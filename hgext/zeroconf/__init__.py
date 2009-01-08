@@ -6,9 +6,9 @@
 # GNU General Public License version 2 or any later version.
 '''discover and advertise repositories on the local network
 
-Zeroconf-enabled repositories will be announced in a network without
-the need to configure a server or a service. They can be discovered
-without knowing their actual IP address.
+The zeroconf extension will advertise :hg:`serve` instances over
+DNS-SD so that they can be discovered using the :hg:`paths` command
+without knowing the server's IP address.
 
 To allow other people to discover your repository using run
 :hg:`serve` in your repository::
