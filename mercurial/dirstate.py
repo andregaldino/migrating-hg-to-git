@@ -757,10 +757,10 @@ class dirstate(object):
                 del files[i]
             j += 1
 
-        if not files or '.' in files:
-            files = ['.']
+        if not files or '' in files:
+            files = ['']
             # constructing the foldmap is expensive, so don't do it for the
-            # common case where files is ['.']
+            # common case where files is ['']
             normalize = None
         results = dict.fromkeys(subrepos)
         results['.hg'] = None
@@ -910,9 +910,7 @@ class dirstate(object):
                 if visitentries == 'this' or visitentries == 'all':
                     visitentries = None
                 skip = None
-                if nd == '.':
-                    nd = ''
-                else:
+                if nd != '':
                     skip = '.hg'
                 try:
                     entries = listdir(join(nd), stat=True, skip=skip)

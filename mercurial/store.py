@@ -40,7 +40,7 @@ def _matchtrackedpath(path, matcher):
     if path.startswith('data/'):
         return matcher(path[len('data/'):-len('.i')])
     elif path.startswith('meta/'):
-        return matcher.visitdir(path[len('meta/'):-len('/00manifest.i')] or '.')
+        return matcher.visitdir(path[len('meta/'):-len('/00manifest.i')])
 
     raise error.ProgrammingError("cannot decode path %s" % path)
 

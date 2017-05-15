@@ -466,9 +466,9 @@ class manifestdict(object):
             if match(fn):
                 yield fn
 
-        # for dirstate.walk, files=['.'] means "walk the whole tree".
+        # for dirstate.walk, files=[''] means "walk the whole tree".
         # follow that here, too
-        fset.discard('.')
+        fset.discard('')
 
         for fn in sorted(fset):
             if not self.hasdir(fn):
@@ -1038,9 +1038,9 @@ class treemanifest(object):
                 fset.remove(fn)
             yield fn
 
-        # for dirstate.walk, files=['.'] means "walk the whole tree".
+        # for dirstate.walk, files=[''] means "walk the whole tree".
         # follow that here, too
-        fset.discard('.')
+        fset.discard('')
 
         for fn in sorted(fset):
             if not self.hasdir(fn):
@@ -1048,7 +1048,7 @@ class treemanifest(object):
 
     def _walk(self, match):
         '''Recursively generates matching file names for walk().'''
-        visit = match.visitchildrenset(self._dir[:-1] or '.')
+        visit = match.visitchildrenset(self._dir[:-1])
         if not visit:
             return
 
@@ -1076,7 +1076,7 @@ class treemanifest(object):
         '''recursively generate a new manifest filtered by the match argument.
         '''
 
-        visit = match.visitchildrenset(self._dir[:-1] or '.')
+        visit = match.visitchildrenset(self._dir[:-1])
         if visit == 'all':
             return self.copy()
         ret = treemanifest(self._dir)
@@ -1235,7 +1235,7 @@ class treemanifest(object):
             return m._dirs.get(d, emptytree)._node
 
         # let's skip investigating things that `match` says we do not need.
-        visit = match.visitchildrenset(self._dir[:-1] or '.')
+        visit = match.visitchildrenset(self._dir[:-1])
         visit = self._loadchildrensetlazy(visit)
         if visit == 'this' or visit == 'all':
             visit = None
@@ -1254,7 +1254,7 @@ class treemanifest(object):
 
         If `matcher` is provided, it only returns subtrees that match.
         """
-        if matcher and not matcher.visitdir(self._dir[:-1] or '.'):
+        if matcher and not matcher.visitdir(self._dir[:-1]):
             return
         if not matcher or matcher(self._dir[:-1]):
             yield self
@@ -1685,7 +1685,7 @@ class manifestlog(object):
             return self._dirmancache[tree][node]
 
         if not self._narrowmatch.always():
-            if not self._narrowmatch.visitdir(tree[:-1] or '.'):
+            if not self._narrowmatch.visitdir(tree[:-1]):
                 return excludeddirmanifestctx(tree, node)
         if tree:
             if self._rootstore._treeondisk:
@@ -1878,7 +1878,7 @@ class treemanifestctx(object):
     def _storage(self):
         narrowmatch = self._manifestlog._narrowmatch
         if not narrowmatch.always():
-            if not narrowmatch.visitdir(self._dir[:-1] or '.'):
+            if not narrowmatch.visitdir(self._dir[:-1]):
                 return excludedmanifestrevlog(self._dir)
         return self._manifestlog.getstorage(self._dir)
 
