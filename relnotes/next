@@ -32,3 +32,6 @@
 
  * `match.visitdir()` and `match.visitchildrenset()` now expect the
    empty string instead of '.' to indicate the root directory.
+
+ * `util.dirs()` and `util.finddirs()` now include an entry for the
+   root directory (empty string).

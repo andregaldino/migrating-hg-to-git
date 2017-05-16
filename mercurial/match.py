@@ -539,8 +539,7 @@ class patternmatcher(basematcher):
         dir = normalizerootdir(dir, 'visitdir')
         if self._prefix and dir in self._fileset:
             return 'all'
-        return ('' in self._fileset or
-                dir in self._fileset or
+        return (dir in self._fileset or
                 dir in self._dirs or
                 any(parentdir in self._fileset
                     for parentdir in util.finddirs(dir)))
@@ -621,8 +620,7 @@ class includematcher(basematcher):
         dir = normalizerootdir(dir, 'visitdir')
         if self._prefix and dir in self._roots:
             return 'all'
-        return ('' in self._roots or
-                dir in self._roots or
+        return (dir in self._roots or
                 dir in self._dirs or
                 dir in self._parents or
                 any(parentdir in self._roots
@@ -1386,14 +1384,14 @@ def _rootsdirsandparents(kindpats):
     >>> _rootsdirsandparents(
     ...     [(b'glob', b'g/h/*', b''), (b'glob', b'g/h', b''),
     ...      (b'glob', b'g*', b'')])
-    (['g/h', 'g/h', ''], [], ['g', ''])
+    (['g/h', 'g/h', ''], [], ['', 'g'])
     >>> _rootsdirsandparents(
     ...     [(b'rootfilesin', b'g/h', b''), (b'rootfilesin', b'', b'')])
-    ([], ['g/h', ''], ['g', ''])
+    ([], ['g/h', ''], ['', 'g'])
     >>> _rootsdirsandparents(
     ...     [(b'relpath', b'r', b''), (b'path', b'p/p', b''),
     ...      (b'path', b'', b'')])
-    (['r', 'p/p', ''], [], ['p', ''])
+    (['r', 'p/p', ''], [], ['', 'p'])
     >>> _rootsdirsandparents(
     ...     [(b'relglob', b'rg*', b''), (b're', b're/', b''),
     ...      (b'relre', b'rr', b'')])
@@ -1406,8 +1404,6 @@ def _rootsdirsandparents(kindpats):
     # scanned to get to either the roots or the other exact directories.
     p.extend(util.dirs(d))
     p.extend(util.dirs(r))
-    # util.dirs() does not include the root directory, so add it manually
-    p.append('')
 
     # FIXME: all uses of this function convert these to sets, do so before
     # returning.

@@ -667,7 +667,7 @@ void dirs_module_init(PyObject *mod);
 void manifest_module_init(PyObject *mod);
 void revlog_module_init(PyObject *mod);
 
-static const int version = 12;
+static const int version = 13;
 
 static void module_init(PyObject *mod)
 {
