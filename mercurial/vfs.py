@@ -339,6 +339,8 @@ class vfs(abstractvfs):
 
     def _auditpath(self, path, mode):
         if self._audit:
+            if os.path.isabs(path) and path.startswith(self.base):
+                path = os.path.relpath(path, self.base)
             r = util.checkosfilename(path)
             if r:
                 raise error.Abort("%s: %r" % (r, path))
