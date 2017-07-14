@@ -662,8 +662,6 @@ class dirstate(object):
         self._dirty = False
 
     def _dirignore(self, f):
-        if f == '.':
-            return False
         if self._ignore(f):
             return True
         for p in util.finddirs(f):
