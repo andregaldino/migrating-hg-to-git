@@ -2058,14 +2058,11 @@ def registersummarycallback(repo, otr, txnname=b'', as_validator=False):
             pull/unbundle.
             """
             origrepolen = tr.changes.get(b'origrepolen', len(repo))
-            phasetracking = tr.changes.get(b'phases', {})
-            if not phasetracking:
-                return
-            published = [
-                rev
-                for rev, (old, new) in pycompat.iteritems(phasetracking)
-                if new == phases.public and rev < origrepolen
-            ]
+            published = []
+            for revs, (old, new) in tr.changes.get(b'phases', []):
+                if new != phases.public:
+                    continue
+                published.extend(rev for rev in revs if rev < origrepolen)
             if not published:
                 return
             msg = _(b'%d local changesets published\n')

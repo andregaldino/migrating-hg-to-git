@@ -2178,15 +2178,16 @@ class localrepository(object):
                     )
             if hook.hashook(repo.ui, b'pretxnclose-phase'):
                 cl = repo.unfiltered().changelog
-                for rev, (old, new) in tr.changes[b'phases'].items():
-                    args = tr.hookargs.copy()
-                    node = hex(cl.node(rev))
-                    args.update(phases.preparehookargs(node, old, new))
-                    repo.hook(
-                        b'pretxnclose-phase',
-                        throw=True,
-                        **pycompat.strkwargs(args)
-                    )
+                for revs, (old, new) in tr.changes[b'phases']:
+                    for rev in revs:
+                        args = tr.hookargs.copy()
+                        node = hex(cl.node(rev))
+                        args.update(phases.preparehookargs(node, old, new))
+                        repo.hook(
+                            b'pretxnclose-phase',
+                            throw=True,
+                            **pycompat.strkwargs(args)
+                        )
 
             repo.hook(
                 b'pretxnclose', throw=True, **pycompat.strkwargs(tr.hookargs)
@@ -2231,7 +2232,7 @@ class localrepository(object):
         )
         tr.changes[b'origrepolen'] = len(self)
         tr.changes[b'obsmarkers'] = set()
-        tr.changes[b'phases'] = {}
+        tr.changes[b'phases'] = []
         tr.changes[b'bookmarks'] = {}
 
         tr.hookargs[b'txnid'] = txnid
@@ -2265,16 +2266,19 @@ class localrepository(object):
 
                 if hook.hashook(repo.ui, b'txnclose-phase'):
                     cl = repo.unfiltered().changelog
-                    phasemv = sorted(tr.changes[b'phases'].items())
-                    for rev, (old, new) in phasemv:
-                        args = tr.hookargs.copy()
-                        node = hex(cl.node(rev))
-                        args.update(phases.preparehookargs(node, old, new))
-                        repo.hook(
-                            b'txnclose-phase',
-                            throw=False,
-                            **pycompat.strkwargs(args)
-                        )
+                    phasemv = sorted(
+                        tr.changes[b'phases'], key=lambda r: r[0][0]
+                    )
+                    for revs, (old, new) in phasemv:
+                        for rev in revs:
+                            args = tr.hookargs.copy()
+                            node = hex(cl.node(rev))
+                            args.update(phases.preparehookargs(node, old, new))
+                            repo.hook(
+                                b'txnclose-phase',
+                                throw=False,
+                                **pycompat.strkwargs(args)
+                            )
 
                 repo.hook(
                     b'txnclose', throw=False, **pycompat.strkwargs(hookargs)

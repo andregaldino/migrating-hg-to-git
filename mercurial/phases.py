@@ -216,17 +216,101 @@ def binarydecode(stream):
     return headsbyphase
 
 
+def _sortedrange_insert(data, idx, rev, t):
+    merge_before = False
+    if idx:
+        r1, t1 = data[idx - 1]
+        merge_before = r1[-1] + 1 == rev and t1 == t
+    merge_after = False
+    if idx < len(data):
+        r2, t2 = data[idx]
+        merge_after = r2[0] == rev + 1 and t2 == t
+
+    if merge_before and merge_after:
+        data[idx - 1] = (pycompat.xrange(r1[0], r2[-1] + 1), t)
+        data.pop(idx)
+    elif merge_before:
+        data[idx - 1] = (pycompat.xrange(r1[0], rev + 1), t)
+    elif merge_after:
+        data[idx] = (pycompat.xrange(rev, r2[-1] + 1), t)
+    else:
+        data.insert(idx, (pycompat.xrange(rev, rev + 1), t))
+
+
+def _sortedrange_split(data, idx, rev, t):
+    r1, t1 = data[idx]
+    if t == t1:
+        return
+    t = (t1[0], t[1])
+    if len(r1) == 1:
+        data.pop(idx)
+        _sortedrange_insert(data, idx, rev, t)
+    elif r1[0] == rev:
+        data[idx] = (pycompat.xrange(rev + 1, r1[-1] + 1), t1)
+        _sortedrange_insert(data, idx, rev, t)
+    elif r1[-1] == rev:
+        data[idx] = (pycompat.xrange(r1[0], rev), t1)
+        _sortedrange_insert(data, idx + 1, rev, t)
+    else:
+        data[idx : idx + 1] = [
+            (pycompat.xrange(r1[0], rev), t1),
+            (pycompat.xrange(rev, rev + 1), t),
+            (pycompat.xrange(rev + 1, r1[-1] + 1), t1),
+        ]
+
+
 def _trackphasechange(data, rev, old, new):
-    """add a phase move the <data> dictionnary
+    """add a phase move to the <data> list of ranges
 
     If data is None, nothing happens.
     """
     if data is None:
         return
-    existing = data.get(rev)
-    if existing is not None:
-        old = existing[0]
-    data[rev] = (old, new)
+
+    # If data is empty, create a one-revision range and done
+    if not data:
+        data.insert(0, (pycompat.xrange(rev, rev + 1), (old, new)))
+        return
+
+    low = 0
+    high = len(data)
+    t = (old, new)
+    while low < high:
+        mid = (low + high) // 2
+        revs = data[mid][0]
+
+        if rev in revs:
+            _sortedrange_split(data, mid, rev, t)
+            return
+
+        if revs[0] == rev + 1:
+            if mid and data[mid - 1][0][-1] == rev:
+                _sortedrange_split(data, mid - 1, rev, t)
+            else:
+                _sortedrange_insert(data, mid, rev, t)
+            return
+
+        if revs[-1] == rev - 1:
+            if mid + 1 < len(data) and data[mid + 1][0][0] == rev:
+                _sortedrange_split(data, mid + 1, rev, t)
+            else:
+                _sortedrange_insert(data, mid + 1, rev, t)
+            return
+
+        if revs[0] > rev:
+            high = mid
+        else:
+            low = mid + 1
+
+    if low == len(data):
+        data.append((pycompat.xrange(rev, rev + 1), t))
+        return
+
+    r1, t1 = data[low]
+    if r1[0] > rev:
+        data.insert(low, (pycompat.xrange(rev, rev + 1), t))
+    else:
+        data.insert(low + 1, (pycompat.xrange(rev, rev + 1), t))
 
 
 class phasecache(object):
@@ -400,8 +484,9 @@ class phasecache(object):
             phasetracking = tr.changes[b'phases']
             torev = repo.changelog.rev
             phase = self.phase
-            for n in nodes:
-                rev = torev(n)
+            revs = [torev(node) for node in nodes]
+            revs.sort()
+            for rev in revs:
                 revphase = phase(repo, rev)
                 _trackphasechange(phasetracking, rev, None, revphase)
         repo.invalidatevolatilesets()
@@ -485,7 +570,7 @@ class phasecache(object):
                     affected -= revs
                 else:  # public phase
                     revs = affected
-                for r in revs:
+                for r in sorted(revs):
                     _trackphasechange(phasetracking, r, phase, targetphase)
         repo.invalidatevolatilesets()
 
