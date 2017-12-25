@@ -2342,13 +2342,13 @@ class localrepository(object):
             #    \- 2 --- 4        as the merge base
             #
 
-            crev = manifest1.get(cfname)
+            cnode = manifest1.get(cfname)
             newfparent = fparent2
 
             if manifest2: # branch merge
-                if fparent2 == nullid or crev is None: # copied on remote side
+                if fparent2 == nullid or cnode is None: # copied on remote side
                     if cfname in manifest2:
-                        crev = manifest2[cfname]
+                        cnode = manifest2[cfname]
                         newfparent = fparent1
 
             # Here, we used to search backwards through history to try to find
@@ -2360,10 +2360,10 @@ class localrepository(object):
             # expect this outcome it can be fixed, but this is the correct
             # behavior in this circumstance.
 
-            if crev:
-                self.ui.debug(" %s: copy %s:%s\n" % (fname, cfname, hex(crev)))
+            if cnode:
+                self.ui.debug(" %s: copy %s:%s\n" % (fname, cfname, hex(cnode)))
                 meta["copy"] = cfname
-                meta["copyrev"] = hex(crev)
+                meta["copyrev"] = hex(cnode)
                 fparent1, fparent2 = nullid, newfparent
             else:
                 self.ui.warn(_("warning: can't find ancestor for '%s' "
