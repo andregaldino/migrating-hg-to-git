@@ -275,7 +275,7 @@ class simplefilectx(object):
     def path(self):
         return self._path
 
-    def renamed(self):
+    def copysource(self):
         return None
 
     def flags(self):

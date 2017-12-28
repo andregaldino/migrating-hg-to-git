@@ -2293,8 +2293,8 @@ class localrepository(object):
 
         flog = self.file(fname)
         meta = {}
-        copy = fctx.renamed()
-        if copy and copy[0] != fname:
+        cfname = fctx.copysource()
+        if cfname and cfname != fname:
             # Mark the new revision of this file as a copy of another
             # file.  This copy data will effectively act as a parent
             # of this new revision.  If this is a merge, the first
@@ -2314,7 +2314,6 @@ class localrepository(object):
             #    \- 2 --- 4        as the merge base
             #
 
-            cfname = copy[0]
             crev = manifest1.get(cfname)
             newfparent = fparent2
 
