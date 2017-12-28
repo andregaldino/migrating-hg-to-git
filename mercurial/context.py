@@ -441,6 +441,21 @@ class changectx(basectx):
         return self._changeset.files
     @propertycache
     def _copies(self):
+        source = self._repo.ui.config('experimental', 'copies.read-from')
+        p1copies = self._changeset.p1copies
+        p2copies = self._changeset.p2copies
+        # If config says to get copy metadata only from changeset, then return
+        # that, defaulting to {} if there was no copy metadata.
+        # In compatibility mode, we return copy data from the changeset if
+        # it was recorded there, and otherwise we fall back to getting it from
+        # the filelogs (below).
+        if (source == 'changeset-only' or
+            (source == 'compatibility' and p1copies is not None)):
+            return p1copies or {}, p2copies or {}
+
+        # Otherwise (config said to read only from filelog, or we are in
+        # compatiblity mode and there is not data in the changeset), we get
+        # the copy metadata from the filelogs.
         p1copies = {}
         p2copies = {}
         p1 = self.p1()

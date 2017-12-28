@@ -2,9 +2,11 @@
   $ cat >> $HGRCPATH << EOF
   > [experimental]
   > copies.write-to=changeset-only
+  > copies.read-from=changeset-only
   > [alias]
   > changesetcopies = log -r . -T 'files: {files}
   >   {extras % "{ifcontains("copies", key, "{key}: {value}\n")}"}'
+  > showcopies = log -r . -T '{file_copies % "{source} -> {name}\n"}'
   > EOF
 
 Check that copies are recorded correctly
@@ -23,6 +25,15 @@ Check that copies are recorded correctly
   p1copies: b\x00a (esc)
   c\x00a (esc)
   d\x00a (esc)
+  $ hg showcopies
+  a -> b
+  a -> c
+  a -> d
+  $ hg showcopies --config experimental.copies.read-from=compatibility
+  a -> b
+  a -> c
+  a -> d
+  $ hg showcopies --config experimental.copies.read-from=filelog-only
 
 Check that renames are recorded correctly
 
@@ -31,6 +42,8 @@ Check that renames are recorded correctly
   $ hg changesetcopies
   files: b b2
   p1copies: b2\x00b (esc)
+  $ hg showcopies
+  b -> b2
 
 Rename onto existing file. This should get recorded in the changeset files list and in the extras,
 even though there is no filelog entry.
@@ -46,6 +59,8 @@ even though there is no filelog entry.
   $ hg changesetcopies
   files: c
   p1copies: c\x00b2 (esc)
+  $ hg showcopies
+  b2 -> c
   $ hg debugindex c
      rev linkrev nodeid       p1           p2
        0       1 b789fdd96dc2 000000000000 000000000000
@@ -74,6 +89,10 @@ File 'f' exists only in p1, so 'i' should be from p1
   p1copies: g\x00a (esc)
   i\x00f (esc)
   p2copies: h\x00d (esc)
+  $ hg showcopies
+  a -> g
+  d -> h
+  f -> i
 
 Test writing to both changeset and filelog
 
@@ -88,6 +107,12 @@ Test writing to both changeset and filelog
   copyrev: b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3
   \x01 (esc)
   a
+  $ hg showcopies
+  a -> j
+  $ hg showcopies --config experimental.copies.read-from=compatibility
+  a -> j
+  $ hg showcopies --config experimental.copies.read-from=filelog-only
+  a -> j
 
 Test writing only to filelog
 
@@ -101,5 +126,10 @@ Test writing only to filelog
   copyrev: b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3
   \x01 (esc)
   a
+  $ hg showcopies
+  $ hg showcopies --config experimental.copies.read-from=compatibility
+  a -> k
+  $ hg showcopies --config experimental.copies.read-from=filelog-only
+  a -> k
 
   $ cd ..

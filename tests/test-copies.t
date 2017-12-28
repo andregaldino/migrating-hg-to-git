@@ -1,4 +1,4 @@
-#testcases filelog compatibility
+#testcases filelog compatibility changeset
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -11,6 +11,14 @@
   $ cat >> $HGRCPATH << EOF
   > [experimental]
   > copies.read-from = compatibility
+  > EOF
+#endif
+
+#if changeset
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > copies.read-from = changeset-only
+  > copies.write-to = changeset-only
   > EOF
 #endif
 
@@ -376,11 +384,13 @@ Copy file that exists on both sides of the merge, different content
   o  0 add x on branch 1
      x
   $ hg debugp1copies -r 2
+  x -> z (changeset !)
   $ hg debugp2copies -r 2
-  x -> z
+  x -> z (no-changeset !)
   $ hg debugpathcopies 1 2
+  x -> z (changeset !)
   $ hg debugpathcopies 0 2
-  x -> z
+  x -> z (no-changeset !)
 
 Copy x->y on one side of merge and copy x->z on the other side. Pathcopies from one parent
 of the merge to the merge should include the copy from the other side.
@@ -539,6 +549,9 @@ test reflect that for this particular case this algorithm correctly find the cop
 
 Grafting revision 4 on top of revision 2, showing that it respect the rename:
 
+TODO: Make this work with copy info in changesets (probably by writing a
+changeset-centric version of copies.mergecopies())
+#if no-changeset
   $ hg up 2 -q
   $ hg graft -r 4 --base 3 --hidden
   grafting 4:af28412ec03c "added d, modified b" (tip)
@@ -554,6 +567,8 @@ Grafting revision 4 on top of revision 2, showing that it respect the rename:
       b
      +baba
   
+#endif
+
 Test to make sure that fullcopytracing algorithm don't fail when both the merging csets are dirty
 (a dirty cset is one who is not the descendant of merge base)
 -------------------------------------------------------------------------------------------------

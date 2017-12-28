@@ -87,6 +87,18 @@ def encodecopies(copies):
     ]
     return "\n".join(items)
 
+def decodecopies(data):
+    try:
+        copies = {}
+        for l in data.split('\n'):
+            k, v = l.split('\0')
+            copies[k] = v
+        return copies
+    except ValueError:
+        # Perhaps someone had chosen the same key name (e.g. "p1copies") and
+        # used different syntax for the value.
+        return None
+
 def stripdesc(desc):
     """strip trailing whitespace and leading and trailing empty lines"""
     return '\n'.join([l.rstrip() for l in desc.splitlines()]).strip('\n')
@@ -284,6 +296,16 @@ class changelogrevision(object):
             return []
 
         return self._text[off[2] + 1:off[3]].split('\n')
+
+    @property
+    def p1copies(self):
+        rawcopies = self.extra.get('p1copies')
+        return rawcopies and decodecopies(rawcopies)
+
+    @property
+    def p2copies(self):
+        rawcopies = self.extra.get('p2copies')
+        return rawcopies and decodecopies(rawcopies)
 
     @property
     def description(self):
