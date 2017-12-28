@@ -445,8 +445,8 @@ and its ancestor by overriding "repo._filecommit".
   >             fparent1 = manifest1.get(fname, node.nullid)
   >             fparent2 = manifest2.get(fname, node.nullid)
   >             meta = {}
-  >             copy = fctx.renamed()
-  >             if copy and copy[0] != fname:
+  >             copy = fctx.copysource()
+  >             if copy and copy != fname:
   >                 raise error.Abort('copying is not supported')
   >             if fparent2 != node.nullid:
   >                 changelist.append(fname)
