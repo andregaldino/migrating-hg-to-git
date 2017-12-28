@@ -557,7 +557,7 @@ class mercurial_source(common.converter_source):
             if name in self.ignored:
                 continue
             try:
-                copysource, _copynode = ctx.filectx(name).renamed()
+                copysource = ctx.filectx(name).copysource()
                 if copysource in self.ignored:
                     continue
                 # Ignore copy sources not in parent revisions
