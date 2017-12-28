@@ -207,12 +207,12 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
             # the largefile-ness of its predecessor
             if f in ctx.manifest():
                 fctx = ctx.filectx(f)
-                renamed = fctx.renamed()
+                renamed = fctx.copysource()
                 if renamed is None:
                     # the code below assumes renamed to be a boolean or a list
                     # and won't quite work with the value None
                     renamed = False
-                renamedlfile = renamed and renamed[0] in lfiles
+                renamedlfile = renamed and renamed in lfiles
                 islfile |= renamedlfile
                 if 'l' in fctx.flags():
                     if renamedlfile:
@@ -232,8 +232,8 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
             if f in ctx.manifest():
                 fctx = ctx.filectx(f)
                 if 'l' in fctx.flags():
-                    renamed = fctx.renamed()
-                    if renamed and renamed[0] in lfiles:
+                    renamed = fctx.copysource()
+                    if renamed and renamed in lfiles:
                         raise error.Abort(_('largefile %s becomes symlink') % f)
 
                 # largefile was modified, update standins
@@ -259,11 +259,11 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
                 fctx = ctx.filectx(srcfname)
             except error.LookupError:
                 return None
-            renamed = fctx.renamed()
+            renamed = fctx.copysource()
             if renamed:
                 # standin is always a largefile because largefile-ness
                 # doesn't change after rename or copy
-                renamed = lfutil.standin(renamed[0])
+                renamed = lfutil.standin(renamed)
 
             return context.memfilectx(repo, memctx, f,
                                       lfiletohash[srcfname] + '\n',
@@ -308,9 +308,7 @@ def _getnormalcontext(repo, ctx, f, revmap):
         fctx = ctx.filectx(f)
     except error.LookupError:
         return None
-    renamed = fctx.renamed()
-    if renamed:
-        renamed = renamed[0]
+    renamed = fctx.copysource()
 
     data = fctx.data()
     if f == '.hgtags':
