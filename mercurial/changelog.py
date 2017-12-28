@@ -80,6 +80,13 @@ def encodeextra(d):
     ]
     return "\0".join(items)
 
+def encodecopies(copies):
+    items = [
+        '%s\0%s' % (k, copies[k])
+        for k in sorted(copies)
+    ]
+    return "\n".join(items)
+
 def stripdesc(desc):
     """strip trailing whitespace and leading and trailing empty lines"""
     return '\n'.join([l.rstrip() for l in desc.splitlines()]).strip('\n')
@@ -533,7 +540,7 @@ class changelog(revlog.revlog):
         return l[3:]
 
     def add(self, manifest, files, desc, transaction, p1, p2,
-                  user, date=None, extra=None):
+                  user, date=None, extra=None, p1copies=None, p2copies=None):
         # Convert to UTF-8 encoded bytestrings as the very first
         # thing: calling any method on a localstr object will turn it
         # into a str object and the cached UTF-8 string is thus lost.
@@ -562,6 +569,13 @@ class changelog(revlog.revlog):
             elif branch in (".", "null", "tip"):
                 raise error.StorageError(_('the name \'%s\' is reserved')
                                          % branch)
+        if (p1copies or p2copies) and extra is None:
+            extra = {}
+        if p1copies:
+            extra['p1copies'] = encodecopies(p1copies)
+        if p2copies:
+            extra['p2copies'] = encodecopies(p2copies)
+
         if extra:
             extra = encodeextra(extra)
             parseddate = "%s %s" % (parseddate, extra)

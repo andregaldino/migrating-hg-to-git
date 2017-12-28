@@ -488,6 +488,9 @@ coreconfigitem('experimental', 'copytrace.sourcecommitlimit',
 coreconfigitem('experimental', 'copies.read-from',
     default="filelog-only",
 )
+coreconfigitem('experimental', 'copies.write-to',
+    default='filelog-only',
+)
 coreconfigitem('experimental', 'crecordtest',
     default=None,
 )

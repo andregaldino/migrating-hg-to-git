@@ -2324,7 +2324,8 @@ class localrepository(object):
         """Returns the wlock if it's held, or None if it's not."""
         return self._currentlock(self._wlockref)
 
-    def _filecommit(self, fctx, manifest1, manifest2, linkrev, tr, changelist):
+    def _filecommit(self, fctx, manifest1, manifest2, linkrev, tr, changelist,
+                    includecopymeta):
         """
         commit an individual file as part of a larger transaction
         """
@@ -2383,8 +2384,9 @@ class localrepository(object):
 
             if cnode:
                 self.ui.debug(" %s: copy %s:%s\n" % (fname, cfname, hex(cnode)))
-                meta["copy"] = cfname
-                meta["copyrev"] = hex(cnode)
+                if includecopymeta:
+                    meta["copy"] = cfname
+                    meta["copyrev"] = hex(cnode)
                 fparent1, fparent2 = nullid, newfparent
             else:
                 self.ui.warn(_("warning: can't find ancestor for '%s' "
@@ -2552,6 +2554,12 @@ class localrepository(object):
         p1, p2 = ctx.p1(), ctx.p2()
         user = ctx.user()
 
+        writecopiesto = self.ui.config('experimental', 'copies.write-to')
+        writefilecopymeta = writecopiesto != 'changeset-only'
+        p1copies, p2copies = None, None
+        if writecopiesto in ('changeset-only', 'compatibility'):
+            p1copies = ctx.p1copies()
+            p2copies = ctx.p2copies()
         with self.lock(), self.transaction("commit") as tr:
             trp = weakref.proxy(tr)
 
@@ -2585,7 +2593,8 @@ class localrepository(object):
                         else:
                             added.append(f)
                             m[f] = self._filecommit(fctx, m1, m2, linkrev,
-                                                    trp, changed)
+                                                    trp, changed,
+                                                    writefilecopymeta)
                             m.setflag(f, fctx.flags())
                     except OSError:
                         self.ui.warn(_("trouble committing %s!\n") %
@@ -2639,7 +2648,8 @@ class localrepository(object):
             self.changelog.delayupdate(tr)
             n = self.changelog.add(mn, files, ctx.description(),
                                    trp, p1.node(), p2.node(),
-                                   user, ctx.date(), ctx.extra().copy())
+                                   user, ctx.date(), ctx.extra().copy(),
+                                   p1copies, p2copies)
             xp1, xp2 = p1.hex(), p2 and p2.hex() or ''
             self.hook('pretxncommit', throw=True, node=hex(n), parent1=xp1,
                       parent2=xp2)
