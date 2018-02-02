@@ -340,8 +340,6 @@ commonpypats = [
         ),
         (r'[^\n]\Z', "no trailing newline"),
         (r'(\S[ \t]+|^[ \t]+)\n', "trailing whitespace"),
-        #    (r'^\s+[^_ \n][^_. \n]+_[^_\n]+\s*=',
-        #     "don't use underbars in identifiers"),
         (
             r'^\s+(self\.)?[A-Za-z][a-z0-9]+[A-Z]\w* = ',
             "don't use camelcase in identifiers",
