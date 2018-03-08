@@ -110,13 +110,14 @@ class partialdiscovery(object):
     (all tracked revisions are known locally)
     """
 
-    def __init__(self, repo, targetheads):
+    def __init__(self, repo, targetheads, respectsize):
         self._repo = repo
         self._targetheads = targetheads
         self._common = repo.changelog.incrementalmissingrevs()
         self._undecided = None
         self.missing = set()
         self._childrenmap = None
+        self._respectsize = respectsize
 
     def addcommons(self, commons):
         """register nodes known as common"""
@@ -241,6 +242,8 @@ class partialdiscovery(object):
 
         # update from roots
         revsroots = set(repo.revs('roots(%ld)', revs))
+        if not self._respectsize:
+            size = max(size, len(revsroots))
 
         childrenrevs = self._childrengetter()
 
@@ -373,7 +376,7 @@ def findcommonheads(ui, local, remote,
 
     # full blown discovery
 
-    disco = partialdiscovery(local, ownheads)
+    disco = partialdiscovery(local, ownheads, remote.limitedarguments)
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
     disco.addcommons(knownsrvheads)
