@@ -129,8 +129,7 @@ def getrenamedfn(repo, endrev=None):
         # If linkrev != rev (i.e. rev not found in rcache) fallback to
         # filectx logic.
         try:
-            renamed = repo[rev][fn].renamed()
-            return renamed and renamed[0]
+            return repo[rev][fn].copysource()
         except error.LookupError:
             return None
 
