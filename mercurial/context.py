@@ -2234,9 +2234,7 @@ def memfilefromctx(ctx):
     """
     def getfilectx(repo, memctx, path):
         fctx = ctx[path]
-        copied = fctx.renamed()
-        if copied:
-            copied = copied[0]
+        copied = fctx.copysource()
         return memfilectx(repo, memctx, path, fctx.data(),
                           islink=fctx.islink(), isexec=fctx.isexec(),
                           copied=copied)
