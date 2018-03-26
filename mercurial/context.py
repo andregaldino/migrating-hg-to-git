@@ -691,6 +691,8 @@ class basefilectx(object):
         return self._changectx
     def renamed(self):
         return self._copied
+    def copysource(self):
+        return self._copied and self._copied[0]
     def repo(self):
         return self._repo
     def size(self):
@@ -1703,6 +1705,8 @@ class workingfilectx(committablefilectx):
         if not rp:
             return None
         return rp, self._changectx._parents[0]._manifest.get(rp, nullid)
+    def copysource(self):
+        return self._repo.dirstate.copied(self._path)
 
     def size(self):
         return self._repo.wvfs.lstat(self._path).st_size
@@ -2147,6 +2151,9 @@ class overlayworkingfilectx(committablefilectx):
         if not path:
             return None
         return path, self._changectx._parents[0]._manifest.get(path, nullid)
+
+    def copysource(self):
+        return self._parent.copydata(self._path)
 
     def size(self):
         return self._parent.size(self._path)

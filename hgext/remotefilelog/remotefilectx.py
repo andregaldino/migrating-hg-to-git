@@ -136,6 +136,10 @@ class remotefilectx(context.filectx):
                 pass
         return renamed
 
+    def copysource(self):
+        copy = self.renamed()
+        return copy and copy[0]
+
     def ancestormap(self):
         if not self._ancestormap:
             self._ancestormap = self.filelog().ancestormap(self._filenode)
