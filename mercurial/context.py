@@ -1701,7 +1701,7 @@ class workingfilectx(committablefilectx):
     def data(self):
         return self._repo.wread(self._path)
     def renamed(self):
-        rp = self._repo.dirstate.copied(self._path)
+        rp = self.copysource()
         if not rp:
             return None
         return rp, self._changectx._parents[0]._manifest.get(rp, nullid)
@@ -2147,7 +2147,7 @@ class overlayworkingfilectx(committablefilectx):
         return self._parent.exists(self._path)
 
     def renamed(self):
-        path = self._parent.copydata(self._path)
+        path = self.copysource()
         if not path:
             return None
         return path, self._changectx._parents[0]._manifest.get(path, nullid)
