@@ -1664,6 +1664,12 @@ class committablefilectx(basefilectx):
         # linked to self._changectx no matter if file is modified or not
         return self.rev()
 
+    def renamed(self):
+        path = self.copysource()
+        if not path:
+            return None
+        return path, self._changectx._parents[0]._manifest.get(path, nullid)
+
     def parents(self):
         '''return parent filectxs, following copies if necessary'''
         def filenode(ctx, path):
@@ -1700,11 +1706,6 @@ class workingfilectx(committablefilectx):
 
     def data(self):
         return self._repo.wread(self._path)
-    def renamed(self):
-        rp = self.copysource()
-        if not rp:
-            return None
-        return rp, self._changectx._parents[0]._manifest.get(rp, nullid)
     def copysource(self):
         return self._repo.dirstate.copied(self._path)
 
@@ -2145,12 +2146,6 @@ class overlayworkingfilectx(committablefilectx):
 
     def lexists(self):
         return self._parent.exists(self._path)
-
-    def renamed(self):
-        path = self.copysource()
-        if not path:
-            return None
-        return path, self._changectx._parents[0]._manifest.get(path, nullid)
 
     def copysource(self):
         return self._parent.copydata(self._path)
