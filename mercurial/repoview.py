@@ -86,6 +86,14 @@ def computehidden(repo, visibilityexceptions=None):
         _revealancestors(pfunc, hidden, visible)
     return frozenset(hidden)
 
+def computesecret(repo, visibilityexceptions=None):
+    """compute the set of revision that can never be exposed through hgweb
+
+    Changeset in the secret phase (or above) should stay unaccessible."""
+    assert not repo.changelog.filteredrevs
+    secrets = repo._phasecache.getrevset(repo, phases.remotehiddenphases)
+    return frozenset(secrets)
+
 def computeunserved(repo, visibilityexceptions=None):
     """compute the set of revision that should be filtered when used a server
 
@@ -93,9 +101,9 @@ def computeunserved(repo, visibilityexceptions=None):
     assert not repo.changelog.filteredrevs
     # fast path in simple case to avoid impact of non optimised code
     hiddens = filterrevs(repo, 'visible')
-    secrets = repo._phasecache.getrevset(repo, phases.remotehiddenphases)
+    secrets = filterrevs(repo, 'served.hidden')
     if secrets:
-        return frozenset(hiddens | frozenset(secrets))
+        return frozenset(hiddens | secrets)
     else:
         return hiddens
 
@@ -141,6 +149,7 @@ def computeimpactable(repo, visibilityexceptions=None):
 # from scratch (very slow).
 filtertable = {'visible': computehidden,
                'visible-hidden': computehidden,
+               'served.hidden': computesecret,
                'served': computeunserved,
                'immutable':  computemutable,
                'base':  computeimpactable}

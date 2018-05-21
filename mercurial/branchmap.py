@@ -40,6 +40,7 @@ unpack_from = struct.unpack_from
 subsettable = {None: 'visible',
                'visible-hidden': 'visible',
                'visible': 'served',
+               'served.hidden': 'served',
                'served': 'immutable',
                'immutable': 'base'}
 
