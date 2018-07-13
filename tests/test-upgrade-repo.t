@@ -131,17 +131,17 @@ An upgrade of a repository created with recommended settings only suggests optim
   
   additional optimizations are available by specifying "--optimize <name>":
   
-  redeltaparent
+  re-delta-parent
      deltas within internal storage will be recalculated to choose an optimal base revision where this was not already done; the size of the repository may shrink and various operations may become faster; the first time this optimization is performed could slow down upgrade execution considerably; subsequent invocations should not run noticeably slower
   
-  redeltamultibase
+  re-delta-multibase
      deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
   
-  redeltafulladd
-     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "redeltaall" but even slower since more logic is involved.
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
 
 --optimize can be used to add optimizations
@@ -153,20 +153,51 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  redeltaparent
+  re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
   additional optimizations are available by specifying "--optimize <name>":
   
-  redeltamultibase
+  re-delta-multibase
      deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
   
-  redeltafulladd
-     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "redeltaall" but even slower since more logic is involved.
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
+
+modern form of the option
+
+  $ hg debugupgrade --optimize re-delta-parent
+  (no feature deficiencies found in existing repository)
+  performing an upgrade with "--run" will make the following changes:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  re-delta-parent
+     deltas within internal storage will choose a new base revision if needed
+  
+  additional optimizations are available by specifying "--optimize <name>":
+  
+  re-delta-multibase
+     deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
+  
+  re-delta-all
+     deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
+  
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
+  
+
+unknown optimization:
+
+  $ hg debugupgrade --optimize foobar
+  abort: unknown optimization action requested: foobar
+  (run without arguments to see valid optimizations)
+  [255]
 
 Various sub-optimal detections work
 
@@ -243,17 +274,17 @@ Various sub-optimal detections work
   
   additional optimizations are available by specifying "--optimize <name>":
   
-  redeltaparent
+  re-delta-parent
      deltas within internal storage will be recalculated to choose an optimal base revision where this was not already done; the size of the repository may shrink and various operations may become faster; the first time this optimization is performed could slow down upgrade execution considerably; subsequent invocations should not run noticeably slower
   
-  redeltamultibase
+  re-delta-multibase
      deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
   
-  redeltafulladd
-     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "redeltaall" but even slower since more logic is involved.
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
 
   $ hg --config format.dotencode=false debugupgraderepo
@@ -291,17 +322,17 @@ Various sub-optimal detections work
   
   additional optimizations are available by specifying "--optimize <name>":
   
-  redeltaparent
+  re-delta-parent
      deltas within internal storage will be recalculated to choose an optimal base revision where this was not already done; the size of the repository may shrink and various operations may become faster; the first time this optimization is performed could slow down upgrade execution considerably; subsequent invocations should not run noticeably slower
   
-  redeltamultibase
+  re-delta-multibase
      deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
   
-  redeltafulladd
-     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "redeltaall" but even slower since more logic is involved.
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
 
   $ cd ..
@@ -480,7 +511,7 @@ store files with special filenames aren't encoded during copy
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  redeltafulladd
+  re-delta-fulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
   
   beginning upgrade...
@@ -692,7 +723,7 @@ repository config is taken in account
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time
   
   beginning upgrade...
