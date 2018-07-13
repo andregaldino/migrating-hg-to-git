@@ -150,25 +150,3 @@ Can pull into repo with a single commit
   rollback completed
   abort: pull failed on remote
   [255]
-
-Can use 'hg share':
-  $ cat >> $HGRCPATH <<EOF
-  > [extensions]
-  > share=
-  > EOF
-
-  $ cd ..
-  $ hg share narrow2 narrow2-share
-  updating working directory
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cd narrow2-share
-  $ hg status
-
-We should also be able to unshare without breaking everything:
-  $ hg unshare
-  $ hg verify
-  checking changesets
-  checking manifests
-  crosschecking files in changesets and manifests
-  checking files
-  checked 1 changesets with 1 changes to 1 files
