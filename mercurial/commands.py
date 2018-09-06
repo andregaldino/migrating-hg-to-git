@@ -2944,16 +2944,18 @@ def grep(ui, repo, pattern, *pats, **opts):
                 fnode = ctx.filenode(fn)
             except error.LookupError:
                 continue
-            try:
-                copied = flog.renamed(fnode)
-            except error.WdirUnsupported:
-                copied = ctx[fn].renamed()
-            copy = follow and copied and copied[0]
-            if copy:
-                copies.setdefault(rev, {})[fn] = copy
-            if fn in skip:
+            copy = None
+            if follow:
+                try:
+                    copied = flog.renamed(fnode)
+                except error.WdirUnsupported:
+                    copied = ctx[fn].renamed()
+                copy = copied and copied[0]
                 if copy:
-                    skip[copy] = True
+                    copies.setdefault(rev, {})[fn] = copy
+                    if fn in skip:
+                        skip[copy] = True
+            if fn in skip:
                 continue
             files.append(fn)
 
