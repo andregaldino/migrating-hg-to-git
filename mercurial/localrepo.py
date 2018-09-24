@@ -2502,13 +2502,10 @@ class localrepository(object):
         from p1 or p2 are excluded from the committed ctx.files().
         """
 
-        tr = None
         p1, p2 = ctx.p1(), ctx.p2()
         user = ctx.user()
 
-        lock = self.lock()
-        try:
-            tr = self.transaction("commit")
+        with self.lock(), self.transaction("commit") as tr:
             trp = weakref.proxy(tr)
 
             if ctx.manifestnode():
@@ -2605,12 +2602,7 @@ class localrepository(object):
                 #
                 # if minimal phase was 0 we don't need to retract anything
                 phases.registernew(self, tr, targetphase, [n])
-            tr.close()
             return n
-        finally:
-            if tr:
-                tr.release()
-            lock.release()
 
     @unfilteredmethod
     def destroying(self):
