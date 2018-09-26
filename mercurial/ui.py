@@ -1080,6 +1080,15 @@ class ui(object):
             return False
         return procutil.isatty(fh)
 
+    @contextlib.contextmanager
+    def protectedfinout(self):
+        """Run code block with protected standard streams"""
+        fin, fout = procutil.protectstdio(self._fin, self._fout)
+        try:
+            yield fin, fout
+        finally:
+            procutil.restorestdio(self._fin, self._fout, fin, fout)
+
     def disablepager(self):
         self._disablepager = True
 

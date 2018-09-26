@@ -299,15 +299,6 @@ def restorestdio(uin, uout, fin, fout):
             os.dup2(f.fileno(), uif.fileno())
             f.close()
 
-@contextlib.contextmanager
-def protectedstdio(uin, uout):
-    """Run code block with protected standard streams"""
-    fin, fout = protectstdio(uin, uout)
-    try:
-        yield fin, fout
-    finally:
-        restorestdio(uin, uout, fin, fout)
-
 def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""
     def py2shell(val):

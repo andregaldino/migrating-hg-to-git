@@ -399,7 +399,7 @@ class pipeservice(object):
         ui = self.ui
         # redirect stdio to null device so that broken extensions or in-process
         # hooks will never cause corruption of channel protocol.
-        with procutil.protectedstdio(ui.fin, ui.fout) as (fin, fout):
+        with ui.protectedfinout() as (fin, fout):
             sv = server(ui, self.repo, fin, fout)
             try:
                 return sv.serve()
