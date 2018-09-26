@@ -200,7 +200,7 @@ def _newchgui(srcui, csystem, attachio):
         def _runsystem(self, cmd, environ, cwd, out):
             # fallback to the original system method if
             #  a. the output stream is not stdout (e.g. stderr, cStringIO),
-            #  b. or stdout is redirected by protectstdio(),
+            #  b. or stdout is redirected by protectfinout(),
             # because the chg client is not aware of these situations and
             # will behave differently (i.e. write to stdout).
             if (out is not self.fout

@@ -1080,14 +1080,38 @@ class ui(object):
             return False
         return procutil.isatty(fh)
 
+    def protectfinout(self):
+        """Duplicate ui streams and redirect original if they are stdio
+
+        Returns (fin, fout) which point to the original ui fds, but may be
+        copy of them. The returned streams can be considered "owned" in that
+        print(), exec(), etc. never reach to them.
+        """
+        if self._finoutredirected:
+            # if already redirected, protectstdio() would just create another
+            # nullfd pair, which is equivalent to returning self._fin/_fout.
+            return self._fin, self._fout
+        fin, fout = procutil.protectstdio(self._fin, self._fout)
+        self._finoutredirected = (fin, fout) != (self._fin, self._fout)
+        return fin, fout
+
+    def restorefinout(self, fin, fout):
+        """Restore ui streams from possibly duplicated (fin, fout)"""
+        if (fin, fout) == (self._fin, self._fout):
+            return
+        procutil.restorestdio(self._fin, self._fout, fin, fout)
+        # protectfinout() won't create more than one duplicated streams,
+        # so we can just turn the redirection flag off.
+        self._finoutredirected = False
+
     @contextlib.contextmanager
     def protectedfinout(self):
         """Run code block with protected standard streams"""
-        fin, fout = procutil.protectstdio(self._fin, self._fout)
+        fin, fout = self.protectfinout()
         try:
             yield fin, fout
         finally:
-            procutil.restorestdio(self._fin, self._fout, fin, fout)
+            self.restorefinout(fin, fout)
 
     def disablepager(self):
         self._disablepager = True

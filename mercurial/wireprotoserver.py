@@ -24,7 +24,6 @@ from . import (
 from .utils import (
     cborutil,
     interfaceutil,
-    procutil,
 )
 
 stringio = util.stringio
@@ -782,9 +781,7 @@ class sshserver(object):
     def __init__(self, ui, repo, logfh=None):
         self._ui = ui
         self._repo = repo
-        self._fin, self._fout = procutil.protectstdio(ui.fin, ui.fout)
-        # TODO: manage the redirection flag internally by ui
-        ui._finoutredirected = (self._fin, self._fout) != (ui.fin, ui.fout)
+        self._fin, self._fout = ui.protectfinout()
 
         # Log write I/O to stdout and stderr if configured.
         if logfh:
@@ -795,8 +792,7 @@ class sshserver(object):
 
     def serve_forever(self):
         self.serveuntil(threading.Event())
-        procutil.restorestdio(self._ui.fin, self._ui.fout,
-                              self._fin, self._fout)
+        self._ui.restorefinout(self._fin, self._fout)
         sys.exit(0)
 
     def serveuntil(self, ev):
