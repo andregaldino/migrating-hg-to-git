@@ -33,6 +33,12 @@ where
     where
         P: AsRef<Path>;
 
+    /// Updates the environment variables of the server.
+    fn set_env_vars_os<I, P>(self, vars: I) -> OneShotRequest<C>
+    where
+        I: IntoIterator<Item = (P, P)>,
+        P: AsRef<OsStr>;
+
     /// Runs the specified Mercurial command with cHg extension.
     fn run_command_chg<I, P, H>(self, handler: H, args: I) -> ChgRunCommand<C, H>
     where
@@ -59,6 +65,14 @@ where
         P: AsRef<Path>,
     {
         OneShotRequest::start_with_args(self, b"chdir", dir.as_ref().as_os_str().as_bytes())
+    }
+
+    fn set_env_vars_os<I, P>(self, vars: I) -> OneShotRequest<C>
+    where
+        I: IntoIterator<Item = (P, P)>,
+        P: AsRef<OsStr>,
+    {
+        OneShotRequest::start_with_args(self, b"setenv", message::pack_env_vars_os(vars))
     }
 
     fn run_command_chg<I, P, H>(self, handler: H, args: I) -> ChgRunCommand<C, H>

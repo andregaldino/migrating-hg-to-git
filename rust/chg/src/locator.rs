@@ -24,7 +24,7 @@ use super::clientext::ChgClientExt;
 use super::message::ServerSpec;
 use super::procutil;
 
-const REQUIRED_SERVER_CAPABILITIES: &[&str] = &["attachio", "chdir", "runcommand"];
+const REQUIRED_SERVER_CAPABILITIES: &[&str] = &["attachio", "chdir", "runcommand", "setenv"];
 
 /// Helper to connect to and spawn a server process.
 #[derive(Clone, Debug)]
@@ -84,6 +84,11 @@ impl Locator {
             .and_then(|(loc, client)| {
                 client
                     .set_current_dir(&loc.current_dir)
+                    .map(|client| (loc, client))
+            })
+            .and_then(|(loc, client)| {
+                client
+                    .set_env_vars_os(loc.env_vars.iter().cloned())
                     .map(|client| (loc, client))
             })
     }
