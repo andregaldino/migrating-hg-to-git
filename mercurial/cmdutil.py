@@ -2353,14 +2353,22 @@ def remove(ui, repo, m, prefix, uipathfn, after, force, subrepos, dryrun,
 
     return ret
 
+def _catfmtneedsdata(fm):
+    return not fm.datahint() or 'data' in fm.datahint()
+
 def _updatecatformatter(fm, ctx, matcher, path, decode):
     """Hook for adding data to the formatter used by ``hg cat``.
 
     Extensions (e.g., lfs) can wrap this to inject keywords/data, but must call
     this method first."""
-    data = ctx[path].data()
-    if decode:
-        data = ctx.repo().wwritedata(path, data)
+
+    # data() can be expensive to fetch (e.g. lfs), so don't fetch it if it
+    # wasn't requested.
+    data = b''
+    if _catfmtneedsdata(fm):
+        data = ctx[path].data()
+        if decode:
+            data = ctx.repo().wwritedata(path, data)
     fm.startitem()
     fm.context(ctx=ctx)
     fm.write('data', '%s', data)
@@ -2391,13 +2399,15 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         mfnode = ctx.manifestnode()
         try:
             if mfnode and mfl[mfnode].find(file)[0]:
-                scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
+                if _catfmtneedsdata(basefm):
+                    scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
                 write(file)
                 return 0
         except KeyError:
             pass
 
-    scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
+    if _catfmtneedsdata(basefm):
+        scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
 
     for abs in ctx.walk(matcher):
         write(abs)

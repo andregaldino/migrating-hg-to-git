@@ -537,8 +537,55 @@ Misc: process dies early if a requirement exists and the extension is disabled
 
   $ hg clone -qU http://localhost:$HGPORT $TESTTMP/bulkfetch
 
+Cat doesn't prefetch unless data is needed (e.g. '-T {rawdata}' doesn't need it)
+
+  $ hg --cwd $TESTTMP/bulkfetch cat -vr tip lfspair1.bin -T '{rawdata}\n{path}\n'
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  version https://git-lfs.github.com/spec/v1
+  oid sha256:cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
+  size 20
+  x-is-binary 0
+  
+  lfspair1.bin
+
+  $ hg --cwd $TESTTMP/bulkfetch cat -vr tip lfspair1.bin -T json
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  [lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 (20 bytes)
+  lfs: processed: cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
+  lfs: downloaded 1 files (20 bytes)
+  lfs: found cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 in the local lfs store
+  
+   {
+    "data": "this is an lfs file\n",
+    "path": "lfspair1.bin",
+    "rawdata": "version https://git-lfs.github.com/spec/v1\noid sha256:cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782\nsize 20\nx-is-binary 0\n"
+   }
+  ]
+
+  $ rm -r $TESTTMP/bulkfetch/.hg/store/lfs
+
+  $ hg --cwd $TESTTMP/bulkfetch cat -vr tip lfspair1.bin -T '{data}\n'
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 (20 bytes)
+  lfs: processed: cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
+  lfs: downloaded 1 files (20 bytes)
+  lfs: found cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 in the local lfs store
+  this is an lfs file
+  
+  $ hg --cwd $TESTTMP/bulkfetch cat -vr tip lfspair2.bin
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
+  lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: downloaded 1 files (24 bytes)
+  lfs: found d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e in the local lfs store
+  this is an lfs file too
+
 Export will prefetch all needed files across all needed revisions
 
+  $ rm -r $TESTTMP/bulkfetch/.hg/store/lfs
   $ hg -R $TESTTMP/bulkfetch -v export -r 0:tip -o all.export
   lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
   exporting patches:
