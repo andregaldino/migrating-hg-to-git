@@ -24,8 +24,14 @@ use super::clientext::ChgClientExt;
 use super::message::{Instruction, ServerSpec};
 use super::procutil;
 
-const REQUIRED_SERVER_CAPABILITIES: &[&str] =
-    &["attachio", "chdir", "runcommand", "setenv", "validate"];
+const REQUIRED_SERVER_CAPABILITIES: &[&str] = &[
+    "attachio",
+    "chdir",
+    "runcommand",
+    "setenv",
+    "setumask2",
+    "validate",
+];
 
 /// Helper to connect to and spawn a server process.
 #[derive(Clone, Debug)]

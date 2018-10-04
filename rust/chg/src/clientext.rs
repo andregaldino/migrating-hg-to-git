@@ -5,9 +5,10 @@
 
 //! cHg extensions to command server client.
 
-use bytes::Bytes;
+use bytes::{BufMut, Bytes, BytesMut};
 use std::ffi::OsStr;
 use std::io;
+use std::mem;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
@@ -40,6 +41,9 @@ where
     where
         I: IntoIterator<Item = (P, P)>,
         P: AsRef<OsStr>;
+
+    /// Changes the umask of the server process.
+    fn set_umask(self, mask: u32) -> OneShotRequest<C>;
 
     /// Runs the specified Mercurial command with cHg extension.
     fn run_command_chg<I, P, H>(self, handler: H, args: I) -> ChgRunCommand<C, H>
@@ -88,6 +92,12 @@ where
         P: AsRef<OsStr>,
     {
         OneShotRequest::start_with_args(self, b"setenv", message::pack_env_vars_os(vars))
+    }
+
+    fn set_umask(self, mask: u32) -> OneShotRequest<C> {
+        let mut args = BytesMut::with_capacity(mem::size_of_val(&mask));
+        args.put_u32_be(mask);
+        OneShotRequest::start_with_args(self, b"setumask2", args)
     }
 
     fn run_command_chg<I, P, H>(self, handler: H, args: I) -> ChgRunCommand<C, H>

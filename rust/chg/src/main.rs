@@ -73,6 +73,7 @@ fn main() {
 }
 
 fn run() -> io::Result<i32> {
+    let umask = unsafe { procutil::get_umask() }; // not thread safe
     let mut loc = Locator::prepare_from_env()?;
     loc.set_early_args(locator::collect_early_args(env::args_os().skip(1)));
     let handler = ChgUiHandler::new();
@@ -80,6 +81,7 @@ fn run() -> io::Result<i32> {
     let fut = loc
         .connect()
         .and_then(|(_, client)| client.attach_io(io::stdin(), io::stdout(), io::stderr()))
+        .and_then(move |client| client.set_umask(umask))
         .and_then(|client| {
             let pid = client.server_spec().process_id.unwrap();
             let pgid = client.server_spec().process_group_id;

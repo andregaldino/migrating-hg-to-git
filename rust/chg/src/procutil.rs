@@ -25,6 +25,19 @@ pub fn get_effective_uid() -> u32 {
     unsafe { libc::geteuid() }
 }
 
+/// Returns the umask of the current process.
+///
+/// # Safety
+///
+/// This is unsafe because the umask value is temporarily changed, and
+/// the change can be observed from the other threads. Don't call this in
+/// multi-threaded context.
+pub unsafe fn get_umask() -> u32 {
+    let mask = libc::umask(0);
+    libc::umask(mask);
+    mask
+}
+
 /// Changes the given fd to blocking mode.
 pub fn set_blocking_fd(fd: RawFd) -> io::Result<()> {
     let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
