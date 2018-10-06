@@ -9,7 +9,7 @@ extern crate log;
 extern crate tokio;
 extern crate tokio_hglib;
 
-use chg::locator;
+use chg::locator::Locator;
 use chg::procutil;
 use chg::{ChgClientExt, ChgUiHandler};
 use futures::sync::oneshot;
@@ -18,7 +18,6 @@ use std::io;
 use std::process;
 use std::time::Instant;
 use tokio::prelude::*;
-use tokio_hglib::UnixClient;
 
 struct DebugLogger {
     start: Instant,
@@ -64,6 +63,8 @@ fn main() {
         log::set_max_level(log::LevelFilter::Debug);
     }
 
+    // TODO: add loop detection by $CHGINTERNALMARK
+
     let code = run().unwrap_or_else(|err| {
         writeln!(io::stderr(), "chg: abort: {}", err).unwrap_or(());
         255
@@ -73,11 +74,12 @@ fn main() {
 
 fn run() -> io::Result<i32> {
     let current_dir = env::current_dir()?;
-    let sock_path = locator::prepare_server_socket_path()?;
+    let loc = Locator::prepare_from_env()?;
     let handler = ChgUiHandler::new();
     let (result_tx, result_rx) = oneshot::channel();
-    let fut = UnixClient::connect(sock_path)
-        .and_then(|client| client.set_current_dir(current_dir))
+    let fut = loc
+        .connect()
+        .and_then(|(_, client)| client.set_current_dir(current_dir))
         .and_then(|client| client.attach_io(io::stdin(), io::stdout(), io::stderr()))
         .and_then(|client| {
             let pid = client.server_spec().process_id.unwrap();

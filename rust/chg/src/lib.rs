@@ -7,9 +7,12 @@ extern crate bytes;
 #[macro_use]
 extern crate futures;
 extern crate libc;
+#[macro_use]
+extern crate log;
 extern crate tokio;
 extern crate tokio_hglib;
 extern crate tokio_process;
+extern crate tokio_timer;
 
 mod attachio;
 mod clientext;

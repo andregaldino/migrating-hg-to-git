@@ -5,6 +5,7 @@
 
 //! Utility for locating command-server process.
 
+use futures::future::{self, Either, Loop};
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fs::{self, DirBuilder};
@@ -12,8 +13,12 @@ use std::io;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::os::unix::fs::{DirBuilderExt, MetadataExt};
 use std::path::{Path, PathBuf};
-use std::process;
+use std::process::{self, Command};
 use std::time::Duration;
+use tokio::prelude::*;
+use tokio_hglib::UnixClient;
+use tokio_process::{Child, CommandExt};
+use tokio_timer;
 
 use super::procutil;
 
@@ -52,13 +57,113 @@ impl Locator {
         buf.extend_from_slice(format!(".{}", self.process_id).as_bytes());
         OsString::from_vec(buf).into()
     }
+
+    /// Connects to the server.
+    ///
+    /// The server process will be spawned if not running.
+    pub fn connect(self) -> impl Future<Item = (Self, UnixClient), Error = io::Error> {
+        self.try_connect()
+    }
+
+    /// Tries to connect to the existing server, or spawns new if not running.
+    fn try_connect(self) -> impl Future<Item = (Self, UnixClient), Error = io::Error> {
+        debug!("try connect to {}", self.base_sock_path.display());
+        UnixClient::connect(self.base_sock_path.clone()).then(|res| match res {
+            Ok(client) => Either::A(future::ok((self, client))),
+            Err(_) => Either::B(self.spawn_connect()),
+        })
+    }
+
+    /// Spawns new server process and connects to it.
+    ///
+    /// The server will be spawned at the current working directory, then
+    /// chdir to "/", so that the server will load configs from the target
+    /// repository.
+    fn spawn_connect(self) -> impl Future<Item = (Self, UnixClient), Error = io::Error> {
+        let sock_path = self.temp_sock_path();
+        debug!("start cmdserver at {}", sock_path.display());
+        Command::new(&self.hg_command)
+            .arg("serve")
+            .arg("--cmdserver")
+            .arg("chgunix")
+            .arg("--address")
+            .arg(&sock_path)
+            .arg("--daemon-postexec")
+            .arg("chdir:/")
+            .current_dir(&self.current_dir)
+            .env_clear()
+            .envs(self.env_vars.iter().cloned())
+            .env("CHGINTERNALMARK", "")
+            .spawn_async()
+            .into_future()
+            .and_then(|server| self.connect_spawned(server, sock_path))
+            .and_then(|(loc, client, sock_path)| {
+                debug!(
+                    "rename {} to {}",
+                    sock_path.display(),
+                    loc.base_sock_path.display()
+                );
+                fs::rename(&sock_path, &loc.base_sock_path)?;
+                Ok((loc, client))
+            })
+    }
+
+    /// Tries to connect to the just spawned server repeatedly until timeout
+    /// exceeded.
+    fn connect_spawned(
+        self,
+        server: Child,
+        sock_path: PathBuf,
+    ) -> impl Future<Item = (Self, UnixClient, PathBuf), Error = io::Error> {
+        debug!("try connect to {} repeatedly", sock_path.display());
+        let connect = future::loop_fn(sock_path, |sock_path| {
+            UnixClient::connect(sock_path.clone()).then(|res| {
+                match res {
+                    Ok(client) => Either::A(future::ok(Loop::Break((client, sock_path)))),
+                    Err(_) => {
+                        // try again with slight delay
+                        let fut = tokio_timer::sleep(Duration::from_millis(10))
+                            .map(|()| Loop::Continue(sock_path))
+                            .map_err(|err| io::Error::new(io::ErrorKind::Other, err));
+                        Either::B(fut)
+                    }
+                }
+            })
+        });
+
+        // waits for either connection established or server failed to start
+        connect
+            .select2(server)
+            .map_err(|res| res.split().0)
+            .timeout(self.timeout)
+            .map_err(|err| {
+                err.into_inner().unwrap_or_else(|| {
+                    io::Error::new(
+                        io::ErrorKind::TimedOut,
+                        "timed out while connecting to server",
+                    )
+                })
+            })
+            .and_then(|res| {
+                match res {
+                    Either::A(((client, sock_path), server)) => {
+                        server.forget(); // continue to run in background
+                        Ok((self, client, sock_path))
+                    }
+                    Either::B((st, _)) => Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("server exited too early: {}", st),
+                    )),
+                }
+            })
+    }
 }
 
 /// Determines the server socket to connect to.
 ///
 /// If no `$CHGSOCKNAME` is specified, the socket directory will be created
 /// as necessary.
-pub fn prepare_server_socket_path() -> io::Result<PathBuf> {
+fn prepare_server_socket_path() -> io::Result<PathBuf> {
     if let Some(s) = env::var_os("CHGSOCKNAME") {
         Ok(PathBuf::from(s))
     } else {
