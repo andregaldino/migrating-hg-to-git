@@ -10,6 +10,7 @@ use std::error;
 use std::ffi::{OsStr, OsString};
 use std::io;
 use std::os::unix::ffi::OsStrExt;
+use std::path::PathBuf;
 
 pub use tokio_hglib::message::*; // re-exports
 
@@ -65,6 +66,42 @@ fn parse_command_type(value: &[u8]) -> io::Result<CommandType> {
             decode_latin1(value)
         ))),
     }
+}
+
+/// Client-side instruction requested by the server.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Instruction {
+    Exit(i32),
+    Reconnect,
+    Redirect(PathBuf),
+    Unlink(PathBuf),
+}
+
+/// Parses validation result into instructions.
+pub fn parse_instructions(data: Bytes) -> io::Result<Vec<Instruction>> {
+    let mut instructions = Vec::new();
+    for l in data.split(|&c| c == b'\0') {
+        if l.is_empty() {
+            continue;
+        }
+        let mut s = l.splitn(2, |&c| c == b' ');
+        let inst = match (s.next().unwrap(), s.next()) {
+            (b"exit", Some(arg)) => decode_latin1(arg)
+                .parse()
+                .map(Instruction::Exit)
+                .map_err(|_| new_parse_error(format!("invalid exit code: {:?}", arg)))?,
+            (b"reconnect", None) => Instruction::Reconnect,
+            (b"redirect", Some(arg)) => {
+                Instruction::Redirect(OsStr::from_bytes(arg).to_owned().into())
+            }
+            (b"unlink", Some(arg)) => Instruction::Unlink(OsStr::from_bytes(arg).to_owned().into()),
+            _ => {
+                return Err(new_parse_error(format!("unknown command: {:?}", l)));
+            }
+        };
+        instructions.push(inst);
+    }
+    Ok(instructions)
 }
 
 // allocate large buffer as environment variables can be quite long
@@ -168,6 +205,50 @@ mod tests {
     }
 
     #[test]
+    fn parse_instructions_good() {
+        let src = [
+            b"exit 123".as_ref(),
+            b"reconnect".as_ref(),
+            b"redirect /whatever".as_ref(),
+            b"unlink /someother".as_ref(),
+        ]
+        .join(&0);
+        let insts = vec![
+            Instruction::Exit(123),
+            Instruction::Reconnect,
+            Instruction::Redirect(path_buf_from(b"/whatever")),
+            Instruction::Unlink(path_buf_from(b"/someother")),
+        ];
+        assert_eq!(parse_instructions(Bytes::from(src)).unwrap(), insts);
+    }
+
+    #[test]
+    fn parse_instructions_empty() {
+        assert_eq!(parse_instructions(Bytes::new()).unwrap(), vec![]);
+        assert_eq!(
+            parse_instructions(Bytes::from_static(b"\0")).unwrap(),
+            vec![]
+        );
+    }
+
+    #[test]
+    fn parse_instructions_malformed_exit_code() {
+        assert!(parse_instructions(Bytes::from_static(b"exit foo")).is_err());
+    }
+
+    #[test]
+    fn parse_instructions_missing_argument() {
+        assert!(parse_instructions(Bytes::from_static(b"exit")).is_err());
+        assert!(parse_instructions(Bytes::from_static(b"redirect")).is_err());
+        assert!(parse_instructions(Bytes::from_static(b"unlink")).is_err());
+    }
+
+    #[test]
+    fn parse_instructions_unknown_command() {
+        assert!(parse_instructions(Bytes::from_static(b"quit 0")).is_err());
+    }
+
+    #[test]
     fn pack_env_vars_os_good() {
         assert_eq!(
             pack_env_vars_os(vec![] as Vec<(OsString, OsString)>),
@@ -228,5 +309,9 @@ mod tests {
 
     fn os_string_pair_from(k: &[u8], v: &[u8]) -> (OsString, OsString) {
         (os_string_from(k), os_string_from(v))
+    }
+
+    fn path_buf_from(s: &[u8]) -> PathBuf {
+        os_string_from(s).into()
     }
 }
