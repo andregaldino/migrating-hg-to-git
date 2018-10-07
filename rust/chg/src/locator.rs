@@ -20,7 +20,10 @@ use tokio_hglib::UnixClient;
 use tokio_process::{Child, CommandExt};
 use tokio_timer;
 
+use super::message::ServerSpec;
 use super::procutil;
+
+const REQUIRED_SERVER_CAPABILITIES: &[&str] = &["attachio", "chdir", "runcommand"];
 
 /// Helper to connect to and spawn a server process.
 #[derive(Clone, Debug)]
@@ -68,10 +71,15 @@ impl Locator {
     /// Tries to connect to the existing server, or spawns new if not running.
     fn try_connect(self) -> impl Future<Item = (Self, UnixClient), Error = io::Error> {
         debug!("try connect to {}", self.base_sock_path.display());
-        UnixClient::connect(self.base_sock_path.clone()).then(|res| match res {
-            Ok(client) => Either::A(future::ok((self, client))),
-            Err(_) => Either::B(self.spawn_connect()),
-        })
+        UnixClient::connect(self.base_sock_path.clone())
+            .then(|res| match res {
+                Ok(client) => Either::A(future::ok((self, client))),
+                Err(_) => Either::B(self.spawn_connect()),
+            })
+            .and_then(|(loc, client)| {
+                check_server_capabilities(client.server_spec())?;
+                Ok((loc, client))
+            })
     }
 
     /// Spawns new server process and connects to it.
@@ -237,5 +245,22 @@ where
         Ok(path)
     } else {
         Err(io::Error::new(io::ErrorKind::Other, "insecure directory"))
+    }
+}
+
+fn check_server_capabilities(spec: &ServerSpec) -> io::Result<()> {
+    let unsupported: Vec<_> = REQUIRED_SERVER_CAPABILITIES
+        .iter()
+        .cloned()
+        .filter(|&s| !spec.capabilities.contains(s))
+        .collect();
+    if unsupported.is_empty() {
+        Ok(())
+    } else {
+        let msg = format!(
+            "insufficient server capabilities: {}",
+            unsupported.join(", ")
+        );
+        Err(io::Error::new(io::ErrorKind::Other, msg))
     }
 }
