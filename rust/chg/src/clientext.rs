@@ -5,15 +5,17 @@
 
 //! cHg extensions to command server client.
 
+use bytes::Bytes;
 use std::ffi::OsStr;
+use std::io;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
-use tokio_hglib::protocol::OneShotRequest;
+use tokio_hglib::protocol::{OneShotQuery, OneShotRequest};
 use tokio_hglib::{Client, Connection};
 
 use super::attachio::AttachIo;
-use super::message;
+use super::message::{self, Instruction};
 use super::runcommand::ChgRunCommand;
 use super::uihandler::SystemHandler;
 
@@ -45,6 +47,19 @@ where
         I: IntoIterator<Item = P>,
         P: AsRef<OsStr>,
         H: SystemHandler;
+
+    /// Validates if the server can run Mercurial commands with the expected
+    /// configuration.
+    ///
+    /// The `args` should contain early command arguments such as `--config`
+    /// and `-R`.
+    ///
+    /// Client-side environment must be sent prior to this request, by
+    /// `set_current_dir()` and `set_env_vars_os()`.
+    fn validate<I, P>(self, args: I) -> OneShotQuery<C, fn(Bytes) -> io::Result<Vec<Instruction>>>
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<OsStr>;
 }
 
 impl<C> ChgClientExt<C> for Client<C>
@@ -82,5 +97,18 @@ where
         H: SystemHandler,
     {
         ChgRunCommand::with_client(self, handler, message::pack_args_os(args))
+    }
+
+    fn validate<I, P>(self, args: I) -> OneShotQuery<C, fn(Bytes) -> io::Result<Vec<Instruction>>>
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<OsStr>,
+    {
+        OneShotQuery::start_with_args(
+            self,
+            b"validate",
+            message::pack_args_os(args),
+            message::parse_instructions,
+        )
     }
 }
