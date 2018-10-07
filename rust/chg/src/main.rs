@@ -73,14 +73,12 @@ fn main() {
 }
 
 fn run() -> io::Result<i32> {
-    let current_dir = env::current_dir()?;
     let loc = Locator::prepare_from_env()?;
     let handler = ChgUiHandler::new();
     let (result_tx, result_rx) = oneshot::channel();
     let fut = loc
         .connect()
-        .and_then(|(_, client)| client.set_current_dir(current_dir))
-        .and_then(|client| client.attach_io(io::stdin(), io::stdout(), io::stderr()))
+        .and_then(|(_, client)| client.attach_io(io::stdin(), io::stdout(), io::stderr()))
         .and_then(|client| {
             let pid = client.server_spec().process_id.unwrap();
             let pgid = client.server_spec().process_group_id;

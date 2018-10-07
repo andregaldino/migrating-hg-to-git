@@ -20,6 +20,7 @@ use tokio_hglib::UnixClient;
 use tokio_process::{Child, CommandExt};
 use tokio_timer;
 
+use super::clientext::ChgClientExt;
 use super::message::ServerSpec;
 use super::procutil;
 
@@ -79,6 +80,11 @@ impl Locator {
             .and_then(|(loc, client)| {
                 check_server_capabilities(client.server_spec())?;
                 Ok((loc, client))
+            })
+            .and_then(|(loc, client)| {
+                client
+                    .set_current_dir(&loc.current_dir)
+                    .map(|client| (loc, client))
             })
     }
 
