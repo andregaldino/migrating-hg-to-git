@@ -30,6 +30,7 @@ const REQUIRED_SERVER_CAPABILITIES: &[&str] = &["attachio", "chdir", "runcommand
 #[derive(Clone, Debug)]
 pub struct Locator {
     hg_command: OsString,
+    hg_early_args: Vec<OsString>,
     current_dir: PathBuf,
     env_vars: Vec<(OsString, OsString)>,
     process_id: u32,
@@ -45,6 +46,7 @@ impl Locator {
     pub fn prepare_from_env() -> io::Result<Locator> {
         Ok(Locator {
             hg_command: default_hg_command(),
+            hg_early_args: Vec::new(),
             current_dir: env::current_dir()?,
             env_vars: env::vars_os().collect(),
             process_id: process::id(),
@@ -60,6 +62,15 @@ impl Locator {
         buf.extend_from_slice(src);
         buf.extend_from_slice(format!(".{}", self.process_id).as_bytes());
         OsString::from_vec(buf).into()
+    }
+
+    /// Specifies the arguments to be passed to the server at start.
+    pub fn set_early_args<I, P>(&mut self, args: I)
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<OsStr>,
+    {
+        self.hg_early_args = args.into_iter().map(|a| a.as_ref().to_owned()).collect();
     }
 
     /// Connects to the server.
@@ -109,6 +120,7 @@ impl Locator {
             .arg(&sock_path)
             .arg("--daemon-postexec")
             .arg("chdir:/")
+            .args(&self.hg_early_args)
             .current_dir(&self.current_dir)
             .env_clear()
             .envs(self.env_vars.iter().cloned())
@@ -273,5 +285,102 @@ fn check_server_capabilities(spec: &ServerSpec) -> io::Result<()> {
             unsupported.join(", ")
         );
         Err(io::Error::new(io::ErrorKind::Other, msg))
+    }
+}
+
+/// Collects arguments which need to be passed to the server at start.
+pub fn collect_early_args<I, P>(args: I) -> Vec<OsString>
+where
+    I: IntoIterator<Item = P>,
+    P: AsRef<OsStr>,
+{
+    let mut args_iter = args.into_iter();
+    let mut early_args = Vec::new();
+    while let Some(arg) = args_iter.next() {
+        let argb = arg.as_ref().as_bytes();
+        if argb == b"--" {
+            break;
+        } else if argb.starts_with(b"--") {
+            let mut split = argb[2..].splitn(2, |&c| c == b'=');
+            match split.next().unwrap() {
+                b"traceback" => {
+                    if split.next().is_none() {
+                        early_args.push(arg.as_ref().to_owned());
+                    }
+                }
+                b"config" | b"cwd" | b"repo" | b"repository" => {
+                    if split.next().is_some() {
+                        // --<flag>=<val>
+                        early_args.push(arg.as_ref().to_owned());
+                    } else {
+                        // --<flag> <val>
+                        args_iter.next().map(|val| {
+                            early_args.push(arg.as_ref().to_owned());
+                            early_args.push(val.as_ref().to_owned());
+                        });
+                    }
+                }
+                _ => {}
+            }
+        } else if argb.starts_with(b"-R") {
+            if argb.len() > 2 {
+                // -R<val>
+                early_args.push(arg.as_ref().to_owned());
+            } else {
+                // -R <val>
+                args_iter.next().map(|val| {
+                    early_args.push(arg.as_ref().to_owned());
+                    early_args.push(val.as_ref().to_owned());
+                });
+            }
+        }
+    }
+
+    early_args
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn collect_early_args_some() {
+        assert!(collect_early_args(&[] as &[&OsStr]).is_empty());
+        assert!(collect_early_args(&["log"]).is_empty());
+        assert_eq!(
+            collect_early_args(&["log", "-Ra", "foo"]),
+            os_string_vec_from(&[b"-Ra"])
+        );
+        assert_eq!(
+            collect_early_args(&["log", "-R", "repo", "", "--traceback", "a"]),
+            os_string_vec_from(&[b"-R", b"repo", b"--traceback"])
+        );
+        assert_eq!(
+            collect_early_args(&["log", "--config", "diff.git=1", "-q"]),
+            os_string_vec_from(&[b"--config", b"diff.git=1"])
+        );
+        assert_eq!(
+            collect_early_args(&["--cwd=..", "--repository", "r", "log"]),
+            os_string_vec_from(&[b"--cwd=..", b"--repository", b"r"])
+        );
+        assert_eq!(
+            collect_early_args(&["log", "--repo=r", "--repos", "a"]),
+            os_string_vec_from(&[b"--repo=r"])
+        );
+    }
+
+    #[test]
+    fn collect_early_args_orphaned() {
+        assert!(collect_early_args(&["log", "-R"]).is_empty());
+        assert!(collect_early_args(&["log", "--config"]).is_empty());
+    }
+
+    #[test]
+    fn collect_early_args_unwanted_value() {
+        assert!(collect_early_args(&["log", "--traceback="]).is_empty());
+    }
+
+    fn os_string_vec_from(v: &[&[u8]]) -> Vec<OsString> {
+        v.iter().map(|s| OsStr::from_bytes(s).to_owned()).collect()
     }
 }

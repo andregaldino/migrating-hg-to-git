@@ -9,7 +9,7 @@ extern crate log;
 extern crate tokio;
 extern crate tokio_hglib;
 
-use chg::locator::Locator;
+use chg::locator::{self, Locator};
 use chg::procutil;
 use chg::{ChgClientExt, ChgUiHandler};
 use futures::sync::oneshot;
@@ -73,7 +73,8 @@ fn main() {
 }
 
 fn run() -> io::Result<i32> {
-    let loc = Locator::prepare_from_env()?;
+    let mut loc = Locator::prepare_from_env()?;
+    loc.set_early_args(locator::collect_early_args(env::args_os().skip(1)));
     let handler = ChgUiHandler::new();
     let (result_tx, result_rx) = oneshot::channel();
     let fut = loc
