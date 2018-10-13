@@ -646,6 +646,13 @@ def has_demandimport():
     # chg disables demandimport intentionally for performance wins.
     return ((not has_chg()) and os.environ.get('HGDEMANDIMPORT') != 'disable')
 
+@checkvers("py", "Python >= %s", (2.7, 3.5, 3.6, 3.7, 3.8, 3.9))
+def has_python_range(v):
+    major, minor = v.split('.')[0:2]
+    py_major, py_minor = sys.version_info.major, sys.version_info.minor
+
+    return (py_major, py_minor) >= (int(major), int(minor))
+
 @check("py3", "running with Python 3.x")
 def has_py3():
     return 3 == sys.version_info[0]
