@@ -1766,6 +1766,9 @@ def registersummarycallback(repo, otr, txnname=''):
         @reportsummary
         def reportobsoleted(repo, tr):
             obsoleted = obsutil.getobsoleted(repo, tr)
+            newmarkers = len(tr.changes.get('obsmarkers', ()))
+            if newmarkers:
+                repo.ui.status(_('%i new obsolescence markers\n') % newmarkers)
             if obsoleted:
                 repo.ui.status(_('obsoleted %i changesets\n')
                                % len(obsoleted))

@@ -1766,7 +1766,6 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
                 repo.obsstore.create(tr, prec, succs, opts['flags'],
                                      parents=parents, date=date,
                                      metadata=metadata, ui=ui)
-                repo.ui.status(('1 new obsolescence markers\n'))
                 tr.close()
             except ValueError as exc:
                 raise error.Abort(_('bad obsmarker input: %s') %

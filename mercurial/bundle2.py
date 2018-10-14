@@ -2193,8 +2193,6 @@ def handleobsmarker(op, inpart):
         return
     new = op.repo.obsstore.mergemarkers(tr, markerdata)
     op.repo.invalidatevolatilesets()
-    if new:
-        op.repo.ui.status(_('%i new obsolescence markers\n') % new)
     op.records.add('obsmarkers', {'new': new})
     if op.reply is not None:
         rpart = op.reply.newpart('reply:obsmarkers')
