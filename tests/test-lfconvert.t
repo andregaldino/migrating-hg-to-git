@@ -332,6 +332,7 @@ process.
   > evolution.createmarkers=True
   > EOF
   $ hg debugobsolete `hg log -r tip -T "{node}"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ cd ..
 

@@ -157,6 +157,7 @@ Pruned commits affecting removed paths should not prevent narrowing
   $ hg co '.^'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg debugobsolete `hg log -T '{node}' -r 'desc("local change to d0")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg tracked --removeinclude d0
   comparing with ssh://user@dummy/master

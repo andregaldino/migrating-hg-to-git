@@ -70,10 +70,13 @@ initial
   created new head
   $ mkcommit B1
   $ hg debugobsolete --hidden `getid 'desc(A0)'` `getid 'desc(A1)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   2 new orphan changesets
   $ hg debugobsolete --hidden aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid 'desc(B0)'`
+  1 new obsolescence markers
   $ hg debugobsolete --hidden `getid 'desc(B0)'` `getid 'desc(B1)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg prune -qd '0 0' 'desc(B1)'
   $ hg log -G --hidden

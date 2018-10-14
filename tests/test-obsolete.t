@@ -52,6 +52,7 @@ Killing a single changeset without replacement
   abort: changeset references must be full hexadecimal node identifiers
   [255]
   $ hg debugobsolete -d '0 0' `getid kill_me` -u babar
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete
   97b7c2d76b1845ed3eb988cd612611e72406cef0 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'babar'}
@@ -88,6 +89,7 @@ Killing a single changeset with replacement
   created new head
   $ hg log -r 'hidden()' --template '{rev}:{node|short} {desc}\n' --hidden
   $ hg debugobsolete --config format.obsstore-version=0 --flag 12 `getid original_c`  `getid new_c` -d '121 120'
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -r 'hidden()' --template '{rev}:{node|short} {desc}\n' --hidden
   2:245bde4270cd add original_c
@@ -112,6 +114,7 @@ do it again (it read the obsstore before adding new changeset)
   $ mkcommit new_2_c
   created new head
   $ hg debugobsolete -d '1337 0' `getid new_c` `getid new_2_c`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete
   245bde4270cd1072a27757984f9cda8ba26f08ca cdbce2fbb16313928851e97e0d85413f3f7eb77f C (Thu Jan 01 00:00:01 1970 -0002) {'user': 'test'}
@@ -124,8 +127,10 @@ Register two markers with a missing node
   $ mkcommit new_3_c
   created new head
   $ hg debugobsolete -d '1338 0' `getid new_2_c` 1337133713371337133713371337133713371337
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete -d '1339 0' 1337133713371337133713371337133713371337 `getid new_3_c`
+  1 new obsolescence markers
   $ hg debugobsolete
   245bde4270cd1072a27757984f9cda8ba26f08ca cdbce2fbb16313928851e97e0d85413f3f7eb77f C (Thu Jan 01 00:00:01 1970 -0002) {'user': 'test'}
   cdbce2fbb16313928851e97e0d85413f3f7eb77f ca819180edb99ed25ceafb3e9584ac287e240b00 0 (Thu Jan 01 00:22:17 1970 +0000) {'user': 'test'}
@@ -264,6 +269,7 @@ We need to create a clone of 5 and add a special marker with a flag
   $ hg ci -m 'add n3w_3_c'
   created new head
   $ hg debugobsolete -d '1338 0' --flags 1 `getid new_3_c` `getid n3w_3_c`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -r 'phasedivergent()'
   $ hg log -G
@@ -323,6 +329,7 @@ Revision 0 is hidden
   $ mkcommit kill0
   $ hg up -q null
   $ hg debugobsolete `getid kill0`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ mkcommit a
   $ mkcommit b
@@ -349,6 +356,7 @@ Can disable transaction summary report
   $ mkcommit b
   $ hg up -q null
   $ hg --config experimental.evolution.report-instabilities=false debugobsolete `getid a`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ cd ..
 
@@ -392,6 +400,7 @@ Try to pull markers
 Rollback//Transaction support
 
   $ hg debugobsolete -d '1340 0' aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  1 new obsolescence markers
   $ hg debugobsolete
   1337133713371337133713371337133713371337 5601fb93a350734d935195fee37f4054c529ff39 0 (Thu Jan 01 00:22:19 1970 +0000) {'user': 'test'}
   245bde4270cd1072a27757984f9cda8ba26f08ca cdbce2fbb16313928851e97e0d85413f3f7eb77f C (Thu Jan 01 00:00:01 1970 -0002) {'user': 'test'}
@@ -478,6 +487,7 @@ On pull
   $ hg init tmpe
   $ cd tmpe
   $ hg debugobsolete -d '1339 0' 1339133913391339133913391339133913391339 ca819180edb99ed25ceafb3e9584ac287e240b00
+  1 new obsolescence markers
   $ hg pull ../tmpb
   pulling from ../tmpb
   requesting all changes
@@ -531,6 +541,7 @@ detect outgoing obsolete and unstable
   $ mkcommit original_d
   $ mkcommit original_e
   $ hg debugobsolete --record-parents `getid original_d` -d '0 0'
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete | grep `getid original_d`
@@ -627,6 +638,7 @@ Do not warn about new head when the new head is a successors of a remote one
   created new head
   $ hg debugobsolete `getid 'original_e'` `getid 'obsolete_e'` \
   > -u 'test <test@example.net>'
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg outgoing ../tmpf # parasite hg outgoing testin
   comparing with ../tmpf
@@ -812,65 +824,125 @@ check hgweb does not explode
   > do
   >    hg debugobsolete $node
   > done
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up tip
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -938,9 +1010,11 @@ reenable for later test
 Several troubles on the same changeset (create an unstable and bumped and content-divergent changeset)
 
   $ hg debugobsolete `getid obsolete_e`
+  1 new obsolescence markers
   obsoleted 1 changesets
   2 new orphan changesets
   $ hg debugobsolete `getid original_c` `getid babar`
+  1 new obsolescence markers
   1 new phase-divergent changesets
   2 new content-divergent changesets
   $ hg log --config ui.logtemplate= -r 'phasedivergent() and orphan() and contentdivergent()'
@@ -1309,6 +1383,7 @@ Test issue 4506
   grafting 1:1c9eddb02162 "content-1" (tip)
 
   $ hg debugobsolete `hg log -r1 -T'{node}'` `hg log -r2 -T'{node}'`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
@@ -1610,6 +1685,7 @@ Test adding changeset after obsmarkers affecting it
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/tmpe/issue4845/doindexrev/.hg/strip-backup/9bc153528424-ee80edd4-backup.hg
   $ hg debugobsolete 9bc153528424ea266d13e57f9ff0d799dfe61e4b
+  1 new obsolescence markers
   $ hg unbundle ../bundle-2.hg
   adding changesets
   adding manifests

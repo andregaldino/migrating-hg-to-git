@@ -537,6 +537,7 @@ Clone non-publishing with obsolescence
   $ echo foo > foo
   $ hg -q commit -m 'about to be pruned'
   $ hg debugobsolete `hg log -r . -T '{node}'` -d '0 0' -u test --record-parents
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up null -q
   $ hg log -T '{rev}: {phase}\n'

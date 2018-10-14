@@ -74,10 +74,12 @@ Real world exchange
 Add more obsolescence information
 
   $ hg -R main debugobsolete -d '0 0' 1111111111111111111111111111111111111111 `getmainid 9520eea781bc`
+  1 new obsolescence markers
   pre-close-tip:02de42196ebe draft 
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
   $ hg -R main debugobsolete -d '0 0' 2222222222222222222222222222222222222222 `getmainid 24b6387c8c8c`
+  1 new obsolescence markers
   pre-close-tip:02de42196ebe draft 
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
@@ -192,6 +194,7 @@ add extra data to test their exchange during push
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 3333333333333333333333333333333333333333 `getmainid eea13746799a`
+  1 new obsolescence markers
   pre-close-tip:02de42196ebe draft 
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
@@ -200,6 +203,7 @@ add extra data to test their exchange during push
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 4444444444444444444444444444444444444444 `getmainid 02de42196ebe`
+  1 new obsolescence markers
   pre-close-tip:02de42196ebe draft book_02de
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
@@ -208,6 +212,7 @@ add extra data to test their exchange during push
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 5555555555555555555555555555555555555555 `getmainid 42ccdea3bb16`
+  1 new obsolescence markers
   pre-close-tip:02de42196ebe draft book_02de
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
@@ -216,6 +221,7 @@ add extra data to test their exchange during push
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 6666666666666666666666666666666666666666 `getmainid 5fddd98957c8`
+  1 new obsolescence markers
   pre-close-tip:02de42196ebe draft book_02de
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
@@ -224,6 +230,7 @@ add extra data to test their exchange during push
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 7777777777777777777777777777777777777777 `getmainid 32af7686d403`
+  1 new obsolescence markers
   pre-close-tip:02de42196ebe draft book_02de
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete

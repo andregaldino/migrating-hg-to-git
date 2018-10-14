@@ -235,6 +235,7 @@ Obsolescence information appears in labels.
   > evolution=createmarkers
   > EOF
   $ hg debugobsolete `hg log -r 'desc("commit 2")' -T "{node}"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg show work --color=debug

@@ -65,8 +65,10 @@ Implemented as the non-split version
   $ mkcommit C
   created new head
   $ hg debugobsolete --hidden `getid 'desc(A)'` `getid 'desc(B)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete --hidden `getid 'desc(A)'` `getid 'desc(C)'`
+  1 new obsolescence markers
   2 new content-divergent changesets
   $ hg prune -qd '0 0' .
   $ hg log -G --hidden

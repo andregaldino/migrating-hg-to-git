@@ -581,6 +581,7 @@ tip is obsolete
 ---------------------
 
   $ hg debugobsolete `hg id --debug -i -r tip`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg bisect --reset
   $ hg bisect --good 15
@@ -609,6 +610,7 @@ Rewritten commits should not crash
   $ hg commit -m 'msg 30 -- fixed'
   created new head
   $ hg debugobsolete `hg id --debug -i -r 30` `hg id --debug -i -r .`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg bisect
   The first bad revision is:

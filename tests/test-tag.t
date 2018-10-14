@@ -434,6 +434,7 @@ issue5539: pruned tags do not appear in .hgtags
   abeb261f0508ecebcd345ce21e7a25112df417aa
 (mimic 'hg prune' command by obsoleting current changeset and then moving to its parent)
   $ hg debugobsolete abeb261f0508ecebcd345ce21e7a25112df417aa --record-parents
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up ".^" --quiet
   $ cat .hgtags

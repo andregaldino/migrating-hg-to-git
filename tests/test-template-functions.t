@@ -918,10 +918,13 @@ Test shortest(node) with the repo having short hash collision:
   9:c5623987d205cd6d9d8389bfc40fff9dbb670b48
   10:c562ddd9c94164376c20b86b0b4991636a3bf84f
   $ hg debugobsolete a00be79088084cb3aff086ab799f8790e01a976b
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete c5623987d205cd6d9d8389bfc40fff9dbb670b48
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete c562ddd9c94164376c20b86b0b4991636a3bf84f
+  1 new obsolescence markers
   obsoleted 1 changesets
 
  nodes starting with '11' (we don't have the revision number '11' though)
@@ -987,6 +990,7 @@ Test prefixhexnode when the first character of the hash is 0.
   1:x0
 
   $ hg debugobsolete 0cf177ba2b1dc3862a00fb81715fec90950201be
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up -q 0
   $ echo 61 > a

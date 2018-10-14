@@ -56,11 +56,13 @@ initial
   $ cd main
   $ mkcommit A
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid 'desc(A)'`
+  1 new obsolescence markers
   $ hg up '.~1'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ mkcommit B
   created new head
   $ hg debugobsolete bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb `getid 'desc(B)'`
+  1 new obsolescence markers
   $ hg log -G
   @  35b183996678 (draft): B
   |

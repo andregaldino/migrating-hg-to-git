@@ -51,6 +51,7 @@ Initial
   $ hg push -q ../pushdest
   $ hg push -q ../pulldest
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid 'desc(A)'`
+  1 new obsolescence markers
   $ hg log -G --hidden
   @  f5bc6836db60 (draft): A
   |

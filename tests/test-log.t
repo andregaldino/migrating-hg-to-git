@@ -1941,6 +1941,7 @@ enable obsolete to test hidden feature
   1:a765632148dc55d38c35c4f247c618701886cb2f
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05
   $ hg debugobsolete a765632148dc55d38c35c4f247c618701886cb2f
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up null -q
   $ hg log --template='{rev}:{node}\n'
@@ -1995,6 +1996,7 @@ test hidden revision 0 (issue5385)
   $ hg bookmark -d X@foo
   $ hg up null -q
   $ hg debugobsolete 9f758d63dcde62d547ebfb08e1e7ee96535f2b05
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ echo f > b
   $ hg ci -Am'b' -d '2 0'
@@ -2470,6 +2472,7 @@ Test that we use the first non-hidden changeset in that case.
   $ hg log -T '{node}\n' -r 1
   2294ae80ad8447bc78383182eeac50cb049df623
   $ hg debugobsolete 2294ae80ad8447bc78383182eeac50cb049df623
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G
   o  changeset:   4:50b9b36e9c5d
@@ -2520,6 +2523,7 @@ Even when a head revision is linkrev-shadowed.
   $ hg log -T '{node}\n' -r 4
   50b9b36e9c5df2c6fc6dcefa8ad0da929e84aed2
   $ hg debugobsolete 50b9b36e9c5df2c6fc6dcefa8ad0da929e84aed2
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G a
   @  changeset:   3:15b2327059e5

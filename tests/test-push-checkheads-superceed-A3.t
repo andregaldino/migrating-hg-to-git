@@ -63,9 +63,11 @@ Test setup
   created new head
   $ mkcommit A1
   $ hg debugobsolete `getid "desc(A0)" ` `getid "desc(A1)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete `getid "desc(B0)" ` `getid "desc(B1)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G --hidden
   @  c1c7524e9488 (draft): A1

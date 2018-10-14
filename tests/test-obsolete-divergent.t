@@ -64,8 +64,10 @@ A_1 have two direct and divergent successors A_1 and A_1
 
   $ newcase direct
   $ hg debugobsolete `getid A_0` `getid A_1`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  1 new obsolescence markers
   2 new content-divergent changesets
   $ hg log -G --hidden
   *  3:392fd25390da A_2
@@ -124,12 +126,15 @@ indirect divergence with known changeset
 
   $ newcase indirect_known
   $ hg debugobsolete `getid A_0` `getid A_1`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  1 new obsolescence markers
   2 new content-divergent changesets
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_2` `getid A_3`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G --hidden
   @  4:01f36c5a8fda A_3
@@ -184,9 +189,12 @@ indirect divergence with known changeset
 
   $ newcase indirect_unknown
   $ hg debugobsolete `getid A_0` aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid A_1`
+  1 new obsolescence markers
   $ hg debugobsolete `getid A_0` `getid A_2`
+  1 new obsolescence markers
   2 new content-divergent changesets
   $ hg log -G --hidden
   *  3:392fd25390da A_2
@@ -234,12 +242,17 @@ do not take unknown node in account if they are final
 
   $ newcase final-unknown
   $ hg debugobsolete `getid A_0` `getid A_1`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_1` `getid A_2`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  1 new obsolescence markers
   $ hg debugobsolete bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb cccccccccccccccccccccccccccccccccccccccc
+  1 new obsolescence markers
   $ hg debugobsolete `getid A_1` dddddddddddddddddddddddddddddddddddddddd
+  1 new obsolescence markers
 
   $ hg debugsuccessorssets --hidden 'desc('A_0')'
   007dc284c1f8
@@ -256,14 +269,18 @@ divergence that converge again is not divergence anymore
 
   $ newcase converged_divergence
   $ hg debugobsolete `getid A_0` `getid A_1`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  1 new obsolescence markers
   2 new content-divergent changesets
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_1` `getid A_3`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_2` `getid A_3`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G --hidden
   @  4:01f36c5a8fda A_3
@@ -312,6 +329,7 @@ split is not divergences
 
   $ newcase split
   $ hg debugobsolete `getid A_0` `getid A_1` `getid A_2`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G --hidden
   o  3:392fd25390da A_2
@@ -354,18 +372,21 @@ Even when subsequent rewriting happen
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_1` `getid A_3`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up 0
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ mkcommit A_4
   created new head
   $ hg debugobsolete `getid A_2` `getid A_4`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up 0
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ mkcommit A_5
   created new head
   $ hg debugobsolete `getid A_4` `getid A_5`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G --hidden
   @  6:e442cfc57690 A_5
@@ -426,6 +447,7 @@ Check more complex obsolescence graft (with divergence)
   $ mkcommit B_0; hg up 0
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg debugobsolete `getid B_0` `getid A_2`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ mkcommit A_7; hg up 0
   created new head
@@ -434,11 +456,13 @@ Check more complex obsolescence graft (with divergence)
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `getid A_5` `getid A_7` `getid A_8`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ mkcommit A_9; hg up 0
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `getid A_5` `getid A_9`
+  1 new obsolescence markers
   4 new content-divergent changesets
   $ hg log -G --hidden
   *  10:bed64f5d2f5a A_9
@@ -547,10 +571,13 @@ fix the divergence
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `getid A_9` `getid A_A`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_7` `getid A_A`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_8` `getid A_A`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G --hidden
   o  11:a139f71be9da A_A
@@ -675,8 +702,10 @@ successors-set. (report [A,B] not [A] + [A,B])
 
   $ newcase subset
   $ hg debugobsolete `getid A_0` `getid A_2`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_1` `getid A_2`
+  1 new obsolescence markers
   $ hg debugsuccessorssets --hidden 'desc('A_0')'
   007dc284c1f8
       82623d38b9ba 392fd25390da

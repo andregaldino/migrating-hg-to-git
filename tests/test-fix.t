@@ -1103,6 +1103,7 @@ obsolete revision.
   $ printf "foo\n" > foo.changed
   $ hg commit -Aqm "foo"
   $ hg debugobsolete `hg parents --template '{node}'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg --hidden fix -r 0
   abort: fixing obsolete revision could cause divergence
