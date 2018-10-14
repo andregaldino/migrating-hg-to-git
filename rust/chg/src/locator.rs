@@ -47,7 +47,7 @@ impl Locator {
     /// Temporary socket path for this client process.
     fn temp_sock_path(&self) -> PathBuf {
         let src = self.base_sock_path.as_os_str().as_bytes();
-        let mut buf = Vec::with_capacity(src.len() + 6);
+        let mut buf = Vec::with_capacity(src.len() + 6); // "{src}.{pid}".len()
         buf.extend_from_slice(src);
         buf.extend_from_slice(format!(".{}", self.process_id).as_bytes());
         OsString::from_vec(buf).into()
