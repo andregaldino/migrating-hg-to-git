@@ -3028,12 +3028,14 @@ Setting HGPLAIN ignores graphmod styling:
        date:        Thu Jan 01 00:00:04 1970 +0000
        summary:     (4) merge two known; one immediate left, one immediate right
   
-Draw only part of a grandparent line differently with "<N><char>"; only the
-last N lines (for positive N) or everything but the first N lines (for
-negative N) along the current node use the style, the rest of the edge uses
-the parent edge styling.
+Previously, one could specify graphstyle.grandparent = <N><char> to draw <char>
+on only the last N lines (for positive N) or everything but the first N lines
+(for negative N), with the rest of the edge using the parent edge styling.
 
-Last 3 lines:
+This was removed, and this test now shows that muliple characters being
+specified in graphstyle.grandparent aren't treated specially (including in width
+calculations; there's no specific reason to *avoid* handling the width
+calculations, but it's difficult to do correctly and efficiently).
 
   $ cat << EOF >> $HGRCPATH
   > [experimental]
@@ -3043,77 +3045,77 @@ Last 3 lines:
   > EOF
   $ hg log -G -r '36:18 & file("a")' -m
   @  changeset:   36:08a19a744424
-  !  branch:      branch
-  !  tag:         tip
-  !  parent:      35:9159c3644c5e
-  !  parent:      35:9159c3644c5e
-  !  user:        test
-  .  date:        Thu Jan 01 00:00:36 1970 +0000
-  .  summary:     (36) buggy merge: identical parents
-  .
+  3.  branch:      branch
+  3.  tag:         tip
+  3.  parent:      35:9159c3644c5e
+  3.  parent:      35:9159c3644c5e
+  3.  user:        test
+  3.  date:        Thu Jan 01 00:00:36 1970 +0000
+  3.  summary:     (36) buggy merge: identical parents
+  3.
   o    changeset:   32:d06dffa21a31
   !\   parent:      27:886ed638191b
-  ! !  parent:      31:621d83e11f67
-  ! !  user:        test
-  ! .  date:        Thu Jan 01 00:00:32 1970 +0000
-  ! .  summary:     (32) expand
-  ! .
-  o !  changeset:   31:621d83e11f67
-  !\!  parent:      21:d42a756af44d
-  ! !  parent:      30:6e11cd4b648f
-  ! !  user:        test
-  ! !  date:        Thu Jan 01 00:00:31 1970 +0000
-  ! !  summary:     (31) expand
-  ! !
-  o !    changeset:   30:6e11cd4b648f
+  ! 3.  parent:      31:621d83e11f67
+  ! 3.  user:        test
+  ! 3.  date:        Thu Jan 01 00:00:32 1970 +0000
+  ! 3.  summary:     (32) expand
+  ! 3.
+  o 3.  changeset:   31:621d83e11f67
+  !\3.  parent:      21:d42a756af44d
+  ! 3.  parent:      30:6e11cd4b648f
+  ! 3.  user:        test
+  ! 3.  date:        Thu Jan 01 00:00:31 1970 +0000
+  ! 3.  summary:     (31) expand
+  ! 3.
+  o 3.   changeset:   30:6e11cd4b648f
   !\ \   parent:      28:44ecd0b9ae99
-  ! ~ !  parent:      29:cd9bb2be7593
-  !   !  user:        test
-  !   !  date:        Thu Jan 01 00:00:30 1970 +0000
-  !   !  summary:     (30) expand
+  ! ~ 3.  parent:      29:cd9bb2be7593
+  !   3.  user:        test
+  !   3.  date:        Thu Jan 01 00:00:30 1970 +0000
+  !   3.  summary:     (30) expand
   !  /
-  o !    changeset:   28:44ecd0b9ae99
+  o 3.   changeset:   28:44ecd0b9ae99
   !\ \   parent:      1:6db2ef61d156
-  ! ~ !  parent:      26:7f25b6c2f0b9
-  !   !  user:        test
-  !   !  date:        Thu Jan 01 00:00:28 1970 +0000
-  !   !  summary:     (28) merge zero known
+  ! ~ 3.  parent:      26:7f25b6c2f0b9
+  !   3.  user:        test
+  !   3.  date:        Thu Jan 01 00:00:28 1970 +0000
+  !   3.  summary:     (28) merge zero known
   !  /
-  o !    changeset:   26:7f25b6c2f0b9
+  o 3.   changeset:   26:7f25b6c2f0b9
   !\ \   parent:      18:1aa84d96232a
-  ! ! !  parent:      25:91da8ed57247
-  ! ! !  user:        test
-  ! ! !  date:        Thu Jan 01 00:00:26 1970 +0000
-  ! ! !  summary:     (26) merge one known; far right
-  ! ! !
-  ! o !  changeset:   25:91da8ed57247
-  ! !\!  parent:      21:d42a756af44d
-  ! ! !  parent:      24:a9c19a3d96b7
-  ! ! !  user:        test
-  ! ! !  date:        Thu Jan 01 00:00:25 1970 +0000
-  ! ! !  summary:     (25) merge one known; far left
-  ! ! !
-  ! o !    changeset:   24:a9c19a3d96b7
+  ! ! 3.  parent:      25:91da8ed57247
+  ! ! 3.  user:        test
+  ! ! 3.  date:        Thu Jan 01 00:00:26 1970 +0000
+  ! ! 3.  summary:     (26) merge one known; far right
+  ! ! 3.
+  ! o 3.  changeset:   25:91da8ed57247
+  ! !\3.  parent:      21:d42a756af44d
+  ! ! 3.  parent:      24:a9c19a3d96b7
+  ! ! 3.  user:        test
+  ! ! 3.  date:        Thu Jan 01 00:00:25 1970 +0000
+  ! ! 3.  summary:     (25) merge one known; far left
+  ! ! 3.
+  ! o 3.   changeset:   24:a9c19a3d96b7
   ! !\ \   parent:      0:e6eb3150255d
-  ! ! ~ !  parent:      23:a01cddf0766d
-  ! !   !  user:        test
-  ! !   !  date:        Thu Jan 01 00:00:24 1970 +0000
-  ! !   !  summary:     (24) merge one known; immediate right
+  ! ! ~ 3.  parent:      23:a01cddf0766d
+  ! !   3.  user:        test
+  ! !   3.  date:        Thu Jan 01 00:00:24 1970 +0000
+  ! !   3.  summary:     (24) merge one known; immediate right
   ! !  /
-  ! o !    changeset:   23:a01cddf0766d
+  ! o 3.   changeset:   23:a01cddf0766d
   ! !\ \   parent:      1:6db2ef61d156
-  ! ! ~ !  parent:      22:e0d9cccacb5d
-  ! !   !  user:        test
-  ! !   !  date:        Thu Jan 01 00:00:23 1970 +0000
-  ! !   !  summary:     (23) merge one known; immediate left
+  ! ! ~ 3.  parent:      22:e0d9cccacb5d
+  ! !   3.  user:        test
+  ! !   3.  date:        Thu Jan 01 00:00:23 1970 +0000
+  ! !   3.  summary:     (23) merge one known; immediate left
   ! !  /
-  ! o !  changeset:   22:e0d9cccacb5d
-  !/!/   parent:      18:1aa84d96232a
-  ! !    parent:      21:d42a756af44d
-  ! !    user:        test
-  ! !    date:        Thu Jan 01 00:00:22 1970 +0000
-  ! !    summary:     (22) merge two known; one far left, one far right
-  ! !
+  ! o 3.  changeset:   22:e0d9cccacb5d
+  !/3./  parent:      18:1aa84d96232a
+  ! 3.   parent:      21:d42a756af44d
+  ! 3.   user:        test
+  ! 3.   date:        Thu Jan 01 00:00:22 1970 +0000
+  ! 3.   summary:     (22) merge two known; one far left, one far right
+  ! 3.
   ! o    changeset:   21:d42a756af44d
   ! !\   parent:      19:31ddc2c1573b
   ! ! !  parent:      20:d30ed6450e32
@@ -3142,7 +3144,8 @@ Last 3 lines:
        date:        Thu Jan 01 00:00:18 1970 +0000
        summary:     (18) merge two known; two far left
   
-All but the first 3 lines:
+(This formerly tested "All but the first 3 lines", but is now showing that it's
+still not treated any differently):
 
   $ cat << EOF >> $HGRCPATH
   > [experimental]
@@ -3152,77 +3155,77 @@ All but the first 3 lines:
   > EOF
   $ hg log -G -r '36:18 & file("a")' -m
   @  changeset:   36:08a19a744424
-  !  branch:      branch
-  !  tag:         tip
-  .  parent:      35:9159c3644c5e
-  .  parent:      35:9159c3644c5e
-  .  user:        test
-  .  date:        Thu Jan 01 00:00:36 1970 +0000
-  .  summary:     (36) buggy merge: identical parents
-  .
+  -3.  branch:      branch
+  -3.  tag:         tip
+  -3.  parent:      35:9159c3644c5e
+  -3.  parent:      35:9159c3644c5e
+  -3.  user:        test
+  -3.  date:        Thu Jan 01 00:00:36 1970 +0000
+  -3.  summary:     (36) buggy merge: identical parents
+  -3.
   o    changeset:   32:d06dffa21a31
   !\   parent:      27:886ed638191b
-  ! !  parent:      31:621d83e11f67
-  ! .  user:        test
-  ! .  date:        Thu Jan 01 00:00:32 1970 +0000
-  ! .  summary:     (32) expand
-  ! .
-  o !  changeset:   31:621d83e11f67
-  !\!  parent:      21:d42a756af44d
-  ! !  parent:      30:6e11cd4b648f
-  ! !  user:        test
-  ! !  date:        Thu Jan 01 00:00:31 1970 +0000
-  ! !  summary:     (31) expand
-  ! !
-  o !    changeset:   30:6e11cd4b648f
+  ! -3.  parent:      31:621d83e11f67
+  ! -3.  user:        test
+  ! -3.  date:        Thu Jan 01 00:00:32 1970 +0000
+  ! -3.  summary:     (32) expand
+  ! -3.
+  o -3.  changeset:   31:621d83e11f67
+  !\-3.  parent:      21:d42a756af44d
+  ! -3.  parent:      30:6e11cd4b648f
+  ! -3.  user:        test
+  ! -3.  date:        Thu Jan 01 00:00:31 1970 +0000
+  ! -3.  summary:     (31) expand
+  ! -3.
+  o -3.  changeset:   30:6e11cd4b648f
   !\ \   parent:      28:44ecd0b9ae99
-  ! ~ !  parent:      29:cd9bb2be7593
-  !   !  user:        test
-  !   !  date:        Thu Jan 01 00:00:30 1970 +0000
-  !   !  summary:     (30) expand
+  ! ~ -3.  parent:      29:cd9bb2be7593
+  !   -3.  user:        test
+  !   -3.  date:        Thu Jan 01 00:00:30 1970 +0000
+  !   -3.  summary:     (30) expand
   !  /
-  o !    changeset:   28:44ecd0b9ae99
+  o -3.  changeset:   28:44ecd0b9ae99
   !\ \   parent:      1:6db2ef61d156
-  ! ~ !  parent:      26:7f25b6c2f0b9
-  !   !  user:        test
-  !   !  date:        Thu Jan 01 00:00:28 1970 +0000
-  !   !  summary:     (28) merge zero known
+  ! ~ -3.  parent:      26:7f25b6c2f0b9
+  !   -3.  user:        test
+  !   -3.  date:        Thu Jan 01 00:00:28 1970 +0000
+  !   -3.  summary:     (28) merge zero known
   !  /
-  o !    changeset:   26:7f25b6c2f0b9
+  o -3.  changeset:   26:7f25b6c2f0b9
   !\ \   parent:      18:1aa84d96232a
-  ! ! !  parent:      25:91da8ed57247
-  ! ! !  user:        test
-  ! ! !  date:        Thu Jan 01 00:00:26 1970 +0000
-  ! ! !  summary:     (26) merge one known; far right
-  ! ! !
-  ! o !  changeset:   25:91da8ed57247
-  ! !\!  parent:      21:d42a756af44d
-  ! ! !  parent:      24:a9c19a3d96b7
-  ! ! !  user:        test
-  ! ! !  date:        Thu Jan 01 00:00:25 1970 +0000
-  ! ! !  summary:     (25) merge one known; far left
-  ! ! !
-  ! o !    changeset:   24:a9c19a3d96b7
+  ! ! -3.  parent:      25:91da8ed57247
+  ! ! -3.  user:        test
+  ! ! -3.  date:        Thu Jan 01 00:00:26 1970 +0000
+  ! ! -3.  summary:     (26) merge one known; far right
+  ! ! -3.
+  ! o -3.  changeset:   25:91da8ed57247
+  ! !\-3.  parent:      21:d42a756af44d
+  ! ! -3.  parent:      24:a9c19a3d96b7
+  ! ! -3.  user:        test
+  ! ! -3.  date:        Thu Jan 01 00:00:25 1970 +0000
+  ! ! -3.  summary:     (25) merge one known; far left
+  ! ! -3.
+  ! o -3.  changeset:   24:a9c19a3d96b7
   ! !\ \   parent:      0:e6eb3150255d
-  ! ! ~ !  parent:      23:a01cddf0766d
-  ! !   !  user:        test
-  ! !   !  date:        Thu Jan 01 00:00:24 1970 +0000
-  ! !   !  summary:     (24) merge one known; immediate right
+  ! ! ~ -3.  parent:      23:a01cddf0766d
+  ! !   -3.  user:        test
+  ! !   -3.  date:        Thu Jan 01 00:00:24 1970 +0000
+  ! !   -3.  summary:     (24) merge one known; immediate right
   ! !  /
-  ! o !    changeset:   23:a01cddf0766d
+  ! o -3.  changeset:   23:a01cddf0766d
   ! !\ \   parent:      1:6db2ef61d156
-  ! ! ~ !  parent:      22:e0d9cccacb5d
-  ! !   !  user:        test
-  ! !   !  date:        Thu Jan 01 00:00:23 1970 +0000
-  ! !   !  summary:     (23) merge one known; immediate left
+  ! ! ~ -3.  parent:      22:e0d9cccacb5d
+  ! !   -3.  user:        test
+  ! !   -3.  date:        Thu Jan 01 00:00:23 1970 +0000
+  ! !   -3.  summary:     (23) merge one known; immediate left
   ! !  /
-  ! o !  changeset:   22:e0d9cccacb5d
-  !/!/   parent:      18:1aa84d96232a
-  ! !    parent:      21:d42a756af44d
-  ! !    user:        test
-  ! !    date:        Thu Jan 01 00:00:22 1970 +0000
-  ! !    summary:     (22) merge two known; one far left, one far right
-  ! !
+  ! o -3.  changeset:   22:e0d9cccacb5d
+  !/-3./  parent:      18:1aa84d96232a
+  ! -3.  parent:      21:d42a756af44d
+  ! -3.  user:        test
+  ! -3.  date:        Thu Jan 01 00:00:22 1970 +0000
+  ! -3.  summary:     (22) merge two known; one far left, one far right
+  ! -3.
   ! o    changeset:   21:d42a756af44d
   ! !\   parent:      19:31ddc2c1573b
   ! ! !  parent:      20:d30ed6450e32
