@@ -179,11 +179,14 @@ coreconfigitem('cmdserver', 'max-log-files',
 coreconfigitem('cmdserver', 'max-log-size',
     default='1 MB',
 )
+coreconfigitem('cmdserver', 'max-repo-cache',
+    default=0,
+)
 coreconfigitem('cmdserver', 'message-encodings',
     default=list,
 )
 coreconfigitem('cmdserver', 'track-log',
-    default=lambda: ['chgserver', 'cmdserver'],
+    default=lambda: ['chgserver', 'cmdserver', 'repocache'],
 )
 coreconfigitem('color', '.*',
     default=None,

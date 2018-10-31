@@ -28,6 +28,7 @@ from . import (
     error,
     loggingutil,
     pycompat,
+    repocache,
     util,
     vfs as vfsmod,
 )
@@ -511,6 +512,11 @@ class unixforkingservice(object):
         self._oldsigchldhandler = None
         self._workerpids = set()  # updated by signal handler; do not iterate
         self._socketunlinked = None
+        # experimental config: cmdserver.max-repo-cache
+        maxlen = ui.configint(b'cmdserver', b'max-repo-cache')
+        if maxlen < 0:
+            raise error.Abort(_('negative max-repo-cache size not allowed'))
+        self._repoloader = repocache.repoloader(ui, maxlen)
 
     def init(self):
         self._sock = socket.socket(socket.AF_UNIX)
@@ -525,6 +531,7 @@ class unixforkingservice(object):
         o = signal.signal(signal.SIGCHLD, self._sigchldhandler)
         self._oldsigchldhandler = o
         self._socketunlinked = False
+        self._repoloader.start()
 
     def _unlinksocket(self):
         if not self._socketunlinked:
@@ -537,6 +544,7 @@ class unixforkingservice(object):
         self._mainipc.close()
         self._workeripc.close()
         self._unlinksocket()
+        self._repoloader.stop()
         # don't kill child processes as they have active clients, just wait
         self._reapworkers(0)
 
@@ -590,6 +598,10 @@ class unixforkingservice(object):
                 return
             raise
 
+        # Future improvement: On Python 3.7, maybe gc.freeze() can be used
+        # to prevent COW memory from being touched by GC.
+        # https://instagram-engineering.com/
+        #   copy-on-write-friendly-python-garbage-collection-ad6ed5233ddf
         pid = os.fork()
         if pid:
             try:
@@ -622,8 +634,7 @@ class unixforkingservice(object):
             if inst.args[0] == errno.EINTR:
                 return
             raise
-
-        self.ui.log(b'cmdserver', b'repository: %s\n', path)
+        self._repoloader.load(path)
 
     def _sigchldhandler(self, signal, frame):
         self._reapworkers(os.WNOHANG)
@@ -671,3 +682,9 @@ class unixforkingservice(object):
 
         repo.__class__ = unixcmdserverrepo
         repo._cmdserveripc = self._workeripc
+
+        cachedrepo = self._repoloader.get(repo.root)
+        if cachedrepo is None:
+            return
+        repo.ui.log(b'repocache', b'repo from cache: %s\n', repo.root)
+        repocache.copycache(cachedrepo, repo)
