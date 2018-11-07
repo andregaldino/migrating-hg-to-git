@@ -629,3 +629,169 @@ Test that commands.resolve.confirm respect --unmark option (only when no pattern
 
 Done with commands.resolve.confirm tests:
   $ cd ..
+
+Test that commands.resolve.mark-check works even if there are deleted files:
+  $ hg init resolve-deleted
+  $ cd resolve-deleted
+  $ echo r0 > file1
+  $ hg ci -qAm r0
+  $ echo r1 > file1
+  $ hg ci -qm r1
+  $ hg co -qr 0
+  $ hg rm file1
+  $ hg ci -qm "r2 (delete file1)"
+
+(At this point we have r0 creating file1, and sibling commits r1 and r2, which
+ modify and delete file1, respectively)
+
+  $ hg merge -r 1
+  file 'file1' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
+  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg resolve --list
+  U file1
+Because we left it as 'unresolved' the file should still exist.
+  $ [ -f file1 ] || echo "File does not exist?"
+BC behavior: `hg resolve --mark` accepts that the file is still there, and
+doesn't have a problem with this situation.
+  $ hg resolve --mark --config commands.resolve.mark-check=abort
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+The file is still there:
+  $ [ -f file1 ] || echo "File does not exist?"
+Let's check mark-check=warn:
+  $ hg resolve --unmark file1
+  $ hg resolve --mark --config commands.resolve.mark-check=warn
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+The file is still there:
+  $ [ -f file1 ] || echo "File does not exist?"
+Let's resolve the issue by deleting the file via `hg resolve`
+  $ hg resolve --unmark file1
+  $ echo 'd' | hg resolve file1 --config ui.interactive=1
+  file 'file1' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
+  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? d
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+The file is deleted:
+  $ [ -f file1 ] && echo "File still exists?" || true
+Doing `hg resolve --mark` doesn't break now that the file is missing:
+  $ hg resolve --mark --config commands.resolve.mark-check=abort
+  (no more unresolved files)
+  $ hg resolve --mark --config commands.resolve.mark-check=warn
+  (no more unresolved files)
+Resurrect the file, and delete it outside of hg:
+  $ hg resolve --unmark file1
+  $ hg resolve file1
+  file 'file1' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
+  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  [1]
+  $ [ -f file1 ] || echo "File does not exist?"
+  $ hg resolve --list
+  U file1
+  $ rm file1
+  $ hg resolve --mark --config commands.resolve.mark-check=abort
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+  $ hg resolve --unmark file1
+  $ hg resolve file1
+  file 'file1' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
+  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  [1]
+  $ [ -f file1 ] || echo "File does not exist?"
+  $ hg resolve --list
+  U file1
+  $ rm file1
+  $ hg resolve --mark --config commands.resolve.mark-check=warn
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+
+
+For completeness, let's try that in the opposite direction (merging r2 into r1,
+instead of r1 into r2):
+  $ hg update -qCr 1
+  $ hg merge -r 2
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
+  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg resolve --list
+  U file1
+Because we left it as 'unresolved' the file should still exist.
+  $ [ -f file1 ] || echo "File does not exist?"
+BC behavior: `hg resolve --mark` accepts that the file is still there, and
+doesn't have a problem with this situation.
+  $ hg resolve --mark --config commands.resolve.mark-check=abort
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+The file is still there:
+  $ [ -f file1 ] || echo "File does not exist?"
+Let's check mark-check=warn:
+  $ hg resolve --unmark file1
+  $ hg resolve --mark --config commands.resolve.mark-check=warn
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+The file is still there:
+  $ [ -f file1 ] || echo "File does not exist?"
+Let's resolve the issue by deleting the file via `hg resolve`
+  $ hg resolve --unmark file1
+  $ echo 'd' | hg resolve file1 --config ui.interactive=1
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
+  use (c)hanged version, (d)elete, or leave (u)nresolved? d
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+The file is deleted:
+  $ [ -f file1 ] && echo "File still exists?" || true
+Doing `hg resolve --mark` doesn't break now that the file is missing:
+  $ hg resolve --mark --config commands.resolve.mark-check=abort
+  (no more unresolved files)
+  $ hg resolve --mark --config commands.resolve.mark-check=warn
+  (no more unresolved files)
+Resurrect the file, and delete it outside of hg:
+  $ hg resolve --unmark file1
+  $ hg resolve file1
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
+  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  [1]
+  $ [ -f file1 ] || echo "File does not exist?"
+  $ hg resolve --list
+  U file1
+  $ rm file1
+  $ hg resolve --mark --config commands.resolve.mark-check=abort
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+  $ hg resolve --unmark file1
+  $ hg resolve file1
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
+  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  [1]
+  $ [ -f file1 ] || echo "File does not exist?"
+  $ hg resolve --list
+  U file1
+  $ rm file1
+  $ hg resolve --mark --config commands.resolve.mark-check=warn
+  (no more unresolved files)
+  $ hg resolve --list
+  R file1
+
+  $ cd ..

@@ -4935,8 +4935,7 @@ def resolve(ui, repo, *pats, **opts):
 
             if mark:
                 if markcheck:
-                    with repo.wvfs(f) as fobj:
-                        fdata = fobj.read()
+                    fdata = repo.wvfs.tryread(f)
                     if filemerge.hasconflictmarkers(fdata) and \
                         ms[f] != mergemod.MERGE_RECORD_RESOLVED:
                         hasconflictmarkers.append(f)
