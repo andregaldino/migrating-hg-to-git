@@ -42,6 +42,11 @@ where
         I: IntoIterator<Item = (P, P)>,
         P: AsRef<OsStr>;
 
+    /// Changes the process title of the server.
+    fn set_process_name<P>(self, name: P) -> OneShotRequest<C>
+    where
+        P: AsRef<OsStr>;
+
     /// Changes the umask of the server process.
     fn set_umask(self, mask: u32) -> OneShotRequest<C>;
 
@@ -92,6 +97,13 @@ where
         P: AsRef<OsStr>,
     {
         OneShotRequest::start_with_args(self, b"setenv", message::pack_env_vars_os(vars))
+    }
+
+    fn set_process_name<P>(self, name: P) -> OneShotRequest<C>
+    where
+        P: AsRef<OsStr>,
+    {
+        OneShotRequest::start_with_args(self, b"setprocname", name.as_ref().as_bytes())
     }
 
     fn set_umask(self, mask: u32) -> OneShotRequest<C> {

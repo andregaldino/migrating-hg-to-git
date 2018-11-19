@@ -196,6 +196,17 @@ impl Locator {
                 Ok((loc, client))
             })
             .and_then(|(loc, client)| {
+                // It's purely optional, and the server might not support this command.
+                if client.server_spec().capabilities.contains("setprocname") {
+                    let fut = client
+                        .set_process_name(format!("chg[worker/{}]", loc.process_id))
+                        .map(|client| (loc, client));
+                    Either::A(fut)
+                } else {
+                    Either::B(future::ok((loc, client)))
+                }
+            })
+            .and_then(|(loc, client)| {
                 client
                     .set_current_dir(&loc.current_dir)
                     .map(|client| (loc, client))
