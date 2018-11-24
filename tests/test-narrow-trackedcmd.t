@@ -196,8 +196,8 @@ Testing the --import-rules flag with --addinclude and --addexclude
   X path:widest
 
   $ hg tracked --import-rules specs --clear
-  The --clear option is not yet supported.
-  [1]
+  abort: the --clear option is not yet supported
+  [255]
 
 Testing with passing a out of wdir file
 
