@@ -1006,8 +1006,8 @@ class ui(object):
 
     def _write(self, dest, *args, **opts):
         if self._isbuffered(dest):
-            if self._bufferapplylabels:
-                label = opts.get(r'label', '')
+            label = opts.get(r'label', '')
+            if label and self._bufferapplylabels:
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
                 self._buffers[-1].extend(args)
