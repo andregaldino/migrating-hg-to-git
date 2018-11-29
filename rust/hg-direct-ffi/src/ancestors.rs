@@ -44,12 +44,12 @@ impl Index {
 
 impl Graph for Index {
     /// wrap a call to the C extern parents function
-    fn parents(&self, rev: Revision) -> Result<(Revision, Revision), GraphError> {
+    fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
         let mut res: [c_int; 2] = [0; 2];
         let code =
             unsafe { HgRevlogIndex_GetParents(self.index, rev, &mut res as *mut [c_int; 2]) };
         match code {
-            0 => Ok((res[0], res[1])),
+            0 => Ok(res),
             _ => Err(GraphError::ParentOutOfRange(rev)),
         }
     }
@@ -176,10 +176,10 @@ mod tests {
     struct Stub;
 
     impl Graph for Stub {
-        fn parents(&self, r: Revision) -> Result<(Revision, Revision), GraphError> {
+        fn parents(&self, r: Revision) -> Result<[Revision; 2], GraphError> {
             match r {
                 25 => Err(GraphError::ParentOutOfRange(25)),
-                _ => Ok((1, 2)),
+                _ => Ok([1, 2]),
             }
         }
     }

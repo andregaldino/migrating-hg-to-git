@@ -15,7 +15,7 @@ pub const NULL_REVISION: Revision = -1;
 
 /// The simplest expression of what we need of Mercurial DAGs.
 pub trait Graph {
-    fn parents(&self, Revision) -> Result<(Revision, Revision), GraphError>;
+    fn parents(&self, Revision) -> Result<[Revision; 2], GraphError>;
 }
 
 #[derive(Clone, Debug, PartialEq)]

@@ -57,9 +57,9 @@ impl<G: Graph> AncestorsIterator<G> {
         };
         this.seen.insert(NULL_REVISION);
         for rev in filtered_initrevs {
-            let parents = this.graph.parents(rev)?;
-            this.conditionally_push_rev(parents.0);
-            this.conditionally_push_rev(parents.1);
+            for parent in this.graph.parents(rev)?.iter().cloned() {
+                this.conditionally_push_rev(parent);
+            }
         }
         Ok(this)
     }
@@ -115,7 +115,7 @@ impl<G: Graph> Iterator for AncestorsIterator<G> {
             }
             Some(c) => *c,
         };
-        let (p1, p2) = match self.graph.parents(current) {
+        let [p1, p2] = match self.graph.parents(current) {
             Ok(ps) => ps,
             Err(e) => return Some(Err(e)),
         };
@@ -141,25 +141,22 @@ mod tests {
 
     /// This is the same as the dict from test-ancestors.py
     impl Graph for Stub {
-        fn parents(
-            &self,
-            rev: Revision,
-        ) -> Result<(Revision, Revision), GraphError> {
+        fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
             match rev {
-                0 => Ok((-1, -1)),
-                1 => Ok((0, -1)),
-                2 => Ok((1, -1)),
-                3 => Ok((1, -1)),
-                4 => Ok((2, -1)),
-                5 => Ok((4, -1)),
-                6 => Ok((4, -1)),
-                7 => Ok((4, -1)),
-                8 => Ok((-1, -1)),
-                9 => Ok((6, 7)),
-                10 => Ok((5, -1)),
-                11 => Ok((3, 7)),
-                12 => Ok((9, -1)),
-                13 => Ok((8, -1)),
+                0 => Ok([-1, -1]),
+                1 => Ok([0, -1]),
+                2 => Ok([1, -1]),
+                3 => Ok([1, -1]),
+                4 => Ok([2, -1]),
+                5 => Ok([4, -1]),
+                6 => Ok([4, -1]),
+                7 => Ok([4, -1]),
+                8 => Ok([-1, -1]),
+                9 => Ok([6, 7]),
+                10 => Ok([5, -1]),
+                11 => Ok([3, 7]),
+                12 => Ok([9, -1]),
+                13 => Ok([8, -1]),
                 r => Err(GraphError::ParentOutOfRange(r)),
             }
         }
@@ -231,12 +228,9 @@ mod tests {
     struct Corrupted;
 
     impl Graph for Corrupted {
-        fn parents(
-            &self,
-            rev: Revision,
-        ) -> Result<(Revision, Revision), GraphError> {
+        fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
             match rev {
-                1 => Ok((0, -1)),
+                1 => Ok([0, -1]),
                 r => Err(GraphError::ParentOutOfRange(r)),
             }
         }
