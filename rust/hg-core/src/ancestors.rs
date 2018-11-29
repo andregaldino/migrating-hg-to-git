@@ -8,6 +8,7 @@
 //! Rust versions of generic DAG ancestors algorithms for Mercurial
 
 use super::{Graph, GraphError, Revision, NULL_REVISION};
+use std::cmp::max;
 use std::collections::{BinaryHeap, HashSet};
 
 /// Iterator over the ancestors of a given list of revisions
@@ -22,6 +23,11 @@ pub struct AncestorsIterator<G: Graph> {
     visit: BinaryHeap<Revision>,
     seen: HashSet<Revision>,
     stoprev: Revision,
+}
+
+pub struct MissingAncestors<G: Graph> {
+    graph: G,
+    bases: HashSet<Revision>,
 }
 
 impl<G: Graph> AncestorsIterator<G> {
@@ -131,10 +137,187 @@ impl<G: Graph> Iterator for AncestorsIterator<G> {
     }
 }
 
+impl<G: Graph> MissingAncestors<G> {
+    pub fn new(graph: G, bases: impl IntoIterator<Item = Revision>) -> Self {
+        let mut bases: HashSet<Revision> = bases.into_iter().collect();
+        if bases.is_empty() {
+            bases.insert(NULL_REVISION);
+        }
+        MissingAncestors { graph, bases }
+    }
+
+    pub fn has_bases(&self) -> bool {
+        self.bases.iter().any(|&b| b != NULL_REVISION)
+    }
+
+    /// Return a reference to current bases.
+    ///
+    /// This is useful in unit tests, but also setdiscovery.py does
+    /// read the bases attribute of a ancestor.missingancestors instance.
+    pub fn get_bases<'a>(&'a self) -> &'a HashSet<Revision> {
+        &self.bases
+    }
+
+    pub fn add_bases(
+        &mut self,
+        new_bases: impl IntoIterator<Item = Revision>,
+    ) {
+        self.bases.extend(new_bases);
+    }
+
+    /// Remove all ancestors of self.bases from the revs set (in place)
+    pub fn remove_ancestors_from(
+        &mut self,
+        revs: &mut HashSet<Revision>,
+    ) -> Result<(), GraphError> {
+        revs.retain(|r| !self.bases.contains(r));
+        // the null revision is always an ancestor
+        revs.remove(&NULL_REVISION);
+        if revs.is_empty() {
+            return Ok(());
+        }
+        // anything in revs > start is definitely not an ancestor of bases
+        // revs <= start need to be investigated
+        // TODO optim: if a missingancestors is to be used several times,
+        // we shouldn't need to iterate each time on bases
+        let start = match self.bases.iter().cloned().max() {
+            Some(m) => m,
+            None => {
+                // bases is empty (shouldn't happen, but let's be safe)
+                return Ok(());
+            }
+        };
+        // whatever happens, we'll keep at least keepcount of them
+        // knowing this gives us a earlier stop condition than
+        // going all the way to the root
+        let keepcount = revs.iter().filter(|r| **r > start).count();
+
+        let mut curr = start;
+        while curr != NULL_REVISION && revs.len() > keepcount {
+            if self.bases.contains(&curr) {
+                revs.remove(&curr);
+                self.add_parents(curr)?;
+            }
+            curr -= 1;
+        }
+        Ok(())
+    }
+
+    /// Add rev's parents to self.bases
+    #[inline]
+    fn add_parents(&mut self, rev: Revision) -> Result<(), GraphError> {
+        // No need to bother the set with inserting NULL_REVISION over and
+        // over
+        for p in self.graph.parents(rev)?.iter().cloned() {
+            if p != NULL_REVISION {
+                self.bases.insert(p);
+            }
+        }
+        Ok(())
+    }
+
+    /// Return all the ancestors of revs that are not ancestors of self.bases
+    ///
+    /// This may include elements from revs.
+    ///
+    /// Equivalent to the revset (::revs - ::self.bases). Revs are returned in
+    /// revision number order, which is a topological order.
+    pub fn missing_ancestors(
+        &mut self,
+        revs: impl IntoIterator<Item = Revision>,
+    ) -> Result<Vec<Revision>, GraphError> {
+        // just for convenience and comparison with Python version
+        let bases_visit = &mut self.bases;
+        let mut revs: HashSet<Revision> = revs
+            .into_iter()
+            .filter(|r| !bases_visit.contains(r))
+            .collect();
+        let revs_visit = &mut revs;
+        let mut both_visit: HashSet<Revision> =
+            revs_visit.intersection(&bases_visit).cloned().collect();
+        if revs_visit.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let max_bases =
+            bases_visit.iter().cloned().max().unwrap_or(NULL_REVISION);
+        let max_revs =
+            revs_visit.iter().cloned().max().unwrap_or(NULL_REVISION);
+        let start = max(max_bases, max_revs);
+
+        // TODO heuristics for with_capacity()?
+        let mut missing: Vec<Revision> = Vec::new();
+        for curr in (0..=start).map(|i| start - i) {
+            if revs_visit.is_empty() {
+                break;
+            }
+            if both_visit.contains(&curr) {
+                // curr's parents might have made it into revs_visit through
+                // another path
+                // TODO optim: Rust's HashSet.remove returns a boolean telling
+                // if it happened. This will spare us one set lookup
+                both_visit.remove(&curr);
+                for p in self.graph.parents(curr)?.iter().cloned() {
+                    if p == NULL_REVISION {
+                        continue;
+                    }
+                    revs_visit.remove(&p);
+                    bases_visit.insert(p);
+                    both_visit.insert(p);
+                }
+                continue;
+            }
+            // in Rust, one can't just use mutable variables assignation
+            // to be more straightforward. Instead of Python's
+            // thisvisit and othervisit, we'll differentiate with a boolean
+            let this_visit_is_revs = {
+                if revs_visit.remove(&curr) {
+                    missing.push(curr);
+                    true
+                } else if bases_visit.contains(&curr) {
+                    false
+                } else {
+                    // not an ancestor of revs or bases: ignore
+                    continue;
+                }
+            };
+
+            for p in self.graph.parents(curr)?.iter().cloned() {
+                if p == NULL_REVISION {
+                    continue;
+                }
+                let in_other_visit = if this_visit_is_revs {
+                    bases_visit.contains(&p)
+                } else {
+                    revs_visit.contains(&p)
+                };
+                if in_other_visit || both_visit.contains(&p) {
+                    // p is implicitely in this_visit.
+                    // This means p is or should be in bothvisit
+                    // TODO optim: hence if bothvisit, we look up twice
+                    revs_visit.remove(&p);
+                    bases_visit.insert(p);
+                    both_visit.insert(p);
+                } else {
+                    // visit later
+                    if this_visit_is_revs {
+                        revs_visit.insert(p);
+                    } else {
+                        bases_visit.insert(p);
+                    }
+                }
+            }
+        }
+        missing.reverse();
+        Ok(missing)
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
     use super::*;
+    use std::iter::FromIterator;
 
     #[derive(Clone, Debug)]
     struct Stub;
@@ -252,4 +435,211 @@ mod tests {
             AncestorsIterator::new(Corrupted, vec![1], 0, false).unwrap();
         assert_eq!(iter.next(), Some(Err(GraphError::ParentOutOfRange(0))));
     }
+
+    #[test]
+    /// Test constructor, add/get bases
+    fn test_missing_bases() {
+        let mut missing_ancestors =
+            MissingAncestors::new(Stub, [5, 3, 1, 3].iter().cloned());
+        let mut as_vec: Vec<Revision> =
+            missing_ancestors.get_bases().iter().cloned().collect();
+        as_vec.sort();
+        assert_eq!(as_vec, [1, 3, 5]);
+
+        missing_ancestors.add_bases([3, 7, 8].iter().cloned());
+        as_vec = missing_ancestors.get_bases().iter().cloned().collect();
+        as_vec.sort();
+        assert_eq!(as_vec, [1, 3, 5, 7, 8]);
+    }
+
+    fn assert_missing_remove(
+        bases: &[Revision],
+        revs: &[Revision],
+        expected: &[Revision],
+    ) {
+        let mut missing_ancestors =
+            MissingAncestors::new(Stub, bases.iter().cloned());
+        let mut revset: HashSet<Revision> = revs.iter().cloned().collect();
+        missing_ancestors
+            .remove_ancestors_from(&mut revset)
+            .unwrap();
+        let mut as_vec: Vec<Revision> = revset.into_iter().collect();
+        as_vec.sort();
+        assert_eq!(as_vec.as_slice(), expected);
+    }
+
+    #[test]
+    fn test_missing_remove() {
+        assert_missing_remove(
+            &[1, 2, 3, 4, 7],
+            Vec::from_iter(1..10).as_slice(),
+            &[5, 6, 8, 9],
+        );
+        assert_missing_remove(&[10], &[11, 12, 13, 14], &[11, 12, 13, 14]);
+        assert_missing_remove(&[7], &[1, 2, 3, 4, 5], &[3, 5]);
+    }
+
+    fn assert_missing_ancestors(
+        bases: &[Revision],
+        revs: &[Revision],
+        expected: &[Revision],
+    ) {
+        let mut missing_ancestors =
+            MissingAncestors::new(Stub, bases.iter().cloned());
+        let missing = missing_ancestors
+            .missing_ancestors(revs.iter().cloned())
+            .unwrap();
+        assert_eq!(missing.as_slice(), expected);
+    }
+
+    #[test]
+    fn test_missing_ancestors() {
+        // examples taken from test-ancestors.py by having it run
+        // on the same graph (both naive and fast Python algs)
+        assert_missing_ancestors(&[10], &[11], &[3, 7, 11]);
+        assert_missing_ancestors(&[11], &[10], &[5, 10]);
+        assert_missing_ancestors(&[7], &[9, 11], &[3, 6, 9, 11]);
+    }
+
+    // A Graph represented by a vector whose indices are revisions
+    // and values are parents of the revisions
+    type VecGraph = Vec<[Revision; 2]>;
+
+    impl Graph for VecGraph {
+        fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
+            Ok(self[rev as usize])
+        }
+    }
+
+    /// An interesting case found by a random generator similar to
+    /// the one in test-ancestor.py. An early version of Rust MissingAncestors
+    /// failed this, yet none of the integration tests of the whole suite
+    /// catched it.
+    #[test]
+    fn test_remove_ancestors_from_case1() {
+        let graph: VecGraph = vec![
+            [NULL_REVISION, NULL_REVISION],
+            [0, NULL_REVISION],
+            [1, 0],
+            [2, 1],
+            [3, NULL_REVISION],
+            [4, NULL_REVISION],
+            [5, 1],
+            [2, NULL_REVISION],
+            [7, NULL_REVISION],
+            [8, NULL_REVISION],
+            [9, NULL_REVISION],
+            [10, 1],
+            [3, NULL_REVISION],
+            [12, NULL_REVISION],
+            [13, NULL_REVISION],
+            [14, NULL_REVISION],
+            [4, NULL_REVISION],
+            [16, NULL_REVISION],
+            [17, NULL_REVISION],
+            [18, NULL_REVISION],
+            [19, 11],
+            [20, NULL_REVISION],
+            [21, NULL_REVISION],
+            [22, NULL_REVISION],
+            [23, NULL_REVISION],
+            [2, NULL_REVISION],
+            [3, NULL_REVISION],
+            [26, 24],
+            [27, NULL_REVISION],
+            [28, NULL_REVISION],
+            [12, NULL_REVISION],
+            [1, NULL_REVISION],
+            [1, 9],
+            [32, NULL_REVISION],
+            [33, NULL_REVISION],
+            [34, 31],
+            [35, NULL_REVISION],
+            [36, 26],
+            [37, NULL_REVISION],
+            [38, NULL_REVISION],
+            [39, NULL_REVISION],
+            [40, NULL_REVISION],
+            [41, NULL_REVISION],
+            [42, 26],
+            [0, NULL_REVISION],
+            [44, NULL_REVISION],
+            [45, 4],
+            [40, NULL_REVISION],
+            [47, NULL_REVISION],
+            [36, 0],
+            [49, NULL_REVISION],
+            [NULL_REVISION, NULL_REVISION],
+            [51, NULL_REVISION],
+            [52, NULL_REVISION],
+            [53, NULL_REVISION],
+            [14, NULL_REVISION],
+            [55, NULL_REVISION],
+            [15, NULL_REVISION],
+            [23, NULL_REVISION],
+            [58, NULL_REVISION],
+            [59, NULL_REVISION],
+            [2, NULL_REVISION],
+            [61, 59],
+            [62, NULL_REVISION],
+            [63, NULL_REVISION],
+            [NULL_REVISION, NULL_REVISION],
+            [65, NULL_REVISION],
+            [66, NULL_REVISION],
+            [67, NULL_REVISION],
+            [68, NULL_REVISION],
+            [37, 28],
+            [69, 25],
+            [71, NULL_REVISION],
+            [72, NULL_REVISION],
+            [50, 2],
+            [74, NULL_REVISION],
+            [12, NULL_REVISION],
+            [18, NULL_REVISION],
+            [77, NULL_REVISION],
+            [78, NULL_REVISION],
+            [79, NULL_REVISION],
+            [43, 33],
+            [81, NULL_REVISION],
+            [82, NULL_REVISION],
+            [83, NULL_REVISION],
+            [84, 45],
+            [85, NULL_REVISION],
+            [86, NULL_REVISION],
+            [NULL_REVISION, NULL_REVISION],
+            [88, NULL_REVISION],
+            [NULL_REVISION, NULL_REVISION],
+            [76, 83],
+            [44, NULL_REVISION],
+            [92, NULL_REVISION],
+            [93, NULL_REVISION],
+            [9, NULL_REVISION],
+            [95, 67],
+            [96, NULL_REVISION],
+            [97, NULL_REVISION],
+            [NULL_REVISION, NULL_REVISION],
+        ];
+        let problem_rev = 28 as Revision;
+        let problem_base = 70 as Revision;
+        // making the problem obvious: problem_rev is a parent of problem_base
+        assert_eq!(graph.parents(problem_base).unwrap()[1], problem_rev);
+
+        let mut missing_ancestors: MissingAncestors<VecGraph> =
+            MissingAncestors::new(
+                graph,
+                [60, 26, 70, 3, 96, 19, 98, 49, 97, 47, 1, 6]
+                    .iter()
+                    .cloned(),
+            );
+        assert!(missing_ancestors.bases.contains(&problem_base));
+
+        let mut revs: HashSet<Revision> =
+            [4, 12, 41, 28, 68, 38, 1, 30, 56, 44]
+                .iter()
+                .cloned()
+                .collect();
+        missing_ancestors.remove_ancestors_from(&mut revs).unwrap();
+        assert!(!revs.contains(&problem_rev));
+    }
+
 }

@@ -3,7 +3,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 mod ancestors;
-pub use ancestors::AncestorsIterator;
+pub use ancestors::{AncestorsIterator, MissingAncestors};
 
 /// Mercurial revision numbers
 ///
@@ -15,6 +15,9 @@ pub const NULL_REVISION: Revision = -1;
 
 /// The simplest expression of what we need of Mercurial DAGs.
 pub trait Graph {
+    /// Return the two parents of the given `Revision`.
+    ///
+    /// Each of the parents can be independently `NULL_REVISION`
     fn parents(&self, Revision) -> Result<[Revision; 2], GraphError>;
 }
 
