@@ -11,7 +11,8 @@ else:
     # this would fail already without appropriate ancestor.__package__
     from mercurial.rustext.ancestor import (
         AncestorsIterator,
-        LazyAncestors
+        LazyAncestors,
+        MissingAncestors,
     )
 
 try:
@@ -104,6 +105,22 @@ class rustancestorstest(unittest.TestCase):
 
         # let's check bool for an empty one
         self.assertFalse(LazyAncestors(idx, [0], 0, False))
+
+    def testmissingancestors(self):
+        idx = self.parseindex()
+        missanc = MissingAncestors(idx, [1])
+        self.assertTrue(missanc.hasbases())
+        self.assertEqual(missanc.missingancestors([3]), [2, 3])
+        missanc.addbases({2})
+        self.assertEqual(set(missanc.bases()), {1, 2})
+        self.assertEqual(missanc.missingancestors([3]), [3])
+
+    def testmissingancestorsremove(self):
+        idx = self.parseindex()
+        missanc = MissingAncestors(idx, [1])
+        revs = {0, 1, 2, 3}
+        missanc.removeancestorsfrom(revs)
+        self.assertEqual(revs, {2, 3})
 
     def testrefcount(self):
         idx = self.parseindex()
