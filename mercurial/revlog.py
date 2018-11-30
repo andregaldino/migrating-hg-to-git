@@ -893,6 +893,8 @@ class revlog(object):
         if common is None:
             common = [nullrev]
 
+        if rustext is not None:
+            return rustext.ancestor.MissingAncestors(self.index, common)
         return ancestor.incrementalmissingancestors(self.parentrevs, common)
 
     def findmissingrevs(self, common=None, heads=None):
