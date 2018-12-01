@@ -13,30 +13,38 @@ Test basic extension support
 
   $ cat > foobar.py <<EOF
   > import os
-  > from mercurial import commands, registrar
-  > cmdtable = {}
-  > command = registrar.command(cmdtable)
-  > configtable = {}
-  > configitem = registrar.configitem(configtable)
-  > configitem(b'tests', b'foo', default=b"Foo")
-  > def uisetup(ui):
+  > from mercurial import commands, exthelper, registrar
+  > 
+  > eh = exthelper.exthelper()
+  > eh.configitem(b'tests', b'foo', default=b"Foo")
+  > 
+  > uisetup = eh.finaluisetup
+  > uipopulate = eh.finaluipopulate
+  > reposetup = eh.finalreposetup
+  > cmdtable = eh.cmdtable
+  > configtable = eh.configtable
+  > 
+  > @eh.uisetup
+  > def _uisetup(ui):
   >     ui.debug(b"uisetup called [debug]\\n")
   >     ui.write(b"uisetup called\\n")
   >     ui.status(b"uisetup called [status]\\n")
   >     ui.flush()
-  > def uipopulate(ui):
+  > @eh.uipopulate
+  > def _uipopulate(ui):
   >     ui._populatecnt = getattr(ui, "_populatecnt", 0) + 1
   >     ui.write(b"uipopulate called (%d times)\n" % ui._populatecnt)
-  > def reposetup(ui, repo):
+  > @eh.reposetup
+  > def _reposetup(ui, repo):
   >     ui.write(b"reposetup called for %s\\n" % os.path.basename(repo.root))
   >     ui.write(b"ui %s= repo.ui\\n" % (ui == repo.ui and b"=" or b"!"))
   >     ui.flush()
-  > @command(b'foo', [], b'hg foo')
+  > @eh.command(b'foo', [], b'hg foo')
   > def foo(ui, *args, **kwargs):
   >     foo = ui.config(b'tests', b'foo')
   >     ui.write(foo)
   >     ui.write(b"\\n")
-  > @command(b'bar', [], b'hg bar', norepo=True)
+  > @eh.command(b'bar', [], b'hg bar', norepo=True)
   > def bar(ui, *args, **kwargs):
   >     ui.write(b"Bar\\n")
   > EOF
