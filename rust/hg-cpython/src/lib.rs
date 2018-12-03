@@ -21,8 +21,10 @@
 #[macro_use]
 extern crate cpython;
 extern crate hg;
+extern crate libc;
 
 mod ancestors;
+mod cindex;
 mod exceptions;
 
 py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
