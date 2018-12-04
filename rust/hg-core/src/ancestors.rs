@@ -25,6 +25,15 @@ pub struct AncestorsIterator<G: Graph> {
     stoprev: Revision,
 }
 
+/// Lazy ancestors set, backed by AncestorsIterator
+pub struct LazyAncestors<G: Graph + Clone> {
+    graph: G,
+    containsiter: AncestorsIterator<G>,
+    initrevs: Vec<Revision>,
+    stoprev: Revision,
+    inclusive: bool,
+}
+
 pub struct MissingAncestors<G: Graph> {
     graph: G,
     bases: HashSet<Revision>,
@@ -98,9 +107,31 @@ impl<G: Graph> AncestorsIterator<G> {
         }
         Ok(false)
     }
+
+    pub fn peek(&self) -> Option<Revision> {
+        self.visit.peek().map(|&r| r)
+    }
+
+    /// Tell if the iterator is about an empty set
+    ///
+    /// The result does not depend whether the iterator has been consumed
+    /// or not.
+    /// This is mostly meant for iterators backing a lazy ancestors set
+    pub fn is_empty(&self) -> bool {
+        if self.visit.len() > 0 {
+            return false;
+        }
+        if self.seen.len() > 1 {
+            return false;
+        }
+        // at this point, the seen set is at most a singleton.
+        // If not `self.inclusive`, it's still possible that it has only
+        // the null revision
+        self.seen.is_empty() || self.seen.contains(&NULL_REVISION)
+    }
 }
 
-/// Main implementation.
+/// Main implementation for the iterator
 ///
 /// The algorithm is the same as in `_lazyancestorsiter()` from `ancestors.py`
 /// with a few non crucial differences:
@@ -134,6 +165,49 @@ impl<G: Graph> Iterator for AncestorsIterator<G> {
 
         self.conditionally_push_rev(p2);
         Some(Ok(current))
+    }
+}
+
+impl<G: Graph + Clone> LazyAncestors<G> {
+    pub fn new(
+        graph: G,
+        initrevs: impl IntoIterator<Item = Revision>,
+        stoprev: Revision,
+        inclusive: bool,
+    ) -> Result<Self, GraphError> {
+        let v: Vec<Revision> = initrevs.into_iter().collect();
+        Ok(LazyAncestors {
+            graph: graph.clone(),
+            containsiter: AncestorsIterator::new(
+                graph,
+                v.iter().cloned(),
+                stoprev,
+                inclusive,
+            )?,
+            initrevs: v,
+            stoprev: stoprev,
+            inclusive: inclusive,
+        })
+    }
+
+    pub fn contains(&mut self, rev: Revision) -> Result<bool, GraphError> {
+        self.containsiter.contains(rev)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.containsiter.is_empty()
+    }
+
+    pub fn iter(&self) -> AncestorsIterator<G> {
+        // the arguments being the same as for self.containsiter, we know
+        // for sure that AncestorsIterator constructor can't fail
+        AncestorsIterator::new(
+            self.graph.clone(),
+            self.initrevs.iter().cloned(),
+            self.stoprev,
+            self.inclusive,
+        )
+        .unwrap()
     }
 }
 
@@ -407,7 +481,40 @@ mod tests {
         assert!(!lazy.contains(NULL_REVISION).unwrap());
     }
 
+    #[test]
+    fn test_peek() {
+        let mut iter =
+            AncestorsIterator::new(Stub, vec![10], 0, true).unwrap();
+        // peek() gives us the next value
+        assert_eq!(iter.peek(), Some(10));
+        // but it's not been consumed
+        assert_eq!(iter.next(), Some(Ok(10)));
+        // and iteration resumes normally
+        assert_eq!(iter.next(), Some(Ok(5)));
+
+        // let's drain the iterator to test peek() at the end
+        while iter.next().is_some() {}
+        assert_eq!(iter.peek(), None);
+    }
+
+    #[test]
+    fn test_empty() {
+        let mut iter =
+            AncestorsIterator::new(Stub, vec![10], 0, true).unwrap();
+        assert!(!iter.is_empty());
+        while iter.next().is_some() {}
+        assert!(!iter.is_empty());
+
+        let iter = AncestorsIterator::new(Stub, vec![], 0, true).unwrap();
+        assert!(iter.is_empty());
+
+        // case where iter.seen == {NULL_REVISION}
+        let iter = AncestorsIterator::new(Stub, vec![0], 0, false).unwrap();
+        assert!(iter.is_empty());
+    }
+
     /// A corrupted Graph, supporting error handling tests
+    #[derive(Clone, Debug)]
     struct Corrupted;
 
     impl Graph for Corrupted {
@@ -434,6 +541,39 @@ mod tests {
         let mut iter =
             AncestorsIterator::new(Corrupted, vec![1], 0, false).unwrap();
         assert_eq!(iter.next(), Some(Err(GraphError::ParentOutOfRange(0))));
+    }
+
+    #[test]
+    fn test_lazy_iter_contains() {
+        let mut lazy =
+            LazyAncestors::new(Stub, vec![11, 13], 0, false).unwrap();
+
+        let revs: Vec<Revision> = lazy.iter().map(|r| r.unwrap()).collect();
+        // compare with iterator tests on the same initial revisions
+        assert_eq!(revs, vec![8, 7, 4, 3, 2, 1, 0]);
+
+        // contains() results are correct, unaffected by the fact that
+        // we consumed entirely an iterator out of lazy
+        assert_eq!(lazy.contains(2), Ok(true));
+        assert_eq!(lazy.contains(9), Ok(false));
+    }
+
+    #[test]
+    fn test_lazy_contains_iter() {
+        let mut lazy =
+            LazyAncestors::new(Stub, vec![11, 13], 0, false).unwrap(); // reminder: [8, 7, 4, 3, 2, 1, 0]
+
+        assert_eq!(lazy.contains(2), Ok(true));
+        assert_eq!(lazy.contains(6), Ok(false));
+
+        // after consumption of 2 by the inner iterator, results stay
+        // consistent
+        assert_eq!(lazy.contains(2), Ok(true));
+        assert_eq!(lazy.contains(5), Ok(false));
+
+        // iter() still gives us a fresh iterator
+        let revs: Vec<Revision> = lazy.iter().map(|r| r.unwrap()).collect();
+        assert_eq!(revs, vec![8, 7, 4, 3, 2, 1, 0]);
     }
 
     #[test]

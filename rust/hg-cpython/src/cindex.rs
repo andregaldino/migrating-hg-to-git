@@ -15,7 +15,7 @@ extern crate python27_sys as python_sys;
 extern crate python3_sys as python_sys;
 
 use self::python_sys::PyCapsule_Import;
-use cpython::{PyErr, PyObject, PyResult, Python};
+use cpython::{PyClone, PyErr, PyObject, PyResult, Python};
 use hg::{Graph, GraphError, Revision};
 use libc::c_int;
 use std::ffi::CStr;
@@ -59,7 +59,6 @@ type IndexParentsFn = unsafe extern "C" fn(
 /// the core API, that would be tied to `GILGuard` / `Python<'p>`
 /// in the case of the `cpython` crate bindings yet could leave room for other
 /// mechanisms in other contexts.
-
 pub struct Index {
     index: PyObject,
     parents: IndexParentsFn,
@@ -71,6 +70,16 @@ impl Index {
             index: index,
             parents: decapsule_parents_fn(py)?,
         })
+    }
+}
+
+impl Clone for Index {
+    fn clone(&self) -> Self {
+        let guard = Python::acquire_gil();
+        Index {
+            index: self.index.clone_ref(guard.python()),
+            parents: self.parents.clone(),
+        }
     }
 }
 
