@@ -1838,8 +1838,21 @@ def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None,
         topic = 'adding'
         if runidx is not None:
             topic += ' (run #%d)' % runidx
+         # Support both old and new progress API
+        if util.safehasattr(ui, 'makeprogress'):
+            progress = ui.makeprogress(topic, unit='revs', total=total)
+            def updateprogress(pos):
+                progress.update(pos)
+            def completeprogress():
+                progress.complete()
+        else:
+            def updateprogress(pos):
+                ui.progress(topic, pos, unit='revs', total=total)
+            def completeprogress():
+                ui.progress(topic, None, unit='revs', total=total)
+
         for idx, rev in enumerate(revs):
-            ui.progress(topic, idx, unit='revs', total=total)
+            updateprogress(idx)
             addargs, addkwargs = _getrevisionseed(orig, rev, tr, source)
             if clearcaches:
                 dest.index.clearcaches()
@@ -1847,8 +1860,8 @@ def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None,
             with timeone() as r:
                 dest.addrawrevision(*addargs, **addkwargs)
             timings.append((rev, r[0]))
-        ui.progress(topic, total, unit='revs', total=total)
-        ui.progress(topic, None, unit='revs', total=total)
+        updateprogress(total)
+        completeprogress()
     return timings
 
 def _getrevisionseed(orig, rev, tr, source):
