@@ -182,7 +182,8 @@ def main():
     checkzobject(fl, allowextra=True)
 
     # Conforms to imanifestlog.
-    ml = manifest.manifestlog(vfs, repo, manifest.manifestrevlog(repo.svfs))
+    ml = manifest.manifestlog(vfs, repo, manifest.manifestrevlog(repo.svfs),
+                              repo.narrowmatch())
     checkzobject(ml)
     checkzobject(repo.manifestlog)
 

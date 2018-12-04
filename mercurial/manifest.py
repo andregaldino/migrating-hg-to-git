@@ -1636,7 +1636,7 @@ class manifestlog(object):
     of the list of files in the given commit. Consumers of the output of this
     class do not care about the implementation details of the actual manifests
     they receive (i.e. tree or flat or lazily loaded, etc)."""
-    def __init__(self, opener, repo, rootstore):
+    def __init__(self, opener, repo, rootstore, narrowmatch):
         usetreemanifest = False
         cachesize = 4
 
@@ -1649,7 +1649,7 @@ class manifestlog(object):
 
         self._rootstore = rootstore
         self._rootstore._setupmanifestcachehooks(repo)
-        self._narrowmatch = repo.narrowmatch()
+        self._narrowmatch = narrowmatch
 
         # A cache of the manifestctx or treemanifestctx for each directory
         self._dirmancache = {}

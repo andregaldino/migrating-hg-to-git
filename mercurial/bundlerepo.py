@@ -374,7 +374,8 @@ class bundlerepository(object):
         rootstore = bundlemanifest(self.svfs, self._cgunpacker, linkmapper)
         self.filestart = self._cgunpacker.tell()
 
-        return manifest.manifestlog(self.svfs, self, rootstore)
+        return manifest.manifestlog(self.svfs, self, rootstore,
+                                    self.narrowmatch())
 
     def _consumemanifest(self):
         """Consumes the manifest portion of the bundle, setting filestart so the

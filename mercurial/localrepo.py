@@ -1190,7 +1190,8 @@ class localrepository(object):
     @storecache('00manifest.i')
     def manifestlog(self):
         rootstore = manifest.manifestrevlog(self.svfs)
-        return manifest.manifestlog(self.svfs, self, rootstore)
+        return manifest.manifestlog(self.svfs, self, rootstore,
+                                    self.narrowmatch())
 
     @repofilecache('dirstate')
     def dirstate(self):
