@@ -41,7 +41,6 @@ from mercurial import (
     lock as lockmod,
     mdiff,
     merge,
-    narrowspec,
     node as nodemod,
     patch,
     phases,
@@ -327,11 +326,8 @@ def _aborttransaction(repo, tr):
     '''Abort current transaction for shelve/unshelve, but keep dirstate
     '''
     dirstatebackupname = 'dirstate.shelve'
-    narrowspecbackupname = 'narrowspec.shelve'
     repo.dirstate.savebackup(tr, dirstatebackupname)
-    narrowspec.savebackup(repo, narrowspecbackupname)
     tr.abort()
-    narrowspec.restorebackup(repo, narrowspecbackupname)
     repo.dirstate.restorebackup(None, dirstatebackupname)
 
 def getshelvename(repo, parent, opts):
