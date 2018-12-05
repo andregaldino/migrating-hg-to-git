@@ -242,6 +242,10 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
         repo.destroying()
 
         with repo.transaction("narrowing"):
+            # Update narrowspec before removing revlogs, so repo won't be
+            # corrupt in case of crash
+            repo.setnarrowpats(newincludes, newexcludes)
+
             for f in todelete:
                 ui.status(_('deleting %s\n') % f)
                 util.unlinkpath(repo.svfs.join(f))
@@ -249,7 +253,6 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
 
             _narrowcleanupwdir(repo, oldincludes, oldexcludes, newincludes,
                                newexcludes, oldmatch, newmatch)
-            repo.setnarrowpats(newincludes, newexcludes)
 
         repo.destroyed()
 
