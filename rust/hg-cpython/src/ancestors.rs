@@ -7,7 +7,68 @@
 
 //! Bindings for the hg::ancestors module provided by the
 //! `hg-core` crate. From Python, this will be seen as `rustext.ancestor`
-use cpython::{PyDict, PyModule, PyResult, Python};
+use cindex::Index;
+use cpython::{
+    ObjectProtocol, PyClone, PyDict, PyModule, PyObject, PyResult, Python,
+};
+use exceptions::GraphError;
+use hg;
+use hg::AncestorsIterator as CoreIterator;
+use hg::Revision;
+use std::cell::RefCell;
+
+/// Utility function to convert a Python iterable into a Vec<Revision>
+///
+/// We need this to feed to AncestorIterators constructors because
+/// a PyErr can arise at each step of iteration, whereas our inner objects
+/// expect iterables over Revision, not over some Result<Revision, PyErr>
+fn reviter_to_revvec(py: Python, revs: PyObject) -> PyResult<Vec<Revision>> {
+    revs.iter(py)?
+        .map(|r| r.and_then(|o| o.extract::<Revision>(py)))
+        .collect()
+}
+
+py_class!(class AncestorsIterator |py| {
+    // TODO RW lock ?
+    data inner: RefCell<Box<CoreIterator<Index>>>;
+
+    def __next__(&self) -> PyResult<Option<Revision>> {
+        match self.inner(py).borrow_mut().next() {
+            Some(Err(e)) => Err(GraphError::pynew(py, e)),
+            None => Ok(None),
+            Some(Ok(r)) => Ok(Some(r)),
+        }
+    }
+
+    def __contains__(&self, rev: Revision) -> PyResult<bool> {
+        self.inner(py).borrow_mut().contains(rev).map_err(|e| GraphError::pynew(py, e))
+    }
+
+    def __iter__(&self) -> PyResult<Self> {
+        Ok(self.clone_ref(py))
+    }
+
+    def __new__(_cls, index: PyObject, initrevs: PyObject, stoprev: Revision,
+                inclusive: bool) -> PyResult<AncestorsIterator> {
+        let initvec = reviter_to_revvec(py, initrevs)?;
+        let ait = match hg::AncestorsIterator::new(Index::new(py, index)?,
+                                                   initvec, stoprev,
+                                                   inclusive) {
+            Ok(ait) => ait,
+            Err(e) => {
+                return Err(GraphError::pynew(py, e));
+            }
+        };
+        AncestorsIterator::from_inner(py, ait)
+    }
+
+});
+
+impl AncestorsIterator {
+    pub fn from_inner(py: Python, ait: CoreIterator<Index>) -> PyResult<Self> {
+        Self::create_instance(py, RefCell::new(Box::new(ait)))
+    }
+}
 
 /// Create the module, with __package__ given from parent
 pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
@@ -19,6 +80,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
         "__doc__",
         "Generic DAG ancestor algorithms - Rust implementation",
     )?;
+    m.add_class::<AncestorsIterator>(py)?;
 
     let sys = PyModule::import(py, "sys")?;
     let sys_modules: PyDict = sys.get(py, "modules")?.extract(py)?;

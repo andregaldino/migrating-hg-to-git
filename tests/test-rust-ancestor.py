@@ -1,19 +1,46 @@
 from __future__ import absolute_import
+import sys
 import unittest
 
 try:
     from mercurial import rustext
+    rustext.__name__  # trigger immediate actual import
 except ImportError:
     rustext = None
+else:
+    # this would fail already without appropriate ancestor.__package__
+    from mercurial.rustext.ancestor import AncestorsIterator
 
 try:
     from mercurial.cext import parsers as cparsers
 except ImportError:
     cparsers = None
 
+# picked from test-parse-index2, copied rather than imported
+# so that it stays stable even if test-parse-index2 changes or disappears.
+data_non_inlined = (
+    b'\x00\x00\x00\x01\x00\x00\x00\x00\x00\x01D\x19'
+    b'\x00\x07e\x12\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff'
+    b'\xff\xff\xff\xff\xd1\xf4\xbb\xb0\xbe\xfc\x13\xbd\x8c\xd3\x9d'
+    b'\x0f\xcd\xd9;\x8c\x07\x8cJ/\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    b'\x00\x00\x00\x00\x00\x00\x01D\x19\x00\x00\x00\x00\x00\xdf\x00'
+    b'\x00\x01q\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\xff'
+    b'\xff\xff\xff\xc1\x12\xb9\x04\x96\xa4Z1t\x91\xdfsJ\x90\xf0\x9bh'
+    b'\x07l&\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    b'\x00\x01D\xf8\x00\x00\x00\x00\x01\x1b\x00\x00\x01\xb8\x00\x00'
+    b'\x00\x01\x00\x00\x00\x02\x00\x00\x00\x01\xff\xff\xff\xff\x02\n'
+    b'\x0e\xc6&\xa1\x92\xae6\x0b\x02i\xfe-\xe5\xbao\x05\xd1\xe7\x00'
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01F'
+    b'\x13\x00\x00\x00\x00\x01\xec\x00\x00\x03\x06\x00\x00\x00\x01'
+    b'\x00\x00\x00\x03\x00\x00\x00\x02\xff\xff\xff\xff\x12\xcb\xeby1'
+    b'\xb6\r\x98B\xcb\x07\xbd`\x8f\x92\xd9\xc4\x84\xbdK\x00\x00\x00'
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    )
+
+
 @unittest.skipIf(rustext is None or cparsers is None,
-                 "rustext.ancestor or the C Extension parsers module "
-                 "it relies on is not available")
+                 "rustext or the C Extension parsers module "
+                 "ancestor relies on is not available")
 class rustancestorstest(unittest.TestCase):
     """Test the correctness of binding to Rust code.
 
@@ -27,11 +54,52 @@ class rustancestorstest(unittest.TestCase):
     Algorithmic correctness is asserted by the Rust unit tests.
     """
 
-    def testmodule(self):
-        self.assertTrue('DAG' in rustext.ancestor.__doc__)
+    def parseindex(self):
+        return cparsers.parse_index2(data_non_inlined, False)[0]
+
+    def testiteratorrevlist(self):
+        idx = self.parseindex()
+        # checking test assumption about the index binary data:
+        self.assertEqual({i: (r[5], r[6]) for i, r in enumerate(idx)},
+                         {0: (-1, -1),
+                          1: (0, -1),
+                          2: (1, -1),
+                          3: (2, -1)})
+        ait = AncestorsIterator(idx, [3], 0, True)
+        self.assertEqual([r for r in ait], [3, 2, 1, 0])
+
+        ait = AncestorsIterator(idx, [3], 0, False)
+        self.assertEqual([r for r in ait], [2, 1, 0])
+
+    def testrefcount(self):
+        idx = self.parseindex()
+        start_count = sys.getrefcount(idx)
+
+        # refcount increases upon iterator init...
+        ait = AncestorsIterator(idx, [3], 0, True)
+        self.assertEqual(sys.getrefcount(idx), start_count + 1)
+        self.assertEqual(next(ait), 3)
+
+        # and decreases once the iterator is removed
+        del ait
+        self.assertEqual(sys.getrefcount(idx), start_count)
+
+        # and removing ref to the index after iterator init is no issue
+        ait = AncestorsIterator(idx, [3], 0, True)
+        del idx
+        self.assertEqual([r for r in ait], [3, 2, 1, 0])
 
     def testgrapherror(self):
-        self.assertTrue('GraphError' in dir(rustext))
+        data = (data_non_inlined[:64 + 27] +
+                b'\xf2' +
+                data_non_inlined[64 + 28:])
+        idx = cparsers.parse_index2(data, False)[0]
+        with self.assertRaises(rustext.GraphError) as arc:
+            AncestorsIterator(idx, [1], -1, False)
+        exc = arc.exception
+        self.assertIsInstance(exc, ValueError)
+        # rust-cpython issues appropriate str instances for Python 2 and 3
+        self.assertEqual(exc.args, ('ParentOutOfRange', 1))
 
 
 if __name__ == '__main__':
