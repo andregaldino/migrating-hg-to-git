@@ -633,16 +633,16 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
                             or deltalength(rev))):
                 tested.add(rev)
                 rev = deltaparent(rev)
+            # no need to try a delta against nullrev, this will be done as a
+            # last resort.
+            if rev == nullrev:
+                continue
             # filter out revision we tested already
             if rev in tested:
                 continue
             tested.add(rev)
             # filter out delta base that will never produce good delta
             if deltas_limit < revlog.length(rev):
-                continue
-            # no need to try a delta against nullrev, this will be done as a
-            # last resort.
-            if rev == nullrev:
                 continue
             # no delta for rawtext-changing revs (see "candelta" for why)
             if revlog.flags(rev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
