@@ -73,6 +73,7 @@ cleanbutpackages:
 	$(MAKE) -C doc clean
 	$(MAKE) -C contrib/chg distclean
 	rm -rf rust/target
+	rm -f mercurial/rustext.so
 
 clean: cleanbutpackages
 	rm -rf packages
