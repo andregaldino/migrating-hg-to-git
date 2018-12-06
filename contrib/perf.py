@@ -1797,6 +1797,9 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
         ("90%", resultcount * 90 // 100),
         ("95%", resultcount * 95 // 100),
         ("99%", resultcount * 99 // 100),
+        ("99.9%", resultcount * 999 // 1000),
+        ("99.99%", resultcount * 9999 // 10000),
+        ("99.999%", resultcount * 99999 // 100000),
         ("max", -1),
     ]
     if not ui.quiet:
