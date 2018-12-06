@@ -135,6 +135,7 @@ ispypy = "PyPy" in sys.version
 iswithrustextensions = 'HGWITHRUSTEXT' in os.environ
 
 import ctypes
+import errno
 import stat, subprocess, time
 import re
 import shutil
@@ -898,6 +899,9 @@ xdiff_headers = [
     'mercurial/thirdparty/xdiff/xutils.h',
 ]
 
+class RustCompilationError(CCompilerError):
+    """Exception class for Rust compilation errors."""
+
 class RustExtension(Extension):
     """A C Extension, conditionnally enhanced with Rust code.
 
@@ -942,9 +946,21 @@ class RustExtension(Extension):
             import pwd
             env['HOME'] = pwd.getpwuid(os.getuid()).pw_dir
 
-        subprocess.check_call(['cargo', 'build', '-vv', '--release'],
-                              env=env, cwd=self.rustsrcdir)
-        self.library_dirs.append(self.rusttargetdir)
+        cargocmd = ['cargo', 'build', '-vv', '--release']
+        try:
+            subprocess.check_call(cargocmd, env=env, cwd=self.rustsrcdir)
+        except OSError as exc:
+            if exc.errno == errno.ENOENT:
+                raise RustCompilationError("Cargo not found")
+            elif exc.errno == errno.EACCES:
+                raise RustCompilationError(
+                    "Cargo found, but permisssion to execute it is denied")
+            else:
+                raise
+        except subprocess.CalledProcessError:
+            raise RustCompilationError(
+                "Cargo failed. Working directory: %r, "
+                "command: %r, environment: %r" % (self.rustsrcdir, cmd, env))
 
 extmodules = [
     Extension('mercurial.cext.base85', ['mercurial/cext/base85.c'],
