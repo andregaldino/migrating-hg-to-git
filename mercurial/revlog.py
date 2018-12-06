@@ -97,6 +97,11 @@ REVIDX_KNOWN_FLAGS
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
 parsers = policy.importmod(r'parsers')
+try:
+    from . import rustext
+    rustext.__name__  # force actual import (see hgdemandimport)
+except ImportError:
+    rustext = None
 
 # Aliased for performance.
 _zlibdecompress = zlib.decompress
@@ -779,12 +784,17 @@ class revlog(object):
         for r in revs:
             checkrev(r)
         # and we're sure ancestors aren't filtered as well
-        if util.safehasattr(parsers, 'rustlazyancestors'):
-            return ancestor.rustlazyancestors(
-                self.index, revs,
-                stoprev=stoprev, inclusive=inclusive)
-        return ancestor.lazyancestors(self._uncheckedparentrevs, revs,
-                                      stoprev=stoprev, inclusive=inclusive)
+
+        if rustext is not None:
+            lazyancestors = rustext.ancestor.LazyAncestors
+            arg = self.index
+        elif util.safehasattr(parsers, 'rustlazyancestors'):
+            lazyancestors = ancestor.rustlazyancestors
+            arg = self.index
+        else:
+            lazyancestors = ancestor.lazyancestors
+            arg = self._uncheckedparentrevs
+        return lazyancestors(arg, revs, stoprev=stoprev, inclusive=inclusive)
 
     def descendants(self, revs):
         return dagop.descendantrevs(revs, self.revs, self.parentrevs)
