@@ -1702,6 +1702,14 @@ class ui(object):
         elif self._progbar is not None:
             self._progbar.progress(topic, pos, item=item, unit=unit,
                                    total=total)
+
+            # Looking up progress.debug in tight loops is expensive. The value
+            # is cached on the progbar object and we can avoid the lookup in
+            # the common case where a progbar is active.
+            if pos is None or not self._progbar.debug:
+                return
+
+        # Keep this logic in sync with above.
         if pos is None or not self.configbool('progress', 'debug'):
             return
 
