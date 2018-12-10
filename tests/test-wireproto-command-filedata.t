@@ -19,10 +19,8 @@
   $ echo a1 >> a
   $ echo d1 > dir0/d
   $ hg commit -m 'commit 1'
-  $ echo f0 > dir0/child1/f
+  $ echo f1 > dir0/child1/f
   $ hg commit -m 'commit 2'
-  nothing changed
-  [1]
 
   $ hg -q up -r 0
   $ echo a2 >> a
@@ -30,8 +28,10 @@
   created new head
 
   $ hg log -G -T '{rev}:{node} {desc}\n'
-  @  2:5ce944d7fece1252dae06c34422b573c191b9489 commit 3
+  @  3:5ce944d7fece1252dae06c34422b573c191b9489 commit 3
   |
+  | o  2:b3c27db01410dae01e5485d425b1440078df540c commit 2
+  | |
   | o  1:3ef5e551f219ba505481d34d6b0316b017fa3f00 commit 1
   |/
   o  0:91b232a2253ce0638496f67bdfd7a4933fb51b25 commit 0
@@ -41,7 +41,7 @@
      rev linkrev nodeid                                   p1                                       p2
        0       0 649d149df43d83882523b7fb1e6a3af6f1907b39 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
        1       1 0a86321f1379d1a9ecd0579a22977af7a5acaf11 649d149df43d83882523b7fb1e6a3af6f1907b39 0000000000000000000000000000000000000000
-       2       2 7e5801b6d5f03a5a54f3c47b583f7567aad43e5b 649d149df43d83882523b7fb1e6a3af6f1907b39 0000000000000000000000000000000000000000
+       2       3 7e5801b6d5f03a5a54f3c47b583f7567aad43e5b 649d149df43d83882523b7fb1e6a3af6f1907b39 0000000000000000000000000000000000000000
 
   $ hg --debug debugindex dir0/child0/e
      rev linkrev nodeid                                   p1                                       p2
