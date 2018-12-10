@@ -1267,8 +1267,6 @@ rewritten accordingly
     }
   ]
 
-TODO this is buggy
-
   $ sendhttpv2peer << EOF
   > command filesdata
   >     revisions eval:[{
@@ -1284,8 +1282,16 @@ TODO this is buggy
   sending filesdata command
   response: gen[
     {
-      b'totalitems': 0,
-      b'totalpaths': 0
+      b'totalitems': 1,
+      b'totalpaths': 1
+    },
+    {
+      b'path': b'dupe-file',
+      b'totalitems': 1
+    },
+    {
+      b'linknode': b'G\xfc0X\t\x11#,\xb2dg[@(\x19\xde\xdd\xf6\xc6\xf0',
+      b'node': b'.\xd2\xa3\x91*\x0b$P C\xea\xe8N\xe4\xb2y\xc1\x8b\x90\xdd'
     }
   ]
 

@@ -1156,48 +1156,38 @@ def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
     # changeset, it should probably be allowed to access files data for that
     # changeset.
 
-    cl = repo.changelog
-    clnode = cl.node
     outgoing = resolvenodes(repo, revisions)
     filematcher = makefilematcher(repo, pathfilter)
 
-    # Figure out what needs to be emitted.
-    changedpaths = set()
     # path -> {fnode: linknode}
     fnodes = collections.defaultdict(dict)
 
+    # We collect the set of relevant file revisions by iterating the changeset
+    # revisions and either walking the set of files recorded in the changeset
+    # or by walking the manifest at that revision. There is probably room for a
+    # storage-level API to request this data, as it can be expensive to compute
+    # and would benefit from caching or alternate storage from what revlogs
+    # provide.
     for node in outgoing:
         ctx = repo[node]
-        changedpaths.update(ctx.files())
+        mctx = ctx.manifestctx()
+        md = mctx.read()
 
-    changedpaths = sorted(p for p in changedpaths if filematcher(p))
+        if haveparents:
+            checkpaths = ctx.files()
+        else:
+            checkpaths = md.keys()
 
-    # If ancestors are known, we send file revisions having a linkrev in the
-    # outgoing set of changeset revisions.
-    if haveparents:
-        outgoingclrevs = set(cl.rev(n) for n in outgoing)
+        for path in checkpaths:
+            fnode = md[path]
 
-        for path in changedpaths:
-            try:
-                store = getfilestore(repo, proto, path)
-            except FileAccessError as e:
-                raise error.WireprotoCommandError(e.msg, e.args)
+            if path in fnodes and fnode in fnodes[path]:
+                continue
 
-            for rev in store:
-                linkrev = store.linkrev(rev)
+            if not filematcher(path):
+                continue
 
-                if linkrev in outgoingclrevs:
-                    fnodes[path].setdefault(store.node(rev), clnode(linkrev))
-
-    # If ancestors aren't known, we walk the manifests and send all
-    # encountered file revisions.
-    else:
-        for node in outgoing:
-            mctx = repo[node].manifestctx()
-
-            for path, fnode in mctx.read().items():
-                if filematcher(path):
-                    fnodes[path].setdefault(fnode, node)
+            fnodes[path].setdefault(fnode, node)
 
     yield {
         b'totalpaths': len(fnodes),

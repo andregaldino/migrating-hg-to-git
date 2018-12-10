@@ -1300,21 +1300,6 @@ Perform an incremental pull of both heads and ensure linkrev is written out prop
 
 #if reporevlogstore
   $ hg -R client-linknode-2 debugrevlogindex dupe-file
-  abort: revlog 'dupe-file' not found
-  [255]
+     rev linkrev nodeid       p1           p2
+       0       2 2ed2a3912a0b 000000000000 000000000000
 #endif
-
-  $ hg -R client-linknode-2 verify
-  checking changesets
-  checking manifests
-  crosschecking files in changesets and manifests
-  checking files
-   warning: revlog 'data/dupe-file.i' not in fncache!
-   2: empty or missing dupe-file
-   dupe-file@2: manifest refers to unknown revision 2ed2a3912a0b
-  checked 3 changesets with 2 changes to 3 files
-  1 warnings encountered!
-  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
-  2 integrity errors encountered!
-  (first damaged changeset appears to be 2)
-  [1]
