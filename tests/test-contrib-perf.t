@@ -112,6 +112,7 @@ perfstatus
    perfphases    benchmark phasesets computation
    perfphasesremote
                  benchmark time needed to analyse phases of the remote server
+   perfprogress  printing of progress bars
    perfrawfiles  (no help text available)
    perfrevlogchunks
                  Benchmark operations on revlog chunks.
@@ -188,6 +189,7 @@ perfstatus
   $ hg perfmoonwalk
   $ hg perfnodelookup 2
   $ hg perfpathcopies 1 2
+  $ hg perfprogress --total 1000
   $ hg perfrawfiles 2
   $ hg perfrevlogindex -c
 #if reporevlogstore

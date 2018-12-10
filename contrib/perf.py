@@ -2612,3 +2612,21 @@ def uisetup(ui):
                                   hint=b"use 3.5 or later")
             return orig(repo, cmd, file_, opts)
         extensions.wrapfunction(cmdutil, b'openrevlog', openrevlog)
+
+@command(b'perfprogress', formatteropts + [
+    (b'', b'topic', b'topic', b'topic for progress messages'),
+    (b'c', b'total', 1000000, b'total value we are progressing to'),
+], norepo=True)
+def perfprogress(ui, topic=None, total=None, **opts):
+    """printing of progress bars"""
+    opts = _byteskwargs(opts)
+
+    timer, fm = gettimer(ui, opts)
+
+    def doprogress():
+        with ui.makeprogress(topic, total=total) as progress:
+            for i in pycompat.xrange(total):
+                progress.increment()
+
+    timer(doprogress)
+    fm.end()
