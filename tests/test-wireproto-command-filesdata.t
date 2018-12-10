@@ -1239,7 +1239,6 @@ Request for changeset introducing filenode returns linknode as self
 
 Request for changeset where recorded linknode isn't in DAG ancestry will get
 rewritten accordingly
-TODO this is buggy
 
   $ sendhttpv2peer << EOF
   > command filesdata
@@ -1263,7 +1262,7 @@ TODO this is buggy
       b'totalitems': 1
     },
     {
-      b'linknode': b'\xb1l\xce)g\xc1t\x9e\xf4\xf4\xe3\x08j\x80l\xfb\xad\x8a:\xf7',
+      b'linknode': b'G\xfc0X\t\x11#,\xb2dg[@(\x19\xde\xdd\xf6\xc6\xf0',
       b'node': b'.\xd2\xa3\x91*\x0b$P C\xea\xe8N\xe4\xb2y\xc1\x8b\x90\xdd'
     }
   ]

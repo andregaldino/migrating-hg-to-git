@@ -984,9 +984,7 @@ def getfilestore(repo, proto, path):
 
     return fl
 
-def emitfilerevisions(repo, path, revisions, fields):
-    clnode = repo.changelog.node
-
+def emitfilerevisions(repo, path, revisions, linknodes, fields):
     for revision in revisions:
         d = {
             b'node': revision.node,
@@ -996,13 +994,7 @@ def emitfilerevisions(repo, path, revisions, fields):
             d[b'parents'] = [revision.p1node, revision.p2node]
 
         if b'linknode' in fields:
-            # TODO by creating the filectx against a specific file revision
-            # instead of changeset, linkrev() is always used. This is wrong for
-            # cases where linkrev() may refer to a hidden changeset. We need an
-            # API for performing linkrev adjustment that takes this into
-            # account.
-            fctx = repo.filectx(path, fileid=revision.node)
-            d[b'linknode'] = clnode(fctx.introrev())
+            d[b'linknode'] = linknodes[revision.node]
 
         followingmeta = []
         followingdata = []
@@ -1086,6 +1078,9 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
     except FileAccessError as e:
         raise error.WireprotoCommandError(e.msg, e.args)
 
+    clnode = repo.changelog.node
+    linknodes = {}
+
     # Validate requested nodes.
     for node in nodes:
         try:
@@ -1093,6 +1088,14 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
         except error.LookupError:
             raise error.WireprotoCommandError('unknown file node: %s',
                                               (hex(node),))
+
+        # TODO by creating the filectx against a specific file revision
+        # instead of changeset, linkrev() is always used. This is wrong for
+        # cases where linkrev() may refer to a hidden changeset. But since this
+        # API doesn't know anything about changesets, we're not sure how to
+        # disambiguate the linknode. Perhaps we should delete this API?
+        fctx = repo.filectx(path, fileid=node)
+        linknodes[node] = clnode(fctx.introrev())
 
     revisions = store.emitrevisions(nodes,
                                     revisiondata=b'revision' in fields,
@@ -1102,7 +1105,7 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
         b'totalitems': len(nodes),
     }
 
-    for o in emitfilerevisions(repo, path, revisions, fields):
+    for o in emitfilerevisions(repo, path, revisions, linknodes, fields):
         yield o
 
 def filesdatacapabilities(repo, proto):
@@ -1154,12 +1157,14 @@ def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
     # changeset.
 
     cl = repo.changelog
+    clnode = cl.node
     outgoing = resolvenodes(repo, revisions)
     filematcher = makefilematcher(repo, pathfilter)
 
     # Figure out what needs to be emitted.
     changedpaths = set()
-    fnodes = collections.defaultdict(set)
+    # path -> {fnode: linknode}
+    fnodes = collections.defaultdict(dict)
 
     for node in outgoing:
         ctx = repo[node]
@@ -1182,7 +1187,7 @@ def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
                 linkrev = store.linkrev(rev)
 
                 if linkrev in outgoingclrevs:
-                    fnodes[path].add(store.node(rev))
+                    fnodes[path].setdefault(store.node(rev), clnode(linkrev))
 
     # If ancestors aren't known, we walk the manifests and send all
     # encountered file revisions.
@@ -1192,7 +1197,7 @@ def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
 
             for path, fnode in mctx.read().items():
                 if filematcher(path):
-                    fnodes[path].add(fnode)
+                    fnodes[path].setdefault(fnode, node)
 
     yield {
         b'totalpaths': len(fnodes),
@@ -1210,11 +1215,11 @@ def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
             b'totalitems': len(filenodes),
         }
 
-        revisions = store.emitrevisions(filenodes,
+        revisions = store.emitrevisions(filenodes.keys(),
                                         revisiondata=b'revision' in fields,
                                         assumehaveparentrevisions=haveparents)
 
-        for o in emitfilerevisions(repo, path, revisions, fields):
+        for o in emitfilerevisions(repo, path, revisions, filenodes, fields):
             yield o
 
 @wireprotocommand(
