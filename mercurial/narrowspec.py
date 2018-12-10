@@ -160,19 +160,19 @@ def save(repo, includepats, excludepats):
 def savebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    vfs = repo.vfs
-    vfs.tryunlink(backupname)
-    util.copyfile(repo.svfs.join(FILENAME), vfs.join(backupname), hardlink=True)
+    svfs = repo.svfs
+    svfs.tryunlink(backupname)
+    util.copyfile(svfs.join(FILENAME), svfs.join(backupname), hardlink=True)
 
 def restorebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    util.rename(repo.vfs.join(backupname), repo.svfs.join(FILENAME))
+    util.rename(repo.svfs.join(backupname), repo.svfs.join(FILENAME))
 
 def clearbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    repo.vfs.unlink(backupname)
+    repo.svfs.unlink(backupname)
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     r""" Restricts the patterns according to repo settings,

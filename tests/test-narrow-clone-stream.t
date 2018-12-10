@@ -77,6 +77,7 @@ Making sure store has the required files
   00manifest.i
   data (tree flat-fncache !)
   fncache (tree flat-fncache !)
+  journal.narrowspec
   meta (tree !)
   narrowspec
   undo
