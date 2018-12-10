@@ -13,6 +13,7 @@ New repo should not use SQLite by default
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
 
 storage.new-repo-backend=sqlite is recognized
@@ -26,6 +27,7 @@ storage.new-repo-backend=sqlite is recognized
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
 
   $ cat >> $HGRCPATH << EOF
@@ -43,6 +45,7 @@ Can force compression to zlib
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
 
 Can force compression to none
@@ -55,6 +58,7 @@ Can force compression to none
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
 
 Can make a local commit
