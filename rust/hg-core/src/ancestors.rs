@@ -105,18 +105,6 @@ impl<G: Graph> AncestorsIterator<G> {
 ///   (case where p1 == rev-1), because it amounts to update the first element
 ///   of the heap without sifting, which Rust's BinaryHeap doesn't let us do.
 /// - we save a few pushes by comparing with `stoprev` before pushing
-///
-/// Error treatment:
-/// We swallow the possible GraphError of conditionally_push_parents() to
-/// respect the Iterator trait in a simple manner: never emitting parents
-/// for the returned revision. We finds this good enough for now, because:
-///
-/// - there's a good chance that invalid revisionss are fed from the start,
-///   and `new()` doesn't swallow the error result.
-/// - this is probably what the Python implementation produces anyway, due
-///   to filtering at each step, and Python code is currently the only
-///   concrete caller we target, so we shouldn't need a finer error treatment
-///   for the time being.
 impl<G: Graph> Iterator for AncestorsIterator<G> {
     type Item = Result<Revision, GraphError>;
 
