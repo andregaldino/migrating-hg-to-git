@@ -213,11 +213,7 @@ def _posixworker(ui, func, staticargs, args):
         waitforworkers()
         signal.signal(signal.SIGCHLD, oldchldhandler)
         selector.close()
-        status = problem[0]
-        if status:
-            if status < 0:
-                os.kill(os.getpid(), -status)
-            sys.exit(status)
+        return problem[0]
     try:
         openpipes = len(pipes)
         while openpipes > 0:
@@ -236,7 +232,11 @@ def _posixworker(ui, func, staticargs, args):
         killworkers()
         cleanup()
         raise
-    cleanup()
+    status = cleanup()
+    if status:
+        if status < 0:
+            os.kill(os.getpid(), -status)
+        sys.exit(status)
 
 def _posixexitstatus(code):
     '''convert a posix exit status into the same form returned by
