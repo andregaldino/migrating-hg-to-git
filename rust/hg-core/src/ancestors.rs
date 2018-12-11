@@ -101,9 +101,9 @@ impl<G: Graph> AncestorsIterator<G> {
 ///
 /// - there's no filtering of invalid parent revisions. Actually, it should be
 ///   consistent and more efficient to filter them from the end caller.
-/// - we don't have the optimization for adjacent revs
-///   (case where p1 == rev-1), because it amounts to update the first element
-///   of the heap without sifting, which Rust's BinaryHeap doesn't let us do.
+/// - we don't have the optimization for adjacent revisions (i.e., the case
+///   where `p1 == rev - 1`), because it amounts to update the first element of
+///   the heap without sifting, which Rust's BinaryHeap doesn't let us do.
 /// - we save a few pushes by comparing with `stoprev` before pushing
 impl<G: Graph> Iterator for AncestorsIterator<G> {
     type Item = Result<Revision, GraphError>;
