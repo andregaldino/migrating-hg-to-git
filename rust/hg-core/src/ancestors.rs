@@ -173,6 +173,7 @@ mod tests {
     ) -> Vec<Revision> {
         AncestorsIterator::new(graph, initrevs, stoprev, inclusive)
             .unwrap()
+            .map(|res| res.unwrap())
             .collect()
     }
 
@@ -218,12 +219,12 @@ mod tests {
     fn test_contains() {
         let mut lazy =
             AncestorsIterator::new(Stub, vec![10, 1], 0, true).unwrap();
-        assert!(lazy.contains(1));
-        assert!(!lazy.contains(3));
+        assert!(lazy.contains(1).unwrap());
+        assert!(!lazy.contains(3).unwrap());
 
         let mut lazy =
             AncestorsIterator::new(Stub, vec![0], 0, false).unwrap();
-        assert!(!lazy.contains(NULL_REVISION));
+        assert!(!lazy.contains(NULL_REVISION).unwrap());
     }
 
     /// A corrupted Graph, supporting error handling tests
@@ -255,7 +256,6 @@ mod tests {
         // inclusive=false looks up initrev's parents right away
         let mut iter =
             AncestorsIterator::new(Corrupted, vec![1], 0, false).unwrap();
-        assert_eq!(iter.next(), Some(0));
-        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), Some(Err(GraphError::ParentOutOfRange(0))));
     }
 }
