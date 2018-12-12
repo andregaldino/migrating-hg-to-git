@@ -588,6 +588,9 @@ def spawndetached(args):
     if not res:
         raise ctypes.WinError()
 
+    _kernel32.CloseHandle(pi.hProcess)
+    _kernel32.CloseHandle(pi.hThread)
+
     return pi.dwProcessId
 
 def unlink(f):
