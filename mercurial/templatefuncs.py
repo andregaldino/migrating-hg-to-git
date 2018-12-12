@@ -609,7 +609,7 @@ def search(context, mapping, args):
 
     match = patre.search(src)
     if not match:
-        return
+        return templateutil.mappingnone()
 
     lm = {b'0': match.group(0)}
     lm.update((b'%d' % i, v) for i, v in enumerate(match.groups(), 1))

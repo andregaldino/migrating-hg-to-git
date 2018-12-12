@@ -495,6 +495,19 @@ class mappingdict(mappable, _mappingsequence):
     def tovalue(self, context, mapping):
         return super(mappingdict, self).tovalue(context, mapping)[0]
 
+class mappingnone(wrappedvalue):
+    """Wrapper for None, but supports map operation
+
+    This represents None of Optional[mappable]. It's similar to
+    mapplinglist([]), but the underlying value is not [], but None.
+    """
+
+    def __init__(self):
+        super(mappingnone, self).__init__(None)
+
+    def itermaps(self, context):
+        return iter([])
+
 class mappedgenerator(wrapped):
     """Wrapper for generator of strings which acts as a list
 

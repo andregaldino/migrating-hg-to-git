@@ -635,11 +635,9 @@ Test search() function:
   no
 
  group reference with no match
- (TODO: we'll probably want to map it to an empty value)
 
   $ hg log -R a -r2 -T '{search(r"q", desc) % "match: {0}"}\n'
-  hg: parse error: None is not iterable of mappings
-  [255]
+  
 
  bad group names
 

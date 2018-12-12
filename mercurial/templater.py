@@ -53,6 +53,10 @@ mappingdict
     represents a single mapping (i.e. a dict), which may have default output
     format.
 
+mappingnone
+    represents None of Optional[mappable], which will be mapped to an empty
+    string by % operation.
+
 mappedgenerator
     a lazily-evaluated list of byte strings, which is e.g. a result of %
     operation.
