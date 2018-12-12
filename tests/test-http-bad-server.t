@@ -69,7 +69,7 @@ Failure to read all bytes in initial HTTP request should yield connection relate
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: error: bad HTTP status line: ''
+  abort: error: bad HTTP status line: * (glob)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
@@ -85,7 +85,7 @@ Same failure, but server reads full HTTP request line
   $ hg serve --config badserver.closeafterrecvbytes=40 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: error: bad HTTP status line: ''
+  abort: error: bad HTTP status line: * (glob)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
@@ -102,7 +102,7 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   $ hg serve --config badserver.closeafterrecvbytes=210,223 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: error: bad HTTP status line: ''
+  abort: error: bad HTTP status line: * (glob)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
@@ -141,7 +141,7 @@ Failure to read getbundle HTTP request
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
-  abort: error: bad HTTP status line: ''
+  abort: error: bad HTTP status line: * (glob)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
@@ -200,7 +200,7 @@ Now do a variation using POST to send arguments
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: error: bad HTTP status line: ''
+  abort: error: bad HTTP status line: * (glob)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
