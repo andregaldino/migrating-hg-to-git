@@ -9,7 +9,10 @@ except ImportError:
     rustext = None
 else:
     # this would fail already without appropriate ancestor.__package__
-    from mercurial.rustext.ancestor import AncestorsIterator
+    from mercurial.rustext.ancestor import (
+        AncestorsIterator,
+        LazyAncestors
+    )
 
 try:
     from mercurial.cext import parsers as cparsers
@@ -71,6 +74,37 @@ class rustancestorstest(unittest.TestCase):
         ait = AncestorsIterator(idx, [3], 0, False)
         self.assertEqual([r for r in ait], [2, 1, 0])
 
+    def testlazyancestors(self):
+        idx = self.parseindex()
+        start_count = sys.getrefcount(idx)  # should be 2 (see Python doc)
+        self.assertEqual({i: (r[5], r[6]) for i, r in enumerate(idx)},
+                         {0: (-1, -1),
+                          1: (0, -1),
+                          2: (1, -1),
+                          3: (2, -1)})
+        lazy = LazyAncestors(idx, [3], 0, True)
+        # we have two more references to the index:
+        # - in its inner iterator for __contains__ and __bool__
+        # - in the LazyAncestors instance itself (to spawn new iterators)
+        self.assertEqual(sys.getrefcount(idx), start_count + 2)
+
+        self.assertTrue(2 in lazy)
+        self.assertTrue(bool(lazy))
+        self.assertEqual(list(lazy), [3, 2, 1, 0])
+        # a second time to validate that we spawn new iterators
+        self.assertEqual(list(lazy), [3, 2, 1, 0])
+
+        # now let's watch the refcounts closer
+        ait = iter(lazy)
+        self.assertEqual(sys.getrefcount(idx), start_count + 3)
+        del ait
+        self.assertEqual(sys.getrefcount(idx), start_count + 2)
+        del lazy
+        self.assertEqual(sys.getrefcount(idx), start_count)
+
+        # let's check bool for an empty one
+        self.assertFalse(LazyAncestors(idx, [0], 0, False))
+
     def testrefcount(self):
         idx = self.parseindex()
         start_count = sys.getrefcount(idx)
@@ -87,7 +121,7 @@ class rustancestorstest(unittest.TestCase):
         # and removing ref to the index after iterator init is no issue
         ait = AncestorsIterator(idx, [3], 0, True)
         del idx
-        self.assertEqual([r for r in ait], [3, 2, 1, 0])
+        self.assertEqual(list(ait), [3, 2, 1, 0])
 
     def testgrapherror(self):
         data = (data_non_inlined[:64 + 27] +

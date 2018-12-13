@@ -13,8 +13,8 @@ use cpython::{
 };
 use exceptions::GraphError;
 use hg;
-use hg::AncestorsIterator as CoreIterator;
 use hg::Revision;
+use hg::{AncestorsIterator as CoreIterator, LazyAncestors as CoreLazy};
 use std::cell::RefCell;
 
 /// Utility function to convert a Python iterable into a Vec<Revision>
@@ -70,6 +70,37 @@ impl AncestorsIterator {
     }
 }
 
+py_class!(class LazyAncestors |py| {
+    data inner: RefCell<Box<CoreLazy<Index>>>;
+
+    def __contains__(&self, rev: Revision) -> PyResult<bool> {
+        self.inner(py)
+            .borrow_mut()
+            .contains(rev)
+            .map_err(|e| GraphError::pynew(py, e))
+    }
+
+    def __iter__(&self) -> PyResult<AncestorsIterator> {
+        AncestorsIterator::from_inner(py, self.inner(py).borrow().iter())
+    }
+
+    def __bool__(&self) -> PyResult<bool> {
+        Ok(!self.inner(py).borrow().is_empty())
+    }
+
+    def __new__(_cls, index: PyObject, initrevs: PyObject, stoprev: Revision,
+                inclusive: bool) -> PyResult<Self> {
+        let initvec = reviter_to_revvec(py, initrevs)?;
+
+        let lazy =
+            CoreLazy::new(Index::new(py, index)?, initvec, stoprev, inclusive)
+                .map_err(|e| GraphError::pynew(py, e))?;
+
+        Self::create_instance(py, RefCell::new(Box::new(lazy)))
+        }
+
+});
+
 /// Create the module, with __package__ given from parent
 pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     let dotted_name = &format!("{}.ancestor", package);
@@ -81,6 +112,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
         "Generic DAG ancestor algorithms - Rust implementation",
     )?;
     m.add_class::<AncestorsIterator>(py)?;
+    m.add_class::<LazyAncestors>(py)?;
 
     let sys = PyModule::import(py, "sys")?;
     let sys_modules: PyDict = sys.get(py, "modules")?.extract(py)?;
