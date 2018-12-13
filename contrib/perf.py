@@ -37,6 +37,7 @@ from mercurial import (
     copies,
     error,
     extensions,
+    hg,
     mdiff,
     merge,
     revlog,
@@ -67,6 +68,11 @@ try:
     from mercurial import scmutil # since 1.9 (or 8b252e826c68)
 except ImportError:
     pass
+try:
+    from mercurial import setdiscovery # since 1.9 (or cb98fed52495)
+except ImportError:
+    pass
+
 
 def identity(a):
     return a
@@ -579,6 +585,21 @@ def perfancestorset(ui, repo, revset, **opts):
         for rev in revs:
             rev in s
     timer(d)
+    fm.end()
+
+@command(b'perfdiscovery', formatteropts, b'PATH')
+def perfdiscovery(ui, repo, path, **opts):
+    """benchmark discovery between local repo and the peer at given path
+    """
+    repos = [repo, None]
+    timer, fm = gettimer(ui, opts)
+    path = ui.expandpath(path)
+
+    def s():
+        repos[1] = hg.peer(ui, opts, path)
+    def d():
+        setdiscovery.findcommonheads(ui, *repos)
+    timer(d, setup=s)
     fm.end()
 
 @command(b'perfbookmarks', formatteropts +

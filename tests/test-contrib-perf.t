@@ -79,6 +79,9 @@ perfstatus
                  (no help text available)
    perfdirstatewrite
                  (no help text available)
+   perfdiscovery
+                 benchmark discovery between local repo and the peer at given
+                 path
    perffncacheencode
                  (no help text available)
    perffncacheload
@@ -206,6 +209,7 @@ perfstatus
   $ hg perfvolatilesets
   $ hg perfwalk
   $ hg perfparents
+  $ hg perfdiscovery -q .
 
 test actual output
 ------------------
