@@ -3019,7 +3019,7 @@ class TestRunner(object):
             # least on Windows for now, deal with .pydistutils.cfg bugs
             # when they happen.
             nohome = b''
-        cmd = (b'%(exe)s setup.py %(pure)s clean --all'
+        cmd = (b'"%(exe)s" setup.py %(pure)s clean --all'
                b' build %(compiler)s --build-base="%(base)s"'
                b' install --force --prefix="%(prefix)s"'
                b' --install-lib="%(libdir)s"'
@@ -3042,7 +3042,7 @@ class TestRunner(object):
         makedirs(self._bindir)
 
         vlog("# Running", cmd)
-        if os.system(_strpath(cmd)) == 0:
+        if subprocess.call(_strpath(cmd), shell=True) == 0:
             if not self.options.verbose:
                 try:
                     os.remove(installerrs)
@@ -3121,15 +3121,15 @@ class TestRunner(object):
         if self._hgpath is not None:
             return self._hgpath
 
-        cmd = b'%s -c "import mercurial; print (mercurial.__path__[0])"'
+        cmd = b'"%s" -c "import mercurial; print (mercurial.__path__[0])"'
         cmd = cmd % PYTHON
         if PYTHON3:
             cmd = _strpath(cmd)
-        pipe = os.popen(cmd)
-        try:
-            self._hgpath = _bytespath(pipe.read().strip())
-        finally:
-            pipe.close()
+
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out, err = p.communicate()
+
+        self._hgpath = out.strip()
 
         return self._hgpath
 
