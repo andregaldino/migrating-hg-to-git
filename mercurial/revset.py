@@ -218,6 +218,15 @@ def notset(repo, subset, x, order):
 def relationset(repo, subset, x, y, order):
     raise error.ParseError(_("can't use a relation in this context"))
 
+def generationsrel(repo, subset, x, rel, n, order):
+    # TODO: support range, rewrite tests, and drop startdepth argument
+    # from ancestors() and descendants() predicates
+    if n <= 0:
+        n = -n
+        return _ancestors(repo, subset, x, startdepth=n, stopdepth=n + 1)
+    else:
+        return _descendants(repo, subset, x, startdepth=n, stopdepth=n + 1)
+
 def relsubscriptset(repo, subset, x, y, z, order):
     # this is pretty basic implementation of 'x#y[z]' operator, still
     # experimental so undocumented. see the wiki for further ideas.
@@ -225,17 +234,11 @@ def relsubscriptset(repo, subset, x, y, z, order):
     rel = getsymbol(y)
     n = getinteger(z, _("relation subscript must be an integer"))
 
-    # TODO: perhaps this should be a table of relation functions
-    if rel in ('g', 'generations'):
-        # TODO: support range, rewrite tests, and drop startdepth argument
-        # from ancestors() and descendants() predicates
-        if n <= 0:
-            n = -n
-            return _ancestors(repo, subset, x, startdepth=n, stopdepth=n + 1)
-        else:
-            return _descendants(repo, subset, x, startdepth=n, stopdepth=n + 1)
+    if rel in subscriptrelations:
+        return subscriptrelations[rel](repo, subset, x, rel, n, order)
 
-    raise error.UnknownIdentifier(rel, ['generations'])
+    relnames = [r for r in subscriptrelations.keys() if len(r) > 1]
+    raise error.UnknownIdentifier(rel, relnames)
 
 def subscriptset(repo, subset, x, y, order):
     raise error.ParseError(_("can't use a subscript in this context"))
@@ -2213,6 +2216,11 @@ methods = {
     "ancestor": ancestorspec,
     "parent": parentspec,
     "parentpost": parentpost,
+}
+
+subscriptrelations = {
+    "g": generationsrel,
+    "generations": generationsrel,
 }
 
 def lookupfn(repo):

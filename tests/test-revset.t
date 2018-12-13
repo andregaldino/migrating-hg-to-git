@@ -649,6 +649,17 @@ parse errors of relation, subscript and relation-subscript operators:
   hg: parse error: relation subscript must be an integer
   [255]
 
+suggested relations
+
+  $ hg debugrevspec '.#generafions[0]'
+  hg: parse error: unknown identifier: generafions
+  (did you mean generations?)
+  [255]
+
+  $ hg debugrevspec '.#f[0]'
+  hg: parse error: unknown identifier: f
+  [255]
+
 parsed tree at stages:
 
   $ hg debugrevspec -p all '()'
