@@ -1307,6 +1307,9 @@ coreconfigitem('web', 'archivesubrepos',
 coreconfigitem('web', 'cache',
     default=True,
 )
+coreconfigitem('web', 'comparisoncontext',
+    default=5,
+)
 coreconfigitem('web', 'contact',
     default=None,
 )

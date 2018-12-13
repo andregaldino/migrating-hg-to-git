@@ -858,7 +858,7 @@ def comparison(web):
     if 'context' in web.req.qsparams:
         context = parsecontext(web.req.qsparams['context'])
     else:
-        context = parsecontext(web.config('web', 'comparisoncontext', '5'))
+        context = parsecontext(web.config('web', 'comparisoncontext'))
 
     def filelines(f):
         if f.isbinary():
