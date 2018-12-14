@@ -163,14 +163,14 @@ def optrst(header, options, verbose):
 
         if isinstance(default, fancyopts.customopt):
             default = default.getdefaultvalue()
-        if default and not callable(default):
+        if (default and not callable(default)) or default is False:
             # default is of unknown type, and in Python 2 we abused
             # the %s-shows-repr property to handle integers etc. To
             # match that behavior on Python 3, we do str(default) and
             # then convert it to bytes.
             defaultstr = pycompat.bytestr(default)
-            if default is True:
-                defaultstr = _("on")
+            if isinstance(default, bool):
+                defaultstr = _("on") if default else _("off")
             desc += _(" (default: %s)") % defaultstr
 
         if isinstance(default, list):

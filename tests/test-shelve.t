@@ -75,7 +75,7 @@ shelve has a help message
       --cleanup             delete all shelved changes
       --date DATE           shelve with the specified commit date
    -d --delete              delete the named shelved change(s)
-   -e --edit                invoke editor on commit messages
+   -e --edit                invoke editor on commit messages (default: off)
    -l --list                list current shelves
    -m --message TEXT        use text as shelve message
    -n --name NAME           use the given name for the shelved commit
