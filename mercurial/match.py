@@ -1196,8 +1196,8 @@ def _buildregexmatch(kindpats, globsuffix):
 
     Test too large input
     >>> _buildregexmatch([
-    ...     ('relglob', '?' * MAX_RE_SIZE, '')
-    ... ], '$')
+    ...     (b'relglob', b'?' * MAX_RE_SIZE, b'')
+    ... ], b'$')
     Traceback (most recent call last):
     ...
     Abort: matcher pattern is too long (20009 bytes)
