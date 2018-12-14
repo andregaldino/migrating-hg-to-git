@@ -1229,7 +1229,7 @@ static PyObject *index_slicechunktodensity(indexObject *self, PyObject *args)
 		if (revnum == -1 && PyErr_Occurred()) {
 			goto bail;
 		}
-		if (revnum < 0 || revnum >= idxlen) {
+		if (revnum < nullrev || revnum >= idxlen) {
 			PyErr_Format(PyExc_IndexError,
 			             "index out of range: %zd", revnum);
 			goto bail;
