@@ -14,7 +14,7 @@ if pycompat.ispy3:
     xrange = range
 
 def genhsh(i):
-    return chr(i) + b'\0' * 19
+    return pycompat.bytechr(i) + b'\0' * 19
 
 def gettemppath():
     fd, path = tempfile.mkstemp()
