@@ -1870,11 +1870,11 @@ class overlayworkingctx(committablectx):
             # files.
             if 'l' in self.p1()[component].flags():
                 raise error.Abort("error: %s conflicts with symlink %s "
-                                  "in %s." % (path, component,
+                                  "in %d." % (path, component,
                                               self.p1().rev()))
             else:
                 raise error.Abort("error: '%s' conflicts with file '%s' in "
-                                  "%s." % (path, component,
+                                  "%d." % (path, component,
                                            self.p1().rev()))
 
         # Test that each new directory to be created to write this path from p2
