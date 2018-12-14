@@ -531,6 +531,7 @@ test-remotefilelog-clone.t
 test-remotefilelog-keepset.t
 test-remotefilelog-partial-shallow.t
 test-remotefilelog-prefetch.t
+test-remotefilelog-pull-noshallow.t
 test-remotefilelog-share.t
 test-remotefilelog-tags.t
 test-remove.t

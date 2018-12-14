@@ -11,7 +11,7 @@ non-shallow repositories.
   $ cat > setupremotefilelog.py << EOF
   > from mercurial import extensions
   > def extsetup(ui):
-  >     remotefilelog = extensions.find('remotefilelog')
+  >     remotefilelog = extensions.find(b'remotefilelog')
   >     remotefilelog.onetimeclientsetup(ui)
   > EOF
 
