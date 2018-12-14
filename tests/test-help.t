@@ -809,6 +809,8 @@ this is a section and erroring out weirdly.
   >     [(b'', b'longdesc', 3, b'x'*67),
   >     (b'n', b'', None, b'normal desc'),
   >     (b'', b'newline', b'', b'line1\nline2'),
+  >     (b'', b'default-off', False, b'enable X'),
+  >     (b'', b'default-on', True, b'enable Y'),
   >     (b'', b'callableopt', func, b'adds foo'),
   >     (b'', b'customopt', customopt(''), b'adds bar'),
   >     (b'', b'customopt-withdefault', customopt('foo'), b'adds bar')],
@@ -903,6 +905,8 @@ Test command with no help text
                                     xxxxxxxxxxxxxxxxxxxxxxx (default: 3)
    -n --                            normal desc
       --newline VALUE               line1 line2
+      --default-off                 enable X
+      --default-on                  enable Y (default: on)
       --callableopt VALUE           adds foo
       --customopt VALUE             adds bar
       --customopt-withdefault VALUE adds bar (default: foo)

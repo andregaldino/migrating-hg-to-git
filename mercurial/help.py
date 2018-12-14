@@ -168,7 +168,10 @@ def optrst(header, options, verbose):
             # the %s-shows-repr property to handle integers etc. To
             # match that behavior on Python 3, we do str(default) and
             # then convert it to bytes.
-            desc += _(" (default: %s)") % pycompat.bytestr(default)
+            defaultstr = pycompat.bytestr(default)
+            if default is True:
+                defaultstr = _("on")
+            desc += _(" (default: %s)") % defaultstr
 
         if isinstance(default, list):
             lo += " %s [+]" % optlabel
