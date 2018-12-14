@@ -102,6 +102,8 @@ def _takequicksample(repo, headrevs, revs, size):
     :headrevs: set of head revisions in local DAG to consider
     :revs: set of revs to discover
     :size: the maximum size of the sample"""
+    if len(revs) <= size:
+        return list(revs)
     sample = set(repo.revs('heads(%ld)', revs))
 
     if len(sample) >= size:
@@ -112,6 +114,8 @@ def _takequicksample(repo, headrevs, revs, size):
     return sample
 
 def _takefullsample(repo, headrevs, revs, size):
+    if len(revs) <= size:
+        return list(revs)
     sample = set(repo.revs('heads(%ld)', revs))
 
     # update from heads
@@ -264,10 +268,7 @@ def findcommonheads(ui, local, remote,
             ui.debug("taking quick initial sample\n")
             samplefunc = _takequicksample
             targetsize = initialsamplesize
-        if len(undecided) <= targetsize:
-            sample = list(undecided)
-        else:
-            sample = samplefunc(local, ownheads, undecided, targetsize)
+        sample = samplefunc(local, ownheads, undecided, targetsize)
 
         roundtrips += 1
         progress.update(roundtrips)
