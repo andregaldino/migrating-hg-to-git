@@ -440,7 +440,7 @@ Test short command list with verbose option
       --profile           print command execution profile
       --version           output version information and exit
    -h --help              display help and exit
-      --hidden            consider hidden changesets (default: off)
+      --[no-]hidden       consider hidden changesets (default: off)
       --pager TYPE        when to paginate (boolean, always, auto, or never)
                           (default: auto)
   
@@ -540,7 +540,7 @@ Verbose help for add
       --profile           print command execution profile
       --version           output version information and exit
    -h --help              display help and exit
-      --hidden            consider hidden changesets (default: off)
+      --[no-]hidden       consider hidden changesets (default: off)
       --pager TYPE        when to paginate (boolean, always, auto, or never)
                           (default: auto)
 
@@ -905,8 +905,8 @@ Test command with no help text
                                     xxxxxxxxxxxxxxxxxxxxxxx (default: 3)
    -n --                            normal desc
       --newline VALUE               line1 line2
-      --default-off                 enable X (default: off)
-      --default-on                  enable Y (default: on)
+      --[no-]default-off            enable X (default: off)
+      --[no-]default-on             enable Y (default: on)
       --callableopt VALUE           adds foo
       --customopt VALUE             adds bar
       --customopt-withdefault VALUE adds bar (default: foo)
@@ -2889,7 +2889,7 @@ Dish up an empty repo; serve it cold.
   <td>--help</td>
   <td>display help and exit</td></tr>
   <tr><td></td>
-  <td>--hidden</td>
+  <td>--[no-]hidden</td>
   <td>consider hidden changesets (default: off)</td></tr>
   <tr><td></td>
   <td>--pager TYPE</td>
@@ -3093,7 +3093,7 @@ Dish up an empty repo; serve it cold.
   <td>--help</td>
   <td>display help and exit</td></tr>
   <tr><td></td>
-  <td>--hidden</td>
+  <td>--[no-]hidden</td>
   <td>consider hidden changesets (default: off)</td></tr>
   <tr><td></td>
   <td>--pager TYPE</td>

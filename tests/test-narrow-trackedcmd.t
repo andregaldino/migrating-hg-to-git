@@ -99,19 +99,20 @@ Testing the --import-rules flag of `hg tracked` command
   
   options ([+] can be repeated):
   
-      --addinclude VALUE [+]       new paths to include
-      --removeinclude VALUE [+]    old paths to no longer include
-      --addexclude VALUE [+]       new paths to exclude
-      --import-rules VALUE         import narrowspecs from a file
-      --removeexclude VALUE [+]    old paths to no longer exclude
-      --clear                      whether to replace the existing narrowspec
-                                   (default: off)
-      --force-delete-local-changes forces deletion of local changes when
-                                   narrowing (default: off)
-   -e --ssh CMD                    specify ssh command to use
-      --remotecmd CMD              specify hg command to run on the remote side
-      --insecure                   do not verify server certificate (ignoring
-                                   web.cacerts config)
+      --addinclude VALUE [+]            new paths to include
+      --removeinclude VALUE [+]         old paths to no longer include
+      --addexclude VALUE [+]            new paths to exclude
+      --import-rules VALUE              import narrowspecs from a file
+      --removeexclude VALUE [+]         old paths to no longer exclude
+      --[no-]clear                      whether to replace the existing
+                                        narrowspec (default: off)
+      --[no-]force-delete-local-changes forces deletion of local changes when
+                                        narrowing (default: off)
+   -e --ssh CMD                         specify ssh command to use
+      --remotecmd CMD                   specify hg command to run on the remote
+                                        side
+      --insecure                        do not verify server certificate
+                                        (ignoring web.cacerts config)
   
   (use 'hg tracked -h' to show more help)
   [255]

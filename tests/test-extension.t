@@ -716,7 +716,7 @@ hide outer repo
       --profile           print command execution profile
       --version           output version information and exit
    -h --help              display help and exit
-      --hidden            consider hidden changesets (default: off)
+      --[no-]hidden       consider hidden changesets (default: off)
       --pager TYPE        when to paginate (boolean, always, auto, or never)
                           (default: auto)
 
@@ -755,7 +755,7 @@ hide outer repo
       --profile           print command execution profile
       --version           output version information and exit
    -h --help              display help and exit
-      --hidden            consider hidden changesets (default: off)
+      --[no-]hidden       consider hidden changesets (default: off)
       --pager TYPE        when to paginate (boolean, always, auto, or never)
                           (default: auto)
 
@@ -1043,7 +1043,7 @@ extension help itself
       --profile           print command execution profile
       --version           output version information and exit
    -h --help              display help and exit
-      --hidden            consider hidden changesets (default: off)
+      --[no-]hidden       consider hidden changesets (default: off)
       --pager TYPE        when to paginate (boolean, always, auto, or never)
                           (default: auto)
 
@@ -1080,7 +1080,7 @@ Make sure that single '-v' option shows help and built-ins only for 'dodo' comma
       --profile           print command execution profile
       --version           output version information and exit
    -h --help              display help and exit
-      --hidden            consider hidden changesets (default: off)
+      --[no-]hidden       consider hidden changesets (default: off)
       --pager TYPE        when to paginate (boolean, always, auto, or never)
                           (default: auto)
 
@@ -1155,7 +1155,7 @@ help options '-v' and '-v -e' should be equivalent
       --profile           print command execution profile
       --version           output version information and exit
    -h --help              display help and exit
-      --hidden            consider hidden changesets (default: off)
+      --[no-]hidden       consider hidden changesets (default: off)
       --pager TYPE        when to paginate (boolean, always, auto, or never)
                           (default: auto)
 
@@ -1191,7 +1191,7 @@ help options '-v' and '-v -e' should be equivalent
       --profile           print command execution profile
       --version           output version information and exit
    -h --help              display help and exit
-      --hidden            consider hidden changesets (default: off)
+      --[no-]hidden       consider hidden changesets (default: off)
       --pager TYPE        when to paginate (boolean, always, auto, or never)
                           (default: auto)
 
