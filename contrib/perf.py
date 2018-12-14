@@ -1021,10 +1021,10 @@ def perfindex(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
-    if opts['rev'] is None:
+    if opts[b'rev'] is None:
         n = repo[b"tip"].node()
     else:
-        rev = scmutil.revsingle(repo, opts['rev'])
+        rev = scmutil.revsingle(repo, opts[b'rev'])
         n = repo[rev].node()
 
     unfi = repo.unfiltered()
