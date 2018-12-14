@@ -1014,7 +1014,7 @@ def perfignore(ui, repo, **opts):
     fm.end()
 
 @command(b'perfindex', [
-            (b'', b'rev', '', b'revision to be looked up (default tip)'),
+            (b'', b'rev', b'', b'revision to be looked up (default tip)'),
          ] + formatteropts)
 def perfindex(ui, repo, **opts):
     import mercurial.revlog
