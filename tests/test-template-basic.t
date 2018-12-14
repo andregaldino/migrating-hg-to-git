@@ -860,7 +860,7 @@ Test string escaping in nested expression:
   $ hg log -R a -r 8 --template '{join(files, ifeq(branch, "default", r"\x5c\x786e"))}\n'
   fourth\x5c\x786esecond\x5c\x786ethird
 
-  $ hg log -R a -r 3:4 --template '{rev}:{sub(if("1", "\x6e"), ifeq(branch, "foo", r"\x5c\x786e", "\x5c\x786e"), desc)}\n'
+  $ hg log -R a -r 3:4 --template '{rev}:{sub(if("1", "\x6e"), ifeq(branch, "foo", r"\\x5c\\x786e", "\x5c\x5c\x786e"), desc)}\n'
   3:\x6eo user, \x6eo domai\x6e
   4:\x5c\x786eew bra\x5c\x786ech
 
