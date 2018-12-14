@@ -98,6 +98,7 @@ static Py_ssize_t index_length(const indexObject *self)
 
 static PyObject *nullentry = NULL;
 static const char nullid[20] = {0};
+static const Py_ssize_t nullrev = -1;
 
 static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 
@@ -308,7 +309,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	Py_ssize_t length = index_length(self);
 	PyObject *entry;
 
-	if (pos == -1) {
+	if (pos == nullrev) {
 		Py_INCREF(nullentry);
 		return nullentry;
 	}
@@ -378,7 +379,7 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 	Py_ssize_t length = index_length(self);
 	const char *data;
 
-	if (pos == -1)
+	if (pos == nullrev)
 		return nullid;
 
 	if (pos >= length)
@@ -701,7 +702,7 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 		}
 
 		/* Add its parents to the list of nodes to visit */
-		if (revnum == -1)
+		if (revnum == nullrev)
 			continue;
 		r = index_get_parents(self, revnum, parents, (int)len - 1);
 		if (r < 0)
