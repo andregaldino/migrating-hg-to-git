@@ -44,6 +44,14 @@ class StorageError(Hint, Exception):
 class RevlogError(StorageError):
     __bytes__ = _tobytes
 
+    def __str__(self):
+        # avoid cycle, and directly implement unimethod for this
+        # __str__ to allow delaying the import of encoding until
+        # someone actually wants the __str__ of a RevlogError (which
+        # should be very rare).
+        from . import encoding
+        return encoding.unifromlocal(_tobytes(self))
+
 class FilteredIndexError(IndexError):
     __bytes__ = _tobytes
 
