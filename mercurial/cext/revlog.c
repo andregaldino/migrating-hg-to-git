@@ -261,6 +261,9 @@ static inline int64_t index_get_start(indexObject *self, Py_ssize_t rev)
 
 static inline int index_get_length(indexObject *self, Py_ssize_t rev)
 {
+	if (rev == nullrev) {
+		return 0;
+	}
 	if (rev >= self->length) {
 		PyObject *tuple;
 		PyObject *pylong;
