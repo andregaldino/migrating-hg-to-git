@@ -225,6 +225,9 @@ int HgRevlogIndex_GetParents(PyObject *op, int rev, int *ps)
 static inline int64_t index_get_start(indexObject *self, Py_ssize_t rev)
 {
 	uint64_t offset;
+	if (rev == nullrev) {
+		return 0;
+	}
 	if (rev >= self->length) {
 		PyObject *tuple;
 		PyObject *pylong;
