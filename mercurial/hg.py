@@ -160,23 +160,19 @@ def _peerorrepo(ui, path, create=False, presetupfuncs=None,
     obj = _peerlookup(path).instance(ui, path, create, intents=intents,
                                      createopts=createopts)
     ui = getattr(obj, "ui", ui)
-    if ui.configbool('devel', 'debug.extensions'):
-        log = lambda msg, *values: ui.debug('debug.extensions: ',
-            msg % values, label='debug.extensions')
-    else:
-        log = lambda *a, **kw: None
     for f in presetupfuncs or []:
         f(ui, obj)
-    log('- executing reposetup hooks\n')
+    ui.log(b'extension', b'- executing reposetup hooks\n')
     with util.timedcm('all reposetup') as allreposetupstats:
         for name, module in extensions.extensions(ui):
-            log('  - running reposetup for %s\n' % (name,))
+            ui.log(b'extension', b'  - running reposetup for %s\n', name)
             hook = getattr(module, 'reposetup', None)
             if hook:
                 with util.timedcm('reposetup %r', name) as stats:
                     hook(ui, obj)
-                log('  > reposetup for %s took %s\n', name, stats)
-    log('> all reposetup took %s\n', allreposetupstats)
+                ui.log(b'extension', b'  > reposetup for %s took %s\n',
+                       name, stats)
+    ui.log(b'extension', b'> all reposetup took %s\n', allreposetupstats)
     if not obj.local():
         for f in wirepeersetupfuncs:
             f(ui, obj)
