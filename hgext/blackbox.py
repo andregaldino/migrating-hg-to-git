@@ -96,11 +96,24 @@ class blackboxlogger(object):
         self._trackedevents = set(ui.configlist('blackbox', 'track'))
         self._maxfiles = ui.configint('blackbox', 'maxfiles')
         self._maxsize = ui.configbytes('blackbox', 'maxsize')
+        self._inlog = False
 
     def tracked(self, event):
         return b'*' in self._trackedevents or event in self._trackedevents
 
     def log(self, ui, event, msg, opts):
+        # self._log() -> ctx.dirty() may create new subrepo instance, which
+        # ui is derived from baseui. So the recursion guard in ui.log()
+        # doesn't work as it's local to the ui instance.
+        if self._inlog:
+            return
+        self._inlog = True
+        try:
+            self._log(ui, event, msg, opts)
+        finally:
+            self._inlog = False
+
+    def _log(self, ui, event, msg, opts):
         default = ui.configdate('devel', 'default-date')
         date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
         user = procutil.getuser()
