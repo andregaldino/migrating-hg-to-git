@@ -4,6 +4,9 @@
   > rebase=
   > mock=$TESTDIR/mockblackbox.py
   > 
+  > [blackbox]
+  > track = command, commandfinish, tagscache
+  > 
   > [experimental]
   > evolution.createmarkers=True
   > EOF

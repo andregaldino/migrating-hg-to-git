@@ -4,6 +4,8 @@ setup
   > [extensions]
   > blackbox=
   > mock=$TESTDIR/mockblackbox.py
+  > [blackbox]
+  > track = command, commandfinish, tagscache
   > EOF
 
 Helper functions:
