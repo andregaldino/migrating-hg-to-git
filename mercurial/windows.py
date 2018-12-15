@@ -132,7 +132,10 @@ class fdproxy(object):
         self._fp = fp
 
     def __enter__(self):
-        return self._fp.__enter__()
+        self._fp.__enter__()
+        # Return this wrapper for the context manager so that the name is
+        # still available.
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._fp.__exit__(exc_type, exc_value, traceback)
