@@ -139,6 +139,8 @@ except KeyError:
     class dummyui(object):
         def debug(self, msg):
             pass
+        def log(self, event, msgfmt, *msgargs, **opts):
+            pass
     stripext = extensions.load(dummyui(), 'strip', '')
 
 strip = stripext.strip
