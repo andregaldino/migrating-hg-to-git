@@ -518,7 +518,8 @@ class closewrapbase(object):
         return delattr(self._origfh, attr)
 
     def __enter__(self):
-        return self._origfh.__enter__()
+        self._origfh.__enter__()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         raise NotImplementedError('attempted instantiating ' + str(type(self)))
