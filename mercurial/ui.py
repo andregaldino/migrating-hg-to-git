@@ -30,6 +30,7 @@ from . import (
     encoding,
     error,
     formatter,
+    loggingutil,
     progress,
     pycompat,
     rcutil,
@@ -489,6 +490,14 @@ class ui(object):
             # update trust information
             self._trustusers.update(self.configlist('trusted', 'users'))
             self._trustgroups.update(self.configlist('trusted', 'groups'))
+
+        if section in (None, b'devel', b'ui') and self.debugflag:
+            tracked = set()
+            if self.configbool(b'devel', b'debug.extensions'):
+                tracked.add(b'extension')
+            if tracked:
+                logger = loggingutil.fileobjectlogger(self._ferr, tracked)
+                self.setlogger(b'debug', logger)
 
     def backupconfig(self, section, item):
         return (self._ocfg.backup(section, item),
