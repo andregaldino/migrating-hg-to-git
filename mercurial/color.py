@@ -245,7 +245,7 @@ def _modesetup(ui):
             # Since "ansi" could result in terminal gibberish, we error on the
             # side of selecting "win32". However, if w32effects is not defined,
             # we almost certainly don't support "win32", so don't even try.
-            # w32ffects is not populated when stdout is redirected, so checking
+            # w32effects is not populated when stdout is redirected, so checking
             # it first avoids win32 calls in a state known to error out.
             if ansienviron or not w32effects or win32.enablevtmode():
                 realmode = 'ansi'
