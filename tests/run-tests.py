@@ -2640,6 +2640,10 @@ class TestRunner(object):
             self._tmpbindir = self._bindir
             self._pythondir = os.path.join(self._installdir, b"lib", b"python")
 
+        # Force the use of hg.exe instead of relying on MSYS to recognize hg is
+        # a python script and feed it to python.exe.  Legacy stdio is force
+        # enabled by hg.exe, and this is a more realistic way to launch hg
+        # anyway.
         if os.name == 'nt' and not self._hgcommand.endswith(b'.exe'):
             self._hgcommand += b'.exe'
 
