@@ -22,7 +22,9 @@ Mercurial-patchbomb/.* -> Mercurial-patchbomb/* (glob)
   >     skipblank = False
   >     print(l, end='')
   > EOF
-  $ FILTERBOUNDARY="$PYTHON `pwd`/prune-blank-after-boundary.py"
+  $ filterboundary() {
+  >     "$PYTHON" "$TESTTMP/prune-blank-after-boundary.py"
+  > }
   $ echo "[extensions]" >> $HGRCPATH
   $ echo "patchbomb=" >> $HGRCPATH
 
@@ -357,7 +359,7 @@ Test breaking format changes aren't
 
 test bundle and description:
   $ hg email --date '1970-1-1 0:3' -n -f quux -t foo \
-  >  -c bar -s test -r tip -b --desc description | $FILTERBOUNDARY
+  >  -c bar -s test -r tip -b --desc description | filterboundary
   searching for changes
   1 changesets found
   
@@ -403,7 +405,7 @@ with a specific bundle type
 
   $ hg email --date '1970-1-1 0:3' -n -f quux -t foo \
   >  -c bar -s test -r tip -b --desc description \
-  > --config patchbomb.bundletype=gzip-v1 | $FILTERBOUNDARY
+  > --config patchbomb.bundletype=gzip-v1 | filterboundary
   searching for changes
   1 changesets found
   
@@ -884,7 +886,7 @@ test diffstat for multiple patches:
   
 
 test inline for single patch:
-  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -i -r 2 | $FILTERBOUNDARY
+  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -i -r 2 | filterboundary
   this patch series consists of 1 patches.
   
   
@@ -927,7 +929,7 @@ test inline for single patch:
 
 
 test inline for single patch (quoted-printable):
-  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -i -r 4 | $FILTERBOUNDARY
+  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -i -r 4 | filterboundary
   this patch series consists of 1 patches.
   
   
@@ -986,7 +988,7 @@ test inline for single patch (quoted-printable):
 
 test inline for multiple patches:
   $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -i \
-  >  -r 0:1 -r 4 | $FILTERBOUNDARY
+  >  -r 0:1 -r 4 | filterboundary
   this patch series consists of 3 patches.
   
   
@@ -1138,7 +1140,7 @@ test inline for multiple patches:
   --===*=-- (glob)
 
 test attach for single patch:
-  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -a -r 2 | $FILTERBOUNDARY
+  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -a -r 2 | filterboundary
   this patch series consists of 1 patches.
   
   
@@ -1189,7 +1191,7 @@ test attach for single patch:
   --===*=-- (glob)
 
 test attach for single patch (quoted-printable):
-  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -a -r 4 | $FILTERBOUNDARY
+  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -a -r 4 | filterboundary
   this patch series consists of 1 patches.
   
   
@@ -1256,7 +1258,7 @@ test attach for single patch (quoted-printable):
   --===*=-- (glob)
 
 test attach and body for single patch:
-  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -a --body -r 2 | $FILTERBOUNDARY
+  $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -a --body -r 2 | filterboundary
   this patch series consists of 1 patches.
   
   
@@ -1318,7 +1320,7 @@ test attach and body for single patch:
 
 test attach for multiple patches:
   $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -a \
-  >  -r 0:1 -r 4 | $FILTERBOUNDARY
+  >  -r 0:1 -r 4 | filterboundary
   this patch series consists of 3 patches.
   
   
@@ -1775,7 +1777,7 @@ tagging csets:
 
 test inline for single named patch:
   $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -i \
-  >   -r 2 | $FILTERBOUNDARY
+  >   -r 2 | filterboundary
   this patch series consists of 1 patches.
   
   
@@ -1818,7 +1820,7 @@ test inline for single named patch:
 
 test inline for multiple named/unnamed patches:
   $ hg email --date '1970-1-1 0:1' -n -f quux -t foo -c bar -s test -i \
-  >    -r 0:1 | $FILTERBOUNDARY
+  >    -r 0:1 | filterboundary
   this patch series consists of 2 patches.
   
   
@@ -2124,7 +2126,7 @@ test single flag for single patch (and no warning when not mailing dirty rev):
   $ hg up -qr1
   $ echo dirt > a
   $ hg email --date '1970-1-1 0:1' -n --flag fooFlag -f quux -t foo -c bar -s test \
-  >  -r 2 | $FILTERBOUNDARY
+  >  -r 2 | filterboundary
   this patch series consists of 1 patches.
   
   
