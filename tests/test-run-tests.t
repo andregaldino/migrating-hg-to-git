@@ -644,12 +644,14 @@ Running In Debug Mode
 
   $ rt --debug 2>&1 | grep -v pwd
   running 2 tests using 1 parallel processes 
+  + alias hg=hg.exe (windows !)
   + echo *SALT* 0 0 (glob)
   *SALT* 0 0 (glob)
   + echo babar
   babar
   + echo *SALT* 10 0 (glob)
   *SALT* 10 0 (glob)
+  .+ alias hg=hg.exe (windows !)
   *+ echo *SALT* 0 0 (glob)
   *SALT* 0 0 (glob)
   + echo babar

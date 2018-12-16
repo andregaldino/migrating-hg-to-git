@@ -2640,6 +2640,9 @@ class TestRunner(object):
             self._tmpbindir = self._bindir
             self._pythondir = os.path.join(self._installdir, b"lib", b"python")
 
+        if os.name == 'nt' and not self._hgcommand.endswith(b'.exe'):
+            self._hgcommand += b'.exe'
+
         # set CHGHG, then replace "hg" command by "chg"
         chgbindir = self._bindir
         if self.options.chg or self.options.with_chg:
