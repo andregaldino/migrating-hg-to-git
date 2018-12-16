@@ -702,14 +702,20 @@ class basefilectx(object):
         if fctx._customcmp:
             return fctx.cmp(self)
 
-        if (fctx._filenode is None
-            and (self._repo._encodefilterpats
-                 # if file data starts with '\1\n', empty metadata block is
-                 # prepended, which adds 4 bytes to filelog.size().
-                 or self.size() - 4 == fctx.size())
-            or self.size() == fctx.size()):
+        if fctx._filenode is None:
+            if self._repo._encodefilterpats:
+                # can't rely on size() because wdir content may be decoded
+                return self._filelog.cmp(self._filenode, fctx.data())
+            if self.size() - 4 == fctx.size():
+                # size() can match:
+                # if file data starts with '\1\n', empty metadata block is
+                # prepended, which adds 4 bytes to filelog.size().
+                return self._filelog.cmp(self._filenode, fctx.data())
+        if self.size() == fctx.size():
+            # size() matches: need to compare content
             return self._filelog.cmp(self._filenode, fctx.data())
 
+        # size() differs
         return True
 
     def _adjustlinkrev(self, srcrev, inclusive=False, stoprev=None):
