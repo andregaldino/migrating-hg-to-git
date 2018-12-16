@@ -702,6 +702,10 @@ class basefilectx(object):
         if fctx._customcmp:
             return fctx.cmp(self)
 
+        if self._filenode is None:
+            raise error.ProgrammingError(
+                'filectx.cmp() must be reimplemented if not backed by revlog')
+
         if fctx._filenode is None:
             if self._repo._encodefilterpats:
                 # can't rely on size() because wdir content may be decoded
