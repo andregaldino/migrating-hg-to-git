@@ -2292,6 +2292,9 @@ class memfilectx(committablefilectx):
         if copied:
             self._copied = (copied, nullid)
 
+    def cmp(self, fctx):
+        return self.data() != fctx.data()
+
     def data(self):
         return self._data
 
