@@ -1722,6 +1722,7 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
           (b'', b'details', False, b'print timing for every revisions tested'),
           (b'', b'source', b'full', b'the kind of data feed in the revlog'),
           (b'', b'lazydeltabase', True, b'try the provided delta first'),
+          (b'', b'clear-caches', True, b'clear revlog cache between calls'),
          ],
          b'-c|-m|FILE')
 def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
@@ -1746,6 +1747,7 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
 
     lazydeltabase = opts['lazydeltabase']
     source = opts['source']
+    clearcaches = opts['clear_cache']
     validsource = (b'full', b'parent-1', b'parent-2', b'parent-smallest',
                    b'storage')
     if source not in validsource:
@@ -1758,7 +1760,8 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
     allresults = []
     for c in range(count):
         timing = _timeonewrite(ui, rl, source, startrev, stoprev, c + 1,
-                               lazydeltabase=lazydeltabase)
+                               lazydeltabase=lazydeltabase,
+                               clearcaches=clearcaches)
         allresults.append(timing)
 
     ### consolidate the results in a single list
@@ -1825,7 +1828,7 @@ class _faketr(object):
         return None
 
 def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None,
-                  lazydeltabase=True):
+                  lazydeltabase=True, clearcaches=True):
     timings = []
     tr = _faketr()
     with _temprevlog(ui, orig, startrev) as dest:
@@ -1838,6 +1841,9 @@ def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None,
         for idx, rev in enumerate(revs):
             ui.progress(topic, idx, unit='revs', total=total)
             addargs, addkwargs = _getrevisionseed(orig, rev, tr, source)
+            if clearcaches:
+                dest.index.clearcaches()
+                dest.clearcaches()
             with timeone() as r:
                 dest.addrawrevision(*addargs, **addkwargs)
             timings.append((rev, r[0]))
