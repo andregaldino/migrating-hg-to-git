@@ -1106,6 +1106,12 @@ class Test(unittest.TestCase):
         # IP addresses.
         env['LOCALIP'] = _strpath(self._localip())
 
+        # This has the same effect as Py_LegacyWindowsStdioFlag in exewrapper.c,
+        # but this is needed for testing python instances like dummyssh,
+        # dummysmtpd.py, and dumbhttp.py.
+        if PYTHON3 and os.name == 'nt':
+            env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
+
         # Reset some environment variables to well-known values so that
         # the tests produce repeatable output.
         env['LANG'] = env['LC_ALL'] = env['LANGUAGE'] = 'C'
