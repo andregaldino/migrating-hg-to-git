@@ -586,6 +586,17 @@ def rename(src, dst):
     shutil.copy(src, dst)
     os.remove(src)
 
+def makecleanable(path):
+    """Try to fix directory permission recursively so that the entire tree
+    can be deleted"""
+    for dirpath, dirnames, _filenames in os.walk(path, topdown=True):
+        for d in dirnames:
+            p = os.path.join(dirpath, d)
+            try:
+                os.chmod(p, os.stat(p).st_mode & 0o777 | 0o700)  # chmod u+rwx
+            except OSError:
+                pass
+
 _unified_diff = difflib.unified_diff
 if PYTHON3:
     import functools
@@ -952,7 +963,13 @@ class Test(unittest.TestCase):
                 (self._testtmp.decode('utf-8'),
                  self._threadtmp.decode('utf-8')))
         else:
-            shutil.rmtree(self._testtmp, True)
+            try:
+                shutil.rmtree(self._testtmp)
+            except OSError:
+                # unreadable directory may be left in $TESTTMP; fix permission
+                # and try again
+                makecleanable(self._testtmp)
+                shutil.rmtree(self._testtmp, True)
             shutil.rmtree(self._threadtmp, True)
 
         if self._usechg:
