@@ -41,7 +41,7 @@ test stripping of filelogs where the linkrev doesn't always increase
        3       2 f0ef8726ac4f 000000000000 000000000000
        4       4 0b76e38b4070 000000000000 000000000000
 
-  $ for i in 012 021 102 120 201 210 manifest-file; do
+  $ for i in 012 021 102 120 201 210; do
   >     echo $i
   >     hg debugindex $i
   >     echo
@@ -81,11 +81,6 @@ test stripping of filelogs where the linkrev doesn't always increase
        0       2 b8e02f643373 000000000000 000000000000
        1       1 5d9299349fc0 000000000000 000000000000
        2       0 2661d26c6496 000000000000 000000000000
-  
-  manifest-file
-     rev linkrev nodeid       p1           p2
-       0       3 b8e02f643373 000000000000 000000000000
-       1       4 5d9299349fc0 000000000000 000000000000
   
   $ cd ..
   $ for i in 0 1 2 3 4; do
