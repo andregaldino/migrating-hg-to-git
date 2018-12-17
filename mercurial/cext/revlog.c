@@ -995,6 +995,40 @@ static inline int index_baserev(indexObject *self, int rev)
 	return result;
 }
 
+/**
+ * Find if a revision is a snapshot or not
+ *
+ * Only relevant for sparse-revlog case.
+ * Callers must ensure that rev is in a valid range.
+ */
+static int index_issnapshotrev(indexObject *self, Py_ssize_t rev)
+{
+	int ps[2];
+	Py_ssize_t base;
+	while (rev >= 0) {
+		base = (Py_ssize_t)index_baserev(self, rev);
+		if (base == rev) {
+			base = -1;
+		}
+		if (base == -2) {
+			assert(PyErr_Occurred());
+			return -1;
+		}
+		if (base == -1) {
+			return 1;
+		}
+		if (index_get_parents(self, rev, ps, (int)rev) < 0) {
+			assert(PyErr_Occurred());
+			return -1;
+		};
+		if (base == ps[0] || base == ps[1]) {
+			return 0;
+		}
+		rev = base;
+	}
+	return rev == -1;
+}
+
 static PyObject *index_deltachain(indexObject *self, PyObject *args)
 {
 	int rev, generaldelta;
