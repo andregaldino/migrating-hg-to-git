@@ -2,8 +2,6 @@ test stripping of filelogs where the linkrev doesn't always increase
 
   $ echo '[extensions]' >> $HGRCPATH
   $ echo 'strip =' >> $HGRCPATH
-  $ hg init orig
-  $ cd orig
   $ commit()
   > {
   >     hg up -qC null
@@ -19,27 +17,20 @@ test stripping of filelogs where the linkrev doesn't always increase
 
 2 1 0 2 0 1 2
 
+  $ mkdir files
+  $ cd files
+  $ hg init orig
+  $ cd orig
   $ commit '201 210'
   $ commit '102 120' '210'
   $ commit '021'
   $ commit '201' '021 120'
   $ commit '012 021' '102 201' '120 210'
-  $ commit 'manifest-file'
   $ commit '102 120' '012 210' '021 201'
   $ commit '201 210' '021 120' '012 102'
-  $ HGUSER=another-user; export HGUSER
-  $ commit 'manifest-file'
-  $ commit '012' 'manifest-file'
   $ cd ..
-  $ hg clone -q -U -r 4 -r 6 -r 7 -r 8 -r 9 orig crossed
+  $ hg clone -q -U -r 4 -r 5 -r 6 orig crossed
   $ cd crossed
-  $ hg debugindex --manifest
-     rev linkrev nodeid       p1           p2
-       0       0 6f105cbb914d 000000000000 000000000000
-       1       3 1b55917b3699 000000000000 000000000000
-       2       1 8f3d04e263e5 000000000000 000000000000
-       3       2 f0ef8726ac4f 000000000000 000000000000
-       4       4 0b76e38b4070 000000000000 000000000000
 
   $ for i in 012 021 102 120 201 210; do
   >     echo $i
@@ -83,7 +74,7 @@ test stripping of filelogs where the linkrev doesn't always increase
        2       0 2661d26c6496 000000000000 000000000000
   
   $ cd ..
-  $ for i in 0 1 2 3 4; do
+  $ for i in 0 1 2; do
   >     hg clone -q -U --pull crossed $i
   >     echo "% Trying to strip revision $i"
   >     hg --cwd $i strip $i
@@ -92,47 +83,80 @@ test stripping of filelogs where the linkrev doesn't always increase
   >     echo
   > done
   % Trying to strip revision 0
-  saved backup bundle to $TESTTMP/0/.hg/strip-backup/*-backup.hg (glob)
+  saved backup bundle to $TESTTMP/files/0/.hg/strip-backup/cbb8c2f0a2e3-239800b9-backup.hg
   % Verifying
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 4 changesets with 15 changes to 7 files
+  checked 2 changesets with 12 changes to 6 files
   
   % Trying to strip revision 1
-  saved backup bundle to $TESTTMP/1/.hg/strip-backup/*-backup.hg (glob)
+  saved backup bundle to $TESTTMP/files/1/.hg/strip-backup/124ecc0cbec9-6104543f-backup.hg
   % Verifying
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 4 changesets with 14 changes to 7 files
+  checked 2 changesets with 12 changes to 6 files
   
   % Trying to strip revision 2
-  saved backup bundle to $TESTTMP/2/.hg/strip-backup/*-backup.hg (glob)
+  saved backup bundle to $TESTTMP/files/2/.hg/strip-backup/f6439b304a1a-c6505a5f-backup.hg
   % Verifying
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 4 changesets with 14 changes to 7 files
+  checked 2 changesets with 12 changes to 6 files
+  
+  $ cd ..
+
+Do a similar test where the manifest revlog has unordered linkrevs
+  $ mkdir manifests
+  $ cd manifests
+  $ hg init orig
+  $ cd orig
+  $ commit 'file'
+  $ commit 'other'
+  $ commit '' 'other'
+  $ HGUSER=another-user; export HGUSER
+  $ commit 'file'
+  $ commit 'other' 'file'
+  $ cd ..
+  $ hg clone -q -U -r 1 -r 2 -r 3 -r 4 orig crossed
+  $ cd crossed
+  $ hg debugindex --manifest
+     rev linkrev nodeid       p1           p2
+       0       2 6bbc6fee55c2 000000000000 000000000000
+       1       0 1c556153fe54 000000000000 000000000000
+       2       1 1f76dba919fd 000000000000 000000000000
+       3       3 bbee06ad59d5 000000000000 000000000000
+
+  $ cd ..
+  $ for i in 2 3; do
+  >     hg clone -q -U --pull crossed $i
+  >     echo "% Trying to strip revision $i"
+  >     hg --cwd $i strip $i
+  >     echo "% Verifying"
+  >     hg --cwd $i verify
+  >     echo
+  > done
+  % Trying to strip revision 2
+  saved backup bundle to $TESTTMP/manifests/2/.hg/strip-backup/f3015ad03c03-4d98bdc2-backup.hg
+  % Verifying
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 3 changes to 2 files
   
   % Trying to strip revision 3
-  saved backup bundle to $TESTTMP/3/.hg/strip-backup/*-backup.hg (glob)
+  saved backup bundle to $TESTTMP/manifests/3/.hg/strip-backup/9632aa303aa4-69192e3f-backup.hg
   % Verifying
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 4 changesets with 19 changes to 7 files
+  checked 3 changesets with 3 changes to 2 files
   
-  % Trying to strip revision 4
-  saved backup bundle to $TESTTMP/4/.hg/strip-backup/*-backup.hg (glob)
-  % Verifying
-  checking changesets
-  checking manifests
-  crosschecking files in changesets and manifests
-  checking files
-  checked 4 changesets with 19 changes to 7 files
-  
+  $ cd ..
