@@ -1535,15 +1535,19 @@ class revlog(object):
         """
         if rev == nullrev:
             return True
-        deltap = self.deltaparent(rev)
-        if deltap == nullrev:
+        entry = self.index[rev]
+        base = entry[3]
+        if base == rev:
             return True
         elif not self._sparserevlog:
             return False
-        p1, p2 = self.parentrevs(rev)
-        if deltap in (p1, p2):
+        if base == nullrev:
+            return True
+        p1 = entry[5]
+        p2 = entry[6]
+        if base == p1 or base == p2:
             return False
-        return self.issnapshot(deltap)
+        return self.issnapshot(base)
 
     def snapshotdepth(self, rev):
         """number of snapshot in the chain before this one"""
