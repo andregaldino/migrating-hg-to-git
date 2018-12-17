@@ -922,11 +922,13 @@ class RustExtension(Extension):
 
     rusttargetdir = os.path.join('rust', 'target', 'release')
 
-    def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
+    def __init__(self, mpath, sources, rustlibname, subcrate,
+                 py3_features=None, **kw):
         Extension.__init__(self, mpath, sources, **kw)
         if hgrustext is None:
             return
         srcdir = self.rustsrcdir = os.path.join('rust', subcrate)
+        self.py3_features = py3_features
 
         # adding Rust source and control files to depends so that the extension
         # gets rebuilt if they've changed
@@ -957,6 +959,9 @@ class RustExtension(Extension):
             env['HOME'] = pwd.getpwuid(os.getuid()).pw_dir
 
         cargocmd = ['cargo', 'build', '-vv', '--release']
+        if sys.version_info[0] == 3 and self.py3_features is not None:
+            cargocmd.extend(('--features', self.py3_features,
+                             '--no-default-features'))
         try:
             subprocess.check_call(cargocmd, env=env, cwd=self.rustsrcdir)
         except OSError as exc:
@@ -1047,7 +1052,8 @@ extmodules = [
 
 if hgrustext == 'cpython':
     extmodules.append(
-        RustStandaloneExtension('mercurial.rustext', 'hg-cpython', 'librusthg')
+        RustStandaloneExtension('mercurial.rustext', 'hg-cpython', 'librusthg',
+                                py3_features='python3')
     )
 
 
