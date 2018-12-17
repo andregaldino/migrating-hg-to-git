@@ -31,7 +31,7 @@ test stripping of filelogs where the linkrev doesn't always increase
   $ commit 'manifest-file'
   $ commit '012' 'manifest-file'
   $ cd ..
-  $ hg clone -q -U -r -1 -r -2 -r -3 -r -4 -r -6 orig crossed
+  $ hg clone -q -U -r 4 -r 6 -r 7 -r 8 -r 9 orig crossed
   $ cd crossed
   $ hg debugindex --manifest
      rev linkrev nodeid       p1           p2
