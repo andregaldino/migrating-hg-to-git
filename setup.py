@@ -294,14 +294,17 @@ def findhg():
     hgenv['LANGUAGE'] = 'C'
     hgcmd = ['hg']
     # Run a simple "hg log" command just to see if using hg from the user's
-    # path works and can successfully interact with this repository.
+    # path works and can successfully interact with this repository.  Windows
+    # gives precedence to hg.exe in the current directory, so fall back to the
+    # python invocation of local hg, where pythonXY.dll can always be found.
     check_cmd = ['log', '-r.', '-Ttest']
-    try:
-        retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
-    except EnvironmentError:
-        retcode = -1
-    if retcode == 0 and not filterhgerr(err):
-        return hgcommand(hgcmd, hgenv)
+    if os.name != 'nt':
+        try:
+            retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
+        except EnvironmentError:
+            retcode = -1
+        if retcode == 0 and not filterhgerr(err):
+            return hgcommand(hgcmd, hgenv)
 
     # Fall back to trying the local hg installation.
     hgenv = localhgenv()
