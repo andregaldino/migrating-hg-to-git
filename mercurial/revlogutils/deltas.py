@@ -601,6 +601,11 @@ def isgooddeltainfo(revlog, deltainfo, revinfo):
 
     return True
 
+# If a revision's full text is that much bigger than a base candidate full
+# text's, it is very unlikely that it will produce a valid delta. We no longer
+# consider these candidates.
+LIMIT_BASE2TEXT = 50
+
 def _candidategroups(revlog, textlen, p1, p2, cachedelta):
     """Provides group of revision to be tested as delta base
 
@@ -614,6 +619,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 
     deltalength = revlog.length
     deltaparent = revlog.deltaparent
+    sparse = revlog._sparserevlog
     good = None
 
     deltas_limit = textlen * LIMIT_DELTA2TEXT
@@ -643,6 +649,8 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
             tested.add(rev)
             # filter out delta base that will never produce good delta
             if deltas_limit < revlog.length(rev):
+                continue
+            if sparse and revlog.rawsize(rev) < (textlen // LIMIT_BASE2TEXT):
                 continue
             # no delta for rawtext-changing revs (see "candelta" for why)
             if revlog.flags(rev) & REVIDX_RAWTEXT_CHANGING_FLAGS:

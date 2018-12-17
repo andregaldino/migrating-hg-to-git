@@ -184,8 +184,8 @@ Basic clone
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
-  1030 files to transfer, 96.4 KB of data
-  transferred 96.4 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.5 KB of data
+  transferred 96.5 KB in * seconds (* */sec) (glob)
 
   $ ls -1 clone1/.hg/cache
   branch2-served
@@ -201,11 +201,11 @@ getbundle requests with stream=1 are uncompressed
   
 
   $ f --size --hex --bytes 256 body
-  body: size=112245
+  body: size=112262
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
   0010: 7f 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
   0020: 05 09 04 0c 44 62 79 74 65 63 6f 75 6e 74 39 38 |....Dbytecount98|
-  0030: 37 35 38 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |758filecount1030|
+  0030: 37 37 35 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |775filecount1030|
   0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
   0050: 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 25 |ncode%2Cfncache%|
   0060: 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 32 |2Cgeneraldelta%2|
@@ -232,8 +232,8 @@ getbundle requests with stream=1 are uncompressed
 #if stream-bundle2
   $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
   streaming all changes
-  1030 files to transfer, 96.4 KB of data
-  transferred 96.4 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.5 KB of data
+  transferred 96.5 KB in * seconds (* */sec) (glob)
 #endif
 
 Clone with background file closing enabled
@@ -274,12 +274,12 @@ Clone with background file closing enabled
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "stream2" (params: 3 mandatory) supported
   applying stream bundle
-  1030 files to transfer, 96.4 KB of data
+  1030 files to transfer, 96.5 KB of data
   starting 4 threads for background file closing
   starting 4 threads for background file closing
   updating the branch cache
-  transferred 96.4 KB in * seconds (* */sec) (glob)
-  bundle2-input-part: total payload size 112077
+  transferred 96.5 KB in * seconds (* */sec) (glob)
+  bundle2-input-part: total payload size 112094
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-bundle: 1 parts total
   checking for updated bookmarks
@@ -318,8 +318,8 @@ Streaming of secrets can be overridden by server config
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
   streaming all changes
-  1030 files to transfer, 96.4 KB of data
-  transferred 96.4 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.5 KB of data
+  transferred 96.5 KB in * seconds (* */sec) (glob)
 #endif
 
   $ killdaemons.py
