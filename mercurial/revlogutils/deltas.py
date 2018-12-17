@@ -655,6 +655,17 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
             # no delta for rawtext-changing revs (see "candelta" for why)
             if revlog.flags(rev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
                 continue
+            # If we reach here, we are about to build and test a delta.
+            # The delta building process will compute the chaininfo in all
+            # case, since that computation is cached, it is fine to access it
+            # here too.
+            chainlen, chainsize = revlog._chaininfo(rev)
+            # if chain will be too long, skip base
+            if revlog._maxchainlen and chainlen >= revlog._maxchainlen:
+                continue
+            # if chain already have too much data, skip base
+            if deltas_limit < chainsize:
+                continue
             group.append(rev)
         if group:
             # XXX: in the sparse revlog case, group can become large,
