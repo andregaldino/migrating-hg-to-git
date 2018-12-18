@@ -33,7 +33,12 @@ def connectpipe(path=None, extraargs=()):
         cmdline += [b'-R', path]
     cmdline.extend(extraargs)
 
-    server = subprocess.Popen(cmdline, stdin=subprocess.PIPE,
+    def tonative(cmdline):
+        if os.name != r'nt':
+            return cmdline
+        return [arg.decode("utf-8") for arg in cmdline]
+
+    server = subprocess.Popen(tonative(cmdline), stdin=subprocess.PIPE,
                               stdout=subprocess.PIPE)
 
     return server
