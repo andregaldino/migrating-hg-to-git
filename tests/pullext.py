@@ -32,19 +32,19 @@ def featuresetup(ui, features):
     features.add(repository.NARROW_REQUIREMENT)
 
 def extsetup(ui):
-    entry = extensions.wrapcommand(commands.table, 'clone', clonecommand)
+    entry = extensions.wrapcommand(commands.table, b'clone', clonecommand)
 
-    hasinclude = any(x[1] == 'include' for x in entry[1])
-    hasdepth = any(x[1] == 'depth' for x in entry[1])
+    hasinclude = any(x[1] == b'include' for x in entry[1])
+    hasdepth = any(x[1] == b'depth' for x in entry[1])
 
     if not hasinclude:
-        entry[1].append(('', 'include', [],
-                         _('pattern of file/directory to clone')))
-        entry[1].append(('', 'exclude', [],
-                         _('pattern of file/directory to not clone')))
+        entry[1].append((b'', b'include', [],
+                         _(b'pattern of file/directory to clone')))
+        entry[1].append((b'', b'exclude', [],
+                         _(b'pattern of file/directory to not clone')))
 
     if not hasdepth:
-        entry[1].append(('', 'depth', '',
-                         _('ancestry depth of changesets to fetch')))
+        entry[1].append((b'', b'depth', b'',
+                         _(b'ancestry depth of changesets to fetch')))
 
     localrepo.featuresetupfuncs.add(featuresetup)
