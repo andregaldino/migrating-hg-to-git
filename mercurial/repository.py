@@ -1477,7 +1477,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
     narrowpats = interfaceutil.Attribute(
         """Matcher patterns for this repository's narrowspec.""")
 
-    def narrowmatch():
+    def narrowmatch(match=None, includeexact=False):
         """Obtain a matcher for the narrowspec."""
 
     def setnarrowpats(newincludes, newexcludes):
