@@ -5,7 +5,7 @@ version so behavior is deterministic.
 
   $ cat > fakeversion.py << EOF
   > from mercurial import util
-  > util.version = lambda: '4.2'
+  > util.version = lambda: b'4.2'
   > EOF
 
   $ cat >> $HGRCPATH << EOF
