@@ -321,7 +321,7 @@ impl<G: Graph> MissingAncestors<G> {
 
         // TODO heuristics for with_capacity()?
         let mut missing: Vec<Revision> = Vec::new();
-        for curr in (0..=start).map(|i| start - i) {
+        for curr in (0..=start).rev() {
             if revs_visit.is_empty() {
                 break;
             }
