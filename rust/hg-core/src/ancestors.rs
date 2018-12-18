@@ -44,15 +44,12 @@ impl<G: Graph> AncestorsIterator<G> {
     ///
     /// if `inclusive` is true, then the init revisions are emitted in
     /// particular, otherwise iteration starts from their parents.
-    pub fn new<I>(
+    pub fn new(
         graph: G,
-        initrevs: I,
+        initrevs: impl IntoIterator<Item = Revision>,
         stoprev: Revision,
         inclusive: bool,
-    ) -> Result<Self, GraphError>
-    where
-        I: IntoIterator<Item = Revision>,
-    {
+    ) -> Result<Self, GraphError> {
         let filtered_initrevs = initrevs.into_iter().filter(|&r| r >= stoprev);
         if inclusive {
             let visit: BinaryHeap<Revision> = filtered_initrevs.collect();
