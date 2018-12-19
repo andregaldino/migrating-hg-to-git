@@ -9,18 +9,28 @@
 
 from __future__ import absolute_import, print_function
 
+import os
 import re
 import sys
 
-leadingline = re.compile(r'(^\s*)(\S.*)$')
+try:
+    import msvcrt
+    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+    msvcrt.setmode(sys.stderr.fileno(), os.O_BINARY)
+except ImportError:
+    pass
+
+stdout = getattr(sys.stdout, 'buffer', sys.stdout)
+
+leadingline = re.compile(br'(^\s*)(\S.*)$')
 
 checks = [
-  (r""":hg:`[^`]*'[^`]*`""",
-    """warning: please avoid nesting ' in :hg:`...`"""),
-  (r'\w:hg:`',
-    'warning: please have a space before :hg:'),
-  (r"""(?:[^a-z][^'.])hg ([^,;"`]*'(?!hg)){2}""",
-    '''warning: please use " instead of ' for hg ... "..."'''),
+  (br""":hg:`[^`]*'[^`]*`""",
+   b"""warning: please avoid nesting ' in :hg:`...`"""),
+  (br'\w:hg:`',
+   b'warning: please have a space before :hg:'),
+  (br"""(?:[^a-z][^'.])hg ([^,;"`]*'(?!hg)){2}""",
+   b'''warning: please use " instead of ' for hg ... "..."'''),
 ]
 
 def check(line):
@@ -29,25 +39,25 @@ def check(line):
         if re.search(match, line):
             messages.append(msg)
     if messages:
-        print(line)
+        stdout.write(b'%s\n' % line)
         for msg in messages:
-            print(msg)
+            stdout.write(b'%s\n' % msg)
 
 def work(file):
-    (llead, lline) = ('', '')
+    (llead, lline) = (b'', b'')
 
     for line in file:
         # this section unwraps lines
         match = leadingline.match(line)
         if not match:
             check(lline)
-            (llead, lline) = ('', '')
+            (llead, lline) = (b'', b'')
             continue
 
         lead, line = match.group(1), match.group(2)
         if (lead == llead):
-            if (lline != ''):
-                lline += ' ' + line
+            if (lline != b''):
+                lline += b' ' + line
             else:
                 lline = line
         else:
@@ -58,9 +68,9 @@ def work(file):
 def main():
     for f in sys.argv[1:]:
         try:
-            with open(f) as file:
+            with open(f, 'rb') as file:
                 work(file)
         except BaseException as e:
-            print("failed to process %s: %s" % (f, e))
+            sys.stdout.write(r"failed to process %s: %s\n" % (f, e))
 
 main()
