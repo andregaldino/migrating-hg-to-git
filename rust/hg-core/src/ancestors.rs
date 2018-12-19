@@ -341,40 +341,41 @@ impl<G: Graph> MissingAncestors<G> {
             // in Rust, one can't just use mutable variables assignation
             // to be more straightforward. Instead of Python's
             // thisvisit and othervisit, we'll differentiate with a boolean
-            let this_visit_is_revs = {
-                if revs_visit.remove(&curr) {
-                    missing.push(curr);
-                    true
-                } else if bases_visit.contains(&curr) {
-                    false
-                } else {
-                    // not an ancestor of revs or bases: ignore
-                    continue;
-                }
-            };
+            let this_visit_is_revs;
+            if revs_visit.remove(&curr) {
+                missing.push(curr);
+                this_visit_is_revs = true;
+            } else if bases_visit.contains(&curr) {
+                this_visit_is_revs = false;
+            } else {
+                // not an ancestor of revs or bases: ignore
+                continue;
+            }
 
-            for p in self.graph.parents(curr)?.iter().cloned() {
-                if p == NULL_REVISION {
-                    continue;
-                }
-                let in_other_visit = if this_visit_is_revs {
-                    bases_visit.contains(&p)
-                } else {
-                    revs_visit.contains(&p)
-                };
-                if in_other_visit || both_visit.contains(&p) {
-                    // p is implicitely in this_visit.
-                    // This means p is or should be in bothvisit
-                    // TODO optim: hence if bothvisit, we look up twice
-                    revs_visit.remove(&p);
-                    bases_visit.insert(p);
-                    both_visit.insert(p);
-                } else {
-                    // visit later
-                    if this_visit_is_revs {
-                        revs_visit.insert(p);
+            {
+                for p in self.graph.parents(curr)?.iter().cloned() {
+                    if p == NULL_REVISION {
+                        continue;
+                    }
+                    let in_other_visit = if this_visit_is_revs {
+                        bases_visit.contains(&p)
                     } else {
+                        revs_visit.contains(&p)
+                    };
+                    if in_other_visit || both_visit.contains(&p) {
+                        // p is implicitely in this_visit.
+                        // This means p is or should be in bothvisit
+                        // TODO optim: hence if bothvisit, we look up twice
+                        revs_visit.remove(&p);
                         bases_visit.insert(p);
+                        both_visit.insert(p);
+                    } else {
+                        // visit later
+                        if this_visit_is_revs {
+                            revs_visit.insert(p);
+                        } else {
+                            bases_visit.insert(p);
+                        }
                     }
                 }
             }
