@@ -604,7 +604,7 @@ def isgooddeltainfo(revlog, deltainfo, revinfo):
 # If a revision's full text is that much bigger than a base candidate full
 # text's, it is very unlikely that it will produce a valid delta. We no longer
 # consider these candidates.
-LIMIT_BASE2TEXT = 50
+LIMIT_BASE2TEXT = 500
 
 def _candidategroups(revlog, textlen, p1, p2, cachedelta):
     """Provides group of revision to be tested as delta base
