@@ -160,7 +160,7 @@ def optrst(header, options, verbose):
         if shortopt:
             so = '-' + shortopt
         lo = '--' + longopt
-        if isinstance(default, bool):
+        if default is True:
             lo = '--[no-]' + longopt
 
         if isinstance(default, fancyopts.customopt):
