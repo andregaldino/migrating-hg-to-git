@@ -1747,7 +1747,7 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
 
     lazydeltabase = opts['lazydeltabase']
     source = opts['source']
-    clearcaches = opts['clear_cache']
+    clearcaches = opts['clear_caches']
     validsource = (b'full', b'parent-1', b'parent-2', b'parent-smallest',
                    b'storage')
     if source not in validsource:
