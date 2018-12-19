@@ -37,6 +37,11 @@ parser.add_argument(
 parser.add_argument(
     "out", nargs="?", default=None, help="where to write the output"
 )
+parser.add_argument(
+    "--line",
+    action="store_true",
+    help="print environment variables one per line instead of on a single line",
+)
 args = parser.parse_args()
 
 if args.out is None:
@@ -56,9 +61,18 @@ if os.name == 'nt':
     filter = lambda x: x.replace('\\', '/')
 else:
     filter = lambda x: x
+
 vars = [b"%s=%s" % (k.encode('ascii'), filter(v).encode('ascii'))
         for k, v in env]
-out.write(b" ".join(vars))
+
+# Print variables on out
+if not args.line:
+    out.write(b" ".join(vars))
+else:
+    for var in vars:
+        out.write(var)
+        out.write(b"\n")
+
 out.write(b"\n")
 out.close()
 
