@@ -105,9 +105,8 @@ Testing the --import-rules flag of `hg tracked` command
       --import-rules VALUE         import narrowspecs from a file
       --removeexclude VALUE [+]    old paths to no longer exclude
       --clear                      whether to replace the existing narrowspec
-                                   (default: off)
       --force-delete-local-changes forces deletion of local changes when
-                                   narrowing (default: off)
+                                   narrowing
    -e --ssh CMD                    specify ssh command to use
       --remotecmd CMD              specify hg command to run on the remote side
       --insecure                   do not verify server certificate (ignoring

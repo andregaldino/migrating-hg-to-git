@@ -104,12 +104,12 @@ Help text for fix.
   
   options ([+] can be repeated):
   
-      --all          fix all non-public non-obsolete revisions (default: off)
+      --all          fix all non-public non-obsolete revisions
       --base REV [+] revisions to diff against (overrides automatic selection,
                      and applies to every revision being fixed)
    -r --rev REV [+]  revisions to fix
-   -w --working-dir  fix the working directory (default: off)
-      --whole        always fix every line of a file (default: off)
+   -w --working-dir  fix the working directory
+      --whole        always fix every line of a file
   
   (some details hidden, use --verbose to show complete help)
 
