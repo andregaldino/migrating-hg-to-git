@@ -16,6 +16,16 @@ checks = {
     "false": (lambda: False, "nail clipper"),
 }
 
+try:
+    import msvcrt
+    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+    msvcrt.setmode(sys.stderr.fileno(), os.O_BINARY)
+except ImportError:
+    pass
+
+stdout = getattr(sys.stdout, 'buffer', sys.stdout)
+stderr = getattr(sys.stderr, 'buffer', sys.stderr)
+
 if sys.version_info[0] >= 3:
     def _bytespath(p):
         if p is None:
@@ -90,11 +100,12 @@ def require(features):
     result = checkfeatures(features)
 
     for missing in result['missing']:
-        sys.stderr.write('skipped: unknown feature: %s\n' % missing)
+        stderr.write(('skipped: unknown feature: %s\n'
+                      % missing).encode('utf-8'))
     for msg in result['skipped']:
-        sys.stderr.write('skipped: %s\n' % msg)
+        stderr.write(('skipped: %s\n' % msg).encode('utf-8'))
     for msg in result['error']:
-        sys.stderr.write('%s\n' % msg)
+        stderr.write(('%s\n' % msg).encode('utf-8'))
 
     if result['missing']:
         sys.exit(2)
