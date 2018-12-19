@@ -336,17 +336,15 @@ impl<G: Graph> MissingAncestors<G> {
                     bases_visit.insert(p);
                     both_visit.insert(p);
                 }
-                continue;
-            }
-            if revs_visit.remove(&curr) {
+            } else if revs_visit.remove(&curr) {
                 missing.push(curr);
                 for p in self.graph.parents(curr)?.iter().cloned() {
                     if p == NULL_REVISION {
                         continue;
                     }
                     if bases_visit.contains(&p) || both_visit.contains(&p) {
-                        // p is implicitely in this_visit.
-                        // This means p is or should be in bothvisit
+                        // p is an ancestor of revs_visit, and is implicitly
+                        // in bases_visit, which means p is ::revs & ::bases.
                         // TODO optim: hence if bothvisit, we look up twice
                         revs_visit.remove(&p);
                         bases_visit.insert(p);
@@ -362,19 +360,16 @@ impl<G: Graph> MissingAncestors<G> {
                         continue;
                     }
                     if revs_visit.contains(&p) || both_visit.contains(&p) {
-                        // p is implicitely in this_visit.
-                        // This means p is or should be in bothvisit
+                        // p is an ancestor of bases_visit, and is implicitly
+                        // in revs_visit, which means p is ::revs & ::bases.
                         // TODO optim: hence if bothvisit, we look up twice
                         revs_visit.remove(&p);
                         bases_visit.insert(p);
                         both_visit.insert(p);
                     } else {
-                        // visit later
                         bases_visit.insert(p);
                     }
                 }
-            } else {
-                // not an ancestor of revs or bases: ignore
             }
         }
         missing.reverse();
