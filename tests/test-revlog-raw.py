@@ -12,11 +12,16 @@ from mercurial import (
     vfs,
 )
 
+from mercurial.revlogutils import (
+    deltas,
+)
+
 # TESTTMP is optional. This makes it convenient to run without run-tests.py
 tvfs = vfs.vfs(encoding.environ.get(b'TESTTMP', b'/tmp'))
 
 # Enable generaldelta otherwise revlog won't use delta as expected by the test
-tvfs.options = {b'generaldelta': True, b'revlogv1': True}
+tvfs.options = {b'generaldelta': True, b'revlogv1': True,
+                b'sparse-revlog': True}
 
 # The test wants to control whether to use delta explicitly, based on
 # "storedeltachains".
@@ -291,6 +296,37 @@ def checkrevlog(rlog, expected):
                             abort('rev %d: corrupted %stext'
                                   % (rev, raw and 'raw' or ''))
 
+slicingdata = [
+    ([0, 1, 2, 3, 55, 56, 58, 59, 60],
+     [[0, 1], [2], [58], [59, 60]],
+     10),
+    ([0, 1, 2, 3, 55, 56, 58, 59, 60],
+     [[0, 1], [2], [58], [59, 60]],
+     10),
+    ([-1, 0, 1, 2, 3, 55, 56, 58, 59, 60],
+     [[-1, 0, 1], [2], [58], [59, 60]],
+     10),
+]
+
+def slicingtest(rlog):
+    oldmin = rlog._srmingapsize
+    try:
+        # the test revlog is small, we remove the floor under which we
+        # slicing is diregarded.
+        rlog._srmingapsize = 0
+        for item in slicingdata:
+            chain, expected, target = item
+            result = deltas.slicechunk(rlog, chain, targetsize=target)
+            result = list(result)
+            if result != expected:
+                print('slicing differ:')
+                print('  chain: %s' % chain)
+                print('  target: %s' % target)
+                print('  expected: %s' % expected)
+                print('  result:   %s' % result)
+    finally:
+        rlog._srmingapsize = oldmin
+
 def maintest():
     expected = rl = None
     with newtransaction() as tr:
@@ -313,6 +349,8 @@ def maintest():
         rl4 = lowlevelcopy(rl, tr)
         checkrevlog(rl4, expected)
         print('lowlevelcopy test passed')
+        slicingtest(rl)
+        print('slicing test passed')
 
 try:
     maintest()
