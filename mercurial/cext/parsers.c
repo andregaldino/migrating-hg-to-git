@@ -572,6 +572,17 @@ static PyObject *fm1readmarkers(PyObject *self, PyObject *args)
 	                      &offset, &stop)) {
 		return NULL;
 	}
+	if (offset < 0) {
+		PyErr_SetString(PyExc_ValueError,
+		                "invalid negative offset in fm1readmarkers");
+		return NULL;
+	}
+	if (stop > datalen) {
+		PyErr_SetString(
+		    PyExc_ValueError,
+		    "stop longer than data length in fm1readmarkers");
+		return NULL;
+	}
 	dataend = data + datalen;
 	data += offset;
 	markers = PyList_New(0);
