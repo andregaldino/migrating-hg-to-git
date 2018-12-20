@@ -30,6 +30,7 @@ from ..thirdparty import (
 from .. import (
     error,
     mdiff,
+    util,
 )
 
 # maximum <delta-chain-data>/<revision-text-length> ratio
@@ -688,11 +689,14 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 
 def _findsnapshots(revlog, cache, start_rev):
     """find snapshot from start_rev to tip"""
-    deltaparent = revlog.deltaparent
-    issnapshot = revlog.issnapshot
-    for rev in revlog.revs(start_rev):
-        if issnapshot(rev):
-            cache[deltaparent(rev)].append(rev)
+    if util.safehasattr(revlog.index, 'findsnapshots'):
+        revlog.index.findsnapshots(cache, start_rev)
+    else:
+        deltaparent = revlog.deltaparent
+        issnapshot = revlog.issnapshot
+        for rev in revlog.revs(start_rev):
+            if issnapshot(rev):
+                cache[deltaparent(rev)].append(rev)
 
 def _refinedgroups(revlog, p1, p2, cachedelta):
     good = None

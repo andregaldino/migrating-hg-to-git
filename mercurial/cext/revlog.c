@@ -1050,6 +1050,67 @@ static PyObject *index_issnapshot(indexObject *self, PyObject *value)
 	return PyBool_FromLong((long)issnap);
 }
 
+static PyObject *index_findsnapshots(indexObject *self, PyObject *args)
+{
+	Py_ssize_t start_rev;
+	PyObject *cache;
+	Py_ssize_t base;
+	Py_ssize_t rev;
+	PyObject *key = NULL;
+	PyObject *value = NULL;
+	const Py_ssize_t length = index_length(self);
+	if (!PyArg_ParseTuple(args, "O!n", &PyDict_Type, &cache, &start_rev)) {
+		return NULL;
+	}
+	for (rev = start_rev; rev < length; rev++) {
+		int issnap;
+		PyObject *allvalues = NULL;
+		issnap = index_issnapshotrev(self, rev);
+		if (issnap < 0) {
+			goto bail;
+		}
+		if (issnap == 0) {
+			continue;
+		}
+		base = (Py_ssize_t)index_baserev(self, rev);
+		if (base == rev) {
+			base = -1;
+		}
+		if (base == -2) {
+			assert(PyErr_Occurred());
+			goto bail;
+		}
+		key = PyInt_FromSsize_t(base);
+		allvalues = PyDict_GetItem(cache, key);
+		if (allvalues == NULL && PyErr_Occurred()) {
+			goto bail;
+		}
+		if (allvalues == NULL) {
+			int r;
+			allvalues = PyList_New(0);
+			if (!allvalues) {
+				goto bail;
+			}
+			r = PyDict_SetItem(cache, key, allvalues);
+			Py_DECREF(allvalues);
+			if (r < 0) {
+				goto bail;
+			}
+		}
+		value = PyInt_FromSsize_t(rev);
+		if (PyList_Append(allvalues, value)) {
+			goto bail;
+		}
+		Py_CLEAR(key);
+		Py_CLEAR(value);
+	}
+	Py_RETURN_NONE;
+bail:
+	Py_XDECREF(key);
+	Py_XDECREF(value);
+	return NULL;
+}
+
 static PyObject *index_deltachain(indexObject *self, PyObject *args)
 {
 	int rev, generaldelta;
@@ -2664,6 +2725,8 @@ static PyMethodDef index_methods[] = {
      "get filtered head revisions"}, /* Can always do filtering */
     {"issnapshot", (PyCFunction)index_issnapshot, METH_O,
      "True if the object is a snapshot"},
+    {"findsnapshots", (PyCFunction)index_findsnapshots, METH_VARARGS,
+     "Gather snapshot data in a cache dict"},
     {"deltachain", (PyCFunction)index_deltachain, METH_VARARGS,
      "determine revisions with deltas to reconstruct fulltext"},
     {"slicechunktodensity", (PyCFunction)index_slicechunktodensity,
