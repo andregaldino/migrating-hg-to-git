@@ -12,6 +12,11 @@ fuzzutil-oss-fuzz.o: fuzzutil.cc fuzzutil.h
 	$(CXX) $(CXXFLAGS) -std=c++17 \
 	  -I../../mercurial -c -o fuzzutil-oss-fuzz.o fuzzutil.cc
 
+pyutil.o: pyutil.cc pyutil.h
+	$(CXX) $(CXXFLAGS) -g -O1 \
+	  `$$OUT/sanpy/bin/python-config --cflags` \
+	  -I../../mercurial -c -o pyutil.o pyutil.cc
+
 bdiff.o: ../../mercurial/bdiff.c
 	$(CC) $(CFLAGS) -fsanitize=fuzzer-no-link,address -c -o bdiff.o \
 	  ../../mercurial/bdiff.c
@@ -108,11 +113,11 @@ revlog.o: sanpy ../../mercurial/cext/revlog.c
 	  -I../../mercurial \
 	  -c -o revlog.o ../../mercurial/cext/revlog.c
 
-manifest_fuzzer: sanpy manifest.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o
+manifest_fuzzer: sanpy manifest.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o
 	$(CXX) $(CXXFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial manifest.cc \
-	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o \
+	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
 	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/manifest_fuzzer
 
