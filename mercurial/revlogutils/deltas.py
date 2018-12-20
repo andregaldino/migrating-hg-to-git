@@ -47,11 +47,15 @@ class _testrevlog(object):
         self.index = None
 
     def start(self, rev):
+        if rev == nullrev:
+            return 0
         if rev == 0:
             return 0
         return self._data[rev - 1]
 
     def end(self, rev):
+        if rev == nullrev:
+            return 0
         return self._data[rev]
 
     def length(self, rev):
@@ -61,6 +65,8 @@ class _testrevlog(object):
         return len(self._data)
 
     def issnapshot(self, rev):
+        if rev == nullrev:
+            return True
         return rev in self._snapshot
 
 def slicechunk(revlog, revs, targetsize=None):
@@ -116,6 +122,12 @@ def slicechunk(revlog, revs, targetsize=None):
     [[0], [11], [13], [15]]
     >>> list(slicechunk(revlog, [0, 11, 13, 15], targetsize=20))
     [[0], [11], [13, 15]]
+
+    Slicing involving nullrev
+    >>> list(slicechunk(revlog, [-1, 0, 11, 13, 15], targetsize=20))
+    [[-1, 0], [11], [13, 15]]
+    >>> list(slicechunk(revlog, [-1, 13, 15], targetsize=5))
+    [[-1], [13], [15]]
     """
     if targetsize is not None:
         targetsize = max(targetsize, revlog._srmingapsize)
