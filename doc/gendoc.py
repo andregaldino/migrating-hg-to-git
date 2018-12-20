@@ -29,6 +29,7 @@ from mercurial import util
 util.datapath
 from mercurial import (
     commands,
+    encoding,
     extensions,
     help,
     minirst,
@@ -230,7 +231,7 @@ def allextensionnames():
 if __name__ == "__main__":
     doc = b'hg.1.gendoc'
     if len(sys.argv) > 1:
-        doc = sys.argv[1]
+        doc = encoding.strtolocal(sys.argv[1])
 
     ui = uimod.ui.load()
     if doc == b'hg.1.gendoc':
