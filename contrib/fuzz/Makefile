@@ -124,12 +124,23 @@ manifest_fuzzer: sanpy manifest.cc manifest.o charencode.o parsers.o dirs.o path
 manifest_corpus.zip:
 	python manifest_corpus.py $$OUT/manifest_fuzzer_seed_corpus.zip
 
+revlog_fuzzer: sanpy revlog.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o
+	$(CXX) $(CXXFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -Wno-register -Wno-macro-redefined \
+	  -I../../mercurial revlog.cc \
+	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
+	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  -o $$OUT/revlog_fuzzer
+
+revlog_corpus.zip:
+	python revlog_corpus.py $$OUT/revlog_fuzzer_seed_corpus.zip
+
 clean:
 	$(RM) *.o *_fuzzer \
 	  bdiff \
 	  mpatch \
 	  xdiff
 
-oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer manifest_fuzzer manifest_corpus.zip
+oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer manifest_fuzzer manifest_corpus.zip revlog_fuzzer revlog_corpus.zip
 
 .PHONY: all clean oss-fuzz sanpy
