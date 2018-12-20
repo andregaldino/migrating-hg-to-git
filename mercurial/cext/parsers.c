@@ -38,85 +38,6 @@ static PyObject *dict_new_presized(PyObject *self, PyObject *args)
 	return _dict_new_presized(expected_size);
 }
 
-/*
- * This code assumes that a manifest is stitched together with newline
- * ('\n') characters.
- */
-static PyObject *parse_manifest(PyObject *self, PyObject *args)
-{
-	PyObject *mfdict, *fdict;
-	char *str, *start, *end;
-	int len;
-
-	if (!PyArg_ParseTuple(
-	        args, PY23("O!O!s#:parse_manifest", "O!O!y#:parse_manifest"),
-	        &PyDict_Type, &mfdict, &PyDict_Type, &fdict, &str, &len))
-		goto quit;
-
-	start = str;
-	end = str + len;
-	while (start < end) {
-		PyObject *file = NULL, *node = NULL;
-		PyObject *flags = NULL;
-		char *zero = NULL, *newline = NULL;
-		ptrdiff_t nlen;
-
-		zero = memchr(start, '\0', end - start);
-		if (!zero) {
-			PyErr_SetString(PyExc_ValueError,
-			                "manifest entry has no separator");
-			goto quit;
-		}
-
-		newline = memchr(zero + 1, '\n', end - (zero + 1));
-		if (!newline) {
-			PyErr_SetString(PyExc_ValueError,
-			                "manifest contains trailing garbage");
-			goto quit;
-		}
-
-		file = PyBytes_FromStringAndSize(start, zero - start);
-
-		if (!file)
-			goto bail;
-
-		nlen = newline - zero - 1;
-
-		node = unhexlify(zero + 1, nlen > 40 ? 40 : (Py_ssize_t)nlen);
-		if (!node)
-			goto bail;
-
-		if (nlen > 40) {
-			flags = PyBytes_FromStringAndSize(zero + 41, nlen - 40);
-			if (!flags)
-				goto bail;
-
-			if (PyDict_SetItem(fdict, file, flags) == -1)
-				goto bail;
-		}
-
-		if (PyDict_SetItem(mfdict, file, node) == -1)
-			goto bail;
-
-		start = newline + 1;
-
-		Py_XDECREF(flags);
-		Py_XDECREF(node);
-		Py_XDECREF(file);
-		continue;
-	bail:
-		Py_XDECREF(flags);
-		Py_XDECREF(node);
-		Py_XDECREF(file);
-		goto quit;
-	}
-
-	Py_INCREF(Py_None);
-	return Py_None;
-quit:
-	return NULL;
-}
-
 static inline dirstateTupleObject *make_dirstate_tuple(char state, int mode,
                                                        int size, int mtime)
 {
@@ -690,7 +611,6 @@ static PyMethodDef methods[] = {
     {"nonnormalotherparententries", nonnormalotherparententries, METH_VARARGS,
      "create a set containing non-normal and other parent entries of given "
      "dirstate\n"},
-    {"parse_manifest", parse_manifest, METH_VARARGS, "parse a manifest\n"},
     {"parse_dirstate", parse_dirstate, METH_VARARGS, "parse a dirstate\n"},
     {"parse_index2", parse_index2, METH_VARARGS, "parse a revlog index\n"},
     {"isasciistr", isasciistr, METH_VARARGS, "check if an ASCII string\n"},
