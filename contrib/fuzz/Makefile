@@ -4,7 +4,7 @@ CXX = clang++
 all: bdiff mpatch xdiff
 
 fuzzutil.o: fuzzutil.cc fuzzutil.h
-	$(CXX) $(CXXFLAGS) -g -O1 -fsanitize=fuzzer-no-link,address \
+	$(CXX) $(CXXFLAGS) -g -O1 \
 	  -std=c++17 \
 	  -I../../mercurial -c -o fuzzutil.o fuzzutil.cc
 
