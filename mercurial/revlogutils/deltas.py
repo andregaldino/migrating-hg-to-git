@@ -713,7 +713,8 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
         if good is not None:
             yield None
             return
-    for candidates in _rawgroups(revlog, p1, p2, cachedelta):
+    snapshots = collections.defaultdict(list)
+    for candidates in _rawgroups(revlog, p1, p2, cachedelta, snapshots):
         good = yield candidates
         if good is not None:
             break
@@ -734,12 +735,8 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
                 break
             good = yield (base,)
         # refine snapshot up
-        #
-        # XXX the _findsnapshots call can be expensive and is "duplicated" with
-        # the one done in `_rawgroups`. Once we start working on performance,
-        # we should make the two logics share this computation.
-        snapshots = collections.defaultdict(list)
-        _findsnapshots(revlog, snapshots, good + 1)
+        if not snapshots:
+            _findsnapshots(revlog, snapshots, good + 1)
         previous = None
         while good != previous:
             previous = good
@@ -749,7 +746,7 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
     # we have found nothing
     yield None
 
-def _rawgroups(revlog, p1, p2, cachedelta):
+def _rawgroups(revlog, p1, p2, cachedelta, snapshots=None):
     """Provides group of revision to be tested as delta base
 
     This lower level function focus on emitting delta theorically interresting
@@ -779,7 +776,9 @@ def _rawgroups(revlog, p1, p2, cachedelta):
             yield parents
 
     if sparse and parents:
-        snapshots = collections.defaultdict(list) # map: base-rev: snapshot-rev
+        if snapshots is None:
+            # map: base-rev: snapshot-rev
+            snapshots = collections.defaultdict(list)
         # See if we can use an existing snapshot in the parent chains to use as
         # a base for a new intermediate-snapshot
         #
