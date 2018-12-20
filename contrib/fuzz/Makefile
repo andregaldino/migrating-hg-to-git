@@ -72,7 +72,7 @@ xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-
 
 # TODO use the $OUT env var instead of hardcoding /out
 /out/sanpy/bin/python:
-	cd /Python-2.7.15/ ; ./configure --without-pymalloc --prefix=$$OUT/sanpy CFLAGS="$(CFLAGS)" LDFLAGS=$$PYLDFLAGS
+	cd /Python-2.7.15/ ; ASAN_OPTIONS=detect_leaks=0 ./configure --without-pymalloc --prefix=$$OUT/sanpy CFLAGS="$(CFLAGS)" LINKCC="$($CXX)" LDFLAGS="$(CXXFLAGS)"
 	cd /Python-2.7.15/ ; grep -v HAVE_GETC_UNLOCKED < pyconfig.h > tmp && mv tmp pyconfig.h
 	cd /Python-2.7.15/ ; ASAN_OPTIONS=detect_leaks=0 make && make install
 
