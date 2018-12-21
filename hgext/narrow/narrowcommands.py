@@ -20,7 +20,6 @@ from mercurial import (
     exchange,
     extensions,
     hg,
-    merge,
     narrowspec,
     node,
     pycompat,
@@ -259,8 +258,6 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
 
 def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
            newincludes, newexcludes):
-    newmatch = narrowspec.match(repo.root, newincludes, newexcludes)
-
     # for now we assume that if a server has ellipses enabled, we will be
     # exchanging ellipses nodes. In future we should add ellipses as a client
     # side requirement (maybe) to distinguish a client is shallow or not and
@@ -316,20 +313,10 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                 bundle2.processbundle(repo, bundle,
                         transactiongetter=tgetter)
 
-        repo.setnewnarrowpats()
-        narrowspec.copytoworkingcopy(repo)
-        actions = merge.emptyactions()
-        addgaction = actions['g'].append
-
-        mf = repo['.'].manifest().matches(newmatch)
-        for f, fn in mf.iteritems():
-            if f not in repo.dirstate:
-                addgaction((f, (mf.flags(f), False),
-                            "add from widened narrow clone"))
-
-        merge.applyupdates(repo, actions, wctx=repo[None],
-                           mctx=repo['.'], overwrite=False)
-        merge.recordupdates(repo, actions, branchmerge=False)
+        with repo.transaction('widening'):
+            repo.setnewnarrowpats()
+            narrowspec.updateworkingcopy(repo)
+            narrowspec.copytoworkingcopy(repo)
 
 # TODO(rdamazio): Make new matcher format and update description
 @command('tracked',
