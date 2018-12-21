@@ -161,6 +161,9 @@ configitem('fsmonitor', 'timeout',
 configitem('fsmonitor', 'blacklistusers',
     default=list,
 )
+configitem('hgwatchman', 'verbose',
+    default=True,
+)
 configitem('experimental', 'fsmonitor.transaction_notify',
     default=False,
 )
@@ -172,11 +175,14 @@ _blacklist = ['largefiles', 'eol']
 def _handleunavailable(ui, state, ex):
     """Exception handler for Watchman interaction exceptions"""
     if isinstance(ex, watchmanclient.Unavailable):
-        if ex.warn:
+        # experimental config: hgwatchman.verbose
+        if ex.warn and ui.configbool('hgwatchman', 'verbose'):
             ui.warn(str(ex) + '\n')
         if ex.invalidate:
             state.invalidate()
-        ui.log('fsmonitor', 'Watchman unavailable: %s\n', ex.msg)
+        # experimental config: hgwatchman.verbose
+        if ui.configbool('hgwatchman','verbose'):
+            ui.log('fsmonitor', 'Watchman unavailable: %s\n', ex.msg)
     else:
         ui.log('fsmonitor', 'Watchman exception: %s\n', ex)
 
