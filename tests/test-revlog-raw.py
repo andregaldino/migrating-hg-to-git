@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import, print_function
 
+import hashlib
 import sys
 
 from mercurial import (
@@ -327,6 +328,75 @@ def slicingtest(rlog):
     finally:
         rlog._srmingapsize = oldmin
 
+def md5sum(s):
+    return hashlib.md5(s).digest()
+
+def _maketext(*coord):
+    """create piece of text according to range of integers
+
+    The test returned use a md5sum of the integer to make it less
+    compressible"""
+    pieces = []
+    for start, size in coord:
+        num = range(start, start + size)
+        p = [md5sum(b'%d' % r) for r in num]
+        pieces.append(b'\n'.join(p))
+    return b'\n'.join(pieces) + b'\n'
+
+data = [
+    _maketext((0, 120), (456, 60)),
+    _maketext((0, 120), (345, 60)),
+    _maketext((0, 120), (734, 60)),
+    _maketext((0, 120), (734, 60), (923, 45)),
+    _maketext((0, 120), (734, 60), (234, 45)),
+    _maketext((0, 120), (734, 60), (564, 45)),
+    _maketext((0, 120), (734, 60), (361, 45)),
+    _maketext((0, 120), (734, 60), (489, 45)),
+    _maketext((0, 120), (123, 60)),
+    _maketext((0, 120), (145, 60)),
+    _maketext((0, 120), (104, 60)),
+    _maketext((0, 120), (430, 60)),
+    _maketext((0, 120), (430, 60), (923, 45)),
+    _maketext((0, 120), (430, 60), (234, 45)),
+    _maketext((0, 120), (430, 60), (564, 45)),
+    _maketext((0, 120), (430, 60), (361, 45)),
+    _maketext((0, 120), (430, 60), (489, 45)),
+    _maketext((0, 120), (249, 60)),
+    _maketext((0, 120), (832, 60)),
+    _maketext((0, 120), (891, 60)),
+    _maketext((0, 120), (543, 60)),
+    _maketext((0, 120), (120, 60)),
+    _maketext((0, 120), (60, 60), (768, 30)),
+    _maketext((0, 120), (60, 60), (260, 30)),
+    _maketext((0, 120), (60, 60), (450, 30)),
+    _maketext((0, 120), (60, 60), (361, 30)),
+    _maketext((0, 120), (60, 60), (886, 30)),
+    _maketext((0, 120), (60, 60), (116, 30)),
+    _maketext((0, 120), (60, 60), (567, 30), (629, 40)),
+    _maketext((0, 120), (60, 60), (569, 30), (745, 40)),
+    _maketext((0, 120), (60, 60), (777, 30), (700, 40)),
+    _maketext((0, 120), (60, 60), (618, 30), (398, 40), (158, 10)),
+]
+
+def makesnapshot(tr):
+    rl = newrevlog(name=b'_snaprevlog3.i', recreate=True)
+    for i in data:
+        appendrev(rl, i, tr)
+    return rl
+
+snapshots = [-1, 0, 6, 8, 11, 17, 19, 21, 25, 30]
+def issnapshottest(rlog):
+    result = []
+    if rlog.issnapshot(-1):
+        result.append(-1)
+    for rev in rlog:
+        if rlog.issnapshot(rev):
+            result.append(rev)
+    if snapshots != result:
+        print('snapshot differ:')
+        print('  expected: %s' % snapshots)
+        print('  got:      %s' % result)
+
 def maintest():
     expected = rl = None
     with newtransaction() as tr:
@@ -351,6 +421,9 @@ def maintest():
         print('lowlevelcopy test passed')
         slicingtest(rl)
         print('slicing test passed')
+        rl5 = makesnapshot(tr)
+        issnapshottest(rl5)
+        print('issnapshot test passed')
 
 try:
     maintest()
