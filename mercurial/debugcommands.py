@@ -2751,8 +2751,9 @@ def debugupdatecaches(ui, repo, *pats, **opts):
 @command('debugupgraderepo', [
     ('o', 'optimize', [], _('extra optimization to perform'), _('NAME')),
     ('', 'run', False, _('performs an upgrade')),
+    ('', 'backup', True, _('keep the old repository content around')),
 ])
-def debugupgraderepo(ui, repo, run=False, optimize=None):
+def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True):
     """upgrade a repository to use different features
 
     If no arguments are specified, the repository is evaluated for upgrade
@@ -2771,7 +2772,8 @@ def debugupgraderepo(ui, repo, run=False, optimize=None):
     should complete almost instantaneously and the chances of a consumer being
     unable to access the repository should be low.
     """
-    return upgrade.upgraderepo(ui, repo, run=run, optimize=optimize)
+    return upgrade.upgraderepo(ui, repo, run=run, optimize=optimize,
+                               backup=backup)
 
 @command('debugwalk', cmdutil.walkopts, _('[OPTION]... [FILE]...'),
          inferrepo=True)

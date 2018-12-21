@@ -742,7 +742,7 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
 
     return backuppath
 
-def upgraderepo(ui, repo, run=False, optimize=None):
+def upgraderepo(ui, repo, run=False, optimize=None, backup=True):
     """Upgrade a repository in place."""
     if optimize is None:
         optimize = []
@@ -899,6 +899,10 @@ def upgraderepo(ui, repo, run=False, optimize=None):
             with dstrepo.wlock(), dstrepo.lock():
                 backuppath = _upgraderepo(ui, repo, dstrepo, newreqs,
                                           upgradeactions)
+            if not (backup or backuppath is None):
+                ui.write(_('removing old repository content%s\n') % backuppath)
+                repo.vfs.rmtree(backuppath, forcibly=True)
+                backuppath = None
 
         finally:
             ui.write(_('removing temporary repository %s\n') % tmppath)
