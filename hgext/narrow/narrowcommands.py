@@ -339,6 +339,8 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
      ('', 'clear', False, _('whether to replace the existing narrowspec')),
      ('', 'force-delete-local-changes', False,
        _('forces deletion of local changes when narrowing')),
+     ('', 'update-working-copy', False,
+      _('update working copy when the store has changed')),
     ] + commands.remoteopts,
     _('[OPTIONS]... [REMOTE]'),
     inferrepo=True)
@@ -398,8 +400,9 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     addedexcludes = narrowspec.parsepatterns(opts['addexclude'])
     removedexcludes = narrowspec.parsepatterns(opts['removeexclude'])
 
+    update_working_copy = opts['update_working_copy']
     only_show = not (addedincludes or removedincludes or addedexcludes or
-                     removedexcludes or newrules)
+                     removedexcludes or newrules or update_working_copy)
 
     oldincludes, oldexcludes = repo.narrowpats
 
@@ -426,6 +429,12 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
             fm.write('status', '%s ', 'X', label='narrow.excluded')
             fm.write('pat', '%s\n', i, label='narrow.excluded')
         fm.end()
+        return 0
+
+    if update_working_copy:
+        with repo.wlock(), repo.lock(), repo.transaction('narrow-wc') as tr:
+            narrowspec.updateworkingcopy(repo, tr)
+            narrowspec.copytoworkingcopy(repo, tr)
         return 0
 
     if not widening and not narrowing:

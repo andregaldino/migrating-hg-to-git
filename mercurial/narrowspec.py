@@ -13,12 +13,16 @@ from .i18n import _
 from . import (
     error,
     match as matchmod,
+    merge,
     repository,
     sparse,
     util,
 )
 
+# The file in .hg/store/ that indicates which paths exit in the store
 FILENAME = 'narrowspec'
+# The file in .hg/ that indicates which paths exit in the dirstate
+DIRSTATE_FILENAME = 'narrowspec.dirstate'
 
 # Pattern prefixes that are allowed in narrow patterns. This list MUST
 # only contain patterns that are fast and safe to evaluate. Keep in mind
@@ -157,6 +161,18 @@ def save(repo, includepats, excludepats):
     spec = format(includepats, excludepats)
     repo.svfs.write(FILENAME, spec)
 
+def copytoworkingcopy(repo, tr):
+    if tr:
+        def write(file):
+            spec = repo.svfs.read(FILENAME)
+            file.write(spec)
+            file.close()
+        tr.addfilegenerator('narrowspec', (DIRSTATE_FILENAME,), write,
+                            location='plain')
+    else:
+        spec = repo.svfs.read(FILENAME)
+        repo.vfs.write(DIRSTATE_FILENAME, spec)
+
 def savebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
@@ -226,3 +242,57 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     else:
         res_includes = set(req_includes)
     return res_includes, res_excludes, invalid_includes
+
+# These two are extracted for extensions (specifically for Google's CitC file
+# system)
+def _deletecleanfiles(repo, files):
+    for f in files:
+        repo.wvfs.unlinkpath(f)
+
+def _writeaddedfiles(repo, pctx, files):
+    actions = merge.emptyactions()
+    addgaction = actions['g'].append
+    mf = repo['.'].manifest()
+    for f in files:
+        if not repo.wvfs.exists(f):
+            addgaction((f, (mf.flags(f), False), "narrowspec updated"))
+    merge.applyupdates(repo, actions, wctx=repo[None],
+                       mctx=repo['.'], overwrite=False)
+
+def checkworkingcopynarrowspec(repo):
+    storespec = repo.svfs.tryread(FILENAME)
+    wcspec = repo.vfs.tryread(DIRSTATE_FILENAME)
+    if wcspec != storespec:
+        raise error.Abort(_("working copy's narrowspec is stale"),
+                          hint=_("run 'hg tracked --update-working-copy'"))
+
+def updateworkingcopy(repo, tr):
+    oldspec = repo.vfs.tryread(DIRSTATE_FILENAME)
+    newspec = repo.svfs.tryread(FILENAME)
+
+    oldincludes, oldexcludes = parseconfig(repo.ui, oldspec)
+    newincludes, newexcludes = parseconfig(repo.ui, newspec)
+    oldmatch = match(repo.root, include=oldincludes, exclude=oldexcludes)
+    newmatch = match(repo.root, include=newincludes, exclude=newexcludes)
+    addedmatch = matchmod.differencematcher(newmatch, oldmatch)
+    removedmatch = matchmod.differencematcher(oldmatch, newmatch)
+
+    ds = repo.dirstate
+    lookup, status = ds.status(removedmatch, subrepos=[], ignored=False,
+                               clean=True, unknown=False)
+    _deletecleanfiles(repo, status.clean)
+    trackeddirty = lookup + status.modified + status.added
+    for f in sorted(trackeddirty):
+        repo.ui.status(_('not deleting possibly dirty file %s\n') % f)
+    for f in status.clean + trackeddirty:
+        ds.drop(f)
+
+    repo.narrowpats = newincludes, newexcludes
+    repo._narrowmatch = newmatch
+    pctx = repo['.']
+    newfiles = [f for f in pctx.manifest().walk(addedmatch) if f not in ds]
+    for f in newfiles:
+        ds.normallookup(f)
+    _writeaddedfiles(repo, pctx, newfiles)
+
+    ds.write(tr)

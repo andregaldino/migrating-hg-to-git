@@ -1227,6 +1227,7 @@ class localrepository(object):
     def _narrowmatch(self):
         if repository.NARROW_REQUIREMENT not in self.requirements:
             return matchmod.always(self.root, '')
+        narrowspec.checkworkingcopynarrowspec(self)
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)
 
@@ -1251,7 +1252,14 @@ class localrepository(object):
 
     def setnarrowpats(self, newincludes, newexcludes):
         narrowspec.save(self, newincludes, newexcludes)
+        narrowspec.copytoworkingcopy(self, self.currenttransaction())
         self.invalidate(clearfilecache=True)
+        # So the next access won't be considered a conflict
+        # TODO: It seems like there should be a way of doing this that
+        # doesn't involve replacing these attributes.
+        self.narrowpats = newincludes, newexcludes
+        self._narrowmatch = narrowspec.match(self.root, include=newincludes,
+                                             exclude=newexcludes)
 
     def __getitem__(self, changeid):
         if changeid is None:

@@ -75,13 +75,20 @@ Narrow the share and check that the main repo's working copy gets updated
   deleting meta/d5/00manifest.i (tree !)
   $ hg -R main tracked
   I path:d7
+  $ hg -R main files
+  abort: working copy's narrowspec is stale
+  (run 'hg tracked --update-working-copy')
+  [255]
+  $ hg -R main tracked --update-working-copy
+  not deleting possibly dirty file d3/f
+  not deleting possibly dirty file d3/g
+  not deleting possibly dirty file d5/f
 # d1/f, d3/f, d3/g and d5/f should no longer be reported
   $ hg -R main files
   main/d7/f
 # d1/f should no longer be there, d3/f should be since it was dirty, d3/g should be there since
 # it was added, and d5/f should be since we couldn't be sure it was clean
   $ find main/d* -type f | sort
-  main/d1/f
   main/d3/f
   main/d3/g
   main/d5/f
@@ -102,16 +109,20 @@ Widen the share and check that the main repo's working copy gets updated
   I path:d1
   I path:d3
   I path:d7
+  $ hg -R main files
+  abort: working copy's narrowspec is stale
+  (run 'hg tracked --update-working-copy')
+  [255]
+  $ hg -R main tracked --update-working-copy
 # d1/f, d3/f should be back
   $ hg -R main files
   main/d1/f
   main/d3/f
-  main/d3/g
   main/d7/f
 # d3/f should be modified (not clobbered by the widening), and d3/g should be untracked
   $ hg -R main st --all
   M d3/f
-  A d3/g
+  ? d3/g
   C d1/f
   C d7/f
 
@@ -129,4 +140,31 @@ We should also be able to unshare without breaking everything:
   crosschecking files in changesets and manifests
   checking files
   checked 11 changesets with 3 changes to 3 files
+  $ cd ..
+
+Dirstate should be left alone when upgrading from version of hg that didn't support narrow+share
+
+  $ hg share main share-upgrade
+  updating working directory
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd share-upgrade
+  $ echo x >> d1/f
+  $ echo y >> d3/g
+  $ hg add d3/g
+  $ hg rm d7/f
+  $ hg st
+  M d1/f
+  A d3/g
+  R d7/f
+Make it look like a repo from before narrow+share was supported
+  $ rm .hg/narrowspec.dirstate
+  $ hg st
+  abort: working copy's narrowspec is stale
+  (run 'hg tracked --update-working-copy')
+  [255]
+  $ hg tracked --update-working-copy
+  $ hg st
+  M d1/f
+  A d3/g
+  R d7/f
   $ cd ..

@@ -38,6 +38,7 @@ from . import (
     narrowspec,
     node,
     phases,
+    repository as repositorymod,
     scmutil,
     sshpeer,
     statichttprepo,
@@ -331,6 +332,9 @@ def postshare(sourcerepo, destrepo, defaultpath=None):
         template = ('[paths]\n'
                     'default = %s\n')
         destrepo.vfs.write('hgrc', util.tonativeeol(template % default))
+    if repositorymod.NARROW_REQUIREMENT in sourcerepo.requirements:
+        with destrepo.wlock():
+            narrowspec.copytoworkingcopy(destrepo, None)
 
 def _postshareupdate(repo, update, checkout=None):
     """Maybe perform a working directory update after a shared repo is created.
@@ -731,7 +735,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
             local = destpeer.local()
             if local:
                 if narrow:
-                    with local.lock():
+                    with local.wlock(), local.lock():
                         local.setnarrowpats(storeincludepats, storeexcludepats)
 
                 u = util.url(abspath)

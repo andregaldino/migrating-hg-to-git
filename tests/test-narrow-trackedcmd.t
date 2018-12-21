@@ -107,6 +107,8 @@ Testing the --import-rules flag of `hg tracked` command
       --clear                      whether to replace the existing narrowspec
       --force-delete-local-changes forces deletion of local changes when
                                    narrowing
+      --update-working-copy        update working copy when the store has
+                                   changed
    -e --ssh CMD                    specify ssh command to use
       --remotecmd CMD              specify hg command to run on the remote side
       --insecure                   do not verify server certificate (ignoring

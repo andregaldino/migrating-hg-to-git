@@ -6,6 +6,7 @@
   > path:foo
   > [exclude]
   > EOF
+  $ cp .hg/store/narrowspec .hg/narrowspec.dirstate
   $ echo treemanifest >> .hg/requires
   $ echo narrowhg-experimental >> .hg/requires
   $ mkdir -p foo/bar
