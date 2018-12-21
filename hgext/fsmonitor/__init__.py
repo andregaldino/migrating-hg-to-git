@@ -161,6 +161,9 @@ configitem('fsmonitor', 'timeout',
 configitem('fsmonitor', 'blacklistusers',
     default=list,
 )
+configitem('fsmonitor', 'watchman_exe',
+    default='watchman',
+)
 configitem('fsmonitor', 'verbose',
     default=True,
 )

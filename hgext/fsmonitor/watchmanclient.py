@@ -82,9 +82,11 @@ class client(object):
         try:
             if self._watchmanclient is None:
                 self._firsttime = False
+                watchman_exe = self._ui.configpath('fsmonitor', 'watchman_exe')
                 self._watchmanclient = pywatchman.client(
                     timeout=self._timeout,
-                    useImmutableBser=True)
+                    useImmutableBser=True,
+                    watchman_exe=watchman_exe)
             return self._watchmanclient.query(*watchmanargs)
         except pywatchman.CommandError as ex:
             if 'unable to resolve root' in ex.msg:

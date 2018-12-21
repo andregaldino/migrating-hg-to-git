@@ -317,7 +317,7 @@ class UnixSocketTransport(Transport):
     """ local unix domain socket transport """
     sock = None
 
-    def __init__(self, sockpath, timeout):
+    def __init__(self, sockpath, timeout, watchman_exe):
         self.sockpath = sockpath
         self.timeout = timeout
 
@@ -397,7 +397,7 @@ def _get_overlapped_result_ex_impl(pipe, olap, nbytes, millis, alertable):
 class WindowsNamedPipeTransport(Transport):
     """ connect to a named pipe """
 
-    def __init__(self, sockpath, timeout):
+    def __init__(self, sockpath, timeout, watchman_exe):
         self.sockpath = sockpath
         self.timeout = int(math.ceil(timeout * 1000))
         self._iobuf = None
@@ -563,9 +563,10 @@ class CLIProcessTransport(Transport):
     proc = None
     closed = True
 
-    def __init__(self, sockpath, timeout):
+    def __init__(self, sockpath, timeout, watchman_exe):
         self.sockpath = sockpath
         self.timeout = timeout
+        self.watchman_exe = watchman_exe
 
     def close(self):
         if self.proc:
@@ -579,7 +580,7 @@ class CLIProcessTransport(Transport):
         if self.proc:
             return self.proc
         args = [
-            'watchman',
+            self.watchman_exe,
             '--sockname={0}'.format(self.sockpath),
             '--logfile=/BOGUS',
             '--statefile=/BOGUS',
@@ -756,6 +757,7 @@ class client(object):
     unilateral = ['log', 'subscription']
     tport = None
     useImmutableBser = None
+    watchman_exe = None
 
     def __init__(self,
                  sockpath=None,
@@ -763,10 +765,12 @@ class client(object):
                  transport=None,
                  sendEncoding=None,
                  recvEncoding=None,
-                 useImmutableBser=False):
+                 useImmutableBser=False,
+                 watchman_exe=None):
         self.sockpath = sockpath
         self.timeout = timeout
         self.useImmutableBser = useImmutableBser
+        self.watchman_exe = watchman_exe
 
         if inspect.isclass(transport) and issubclass(transport, Transport):
             self.transport = transport
@@ -817,7 +821,7 @@ class client(object):
         if path:
             return path
 
-        cmd = ['watchman', '--output-encoding=bser', 'get-sockname']
+        cmd = [self.watchman_exe, '--output-encoding=bser', 'get-sockname']
         try:
             args = dict(stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
@@ -858,7 +862,7 @@ class client(object):
         if self.sockpath is None:
             self.sockpath = self._resolvesockname()
 
-        self.tport = self.transport(self.sockpath, self.timeout)
+        self.tport = self.transport(self.sockpath, self.timeout, self.watchman_exe)
         self.sendConn = self.sendCodec(self.tport)
         self.recvConn = self.recvCodec(self.tport)
 
