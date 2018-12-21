@@ -1,0 +1,73 @@
+{
+    "interactions": [
+        {
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Fri, 21 Dec 2018 22:19:11 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fdv22bpksbdis3vfeksluagfslhfojblbnkro7we4; expires=Wed, 20-Dec-2023 22:19:11 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"data\":[],\"maps\":{},\"query\":{\"queryKey\":null},\"cursor\":{\"limit\":100,\"after\":null,\"before\":null,\"order\":null}},\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "headers": {
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "content-length": [
+                        "70"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.1+564-6f483b107eb5+20181221)"
+                    ]
+                }, 
+                "uri": "https://phab.mercurial-scm.org//api/user.search", 
+                "body": "constraints%5BisBot%5D=true&api.token=cli-hahayouwish"
+            }
+        }
+    ], 
+    "version": 1
+}

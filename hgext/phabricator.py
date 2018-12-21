@@ -155,6 +155,8 @@ def urlencodenested(params):
     """
     flatparams = util.sortdict()
     def process(prefix, obj):
+        if isinstance(obj, bool):
+            obj = {True: b'true', False: b'false'}[obj]  # Python -> PHP form
         items = {list: enumerate, dict: lambda x: x.items()}.get(type(obj))
         if items is None:
             flatparams[prefix] = obj

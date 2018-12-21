@@ -65,6 +65,27 @@ Create a differential diff:
   D4597 - created - 1a5640df7bbf: create beta for phabricator test
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/1a5640df7bbf-6daf3e6e-phabsend.hg
 
+  $ hg debugcallconduit user.search --test-vcr "$VCR/phab-conduit.json" <<EOF
+  > {
+  >     "constraints": {
+  >         "isBot": true
+  >     }
+  > }
+  > EOF
+  {
+    "cursor": {
+      "after": null,
+      "before": null,
+      "limit": 100,
+      "order": null
+    },
+    "data": [],
+    "maps": {},
+    "query": {
+      "queryKey": null
+    }
+  }
+
 Template keywords
   $ hg log -T'{rev} {phabreview|json}\n'
   1 {"id": "D4597", "url": "https://phab.mercurial-scm.org/D4597"}
