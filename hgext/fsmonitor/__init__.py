@@ -367,6 +367,9 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
         fexists = entry['exists']
         kind = getkind(fmode)
 
+        if '/.hg/' in fname or fname.endswith('/.hg'):
+            return bail('nested-repo-detected')
+
         if not fexists:
             # if marked as deleted and we don't already have a change
             # record, mark it as deleted.  If we already have an entry
@@ -740,6 +743,14 @@ def wrapupdate(orig, repo, node, branchmerge, force, ancestor=None,
             repo, node, branchmerge, force, ancestor, mergeancestor,
             labels, matcher, **kwargs)
 
+def repo_has_depth_one_nested_repo(repo):
+    for f in repo.wvfs.listdir():
+        if os.path.isdir(os.path.join(repo.root, f, '.hg')):
+            msg = 'fsmonitor: sub-repository %r detected, fsmonitor disabled\n'
+            repo.ui.debug(msg % f)
+            return True
+    return False
+
 def reposetup(ui, repo):
     # We don't work with largefiles or inotify
     exts = extensions.enabled()
@@ -755,6 +766,9 @@ def reposetup(ui, repo):
         # if repo[None].substate can cause a dirstate parse, which is too
         # slow. Instead, look for a file called hgsubstate,
         if repo.wvfs.exists('.hgsubstate') or repo.wvfs.exists('.hgsub'):
+            return
+
+        if repo_has_depth_one_nested_repo(repo):
             return
 
         fsmonitorstate = state.state(repo)
