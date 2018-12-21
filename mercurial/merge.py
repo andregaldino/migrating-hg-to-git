@@ -1541,6 +1541,25 @@ class updateresult(object):
         return (not self.updatedcount and not self.mergedcount
                 and not self.removedcount and not self.unresolvedcount)
 
+def emptyactions():
+    """create an actions dict, to be populated and passed to applyupdates()"""
+    return dict((m, [])
+                for m in (
+                    ACTION_ADD,
+                    ACTION_ADD_MODIFIED,
+                    ACTION_FORGET,
+                    ACTION_GET,
+                    ACTION_CHANGED_DELETED,
+                    ACTION_DELETED_CHANGED,
+                    ACTION_REMOVE,
+                    ACTION_DIR_RENAME_MOVE_LOCAL,
+                    ACTION_LOCAL_DIR_RENAME_GET,
+                    ACTION_MERGE,
+                    ACTION_EXEC,
+                    ACTION_KEEP,
+                    ACTION_PATH_CONFLICT,
+                    ACTION_PATH_CONFLICT_RESOLVE))
+
 def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     """apply the merge action list to the working directory
 
@@ -2090,22 +2109,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
                     del actionbyfile[f]
 
         # Convert to dictionary-of-lists format
-        actions = dict((m, [])
-                       for m in (
-                           ACTION_ADD,
-                           ACTION_ADD_MODIFIED,
-                           ACTION_FORGET,
-                           ACTION_GET,
-                           ACTION_CHANGED_DELETED,
-                           ACTION_DELETED_CHANGED,
-                           ACTION_REMOVE,
-                           ACTION_DIR_RENAME_MOVE_LOCAL,
-                           ACTION_LOCAL_DIR_RENAME_GET,
-                           ACTION_MERGE,
-                           ACTION_EXEC,
-                           ACTION_KEEP,
-                           ACTION_PATH_CONFLICT,
-                           ACTION_PATH_CONFLICT_RESOLVE))
+        actions = emptyactions()
         for f, (m, args, msg) in actionbyfile.iteritems():
             if m not in actions:
                 actions[m] = []

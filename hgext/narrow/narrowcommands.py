@@ -316,7 +316,7 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                         transactiongetter=tgetter)
 
         repo.setnewnarrowpats()
-        actions = {k: [] for k in 'a am f g cd dc r dm dg m e k p pr'.split()}
+        actions = merge.emptyactions()
         addgaction = actions['g'].append
 
         mf = repo['.'].manifest().matches(newmatch)
