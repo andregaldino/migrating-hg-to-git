@@ -180,7 +180,8 @@ def _handleunavailable(ui, state, ex):
     if isinstance(ex, watchmanclient.Unavailable):
         # experimental config: fsmonitor.verbose
         if ex.warn and ui.configbool('fsmonitor', 'verbose'):
-            ui.warn(str(ex) + '\n')
+            if 'illegal_fstypes' not in str(ex):
+                ui.warn(str(ex) + '\n')
         if ex.invalidate:
             state.invalidate()
         # experimental config: fsmonitor.verbose
