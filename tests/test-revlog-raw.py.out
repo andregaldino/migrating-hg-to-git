@@ -4,3 +4,4 @@ clone test passed
 lowlevelcopy test passed
 slicing test passed
 issnapshot test passed
+findsnapshot test passed

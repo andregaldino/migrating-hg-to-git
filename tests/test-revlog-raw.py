@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import, print_function
 
+import collections
 import hashlib
 import sys
 
@@ -397,6 +398,24 @@ def issnapshottest(rlog):
         print('  expected: %s' % snapshots)
         print('  got:      %s' % result)
 
+snapshotmapall = {0: [6, 8, 11, 17, 19, 25], 8: [21], -1: [0, 30]}
+snapshotmap15 = {0: [17, 19, 25], 8: [21], -1: [30]}
+def findsnapshottest(rlog):
+    resultall = collections.defaultdict(list)
+    deltas._findsnapshots(rlog, resultall, 0)
+    resultall = dict(resultall.items())
+    if resultall != snapshotmapall:
+        print('snapshot map  differ:')
+        print('  expected: %s' % snapshotmapall)
+        print('  got:      %s' % resultall)
+    result15 = collections.defaultdict(list)
+    deltas._findsnapshots(rlog, result15, 15)
+    result15 = dict(result15.items())
+    if result15 != snapshotmap15:
+        print('snapshot map  differ:')
+        print('  expected: %s' % snapshotmap15)
+        print('  got:      %s' % result15)
+
 def maintest():
     expected = rl = None
     with newtransaction() as tr:
@@ -424,6 +443,8 @@ def maintest():
         rl5 = makesnapshot(tr)
         issnapshottest(rl5)
         print('issnapshot test passed')
+        findsnapshottest(rl5)
+        print('findsnapshot test passed')
 
 try:
     maintest()
