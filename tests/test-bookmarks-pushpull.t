@@ -673,12 +673,13 @@ Update a bookmark right after the initial lookup -r (issue4700)
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
+  updating bookmark Y
   new changesets 0d60821d2197 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book
      @                         1:0d2164f0ce0d
      X                         1:0d2164f0ce0d
-   * Y                         5:35d1ef0a8d1b
+   * Y                         6:0d60821d2197
      Z                         1:0d2164f0ce0d
   $ hg -R $TESTTMP/pull-race book
      @                         1:0d2164f0ce0d

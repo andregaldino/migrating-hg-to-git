@@ -4414,49 +4414,47 @@ def pull(ui, repo, source="default", **opts):
         revs, checkout = hg.addbranchrevs(repo, other, branches,
                                           opts.get('rev'))
 
-
         pullopargs = {}
-        if opts.get('bookmark'):
-            if not revs:
-                revs = []
-            # The list of bookmark used here is not the one used to actually
-            # update the bookmark name. This can result in the revision pulled
-            # not ending up with the name of the bookmark because of a race
-            # condition on the server. (See issue 4689 for details)
-            remotebookmarks = other.listkeys('bookmarks')
+
+        nodes = None
+        if opts['bookmark'] or revs:
+            # The list of bookmark used here is the same used to actually update
+            # the bookmark names, to avoid the race from issue 4689 and we do
+            # all lookup and bookmark queries in one go so they see the same
+            # version of the server state (issue 4700).
+            nodes = []
+            fnodes = []
+            revs = revs or []
+            if revs and not other.capable('lookup'):
+                err = _("other repository doesn't support revision lookup, "
+                        "so a rev cannot be specified.")
+                raise error.Abort(err)
+            with other.commandexecutor() as e:
+                fremotebookmarks = e.callcommand('listkeys', {
+                    'namespace': 'bookmarks'
+                })
+                for r in revs:
+                    fnodes.append(e.callcommand('lookup', {'key': r}))
+            remotebookmarks = fremotebookmarks.result()
             remotebookmarks = bookmarks.unhexlifybookmarks(remotebookmarks)
             pullopargs['remotebookmarks'] = remotebookmarks
             for b in opts['bookmark']:
                 b = repo._bookmarks.expandname(b)
                 if b not in remotebookmarks:
                     raise error.Abort(_('remote bookmark %s not found!') % b)
-                revs.append(hex(remotebookmarks[b]))
-
-        if revs:
-            try:
-                # When 'rev' is a bookmark name, we cannot guarantee that it
-                # will be updated with that name because of a race condition
-                # server side. (See issue 4689 for details)
-                oldrevs = revs
-                revs = [] # actually, nodes
-                for r in oldrevs:
-                    with other.commandexecutor() as e:
-                        node = e.callcommand('lookup', {'key': r}).result()
-
-                    revs.append(node)
-                    if r == checkout:
-                        checkout = node
-            except error.CapabilityError:
-                err = _("other repository doesn't support revision lookup, "
-                        "so a rev cannot be specified.")
-                raise error.Abort(err)
+                nodes.append(remotebookmarks[b])
+            for i, rev in enumerate(revs):
+                node = fnodes[i].result()
+                nodes.append(node)
+                if rev == checkout:
+                    checkout = node
 
         wlock = util.nullcontextmanager()
         if opts.get('update'):
             wlock = repo.wlock()
         with wlock:
             pullopargs.update(opts.get('opargs', {}))
-            modheads = exchange.pull(repo, other, heads=revs,
+            modheads = exchange.pull(repo, other, heads=nodes,
                                      force=opts.get('force'),
                                      bookmarks=opts.get('bookmark', ()),
                                      opargs=pullopargs).cgresult
