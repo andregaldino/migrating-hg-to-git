@@ -41,11 +41,11 @@ def commit_hook(ui, repo, **kwargs):
     if active:
         if active in ui.configlist(MY_NAME, 'protect'):
             raise error.Abort(
-                _('cannot commit, bookmark {} is protected').format(active))
+                _('cannot commit, bookmark %s is protected') % active)
         if not cwd_at_bookmark(repo, active):
             raise error.Abort(
        _('cannot commit, working directory out of sync with active bookmark'),
-                hint=_("run 'hg up {}'").format(active))
+                hint=_("run 'hg up %s'") % active)
     elif ui.configbool(MY_NAME, 'require-bookmark', True):
         raise error.Abort(_('cannot commit without an active bookmark'))
     return 0
@@ -64,9 +64,9 @@ def bookmarks_addbookmarks(
         marks = repo._bookmarks
         for name in names:
             if name in marks:
-                raise error.Abort(
-                    _("bookmark {} already exists, to move use the --rev option"
-                    ).format(name))
+                raise error.Abort(_(
+                    "bookmark %s already exists, to move use the --rev option"
+                    ) % name)
     return orig(repo, tr, names, rev, force, inactive)
 
 def commands_commit(orig, ui, repo, *args, **opts):
@@ -78,8 +78,9 @@ def commands_pull(orig, ui, repo, *args, **opts):
     active = repo._bookmarks.active
     if active and not cwd_at_bookmark(repo, active):
         ui.warn(_(
-            "working directory out of sync with active bookmark, run 'hg up {}'"
-        ).format(active))
+            "working directory out of sync with active bookmark, run "
+            "'hg up %s'"
+        ) % active)
     return rc
 
 def commands_branch(orig, ui, repo, label=None, **opts):
