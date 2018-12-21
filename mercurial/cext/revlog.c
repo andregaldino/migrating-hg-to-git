@@ -1029,6 +1029,27 @@ static int index_issnapshotrev(indexObject *self, Py_ssize_t rev)
 	return rev == -1;
 }
 
+static PyObject *index_issnapshot(indexObject *self, PyObject *value)
+{
+	long rev;
+	int issnap;
+	Py_ssize_t length = index_length(self);
+
+	if (!pylong_to_long(value, &rev)) {
+		return NULL;
+	}
+	if (rev < -1 || rev >= length) {
+		PyErr_Format(PyExc_ValueError, "revlog index out of range: %ld",
+		             rev);
+		return NULL;
+	};
+	issnap = index_issnapshotrev(self, (Py_ssize_t)rev);
+	if (issnap < 0) {
+		return NULL;
+	};
+	return PyBool_FromLong((long)issnap);
+}
+
 static PyObject *index_deltachain(indexObject *self, PyObject *args)
 {
 	int rev, generaldelta;
@@ -2641,6 +2662,8 @@ static PyMethodDef index_methods[] = {
      "get head revisions"}, /* Can do filtering since 3.2 */
     {"headrevsfiltered", (PyCFunction)index_headrevs, METH_VARARGS,
      "get filtered head revisions"}, /* Can always do filtering */
+    {"issnapshot", (PyCFunction)index_issnapshot, METH_O,
+     "True if the object is a snapshot"},
     {"deltachain", (PyCFunction)index_deltachain, METH_VARARGS,
      "determine revisions with deltas to reconstruct fulltext"},
     {"slicechunktodensity", (PyCFunction)index_slicechunktodensity,

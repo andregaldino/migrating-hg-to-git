@@ -1533,14 +1533,18 @@ class revlog(object):
     def issnapshot(self, rev):
         """tells whether rev is a snapshot
         """
+        if not self._sparserevlog:
+            return self.deltaparent(rev) == nullrev
+        elif util.safehasattr(self.index, 'issnapshot'):
+            # directly assign the method to cache the testing and access
+            self.issnapshot = self.index.issnapshot
+            return self.issnapshot(rev)
         if rev == nullrev:
             return True
         entry = self.index[rev]
         base = entry[3]
         if base == rev:
             return True
-        elif not self._sparserevlog:
-            return False
         if base == nullrev:
             return True
         p1 = entry[5]
