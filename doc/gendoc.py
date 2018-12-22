@@ -237,4 +237,4 @@ if __name__ == "__main__":
     if doc == b'hg.1.gendoc':
         showdoc(ui)
     else:
-        showtopic(ui, sys.argv[1])
+        showtopic(ui, encoding.strtolocal(sys.argv[1]))
