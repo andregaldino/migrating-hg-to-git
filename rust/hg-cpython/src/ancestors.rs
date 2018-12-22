@@ -5,8 +5,23 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-//! Bindings for the hg::ancestors module provided by the
+//! Bindings for the `hg::ancestors` module provided by the
 //! `hg-core` crate. From Python, this will be seen as `rustext.ancestor`
+//! and can be used as replacement for the the pure `ancestor` Python module.
+//!
+//! # Classes visible from Python:
+//! - [`LazyAncestors`] is the Rust implementation of
+//!   `mercurial.ancestor.lazyancestors`.
+//!   The only difference is that it is instantiated with a C `parsers.index`
+//!   instance instead of a parents function.
+//!
+//! - [`AncestorsIterator`] is the Rust counterpart of the
+//!   `ancestor._lazyancestorsiter` Python generator.
+//!   From Python, instances of this should be mainly obtained by calling
+//!   `iter()` on a [`LazyAncestors`] instance.
+//!
+//! [`LazyAncestors`]: struct.LazyAncestors.html
+//! [`AncestorsIterator`]: struct.AncestorsIterator.html
 use cindex::Index;
 use cpython::{
     ObjectProtocol, PyClone, PyDict, PyModule, PyObject, PyResult, Python,
@@ -19,16 +34,16 @@ use std::cell::RefCell;
 
 /// Utility function to convert a Python iterable into a Vec<Revision>
 ///
-/// We need this to feed to AncestorIterators constructors because
-/// a PyErr can arise at each step of iteration, whereas our inner objects
-/// expect iterables over Revision, not over some Result<Revision, PyErr>
+/// We need this to feed to `AncestorIterators` constructors because
+/// a `PyErr` can arise at each step of iteration, whereas our inner objects
+/// expect iterables over `Revision`, not over some `Result<Revision, PyErr>`
 fn reviter_to_revvec(py: Python, revs: PyObject) -> PyResult<Vec<Revision>> {
     revs.iter(py)?
         .map(|r| r.and_then(|o| o.extract::<Revision>(py)))
         .collect()
 }
 
-py_class!(class AncestorsIterator |py| {
+py_class!(pub class AncestorsIterator |py| {
     // TODO RW lock ?
     data inner: RefCell<Box<CoreIterator<Index>>>;
 
@@ -70,7 +85,7 @@ impl AncestorsIterator {
     }
 }
 
-py_class!(class LazyAncestors |py| {
+py_class!(pub class LazyAncestors |py| {
     data inner: RefCell<Box<CoreLazy<Index>>>;
 
     def __contains__(&self, rev: Revision) -> PyResult<bool> {
@@ -101,7 +116,7 @@ py_class!(class LazyAncestors |py| {
 
 });
 
-/// Create the module, with __package__ given from parent
+/// Create the module, with `__package__` given from parent
 pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     let dotted_name = &format!("{}.ancestor", package);
     let m = PyModule::new(py, dotted_name)?;

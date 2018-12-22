@@ -12,7 +12,8 @@
 //! it behaves as the `cext` package.
 //!
 //! Example:
-//! ```
+//!
+//! ```text
 //! >>> from mercurial.rustext import ancestor
 //! >>> ancestor.__doc__
 //! 'Generic DAG ancestor algorithms - Rust implementation'
@@ -23,9 +24,9 @@ extern crate cpython;
 extern crate hg;
 extern crate libc;
 
-mod ancestors;
+pub mod ancestors;
 mod cindex;
-mod exceptions;
+pub mod exceptions;
 
 py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     m.add(
