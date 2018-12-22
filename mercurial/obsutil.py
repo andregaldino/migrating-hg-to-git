@@ -711,7 +711,8 @@ def successorssets(repo, initialnode, closest=False, cache=None):
                                     if part not in newss:
                                         newss.append(part)
                                 productresult.append(newss)
-                        markss = productresult
+                        if productresult:
+                            markss = productresult
                     succssets.extend(markss)
                 # remove duplicated and subset
                 seen = []
