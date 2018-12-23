@@ -375,7 +375,7 @@ def debugdatashallow(orig, *args, **kwds):
         remotefilelog.remotefilelog.__len__ = oldlen
 
 def reposetup(ui, repo):
-    if not isinstance(repo, localrepo.localrepository):
+    if not repo.local():
         return
 
     # put here intentionally bc doesnt work in uisetup
