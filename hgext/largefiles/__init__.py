@@ -128,6 +128,8 @@ from . import (
 testedwith = 'ships-with-hg-core'
 
 eh = exthelper.exthelper()
+eh.merge(lfcommands.eh)
+eh.merge(overrides.eh)
 
 eh.configitem('largefiles', 'minsize',
     default=configitems.dynamicdefault,
@@ -139,17 +141,20 @@ eh.configitem('largefiles', 'usercache',
     default=None,
 )
 
+cmdtable = eh.cmdtable
 configtable = eh.configtable
+extsetup = eh.finalextsetup
 reposetup = reposetup.reposetup
+uisetup = eh.finaluisetup
 
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the largefiles requirement
     supported |= {'largefiles'}
 
-def uisetup(ui):
+@eh.uisetup
+def _uisetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
     hg.wirepeersetupfuncs.append(proto.wirereposetup)
     uisetupmod.uisetup(ui)
 
-cmdtable = lfcommands.cmdtable
 revsetpredicate = overrides.revsetpredicate
