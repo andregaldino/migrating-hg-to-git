@@ -1538,8 +1538,8 @@ class updateresult(object):
     unresolvedcount = attr.ib()
 
     def isempty(self):
-        return (not self.updatedcount and not self.mergedcount
-                and not self.removedcount and not self.unresolvedcount)
+        return not (self.updatedcount or self.mergedcount
+                    or self.removedcount or self.unresolvedcount)
 
 def emptyactions():
     """create an actions dict, to be populated and passed to applyupdates()"""
