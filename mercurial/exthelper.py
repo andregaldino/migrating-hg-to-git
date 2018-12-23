@@ -13,7 +13,6 @@ from __future__ import absolute_import
 
 from . import (
     commands,
-    configitems,
     extensions,
     fileset as filesetmod,
     registrar,
@@ -54,12 +53,7 @@ class exthelper(object):
             self.command._doregister = _newdoregister
 
         self.configtable = {}
-        self._configitem = registrar.configitem(self.configtable)
-
-    def configitem(self, section, config, default=configitems.dynamicdefault):
-        """Register a config item.
-        """
-        self._configitem(section, config, default=default)
+        self.configitem = registrar.configitem(self.configtable)
 
     def merge(self, other):
         self._uicallables.extend(other._uicallables)
