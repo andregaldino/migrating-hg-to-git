@@ -257,7 +257,7 @@ class exthelper(object):
 
         example::
 
-            @eh.function(context.changectx, 'babar')
+            @eh.addattr(context.changectx, 'babar')
             def babar(ctx):
                 return 'babar' in ctx.description
         """
