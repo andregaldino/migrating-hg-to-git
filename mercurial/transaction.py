@@ -347,9 +347,13 @@ class transaction(util.transactional):
                     files.append(vfs(name, 'w', atomictemp=True,
                                      checkambig=checkambig))
                 genfunc(*files)
-            finally:
                 for f in files:
                     f.close()
+                # skip discard() loop since we're sure no open file remains
+                del files[:]
+            finally:
+                for f in files:
+                    f.discard()
         return any
 
     @active
