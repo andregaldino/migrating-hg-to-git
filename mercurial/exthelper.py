@@ -14,10 +14,7 @@ from __future__ import absolute_import
 from . import (
     commands,
     extensions,
-    fileset as filesetmod,
     registrar,
-    revset as revsetmod,
-    templatekw as templatekwmod,
 )
 
 class exthelper(object):
@@ -34,9 +31,6 @@ class exthelper(object):
         self._uicallables = []
         self._extcallables = []
         self._repocallables = []
-        self._revsetsymbols = []
-        self._filesetsymbols = []
-        self._templatekws = []
         self._commandwrappers = []
         self._extcommandwrappers = []
         self._functionwrappers = []
@@ -60,9 +54,6 @@ class exthelper(object):
         self._uipopulatecallables.extend(other._uipopulatecallables)
         self._extcallables.extend(other._extcallables)
         self._repocallables.extend(other._repocallables)
-        self._revsetsymbols.extend(other._revsetsymbols)
-        self._filesetsymbols.extend(other._filesetsymbols)
-        self._templatekws.extend(other._templatekws)
         self._commandwrappers.extend(other._commandwrappers)
         self._extcommandwrappers.extend(other._extcommandwrappers)
         self._functionwrappers.extend(other._functionwrappers)
@@ -125,28 +116,8 @@ class exthelper(object):
         - Changes depending on the status of other extensions. (if
           extensions.find('mq'))
         - Add a global option to all commands
-        - Register revset functions
         """
         knownexts = {}
-
-        revsetpredicate = registrar.revsetpredicate()
-        for name, symbol in self._revsetsymbols:
-            revsetpredicate(name)(symbol)
-        revsetmod.loadpredicate(ui, 'evolve', revsetpredicate)
-
-        filesetpredicate = registrar.filesetpredicate()
-        for name, symbol in self._filesetsymbols:
-            filesetpredicate(name)(symbol)
-        # TODO: Figure out the calling extension name
-        filesetmod.loadpredicate(ui, 'exthelper', filesetpredicate)
-
-        templatekeyword = registrar.templatekeyword()
-        for name, kw, requires in self._templatekws:
-            if requires is not None:
-                templatekeyword(name, requires=requires)(kw)
-            else:
-                templatekeyword(name)(kw)
-        templatekwmod.loadkeyword(ui, 'evolve', templatekeyword)
 
         for ext, command, wrapper, opts in self._extcommandwrappers:
             if ext not in knownexts:
@@ -224,58 +195,6 @@ class exthelper(object):
         """
         self._repocallables.append(call)
         return call
-
-    def revset(self, symbolname):
-        """Decorated function is a revset symbol
-
-        The name of the symbol must be given as the decorator argument.
-        The symbol is added during `extsetup`.
-
-        example::
-
-            @eh.revset('hidden')
-            def revsetbabar(repo, subset, x):
-                args = revset.getargs(x, 0, 0, 'babar accept no argument')
-                return [r for r in subset if 'babar' in repo[r].description()]
-        """
-        def dec(symbol):
-            self._revsetsymbols.append((symbolname, symbol))
-            return symbol
-        return dec
-
-    def fileset(self, symbolname):
-        """Decorated function is a fileset symbol
-
-        The name of the symbol must be given as the decorator argument.
-        The symbol is added during `extsetup`.
-
-        example::
-
-            @eh.fileset('lfs()')
-            def filesetbabar(mctx, x):
-                return mctx.predicate(...)
-        """
-        def dec(symbol):
-            self._filesetsymbols.append((symbolname, symbol))
-            return symbol
-        return dec
-
-    def templatekw(self, keywordname, requires=None):
-        """Decorated function is a template keyword
-
-        The name of the keyword must be given as the decorator argument.
-        The symbol is added during `extsetup`.
-
-        example::
-
-            @eh.templatekw('babar')
-            def kwbabar(ctx):
-                return 'babar'
-        """
-        def dec(keyword):
-            self._templatekws.append((keywordname, keyword, requires))
-            return keyword
-        return dec
 
     def wrapcommand(self, command, extension=None, opts=None):
         """Decorated function is a command wrapper
