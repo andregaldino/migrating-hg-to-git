@@ -246,6 +246,15 @@ class exthelper(object):
         This function takes two arguments, the container and the name of the
         function to wrap. The wrapping is performed during `uisetup`.
 
+        Adding attributes to a container like this is discouraged, because the
+        container modification is visible even in repositories that do not
+        have the extension loaded.  Therefore, care must be taken that the
+        function doesn't make assumptions that the extension was loaded for the
+        current repository.  For `ui` and `repo` instances, a better option is
+        to subclass the instance in `uipopulate` and `reposetup` respectively.
+
+        https://www.mercurial-scm.org/wiki/WritingExtensions
+
         example::
 
             @eh.addattr(context.changectx, 'babar')
