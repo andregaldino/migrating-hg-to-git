@@ -1132,6 +1132,7 @@ def branch(ui, repo, label=None, **opts):
     [('a', 'active', False,
       _('show only branches that have unmerged heads (DEPRECATED)')),
      ('c', 'closed', False, _('show normal and closed branches')),
+     ('r', 'rev', [], _('show branch name(s) of the given rev'))
     ] + formatteropts,
     _('[-c]'),
     helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
@@ -1161,6 +1162,13 @@ def branches(ui, repo, active=False, closed=False, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
+    revs = opts.get('rev')
+    selectedbranches = None
+    if revs:
+        revs = scmutil.revrange(repo, revs)
+        getbi = repo.revbranchcache().branchinfo
+        selectedbranches = {getbi(r)[0] for r in revs}
+
     ui.pager('branches')
     fm = ui.formatter('branches', opts)
     hexfunc = fm.hexfunc
@@ -1168,6 +1176,8 @@ def branches(ui, repo, active=False, closed=False, **opts):
     allheads = set(repo.heads())
     branches = []
     for tag, heads, tip, isclosed in repo.branchmap().iterbranches():
+        if selectedbranches is not None and tag not in selectedbranches:
+            continue
         isactive = False
         if not isclosed:
             openheads = set(repo.branchmap().iteropen(heads))

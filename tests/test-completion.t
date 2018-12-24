@@ -238,7 +238,7 @@ Show all commands + options
   bisect: reset, good, bad, skip, extend, command, noupdate
   bookmarks: force, rev, delete, rename, inactive, list, template
   branch: force, clean, rev
-  branches: active, closed, template
+  branches: active, closed, rev, template
   bundle: force, rev, branch, base, all, type, ssh, remotecmd, insecure
   cat: output, rev, decode, include, exclude, template
   clone: noupdate, updaterev, rev, branch, pull, uncompressed, stream, ssh, remotecmd, insecure
