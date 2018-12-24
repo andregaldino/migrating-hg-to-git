@@ -130,6 +130,7 @@ testedwith = 'ships-with-hg-core'
 eh = exthelper.exthelper()
 eh.merge(lfcommands.eh)
 eh.merge(overrides.eh)
+eh.merge(proto.eh)
 
 eh.configitem('largefiles', 'minsize',
     default=configitems.dynamicdefault,

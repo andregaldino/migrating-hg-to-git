@@ -11,10 +11,12 @@ from mercurial.i18n import _
 
 from mercurial import (
     error,
+    exthelper,
     httppeer,
     util,
     wireprototypes,
     wireprotov1peer,
+    wireprotov1server,
 )
 
 from . import (
@@ -27,6 +29,8 @@ urlreq = util.urlreq
 LARGEFILES_REQUIRED_MSG = ('\nThis repository uses the largefiles extension.'
                            '\n\nPlease enable it in your Mercurial config '
                            'file.\n')
+
+eh = exthelper.exthelper()
 
 # these will all be replaced by largefiles.uisetup
 ssholdcallstream = None
@@ -162,6 +166,7 @@ def wirereposetup(ui, repo):
     repo.__class__ = lfileswirerepository
 
 # advertise the largefiles=serve capability
+@eh.wrapfunction(wireprotov1server, '_capabilities')
 def _capabilities(orig, repo, proto):
     '''announce largefile server capability'''
     caps = orig(repo, proto)
