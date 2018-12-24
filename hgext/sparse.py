@@ -141,6 +141,7 @@ def _clonesparsecmd(orig, ui, repo, *args, **opts):
     include_pat = opts.get(r'include')
     exclude_pat = opts.get(r'exclude')
     enableprofile_pat = opts.get(r'enable_profile')
+    narrow_pat = opts.get(r'narrow')
     include = exclude = enableprofile = False
     if include_pat:
         pat = include_pat
@@ -153,7 +154,9 @@ def _clonesparsecmd(orig, ui, repo, *args, **opts):
         enableprofile = True
     if sum([include, exclude, enableprofile]) > 1:
         raise error.Abort(_("too many flags specified."))
-    if include or exclude or enableprofile:
+    # if --narrow is passed, it means they are includes and excludes for narrow
+    # clone
+    if not narrow_pat and (include or exclude or enableprofile):
         def clonesparse(orig, self, node, overwrite, *args, **kwargs):
             sparse.updateconfig(self.unfiltered(), pat, {}, include=include,
                                 exclude=exclude, enableprofile=enableprofile,

@@ -52,14 +52,12 @@ narrow clone the inside file
   $ hg files
   inside/f
 
-XXX: we should not have sparse enabled
-  $ cat .hg/sparse
-  [include]
-  inside/f
+XXX: we should have a flag in `hg debugsparse` to list the sparse profile
+  $ test -f .hg/sparse
+  [1]
 
   $ cat .hg/requires
   dotencode
-  exp-sparse
   fncache
   generaldelta
   narrowhg-experimental
