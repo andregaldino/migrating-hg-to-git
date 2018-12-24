@@ -13,6 +13,7 @@ from __future__ import absolute_import
 
 from . import (
     commands,
+    error,
     extensions,
     registrar,
 )
@@ -80,8 +81,8 @@ class exthelper(object):
         for command, wrapper, opts in self._commandwrappers:
             entry = extensions.wrapcommand(commands.table, command, wrapper)
             if opts:
-                for short, long, val, msg in opts:
-                    entry[1].append((short, long, val, msg))
+                for opt in opts:
+                    entry[1].append(opt)
         for cont, funcname, wrapper in self._functionwrappers:
             extensions.wrapfunction(cont, funcname, wrapper)
         for c in self._uicallables:
@@ -121,8 +122,8 @@ class exthelper(object):
                 knownexts[ext] = e.cmdtable
             entry = extensions.wrapcommand(knownexts[ext], command, wrapper)
             if opts:
-                for short, long, val, msg in opts:
-                    entry[1].append((short, long, val, msg))
+                for opt in opts:
+                    entry[1].append(opt)
 
         for c in self._extcallables:
             c(ui)
@@ -206,12 +207,21 @@ class exthelper(object):
                 ui.note('Barry!')
                 return orig(ui, repo, *args, **kwargs)
 
-        The `opts` argument allows specifying additional arguments for the
-        command.
+        The `opts` argument allows specifying a list of tuples for additional
+        arguments for the command.  See ``mercurial.fancyopts.fancyopts()`` for
+        the format of the tuple.
 
         """
         if opts is None:
             opts = []
+        else:
+            for opt in opts:
+                if not isinstance(opt, tuple):
+                    raise error.ProgrammingError('opts must be list of tuples')
+                if len(opt) not in (4, 5):
+                    msg = 'each opt tuple must contain 4 or 5 values'
+                    raise error.ProgrammingError(msg)
+
         def dec(wrapper):
             if extension is None:
                 self._commandwrappers.append((command, wrapper, opts))
