@@ -210,7 +210,7 @@ def _setupdirstate(ui):
     def _rebuild(orig, self, parent, allfiles, changedfiles=None):
         matcher = self._sparsematcher
         if not matcher.always():
-            allfiles = allfiles.matches(matcher)
+            allfiles = [f for f in allfiles if matcher(f)]
             if changedfiles:
                 changedfiles = [f for f in changedfiles if matcher(f)]
 
