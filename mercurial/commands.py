@@ -4427,7 +4427,7 @@ def pull(ui, repo, source="default", **opts):
         pullopargs = {}
 
         nodes = None
-        if opts['bookmark'] or revs:
+        if opts.get('bookmark') or revs:
             # The list of bookmark used here is the same used to actually update
             # the bookmark names, to avoid the race from issue 4689 and we do
             # all lookup and bookmark queries in one go so they see the same
@@ -4448,7 +4448,7 @@ def pull(ui, repo, source="default", **opts):
             remotebookmarks = fremotebookmarks.result()
             remotebookmarks = bookmarks.unhexlifybookmarks(remotebookmarks)
             pullopargs['remotebookmarks'] = remotebookmarks
-            for b in opts['bookmark']:
+            for b in opts.get('bookmark', []):
                 b = repo._bookmarks.expandname(b)
                 if b not in remotebookmarks:
                     raise error.Abort(_('remote bookmark %s not found!') % b)
