@@ -199,6 +199,7 @@ class abstractvfs(object):
         checkambig=True only in limited cases (see also issue5418 and
         issue5584 for detail).
         """
+        self._auditpath(dst, 'w')
         srcpath = self.join(src)
         dstpath = self.join(dst)
         oldstat = checkambig and util.filestat.frompath(dstpath)
