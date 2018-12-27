@@ -37,15 +37,6 @@ class exthelper(object):
         self._duckpunchers = []
         self.cmdtable = {}
         self.command = registrar.command(self.cmdtable)
-        if '^init' in commands.table:
-            olddoregister = self.command._doregister
-
-            def _newdoregister(self, name, *args, **kwargs):
-                if kwargs.pop('helpbasic', False):
-                    name = '^' + name
-                return olddoregister(self, name, *args, **kwargs)
-            self.command._doregister = _newdoregister
-
         self.configtable = {}
         self.configitem = registrar.configitem(self.configtable)
 
