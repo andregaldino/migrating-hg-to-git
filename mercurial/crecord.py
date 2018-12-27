@@ -1520,10 +1520,10 @@ the following are valid keystrokes:
         """ask for 'y' to be pressed to confirm selected. return True if
         confirmed."""
         confirmtext = _(
-"""if you answer yes to the following, the your currently chosen patch chunks
-will be loaded into an editor.  you may modify the patch from the editor, and
-save the changes if you wish to change the patch.  otherwise, you can just
-close the editor without saving to accept the current patch as-is.
+"""If you answer yes to the following, your currently chosen patch chunks
+will be loaded into an editor. To modify the patch, make the changes in your
+editor and save. To accept the current patch as-is, close the editor without
+saving.
 
 note: don't add/remove lines unless you also modify the range information.
       failing to follow this rule will result in the commit aborting.
