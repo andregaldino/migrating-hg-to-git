@@ -842,10 +842,11 @@ bail:
 static inline int index_baserev(indexObject *self, int rev)
 {
 	const char *data;
+	int result;
 
 	if (rev >= self->length) {
 		PyObject *tuple = PyList_GET_ITEM(self->added, rev - self->length);
-		return (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 3));
+		result = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 3));
 	}
 	else {
 		data = index_deref(self, rev);
@@ -853,8 +854,16 @@ static inline int index_baserev(indexObject *self, int rev)
 			return -2;
 		}
 
-		return getbe32(data + 16);
+		result = getbe32(data + 16);
 	}
+	if (result > rev) {
+		PyErr_Format(
+		    PyExc_ValueError,
+		    "corrupted revlog, revision base above revision: %d, %d",
+		    rev, result);
+		return -2;
+	}
+	return result;
 }
 
 static PyObject *index_deltachain(indexObject *self, PyObject *args)
