@@ -55,8 +55,8 @@ def getlimit(opts):
     return limit
 
 def diffordiffstat(ui, repo, diffopts, node1, node2, match,
-                   changes=None, stat=False, fp=None, prefix='',
-                   root='', listsubrepos=False, hunksfilterfn=None):
+                   changes=None, stat=False, fp=None, graphwidth=0,
+                   prefix='', root='', listsubrepos=False, hunksfilterfn=None):
     '''show diff or diffstat.'''
     if root:
         relroot = pathutil.canonpath(repo.root, repo.getcwd(), root)
@@ -76,7 +76,7 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         diffopts = diffopts.copy(context=0, noprefix=False)
         width = 80
         if not ui.plain():
-            width = ui.termwidth()
+            width = ui.termwidth() - graphwidth
 
     chunks = repo[node2].diff(repo[node1], match, changes, opts=diffopts,
                               prefix=prefix, relroot=relroot,
@@ -130,12 +130,13 @@ class changesetdiffer(object):
     def _makehunksfilter(self, ctx):
         return None
 
-    def showdiff(self, ui, ctx, diffopts, stat=False):
+    def showdiff(self, ui, ctx, diffopts, graphwidth=0, stat=False):
         repo = ctx.repo()
         node = ctx.node()
         prev = ctx.p1().node()
         diffordiffstat(ui, repo, diffopts, prev, node,
                        match=self._makefilematcher(ctx), stat=stat,
+                       graphwidth=graphwidth,
                        hunksfilterfn=self._makehunksfilter(ctx))
 
 def changesetlabels(ctx):
@@ -193,6 +194,7 @@ class changesetprinter(object):
     def _show(self, ctx, copies, props):
         '''show a single changeset or file revision'''
         changenode = ctx.node()
+        graphwidth = props.get('graphwidth', 0)
 
         if self.ui.quiet:
             self.ui.write("%s\n" % scmutil.formatchangeid(ctx),
@@ -285,7 +287,7 @@ class changesetprinter(object):
                               label='log.summary')
         self.ui.write("\n")
 
-        self._showpatch(ctx)
+        self._showpatch(ctx, graphwidth)
 
     def _showobsfate(self, ctx):
         # TODO: do not depend on templater
@@ -304,13 +306,15 @@ class changesetprinter(object):
         '''empty method used by extension as a hook point
         '''
 
-    def _showpatch(self, ctx):
+    def _showpatch(self, ctx, graphwidth=0):
         if self._includestat:
-            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=True)
+            self._differ.showdiff(self.ui, ctx, self._diffopts,
+                                  graphwidth, stat=True)
         if self._includestat and self._includediff:
             self.ui.write("\n")
         if self._includediff:
-            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
+            self._differ.showdiff(self.ui, ctx, self._diffopts,
+                                  graphwidth, stat=False)
         if self._includestat or self._includediff:
             self.ui.write("\n")
 
@@ -433,6 +437,7 @@ class changesettemplater(changesetprinter):
         props['ctx'] = ctx
         props['index'] = index = next(self._counter)
         props['revcache'] = {'copies': copies}
+        graphwidth = props.get('graphwidth', 0)
 
         # write separator, which wouldn't work well with the header part below
         # since there's inherently a conflict between header (across items) and
@@ -453,7 +458,7 @@ class changesettemplater(changesetprinter):
         # write changeset metadata, then patch if requested
         key = self._parts[self._tref]
         self.ui.write(self.t.render(key, props))
-        self._showpatch(ctx)
+        self._showpatch(ctx, graphwidth)
 
         if self._parts['footer']:
             if not self.footer:
