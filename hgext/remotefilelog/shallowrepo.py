@@ -143,8 +143,13 @@ def wraprepo(repo):
             sparse repository.
             '''
             if revs:
-                return sparse.matcher(repo, revs=revs)
-            return sparse.matcher(repo)
+                ret = sparse.matcher(repo, revs=revs)
+            else:
+                ret = sparse.matcher(repo)
+
+            if ret.always():
+                return None
+            return ret
 
         def file(self, f):
             if f[0] == '/':
