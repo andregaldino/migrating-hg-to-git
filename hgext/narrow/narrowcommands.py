@@ -207,7 +207,7 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                               hint=_('use --force-delete-local-changes to '
                                      'ignore'))
 
-    with ui.uninterruptable():
+    with ui.uninterruptible():
         if revstostrip:
             tostrip = [unfi.changelog.node(r) for r in revstostrip]
             if repo['.'].node() in tostrip:
@@ -284,7 +284,7 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
     # silence the devel-warning of applying an empty changegroup
     overrides = {('devel', 'all-warnings'): False}
 
-    with ui.uninterruptable():
+    with ui.uninterruptible():
         common = commoninc[0]
         if ellipsesremote:
             ds = repo.dirstate

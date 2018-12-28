@@ -348,7 +348,7 @@ class ui(object):
                 (util.timer() - starttime) * 1000
 
     @contextlib.contextmanager
-    def uninterruptable(self):
+    def uninterruptible(self):
         """Mark an operation as unsafe.
 
         Most operations on a repository are safe to interrupt, but a
@@ -362,7 +362,7 @@ class ui(object):
             enabled = self.interactive()
         if self._uninterruptible or not enabled:
             # if nointerrupt support is turned off, the process isn't
-            # interactive, or we're already in an uninterruptable
+            # interactive, or we're already in an uninterruptible
             # block, do nothing.
             yield
             return
@@ -371,7 +371,7 @@ class ui(object):
             self.warn(
                 _("press ^C again to terminate immediately (dangerous)\n"))
             return True
-        with procutil.uninterruptable(warn):
+        with procutil.uninterruptible(warn):
             try:
                 self._uninterruptible = True
                 yield

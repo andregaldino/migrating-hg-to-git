@@ -188,7 +188,7 @@ def _handlechangespec(op, inpart):
         chgrpfile = repair.strip(op.ui, repo, list(clkills), backup=True,
                                  topic='widen')
         if chgrpfile:
-            op._widen_uninterr = repo.ui.uninterruptable()
+            op._widen_uninterr = repo.ui.uninterruptible()
             op._widen_uninterr.__enter__()
             # presence of _widen_bundle attribute activates widen handler later
             op._widen_bundle = chgrpfile

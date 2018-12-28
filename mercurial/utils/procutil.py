@@ -437,7 +437,7 @@ def rundetached(args, condfn):
             signal.signal(signal.SIGCHLD, prevhandler)
 
 @contextlib.contextmanager
-def uninterruptable(warn):
+def uninterruptible(warn):
     """Inhibit SIGINT handling on a region of code.
 
     Note that if this is called in a non-main thread, it turns into a no-op.

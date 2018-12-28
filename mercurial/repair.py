@@ -188,7 +188,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         tmpbundlefile = backupbundle(repo, savebases, saveheads, node, 'temp',
                                      compress=False, obsolescence=False)
 
-    with ui.uninterruptable():
+    with ui.uninterruptible():
         try:
             with repo.transaction("strip") as tr:
                 # TODO this code violates the interface abstraction of the
