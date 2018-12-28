@@ -108,7 +108,6 @@ from __future__ import absolute_import
 
 from mercurial import (
     cmdutil,
-    configitems,
     extensions,
     exthelper,
     hg,
@@ -137,7 +136,7 @@ eh.merge(overrides.eh)
 eh.merge(proto.eh)
 
 eh.configitem('largefiles', 'minsize',
-    default=configitems.dynamicdefault,
+    default=eh.configitem.dynamicdefault,
 )
 eh.configitem('largefiles', 'patterns',
     default=list,
