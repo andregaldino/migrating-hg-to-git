@@ -21,10 +21,57 @@ from . import (
 class exthelper(object):
     """Helper for modular extension setup
 
-    A single helper should be instantiated for each extension. Helper
-    methods are then used as decorators for various purpose.
+    A single helper should be instantiated for each module of an
+    extension, where a command or function needs to be wrapped, or a
+    command, extension hook, fileset, revset or template needs to be
+    registered.  Helper methods are then used as decorators for
+    these various purposes.  If an extension spans multiple modules,
+    all helper instances should be merged in the main module.
 
     All decorators return the original function and may be chained.
+
+    Aside from the helper functions with examples below, several
+    registrar method aliases are available for adding commands,
+    configitems, filesets, revsets, and templates.  Simply decorate
+    the appropriate methods, and assign the corresponding exthelper
+    variable to a module level variable of the extension.  The
+    extension loading mechanism will handle the rest.
+
+    example::
+
+        # ext.py
+        eh = exthelper.exthelper()
+
+        # As needed:
+        cmdtable = eh.cmdtable
+        configtable = eh.configtable
+        filesetpredicate = eh.filesetpredicate
+        revsetpredicate = eh.revsetpredicate
+        templatekeyword = eh.templatekeyword
+
+        @eh.command('mynewcommand',
+            [('r', 'rev', [], _('operate on these revisions'))],
+            _('-r REV...'),
+            helpcategory=command.CATEGORY_XXX)
+        def newcommand(ui, repo, *revs, **opts):
+            # implementation goes here
+
+        eh.configitem('experimental', 'foo',
+            default=False,
+        )
+
+        @eh.filesetpredicate('lfs()')
+        def filesetbabar(mctx, x):
+            return mctx.predicate(...)
+
+        @eh.revsetpredicate('hidden')
+        def revsetbabar(repo, subset, x):
+            args = revset.getargs(x, 0, 0, 'babar accept no argument')
+            return [r for r in subset if 'babar' in repo[r].description()]
+
+        @eh.templatekeyword('babar')
+        def kwbabar(ctx):
+            return 'babar'
     """
 
     def __init__(self):
