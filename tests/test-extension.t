@@ -151,25 +151,35 @@ Check that extensions are loaded in phases:
   $ cat > foo.py <<EOF
   > from __future__ import print_function
   > import os
+  > from mercurial import exthelper
   > name = os.path.basename(__file__).rsplit('.', 1)[0]
   > print("1) %s imported" % name, flush=True)
-  > def uisetup(ui):
+  > eh = exthelper.exthelper()
+  > @eh.uisetup
+  > def _uisetup(ui):
   >     print("2) %s uisetup" % name, flush=True)
-  > def extsetup():
+  > @eh.extsetup
+  > def _extsetup(ui):
   >     print("3) %s extsetup" % name, flush=True)
-  > def uipopulate(ui):
+  > @eh.uipopulate
+  > def _uipopulate(ui):
   >     print("4) %s uipopulate" % name, flush=True)
-  > def reposetup(ui, repo):
+  > @eh.reposetup
+  > def _reposetup(ui, repo):
   >     print("5) %s reposetup" % name, flush=True)
+  > 
+  > extsetup = eh.finalextsetup
+  > reposetup = eh.finalreposetup
+  > uipopulate = eh.finaluipopulate
+  > uisetup = eh.finaluisetup
+  > revsetpredicate = eh.revsetpredicate
   > 
   > bytesname = name.encode('utf-8')
   > # custom predicate to check registration of functions at loading
   > from mercurial import (
-  >     registrar,
   >     smartset,
   > )
-  > revsetpredicate = registrar.revsetpredicate()
-  > @revsetpredicate(bytesname, safe=True) # safe=True for query via hgweb
+  > @eh.revsetpredicate(bytesname, safe=True) # safe=True for query via hgweb
   > def custompredicate(repo, subset, x):
   >     return smartset.baseset([r for r in subset if r in {0}])
   > EOF

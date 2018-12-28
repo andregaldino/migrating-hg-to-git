@@ -40,12 +40,14 @@ class exthelper(object):
         self.command = registrar.command(self.cmdtable)
         self.configtable = {}
         self.configitem = registrar.configitem(self.configtable)
+        self.revsetpredicate = registrar.revsetpredicate()
 
     def merge(self, other):
         self._uicallables.extend(other._uicallables)
         self._uipopulatecallables.extend(other._uipopulatecallables)
         self._extcallables.extend(other._extcallables)
         self._repocallables.extend(other._repocallables)
+        self.revsetpredicate._table.update(other.revsetpredicate._table)
         self._commandwrappers.extend(other._commandwrappers)
         self._extcommandwrappers.extend(other._extcommandwrappers)
         self._functionwrappers.extend(other._functionwrappers)
