@@ -186,6 +186,10 @@ class partialdiscovery(object):
         """return True is we have any clue about the remote state"""
         return self._common.hasbases()
 
+    def iscomplete(self):
+        """True if all the necessary data have been gathered"""
+        return self._undecided is not None and not self._undecided
+
     @property
     def undecided(self):
         if self._undecided is not None:
@@ -278,7 +282,7 @@ def findcommonheads(ui, local, remote,
 
     full = False
     progress = ui.makeprogress(_('searching'), unit=_('queries'))
-    while disco.undecided:
+    while not disco.iscomplete():
 
         if sample:
             missinginsample = [n for i, n in enumerate(sample) if not yesno[i]]
@@ -291,7 +295,7 @@ def findcommonheads(ui, local, remote,
 
             disco.undecided.difference_update(missing)
 
-        if not disco.undecided:
+        if disco.iscomplete():
             break
 
         if full or disco.hasinfo():
