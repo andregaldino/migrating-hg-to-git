@@ -169,6 +169,7 @@ class partialdiscovery(object):
 
     - common:    own nodes I know we both know
     - undecided: own nodes where I don't know if remote knows them
+    - missing:   own nodes I know remote lacks
     """
 
     def __init__(self, repo, targetheads):
@@ -176,11 +177,23 @@ class partialdiscovery(object):
         self._targetheads = targetheads
         self._common = repo.changelog.incrementalmissingrevs()
         self._undecided = None
+        self.missing = set()
 
     def addcommons(self, commons):
         """registrer nodes known as common"""
         self._common.addbases(commons)
         self._common.removeancestorsfrom(self.undecided)
+
+    def addmissings(self, missings):
+        """registrer some nodes as missing"""
+        if self.missing:
+            new = self._repo.revs('descendants(%ld) - descendants(%ld)',
+                                  missings, self.missing)
+            self.missing.update(new)
+        else:
+            self.missing.update(self._repo.revs('descendants(%ld)', missings))
+
+        self.undecided.difference_update(self.missing)
 
     def hasinfo(self):
         """return True is we have any clue about the remote state"""
@@ -277,8 +290,6 @@ def findcommonheads(ui, local, remote,
     disco.addcommons(srvheads)
     commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
     disco.addcommons(commoninsample)
-    # own nodes I know remote lacks
-    missing = set()
 
     full = False
     progress = ui.makeprogress(_('searching'), unit=_('queries'))
@@ -286,14 +297,8 @@ def findcommonheads(ui, local, remote,
 
         if sample:
             missinginsample = [n for i, n in enumerate(sample) if not yesno[i]]
+            disco.addmissings(missinginsample)
 
-            if missing:
-                missing.update(local.revs('descendants(%ld) - descendants(%ld)',
-                                          missinginsample, missing))
-            else:
-                missing.update(local.revs('descendants(%ld)', missinginsample))
-
-            disco.undecided.difference_update(missing)
 
         if disco.iscomplete():
             break
