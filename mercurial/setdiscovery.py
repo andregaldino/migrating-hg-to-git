@@ -167,12 +167,15 @@ class partialdiscovery(object):
     Feed with data from the remote repository, this object keep track of the
     current set of changeset in various states:
 
-    - common: own nodes I know we both know
+    - common:    own nodes I know we both know
+    - undecided: own nodes where I don't know if remote knows them
     """
 
-    def __init__(self, repo):
+    def __init__(self, repo, targetheads):
         self._repo = repo
+        self._targetheads = targetheads
         self._common = repo.changelog.incrementalmissingrevs()
+        self._undecided = None
 
     def addcommons(self, commons):
         """registrer nodes known as common"""
@@ -181,6 +184,13 @@ class partialdiscovery(object):
     def hasinfo(self):
         """return True is we have any clue about the remote state"""
         return self._common.hasbases()
+
+    @property
+    def undecided(self):
+        if self._undecided is not None:
+            return self._undecided
+        self._undecided = set(self._common.missingancestors(self._targetheads))
+        return self._undecided
 
     def commonheads(self):
         """the heads of the known common set"""
@@ -256,20 +266,18 @@ def findcommonheads(ui, local, remote,
 
     # full blown discovery
 
-    disco = partialdiscovery(local)
+    disco = partialdiscovery(local, ownheads)
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
     disco.addcommons(srvheads)
     commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
     disco.addcommons(commoninsample)
-    # own nodes where I don't know if remote knows them
-    undecided = set(disco._common.missingancestors(ownheads))
     # own nodes I know remote lacks
     missing = set()
 
     full = False
     progress = ui.makeprogress(_('searching'), unit=_('queries'))
-    while undecided:
+    while disco.undecided:
 
         if sample:
             missinginsample = [n for i, n in enumerate(sample) if not yesno[i]]
@@ -280,9 +288,9 @@ def findcommonheads(ui, local, remote,
             else:
                 missing.update(local.revs('descendants(%ld)', missinginsample))
 
-            undecided.difference_update(missing)
+            disco.undecided.difference_update(missing)
 
-        if not undecided:
+        if not disco.undecided:
             break
 
         if full or disco.hasinfo():
@@ -297,12 +305,12 @@ def findcommonheads(ui, local, remote,
             ui.debug("taking quick initial sample\n")
             samplefunc = _takequicksample
             targetsize = initialsamplesize
-        sample = samplefunc(local, ownheads, undecided, targetsize)
+        sample = samplefunc(local, ownheads, disco.undecided, targetsize)
 
         roundtrips += 1
         progress.update(roundtrips)
         ui.debug("query %i; still undecided: %i, sample size is: %i\n"
-                 % (roundtrips, len(undecided), len(sample)))
+                 % (roundtrips, len(disco.undecided), len(sample)))
         # indices between sample and externalized version must match
         sample = list(sample)
 
@@ -316,7 +324,7 @@ def findcommonheads(ui, local, remote,
         if sample:
             commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
             disco.addcommons(commoninsample)
-            disco._common.removeancestorsfrom(undecided)
+            disco._common.removeancestorsfrom(disco.undecided)
 
     result = disco.commonheads()
     elapsed = util.timer() - start
