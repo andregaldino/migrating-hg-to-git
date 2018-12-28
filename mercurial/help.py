@@ -616,7 +616,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
         ex = opts.get
         anyopts = (ex(r'keyword') or not (ex(r'command') or ex(r'extension')))
         if not name and anyopts:
-            exts = listexts(_('enabled extensions:'), extensions.enabled())
+            exts = listexts(_('enabled extensions:'), extensions.enabled(),
+                            showdeprecated=ui.verbose)
             if exts:
                 rst.append('\n')
                 rst.extend(exts)
