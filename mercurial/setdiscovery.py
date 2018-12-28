@@ -182,6 +182,13 @@ class partialdiscovery(object):
         """return True is we have any clue about the remote state"""
         return self._common.hasbases()
 
+    def commonheads(self):
+        """the heads of the known common set"""
+        # heads(common) == heads(common.bases) since common represents
+        # common.bases and all its ancestors
+        # The presence of nullrev will confuse heads(). So filter it out.
+        return set(self._repo.revs('heads(%ld)',
+                   self._common.bases - {nullrev}))
 
 def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
@@ -311,10 +318,7 @@ def findcommonheads(ui, local, remote,
             disco.addcommons(commoninsample)
             disco._common.removeancestorsfrom(undecided)
 
-    # heads(common) == heads(common.bases) since common represents common.bases
-    # and all its ancestors
-    # The presence of nullrev will confuse heads(). So filter it out.
-    result = set(local.revs('heads(%ld)', disco._common.bases - {nullrev}))
+    result = disco.commonheads()
     elapsed = util.timer() - start
     progress.complete()
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
