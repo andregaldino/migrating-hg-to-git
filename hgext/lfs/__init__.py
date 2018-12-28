@@ -169,6 +169,7 @@ configtable = eh.configtable
 extsetup = eh.finalextsetup
 uisetup = eh.finaluisetup
 reposetup = eh.finalreposetup
+templatekeyword = eh.templatekeyword
 
 eh.configitem('experimental', 'lfs.serve',
     default=True,
@@ -199,7 +200,6 @@ eh.configitem('lfs', 'track',
 eh.configitem('lfs', 'retry',
     default=5,
 )
-templatekeyword = registrar.templatekeyword()
 filesetpredicate = registrar.filesetpredicate()
 
 lfsprocessor = (
@@ -347,7 +347,7 @@ def lfsfileset(mctx, x):
         return wrapper.pointerfromctx(ctx, f, removed=True) is not None
     return mctx.predicate(lfsfilep, predrepr='<lfs>')
 
-@templatekeyword('lfs_files', requires={'ctx'})
+@eh.templatekeyword('lfs_files', requires={'ctx'})
 def lfsfiles(context, mapping):
     """List of strings. All files modified, added, or removed by this
     changeset."""
