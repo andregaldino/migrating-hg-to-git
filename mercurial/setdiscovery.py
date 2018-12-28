@@ -161,6 +161,28 @@ def _limitsample(sample, desiredlen):
         sample = set(random.sample(sample, desiredlen))
     return sample
 
+class partialdiscovery(object):
+    """an object representing ongoing discovery
+
+    Feed with data from the remote repository, this object keep track of the
+    current set of changeset in various states:
+
+    - common: own nodes I know we both know
+    """
+
+    def __init__(self, repo):
+        self._repo = repo
+        self._common = repo.changelog.incrementalmissingrevs()
+
+    def addcommons(self, commons):
+        """registrer nodes known as common"""
+        self._common.addbases(commons)
+
+    def hasinfo(self):
+        """return True is we have any clue about the remote state"""
+        return self._common.hasbases()
+
+
 def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
                     fullsamplesize=200,
@@ -227,14 +249,14 @@ def findcommonheads(ui, local, remote,
 
     # full blown discovery
 
-    # own nodes I know we both know
+    disco = partialdiscovery(local)
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
-    common = cl.incrementalmissingrevs(srvheads)
+    disco.addcommons(srvheads)
     commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
-    common.addbases(commoninsample)
+    disco.addcommons(commoninsample)
     # own nodes where I don't know if remote knows them
-    undecided = set(common.missingancestors(ownheads))
+    undecided = set(disco._common.missingancestors(ownheads))
     # own nodes I know remote lacks
     missing = set()
 
@@ -256,7 +278,7 @@ def findcommonheads(ui, local, remote,
         if not undecided:
             break
 
-        if full or common.hasbases():
+        if full or disco.hasinfo():
             if full:
                 ui.note(_("sampling from both directions\n"))
             else:
@@ -286,13 +308,13 @@ def findcommonheads(ui, local, remote,
 
         if sample:
             commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
-            common.addbases(commoninsample)
-            common.removeancestorsfrom(undecided)
+            disco.addcommons(commoninsample)
+            disco._common.removeancestorsfrom(undecided)
 
     # heads(common) == heads(common.bases) since common represents common.bases
     # and all its ancestors
     # The presence of nullrev will confuse heads(). So filter it out.
-    result = set(local.revs('heads(%ld)', common.bases - {nullrev}))
+    result = set(local.revs('heads(%ld)', disco._common.bases - {nullrev}))
     elapsed = util.timer() - start
     progress.complete()
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
