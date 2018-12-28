@@ -121,7 +121,7 @@ _VCR_FLAGS = [
      )),
 ]
 
-def vcrcommand(name, flags, spec):
+def vcrcommand(name, flags, spec, helpcategory=None):
     fullflags = flags + _VCR_FLAGS
     def decorate(fn):
         def inner(*args, **kwargs):
@@ -143,7 +143,7 @@ def vcrcommand(name, flags, spec):
             return fn(*args, **kwargs)
         inner.__name__ = fn.__name__
         inner.__doc__ = fn.__doc__
-        return command(name, fullflags, spec)(inner)
+        return command(name, fullflags, spec, helpcategory=helpcategory)(inner)
     return decorate
 
 def urlencodenested(params):
@@ -463,7 +463,8 @@ def userphids(repo, names):
           (b'', b'amend', True, _(b'update commit messages')),
           (b'', b'reviewer', [], _(b'specify reviewers')),
           (b'', b'confirm', None, _(b'ask for confirmation before sending'))],
-         _(b'REV [OPTIONS]'))
+         _(b'REV [OPTIONS]'),
+         helpcategory=command.CATEGORY_IMPORT_EXPORT)
 def phabsend(ui, repo, *revs, **opts):
     """upload changesets to Phabricator
 
@@ -917,7 +918,8 @@ def readpatch(repo, drevs, write):
 
 @vcrcommand(b'phabread',
          [(b'', b'stack', False, _(b'read dependencies'))],
-         _(b'DREVSPEC [OPTIONS]'))
+         _(b'DREVSPEC [OPTIONS]'),
+         helpcategory=command.CATEGORY_IMPORT_EXPORT)
 def phabread(ui, repo, spec, **opts):
     """print patches from Phabricator suitable for importing
 
@@ -948,7 +950,8 @@ def phabread(ui, repo, spec, **opts):
           (b'', b'abandon', False, _(b'abandon revisions')),
           (b'', b'reclaim', False, _(b'reclaim revisions')),
           (b'm', b'comment', b'', _(b'comment on the last revision')),
-          ], _(b'DREVSPEC [OPTIONS]'))
+          ], _(b'DREVSPEC [OPTIONS]'),
+          helpcategory=command.CATEGORY_IMPORT_EXPORT)
 def phabupdate(ui, repo, spec, **opts):
     """update Differential Revision in batch
 
