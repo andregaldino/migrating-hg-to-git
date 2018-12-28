@@ -119,7 +119,6 @@ TOPIC_CATEGORY_NAMES = {
     TOPIC_CATEGORY_CONCEPTS: 'Concepts',
     TOPIC_CATEGORY_MISC: 'Miscellaneous',
     TOPIC_CATEGORY_NONE: 'Uncategorized topics',
-    TOPIC_CATEGORY_NONE: 'Uncategorized topics',
 }
 
 def listexts(header, exts, indent=1, showdeprecated=False):
