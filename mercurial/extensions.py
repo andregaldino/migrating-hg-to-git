@@ -226,6 +226,8 @@ def _runextsetup(name, ui):
             except TypeError:
                 if pycompat.getargspec(extsetup).args:
                     raise
+                ui.deprecwarn("extsetup for '%s' must take a ui argument"
+                              % name, "4.9")
                 extsetup() # old extsetup with no ui argument
         except Exception as inst:
             ui.traceback(force=True)

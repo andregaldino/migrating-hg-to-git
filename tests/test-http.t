@@ -181,7 +181,7 @@ test http authentication
   >                 [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
   >     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user', b'pass']:
   >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
-  > def extsetup():
+  > def extsetup(ui):
   >     common.permhooks.insert(0, perform_authentication)
   > EOT
   $ hg serve --config extensions.x=userpass.py -p $HGPORT2 -d --pid-file=pid \
@@ -526,7 +526,7 @@ We raise HTTP 500 because its message is printed in the abort message.
   >     if not cookie:
   >         raise common.ErrorResponse(common.HTTP_SERVER_ERROR, b'no-cookie')
   >     raise common.ErrorResponse(common.HTTP_SERVER_ERROR, b'Cookie: %s' % cookie)
-  > def extsetup():
+  > def extsetup(ui):
   >     common.permhooks.insert(0, perform_authentication)
   > EOF
 

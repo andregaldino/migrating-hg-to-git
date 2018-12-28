@@ -279,7 +279,7 @@ limit mark, regardless of importing module or not.)
   > NO_CHECK_EOF
   $ cat > loadabs.py <<NO_CHECK_EOF
   > import mod.ambigabs as ambigabs
-  > def extsetup():
+  > def extsetup(ui):
   >     print('ambigabs.s=%s' % ambigabs.s, flush=True)
   > NO_CHECK_EOF
   $ "$PYTHON" $TESTTMP/unflush.py loadabs.py
@@ -295,7 +295,7 @@ limit mark, regardless of importing module or not.)
   > NO_CHECK_EOF
   $ cat > loadrel.py <<NO_CHECK_EOF
   > import mod.ambigrel as ambigrel
-  > def extsetup():
+  > def extsetup(ui):
   >     print('ambigrel.s=%s' % ambigrel.s, flush=True)
   > NO_CHECK_EOF
   $ "$PYTHON" $TESTTMP/unflush.py loadrel.py

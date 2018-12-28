@@ -430,7 +430,7 @@ a large file from the server rather than to get it from the cache
   >                 [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
   >     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user', b'pass']:
   >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
-  > def extsetup():
+  > def extsetup(ui):
   >     common.permhooks.insert(0, perform_authentication)
   > EOT
   $ hg serve --config extensions.x=userpass.py -R credentialmain \

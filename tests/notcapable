@@ -7,7 +7,7 @@ fi
 
 cat > notcapable-$CAP.py << EOF
 from mercurial import extensions, localrepo, repository
-def extsetup():
+def extsetup(ui):
     extensions.wrapfunction(repository.peer, 'capable', wrapcapable)
     extensions.wrapfunction(localrepo.localrepository, 'peer', wrappeer)
 def wrapcapable(orig, self, name, *args, **kwargs):
