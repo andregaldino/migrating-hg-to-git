@@ -195,6 +195,20 @@ class partialdiscovery(object):
 
         self.undecided.difference_update(self.missing)
 
+    def addinfo(self, sample):
+        """consume an iterable of (rev, known) tuples"""
+        common = set()
+        missing = set()
+        for rev, known in sample:
+            if known:
+                common.add(rev)
+            else:
+                missing.add(rev)
+        if common:
+            self.addcommons(common)
+        if missing:
+            self.addmissings(missing)
+
     def hasinfo(self):
         """return True is we have any clue about the remote state"""
         return self._common.hasbases()
@@ -288,20 +302,11 @@ def findcommonheads(ui, local, remote,
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
     disco.addcommons(srvheads)
-    commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
-    disco.addcommons(commoninsample)
+    disco.addinfo(zip(sample, yesno))
 
     full = False
     progress = ui.makeprogress(_('searching'), unit=_('queries'))
     while not disco.iscomplete():
-
-        if sample:
-            missinginsample = [n for i, n in enumerate(sample) if not yesno[i]]
-            disco.addmissings(missinginsample)
-
-
-        if disco.iscomplete():
-            break
 
         if full or disco.hasinfo():
             if full:
@@ -331,9 +336,7 @@ def findcommonheads(ui, local, remote,
 
         full = True
 
-        if sample:
-            commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
-            disco.addcommons(commoninsample)
+        disco.addinfo(zip(sample, yesno))
 
     result = disco.commonheads()
     elapsed = util.timer() - start
