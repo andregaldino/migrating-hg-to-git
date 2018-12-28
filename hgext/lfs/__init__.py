@@ -140,7 +140,6 @@ from mercurial import (
     minifileset,
     node,
     pycompat,
-    registrar,
     repository,
     revlog,
     scmutil,
@@ -168,6 +167,7 @@ cmdtable = eh.cmdtable
 configtable = eh.configtable
 extsetup = eh.finalextsetup
 uisetup = eh.finaluisetup
+filesetpredicate = eh.filesetpredicate
 reposetup = eh.finalreposetup
 templatekeyword = eh.templatekeyword
 
@@ -200,7 +200,6 @@ eh.configitem('lfs', 'track',
 eh.configitem('lfs', 'retry',
     default=5,
 )
-filesetpredicate = registrar.filesetpredicate()
 
 lfsprocessor = (
     wrapper.readfromstore,
@@ -337,7 +336,7 @@ def _extsetup(ui):
     # "packed1". Using "packed1" with lfs will likely cause trouble.
     exchange._bundlespeccontentopts["v2"]["cg.version"] = "03"
 
-@filesetpredicate('lfs()')
+@eh.filesetpredicate('lfs()')
 def lfsfileset(mctx, x):
     """File that uses LFS storage."""
     # i18n: "lfs" is a keyword

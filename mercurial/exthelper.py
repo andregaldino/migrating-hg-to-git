@@ -40,6 +40,7 @@ class exthelper(object):
         self.command = registrar.command(self.cmdtable)
         self.configtable = {}
         self.configitem = registrar.configitem(self.configtable)
+        self.filesetpredicate = registrar.filesetpredicate()
         self.revsetpredicate = registrar.revsetpredicate()
         self.templatekeyword = registrar.templatekeyword()
 
@@ -48,6 +49,7 @@ class exthelper(object):
         self._uipopulatecallables.extend(other._uipopulatecallables)
         self._extcallables.extend(other._extcallables)
         self._repocallables.extend(other._repocallables)
+        self.filesetpredicate._table.update(other.filesetpredicate._table)
         self.revsetpredicate._table.update(other.revsetpredicate._table)
         self.templatekeyword._table.update(other.templatekeyword._table)
         self._commandwrappers.extend(other._commandwrappers)
