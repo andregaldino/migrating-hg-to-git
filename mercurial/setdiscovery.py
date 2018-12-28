@@ -180,6 +180,7 @@ class partialdiscovery(object):
     def addcommons(self, commons):
         """registrer nodes known as common"""
         self._common.addbases(commons)
+        self._common.removeancestorsfrom(self.undecided)
 
     def hasinfo(self):
         """return True is we have any clue about the remote state"""
@@ -324,7 +325,6 @@ def findcommonheads(ui, local, remote,
         if sample:
             commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
             disco.addcommons(commoninsample)
-            disco._common.removeancestorsfrom(disco.undecided)
 
     result = disco.commonheads()
     elapsed = util.timer() - start
