@@ -32,7 +32,6 @@ from mercurial import (
     merge,
     pathutil,
     pycompat,
-    registrar,
     scmutil,
     smartset,
     subrepo,
@@ -888,9 +887,7 @@ def exchangepushoperation(orig, *args, **kwargs):
     pushop.lfrevs = lfrevs
     return pushop
 
-revsetpredicate = registrar.revsetpredicate()
-
-@revsetpredicate('pulled()')
+@eh.revsetpredicate('pulled()')
 def pulledrevsetsymbol(repo, subset, x):
     """Changesets that just has been pulled.
 

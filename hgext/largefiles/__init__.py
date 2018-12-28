@@ -192,4 +192,4 @@ def _uisetup(ui):
             extensions.wrapfunction(module, 'rebase',
                                     overrides.overriderebase)
 
-revsetpredicate = overrides.revsetpredicate
+revsetpredicate = eh.revsetpredicate
