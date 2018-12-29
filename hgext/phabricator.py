@@ -41,6 +41,7 @@ Config::
 
 from __future__ import absolute_import
 
+import contextlib
 import itertools
 import json
 import operator
@@ -214,7 +215,8 @@ def callconduit(repo, name, params):
     else:
         urlopener = urlmod.opener(repo.ui, authinfo)
         request = util.urlreq.request(url, data=data)
-        body = urlopener.open(request).read()
+        with contextlib.closing(urlopener.open(request)) as rsp:
+            body = rsp.read()
     repo.ui.debug(b'Conduit Response: %s\n' % body)
     parsed = json.loads(body)
     if parsed.get(r'error_code'):
