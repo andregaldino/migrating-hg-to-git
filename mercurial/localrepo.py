@@ -1261,12 +1261,6 @@ class localrepository(object):
         narrowspec.save(self, newincludes, newexcludes)
         narrowspec.copytoworkingcopy(self)
         self.invalidate(clearfilecache=True)
-        # So the next access won't be considered a conflict
-        # TODO: It seems like there should be a way of doing this that
-        # doesn't involve replacing these attributes.
-        self.narrowpats = newincludes, newexcludes
-        self._narrowmatch = narrowspec.match(self.root, include=newincludes,
-                                             exclude=newexcludes)
 
     def __getitem__(self, changeid):
         if changeid is None:
