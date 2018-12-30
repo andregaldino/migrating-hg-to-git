@@ -1259,7 +1259,6 @@ class localrepository(object):
 
     def setnarrowpats(self, newincludes, newexcludes):
         narrowspec.save(self, newincludes, newexcludes)
-        narrowspec.copytoworkingcopy(self)
         self.invalidate(clearfilecache=True)
 
     def __getitem__(self, changeid):

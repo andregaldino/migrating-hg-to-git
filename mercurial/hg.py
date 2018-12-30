@@ -737,6 +737,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
                 if narrow:
                     with local.wlock(), local.lock():
                         local.setnarrowpats(storeincludepats, storeexcludepats)
+                        narrowspec.copytoworkingcopy(local)
 
                 u = util.url(abspath)
                 defaulturl = bytes(u)

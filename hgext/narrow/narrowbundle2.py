@@ -151,6 +151,7 @@ def _handlechangespec_2(op, inpart):
         op.repo.requirements.add(repository.NARROW_REQUIREMENT)
         op.repo._writerequirements()
     op.repo.setnarrowpats(includepats, excludepats)
+    narrowspec.copytoworkingcopy(op.repo)
 
 @bundle2.parthandler(_CHANGESPECPART)
 def _handlechangespec(op, inpart):

@@ -71,6 +71,7 @@ have this method available in narrowhg proper at the moment.
   >   if not repo.currenttransaction():
   >     ui.develwarn(b'expandnarrowspec called outside of transaction!')
   >   repo.setnarrowpats(includes, excludes)
+  >   narrowspec.copytoworkingcopy(repo)
   >   newmatcher = narrowspec.match(repo.root, includes, excludes)
   >   added = matchmod.differencematcher(newmatcher, currentmatcher)
   >   for f in repo[b'.'].manifest().walk(added):

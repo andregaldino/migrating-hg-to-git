@@ -245,6 +245,7 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
             # Update narrowspec before removing revlogs, so repo won't be
             # corrupt in case of crash
             repo.setnarrowpats(newincludes, newexcludes)
+            narrowspec.copytoworkingcopy(repo)
 
             for f in todelete:
                 ui.status(_('deleting %s\n') % f)
@@ -316,6 +317,7 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                         transactiongetter=tgetter)
 
         repo.setnewnarrowpats()
+        narrowspec.copytoworkingcopy(repo)
         actions = merge.emptyactions()
         addgaction = actions['g'].append
 
