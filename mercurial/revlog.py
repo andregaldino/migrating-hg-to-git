@@ -1538,6 +1538,8 @@ class revlog(object):
         deltap = self.deltaparent(rev)
         if deltap == nullrev:
             return True
+        elif not self._sparserevlog:
+            return False
         p1, p2 = self.parentrevs(rev)
         if deltap in (p1, p2):
             return False
