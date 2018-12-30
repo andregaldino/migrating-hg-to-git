@@ -967,6 +967,7 @@ bail:
 static inline int index_baserev(indexObject *self, int rev)
 {
 	const char *data;
+	int result;
 
 	if (rev >= self->length) {
 		PyObject *tuple =
@@ -975,15 +976,23 @@ static inline int index_baserev(indexObject *self, int rev)
 		if (!pylong_to_long(PyTuple_GET_ITEM(tuple, 3), &ret)) {
 			return -2;
 		}
-		return (int)ret;
+		result = (int)ret;
 	} else {
 		data = index_deref(self, rev);
 		if (data == NULL) {
 			return -2;
 		}
 
-		return getbe32(data + 16);
+		result = getbe32(data + 16);
 	}
+	if (result > rev) {
+		PyErr_Format(
+		    PyExc_ValueError,
+		    "corrupted revlog, revision base above revision: %d, %d",
+		    rev, result);
+		return -2;
+	}
+	return result;
 }
 
 static PyObject *index_deltachain(indexObject *self, PyObject *args)
