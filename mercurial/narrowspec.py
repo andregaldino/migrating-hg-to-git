@@ -185,10 +185,25 @@ def restorebackup(repo, backupname):
         return
     util.rename(repo.svfs.join(backupname), repo.svfs.join(FILENAME))
 
-def clearbackup(repo, backupname):
+def savewcbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    repo.svfs.unlink(backupname)
+    vfs = repo.vfs
+    vfs.tryunlink(backupname)
+    # It may not exist in old repos
+    if vfs.exists(DIRSTATE_FILENAME):
+        util.copyfile(vfs.join(DIRSTATE_FILENAME), vfs.join(backupname),
+                      hardlink=True)
+
+def restorewcbackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    util.rename(repo.vfs.join(backupname), repo.vfs.join(DIRSTATE_FILENAME))
+
+def clearwcbackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    repo.vfs.unlink(backupname)
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     r""" Restricts the patterns according to repo settings,
