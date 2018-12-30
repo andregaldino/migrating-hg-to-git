@@ -243,7 +243,7 @@ def _reposetup(ui, repo):
                 s = repo.set('%n:%n', _bin(kwargs[r'node']), _bin(last))
             else:
                 s = repo.set('%n', _bin(kwargs[r'node']))
-            match = repo.narrowmatch()
+            match = repo._storenarrowmatch
             for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?
                 if any(ctx[f].islfs() for f in ctx.files()

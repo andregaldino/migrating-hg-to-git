@@ -815,7 +815,7 @@ class revlognarrowfilestorage(object):
         if path[0] == b'/':
             path = path[1:]
 
-        return filelog.narrowfilelog(self.svfs, path, self.narrowmatch())
+        return filelog.narrowfilelog(self.svfs, path, self._storenarrowmatch)
 
 def makefilestorage(requirements, features, **kwargs):
     """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
@@ -1191,7 +1191,7 @@ class localrepository(object):
     def manifestlog(self):
         rootstore = manifest.manifestrevlog(self.svfs)
         return manifest.manifestlog(self.svfs, self, rootstore,
-                                    self.narrowmatch())
+                                    self._storenarrowmatch)
 
     @repofilecache('dirstate')
     def dirstate(self):
@@ -1222,6 +1222,13 @@ class localrepository(object):
         A tuple of (includes, excludes).
         """
         return narrowspec.load(self)
+
+    @storecache(narrowspec.FILENAME)
+    def _storenarrowmatch(self):
+        if repository.NARROW_REQUIREMENT not in self.requirements:
+            return matchmod.always(self.root, '')
+        include, exclude = self.narrowpats
+        return narrowspec.match(self.root, include=include, exclude=exclude)
 
     @storecache(narrowspec.FILENAME)
     def _narrowmatch(self):
