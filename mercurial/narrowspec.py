@@ -273,7 +273,12 @@ def checkworkingcopynarrowspec(repo):
         raise error.Abort(_("working copy's narrowspec is stale"),
                           hint=_("run 'hg tracked --update-working-copy'"))
 
-def updateworkingcopy(repo):
+def updateworkingcopy(repo, assumeclean=False):
+    """updates the working copy and dirstate from the store narrowspec
+
+    When assumeclean=True, files that are not known to be clean will also
+    be deleted. It is then up to the caller to make sure they are clean.
+    """
     oldspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     newspec = repo.svfs.tryread(FILENAME)
 
@@ -287,11 +292,17 @@ def updateworkingcopy(repo):
     ds = repo.dirstate
     lookup, status = ds.status(removedmatch, subrepos=[], ignored=False,
                                clean=True, unknown=False)
-    _deletecleanfiles(repo, status.clean)
-    trackeddirty = lookup + status.modified + status.added
+    trackeddirty = status.modified + status.added
+    clean = status.clean
+    if assumeclean:
+        assert not trackeddirty
+        clean.extend(lookup)
+    else:
+        trackeddirty.extend(lookup)
+    _deletecleanfiles(repo, clean)
     for f in sorted(trackeddirty):
         repo.ui.status(_('not deleting possibly dirty file %s\n') % f)
-    for f in status.clean + trackeddirty:
+    for f in clean + trackeddirty:
         ds.drop(f)
 
     repo.narrowpats = newincludes, newexcludes
