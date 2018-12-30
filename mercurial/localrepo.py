@@ -1836,6 +1836,7 @@ class localrepository(object):
                 # discard all changes (including ones already written
                 # out) in this transaction
                 narrowspec.restorebackup(self, 'journal.narrowspec')
+                narrowspec.restorewcbackup(self, 'journal.narrowspec.dirstate')
                 repo.dirstate.restorebackup(None, 'journal.dirstate')
 
                 repo.invalidate(clearfilecache=True)
@@ -1913,6 +1914,7 @@ class localrepository(object):
     def _journalfiles(self):
         return ((self.svfs, 'journal'),
                 (self.svfs, 'journal.narrowspec'),
+                (self.vfs, 'journal.narrowspec.dirstate'),
                 (self.vfs, 'journal.dirstate'),
                 (self.vfs, 'journal.branch'),
                 (self.vfs, 'journal.desc'),
@@ -1925,6 +1927,7 @@ class localrepository(object):
     @unfilteredmethod
     def _writejournal(self, desc):
         self.dirstate.savebackup(None, 'journal.dirstate')
+        narrowspec.savewcbackup(self, 'journal.narrowspec.dirstate')
         narrowspec.savebackup(self, 'journal.narrowspec')
         self.vfs.write("journal.branch",
                           encoding.fromlocal(self.dirstate.branch()))
@@ -2014,6 +2017,7 @@ class localrepository(object):
             dsguard.close()
 
             narrowspec.restorebackup(self, 'undo.narrowspec')
+            narrowspec.restorewcbackup(self, 'undo.narrowspec.dirstate')
             self.dirstate.restorebackup(None, 'undo.dirstate')
             try:
                 branch = self.vfs.read('undo.branch')
