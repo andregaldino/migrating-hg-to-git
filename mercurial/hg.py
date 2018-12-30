@@ -334,7 +334,7 @@ def postshare(sourcerepo, destrepo, defaultpath=None):
         destrepo.vfs.write('hgrc', util.tonativeeol(template % default))
     if repositorymod.NARROW_REQUIREMENT in sourcerepo.requirements:
         with destrepo.wlock():
-            narrowspec.copytoworkingcopy(destrepo, None)
+            narrowspec.copytoworkingcopy(destrepo)
 
 def _postshareupdate(repo, update, checkout=None):
     """Maybe perform a working directory update after a shared repo is created.

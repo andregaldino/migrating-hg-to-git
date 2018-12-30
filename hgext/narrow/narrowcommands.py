@@ -432,9 +432,9 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         return 0
 
     if update_working_copy:
-        with repo.wlock(), repo.lock(), repo.transaction('narrow-wc') as tr:
+        with repo.wlock(), repo.lock(), repo.transaction('narrow-wc'):
             narrowspec.updateworkingcopy(repo)
-            narrowspec.copytoworkingcopy(repo, tr)
+            narrowspec.copytoworkingcopy(repo)
         return 0
 
     if not widening and not narrowing:

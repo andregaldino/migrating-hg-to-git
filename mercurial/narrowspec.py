@@ -161,17 +161,9 @@ def save(repo, includepats, excludepats):
     spec = format(includepats, excludepats)
     repo.svfs.write(FILENAME, spec)
 
-def copytoworkingcopy(repo, tr):
-    if tr:
-        def write(file):
-            spec = repo.svfs.read(FILENAME)
-            file.write(spec)
-            file.close()
-        tr.addfilegenerator('narrowspec', (DIRSTATE_FILENAME,), write,
-                            location='plain')
-    else:
-        spec = repo.svfs.read(FILENAME)
-        repo.vfs.write(DIRSTATE_FILENAME, spec)
+def copytoworkingcopy(repo):
+    spec = repo.svfs.read(FILENAME)
+    repo.vfs.write(DIRSTATE_FILENAME, spec)
 
 def savebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:

@@ -1252,7 +1252,7 @@ class localrepository(object):
 
     def setnarrowpats(self, newincludes, newexcludes):
         narrowspec.save(self, newincludes, newexcludes)
-        narrowspec.copytoworkingcopy(self, self.currenttransaction())
+        narrowspec.copytoworkingcopy(self)
         self.invalidate(clearfilecache=True)
         # So the next access won't be considered a conflict
         # TODO: It seems like there should be a way of doing this that
