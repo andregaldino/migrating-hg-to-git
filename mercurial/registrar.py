@@ -73,6 +73,25 @@ class _funcregistrarbase(object):
 
         return func
 
+    def _merge(self, registrarbase):
+        """Merge the entries of the given registrar object into this one.
+
+        The other registrar object must not contain any entries already in the
+        current one, or a ProgrammmingError is raised.  Additionally, the types
+        of the two registrars must match.
+        """
+        if type(self) != type(registrarbase):
+            msg = "cannot merge different types of registrar"
+            raise error.ProgrammingError(msg)
+
+        dups = set(registrarbase._table.keys()).intersection(self._table.keys())
+
+        if dups:
+            msg = 'duplicate registration for names: "%s"' % '", "'.join(dups)
+            raise error.ProgrammingError(msg)
+
+        self._table.update(registrarbase._table)
+
     def _parsefuncdecl(self, decl):
         """Parse function declaration and return the name of function in it
         """
