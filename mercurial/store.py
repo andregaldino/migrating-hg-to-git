@@ -523,7 +523,7 @@ class fncache(object):
             self._load()
         return iter(self.entries | self.addls)
 
-class _fncachevfs(vfsmod.abstractvfs, vfsmod.proxyvfs):
+class _fncachevfs(vfsmod.proxyvfs):
     def __init__(self, vfs, fnc, encode):
         vfsmod.proxyvfs.__init__(self, vfs)
         self.fncache = fnc

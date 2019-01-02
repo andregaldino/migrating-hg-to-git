@@ -469,7 +469,7 @@ class vfs(abstractvfs):
 
 opener = vfs
 
-class proxyvfs(object):
+class proxyvfs(abstractvfs):
     def __init__(self, vfs):
         self.vfs = vfs
 
@@ -481,7 +481,7 @@ class proxyvfs(object):
     def options(self, value):
         self.vfs.options = value
 
-class filtervfs(abstractvfs, proxyvfs):
+class filtervfs(proxyvfs, abstractvfs):
     '''Wrapper vfs for filtering filenames with a function.'''
 
     def __init__(self, vfs, filter):
@@ -499,7 +499,7 @@ class filtervfs(abstractvfs, proxyvfs):
 
 filteropener = filtervfs
 
-class readonlyvfs(abstractvfs, proxyvfs):
+class readonlyvfs(proxyvfs):
     '''Wrapper vfs preventing any writing.'''
 
     def __init__(self, vfs):
