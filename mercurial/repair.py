@@ -168,15 +168,10 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         if rev in tostrip:
             updatebm.append(m)
 
-    # backup the changeset we are about to strip
     backupfile = None
     node = nodelist[-1]
     if backup:
-        backupfile = backupbundle(repo, stripbases, cl.heads(), node, topic)
-        repo.ui.status(_("saved backup bundle to %s\n") %
-                       vfs.join(backupfile))
-        repo.ui.log("backupbundle", "saved backup bundle to %s\n",
-                    vfs.join(backupfile))
+        backupfile = _createstripbackup(repo, stripbases, node, topic)
     # create a changegroup for all the branches we need to keep
     tmpbundlefile = None
     if saveheads:
@@ -268,6 +263,17 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     repo.destroyed()
     # return the backup file path (or None if 'backup' was False) so
     # extensions can use it
+    return backupfile
+
+def _createstripbackup(repo, stripbases, node, topic):
+    # backup the changeset we are about to strip
+    vfs = repo.vfs
+    cl = repo.changelog
+    backupfile = backupbundle(repo, stripbases, cl.heads(), node, topic)
+    repo.ui.status(_("saved backup bundle to %s\n") %
+                   vfs.join(backupfile))
+    repo.ui.log("backupbundle", "saved backup bundle to %s\n",
+                vfs.join(backupfile))
     return backupfile
 
 def safestriproots(ui, repo, nodes):
