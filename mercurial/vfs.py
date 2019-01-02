@@ -47,7 +47,7 @@ class abstractvfs(object):
         raise NotImplementedError('attempted instantiating ' + str(type(self)))
 
     def _auditpath(self, path, mode):
-        pass
+        raise NotImplementedError
 
     def tryread(self, path):
         '''gracefully return an empty string for missing files'''
