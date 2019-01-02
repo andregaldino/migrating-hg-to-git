@@ -6038,7 +6038,7 @@ def update(ui, repo, node=None, **opts):
         brev = rev
         if rev:
             repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
-        ctx = scmutil.revsingle(repo, rev, rev)
+        ctx = scmutil.revsingle(repo, rev, default=None)
         rev = ctx.rev()
         hidden = ctx.hidden()
         overrides = {('ui', 'forcemerge'): opts.get(r'tool', '')}

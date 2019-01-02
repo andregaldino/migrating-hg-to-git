@@ -57,6 +57,26 @@ update to rev 0 with a date
   abort: you can't specify a revision and a date
   [255]
 
+update to default destination (with empty revspec)
+
+  $ hg update -q null
+  $ hg update
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg id
+  30aff43faee1 tip
+
+  $ hg update -q null
+  $ hg update -r ''
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg id
+  30aff43faee1 tip
+
+  $ hg update -q null
+  $ hg update ''
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg id
+  30aff43faee1 tip
+
   $ cd ..
 
 update with worker processes
