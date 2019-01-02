@@ -1016,6 +1016,7 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
         for phase, nodes in toadvance.items():
             phases.advanceboundary(repo, tr, phase, nodes)
 
+        mayusearchived = repo.ui.config('experimental', 'cleanup-as-archived')
         # Obsolete or strip nodes
         if obsolete.isenabled(repo, obsolete.createmarkersopt):
             # If a node is already obsoleted, and we want to obsolete it
@@ -1033,6 +1034,17 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             if rels:
                 obsolete.createmarkers(repo, rels, operation=operation,
                                        metadata=metadata)
+        elif phases.supportinternal(repo) and mayusearchived:
+            # this assume we do not have "unstable" nodes above the cleaned ones
+            allreplaced = set()
+            for ns in replacements.keys():
+                allreplaced.update(ns)
+            if backup:
+                from . import repair # avoid import cycle
+                node = min(allreplaced, key=repo.changelog.rev)
+                repair.backupbundle(repo, allreplaced, allreplaced, node,
+                                    operation)
+            phases.retractboundary(repo, tr, phases.archived, allreplaced)
         else:
             from . import repair # avoid import cycle
             tostrip = list(n for ns in replacements for n in ns)

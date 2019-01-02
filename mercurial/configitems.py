@@ -470,6 +470,9 @@ coreconfigitem('experimental', 'bundlecomplevel.zstd',
 coreconfigitem('experimental', 'changegroup3',
     default=False,
 )
+coreconfigitem('experimental', 'cleanup-as-archived',
+    default=False,
+)
 coreconfigitem('experimental', 'clientcompressionengines',
     default=list,
 )
