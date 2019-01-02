@@ -153,20 +153,22 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         stripobsidx = [i for i, m in enumerate(repo.obsstore)
                        if m in obsmarkers]
 
-    # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)), but
-    # is much faster
-    newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
-    if newbmtarget:
-        newbmtarget = repo[newbmtarget.first()].node()
-    else:
-        newbmtarget = '.'
-
+    # compute necessary bookmark movement
     bm = repo._bookmarks
     updatebm = []
     for m in bm:
         rev = repo[bm[m]].rev()
         if rev in tostrip:
             updatebm.append(m)
+    newbmtarget = None
+    if updatebm: # don't compute anything is there is no bookmark to move anyway
+        # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)),
+        # but is much faster
+        newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
+        if newbmtarget:
+            newbmtarget = repo[newbmtarget.first()].node()
+        else:
+            newbmtarget = '.'
 
     backupfile = None
     node = nodelist[-1]
