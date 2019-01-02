@@ -473,6 +473,9 @@ class proxyvfs(abstractvfs):
     def __init__(self, vfs):
         self.vfs = vfs
 
+    def _auditpath(self, path, mode):
+        return self.vfs._auditpath(path, mode)
+
     @property
     def options(self):
         return self.vfs.options
