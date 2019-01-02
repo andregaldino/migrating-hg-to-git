@@ -108,8 +108,9 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
     repo = repo.unfiltered()
     repo.destroying()
-
+    vfs = repo.vfs
     cl = repo.changelog
+
     # TODO handle undo of merge sets
     if isinstance(nodelist, str):
         nodelist = [nodelist]
@@ -169,7 +170,6 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
     # create a changegroup for all the branches we need to keep
     backupfile = None
-    vfs = repo.vfs
     node = nodelist[-1]
     if backup:
         backupfile = backupbundle(repo, stripbases, cl.heads(), node, topic)
