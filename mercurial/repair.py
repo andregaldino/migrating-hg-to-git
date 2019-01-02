@@ -168,7 +168,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         if rev in tostrip:
             updatebm.append(m)
 
-    # create a changegroup for all the branches we need to keep
+    # backup the changeset we are about to strip
     backupfile = None
     node = nodelist[-1]
     if backup:
@@ -177,6 +177,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
                        vfs.join(backupfile))
         repo.ui.log("backupbundle", "saved backup bundle to %s\n",
                     vfs.join(backupfile))
+    # create a changegroup for all the branches we need to keep
     tmpbundlefile = None
     if saveheads:
         # do not compress temporary bundle if we remove it from disk later
