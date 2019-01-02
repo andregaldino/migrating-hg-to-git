@@ -153,22 +153,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         stripobsidx = [i for i, m in enumerate(repo.obsstore)
                        if m in obsmarkers]
 
-    # compute necessary bookmark movement
-    bm = repo._bookmarks
-    updatebm = []
-    for m in bm:
-        rev = repo[bm[m]].rev()
-        if rev in tostrip:
-            updatebm.append(m)
-    newbmtarget = None
-    if updatebm: # don't compute anything is there is no bookmark to move anyway
-        # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)),
-        # but is much faster
-        newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
-        if newbmtarget:
-            newbmtarget = repo[newbmtarget.first()].node()
-        else:
-            newbmtarget = '.'
+    newbmtarget, updatebm = _bookmarkmovements(repo, tostrip)
 
     backupfile = None
     node = nodelist[-1]
@@ -235,7 +220,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
             with repo.transaction('repair') as tr:
                 bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
-                bm.applychanges(repo, tr, bmchanges)
+                repo._bookmarks.applychanges(repo, tr, bmchanges)
 
             # remove undo files
             for undovfs, undofile in repo.undofiles():
@@ -266,6 +251,25 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     # return the backup file path (or None if 'backup' was False) so
     # extensions can use it
     return backupfile
+
+def _bookmarkmovements(repo, tostrip):
+    # compute necessary bookmark movement
+    bm = repo._bookmarks
+    updatebm = []
+    for m in bm:
+        rev = repo[bm[m]].rev()
+        if rev in tostrip:
+            updatebm.append(m)
+    newbmtarget = None
+    if updatebm: # don't compute anything is there is no bookmark to move anyway
+        # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)),
+        # but is much faster
+        newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
+        if newbmtarget:
+            newbmtarget = repo[newbmtarget.first()].node()
+        else:
+            newbmtarget = '.'
+    return newbmtarget, updatebm
 
 def _createstripbackup(repo, stripbases, node, topic):
     # backup the changeset we are about to strip
