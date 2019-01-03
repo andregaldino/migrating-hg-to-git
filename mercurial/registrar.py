@@ -80,11 +80,11 @@ class _funcregistrarbase(object):
         current one, or a ProgrammmingError is raised.  Additionally, the types
         of the two registrars must match.
         """
-        if type(self) != type(registrarbase):
+        if not isinstance(registrarbase, type(self)):
             msg = "cannot merge different types of registrar"
             raise error.ProgrammingError(msg)
 
-        dups = set(registrarbase._table.keys()).intersection(self._table.keys())
+        dups = set(registrarbase._table).intersection(self._table)
 
         if dups:
             msg = 'duplicate registration for names: "%s"' % '", "'.join(dups)
