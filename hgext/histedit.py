@@ -194,6 +194,7 @@ except ImportError:
 import functools
 import os
 import struct
+import time
 
 from mercurial.i18n import _
 from mercurial import (
@@ -1692,6 +1693,18 @@ def _histedit(ui, repo, state, *freeargs, **opts):
 
     _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs)
 
+    hastags = False
+    if revs:
+        revs = scmutil.revrange(repo, revs)
+        ctxs = [repo[rev] for rev in revs]
+        for ctx in ctxs:
+            tags = [tag for tag in ctx.tags() if tag != 'tip']
+            if not hastags:
+                hastags = len(tags)
+    if hastags:
+        ui.warn(_('warning: tags associated with the given changeset '
+        'will be lost after histedit \n'))
+        time.sleep(1)
     # rebuild state
     if goal == goalcontinue:
         state.read()
