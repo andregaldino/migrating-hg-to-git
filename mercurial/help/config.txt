@@ -462,7 +462,7 @@ effect and style see :hg:`help color`.
     (default: False)
 
 ``status.terse``
-    Default value for the --terse flag, which condenes status output.
+    Default value for the --terse flag, which condenses status output.
     (default: empty)
 
 ``update.check``
