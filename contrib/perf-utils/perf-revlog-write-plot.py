@@ -22,7 +22,7 @@ from matplotlib import (
 )
 
 
-def plot(data):
+def plot(data, title=None):
     items = {}
     re_title = re.compile(r'^revisions #\d+ of \d+, rev (\d+)$')
     for item in data:
@@ -108,6 +108,8 @@ def plot(data):
         else:
             legline.set_alpha(0.2)
         fig.canvas.draw()
+    if title is not None:
+        fig.canvas.set_window_title(title)
     fig.canvas.mpl_connect('pick_event', onpick)
 
     plt.show()
@@ -119,7 +121,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         print('reading from %r' % sys.argv[1])
         with open(sys.argv[1], 'r') as fp:
-            plot(json.load(fp))
+            plot(json.load(fp), title=sys.argv[1])
     else:
         print('reading from stdin')
         plot(json.load(sys.stdin))
