@@ -25,6 +25,7 @@ from .utils import (
 )
 
 allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
+                   'rootglob',
                    'listfile', 'listfile0', 'set', 'include', 'subinclude',
                    'rootfilesin')
 cwdrelativepatternkinds = ('relpath', 'glob')
@@ -221,7 +222,7 @@ def _donormalize(patterns, default, root, cwd, auditor, warn):
     for kind, pat in [_patsplit(p, default) for p in patterns]:
         if kind in cwdrelativepatternkinds:
             pat = pathutil.canonpath(root, cwd, pat, auditor)
-        elif kind in ('relglob', 'path', 'rootfilesin'):
+        elif kind in ('relglob', 'path', 'rootfilesin', 'rootglob'):
             pat = util.normpath(pat)
         elif kind in ('listfile', 'listfile0'):
             try:
@@ -1137,7 +1138,7 @@ def _regex(kind, pat, globsuffix):
         if pat.startswith('^'):
             return pat
         return '.*' + pat
-    if kind == 'glob':
+    if kind in ('glob', 'rootglob'):
         return _globre(pat) + globsuffix
     raise error.ProgrammingError('not a regex pattern: %s:%s' % (kind, pat))
 
@@ -1252,7 +1253,7 @@ def _patternrootsanddirs(kindpats):
     r = []
     d = []
     for kind, pat, source in kindpats:
-        if kind == 'glob': # find the non-glob prefix
+        if kind in ('glob', 'rootglob'): # find the non-glob prefix
             root = []
             for p in pat.split('/'):
                 if '[' in p or '{' in p or '*' in p or '?' in p:
@@ -1351,6 +1352,7 @@ def readpatternfile(filepath, warn, sourceinfo=False):
     syntax: glob   # defaults following lines to non-rooted globs
     re:pattern     # non-rooted regular expression
     glob:pattern   # non-rooted glob
+    rootglob:pat   # rooted glob (same root as ^ in regexps)
     pattern        # pattern of the current default type
 
     if sourceinfo is set, returns a list of tuples:
@@ -1361,6 +1363,7 @@ def readpatternfile(filepath, warn, sourceinfo=False):
         're': 'relre:',
         'regexp': 'relre:',
         'glob': 'relglob:',
+        'rootglob': 'rootglob:',
         'include': 'include',
         'subinclude': 'subinclude',
     }
