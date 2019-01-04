@@ -187,14 +187,10 @@ class partialdiscovery(object):
 
     def addmissings(self, missings):
         """registrer some nodes as missing"""
-        if self.missing:
-            new = self._repo.revs('descendants(%ld) - descendants(%ld)',
-                                  missings, self.missing)
-            self.missing.update(new)
-        else:
-            self.missing.update(self._repo.revs('descendants(%ld)', missings))
-
-        self.undecided.difference_update(self.missing)
+        newmissing = self._repo.revs('%ld::%ld', missings, self.undecided)
+        if newmissing:
+            self.missing.update(newmissing)
+            self.undecided.difference_update(newmissing)
 
     def addinfo(self, sample):
         """consume an iterable of (rev, known) tuples"""
