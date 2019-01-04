@@ -333,7 +333,7 @@ def _analyze(x):
     elif op == 'negate':
         s = getstring(x[1], _("can't negate that"))
         return _analyze(('string', '-' + s))
-    elif op in ('string', 'symbol'):
+    elif op in ('string', 'symbol', 'smartset'):
         return x
     elif op == 'rangeall':
         return (op, None)
@@ -373,7 +373,7 @@ def _optimize(x):
         return 0, x
 
     op = x[0]
-    if op in ('string', 'symbol'):
+    if op in ('string', 'symbol', 'smartset'):
         return 0.5, x # single revisions are small
     elif op == 'and':
         wa, ta = _optimize(x[1])
@@ -535,7 +535,8 @@ def expandaliases(tree, aliases, warn=None):
 def foldconcat(tree):
     """Fold elements to be concatenated by `##`
     """
-    if not isinstance(tree, tuple) or tree[0] in ('string', 'symbol'):
+    if (not isinstance(tree, tuple)
+        or tree[0] in ('string', 'symbol', 'smartset')):
         return tree
     if tree[0] == '_concat':
         pending = [tree]
@@ -690,6 +691,28 @@ def formatspec(expr, *args):
         else:
             raise error.ProgrammingError("unknown revspec item type: %r" % t)
     return b''.join(ret)
+
+def spectree(expr, *args):
+    """similar to formatspec but return a parsed and optimized tree"""
+    parsed = _parseargs(expr, args)
+    ret = []
+    inputs = []
+    for t, arg in parsed:
+        if t is None:
+            ret.append(arg)
+        elif t == 'baseset':
+            newtree = ('smartset', smartset.baseset(arg))
+            inputs.append(newtree)
+            ret.append("$")
+        else:
+            raise error.ProgrammingError("unknown revspec item type: %r" % t)
+    expr = b''.join(ret)
+    tree = _parsewith(expr, syminitletters=_aliassyminitletters)
+    tree = parser.buildtree(tree, ('symbol', '$'), *inputs)
+    tree = foldconcat(tree)
+    tree = analyze(tree)
+    tree = optimize(tree)
+    return tree
 
 def _parseargs(expr, args):
     """parse the expression and replace all inexpensive args

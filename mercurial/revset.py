@@ -125,6 +125,13 @@ def stringset(repo, subset, x, order):
         return baseset([x])
     return baseset()
 
+def rawsmartset(repo, subset, x, order):
+    """argument is already a smartset, use that directly"""
+    if order == followorder:
+        return subset & x
+    else:
+        return x & subset
+
 def rangeset(repo, subset, x, y, order):
     m = getset(repo, fullreposet(repo), x)
     n = getset(repo, fullreposet(repo), y)
@@ -2216,6 +2223,7 @@ methods = {
     "ancestor": ancestorspec,
     "parent": parentspec,
     "parentpost": parentpost,
+    "smartset": rawsmartset,
 }
 
 subscriptrelations = {

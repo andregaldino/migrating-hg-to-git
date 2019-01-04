@@ -1362,9 +1362,8 @@ class localrepository(object):
         Returns a revset.abstractsmartset, which is a list-like interface
         that contains integer revisions.
         '''
-        expr = revsetlang.formatspec(expr, *args)
-        m = revset.match(None, expr)
-        return m(self)
+        tree = revsetlang.spectree(expr, *args)
+        return revset.makematcher(tree)(self)
 
     def set(self, expr, *args):
         '''Find revisions matching a revset and emit changectx instances.
