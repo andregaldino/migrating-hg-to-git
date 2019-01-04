@@ -666,6 +666,23 @@ def formatspec(expr, *args):
     >>> formatspec(b'%ls', [b'a', b"'"])
     "_list('a\\\\x00\\\\'')"
     '''
+    parsed = _parseargs(expr, args)
+    ret = []
+    for t, arg in parsed:
+        if t is None:
+            ret.append(arg)
+        else:
+            raise error.ProgrammingError("unknown revspec item type: %r" % t)
+    return b''.join(ret)
+
+def _parseargs(expr, args):
+    """parse the expression and replace all inexpensive args
+
+    return a list of tuple [(arg-type, arg-value)]
+
+    Arg-type can be:
+    * None: a string ready to be concatenated into a final spec
+    """
     expr = pycompat.bytestr(expr)
     argiter = iter(args)
     ret = []
@@ -673,16 +690,16 @@ def formatspec(expr, *args):
     while pos < len(expr):
         q = expr.find('%', pos)
         if q < 0:
-            ret.append(expr[pos:])
+            ret.append((None, expr[pos:]))
             break
-        ret.append(expr[pos:q])
+        ret.append((None, expr[pos:q]))
         pos = q + 1
         try:
             d = expr[pos]
         except IndexError:
             raise error.ParseError(_('incomplete revspec format character'))
         if d == '%':
-            ret.append(d)
+            ret.append((None, d))
             pos += 1
             continue
 
@@ -692,19 +709,20 @@ def formatspec(expr, *args):
             raise error.ParseError(_('missing argument for revspec'))
         f = _formatlistfuncs.get(d)
         if f:
-            # a list of some type
+            # a list of some type, might be expensive, do not replace
             pos += 1
             try:
                 d = expr[pos]
             except IndexError:
                 raise error.ParseError(_('incomplete revspec format character'))
             try:
-                ret.append(f(list(arg), d))
+                ret.append((None, f(list(arg), d)))
             except (TypeError, ValueError):
                 raise error.ParseError(_('invalid argument for revspec'))
         else:
+            # a single entry, not expensive, replace
             try:
-                ret.append(_formatargtype(d, arg))
+                ret.append((None, _formatargtype(d, arg)))
             except (TypeError, ValueError):
                 raise error.ParseError(_('invalid argument for revspec'))
         pos += 1
@@ -714,7 +732,7 @@ def formatspec(expr, *args):
         raise error.ParseError(_('too many revspec arguments specified'))
     except StopIteration:
         pass
-    return ''.join(ret)
+    return ret
 
 def prettyformat(tree):
     return parser.prettyformat(tree, ('string', 'symbol'))
