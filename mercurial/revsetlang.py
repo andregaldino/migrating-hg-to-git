@@ -15,6 +15,7 @@ from . import (
     node,
     parser,
     pycompat,
+    smartset,
     util,
 )
 from .utils import (
@@ -682,6 +683,10 @@ def formatspec(expr, *args):
     for t, arg in parsed:
         if t is None:
             ret.append(arg)
+        elif t == 'baseset':
+            if isinstance(arg, set):
+                arg = sorted(arg)
+            ret.append(_formatintlist(list(arg)))
         else:
             raise error.ProgrammingError("unknown revspec item type: %r" % t)
     return b''.join(ret)
@@ -692,7 +697,8 @@ def _parseargs(expr, args):
     return a list of tuple [(arg-type, arg-value)]
 
     Arg-type can be:
-    * None: a string ready to be concatenated into a final spec
+    * None:      a string ready to be concatenated into a final spec
+    * 'baseset': an iterable of revisions
     """
     expr = pycompat.bytestr(expr)
     argiter = iter(args)
@@ -722,10 +728,25 @@ def _parseargs(expr, args):
         if f:
             # a list of some type, might be expensive, do not replace
             pos += 1
+            islist = (d == 'l')
             try:
                 d = expr[pos]
             except IndexError:
                 raise error.ParseError(_('incomplete revspec format character'))
+            if islist and d == 'd' and arg:
+                # special case, we might be able to speedup the list of int case
+                #
+                # We have been very conservative here for the first version.
+                # Other types (eg: generator) are probably fine, but we did not
+                # wanted to take any risk>
+                safeinputtype = (list, tuple, set, smartset.abstractsmartset)
+                if isinstance(arg, safeinputtype):
+                    # we don't create a baseset yet, because it come with an
+                    # extra cost. If we are going to serialize it we better
+                    # skip it.
+                    ret.append(('baseset', arg))
+                    pos += 1
+                    continue
             try:
                 ret.append((None, f(list(arg), d)))
             except (TypeError, ValueError):
