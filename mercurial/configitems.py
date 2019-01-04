@@ -991,6 +991,9 @@ coreconfigitem('storage', 'mmap-threshold',
     default='1MB',
     alias=[('experimental', 'mmapindexthreshold')],
 )
+coreconfigitem('rewrite', 'update-timestamp',
+    default=False,
+)
 coreconfigitem('storage', 'new-repo-backend',
     default='revlogv1',
 )

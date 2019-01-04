@@ -2443,6 +2443,12 @@ def amend(ui, repo, old, extra, pats, opts):
         user = opts.get('user') or old.user()
         date = opts.get('date') or old.date()
 
+        if ui.configbool('rewrite', 'update-timestamp'):
+            if opts.get('date'):
+                pass
+            else:
+                date = dateutil.makedate()
+
         # Parse the date to allow comparison between date and old.date()
         date = dateutil.parsedate(date)
 
@@ -2558,13 +2564,15 @@ def amend(ui, repo, old, extra, pats, opts):
         if ((not changes)
             and newdesc == old.description()
             and user == old.user()
-            and date == old.date()
             and pureextra == old.extra()):
             # nothing changed. continuing here would create a new node
             # anyway because of the amend_source noise.
             #
             # This not what we expect from amend.
-            return old.node()
+            if (date == old.date() or
+                (ui.configbool('rewrite', 'update-timestamp') and
+                 not opts.get('date'))):
+                return old.node()
 
         commitphase = None
         if opts.get('secret'):

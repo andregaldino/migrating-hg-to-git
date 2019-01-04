@@ -1806,6 +1806,13 @@ have a definite end point.
 
 Alias definitions for revsets. See :hg:`help revsets` for details.
 
+``rewrite``
+-----------
+
+``update-timestamp``
+    If true, updates the date and time of the changeset to current. It is only
+    applicable for hg amend in current version.
+
 ``storage``
 -----------
 
