@@ -146,7 +146,7 @@ def _takefullsample(repo, headrevs, revs, size):
     _updatesample(revs, revsroots, sample, children.__getitem__)
     assert sample
     sample = _limitsample(sample, size)
-    if len(sample) < size:
+    if len(sample) <= size:
         more = size - len(sample)
         sample.update(random.sample(list(revs - sample), more))
     return sample
@@ -264,7 +264,7 @@ def findcommonheads(ui, local, remote,
             ui.debug("taking quick initial sample\n")
             samplefunc = _takequicksample
             targetsize = initialsamplesize
-        if len(undecided) < targetsize:
+        if len(undecided) <= targetsize:
             sample = list(undecided)
         else:
             sample = samplefunc(local, ownheads, undecided, targetsize)
