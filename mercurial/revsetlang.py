@@ -607,7 +607,7 @@ def _formatlistexp(s, t):
     elif l == 1:
         return _formatargtype(t, s[0])
     elif t == 'd':
-        return "_intlist('%s')" % "\0".join('%d' % int(a) for a in s)
+        return _formatintlist(s)
     elif t == 's':
         return "_list(%s)" % _quote("\0".join(s))
     elif t == 'n':
@@ -620,6 +620,17 @@ def _formatlistexp(s, t):
 
     m = l // 2
     return '(%s or %s)' % (_formatlistexp(s[:m], t), _formatlistexp(s[m:], t))
+
+def _formatintlist(data):
+    try:
+        l = len(data)
+        if l == 0:
+            return "_list('')"
+        elif l == 1:
+            return _formatargtype('d', data[0])
+        return "_intlist('%s')" % "\0".join('%d' % int(a) for a in data)
+    except (TypeError, ValueError):
+        raise error.ParseError(_('invalid argument for revspec'))
 
 def _formatparamexp(args, t):
     return ', '.join(_formatargtype(t, a) for a in args)
