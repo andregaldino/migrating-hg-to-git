@@ -167,9 +167,10 @@ class partialdiscovery(object):
     Feed with data from the remote repository, this object keep track of the
     current set of changeset in various states:
 
-    - common:    own nodes I know we both know
-    - undecided: own nodes where I don't know if remote knows them
-    - missing:   own nodes I know remote lacks
+    - common:    revs also known remotely
+    - undecided: revs we don't have information on yet
+    - missing:   revs missing remotely
+    (all tracked revisions are known locally)
     """
 
     def __init__(self, repo, targetheads):
