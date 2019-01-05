@@ -59,6 +59,7 @@ from mercurial import (
     obsutil,
     parser,
     patch,
+    phases,
     registrar,
     scmutil,
     smartset,
@@ -584,6 +585,10 @@ def phabsend(ui, repo, *revs, **opts):
                 newdesc = encoding.unitolocal(newdesc)
                 # Make sure commit message contain "Differential Revision"
                 if old.description() != newdesc:
+                    if old.phase() == phases.public:
+                        ui.warn(_("warning: not updating public commit %s\n")
+                                % scmutil.formatchangeid(old))
+                        continue
                     parents = [
                         mapping.get(old.p1().node(), (old.p1(),))[0],
                         mapping.get(old.p2().node(), (old.p2(),))[0],

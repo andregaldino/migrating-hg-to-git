@@ -1,0 +1,957 @@
+{
+    "interactions": [
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:24 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2F5faozuxaekgxbyfcc43jvrcmbr5fscbki46mvcvl; expires=Tue, 09-Jan-2024 04:08:24 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"data\":[{\"id\":2,\"type\":\"REPO\",\"phid\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"fields\":{\"name\":\"Mercurial\",\"vcs\":\"hg\",\"callsign\":\"HG\",\"shortName\":null,\"status\":\"active\",\"isImporting\":false,\"spacePHID\":null,\"dateCreated\":1498761653,\"dateModified\":1500403184,\"policy\":{\"view\":\"public\",\"edit\":\"admin\",\"diffusion.push\":\"users\"}},\"attachments\":{}}],\"maps\":{},\"query\":{\"queryKey\":null},\"cursor\":{\"limit\":100,\"after\":null,\"before\":null,\"order\":null}},\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/diffusion.repository.search", 
+                "headers": {
+                    "content-length": [
+                        "79"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "constraints%5Bcallsigns%5D%5B0%5D=HG&api.token=cli-hahayouwish"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:25 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fkb72422mbpyuyoultl4hkizat6qscjgrl5hi6k2n; expires=Tue, 09-Jan-2024 04:08:25 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"id\":13121,\"phid\":\"PHID-DIFF-xrku5f3mlveqr3hhj6a7\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/differential\\/diff\\/13121\\/\"},\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.createrawdiff", 
+                "headers": {
+                    "content-length": [
+                        "220"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "repositoryPHID=PHID-REPO-bvunnehri4u2isyr7bc3&diff=diff+--git+a%2Fbeta+b%2Fbeta%0A---+a%2Fbeta%0A%2B%2B%2B+b%2Fbeta%0A%40%40+-1%2C1+%2B1%2C1+%40%40%0A-beta%0A%2Bpublic+change%0A&api.token=cli-hahayouwish"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:25 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fpyr677mjsjvlsn3wwzl2iignpppablawwz7dn5ap; expires=Tue, 09-Jan-2024 04:08:25 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":null,\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.setdiffproperty", 
+                "headers": {
+                    "content-length": [
+                        "264"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "name=hg%3Ameta&api.token=cli-hahayouwish&data=%7B%22date%22%3A+%220+0%22%2C+%22user%22%3A+%22test%22%2C+%22node%22%3A+%22540a21d3fbeb7c56cafe726bba6cd9fdcc94f29c%22%2C+%22parent%22%3A+%22c2b605ada280b38c38031b5d31622869c72b0d8d%22%7D&diff_id=13121"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:26 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fegvbvujn6hykhurzyjtaq4xduxl6sz7gavenbcou; expires=Tue, 09-Jan-2024 04:08:26 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":null,\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.setdiffproperty", 
+                "headers": {
+                    "content-length": [
+                        "227"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "name=local%3Acommits&api.token=cli-hahayouwish&data=%7B%22540a21d3fbeb7c56cafe726bba6cd9fdcc94f29c%22%3A+%7B%22author%22%3A+%22test%22%2C+%22authorEmail%22%3A+%22test%22%2C+%22time%22%3A+0.0%7D%7D&diff_id=13121"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:26 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Flbjzqvie4g24kmhnqws2bwhmeiijd3qvvkd22isg; expires=Tue, 09-Jan-2024 04:08:27 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"errors\":[],\"fields\":{\"title\":\"create public change for phabricator testing\"},\"revisionIDFieldInfo\":{\"value\":null,\"validDomain\":\"https:\\/\\/phab.mercurial-scm.org\"}},\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.parsecommitmessage", 
+                "headers": {
+                    "content-length": [
+                        "94"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "corpus=create+public+change+for+phabricator+testing&api.token=cli-hahayouwish"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:27 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fkclyjmm2warvrxwksppx3qxupj4f72ejvxuavrn5; expires=Tue, 09-Jan-2024 04:08:27 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"object\":{\"id\":5544,\"phid\":\"PHID-DREV-bwugldlyieuwzrk76xzy\"},\"transactions\":[{\"phid\":\"PHID-XACT-DREV-wojlvnhodzdoqh6\"},{\"phid\":\"PHID-XACT-DREV-ju3bw7rltmmwpbf\"},{\"phid\":\"PHID-XACT-DREV-2hwwi7dagftdp6q\"},{\"phid\":\"PHID-XACT-DREV-zfsyu5o7wkqzh6s\"},{\"phid\":\"PHID-XACT-DREV-srrkwmheqn6gssk\"}]},\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.revision.edit", 
+                "headers": {
+                    "content-length": [
+                        "253"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "transactions%5B0%5D%5Btype%5D=update&transactions%5B0%5D%5Bvalue%5D=PHID-DIFF-xrku5f3mlveqr3hhj6a7&transactions%5B1%5D%5Btype%5D=title&transactions%5B1%5D%5Bvalue%5D=create+public+change+for+phabricator+testing&api.token=cli-hahayouwish"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:28 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fbw4ordbzl7d4hcgyyxnoawhrfhycrvvkk6arnz5p; expires=Tue, 09-Jan-2024 04:08:28 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"id\":13122,\"phid\":\"PHID-DIFF-iksauhhfhmxfjijyqxji\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/differential\\/diff\\/13122\\/\"},\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.createrawdiff", 
+                "headers": {
+                    "content-length": [
+                        "232"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "repositoryPHID=PHID-REPO-bvunnehri4u2isyr7bc3&diff=diff+--git+a%2Falpha+b%2Falpha%0A---+a%2Falpha%0A%2B%2B%2B+b%2Falpha%0A%40%40+-1%2C2+%2B1%2C1+%40%40%0A-alpha%0A-more%0A%2Bdraft+change%0A&api.token=cli-hahayouwish"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:29 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fgt3wmrrlkmpdhyaj5rsesxcwbabhpjlhoa6matcg; expires=Tue, 09-Jan-2024 04:08:29 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":null,\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.setdiffproperty", 
+                "headers": {
+                    "content-length": [
+                        "264"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "name=hg%3Ameta&api.token=cli-hahayouwish&data=%7B%22date%22%3A+%220+0%22%2C+%22user%22%3A+%22test%22%2C+%22node%22%3A+%226bca752686cd24e603094ef55574655c0017723a%22%2C+%22parent%22%3A+%22540a21d3fbeb7c56cafe726bba6cd9fdcc94f29c%22%7D&diff_id=13122"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:29 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fntcsqzh6pptdkfnebvmck6l3y3rrwxzotvsq4phl; expires=Tue, 09-Jan-2024 04:08:29 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":null,\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.setdiffproperty", 
+                "headers": {
+                    "content-length": [
+                        "227"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "name=local%3Acommits&api.token=cli-hahayouwish&data=%7B%226bca752686cd24e603094ef55574655c0017723a%22%3A+%7B%22author%22%3A+%22test%22%2C+%22authorEmail%22%3A+%22test%22%2C+%22time%22%3A+0.0%7D%7D&diff_id=13122"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:30 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fgturi5p5fz64q26mztdrzjldzynp62pp7opcxsnm; expires=Tue, 09-Jan-2024 04:08:30 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"errors\":[],\"fields\":{\"title\":\"create draft change for phabricator testing\"},\"revisionIDFieldInfo\":{\"value\":null,\"validDomain\":\"https:\\/\\/phab.mercurial-scm.org\"}},\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.parsecommitmessage", 
+                "headers": {
+                    "content-length": [
+                        "93"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "corpus=create+draft+change+for+phabricator+testing&api.token=cli-hahayouwish"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:31 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2F4vyvyabatbn7y5bhav6nthgdt4mm6oeh6ybvnrl5; expires=Tue, 09-Jan-2024 04:08:31 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"object\":{\"id\":5545,\"phid\":\"PHID-DREV-ga6i6vbmatvd2fszrr2o\"},\"transactions\":[{\"phid\":\"PHID-XACT-DREV-epqu5uekkf4ig67\"},{\"phid\":\"PHID-XACT-DREV-y3t5z573bwbqv7e\"},{\"phid\":\"PHID-XACT-DREV-dmjvlq7wngqgwxv\"},{\"phid\":\"PHID-XACT-DREV-rkm576j6wvji3ye\"},{\"phid\":\"PHID-XACT-DREV-mb7ttr44lno6j2w\"},{\"phid\":\"PHID-XACT-DREV-ma747d2dkzk3eun\"},{\"phid\":\"PHID-XACT-DREV-3u7lqg7mwxrix5w\"},{\"phid\":\"PHID-XACT-DREV-r33n73dqn7doz7b\"}]},\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.revision.edit", 
+                "headers": {
+                    "content-length": [
+                        "409"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "transactions%5B0%5D%5Btype%5D=update&transactions%5B0%5D%5Bvalue%5D=PHID-DIFF-iksauhhfhmxfjijyqxji&transactions%5B1%5D%5Btype%5D=summary&transactions%5B1%5D%5Bvalue%5D=Depends+on+D5544&transactions%5B2%5D%5Btype%5D=summary&transactions%5B2%5D%5Bvalue%5D=+&transactions%5B3%5D%5Btype%5D=title&transactions%5B3%5D%5Bvalue%5D=create+draft+change+for+phabricator+testing&api.token=cli-hahayouwish"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:32 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fvd66cz7uxztfwfapgqrlmfmoj7szo5wvwk7vqc2u; expires=Tue, 09-Jan-2024 04:08:32 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":[{\"id\":\"5545\",\"phid\":\"PHID-DREV-ga6i6vbmatvd2fszrr2o\",\"title\":\"create draft change for phabricator testing\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D5545\",\"dateCreated\":\"1547093311\",\"dateModified\":\"1547093311\",\"authorPHID\":\"PHID-USER-tzhaient733lwrlbcag5\",\"status\":\"0\",\"statusName\":\"Needs Review\",\"properties\":[],\"branch\":null,\"summary\":\" \",\"testPlan\":\"\",\"lineCount\":\"3\",\"activeDiffPHID\":\"PHID-DIFF-iksauhhfhmxfjijyqxji\",\"diffs\":[\"13122\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-bwugldlyieuwzrk76xzy\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":null},{\"id\":\"5544\",\"phid\":\"PHID-DREV-bwugldlyieuwzrk76xzy\",\"title\":\"create public change for phabricator testing\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D5544\",\"dateCreated\":\"1547093307\",\"dateModified\":\"1547093311\",\"authorPHID\":\"PHID-USER-tzhaient733lwrlbcag5\",\"status\":\"0\",\"statusName\":\"Needs Review\",\"properties\":[],\"branch\":null,\"summary\":\"\",\"testPlan\":\"\",\"lineCount\":\"2\",\"activeDiffPHID\":\"PHID-DIFF-xrku5f3mlveqr3hhj6a7\",\"diffs\":[\"13121\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":null}],\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.query", 
+                "headers": {
+                    "content-length": [
+                        "74"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "ids%5B0%5D=5544&ids%5B1%5D=5545&api.token=cli-hahayouwish"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:32 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fbqbv2blmnjqe3a5qkpewf5wghxqwcuewjbgfrtq7; expires=Tue, 09-Jan-2024 04:08:32 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":null,\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.setdiffproperty", 
+                "headers": {
+                    "content-length": [
+                        "264"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "name=hg%3Ameta&api.token=cli-hahayouwish&data=%7B%22date%22%3A+%220+0%22%2C+%22user%22%3A+%22test%22%2C+%22node%22%3A+%22620a50fd6ed958bbee178052de67acc31dcac66e%22%2C+%22parent%22%3A+%22540a21d3fbeb7c56cafe726bba6cd9fdcc94f29c%22%7D&diff_id=13122"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "date": [
+                        "Thu, 10 Jan 2019 04:08:33 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fic7sfd33zs7c44ojloujnoicm3roxnre45glurgz; expires=Tue, 09-Jan-2024 04:08:33 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":null,\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.setdiffproperty", 
+                "headers": {
+                    "content-length": [
+                        "227"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2+682-e2cf04a597cc+20190109)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "name=local%3Acommits&api.token=cli-hahayouwish&data=%7B%22620a50fd6ed958bbee178052de67acc31dcac66e%22%3A+%7B%22author%22%3A+%22test%22%2C+%22authorEmail%22%3A+%22test%22%2C+%22time%22%3A+0.0%7D%7D&diff_id=13122"
+            }
+        }
+    ], 
+    "version": 1
+}
