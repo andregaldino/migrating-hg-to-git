@@ -48,7 +48,7 @@ def _expandsets(root, cwd, kindpats, ctx, listsubrepos, badfn):
 
     for kind, pat, source in kindpats:
         if kind == 'set':
-            if not ctx:
+            if ctx is None:
                 raise error.ProgrammingError("fileset expression with no "
                                              "context")
             matchers.append(ctx.matchfileset(pat, badfn=badfn))
