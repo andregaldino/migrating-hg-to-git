@@ -207,7 +207,7 @@ class revmap(object):
             path = self.rev2path(rev)
             if path is None:
                 raise error.CorruptedFileError('cannot find path for %s' % rev)
-            f.write(path + '\0')
+            f.write(path + b'\0')
         f.write(hsh)
 
     @staticmethod
