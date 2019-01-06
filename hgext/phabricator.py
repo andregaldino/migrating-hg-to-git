@@ -997,3 +997,17 @@ def template_review(context, mapping):
             b'url': m.group(b'url'),
             b'id': b"D{}".format(m.group(b'id')),
         })
+    else:
+        tags = ctx.repo().nodetags(ctx.node())
+        for t in tags:
+            if _differentialrevisiontagre.match(t):
+                url = ctx.repo().ui.config(b'phabricator', b'url')
+                if not url.endswith(b'/'):
+                    url += b'/'
+                url += t
+
+                return templateutil.hybriddict({
+                    b'url': url,
+                    b'id': t,
+                })
+    return None

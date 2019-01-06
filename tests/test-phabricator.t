@@ -106,13 +106,13 @@ behind to identify it.
 Template keywords
   $ hg log -T'{rev} {phabreview|json}\n'
   3 {"id": "D5545", "url": "https://phab.mercurial-scm.org/D5545"}
-  2 null
+  2 {"id": "D5544", "url": "https://phab.mercurial-scm.org/D5544"}
   1 {"id": "D4597", "url": "https://phab.mercurial-scm.org/D4597"}
   0 {"id": "D4596", "url": "https://phab.mercurial-scm.org/D4596"}
 
   $ hg log -T'{rev} {if(phabreview, "{phabreview.url} {phabreview.id}")}\n'
   3 https://phab.mercurial-scm.org/D5545 D5545
-  2 
+  2 https://phab.mercurial-scm.org/D5544 D5544
   1 https://phab.mercurial-scm.org/D4597 D4597
   0 https://phab.mercurial-scm.org/D4596 D4596
 
