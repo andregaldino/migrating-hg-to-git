@@ -194,7 +194,6 @@ except ImportError:
 import functools
 import os
 import struct
-import time
 
 from mercurial.i18n import _
 from mercurial import (
@@ -1702,9 +1701,10 @@ def _histedit(ui, repo, state, *freeargs, **opts):
             if not hastags:
                 hastags = len(tags)
     if hastags:
-        ui.warn(_('warning: tags associated with the given changeset '
-        'will be lost after histedit \n'))
-        time.sleep(1)
+        if ui.promptchoice(_('warning: tags associated with the given'
+            ' changeset will be lost after histedit. \n'
+            'do you want to continue (yN)? $$ &Yes $$ &No'), default=1):
+            raise error.Abort(_('histedit cancelled\n'))
     # rebuild state
     if goal == goalcontinue:
         state.read()
