@@ -30,6 +30,7 @@ test-bisect.t
 test-bisect2.t
 test-bisect3.t
 test-blackbox.t
+test-bookflow.t
 test-bookmarks-current.t
 test-bookmarks-merge.t
 test-bookmarks-pushpull.t
@@ -62,6 +63,7 @@ test-check-commit.t
 test-check-config.py
 test-check-config.t
 test-check-execute.t
+test-check-help.t
 test-check-interfaces.py
 test-check-module-imports.t
 test-check-py3-compat.t
@@ -405,6 +407,7 @@ test-narrow-pull.t
 test-narrow-rebase.t
 test-narrow-shallow-merges.t
 test-narrow-shallow.t
+test-narrow-share.t
 test-narrow-strip.t
 test-narrow-trackedcmd.t
 test-narrow-update.t
@@ -563,6 +566,7 @@ test-revset-outgoing.t
 test-rollback.t
 test-run-tests.py
 test-run-tests.t
+test-rust-ancestor.py
 test-schemes.t
 test-serve.t
 test-setdiscovery.t
