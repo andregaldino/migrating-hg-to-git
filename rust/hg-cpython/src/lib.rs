@@ -35,7 +35,6 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     )?;
 
     let dotted_name: String = m.get(py, "__name__")?.extract(py)?;
-    m.add(py, "__package__", "mercurial")?;
     m.add(py, "ancestor", ancestors::init_module(py, &dotted_name)?)?;
     m.add(py, "GraphError", py.get_type::<exceptions::GraphError>())?;
     Ok(())
