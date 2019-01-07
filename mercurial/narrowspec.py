@@ -266,7 +266,7 @@ def checkworkingcopynarrowspec(repo):
         raise error.Abort(_("working copy's narrowspec is stale"),
                           hint=_("run 'hg tracked --update-working-copy'"))
 
-def updateworkingcopy(repo, tr):
+def updateworkingcopy(repo):
     oldspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     newspec = repo.svfs.tryread(FILENAME)
 
@@ -294,5 +294,3 @@ def updateworkingcopy(repo, tr):
     for f in newfiles:
         ds.normallookup(f)
     _writeaddedfiles(repo, pctx, newfiles)
-
-    ds.write(tr)

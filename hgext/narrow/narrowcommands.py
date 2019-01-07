@@ -433,7 +433,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
 
     if update_working_copy:
         with repo.wlock(), repo.lock(), repo.transaction('narrow-wc') as tr:
-            narrowspec.updateworkingcopy(repo, tr)
+            narrowspec.updateworkingcopy(repo)
             narrowspec.copytoworkingcopy(repo, tr)
         return 0
 
