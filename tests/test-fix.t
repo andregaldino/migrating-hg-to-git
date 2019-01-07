@@ -173,8 +173,8 @@ Help text for fix.
   in a text file by ensuring that 'sort' runs before 'head':
   
     [fix]
-    sort:command = sort --numeric-sort
-    head:command = head --lines=10
+    sort:command = sort -n
+    head:command = head -n 10
     sort:pattern = numbers.txt
     head:pattern = numbers.txt
     sort:priority = 2
@@ -1159,10 +1159,10 @@ implementation of fix). The goal is to use multiple tools to select the lowest
 
   $ cat >> .hg/hgrc <<EOF
   > [fix]
-  > head:command = head --lines=5
+  > head:command = head -n 5
   > head:pattern = numbers.txt
   > head:priority = 1
-  > sort:command = sort --numeric-sort
+  > sort:command = sort -n
   > sort:pattern = numbers.txt
   > sort:priority = 2
   > EOF

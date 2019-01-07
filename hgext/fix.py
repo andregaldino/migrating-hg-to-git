@@ -62,8 +62,8 @@ could use the 'sort' and 'head' utilities to keep only the 10 smallest numbers
 in a text file by ensuring that 'sort' runs before 'head'::
 
   [fix]
-  sort:command = sort --numeric-sort
-  head:command = head --lines=10
+  sort:command = sort -n
+  head:command = head -n 10
   sort:pattern = numbers.txt
   head:pattern = numbers.txt
   sort:priority = 2
