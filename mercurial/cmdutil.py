@@ -2442,10 +2442,12 @@ def amend(ui, repo, old, extra, pats, opts):
 
         user = opts.get('user') or old.user()
 
+        datemaydiffer = False  # date-only change should be ignored?
         if opts.get('date'):
             date = dateutil.parsedate(opts.get('date'))
         elif ui.configbool('rewrite', 'update-timestamp'):
             date = dateutil.makedate()
+            datemaydiffer = True
         else:
             date = old.date()
 
@@ -2561,15 +2563,13 @@ def amend(ui, repo, old, extra, pats, opts):
         if ((not changes)
             and newdesc == old.description()
             and user == old.user()
+            and (date == old.date() or datemaydiffer)
             and pureextra == old.extra()):
             # nothing changed. continuing here would create a new node
             # anyway because of the amend_source noise.
             #
             # This not what we expect from amend.
-            if (date == old.date() or
-                (ui.configbool('rewrite', 'update-timestamp') and
-                 not opts.get('date'))):
-                return old.node()
+            return old.node()
 
         commitphase = None
         if opts.get('secret'):
