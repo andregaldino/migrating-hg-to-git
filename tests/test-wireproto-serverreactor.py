@@ -2,9 +2,6 @@ from __future__ import absolute_import, print_function
 
 import unittest
 
-from mercurial.thirdparty import (
-    cbor,
-)
 from mercurial import (
     ui as uimod,
     util,
@@ -16,7 +13,7 @@ from mercurial.utils import (
 
 ffs = framing.makeframefromhumanstring
 
-OK = cbor.dumps({b'status': b'ok'})
+OK = b''.join(cborutil.streamencode({b'status': b'ok'}))
 
 def makereactor(deferoutput=False):
     ui = uimod.ui()
@@ -270,20 +267,20 @@ class ServerReactorTests(unittest.TestCase):
         })
 
     def testinterleavedcommands(self):
-        cbor1 = cbor.dumps({
+        cbor1 = b''.join(cborutil.streamencode({
             b'name': b'command1',
             b'args': {
                 b'foo': b'bar',
                 b'key1': b'val',
             }
-        }, canonical=True)
-        cbor3 = cbor.dumps({
+        }))
+        cbor3 = b''.join(cborutil.streamencode({
             b'name': b'command3',
             b'args': {
                 b'biz': b'baz',
                 b'key': b'val',
             },
-        }, canonical=True)
+        }))
 
         results = list(sendframes(makereactor(), [
             ffs(b'1 1 stream-begin command-request new|more %s' % cbor1[0:6]),
