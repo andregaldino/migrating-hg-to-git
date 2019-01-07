@@ -13,8 +13,8 @@ All the data related to the command state is stored as dictionary in the object.
 The class has methods using which the data can be stored to disk in a file under
 .hg/ directory.
 
-We store the data on disk in cbor, for which we use the third party cbor library
-to serialize and deserialize data.
+We store the data on disk in cbor, for which we use the CBOR format to encode
+the data.
 """
 
 from __future__ import absolute_import
