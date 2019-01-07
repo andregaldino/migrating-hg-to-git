@@ -396,97 +396,45 @@ Test update-timestamp config option|
 
   $ hg init $TESTTMP/repo5
   $ cd $TESTTMP/repo5
+  $ cat <<'EOF' >> .hg/hgrc
+  > [ui]
+  > logtemplate = 'user:        {user}
+  >                date:        {date|date}
+  >                summary:     {desc|firstline}\n'
+  > EOF
+
   $ echo a>a
   $ hg ci -Am 'commit 1'
   adding a
-#if obsstore-on
 
 When updatetimestamp is False
 
   $ hg amend --date '1997-1-1 0:1'
   $ hg log --limit 1
-  changeset:   1:036a159be19d
-  tag:         tip
-  parent:      -1:000000000000
   user:        test
   date:        Wed Jan 01 00:01:00 1997 +0000
   summary:     commit 1
-  
+
  When update-timestamp is True and no other change than the date
 
   $ hg amend --config rewrite.update-timestamp=True
   nothing changed
   [1]
   $ hg log --limit 1
-  changeset:   1:036a159be19d
-  tag:         tip
-  parent:      -1:000000000000
   user:        test
   date:        Wed Jan 01 00:01:00 1997 +0000
   summary:     commit 1
-  
+
 When update-timestamp is True and there is other change than the date
   $ hg amend --user foobar --config rewrite.update-timestamp=True
   $ hg log --limit 1
-  changeset:   2:3ba48b892280
-  tag:         tip
-  parent:      -1:000000000000
   user:        foobar
   date:        Thu Jan 01 00:00:02 1970 +0000
   summary:     commit 1
-  
 
 When date option is applicable and update-timestamp is True
   $ hg amend  --date '1998-1-1 0:1' --config rewrite.update-timestamp=True
   $ hg log --limit 1
-  changeset:   3:626aee031885
-  tag:         tip
-  parent:      -1:000000000000
   user:        foobar
   date:        Thu Jan 01 00:01:00 1998 +0000
   summary:     commit 1
-  
-#else
-
-When updatetimestamp is False
-
-  $ hg amend --date '1997-1-1 0:1'
-  $ hg log --limit 1
-  changeset:   0:036a159be19d
-  tag:         tip
-  user:        test
-  date:        Wed Jan 01 00:01:00 1997 +0000
-  summary:     commit 1
-  
- When update-timestamp is True and no other change than the date
-
-  $ hg amend --config rewrite.update-timestamp=True
-  nothing changed
-  [1]
-  $ hg log --limit 1
-  changeset:   0:036a159be19d
-  tag:         tip
-  user:        test
-  date:        Wed Jan 01 00:01:00 1997 +0000
-  summary:     commit 1
-  
-When update-timestamp is True and there is other change than the date
-  $ hg amend --user foobar --config rewrite.update-timestamp=True
-  $ hg log --limit 1
-  changeset:   0:3ba48b892280
-  tag:         tip
-  user:        foobar
-  date:        Thu Jan 01 00:00:02 1970 +0000
-  summary:     commit 1
-  
-
-When date option is applicable and update-timestamp is True
-  $ hg amend  --date '1998-1-1 0:1' --config rewrite.update-timestamp=True
-  $ hg log --limit 1
-  changeset:   0:626aee031885
-  tag:         tip
-  user:        foobar
-  date:        Thu Jan 01 00:01:00 1998 +0000
-  summary:     commit 1
-  
-#endif
