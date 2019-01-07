@@ -251,7 +251,7 @@ def _deletecleanfiles(repo, files):
 
 def _writeaddedfiles(repo, pctx, files):
     actions = merge.emptyactions()
-    addgaction = actions['g'].append
+    addgaction = actions[merge.ACTION_GET].append
     mf = repo['.'].manifest()
     for f in files:
         if not repo.wvfs.exists(f):
