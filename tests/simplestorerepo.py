@@ -23,7 +23,6 @@ from mercurial.node import (
 )
 from mercurial.thirdparty import (
     attr,
-    cbor,
 )
 from mercurial import (
     ancestor,
@@ -39,6 +38,7 @@ from mercurial import (
     verify,
 )
 from mercurial.utils import (
+    cborutil,
     interfaceutil,
     storageutil,
 )
@@ -106,7 +106,7 @@ class filestorage(object):
 
         indexdata = self._svfs.tryread(self._indexpath)
         if indexdata:
-            indexdata = cbor.loads(indexdata)
+            indexdata = cborutil.decodeall(indexdata)
 
         self._indexdata = indexdata or []
         self._indexbynode = {}
@@ -513,7 +513,8 @@ class filestorage(object):
 
     def _reflectindexupdate(self):
         self._refreshindex()
-        self._svfs.write(self._indexpath, cbor.dumps(self._indexdata))
+        self._svfs.write(self._indexpath,
+                         ''.join(cborutil.streamencode(self._indexdata)))
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
                  maybemissingparents=False):
