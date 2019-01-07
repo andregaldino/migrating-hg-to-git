@@ -2443,8 +2443,13 @@ def amend(ui, repo, old, extra, pats, opts):
         user = opts.get('user') or old.user()
 
         datemaydiffer = False  # date-only change should be ignored?
+        if opts.get('date') and opts.get('currentdate'):
+            raise error.Abort(_('--date and --currentdate are mutually '
+                                'exclusive'))
         if opts.get('date'):
             date = dateutil.parsedate(opts.get('date'))
+        elif opts.get('currentdate'):
+            date = dateutil.makedate()
         elif ui.configbool('rewrite', 'update-timestamp'):
             date = dateutil.makedate()
             datemaydiffer = True

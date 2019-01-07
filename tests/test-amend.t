@@ -438,3 +438,25 @@ When date option is applicable and update-timestamp is True
   user:        foobar
   date:        Thu Jan 01 00:01:00 1998 +0000
   summary:     commit 1
+
+Unlike rewrite.update-timestamp, -D/--currentdate always updates the timestamp
+
+  $ hg amend -D
+  $ hg log --limit 1
+  user:        foobar
+  date:        Thu Jan 01 00:00:04 1970 +0000
+  summary:     commit 1
+
+  $ hg amend -D --config rewrite.update-timestamp=True
+  $ hg log --limit 1
+  user:        foobar
+  date:        Thu Jan 01 00:00:05 1970 +0000
+  summary:     commit 1
+
+Bad combination of date options:
+
+  $ hg amend -D --date '0 0'
+  abort: --date and --currentdate are mutually exclusive
+  [255]
+
+  $ cd ..
