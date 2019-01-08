@@ -1422,6 +1422,24 @@ class progress(object):
         self.unit = unit
         self.total = total
         self.debug = ui.configbool('progress', 'debug')
+        if getattr(ui._fmsgerr, 'structured', False):
+            # channel for machine-readable output with metadata, just send
+            # raw information
+            # TODO: consider porting some useful information (e.g. estimated
+            # time) from progbar. we might want to support update delay to
+            # reduce the cost of transferring progress messages.
+            def updatebar(item):
+                ui._fmsgerr.write(None, type=b'progress', topic=self.topic,
+                                  pos=self.pos, item=item, unit=self.unit,
+                                  total=self.total)
+        elif ui._progbar is not None:
+            def updatebar(item):
+                ui._progbar.progress(self.topic, self.pos, item=item,
+                                     unit=self.unit, total=self.total)
+        else:
+            def updatebar(item):
+                pass
+        self._updatebar = updatebar
 
     def __enter__(self):
         return self
@@ -1446,20 +1464,6 @@ class progress(object):
         self.unit = ""
         self.total = None
         self._updatebar("")
-
-    def _updatebar(self, item):
-        if getattr(self.ui._fmsgerr, 'structured', False):
-            # channel for machine-readable output with metadata, just send
-            # raw information
-            # TODO: consider porting some useful information (e.g. estimated
-            # time) from progbar. we might want to support update delay to
-            # reduce the cost of transferring progress messages.
-            self.ui._fmsgerr.write(None, type=b'progress', topic=self.topic,
-                                   pos=self.pos, item=item, unit=self.unit,
-                                   total=self.total)
-        elif self.ui._progbar is not None:
-            self.ui._progbar.progress(self.topic, self.pos, item=item,
-                                      unit=self.unit, total=self.total)
 
     def _printdebug(self, item):
         if self.unit:
