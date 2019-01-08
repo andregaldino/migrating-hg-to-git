@@ -43,7 +43,6 @@ fn reviter_to_revvec(py: Python, revs: PyObject) -> PyResult<Vec<Revision>> {
 }
 
 py_class!(pub class AncestorsIterator |py| {
-    // TODO RW lock ?
     data inner: RefCell<Box<CoreIterator<Index>>>;
 
     def __next__(&self) -> PyResult<Option<Revision>> {
@@ -55,7 +54,8 @@ py_class!(pub class AncestorsIterator |py| {
     }
 
     def __contains__(&self, rev: Revision) -> PyResult<bool> {
-        self.inner(py).borrow_mut().contains(rev).map_err(|e| GraphError::pynew(py, e))
+        self.inner(py).borrow_mut().contains(rev)
+            .map_err(|e| GraphError::pynew(py, e))
     }
 
     def __iter__(&self) -> PyResult<Self> {
@@ -65,14 +65,13 @@ py_class!(pub class AncestorsIterator |py| {
     def __new__(_cls, index: PyObject, initrevs: PyObject, stoprev: Revision,
                 inclusive: bool) -> PyResult<AncestorsIterator> {
         let initvec = reviter_to_revvec(py, initrevs)?;
-        let ait = match CoreIterator::new(Index::new(py, index)?,
-                                          initvec, stoprev,
-                                          inclusive) {
-            Ok(ait) => ait,
-            Err(e) => {
-                return Err(GraphError::pynew(py, e));
-            }
-        };
+        let ait = CoreIterator::new(
+            Index::new(py, index)?,
+            initvec,
+            stoprev,
+            inclusive,
+        )
+        .map_err(|e| GraphError::pynew(py, e))?;
         AncestorsIterator::from_inner(py, ait)
     }
 
