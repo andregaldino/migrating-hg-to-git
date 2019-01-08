@@ -22,6 +22,11 @@ int hunk_consumer(long a1, long a2, long b1, long b2, void *priv)
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
+	// Don't allow fuzzer inputs larger than 100k, since we'll just bog
+	// down and not accomplish much.
+	if (Size > 100000) {
+		return 0;
+	}
 	auto maybe_inputs = SplitInputs(Data, Size);
 	if (!maybe_inputs) {
 		return 0;
