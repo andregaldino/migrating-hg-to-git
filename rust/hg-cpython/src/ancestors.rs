@@ -27,7 +27,6 @@ use cpython::{
     ObjectProtocol, PyClone, PyDict, PyModule, PyObject, PyResult, Python,
 };
 use exceptions::GraphError;
-use hg;
 use hg::Revision;
 use hg::{AncestorsIterator as CoreIterator, LazyAncestors as CoreLazy};
 use std::cell::RefCell;
@@ -66,9 +65,9 @@ py_class!(pub class AncestorsIterator |py| {
     def __new__(_cls, index: PyObject, initrevs: PyObject, stoprev: Revision,
                 inclusive: bool) -> PyResult<AncestorsIterator> {
         let initvec = reviter_to_revvec(py, initrevs)?;
-        let ait = match hg::AncestorsIterator::new(Index::new(py, index)?,
-                                                   initvec, stoprev,
-                                                   inclusive) {
+        let ait = match CoreIterator::new(Index::new(py, index)?,
+                                          initvec, stoprev,
+                                          inclusive) {
             Ok(ait) => ait,
             Err(e) => {
                 return Err(GraphError::pynew(py, e));
