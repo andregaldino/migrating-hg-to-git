@@ -478,6 +478,13 @@ class mergestate(object):
             f.write(_pack(format, key, len(data), data))
         f.close()
 
+    @staticmethod
+    def getlocalkey(path):
+        """hash the path of a local file context for storage in the .hg/merge
+        directory."""
+
+        return hex(hashlib.sha1(path).digest())
+
     def add(self, fcl, fco, fca, fd):
         """add a new (potentially?) conflicting file the merge state
         fcl: file context for local,
@@ -488,11 +495,11 @@ class mergestate(object):
         note: also write the local version to the `.hg/merge` directory.
         """
         if fcl.isabsent():
-            hash = nullhex
+            localkey = nullhex
         else:
-            hash = hex(hashlib.sha1(fcl.path()).digest())
-            self._repo.vfs.write('merge/' + hash, fcl.data())
-        self._state[fd] = [MERGE_RECORD_UNRESOLVED, hash, fcl.path(),
+            localkey = mergestate.getlocalkey(fcl.path())
+            self._repo.vfs.write('merge/' + localkey, fcl.data())
+        self._state[fd] = [MERGE_RECORD_UNRESOLVED, localkey, fcl.path(),
                            fca.path(), hex(fca.filenode()),
                            fco.path(), hex(fco.filenode()),
                            fcl.flags()]
@@ -551,7 +558,7 @@ class mergestate(object):
                            MERGE_RECORD_DRIVER_RESOLVED):
             return True, 0
         stateentry = self._state[dfile]
-        state, hash, lfile, afile, anode, ofile, onode, flags = stateentry
+        state, localkey, lfile, afile, anode, ofile, onode, flags = stateentry
         octx = self._repo[self._other]
         extras = self.extras(dfile)
         anccommitnode = extras.get('ancestorlinknode')
@@ -559,7 +566,7 @@ class mergestate(object):
             actx = self._repo[anccommitnode]
         else:
             actx = None
-        fcd = self._filectxorabsent(hash, wctx, dfile)
+        fcd = self._filectxorabsent(localkey, wctx, dfile)
         fco = self._filectxorabsent(onode, octx, ofile)
         # TODO: move this to filectxorabsent
         fca = self._repo.filectx(afile, fileid=anode, changectx=actx)
@@ -577,8 +584,8 @@ class mergestate(object):
                 flags = flo
         if preresolve:
             # restore local
-            if hash != nullhex:
-                f = self._repo.vfs('merge/' + hash)
+            if localkey != nullhex:
+                f = self._repo.vfs('merge/' + localkey)
                 wctx[dfile].write(f.read(), flags)
                 f.close()
             else:
