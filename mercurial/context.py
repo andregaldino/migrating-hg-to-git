@@ -2018,6 +2018,12 @@ class overlayworkingctx(committablectx):
         to resolve a conflict.
         """
         keys = []
+        # This won't be perfect, but can help performance significantly when
+        # using things like remotefilelog.
+        scmutil.prefetchfiles(
+            self.repo(), [self.p1().rev()],
+            matchmod.match('', '', patterns=self._cache.keys(), exact=True))
+
         for path in self._cache.keys():
             cache = self._cache[path]
             try:
