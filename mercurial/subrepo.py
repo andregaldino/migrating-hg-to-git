@@ -403,7 +403,16 @@ class hgsubrepo(abstractsubrepo):
         r = ctx.repo()
         root = r.wjoin(path)
         create = allowcreate and not r.wvfs.exists('%s/.hg' % path)
+        # repository constructor does expand variables in path, which is
+        # unsafe since subrepo path might come from untrusted source.
+        if os.path.realpath(util.expandpath(root)) != root:
+            raise error.Abort(_('subrepo path contains illegal component: %s')
+                              % path)
         self._repo = hg.repository(r.baseui, root, create=create)
+        if self._repo.root != root:
+            raise error.ProgrammingError('failed to reject unsafe subrepo '
+                                         'path: %s (expanded to %s)'
+                                         % (root, self._repo.root))
 
         # Propagate the parent's --hidden option
         if r is r.unfiltered():
