@@ -127,6 +127,13 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             and not path.startswith(self.server.prefix + b'/')):
             self._start_response(pycompat.strurl(common.statusmessage(404)),
                                  [])
+            if self.command == 'POST':
+                # Paranoia: tell the client we're going to close the
+                # socket so they don't try and reuse a socket that
+                # might have a POST body waiting to confuse us. We do
+                # this by directly munging self.saved_headers because
+                # self._start_response ignores Connection headers.
+                self.saved_headers = [(r'Connection', r'Close')]
             self._write(b"Not Found")
             self._done()
             return

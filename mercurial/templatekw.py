@@ -586,7 +586,7 @@ def showpeerurls(context, mapping):
 
 @templatekeyword("predecessors", requires={'repo', 'ctx'})
 def showpredecessors(context, mapping):
-    """Returns the list if the closest visible successors. (EXPERIMENTAL)"""
+    """Returns the list of the closest visible successors. (EXPERIMENTAL)"""
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
     predecessors = sorted(obsutil.closestpredecessors(repo, ctx.node()))
@@ -624,7 +624,7 @@ def showstatus(context, mapping):
 @templatekeyword("successorssets", requires={'repo', 'ctx'})
 def showsuccessorssets(context, mapping):
     """Returns a string of sets of successors for a changectx. Format used
-    is: [ctx1, ctx2], [ctx3] if ctx has been splitted into ctx1 and ctx2
+    is: [ctx1, ctx2], [ctx3] if ctx has been split into ctx1 and ctx2
     while also diverged into ctx3. (EXPERIMENTAL)"""
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')

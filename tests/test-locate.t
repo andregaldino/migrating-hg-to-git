@@ -156,6 +156,11 @@ Issue294: hg remove --after dir fails when dir.* also exists
   $ hg files .
   [1]
 
+Fileset at null (i.e. a falsy context) shouldn't crash (issue6046)
+
+  $ hg files -r null 'set:tracked()'
+  [1]
+
 Convert native path separator to slash (issue5572)
 
   $ hg files -T '{path|relpath|slashpath}\n'
