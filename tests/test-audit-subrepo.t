@@ -279,8 +279,9 @@ prepare tampered repo (including the changes above as two commits):
 on clone (and update) with various substitutions:
 
   $ hg clone -q main main2
+  abort: subrepo path contains illegal component: $SUB
+  [255]
   $ ls main2
-  $SUB
 
   $ SUB=sub1 hg clone -q main main3
   abort: subrepo path contains illegal component: $SUB
@@ -363,8 +364,9 @@ are concatenated prior to variable expansion:
 Test tilde
 ----------
 
-The leading tilde may be expanded to $HOME, but it's a valid subrepo path.
-However, we might want to prohibit it as it seems potentially unsafe.
+The leading tilde may be expanded to $HOME, but it can be a valid subrepo
+path in theory. However, we want to prohibit it as there might be unsafe
+handling of such paths.
 
 on commit:
 
@@ -373,15 +375,32 @@ on commit:
   $ hg init './~'
   $ echo '~ = ~' >> .hgsub
   $ hg ci -qAm 'add subrepo "~"'
-  $ ls
-  ~
+  abort: subrepo path contains illegal component: ~
+  [255]
+
+prepare tampered repo (including the commit above):
+
+  $ hg import --bypass -qm 'add subrepo "~"' - <<'EOF'
+  > diff --git a/.hgsub b/.hgsub
+  > new file mode 100644
+  > --- /dev/null
+  > +++ b/.hgsub
+  > @@ -0,0 +1,1 @@
+  > +~ = ~
+  > diff --git a/.hgsubstate b/.hgsubstate
+  > new file mode 100644
+  > --- /dev/null
+  > +++ b/.hgsubstate
+  > @@ -0,0 +1,1 @@
+  > +0000000000000000000000000000000000000000 ~
+  > EOF
   $ cd ..
 
 on clone (and update):
 
   $ hg clone -q tilde tilde2
-  $ ls tilde2
-  ~
+  abort: subrepo path contains illegal component: ~
+  [255]
 
 Test direct symlink traversal
 -----------------------------

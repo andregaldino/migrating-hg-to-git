@@ -115,6 +115,10 @@ def _sanitize(ui, vfs, ignore):
                 vfs.unlink(vfs.reljoin(dirname, f))
 
 def _auditsubrepopath(repo, path):
+    # sanity check for potentially unsafe paths such as '~' and '$FOO'
+    if path.startswith('~') or '$' in path or util.expandpath(path) != path:
+        raise error.Abort(_('subrepo path contains illegal component: %s')
+                          % path)
     # auditor doesn't check if the path itself is a symlink
     pathutil.pathauditor(repo.root)(path)
     if repo.wvfs.islink(path):
