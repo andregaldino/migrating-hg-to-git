@@ -1691,6 +1691,8 @@ class ui(object):
         All topics should be marked closed by setting pos to None at
         termination.
         '''
+        self.deprecwarn("use ui.makeprogress() instead of ui.progress()",
+                        "5.1")
         progress = self.makeprogress(topic, unit, total)
         if pos is not None:
             progress.update(pos, item=item)
