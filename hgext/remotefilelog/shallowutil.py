@@ -106,7 +106,7 @@ def prefixkeys(dict, prefix):
 def reportpackmetrics(ui, prefix, *stores):
     dicts = [s.getmetrics() for s in stores]
     dict = prefixkeys(sumdicts(*dicts), prefix + '_')
-    ui.log(prefix + "_packsizes", "", **pycompat.strkwargs(dict))
+    ui.log(prefix + "_packsizes", "\n", **pycompat.strkwargs(dict))
 
 def _parsepackmeta(metabuf):
     """parse datapack meta, bytes (<metadata-list>) -> dict

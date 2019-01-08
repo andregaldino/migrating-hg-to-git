@@ -226,7 +226,7 @@ class remotefilectx(context.filectx):
             r'reponame': shallowutil.getreponame(repo.ui),
         }
 
-        repo.ui.log('linkrevfixup', 'adjusting linknode', **commonlogkwargs)
+        repo.ui.log('linkrevfixup', 'adjusting linknode\n', **commonlogkwargs)
 
         pc = repo._phasecache
         seenpublic = False
@@ -315,7 +315,7 @@ class remotefilectx(context.filectx):
             return None
         finally:
             elapsed = time.time() - start
-            repo.ui.log('linkrevfixup', logmsg, elapsed=elapsed * 1000,
+            repo.ui.log('linkrevfixup', logmsg + '\n', elapsed=elapsed * 1000,
                         **pycompat.strkwargs(commonlogkwargs))
 
     def _verifylinknode(self, revs, linknode):
