@@ -1434,7 +1434,9 @@ class progress(object):
         if total:
             self.total = total
         self.pos = pos
-        self._print(item)
+        self._updatebar(item)
+        if self.debug:
+            self._printdebug(item)
 
     def increment(self, step=1, item="", total=None):
         self.update(self.pos + step, item, total)
@@ -1443,9 +1445,9 @@ class progress(object):
         self.pos = None
         self.unit = ""
         self.total = None
-        self._print("")
+        self._updatebar("")
 
-    def _print(self, item):
+    def _updatebar(self, item):
         if getattr(self.ui._fmsgerr, 'structured', False):
             # channel for machine-readable output with metadata, just send
             # raw information
@@ -1459,9 +1461,7 @@ class progress(object):
             self.ui._progbar.progress(self.topic, self.pos, item=item,
                                       unit=self.unit, total=self.total)
 
-        if self.pos is None or not self.debug:
-            return
-
+    def _printdebug(self, item):
         if self.unit:
             unit = ' ' + self.unit
         if item:
