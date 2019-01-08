@@ -1439,11 +1439,46 @@ class progress(object):
         self.update(self.pos + step, item, total)
 
     def complete(self):
-        self.ui.progress(self.topic, None)
+        self.pos = None
+        self.unit = ""
+        self.total = None
+        self._print("")
 
     def _print(self, item):
-        self.ui.progress(self.topic, self.pos, item, self.unit,
-                         self.total)
+        if getattr(self.ui._fmsgerr, 'structured', False):
+            # channel for machine-readable output with metadata, just send
+            # raw information
+            # TODO: consider porting some useful information (e.g. estimated
+            # time) from progbar. we might want to support update delay to
+            # reduce the cost of transferring progress messages.
+            self.ui._fmsgerr.write(None, type=b'progress', topic=self.topic,
+                                   pos=self.pos, item=item, unit=self.unit,
+                                   total=self.total)
+        elif self.ui._progbar is not None:
+            self.ui._progbar.progress(self.topic, self.pos, item=item,
+                                      unit=self.unit, total=self.total)
+
+            # Looking up progress.debug in tight loops is expensive. The value
+            # is cached on the progbar object and we can avoid the lookup in
+            # the common case where a progbar is active.
+            if self.pos is None or not self.ui._progbar.debug:
+                return
+
+        # Keep this logic in sync with above.
+        if self.pos is None or not self.ui.configbool('progress', 'debug'):
+            return
+
+        if self.unit:
+            unit = ' ' + self.unit
+        if item:
+            item = ' ' + item
+
+        if self.total:
+            pct = 100.0 * self.pos / self.total
+            self.ui.debug('%s:%s %d/%d%s (%4.2f%%)\n'
+                       % (self.topic, item, self.pos, self.total, unit, pct))
+        else:
+            self.ui.debug('%s:%s %d%s\n' % (self.topic, item, self.pos, unit))
 
 def gdinitconfig(ui):
     """helper function to know if a repo should be created as general delta

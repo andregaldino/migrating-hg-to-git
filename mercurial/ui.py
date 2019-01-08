@@ -1691,39 +1691,11 @@ class ui(object):
         All topics should be marked closed by setting pos to None at
         termination.
         '''
-        if getattr(self._fmsgerr, 'structured', False):
-            # channel for machine-readable output with metadata, just send
-            # raw information
-            # TODO: consider porting some useful information (e.g. estimated
-            # time) from progbar. we might want to support update delay to
-            # reduce the cost of transferring progress messages.
-            self._fmsgerr.write(None, type=b'progress', topic=topic, pos=pos,
-                                item=item, unit=unit, total=total)
-        elif self._progbar is not None:
-            self._progbar.progress(topic, pos, item=item, unit=unit,
-                                   total=total)
-
-            # Looking up progress.debug in tight loops is expensive. The value
-            # is cached on the progbar object and we can avoid the lookup in
-            # the common case where a progbar is active.
-            if pos is None or not self._progbar.debug:
-                return
-
-        # Keep this logic in sync with above.
-        if pos is None or not self.configbool('progress', 'debug'):
-            return
-
-        if unit:
-            unit = ' ' + unit
-        if item:
-            item = ' ' + item
-
-        if total:
-            pct = 100.0 * pos / total
-            self.debug('%s:%s %d/%d%s (%4.2f%%)\n'
-                     % (topic, item, pos, total, unit, pct))
+        progress = self.makeprogress(topic, unit, total)
+        if pos is not None:
+            progress.update(pos, item=item)
         else:
-            self.debug('%s:%s %d%s\n' % (topic, item, pos, unit))
+            progress.complete()
 
     def makeprogress(self, topic, unit="", total=None):
         '''exists only so low-level modules won't need to import scmutil'''
