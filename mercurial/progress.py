@@ -104,8 +104,6 @@ class progbar(object):
         self.order = self.ui.configlist('progress', 'format')
         self.estimateinterval = self.ui.configwith(
             float, 'progress', 'estimateinterval')
-        # developer config: progress.debug
-        self.debug = self.ui.configbool('progress', 'debug')
 
     def show(self, now, topic, pos, item, unit, total):
         if not shouldprint(self.ui):

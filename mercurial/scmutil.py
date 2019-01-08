@@ -1421,6 +1421,7 @@ class progress(object):
         self.topic = topic
         self.unit = unit
         self.total = total
+        self.debug = ui.configbool('progress', 'debug')
 
     def __enter__(self):
         return self
@@ -1458,14 +1459,7 @@ class progress(object):
             self.ui._progbar.progress(self.topic, self.pos, item=item,
                                       unit=self.unit, total=self.total)
 
-            # Looking up progress.debug in tight loops is expensive. The value
-            # is cached on the progbar object and we can avoid the lookup in
-            # the common case where a progbar is active.
-            if self.pos is None or not self.ui._progbar.debug:
-                return
-
-        # Keep this logic in sync with above.
-        if self.pos is None or not self.ui.configbool('progress', 'debug'):
+        if self.pos is None or not self.debug:
             return
 
         if self.unit:
