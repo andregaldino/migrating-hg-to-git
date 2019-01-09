@@ -270,6 +270,9 @@ class filemap_source(common.converter_source):
             self.children[p] = self.children.get(p, 0) + 1
         return c
 
+    def numcommits(self):
+        return self.base.numcommits()
+
     def _cachedcommit(self, rev):
         if rev in self.commits:
             return self.commits[rev]

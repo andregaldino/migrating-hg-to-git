@@ -597,6 +597,9 @@ class mercurial_source(common.converter_source):
                              saverev=self.saverev,
                              phase=ctx.phase())
 
+    def numcommits(self):
+        return len(self.repo)
+
     def gettags(self):
         # This will get written to .hgtags, filter non global tags out.
         tags = [t for t in self.repo.tagslist()
