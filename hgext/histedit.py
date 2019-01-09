@@ -308,21 +308,17 @@ Commands:
     return ''.join(['# %s\n' % l if l else '#\n' for l in lines])
 
 class histeditstate(object):
-    def __init__(self, repo, parentctxnode=None, actions=None, keep=None,
-            topmost=None, replacements=None, lock=None, wlock=None):
+    def __init__(self, repo):
         self.repo = repo
-        self.actions = actions
-        self.keep = keep
-        self.topmost = topmost
-        self.parentctxnode = parentctxnode
-        self.lock = lock
-        self.wlock = wlock
+        self.actions = None
+        self.keep = None
+        self.topmost = None
+        self.parentctxnode = None
+        self.lock = None
+        self.wlock = None
         self.backupfile = None
         self.stateobj = statemod.cmdstate(repo, 'histedit-state')
-        if replacements is None:
-            self.replacements = []
-        else:
-            self.replacements = replacements
+        self.replacements = []
 
     def read(self):
         """Load histedit state from disk and set fields appropriately."""
