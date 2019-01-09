@@ -1773,8 +1773,7 @@ class workingfilectx(committablefilectx):
 
     def markcopied(self, src):
         """marks this file a copy of `src`"""
-        if self._repo.dirstate[self._path] in "nma":
-            self._repo.dirstate.copy(src, self._path)
+        self._repo.dirstate.copy(src, self._path)
 
     def clearunknown(self):
         """Removes conflicting items in the working directory so that

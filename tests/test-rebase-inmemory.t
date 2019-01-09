@@ -795,12 +795,10 @@ Rebase across a copy with --collapse
   $ hg co -q 0
   $ echo a2 > a
   $ hg ci -qm 'modify a'
-BROKEN: obviously...
   $ hg rebase -r . -d 1 --collapse
   rebasing 2:41c4ea50d4cf "modify a" (tip)
   merging b and a to b
-  abort: a@b977edf6f839: not found in manifest!
-  [255]
+  saved backup bundle to $TESTTMP/rebase-rename-collapse/.hg/strip-backup/41c4ea50d4cf-b90b7994-rebase.hg
   $ cd ..
 
 Test rebasing when the file we are merging in destination is empty

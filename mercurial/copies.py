@@ -798,4 +798,5 @@ def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
     for dst, src in pathcopies(repo[fromrev], repo[rev]).iteritems():
         if dst in exclude:
             continue
-        wctx[dst].markcopied(src)
+        if dst in wctx:
+            wctx[dst].markcopied(src)
