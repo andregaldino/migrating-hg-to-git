@@ -30,13 +30,18 @@ use exceptions::GraphError;
 use hg::Revision;
 use hg::{AncestorsIterator as CoreIterator, LazyAncestors as CoreLazy};
 use std::cell::RefCell;
+use std::iter::FromIterator;
 
-/// Utility function to convert a Python iterable into a Vec<Revision>
+/// Utility function to convert a Python iterable into various collections
 ///
-/// We need this to feed to `AncestorIterators` constructors because
-/// a `PyErr` can arise at each step of iteration, whereas our inner objects
+/// We need this in particular to feed to various methods of inner objects
+/// with `impl IntoIterator<Item=Revision>` arguments, because
+/// a `PyErr` can arise at each step of iteration, whereas these methods
 /// expect iterables over `Revision`, not over some `Result<Revision, PyErr>`
-fn reviter_to_revvec(py: Python, revs: PyObject) -> PyResult<Vec<Revision>> {
+fn rev_pyiter_collect<C>(py: Python, revs: &PyObject) -> PyResult<C>
+where
+    C: FromIterator<Revision>,
+{
     revs.iter(py)?
         .map(|r| r.and_then(|o| o.extract::<Revision>(py)))
         .collect()
@@ -64,7 +69,7 @@ py_class!(pub class AncestorsIterator |py| {
 
     def __new__(_cls, index: PyObject, initrevs: PyObject, stoprev: Revision,
                 inclusive: bool) -> PyResult<AncestorsIterator> {
-        let initvec = reviter_to_revvec(py, initrevs)?;
+        let initvec: Vec<Revision> = rev_pyiter_collect(py, &initrevs)?;
         let ait = CoreIterator::new(
             Index::new(py, index)?,
             initvec,
@@ -103,7 +108,7 @@ py_class!(pub class LazyAncestors |py| {
 
     def __new__(_cls, index: PyObject, initrevs: PyObject, stoprev: Revision,
                 inclusive: bool) -> PyResult<Self> {
-        let initvec = reviter_to_revvec(py, initrevs)?;
+        let initvec: Vec<Revision> = rev_pyiter_collect(py, &initrevs)?;
 
         let lazy =
             CoreLazy::new(Index::new(py, index)?, initvec, stoprev, inclusive)
