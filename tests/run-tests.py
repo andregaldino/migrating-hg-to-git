@@ -2794,9 +2794,10 @@ class TestRunner(object):
             if not (os.path.basename(t).startswith(b'test-')
                     and (t.endswith(b'.py') or t.endswith(b'.t'))):
 
-                m = testcasepattern.match(t)
+                m = testcasepattern.match(os.path.basename(t))
                 if m is not None:
-                    t, _, casestr = m.groups()
+                    t_basename, _, casestr = m.groups()
+                    t = os.path.join(os.path.dirname(t), t_basename)
                     if casestr:
                         case = casestr.split(b'#')
                 else:
