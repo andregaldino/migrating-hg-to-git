@@ -435,6 +435,32 @@ exercise incremental conversion at the same time
   |
   o  0 "addb" files: b
   
+Include directives dropped empty commits, but other directives don't
+
+  $ cat > branchpruning/exclude_filemap <<EOF
+  > exclude a
+  > EOF
+  $ hg convert --filemap branchpruning/exclude_filemap branchpruning branchpruning-hg-exclude
+  initializing destination branchpruning-hg-exclude repository
+  scanning source...
+  sorting...
+  converting...
+  5 adda
+  4 closefoo
+  3 emptybranch
+  2 closeempty
+  1 addb
+  0 closedefault
+
+  $ glog -R branchpruning-hg-exclude
+  _  3 "closedefault" files:
+  |
+  o  2 "addb" files: b
+  
+  _  1 "closeempty" files:
+  |
+  o  0 "emptybranch" files:
+  
 
 Test rebuilding of map with unknown revisions in shamap - it used to crash
 
