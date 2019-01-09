@@ -388,13 +388,13 @@ class revlog(object):
 
         if 'revlogv2' in opts:
             # version 2 revlogs always use generaldelta.
-            v = REVLOGV2 | FLAG_GENERALDELTA | FLAG_INLINE_DATA
+            versionflags = REVLOGV2 | FLAG_GENERALDELTA | FLAG_INLINE_DATA
         elif 'revlogv1' in opts:
-            v = REVLOGV1 | FLAG_INLINE_DATA
+            versionflags = REVLOGV1 | FLAG_INLINE_DATA
             if 'generaldelta' in opts:
-                v |= FLAG_GENERALDELTA
+                versionflags |= FLAG_GENERALDELTA
         else:
-            v = REVLOG_DEFAULT_VERSION
+            versionflags = REVLOG_DEFAULT_VERSION
 
         if 'chunkcachesize' in opts:
             self._chunkcachesize = opts['chunkcachesize']
@@ -431,9 +431,9 @@ class revlog(object):
             raise error.RevlogError(_('revlog chunk cache size %r is not a '
                                       'power of 2') % self._chunkcachesize)
 
-        self._loadindex(v, mmapindexthreshold)
+        self._loadindex(versionflags, mmapindexthreshold)
 
-    def _loadindex(self, v, mmapindexthreshold):
+    def _loadindex(self, versionflags, mmapindexthreshold):
         indexdata = ''
         self._initempty = True
         try:
@@ -444,17 +444,17 @@ class revlog(object):
                 else:
                     indexdata = f.read()
             if len(indexdata) > 0:
-                v = versionformat_unpack(indexdata[:4])[0]
+                versionflags = versionformat_unpack(indexdata[:4])[0]
                 self._initempty = False
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise
 
-        self.version = v
-        self._inline = v & FLAG_INLINE_DATA
-        self._generaldelta = v & FLAG_GENERALDELTA
-        flags = v & ~0xFFFF
-        fmt = v & 0xFFFF
+        self.version = versionflags
+        self._inline = versionflags & FLAG_INLINE_DATA
+        self._generaldelta = versionflags & FLAG_GENERALDELTA
+        flags = versionflags & ~0xFFFF
+        fmt = versionflags & 0xFFFF
         if fmt == REVLOGV0:
             if flags:
                 raise error.RevlogError(_('unknown flags (%#04x) in version %d '
