@@ -2786,7 +2786,8 @@ class TestRunner(object):
                 expanded_args.append(arg)
         args = expanded_args
 
-        testcasepattern = re.compile(br'([\w-]+\.t|py)(#([a-zA-Z0-9_\-\.#]+))')
+        testcasepattern = re.compile(
+            br'([\w-]+\.t|py)(?:#([a-zA-Z0-9_\-\.#]+))')
         tests = []
         for t in args:
             case = []
@@ -2796,7 +2797,7 @@ class TestRunner(object):
 
                 m = testcasepattern.match(os.path.basename(t))
                 if m is not None:
-                    t_basename, _, casestr = m.groups()
+                    t_basename, casestr = m.groups()
                     t = os.path.join(os.path.dirname(t), t_basename)
                     if casestr:
                         case = casestr.split(b'#')
