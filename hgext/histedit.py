@@ -207,7 +207,6 @@ from mercurial import (
     exchange,
     extensions,
     hg,
-    lock,
     logcmdutil,
     merge as mergemod,
     mergeutil,
@@ -225,7 +224,6 @@ from mercurial.utils import (
 )
 
 pickle = util.pickle
-release = lock.release
 cmdtable = {}
 command = registrar.command(cmdtable)
 
@@ -1601,12 +1599,10 @@ def histedit(ui, repo, *freeargs, **opts):
 
 def _texthistedit(ui, repo, *freeargs, **opts):
     state = histeditstate(repo)
-    try:
-        state.wlock = repo.wlock()
-        state.lock = repo.lock()
+    with repo.wlock() as wlock, repo.lock() as lock:
+        state.wlock = wlock
+        state.lock = lock
         _histedit(ui, repo, state, *freeargs, **opts)
-    finally:
-        release(state.lock, state.wlock)
 
 goalcontinue = 'continue'
 goalabort = 'abort'
