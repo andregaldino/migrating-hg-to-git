@@ -1912,6 +1912,7 @@ class localrepository(object):
 
     def _journalfiles(self):
         return ((self.svfs, 'journal'),
+                (self.svfs, 'journal.narrowspec'),
                 (self.vfs, 'journal.dirstate'),
                 (self.vfs, 'journal.branch'),
                 (self.vfs, 'journal.desc'),

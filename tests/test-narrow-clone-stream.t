@@ -77,11 +77,11 @@ Making sure store has the required files
   00manifest.i
   data (tree flat-fncache !)
   fncache (tree flat-fncache !)
-  journal.narrowspec
   meta (tree !)
   narrowspec
   undo
   undo.backupfiles
+  undo.narrowspec
   undo.phaseroots
 
 Checking that repository has all the required data and not broken
