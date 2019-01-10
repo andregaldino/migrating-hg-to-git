@@ -352,6 +352,7 @@ class revlog(object):
         #  When True, indexfile is opened with checkambig=True at writing, to
         #  avoid file stat ambiguity.
         self._checkambig = checkambig
+        self._mmaplargeindex = mmaplargeindex
         self._censorable = censorable
         # 3-tuple of (node, rev, text) for a raw revision.
         self._revisioncache = None
@@ -406,7 +407,7 @@ class revlog(object):
             self._compengine = opts['compengine']
         if 'maxdeltachainspan' in opts:
             self._maxdeltachainspan = opts['maxdeltachainspan']
-        if mmaplargeindex and 'mmapindexthreshold' in opts:
+        if self._mmaplargeindex and 'mmapindexthreshold' in opts:
             mmapindexthreshold = opts['mmapindexthreshold']
         self._sparserevlog = bool(opts.get('sparse-revlog', False))
         withsparseread = bool(opts.get('with-sparse-read', False))
