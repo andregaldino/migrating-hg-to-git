@@ -66,8 +66,6 @@ Version 2 revlogs have the following flags at the specified bit offsets:
 
 0
    Store revision data inline.
-1
-   Generaldelta encoding.
 
 The following header values are common:
 
@@ -159,8 +157,10 @@ Version 2 Format
 
 (In development. Format not finalized or stable.)
 
-Version 2 is currently identical to version 1. This will obviously
-change.
+Version 2 is identical to version 2 with the following differences.
+
+There is no dedicated *generaldelta* revlog format flag. Instead,
+the feature is implied enabled by default.
 
 Delta Chains
 ============

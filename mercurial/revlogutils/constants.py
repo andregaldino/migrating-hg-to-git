@@ -20,13 +20,15 @@ REVLOGV1 = 1
 # Dummy value until file format is finalized.
 # Reminder: change the bounds check in revlog.__init__ when this is changed.
 REVLOGV2 = 0xDEAD
+# Shared across v1 and v2.
 FLAG_INLINE_DATA = (1 << 16)
+# Only used by v1, implied by v2.
 FLAG_GENERALDELTA = (1 << 17)
 REVLOG_DEFAULT_FLAGS = FLAG_INLINE_DATA
 REVLOG_DEFAULT_FORMAT = REVLOGV1
 REVLOG_DEFAULT_VERSION = REVLOG_DEFAULT_FORMAT | REVLOG_DEFAULT_FLAGS
 REVLOGV1_FLAGS = FLAG_INLINE_DATA | FLAG_GENERALDELTA
-REVLOGV2_FLAGS = REVLOGV1_FLAGS
+REVLOGV2_FLAGS = FLAG_INLINE_DATA
 
 # revlog index flags
 

@@ -387,8 +387,7 @@ class revlog(object):
         opts = getattr(opener, 'options', {}) or {}
 
         if 'revlogv2' in opts:
-            # version 2 revlogs always use generaldelta.
-            versionflags = REVLOGV2 | FLAG_GENERALDELTA | FLAG_INLINE_DATA
+            versionflags = REVLOGV2 | FLAG_INLINE_DATA
         elif 'revlogv1' in opts:
             versionflags = REVLOGV1 | FLAG_INLINE_DATA
             if 'generaldelta' in opts:
@@ -451,25 +450,38 @@ class revlog(object):
                 raise
 
         self.version = versionflags
-        self._inline = versionflags & FLAG_INLINE_DATA
-        self._generaldelta = versionflags & FLAG_GENERALDELTA
+
         flags = versionflags & ~0xFFFF
         fmt = versionflags & 0xFFFF
+
         if fmt == REVLOGV0:
             if flags:
                 raise error.RevlogError(_('unknown flags (%#04x) in version %d '
                                           'revlog %s') %
                                         (flags >> 16, fmt, self.indexfile))
+
+            self._inline = False
+            self._generaldelta = False
+
         elif fmt == REVLOGV1:
             if flags & ~REVLOGV1_FLAGS:
                 raise error.RevlogError(_('unknown flags (%#04x) in version %d '
                                           'revlog %s') %
                                         (flags >> 16, fmt, self.indexfile))
+
+            self._inline = versionflags & FLAG_INLINE_DATA
+            self._generaldelta = versionflags & FLAG_GENERALDELTA
+
         elif fmt == REVLOGV2:
             if flags & ~REVLOGV2_FLAGS:
                 raise error.RevlogError(_('unknown flags (%#04x) in version %d '
                                           'revlog %s') %
                                         (flags >> 16, fmt, self.indexfile))
+
+            self._inline = versionflags & FLAG_INLINE_DATA
+            # generaldelta implied by version 2 revlogs.
+            self._generaldelta = True
+
         else:
             raise error.RevlogError(_('unknown version (%d) in revlog %s') %
                                     (fmt, self.indexfile))

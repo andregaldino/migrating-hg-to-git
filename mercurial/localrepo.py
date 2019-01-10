@@ -363,7 +363,7 @@ class locallegacypeer(localpeer):
 
 # Increment the sub-version when the revlog v2 format changes to lock out old
 # clients.
-REVLOGV2_REQUIREMENT = 'exp-revlogv2.0'
+REVLOGV2_REQUIREMENT = 'exp-revlogv2.1'
 
 # A repository with the sparserevlog feature will have delta chains that
 # can spread over a larger span. Sparse reading cuts these large spans into
