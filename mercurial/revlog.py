@@ -384,8 +384,11 @@ class revlog(object):
         # 2-tuple of file handles being used for active writing.
         self._writinghandles = None
 
+        self._loadindex()
+
+    def _loadindex(self):
         mmapindexthreshold = None
-        opts = getattr(opener, 'options', {}) or {}
+        opts = getattr(self.opener, 'options', {}) or {}
 
         if 'revlogv2' in opts:
             versionflags = REVLOGV2 | FLAG_INLINE_DATA
@@ -431,9 +434,6 @@ class revlog(object):
             raise error.RevlogError(_('revlog chunk cache size %r is not a '
                                       'power of 2') % self._chunkcachesize)
 
-        self._loadindex(versionflags, mmapindexthreshold)
-
-    def _loadindex(self, versionflags, mmapindexthreshold):
         indexdata = ''
         self._initempty = True
         try:
@@ -2499,7 +2499,7 @@ class revlog(object):
             self.opener.rename(newrl.datafile, self.datafile)
 
         self.clearcaches()
-        self._loadindex(self.version, None)
+        self._loadindex()
 
     def verifyintegrity(self, state):
         """Verifies the integrity of the revlog.
