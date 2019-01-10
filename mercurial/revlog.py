@@ -391,13 +391,13 @@ class revlog(object):
         opts = getattr(self.opener, 'options', {}) or {}
 
         if 'revlogv2' in opts:
-            versionflags = REVLOGV2 | FLAG_INLINE_DATA
+            newversionflags = REVLOGV2 | FLAG_INLINE_DATA
         elif 'revlogv1' in opts:
-            versionflags = REVLOGV1 | FLAG_INLINE_DATA
+            newversionflags = REVLOGV1 | FLAG_INLINE_DATA
             if 'generaldelta' in opts:
-                versionflags |= FLAG_GENERALDELTA
+                newversionflags |= FLAG_GENERALDELTA
         else:
-            versionflags = REVLOG_DEFAULT_VERSION
+            newversionflags = REVLOG_DEFAULT_VERSION
 
         if 'chunkcachesize' in opts:
             self._chunkcachesize = opts['chunkcachesize']
@@ -446,9 +446,13 @@ class revlog(object):
             if len(indexdata) > 0:
                 versionflags = versionformat_unpack(indexdata[:4])[0]
                 self._initempty = False
+            else:
+                versionflags = newversionflags
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise
+
+            versionflags = newversionflags
 
         self.version = versionflags
 
