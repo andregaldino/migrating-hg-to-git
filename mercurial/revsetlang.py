@@ -583,7 +583,7 @@ def _quote(s):
 
 def _formatargtype(c, arg):
     if c == 'd':
-        return '%d' % int(arg)
+        return 'rev(%d)' % int(arg)
     elif c == 's':
         return _quote(arg)
     elif c == 'r':
@@ -638,7 +638,7 @@ def formatspec(expr, *args):
     Supported arguments:
 
     %r = revset expression, parenthesized
-    %d = int(arg), no quoting
+    %d = rev(int(arg)), no quoting
     %s = string(arg), escaped and single-quoted
     %b = arg.branch(), escaped and single-quoted
     %n = hex(arg), single-quoted
@@ -650,9 +650,9 @@ def formatspec(expr, *args):
     >>> formatspec(b'%r:: and %lr', b'10 or 11', (b"this()", b"that()"))
     '(10 or 11):: and ((this()) or (that()))'
     >>> formatspec(b'%d:: and not %d::', 10, 20)
-    '10:: and not 20::'
+    'rev(10):: and not rev(20)::'
     >>> formatspec(b'%ld or %ld', [], [1])
-    "_list('') or 1"
+    "_list('') or rev(1)"
     >>> formatspec(b'keyword(%s)', b'foo\\xe9')
     "keyword('foo\\\\xe9')"
     >>> b = lambda: b'default'

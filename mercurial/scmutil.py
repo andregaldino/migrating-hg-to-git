@@ -723,7 +723,7 @@ def revrange(repo, specs, localalias=None):
     allspecs = []
     for spec in specs:
         if isinstance(spec, int):
-            spec = revsetlang.formatspec('rev(%d)', spec)
+            spec = revsetlang.formatspec('%d', spec)
         allspecs.append(spec)
     return repo.anyrevs(allspecs, user=True, localalias=localalias)
 
