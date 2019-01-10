@@ -2859,8 +2859,9 @@ class TestRunner(object):
                     testdescs = orig
 
             tests = [self._gettest(d, i) for i, d in enumerate(testdescs)]
+            num_tests = len(tests) * self.options.runs_per_test
 
-            jobs = min(len(tests), self.options.jobs)
+            jobs = min(num_tests, self.options.jobs)
 
             failed = False
             kws = self.options.keywords
@@ -2897,7 +2898,7 @@ class TestRunner(object):
                     self._installchg()
 
                 log('running %d tests using %d parallel processes' % (
-                    len(tests), jobs))
+                    num_tests, jobs))
 
                 result = runner.run(suite)
 

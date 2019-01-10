@@ -716,6 +716,12 @@ failures in parallel with --first should only print one failure
 (delete the duplicated test file)
   $ rm test-failure-copy.t
 
+multiple runs per test should be parallelized
+
+  $ rt --jobs 2 --runs-per-test 2 test-success.t
+  running 2 tests using 2 parallel processes 
+  ..
+  # Ran 2 tests, 0 skipped, 0 failed.
 
 Interactive run
 ===============
