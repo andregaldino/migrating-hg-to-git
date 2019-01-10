@@ -150,7 +150,7 @@ def _takefullsample(repo, headrevs, revs, size):
     _updatesample(revs, revsroots, sample, children.__getitem__)
     assert sample
     sample = _limitsample(sample, size)
-    if len(sample) <= size:
+    if len(sample) < size:
         more = size - len(sample)
         sample.update(random.sample(list(revs - sample), more))
     return sample
