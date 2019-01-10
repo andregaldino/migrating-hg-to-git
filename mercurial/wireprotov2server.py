@@ -823,7 +823,7 @@ def resolvenodes(repo, revisions):
                         '%s key not present in changesetexplicitdepth revision '
                         'specifier', (key,))
 
-            for rev in repo.revs(b'ancestors(%ln, %d)', spec[b'nodes'],
+            for rev in repo.revs(b'ancestors(%ln, %s)', spec[b'nodes'],
                                  spec[b'depth'] - 1):
                 node = cl.node(rev)
 
