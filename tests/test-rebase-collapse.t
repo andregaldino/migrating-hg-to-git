@@ -34,7 +34,7 @@ Highest phase of source commits is used:
   > echo "===="
   > echo "edited manually" >> \$1
   > EOF
-  $ HGEDITOR="sh $TESTTMP/editor.sh" hg rebase --collapse --keepbranches -e --dest F
+  $ HGEDITOR="sh $TESTTMP/editor.sh" hg rebase --collapse --keepbranches -e --source B --dest F
   rebasing 1:112478962961 "B" (B)
   rebasing 3:26805aba1e60 "C" (C)
   rebasing 5:f585351a92f8 "D" (D tip)
