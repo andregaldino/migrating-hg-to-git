@@ -453,6 +453,14 @@ Unlike rewrite.update-timestamp, -D/--currentdate always updates the timestamp
   date:        Thu Jan 01 00:00:05 1970 +0000
   summary:     commit 1
 
+rewrite.update-timestamp can be negated by --no-currentdate
+
+  $ hg amend --config rewrite.update-timestamp=True --no-currentdate -u baz
+  $ hg log --limit 1
+  user:        baz
+  date:        Thu Jan 01 00:00:05 1970 +0000
+  summary:     commit 1
+
 Bad combination of date options:
 
   $ hg amend -D --date '0 0'

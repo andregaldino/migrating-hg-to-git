@@ -2450,7 +2450,8 @@ def amend(ui, repo, old, extra, pats, opts):
             date = dateutil.parsedate(opts.get('date'))
         elif opts.get('currentdate'):
             date = dateutil.makedate()
-        elif ui.configbool('rewrite', 'update-timestamp'):
+        elif (ui.configbool('rewrite', 'update-timestamp')
+              and opts.get('currentdate') is None):
             date = dateutil.makedate()
             datemaydiffer = True
         else:
