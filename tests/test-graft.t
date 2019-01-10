@@ -112,6 +112,16 @@ Specify revisions with -r:
   skipping ancestor revision 1:5d205f8b35b6
   [255]
 
+Conflicting date/user options:
+
+  $ hg up -q 0
+  $ hg graft -U --user foo 2
+  abort: --user and --currentuser are mutually exclusive
+  [255]
+  $ hg graft -D --date '0 0' 2
+  abort: --date and --currentdate are mutually exclusive
+  [255]
+
 Can't graft with dirty wd:
 
   $ hg up -q 0

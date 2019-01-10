@@ -2393,6 +2393,10 @@ def _dograft(ui, repo, *revs, **opts):
     # list of new nodes created by ongoing graft
     statedata['newnodes'] = []
 
+    if opts.get('user') and opts.get('currentuser'):
+        raise error.Abort(_('--user and --currentuser are mutually exclusive'))
+    if opts.get('date') and opts.get('currentdate'):
+        raise error.Abort(_('--date and --currentdate are mutually exclusive'))
     if not opts.get('user') and opts.get('currentuser'):
         opts['user'] = ui.username()
     if not opts.get('date') and opts.get('currentdate'):
