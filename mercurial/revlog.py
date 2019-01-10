@@ -384,44 +384,45 @@ class revlog(object):
         self._writinghandles = None
 
         mmapindexthreshold = None
-        v = REVLOG_DEFAULT_VERSION
-        opts = getattr(opener, 'options', None)
-        if opts is not None:
-            if 'revlogv2' in opts:
-                # version 2 revlogs always use generaldelta.
-                v = REVLOGV2 | FLAG_GENERALDELTA | FLAG_INLINE_DATA
-            elif 'revlogv1' in opts:
-                if 'generaldelta' in opts:
-                    v |= FLAG_GENERALDELTA
-            else:
-                v = 0
-            if 'chunkcachesize' in opts:
-                self._chunkcachesize = opts['chunkcachesize']
-            if 'maxchainlen' in opts:
-                self._maxchainlen = opts['maxchainlen']
-            if 'deltabothparents' in opts:
-                self._deltabothparents = opts['deltabothparents']
-            self._lazydeltabase = bool(opts.get('lazydeltabase', False))
-            if 'compengine' in opts:
-                self._compengine = opts['compengine']
-            if 'maxdeltachainspan' in opts:
-                self._maxdeltachainspan = opts['maxdeltachainspan']
-            if mmaplargeindex and 'mmapindexthreshold' in opts:
-                mmapindexthreshold = opts['mmapindexthreshold']
-            self._sparserevlog = bool(opts.get('sparse-revlog', False))
-            withsparseread = bool(opts.get('with-sparse-read', False))
-            # sparse-revlog forces sparse-read
-            self._withsparseread = self._sparserevlog or withsparseread
-            if 'sparse-read-density-threshold' in opts:
-                self._srdensitythreshold = opts['sparse-read-density-threshold']
-            if 'sparse-read-min-gap-size' in opts:
-                self._srmingapsize = opts['sparse-read-min-gap-size']
-            if opts.get('enableellipsis'):
-                self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
+        opts = getattr(opener, 'options', {}) or {}
 
-            # revlog v0 doesn't have flag processors
-            for flag, processor in opts.get(b'flagprocessors', {}).iteritems():
-                _insertflagprocessor(flag, processor, self._flagprocessors)
+        if 'revlogv2' in opts:
+            # version 2 revlogs always use generaldelta.
+            v = REVLOGV2 | FLAG_GENERALDELTA | FLAG_INLINE_DATA
+        elif 'revlogv1' in opts:
+            v = REVLOGV1 | FLAG_INLINE_DATA
+            if 'generaldelta' in opts:
+                v |= FLAG_GENERALDELTA
+        else:
+            v = REVLOG_DEFAULT_VERSION
+
+        if 'chunkcachesize' in opts:
+            self._chunkcachesize = opts['chunkcachesize']
+        if 'maxchainlen' in opts:
+            self._maxchainlen = opts['maxchainlen']
+        if 'deltabothparents' in opts:
+            self._deltabothparents = opts['deltabothparents']
+        self._lazydeltabase = bool(opts.get('lazydeltabase', False))
+        if 'compengine' in opts:
+            self._compengine = opts['compengine']
+        if 'maxdeltachainspan' in opts:
+            self._maxdeltachainspan = opts['maxdeltachainspan']
+        if mmaplargeindex and 'mmapindexthreshold' in opts:
+            mmapindexthreshold = opts['mmapindexthreshold']
+        self._sparserevlog = bool(opts.get('sparse-revlog', False))
+        withsparseread = bool(opts.get('with-sparse-read', False))
+        # sparse-revlog forces sparse-read
+        self._withsparseread = self._sparserevlog or withsparseread
+        if 'sparse-read-density-threshold' in opts:
+            self._srdensitythreshold = opts['sparse-read-density-threshold']
+        if 'sparse-read-min-gap-size' in opts:
+            self._srmingapsize = opts['sparse-read-min-gap-size']
+        if opts.get('enableellipsis'):
+            self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
+
+        # revlog v0 doesn't have flag processors
+        for flag, processor in opts.get(b'flagprocessors', {}).iteritems():
+            _insertflagprocessor(flag, processor, self._flagprocessors)
 
         if self._chunkcachesize <= 0:
             raise error.RevlogError(_('revlog chunk cache size %r is not '
