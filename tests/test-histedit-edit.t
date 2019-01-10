@@ -4,6 +4,7 @@
   > [extensions]
   > histedit=
   > strip=
+  > mockmakedate = $TESTDIR/mockmakedate.py
   > EOF
 
   $ initrepo ()
@@ -481,6 +482,56 @@ Attempting to fold a change into a public change should not work:
   #  f, fold = use commit, but combine it with the one above
   #  r, roll = like fold, but discard this commit's description and date
   #
+
+  $ cd ..
+
+============================================
+Test update-timestamp config option in mess|
+============================================
+
+  $ addwithdate ()
+  > {
+  >     echo $1 > $1
+  >     hg add $1
+  >     hg ci -m $1 -d "$2 0"
+  > }
+
+  $ initrepo ()
+  > {
+  >     hg init r2
+  >     cd r2
+  >     addwithdate a 1
+  >     addwithdate b 2
+  >     addwithdate c 3
+  >     addwithdate d 4
+  >     addwithdate e 5
+  >     addwithdate f 6
+  > }
+
+  $ initrepo
+
+log before edit
+
+  $ hg log --limit 1
+  changeset:   5:178e35e0ce73
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:06 1970 +0000
+  summary:     f
+  
+  $ hg histedit tip --commands - 2>&1 --config rewrite.update-timestamp=True << EOF | fixbundle
+  > mess 178e35e0ce73 f
+  > EOF
+
+log after edit
+
+  $ hg log --limit 1
+  changeset:   5:98bf456d476b
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     f
+  
 
   $ cd ..
 

@@ -220,6 +220,7 @@ from mercurial import (
     util,
 )
 from mercurial.utils import (
+    dateutil,
     stringutil,
 )
 
@@ -527,9 +528,12 @@ class histeditaction(object):
 
         editor = self.commiteditor()
         commit = commitfuncfor(repo, rulectx)
-
+        if repo.ui.configbool('rewrite', 'update-timestamp'):
+            date = dateutil.makedate()
+        else:
+            date = rulectx.date()
         commit(text=rulectx.description(), user=rulectx.user(),
-               date=rulectx.date(), extra=rulectx.extra(), editor=editor)
+               date=date, extra=rulectx.extra(), editor=editor)
 
     def commiteditor(self):
         """The editor to be used to edit the commit message."""
@@ -810,6 +814,10 @@ class fold(histeditaction):
             commitopts['date'] = ctx.date()
         else:
             commitopts['date'] = max(ctx.date(), oldctx.date())
+        # if date is to be updated to current
+        if ui.configbool('rewrite', 'update-timestamp'):
+            commitopts['date'] = dateutil.makedate()
+
         extra = ctx.extra().copy()
         # histedit_source
         # note: ctx is likely a temporary commit but that the best we can do
