@@ -1,0 +1,53 @@
+// dagops.rs
+//
+// Copyright 2019 Georges Racinet <georges.racinet@octobus.net>
+//
+// This software may be used and distributed according to the terms of the
+// GNU General Public License version 2 or any later version.
+
+//! Bindings for the `hg::dagops` module provided by the
+//! `hg-core` package.
+//!
+//! From Python, this will be seen as `mercurial.rustext.dagop`
+use cindex::Index;
+use cpython::{PyDict, PyModule, PyObject, PyResult, Python};
+use crate::conversion::{py_set, rev_pyiter_collect};
+use exceptions::GraphError;
+use hg::dagops;
+use hg::Revision;
+use std::collections::HashSet;
+
+/// Using the the `index`, return heads out of any Python iterable of Revisions
+///
+/// This is the Rust counterpart for `mercurial.dagop.headrevs`
+pub fn headrevs(
+    py: Python,
+    index: PyObject,
+    revs: PyObject,
+) -> PyResult<PyObject> {
+    let mut as_set: HashSet<Revision> = rev_pyiter_collect(py, &revs)?;
+    dagops::retain_heads(&Index::new(py, index)?, &mut as_set)
+        .map_err(|e| GraphError::pynew(py, e))?;
+    py_set(py, &as_set)
+}
+
+/// Create the module, with `__package__` given from parent
+pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
+    let dotted_name = &format!("{}.dagop", package);
+    let m = PyModule::new(py, dotted_name)?;
+    m.add(py, "__package__", package)?;
+    m.add(py, "__doc__", "DAG operations - Rust implementation")?;
+    m.add(
+        py,
+        "headrevs",
+        py_fn!(py, headrevs(index: PyObject, revs: PyObject)),
+    )?;
+
+    let sys = PyModule::import(py, "sys")?;
+    let sys_modules: PyDict = sys.get(py, "modules")?.extract(py)?;
+    sys_modules.set_item(py, dotted_name, &m)?;
+    // Example C code (see pyexpat.c and import.c) will "give away the
+    // reference", but we won't because it will be consumed once the
+    // Rust PyObject is dropped.
+    Ok(m)
+}
