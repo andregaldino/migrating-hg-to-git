@@ -408,6 +408,7 @@ test-narrow-rebase.t
 test-narrow-shallow-merges.t
 test-narrow-shallow.t
 test-narrow-share.t
+test-narrow-sparse.t
 test-narrow-strip.t
 test-narrow-trackedcmd.t
 test-narrow-update.t
