@@ -995,8 +995,8 @@ static inline int index_baserev(indexObject *self, int rev)
 	if (result < -1) {
 		PyErr_Format(
 		    PyExc_ValueError,
-		    "corrupted revlog, revision base out of range: %d, %d",
-		    rev, result);
+		    "corrupted revlog, revision base out of range: %d, %d", rev,
+		    result);
 		return -2;
 	}
 	return result;
