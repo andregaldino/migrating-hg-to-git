@@ -481,3 +481,24 @@ Attempting to fold a change into a public change should not work:
   #  f, fold = use commit, but combine it with the one above
   #  r, roll = like fold, but discard this commit's description and date
   #
+
+  $ cd ..
+
+warn the user on editing tagged commits
+
+  $ hg init issue4017
+  $ cd issue4017
+  $ echo > a
+  $ hg ci -Am 'add a'
+  adding a
+  $ hg tag a
+  $ hg tags
+  tip                                1:bd7ee4f3939b
+  a                                  0:a8a82d372bb3
+  $ hg histedit
+  warning: tags associated with the given changeset will be lost after histedit. 
+  do you want to continue (yN)?  n
+  abort: histedit cancelled
+  
+  [255]
+  $ cd ..
