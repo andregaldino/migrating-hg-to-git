@@ -153,7 +153,7 @@ def setflags(f, l, x):
         # Turn off all +x bits
         os.chmod(f, s & 0o666)
 
-def copymode(src, dst, mode=None):
+def copymode(src, dst, mode=None, enforcewritable=False):
     '''Copy the file mode from the file at path src to dst.
     If src doesn't exist, we're using mode instead. If mode is None, we're
     using umask.'''
@@ -166,7 +166,13 @@ def copymode(src, dst, mode=None):
         if st_mode is None:
             st_mode = ~umask
         st_mode &= 0o666
-    os.chmod(dst, st_mode)
+
+    new_mode = st_mode
+
+    if enforcewritable:
+        new_mode |= stat.S_IWUSR
+
+    os.chmod(dst, new_mode)
 
 def checkexec(path):
     """

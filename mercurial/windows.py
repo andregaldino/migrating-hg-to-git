@@ -248,7 +248,7 @@ def sshargs(sshcmd, host, user, port):
 def setflags(f, l, x):
     pass
 
-def copymode(src, dst, mode=None):
+def copymode(src, dst, mode=None, enforcewritable=False):
     pass
 
 def checkexec(path):

@@ -2045,7 +2045,7 @@ def splitpath(path):
     function if need.'''
     return path.split(pycompat.ossep)
 
-def mktempcopy(name, emptyok=False, createmode=None):
+def mktempcopy(name, emptyok=False, createmode=None, enforcewritable=False):
     """Create a temporary file with the same contents from name
 
     The permission bits are copied from the original file.
@@ -2061,7 +2061,8 @@ def mktempcopy(name, emptyok=False, createmode=None):
     # Temporary files are created with mode 0600, which is usually not
     # what we want.  If the original file already exists, just copy
     # its mode.  Otherwise, manually obey umask.
-    copymode(name, temp, createmode)
+    copymode(name, temp, createmode, enforcewritable)
+
     if emptyok:
         return temp
     try:
@@ -2204,7 +2205,9 @@ class atomictempfile(object):
     def __init__(self, name, mode='w+b', createmode=None, checkambig=False):
         self.__name = name      # permanent name
         self._tempname = mktempcopy(name, emptyok=('w' in mode),
-                                    createmode=createmode)
+                                    createmode=createmode,
+                                    enforcewritable=('w' in mode))
+
         self._fp = posixfile(self._tempname, mode)
         self._checkambig = checkambig
 
