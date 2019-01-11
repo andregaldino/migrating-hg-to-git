@@ -47,7 +47,7 @@ def get_dockerfile(path: pathlib.Path, args: list) -> bytes:
         df = fh.read()
 
     for k, v in args:
-        df = df.replace(b'%%%s%%' % k, v)
+        df = df.replace(bytes('%%%s%%' % k.decode(), 'utf-8'), v)
 
     return df
 

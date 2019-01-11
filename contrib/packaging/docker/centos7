@@ -1,7 +1,7 @@
 FROM centos:centos7
 
-RUN groupadd -g 1000 build && \
-    useradd -u 1000 -g 1000 -s /bin/bash -d /build -m build
+RUN groupadd -g %GID% build && \
+    useradd -u %UID% -g %GID% -s /bin/bash -d /build -m build
 
 RUN yum install -y \
 	gcc \
