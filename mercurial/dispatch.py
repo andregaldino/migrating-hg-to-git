@@ -248,7 +248,7 @@ def dispatch(req):
             req.ui.flush()
             if req.ui.logblockedtimes:
                 req.ui._blockedtimes['command_duration'] = duration * 1000
-                req.ui.log('uiblocked', 'ui blocked ms',
+                req.ui.log('uiblocked', 'ui blocked ms\n',
                            **pycompat.strkwargs(req.ui._blockedtimes))
             return_code = ret & 255
             req.ui.log(
