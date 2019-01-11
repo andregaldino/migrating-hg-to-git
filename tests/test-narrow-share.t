@@ -44,6 +44,14 @@
 
 Narrow the share and check that the main repo's working copy gets updated
 
+# Make sure the files that are supposed to be known-clean get their timestamps set in the dirstate
+  $ sleep 2
+  $ hg -R main st
+  $ hg -R main debugdirstate --no-dates
+  n 644          2 set                 d1/f
+  n 644          2 set                 d3/f
+  n 644          2 set                 d5/f
+  n 644          2 set                 d7/f
 # Make d3/f dirty
   $ echo x >> main/d3/f
   $ echo y >> main/d3/g
@@ -58,7 +66,7 @@ Narrow the share and check that the main repo's working copy gets updated
   A d3/g
   $ hg -R main debugdirstate --no-dates
   n 644          2 set                 d1/f
-  n 644          2 unset               d3/f
+  n 644          2 set                 d3/f
   a   0         -1 unset               d3/g
   n 644          2 set                 d5/f
   n 644          2 set                 d7/f
