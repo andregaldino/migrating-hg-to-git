@@ -108,7 +108,7 @@ Trace renames
   $ hg mv x z
   $ hg commit -m move
   $ hg log -f z -T '{desc} {file_copies}\n' -G
-  @  move z (x\x14\x06\xe7A\x18bv\x94&\x84\x17I\x1f\x01\x8aJ\x881R\xf0) (esc)
+  @  move z (x)
   :
   o  x
   

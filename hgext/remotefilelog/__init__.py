@@ -680,9 +680,10 @@ def getrenamedfn(repo, endrev=None):
             for ancestor in fctx.ancestors():
                 if ancestor.path() == fn:
                     renamed = ancestor.renamed()
-                    rcache[fn][ancestor.rev()] = renamed
+                    rcache[fn][ancestor.rev()] = renamed and renamed[0]
 
-            return fctx.renamed()
+            renamed = fctx.renamed()
+            return renamed and renamed[0]
         except error.LookupError:
             return None
 
