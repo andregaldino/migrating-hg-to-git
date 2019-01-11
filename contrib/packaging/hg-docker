@@ -72,7 +72,12 @@ def build_docker_image(dockerfile: pathlib.Path, params: list, tag: str):
     ]
 
     print('executing: %r' % args)
-    subprocess.run(args, input=dockerfile, check=True)
+    p = subprocess.Popen(args, stdin=subprocess.PIPE)
+    p.communicate(input=dockerfile)
+    if p.returncode:
+        raise subprocess.CalledProcessException(
+                p.returncode, 'failed to build docker image: %s %s' \
+                % (p.stdout, p.stderr))
 
 def command_build(args):
     build_args = []
