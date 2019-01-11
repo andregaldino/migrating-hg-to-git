@@ -1409,7 +1409,8 @@ class TTest(Test):
         session = str(uuid.uuid4())
         if PYTHON3:
             session = session.encode('ascii')
-        hgcatapult = os.getenv('HGTESTCATAPULTSERVERPIPE')
+        hgcatapult = os.getenv('HGTESTCATAPULTSERVERPIPE') or \
+            os.getenv('HGCATAPULTSERVERPIPE')
         def toggletrace(cmd=None):
             if not hgcatapult or hgcatapult == os.devnull:
                 return
