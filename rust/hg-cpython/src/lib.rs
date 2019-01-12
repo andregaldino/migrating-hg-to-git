@@ -26,6 +26,7 @@ extern crate libc;
 
 pub mod ancestors;
 mod cindex;
+mod conversion;
 pub mod exceptions;
 
 py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {

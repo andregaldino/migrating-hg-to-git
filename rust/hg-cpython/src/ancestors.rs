@@ -34,6 +34,7 @@
 //! [`LazyAncestors`]: struct.LazyAncestors.html
 //! [`MissingAncestors`]: struct.MissingAncestors.html
 //! [`AncestorsIterator`]: struct.AncestorsIterator.html
+use crate::conversion::rev_pyiter_collect;
 use cindex::Index;
 use cpython::{
     ObjectProtocol, PyClone, PyDict, PyList, PyModule, PyObject,
@@ -46,23 +47,7 @@ use hg::{
     MissingAncestors as CoreMissing,
 };
 use std::cell::RefCell;
-use std::iter::FromIterator;
 use std::collections::HashSet;
-
-/// Utility function to convert a Python iterable into various collections
-///
-/// We need this in particular to feed to various methods of inner objects
-/// with `impl IntoIterator<Item=Revision>` arguments, because
-/// a `PyErr` can arise at each step of iteration, whereas these methods
-/// expect iterables over `Revision`, not over some `Result<Revision, PyErr>`
-fn rev_pyiter_collect<C>(py: Python, revs: &PyObject) -> PyResult<C>
-where
-    C: FromIterator<Revision>,
-{
-    revs.iter(py)?
-        .map(|r| r.and_then(|o| o.extract::<Revision>(py)))
-        .collect()
-}
 
 py_class!(pub class AncestorsIterator |py| {
     data inner: RefCell<Box<CoreIterator<Index>>>;
