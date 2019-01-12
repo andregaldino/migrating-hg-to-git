@@ -1812,6 +1812,9 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
 ``rewrite``
 -----------
 
+``backup-bundle``
+    Whether to save stripped changesets to a bundle file. (default: True)
+
 ``update-timestamp``
     If true, updates the date and time of the changeset to current. It is only
     applicable for hg amend in current version.
