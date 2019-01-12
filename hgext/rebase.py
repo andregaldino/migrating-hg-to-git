@@ -177,7 +177,7 @@ class rebaseruntime(object):
         if e:
             self.extrafns = [e]
 
-        self.backupf = ui.configbool('ui', 'history-editing-backup')
+        self.backupf = ui.configbool('rewrite', 'backup-bundle')
         self.keepf = opts.get('keep', False)
         self.keepbranchesf = opts.get('keepbranches', False)
         self.obsoletenotrebased = {}

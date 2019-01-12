@@ -3,9 +3,9 @@
   > rebase=
   > EOF
 
-==========================================
-Test history-editing-backup config option |
-==========================================
+==================================
+Test backup-bundle config option |
+==================================
 Test with Pre-obsmarker rebase:
 1) When config option is not set:
   $ hg init repo1
@@ -50,8 +50,8 @@ Test with Pre-obsmarker rebase:
 
 2) When config option is set:
   $ cat << EOF >> $HGRCPATH
-  > [ui]
-  > history-editing-backup = False
+  > [rewrite]
+  > backup-bundle = False
   > EOF
 
   $ echo f>f
@@ -116,10 +116,10 @@ Test when rebased revisions are stripped during abort:
   |
   o  0: a
   
-When history-editing-backup = True:
+When backup-bundle = True:
   $ cat << EOF >> $HGRCPATH
-  > [ui]
-  > history-editing-backup = True
+  > [rewrite]
+  > backup-bundle = True
   > EOF
   $ hg rebase -s 5 -d .
   rebasing 5:1f8148a544ee "b"
@@ -132,10 +132,10 @@ When history-editing-backup = True:
   saved backup bundle to $TESTTMP/repo1/.hg/strip-backup/818c1a43c916-2b644d96-backup.hg
   rebase aborted
 
-When history-editing-backup = False:
+When backup-bundle = False:
   $ cat << EOF >> $HGRCPATH
-  > [ui]
-  > history-editing-backup = False
+  > [rewrite]
+  > backup-bundle = False
   > EOF
   $ hg rebase -s 5 -d .
   rebasing 5:1f8148a544ee "b"

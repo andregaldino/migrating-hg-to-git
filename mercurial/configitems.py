@@ -991,6 +991,10 @@ coreconfigitem('storage', 'mmap-threshold',
     default='1MB',
     alias=[('experimental', 'mmapindexthreshold')],
 )
+coreconfigitem('rewrite', 'backup-bundle',
+    default=True,
+    alias=[('ui', 'history-editing-backup')],
+)
 coreconfigitem('rewrite', 'update-timestamp',
     default=False,
 )
@@ -1167,9 +1171,6 @@ coreconfigitem('ui', 'formatted',
 )
 coreconfigitem('ui', 'graphnodetemplate',
     default=None,
-)
-coreconfigitem('ui', 'history-editing-backup',
-    default=True,
 )
 coreconfigitem('ui', 'interactive',
     default=None,

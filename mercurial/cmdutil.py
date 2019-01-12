@@ -2588,7 +2588,7 @@ def amend(ui, repo, old, extra, pats, opts):
         obsmetadata = None
         if opts.get('note'):
             obsmetadata = {'note': encoding.fromlocal(opts['note'])}
-        backup = ui.configbool('ui', 'history-editing-backup')
+        backup = ui.configbool('rewrite', 'backup-bundle')
         scmutil.cleanupnodes(repo, mapping, 'amend', metadata=obsmetadata,
                              fixphase=True, targetphase=commitphase,
                              backup=backup)

@@ -6,9 +6,9 @@ Enable extension used by this test
   > histedit=
   > EOF
 
-==========================================
-Test history-editing-backup config option|
-==========================================
+=================================
+Test backup-bundle config option|
+=================================
 Repo setup:
   $ hg init foo
   $ cd foo
@@ -33,7 +33,7 @@ Repo setup:
   o  0   36b4bdd91f5b   1970-01-01 00:00 +0000   test
        one
   
-Test when `history-editing-backup` config option is enabled:
+Test when `backup-bundle` config option is enabled:
   $ hg histedit -r '36b4bdd91f5b' --commands - << EOF
   > pick 36b4bdd91f5b 0 one
   > pick 6153eb23e623 1 two
@@ -49,11 +49,11 @@ Test when `history-editing-backup` config option is enabled:
   saved backup bundle to $TESTTMP/foo/.hg/strip-backup/1d8f701c7b35-cf7be322-backup.hg
   saved backup bundle to $TESTTMP/foo/.hg/strip-backup/5c0056670bce-b54b65d0-backup.hg
 
-Test when `history-editing-backup` config option is not enabled
+Test when `backup-bundle` config option is not enabled
 Enable config option:
   $ cat >>$HGRCPATH <<EOF
-  > [ui]
-  > history-editing-backup=False
+  > [rewrite]
+  > backup-bundle = False
   > EOF
 
   $ hg histedit -r '36b4bdd91f5b' --commands - << EOF
