@@ -1696,8 +1696,9 @@ def _histedit(ui, repo, state, *freeargs, **opts):
                 hastags = len(tags)
     if hastags:
         if ui.promptchoice(_('warning: tags associated with the given'
-            ' changeset will be lost after histedit. \n'
-            'do you want to continue (yN)? $$ &Yes $$ &No'), default=1):
+                             ' changeset will be lost after histedit. \n'
+                             'do you want to continue (yN)? $$ &Yes $$ &No'),
+                           default=1):
             raise error.Abort(_('histedit cancelled\n'))
     # rebuild state
     if goal == goalcontinue:
