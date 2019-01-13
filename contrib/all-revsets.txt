@@ -139,3 +139,11 @@ secret()
 # test finding common ancestors
 heads(commonancestors(last(head(), 2)))
 heads(commonancestors(head()))
+
+# more heads testing
+heads(all())
+heads(-10000:-1)
+(-5000:-1000) and heads(-10000:-1)
+heads(matching(tip, "author"))
+heads(matching(tip, "author")) and -10000:-1
+(-10000:-1) and heads(matching(tip, "author"))
