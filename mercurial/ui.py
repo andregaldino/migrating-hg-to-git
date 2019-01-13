@@ -1698,8 +1698,22 @@ class ui(object):
             progress.complete()
 
     def makeprogress(self, topic, unit="", total=None):
-        '''exists only so low-level modules won't need to import scmutil'''
-        return scmutil.progress(self, topic, unit, total)
+        """Create a progress helper for the specified topic"""
+        if getattr(self._fmsgerr, 'structured', False):
+            # channel for machine-readable output with metadata, just send
+            # raw information
+            # TODO: consider porting some useful information (e.g. estimated
+            # time) from progbar. we might want to support update delay to
+            # reduce the cost of transferring progress messages.
+            def updatebar(topic, pos, item, unit, total):
+                self._fmsgerr.write(None, type=b'progress', topic=topic,
+                                    pos=pos, item=item, unit=unit, total=total)
+        elif self._progbar is not None:
+            updatebar = self._progbar.progress
+        else:
+            def updatebar(topic, pos, item, unit, total):
+                pass
+        return scmutil.progress(self, updatebar, topic, unit, total)
 
     def getlogger(self, name):
         """Returns a logger of the given name; or None if not registered"""

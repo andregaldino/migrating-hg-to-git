@@ -1415,28 +1415,13 @@ def wlocksub(repo, cmd, *args, **kwargs):
                     **kwargs)
 
 class progress(object):
-    def __init__(self, ui, topic, unit="", total=None):
+    def __init__(self, ui, updatebar, topic, unit="", total=None):
         self.ui = ui
         self.pos = 0
         self.topic = topic
         self.unit = unit
         self.total = total
         self.debug = ui.configbool('progress', 'debug')
-        if getattr(ui._fmsgerr, 'structured', False):
-            # channel for machine-readable output with metadata, just send
-            # raw information
-            # TODO: consider porting some useful information (e.g. estimated
-            # time) from progbar. we might want to support update delay to
-            # reduce the cost of transferring progress messages.
-            def updatebar(topic, pos, item, unit, total):
-                ui._fmsgerr.write(None, type=b'progress', topic=topic,
-                                  pos=pos, item=item, unit=unit,
-                                  total=total)
-        elif ui._progbar is not None:
-            updatebar = ui._progbar.progress
-        else:
-            def updatebar(topic, pos, item, unit, total):
-                pass
         self._updatebar = updatebar
 
     def __enter__(self):
