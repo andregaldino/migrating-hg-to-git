@@ -368,30 +368,11 @@ When backup-bundle config option is set:
 ==========================================
 Test update-timestamp config option|
 ==========================================
-  $ cat >> testmocks.py << EOF
-  > # mock out util.makedate() to supply testable values
-  > import os
-  > from mercurial import pycompat, util
-  > from mercurial.utils import dateutil
-  > 
-  > def mockmakedate():
-  >     filename = os.path.join(os.environ['TESTTMP'], 'testtime')
-  >     try:
-  >         with open(filename, 'rb') as timef:
-  >             time = float(timef.read()) + 1
-  >     except IOError:
-  >         time = 0.0
-  >     with open(filename, 'wb') as timef:
-  >         timef.write(pycompat.bytestr(time))
-  >     return (time, 0)
-  > 
-  > dateutil.makedate = mockmakedate
-  > EOF
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > amend=
-  > testmocks=`pwd`/testmocks.py
+  > mockmakedate = $TESTDIR/mockmakedate.py
   > EOF
 
   $ hg init $TESTTMP/repo5
