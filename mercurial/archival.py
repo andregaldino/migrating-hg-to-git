@@ -327,8 +327,8 @@ def archive(repo, dest, node, kind, decode=True, match=None,
         files.sort()
         scmutil.prefetchfiles(repo, [ctx.rev()],
                               scmutil.matchfiles(repo, files))
-        progress = scmutil.progress(repo.ui, _('archiving'), unit=_('files'),
-                                    total=total)
+        progress = repo.ui.makeprogress(_('archiving'), unit=_('files'),
+                                        total=total)
         progress.update(0)
         for f in files:
             ff = ctx.flags(f)
