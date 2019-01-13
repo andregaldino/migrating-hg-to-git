@@ -1428,16 +1428,14 @@ class progress(object):
             # TODO: consider porting some useful information (e.g. estimated
             # time) from progbar. we might want to support update delay to
             # reduce the cost of transferring progress messages.
-            def updatebar(item):
-                ui._fmsgerr.write(None, type=b'progress', topic=self.topic,
-                                  pos=self.pos, item=item, unit=self.unit,
-                                  total=self.total)
+            def updatebar(topic, pos, item, unit, total):
+                ui._fmsgerr.write(None, type=b'progress', topic=topic,
+                                  pos=pos, item=item, unit=unit,
+                                  total=total)
         elif ui._progbar is not None:
-            def updatebar(item):
-                ui._progbar.progress(self.topic, self.pos, item=item,
-                                     unit=self.unit, total=self.total)
+            updatebar = ui._progbar.progress
         else:
-            def updatebar(item):
+            def updatebar(topic, pos, item, unit, total):
                 pass
         self._updatebar = updatebar
 
@@ -1452,7 +1450,7 @@ class progress(object):
         if total:
             self.total = total
         self.pos = pos
-        self._updatebar(item)
+        self._updatebar(self.topic, self.pos, item, self.unit, self.total)
         if self.debug:
             self._printdebug(item)
 
@@ -1463,7 +1461,7 @@ class progress(object):
         self.pos = None
         self.unit = ""
         self.total = None
-        self._updatebar("")
+        self._updatebar(self.topic, self.pos, "", self.unit, self.total)
 
     def _printdebug(self, item):
         if self.unit:
