@@ -440,6 +440,8 @@ class revlog(object):
             with self._indexfp() as f:
                 if (mmapindexthreshold is not None and
                     self.opener.fstat(f).st_size >= mmapindexthreshold):
+                    # TODO: should .close() to release resources without
+                    # relying on Python GC
                     indexdata = util.buffer(util.mmapread(f))
                 else:
                     indexdata = f.read()
