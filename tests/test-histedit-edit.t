@@ -496,7 +496,7 @@ warn the user on editing tagged commits
   tip                                1:bd7ee4f3939b
   a                                  0:a8a82d372bb3
   $ hg histedit
-  warning: tags associated with the given changeset will be lost after histedit. 
+  warning: tags associated with the given changeset will be lost after histedit.
   do you want to continue (yN)?  n
   abort: histedit cancelled
   
