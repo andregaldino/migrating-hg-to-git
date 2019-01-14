@@ -381,6 +381,8 @@ def desthistedit(ui, repo):
         revs = stack.getstack(repo)
     elif default:
         revs = scmutil.revrange(repo, [default])
+    else:
+        raise error.Abort(_("config option histedit.defaultrev can't be empty"))
 
     if revs:
         # Take the first revision of the revset as the root
