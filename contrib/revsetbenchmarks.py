@@ -56,9 +56,11 @@ def hg(cmd, repo=None):
 def perf(revset, target=None, contexts=False):
     """run benchmark for this very revset"""
     try:
-        args = ['perfrevset', revset]
+        args = ['perfrevset']
         if contexts:
             args.append('--contexts')
+        args.append('--')
+        args.append(revset)
         output = hg(args, repo=target)
         return parseoutput(output)
     except subprocess.CalledProcessError as exc:
