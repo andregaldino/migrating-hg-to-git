@@ -381,33 +381,8 @@ impl<G: Graph> MissingAncestors<G> {
 mod tests {
 
     use super::*;
+    use crate::testing::{SampleGraph, VecGraph};
     use std::iter::FromIterator;
-
-    #[derive(Clone, Debug)]
-    struct Stub;
-
-    /// This is the same as the dict from test-ancestors.py
-    impl Graph for Stub {
-        fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
-            match rev {
-                0 => Ok([-1, -1]),
-                1 => Ok([0, -1]),
-                2 => Ok([1, -1]),
-                3 => Ok([1, -1]),
-                4 => Ok([2, -1]),
-                5 => Ok([4, -1]),
-                6 => Ok([4, -1]),
-                7 => Ok([4, -1]),
-                8 => Ok([-1, -1]),
-                9 => Ok([6, 7]),
-                10 => Ok([5, -1]),
-                11 => Ok([3, 7]),
-                12 => Ok([9, -1]),
-                13 => Ok([8, -1]),
-                r => Err(GraphError::ParentOutOfRange(r)),
-            }
-        }
-    }
 
     fn list_ancestors<G: Graph>(
         graph: G,
@@ -425,25 +400,37 @@ mod tests {
     /// Same tests as test-ancestor.py, without membership
     /// (see also test-ancestor.py.out)
     fn test_list_ancestor() {
-        assert_eq!(list_ancestors(Stub, vec![], 0, false), vec![]);
+        assert_eq!(list_ancestors(SampleGraph, vec![], 0, false), vec![]);
         assert_eq!(
-            list_ancestors(Stub, vec![11, 13], 0, false),
+            list_ancestors(SampleGraph, vec![11, 13], 0, false),
             vec![8, 7, 4, 3, 2, 1, 0]
         );
-        assert_eq!(list_ancestors(Stub, vec![1, 3], 0, false), vec![1, 0]);
         assert_eq!(
-            list_ancestors(Stub, vec![11, 13], 0, true),
+            list_ancestors(SampleGraph, vec![1, 3], 0, false),
+            vec![1, 0]
+        );
+        assert_eq!(
+            list_ancestors(SampleGraph, vec![11, 13], 0, true),
             vec![13, 11, 8, 7, 4, 3, 2, 1, 0]
         );
-        assert_eq!(list_ancestors(Stub, vec![11, 13], 6, false), vec![8, 7]);
         assert_eq!(
-            list_ancestors(Stub, vec![11, 13], 6, true),
+            list_ancestors(SampleGraph, vec![11, 13], 6, false),
+            vec![8, 7]
+        );
+        assert_eq!(
+            list_ancestors(SampleGraph, vec![11, 13], 6, true),
             vec![13, 11, 8, 7]
         );
-        assert_eq!(list_ancestors(Stub, vec![11, 13], 11, true), vec![13, 11]);
-        assert_eq!(list_ancestors(Stub, vec![11, 13], 12, true), vec![13]);
         assert_eq!(
-            list_ancestors(Stub, vec![10, 1], 0, true),
+            list_ancestors(SampleGraph, vec![11, 13], 11, true),
+            vec![13, 11]
+        );
+        assert_eq!(
+            list_ancestors(SampleGraph, vec![11, 13], 12, true),
+            vec![13]
+        );
+        assert_eq!(
+            list_ancestors(SampleGraph, vec![10, 1], 0, true),
             vec![10, 5, 4, 2, 1, 0]
         );
     }
@@ -455,26 +442,26 @@ mod tests {
     /// For instance, run tests/test-obsolete-checkheads.t
     fn test_nullrev_input() {
         let mut iter =
-            AncestorsIterator::new(Stub, vec![-1], 0, false).unwrap();
+            AncestorsIterator::new(SampleGraph, vec![-1], 0, false).unwrap();
         assert_eq!(iter.next(), None)
     }
 
     #[test]
     fn test_contains() {
         let mut lazy =
-            AncestorsIterator::new(Stub, vec![10, 1], 0, true).unwrap();
+            AncestorsIterator::new(SampleGraph, vec![10, 1], 0, true).unwrap();
         assert!(lazy.contains(1).unwrap());
         assert!(!lazy.contains(3).unwrap());
 
         let mut lazy =
-            AncestorsIterator::new(Stub, vec![0], 0, false).unwrap();
+            AncestorsIterator::new(SampleGraph, vec![0], 0, false).unwrap();
         assert!(!lazy.contains(NULL_REVISION).unwrap());
     }
 
     #[test]
     fn test_peek() {
         let mut iter =
-            AncestorsIterator::new(Stub, vec![10], 0, true).unwrap();
+            AncestorsIterator::new(SampleGraph, vec![10], 0, true).unwrap();
         // peek() gives us the next value
         assert_eq!(iter.peek(), Some(10));
         // but it's not been consumed
@@ -490,16 +477,18 @@ mod tests {
     #[test]
     fn test_empty() {
         let mut iter =
-            AncestorsIterator::new(Stub, vec![10], 0, true).unwrap();
+            AncestorsIterator::new(SampleGraph, vec![10], 0, true).unwrap();
         assert!(!iter.is_empty());
         while iter.next().is_some() {}
         assert!(!iter.is_empty());
 
-        let iter = AncestorsIterator::new(Stub, vec![], 0, true).unwrap();
+        let iter =
+            AncestorsIterator::new(SampleGraph, vec![], 0, true).unwrap();
         assert!(iter.is_empty());
 
         // case where iter.seen == {NULL_REVISION}
-        let iter = AncestorsIterator::new(Stub, vec![0], 0, false).unwrap();
+        let iter =
+            AncestorsIterator::new(SampleGraph, vec![0], 0, false).unwrap();
         assert!(iter.is_empty());
     }
 
@@ -519,7 +508,7 @@ mod tests {
     #[test]
     fn test_initrev_out_of_range() {
         // inclusive=false looks up initrev's parents right away
-        match AncestorsIterator::new(Stub, vec![25], 0, false) {
+        match AncestorsIterator::new(SampleGraph, vec![25], 0, false) {
             Ok(_) => panic!("Should have been ParentOutOfRange"),
             Err(e) => assert_eq!(e, GraphError::ParentOutOfRange(25)),
         }
@@ -536,7 +525,7 @@ mod tests {
     #[test]
     fn test_lazy_iter_contains() {
         let mut lazy =
-            LazyAncestors::new(Stub, vec![11, 13], 0, false).unwrap();
+            LazyAncestors::new(SampleGraph, vec![11, 13], 0, false).unwrap();
 
         let revs: Vec<Revision> = lazy.iter().map(|r| r.unwrap()).collect();
         // compare with iterator tests on the same initial revisions
@@ -551,7 +540,7 @@ mod tests {
     #[test]
     fn test_lazy_contains_iter() {
         let mut lazy =
-            LazyAncestors::new(Stub, vec![11, 13], 0, false).unwrap(); // reminder: [8, 7, 4, 3, 2, 1, 0]
+            LazyAncestors::new(SampleGraph, vec![11, 13], 0, false).unwrap(); // reminder: [8, 7, 4, 3, 2, 1, 0]
 
         assert_eq!(lazy.contains(2), Ok(true));
         assert_eq!(lazy.contains(6), Ok(false));
@@ -570,7 +559,7 @@ mod tests {
     /// Test constructor, add/get bases
     fn test_missing_bases() {
         let mut missing_ancestors =
-            MissingAncestors::new(Stub, [5, 3, 1, 3].iter().cloned());
+            MissingAncestors::new(SampleGraph, [5, 3, 1, 3].iter().cloned());
         let mut as_vec: Vec<Revision> =
             missing_ancestors.get_bases().iter().cloned().collect();
         as_vec.sort();
@@ -588,7 +577,7 @@ mod tests {
         expected: &[Revision],
     ) {
         let mut missing_ancestors =
-            MissingAncestors::new(Stub, bases.iter().cloned());
+            MissingAncestors::new(SampleGraph, bases.iter().cloned());
         let mut revset: HashSet<Revision> = revs.iter().cloned().collect();
         missing_ancestors
             .remove_ancestors_from(&mut revset)
@@ -615,7 +604,7 @@ mod tests {
         expected: &[Revision],
     ) {
         let mut missing_ancestors =
-            MissingAncestors::new(Stub, bases.iter().cloned());
+            MissingAncestors::new(SampleGraph, bases.iter().cloned());
         let missing = missing_ancestors
             .missing_ancestors(revs.iter().cloned())
             .unwrap();
@@ -629,16 +618,6 @@ mod tests {
         assert_missing_ancestors(&[10], &[11], &[3, 7, 11]);
         assert_missing_ancestors(&[11], &[10], &[5, 10]);
         assert_missing_ancestors(&[7], &[9, 11], &[3, 6, 9, 11]);
-    }
-
-    // A Graph represented by a vector whose indices are revisions
-    // and values are parents of the revisions
-    type VecGraph = Vec<[Revision; 2]>;
-
-    impl Graph for VecGraph {
-        fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
-            Ok(self[rev as usize])
-        }
     }
 
     /// An interesting case found by a random generator similar to

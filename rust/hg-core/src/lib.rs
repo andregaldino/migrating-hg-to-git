@@ -4,6 +4,8 @@
 // GNU General Public License version 2 or any later version.
 mod ancestors;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
+#[cfg(test)]
+pub mod testing;
 
 /// Mercurial revision numbers
 ///
