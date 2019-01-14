@@ -1169,17 +1169,18 @@ def heads(repo, subset, x, order):
     if order == defineorder:
         order = followorder
     inputset = getset(repo, fullreposet(repo), x, order=order)
-    ps = set()
-    cl = repo.changelog
-    up = ps.update
-    parentrevs = cl.parentrevs
-    for r in inputset:
-        try:
-            up(parentrevs(r))
-        except error.WdirUnsupported:
-            up(p.rev() for p in repo[r].parents())
-    ps.discard(node.nullrev)
-    return subset & (inputset - ps)
+    wdirparents = None
+    if node.wdirrev in inputset:
+        # a bit slower, but not common so good enough for now
+        wdirparents = [p.rev() for p in repo[None].parents()]
+        inputset = set(inputset)
+        inputset.discard(node.wdirrev)
+    heads = repo.changelog.headrevs(inputset)
+    if wdirparents is not None:
+        heads.difference_update(wdirparents)
+        heads.add(node.wdirrev)
+    heads = baseset(heads)
+    return subset & heads
 
 @predicate('hidden()', safe=True)
 def hidden(repo, subset, x):

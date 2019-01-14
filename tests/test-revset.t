@@ -1428,9 +1428,7 @@ Test heads
   * set:
   <filteredset
     <baseset [9]>,
-    <filteredset
-      <spanset+ 0:10>,
-      <not set([0, 1, 2, 3, 4, 5, 6, 8])>>>
+    <baseset+ [7, 9]>>
   9
 
  but should follow the order of the subset
