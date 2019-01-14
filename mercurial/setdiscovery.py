@@ -229,9 +229,7 @@ class partialdiscovery(object):
         """the heads of the known common set"""
         # heads(common) == heads(common.bases) since common represents
         # common.bases and all its ancestors
-        # The presence of nullrev will confuse heads(). So filter it out.
-        return set(self._repo.revs('heads(%ld)',
-                   self._common.bases - {nullrev}))
+        return self._common.basesheads()
 
 def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
