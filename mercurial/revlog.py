@@ -1102,11 +1102,13 @@ class revlog(object):
         assert heads
         return (orderedout, roots, heads)
 
-    def headrevs(self):
-        try:
-            return self.index.headrevs()
-        except AttributeError:
-            return self._headrevs()
+    def headrevs(self, revs=None):
+        if revs is None:
+            try:
+                return self.index.headrevs()
+            except AttributeError:
+                return self._headrevs()
+        return dagop.headrevs(revs, self.parentrevs)
 
     def computephases(self, roots):
         return self.index.computephasesmapsets(roots)
