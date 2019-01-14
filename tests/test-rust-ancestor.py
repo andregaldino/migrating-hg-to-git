@@ -112,7 +112,7 @@ class rustancestorstest(unittest.TestCase):
         self.assertTrue(missanc.hasbases())
         self.assertEqual(missanc.missingancestors([3]), [2, 3])
         missanc.addbases({2})
-        self.assertEqual(set(missanc.bases()), {1, 2})
+        self.assertEqual(missanc.bases(), {1, 2})
         self.assertEqual(missanc.missingancestors([3]), [3])
 
     def testmissingancestorsremove(self):

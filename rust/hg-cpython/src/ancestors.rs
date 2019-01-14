@@ -11,9 +11,9 @@
 //!
 //! # Classes visible from Python:
 //! - [`LazyAncestors`] is the Rust implementation of
-//!   `mercurial.ancestor.lazyancestors`.
-//!   The only difference is that it is instantiated with a C `parsers.index`
-//!   instance instead of a parents function.
+//!   `mercurial.ancestor.lazyancestors`. The only difference is that it is
+//!   instantiated with a C `parsers.index` instance instead of a parents
+//!   function.
 //!
 //! - [`MissingAncestors`] is the Rust implementation of
 //!   `mercurial.ancestor.incrementalmissingancestors`.
@@ -27,9 +27,9 @@
 //!      is accepted.
 //!
 //! - [`AncestorsIterator`] is the Rust counterpart of the
-//!   `ancestor._lazyancestorsiter` Python generator.
-//!   From Python, instances of this should be mainly obtained by calling
-//!   `iter()` on a [`LazyAncestors`] instance.
+//!   `ancestor._lazyancestorsiter` Python generator. From Python, instances of
+//!   this should be mainly obtained by calling `iter()` on a [`LazyAncestors`]
+//!   instance.
 //!
 //! [`LazyAncestors`]: struct.LazyAncestors.html
 //! [`MissingAncestors`]: struct.MissingAncestors.html
@@ -37,8 +37,8 @@
 use crate::conversion::rev_pyiter_collect;
 use cindex::Index;
 use cpython::{
-    ObjectProtocol, PyClone, PyDict, PyList, PyModule, PyObject,
-    PyResult, PyTuple, Python, PythonObject, ToPyObject,
+    ObjectProtocol, PyClone, PyDict, PyList, PyModule, PyObject, PyResult,
+    PyTuple, Python, PythonObject, ToPyObject,
 };
 use exceptions::GraphError;
 use hg::Revision;
@@ -88,6 +88,24 @@ impl AncestorsIterator {
     pub fn from_inner(py: Python, ait: CoreIterator<Index>) -> PyResult<Self> {
         Self::create_instance(py, RefCell::new(Box::new(ait)))
     }
+}
+
+/// Copy and convert an `HashSet<Revision>` in a Python set
+///
+/// This will probably turn useless once `PySet` support lands in
+/// `rust-cpython`.
+///
+/// This builds a Python tuple, then calls Python's "set()" on it
+fn py_set(py: Python, set: &HashSet<Revision>) -> PyResult<PyObject> {
+    let as_vec: Vec<PyObject> = set
+        .iter()
+        .map(|rev| rev.to_py_object(py).into_object())
+        .collect();
+    let as_pytuple = PyTuple::new(py, as_vec.as_slice());
+
+    let locals = PyDict::new(py);
+    locals.set_item(py, "obj", as_pytuple.to_py_object(py))?;
+    py.eval("set(obj)", None, Some(&locals))
 }
 
 py_class!(pub class LazyAncestors |py| {
@@ -144,16 +162,8 @@ py_class!(pub class MissingAncestors |py| {
         Ok(py.None())
     }
 
-    def bases(&self) -> PyResult<PyTuple> {
-        let inner = self.inner(py).borrow();
-        let bases_set = inner.get_bases();
-        // convert as Python tuple TODO how to return a proper Python set?
-        let mut bases_vec: Vec<PyObject> = Vec::with_capacity(
-            bases_set.len());
-        for rev in bases_set {
-            bases_vec.push(rev.to_py_object(py).into_object());
-        }
-        Ok(PyTuple::new(py, bases_vec.as_slice()))
+    def bases(&self) -> PyResult<PyObject> {
+        py_set(py, self.inner(py).borrow().get_bases())
     }
 
     def removeancestorsfrom(&self, revs: PyObject) -> PyResult<PyObject> {
