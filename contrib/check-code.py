@@ -233,6 +233,7 @@ utestfilters = [
 
 pypats = [
   [
+    (r'\\$', 'Use () to wrap long lines in Python, not \\'),
     (r'^\s*def\s*\w+\s*\(.*,\s*\(',
      "tuple parameter unpacking not available in Python 3+"),
     (r'lambda\s*\(.*,.*\)',

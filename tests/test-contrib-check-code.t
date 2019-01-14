@@ -7,6 +7,9 @@
   > def toto( arg1, arg2):
   >     del(arg2)
   >     return ( 5+6, 9)
+  > def badwrap():
+  >     return 1 + \\
+  >        2
   > NO_CHECK_EOF
   $ cat > quote.py <<NO_CHECK_EOF
   > # let's use quote in comments
@@ -42,6 +45,9 @@
    >     return ( 5+6, 9)
    gratuitous whitespace in () or []
    missing whitespace in expression
+  ./wrong.py:5:
+   >     return 1 + \
+   Use () to wrap long lines in Python, not \
   ./quote.py:5:
    > '"""', 42+1, """and
    missing whitespace in expression
