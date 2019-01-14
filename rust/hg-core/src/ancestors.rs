@@ -10,6 +10,7 @@
 use super::{Graph, GraphError, Revision, NULL_REVISION};
 use std::cmp::max;
 use std::collections::{BinaryHeap, HashSet};
+use crate::dagops;
 
 /// Iterator over the ancestors of a given list of revisions
 /// This is a generic type, defined and implemented for any Graph, so that
@@ -227,6 +228,19 @@ impl<G: Graph> MissingAncestors<G> {
     /// read the bases attribute of a ancestor.missingancestors instance.
     pub fn get_bases<'a>(&'a self) -> &'a HashSet<Revision> {
         &self.bases
+    }
+
+    /// Computes the relative heads of current bases.
+    ///
+    /// The object is still usable after this.
+    pub fn bases_heads(&self) -> Result<HashSet<Revision>, GraphError> {
+        dagops::heads(&self.graph, self.bases.iter())
+    }
+
+    /// Consumes the object and returns the relative heads of its bases.
+    pub fn into_bases_heads(mut self) -> Result<HashSet<Revision>, GraphError> {
+        dagops::retain_heads(&self.graph, &mut self.bases)?;
+        Ok(self.bases)
     }
 
     pub fn add_bases(
@@ -556,8 +570,8 @@ mod tests {
     }
 
     #[test]
-    /// Test constructor, add/get bases
-    fn test_missing_bases() {
+    /// Test constructor, add/get bases and heads
+    fn test_missing_bases() -> Result<(), GraphError> {
         let mut missing_ancestors =
             MissingAncestors::new(SampleGraph, [5, 3, 1, 3].iter().cloned());
         let mut as_vec: Vec<Revision> =
@@ -569,6 +583,11 @@ mod tests {
         as_vec = missing_ancestors.get_bases().iter().cloned().collect();
         as_vec.sort();
         assert_eq!(as_vec, [1, 3, 5, 7, 8]);
+
+        as_vec = missing_ancestors.bases_heads()?.iter().cloned().collect();
+        as_vec.sort();
+        assert_eq!(as_vec, [3, 5, 7, 8]);
+        Ok(())
     }
 
     fn assert_missing_remove(

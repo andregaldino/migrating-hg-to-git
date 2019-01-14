@@ -166,6 +166,11 @@ py_class!(pub class MissingAncestors |py| {
         py_set(py, self.inner(py).borrow().get_bases())
     }
 
+    def basesheads(&self) -> PyResult<PyObject> {
+        let inner = self.inner(py).borrow();
+        py_set(py, &inner.bases_heads().map_err(|e| GraphError::pynew(py, e))?)
+    }
+
     def removeancestorsfrom(&self, revs: PyObject) -> PyResult<PyObject> {
         let mut inner = self.inner(py).borrow_mut();
         // this is very lame: we convert to a Rust set, update it in place

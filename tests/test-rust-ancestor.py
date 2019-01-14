@@ -114,6 +114,7 @@ class rustancestorstest(unittest.TestCase):
         missanc.addbases({2})
         self.assertEqual(missanc.bases(), {1, 2})
         self.assertEqual(missanc.missingancestors([3]), [3])
+        self.assertEqual(missanc.basesheads(), {2})
 
     def testmissingancestorsremove(self):
         idx = self.parseindex()
