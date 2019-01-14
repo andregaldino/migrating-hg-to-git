@@ -1427,12 +1427,10 @@ Test heads
   $ hg debugrevspec -s '9: & heads(all())'
   * set:
   <filteredset
+    <baseset [9]>,
     <filteredset
-      <baseset [9]>,
-      <spanset+ 0:10>>,
-    <not
-      <filteredset
-        <baseset [9]>, set([0, 1, 2, 3, 4, 5, 6, 8])>>>
+      <spanset+ 0:10>,
+      <not set([0, 1, 2, 3, 4, 5, 6, 8])>>>
   9
 
  but should follow the order of the subset
