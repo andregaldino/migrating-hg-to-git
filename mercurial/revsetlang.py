@@ -757,19 +757,12 @@ def _parseargs(expr, args):
             except IndexError:
                 raise error.ParseError(_('incomplete revspec format character'))
             if islist and d == 'd' and arg:
-                # special case, we might be able to speedup the list of int case
-                #
-                # We have been very conservative here for the first version.
-                # Other types (eg: generator) are probably fine, but we did not
-                # wanted to take any risk>
-                safeinputtype = (list, tuple, set, smartset.abstractsmartset)
-                if isinstance(arg, safeinputtype):
-                    # we don't create a baseset yet, because it come with an
-                    # extra cost. If we are going to serialize it we better
-                    # skip it.
-                    ret.append(('baseset', arg))
-                    pos += 1
-                    continue
+                # we don't create a baseset yet, because it come with an
+                # extra cost. If we are going to serialize it we better
+                # skip it.
+                ret.append(('baseset', arg))
+                pos += 1
+                continue
             try:
                 ret.append((None, f(list(arg), d)))
             except (TypeError, ValueError):
