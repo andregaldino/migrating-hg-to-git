@@ -31,7 +31,6 @@ def _findlimit(repo, a, b):
     Generally, this means finding the earliest revision number that's an
     ancestor of a or b but not both, except when a or b is a direct descendent
     of the other, in which case we can return the minimum revnum of a and b.
-    None if no such revision exists.
     """
 
     # basic idea:
@@ -55,7 +54,6 @@ def _findlimit(repo, a, b):
     visit = [-a, -b]
     heapq.heapify(visit)
     interesting = len(visit)
-    hascommonancestor = False
     limit = node.wdirrev
 
     while interesting:
@@ -64,9 +62,9 @@ def _findlimit(repo, a, b):
             parents = [cl.rev(p) for p in repo.dirstate.parents()]
         else:
             parents = cl.parentrevs(r)
+        if parents[1] == node.nullrev:
+            parents = parents[:1]
         for p in parents:
-            if p < 0:
-                continue
             if p not in side:
                 # first time we see p; add it to visit
                 side[p] = side[r]
@@ -77,13 +75,9 @@ def _findlimit(repo, a, b):
                 # p was interesting but now we know better
                 side[p] = 0
                 interesting -= 1
-                hascommonancestor = True
         if side[r]:
             limit = r # lowest rev visited
             interesting -= 1
-
-    if not hascommonancestor:
-        return None
 
     # Consider the following flow (see test-commit-amend.t under issue4405):
     # 1/ File 'a0' committed
@@ -169,8 +163,6 @@ def _committedforwardcopies(a, b, match):
         dbg('debug.copies:    looking into rename from %s to %s\n'
             % (a, b))
     limit = _findlimit(repo, a.rev(), b.rev())
-    if limit is None:
-        limit = node.nullrev
     if debug:
         dbg('debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()
@@ -465,9 +457,6 @@ def _fullcopytracing(repo, c1, c2, base):
         tca = _c1.ancestor(_c2)
 
     limit = _findlimit(repo, c1.rev(), c2.rev())
-    if limit is None:
-        # no common ancestor, no copies
-        return {}, {}, {}, {}, {}
     repo.ui.debug("  searching for copies back to rev %d\n" % limit)
 
     m1 = c1.manifest()
