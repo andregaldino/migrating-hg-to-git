@@ -46,22 +46,21 @@ def _findlimit(repo, a, b):
     #   - quit when interesting revs is zero
 
     cl = repo.changelog
-    working = len(cl) # pseudo rev for the working directory
     if a is None:
-        a = working
+        a = node.wdirrev
     if b is None:
-        b = working
+        b = node.wdirrev
 
     side = {a: -1, b: 1}
     visit = [-a, -b]
     heapq.heapify(visit)
     interesting = len(visit)
     hascommonancestor = False
-    limit = working
+    limit = node.wdirrev
 
     while interesting:
         r = -heapq.heappop(visit)
-        if r == working:
+        if r == node.wdirrev:
             parents = [cl.rev(p) for p in repo.dirstate.parents()]
         else:
             parents = cl.parentrevs(r)
