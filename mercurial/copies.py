@@ -131,7 +131,7 @@ def _chain(src, dst, a, b):
 
     return t
 
-def _tracefile(fctx, am, limit=-1):
+def _tracefile(fctx, am, limit=node.nullrev):
     """return file context that is the ancestor of fctx present in ancestor
     manifest am, stopping after the first ancestor lower than limit"""
 
@@ -170,7 +170,7 @@ def _committedforwardcopies(a, b, match):
             % (a, b))
     limit = _findlimit(repo, a.rev(), b.rev())
     if limit is None:
-        limit = -1
+        limit = node.nullrev
     if debug:
         dbg('debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()
