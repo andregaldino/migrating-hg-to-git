@@ -225,24 +225,82 @@ def notset(repo, subset, x, order):
 def relationset(repo, subset, x, y, order):
     raise error.ParseError(_("can't use a relation in this context"))
 
-def generationsrel(repo, subset, x, rel, n, order):
-    # TODO: support range, rewrite tests, and drop startdepth argument
-    # from ancestors() and descendants() predicates
-    if n <= 0:
-        n = -n
-        return _ancestors(repo, subset, x, startdepth=n, stopdepth=n + 1)
-    else:
-        return _descendants(repo, subset, x, startdepth=n, stopdepth=n + 1)
+def _splitrange(a, b):
+    """Split range with bounds a and b into two ranges at 0 and return two
+    tuples of numbers for use as startdepth and stopdepth arguments of
+    revancestors and revdescendants.
+
+    >>> _splitrange(-10, -5)     # [-10:-5]
+    ((5, 11), (None, None))
+    >>> _splitrange(5, 10)       # [5:10]
+    ((None, None), (5, 11))
+    >>> _splitrange(-10, 10)     # [-10:10]
+    ((0, 11), (0, 11))
+    >>> _splitrange(-10, 0)      # [-10:0]
+    ((0, 11), (None, None))
+    >>> _splitrange(0, 10)       # [0:10]
+    ((None, None), (0, 11))
+    >>> _splitrange(0, 0)        # [0:0]
+    ((0, 1), (None, None))
+    >>> _splitrange(1, -1)       # [1:-1]
+    ((None, None), (None, None))
+    """
+    ancdepths = (None, None)
+    descdepths = (None, None)
+    if a == b == 0:
+        ancdepths = (0, 1)
+    if a < 0:
+        ancdepths = (-min(b, 0), -a + 1)
+    if b > 0:
+        descdepths = (max(a, 0), b + 1)
+    return ancdepths, descdepths
+
+def generationsrel(repo, subset, x, rel, a, b, order):
+    # TODO: rewrite tests, and drop startdepth argument from ancestors() and
+    # descendants() predicates
+    (ancstart, ancstop), (descstart, descstop) = _splitrange(a, b)
+
+    if ancstart is None and descstart is None:
+        return baseset()
+
+    revs = getset(repo, fullreposet(repo), x)
+    if not revs:
+        return baseset()
+
+    if ancstart is not None and descstart is not None:
+        s = dagop.revancestors(repo, revs, False, ancstart, ancstop)
+        s += dagop.revdescendants(repo, revs, False, descstart, descstop)
+    elif ancstart is not None:
+        s = dagop.revancestors(repo, revs, False, ancstart, ancstop)
+    elif descstart is not None:
+        s = dagop.revdescendants(repo, revs, False, descstart, descstop)
+
+    return subset & s
 
 def relsubscriptset(repo, subset, x, y, z, order):
     # this is pretty basic implementation of 'x#y[z]' operator, still
     # experimental so undocumented. see the wiki for further ideas.
     # https://www.mercurial-scm.org/wiki/RevsetOperatorPlan
     rel = getsymbol(y)
-    n = getinteger(z, _("relation subscript must be an integer"))
+    try:
+        a, b = getrange(z, '')
+    except error.ParseError:
+        a = getinteger(z, _("relation subscript must be an integer"))
+        b = a
+    else:
+        def getbound(i):
+            if i is None:
+                return None
+            msg = _("relation subscript bounds must be integers")
+            return getinteger(i, msg)
+        a, b = [getbound(i) for i in (a, b)]
+        if a is None:
+            a = -(dagop.maxlogdepth - 1)
+        if b is None:
+            b = +(dagop.maxlogdepth - 1)
 
     if rel in subscriptrelations:
-        return subscriptrelations[rel](repo, subset, x, rel, n, order)
+        return subscriptrelations[rel](repo, subset, x, rel, a, b, order)
 
     relnames = [r for r in subscriptrelations.keys() if len(r) > 1]
     raise error.UnknownIdentifier(rel, relnames)

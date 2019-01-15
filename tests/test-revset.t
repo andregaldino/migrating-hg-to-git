@@ -648,6 +648,9 @@ parse errors of relation, subscript and relation-subscript operators:
   $ hg debugrevspec '.#generations[1-2]'
   hg: parse error: relation subscript must be an integer
   [255]
+  $ hg debugrevspec '.#generations[foo:bar]'
+  hg: parse error: relation subscript bounds must be integers
+  [255]
 
 suggested relations
 
@@ -1273,6 +1276,30 @@ test ancestors/descendants relation subscript:
   8
   $ log '.#g[(-1)]'
   8
+
+  $ log '6#generations[0:1]'
+  6
+  7
+  $ log '6#generations[-1:1]'
+  4
+  5
+  6
+  7
+  $ log '6#generations[0:]'
+  6
+  7
+  $ log '5#generations[:0]'
+  0
+  1
+  3
+  5
+  $ log '3#generations[:]'
+  0
+  1
+  3
+  5
+  6
+  7
 
   $ hg debugrevspec -p parsed 'roots(:)#g[2]'
   * parsed:
