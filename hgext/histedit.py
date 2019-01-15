@@ -1604,7 +1604,8 @@ def histedit(ui, repo, *freeargs, **opts):
     # kludge: _chistedit only works for starting an edit, not aborting
     # or continuing, so fall back to regular _texthistedit for those
     # operations.
-    if ui.interface('histedit') == 'curses' and  _getgoal(opts) == goalnew:
+    if ui.interface('histedit') == 'curses' and  _getgoal(
+            pycompat.byteskwargs(opts)) == goalnew:
         return _chistedit(ui, repo, *freeargs, **opts)
     return _texthistedit(ui, repo, *freeargs, **opts)
 
@@ -1621,11 +1622,11 @@ goaleditplan = 'edit-plan'
 goalnew = 'new'
 
 def _getgoal(opts):
-    if opts.get('continue'):
+    if opts.get(b'continue'):
         return goalcontinue
-    if opts.get('abort'):
+    if opts.get(b'abort'):
         return goalabort
-    if opts.get('edit_plan'):
+    if opts.get(b'edit_plan'):
         return goaleditplan
     return goalnew
 
