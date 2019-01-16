@@ -24,7 +24,7 @@ from .utils import (
     stringutil,
 )
 
-def _findlimit(repo, a, b):
+def _findlimit(repo, ctxa, ctxb):
     """
     Find the last revision that needs to be checked to ensure that a full
     transitive closure for file copies can be properly calculated.
@@ -45,6 +45,8 @@ def _findlimit(repo, a, b):
     #   - quit when interesting revs is zero
 
     cl = repo.changelog
+    a = ctxa.rev()
+    b = ctxb.rev()
     if a is None:
         a = node.wdirrev
     if b is None:
@@ -162,7 +164,7 @@ def _committedforwardcopies(a, b, match):
     if debug:
         dbg('debug.copies:    looking into rename from %s to %s\n'
             % (a, b))
-    limit = _findlimit(repo, a.rev(), b.rev())
+    limit = _findlimit(repo, a, b)
     if debug:
         dbg('debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()
@@ -456,7 +458,7 @@ def _fullcopytracing(repo, c1, c2, base):
     if graft:
         tca = _c1.ancestor(_c2)
 
-    limit = _findlimit(repo, c1.rev(), c2.rev())
+    limit = _findlimit(repo, c1, c2)
     repo.ui.debug("  searching for copies back to rev %d\n" % limit)
 
     m1 = c1.manifest()
