@@ -269,8 +269,8 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
 
         base = fl.revision(deltabase, raw=True)
         text = mdiff.patch(base, delta)
-        if isinstance(text, buffer):
-            text = str(text)
+        if not isinstance(text, bytes):
+            text = bytes(text)
 
         meta, text = shallowutil.parsemeta(text)
         if 'copy' in meta:
