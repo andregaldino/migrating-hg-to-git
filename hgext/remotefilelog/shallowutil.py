@@ -420,7 +420,7 @@ def readpathlist(stream):
 
 def getgid(groupname):
     try:
-        gid = grp.getgrnam(groupname).gr_gid
+        gid = grp.getgrnam(pycompat.fsdecode(groupname)).gr_gid
         return gid
     except KeyError:
         return None
