@@ -98,7 +98,7 @@ def _parseresponse(payload):
     state = 0 # 0: vfspath, 1: size
     vfspath = size = ''
     while i < l:
-        ch = payload[i]
+        ch = payload[i:i + 1]
         if ch == '\0':
             if state == 1:
                 result[vfspath] = buffer(payload, i + 1, int(size))

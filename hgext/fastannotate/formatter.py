@@ -103,7 +103,7 @@ class defaultformatter(object):
                         result += ': ' + self.ui.label('-' + lines[i],
                                                        'diff.deleted')
 
-            if result[-1] != '\n':
+            if result[-1:] != '\n':
                 result += '\n'
 
         self.ui.write(result)
