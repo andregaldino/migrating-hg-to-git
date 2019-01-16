@@ -305,8 +305,7 @@ class basestore(object):
         cachepath = self._path
 
         # prune cache
-        import Queue
-        queue = Queue.PriorityQueue()
+        queue = pycompat.queue.PriorityQueue()
         originalsize = 0
         size = 0
         count = 0
