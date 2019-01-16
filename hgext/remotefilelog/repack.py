@@ -481,7 +481,7 @@ class repacker(object):
             else:
                 parent = orphans[i - 1]
                 deltabases[node] = (parent, deltabases[parent][1] + 1)
-        nodes = filter(lambda node: node not in orphans, nodes)
+        nodes = [n for n in nodes if n not in orphans]
         nodes += orphans
         return nodes
 
