@@ -18,6 +18,7 @@ import silenttestrunner
 sys.path[0:0] = [os.path.join(os.path.dirname(__file__), '..')]
 from mercurial.node import nullid
 from mercurial import (
+    pycompat,
     ui as uimod,
 )
 from hgext.remotefilelog import (
@@ -245,7 +246,7 @@ class datapacktestsbase(object):
         revisions = []
         blobs = {}
         total = basepack.SMALLFANOUTCUTOFF + 1
-        for i in xrange(total):
+        for i in pycompat.xrange(total):
             filename = "filename-%s" % i
             content = filename
             node = self.getHash(content)
@@ -328,7 +329,7 @@ class datapacktestsbase(object):
         ]
         for packsize in packsizes:
             revisions = []
-            for i in xrange(packsize):
+            for i in pycompat.xrange(packsize):
                 filename = "filename-%s" % i
                 content = "content-%s" % i
                 node = self.getHash(content)

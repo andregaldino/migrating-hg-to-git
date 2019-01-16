@@ -18,6 +18,8 @@
   > import os
   > import shutil
   > import sys
+  > if sys.version_info[0] > 2:
+  >     xrange = range
   > f = open('$TESTTMP/cachelog.log', 'w')
   > srccache = os.path.join('$TESTTMP', 'oldhgcache')
   > def log(message):
