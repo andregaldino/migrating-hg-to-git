@@ -128,7 +128,7 @@ class jsonformatter(defaultformatter):
         if annotatedresult:
             self._writecomma()
 
-        pieces = [(name, map(f, annotatedresult))
+        pieces = [(name, pycompat.maplist(f, annotatedresult))
                   for f, sep, name, enc in self.funcmap]
         if lines is not None:
             pieces.append(('line', lines))
