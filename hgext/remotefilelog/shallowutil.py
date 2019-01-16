@@ -121,7 +121,7 @@ def _parsepackmeta(metabuf):
     offset = 0
     buflen = len(metabuf)
     while buflen - offset >= 3:
-        key = metabuf[offset]
+        key = metabuf[offset:offset + 1]
         offset += 1
         metalen = struct.unpack_from('!H', metabuf, offset)[0]
         offset += 2
