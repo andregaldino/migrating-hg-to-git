@@ -52,9 +52,10 @@ SMALLFANOUTCUTOFF = 2**16 // 8
 # loaded the pack list.
 REFRESHRATE = 0.1
 
-if pycompat.isposix:
+if pycompat.isposix and not pycompat.ispy3:
     # With glibc 2.7+ the 'e' flag uses O_CLOEXEC when opening.
     # The 'e' flag will be ignored on older versions of glibc.
+    # Python 3 can't handle the 'e' flag.
     PACKOPENMODE = 'rbe'
 else:
     PACKOPENMODE = 'rb'
