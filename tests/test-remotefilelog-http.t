@@ -15,7 +15,7 @@
 
 Build a query string for later use:
   $ GET=`hg debugdata -m 0 | $PYTHON -c \
-  > 'import sys ; print [("?cmd=x_rfl_getfile&file=%s&node=%s" % tuple(s.split("\0"))) for s in sys.stdin.read().splitlines()][0]'`
+  > 'import sys ; print([("?cmd=x_rfl_getfile&file=%s&node=%s" % tuple(s.split("\0"))) for s in sys.stdin.read().splitlines()][0])'`
 
   $ cd ..
   $ cat hg1.pid >> $DAEMON_PIDS
