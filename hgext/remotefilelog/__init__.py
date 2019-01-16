@@ -804,7 +804,7 @@ def gcclient(ui, cachepath):
         ui.warn(_("no known cache at %s\n") % cachepath)
         return
 
-    reposfile = open(repospath, 'r')
+    reposfile = open(repospath, 'rb')
     repos = set([r[:-1] for r in reposfile.readlines()])
     reposfile.close()
 
@@ -874,7 +874,7 @@ def gcclient(ui, cachepath):
     # write list of valid repos back
     oldumask = os.umask(0o002)
     try:
-        reposfile = open(repospath, 'w')
+        reposfile = open(repospath, 'wb')
         reposfile.writelines([("%s\n" % r) for r in validrepos])
         reposfile.close()
     finally:
