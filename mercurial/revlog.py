@@ -1121,6 +1121,8 @@ class revlog(object):
                 return self.index.headrevs()
             except AttributeError:
                 return self._headrevs()
+        if rustext is not None:
+            return rustext.dagop.headrevs(self.index, revs)
         return dagop.headrevs(revs, self._uncheckedparentrevs)
 
     def computephases(self, roots):
