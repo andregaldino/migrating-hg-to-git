@@ -420,6 +420,7 @@ class baseunionstore(object):
                 except KeyError:
                     pass
             # retries exhausted
-            retrylog('retries exhausted in %s, raising KeyError\n' % funcname)
+            retrylog('retries exhausted in %s, raising KeyError\n' %
+                     pycompat.sysbytes(funcname))
             raise
         return wrapped
