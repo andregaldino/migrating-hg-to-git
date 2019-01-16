@@ -383,7 +383,7 @@ class basestore(object):
                 removedexcess += oldpathstat.st_size
             progress.complete()
 
-        ui.status(_("finished: removed %s of %s files (%0.2f GB to %0.2f GB)\n")
+        ui.status(_("finished: removed %d of %d files (%0.2f GB to %0.2f GB)\n")
                   % (removed, count,
                      float(originalsize) / 1024.0 / 1024.0 / 1024.0,
                      float(size) / 1024.0 / 1024.0 / 1024.0))

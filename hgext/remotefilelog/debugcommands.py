@@ -242,8 +242,8 @@ def debugdatapack(ui, *paths, **opts):
 
             ui.write(("Total:%s%s  %s (%s)\n") % (
                 "".ljust(2 * hashlen - len("Total:")),
-                str(totaldeltasize).ljust(12),
-                str(totalblobsize).ljust(9),
+                ('%d' % totaldeltasize).ljust(12),
+                ('%d' % totalblobsize).ljust(9),
                 deltastr
             ))
 
@@ -277,10 +277,10 @@ def debugdatapack(ui, *paths, **opts):
                 totalblobsize += blobsize
             else:
                 blobsize = "(missing)"
-            ui.write("%s  %s  %s%s\n" % (
+            ui.write("%s  %s  %s%d\n" % (
                 hashformatter(node),
                 hashformatter(deltabase),
-                str(deltalen).ljust(14),
+                ('%d' % deltalen).ljust(14),
                 blobsize))
 
         if filename is not None:
@@ -342,7 +342,7 @@ def dumpdeltachain(ui, deltachain, **opts):
             "Delta Length".ljust(6),
         ))
 
-        ui.write("%s  %s  %s  %s\n" % (
+        ui.write("%s  %s  %s  %d\n" % (
             hashformatter(node),
             hashformatter(deltabasenode),
             nodemod.hex(hashlib.sha1(delta).digest()),
