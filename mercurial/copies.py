@@ -45,11 +45,15 @@ def _findlimit(repo, ctxa, ctxb):
     #   - quit when interesting revs is zero
 
     cl = repo.changelog
+    wdirparents = None
     a = ctxa.rev()
     b = ctxb.rev()
     if a is None:
+        wdirparents = (ctxa.p1(), ctxa.p2())
         a = node.wdirrev
     if b is None:
+        assert not wdirparents
+        wdirparents = (ctxb.p1(), ctxb.p2())
         b = node.wdirrev
 
     side = {a: -1, b: 1}
@@ -61,7 +65,7 @@ def _findlimit(repo, ctxa, ctxb):
     while interesting:
         r = -heapq.heappop(visit)
         if r == node.wdirrev:
-            parents = [cl.rev(p) for p in repo.dirstate.parents()]
+            parents = [pctx.rev() for pctx in wdirparents]
         else:
             parents = cl.parentrevs(r)
         if parents[1] == node.nullrev:
