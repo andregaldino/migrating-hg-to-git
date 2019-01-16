@@ -201,7 +201,14 @@ test-extension-timing.t
 test-extensions-afterloaded.t
 test-extensions-wrapfunction.py
 test-extra-filelog-entry.t
+test-fastannotate-corrupt.t
+test-fastannotate-diffopts.t
+test-fastannotate-hg.t
+test-fastannotate-perfhack.t
+test-fastannotate-protocol.t
+test-fastannotate-renames.t
 test-fastannotate-revmap.py
+test-fastannotate.t
 test-fetch.t
 test-filebranch.t
 test-filecache.py
