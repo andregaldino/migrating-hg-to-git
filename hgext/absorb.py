@@ -489,7 +489,8 @@ class filefixupstate(object):
             if l[colonpos - 1:colonpos + 2] != ' : ':
                 raise error.Abort(_('malformed line: %s') % l)
             linecontent = l[colonpos + 2:]
-            for i, ch in enumerate(l[leftpadpos:colonpos - 1]):
+            for i, ch in enumerate(
+                    pycompat.bytestr(l[leftpadpos:colonpos - 1])):
                 if ch == 'y':
                     contents[visiblefctxs[i][0]] += linecontent
         # chunkstats is hard to calculate if anything changes, therefore
