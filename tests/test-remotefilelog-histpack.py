@@ -273,4 +273,6 @@ class histpacktests(unittest.TestCase):
 # - repack two packs into one
 
 if __name__ == '__main__':
+    if pycompat.iswindows:
+        sys.exit(80)    # Skip on Windows
     silenttestrunner.main(__name__)
