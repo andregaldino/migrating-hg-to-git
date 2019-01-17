@@ -236,3 +236,22 @@ and starting with '++' should count as additions
   $ hg diff --root . --stat
    file |  2 +-
    1 files changed, 1 insertions(+), 1 deletions(-)
+
+When a file is renamed, --git shouldn't loss the info about old file
+  $ hg init issue6025
+  $ cd issue6025
+  $ echo > a
+  $ hg ci -Am 'add a'
+  adding a
+  $ hg mv a b
+  $ hg diff --git
+  diff --git a/a b/b
+  rename from a
+  rename to b
+  $ hg diff --stat
+   a |  1 -
+   b |  1 +
+   2 files changed, 1 insertions(+), 1 deletions(-)
+  $ hg diff --stat --git
+   a => b |  0 
+   1 files changed, 0 insertions(+), 0 deletions(-)

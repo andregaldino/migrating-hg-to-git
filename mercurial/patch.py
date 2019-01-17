@@ -2805,6 +2805,10 @@ def diffstatdata(lines):
         elif (line.startswith('GIT binary patch') or
               line.startswith('Binary file')):
             isbinary = True
+        elif line.startswith('rename from'):
+            filename = line.split()[-1]
+        elif line.startswith('rename to'):
+            filename += ' => %s' % line.split()[-1]
     addresult()
     return results
 
