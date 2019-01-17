@@ -2475,16 +2475,16 @@ class localrepository(object):
                           parent2=hookp2)
                 tr = self.transaction('commit')
                 ret = self.commitctx(cctx, True)
+                # update bookmarks, dirstate and mergestate
+                bookmarks.update(self, [p1, p2], ret)
+                cctx.markcommitted(ret)
+                ms.reset()
+                tr.close()
             except: # re-raises
                 if edited:
                     self.ui.write(
                         _('note: commit message saved in %s\n') % msgfn)
                 raise
-            # update bookmarks, dirstate and mergestate
-            bookmarks.update(self, [p1, p2], ret)
-            cctx.markcommitted(ret)
-            ms.reset()
-            tr.close()
 
         finally:
             lockmod.release(tr, lock, wlock)
