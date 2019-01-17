@@ -2409,7 +2409,7 @@ class localrepository(object):
             match.explicitdir = vdirs.append
             match.bad = fail
 
-        wlock = lock = tr = None
+        wlock = lock = None
         try:
             wlock = self.wlock()
             lock = self.lock() # for recent changelog (see issue4368)
@@ -2473,13 +2473,12 @@ class localrepository(object):
             try:
                 self.hook("precommit", throw=True, parent1=hookp1,
                           parent2=hookp2)
-                tr = self.transaction('commit')
-                ret = self.commitctx(cctx, True)
-                # update bookmarks, dirstate and mergestate
-                bookmarks.update(self, [p1, p2], ret)
-                cctx.markcommitted(ret)
-                ms.reset()
-                tr.close()
+                with self.transaction('commit'):
+                    ret = self.commitctx(cctx, True)
+                    # update bookmarks, dirstate and mergestate
+                    bookmarks.update(self, [p1, p2], ret)
+                    cctx.markcommitted(ret)
+                    ms.reset()
             except: # re-raises
                 if edited:
                     self.ui.write(
@@ -2487,7 +2486,7 @@ class localrepository(object):
                 raise
 
         finally:
-            lockmod.release(tr, lock, wlock)
+            lockmod.release(lock, wlock)
 
         def commithook(node=hex(ret), parent1=hookp1, parent2=hookp2):
             # hack for command that use a temporary commit (eg: histedit)
