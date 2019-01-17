@@ -12,7 +12,6 @@ import glob
 import hashlib
 import os
 import re
-import socket
 import subprocess
 import weakref
 
@@ -270,8 +269,6 @@ def callcatch(ui, func):
         # Commands shouldn't sys.exit directly, but give a return code.
         # Just in case catch this and and pass exit code to caller.
         return inst.code
-    except socket.error as inst:
-        ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst.args[-1]))
 
     return -1
 
