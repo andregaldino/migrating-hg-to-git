@@ -208,7 +208,6 @@ def filectxisbinary(orig, self):
         return bool(int(metadata.get('x-is-binary', 1)))
     return orig(self)
 
-@eh.addattr(context.basefilectx, 'islfs')
 def filectxislfs(self):
     return _islfs(self.filelog(), self.filenode())
 

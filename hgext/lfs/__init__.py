@@ -130,6 +130,7 @@ from mercurial.i18n import _
 
 from mercurial import (
     config,
+    context,
     error,
     exchange,
     extensions,
@@ -328,6 +329,8 @@ def _resolverevlogstorevfsoptions(orig, ui, requirements, features):
 @eh.extsetup
 def _extsetup(ui):
     wrapfilelog(filelog.filelog)
+
+    context.basefilectx.islfs = wrapper.filectxislfs
 
     scmutil.fileprefetchhooks.add('lfs', wrapper._prefetchfiles)
 

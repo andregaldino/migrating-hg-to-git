@@ -82,7 +82,6 @@ class exthelper(object):
         self._commandwrappers = []
         self._extcommandwrappers = []
         self._functionwrappers = []
-        self._duckpunchers = []
         self.cmdtable = {}
         self.command = registrar.command(self.cmdtable)
         self.configtable = {}
@@ -102,7 +101,6 @@ class exthelper(object):
         self._commandwrappers.extend(other._commandwrappers)
         self._extcommandwrappers.extend(other._extcommandwrappers)
         self._functionwrappers.extend(other._functionwrappers)
-        self._duckpunchers.extend(other._duckpunchers)
         self.cmdtable.update(other.cmdtable)
         for section, items in other.configtable.iteritems():
             if section in self.configtable:
@@ -129,8 +127,6 @@ class exthelper(object):
         - Setup of pre-* and post-* hooks
         - pushkey setup
         """
-        for cont, funcname, func in self._duckpunchers:
-            setattr(cont, funcname, func)
         for command, wrapper, opts in self._commandwrappers:
             entry = extensions.wrapcommand(commands.table, command, wrapper)
             if opts:
@@ -301,30 +297,4 @@ class exthelper(object):
         def dec(wrapper):
             self._functionwrappers.append((container, funcname, wrapper))
             return wrapper
-        return dec
-
-    def addattr(self, container, funcname):
-        """Decorated function is to be added to the container
-
-        This function takes two arguments, the container and the name of the
-        function to wrap. The wrapping is performed during `uisetup`.
-
-        Adding attributes to a container like this is discouraged, because the
-        container modification is visible even in repositories that do not
-        have the extension loaded.  Therefore, care must be taken that the
-        function doesn't make assumptions that the extension was loaded for the
-        current repository.  For `ui` and `repo` instances, a better option is
-        to subclass the instance in `uipopulate` and `reposetup` respectively.
-
-        https://www.mercurial-scm.org/wiki/WritingExtensions
-
-        example::
-
-            @eh.addattr(context.changectx, 'babar')
-            def babar(ctx):
-                return 'babar' in ctx.description
-        """
-        def dec(func):
-            self._duckpunchers.append((container, funcname, func))
-            return func
         return dec
