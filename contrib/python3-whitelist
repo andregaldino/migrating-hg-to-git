@@ -554,6 +554,7 @@ test-remotefilelog-bgprefetch.t
 test-remotefilelog-blame.t
 test-remotefilelog-bundle2.t
 test-remotefilelog-bundles.t
+test-remotefilelog-cacheprocess.t
 test-remotefilelog-clone-tree.t
 test-remotefilelog-clone.t
 test-remotefilelog-gcrepack.t
@@ -562,6 +563,7 @@ test-remotefilelog-keepset.t
 test-remotefilelog-local.t
 test-remotefilelog-log.t
 test-remotefilelog-partial-shallow.t
+test-remotefilelog-permissions.t
 test-remotefilelog-permisssions.t
 test-remotefilelog-prefetch.t
 test-remotefilelog-pull-noshallow.t
