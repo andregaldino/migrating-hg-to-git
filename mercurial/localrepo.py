@@ -2409,11 +2409,8 @@ class localrepository(object):
             match.explicitdir = vdirs.append
             match.bad = fail
 
-        wlock = lock = None
-        try:
-            wlock = self.wlock()
-            lock = self.lock() # for recent changelog (see issue4368)
-
+        # lock() for recent changelog (see issue4368)
+        with self.wlock(), self.lock():
             wctx = self[None]
             merge = len(wctx.parents()) > 1
 
@@ -2484,9 +2481,6 @@ class localrepository(object):
                     self.ui.write(
                         _('note: commit message saved in %s\n') % msgfn)
                 raise
-
-        finally:
-            lockmod.release(lock, wlock)
 
         def commithook(node=hex(ret), parent1=hookp1, parent2=hookp2):
             # hack for command that use a temporary commit (eg: histedit)
