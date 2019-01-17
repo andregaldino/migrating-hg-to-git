@@ -282,25 +282,20 @@ def unshare(ui, repo):
     called.
     """
 
-    destlock = None
-    lock = repo.lock()
-    try:
+    with repo.lock():
         # we use locks here because if we race with commit, we
         # can end up with extra data in the cloned revlogs that's
         # not pointed to by changesets, thus causing verify to
         # fail
-
         destlock = copystore(ui, repo, repo.path)
+        with destlock or util.nullcontextmanager():
 
-        sharefile = repo.vfs.join('sharedpath')
-        util.rename(sharefile, sharefile + '.old')
+            sharefile = repo.vfs.join('sharedpath')
+            util.rename(sharefile, sharefile + '.old')
 
-        repo.requirements.discard('shared')
-        repo.requirements.discard('relshared')
-        repo._writerequirements()
-    finally:
-        destlock and destlock.release()
-        lock and lock.release()
+            repo.requirements.discard('shared')
+            repo.requirements.discard('relshared')
+            repo._writerequirements()
 
     # Removing share changes some fundamental properties of the repo instance.
     # So we instantiate a new repo object and operate on it rather than
