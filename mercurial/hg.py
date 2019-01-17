@@ -282,7 +282,7 @@ def unshare(ui, repo):
     called.
     """
 
-    destlock = lock = None
+    destlock = None
     lock = repo.lock()
     try:
         # we use locks here because if we race with commit, we

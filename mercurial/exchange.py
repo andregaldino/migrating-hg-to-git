@@ -297,7 +297,6 @@ def getbundlespec(ui, fh):
                                               'client'))
             elif part.type == 'stream2' and version is None:
                 # A stream2 part requires to be part of a v2 bundle
-                version = "v2"
                 requirements = urlreq.unquote(part.params['requirements'])
                 splitted = requirements.split()
                 params = bundle2._formatrequirementsparams(splitted)

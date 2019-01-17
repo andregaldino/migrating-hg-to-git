@@ -726,7 +726,6 @@ class fixupstate(object):
                 # nothing changed, nothing commited
                 nextp1 = ctx
                 continue
-            msg = ''
             if self._willbecomenoop(memworkingcopy, ctx, nextp1):
                 # changeset is no longer necessary
                 self.replacemap[ctx.node()] = None

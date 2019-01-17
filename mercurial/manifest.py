@@ -283,7 +283,6 @@ class _lazymanifest(object):
         if len(self.extradata) == 0:
             return
         l = []
-        last_cut = 0
         i = 0
         offset = 0
         self.extrainfo = [0] * len(self.positions)

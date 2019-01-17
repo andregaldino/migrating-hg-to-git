@@ -417,7 +417,6 @@ def findsnapshottest(rlog):
         print('  got:      %s' % result15)
 
 def maintest():
-    expected = rl = None
     with newtransaction() as tr:
         rl = newrevlog(recreate=True)
         expected = writecases(rl, tr)

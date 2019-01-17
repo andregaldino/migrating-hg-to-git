@@ -610,7 +610,7 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
     try:
         with opentext(f) as fp:
             try:
-                pre = post = fp.read()
+                pre = fp.read()
             except UnicodeDecodeError as e:
                 print("%s while reading %s" % (e, f))
                 return result

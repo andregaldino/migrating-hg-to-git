@@ -250,10 +250,8 @@ class datapack(basepack.basepack):
                     break
                 if node > midnode:
                     start = mid
-                    startnode = midnode
                 elif node < midnode:
                     end = mid
-                    endnode = midnode
             else:
                 return None
 

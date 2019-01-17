@@ -1251,10 +1251,6 @@ def copy(ui, repo, pats, opts, rename=False):
                 else:
                     ui.warn(_('%s: cannot copy - %s\n') %
                             (relsrc, encoding.strtolocal(inst.strerror)))
-                    if rename:
-                        hint = _("('hg rename --after' to record the rename)\n")
-                    else:
-                        hint = _("('hg copy --after' to record the copy)\n")
                     return True # report a failure
 
         if ui.verbose or not exact:

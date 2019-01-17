@@ -175,7 +175,6 @@ def _decompressblob(raw):
     return zlib.decompress(raw)
 
 def parsefileblob(path, decompress):
-    raw = None
     f = open(path, "rb")
     try:
         raw = f.read()

@@ -97,7 +97,6 @@ def saveremotenames(repo, remotepath, branches=None, bookmarks=None):
 
 def activepath(repo, remote):
     """returns remote path"""
-    local = None
     # is the remote a local peer
     local = remote.local()
 

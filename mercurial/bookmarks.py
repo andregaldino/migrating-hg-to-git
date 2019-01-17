@@ -306,7 +306,6 @@ def _readactive(repo, marks):
     itself as we commit. This function returns the name of that bookmark.
     It is stored in .hg/bookmarks.current
     """
-    mark = None
     try:
         file = repo.vfs('bookmarks.current')
     except IOError as inst:

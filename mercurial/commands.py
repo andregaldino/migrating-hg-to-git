@@ -2633,7 +2633,6 @@ def _abortgraft(ui, repo, graftstate):
         raise error.Abort(_("cannot abort using an old graftstate"))
 
     # changeset from which graft operation was started
-    startctx = None
     if len(newnodes) > 0:
         startctx = repo[newnodes[0]].p1()
     else:
@@ -5503,7 +5502,6 @@ def summary(ui, repo, **opts):
     pnode = parents[0].node()
     marks = []
 
-    ms = None
     try:
         ms = mergemod.mergestate.read(repo)
     except error.UnsupportedMergeRecords as e:
@@ -5908,7 +5906,6 @@ def tags(ui, repo, **opts):
     ui.pager('tags')
     fm = ui.formatter('tags', opts)
     hexfunc = fm.hexfunc
-    tagtype = ""
 
     for t, n in reversed(repo.tagslist()):
         hn = hexfunc(n)

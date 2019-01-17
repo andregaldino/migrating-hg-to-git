@@ -1225,7 +1225,6 @@ class Test(unittest.TestCase):
             killdaemons(env['DAEMON_PIDS'])
             return ret
 
-        output = b''
         proc.tochild.close()
 
         try:

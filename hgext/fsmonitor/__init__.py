@@ -240,24 +240,6 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
         clock = 'c:0:0'
         notefiles = []
 
-    def fwarn(f, msg):
-        self._ui.warn('%s: %s\n' % (self.pathto(f), msg))
-        return False
-
-    def badtype(mode):
-        kind = _('unknown')
-        if stat.S_ISCHR(mode):
-            kind = _('character device')
-        elif stat.S_ISBLK(mode):
-            kind = _('block device')
-        elif stat.S_ISFIFO(mode):
-            kind = _('fifo')
-        elif stat.S_ISSOCK(mode):
-            kind = _('socket')
-        elif stat.S_ISDIR(mode):
-            kind = _('directory')
-        return _('unsupported file type (type is %s)') % kind
-
     ignore = self._ignore
     dirignore = self._dirignore
     if unknown:

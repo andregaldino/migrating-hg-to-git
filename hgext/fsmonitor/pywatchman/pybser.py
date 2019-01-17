@@ -267,7 +267,7 @@ class _BunserDict(object):
             key = key[3:]
         try:
             return self._values[self._keys.index(key)]
-        except ValueError as ex:
+        except ValueError:
             raise KeyError('_BunserDict has no key %s' % key)
 
     def __len__(self):
@@ -420,7 +420,6 @@ class Bunser(object):
 
 
 def _pdu_info_helper(buf):
-    bser_version = -1
     if buf[0:2] == EMPTY_HEADER[0:2]:
         bser_version = 1
         bser_capabilities = 0

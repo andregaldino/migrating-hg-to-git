@@ -145,7 +145,6 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
 
     promptssrc = filemerge.partextras(labels)
     for s, l in sorted(s1.iteritems()):
-        prompts = None
         a = sa.get(s, nullstate)
         ld = l # local state with possible dirty flag for compares
         if wctx.sub(s).dirty():
@@ -218,7 +217,6 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
                 wctx.sub(s).remove()
 
     for s, r in sorted(s2.items()):
-        prompts = None
         if s in s1:
             continue
         elif s not in sa:

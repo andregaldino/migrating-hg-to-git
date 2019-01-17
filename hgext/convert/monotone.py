@@ -335,7 +335,6 @@ class monotone_source(common.converter_source, common.commandline):
 
     def before(self):
         # Check if we have a new enough version to use automate stdio
-        version = 0.0
         try:
             versionstr = self.mtnrunsingle("interface_version")
             version = float(versionstr)

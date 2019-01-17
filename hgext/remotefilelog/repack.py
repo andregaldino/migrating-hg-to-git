@@ -601,7 +601,6 @@ class repacker(object):
                 # TODO: Optimize the deltachain fetching. Since we're
                 # iterating over the different version of the file, we may
                 # be fetching the same deltachain over and over again.
-                meta = None
                 if deltabase != nullid:
                     deltaentry = self.data.getdelta(filename, node)
                     delta, deltabasename, origdeltabase, meta = deltaentry

@@ -938,7 +938,6 @@ class Listener(object):
         self.zeroconf.engine.addReader(self, self.zeroconf.socket)
 
     def handle_read(self):
-        data = addr = port = None
         sock = self.zeroconf.socket
         try:
             data, (addr, port) = sock.recvfrom(_MAX_MSG_ABSOLUTE)
@@ -1230,7 +1229,6 @@ class ServiceInfo(object):
         delay = _LISTENER_TIME
         next = now + delay
         last = now + timeout
-        result = 0
         try:
             zeroconf.addListener(self, DNSQuestion(self.name, _TYPE_ANY,
                                                    _CLASS_IN))

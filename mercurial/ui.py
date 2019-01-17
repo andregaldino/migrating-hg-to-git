@@ -566,8 +566,6 @@ class ui(object):
             candidate = self._data(untrusted).get(s, n, None)
             if candidate is not None:
                 value = candidate
-                section = s
-                name = n
                 break
 
         if self.debugflag and not untrusted and self._reportuntrusted:

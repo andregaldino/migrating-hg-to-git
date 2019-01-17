@@ -123,7 +123,6 @@ def test_missingancestors(seed, rng):
             # reference slow algorithm
             naiveinc = naiveincrementalmissingancestors(ancs, bases)
             seq = []
-            revs = []
             for _ in xrange(inccount):
                 if rng.random() < 0.2:
                     newbases = samplerevs(graphnodes)

@@ -641,7 +641,6 @@ def formathtml(blocks):
 
 def parse(text, indent=0, keep=None, admonitions=None):
     """Parse text into a list of blocks"""
-    pruned = []
     blocks = findblocks(text)
     for b in blocks:
         b['indent'] += indent
@@ -736,7 +735,6 @@ def _getsections(blocks):
     '''return a list of (section path, nesting level, blocks) tuples'''
     nest = ""
     names = ()
-    level = 0
     secs = []
 
     def getname(b):

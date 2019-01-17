@@ -143,7 +143,7 @@ def rawindexentries(ui, repos, req, subdir=''):
                 path = path[:-len(discarded) - 1]
 
                 try:
-                    r = hg.repository(ui, path)
+                    hg.repository(ui, path)
                     directory = False
                 except (IOError, error.RepoError):
                     pass

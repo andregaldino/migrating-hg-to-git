@@ -210,8 +210,6 @@ def removelargefiles(ui, repo, isaddremove, matcher, dryrun, **opts):
             ui.warn(msg % m.rel(f))
         return int(len(files) > 0)
 
-    result = 0
-
     if after:
         remove = deleted
         result = warn(modified + added + clean,

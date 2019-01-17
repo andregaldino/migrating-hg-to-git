@@ -462,7 +462,6 @@ def _imergeauto(repo, mynode, orig, fcd, fco, fca, toolconf, files,
     Generic driver for _imergelocal and _imergeother
     """
     assert localorother is not None
-    tool, toolpath, binary, symlink, scriptfn = toolconf
     r = simplemerge.simplemerge(repo.ui, fcd, fca, fco, label=labels,
                                 localorother=localorother)
     return True, r

@@ -984,7 +984,6 @@ class svn_source(converter_source):
         # TODO: ra.get_file transmits the whole file instead of diffs.
         if file in self.removed:
             return None, None
-        mode = ''
         try:
             new_module, revnum = revsplit(rev)[1:]
             if self.module != new_module:

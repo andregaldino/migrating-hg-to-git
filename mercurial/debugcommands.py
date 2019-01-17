@@ -745,7 +745,6 @@ def debugstate(ui, repo, **opts):
         nodates = True
     datesort = opts.get(r'datesort')
 
-    timestr = ""
     if datesort:
         keyfunc = lambda x: (x[1][3], x[0]) # sort by mtime, then by filename
     else:
@@ -1181,13 +1180,6 @@ def debuginstall(ui, **opts):
     Returns 0 on success.
     '''
     opts = pycompat.byteskwargs(opts)
-
-    def writetemp(contents):
-        (fd, name) = pycompat.mkstemp(prefix="hg-debuginstall-")
-        f = os.fdopen(fd, r"wb")
-        f.write(contents)
-        f.close()
-        return name
 
     problems = 0
 
@@ -2569,7 +2561,6 @@ def debugssl(ui, repo, source=None, **opts):
 
     source, branches = hg.parseurl(ui.expandpath(source))
     url = util.url(source)
-    addr = None
 
     defaultport = {'https': 443, 'ssh': 22}
     if url.scheme in defaultport:

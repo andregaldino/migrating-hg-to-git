@@ -169,7 +169,7 @@ def _terminfosetup(ui, mode, formatted):
             ui._terminfoparams[key[9:]] = newval
     try:
         curses.setupterm()
-    except curses.error as e:
+    except curses.error:
         ui._terminfoparams.clear()
         return
 

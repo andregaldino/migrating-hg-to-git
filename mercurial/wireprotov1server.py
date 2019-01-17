@@ -424,8 +424,6 @@ def getbundle(repo, proto, others):
             raise error.Abort(bundle2requiredmain,
                               hint=bundle2requiredhint)
 
-    prefercompressed = True
-
     try:
         clheads = set(repo.changelog.heads())
         heads = set(opts.get('heads', set()))
@@ -578,7 +576,6 @@ def unbundle(repo, proto, heads):
                     repo.ui.debug('redirecting incoming bundle to %s\n' %
                         tempname)
                     fp = os.fdopen(fd, pycompat.sysstr('wb+'))
-                    r = 0
                     for p in payload:
                         fp.write(p)
                     fp.seek(0)

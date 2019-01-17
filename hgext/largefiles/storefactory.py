@@ -43,7 +43,6 @@ def openstore(repo=None, remote=None, put=False, ui=None):
             path, _branches = hg.parseurl(path)
             remote = hg.peer(repo or ui, {}, path)
         elif path == 'default-push' or path == 'default':
-            path = ''
             remote = repo
         else:
             path, _branches = hg.parseurl(path)

@@ -15,7 +15,6 @@ maxdeltab = 10
 def _genedits(seed, endrev):
     lines = []
     random.seed(seed)
-    rev = 0
     for rev in range(0, endrev):
         n = len(lines)
         a1 = random.randint(0, n)

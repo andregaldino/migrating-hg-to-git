@@ -450,7 +450,6 @@ def synthesize(ui, repo, descpath, **opts):
                 path = fctx.path()
                 changes[path] = '\n'.join(lines) + '\n'
             for __ in xrange(pick(filesremoved)):
-                path = random.choice(mfk)
                 for __ in xrange(10):
                     path = random.choice(mfk)
                     if path not in changes:

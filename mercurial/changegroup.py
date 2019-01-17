@@ -275,7 +275,7 @@ class cg1unpacker(object):
             # because we need to use the top level value (if they exist)
             # in this function.
             srctype = tr.hookargs.setdefault('source', srctype)
-            url = tr.hookargs.setdefault('url', url)
+            tr.hookargs.setdefault('url', url)
             repo.hook('prechangegroup',
                       throw=True, **pycompat.strkwargs(tr.hookargs))
 

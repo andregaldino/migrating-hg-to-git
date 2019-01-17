@@ -911,9 +911,7 @@ def perfphasesremote(ui, repo, dest=None, **opts):
         raise error.Abort((b'default repository not configured!'),
                           hint=(b"see 'hg help config.paths'"))
     dest = path.pushloc or path.loc
-    branches = (path.branch, opts.get(b'branch') or [])
     ui.status((b'analysing phase of %s\n') % util.hidepassword(dest))
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, opts.get(b'rev'))
     other = hg.peer(repo, opts, dest)
 
     # easier to perform discovery through the operation

@@ -1448,7 +1448,6 @@ class binhunk(object):
             hunk.append(l)
             return l.rstrip('\r\n')
 
-        size = 0
         while True:
             line = getline(lr, self.hunk)
             if not line:
@@ -1903,7 +1902,6 @@ def iterhunks(fp):
             if not gitpatches:
                 raise PatchError(_('failed to synchronize metadata for "%s"')
                                  % afile[2:])
-            gp = gitpatches[-1]
             newfile = True
         elif x.startswith('---'):
             # check for a unified diff
@@ -2353,7 +2351,6 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
             modified = filterrel(modified)
             added = filterrel(added)
             removed = filterrel(removed)
-            relfiltered = True
         # filter out copies where either side isn't inside the relative root
         copy = dict(((dst, src) for (dst, src) in copy.iteritems()
                      if dst.startswith(relroot)

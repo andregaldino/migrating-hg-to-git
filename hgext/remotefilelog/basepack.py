@@ -457,8 +457,6 @@ class mutablebasepack(versionmixin):
             pass
 
     def writeindex(self):
-        rawindex = ''
-
         largefanout = len(self.entries) > SMALLFANOUTCUTOFF
         if largefanout:
             params = indexparams(LARGEFANOUTPREFIX, self.VERSION)

@@ -277,7 +277,6 @@ def getoldnodedrevmap(repo, nodelist):
     The ``old node``, if not None, is guaranteed to be the last diff of
     corresponding Differential Revision, and exist in the repo.
     """
-    url, token = readurltoken(repo)
     unfi = repo.unfiltered()
     nodemap = unfi.changelog.nodemap
 

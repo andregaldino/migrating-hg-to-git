@@ -1186,9 +1186,6 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
 
     diff = m1.diff(m2, match=matcher)
 
-    if matcher is None:
-        matcher = matchmod.always('', '')
-
     actions = {}
     for f, ((n1, fl1), (n2, fl2)) in diff.iteritems():
         if n1 and n2: # file exists on both local and remote side

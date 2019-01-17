@@ -61,8 +61,6 @@ class remotefilelog(object):
         return t[s + 2:]
 
     def add(self, text, meta, transaction, linknode, p1=None, p2=None):
-        hashtext = text
-
         # hash with the metadata, like in vanilla filelogs
         hashtext = shallowutil.createrevlogtext(text, meta.get('copy'),
                                                 meta.get('copyrev'))

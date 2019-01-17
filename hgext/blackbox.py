@@ -118,7 +118,6 @@ class blackboxlogger(object):
         date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
         user = procutil.getuser()
         pid = '%d' % procutil.getpid()
-        rev = '(unknown)'
         changed = ''
         ctx = self._repo[None]
         parents = ctx.parents()

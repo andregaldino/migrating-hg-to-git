@@ -71,7 +71,6 @@ def _getannotate(repo, proto, path, lastnode):
             for p in [actx.revmappath, actx.linelogpath]:
                 if not os.path.exists(p):
                     continue
-                content = ''
                 with open(p, 'rb') as f:
                     content = f.read()
                 vfsbaselen = len(repo.vfs.base + '/')

@@ -1804,7 +1804,6 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
 
 def pullrebase(orig, ui, repo, *args, **opts):
     'Call rebase after pull if the latter has been invoked with --rebase'
-    ret = None
     if opts.get(r'rebase'):
         if ui.configbool('commands', 'rebase.requiredest'):
             msg = _('rebase destination required by configuration')
