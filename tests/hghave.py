@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import errno
 import os
 import re
 import socket
@@ -118,13 +117,8 @@ def matchoutput(cmd, regexp, ignorestatus=False):
     is matched by the supplied regular expression.
     """
     r = re.compile(regexp)
-    try:
-        p = subprocess.Popen(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-        ret = -1
+    p = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     s = p.communicate()[0]
     ret = p.returncode
     return (ignorestatus or not ret) and r.search(s)
