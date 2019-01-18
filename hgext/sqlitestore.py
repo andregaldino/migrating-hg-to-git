@@ -63,6 +63,7 @@ from mercurial.thirdparty import (
 from mercurial import (
     ancestor,
     dagop,
+    encoding,
     error,
     extensions,
     localrepo,
@@ -558,7 +559,8 @@ class sqlitefilestore(object):
         return not storageutil.filedataequivalent(self, node, fulltext)
 
     def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
-                      assumehaveparentrevisions=False, deltaprevious=False):
+                      assumehaveparentrevisions=False,
+                      deltamode=repository.CG_DELTAMODE_STD):
         if nodesorder not in ('nodes', 'storage', 'linear', None):
             raise error.ProgrammingError('unhandled value for nodesorder: %s' %
                                          nodesorder)
@@ -589,7 +591,7 @@ class sqlitefilestore(object):
             deltaparentfn=deltabases.__getitem__,
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
-            deltaprevious=deltaprevious):
+            deltamode=deltamode):
 
             yield delta
 
@@ -1020,7 +1022,7 @@ class sqliterepository(localrepo.localrepository):
 def makedb(path):
     """Construct a database handle for a database at path."""
 
-    db = sqlite3.connect(path)
+    db = sqlite3.connect(encoding.strfromlocal(path))
     db.text_factory = bytes
 
     res = db.execute(r'PRAGMA user_version').fetchone()[0]

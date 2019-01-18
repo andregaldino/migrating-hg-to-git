@@ -46,22 +46,21 @@ def _findlimit(repo, a, b):
     #   - quit when interesting revs is zero
 
     cl = repo.changelog
-    working = len(cl) # pseudo rev for the working directory
     if a is None:
-        a = working
+        a = node.wdirrev
     if b is None:
-        b = working
+        b = node.wdirrev
 
     side = {a: -1, b: 1}
     visit = [-a, -b]
     heapq.heapify(visit)
     interesting = len(visit)
     hascommonancestor = False
-    limit = working
+    limit = node.wdirrev
 
     while interesting:
         r = -heapq.heappop(visit)
-        if r == working:
+        if r == node.wdirrev:
             parents = [cl.rev(p) for p in repo.dirstate.parents()]
         else:
             parents = cl.parentrevs(r)
@@ -132,14 +131,14 @@ def _chain(src, dst, a, b):
 
     return t
 
-def _tracefile(fctx, am, limit=-1):
+def _tracefile(fctx, am, limit=node.nullrev):
     """return file context that is the ancestor of fctx present in ancestor
     manifest am, stopping after the first ancestor lower than limit"""
 
     for f in fctx.ancestors():
         if am.get(f.path(), None) == f.filenode():
             return f
-        if limit >= 0 and f.linkrev() < limit and f.rev() < limit:
+        if limit >= 0 and not f.isintroducedafter(limit):
             return None
 
 def _dirstatecopies(d, match=None):
@@ -171,7 +170,7 @@ def _committedforwardcopies(a, b, match):
             % (a, b))
     limit = _findlimit(repo, a.rev(), b.rev())
     if limit is None:
-        limit = -1
+        limit = node.nullrev
     if debug:
         dbg('debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()

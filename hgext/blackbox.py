@@ -33,11 +33,15 @@ Examples::
   # rotate up to N log files when the current one gets too big
   maxfiles = 3
 
+  [blackbox]
+  # Include nanoseconds in log entries with %f (see Python function
+  # datetime.datetime.strftime)
+  date-format = '%Y-%m-%d @ %H:%M:%S.%f'
+
 """
 
 from __future__ import absolute_import
 
-import errno
 import re
 
 from mercurial.i18n import _
@@ -45,10 +49,8 @@ from mercurial.node import hex
 
 from mercurial import (
     encoding,
-    pycompat,
+    loggingutil,
     registrar,
-    ui as uimod,
-    util,
 )
 from mercurial.utils import (
     dateutil,
@@ -82,131 +84,69 @@ configitem('blackbox', 'maxfiles',
 configitem('blackbox', 'track',
     default=lambda: ['*'],
 )
+configitem('blackbox', 'date-format',
+    default='%Y/%m/%d %H:%M:%S',
+)
 
-lastui = None
+_lastlogger = loggingutil.proxylogger()
 
-def _openlogfile(ui, vfs):
-    def rotate(oldpath, newpath):
-        try:
-            vfs.unlink(newpath)
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                ui.debug("warning: cannot remove '%s': %s\n" %
-                         (newpath, err.strerror))
-        try:
-            if newpath:
-                vfs.rename(oldpath, newpath)
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                ui.debug("warning: cannot rename '%s' to '%s': %s\n" %
-                         (newpath, oldpath, err.strerror))
+class blackboxlogger(object):
+    def __init__(self, ui, repo):
+        self._repo = repo
+        self._trackedevents = set(ui.configlist('blackbox', 'track'))
+        self._maxfiles = ui.configint('blackbox', 'maxfiles')
+        self._maxsize = ui.configbytes('blackbox', 'maxsize')
+        self._inlog = False
 
-    maxsize = ui.configbytes('blackbox', 'maxsize')
-    name = 'blackbox.log'
-    if maxsize > 0:
+    def tracked(self, event):
+        return b'*' in self._trackedevents or event in self._trackedevents
+
+    def log(self, ui, event, msg, opts):
+        # self._log() -> ctx.dirty() may create new subrepo instance, which
+        # ui is derived from baseui. So the recursion guard in ui.log()
+        # doesn't work as it's local to the ui instance.
+        if self._inlog:
+            return
+        self._inlog = True
         try:
-            st = vfs.stat(name)
-        except OSError:
-            pass
+            self._log(ui, event, msg, opts)
+        finally:
+            self._inlog = False
+
+    def _log(self, ui, event, msg, opts):
+        default = ui.configdate('devel', 'default-date')
+        date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
+        user = procutil.getuser()
+        pid = '%d' % procutil.getpid()
+        rev = '(unknown)'
+        changed = ''
+        ctx = self._repo[None]
+        parents = ctx.parents()
+        rev = ('+'.join([hex(p.node()) for p in parents]))
+        if (ui.configbool('blackbox', 'dirty') and
+            ctx.dirty(missing=True, merge=False, branch=False)):
+            changed = '+'
+        if ui.configbool('blackbox', 'logsource'):
+            src = ' [%s]' % event
         else:
-            if st.st_size >= maxsize:
-                path = vfs.join(name)
-                maxfiles = ui.configint('blackbox', 'maxfiles')
-                for i in pycompat.xrange(maxfiles - 1, 1, -1):
-                    rotate(oldpath='%s.%d' % (path, i - 1),
-                           newpath='%s.%d' % (path, i))
-                rotate(oldpath=path,
-                       newpath=maxfiles > 0 and path + '.1')
-    return vfs(name, 'a')
+            src = ''
+        try:
+            fmt = '%s %s @%s%s (%s)%s> %s'
+            args = (date, user, rev, changed, pid, src, msg)
+            with loggingutil.openlogfile(
+                    ui, self._repo.vfs, name='blackbox.log',
+                    maxfiles=self._maxfiles, maxsize=self._maxsize) as fp:
+                fp.write(fmt % args)
+        except (IOError, OSError) as err:
+            # deactivate this to avoid failed logging again
+            self._trackedevents.clear()
+            ui.debug('warning: cannot write to blackbox.log: %s\n' %
+                     encoding.strtolocal(err.strerror))
+            return
+        _lastlogger.logger = self
 
-def wrapui(ui):
-    class blackboxui(ui.__class__):
-        @property
-        def _bbvfs(self):
-            vfs = None
-            repo = getattr(self, '_bbrepo', None)
-            if repo:
-                vfs = repo.vfs
-                if not vfs.isdir('.'):
-                    vfs = None
-            return vfs
-
-        @util.propertycache
-        def track(self):
-            return self.configlist('blackbox', 'track')
-
-        def debug(self, *msg, **opts):
-            super(blackboxui, self).debug(*msg, **opts)
-            if self.debugflag:
-                self.log('debug', '%s', ''.join(msg))
-
-        def log(self, event, *msg, **opts):
-            global lastui
-            super(blackboxui, self).log(event, *msg, **opts)
-
-            if not '*' in self.track and not event in self.track:
-                return
-
-            if self._bbvfs:
-                ui = self
-            else:
-                # certain ui instances exist outside the context of
-                # a repo, so just default to the last blackbox that
-                # was seen.
-                ui = lastui
-
-            if not ui:
-                return
-            vfs = ui._bbvfs
-            if not vfs:
-                return
-
-            repo = getattr(ui, '_bbrepo', None)
-            if not lastui or repo:
-                lastui = ui
-            if getattr(ui, '_bbinlog', False):
-                # recursion and failure guard
-                return
-            ui._bbinlog = True
-            default = self.configdate('devel', 'default-date')
-            date = dateutil.datestr(default, '%Y/%m/%d %H:%M:%S')
-            user = procutil.getuser()
-            pid = '%d' % procutil.getpid()
-            formattedmsg = msg[0] % msg[1:]
-            rev = '(unknown)'
-            changed = ''
-            if repo:
-                ctx = repo[None]
-                parents = ctx.parents()
-                rev = ('+'.join([hex(p.node()) for p in parents]))
-                if (ui.configbool('blackbox', 'dirty') and
-                    ctx.dirty(missing=True, merge=False, branch=False)):
-                    changed = '+'
-            if ui.configbool('blackbox', 'logsource'):
-                src = ' [%s]' % event
-            else:
-                src = ''
-            try:
-                fmt = '%s %s @%s%s (%s)%s> %s'
-                args = (date, user, rev, changed, pid, src, formattedmsg)
-                with _openlogfile(ui, vfs) as fp:
-                    fp.write(fmt % args)
-            except (IOError, OSError) as err:
-                self.debug('warning: cannot write to blackbox.log: %s\n' %
-                           encoding.strtolocal(err.strerror))
-                # do not restore _bbinlog intentionally to avoid failed
-                # logging again
-            else:
-                ui._bbinlog = False
-
-        def setrepo(self, repo):
-            self._bbrepo = repo
-
-    ui.__class__ = blackboxui
-    uimod.ui = blackboxui
-
-def uisetup(ui):
-    wrapui(ui)
+def uipopulate(ui):
+    ui.setlogger(b'blackbox', _lastlogger)
 
 def reposetup(ui, repo):
     # During 'hg pull' a httppeer repo is created to represent the remote repo.
@@ -215,14 +155,15 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    if util.safehasattr(ui, 'setrepo'):
-        ui.setrepo(repo)
+    # Since blackbox.log is stored in the repo directory, the logger should be
+    # instantiated per repository.
+    logger = blackboxlogger(ui, repo)
+    ui.setlogger(b'blackbox', logger)
 
-        # Set lastui even if ui.log is not called. This gives blackbox a
-        # fallback place to log.
-        global lastui
-        if lastui is None:
-            lastui = ui
+    # Set _lastlogger even if ui.log is not called. This gives blackbox a
+    # fallback place to log
+    if _lastlogger.logger is None:
+        _lastlogger.logger = logger
 
     repo._wlockfreeprefix.add('blackbox.log')
 

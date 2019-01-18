@@ -13,12 +13,16 @@ from .i18n import _
 from . import (
     error,
     match as matchmod,
+    merge,
     repository,
     sparse,
     util,
 )
 
+# The file in .hg/store/ that indicates which paths exit in the store
 FILENAME = 'narrowspec'
+# The file in .hg/ that indicates which paths exit in the dirstate
+DIRSTATE_FILENAME = 'narrowspec.dirstate'
 
 # Pattern prefixes that are allowed in narrow patterns. This list MUST
 # only contain patterns that are fast and safe to evaluate. Keep in mind
@@ -127,18 +131,9 @@ def match(root, include=None, exclude=None):
     return matchmod.match(root, '', [], include=include or [],
                           exclude=exclude or [])
 
-def load(repo):
-    try:
-        spec = repo.svfs.read(FILENAME)
-    except IOError as e:
-        # Treat "narrowspec does not exist" the same as "narrowspec file exists
-        # and is empty".
-        if e.errno == errno.ENOENT:
-            return set(), set()
-        raise
+def parseconfig(ui, spec):
     # maybe we should care about the profiles returned too
-    includepats, excludepats, profiles = sparse.parseconfig(repo.ui, spec,
-                                                            'narrow')
+    includepats, excludepats, profiles = sparse.parseconfig(ui, spec, 'narrow')
     if profiles:
         raise error.Abort(_("including other spec files using '%include' is not"
                             " supported in narrowspec"))
@@ -148,25 +143,56 @@ def load(repo):
 
     return includepats, excludepats
 
+def load(repo):
+    try:
+        spec = repo.svfs.read(FILENAME)
+    except IOError as e:
+        # Treat "narrowspec does not exist" the same as "narrowspec file exists
+        # and is empty".
+        if e.errno == errno.ENOENT:
+            return set(), set()
+        raise
+
+    return parseconfig(repo.ui, spec)
+
 def save(repo, includepats, excludepats):
     validatepatterns(includepats)
     validatepatterns(excludepats)
     spec = format(includepats, excludepats)
     repo.svfs.write(FILENAME, spec)
 
+def copytoworkingcopy(repo):
+    spec = repo.svfs.read(FILENAME)
+    repo.vfs.write(DIRSTATE_FILENAME, spec)
+
 def savebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    vfs = repo.vfs
-    vfs.tryunlink(backupname)
-    util.copyfile(repo.svfs.join(FILENAME), vfs.join(backupname), hardlink=True)
+    svfs = repo.svfs
+    svfs.tryunlink(backupname)
+    util.copyfile(svfs.join(FILENAME), svfs.join(backupname), hardlink=True)
 
 def restorebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    util.rename(repo.vfs.join(backupname), repo.svfs.join(FILENAME))
+    util.rename(repo.svfs.join(backupname), repo.svfs.join(FILENAME))
 
-def clearbackup(repo, backupname):
+def savewcbackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    vfs = repo.vfs
+    vfs.tryunlink(backupname)
+    # It may not exist in old repos
+    if vfs.exists(DIRSTATE_FILENAME):
+        util.copyfile(vfs.join(DIRSTATE_FILENAME), vfs.join(backupname),
+                      hardlink=True)
+
+def restorewcbackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    util.rename(repo.vfs.join(backupname), repo.vfs.join(DIRSTATE_FILENAME))
+
+def clearwcbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
     repo.vfs.unlink(backupname)
@@ -223,3 +249,66 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     else:
         res_includes = set(req_includes)
     return res_includes, res_excludes, invalid_includes
+
+# These two are extracted for extensions (specifically for Google's CitC file
+# system)
+def _deletecleanfiles(repo, files):
+    for f in files:
+        repo.wvfs.unlinkpath(f)
+
+def _writeaddedfiles(repo, pctx, files):
+    actions = merge.emptyactions()
+    addgaction = actions[merge.ACTION_GET].append
+    mf = repo['.'].manifest()
+    for f in files:
+        if not repo.wvfs.exists(f):
+            addgaction((f, (mf.flags(f), False), "narrowspec updated"))
+    merge.applyupdates(repo, actions, wctx=repo[None],
+                       mctx=repo['.'], overwrite=False)
+
+def checkworkingcopynarrowspec(repo):
+    storespec = repo.svfs.tryread(FILENAME)
+    wcspec = repo.vfs.tryread(DIRSTATE_FILENAME)
+    if wcspec != storespec:
+        raise error.Abort(_("working copy's narrowspec is stale"),
+                          hint=_("run 'hg tracked --update-working-copy'"))
+
+def updateworkingcopy(repo, assumeclean=False):
+    """updates the working copy and dirstate from the store narrowspec
+
+    When assumeclean=True, files that are not known to be clean will also
+    be deleted. It is then up to the caller to make sure they are clean.
+    """
+    oldspec = repo.vfs.tryread(DIRSTATE_FILENAME)
+    newspec = repo.svfs.tryread(FILENAME)
+
+    oldincludes, oldexcludes = parseconfig(repo.ui, oldspec)
+    newincludes, newexcludes = parseconfig(repo.ui, newspec)
+    oldmatch = match(repo.root, include=oldincludes, exclude=oldexcludes)
+    newmatch = match(repo.root, include=newincludes, exclude=newexcludes)
+    addedmatch = matchmod.differencematcher(newmatch, oldmatch)
+    removedmatch = matchmod.differencematcher(oldmatch, newmatch)
+
+    ds = repo.dirstate
+    lookup, status = ds.status(removedmatch, subrepos=[], ignored=False,
+                               clean=True, unknown=False)
+    trackeddirty = status.modified + status.added
+    clean = status.clean
+    if assumeclean:
+        assert not trackeddirty
+        clean.extend(lookup)
+    else:
+        trackeddirty.extend(lookup)
+    _deletecleanfiles(repo, clean)
+    for f in sorted(trackeddirty):
+        repo.ui.status(_('not deleting possibly dirty file %s\n') % f)
+    for f in clean + trackeddirty:
+        ds.drop(f)
+
+    repo.narrowpats = newincludes, newexcludes
+    repo._narrowmatch = newmatch
+    pctx = repo['.']
+    newfiles = [f for f in pctx.manifest().walk(addedmatch) if f not in ds]
+    for f in newfiles:
+        ds.normallookup(f)
+    _writeaddedfiles(repo, pctx, newfiles)

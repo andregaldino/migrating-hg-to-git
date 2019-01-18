@@ -20,8 +20,10 @@ Check the basic files created:
 
   $ ls .hg
   00changelog.i
+  cache
   requires
   store
+  wcache
 
 Should be empty:
 

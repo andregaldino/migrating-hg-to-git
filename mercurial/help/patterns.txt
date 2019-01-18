@@ -20,7 +20,9 @@ absolute path (relative to the repository root).
 
 To use an extended glob, start a name with ``glob:``. Globs are rooted
 at the current directory; a glob such as ``*.c`` will only match files
-in the current directory ending with ``.c``.
+in the current directory ending with ``.c``. ``rootglob:`` can be used
+instead of ``glob:`` for a glob that is rooted at the root of the
+repository.
 
 The supported glob syntax extensions are ``**`` to match any string
 across path separators and ``{a,b}`` to mean "a or b".
@@ -64,6 +66,7 @@ Glob examples::
   foo/*.c        any name ending in ".c" in the directory foo
   foo/**.c       any name ending in ".c" in any subdirectory of foo
                  including itself.
+  rootglob:*.c   any name ending in ".c" in the root of the repository
 
 Regexp examples::
 

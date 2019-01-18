@@ -1242,19 +1242,21 @@ Check that share works with subrepo
   ../shared/subrepo-1/.hg/hgrc
   ../shared/subrepo-1/.hg/requires
   ../shared/subrepo-1/.hg/sharedpath
+  ../shared/subrepo-1/.hg/wcache
   ../shared/subrepo-2
   ../shared/subrepo-2/.hg
   ../shared/subrepo-2/.hg/branch
   ../shared/subrepo-2/.hg/cache
-  ../shared/subrepo-2/.hg/cache/checkisexec (execbit !)
-  ../shared/subrepo-2/.hg/cache/checklink (symlink !)
-  ../shared/subrepo-2/.hg/cache/checklink-target (symlink !)
   ../shared/subrepo-2/.hg/cache/storehash
   ../shared/subrepo-2/.hg/cache/storehash/* (glob)
   ../shared/subrepo-2/.hg/dirstate
   ../shared/subrepo-2/.hg/hgrc
   ../shared/subrepo-2/.hg/requires
   ../shared/subrepo-2/.hg/sharedpath
+  ../shared/subrepo-2/.hg/wcache
+  ../shared/subrepo-2/.hg/wcache/checkisexec (execbit !)
+  ../shared/subrepo-2/.hg/wcache/checklink (symlink !)
+  ../shared/subrepo-2/.hg/wcache/checklink-target (symlink !)
   ../shared/subrepo-2/file
   $ hg -R ../shared in
   abort: repository default not found!

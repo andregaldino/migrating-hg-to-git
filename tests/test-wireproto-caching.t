@@ -432,7 +432,8 @@ A non-cacheable command does not instantiate cacher
       ]),
       b'rawrepoformats': [
         b'generaldelta',
-        b'revlogv1'
+        b'revlogv1',
+        b'sparserevlog'
       ]
     }
   ]

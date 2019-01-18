@@ -609,13 +609,12 @@ Update a bookmark right after the initial lookup -B (issue4689)
   > # call.
   > listkeys.makecommit= sh $TESTTMP/listkeys_makecommit.sh
   > EOF
-
-(new config need server restart)
-
-  $ killdaemons.py
-  $ hg serve -R ../pull-race -p $HGPORT -d --pid-file=../pull-race.pid -E main-error.log
-  $ cat ../pull-race.pid >> $DAEMON_PIDS
-
+  $ restart_server() {
+  >  "$TESTDIR/killdaemons.py" $DAEMON_PIDS
+  >  hg serve -R ../pull-race -p $HGPORT -d --pid-file=../pull-race.pid -E main-error.log
+  >  cat ../pull-race.pid >> $DAEMON_PIDS
+  > }
+  $ restart_server # new config need server restart
   $ hg -R $TESTTMP/pull-race book
      @                         1:0d2164f0ce0d
      X                         1:0d2164f0ce0d
@@ -638,6 +637,54 @@ Update a bookmark right after the initial lookup -B (issue4689)
      @                         1:0d2164f0ce0d
      X                         1:0d2164f0ce0d
    * Y                         5:35d1ef0a8d1b
+     Z                         1:0d2164f0ce0d
+
+Update a bookmark right after the initial lookup -r (issue4700)
+
+  $ echo c7 > ../pull-race/f3 # to be committed during the race
+  $ cat <<EOF > ../lookuphook.py
+  > """small extensions adding a hook after wireprotocol lookup to test race"""
+  > import functools
+  > from mercurial import wireprotov1server, wireprotov2server
+  > 
+  > def wrappedlookup(orig, repo, *args, **kwargs):
+  >     ret = orig(repo, *args, **kwargs)
+  >     repo.hook(b'lookup')
+  >     return ret
+  > for table in [wireprotov1server.commands, wireprotov2server.COMMANDS]:
+  >   table[b'lookup'].func = functools.partial(wrappedlookup, table[b'lookup'].func)
+  > EOF
+  $ cat <<EOF > ../pull-race/.hg/hgrc
+  > [extensions]
+  > lookuphook=$TESTTMP/lookuphook.py
+  > [hooks]
+  > lookup.makecommit= sh $TESTTMP/listkeys_makecommit.sh
+  > EOF
+  $ restart_server # new config need server restart
+  $ hg -R $TESTTMP/pull-race book
+     @                         1:0d2164f0ce0d
+     X                         1:0d2164f0ce0d
+   * Y                         6:0d60821d2197
+     Z                         1:0d2164f0ce0d
+  $ hg pull -r Y
+  pulling from http://localhost:$HGPORT/
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  updating bookmark Y
+  new changesets 0d60821d2197 (1 drafts)
+  (run 'hg update' to get a working copy)
+  $ hg book
+     @                         1:0d2164f0ce0d
+     X                         1:0d2164f0ce0d
+   * Y                         6:0d60821d2197
+     Z                         1:0d2164f0ce0d
+  $ hg -R $TESTTMP/pull-race book
+     @                         1:0d2164f0ce0d
+     X                         1:0d2164f0ce0d
+   * Y                         7:714424d9e8b8
      Z                         1:0d2164f0ce0d
 
 (done with this section of the test)

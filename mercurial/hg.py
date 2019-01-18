@@ -38,6 +38,7 @@ from . import (
     narrowspec,
     node,
     phases,
+    repository as repositorymod,
     scmutil,
     sshpeer,
     statichttprepo,
@@ -160,23 +161,19 @@ def _peerorrepo(ui, path, create=False, presetupfuncs=None,
     obj = _peerlookup(path).instance(ui, path, create, intents=intents,
                                      createopts=createopts)
     ui = getattr(obj, "ui", ui)
-    if ui.configbool('devel', 'debug.extensions'):
-        log = lambda msg, *values: ui.debug('debug.extensions: ',
-            msg % values, label='debug.extensions')
-    else:
-        log = lambda *a, **kw: None
     for f in presetupfuncs or []:
         f(ui, obj)
-    log('- executing reposetup hooks\n')
+    ui.log(b'extension', b'- executing reposetup hooks\n')
     with util.timedcm('all reposetup') as allreposetupstats:
         for name, module in extensions.extensions(ui):
-            log('  - running reposetup for %s\n' % (name,))
+            ui.log(b'extension', b'  - running reposetup for %s\n', name)
             hook = getattr(module, 'reposetup', None)
             if hook:
                 with util.timedcm('reposetup %r', name) as stats:
                     hook(ui, obj)
-                log('  > reposetup for %r took %s\n', name, stats)
-    log('> all reposetup took %s\n', allreposetupstats)
+                ui.log(b'extension', b'  > reposetup for %s took %s\n',
+                       name, stats)
+    ui.log(b'extension', b'> all reposetup took %s\n', allreposetupstats)
     if not obj.local():
         for f in wirepeersetupfuncs:
             f(ui, obj)
@@ -270,6 +267,7 @@ def share(ui, source, dest=None, update=True, bookmarks=True, defaultpath=None,
     })
 
     postshare(srcrepo, r, defaultpath=defaultpath)
+    r = repository(ui, dest)
     _postshareupdate(r, update, checkout=checkout)
     return r
 
@@ -334,6 +332,9 @@ def postshare(sourcerepo, destrepo, defaultpath=None):
         template = ('[paths]\n'
                     'default = %s\n')
         destrepo.vfs.write('hgrc', util.tonativeeol(template % default))
+    if repositorymod.NARROW_REQUIREMENT in sourcerepo.requirements:
+        with destrepo.wlock():
+            narrowspec.copytoworkingcopy(destrepo)
 
 def _postshareupdate(repo, update, checkout=None):
     """Maybe perform a working directory update after a shared repo is created.
@@ -451,15 +452,14 @@ def clonewithshare(ui, peeropts, sharepath, source, srcpeer, dest, pull=False,
         defaultpath = source
 
     sharerepo = repository(ui, path=sharepath)
-    share(ui, sharerepo, dest=dest, update=False, bookmarks=False,
-          defaultpath=defaultpath)
+    destrepo = share(ui, sharerepo, dest=dest, update=False, bookmarks=False,
+                     defaultpath=defaultpath)
 
     # We need to perform a pull against the dest repo to fetch bookmarks
     # and other non-store data that isn't shared by default. In the case of
     # non-existing shared repo, this means we pull from the remote twice. This
     # is a bit weird. But at the time it was implemented, there wasn't an easy
     # way to pull just non-changegroup data.
-    destrepo = repository(ui, path=dest)
     exchange.pull(destrepo, srcpeer, heads=revs)
 
     _postshareupdate(destrepo, update)
@@ -735,8 +735,9 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
             local = destpeer.local()
             if local:
                 if narrow:
-                    with local.lock():
+                    with local.wlock(), local.lock():
                         local.setnarrowpats(storeincludepats, storeexcludepats)
+                        narrowspec.copytoworkingcopy(local)
 
                 u = util.url(abspath)
                 defaulturl = bytes(u)

@@ -1320,7 +1320,16 @@ class lrucachedict(object):
         self.insert(k, v)
 
     def __delitem__(self, k):
-        node = self._cache.pop(k)
+        self.pop(k)
+
+    def pop(self, k, default=_notset):
+        try:
+            node = self._cache.pop(k)
+        except KeyError:
+            if default is _notset:
+                raise
+            return default
+        value = node.value
         self.totalcost -= node.cost
         node.markempty()
 
@@ -1329,12 +1338,28 @@ class lrucachedict(object):
         self._movetohead(node)
         self._head = node.next
 
+        return value
+
     # Additional dict methods.
 
     def get(self, k, default=None):
         try:
             return self.__getitem__(k)
         except KeyError:
+            return default
+
+    def peek(self, k, default=_notset):
+        """Get the specified item without moving it to the head
+
+        Unlike get(), this doesn't mutate the internal state. But be aware
+        that it doesn't mean peek() is thread safe.
+        """
+        try:
+            node = self._cache[k]
+            return node.value
+        except KeyError:
+            if default is _notset:
+                raise
             return default
 
     def clear(self):
@@ -1535,6 +1560,7 @@ class propertycache(object):
 
 def clearcachedproperty(obj, prop):
     '''clear a cached property value, if one has been set'''
+    prop = pycompat.sysstr(prop)
     if prop in obj.__dict__:
         del obj.__dict__[prop]
 
@@ -2019,7 +2045,7 @@ def splitpath(path):
     function if need.'''
     return path.split(pycompat.ossep)
 
-def mktempcopy(name, emptyok=False, createmode=None):
+def mktempcopy(name, emptyok=False, createmode=None, enforcewritable=False):
     """Create a temporary file with the same contents from name
 
     The permission bits are copied from the original file.
@@ -2035,7 +2061,8 @@ def mktempcopy(name, emptyok=False, createmode=None):
     # Temporary files are created with mode 0600, which is usually not
     # what we want.  If the original file already exists, just copy
     # its mode.  Otherwise, manually obey umask.
-    copymode(name, temp, createmode)
+    copymode(name, temp, createmode, enforcewritable)
+
     if emptyok:
         return temp
     try:
@@ -2178,7 +2205,9 @@ class atomictempfile(object):
     def __init__(self, name, mode='w+b', createmode=None, checkambig=False):
         self.__name = name      # permanent name
         self._tempname = mktempcopy(name, emptyok=('w' in mode),
-                                    createmode=createmode)
+                                    createmode=createmode,
+                                    enforcewritable=('w' in mode))
+
         self._fp = posixfile(self._tempname, mode)
         self._checkambig = checkambig
 

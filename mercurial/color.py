@@ -245,7 +245,7 @@ def _modesetup(ui):
             # Since "ansi" could result in terminal gibberish, we error on the
             # side of selecting "win32". However, if w32effects is not defined,
             # we almost certainly don't support "win32", so don't even try.
-            # w32ffects is not populated when stdout is redirected, so checking
+            # w32effects is not populated when stdout is redirected, so checking
             # it first avoids win32 calls in a state known to error out.
             if ansienviron or not w32effects or win32.enablevtmode():
                 realmode = 'ansi'
@@ -487,11 +487,7 @@ if pycompat.iswindows:
             ansire = re.compile(b'\033\[([^m]*)m([^\033]*)(.*)',
                                 re.MULTILINE | re.DOTALL)
 
-    def win32print(ui, writefunc, *msgs, **opts):
-        for text in msgs:
-            _win32print(ui, text, writefunc, **opts)
-
-    def _win32print(ui, text, writefunc, **opts):
+    def win32print(ui, writefunc, text, **opts):
         label = opts.get(r'label', '')
         attr = origattr
 
@@ -529,7 +525,7 @@ if pycompat.iswindows:
                         attr = mapcolor(int(sattr), attr)
                 ui.flush()
                 _kernel32.SetConsoleTextAttribute(stdout, attr)
-                writefunc(m.group(2), **opts)
+                writefunc(m.group(2))
                 m = re.match(ansire, m.group(3))
         finally:
             # Explicitly reset original attributes

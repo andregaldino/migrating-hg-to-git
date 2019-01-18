@@ -833,9 +833,9 @@ Stream clone with fncachestore
 Packed bundle
   $ hg -R deeprepo debugcreatestreamclonebundle repo-packed.hg
   writing 5330 bytes for 18 files
-  bundle requirements: generaldelta, revlogv1, treemanifest
+  bundle requirements: generaldelta, revlogv1, sparserevlog, treemanifest
   $ hg debugbundle --spec repo-packed.hg
-  none-packed1;requirements%3Dgeneraldelta%2Crevlogv1%2Ctreemanifest
+  none-packed1;requirements%3Dgeneraldelta%2Crevlogv1%2Csparserevlog%2Ctreemanifest
 
 #endif
 

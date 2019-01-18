@@ -131,7 +131,7 @@ non-lfs content, and the extension enabled.
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
   beginning upgrade...
   repository locked and read-only

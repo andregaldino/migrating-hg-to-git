@@ -481,8 +481,7 @@ def _getfnodes(ui, repo, nodes):
 
     duration = util.timer() - starttime
     ui.log('tagscache',
-           '%d/%d cache hits/lookups in %0.4f '
-           'seconds\n',
+           '%d/%d cache hits/lookups in %0.4f seconds\n',
            fnodescache.hitcount, fnodescache.lookupcount, duration)
     return cachefnode
 

@@ -57,6 +57,9 @@ perfstatus
                  benchmark the update of a branchmap
    perfbranchmapload
                  benchmark reading the branchmap
+   perfbranchmapupdate
+                 benchmark branchmap update from for <base> revs to <target>
+                 revs
    perfbundleread
                  Benchmark reading of bundle files.
    perfcca       (no help text available)
@@ -76,6 +79,9 @@ perfstatus
                  (no help text available)
    perfdirstatewrite
                  (no help text available)
+   perfdiscovery
+                 benchmark discovery between local repo and the peer at given
+                 path
    perffncacheencode
                  (no help text available)
    perffncacheload
@@ -83,6 +89,10 @@ perfstatus
    perffncachewrite
                  (no help text available)
    perfheads     (no help text available)
+   perfhelper-pathcopies
+                 find statistic about potential parameters for the
+                 'perftracecopies'
+   perfignore    benchmark operation related to computing ignore
    perfindex     (no help text available)
    perflinelogedits
                  (no help text available)
@@ -101,10 +111,11 @@ perfstatus
                  (no help text available)
    perfparents   (no help text available)
    perfpathcopies
-                 (no help text available)
+                 benchmark the copy tracing logic
    perfphases    benchmark phasesets computation
    perfphasesremote
                  benchmark time needed to analyse phases of the remote server
+   perfprogress  printing of progress bars
    perfrawfiles  (no help text available)
    perfrevlogchunks
                  Benchmark operations on revlog chunks.
@@ -114,6 +125,8 @@ perfstatus
                  Benchmark obtaining a revlog revision.
    perfrevlogrevisions
                  Benchmark reading a series of revisions from a revlog.
+   perfrevlogwrite
+                 Benchmark writing a series of revisions to a revlog.
    perfrevrange  (no help text available)
    perfrevset    benchmark the execution time of a revset
    perfstartup   (no help text available)
@@ -138,8 +151,12 @@ perfstatus
   $ hg perfunidiff --alldata 1
   $ hg perfbookmarks
   $ hg perfbranchmap
+  $ hg perfbranchmapload
+  $ hg perfbranchmapupdate --base "not tip" --target "tip"
+  benchmark of branchmap with 3 revisions with 1 new ones
   $ hg perfcca
   $ hg perfchangegroupchangelog
+  $ hg perfchangegroupchangelog --cgversion 01
   $ hg perfchangeset 2
   $ hg perfctxfiles 2
   $ hg perfdiffwd
@@ -159,6 +176,7 @@ perfstatus
   fncache already up to date
 #endif
   $ hg perfheads
+  $ hg perfignore
   $ hg perfindex
   $ hg perflinelogedits -n 1
   $ hg perfloadmarkers
@@ -174,6 +192,7 @@ perfstatus
   $ hg perfmoonwalk
   $ hg perfnodelookup 2
   $ hg perfpathcopies 1 2
+  $ hg perfprogress --total 1000
   $ hg perfrawfiles 2
   $ hg perfrevlogindex -c
 #if reporevlogstore
@@ -190,6 +209,7 @@ perfstatus
   $ hg perfvolatilesets
   $ hg perfwalk
   $ hg perfparents
+  $ hg perfdiscovery -q .
 
 test actual output
 ------------------
@@ -265,4 +285,16 @@ Check perf.py for historical portability
   contrib/perf.py:\d+: (re)
    >     from mercurial import (
    import newer module separately in try clause for early Mercurial
+  contrib/perf.py:\d+: (re)
+   >     origindexpath = orig.opener.join(orig.indexfile)
+   use getvfs()/getsvfs() for early Mercurial
+  contrib/perf.py:\d+: (re)
+   >     origdatapath = orig.opener.join(orig.datafile)
+   use getvfs()/getsvfs() for early Mercurial
+  contrib/perf.py:\d+: (re)
+   >         vfs = vfsmod.vfs(tmpdir)
+   use getvfs()/getsvfs() for early Mercurial
+  contrib/perf.py:\d+: (re)
+   >         vfs.options = getattr(orig.opener, 'options', None)
+   use getvfs()/getsvfs() for early Mercurial
   [1]

@@ -40,8 +40,12 @@ from mercurial import (
     wireprotov2server,
 )
 
-rootdir = pycompat.fsencode(
-    os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
+testdir = os.path.dirname(__file__)
+rootdir = pycompat.fsencode(os.path.normpath(os.path.join(testdir, '..')))
+
+sys.path[0:0] = [testdir]
+import simplestorerepo
+del sys.path[0]
 
 def checkzobject(o, allowextra=False):
     """Verify an object with a zope interface."""
@@ -177,12 +181,19 @@ def main():
     ziverify.verifyClass(repository.imanifestlog, manifest.manifestlog)
     ziverify.verifyClass(repository.imanifeststorage, manifest.manifestrevlog)
 
+    ziverify.verifyClass(repository.irevisiondelta,
+                         simplestorerepo.simplestorerevisiondelta)
+    ziverify.verifyClass(repository.ifilestorage, simplestorerepo.filestorage)
+    ziverify.verifyClass(repository.iverifyproblem,
+                         simplestorerepo.simplefilestoreproblem)
+
     vfs = vfsmod.vfs(b'.')
     fl = filelog.filelog(vfs, b'dummy.i')
     checkzobject(fl, allowextra=True)
 
     # Conforms to imanifestlog.
-    ml = manifest.manifestlog(vfs, repo, manifest.manifestrevlog(repo.svfs))
+    ml = manifest.manifestlog(vfs, repo, manifest.manifestrevlog(repo.svfs),
+                              repo.narrowmatch())
     checkzobject(ml)
     checkzobject(repo.manifestlog)
 

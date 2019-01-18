@@ -66,10 +66,10 @@ choose which behavior to use by naming files.
   > evolution.allowunstable=True
   > [fix]
   > uppercase-whole-file:command="$PYTHON" $UPPERCASEPY all
-  > uppercase-whole-file:fileset=set:**.whole
+  > uppercase-whole-file:pattern=set:**.whole
   > uppercase-changed-lines:command="$PYTHON" $UPPERCASEPY
   > uppercase-changed-lines:linerange={first}-{last}
-  > uppercase-changed-lines:fileset=set:**.changed
+  > uppercase-changed-lines:pattern=set:**.changed
   > EOF
 
 Help text for fix.
@@ -126,13 +126,15 @@ Help text for fix.
     [fix]
     clang-format:command=clang-format --assume-filename={rootpath}
     clang-format:linerange=--lines={first}:{last}
-    clang-format:fileset=set:**.cpp or **.hpp
+    clang-format:pattern=set:**.cpp or **.hpp
   
   The :command suboption forms the first part of the shell command that will be
   used to fix a file. The content of the file is passed on standard input, and
-  the fixed file content is expected on standard output. If there is any output
-  on standard error, the file will not be affected. Some values may be
-  substituted into the command:
+  the fixed file content is expected on standard output. Any output on standard
+  error will be displayed as a warning. If the exit status is not zero, the file
+  will not be affected. A placeholder warning is displayed if there is a non-
+  zero exit status but no standard error output. Some values may be substituted
+  into the command:
   
     {rootpath}  The path of the file being fixed, relative to the repo root
     {basename}  The name of the file being fixed, without the directory path
@@ -145,15 +147,43 @@ Help text for fix.
     {first}   The 1-based line number of the first line in the modified range
     {last}    The 1-based line number of the last line in the modified range
   
-  The :fileset suboption determines which files will be passed through each
-  configured tool. See 'hg help fileset' for possible values. If there are file
-  arguments to 'hg fix', the intersection of these filesets is used.
+  The :pattern suboption determines which files will be passed through each
+  configured tool. See 'hg help patterns' for possible values. If there are file
+  arguments to 'hg fix', the intersection of these patterns is used.
   
   There is also a configurable limit for the maximum size of file that will be
   processed by 'hg fix':
   
     [fix]
-    maxfilesize=2MB
+    maxfilesize = 2MB
+  
+  Normally, execution of configured tools will continue after a failure
+  (indicated by a non-zero exit status). It can also be configured to abort
+  after the first such failure, so that no files will be affected if any tool
+  fails. This abort will also cause 'hg fix' to exit with a non-zero status:
+  
+    [fix]
+    failure = abort
+  
+  When multiple tools are configured to affect a file, they execute in an order
+  defined by the :priority suboption. The priority suboption has a default value
+  of zero for each tool. Tools are executed in order of descending priority. The
+  execution order of tools with equal priority is unspecified. For example, you
+  could use the 'sort' and 'head' utilities to keep only the 10 smallest numbers
+  in a text file by ensuring that 'sort' runs before 'head':
+  
+    [fix]
+    sort:command = sort -n
+    head:command = head -n 10
+    sort:pattern = numbers.txt
+    head:pattern = numbers.txt
+    sort:priority = 2
+    head:priority = 1
+  
+  To account for changes made by each tool, the line numbers used for
+  incremental formatting are recomputed before executing the next tool. So, each
+  tool may see different values for the arguments added by the :linerange
+  suboption.
   
   list of commands:
   
@@ -361,7 +391,7 @@ allows fixers to know where deletions are located.
 
   $ hg --config "fix.fail:command=echo" \
   >    --config "fix.fail:linerange={first}:{last}" \
-  >    --config "fix.fail:fileset=foo.txt" \
+  >    --config "fix.fail:pattern=foo.txt" \
   >    fix --working-dir
   $ cat foo.txt
   1:1 4:6 8:8
@@ -508,7 +538,9 @@ fixing if its exit code is zero. Some code formatters might emit error messages
 on stderr and nothing on stdout, which would cause us the clear the file,
 except that they also exit with a non-zero code. We show the user which fixer
 emitted the stderr, and which revision, but we assume that the fixer will print
-the filename if it is relevant (since the issue may be non-specific).
+the filename if it is relevant (since the issue may be non-specific). There is
+also a config to abort (without affecting any files whatsoever) if we see any
+tool with a non-zero exit status.
 
   $ hg init showstderr
   $ cd showstderr
@@ -516,35 +548,54 @@ the filename if it is relevant (since the issue may be non-specific).
   $ printf "hello\n" > hello.txt
   $ hg add
   adding hello.txt
-  $ cat > $TESTTMP/fail.sh <<'EOF'
+  $ cat > $TESTTMP/work.sh <<'EOF'
   > printf 'HELLO\n'
-  > printf "$@: some\nerror" >&2
+  > printf "$@: some\nerror that didn't stop the tool" >&2
   > exit 0 # success despite the stderr output
   > EOF
-  $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
-  >    --config "fix.fail:fileset=hello.txt" \
+  $ hg --config "fix.work:command=sh $TESTTMP/work.sh {rootpath}" \
+  >    --config "fix.work:pattern=hello.txt" \
   >    fix --working-dir
-  [wdir] fail: hello.txt: some
-  [wdir] fail: error
+  [wdir] work: hello.txt: some
+  [wdir] work: error that didn't stop the tool
   $ cat hello.txt
   HELLO
 
   $ printf "goodbye\n" > hello.txt
-  $ cat > $TESTTMP/work.sh <<'EOF'
+  $ printf "foo\n" > foo.whole
+  $ hg add
+  adding foo.whole
+  $ cat > $TESTTMP/fail.sh <<'EOF'
   > printf 'GOODBYE\n'
-  > printf "$@: some\nerror\n" >&2
+  > printf "$@: some\nerror that did stop the tool\n" >&2
   > exit 42 # success despite the stdout output
   > EOF
-  $ hg --config "fix.fail:command=sh $TESTTMP/work.sh {rootpath}" \
-  >    --config "fix.fail:fileset=hello.txt" \
+  $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
+  >    --config "fix.fail:pattern=hello.txt" \
+  >    --config "fix.failure=abort" \
   >    fix --working-dir
   [wdir] fail: hello.txt: some
-  [wdir] fail: error
+  [wdir] fail: error that did stop the tool
+  abort: no fixes will be applied
+  (use --config fix.failure=continue to apply any successful fixes anyway)
+  [255]
   $ cat hello.txt
   goodbye
+  $ cat foo.whole
+  foo
+
+  $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
+  >    --config "fix.fail:pattern=hello.txt" \
+  >    fix --working-dir
+  [wdir] fail: hello.txt: some
+  [wdir] fail: error that did stop the tool
+  $ cat hello.txt
+  goodbye
+  $ cat foo.whole
+  FOO
 
   $ hg --config "fix.fail:command=exit 42" \
-  >    --config "fix.fail:fileset=hello.txt" \
+  >    --config "fix.fail:pattern=hello.txt" \
   >    fix --working-dir
   [wdir] fail: exited with status 42
 
@@ -842,24 +893,24 @@ no ancestors that are replaced.
   $ printf "BAR\n" > bar.whole
   $ hg commit -Aqm "add bar"
 
-  $ hg log --graph --template '{node|shortest} {files}'
-  @  bc05 bar.whole
+  $ hg log --graph --template '{rev} {files}'
+  @  2 bar.whole
   |
-  o  4fd2 foo.whole
+  o  1 foo.whole
   |
-  o  f9ac foo.whole
+  o  0 foo.whole
   
   $ hg fix -r 0:2
-  $ hg log --graph --template '{node|shortest} {files}'
-  o  b4e2 bar.whole
+  $ hg log --graph --template '{rev} {files}'
+  o  4 bar.whole
   |
-  o  59f4
+  o  3
   |
-  | @  bc05 bar.whole
+  | @  2 bar.whole
   | |
-  | x  4fd2 foo.whole
+  | x  1 foo.whole
   |/
-  o  f9ac foo.whole
+  o  0 foo.whole
   
 
   $ cd ..
@@ -996,7 +1047,7 @@ Test all of the available substitution values for fixer commands.
   adding foo/bar
   $ hg --config "fix.fail:command=printf '%s\n' '{rootpath}' '{basename}'" \
   >    --config "fix.fail:linerange='{first}' '{last}'" \
-  >    --config "fix.fail:fileset=foo/bar" \
+  >    --config "fix.fail:pattern=foo/bar" \
   >    fix --working-dir
   $ cat foo/bar
   foo/bar
@@ -1074,3 +1125,107 @@ until we specify the base, but then we do fix unchanged lines.
   FOO2
 
   $ cd ..
+
+The :fileset subconfig was a misnomer, so we renamed it to :pattern. We will
+still accept :fileset by itself as if it were :pattern, but this will issue a
+warning.
+
+  $ hg init filesetispattern
+  $ cd filesetispattern
+
+  $ printf "foo\n" > foo.whole
+  $ printf "first\nsecond\n" > bar.txt
+  $ hg add -q
+  $ hg fix -w --config fix.sometool:fileset=bar.txt \
+  >           --config fix.sometool:command="sort -r"
+  the fix.tool:fileset config name is deprecated; please rename it to fix.tool:pattern
+
+  $ cat foo.whole
+  FOO
+  $ cat bar.txt
+  second
+  first
+
+  $ cd ..
+
+The execution order of tools can be controlled. This example doesn't work if
+you sort after truncating, but the config defines the correct order while the
+definitions are out of order (which might imply the incorrect order given the
+implementation of fix). The goal is to use multiple tools to select the lowest
+5 numbers in the file.
+
+  $ hg init priorityexample
+  $ cd priorityexample
+
+  $ cat >> .hg/hgrc <<EOF
+  > [fix]
+  > head:command = head -n 5
+  > head:pattern = numbers.txt
+  > head:priority = 1
+  > sort:command = sort -n
+  > sort:pattern = numbers.txt
+  > sort:priority = 2
+  > EOF
+
+  $ printf "8\n2\n3\n6\n7\n4\n9\n5\n1\n0\n" > numbers.txt
+  $ hg add -q
+  $ hg fix -w
+  $ cat numbers.txt
+  0
+  1
+  2
+  3
+  4
+
+And of course we should be able to break this by reversing the execution order.
+Test negative priorities while we're at it.
+
+  $ cat >> .hg/hgrc <<EOF
+  > [fix]
+  > head:priority = -1
+  > sort:priority = -2
+  > EOF
+  $ printf "8\n2\n3\n6\n7\n4\n9\n5\n1\n0\n" > numbers.txt
+  $ hg fix -w
+  $ cat numbers.txt
+  2
+  3
+  6
+  7
+  8
+
+  $ cd ..
+
+It's possible for repeated applications of a fixer tool to create cycles in the
+generated content of a file. For example, two users with different versions of
+a code formatter might fight over the formatting when they run hg fix. In the
+absence of other changes, this means we could produce commits with the same
+hash in subsequent runs of hg fix. This is a problem unless we support
+obsolescence cycles well. We avoid this by adding an extra field to the
+successor which forces it to have a new hash. That's why this test creates
+three revisions instead of two.
+
+  $ hg init cyclictool
+  $ cd cyclictool
+
+  $ cat >> .hg/hgrc <<EOF
+  > [fix]
+  > swapletters:command = tr ab ba
+  > swapletters:pattern = foo
+  > EOF
+
+  $ echo ab > foo
+  $ hg commit -Aqm foo
+
+  $ hg fix -r 0
+  $ hg fix -r 1
+
+  $ hg cat -r 0 foo --hidden
+  ab
+  $ hg cat -r 1 foo --hidden
+  ba
+  $ hg cat -r 2 foo
+  ab
+
+  $ cd ..
+

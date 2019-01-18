@@ -5,7 +5,7 @@ directory (and ".hg/largefiles/dirstate")
 
   $ cat >> $HGRCPATH <<EOF
   > [ui]
-  > merge = internal:fail
+  > merge = internal:merge
   > [extensions]
   > largefiles =
   > [extdiff]

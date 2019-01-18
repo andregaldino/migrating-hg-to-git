@@ -72,6 +72,8 @@ cleanbutpackages:
 	rm -rf build mercurial/locale
 	$(MAKE) -C doc clean
 	$(MAKE) -C contrib/chg distclean
+	rm -rf rust/target
+	rm -f mercurial/rustext.so
 
 clean: cleanbutpackages
 	rm -rf packages
@@ -178,6 +180,7 @@ packaging_targets := \
   docker-fedora20 \
   docker-fedora21 \
   docker-fedora28 \
+  docker-fedora29 \
   docker-ubuntu-trusty \
   docker-ubuntu-trusty-ppa \
   docker-ubuntu-xenial \
@@ -189,6 +192,7 @@ packaging_targets := \
   fedora20 \
   fedora21 \
   fedora28 \
+  fedora29 \
   linux-wheels \
   linux-wheels-x86_64 \
   linux-wheels-i686 \

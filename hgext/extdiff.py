@@ -139,7 +139,7 @@ def snapshot(ui, repo, files, node, tmproot, listsubrepos):
         repo.ui.setconfig("ui", "archivemeta", False)
 
         archival.archive(repo, base, node, 'files',
-                         matchfn=scmutil.matchfiles(repo, files),
+                         match=scmutil.matchfiles(repo, files),
                          subrepos=listsubrepos)
 
         for fn in sorted(files):
@@ -151,6 +151,29 @@ def snapshot(ui, repo, files, node, tmproot, listsubrepos):
 
                 fnsandstat.append((dest, repo.wjoin(fn), os.lstat(dest)))
     return dirname, fnsandstat
+
+def formatcmdline(cmdline, repo_root, do3way,
+                  parent1, plabel1, parent2, plabel2, child, clabel):
+    # Function to quote file/dir names in the argument string.
+    # When not operating in 3-way mode, an empty string is
+    # returned for parent2
+    replace = {'parent': parent1, 'parent1': parent1, 'parent2': parent2,
+               'plabel1': plabel1, 'plabel2': plabel2,
+               'child': child, 'clabel': clabel,
+               'root': repo_root}
+    def quote(match):
+        pre = match.group(2)
+        key = match.group(3)
+        if not do3way and key == 'parent2':
+            return pre
+        return pre + procutil.shellquote(replace[key])
+
+    # Match parent2 first, so 'parent1?' will match both parent1 and parent
+    regex = (br'''(['"]?)([^\s'"$]*)'''
+             br'\$(parent2|parent1?|child|plabel1|plabel2|clabel|root)\1')
+    if not do3way and not re.search(regex, cmdline):
+        cmdline += ' $parent1 $child'
+    return re.sub(regex, quote, cmdline)
 
 def dodiff(ui, repo, cmdline, pats, opts):
     '''Do the actual diff:
@@ -281,28 +304,14 @@ def dodiff(ui, repo, cmdline, pats, opts):
             label1b = None
             fnsandstat = []
 
-        # Function to quote file/dir names in the argument string.
-        # When not operating in 3-way mode, an empty string is
-        # returned for parent2
-        replace = {'parent': dir1a, 'parent1': dir1a, 'parent2': dir1b,
-                   'plabel1': label1a, 'plabel2': label1b,
-                   'clabel': label2, 'child': dir2,
-                   'root': repo.root}
-        def quote(match):
-            pre = match.group(2)
-            key = match.group(3)
-            if not do3way and key == 'parent2':
-                return pre
-            return pre + procutil.shellquote(replace[key])
-
-        # Match parent2 first, so 'parent1?' will match both parent1 and parent
-        regex = (br'''(['"]?)([^\s'"$]*)'''
-                 br'\$(parent2|parent1?|child|plabel1|plabel2|clabel|root)\1')
-        if not do3way and not re.search(regex, cmdline):
-            cmdline += ' $parent1 $child'
-        cmdline = re.sub(regex, quote, cmdline)
-
-        ui.debug('running %r in %s\n' % (pycompat.bytestr(cmdline), tmproot))
+        # Run the external tool on the 2 temp directories or the patches
+        cmdline = formatcmdline(
+            cmdline, repo.root, do3way=do3way,
+            parent1=dir1a, plabel1=label1a,
+            parent2=dir1b, plabel2=label1b,
+            child=dir2, clabel=label2)
+        ui.debug('running %r in %s\n' % (pycompat.bytestr(cmdline),
+                                         tmproot))
         ui.system(cmdline, cwd=tmproot, blockedtag='extdiff')
 
         for copy_fn, working_fn, st in fnsandstat:
@@ -383,8 +392,9 @@ class savedcmd(object):
 
     def __init__(self, path, cmdline):
         # We can't pass non-ASCII through docstrings (and path is
-        # in an unknown encoding anyway)
-        docpath = stringutil.escapestr(path)
+        # in an unknown encoding anyway), but avoid double separators on
+        # Windows
+        docpath = stringutil.escapestr(path).replace(b'\\\\', b'\\')
         self.__doc__ %= {r'path': pycompat.sysstr(stringutil.uirepr(docpath))}
         self._cmdline = cmdline
 

@@ -3,10 +3,10 @@
   $ cat > nlinks.py <<EOF
   > from __future__ import print_function
   > import sys
-  > from mercurial import util
+  > from mercurial import pycompat, util
   > for f in sorted(sys.stdin.readlines()):
   >     f = f[:-1]
-  >     print(util.nlinks(f), f)
+  >     print(util.nlinks(pycompat.fsencode(f)), f)
   > EOF
 
   $ nlinksdir()
@@ -230,7 +230,7 @@ Create hardlinked copy r4 of r3 (on Linux, we would call 'cp -al'):
 the symlink should be followed or not. It does behave differently on Linux and
 BSD. Just remove it so the test pass on both platforms.
 
-  $ rm -f r4/.hg/cache/checklink
+  $ rm -f r4/.hg/wcache/checklink
 
 r4 has hardlinks in the working dir (not just inside .hg):
 
@@ -239,9 +239,6 @@ r4 has hardlinks in the working dir (not just inside .hg):
   2 r4/.hg/branch
   2 r4/.hg/cache/branch2-base
   2 r4/.hg/cache/branch2-served
-  2 r4/.hg/cache/checkisexec (execbit !)
-  ? r4/.hg/cache/checklink-target (glob) (symlink !)
-  2 r4/.hg/cache/checknoexec (execbit !)
   2 r4/.hg/cache/manifestfulltextcache (reporevlogstore !)
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
@@ -268,6 +265,9 @@ r4 has hardlinks in the working dir (not just inside .hg):
   2 r4/.hg/undo.branch
   2 r4/.hg/undo.desc
   [24] r4/\.hg/undo\.dirstate (re)
+  2 r4/.hg/wcache/checkisexec (execbit !)
+  2 r4/.hg/wcache/checklink-target (symlink !)
+  2 r4/.hg/wcache/checknoexec (execbit !)
   2 r4/d1/data1
   2 r4/d1/f2
   2 r4/f1
@@ -290,9 +290,6 @@ Update back to revision 12 in r4 should break hardlink of file f1 and f3:
   1 r4/.hg/branch
   2 r4/.hg/cache/branch2-base
   2 r4/.hg/cache/branch2-served
-  2 r4/.hg/cache/checkisexec (execbit !)
-  2 r4/.hg/cache/checklink-target (symlink !)
-  2 r4/.hg/cache/checknoexec (execbit !)
   2 r4/.hg/cache/manifestfulltextcache (reporevlogstore !)
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
@@ -319,6 +316,9 @@ Update back to revision 12 in r4 should break hardlink of file f1 and f3:
   2 r4/.hg/undo.branch
   2 r4/.hg/undo.desc
   [24] r4/\.hg/undo\.dirstate (re)
+  2 r4/.hg/wcache/checkisexec (execbit !)
+  2 r4/.hg/wcache/checklink-target (symlink !)
+  2 r4/.hg/wcache/checknoexec (execbit !)
   2 r4/d1/data1
   2 r4/d1/f2
   1 r4/f1

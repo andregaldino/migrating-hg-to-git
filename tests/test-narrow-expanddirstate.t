@@ -56,9 +56,13 @@ have this method available in narrowhg proper at the moment.
   > from mercurial import patch
   > from mercurial import util as hgutil
   > 
+  > narrowspecexpanded = False
   > def expandnarrowspec(ui, repo, newincludes=None):
   >   if not newincludes:
   >     return
+  >   if getattr(repo, '_narrowspecexpanded', False):
+  >     return
+  >   repo._narrowspecexpanded = True
   >   import sys
   >   newincludes = set([newincludes])
   >   includes, excludes = repo.narrowpats
@@ -67,29 +71,20 @@ have this method available in narrowhg proper at the moment.
   >   if not repo.currenttransaction():
   >     ui.develwarn(b'expandnarrowspec called outside of transaction!')
   >   repo.setnarrowpats(includes, excludes)
+  >   narrowspec.copytoworkingcopy(repo)
   >   newmatcher = narrowspec.match(repo.root, includes, excludes)
   >   added = matchmod.differencematcher(newmatcher, currentmatcher)
   >   for f in repo[b'.'].manifest().walk(added):
   >     repo.dirstate.normallookup(f)
   > 
-  > def wrapds(ui, repo, ds):
-  >   class expandingdirstate(ds.__class__):
-  >     @hgutil.propertycache
-  >     def _map(self):
-  >       ret = super(expandingdirstate, self)._map
+  > def reposetup(ui, repo):
+  >   class expandingrepo(repo.__class__):
+  >     def narrowmatch(self, *args, **kwargs):
   >       with repo.wlock(), repo.lock(), repo.transaction(
   >           b'expandnarrowspec'):
   >         expandnarrowspec(ui, repo,
   >                          encoding.environ.get(b'DIRSTATEINCLUDES'))
-  >       return ret
-  >   ds.__class__ = expandingdirstate
-  >   return ds
-  > 
-  > def reposetup(ui, repo):
-  >   class expandingrepo(repo.__class__):
-  >     def _makedirstate(self):
-  >       dirstate = super(expandingrepo, self)._makedirstate()
-  >       return wrapds(ui, repo, dirstate)
+  >       return super(expandingrepo, self).narrowmatch(*args, **kwargs)
   >   repo.__class__ = expandingrepo
   > 
   > def extsetup(unused_ui):

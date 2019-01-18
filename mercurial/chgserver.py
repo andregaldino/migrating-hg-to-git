@@ -66,8 +66,6 @@ from .utils import (
     procutil,
 )
 
-_log = commandserver.log
-
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
     return node.hex(hashlib.sha1(str(items)).digest())
@@ -186,7 +184,8 @@ class hashstate(object):
             mtimepaths = _getmtimepaths(ui)
         confighash = _confighash(ui)
         mtimehash = _mtimehash(mtimepaths)
-        _log('confighash = %s mtimehash = %s\n' % (confighash, mtimehash))
+        ui.log('cmdserver', 'confighash = %s mtimehash = %s\n',
+               confighash, mtimehash)
         return hashstate(confighash, mtimehash, mtimepaths)
 
 def _newchgui(srcui, csystem, attachio):
@@ -201,7 +200,7 @@ def _newchgui(srcui, csystem, attachio):
         def _runsystem(self, cmd, environ, cwd, out):
             # fallback to the original system method if
             #  a. the output stream is not stdout (e.g. stderr, cStringIO),
-            #  b. or stdout is redirected by protectstdio(),
+            #  b. or stdout is redirected by protectfinout(),
             # because the chg client is not aware of these situations and
             # will behave differently (i.e. write to stdout).
             if (out is not self.fout
@@ -219,7 +218,7 @@ def _newchgui(srcui, csystem, attachio):
 
     return chgui(srcui)
 
-def _loadnewui(srcui, args):
+def _loadnewui(srcui, args, cdebug):
     from . import dispatch  # avoid cycle
 
     newui = srcui.__class__.load()
@@ -245,6 +244,12 @@ def _loadnewui(srcui, args):
     cwd = cwd and os.path.realpath(cwd) or None
     rpath = options['repository']
     path, newlui = dispatch._getlocal(newui, rpath, wd=cwd)
+
+    extensions.populateui(newui)
+    commandserver.setuplogging(newui, fp=cdebug)
+    if newui is not newlui:
+        extensions.populateui(newlui)
+        commandserver.setuplogging(newlui, fp=cdebug)
 
     return (newui, newlui)
 
@@ -294,7 +299,6 @@ class channeledsystem(object):
                 if not cmd:
                     break
                 if cmdtable and cmd in cmdtable:
-                    _log('pager subcommand: %s' % cmd)
                     cmdtable[cmd]()
                 else:
                     raise error.Abort(_('unexpected command: %s') % cmd)
@@ -309,10 +313,11 @@ _iochannels = [
 ]
 
 class chgcmdserver(commandserver.server):
-    def __init__(self, ui, repo, fin, fout, sock, hashstate, baseaddress):
+    def __init__(self, ui, repo, fin, fout, sock, prereposetups,
+                 hashstate, baseaddress):
         super(chgcmdserver, self).__init__(
             _newchgui(ui, channeledsystem(fin, fout, 'S'), self.attachio),
-            repo, fin, fout)
+            repo, fin, fout, prereposetups)
         self.clientsock = sock
         self._ioattached = False
         self._oldios = []  # original (self.ch, ui.fp, fd) before "attachio"
@@ -338,7 +343,7 @@ class chgcmdserver(commandserver.server):
         # distinctive from "attachio\n" command consumed by client.read()
         self.clientsock.sendall(struct.pack('>cI', 'I', 1))
         clientfds = util.recvfds(self.clientsock.fileno())
-        _log('received fds: %r\n' % clientfds)
+        self.ui.log('chgserver', 'received fds: %r\n', clientfds)
 
         ui = self.ui
         ui.flush()
@@ -419,7 +424,7 @@ class chgcmdserver(commandserver.server):
 
         args = self._readlist()
         try:
-            self.ui, lui = _loadnewui(self.ui, args)
+            self.ui, lui = _loadnewui(self.ui, args, self.cdebug)
         except error.ParseError as inst:
             dispatch._formatparse(self.ui.warn, inst)
             self.ui.flush()
@@ -444,7 +449,7 @@ class chgcmdserver(commandserver.server):
         if newhash.confighash != self.hashstate.confighash:
             addr = _hashaddress(self.baseaddress, newhash.confighash)
             insts.append('redirect %s' % addr)
-        _log('validate: %s\n' % insts)
+        self.ui.log('chgserver', 'validate: %s\n', insts)
         self.cresult.write('\0'.join(insts) or '\0')
 
     def chdir(self):
@@ -456,7 +461,7 @@ class chgcmdserver(commandserver.server):
         path = self._readstr()
         if not path:
             return
-        _log('chdir to %r\n' % path)
+        self.ui.log('chgserver', 'chdir to %r\n', path)
         os.chdir(path)
 
     def setumask(self):
@@ -474,7 +479,7 @@ class chgcmdserver(commandserver.server):
 
     def _setumask(self, data):
         mask = struct.unpack('>I', data)[0]
-        _log('setumask %r\n' % mask)
+        self.ui.log('chgserver', 'setumask %r\n', mask)
         os.umask(mask)
 
     def runcommand(self):
@@ -499,7 +504,7 @@ class chgcmdserver(commandserver.server):
             newenv = dict(s.split('=', 1) for s in l)
         except ValueError:
             raise ValueError('unexpected value in setenv request')
-        _log('setenv: %r\n' % sorted(newenv.keys()))
+        self.ui.log('chgserver', 'setenv: %r\n', sorted(newenv.keys()))
         encoding.environ.clear()
         encoding.environ.update(newenv)
 
@@ -515,7 +520,7 @@ class chgcmdserver(commandserver.server):
         def setprocname(self):
             """Change process title"""
             name = self._readstr()
-            _log('setprocname: %r\n' % name)
+            self.ui.log('chgserver', 'setprocname: %r\n', name)
             procutil.setprocname(name)
         capabilities['setprocname'] = setprocname
 
@@ -602,18 +607,19 @@ class chgunixservicehandler(object):
 
     def shouldexit(self):
         if not self._issocketowner():
-            self.ui.debug('%s is not owned, exiting.\n' % self._realaddress)
+            self.ui.log(b'chgserver', b'%s is not owned, exiting.\n',
+                        self._realaddress)
             return True
         if time.time() - self._lastactive > self._idletimeout:
-            self.ui.debug('being idle too long. exiting.\n')
+            self.ui.log(b'chgserver', b'being idle too long. exiting.\n')
             return True
         return False
 
     def newconnection(self):
         self._lastactive = time.time()
 
-    def createcmdserver(self, repo, conn, fin, fout):
-        return chgcmdserver(self.ui, repo, fin, fout, conn,
+    def createcmdserver(self, repo, conn, fin, fout, prereposetups):
+        return chgcmdserver(self.ui, repo, fin, fout, conn, prereposetups,
                             self._hashstate, self._baseaddress)
 
 def chgunixservice(ui, repo, opts):

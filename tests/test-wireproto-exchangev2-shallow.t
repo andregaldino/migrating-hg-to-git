@@ -196,7 +196,7 @@ Shallow clone pulls down latest revision of every file
      node = I\x1d\xa1\xbb\x89\xeax\xc0\xc0\xa2s[\x16\xce}\x93\x1d\xc8\xe2\r (esc)
     p1rev = -1
     p2rev = -1
-  linkrev = 4
+  linkrev = 5
     flags = 2
   
        id = 4
@@ -205,7 +205,7 @@ Shallow clone pulls down latest revision of every file
      node = S\x82\x06\xdc\x97\x1eR\x15@\xd6\x84:\xbf\xe6\xd1`2\xf6\xd4& (esc)
     p1rev = -1
     p2rev = -1
-  linkrev = 1
+  linkrev = 5
     flags = 0
   
        id = 5
@@ -214,7 +214,7 @@ Shallow clone pulls down latest revision of every file
      node = ]\xf3\xac\xd8\xd0\xc7\xfaP\x98\xd0'\x9a\x044\xc3\x02\x9e+x\xe1 (esc)
     p1rev = -1
     p2rev = -1
-  linkrev = 4
+  linkrev = 5
     flags = 2
   
        id = 6
@@ -223,7 +223,7 @@ Shallow clone pulls down latest revision of every file
      node = (\xc7v\xae\x08\xd0\xd5^\xb4\x06H\xb4\x01\xb9\x0f\xf5DH4\x8e (esc)
     p1rev = -1
     p2rev = -1
-  linkrev = 4
+  linkrev = 5
     flags = 2
 
 Test a shallow clone with only some files
@@ -342,7 +342,7 @@ Test a shallow clone with only some files
      node = I\x1d\xa1\xbb\x89\xeax\xc0\xc0\xa2s[\x16\xce}\x93\x1d\xc8\xe2\r (esc)
     p1rev = -1
     p2rev = -1
-  linkrev = 4
+  linkrev = 5
     flags = 2
   
        id = 2
@@ -351,7 +351,7 @@ Test a shallow clone with only some files
      node = S\x82\x06\xdc\x97\x1eR\x15@\xd6\x84:\xbf\xe6\xd1`2\xf6\xd4& (esc)
     p1rev = -1
     p2rev = -1
-  linkrev = 1
+  linkrev = 5
     flags = 0
 
 Cloning an old revision with depth=1 works

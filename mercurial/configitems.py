@@ -173,6 +173,21 @@ coreconfigitem('chgserver', 'skiphash',
 coreconfigitem('cmdserver', 'log',
     default=None,
 )
+coreconfigitem('cmdserver', 'max-log-files',
+    default=7,
+)
+coreconfigitem('cmdserver', 'max-log-size',
+    default='1 MB',
+)
+coreconfigitem('cmdserver', 'max-repo-cache',
+    default=0,
+)
+coreconfigitem('cmdserver', 'message-encodings',
+    default=list,
+)
+coreconfigitem('cmdserver', 'track-log',
+    default=lambda: ['chgserver', 'cmdserver', 'repocache'],
+)
 coreconfigitem('color', '.*',
     default=None,
     generic=True,
@@ -329,6 +344,9 @@ coreconfigitem('devel', 'all-warnings',
 coreconfigitem('devel', 'bundle2.debug',
     default=False,
 )
+coreconfigitem('devel', 'bundle.delta',
+    default='',
+)
 coreconfigitem('devel', 'cache-vfs',
     default=None,
 )
@@ -443,6 +461,9 @@ coreconfigitem('email', 'to',
 coreconfigitem('experimental', 'archivemetatemplate',
     default=dynamicdefault,
 )
+coreconfigitem('experimental', 'auto-publish',
+    default='publish',
+)
 coreconfigitem('experimental', 'bundle-phases',
     default=False,
 )
@@ -533,9 +554,6 @@ coreconfigitem('experimental', 'maxdeltachainspan',
     default=-1,
 )
 coreconfigitem('experimental', 'mergetempdirprefix',
-    default=None,
-)
-coreconfigitem('experimental', 'mmapindexthreshold',
     default=None,
 )
 coreconfigitem('experimental', 'narrow',
@@ -679,7 +697,7 @@ coreconfigitem('format', 'obsstore-version',
     default=None,
 )
 coreconfigitem('format', 'sparse-revlog',
-    default=False,
+    default=True,
 )
 coreconfigitem('format', 'usefncache',
     default=True,
@@ -698,6 +716,14 @@ coreconfigitem('fsmonitor', 'warn_when_unused',
 )
 coreconfigitem('fsmonitor', 'warn_update_file_count',
     default=50000,
+)
+coreconfigitem('help', 'hidden-command\..*',
+    default=False,
+    generic=True,
+)
+coreconfigitem('help', 'hidden-topic\..*',
+    default=False,
+    generic=True,
 )
 coreconfigitem('hooks', '.*',
     default=dynamicdefault,
@@ -961,6 +987,17 @@ coreconfigitem('progress', 'width',
 coreconfigitem('push', 'pushvars.server',
     default=False,
 )
+coreconfigitem('storage', 'mmap-threshold',
+    default='1MB',
+    alias=[('experimental', 'mmapindexthreshold')],
+)
+coreconfigitem('rewrite', 'backup-bundle',
+    default=True,
+    alias=[('ui', 'history-editing-backup')],
+)
+coreconfigitem('rewrite', 'update-timestamp',
+    default=False,
+)
 coreconfigitem('storage', 'new-repo-backend',
     default='revlogv1',
 )
@@ -1135,9 +1172,6 @@ coreconfigitem('ui', 'formatted',
 coreconfigitem('ui', 'graphnodetemplate',
     default=None,
 )
-coreconfigitem('ui', 'history-editing-backup',
-    default=True,
-)
 coreconfigitem('ui', 'interactive',
     default=None,
 )
@@ -1170,6 +1204,9 @@ coreconfigitem('ui', 'mergemarkertemplate',
             '{ifeq(branch, "default", "", "{branch} ")}'
             '- {author|user}: {desc|firstline}')
 )
+coreconfigitem('ui', 'message-output',
+    default='stdio',
+)
 coreconfigitem('ui', 'nontty',
     default=False,
 )
@@ -1180,6 +1217,9 @@ coreconfigitem('ui', 'paginate',
     default=True,
 )
 coreconfigitem('ui', 'patch',
+    default=None,
+)
+coreconfigitem('ui', 'pre-merge-tool-output-template',
     default=None,
 )
 coreconfigitem('ui', 'portablefilenames',

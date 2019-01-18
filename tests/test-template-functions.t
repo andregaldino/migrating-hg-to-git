@@ -603,6 +603,51 @@ Test laziness of if() then/else clause
   $ hg debugtemplate '{ifeq(0, 0, "", count(0))}'
   $ hg debugtemplate '{ifeq(0, 1, count(0), "")}'
 
+Test search() function:
+
+  $ hg log -R a -r2 -T '{desc}\n'
+  no person
+
+  $ hg log -R a -r2 -T '{search(r"p.*", desc)}\n'
+  person
+
+ as bool
+
+  $ hg log -R a -r2 -T '{if(search(r"p.*", desc), "", "not ")}found\n'
+  found
+  $ hg log -R a -r2 -T '{if(search(r"q", desc), "", "not ")}found\n'
+  not found
+
+ match as json
+
+  $ hg log -R a -r2 -T '{search(r"(no) p.*", desc)|json}\n'
+  {"0": "no person", "1": "no"}
+  $ hg log -R a -r2 -T '{search(r"q", desc)|json}\n'
+  null
+
+ group reference
+
+  $ hg log -R a -r2 -T '{search(r"(no) (p.*)", desc) % "{1|upper} {2|hex}"}\n'
+  NO 706572736f6e
+  $ hg log -R a -r2 -T '{search(r"(?P<foo>[a-z]*)", desc) % "{foo}"}\n'
+  no
+  $ hg log -R a -r2 -T '{search(r"(?P<foo>[a-z]*)", desc).foo}\n'
+  no
+
+ group reference with no match
+
+  $ hg log -R a -r2 -T '{search(r"q", desc) % "match: {0}"}\n'
+  
+
+ bad group names
+
+  $ hg log -R a -r2 -T '{search(r"(?P<0>.)", desc) % "{0}"}\n'
+  hg: parse error: search got an invalid pattern: (?P<0>.)
+  [255]
+  $ hg log -R a -r2 -T '{search(r"(?P<repo>.)", desc) % "{repo}"}\n'
+  hg: parse error: invalid group 'repo' in search pattern: (?P<repo>.)
+  [255]
+
 Test the sub function of templating for expansion:
 
   $ hg log -R latesttag -r 10 --template '{sub("[0-9]", "x", "{rev}")}\n'

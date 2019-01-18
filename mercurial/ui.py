@@ -30,6 +30,7 @@ from . import (
     encoding,
     error,
     formatter,
+    loggingutil,
     progress,
     pycompat,
     rcutil,
@@ -228,10 +229,14 @@ class ui(object):
         self._uninterruptible = False
 
         if src:
-            self.fout = src.fout
-            self.ferr = src.ferr
-            self.fin = src.fin
+            self._fout = src._fout
+            self._ferr = src._ferr
+            self._fin = src._fin
+            self._fmsg = src._fmsg
+            self._fmsgout = src._fmsgout
+            self._fmsgerr = src._fmsgerr
             self._finoutredirected = src._finoutredirected
+            self._loggers = src._loggers.copy()
             self.pageractive = src.pageractive
             self._disablepager = src._disablepager
             self._tweaked = src._tweaked
@@ -253,10 +258,14 @@ class ui(object):
             self.httppasswordmgrdb = src.httppasswordmgrdb
             self._blockedtimes = src._blockedtimes
         else:
-            self.fout = procutil.stdout
-            self.ferr = procutil.stderr
-            self.fin = procutil.stdin
+            self._fout = procutil.stdout
+            self._ferr = procutil.stderr
+            self._fin = procutil.stdin
+            self._fmsg = None
+            self._fmsgout = self.fout  # configurable
+            self._fmsgerr = self.ferr  # configurable
             self._finoutredirected = False
+            self._loggers = {}
             self.pageractive = False
             self._disablepager = False
             self._tweaked = False
@@ -339,7 +348,7 @@ class ui(object):
                 (util.timer() - starttime) * 1000
 
     @contextlib.contextmanager
-    def uninterruptable(self):
+    def uninterruptible(self):
         """Mark an operation as unsafe.
 
         Most operations on a repository are safe to interrupt, but a
@@ -353,7 +362,7 @@ class ui(object):
             enabled = self.interactive()
         if self._uninterruptible or not enabled:
             # if nointerrupt support is turned off, the process isn't
-            # interactive, or we're already in an uninterruptable
+            # interactive, or we're already in an uninterruptible
             # block, do nothing.
             yield
             return
@@ -362,7 +371,7 @@ class ui(object):
             self.warn(
                 _("press ^C again to terminate immediately (dangerous)\n"))
             return True
-        with procutil.uninterruptable(warn):
+        with procutil.uninterruptible(warn):
             try:
                 self._uninterruptible = True
                 yield
@@ -413,7 +422,7 @@ class ui(object):
 
         if self.plain():
             for k in ('debug', 'fallbackencoding', 'quiet', 'slash',
-                      'logtemplate', 'statuscopies', 'style',
+                      'logtemplate', 'message-output', 'statuscopies', 'style',
                       'traceback', 'verbose'):
                 if k in cfg['ui']:
                     del cfg['ui'][k]
@@ -466,6 +475,7 @@ class ui(object):
 
         if section in (None, 'ui'):
             # update ui options
+            self._fmsgout, self._fmsgerr = _selectmsgdests(self)
             self.debugflag = self.configbool('ui', 'debug')
             self.verbose = self.debugflag or self.configbool('ui', 'verbose')
             self.quiet = not self.debugflag and self.configbool('ui', 'quiet')
@@ -480,6 +490,14 @@ class ui(object):
             # update trust information
             self._trustusers.update(self.configlist('trusted', 'users'))
             self._trustgroups.update(self.configlist('trusted', 'groups'))
+
+        if section in (None, b'devel', b'ui') and self.debugflag:
+            tracked = set()
+            if self.configbool(b'devel', b'debug.extensions'):
+                tracked.add(b'extension')
+            if tracked:
+                logger = loggingutil.fileobjectlogger(self._ferr, tracked)
+                self.setlogger(b'debug', logger)
 
     def backupconfig(self, section, item):
         return (self._ocfg.backup(section, item),
@@ -881,6 +899,43 @@ class ui(object):
     def paths(self):
         return paths(self)
 
+    @property
+    def fout(self):
+        return self._fout
+
+    @fout.setter
+    def fout(self, f):
+        self._fout = f
+        self._fmsgout, self._fmsgerr = _selectmsgdests(self)
+
+    @property
+    def ferr(self):
+        return self._ferr
+
+    @ferr.setter
+    def ferr(self, f):
+        self._ferr = f
+        self._fmsgout, self._fmsgerr = _selectmsgdests(self)
+
+    @property
+    def fin(self):
+        return self._fin
+
+    @fin.setter
+    def fin(self, f):
+        self._fin = f
+
+    @property
+    def fmsg(self):
+        """Stream dedicated for status/error messages; may be None if
+        fout/ferr are used"""
+        return self._fmsg
+
+    @fmsg.setter
+    def fmsg(self, f):
+        self._fmsg = f
+        self._fmsgout, self._fmsgerr = _selectmsgdests(self)
+
     def pushbuffer(self, error=False, subproc=False, labeled=False):
         """install a buffer to capture standard output of the ui object
 
@@ -910,6 +965,13 @@ class ui(object):
 
         return "".join(self._buffers.pop())
 
+    def _isbuffered(self, dest):
+        if dest is self._fout:
+            return bool(self._buffers)
+        if dest is self._ferr:
+            return bool(self._bufferstates and self._bufferstates[-1][0])
+        return False
+
     def canwritewithoutlabels(self):
         '''check if write skips the label'''
         if self._buffers and not self._bufferapplylabels:
@@ -937,81 +999,75 @@ class ui(object):
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
         '''
-        if self._buffers:
+        self._write(self._fout, *args, **opts)
+
+    def write_err(self, *args, **opts):
+        self._write(self._ferr, *args, **opts)
+
+    def _write(self, dest, *args, **opts):
+        if self._isbuffered(dest):
             if self._bufferapplylabels:
                 label = opts.get(r'label', '')
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
                 self._buffers[-1].extend(args)
         else:
-            self._writenobuf(*args, **opts)
+            self._writenobuf(dest, *args, **opts)
 
-    def _writenobuf(self, *args, **opts):
-        if self._colormode == 'win32':
-            # windows color printing is its own can of crab, defer to
-            # the color module and that is it.
-            color.win32print(self, self._write, *args, **opts)
-        else:
-            msgs = args
-            if self._colormode is not None:
-                label = opts.get(r'label', '')
-                msgs = [self.label(a, label) for a in args]
-            self._write(*msgs, **opts)
-
-    def _write(self, *msgs, **opts):
+    def _writenobuf(self, dest, *args, **opts):
         self._progclear()
+        msg = b''.join(args)
+
         # opencode timeblockedsection because this is a critical path
         starttime = util.timer()
         try:
-            self.fout.write(''.join(msgs))
+            if dest is self._ferr and not getattr(self._fout, 'closed', False):
+                self._fout.flush()
+            if getattr(dest, 'structured', False):
+                # channel for machine-readable output with metadata, where
+                # no extra colorization is necessary.
+                dest.write(msg, **opts)
+            elif self._colormode == 'win32':
+                # windows color printing is its own can of crab, defer to
+                # the color module and that is it.
+                color.win32print(self, dest.write, msg, **opts)
+            else:
+                if self._colormode is not None:
+                    label = opts.get(r'label', '')
+                    msg = self.label(msg, label)
+                dest.write(msg)
+            # stderr may be buffered under win32 when redirected to files,
+            # including stdout.
+            if dest is self._ferr and not getattr(self._ferr, 'closed', False):
+                dest.flush()
         except IOError as err:
+            if (dest is self._ferr
+                and err.errno in (errno.EPIPE, errno.EIO, errno.EBADF)):
+                # no way to report the error, so ignore it
+                return
             raise error.StdioError(err)
         finally:
             self._blockedtimes['stdio_blocked'] += \
                 (util.timer() - starttime) * 1000
 
-    def write_err(self, *args, **opts):
-        self._progclear()
-        if self._bufferstates and self._bufferstates[-1][0]:
-            self.write(*args, **opts)
-        elif self._colormode == 'win32':
-            # windows color printing is its own can of crab, defer to
-            # the color module and that is it.
-            color.win32print(self, self._write_err, *args, **opts)
-        else:
-            msgs = args
-            if self._colormode is not None:
-                label = opts.get(r'label', '')
-                msgs = [self.label(a, label) for a in args]
-            self._write_err(*msgs, **opts)
+    def _writemsg(self, dest, *args, **opts):
+        _writemsgwith(self._write, dest, *args, **opts)
 
-    def _write_err(self, *msgs, **opts):
-        try:
-            with self.timeblockedsection('stdio'):
-                if not getattr(self.fout, 'closed', False):
-                    self.fout.flush()
-                for a in msgs:
-                    self.ferr.write(a)
-                # stderr may be buffered under win32 when redirected to files,
-                # including stdout.
-                if not getattr(self.ferr, 'closed', False):
-                    self.ferr.flush()
-        except IOError as inst:
-            if inst.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
-                raise error.StdioError(inst)
+    def _writemsgnobuf(self, dest, *args, **opts):
+        _writemsgwith(self._writenobuf, dest, *args, **opts)
 
     def flush(self):
         # opencode timeblockedsection because this is a critical path
         starttime = util.timer()
         try:
             try:
-                self.fout.flush()
+                self._fout.flush()
             except IOError as err:
                 if err.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
                     raise error.StdioError(err)
             finally:
                 try:
-                    self.ferr.flush()
+                    self._ferr.flush()
                 except IOError as err:
                     if err.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
                         raise error.StdioError(err)
@@ -1023,6 +1079,39 @@ class ui(object):
         if self.configbool('ui', 'nontty'):
             return False
         return procutil.isatty(fh)
+
+    def protectfinout(self):
+        """Duplicate ui streams and redirect original if they are stdio
+
+        Returns (fin, fout) which point to the original ui fds, but may be
+        copy of them. The returned streams can be considered "owned" in that
+        print(), exec(), etc. never reach to them.
+        """
+        if self._finoutredirected:
+            # if already redirected, protectstdio() would just create another
+            # nullfd pair, which is equivalent to returning self._fin/_fout.
+            return self._fin, self._fout
+        fin, fout = procutil.protectstdio(self._fin, self._fout)
+        self._finoutredirected = (fin, fout) != (self._fin, self._fout)
+        return fin, fout
+
+    def restorefinout(self, fin, fout):
+        """Restore ui streams from possibly duplicated (fin, fout)"""
+        if (fin, fout) == (self._fin, self._fout):
+            return
+        procutil.restorestdio(self._fin, self._fout, fin, fout)
+        # protectfinout() won't create more than one duplicated streams,
+        # so we can just turn the redirection flag off.
+        self._finoutredirected = False
+
+    @contextlib.contextmanager
+    def protectedfinout(self):
+        """Run code block with protected standard streams"""
+        fin, fout = self.protectfinout()
+        try:
+            yield fin, fout
+        finally:
+            self.restorefinout(fin, fout)
 
     def disablepager(self):
         self._disablepager = True
@@ -1200,7 +1289,11 @@ class ui(object):
             "chunkselector": [
                 "text",
                 "curses",
-            ]
+            ],
+            "histedit": [
+                "text",
+                "curses",
+            ],
         }
 
         # Feature-specific interface
@@ -1261,7 +1354,7 @@ class ui(object):
         if i is None:
             # some environments replace stdin without implementing isatty
             # usually those are non-interactive
-            return self._isatty(self.fin)
+            return self._isatty(self._fin)
 
         return i
 
@@ -1299,7 +1392,7 @@ class ui(object):
         if i is None:
             # some environments replace stdout without implementing isatty
             # usually those are non-interactive
-            return self._isatty(self.fout)
+            return self._isatty(self._fout)
 
         return i
 
@@ -1308,9 +1401,9 @@ class ui(object):
         # because they have to be text streams with *no buffering*. Instead,
         # we use rawinput() only if call_readline() will be invoked by
         # PyOS_Readline(), so no I/O will be made at Python layer.
-        usereadline = (self._isatty(self.fin) and self._isatty(self.fout)
-                       and procutil.isstdin(self.fin)
-                       and procutil.isstdout(self.fout))
+        usereadline = (self._isatty(self._fin) and self._isatty(self._fout)
+                       and procutil.isstdin(self._fin)
+                       and procutil.isstdout(self._fout))
         if usereadline:
             try:
                 # magically add command line editing support, where
@@ -1332,9 +1425,9 @@ class ui(object):
                 if pycompat.oslinesep == b'\r\n' and line.endswith(b'\r'):
                     line = line[:-1]
             else:
-                self.fout.write(b' ')
-                self.fout.flush()
-                line = self.fin.readline()
+                self._fout.write(b' ')
+                self._fout.flush()
+                line = self._fin.readline()
                 if not line:
                     raise EOFError
                 line = line.rstrip(pycompat.oslinesep)
@@ -1345,17 +1438,23 @@ class ui(object):
         """Prompt user with msg, read response.
         If ui is not interactive, the default is returned.
         """
+        return self._prompt(msg, default=default)
+
+    def _prompt(self, msg, **opts):
+        default = opts[r'default']
         if not self.interactive():
-            self.write(msg, ' ', default or '', "\n")
+            self._writemsg(self._fmsgout, msg, ' ', type='prompt', **opts)
+            self._writemsg(self._fmsgout, default or '', "\n",
+                           type='promptecho')
             return default
-        self._writenobuf(msg, label='ui.prompt')
+        self._writemsgnobuf(self._fmsgout, msg, type='prompt', **opts)
         self.flush()
         try:
             r = self._readline()
             if not r:
                 r = default
             if self.configbool('ui', 'promptecho'):
-                self.write(r, "\n")
+                self._writemsg(self._fmsgout, r, "\n", type='promptecho')
             return r
         except EOFError:
             raise error.ResponseExpected()
@@ -1402,21 +1501,23 @@ class ui(object):
         msg, choices = self.extractchoices(prompt)
         resps = [r for r, t in choices]
         while True:
-            r = self.prompt(msg, resps[default])
+            r = self._prompt(msg, default=resps[default], choices=choices)
             if r.lower() in resps:
                 return resps.index(r.lower())
-            self.write(_("unrecognized response\n"))
+            # TODO: shouldn't it be a warning?
+            self._writemsg(self._fmsgout, _("unrecognized response\n"))
 
     def getpass(self, prompt=None, default=None):
         if not self.interactive():
             return default
         try:
-            self.write_err(self.label(prompt or _('password: '), 'ui.prompt'))
+            self._writemsg(self._fmsgerr, prompt or _('password: '),
+                           type='prompt', password=True)
             # disable getpass() only if explicitly specified. it's still valid
             # to interact with tty even if fin is not a tty.
             with self.timeblockedsection('stdio'):
                 if self.configbool('ui', 'nontty'):
-                    l = self.fin.readline()
+                    l = self._fin.readline()
                     if not l:
                         raise EOFError
                     return l.rstrip('\n')
@@ -1431,24 +1532,21 @@ class ui(object):
         This adds an output label of "ui.status".
         '''
         if not self.quiet:
-            opts[r'label'] = opts.get(r'label', '') + ' ui.status'
-            self.write(*msg, **opts)
+            self._writemsg(self._fmsgout, type='status', *msg, **opts)
 
     def warn(self, *msg, **opts):
         '''write warning message to output (stderr)
 
         This adds an output label of "ui.warning".
         '''
-        opts[r'label'] = opts.get(r'label', '') + ' ui.warning'
-        self.write_err(*msg, **opts)
+        self._writemsg(self._fmsgerr, type='warning', *msg, **opts)
 
     def error(self, *msg, **opts):
         '''write error message to output (stderr)
 
         This adds an output label of "ui.error".
         '''
-        opts[r'label'] = opts.get(r'label', '') + ' ui.error'
-        self.write_err(*msg, **opts)
+        self._writemsg(self._fmsgerr, type='error', *msg, **opts)
 
     def note(self, *msg, **opts):
         '''write note to output (if ui.verbose is True)
@@ -1456,8 +1554,7 @@ class ui(object):
         This adds an output label of "ui.note".
         '''
         if self.verbose:
-            opts[r'label'] = opts.get(r'label', '') + ' ui.note'
-            self.write(*msg, **opts)
+            self._writemsg(self._fmsgout, type='note', *msg, **opts)
 
     def debug(self, *msg, **opts):
         '''write debug message to output (if ui.debugflag is True)
@@ -1465,8 +1562,8 @@ class ui(object):
         This adds an output label of "ui.debug".
         '''
         if self.debugflag:
-            opts[r'label'] = opts.get(r'label', '') + ' ui.debug'
-            self.write(*msg, **opts)
+            self._writemsg(self._fmsgout, type='debug', *msg, **opts)
+            self.log(b'debug', b'%s', b''.join(msg))
 
     def edit(self, text, user, extra=None, editform=None, pending=None,
              repopath=None, action=None):
@@ -1542,7 +1639,7 @@ class ui(object):
             # the tail end instead
             cmdsuffix = cmd.translate(None, _keepalnum)[-85:]
             blockedtag = 'unknown_system_' + cmdsuffix
-        out = self.fout
+        out = self._fout
         if any(s[1] for s in self._bufferstates):
             out = self
         with self.timeblockedsection(blockedtag):
@@ -1627,39 +1724,71 @@ class ui(object):
         All topics should be marked closed by setting pos to None at
         termination.
         '''
-        if self._progbar is not None:
-            self._progbar.progress(topic, pos, item=item, unit=unit,
-                                   total=total)
-        if pos is None or not self.configbool('progress', 'debug'):
-            return
-
-        if unit:
-            unit = ' ' + unit
-        if item:
-            item = ' ' + item
-
-        if total:
-            pct = 100.0 * pos / total
-            self.debug('%s:%s %d/%d%s (%4.2f%%)\n'
-                     % (topic, item, pos, total, unit, pct))
+        self.deprecwarn("use ui.makeprogress() instead of ui.progress()",
+                        "5.1")
+        progress = self.makeprogress(topic, unit, total)
+        if pos is not None:
+            progress.update(pos, item=item)
         else:
-            self.debug('%s:%s %d%s\n' % (topic, item, pos, unit))
+            progress.complete()
 
     def makeprogress(self, topic, unit="", total=None):
-        '''exists only so low-level modules won't need to import scmutil'''
-        return scmutil.progress(self, topic, unit, total)
+        """Create a progress helper for the specified topic"""
+        if getattr(self._fmsgerr, 'structured', False):
+            # channel for machine-readable output with metadata, just send
+            # raw information
+            # TODO: consider porting some useful information (e.g. estimated
+            # time) from progbar. we might want to support update delay to
+            # reduce the cost of transferring progress messages.
+            def updatebar(topic, pos, item, unit, total):
+                self._fmsgerr.write(None, type=b'progress', topic=topic,
+                                    pos=pos, item=item, unit=unit, total=total)
+        elif self._progbar is not None:
+            updatebar = self._progbar.progress
+        else:
+            def updatebar(topic, pos, item, unit, total):
+                pass
+        return scmutil.progress(self, updatebar, topic, unit, total)
 
-    def log(self, service, *msg, **opts):
+    def getlogger(self, name):
+        """Returns a logger of the given name; or None if not registered"""
+        return self._loggers.get(name)
+
+    def setlogger(self, name, logger):
+        """Install logger which can be identified later by the given name
+
+        More than one loggers can be registered. Use extension or module
+        name to uniquely identify the logger instance.
+        """
+        self._loggers[name] = logger
+
+    def log(self, event, msgfmt, *msgargs, **opts):
         '''hook for logging facility extensions
 
-        service should be a readily-identifiable subsystem, which will
+        event should be a readily-identifiable subsystem, which will
         allow filtering.
 
-        *msg should be a newline-terminated format string to log, and
-        then any values to %-format into that format string.
+        msgfmt should be a newline-terminated format string to log, and
+        *msgargs are %-formatted into it.
 
         **opts currently has no defined meanings.
         '''
+        if not self._loggers:
+            return
+        activeloggers = [l for l in self._loggers.itervalues()
+                         if l.tracked(event)]
+        if not activeloggers:
+            return
+        msg = msgfmt % msgargs
+        opts = pycompat.byteskwargs(opts)
+        # guard against recursion from e.g. ui.debug()
+        registeredloggers = self._loggers
+        self._loggers = {}
+        try:
+            for logger in activeloggers:
+                logger.log(self, event, msg, opts)
+        finally:
+            self._loggers = registeredloggers
 
     def label(self, msg, label):
         '''style msg based on supplied label
@@ -1687,7 +1816,7 @@ class ui(object):
         msg = 'devel-warn: ' + msg
         stacklevel += 1 # get in develwarn
         if self.tracebackflag:
-            util.debugstacktrace(msg, stacklevel, self.ferr, self.fout)
+            util.debugstacktrace(msg, stacklevel, self._ferr, self._fout)
             self.log('develwarn', '%s at:\n%s' %
                      (msg, ''.join(util.getstackframes(stacklevel))))
         else:
@@ -1920,3 +2049,29 @@ def getprogbar(ui):
 
 def haveprogbar():
     return _progresssingleton is not None
+
+def _selectmsgdests(ui):
+    name = ui.config(b'ui', b'message-output')
+    if name == b'channel':
+        if ui.fmsg:
+            return ui.fmsg, ui.fmsg
+        else:
+            # fall back to ferr if channel isn't ready so that status/error
+            # messages can be printed
+            return ui.ferr, ui.ferr
+    if name == b'stdio':
+        return ui.fout, ui.ferr
+    if name == b'stderr':
+        return ui.ferr, ui.ferr
+    raise error.Abort(b'invalid ui.message-output destination: %s' % name)
+
+def _writemsgwith(write, dest, *args, **opts):
+    """Write ui message with the given ui._write*() function
+
+    The specified message type is translated to 'ui.<type>' label if the dest
+    isn't a structured channel, so that the message will be colorized.
+    """
+    # TODO: maybe change 'type' to a mandatory option
+    if r'type' in opts and not getattr(dest, 'structured', False):
+        opts[r'label'] = opts.get(r'label', '') + ' ui.%s' % opts.pop(r'type')
+    write(dest, *args, **opts)

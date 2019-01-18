@@ -38,6 +38,8 @@ typedef struct {
 #define MANIFEST_OOM -1
 #define MANIFEST_NOT_SORTED -2
 #define MANIFEST_MALFORMED -3
+#define MANIFEST_BOGUS_FILENAME -4
+#define MANIFEST_TOO_SHORT_LINE -5
 
 /* get the length of the path for a line */
 static size_t pathlen(line *l)
@@ -115,17 +117,32 @@ static int find_lines(lazymanifest *self, char *data, Py_ssize_t len)
 	char *prev = NULL;
 	while (len > 0) {
 		line *l;
-		char *next = memchr(data, '\n', len);
+		char *next;
+		if (*data == '\0') {
+			/* It's implausible there's no filename, don't
+			 * even bother looking for the newline. */
+			return MANIFEST_BOGUS_FILENAME;
+		}
+		next = memchr(data, '\n', len);
 		if (!next) {
 			return MANIFEST_MALFORMED;
 		}
-		next++; /* advance past newline */
-		if (!realloc_if_full(self)) {
-			return MANIFEST_OOM; /* no memory */
+		if ((next - data) < 42) {
+			/* We should have at least 42 bytes in a line:
+			   1 byte filename
+			   1 NUL
+			   40 bytes of hash
+			   so we can give up here.
+			*/
+			return MANIFEST_TOO_SHORT_LINE;
 		}
+		next++; /* advance past newline */
 		if (prev && strcmp(prev, data) > -1) {
 			/* This data isn't sorted, so we have to abort. */
 			return MANIFEST_NOT_SORTED;
+		}
+		if (!realloc_if_full(self)) {
+			return MANIFEST_OOM; /* no memory */
 		}
 		l = self->lines + ((self->numlines)++);
 		l->start = data;
@@ -189,6 +206,16 @@ static int lazymanifest_init(lazymanifest *self, PyObject *args)
 	case MANIFEST_MALFORMED:
 		PyErr_Format(PyExc_ValueError,
 			     "Manifest did not end in a newline.");
+		break;
+	case MANIFEST_BOGUS_FILENAME:
+		PyErr_Format(
+			PyExc_ValueError,
+			"Manifest had an entry with a zero-length filename.");
+		break;
+	case MANIFEST_TOO_SHORT_LINE:
+		PyErr_Format(
+			PyExc_ValueError,
+			"Manifest had implausibly-short line.");
 		break;
 	default:
 		PyErr_Format(PyExc_ValueError,

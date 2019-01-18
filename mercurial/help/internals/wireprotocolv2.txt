@@ -426,8 +426,10 @@ When ``haveparents`` is false, the command MUST assume that the receiver
 has no file revisions data. This means that all referenced file revisions
 in the queried set of changeset revisions will be sent.
 
-TODO we'll probably want a more complicated mechanism for the client to
-specify which ancestor revisions are known.
+TODO we want a more complicated mechanism for the client to specify which
+ancestor revisions are known. This is needed so intelligent deltas can be
+emitted and so updated linknodes can be sent if the client needs to adjust
+its linknodes for existing file nodes to older changeset revisions.
 TODO we may want to make linknodes an array so multiple changesets can be
 marked as introducing a file revision, since this can occur with e.g. hidden
 changesets.

@@ -482,6 +482,7 @@ def parseargs(args, parser):
             parser.error('--with-hg must specify an executable hg script')
         if os.path.basename(options.with_hg) not in [b'hg', b'hg.exe']:
             sys.stderr.write('warning: --with-hg should specify an hg script\n')
+            sys.stderr.flush()
     if options.local:
         testdir = os.path.dirname(_bytespath(canonpath(sys.argv[0])))
         reporootdir = os.path.dirname(testdir)
@@ -1095,14 +1096,17 @@ class Test(unittest.TestCase):
                                                    b'daemon.pids'))
         env["HGEDITOR"] = ('"' + sys.executable + '"'
                            + ' -c "import sys; sys.exit(0)"')
-        env["HGMERGE"] = "internal:merge"
         env["HGUSER"]   = "test"
         env["HGENCODING"] = "ascii"
         env["HGENCODINGMODE"] = "strict"
         env["HGHOSTNAME"] = "test-hostname"
         env['HGIPV6'] = str(int(self._useipv6))
-        if 'HGCATAPULTSERVERPIPE' not in env:
-            env['HGCATAPULTSERVERPIPE'] = os.devnull
+        # See contrib/catapipe.py for how to use this functionality.
+        if 'HGTESTCATAPULTSERVERPIPE' not in env:
+            # If we don't have HGTESTCATAPULTSERVERPIPE explicitly set, pull the
+            # non-test one in as a default, otherwise set to devnull
+            env['HGTESTCATAPULTSERVERPIPE'] = \
+                env.get('HGCATAPULTSERVERPIPE', os.devnull)
 
         extraextensions = []
         for opt in self._extraconfigopts:
@@ -1119,6 +1123,12 @@ class Test(unittest.TestCase):
         # IP addresses.
         env['LOCALIP'] = _strpath(self._localip())
 
+        # This has the same effect as Py_LegacyWindowsStdioFlag in exewrapper.c,
+        # but this is needed for testing python instances like dummyssh,
+        # dummysmtpd.py, and dumbhttp.py.
+        if PYTHON3 and os.name == 'nt':
+            env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
+
         # Reset some environment variables to well-known values so that
         # the tests produce repeatable output.
         env['LANG'] = env['LC_ALL'] = env['LANGUAGE'] = 'C'
@@ -1127,9 +1137,24 @@ class Test(unittest.TestCase):
         env['COLUMNS'] = '80'
         env['TERM'] = 'xterm'
 
-        for k in ('HG HGPROF CDPATH GREP_OPTIONS http_proxy no_proxy ' +
-                  'HGPLAIN HGPLAINEXCEPT EDITOR VISUAL PAGER ' +
-                  'NO_PROXY CHGDEBUG').split():
+        dropped = [
+            'CDPATH',
+            'CHGDEBUG',
+            'EDITOR',
+            'GREP_OPTIONS',
+            'HG',
+            'HGMERGE',
+            'HGPLAIN',
+            'HGPLAINEXCEPT',
+            'HGPROF',
+            'http_proxy',
+            'no_proxy',
+            'NO_PROXY',
+            'PAGER',
+            'VISUAL',
+        ]
+
+        for k in dropped:
             if k in env:
                 del env[k]
 
@@ -1149,6 +1174,7 @@ class Test(unittest.TestCase):
             hgrc.write(b'[ui]\n')
             hgrc.write(b'slash = True\n')
             hgrc.write(b'interactive = False\n')
+            hgrc.write(b'merge = internal:merge\n')
             hgrc.write(b'mergemarkers = detailed\n')
             hgrc.write(b'promptecho = True\n')
             hgrc.write(b'[defaults]\n')
@@ -1379,24 +1405,32 @@ class TTest(Test):
                 script.append(b'%s %d 0\n' % (salt, line))
             else:
                 script.append(b'echo %s %d $?\n' % (salt, line))
-        active = []
+        activetrace = []
         session = str(uuid.uuid4())
         if PYTHON3:
             session = session.encode('ascii')
-        def toggletrace(cmd):
+        hgcatapult = os.getenv('HGTESTCATAPULTSERVERPIPE') or \
+            os.getenv('HGCATAPULTSERVERPIPE')
+        def toggletrace(cmd=None):
+            if not hgcatapult or hgcatapult == os.devnull:
+                return
+
+            if activetrace:
+                script.append(
+                    b'echo END %s %s >> "$HGTESTCATAPULTSERVERPIPE"\n' % (
+                        session, activetrace[0]))
+            if cmd is None:
+                return
+
             if isinstance(cmd, str):
                 quoted = shellquote(cmd.strip())
             else:
                 quoted = shellquote(cmd.strip().decode('utf8')).encode('utf8')
             quoted = quoted.replace(b'\\', b'\\\\')
-            if active:
-                script.append(
-                    b'echo END %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
-                        session, active[0]))
-                script.append(
-                    b'echo START %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
-                        session, quoted))
-                active[0:] = [quoted]
+            script.append(
+                b'echo START %s %s >> "$HGTESTCATAPULTSERVERPIPE"\n' % (
+                    session, quoted))
+            activetrace[0:] = [quoted]
 
         script = []
 
@@ -1425,7 +1459,6 @@ class TTest(Test):
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
 
-        hgcatapult = os.getenv('HGCATAPULTSERVERPIPE')
         if hgcatapult and hgcatapult != os.devnull:
             # Kludge: use a while loop to keep the pipe from getting
             # closed by our echo commands. The still-running file gets
@@ -1433,18 +1466,19 @@ class TTest(Test):
             # loop to exit and closes the pipe. Sigh.
             script.append(
                 b'rtendtracing() {\n'
-                b'  echo END %(session)s %(name)s >> $HGCATAPULTSERVERPIPE\n'
+                b'  echo END %(session)s %(name)s >> %(catapult)s\n'
                 b'  rm -f "$TESTTMP/.still-running"\n'
                 b'}\n'
                 b'trap "rtendtracing" 0\n'
                 b'touch "$TESTTMP/.still-running"\n'
                 b'while [ -f "$TESTTMP/.still-running" ]; do sleep 1; done '
-                b'> $HGCATAPULTSERVERPIPE &\n'
+                b'> %(catapult)s &\n'
                 b'HGCATAPULTSESSION=%(session)s ; export HGCATAPULTSESSION\n'
-                b'echo START %(session)s %(name)s >> $HGCATAPULTSERVERPIPE\n'
+                b'echo START %(session)s %(name)s >> %(catapult)s\n'
                 % {
                     'name': self.name,
                     'session': session,
+                    'catapult': hgcatapult,
                 }
             )
 
@@ -1537,6 +1571,9 @@ class TTest(Test):
         if skipping is not None:
             after.setdefault(pos, []).append('  !!! missing #endif\n')
         addsalt(n + 1, False)
+        # Need to end any current per-command trace
+        if activetrace:
+            toggletrace()
         return salt, script, after, expected
 
     def _processoutput(self, exitcode, output, salt, after, expected):
@@ -2544,17 +2581,18 @@ class TestRunner(object):
             os.umask(oldmask)
 
     def _run(self, testdescs):
+        testdir = getcwdb()
         self._testdir = osenvironb[b'TESTDIR'] = getcwdb()
         # assume all tests in same folder for now
         if testdescs:
             pathname = os.path.dirname(testdescs[0]['path'])
             if pathname:
-                osenvironb[b'TESTDIR'] = os.path.join(osenvironb[b'TESTDIR'],
-                                                      pathname)
+                testdir = os.path.join(testdir, pathname)
+        self._testdir = osenvironb[b'TESTDIR'] = testdir
         if self.options.outputdir:
             self._outputdir = canonpath(_bytespath(self.options.outputdir))
         else:
-            self._outputdir = self._testdir
+            self._outputdir = getcwdb()
             if testdescs and pathname:
                 self._outputdir = os.path.join(self._outputdir, pathname)
         previoustimes = {}
@@ -2625,6 +2663,13 @@ class TestRunner(object):
             self._hgcommand = b'hg'
             self._tmpbindir = self._bindir
             self._pythondir = os.path.join(self._installdir, b"lib", b"python")
+
+        # Force the use of hg.exe instead of relying on MSYS to recognize hg is
+        # a python script and feed it to python.exe.  Legacy stdio is force
+        # enabled by hg.exe, and this is a more realistic way to launch hg
+        # anyway.
+        if os.name == 'nt' and not self._hgcommand.endswith(b'.exe'):
+            self._hgcommand += b'.exe'
 
         # set CHGHG, then replace "hg" command by "chg"
         chgbindir = self._bindir
@@ -2742,7 +2787,8 @@ class TestRunner(object):
                 expanded_args.append(arg)
         args = expanded_args
 
-        testcasepattern = re.compile(br'([\w-]+\.t|py)(#([a-zA-Z0-9_\-\.#]+))')
+        testcasepattern = re.compile(
+            br'([\w-]+\.t|py)(?:#([a-zA-Z0-9_\-\.#]+))')
         tests = []
         for t in args:
             case = []
@@ -2750,9 +2796,10 @@ class TestRunner(object):
             if not (os.path.basename(t).startswith(b'test-')
                     and (t.endswith(b'.py') or t.endswith(b'.t'))):
 
-                m = testcasepattern.match(t)
+                m = testcasepattern.match(os.path.basename(t))
                 if m is not None:
-                    t, _, casestr = m.groups()
+                    t_basename, casestr = m.groups()
+                    t = os.path.join(os.path.dirname(t), t_basename)
                     if casestr:
                         case = casestr.split(b'#')
                 else:
@@ -2813,8 +2860,9 @@ class TestRunner(object):
                     testdescs = orig
 
             tests = [self._gettest(d, i) for i, d in enumerate(testdescs)]
+            num_tests = len(tests) * self.options.runs_per_test
 
-            jobs = min(len(tests), self.options.jobs)
+            jobs = min(num_tests, self.options.jobs)
 
             failed = False
             kws = self.options.keywords
@@ -2851,7 +2899,7 @@ class TestRunner(object):
                     self._installchg()
 
                 log('running %d tests using %d parallel processes' % (
-                    len(tests), jobs))
+                    num_tests, jobs))
 
                 result = runner.run(suite)
 
@@ -2902,7 +2950,7 @@ class TestRunner(object):
                 testcls = cls
                 break
 
-        refpath = os.path.join(self._testdir, path)
+        refpath = os.path.join(getcwdb(), path)
         tmpdir = os.path.join(self._hgtmp, b'child%d' % count)
 
         # extra keyword parameters. 'case' is used by .t tests
@@ -3005,7 +3053,7 @@ class TestRunner(object):
             # least on Windows for now, deal with .pydistutils.cfg bugs
             # when they happen.
             nohome = b''
-        cmd = (b'%(exe)s setup.py %(pure)s clean --all'
+        cmd = (b'"%(exe)s" setup.py %(pure)s clean --all'
                b' build %(compiler)s --build-base="%(base)s"'
                b' install --force --prefix="%(prefix)s"'
                b' --install-lib="%(libdir)s"'
@@ -3028,7 +3076,7 @@ class TestRunner(object):
         makedirs(self._bindir)
 
         vlog("# Running", cmd)
-        if os.system(_strpath(cmd)) == 0:
+        if subprocess.call(_strpath(cmd), shell=True) == 0:
             if not self.options.verbose:
                 try:
                     os.remove(installerrs)
@@ -3107,15 +3155,15 @@ class TestRunner(object):
         if self._hgpath is not None:
             return self._hgpath
 
-        cmd = b'%s -c "import mercurial; print (mercurial.__path__[0])"'
+        cmd = b'"%s" -c "import mercurial; print (mercurial.__path__[0])"'
         cmd = cmd % PYTHON
         if PYTHON3:
             cmd = _strpath(cmd)
-        pipe = os.popen(cmd)
-        try:
-            self._hgpath = _bytespath(pipe.read().strip())
-        finally:
-            pipe.close()
+
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out, err = p.communicate()
+
+        self._hgpath = out.strip()
 
         return self._hgpath
 

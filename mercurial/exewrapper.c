@@ -7,6 +7,7 @@
  GNU General Public License version 2 or any later version.
 */
 
+#include <Python.h>
 #include <stdio.h>
 #include <tchar.h>
 #include <windows.h>
@@ -45,6 +46,10 @@ int _tmain(int argc, TCHAR *argv[])
 	HMODULE pydll;
 	void(__cdecl * Py_SetPythonHome)(TCHAR * home);
 	int(__cdecl * Py_Main)(int argc, TCHAR *argv[]);
+
+#if PY_MAJOR_VERSION >= 3
+	Py_LegacyWindowsStdioFlag = 1;
+#endif
 
 	if (GetModuleFileName(NULL, pyscript, _countof(pyscript)) == 0) {
 		err = "GetModuleFileName failed";

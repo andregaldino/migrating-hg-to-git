@@ -42,7 +42,7 @@ just in case somebody has a strange $TMPDIR
   $ hg init repo
   $ cd repo
 
-  $ chmod 0770 .hg/store
+  $ chmod 0770 .hg/store .hg/cache .hg/wcache
 
 before commit
 store can be written by the group, other files cannot
@@ -51,8 +51,10 @@ store is setgid
   $ "$PYTHON" ../printmodes.py .
   00700 ./.hg/
   00600 ./.hg/00changelog.i
+  00770 ./.hg/cache/
   00600 ./.hg/requires
   00770 ./.hg/store/
+  00770 ./.hg/wcache/
 
   $ mkdir dir
   $ touch foo dir/bar
@@ -69,9 +71,6 @@ new directories are setgid
   00600 ./.hg/00changelog.i
   00770 ./.hg/cache/
   00660 ./.hg/cache/branch2-served
-  00711 ./.hg/cache/checkisexec
-  007.. ./.hg/cache/checklink (re)
-  00600 ./.hg/cache/checklink-target
   00660 ./.hg/cache/manifestfulltextcache (reporevlogstore !)
   00660 ./.hg/cache/rbc-names-v1
   00660 ./.hg/cache/rbc-revs-v1
@@ -102,6 +101,10 @@ new directories are setgid
   00660 ./.hg/undo.branch
   00660 ./.hg/undo.desc
   00660 ./.hg/undo.dirstate
+  00770 ./.hg/wcache/
+  00711 ./.hg/wcache/checkisexec
+  007.. ./.hg/wcache/checklink (re)
+  00600 ./.hg/wcache/checklink-target
   00700 ./dir/
   00600 ./dir/bar
   00600 ./foo
@@ -115,8 +118,10 @@ group can write everything
   $ "$PYTHON" ../printmodes.py ../push
   00770 ../push/.hg/
   00660 ../push/.hg/00changelog.i
+  00770 ../push/.hg/cache/
   00660 ../push/.hg/requires
   00770 ../push/.hg/store/
+  00770 ../push/.hg/wcache/
 
   $ umask 077
   $ hg -q push ../push
@@ -152,6 +157,7 @@ group can still write everything
   00660 ../push/.hg/undo.branch
   00660 ../push/.hg/undo.desc
   00660 ../push/.hg/undo.dirstate
+  00770 ../push/.hg/wcache/
 
 
 Test that we don't lose the setgid bit when we call chmod.

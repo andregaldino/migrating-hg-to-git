@@ -87,7 +87,7 @@ def generate_css(web):
     ]))
     return web.res.sendresponse()
 
-def extsetup():
+def extsetup(ui):
     # monkeypatch in the new version
     extensions.wrapfunction(webcommands, '_filerevision',
                             filerevision_highlight)

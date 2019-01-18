@@ -462,7 +462,7 @@ effect and style see :hg:`help color`.
     (default: False)
 
 ``status.terse``
-    Default value for the --terse flag, which condenes status output.
+    Default value for the --terse flag, which condenses status output.
     (default: empty)
 
 ``update.check``
@@ -1756,6 +1756,9 @@ Mercurial commands can draw progress bars that are as informative as
 possible. Some progress bars only offer indeterminate information, while others
 have a definite end point.
 
+``debug``
+    Whether to print debug info when updating the progress bar. (default: False)
+
 ``delay``
     Number of seconds (float) before showing the progress bar. (default: 3)
 
@@ -1805,6 +1808,16 @@ have a definite end point.
 ---------------
 
 Alias definitions for revsets. See :hg:`help revsets` for details.
+
+``rewrite``
+-----------
+
+``backup-bundle``
+    Whether to save stripped changesets to a bundle file. (default: True)
+
+``update-timestamp``
+    If true, updates the date and time of the changeset to current. It is only
+    applicable for hg amend in current version.
 
 ``storage``
 -----------
@@ -2246,6 +2259,14 @@ User interface controls.
 
     Can be overridden per-merge-tool, see the ``[merge-tools]`` section.
 
+``message-output``
+    Where to write status and error messages. (default: ``stdio``)
+
+    ``stderr``
+      Everything to stderr.
+    ``stdio``
+      Status to stdout, and error to stderr.
+
 ``origbackuppath``
     The path to a directory used to store generated .orig files. If the path is
     not a directory, one will be created.  If set, files stored in this
@@ -2295,6 +2316,16 @@ User interface controls.
     .. container:: windows
 
       On Windows, this configuration option is ignored and the command aborted.
+
+``pre-merge-tool-output-template``
+    A template that is printed before executing an external merge tool. This can
+    be used to print out additional context that might be useful to have during
+    the conflict resolution, such as the description of the various commits
+    involved or bookmarks/tags.
+
+    Additional information is available in the ``local`, ``base``, and ``other``
+    dicts. For example: ``{local.label}``, ``{base.name}``, or
+    ``{other.islink}``.
 
 ``quiet``
     Reduce the amount of output printed.

@@ -40,6 +40,10 @@ if sys.version_info[0] >= 3:
             # zstd is already dual-version clean, don't try and mangle it
             if fullname.startswith('mercurial.zstd'):
                 return None
+            # rustext is built for the right python version,
+            # don't try and mangle it
+            if fullname.startswith('mercurial.rustext'):
+                return None
             # pywatchman is already dual-version clean, don't try and mangle it
             if fullname.startswith('hgext.fsmonitor.pywatchman'):
                 return None

@@ -562,9 +562,7 @@ class basefilectx(object):
 
     @propertycache
     def _changeid(self):
-        if r'_changeid' in self.__dict__:
-            return self._changeid
-        elif r'_changectx' in self.__dict__:
+        if r'_changectx' in self.__dict__:
             return self._changectx.rev()
         elif r'_descendantrev' in self.__dict__:
             # this file context was created from a revision with a known
@@ -704,17 +702,27 @@ class basefilectx(object):
         if fctx._customcmp:
             return fctx.cmp(self)
 
-        if (fctx._filenode is None
-            and (self._repo._encodefilterpats
-                 # if file data starts with '\1\n', empty metadata block is
-                 # prepended, which adds 4 bytes to filelog.size().
-                 or self.size() - 4 == fctx.size())
-            or self.size() == fctx.size()):
+        if self._filenode is None:
+            raise error.ProgrammingError(
+                'filectx.cmp() must be reimplemented if not backed by revlog')
+
+        if fctx._filenode is None:
+            if self._repo._encodefilterpats:
+                # can't rely on size() because wdir content may be decoded
+                return self._filelog.cmp(self._filenode, fctx.data())
+            if self.size() - 4 == fctx.size():
+                # size() can match:
+                # if file data starts with '\1\n', empty metadata block is
+                # prepended, which adds 4 bytes to filelog.size().
+                return self._filelog.cmp(self._filenode, fctx.data())
+        if self.size() == fctx.size():
+            # size() matches: need to compare content
             return self._filelog.cmp(self._filenode, fctx.data())
 
+        # size() differs
         return True
 
-    def _adjustlinkrev(self, srcrev, inclusive=False):
+    def _adjustlinkrev(self, srcrev, inclusive=False, stoprev=None):
         """return the first ancestor of <srcrev> introducing <fnode>
 
         If the linkrev of the file revision does not point to an ancestor of
@@ -723,6 +731,10 @@ class basefilectx(object):
 
         :srcrev: the changeset revision we search ancestors from
         :inclusive: if true, the src revision will also be checked
+        :stoprev: an optional revision to stop the walk at. If no introduction
+                  of this file content could be found before this floor
+                  revision, the function will returns "None" and stops its
+                  iteration.
         """
         repo = self._repo
         cl = repo.unfiltered().changelog
@@ -750,6 +762,8 @@ class basefilectx(object):
             fnode = self._filenode
             path = self._path
             for a in iteranc:
+                if stoprev is not None and a < stoprev:
+                    return None
                 ac = cl.read(a) # get changeset data (we avoid object creation)
                 if path in ac[3]: # checking the 'files' field.
                     # The file has been touched, check if the content is
@@ -762,6 +776,16 @@ class basefilectx(object):
             # result is crash somewhere else at to some point.
         return lkr
 
+    def isintroducedafter(self, changelogrev):
+        """True if a filectx has been introduced after a given floor revision
+        """
+        if self.linkrev() >= changelogrev:
+            return True
+        introrev = self._introrev(stoprev=changelogrev)
+        if introrev is None:
+            return False
+        return introrev >= changelogrev
+
     def introrev(self):
         """return the rev of the changeset which introduced this file revision
 
@@ -771,10 +795,34 @@ class basefilectx(object):
         'linkrev-shadowing' when a file revision is used by multiple
         changesets.
         """
+        return self._introrev()
+
+    def _introrev(self, stoprev=None):
+        """
+        Same as `introrev` but, with an extra argument to limit changelog
+        iteration range in some internal usecase.
+
+        If `stoprev` is set, the `introrev` will not be searched past that
+        `stoprev` revision and "None" might be returned. This is useful to
+        limit the iteration range.
+        """
+        toprev = None
         attrs = vars(self)
-        hastoprev = (r'_changeid' in attrs or r'_changectx' in attrs)
-        if hastoprev:
-            return self._adjustlinkrev(self.rev(), inclusive=True)
+        if r'_changeid' in attrs:
+            # We have a cached value already
+            toprev = self._changeid
+        elif r'_changectx' in attrs:
+            # We know which changelog entry we are coming from
+            toprev = self._changectx.rev()
+
+        if toprev is not None:
+            return self._adjustlinkrev(toprev, inclusive=True, stoprev=stoprev)
+        elif r'_descendantrev' in attrs:
+            introrev = self._adjustlinkrev(self._descendantrev, stoprev=stoprev)
+            # be nice and cache the result of the computation
+            if introrev is not None:
+                self._changeid = introrev
+            return introrev
         else:
             return self.linkrev()
 
@@ -1832,11 +1880,11 @@ class overlayworkingctx(committablectx):
             # files.
             if 'l' in self.p1()[component].flags():
                 raise error.Abort("error: %s conflicts with symlink %s "
-                                  "in %s." % (path, component,
+                                  "in %d." % (path, component,
                                               self.p1().rev()))
             else:
                 raise error.Abort("error: '%s' conflicts with file '%s' in "
-                                  "%s." % (path, component,
+                                  "%d." % (path, component,
                                            self.p1().rev()))
 
         # Test that each new directory to be created to write this path from p2
@@ -1970,6 +2018,12 @@ class overlayworkingctx(committablectx):
         to resolve a conflict.
         """
         keys = []
+        # This won't be perfect, but can help performance significantly when
+        # using things like remotefilelog.
+        scmutil.prefetchfiles(
+            self.repo(), [self.p1().rev()],
+            scmutil.matchfiles(self.repo(), self._cache.keys()))
+
         for path in self._cache.keys():
             cache = self._cache[path]
             try:

@@ -3,7 +3,10 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 mod ancestors;
-pub use ancestors::AncestorsIterator;
+pub mod dagops;
+pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
+#[cfg(test)]
+pub mod testing;
 
 /// Mercurial revision numbers
 ///
@@ -15,7 +18,10 @@ pub const NULL_REVISION: Revision = -1;
 
 /// The simplest expression of what we need of Mercurial DAGs.
 pub trait Graph {
-    fn parents(&self, Revision) -> Result<(Revision, Revision), GraphError>;
+    /// Return the two parents of the given `Revision`.
+    ///
+    /// Each of the parents can be independently `NULL_REVISION`
+    fn parents(&self, Revision) -> Result<[Revision; 2], GraphError>;
 }
 
 #[derive(Clone, Debug, PartialEq)]

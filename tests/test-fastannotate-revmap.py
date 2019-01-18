@@ -14,7 +14,7 @@ if pycompat.ispy3:
     xrange = range
 
 def genhsh(i):
-    return chr(i) + b'\0' * 19
+    return pycompat.bytechr(i) + b'\0' * 19
 
 def gettemppath():
     fd, path = tempfile.mkstemp()
@@ -35,7 +35,8 @@ def testbasicreadwrite():
         ensure(rm.rev2hsh(i) is None)
     ensure(rm.hsh2rev(b'\0' * 20) is None)
 
-    paths = ['', 'a', None, 'b', 'b', 'c', 'c', None, 'a', 'b', 'a', 'a']
+    paths = [
+        b'', b'a', None, b'b', b'b', b'c', b'c', None, b'a', b'b', b'a', b'a']
     for i in xrange(1, 5):
         ensure(rm.append(genhsh(i), sidebranch=(i & 1), path=paths[i]) == i)
 
@@ -88,7 +89,7 @@ def testcorruptformat():
     path = gettemppath()
 
     # incorrect header
-    with open(path, 'w') as f:
+    with open(path, 'wb') as f:
         f.write(b'NOT A VALID HEADER')
     try:
         revmap.revmap(path)
@@ -106,8 +107,8 @@ def testcorruptformat():
 
     # corrupt the file by appending a byte
     size = os.stat(path).st_size
-    with open(path, 'a') as f:
-        f.write('\xff')
+    with open(path, 'ab') as f:
+        f.write(b'\xff')
     try:
         revmap.revmap(path)
         ensure(False)
@@ -116,7 +117,7 @@ def testcorruptformat():
 
     # corrupt the file by removing the last byte
     ensure(size > 0)
-    with open(path, 'w') as f:
+    with open(path, 'wb') as f:
         f.truncate(size - 1)
     try:
         revmap.revmap(path)
@@ -130,7 +131,8 @@ def testcopyfrom():
     path = gettemppath()
     rm = revmap.revmap(path)
     for i in xrange(1, 10):
-        ensure(rm.append(genhsh(i), sidebranch=(i & 1), path=str(i // 3)) == i)
+        ensure(rm.append(genhsh(i),
+                         sidebranch=(i & 1), path=(b'%d' % (i // 3))) == i)
     rm.flush()
 
     # copy rm to rm2
@@ -174,10 +176,10 @@ def testcontains():
     # "contains" checks paths
     rm = revmap.revmap()
     for i in xrange(1, 5):
-        ensure(rm.append(genhsh(i), path=str(i // 2)) == i)
+        ensure(rm.append(genhsh(i), path=(b'%d' % (i // 2))) == i)
     for i in xrange(1, 5):
-        ensure(fakefctx(genhsh(i), path=str(i // 2)) in rm)
-        ensure(fakefctx(genhsh(i), path='a') not in rm)
+        ensure(fakefctx(genhsh(i), path=(b'%d' % (i // 2))) in rm)
+        ensure(fakefctx(genhsh(i), path=b'a') not in rm)
 
 def testlastnode():
     path = gettemppath()
@@ -186,7 +188,7 @@ def testlastnode():
     ensure(revmap.getlastnode(path) is None)
     for i in xrange(1, 10):
         hsh = genhsh(i)
-        rm.append(hsh, path=str(i // 2), flush=True)
+        rm.append(hsh, path=(b'%d' % (i // 2)), flush=True)
         ensure(revmap.getlastnode(path) == hsh)
         rm2 = revmap.revmap(path)
         ensure(rm2.rev2hsh(rm2.maxrev) == hsh)

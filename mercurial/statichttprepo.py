@@ -187,7 +187,8 @@ class statichttprepository(localrepo.localrepository,
         self.requirements = requirements
 
         rootmanifest = manifest.manifestrevlog(self.svfs)
-        self.manifestlog = manifest.manifestlog(self.svfs, self, rootmanifest)
+        self.manifestlog = manifest.manifestlog(self.svfs, self, rootmanifest,
+                                                self.narrowmatch())
         self.changelog = changelog.changelog(self.svfs)
         self._tags = None
         self.nodetagscache = None

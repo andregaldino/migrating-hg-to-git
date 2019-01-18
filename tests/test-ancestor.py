@@ -182,6 +182,64 @@ graph = {0: [-1, -1], 1: [0, -1], 2: [1, -1], 3: [1, -1], 4: [2, -1],
          5: [4, -1], 6: [4, -1], 7: [4, -1], 8: [-1, -1], 9: [6, 7],
          10: [5, -1], 11: [3, 7], 12: [9, -1], 13: [8, -1]}
 
+def test_missingancestors_explicit():
+    """A few explicit cases, easier to check for catching errors in refactors.
+
+    The bigger graph at the end has been produced by the random generator
+    above, and we have some evidence that the other tests don't cover it.
+    """
+    for i, (bases, revs) in enumerate((({1, 2, 3, 4, 7}, set(xrange(10))),
+                                       ({10}, set({11, 12, 13, 14})),
+                                       ({7}, set({1, 2, 3, 4, 5})),
+                                       )):
+        print("%% removeancestorsfrom(), example %d" % (i + 1))
+        missanc = ancestor.incrementalmissingancestors(graph.get, bases)
+        missanc.removeancestorsfrom(revs)
+        print("remaining (sorted): %s" % sorted(list(revs)))
+
+    for i, (bases, revs) in enumerate((({10}, {11}),
+                                       ({11}, {10}),
+                                       ({7}, {9, 11}),
+                                       )):
+        print("%% missingancestors(), example %d" % (i + 1))
+        missanc = ancestor.incrementalmissingancestors(graph.get, bases)
+        print("return %s" % missanc.missingancestors(revs))
+
+    print("% removeancestorsfrom(), bigger graph")
+    vecgraph = [
+        [-1, -1], [0, -1], [1, 0], [2, 1], [3, -1], [4, -1], [5, 1],
+        [2, -1], [7, -1], [8, -1], [9, -1], [10, 1], [3, -1], [12, -1],
+        [13, -1], [14, -1], [4, -1], [16, -1], [17, -1], [18, -1],
+        [19, 11], [20, -1], [21, -1], [22, -1], [23, -1], [2, -1],
+        [3, -1], [26, 24], [27, -1], [28, -1], [12, -1], [1, -1], [1, 9],
+        [32, -1], [33, -1], [34, 31], [35, -1], [36, 26], [37, -1],
+        [38, -1], [39, -1], [40, -1], [41, -1], [42, 26], [0, -1],
+        [44, -1], [45, 4], [40, -1], [47, -1], [36, 0], [49, -1],
+        [-1, -1], [51, -1], [52, -1], [53, -1], [14, -1],
+        [55, -1], [15, -1], [23, -1], [58, -1], [59, -1], [2, -1],
+        [61, 59], [62, -1], [63, -1], [-1, -1], [65, -1],
+        [66, -1], [67, -1], [68, -1], [37, 28], [69, 25],
+        [71, -1], [72, -1], [50, 2], [74, -1], [12, -1],
+        [18, -1], [77, -1], [78, -1], [79, -1], [43, 33],
+        [81, -1], [82, -1], [83, -1], [84, 45], [85, -1],
+        [86, -1], [-1, -1], [88, -1], [-1, -1], [76, 83], [44, -1],
+        [92, -1], [93, -1], [9, -1], [95, 67], [96, -1], [97, -1],
+        [-1, -1]]
+    problem_rev = 28
+    problem_base = 70
+    # problem_rev is a parent of problem_base, but a faulty implementation
+    # could forget to remove it.
+    bases = {60, 26, 70, 3, 96, 19, 98, 49, 97, 47, 1, 6}
+    if problem_rev not in vecgraph[problem_base] or problem_base not in bases:
+        print("Conditions have changed")
+    missanc = ancestor.incrementalmissingancestors(vecgraph.__getitem__, bases)
+    revs = {4, 12, 41, 28, 68, 38, 1, 30, 56, 44}
+    missanc.removeancestorsfrom(revs)
+    if 28 in revs:
+        print("Failed!")
+    else:
+        print("Ok")
+
 def genlazyancestors(revs, stoprev=0, inclusive=False):
     print(("%% lazy ancestor set for %s, stoprev = %s, inclusive = %s" %
            (revs, stoprev, inclusive)))
@@ -276,6 +334,7 @@ def main():
             seed = long(time.time() * 1000)
 
     rng = random.Random(seed)
+    test_missingancestors_explicit()
     test_missingancestors(seed, rng)
     test_lazyancestors()
     test_gca()

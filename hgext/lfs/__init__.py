@@ -129,30 +129,23 @@ import sys
 from mercurial.i18n import _
 
 from mercurial import (
-    bundle2,
-    changegroup,
-    cmdutil,
     config,
     context,
     error,
     exchange,
     extensions,
+    exthelper,
     filelog,
     filesetlang,
     localrepo,
     minifileset,
     node,
     pycompat,
-    registrar,
     repository,
     revlog,
     scmutil,
     templateutil,
-    upgrade,
     util,
-    vfs as vfsmod,
-    wireprotoserver,
-    wireprotov1server,
 )
 
 from . import (
@@ -167,44 +160,47 @@ from . import (
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-configtable = {}
-configitem = registrar.configitem(configtable)
+eh = exthelper.exthelper()
+eh.merge(wrapper.eh)
+eh.merge(wireprotolfsserver.eh)
 
-configitem('experimental', 'lfs.serve',
+cmdtable = eh.cmdtable
+configtable = eh.configtable
+extsetup = eh.finalextsetup
+uisetup = eh.finaluisetup
+filesetpredicate = eh.filesetpredicate
+reposetup = eh.finalreposetup
+templatekeyword = eh.templatekeyword
+
+eh.configitem('experimental', 'lfs.serve',
     default=True,
 )
-configitem('experimental', 'lfs.user-agent',
+eh.configitem('experimental', 'lfs.user-agent',
     default=None,
 )
-configitem('experimental', 'lfs.disableusercache',
+eh.configitem('experimental', 'lfs.disableusercache',
     default=False,
 )
-configitem('experimental', 'lfs.worker-enable',
+eh.configitem('experimental', 'lfs.worker-enable',
     default=False,
 )
 
-configitem('lfs', 'url',
+eh.configitem('lfs', 'url',
     default=None,
 )
-configitem('lfs', 'usercache',
+eh.configitem('lfs', 'usercache',
     default=None,
 )
 # Deprecated
-configitem('lfs', 'threshold',
+eh.configitem('lfs', 'threshold',
     default=None,
 )
-configitem('lfs', 'track',
+eh.configitem('lfs', 'track',
     default='none()',
 )
-configitem('lfs', 'retry',
+eh.configitem('lfs', 'retry',
     default=5,
 )
-
-cmdtable = {}
-command = registrar.command(cmdtable)
-
-templatekeyword = registrar.templatekeyword()
-filesetpredicate = registrar.filesetpredicate()
 
 lfsprocessor = (
     wrapper.readfromstore,
@@ -216,10 +212,12 @@ def featuresetup(ui, supported):
     # don't die on seeing a repo with the lfs requirement
     supported |= {'lfs'}
 
-def uisetup(ui):
+@eh.uisetup
+def _uisetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
 
-def reposetup(ui, repo):
+@eh.reposetup
+def _reposetup(ui, repo):
     # Nothing to do with a remote repo
     if not repo.local():
         return
@@ -246,7 +244,7 @@ def reposetup(ui, repo):
                 s = repo.set('%n:%n', _bin(kwargs[r'node']), _bin(last))
             else:
                 s = repo.set('%n', _bin(kwargs[r'node']))
-            match = repo.narrowmatch()
+            match = repo._storenarrowmatch
             for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?
                 if any(ctx[f].islfs() for f in ctx.files()
@@ -305,6 +303,7 @@ def _trackedmatcher(repo):
 
     return _match
 
+# Called by remotefilelog
 def wrapfilelog(filelog):
     wrapfunction = extensions.wrapfunction
 
@@ -312,6 +311,7 @@ def wrapfilelog(filelog):
     wrapfunction(filelog, 'renamed', wrapper.filelogrenamed)
     wrapfunction(filelog, 'size', wrapper.filelogsize)
 
+@eh.wrapfunction(localrepo, 'resolverevlogstorevfsoptions')
 def _resolverevlogstorevfsoptions(orig, ui, requirements, features):
     opts = orig(ui, requirements, features)
     for name, module in extensions.extensions(ui):
@@ -326,38 +326,10 @@ def _resolverevlogstorevfsoptions(orig, ui, requirements, features):
 
     return opts
 
-def extsetup(ui):
+@eh.extsetup
+def _extsetup(ui):
     wrapfilelog(filelog.filelog)
 
-    wrapfunction = extensions.wrapfunction
-
-    wrapfunction(localrepo, 'makefilestorage', wrapper.localrepomakefilestorage)
-    wrapfunction(localrepo, 'resolverevlogstorevfsoptions',
-                 _resolverevlogstorevfsoptions)
-
-    wrapfunction(cmdutil, '_updatecatformatter', wrapper._updatecatformatter)
-    wrapfunction(scmutil, 'wrapconvertsink', wrapper.convertsink)
-
-    wrapfunction(upgrade, '_finishdatamigration',
-                 wrapper.upgradefinishdatamigration)
-
-    wrapfunction(upgrade, 'preservedrequirements',
-                 wrapper.upgraderequirements)
-
-    wrapfunction(upgrade, 'supporteddestrequirements',
-                 wrapper.upgraderequirements)
-
-    wrapfunction(changegroup,
-                 'allsupportedversions',
-                 wrapper.allsupportedversions)
-
-    wrapfunction(exchange, 'push', wrapper.push)
-    wrapfunction(wireprotov1server, '_capabilities', wrapper._capabilities)
-    wrapfunction(wireprotoserver, 'handlewsgirequest',
-                 wireprotolfsserver.handlewsgirequest)
-
-    wrapfunction(context.basefilectx, 'cmp', wrapper.filectxcmp)
-    wrapfunction(context.basefilectx, 'isbinary', wrapper.filectxisbinary)
     context.basefilectx.islfs = wrapper.filectxislfs
 
     scmutil.fileprefetchhooks.add('lfs', wrapper._prefetchfiles)
@@ -367,14 +339,7 @@ def extsetup(ui):
     # "packed1". Using "packed1" with lfs will likely cause trouble.
     exchange._bundlespeccontentopts["v2"]["cg.version"] = "03"
 
-    # bundlerepo uses "vfsmod.readonlyvfs(othervfs)", we need to make sure lfs
-    # options and blob stores are passed from othervfs to the new readonlyvfs.
-    wrapfunction(vfsmod.readonlyvfs, '__init__', wrapper.vfsinit)
-
-    # when writing a bundle via "hg bundle" command, upload related LFS blobs
-    wrapfunction(bundle2, 'writenewbundle', wrapper.writenewbundle)
-
-@filesetpredicate('lfs()')
+@eh.filesetpredicate('lfs()')
 def lfsfileset(mctx, x):
     """File that uses LFS storage."""
     # i18n: "lfs" is a keyword
@@ -384,7 +349,7 @@ def lfsfileset(mctx, x):
         return wrapper.pointerfromctx(ctx, f, removed=True) is not None
     return mctx.predicate(lfsfilep, predrepr='<lfs>')
 
-@templatekeyword('lfs_files', requires={'ctx'})
+@eh.templatekeyword('lfs_files', requires={'ctx'})
 def lfsfiles(context, mapping):
     """List of strings. All files modified, added, or removed by this
     changeset."""
@@ -409,8 +374,8 @@ def lfsfiles(context, mapping):
     f = templateutil._showcompatlist(context, mapping, 'lfs_file', files)
     return templateutil.hybrid(f, files, makemap, pycompat.identity)
 
-@command('debuglfsupload',
-         [('r', 'rev', [], _('upload large files introduced by REV'))])
+@eh.command('debuglfsupload',
+            [('r', 'rev', [], _('upload large files introduced by REV'))])
 def debuglfsupload(ui, repo, **opts):
     """upload lfs blobs added by the working copy parent or given revisions"""
     revs = opts.get(r'rev', [])

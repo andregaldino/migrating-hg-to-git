@@ -83,6 +83,8 @@
   > blackbox=
   > [devel]
   > all-warnings=1
+  > [blackbox]
+  > track = command, commandexception, commandfinish, develwarn
   > EOF
 
   $ hg init lock-checker

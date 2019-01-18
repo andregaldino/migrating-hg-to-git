@@ -34,9 +34,26 @@
   $ hg commit -m 'commit 3'
   created new head
 
+Create multiple heads introducing the same file nodefile node
+
+  $ hg -q up -r 0
+  $ echo foo > dupe-file
+  $ hg commit -Am 'dupe 1'
+  adding dupe-file
+  created new head
+  $ hg -q up -r 0
+  $ echo foo > dupe-file
+  $ hg commit -Am 'dupe 2'
+  adding dupe-file
+  created new head
+
   $ hg log -G -T '{rev}:{node} {desc}\n'
-  @  3:476fbf122cd82f6726f0191ff146f67140946abc commit 3
+  @  5:47fc30580911232cb264675b402819deddf6c6f0 dupe 2
   |
+  | o  4:b16cce2967c1749ef4f4e3086a806cfbad8a3af7 dupe 1
+  |/
+  | o  3:476fbf122cd82f6726f0191ff146f67140946abc commit 3
+  |/
   | o  2:b91c03cbba3519ab149b6cd0a0afbdb5cf1b5c8a commit 2
   | |
   | o  1:5b0b1a23577e205ea240e39c9704e28d7697cbd8 commit 1
@@ -1158,6 +1175,123 @@ Requesting linknode field works
     {
       b'linknode': b'[\x0b\x1a#W~ ^\xa2@\xe3\x9c\x97\x04\xe2\x8dv\x97\xcb\xd8',
       b'node': b'\x03A\xfc\x84\x1b\xb5\xb4\xba\x93\xb2mM\xdaa\xf7y6]\xb3K'
+    }
+  ]
+
+Test behavior where a file node is introduced in 2 DAG heads
+
+Request for changeset introducing filenode returns linknode as self
+
+  $ sendhttpv2peer << EOF
+  > command filesdata
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [
+  >             b'\xb1\x6c\xce\x29\x67\xc1\x74\x9e\xf4\xf4\xe3\x08\x6a\x80\x6c\xfb\xad\x8a\x3a\xf7',
+  >         ]}]
+  >     fields eval:[b'linknode']
+  >     pathfilter eval:{b'include': [b'path:dupe-file']}
+  > EOF
+  creating http peer for wire protocol version 2
+  sending filesdata command
+  response: gen[
+    {
+      b'totalitems': 1,
+      b'totalpaths': 1
+    },
+    {
+      b'path': b'dupe-file',
+      b'totalitems': 1
+    },
+    {
+      b'linknode': b'\xb1l\xce)g\xc1t\x9e\xf4\xf4\xe3\x08j\x80l\xfb\xad\x8a:\xf7',
+      b'node': b'.\xd2\xa3\x91*\x0b$P C\xea\xe8N\xe4\xb2y\xc1\x8b\x90\xdd'
+    }
+  ]
+
+  $ sendhttpv2peer << EOF
+  > command filesdata
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [
+  >             b'\xb1\x6c\xce\x29\x67\xc1\x74\x9e\xf4\xf4\xe3\x08\x6a\x80\x6c\xfb\xad\x8a\x3a\xf7',
+  >         ]}]
+  >     fields eval:[b'linknode']
+  >     haveparents eval:True
+  >     pathfilter eval:{b'include': [b'path:dupe-file']}
+  > EOF
+  creating http peer for wire protocol version 2
+  sending filesdata command
+  response: gen[
+    {
+      b'totalitems': 1,
+      b'totalpaths': 1
+    },
+    {
+      b'path': b'dupe-file',
+      b'totalitems': 1
+    },
+    {
+      b'linknode': b'\xb1l\xce)g\xc1t\x9e\xf4\xf4\xe3\x08j\x80l\xfb\xad\x8a:\xf7',
+      b'node': b'.\xd2\xa3\x91*\x0b$P C\xea\xe8N\xe4\xb2y\xc1\x8b\x90\xdd'
+    }
+  ]
+
+Request for changeset where recorded linknode isn't in DAG ancestry will get
+rewritten accordingly
+
+  $ sendhttpv2peer << EOF
+  > command filesdata
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [
+  >             b'\x47\xfc\x30\x58\x09\x11\x23\x2c\xb2\x64\x67\x5b\x40\x28\x19\xde\xdd\xf6\xc6\xf0',
+  >         ]}]
+  >     fields eval:[b'linknode']
+  >     pathfilter eval:{b'include': [b'path:dupe-file']}
+  > EOF
+  creating http peer for wire protocol version 2
+  sending filesdata command
+  response: gen[
+    {
+      b'totalitems': 1,
+      b'totalpaths': 1
+    },
+    {
+      b'path': b'dupe-file',
+      b'totalitems': 1
+    },
+    {
+      b'linknode': b'G\xfc0X\t\x11#,\xb2dg[@(\x19\xde\xdd\xf6\xc6\xf0',
+      b'node': b'.\xd2\xa3\x91*\x0b$P C\xea\xe8N\xe4\xb2y\xc1\x8b\x90\xdd'
+    }
+  ]
+
+  $ sendhttpv2peer << EOF
+  > command filesdata
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [
+  >             b'\x47\xfc\x30\x58\x09\x11\x23\x2c\xb2\x64\x67\x5b\x40\x28\x19\xde\xdd\xf6\xc6\xf0',
+  >         ]}]
+  >     fields eval:[b'linknode']
+  >     haveparents eval:True
+  >     pathfilter eval:{b'include': [b'path:dupe-file']}
+  > EOF
+  creating http peer for wire protocol version 2
+  sending filesdata command
+  response: gen[
+    {
+      b'totalitems': 1,
+      b'totalpaths': 1
+    },
+    {
+      b'path': b'dupe-file',
+      b'totalitems': 1
+    },
+    {
+      b'linknode': b'G\xfc0X\t\x11#,\xb2dg[@(\x19\xde\xdd\xf6\xc6\xf0',
+      b'node': b'.\xd2\xa3\x91*\x0b$P C\xea\xe8N\xe4\xb2y\xc1\x8b\x90\xdd'
     }
   ]
 

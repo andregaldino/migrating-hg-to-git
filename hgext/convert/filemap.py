@@ -270,6 +270,9 @@ class filemap_source(common.converter_source):
             self.children[p] = self.children.get(p, 0) + 1
         return c
 
+    def numcommits(self):
+        return self.base.numcommits()
+
     def _cachedcommit(self, rev):
         if rev in self.commits:
             return self.commits[rev]
@@ -302,7 +305,18 @@ class filemap_source(common.converter_source):
         for f in files:
             if self.filemapper(f):
                 return True
-        return False
+
+        # The include directive is documented to include nothing else (though
+        # valid branch closes are included).
+        if self.filemapper.include:
+            return False
+
+        # Allow empty commits in the source revision through.  The getchanges()
+        # method doesn't even bother calling this if it determines that the
+        # close marker is significant (i.e. all of the branch ancestors weren't
+        # eliminated).  Therefore if there *is* a close marker, getchanges()
+        # doesn't consider it significant, and this revision should be dropped.
+        return not files and 'close' not in self.commits[rev].extra
 
     def mark_not_wanted(self, rev, p):
         # Mark rev as not interesting and update data structures.

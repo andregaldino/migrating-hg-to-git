@@ -91,11 +91,16 @@ class _basefilecache(scmutil.filecache):
     def __get__(self, repo, type=None):
         if repo is None:
             return self
-        return super(_basefilecache, self).__get__(repo.unfiltered(), type)
-    def __set__(self, repo, value):
-        return super(_basefilecache, self).__set__(repo.unfiltered(), value)
-    def __delete__(self, repo):
-        return super(_basefilecache, self).__delete__(repo.unfiltered())
+        # proxy to unfiltered __dict__ since filtered repo has no entry
+        unfi = repo.unfiltered()
+        try:
+            return unfi.__dict__[self.sname]
+        except KeyError:
+            pass
+        return super(_basefilecache, self).__get__(unfi, type)
+
+    def set(self, repo, value):
+        return super(_basefilecache, self).set(repo.unfiltered(), value)
 
 class repofilecache(_basefilecache):
     """filecache for files in .hg but outside of .hg/store"""
@@ -358,7 +363,7 @@ class locallegacypeer(localpeer):
 
 # Increment the sub-version when the revlog v2 format changes to lock out old
 # clients.
-REVLOGV2_REQUIREMENT = 'exp-revlogv2.0'
+REVLOGV2_REQUIREMENT = 'exp-revlogv2.1'
 
 # A repository with the sparserevlog feature will have delta chains that
 # can spread over a larger span. Sparse reading cuts these large spans into
@@ -446,15 +451,10 @@ def makelocalrepository(baseui, path, intents=None):
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and
     # process any new extensions that it may have pulled in.
-    try:
-        ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
-        # Run this before extensions.loadall() so extensions can be
-        # automatically enabled.
+    if loadhgrc(ui, wdirvfs, hgvfs, requirements):
         afterhgrcload(ui, wdirvfs, hgvfs, requirements)
-    except IOError:
-        pass
-    else:
         extensions.loadall(ui)
+        extensions.populateui(ui)
 
     # Set of module names of extensions loaded for this repository.
     extensionmodulenames = {m.__name__ for n, m in extensions.extensions(ui)}
@@ -508,6 +508,8 @@ def makelocalrepository(baseui, path, intents=None):
     else:
         storebasepath = hgvfs.base
         cachepath = hgvfs.join(b'cache')
+    wcachepath = hgvfs.join(b'wcache')
+
 
     # The store has changed over time and the exact layout is dictated by
     # requirements. The store interface abstracts differences across all
@@ -522,6 +524,9 @@ def makelocalrepository(baseui, path, intents=None):
     # The cache vfs is used to manage cache files.
     cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
     cachevfs.createmode = store.createmode
+    # The cache vfs is used to manage cache files related to the working copy
+    wcachevfs = vfsmod.vfs(wcachepath, cacheaudited=True)
+    wcachevfs.createmode = store.createmode
 
     # Now resolve the type for the repository object. We do this by repeatedly
     # calling a factory function to produces types for specific aspects of the
@@ -544,6 +549,7 @@ def makelocalrepository(baseui, path, intents=None):
                  storevfs=storevfs,
                  storeoptions=storevfs.options,
                  cachevfs=cachevfs,
+                 wcachevfs=wcachevfs,
                  extensionmodulenames=extensionmodulenames,
                  extrastate=extrastate,
                  baseclasses=bases)
@@ -574,8 +580,27 @@ def makelocalrepository(baseui, path, intents=None):
         sharedpath=storebasepath,
         store=store,
         cachevfs=cachevfs,
+        wcachevfs=wcachevfs,
         features=features,
         intents=intents)
+
+def loadhgrc(ui, wdirvfs, hgvfs, requirements):
+    """Load hgrc files/content into a ui instance.
+
+    This is called during repository opening to load any additional
+    config files or settings relevant to the current repository.
+
+    Returns a bool indicating whether any additional configs were loaded.
+
+    Extensions should monkeypatch this function to modify how per-repo
+    configs are loaded. For example, an extension may wish to pull in
+    configs from alternate files or sources.
+    """
+    try:
+        ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
+        return True
+    except IOError:
+        return False
 
 def afterhgrcload(ui, wdirvfs, hgvfs, requirements):
     """Perform additional actions after .hg/hgrc is loaded.
@@ -733,8 +758,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if 0 <= chainspan:
         options[b'maxdeltachainspan'] = chainspan
 
-    mmapindexthreshold = ui.configbytes(b'experimental',
-                                        b'mmapindexthreshold')
+    mmapindexthreshold = ui.configbytes(b'storage', b'mmap-threshold')
     if mmapindexthreshold is not None:
         options[b'mmapindexthreshold'] = mmapindexthreshold
 
@@ -791,7 +815,7 @@ class revlognarrowfilestorage(object):
         if path[0] == b'/':
             path = path[1:]
 
-        return filelog.narrowfilelog(self.svfs, path, self.narrowmatch())
+        return filelog.narrowfilelog(self.svfs, path, self._storenarrowmatch)
 
 def makefilestorage(requirements, features, **kwargs):
     """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
@@ -872,7 +896,7 @@ class localrepository(object):
     }
 
     def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, requirements,
-                 supportedrequirements, sharedpath, store, cachevfs,
+                 supportedrequirements, sharedpath, store, cachevfs, wcachevfs,
                  features, intents=None):
         """Create a new local repository instance.
 
@@ -915,6 +939,9 @@ class localrepository(object):
         cachevfs
            ``vfs.vfs`` used for cache files.
 
+        wcachevfs
+           ``vfs.vfs`` used for cache files related to the working copy.
+
         features
            ``set`` of bytestrings defining features/capabilities of this
            instance.
@@ -937,6 +964,7 @@ class localrepository(object):
         self.sharedpath = sharedpath
         self.store = store
         self.cachevfs = cachevfs
+        self.wcachevfs = wcachevfs
         self.features = features
 
         self.filtername = None
@@ -1012,12 +1040,12 @@ class localrepository(object):
                 path = path[len(repo.path) + 1:]
             if path.startswith('cache/'):
                 msg = 'accessing cache with vfs instead of cachevfs: "%s"'
-                repo.ui.develwarn(msg % path, stacklevel=2, config="cache-vfs")
-            if path.startswith('journal.'):
+                repo.ui.develwarn(msg % path, stacklevel=3, config="cache-vfs")
+            if path.startswith('journal.') or path.startswith('undo.'):
                 # journal is covered by 'lock'
                 if repo._currentlock(repo._lockref) is None:
                     repo.ui.develwarn('write with no lock: "%s"' % path,
-                                      stacklevel=2, config='check-locks')
+                                      stacklevel=3, config='check-locks')
             elif repo._currentlock(repo._wlockref) is None:
                 # rest of vfs files are covered by 'wlock'
                 #
@@ -1026,7 +1054,7 @@ class localrepository(object):
                     if path.startswith(prefix):
                         return
                 repo.ui.develwarn('write with no wlock: "%s"' % path,
-                                  stacklevel=2, config='check-locks')
+                                  stacklevel=3, config='check-locks')
             return ret
         return checkvfs
 
@@ -1045,7 +1073,7 @@ class localrepository(object):
                 path = path[len(repo.sharedpath) + 1:]
             if repo._currentlock(repo._lockref) is None:
                 repo.ui.develwarn('write with no lock: "%s"' % path,
-                                  stacklevel=3)
+                                  stacklevel=4)
             return ret
         return checksvfs
 
@@ -1162,7 +1190,8 @@ class localrepository(object):
     @storecache('00manifest.i')
     def manifestlog(self):
         rootstore = manifest.manifestrevlog(self.svfs)
-        return manifest.manifestlog(self.svfs, self, rootstore)
+        return manifest.manifestlog(self.svfs, self, rootstore,
+                                    self._storenarrowmatch)
 
     @repofilecache('dirstate')
     def dirstate(self):
@@ -1195,9 +1224,17 @@ class localrepository(object):
         return narrowspec.load(self)
 
     @storecache(narrowspec.FILENAME)
+    def _storenarrowmatch(self):
+        if repository.NARROW_REQUIREMENT not in self.requirements:
+            return matchmod.always(self.root, '')
+        include, exclude = self.narrowpats
+        return narrowspec.match(self.root, include=include, exclude=exclude)
+
+    @storecache(narrowspec.FILENAME)
     def _narrowmatch(self):
         if repository.NARROW_REQUIREMENT not in self.requirements:
             return matchmod.always(self.root, '')
+        narrowspec.checkworkingcopynarrowspec(self)
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)
 
@@ -1325,9 +1362,8 @@ class localrepository(object):
         Returns a revset.abstractsmartset, which is a list-like interface
         that contains integer revisions.
         '''
-        expr = revsetlang.formatspec(expr, *args)
-        m = revset.match(None, expr)
-        return m(self)
+        tree = revsetlang.spectree(expr, *args)
+        return revset.makematcher(tree)(self)
 
     def set(self, expr, *args):
         '''Find revisions matching a revset and emit changectx instances.
@@ -1399,10 +1435,11 @@ class localrepository(object):
             tags, tt = self._findtags()
         else:
             tags = self._tagscache.tags
+        rev = self.changelog.rev
         for k, v in tags.iteritems():
             try:
                 # ignore tags to unknown nodes
-                self.changelog.rev(v)
+                rev(v)
                 t[k] = v
             except (error.LookupError, ValueError):
                 pass
@@ -1570,7 +1607,7 @@ class localrepository(object):
                         self.dirstate.copy(None, f)
 
     def filectx(self, path, changeid=None, fileid=None, changectx=None):
-        """changeid can be a changeset revision, node, or tag.
+        """changeid must be a changeset revision, if specified.
            fileid can be a file revision or node."""
         return context.filectx(self, path, changeid, fileid,
                                changectx=changectx)
@@ -1799,6 +1836,7 @@ class localrepository(object):
                 # discard all changes (including ones already written
                 # out) in this transaction
                 narrowspec.restorebackup(self, 'journal.narrowspec')
+                narrowspec.restorewcbackup(self, 'journal.narrowspec.dirstate')
                 repo.dirstate.restorebackup(None, 'journal.dirstate')
 
                 repo.invalidate(clearfilecache=True)
@@ -1875,6 +1913,8 @@ class localrepository(object):
 
     def _journalfiles(self):
         return ((self.svfs, 'journal'),
+                (self.svfs, 'journal.narrowspec'),
+                (self.vfs, 'journal.narrowspec.dirstate'),
                 (self.vfs, 'journal.dirstate'),
                 (self.vfs, 'journal.branch'),
                 (self.vfs, 'journal.desc'),
@@ -1887,6 +1927,7 @@ class localrepository(object):
     @unfilteredmethod
     def _writejournal(self, desc):
         self.dirstate.savebackup(None, 'journal.dirstate')
+        narrowspec.savewcbackup(self, 'journal.narrowspec.dirstate')
         narrowspec.savebackup(self, 'journal.narrowspec')
         self.vfs.write("journal.branch",
                           encoding.fromlocal(self.dirstate.branch()))
@@ -1976,6 +2017,7 @@ class localrepository(object):
             dsguard.close()
 
             narrowspec.restorebackup(self, 'undo.narrowspec')
+            narrowspec.restorewcbackup(self, 'undo.narrowspec.dirstate')
             self.dirstate.restorebackup(None, 'undo.dirstate')
             try:
                 branch = self.vfs.read('undo.branch')
@@ -2877,11 +2919,11 @@ def newreporequirements(ui, createopts):
 
     if scmutil.gdinitconfig(ui):
         requirements.add('generaldelta')
+        # experimental config: format.sparse-revlog
+        if ui.configbool('format', 'sparse-revlog'):
+            requirements.add(SPARSEREVLOG_REQUIREMENT)
     if ui.configbool('experimental', 'treemanifest'):
         requirements.add('treemanifest')
-    # experimental config: format.sparse-revlog
-    if ui.configbool('format', 'sparse-revlog'):
-        requirements.add(SPARSEREVLOG_REQUIREMENT)
 
     revlogv2 = ui.config('experimental', 'revlogv2')
     if revlogv2 == 'enable-unstable-format-and-corrupt-my-data':
@@ -2992,6 +3034,9 @@ def createrepository(ui, path, createopts=None):
         wdirvfs.makedirs()
 
     hgvfs.makedir(notindexed=True)
+    if 'sharedrepo' not in createopts:
+        hgvfs.mkdir(b'cache')
+    hgvfs.mkdir(b'wcache')
 
     if b'store' in requirements and 'sharedrepo' not in createopts:
         hgvfs.mkdir(b'store')

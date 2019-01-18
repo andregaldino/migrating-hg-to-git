@@ -14,18 +14,29 @@ import os
 
 from mercurial.i18n import _
 
+from mercurial.hgweb import (
+    webcommands,
+)
+
 from mercurial import (
     archival,
     cmdutil,
+    copies as copiesmod,
     error,
+    exchange,
+    exthelper,
+    filemerge,
     hg,
     logcmdutil,
     match as matchmod,
+    merge,
     pathutil,
     pycompat,
-    registrar,
     scmutil,
     smartset,
+    subrepo,
+    upgrade,
+    url as urlmod,
     util,
 )
 
@@ -34,6 +45,8 @@ from . import (
     lfutil,
     storefactory,
 )
+
+eh = exthelper.exthelper()
 
 # -- Utility functions: commonly/repeatedly needed functionality ---------------
 
@@ -248,16 +261,23 @@ def removelargefiles(ui, repo, isaddremove, matcher, dryrun, **opts):
 
 # For overriding mercurial.hgweb.webcommands so that largefiles will
 # appear at their right place in the manifests.
+@eh.wrapfunction(webcommands, 'decodepath')
 def decodepath(orig, path):
     return lfutil.splitstandin(path) or path
 
 # -- Wrappers: modify existing commands --------------------------------
 
+@eh.wrapcommand('add',
+    opts=[('', 'large', None, _('add as largefile')),
+          ('', 'normal', None, _('add as normal file')),
+          ('', 'lfsize', '', _('add all files above this size (in megabytes) '
+                               'as largefiles (default: 10)'))])
 def overrideadd(orig, ui, repo, *pats, **opts):
     if opts.get(r'normal') and opts.get(r'large'):
         raise error.Abort(_('--normal cannot be used with --large'))
     return orig(ui, repo, *pats, **opts)
 
+@eh.wrapfunction(cmdutil, 'add')
 def cmdutiladd(orig, ui, repo, matcher, prefix, explicitonly, **opts):
     # The --normal flag short circuits this override
     if opts.get(r'normal'):
@@ -271,6 +291,7 @@ def cmdutiladd(orig, ui, repo, matcher, prefix, explicitonly, **opts):
     bad.extend(f for f in lbad)
     return bad
 
+@eh.wrapfunction(cmdutil, 'remove')
 def cmdutilremove(orig, ui, repo, matcher, prefix, after, force, subrepos,
                   dryrun):
     normalmatcher = composenormalfilematcher(matcher, repo[None].manifest())
@@ -279,6 +300,7 @@ def cmdutilremove(orig, ui, repo, matcher, prefix, after, force, subrepos,
     return removelargefiles(ui, repo, False, matcher, dryrun, after=after,
                             force=force) or result
 
+@eh.wrapfunction(subrepo.hgsubrepo, 'status')
 def overridestatusfn(orig, repo, rev2, **opts):
     try:
         repo._repo.lfstatus = True
@@ -286,6 +308,7 @@ def overridestatusfn(orig, repo, rev2, **opts):
     finally:
         repo._repo.lfstatus = False
 
+@eh.wrapcommand('status')
 def overridestatus(orig, ui, repo, *pats, **opts):
     try:
         repo.lfstatus = True
@@ -293,6 +316,7 @@ def overridestatus(orig, ui, repo, *pats, **opts):
     finally:
         repo.lfstatus = False
 
+@eh.wrapfunction(subrepo.hgsubrepo, 'dirty')
 def overridedirty(orig, repo, ignoreupdate=False, missing=False):
     try:
         repo._repo.lfstatus = True
@@ -300,6 +324,7 @@ def overridedirty(orig, repo, ignoreupdate=False, missing=False):
     finally:
         repo._repo.lfstatus = False
 
+@eh.wrapcommand('log')
 def overridelog(orig, ui, repo, *pats, **opts):
     def overridematchandpats(ctx, pats=(), opts=None, globbed=False,
             default='relpath', badfn=None):
@@ -406,6 +431,13 @@ def overridelog(orig, ui, repo, *pats, **opts):
         restorematchandpatsfn()
         setattr(logcmdutil, '_makenofollowfilematcher', oldmakefilematcher)
 
+@eh.wrapcommand('verify',
+    opts=[('', 'large', None,
+                _('verify that all largefiles in current revision exists')),
+          ('', 'lfa', None,
+                _('verify largefiles in all revisions, not just current')),
+          ('', 'lfc', None,
+                _('verify local largefile contents, not just existence'))])
 def overrideverify(orig, ui, repo, *pats, **opts):
     large = opts.pop(r'large', False)
     all = opts.pop(r'lfa', False)
@@ -416,6 +448,8 @@ def overrideverify(orig, ui, repo, *pats, **opts):
         result = result or lfcommands.verifylfiles(ui, repo, all, contents)
     return result
 
+@eh.wrapcommand('debugstate',
+    opts=[('', 'large', None, _('display largefiles dirstate'))])
 def overridedebugstate(orig, ui, repo, *pats, **opts):
     large = opts.pop(r'large', False)
     if large:
@@ -435,6 +469,7 @@ def overridedebugstate(orig, ui, repo, *pats, **opts):
 # The overridden function filters the unknown files by removing any
 # largefiles. This makes the merge proceed and we can then handle this
 # case further in the overridden calculateupdates function below.
+@eh.wrapfunction(merge, '_checkunknownfile')
 def overridecheckunknownfile(origfn, repo, wctx, mctx, f, f2=None):
     if lfutil.standin(repo.dirstate.normalize(f)) in wctx:
         return False
@@ -466,6 +501,7 @@ def overridecheckunknownfile(origfn, repo, wctx, mctx, f, f2=None):
 # Finally, the merge.applyupdates function will then take care of
 # writing the files into the working copy and lfcommands.updatelfiles
 # will update the largefiles.
+@eh.wrapfunction(merge, 'calculateupdates')
 def overridecalculateupdates(origfn, repo, p1, p2, pas, branchmerge, force,
                              acceptremote, *args, **kwargs):
     overwrite = force and not branchmerge
@@ -534,6 +570,7 @@ def overridecalculateupdates(origfn, repo, p1, p2, pas, branchmerge, force,
 
     return actions, diverge, renamedelete
 
+@eh.wrapfunction(merge, 'recordupdates')
 def mergerecordupdates(orig, repo, actions, branchmerge):
     if 'lfmr' in actions:
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
@@ -549,6 +586,7 @@ def mergerecordupdates(orig, repo, actions, branchmerge):
 
 # Override filemerge to prompt the user about how they wish to merge
 # largefiles. This will handle identical edits without prompting the user.
+@eh.wrapfunction(filemerge, '_filemerge')
 def overridefilemerge(origfn, premerge, repo, wctx, mynode, orig, fcd, fco, fca,
                       labels=None):
     if not lfutil.isstandin(orig) or fcd.isabsent() or fco.isabsent():
@@ -570,6 +608,7 @@ def overridefilemerge(origfn, premerge, repo, wctx, mynode, orig, fcd, fco, fca,
         repo.wwrite(fcd.path(), fco.data(), fco.flags())
     return True, 0, False
 
+@eh.wrapfunction(copiesmod, 'pathcopies')
 def copiespathcopies(orig, ctx1, ctx2, match=None):
     copies = orig(ctx1, ctx2, match=match)
     updated = {}
@@ -584,6 +623,7 @@ def copiespathcopies(orig, ctx1, ctx2, match=None):
 # checks if the destination largefile already exists. It also keeps a
 # list of copied files so that the largefiles can be copied and the
 # dirstate updated.
+@eh.wrapfunction(cmdutil, 'copy')
 def overridecopy(orig, ui, repo, pats, opts, rename=False):
     # doesn't remove largefile on rename
     if len(pats) < 2:
@@ -729,6 +769,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
 # commits. Update the standins then run the original revert, changing
 # the matcher to hit standins instead of largefiles. Based on the
 # resulting standins update the largefiles.
+@eh.wrapfunction(cmdutil, 'revert')
 def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
     # Because we put the standins in a bad state (by updating them)
     # and then return them to a correct state we need to lock to
@@ -799,6 +840,11 @@ def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
 
 # after pulling changesets, we need to take some extra care to get
 # largefiles updated remotely
+@eh.wrapcommand('pull',
+    opts=[('', 'all-largefiles', None,
+                _('download all pulled versions of largefiles (DEPRECATED)')),
+          ('', 'lfrev', [],
+                _('download largefiles for these revisions'), _('REV'))])
 def overridepull(orig, ui, repo, source=None, **opts):
     revsprepull = len(repo)
     if not source:
@@ -822,6 +868,9 @@ def overridepull(orig, ui, repo, source=None, **opts):
         ui.status(_("%d largefiles cached\n") % numcached)
     return result
 
+@eh.wrapcommand('push',
+    opts=[('', 'lfrev', [],
+               _('upload largefiles for these revisions'), _('REV'))])
 def overridepush(orig, ui, repo, *args, **kwargs):
     """Override push command and store --lfrev parameters in opargs"""
     lfrevs = kwargs.pop(r'lfrev', None)
@@ -830,6 +879,7 @@ def overridepush(orig, ui, repo, *args, **kwargs):
         opargs['lfrevs'] = scmutil.revrange(repo, lfrevs)
     return orig(ui, repo, *args, **kwargs)
 
+@eh.wrapfunction(exchange, 'pushoperation')
 def exchangepushoperation(orig, *args, **kwargs):
     """Override pushoperation constructor and store lfrevs parameter"""
     lfrevs = kwargs.pop(r'lfrevs', None)
@@ -837,9 +887,7 @@ def exchangepushoperation(orig, *args, **kwargs):
     pushop.lfrevs = lfrevs
     return pushop
 
-revsetpredicate = registrar.revsetpredicate()
-
-@revsetpredicate('pulled()')
+@eh.revsetpredicate('pulled()')
 def pulledrevsetsymbol(repo, subset, x):
     """Changesets that just has been pulled.
 
@@ -865,6 +913,9 @@ def pulledrevsetsymbol(repo, subset, x):
         raise error.Abort(_("pulled() only available in --lfrev"))
     return smartset.baseset([r for r in subset if r >= firstpulled])
 
+@eh.wrapcommand('clone',
+    opts=[('', 'all-largefiles', None,
+               _('download all versions of all largefiles'))])
 def overrideclone(orig, ui, source, dest=None, **opts):
     d = dest
     if d is None:
@@ -876,6 +927,7 @@ def overrideclone(orig, ui, source, dest=None, **opts):
 
     return orig(ui, source, dest, **opts)
 
+@eh.wrapfunction(hg, 'clone')
 def hgclone(orig, ui, opts, *args, **kwargs):
     result = orig(ui, opts, *args, **kwargs)
 
@@ -900,6 +952,7 @@ def hgclone(orig, ui, opts, *args, **kwargs):
 
     return result
 
+@eh.wrapcommand('rebase', extension='rebase')
 def overriderebase(orig, ui, repo, **opts):
     if not util.safehasattr(repo, '_largefilesenabled'):
         return orig(ui, repo, **opts)
@@ -913,6 +966,7 @@ def overriderebase(orig, ui, repo, **opts):
         repo._lfstatuswriters.pop()
         repo._lfcommithooks.pop()
 
+@eh.wrapcommand('archive')
 def overridearchivecmd(orig, ui, repo, dest, **opts):
     repo.unfiltered().lfstatus = True
 
@@ -921,6 +975,7 @@ def overridearchivecmd(orig, ui, repo, dest, **opts):
     finally:
         repo.unfiltered().lfstatus = False
 
+@eh.wrapfunction(webcommands, 'archive')
 def hgwebarchive(orig, web):
     web.repo.lfstatus = True
 
@@ -929,12 +984,13 @@ def hgwebarchive(orig, web):
     finally:
         web.repo.lfstatus = False
 
-def overridearchive(orig, repo, dest, node, kind, decode=True, matchfn=None,
+@eh.wrapfunction(archival, 'archive')
+def overridearchive(orig, repo, dest, node, kind, decode=True, match=None,
             prefix='', mtime=None, subrepos=None):
     # For some reason setting repo.lfstatus in hgwebarchive only changes the
     # unfiltered repo's attr, so check that as well.
     if not repo.lfstatus and not repo.unfiltered().lfstatus:
-        return orig(repo, dest, node, kind, decode, matchfn, prefix, mtime,
+        return orig(repo, dest, node, kind, decode, match, prefix, mtime,
                     subrepos)
 
     # No need to lock because we are only reading history and
@@ -955,7 +1011,7 @@ def overridearchive(orig, repo, dest, node, kind, decode=True, matchfn=None,
         prefix = archival.tidyprefix(dest, kind, prefix)
 
     def write(name, mode, islink, getdata):
-        if matchfn and not matchfn(name):
+        if match and not match(name):
             return
         data = getdata()
         if decode:
@@ -991,12 +1047,13 @@ def overridearchive(orig, repo, dest, node, kind, decode=True, matchfn=None,
     if subrepos:
         for subpath in sorted(ctx.substate):
             sub = ctx.workingsub(subpath)
-            submatch = matchmod.subdirmatcher(subpath, matchfn)
+            submatch = matchmod.subdirmatcher(subpath, match)
             sub._repo.lfstatus = True
             sub.archive(archiver, prefix, submatch)
 
     archiver.done()
 
+@eh.wrapfunction(subrepo.hgsubrepo, 'archive')
 def hgsubrepoarchive(orig, repo, archiver, prefix, match=None, decode=True):
     lfenabled = util.safehasattr(repo._repo, '_largefilesenabled')
     if not lfenabled or not repo._repo.lfstatus:
@@ -1051,6 +1108,7 @@ def hgsubrepoarchive(orig, repo, archiver, prefix, match=None, decode=True):
 # standin until a commit. cmdutil.bailifchanged() raises an exception
 # if the repo has uncommitted changes. Wrap it to also check if
 # largefiles were changed. This is used by bisect, backout and fetch.
+@eh.wrapfunction(cmdutil, 'bailifchanged')
 def overridebailifchanged(orig, repo, *args, **kwargs):
     orig(repo, *args, **kwargs)
     repo.lfstatus = True
@@ -1059,6 +1117,7 @@ def overridebailifchanged(orig, repo, *args, **kwargs):
     if s.modified or s.added or s.removed or s.deleted:
         raise error.Abort(_('uncommitted changes'))
 
+@eh.wrapfunction(cmdutil, 'postcommitstatus')
 def postcommitstatus(orig, repo, *args, **kwargs):
     repo.lfstatus = True
     try:
@@ -1066,6 +1125,7 @@ def postcommitstatus(orig, repo, *args, **kwargs):
     finally:
         repo.lfstatus = False
 
+@eh.wrapfunction(cmdutil, 'forget')
 def cmdutilforget(orig, ui, repo, match, prefix, explicitonly, dryrun,
                   interactive):
     normalmatcher = composenormalfilematcher(match, repo[None].manifest())
@@ -1167,6 +1227,13 @@ def outgoinghook(ui, repo, other, opts, missing):
                 showhashes(file)
             ui.status('\n')
 
+@eh.wrapcommand('outgoing',
+    opts=[('', 'large', None, _('display outgoing largefiles'))])
+def _outgoingcmd(orig, *args, **kwargs):
+    # Nothing to do here other than add the extra help option- the hook above
+    # processes it.
+    return orig(*args, **kwargs)
+
 def summaryremotehook(ui, repo, opts, changes):
     largeopt = opts.get('large', False)
     if changes is None:
@@ -1196,6 +1263,8 @@ def summaryremotehook(ui, repo, opts, changes):
             ui.status(_('largefiles: %d entities for %d files to upload\n')
                       % (len(lfhashes), len(toupload)))
 
+@eh.wrapcommand('summary',
+    opts=[('', 'large', None, _('display outgoing largefiles'))])
 def overridesummary(orig, ui, repo, *pats, **opts):
     try:
         repo.lfstatus = True
@@ -1203,6 +1272,7 @@ def overridesummary(orig, ui, repo, *pats, **opts):
     finally:
         repo.lfstatus = False
 
+@eh.wrapfunction(scmutil, 'addremove')
 def scmutiladdremove(orig, repo, matcher, prefix, opts=None):
     if opts is None:
         opts = {}
@@ -1242,6 +1312,7 @@ def scmutiladdremove(orig, repo, matcher, prefix, opts=None):
 
 # Calling purge with --all will cause the largefiles to be deleted.
 # Override repo.status to prevent this from happening.
+@eh.wrapcommand('purge', extension='purge')
 def overridepurge(orig, ui, repo, *dirs, **opts):
     # XXX Monkey patching a repoview will not work. The assigned attribute will
     # be set on the unfiltered repo, but we will only lookup attributes in the
@@ -1267,6 +1338,7 @@ def overridepurge(orig, ui, repo, *dirs, **opts):
     orig(ui, repo, *dirs, **opts)
     repo.status = oldstatus
 
+@eh.wrapcommand('rollback')
 def overriderollback(orig, ui, repo, **opts):
     with repo.wlock():
         before = repo.dirstate.parents()
@@ -1304,6 +1376,7 @@ def overriderollback(orig, ui, repo, **opts):
         lfdirstate.write()
     return result
 
+@eh.wrapcommand('transplant', extension='transplant')
 def overridetransplant(orig, ui, repo, *revs, **opts):
     resuming = opts.get(r'continue')
     repo._lfcommithooks.append(lfutil.automatedcommithook(resuming))
@@ -1315,6 +1388,7 @@ def overridetransplant(orig, ui, repo, *revs, **opts):
         repo._lfcommithooks.pop()
     return result
 
+@eh.wrapcommand('cat')
 def overridecat(orig, ui, repo, file1, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     ctx = scmutil.revsingle(repo, opts.get('rev'))
@@ -1375,6 +1449,7 @@ def overridecat(orig, ui, repo, file1, *pats, **opts):
         err = 0
     return err
 
+@eh.wrapfunction(merge, 'update')
 def mergeupdate(orig, repo, node, branchmerge, force,
                 *args, **kwargs):
     matcher = kwargs.get(r'matcher', None)
@@ -1452,6 +1527,7 @@ def mergeupdate(orig, repo, node, branchmerge, force,
 
         return result
 
+@eh.wrapfunction(scmutil, 'marktouched')
 def scmutilmarktouched(orig, repo, files, *args, **kwargs):
     result = orig(repo, files, *args, **kwargs)
 
@@ -1466,6 +1542,8 @@ def scmutilmarktouched(orig, repo, files, *args, **kwargs):
 
     return result
 
+@eh.wrapfunction(upgrade, 'preservedrequirements')
+@eh.wrapfunction(upgrade, 'supporteddestrequirements')
 def upgraderequirements(orig, repo):
     reqs = orig(repo)
     if 'largefiles' in repo.requirements:
@@ -1473,6 +1551,8 @@ def upgraderequirements(orig, repo):
     return reqs
 
 _lfscheme = 'largefile://'
+
+@eh.wrapfunction(urlmod, 'open')
 def openlargefile(orig, ui, url_, data=None):
     if url_.startswith(_lfscheme):
         if data:

@@ -212,7 +212,8 @@ class unionrepository(object):
     def manifestlog(self):
         rootstore = unionmanifest(self.svfs, self.repo2.svfs,
                                   self.unfiltered()._clrev)
-        return manifest.manifestlog(self.svfs, self, rootstore)
+        return manifest.manifestlog(self.svfs, self, rootstore,
+                                    self.narrowmatch())
 
     def _clrev(self, rev2):
         """map from repo2 changelog rev to temporary rev in self.changelog"""

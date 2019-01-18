@@ -15,6 +15,7 @@ Initialization
   > logt = log --template '{rev}:{node|short} {desc|firstline}\n'
   > [extensions]
   > histedit=
+  > mockmakedate = $TESTDIR/mockmakedate.py
   > EOF
 
 
@@ -597,3 +598,110 @@ Test rolling into a commit with multiple children (issue5498)
   o  8f0162e483d0 aa
   
 
+  $ cd ..
+
+====================================
+Test update-timestamp config option|
+====================================
+
+  $ addwithdate ()
+  > {
+  >     echo $1 > $1
+  >     hg add $1
+  >     hg ci -m $1 -d "$2 0"
+  > }
+
+  $ initrepo ()
+  > {
+  >     hg init r
+  >     cd r
+  >     addwithdate a 1
+  >     addwithdate b 2
+  >     addwithdate c 3
+  >     addwithdate d 4
+  >     addwithdate e 5
+  >     addwithdate f 6
+  > }
+
+  $ initrepo
+
+log before edit
+
+  $ hg log
+  changeset:   5:178e35e0ce73
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:06 1970 +0000
+  summary:     f
+  
+  changeset:   4:1ddb6c90f2ee
+  user:        test
+  date:        Thu Jan 01 00:00:05 1970 +0000
+  summary:     e
+  
+  changeset:   3:532247a8969b
+  user:        test
+  date:        Thu Jan 01 00:00:04 1970 +0000
+  summary:     d
+  
+  changeset:   2:ff2c9fa2018b
+  user:        test
+  date:        Thu Jan 01 00:00:03 1970 +0000
+  summary:     c
+  
+  changeset:   1:97d72e5f12c7
+  user:        test
+  date:        Thu Jan 01 00:00:02 1970 +0000
+  summary:     b
+  
+  changeset:   0:8580ff50825a
+  user:        test
+  date:        Thu Jan 01 00:00:01 1970 +0000
+  summary:     a
+  
+
+  $ hg histedit 1ddb6c90f2ee --commands - 2>&1 --config rewrite.update-timestamp=True <<EOF | fixbundle
+  > pick 178e35e0ce73 f
+  > fold 1ddb6c90f2ee e
+  > EOF
+
+log after edit
+observe time from f is updated
+
+  $ hg log
+  changeset:   4:f7909b1863a2
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:01 1970 +0000
+  summary:     f
+  
+  changeset:   3:532247a8969b
+  user:        test
+  date:        Thu Jan 01 00:00:04 1970 +0000
+  summary:     d
+  
+  changeset:   2:ff2c9fa2018b
+  user:        test
+  date:        Thu Jan 01 00:00:03 1970 +0000
+  summary:     c
+  
+  changeset:   1:97d72e5f12c7
+  user:        test
+  date:        Thu Jan 01 00:00:02 1970 +0000
+  summary:     b
+  
+  changeset:   0:8580ff50825a
+  user:        test
+  date:        Thu Jan 01 00:00:01 1970 +0000
+  summary:     a
+  
+post-fold manifest
+  $ hg manifest
+  a
+  b
+  c
+  d
+  e
+  f
+
+  $ cd ..

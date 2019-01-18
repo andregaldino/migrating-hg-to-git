@@ -935,21 +935,21 @@ reenable for later test
   $ rm access.log errors.log
 #endif
 
-Several troubles on the same changeset (create an unstable and bumped changeset)
+Several troubles on the same changeset (create an unstable and bumped and content-divergent changeset)
 
   $ hg debugobsolete `getid obsolete_e`
   obsoleted 1 changesets
   2 new orphan changesets
   $ hg debugobsolete `getid original_c` `getid babar`
   1 new phase-divergent changesets
-  $ hg log --config ui.logtemplate= -r 'phasedivergent() and orphan()'
+  2 new content-divergent changesets
+  $ hg log --config ui.logtemplate= -r 'phasedivergent() and orphan() and contentdivergent()'
   changeset:   7:50c51b361e60
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
-  instability: orphan, phase-divergent
+  instability: orphan, phase-divergent, content-divergent
   summary:     add babar
   
-
 test the "obsolete" templatekw
 
   $ hg log -r 'obsolete()'
@@ -958,7 +958,7 @@ test the "obsolete" templatekw
 test the "troubles" templatekw
 
   $ hg log -r 'phasedivergent() and orphan()'
-  7:50c51b361e60 (draft orphan phase-divergent) [ ] add babar
+  7:50c51b361e60 (draft orphan phase-divergent content-divergent) [ ] add babar
 
 test the default cmdline template
 
@@ -966,7 +966,7 @@ test the default cmdline template
   changeset:   7:50c51b361e60
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
-  instability: orphan, phase-divergent
+  instability: orphan, phase-divergent, content-divergent
   summary:     add babar
   
   $ hg log -T default -r 'obsolete()'
@@ -981,18 +981,18 @@ test the default cmdline template
 test the obsolete labels
 
   $ hg log --config ui.logtemplate= --color=debug -r 'phasedivergent()'
-  [log.changeset changeset.draft changeset.unstable instability.orphan instability.phase-divergent|changeset:   7:50c51b361e60]
+  [log.changeset changeset.draft changeset.unstable instability.orphan instability.phase-divergent instability.content-divergent|changeset:   7:50c51b361e60]
   [log.user|user:        test]
   [log.date|date:        Thu Jan 01 00:00:00 1970 +0000]
-  [log.instability|instability: orphan, phase-divergent]
+  [log.instability|instability: orphan, phase-divergent, content-divergent]
   [log.summary|summary:     add babar]
   
 
   $ hg log -T default -r 'phasedivergent()' --color=debug
-  [log.changeset changeset.draft changeset.unstable instability.orphan instability.phase-divergent|changeset:   7:50c51b361e60]
+  [log.changeset changeset.draft changeset.unstable instability.orphan instability.phase-divergent instability.content-divergent|changeset:   7:50c51b361e60]
   [log.user|user:        test]
   [log.date|date:        Thu Jan 01 00:00:00 1970 +0000]
-  [log.instability|instability: orphan, phase-divergent]
+  [log.instability|instability: orphan, phase-divergent, content-divergent]
   [log.summary|summary:     add babar]
   
 
@@ -1019,13 +1019,14 @@ test summary output
   $ hg up -r 'phasedivergent() and orphan()'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg summary
-  parent: 7:50c51b361e60  (orphan, phase-divergent)
+  parent: 7:50c51b361e60  (orphan, phase-divergent, content-divergent)
    add babar
   branch: default
   commit: (clean)
   update: 2 new changesets (update)
   phases: 4 draft
   orphan: 2 changesets
+  content-divergent: 2 changesets
   phase-divergent: 1 changesets
   $ hg up -r 'obsolete()'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -1037,6 +1038,7 @@ test summary output
   update: 3 new changesets (update)
   phases: 4 draft
   orphan: 2 changesets
+  content-divergent: 2 changesets
   phase-divergent: 1 changesets
 
 test debugwhyunstable output
@@ -1044,15 +1046,18 @@ test debugwhyunstable output
   $ hg debugwhyunstable 50c51b361e60
   orphan: obsolete parent 3de5eca88c00aa039da7399a220f4a5221faa585
   phase-divergent: immutable predecessor 245bde4270cd1072a27757984f9cda8ba26f08ca
+  content-divergent: 6f96419950729f3671185b847352890f074f7557 (draft) predecessor 245bde4270cd1072a27757984f9cda8ba26f08ca
 
 test whyunstable template keyword
 
   $ hg log -r 50c51b361e60 -T '{whyunstable}\n'
   orphan: obsolete parent 3de5eca88c00
   phase-divergent: immutable predecessor 245bde4270cd
+  content-divergent: 3:6f9641995072 (draft) predecessor 245bde4270cd
   $ hg log -r 50c51b361e60 -T '{whyunstable % "{instability}: {reason} {node|shortest}\n"}'
   orphan: obsolete parent 3de5
   phase-divergent: immutable predecessor 245b
+  content-divergent: predecessor 245b
 
 #if serve
 
@@ -1076,36 +1081,43 @@ check obsolete changeset
 check changeset with instabilities
 
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=paper' | grep '<span class="instability">'
-     <span class="phase">draft</span> <span class="instability">orphan</span> <span class="instability">phase-divergent</span> 
+     <span class="phase">draft</span> <span class="instability">orphan</span> <span class="instability">phase-divergent</span> <span class="instability">content-divergent</span> 
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=coal' | grep '<span class="instability">'
-     <span class="phase">draft</span> <span class="instability">orphan</span> <span class="instability">phase-divergent</span> 
+     <span class="phase">draft</span> <span class="instability">orphan</span> <span class="instability">phase-divergent</span> <span class="instability">content-divergent</span> 
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=gitweb' | grep '<span class="logtags">'
-    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> <span class="instabilitytag" title="content-divergent">content-divergent</span> </span>
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=monoblue' | grep '<span class="logtags">'
-          <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> </span>
+          <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> <span class="instabilitytag" title="content-divergent">content-divergent</span> </span>
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=spartan' | grep 'class="unstable"'
   <th class="unstable">unstable:</th>
   <td class="unstable">orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a></td>
   <th class="unstable">unstable:</th>
   <td class="unstable">phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=spartan">245bde4270cd</a></td>
+  <th class="unstable">unstable:</th>
+  <td class="unstable">content-divergent: <a href="/rev/6f9641995072?style=spartan">6f9641995072</a> (draft) predecessor <a href="/rev/245bde4270cd?style=spartan">245bde4270cd</a></td>
 
-check explanation for an orphan and phase-divergent changeset
+check explanation for an orphan, phase-divergent and content-divergent changeset
 
-  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=paper' | egrep '(orphan|phase-divergent):'
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=paper' | egrep '(orphan|phase-divergent|content-divergent):'
    <td>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=paper">3de5eca88c00</a><br>
-  phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=paper">245bde4270cd</a></td>
-  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=coal' | egrep '(orphan|phase-divergent):'
+  phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=paper">245bde4270cd</a><br>
+  content-divergent: <a href="/rev/6f9641995072?style=paper">6f9641995072</a> (draft) predecessor <a href="/rev/245bde4270cd?style=paper">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=coal' | egrep '(orphan|phase-divergent|content-divergent):'
    <td>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a><br>
-  phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=coal">245bde4270cd</a></td>
-  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=gitweb' | egrep '(orphan|phase-divergent):'
+  phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=coal">245bde4270cd</a><br>
+  content-divergent: <a href="/rev/6f9641995072?style=coal">6f9641995072</a> (draft) predecessor <a href="/rev/245bde4270cd?style=coal">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=gitweb' | egrep '(orphan|phase-divergent|content-divergent):'
   <td>orphan:  obsolete parent <a class="list" href="/rev/3de5eca88c00?style=gitweb">3de5eca88c00</a></td>
   <td>phase-divergent:  immutable predecessor <a class="list" href="/rev/245bde4270cd?style=gitweb">245bde4270cd</a></td>
-  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=monoblue' | egrep '(orphan|phase-divergent):'
+  <td>content-divergent: <a class="list" href="/rev/6f9641995072?style=gitweb">6f9641995072</a> (draft) predecessor <a class="list" href="/rev/245bde4270cd?style=gitweb">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=monoblue' | egrep '(orphan|phase-divergent|content-divergent):'
   <dd>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=monoblue">3de5eca88c00</a></dd>
   <dd>phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=monoblue">245bde4270cd</a></dd>
-  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=spartan' | egrep '(orphan|phase-divergent):'
+  <dd>content-divergent: <a href="/rev/6f9641995072?style=monoblue">6f9641995072</a> (draft) predecessor <a href="/rev/245bde4270cd?style=monoblue">245bde4270cd</a></dd>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=spartan' | egrep '(orphan|phase-divergent|content-divergent):'
   <td class="unstable">orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a></td>
   <td class="unstable">phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=spartan">245bde4270cd</a></td>
+  <td class="unstable">content-divergent: <a href="/rev/6f9641995072?style=spartan">6f9641995072</a> (draft) predecessor <a href="/rev/245bde4270cd?style=spartan">245bde4270cd</a></td>
 
   $ killdaemons.py
 

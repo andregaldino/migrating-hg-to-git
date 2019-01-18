@@ -10,7 +10,6 @@
 from __future__ import absolute_import
 
 import collections
-import heapq
 import struct
 
 # import stuff from node for others to import from revlog
@@ -31,6 +30,7 @@ from ..thirdparty import (
 from .. import (
     error,
     mdiff,
+    util,
 )
 
 # maximum <delta-chain-data>/<revision-text-length> ratio
@@ -39,18 +39,24 @@ LIMIT_DELTA2TEXT = 2
 class _testrevlog(object):
     """minimalist fake revlog to use in doctests"""
 
-    def __init__(self, data, density=0.5, mingap=0):
+    def __init__(self, data, density=0.5, mingap=0, snapshot=()):
         """data is an list of revision payload boundaries"""
         self._data = data
         self._srdensitythreshold = density
         self._srmingapsize = mingap
+        self._snapshot = set(snapshot)
+        self.index = None
 
     def start(self, rev):
+        if rev == nullrev:
+            return 0
         if rev == 0:
             return 0
         return self._data[rev - 1]
 
     def end(self, rev):
+        if rev == nullrev:
+            return 0
         return self._data[rev]
 
     def length(self, rev):
@@ -59,7 +65,12 @@ class _testrevlog(object):
     def __len__(self):
         return len(self._data)
 
-def slicechunk(revlog, revs, deltainfo=None, targetsize=None):
+    def issnapshot(self, rev):
+        if rev == nullrev:
+            return True
+        return rev in self._snapshot
+
+def slicechunk(revlog, revs, targetsize=None):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
     ``revs`` is sliced into groups that should be read in one time.
@@ -76,7 +87,7 @@ def slicechunk(revlog, revs, deltainfo=None, targetsize=None):
     If individual revisions chunk are larger than this limit, they will still
     be raised individually.
 
-    >>> revlog = _testrevlog([
+    >>> data = [
     ...  5,  #00 (5)
     ...  10, #01 (5)
     ...  12, #02 (2)
@@ -93,7 +104,8 @@ def slicechunk(revlog, revs, deltainfo=None, targetsize=None):
     ...  85, #13 (11)
     ...  86, #14 (1)
     ...  91, #15 (5)
-    ... ])
+    ... ]
+    >>> revlog = _testrevlog(data, snapshot=range(16))
 
     >>> list(slicechunk(revlog, list(range(16))))
     [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
@@ -111,19 +123,23 @@ def slicechunk(revlog, revs, deltainfo=None, targetsize=None):
     [[0], [11], [13], [15]]
     >>> list(slicechunk(revlog, [0, 11, 13, 15], targetsize=20))
     [[0], [11], [13, 15]]
+
+    Slicing involving nullrev
+    >>> list(slicechunk(revlog, [-1, 0, 11, 13, 15], targetsize=20))
+    [[-1, 0], [11], [13, 15]]
+    >>> list(slicechunk(revlog, [-1, 13, 15], targetsize=5))
+    [[-1], [13], [15]]
     """
     if targetsize is not None:
         targetsize = max(targetsize, revlog._srmingapsize)
     # targetsize should not be specified when evaluating delta candidates:
     # * targetsize is used to ensure we stay within specification when reading,
-    # * deltainfo is used to pick are good delta chain when writing.
-    if not (deltainfo is None or targetsize is None):
-        msg = 'cannot use `targetsize` with a `deltainfo`'
-        raise error.ProgrammingError(msg)
-    for chunk in _slicechunktodensity(revlog, revs,
-                                      deltainfo,
-                                      revlog._srdensitythreshold,
-                                      revlog._srmingapsize):
+    densityslicing = getattr(revlog.index, 'slicechunktodensity', None)
+    if densityslicing is None:
+        densityslicing = lambda x, y, z: _slicechunktodensity(revlog, x, y, z)
+    for chunk in densityslicing(revs,
+                                revlog._srdensitythreshold,
+                                revlog._srmingapsize):
         for subchunk in _slicechunktosize(revlog, chunk, targetsize):
             yield subchunk
 
@@ -135,7 +151,7 @@ def _slicechunktosize(revlog, revs, targetsize=None):
     happens when "minimal gap size" interrupted the slicing or when chain are
     built in a way that create large blocks next to each other.
 
-    >>> revlog = _testrevlog([
+    >>> data = [
     ...  3,  #0 (3)
     ...  5,  #1 (2)
     ...  6,  #2 (1)
@@ -145,7 +161,10 @@ def _slicechunktosize(revlog, revs, targetsize=None):
     ...  12, #6 (1)
     ...  13, #7 (1)
     ...  14, #8 (1)
-    ... ])
+    ... ]
+
+    == All snapshots cases ==
+    >>> revlog = _testrevlog(data, snapshot=range(9))
 
     Cases where chunk is already small enough
     >>> list(_slicechunktosize(revlog, [0], 3))
@@ -180,39 +199,110 @@ def _slicechunktosize(revlog, revs, targetsize=None):
     [[1], [3]]
     >>> list(_slicechunktosize(revlog, [3, 4, 5], 2))
     [[3], [5]]
+
+    == No Snapshot cases ==
+    >>> revlog = _testrevlog(data)
+
+    Cases where chunk is already small enough
+    >>> list(_slicechunktosize(revlog, [0], 3))
+    [[0]]
+    >>> list(_slicechunktosize(revlog, [6, 7], 3))
+    [[6, 7]]
+    >>> list(_slicechunktosize(revlog, [0], None))
+    [[0]]
+    >>> list(_slicechunktosize(revlog, [6, 7], None))
+    [[6, 7]]
+
+    cases where we need actual slicing
+    >>> list(_slicechunktosize(revlog, [0, 1], 3))
+    [[0], [1]]
+    >>> list(_slicechunktosize(revlog, [1, 3], 3))
+    [[1], [3]]
+    >>> list(_slicechunktosize(revlog, [1, 2, 3], 3))
+    [[1], [2, 3]]
+    >>> list(_slicechunktosize(revlog, [3, 5], 3))
+    [[3], [5]]
+    >>> list(_slicechunktosize(revlog, [3, 4, 5], 3))
+    [[3], [4, 5]]
+    >>> list(_slicechunktosize(revlog, [5, 6, 7, 8], 3))
+    [[5], [6, 7, 8]]
+    >>> list(_slicechunktosize(revlog, [0, 1, 2, 3, 4, 5, 6, 7, 8], 3))
+    [[0], [1, 2], [3], [5], [6, 7, 8]]
+
+    Case with too large individual chunk (must return valid chunk)
+    >>> list(_slicechunktosize(revlog, [0, 1], 2))
+    [[0], [1]]
+    >>> list(_slicechunktosize(revlog, [1, 3], 1))
+    [[1], [3]]
+    >>> list(_slicechunktosize(revlog, [3, 4, 5], 2))
+    [[3], [5]]
+
+    == mixed case ==
+    >>> revlog = _testrevlog(data, snapshot=[0, 1, 2])
+    >>> list(_slicechunktosize(revlog, list(range(9)), 5))
+    [[0, 1], [2], [3, 4, 5], [6, 7, 8]]
     """
     assert targetsize is None or 0 <= targetsize
-    if targetsize is None or segmentspan(revlog, revs) <= targetsize:
+    startdata = revlog.start(revs[0])
+    enddata = revlog.end(revs[-1])
+    fullspan = enddata - startdata
+    if targetsize is None or fullspan <= targetsize:
         yield revs
         return
 
     startrevidx = 0
-    startdata = revlog.start(revs[0])
-    endrevidx = 0
+    endrevidx = 1
     iterrevs = enumerate(revs)
     next(iterrevs) # skip first rev.
+    # first step: get snapshots out of the way
     for idx, r in iterrevs:
         span = revlog.end(r) - startdata
-        if span <= targetsize:
-            endrevidx = idx
+        snapshot = revlog.issnapshot(r)
+        if span <= targetsize and snapshot:
+            endrevidx = idx + 1
         else:
-            chunk = _trimchunk(revlog, revs, startrevidx, endrevidx + 1)
+            chunk = _trimchunk(revlog, revs, startrevidx, endrevidx)
             if chunk:
                 yield chunk
             startrevidx = idx
             startdata = revlog.start(r)
-            endrevidx = idx
-    yield _trimchunk(revlog, revs, startrevidx)
+            endrevidx = idx + 1
+        if not snapshot:
+            break
 
-def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
+    # for the others, we use binary slicing to quickly converge toward valid
+    # chunks (otherwise, we might end up looking for start/end of many
+    # revisions). This logic is not looking for the perfect slicing point, it
+    # focuses on quickly converging toward valid chunks.
+    nbitem = len(revs)
+    while (enddata - startdata) > targetsize:
+        endrevidx = nbitem
+        if nbitem - startrevidx <= 1:
+            break # protect against individual chunk larger than limit
+        localenddata = revlog.end(revs[endrevidx - 1])
+        span = localenddata - startdata
+        while span > targetsize:
+            if endrevidx - startrevidx <= 1:
+                break # protect against individual chunk larger than limit
+            endrevidx -= (endrevidx - startrevidx) // 2
+            localenddata = revlog.end(revs[endrevidx - 1])
+            span = localenddata - startdata
+        chunk = _trimchunk(revlog, revs, startrevidx, endrevidx)
+        if chunk:
+            yield chunk
+        startrevidx = endrevidx
+        startdata = revlog.start(revs[startrevidx])
+
+    chunk = _trimchunk(revlog, revs, startrevidx)
+    if chunk:
+        yield chunk
+
+def _slicechunktodensity(revlog, revs, targetdensity=0.5,
                          mingapsize=0):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
     ``revs`` is sliced into groups that should be read in one time.
     Assume that revs are sorted.
-
-    ``deltainfo`` is a _deltainfo instance of a revision that we would append
-    to the top of the revlog.
 
     The initial chunk is sliced until the overall density (payload/chunks-span
     ratio) is above `targetdensity`. No gap smaller than `mingapsize` is
@@ -264,21 +354,14 @@ def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
         yield revs
         return
 
-    nextrev = len(revlog)
-    nextoffset = revlog.end(nextrev - 1)
-
-    if deltainfo is None:
-        deltachainspan = segmentspan(revlog, revs)
-        chainpayload = sum(length(r) for r in revs)
-    else:
-        deltachainspan = deltainfo.distance
-        chainpayload = deltainfo.compresseddeltalen
+    deltachainspan = segmentspan(revlog, revs)
 
     if deltachainspan < mingapsize:
         yield revs
         return
 
     readdata = deltachainspan
+    chainpayload = sum(length(r) for r in revs)
 
     if deltachainspan:
         density = chainpayload / float(deltachainspan)
@@ -289,21 +372,12 @@ def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
         yield revs
         return
 
-    if deltainfo is not None and deltainfo.deltalen:
-        revs = list(revs)
-        revs.append(nextrev)
-
     # Store the gaps in a heap to have them sorted by decreasing size
-    gapsheap = []
-    heapq.heapify(gapsheap)
+    gaps = []
     prevend = None
     for i, rev in enumerate(revs):
-        if rev < nextrev:
-            revstart = start(rev)
-            revlen = length(rev)
-        else:
-            revstart = nextoffset
-            revlen = deltainfo.deltalen
+        revstart = start(rev)
+        revlen = length(rev)
 
         # Skip empty revisions to form larger holes
         if revlen == 0:
@@ -313,30 +387,31 @@ def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
             gapsize = revstart - prevend
             # only consider holes that are large enough
             if gapsize > mingapsize:
-                heapq.heappush(gapsheap, (-gapsize, i))
+                gaps.append((gapsize, i))
 
         prevend = revstart + revlen
+    # sort the gaps to pop them from largest to small
+    gaps.sort()
 
     # Collect the indices of the largest holes until the density is acceptable
-    indicesheap = []
-    heapq.heapify(indicesheap)
-    while gapsheap and density < targetdensity:
-        oppgapsize, gapidx = heapq.heappop(gapsheap)
+    selected = []
+    while gaps and density < targetdensity:
+        gapsize, gapidx = gaps.pop()
 
-        heapq.heappush(indicesheap, gapidx)
+        selected.append(gapidx)
 
         # the gap sizes are stored as negatives to be sorted decreasingly
         # by the heap
-        readdata -= (-oppgapsize)
+        readdata -= gapsize
         if readdata > 0:
             density = chainpayload / float(readdata)
         else:
             density = 1.0
+    selected.sort()
 
     # Cut the revs at collected indices
     previdx = 0
-    while indicesheap:
-        idx = heapq.heappop(indicesheap)
+    for idx in selected:
 
         chunk = _trimchunk(revlog, revs, previdx, idx)
         if chunk:
@@ -401,7 +476,7 @@ def _trimchunk(revlog, revs, startidx, endidx=None):
 
     return revs[startidx:endidx]
 
-def segmentspan(revlog, revs, deltainfo=None):
+def segmentspan(revlog, revs):
     """Get the byte span of a segment of revisions
 
     revs is a sorted array of revision numbers
@@ -427,13 +502,7 @@ def segmentspan(revlog, revs, deltainfo=None):
     """
     if not revs:
         return 0
-    if deltainfo is not None and len(revlog) <= revs[-1]:
-        if len(revs) == 1:
-            return deltainfo.deltalen
-        offset = revlog.end(len(revlog) - 1)
-        end = deltainfo.deltalen + offset
-    else:
-        end = revlog.end(revs[-1])
+    end = revlog.end(revs[-1])
     return end - revlog.start(revs[0])
 
 def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
@@ -489,45 +558,23 @@ def isgooddeltainfo(revlog, deltainfo, revinfo):
     #   deltas we need to apply -- bounding it limits the amount of CPU
     #   we consume.
 
-    if revlog._sparserevlog:
-        # As sparse-read will be used, we can consider that the distance,
-        # instead of being the span of the whole chunk,
-        # is the span of the largest read chunk
-        base = deltainfo.base
-
-        if base != nullrev:
-            deltachain = revlog._deltachain(base)[0]
-        else:
-            deltachain = []
-
-        # search for the first non-snapshot revision
-        for idx, r in enumerate(deltachain):
-            if not revlog.issnapshot(r):
-                break
-        deltachain = deltachain[idx:]
-        chunks = slicechunk(revlog, deltachain, deltainfo)
-        all_span = [segmentspan(revlog, revs, deltainfo)
-                    for revs in chunks]
-        distance = max(all_span)
-    else:
-        distance = deltainfo.distance
-
     textlen = revinfo.textlen
     defaultmax = textlen * 4
     maxdist = revlog._maxdeltachainspan
     if not maxdist:
-        maxdist = distance # ensure the conditional pass
+        maxdist = deltainfo.distance # ensure the conditional pass
     maxdist = max(maxdist, defaultmax)
-    if revlog._sparserevlog and maxdist < revlog._srmingapsize:
-        # In multiple place, we are ignoring irrelevant data range below a
-        # certain size. Be also apply this tradeoff here and relax span
-        # constraint for small enought content.
-        maxdist = revlog._srmingapsize
 
     # Bad delta from read span:
     #
     #   If the span of data read is larger than the maximum allowed.
-    if maxdist < distance:
+    #
+    #   In the sparse-revlog case, we rely on the associated "sparse reading"
+    #   to avoid issue related to the span of data. In theory, it would be
+    #   possible to build pathological revlog where delta pattern would lead
+    #   to too many reads. However, they do not happen in practice at all. So
+    #   we skip the span check entirely.
+    if not revlog._sparserevlog and maxdist < deltainfo.distance:
         return False
 
     # Bad delta from new delta size:
@@ -567,6 +614,11 @@ def isgooddeltainfo(revlog, deltainfo, revinfo):
 
     return True
 
+# If a revision's full text is that much bigger than a base candidate full
+# text's, it is very unlikely that it will produce a valid delta. We no longer
+# consider these candidates.
+LIMIT_BASE2TEXT = 500
+
 def _candidategroups(revlog, textlen, p1, p2, cachedelta):
     """Provides group of revision to be tested as delta base
 
@@ -580,6 +632,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 
     deltalength = revlog.length
     deltaparent = revlog.deltaparent
+    sparse = revlog._sparserevlog
     good = None
 
     deltas_limit = textlen * LIMIT_DELTA2TEXT
@@ -599,6 +652,10 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
                             or deltalength(rev))):
                 tested.add(rev)
                 rev = deltaparent(rev)
+            # no need to try a delta against nullrev, this will be done as a
+            # last resort.
+            if rev == nullrev:
+                continue
             # filter out revision we tested already
             if rev in tested:
                 continue
@@ -606,12 +663,21 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
             # filter out delta base that will never produce good delta
             if deltas_limit < revlog.length(rev):
                 continue
-            # no need to try a delta against nullrev, this will be done as a
-            # last resort.
-            if rev == nullrev:
+            if sparse and revlog.rawsize(rev) < (textlen // LIMIT_BASE2TEXT):
                 continue
             # no delta for rawtext-changing revs (see "candelta" for why)
             if revlog.flags(rev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
+                continue
+            # If we reach here, we are about to build and test a delta.
+            # The delta building process will compute the chaininfo in all
+            # case, since that computation is cached, it is fine to access it
+            # here too.
+            chainlen, chainsize = revlog._chaininfo(rev)
+            # if chain will be too long, skip base
+            if revlog._maxchainlen and chainlen >= revlog._maxchainlen:
+                continue
+            # if chain already have too much data, skip base
+            if deltas_limit < chainsize:
                 continue
             group.append(rev)
         if group:
@@ -623,11 +689,14 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 
 def _findsnapshots(revlog, cache, start_rev):
     """find snapshot from start_rev to tip"""
-    deltaparent = revlog.deltaparent
-    issnapshot = revlog.issnapshot
-    for rev in revlog.revs(start_rev):
-        if issnapshot(rev):
-            cache[deltaparent(rev)].append(rev)
+    if util.safehasattr(revlog.index, 'findsnapshots'):
+        revlog.index.findsnapshots(cache, start_rev)
+    else:
+        deltaparent = revlog.deltaparent
+        issnapshot = revlog.issnapshot
+        for rev in revlog.revs(start_rev):
+            if issnapshot(rev):
+                cache[deltaparent(rev)].append(rev)
 
 def _refinedgroups(revlog, p1, p2, cachedelta):
     good = None
@@ -644,7 +713,8 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
         if good is not None:
             yield None
             return
-    for candidates in _rawgroups(revlog, p1, p2, cachedelta):
+    snapshots = collections.defaultdict(list)
+    for candidates in _rawgroups(revlog, p1, p2, cachedelta, snapshots):
         good = yield candidates
         if good is not None:
             break
@@ -665,12 +735,8 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
                 break
             good = yield (base,)
         # refine snapshot up
-        #
-        # XXX the _findsnapshots call can be expensive and is "duplicated" with
-        # the one done in `_rawgroups`. Once we start working on performance,
-        # we should make the two logics share this computation.
-        snapshots = collections.defaultdict(list)
-        _findsnapshots(revlog, snapshots, good + 1)
+        if not snapshots:
+            _findsnapshots(revlog, snapshots, good + 1)
         previous = None
         while good != previous:
             previous = good
@@ -680,7 +746,7 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
     # we have found nothing
     yield None
 
-def _rawgroups(revlog, p1, p2, cachedelta):
+def _rawgroups(revlog, p1, p2, cachedelta, snapshots=None):
     """Provides group of revision to be tested as delta base
 
     This lower level function focus on emitting delta theorically interresting
@@ -710,7 +776,9 @@ def _rawgroups(revlog, p1, p2, cachedelta):
             yield parents
 
     if sparse and parents:
-        snapshots = collections.defaultdict(list) # map: base-rev: snapshot-rev
+        if snapshots is None:
+            # map: base-rev: snapshot-rev
+            snapshots = collections.defaultdict(list)
         # See if we can use an existing snapshot in the parent chains to use as
         # a base for a new intermediate-snapshot
         #

@@ -21,6 +21,7 @@ Enable sparse profile
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
@@ -37,6 +38,7 @@ Requirement for sparse added when sparse is enabled
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
@@ -55,6 +57,7 @@ Requirement for sparse is removed when sparse is disabled
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 

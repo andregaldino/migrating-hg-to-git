@@ -10,13 +10,14 @@
   >     import msvcrt
   >     import os
   >     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+  > stdout = getattr(sys.stdout, 'buffer', sys.stdout)
   > topics = set()
   > topicre = re.compile(br':hg:`help ([a-z0-9\-.]+)`')
   > for fname in sys.argv:
   >     with open(fname, 'rb') as f:
   >         topics.update(m.group(1) for m in topicre.finditer(f.read()))
   > for s in sorted(topics):
-  >     print(s)
+  >     stdout.write(b'%s\n' % s)
   > EOF
 
   $ cd "$TESTDIR"/..

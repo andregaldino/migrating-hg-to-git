@@ -153,10 +153,13 @@ def getlogcolumns():
     return dict(zip([s.split(':', 1)[0] for s in columns.splitlines()],
                     i18n._(columns).splitlines(True)))
 
+# basic internal templates
+_changeidtmpl = '{rev}:{node|formatnode}'
+
 # default templates internally used for rendering of lists
 defaulttempl = {
-    'parent': '{rev}:{node|formatnode} ',
-    'manifest': '{rev}:{node|formatnode}',
+    'parent': _changeidtmpl + ' ',
+    'manifest': _changeidtmpl,
     'file_copy': '{name} ({source})',
     'envvar': '{key}={value}',
     'extra': '{key}={value|stringescape}'
@@ -688,17 +691,31 @@ def showsuccsandmarkers(context, mapping):
 
     return templateutil.mappinglist(data)
 
+@templatekeyword('p1', requires={'ctx'})
+def showp1(context, mapping):
+    """Changeset. The changeset's first parent. ``{p1.rev}`` for the revision
+    number, and ``{p1.node}`` for the identification hash."""
+    ctx = context.resource(mapping, 'ctx')
+    return templateutil.mappingdict({'ctx': ctx.p1()}, tmpl=_changeidtmpl)
+
+@templatekeyword('p2', requires={'ctx'})
+def showp2(context, mapping):
+    """Changeset. The changeset's second parent. ``{p2.rev}`` for the revision
+    number, and ``{p2.node}`` for the identification hash."""
+    ctx = context.resource(mapping, 'ctx')
+    return templateutil.mappingdict({'ctx': ctx.p2()}, tmpl=_changeidtmpl)
+
 @templatekeyword('p1rev', requires={'ctx'})
 def showp1rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's
-    first parent, or -1 if the changeset has no parents."""
+    first parent, or -1 if the changeset has no parents. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p1().rev()
 
 @templatekeyword('p2rev', requires={'ctx'})
 def showp2rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's
-    second parent, or -1 if the changeset has no second parent."""
+    second parent, or -1 if the changeset has no second parent. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p2().rev()
 
@@ -706,7 +723,7 @@ def showp2rev(context, mapping):
 def showp1node(context, mapping):
     """String. The identification hash of the changeset's first parent,
     as a 40 digit hexadecimal string. If the changeset has no parents, all
-    digits are 0."""
+    digits are 0. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p1().hex()
 
@@ -714,7 +731,7 @@ def showp1node(context, mapping):
 def showp2node(context, mapping):
     """String. The identification hash of the changeset's second
     parent, as a 40 digit hexadecimal string. If the changeset has no second
-    parent, all digits are 0."""
+    parent, all digits are 0. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p2().hex()
 
@@ -757,7 +774,10 @@ def showrevslist(context, mapping, name, revs):
     """helper to generate a list of revisions in which a mapped template will
     be evaluated"""
     repo = context.resource(mapping, 'repo')
-    f = _showcompatlist(context, mapping, name, ['%d' % r for r in revs])
+    # revs may be a smartset; don't compute it until f() has to be evaluated
+    def f():
+        srevs = ['%d' % r for r in revs]
+        return _showcompatlist(context, mapping, name, srevs)
     return _hybrid(f, revs,
                    lambda x: {name: x, 'ctx': repo[x]},
                    pycompat.identity, keytype=int)

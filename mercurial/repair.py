@@ -108,8 +108,9 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
     repo = repo.unfiltered()
     repo.destroying()
-
+    vfs = repo.vfs
     cl = repo.changelog
+
     # TODO handle undo of merge sets
     if isinstance(nodelist, str):
         nodelist = [nodelist]
@@ -152,31 +153,13 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         stripobsidx = [i for i, m in enumerate(repo.obsstore)
                        if m in obsmarkers]
 
-    # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)), but
-    # is much faster
-    newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
-    if newbmtarget:
-        newbmtarget = repo[newbmtarget.first()].node()
-    else:
-        newbmtarget = '.'
+    newbmtarget, updatebm = _bookmarkmovements(repo, tostrip)
 
-    bm = repo._bookmarks
-    updatebm = []
-    for m in bm:
-        rev = repo[bm[m]].rev()
-        if rev in tostrip:
-            updatebm.append(m)
-
-    # create a changegroup for all the branches we need to keep
     backupfile = None
-    vfs = repo.vfs
     node = nodelist[-1]
     if backup:
-        backupfile = backupbundle(repo, stripbases, cl.heads(), node, topic)
-        repo.ui.status(_("saved backup bundle to %s\n") %
-                       vfs.join(backupfile))
-        repo.ui.log("backupbundle", "saved backup bundle to %s\n",
-                    vfs.join(backupfile))
+        backupfile = _createstripbackup(repo, stripbases, node, topic)
+    # create a changegroup for all the branches we need to keep
     tmpbundlefile = None
     if saveheads:
         # do not compress temporary bundle if we remove it from disk later
@@ -188,7 +171,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         tmpbundlefile = backupbundle(repo, savebases, saveheads, node, 'temp',
                                      compress=False, obsolescence=False)
 
-    with ui.uninterruptable():
+    with ui.uninterruptible():
         try:
             with repo.transaction("strip") as tr:
                 # TODO this code violates the interface abstraction of the
@@ -237,7 +220,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
             with repo.transaction('repair') as tr:
                 bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
-                bm.applychanges(repo, tr, bmchanges)
+                repo._bookmarks.applychanges(repo, tr, bmchanges)
 
             # remove undo files
             for undovfs, undofile in repo.undofiles():
@@ -267,6 +250,36 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     repo.destroyed()
     # return the backup file path (or None if 'backup' was False) so
     # extensions can use it
+    return backupfile
+
+def _bookmarkmovements(repo, tostrip):
+    # compute necessary bookmark movement
+    bm = repo._bookmarks
+    updatebm = []
+    for m in bm:
+        rev = repo[bm[m]].rev()
+        if rev in tostrip:
+            updatebm.append(m)
+    newbmtarget = None
+    if updatebm: # don't compute anything is there is no bookmark to move anyway
+        # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)),
+        # but is much faster
+        newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
+        if newbmtarget:
+            newbmtarget = repo[newbmtarget.first()].node()
+        else:
+            newbmtarget = '.'
+    return newbmtarget, updatebm
+
+def _createstripbackup(repo, stripbases, node, topic):
+    # backup the changeset we are about to strip
+    vfs = repo.vfs
+    cl = repo.changelog
+    backupfile = backupbundle(repo, stripbases, cl.heads(), node, topic)
+    repo.ui.status(_("saved backup bundle to %s\n") %
+                   vfs.join(backupfile))
+    repo.ui.log("backupbundle", "saved backup bundle to %s\n",
+                vfs.join(backupfile))
     return backupfile
 
 def safestriproots(ui, repo, nodes):

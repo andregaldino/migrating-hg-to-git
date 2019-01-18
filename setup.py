@@ -132,9 +132,14 @@ else:
 
 ispypy = "PyPy" in sys.version
 
-iswithrustextensions = 'HGWITHRUSTEXT' in os.environ
+hgrustext = os.environ.get('HGWITHRUSTEXT')
+# TODO record it for proper rebuild upon changes
+# (see mercurial/__modulepolicy__.py)
+if hgrustext != 'cpython' and hgrustext is not None:
+    hgrustext = 'direct-ffi'
 
 import ctypes
+import errno
 import stat, subprocess, time
 import re
 import shutil
@@ -289,14 +294,17 @@ def findhg():
     hgenv['LANGUAGE'] = 'C'
     hgcmd = ['hg']
     # Run a simple "hg log" command just to see if using hg from the user's
-    # path works and can successfully interact with this repository.
+    # path works and can successfully interact with this repository.  Windows
+    # gives precedence to hg.exe in the current directory, so fall back to the
+    # python invocation of local hg, where pythonXY.dll can always be found.
     check_cmd = ['log', '-r.', '-Ttest']
-    try:
-        retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
-    except EnvironmentError:
-        retcode = -1
-    if retcode == 0 and not filterhgerr(err):
-        return hgcommand(hgcmd, hgenv)
+    if os.name != 'nt':
+        try:
+            retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
+        except EnvironmentError:
+            retcode = -1
+        if retcode == 0 and not filterhgerr(err):
+            return hgcommand(hgcmd, hgenv)
 
     # Fall back to trying the local hg installation.
     hgenv = localhgenv()
@@ -457,10 +465,17 @@ class hgbuildext(build_ext):
         return build_ext.initialize_options(self)
 
     def build_extensions(self):
+        ruststandalones = [e for e in self.extensions
+                           if isinstance(e, RustStandaloneExtension)]
+        self.extensions = [e for e in self.extensions
+                           if e not in ruststandalones]
         # Filter out zstd if disabled via argument.
         if not self.zstd:
             self.extensions = [e for e in self.extensions
                                if e.name != 'mercurial.zstd']
+
+        for rustext in ruststandalones:
+            rustext.build('' if self.inplace else self.build_lib)
 
         return build_ext.build_extensions(self)
 
@@ -831,8 +846,6 @@ packages = ['mercurial',
             'mercurial.pure',
             'mercurial.thirdparty',
             'mercurial.thirdparty.attr',
-            'mercurial.thirdparty.cbor',
-            'mercurial.thirdparty.cbor.cbor2',
             'mercurial.thirdparty.zope',
             'mercurial.thirdparty.zope.interface',
             'mercurial.utils',
@@ -844,6 +857,7 @@ packages = ['mercurial',
             'hgext.infinitepush',
             'hgext.highlight',
             'hgext.largefiles', 'hgext.lfs', 'hgext.narrow',
+            'hgext.remotefilelog',
             'hgext.zeroconf', 'hgext3rd',
             'hgdemandimport']
 if sys.version_info[0] == 2:
@@ -897,21 +911,22 @@ xdiff_headers = [
     'mercurial/thirdparty/xdiff/xutils.h',
 ]
 
-class RustExtension(Extension):
-    """A C Extension, conditionnally enhanced with Rust code.
+class RustCompilationError(CCompilerError):
+    """Exception class for Rust compilation errors."""
 
-    if iswithrustextensions is False, does nothing else than plain Extension
+class RustExtension(Extension):
+    """Base classes for concrete Rust Extension classes.
     """
 
     rusttargetdir = os.path.join('rust', 'target', 'release')
 
-    def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
+    def __init__(self, mpath, sources, rustlibname, subcrate,
+                 py3_features=None, **kw):
         Extension.__init__(self, mpath, sources, **kw)
-        if not iswithrustextensions:
+        if hgrustext is None:
             return
         srcdir = self.rustsrcdir = os.path.join('rust', subcrate)
-        self.libraries.append(rustlibname)
-        self.extra_compile_args.append('-DWITH_RUST')
+        self.py3_features = py3_features
 
         # adding Rust source and control files to depends so that the extension
         # gets rebuilt if they've changed
@@ -925,7 +940,7 @@ class RustExtension(Extension):
                                 if os.path.splitext(fname)[1] == '.rs')
 
     def rustbuild(self):
-        if not iswithrustextensions:
+        if hgrustext is None:
             return
         env = os.environ.copy()
         if 'HGTEST_RESTOREENV' in env:
@@ -941,9 +956,58 @@ class RustExtension(Extension):
             import pwd
             env['HOME'] = pwd.getpwuid(os.getuid()).pw_dir
 
-        subprocess.check_call(['cargo', 'build', '-vv', '--release'],
-                              env=env, cwd=self.rustsrcdir)
+        cargocmd = ['cargo', 'build', '-vv', '--release']
+        if sys.version_info[0] == 3 and self.py3_features is not None:
+            cargocmd.extend(('--features', self.py3_features,
+                             '--no-default-features'))
+        try:
+            subprocess.check_call(cargocmd, env=env, cwd=self.rustsrcdir)
+        except OSError as exc:
+            if exc.errno == errno.ENOENT:
+                raise RustCompilationError("Cargo not found")
+            elif exc.errno == errno.EACCES:
+                raise RustCompilationError(
+                    "Cargo found, but permisssion to execute it is denied")
+            else:
+                raise
+        except subprocess.CalledProcessError:
+            raise RustCompilationError(
+                "Cargo failed. Working directory: %r, "
+                "command: %r, environment: %r" % (self.rustsrcdir, cmd, env))
+
+class RustEnhancedExtension(RustExtension):
+    """A C Extension, conditionally enhanced with Rust code.
+
+    If the HGRUSTEXT environment variable is set to something else
+    than 'cpython', the Rust sources get compiled and linked within the
+    C target shared library object.
+    """
+
+    def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
+        RustExtension.__init__(self, mpath, sources, rustlibname, subcrate,
+                               **kw)
+        if hgrustext != 'direct-ffi':
+            return
+        self.extra_compile_args.append('-DWITH_RUST')
+        self.libraries.append(rustlibname)
         self.library_dirs.append(self.rusttargetdir)
+
+class RustStandaloneExtension(RustExtension):
+
+    def __init__(self, pydottedname, rustcrate, dylibname, **kw):
+        RustExtension.__init__(self, pydottedname, [], dylibname, rustcrate,
+                               **kw)
+        self.dylibname = dylibname
+
+    def build(self, target_dir):
+        self.rustbuild()
+        target = [target_dir]
+        target.extend(self.name.split('.'))
+        ext = '.so'  # TODO Unix only
+        target[-1] += ext
+        shutil.copy2(os.path.join(self.rusttargetdir, self.dylibname + ext),
+                     os.path.join(*target))
+
 
 extmodules = [
     Extension('mercurial.cext.base85', ['mercurial/cext/base85.c'],
@@ -957,19 +1021,20 @@ extmodules = [
                                         'mercurial/cext/mpatch.c'],
               include_dirs=common_include_dirs,
               depends=common_depends),
-    RustExtension('mercurial.cext.parsers', ['mercurial/cext/charencode.c',
-                                             'mercurial/cext/dirs.c',
-                                             'mercurial/cext/manifest.c',
-                                             'mercurial/cext/parsers.c',
-                                             'mercurial/cext/pathencode.c',
-                                             'mercurial/cext/revlog.c'],
-                  'hgdirectffi',
-                  'hg-direct-ffi',
-                  include_dirs=common_include_dirs,
-                  depends=common_depends + ['mercurial/cext/charencode.h',
-                                            'mercurial/rust/src/lib.rs',
-                                            'mercurial/rust/src/ancestors.rs',
-                                            'mercurial/rust/src/cpython.rs']),
+    RustEnhancedExtension(
+        'mercurial.cext.parsers', ['mercurial/cext/charencode.c',
+                                   'mercurial/cext/dirs.c',
+                                   'mercurial/cext/manifest.c',
+                                   'mercurial/cext/parsers.c',
+                                   'mercurial/cext/pathencode.c',
+                                   'mercurial/cext/revlog.c'],
+        'hgdirectffi',
+        'hg-direct-ffi',
+        include_dirs=common_include_dirs,
+        depends=common_depends + ['mercurial/cext/charencode.h',
+                                  'mercurial/cext/revlog.h',
+                                  'rust/hg-core/src/ancestors.rs',
+                                  'rust/hg-core/src/lib.rs']),
     Extension('mercurial.cext.osutil', ['mercurial/cext/osutil.c'],
               include_dirs=common_include_dirs,
               extra_compile_args=osutil_cflags,
@@ -982,6 +1047,13 @@ extmodules = [
     Extension('hgext.fsmonitor.pywatchman.bser',
               ['hgext/fsmonitor/pywatchman/bser.c']),
     ]
+
+if hgrustext == 'cpython':
+    extmodules.append(
+        RustStandaloneExtension('mercurial.rustext', 'hg-cpython', 'librusthg',
+                                py3_features='python3')
+    )
+
 
 sys.path.insert(0, 'contrib/python-zstandard')
 import setup_zstd

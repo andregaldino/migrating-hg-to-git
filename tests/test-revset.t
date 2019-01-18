@@ -649,6 +649,17 @@ parse errors of relation, subscript and relation-subscript operators:
   hg: parse error: relation subscript must be an integer
   [255]
 
+suggested relations
+
+  $ hg debugrevspec '.#generafions[0]'
+  hg: parse error: unknown identifier: generafions
+  (did you mean generations?)
+  [255]
+
+  $ hg debugrevspec '.#f[0]'
+  hg: parse error: unknown identifier: f
+  [255]
+
 parsed tree at stages:
 
   $ hg debugrevspec -p all '()'
@@ -1416,12 +1427,8 @@ Test heads
   $ hg debugrevspec -s '9: & heads(all())'
   * set:
   <filteredset
-    <filteredset
-      <baseset [9]>,
-      <spanset+ 0:10>>,
-    <not
-      <filteredset
-        <baseset [9]>, set([0, 1, 2, 3, 4, 5, 6, 8])>>>
+    <baseset [9]>,
+    <baseset+ [7, 9]>>
   9
 
  but should follow the order of the subset

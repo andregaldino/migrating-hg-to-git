@@ -102,6 +102,8 @@ def _takequicksample(repo, headrevs, revs, size):
     :headrevs: set of head revisions in local DAG to consider
     :revs: set of revs to discover
     :size: the maximum size of the sample"""
+    if len(revs) <= size:
+        return list(revs)
     sample = set(repo.revs('heads(%ld)', revs))
 
     if len(sample) >= size:
@@ -112,6 +114,8 @@ def _takequicksample(repo, headrevs, revs, size):
     return sample
 
 def _takefullsample(repo, headrevs, revs, size):
+    if len(revs) <= size:
+        return list(revs)
     sample = set(repo.revs('heads(%ld)', revs))
 
     # update from heads
@@ -156,6 +160,72 @@ def _limitsample(sample, desiredlen):
     if len(sample) > desiredlen:
         sample = set(random.sample(sample, desiredlen))
     return sample
+
+class partialdiscovery(object):
+    """an object representing ongoing discovery
+
+    Feed with data from the remote repository, this object keep track of the
+    current set of changeset in various states:
+
+    - common:    revs also known remotely
+    - undecided: revs we don't have information on yet
+    - missing:   revs missing remotely
+    (all tracked revisions are known locally)
+    """
+
+    def __init__(self, repo, targetheads):
+        self._repo = repo
+        self._targetheads = targetheads
+        self._common = repo.changelog.incrementalmissingrevs()
+        self._undecided = None
+        self.missing = set()
+
+    def addcommons(self, commons):
+        """registrer nodes known as common"""
+        self._common.addbases(commons)
+        self._common.removeancestorsfrom(self.undecided)
+
+    def addmissings(self, missings):
+        """registrer some nodes as missing"""
+        newmissing = self._repo.revs('%ld::%ld', missings, self.undecided)
+        if newmissing:
+            self.missing.update(newmissing)
+            self.undecided.difference_update(newmissing)
+
+    def addinfo(self, sample):
+        """consume an iterable of (rev, known) tuples"""
+        common = set()
+        missing = set()
+        for rev, known in sample:
+            if known:
+                common.add(rev)
+            else:
+                missing.add(rev)
+        if common:
+            self.addcommons(common)
+        if missing:
+            self.addmissings(missing)
+
+    def hasinfo(self):
+        """return True is we have any clue about the remote state"""
+        return self._common.hasbases()
+
+    def iscomplete(self):
+        """True if all the necessary data have been gathered"""
+        return self._undecided is not None and not self._undecided
+
+    @property
+    def undecided(self):
+        if self._undecided is not None:
+            return self._undecided
+        self._undecided = set(self._common.missingancestors(self._targetheads))
+        return self._undecided
+
+    def commonheads(self):
+        """the heads of the known common set"""
+        # heads(common) == heads(common.bases) since common represents
+        # common.bases and all its ancestors
+        return self._common.basesheads()
 
 def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
@@ -223,36 +293,17 @@ def findcommonheads(ui, local, remote,
 
     # full blown discovery
 
-    # own nodes I know we both know
+    disco = partialdiscovery(local, ownheads)
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
-    common = cl.incrementalmissingrevs(srvheads)
-    commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
-    common.addbases(commoninsample)
-    # own nodes where I don't know if remote knows them
-    undecided = set(common.missingancestors(ownheads))
-    # own nodes I know remote lacks
-    missing = set()
+    disco.addcommons(srvheads)
+    disco.addinfo(zip(sample, yesno))
 
     full = False
     progress = ui.makeprogress(_('searching'), unit=_('queries'))
-    while undecided:
+    while not disco.iscomplete():
 
-        if sample:
-            missinginsample = [n for i, n in enumerate(sample) if not yesno[i]]
-
-            if missing:
-                missing.update(local.revs('descendants(%ld) - descendants(%ld)',
-                                          missinginsample, missing))
-            else:
-                missing.update(local.revs('descendants(%ld)', missinginsample))
-
-            undecided.difference_update(missing)
-
-        if not undecided:
-            break
-
-        if full or common.hasbases():
+        if full or disco.hasinfo():
             if full:
                 ui.note(_("sampling from both directions\n"))
             else:
@@ -264,15 +315,12 @@ def findcommonheads(ui, local, remote,
             ui.debug("taking quick initial sample\n")
             samplefunc = _takequicksample
             targetsize = initialsamplesize
-        if len(undecided) < targetsize:
-            sample = list(undecided)
-        else:
-            sample = samplefunc(local, ownheads, undecided, targetsize)
+        sample = samplefunc(local, ownheads, disco.undecided, targetsize)
 
         roundtrips += 1
         progress.update(roundtrips)
         ui.debug("query %i; still undecided: %i, sample size is: %i\n"
-                 % (roundtrips, len(undecided), len(sample)))
+                 % (roundtrips, len(disco.undecided), len(sample)))
         # indices between sample and externalized version must match
         sample = list(sample)
 
@@ -283,15 +331,9 @@ def findcommonheads(ui, local, remote,
 
         full = True
 
-        if sample:
-            commoninsample = set(n for i, n in enumerate(sample) if yesno[i])
-            common.addbases(commoninsample)
-            common.removeancestorsfrom(undecided)
+        disco.addinfo(zip(sample, yesno))
 
-    # heads(common) == heads(common.bases) since common represents common.bases
-    # and all its ancestors
-    # The presence of nullrev will confuse heads(). So filter it out.
-    result = set(local.revs('heads(%ld)', common.bases - {nullrev}))
+    result = disco.commonheads()
     elapsed = util.timer() - start
     progress.complete()
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))

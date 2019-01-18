@@ -46,6 +46,9 @@ class abstractvfs(object):
         '''Prevent instantiation; don't call this from subclasses.'''
         raise NotImplementedError('attempted instantiating ' + str(type(self)))
 
+    def _auditpath(self, path, mode):
+        raise NotImplementedError
+
     def tryread(self, path):
         '''gracefully return an empty string for missing files'''
         try:
@@ -196,6 +199,7 @@ class abstractvfs(object):
         checkambig=True only in limited cases (see also issue5418 and
         issue5584 for detail).
         """
+        self._auditpath(dst, 'w')
         srcpath = self.join(src)
         dstpath = self.join(dst)
         oldstat = checkambig and util.filestat.frompath(dstpath)
@@ -337,13 +341,24 @@ class vfs(abstractvfs):
             return
         os.chmod(name, self.createmode & 0o666)
 
+    def _auditpath(self, path, mode):
+        if self._audit:
+            if os.path.isabs(path) and path.startswith(self.base):
+                path = os.path.relpath(path, self.base)
+            r = util.checkosfilename(path)
+            if r:
+                raise error.Abort("%s: %r" % (r, path))
+            self.audit(path, mode=mode)
+
     def __call__(self, path, mode="r", atomictemp=False, notindexed=False,
-                 backgroundclose=False, checkambig=False, auditpath=True):
+                 backgroundclose=False, checkambig=False, auditpath=True,
+                 makeparentdirs=True):
         '''Open ``path`` file, which is relative to vfs root.
 
-        Newly created directories are marked as "not to be indexed by
-        the content indexing service", if ``notindexed`` is specified
-        for "write" mode access.
+        By default, parent directories are created as needed. Newly created
+        directories are marked as "not to be indexed by the content indexing
+        service", if ``notindexed`` is specified for "write" mode access.
+        Set ``makeparentdirs=False`` to not create directories implicitly.
 
         If ``backgroundclose`` is passed, the file may be closed asynchronously.
         It can only be used if the ``self.backgroundclosing()`` context manager
@@ -369,11 +384,7 @@ class vfs(abstractvfs):
         cases (see also issue5418 and issue5584 for detail).
         '''
         if auditpath:
-            if self._audit:
-                r = util.checkosfilename(path)
-                if r:
-                    raise error.Abort("%s: %r" % (r, path))
-            self.audit(path, mode=mode)
+            self._auditpath(path, mode)
         f = self.join(path)
 
         if "b" not in mode:
@@ -386,7 +397,8 @@ class vfs(abstractvfs):
             # to a directory. Let the posixfile() call below raise IOError.
             if basename:
                 if atomictemp:
-                    util.makedirs(dirname, self.createmode, notindexed)
+                    if makeparentdirs:
+                        util.makedirs(dirname, self.createmode, notindexed)
                     return util.atomictempfile(f, mode, self.createmode,
                                                checkambig=checkambig)
                 try:
@@ -404,7 +416,8 @@ class vfs(abstractvfs):
                     if e.errno != errno.ENOENT:
                         raise
                     nlink = 0
-                    util.makedirs(dirname, self.createmode, notindexed)
+                    if makeparentdirs:
+                        util.makedirs(dirname, self.createmode, notindexed)
                 if nlink > 0:
                     if self._trustnlink is None:
                         self._trustnlink = nlink > 1 or util.checknlink(f)
@@ -456,9 +469,12 @@ class vfs(abstractvfs):
 
 opener = vfs
 
-class proxyvfs(object):
+class proxyvfs(abstractvfs):
     def __init__(self, vfs):
         self.vfs = vfs
+
+    def _auditpath(self, path, mode):
+        return self.vfs._auditpath(path, mode)
 
     @property
     def options(self):
@@ -468,7 +484,7 @@ class proxyvfs(object):
     def options(self, value):
         self.vfs.options = value
 
-class filtervfs(abstractvfs, proxyvfs):
+class filtervfs(proxyvfs, abstractvfs):
     '''Wrapper vfs for filtering filenames with a function.'''
 
     def __init__(self, vfs, filter):
@@ -486,7 +502,7 @@ class filtervfs(abstractvfs, proxyvfs):
 
 filteropener = filtervfs
 
-class readonlyvfs(abstractvfs, proxyvfs):
+class readonlyvfs(proxyvfs):
     '''Wrapper vfs preventing any writing.'''
 
     def __init__(self, vfs):

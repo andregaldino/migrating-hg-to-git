@@ -240,10 +240,10 @@ Clone over http, no largefiles pulled on clone.
 
 Archive contains largefiles
   >>> import os
-  >>> import urllib2
+  >>> from mercurial import urllibcompat
   >>> u = 'http://localhost:%s/archive/default.zip' % os.environ['HGPORT2']
-  >>> with open('archive.zip', 'w') as f:
-  ...     f.write(urllib2.urlopen(u).read()) and None
+  >>> with open('archive.zip', 'wb') as f:
+  ...     f.write(urllibcompat.urlreq.urlopen(u).read()) and None
   $ unzip -t archive.zip
   Archive:  archive.zip
       testing: empty-default/.hg_archival.txt*OK (glob)
@@ -430,7 +430,7 @@ a large file from the server rather than to get it from the cache
   >                 [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
   >     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user', b'pass']:
   >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
-  > def extsetup():
+  > def extsetup(ui):
   >     common.permhooks.insert(0, perform_authentication)
   > EOT
   $ hg serve --config extensions.x=userpass.py -R credentialmain \

@@ -1135,7 +1135,10 @@ class treemanifest(object):
             return m1.diff(m2, clean=clean)
         result = {}
         emptytree = treemanifest()
-        def _diff(t1, t2):
+
+        def _iterativediff(t1, t2, stack):
+            """compares two tree manifests and append new tree-manifests which
+            needs to be compared to stack"""
             if t1._node == t2._node and not t1._dirty and not t2._dirty:
                 return
             t1._load()
@@ -1144,11 +1147,11 @@ class treemanifest(object):
 
             for d, m1 in t1._dirs.iteritems():
                 m2 = t2._dirs.get(d, emptytree)
-                _diff(m1, m2)
+                stack.append((m1, m2))
 
             for d, m2 in t2._dirs.iteritems():
                 if d not in t1._dirs:
-                    _diff(emptytree, m2)
+                    stack.append((emptytree, m2))
 
             for fn, n1 in t1._files.iteritems():
                 fl1 = t1._flags.get(fn, '')
@@ -1164,7 +1167,12 @@ class treemanifest(object):
                     fl2 = t2._flags.get(fn, '')
                     result[t2._subpath(fn)] = ((None, ''), (n2, fl2))
 
-        _diff(self, m2)
+        stackls = []
+        _iterativediff(self, m2, stackls)
+        while stackls:
+            t1, t2 = stackls.pop()
+            # stackls is populated in the function call
+            _iterativediff(t1, t2, stackls)
         return result
 
     def unmodifiedsince(self, m2):
@@ -1575,11 +1583,11 @@ class manifestrevlog(object):
 
     def emitrevisions(self, nodes, nodesorder=None,
                       revisiondata=False, assumehaveparentrevisions=False,
-                      deltaprevious=False):
+                      deltamode=repository.CG_DELTAMODE_STD):
         return self._revlog.emitrevisions(
             nodes, nodesorder=nodesorder, revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
-            deltaprevious=deltaprevious)
+            deltamode=deltamode)
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
         return self._revlog.addgroup(deltas, linkmapper, transaction,
@@ -1636,7 +1644,7 @@ class manifestlog(object):
     of the list of files in the given commit. Consumers of the output of this
     class do not care about the implementation details of the actual manifests
     they receive (i.e. tree or flat or lazily loaded, etc)."""
-    def __init__(self, opener, repo, rootstore):
+    def __init__(self, opener, repo, rootstore, narrowmatch):
         usetreemanifest = False
         cachesize = 4
 
@@ -1649,7 +1657,7 @@ class manifestlog(object):
 
         self._rootstore = rootstore
         self._rootstore._setupmanifestcachehooks(repo)
-        self._narrowmatch = repo.narrowmatch()
+        self._narrowmatch = narrowmatch
 
         # A cache of the manifestctx or treemanifestctx for each directory
         self._dirmancache = {}

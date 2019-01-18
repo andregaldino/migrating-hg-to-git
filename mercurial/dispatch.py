@@ -37,6 +37,7 @@ from . import (
     hook,
     profiling,
     pycompat,
+    registrar,
     scmutil,
     ui as uimod,
     util,
@@ -49,7 +50,7 @@ from .utils import (
 
 class request(object):
     def __init__(self, args, ui=None, repo=None, fin=None, fout=None,
-                 ferr=None, prereposetups=None):
+                 ferr=None, fmsg=None, prereposetups=None):
         self.args = args
         self.ui = ui
         self.repo = repo
@@ -58,6 +59,8 @@ class request(object):
         self.fin = fin
         self.fout = fout
         self.ferr = ferr
+        # separate stream for status/error messages
+        self.fmsg = fmsg
 
         # remember options pre-parsed by _earlyparseopts()
         self.earlyoptions = {}
@@ -204,6 +207,8 @@ def dispatch(req):
                 req.ui.fout = req.fout
             if req.ferr:
                 req.ui.ferr = req.ferr
+            if req.fmsg:
+                req.ui.fmsg = req.fmsg
         except error.Abort as inst:
             ferr.write(_("abort: %s\n") % inst)
             if inst.hint:
@@ -243,11 +248,19 @@ def dispatch(req):
             req.ui.flush()
             if req.ui.logblockedtimes:
                 req.ui._blockedtimes['command_duration'] = duration * 1000
-                req.ui.log('uiblocked', 'ui blocked ms',
+                req.ui.log('uiblocked', 'ui blocked ms\n',
                            **pycompat.strkwargs(req.ui._blockedtimes))
-            req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
-                       msg, ret & 255, duration,
-                       canonical_command=req.canonical_command)
+            return_code = ret & 255
+            req.ui.log(
+                "commandfinish",
+                "%s exited %d after %0.2f seconds\n",
+                msg,
+                return_code,
+                duration,
+                return_code=return_code,
+                duration=duration,
+                canonical_command=req.canonical_command,
+            )
             try:
                 req._runexithandlers()
             except: # exiting, so no re-raises
@@ -503,6 +516,7 @@ class cmdalias(object):
                 return ui.system(cmd, environ=env,
                                  blockedtag='alias_%s' % self.name)
             self.fn = fn
+            self.alias = True
             self._populatehelp(ui, name, shdef, self.fn)
             return
 
@@ -530,6 +544,7 @@ class cmdalias(object):
                 self.fn, self.opts = tableentry
                 cmdhelp = None
 
+            self.alias = True
             self._populatehelp(ui, name, cmd, self.fn, cmdhelp)
 
         except error.UnknownCommand:
@@ -543,7 +558,7 @@ class cmdalias(object):
     def _populatehelp(self, ui, name, cmd, fn, defaulthelp=None):
         # confine strings to be passed to i18n.gettext()
         cfg = {}
-        for k in ('doc', 'help'):
+        for k in ('doc', 'help', 'category'):
             v = ui.config('alias', '%s:%s' % (name, k), None)
             if v is None:
                 continue
@@ -558,10 +573,13 @@ class cmdalias(object):
             # drop prefix in old-style help lines so hg shows the alias
             self.help = self.help[4 + len(cmd):]
 
+        self.owndoc = 'doc' in cfg
         doc = cfg.get('doc', pycompat.getdoc(fn))
         if doc is not None:
             doc = pycompat.sysstr(doc)
         self.__doc__ = doc
+
+        self.helpcategory = cfg.get('category', registrar.command.CATEGORY_NONE)
 
     @property
     def args(self):
@@ -613,6 +631,7 @@ class lazyaliasentry(object):
         self.definition = definition
         self.cmdtable = cmdtable.copy()
         self.source = source
+        self.alias = True
 
     @util.propertycache
     def _aliasdef(self):
@@ -847,6 +866,9 @@ def _dispatch(req):
         # Check abbreviation/ambiguity of shell alias.
         shellaliasfn = _checkshellalias(lui, ui, args)
         if shellaliasfn:
+            # no additional configs will be set, set up the ui instances
+            for ui_ in uis:
+                extensions.populateui(ui_)
             return shellaliasfn()
 
         # check for fallback encoding
@@ -929,6 +951,10 @@ def _dispatch(req):
             for ui_ in uis:
                 ui_.disablepager()
 
+        # configs are fully loaded, set up the ui instances
+        for ui_ in uis:
+            extensions.populateui(ui_)
+
         if options['version']:
             return commands.version_(ui)
         if options['help']:
@@ -948,6 +974,7 @@ def _dispatch(req):
                 repo.ui.fin = ui.fin
                 repo.ui.fout = ui.fout
                 repo.ui.ferr = ui.ferr
+                repo.ui.fmsg = ui.fmsg
             else:
                 try:
                     repo = hg.repository(ui, path=path,

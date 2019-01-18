@@ -5,12 +5,14 @@ version so behavior is deterministic.
 
   $ cat > fakeversion.py << EOF
   > from mercurial import util
-  > util.version = lambda: '4.2'
+  > util.version = lambda: b'4.2'
   > EOF
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > fakeversion = `pwd`/fakeversion.py
+  > [format]
+  > sparse-revlog = no
   > [devel]
   > legacy.exchange = phases
   > EOF
@@ -36,7 +38,7 @@ Failure to accept() socket should result in connection related error message
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: error: $ECONNRESET$
+  abort: error: (\$ECONNRESET\$|\$EADDRNOTAVAIL\$) (re)
   [255]
 
 (The server exits on its own, but there is a race between that and starting a new server.

@@ -240,13 +240,16 @@ class peerexecutor(object):
 
             # Encoded arguments and future holding remote result.
             try:
-                encodedargs, fremote = next(batchable)
+                encargsorres, fremote = next(batchable)
             except Exception:
                 pycompat.future_set_exception_info(f, sys.exc_info()[1:])
                 return
 
-            requests.append((command, encodedargs))
-            states.append((command, f, batchable, fremote))
+            if not fremote:
+                f.set_result(encargsorres)
+            else:
+                requests.append((command, encargsorres))
+                states.append((command, f, batchable, fremote))
 
         if not requests:
             return

@@ -750,7 +750,7 @@ test non-tab whitespace .gitmodules
 test missing .gitmodules
 
   $ git submodule add ../git-repo4 >/dev/null 2>/dev/null
-  $ git checkout HEAD .gitmodules
+  $ git checkout HEAD -- .gitmodules
   $ git rm .gitmodules
   rm '.gitmodules'
   $ git commit -q -m "remove .gitmodules" .gitmodules

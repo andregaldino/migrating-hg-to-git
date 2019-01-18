@@ -15,6 +15,7 @@ from . import (
     node,
     parser,
     pycompat,
+    smartset,
     util,
 )
 from .utils import (
@@ -332,7 +333,7 @@ def _analyze(x):
     elif op == 'negate':
         s = getstring(x[1], _("can't negate that"))
         return _analyze(('string', '-' + s))
-    elif op in ('string', 'symbol'):
+    elif op in ('string', 'symbol', 'smartset'):
         return x
     elif op == 'rangeall':
         return (op, None)
@@ -372,7 +373,7 @@ def _optimize(x):
         return 0, x
 
     op = x[0]
-    if op in ('string', 'symbol'):
+    if op in ('string', 'symbol', 'smartset'):
         return 0.5, x # single revisions are small
     elif op == 'and':
         wa, ta = _optimize(x[1])
@@ -534,7 +535,8 @@ def expandaliases(tree, aliases, warn=None):
 def foldconcat(tree):
     """Fold elements to be concatenated by `##`
     """
-    if not isinstance(tree, tuple) or tree[0] in ('string', 'symbol'):
+    if (not isinstance(tree, tuple)
+        or tree[0] in ('string', 'symbol', 'smartset')):
         return tree
     if tree[0] == '_concat':
         pending = [tree]
@@ -583,7 +585,7 @@ def _quote(s):
 
 def _formatargtype(c, arg):
     if c == 'd':
-        return '%d' % int(arg)
+        return 'rev(%d)' % int(arg)
     elif c == 's':
         return _quote(arg)
     elif c == 'r':
@@ -607,7 +609,7 @@ def _formatlistexp(s, t):
     elif l == 1:
         return _formatargtype(t, s[0])
     elif t == 'd':
-        return "_intlist('%s')" % "\0".join('%d' % int(a) for a in s)
+        return _formatintlist(s)
     elif t == 's':
         return "_list(%s)" % _quote("\0".join(s))
     elif t == 'n':
@@ -620,6 +622,17 @@ def _formatlistexp(s, t):
 
     m = l // 2
     return '(%s or %s)' % (_formatlistexp(s[:m], t), _formatlistexp(s[m:], t))
+
+def _formatintlist(data):
+    try:
+        l = len(data)
+        if l == 0:
+            return "_list('')"
+        elif l == 1:
+            return _formatargtype('d', data[0])
+        return "_intlist('%s')" % "\0".join('%d' % int(a) for a in data)
+    except (TypeError, ValueError):
+        raise error.ParseError(_('invalid argument for revspec'))
 
 def _formatparamexp(args, t):
     return ', '.join(_formatargtype(t, a) for a in args)
@@ -638,7 +651,7 @@ def formatspec(expr, *args):
     Supported arguments:
 
     %r = revset expression, parenthesized
-    %d = int(arg), no quoting
+    %d = rev(int(arg)), no quoting
     %s = string(arg), escaped and single-quoted
     %b = arg.branch(), escaped and single-quoted
     %n = hex(arg), single-quoted
@@ -650,9 +663,9 @@ def formatspec(expr, *args):
     >>> formatspec(b'%r:: and %lr', b'10 or 11', (b"this()", b"that()"))
     '(10 or 11):: and ((this()) or (that()))'
     >>> formatspec(b'%d:: and not %d::', 10, 20)
-    '10:: and not 20::'
+    'rev(10):: and not rev(20)::'
     >>> formatspec(b'%ld or %ld', [], [1])
-    "_list('') or 1"
+    "_list('') or rev(1)"
     >>> formatspec(b'keyword(%s)', b'foo\\xe9')
     "keyword('foo\\\\xe9')"
     >>> b = lambda: b'default'
@@ -666,6 +679,50 @@ def formatspec(expr, *args):
     >>> formatspec(b'%ls', [b'a', b"'"])
     "_list('a\\\\x00\\\\'')"
     '''
+    parsed = _parseargs(expr, args)
+    ret = []
+    for t, arg in parsed:
+        if t is None:
+            ret.append(arg)
+        elif t == 'baseset':
+            if isinstance(arg, set):
+                arg = sorted(arg)
+            ret.append(_formatintlist(list(arg)))
+        else:
+            raise error.ProgrammingError("unknown revspec item type: %r" % t)
+    return b''.join(ret)
+
+def spectree(expr, *args):
+    """similar to formatspec but return a parsed and optimized tree"""
+    parsed = _parseargs(expr, args)
+    ret = []
+    inputs = []
+    for t, arg in parsed:
+        if t is None:
+            ret.append(arg)
+        elif t == 'baseset':
+            newtree = ('smartset', smartset.baseset(arg))
+            inputs.append(newtree)
+            ret.append("$")
+        else:
+            raise error.ProgrammingError("unknown revspec item type: %r" % t)
+    expr = b''.join(ret)
+    tree = _parsewith(expr, syminitletters=_aliassyminitletters)
+    tree = parser.buildtree(tree, ('symbol', '$'), *inputs)
+    tree = foldconcat(tree)
+    tree = analyze(tree)
+    tree = optimize(tree)
+    return tree
+
+def _parseargs(expr, args):
+    """parse the expression and replace all inexpensive args
+
+    return a list of tuple [(arg-type, arg-value)]
+
+    Arg-type can be:
+    * None:      a string ready to be concatenated into a final spec
+    * 'baseset': an iterable of revisions
+    """
     expr = pycompat.bytestr(expr)
     argiter = iter(args)
     ret = []
@@ -673,16 +730,16 @@ def formatspec(expr, *args):
     while pos < len(expr):
         q = expr.find('%', pos)
         if q < 0:
-            ret.append(expr[pos:])
+            ret.append((None, expr[pos:]))
             break
-        ret.append(expr[pos:q])
+        ret.append((None, expr[pos:q]))
         pos = q + 1
         try:
             d = expr[pos]
         except IndexError:
             raise error.ParseError(_('incomplete revspec format character'))
         if d == '%':
-            ret.append(d)
+            ret.append((None, d))
             pos += 1
             continue
 
@@ -692,19 +749,28 @@ def formatspec(expr, *args):
             raise error.ParseError(_('missing argument for revspec'))
         f = _formatlistfuncs.get(d)
         if f:
-            # a list of some type
+            # a list of some type, might be expensive, do not replace
             pos += 1
+            islist = (d == 'l')
             try:
                 d = expr[pos]
             except IndexError:
                 raise error.ParseError(_('incomplete revspec format character'))
+            if islist and d == 'd' and arg:
+                # we don't create a baseset yet, because it come with an
+                # extra cost. If we are going to serialize it we better
+                # skip it.
+                ret.append(('baseset', arg))
+                pos += 1
+                continue
             try:
-                ret.append(f(list(arg), d))
+                ret.append((None, f(list(arg), d)))
             except (TypeError, ValueError):
                 raise error.ParseError(_('invalid argument for revspec'))
         else:
+            # a single entry, not expensive, replace
             try:
-                ret.append(_formatargtype(d, arg))
+                ret.append((None, _formatargtype(d, arg)))
             except (TypeError, ValueError):
                 raise error.ParseError(_('invalid argument for revspec'))
         pos += 1
@@ -714,7 +780,7 @@ def formatspec(expr, *args):
         raise error.ParseError(_('too many revspec arguments specified'))
     except StopIteration:
         pass
-    return ''.join(ret)
+    return ret
 
 def prettyformat(tree):
     return parser.prettyformat(tree, ('string', 'symbol'))

@@ -34,7 +34,7 @@ Highest phase of source commits is used:
   > echo "===="
   > echo "edited manually" >> \$1
   > EOF
-  $ HGEDITOR="sh $TESTTMP/editor.sh" hg rebase --collapse --keepbranches -e --dest F
+  $ HGEDITOR="sh $TESTTMP/editor.sh" hg rebase --collapse --keepbranches -e --source B --dest F
   rebasing 1:112478962961 "B" (B)
   rebasing 3:26805aba1e60 "C" (C)
   rebasing 5:f585351a92f8 "D" (D tip)
@@ -500,7 +500,7 @@ Interactions between collapse and keepbranches
   
   $ hg rebase -s 5 -d 4
   rebasing 5:fbfb97b1089a "E" (tip)
-  note: rebase of 5:fbfb97b1089a created no changes to commit
+  note: not rebasing 5:fbfb97b1089a "E" (tip), its destination already has all its changes
   saved backup bundle to $TESTTMP/e/.hg/strip-backup/fbfb97b1089a-553e1d85-rebase.hg
   $ hg tglog
   @  4: f338eb3c2c7c 'E'

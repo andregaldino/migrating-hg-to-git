@@ -16,9 +16,14 @@ use std::ptr::null_mut;
 use std::slice;
 
 type IndexPtr = *mut c_void;
-type IndexParentsFn =
-    unsafe extern "C" fn(index: IndexPtr, rev: ssize_t, ps: *mut [c_int; 2], max_rev: c_int)
-        -> c_int;
+
+extern "C" {
+    fn HgRevlogIndex_GetParents(
+        op: IndexPtr,
+        rev: c_int,
+        parents: *mut [c_int; 2],
+    ) -> c_int;
+}
 
 /// A Graph backed up by objects and functions from revlog.c
 ///
@@ -27,26 +32,24 @@ type IndexParentsFn =
 /// - the `index_get_parents()` function (`parents` member)
 pub struct Index {
     index: IndexPtr,
-    parents: IndexParentsFn,
 }
 
 impl Index {
-    pub fn new(index: IndexPtr, parents: IndexParentsFn) -> Self {
+    pub fn new(index: IndexPtr) -> Self {
         Index {
             index: index,
-            parents: parents,
         }
     }
 }
 
 impl Graph for Index {
     /// wrap a call to the C extern parents function
-    fn parents(&self, rev: Revision) -> Result<(Revision, Revision), GraphError> {
+    fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
         let mut res: [c_int; 2] = [0; 2];
         let code =
-            unsafe { (self.parents)(self.index, rev as ssize_t, &mut res as *mut [c_int; 2], rev) };
+            unsafe { HgRevlogIndex_GetParents(self.index, rev, &mut res as *mut [c_int; 2]) };
         match code {
-            0 => Ok((res[0], res[1])),
+            0 => Ok(res),
             _ => Err(GraphError::ParentOutOfRange(rev)),
         }
     }
@@ -59,7 +62,6 @@ impl Graph for Index {
 #[no_mangle]
 pub extern "C" fn rustlazyancestors_init(
     index: IndexPtr,
-    parents: IndexParentsFn,
     initrevslen: ssize_t,
     initrevs: *mut c_long,
     stoprev: c_long,
@@ -68,7 +70,7 @@ pub extern "C" fn rustlazyancestors_init(
     assert!(initrevslen >= 0);
     unsafe {
         raw_init(
-            Index::new(index, parents),
+            Index::new(index),
             initrevslen as usize,
             initrevs,
             stoprev,
@@ -137,7 +139,11 @@ pub extern "C" fn rustlazyancestors_next(raw: *mut AncestorsIterator<Index>) -> 
 #[inline]
 fn raw_next<G: Graph>(raw: *mut AncestorsIterator<G>) -> c_long {
     let as_ref = unsafe { &mut *raw };
-    as_ref.next().unwrap_or(NULL_REVISION) as c_long
+    let rev = match as_ref.next() {
+        Some(Ok(rev)) => rev,
+        Some(Err(_)) | None => NULL_REVISION,
+    };
+    rev as c_long
 }
 
 #[no_mangle]
@@ -155,10 +161,10 @@ fn raw_contains<G: Graph>(
     target: c_long,
 ) -> c_int {
     let as_ref = unsafe { &mut *raw };
-    if as_ref.contains(target as Revision) {
-        return 1;
+    match as_ref.contains(target as Revision) {
+        Ok(r) => r as c_int,
+        Err(_) => -1,
     }
-    0
 }
 
 #[cfg(test)]
@@ -170,10 +176,10 @@ mod tests {
     struct Stub;
 
     impl Graph for Stub {
-        fn parents(&self, r: Revision) -> Result<(Revision, Revision), GraphError> {
+        fn parents(&self, r: Revision) -> Result<[Revision; 2], GraphError> {
             match r {
                 25 => Err(GraphError::ParentOutOfRange(25)),
-                _ => Ok((1, 2)),
+                _ => Ok([1, 2]),
             }
         }
     }

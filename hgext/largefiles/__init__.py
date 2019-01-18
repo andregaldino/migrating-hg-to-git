@@ -107,9 +107,14 @@ command.
 from __future__ import absolute_import
 
 from mercurial import (
+    cmdutil,
+    extensions,
+    exthelper,
     hg,
+    httppeer,
     localrepo,
-    registrar,
+    sshpeer,
+    wireprotov1server,
 )
 
 from . import (
@@ -117,7 +122,6 @@ from . import (
     overrides,
     proto,
     reposetup,
-    uisetup as uisetupmod,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -126,29 +130,65 @@ from . import (
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-configtable = {}
-configitem = registrar.configitem(configtable)
+eh = exthelper.exthelper()
+eh.merge(lfcommands.eh)
+eh.merge(overrides.eh)
+eh.merge(proto.eh)
 
-configitem('largefiles', 'minsize',
-    default=configitem.dynamicdefault,
+eh.configitem('largefiles', 'minsize',
+    default=eh.configitem.dynamicdefault,
 )
-configitem('largefiles', 'patterns',
+eh.configitem('largefiles', 'patterns',
     default=list,
 )
-configitem('largefiles', 'usercache',
+eh.configitem('largefiles', 'usercache',
     default=None,
 )
 
+cmdtable = eh.cmdtable
+configtable = eh.configtable
+extsetup = eh.finalextsetup
 reposetup = reposetup.reposetup
+uisetup = eh.finaluisetup
 
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the largefiles requirement
     supported |= {'largefiles'}
 
-def uisetup(ui):
+@eh.uisetup
+def _uisetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
     hg.wirepeersetupfuncs.append(proto.wirereposetup)
-    uisetupmod.uisetup(ui)
 
-cmdtable = lfcommands.cmdtable
-revsetpredicate = overrides.revsetpredicate
+    cmdutil.outgoinghooks.add('largefiles', overrides.outgoinghook)
+    cmdutil.summaryremotehooks.add('largefiles', overrides.summaryremotehook)
+
+    # create the new wireproto commands ...
+    wireprotov1server.wireprotocommand('putlfile', 'sha', permission='push')(
+        proto.putlfile)
+    wireprotov1server.wireprotocommand('getlfile', 'sha', permission='pull')(
+        proto.getlfile)
+    wireprotov1server.wireprotocommand('statlfile', 'sha', permission='pull')(
+        proto.statlfile)
+    wireprotov1server.wireprotocommand('lheads', '', permission='pull')(
+        wireprotov1server.heads)
+
+    extensions.wrapfunction(wireprotov1server.commands['heads'], 'func',
+                            proto.heads)
+    # TODO also wrap wireproto.commandsv2 once heads is implemented there.
+
+    # can't do this in reposetup because it needs to have happened before
+    # wirerepo.__init__ is called
+    proto.ssholdcallstream = sshpeer.sshv1peer._callstream
+    proto.httpoldcallstream = httppeer.httppeer._callstream
+    sshpeer.sshv1peer._callstream = proto.sshrepocallstream
+    httppeer.httppeer._callstream = proto.httprepocallstream
+
+    # override some extensions' stuff as well
+    for name, module in extensions.extensions():
+        if name == 'rebase':
+            # TODO: teach exthelper to handle this
+            extensions.wrapfunction(module, 'rebase',
+                                    overrides.overriderebase)
+
+revsetpredicate = eh.revsetpredicate

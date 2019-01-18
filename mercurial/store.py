@@ -24,6 +24,22 @@ from . import (
 
 parsers = policy.importmod(r'parsers')
 
+def _matchtrackedpath(path, matcher):
+    """parses a fncache entry and returns whether the entry is tracking a path
+    matched by matcher or not.
+
+    If matcher is None, returns True"""
+
+    if matcher is None:
+        return True
+    path = decodedir(path)
+    if path.startswith('data/'):
+        return matcher(path[len('data/'):-len('.i')])
+    elif path.startswith('meta/'):
+        return matcher.visitdir(path[len('meta/'):-len('/00manifest.i')] or '.')
+
+    raise error.ProgrammingError("cannot decode path %s" % path)
+
 # This avoids a collision between a file named foo and a dir named
 # foo.i or foo.d
 def _encodedir(path):
@@ -417,6 +433,8 @@ class encodedstore(basicstore):
                 a = decodefilename(a)
             except KeyError:
                 a = None
+            if a is not None and not _matchtrackedpath(a, matcher):
+                continue
             yield a, b, size
 
     def join(self, f):
@@ -433,6 +451,8 @@ class fncache(object):
         self.vfs = vfs
         self.entries = None
         self._dirty = False
+        # set of new additions to fncache
+        self.addls = set()
 
     def _load(self):
         '''fill the entries from the fncache file'''
@@ -455,23 +475,36 @@ class fncache(object):
     def write(self, tr):
         if self._dirty:
             assert self.entries is not None
+            self.entries = self.entries | self.addls
+            self.addls = set()
             tr.addbackup('fncache')
             fp = self.vfs('fncache', mode='wb', atomictemp=True)
             if self.entries:
                 fp.write(encodedir('\n'.join(self.entries) + '\n'))
             fp.close()
             self._dirty = False
+        if self.addls:
+            # if we have just new entries, let's append them to the fncache
+            tr.addbackup('fncache')
+            fp = self.vfs('fncache', mode='ab', atomictemp=True)
+            if self.addls:
+                fp.write(encodedir('\n'.join(self.addls) + '\n'))
+            fp.close()
+            self.entries = None
+            self.addls = set()
 
     def add(self, fn):
         if self.entries is None:
             self._load()
         if fn not in self.entries:
-            self._dirty = True
-            self.entries.add(fn)
+            self.addls.add(fn)
 
     def remove(self, fn):
         if self.entries is None:
             self._load()
+        if fn in self.addls:
+            self.addls.remove(fn)
+            return
         try:
             self.entries.remove(fn)
             self._dirty = True
@@ -479,6 +512,8 @@ class fncache(object):
             pass
 
     def __contains__(self, fn):
+        if fn in self.addls:
+            return True
         if self.entries is None:
             self._load()
         return fn in self.entries
@@ -486,9 +521,9 @@ class fncache(object):
     def __iter__(self):
         if self.entries is None:
             self._load()
-        return iter(self.entries)
+        return iter(self.entries | self.addls)
 
-class _fncachevfs(vfsmod.abstractvfs, vfsmod.proxyvfs):
+class _fncachevfs(vfsmod.proxyvfs):
     def __init__(self, vfs, fnc, encode):
         vfsmod.proxyvfs.__init__(self, vfs)
         self.fncache = fnc
@@ -542,6 +577,8 @@ class fncachestore(basicstore):
 
     def datafiles(self, matcher=None):
         for f in sorted(self.fncache):
+            if not _matchtrackedpath(f, matcher):
+                continue
             ef = self.encode(f)
             try:
                 yield f, ef, self.getsize(ef)
@@ -560,6 +597,7 @@ class fncachestore(basicstore):
 
     def invalidatecaches(self):
         self.fncache.entries = None
+        self.fncache.addls = set()
 
     def markremoved(self, fn):
         self.fncache.remove(fn)

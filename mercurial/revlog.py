@@ -97,6 +97,11 @@ REVIDX_KNOWN_FLAGS
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
 parsers = policy.importmod(r'parsers')
+try:
+    from . import rustext
+    rustext.__name__  # force actual import (see hgdemandimport)
+except ImportError:
+    rustext = None
 
 # Aliased for performance.
 _zlibdecompress = zlib.decompress
@@ -347,6 +352,7 @@ class revlog(object):
         #  When True, indexfile is opened with checkambig=True at writing, to
         #  avoid file stat ambiguity.
         self._checkambig = checkambig
+        self._mmaplargeindex = mmaplargeindex
         self._censorable = censorable
         # 3-tuple of (node, rev, text) for a raw revision.
         self._revisioncache = None
@@ -375,45 +381,51 @@ class revlog(object):
         # custom flags.
         self._flagprocessors = dict(_flagprocessors)
 
-        mmapindexthreshold = None
-        v = REVLOG_DEFAULT_VERSION
-        opts = getattr(opener, 'options', None)
-        if opts is not None:
-            if 'revlogv2' in opts:
-                # version 2 revlogs always use generaldelta.
-                v = REVLOGV2 | FLAG_GENERALDELTA | FLAG_INLINE_DATA
-            elif 'revlogv1' in opts:
-                if 'generaldelta' in opts:
-                    v |= FLAG_GENERALDELTA
-            else:
-                v = 0
-            if 'chunkcachesize' in opts:
-                self._chunkcachesize = opts['chunkcachesize']
-            if 'maxchainlen' in opts:
-                self._maxchainlen = opts['maxchainlen']
-            if 'deltabothparents' in opts:
-                self._deltabothparents = opts['deltabothparents']
-            self._lazydeltabase = bool(opts.get('lazydeltabase', False))
-            if 'compengine' in opts:
-                self._compengine = opts['compengine']
-            if 'maxdeltachainspan' in opts:
-                self._maxdeltachainspan = opts['maxdeltachainspan']
-            if mmaplargeindex and 'mmapindexthreshold' in opts:
-                mmapindexthreshold = opts['mmapindexthreshold']
-            self._sparserevlog = bool(opts.get('sparse-revlog', False))
-            withsparseread = bool(opts.get('with-sparse-read', False))
-            # sparse-revlog forces sparse-read
-            self._withsparseread = self._sparserevlog or withsparseread
-            if 'sparse-read-density-threshold' in opts:
-                self._srdensitythreshold = opts['sparse-read-density-threshold']
-            if 'sparse-read-min-gap-size' in opts:
-                self._srmingapsize = opts['sparse-read-min-gap-size']
-            if opts.get('enableellipsis'):
-                self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
+        # 2-tuple of file handles being used for active writing.
+        self._writinghandles = None
 
-            # revlog v0 doesn't have flag processors
-            for flag, processor in opts.get(b'flagprocessors', {}).iteritems():
-                _insertflagprocessor(flag, processor, self._flagprocessors)
+        self._loadindex()
+
+    def _loadindex(self):
+        mmapindexthreshold = None
+        opts = getattr(self.opener, 'options', {}) or {}
+
+        if 'revlogv2' in opts:
+            newversionflags = REVLOGV2 | FLAG_INLINE_DATA
+        elif 'revlogv1' in opts:
+            newversionflags = REVLOGV1 | FLAG_INLINE_DATA
+            if 'generaldelta' in opts:
+                newversionflags |= FLAG_GENERALDELTA
+        else:
+            newversionflags = REVLOG_DEFAULT_VERSION
+
+        if 'chunkcachesize' in opts:
+            self._chunkcachesize = opts['chunkcachesize']
+        if 'maxchainlen' in opts:
+            self._maxchainlen = opts['maxchainlen']
+        if 'deltabothparents' in opts:
+            self._deltabothparents = opts['deltabothparents']
+        self._lazydeltabase = bool(opts.get('lazydeltabase', False))
+        if 'compengine' in opts:
+            self._compengine = opts['compengine']
+        if 'maxdeltachainspan' in opts:
+            self._maxdeltachainspan = opts['maxdeltachainspan']
+        if self._mmaplargeindex and 'mmapindexthreshold' in opts:
+            mmapindexthreshold = opts['mmapindexthreshold']
+        self._sparserevlog = bool(opts.get('sparse-revlog', False))
+        withsparseread = bool(opts.get('with-sparse-read', False))
+        # sparse-revlog forces sparse-read
+        self._withsparseread = self._sparserevlog or withsparseread
+        if 'sparse-read-density-threshold' in opts:
+            self._srdensitythreshold = opts['sparse-read-density-threshold']
+        if 'sparse-read-min-gap-size' in opts:
+            self._srmingapsize = opts['sparse-read-min-gap-size']
+        if opts.get('enableellipsis'):
+            self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
+
+        # revlog v0 doesn't have flag processors
+        for flag, processor in opts.get(b'flagprocessors', {}).iteritems():
+            _insertflagprocessor(flag, processor, self._flagprocessors)
 
         if self._chunkcachesize <= 0:
             raise error.RevlogError(_('revlog chunk cache size %r is not '
@@ -422,45 +434,61 @@ class revlog(object):
             raise error.RevlogError(_('revlog chunk cache size %r is not a '
                                       'power of 2') % self._chunkcachesize)
 
-        self._loadindex(v, mmapindexthreshold)
-
-    def _loadindex(self, v, mmapindexthreshold):
         indexdata = ''
         self._initempty = True
         try:
             with self._indexfp() as f:
                 if (mmapindexthreshold is not None and
                     self.opener.fstat(f).st_size >= mmapindexthreshold):
+                    # TODO: should .close() to release resources without
+                    # relying on Python GC
                     indexdata = util.buffer(util.mmapread(f))
                 else:
                     indexdata = f.read()
             if len(indexdata) > 0:
-                v = versionformat_unpack(indexdata[:4])[0]
+                versionflags = versionformat_unpack(indexdata[:4])[0]
                 self._initempty = False
+            else:
+                versionflags = newversionflags
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise
 
-        self.version = v
-        self._inline = v & FLAG_INLINE_DATA
-        self._generaldelta = v & FLAG_GENERALDELTA
-        flags = v & ~0xFFFF
-        fmt = v & 0xFFFF
+            versionflags = newversionflags
+
+        self.version = versionflags
+
+        flags = versionflags & ~0xFFFF
+        fmt = versionflags & 0xFFFF
+
         if fmt == REVLOGV0:
             if flags:
                 raise error.RevlogError(_('unknown flags (%#04x) in version %d '
                                           'revlog %s') %
                                         (flags >> 16, fmt, self.indexfile))
+
+            self._inline = False
+            self._generaldelta = False
+
         elif fmt == REVLOGV1:
             if flags & ~REVLOGV1_FLAGS:
                 raise error.RevlogError(_('unknown flags (%#04x) in version %d '
                                           'revlog %s') %
                                         (flags >> 16, fmt, self.indexfile))
+
+            self._inline = versionflags & FLAG_INLINE_DATA
+            self._generaldelta = versionflags & FLAG_GENERALDELTA
+
         elif fmt == REVLOGV2:
             if flags & ~REVLOGV2_FLAGS:
                 raise error.RevlogError(_('unknown flags (%#04x) in version %d '
                                           'revlog %s') %
                                         (flags >> 16, fmt, self.indexfile))
+
+            self._inline = versionflags & FLAG_INLINE_DATA
+            # generaldelta implied by version 2 revlogs.
+            self._generaldelta = True
+
         else:
             raise error.RevlogError(_('unknown version (%d) in revlog %s') %
                                     (fmt, self.indexfile))
@@ -505,8 +533,21 @@ class revlog(object):
     @contextlib.contextmanager
     def _datareadfp(self, existingfp=None):
         """file object suitable to read data"""
+        # Use explicit file handle, if given.
         if existingfp is not None:
             yield existingfp
+
+        # Use a file handle being actively used for writes, if available.
+        # There is some danger to doing this because reads will seek the
+        # file. However, _writeentry() performs a SEEK_END before all writes,
+        # so we should be safe.
+        elif self._writinghandles:
+            if self._inline:
+                yield self._writinghandles[0]
+            else:
+                yield self._writinghandles[1]
+
+        # Otherwise open a new file handle.
         else:
             if self._inline:
                 func = self._indexfp
@@ -752,7 +793,7 @@ class revlog(object):
         return chain, stopped
 
     def ancestors(self, revs, stoprev=0, inclusive=False):
-        """Generate the ancestors of 'revs' in reverse topological order.
+        """Generate the ancestors of 'revs' in reverse revision order.
         Does not generate revs lower than stoprev.
 
         See the documentation for ancestor.lazyancestors for more details."""
@@ -763,12 +804,17 @@ class revlog(object):
         for r in revs:
             checkrev(r)
         # and we're sure ancestors aren't filtered as well
-        if util.safehasattr(parsers, 'rustlazyancestors'):
-            return ancestor.rustlazyancestors(
-                self.index, revs,
-                stoprev=stoprev, inclusive=inclusive)
-        return ancestor.lazyancestors(self._uncheckedparentrevs, revs,
-                                      stoprev=stoprev, inclusive=inclusive)
+
+        if rustext is not None:
+            lazyancestors = rustext.ancestor.LazyAncestors
+            arg = self.index
+        elif util.safehasattr(parsers, 'rustlazyancestors'):
+            lazyancestors = ancestor.rustlazyancestors
+            arg = self.index
+        else:
+            lazyancestors = ancestor.lazyancestors
+            arg = self._uncheckedparentrevs
+        return lazyancestors(arg, revs, stoprev=stoprev, inclusive=inclusive)
 
     def descendants(self, revs):
         return dagop.descendantrevs(revs, self.revs, self.parentrevs)
@@ -849,6 +895,8 @@ class revlog(object):
         if common is None:
             common = [nullrev]
 
+        if rustext is not None:
+            return rustext.ancestor.MissingAncestors(self.index, common)
         return ancestor.incrementalmissingancestors(self.parentrevs, common)
 
     def findmissingrevs(self, common=None, heads=None):
@@ -1056,11 +1104,13 @@ class revlog(object):
         assert heads
         return (orderedout, roots, heads)
 
-    def headrevs(self):
-        try:
-            return self.index.headrevs()
-        except AttributeError:
-            return self._headrevs()
+    def headrevs(self, revs=None):
+        if revs is None:
+            try:
+                return self.index.headrevs()
+            except AttributeError:
+                return self._headrevs()
+        return dagop.headrevs(revs, self.parentrevs)
 
     def computephases(self, roots):
         return self.index.computephasesmapsets(roots)
@@ -1342,6 +1392,8 @@ class revlog(object):
         original seek position will NOT be restored.
 
         Returns a str or buffer of raw byte data.
+
+        Raises if the requested number of bytes could not be read.
         """
         # Cache data both forward and backward around the requested
         # data, in a fixed size window. This helps speed up operations
@@ -1353,9 +1405,26 @@ class revlog(object):
         with self._datareadfp(df) as df:
             df.seek(realoffset)
             d = df.read(reallength)
+
         self._cachesegment(realoffset, d)
         if offset != realoffset or reallength != length:
-            return util.buffer(d, offset - realoffset, length)
+            startoffset = offset - realoffset
+            if len(d) - startoffset < length:
+                raise error.RevlogError(
+                    _('partial read of revlog %s; expected %d bytes from '
+                      'offset %d, got %d') %
+                    (self.indexfile if self._inline else self.datafile,
+                     length, realoffset, len(d) - startoffset))
+
+            return util.buffer(d, startoffset, length)
+
+        if len(d) < length:
+            raise error.RevlogError(
+                _('partial read of revlog %s; expected %d bytes from offset '
+                  '%d, got %d') %
+                (self.indexfile if self._inline else self.datafile,
+                 length, offset, len(d)))
+
         return d
 
     def _getsegment(self, offset, length, df=None):
@@ -1498,15 +1567,25 @@ class revlog(object):
     def issnapshot(self, rev):
         """tells whether rev is a snapshot
         """
+        if not self._sparserevlog:
+            return self.deltaparent(rev) == nullrev
+        elif util.safehasattr(self.index, 'issnapshot'):
+            # directly assign the method to cache the testing and access
+            self.issnapshot = self.index.issnapshot
+            return self.issnapshot(rev)
         if rev == nullrev:
             return True
-        deltap = self.deltaparent(rev)
-        if deltap == nullrev:
+        entry = self.index[rev]
+        base = entry[3]
+        if base == rev:
             return True
-        p1, p2 = self.parentrevs(rev)
-        if deltap in (p1, p2):
+        if base == nullrev:
+            return True
+        p1 = entry[5]
+        p2 = entry[6]
+        if base == p1 or base == p2:
             return False
-        return self.issnapshot(deltap)
+        return self.issnapshot(base)
 
     def snapshotdepth(self, rev):
         """number of snapshot in the chain before this one"""
@@ -1731,10 +1810,13 @@ class revlog(object):
         if fp:
             fp.flush()
             fp.close()
+            # We can't use the cached file handle after close(). So prevent
+            # its usage.
+            self._writinghandles = None
 
-        with self._datafp('w') as df:
+        with self._indexfp('r') as ifh, self._datafp('w') as dfh:
             for r in self:
-                df.write(self._getsegmentforrevs(r, r)[1])
+                dfh.write(self._getsegmentforrevs(r, r, df=ifh)[1])
 
         with self._indexfp('w') as fp:
             self.version &= ~FLAG_INLINE_DATA
@@ -1977,7 +2059,9 @@ class revlog(object):
         # if the file was seeked to before the end. See issue4943 for more.
         #
         # We work around this issue by inserting a seek() before writing.
-        # Note: This is likely not necessary on Python 3.
+        # Note: This is likely not necessary on Python 3. However, because
+        # the file handle is reused for reads and may be seeked there, we need
+        # to be careful before changing this.
         ifh.seek(0, os.SEEK_END)
         if dfh:
             dfh.seek(0, os.SEEK_END)
@@ -2010,6 +2094,9 @@ class revlog(object):
         this revlog and the node that was added.
         """
 
+        if self._writinghandles:
+            raise error.ProgrammingError('cannot nest addgroup() calls')
+
         nodes = []
 
         r = len(self)
@@ -2029,6 +2116,9 @@ class revlog(object):
             if dfh:
                 dfh.flush()
             ifh.flush()
+
+        self._writinghandles = (ifh, dfh)
+
         try:
             deltacomputer = deltautil.deltacomputer(self)
             # loop through our set of deltas
@@ -2090,7 +2180,10 @@ class revlog(object):
                     ifh.close()
                     dfh = self._datafp("a+")
                     ifh = self._indexfp("a+")
+                    self._writinghandles = (ifh, dfh)
         finally:
+            self._writinghandles = None
+
             if dfh:
                 dfh.close()
             ifh.close()
@@ -2205,13 +2298,18 @@ class revlog(object):
         return res
 
     def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
-                      assumehaveparentrevisions=False, deltaprevious=False):
+                      assumehaveparentrevisions=False,
+                      deltamode=repository.CG_DELTAMODE_STD):
         if nodesorder not in ('nodes', 'storage', 'linear', None):
             raise error.ProgrammingError('unhandled value for nodesorder: %s' %
                                          nodesorder)
 
         if nodesorder is None and not self._generaldelta:
             nodesorder = 'storage'
+
+        if (not self._storedeltachains and
+                deltamode != repository.CG_DELTAMODE_PREV):
+            deltamode = repository.CG_DELTAMODE_FULL
 
         return storageutil.emitrevisions(
             self, nodes, nodesorder, revlogrevisiondelta,
@@ -2220,10 +2318,9 @@ class revlog(object):
             rawsizefn=self.rawsize,
             revdifffn=self.revdiff,
             flagsfn=self.flags,
-            sendfulltext=not self._storedeltachains,
+            deltamode=deltamode,
             revisiondata=revisiondata,
-            assumehaveparentrevisions=assumehaveparentrevisions,
-            deltaprevious=deltaprevious)
+            assumehaveparentrevisions=assumehaveparentrevisions)
 
     DELTAREUSEALWAYS = 'always'
     DELTAREUSESAMEREVS = 'samerevs'
@@ -2234,7 +2331,7 @@ class revlog(object):
     DELTAREUSEALL = {'always', 'samerevs', 'never', 'fulladd'}
 
     def clone(self, tr, destrevlog, addrevisioncb=None,
-              deltareuse=DELTAREUSESAMEREVS, deltabothparents=None):
+              deltareuse=DELTAREUSESAMEREVS, forcedeltabothparents=None):
         """Copy this revlog to another, possibly with format changes.
 
         The destination revlog will contain the same revisions and nodes.
@@ -2268,9 +2365,9 @@ class revlog(object):
         deltas will be recomputed if the delta's parent isn't a parent of the
         revision.
 
-        In addition to the delta policy, the ``deltabothparents`` argument
-        controls whether to compute deltas against both parents for merges.
-        By default, the current default is used.
+        In addition to the delta policy, the ``forcedeltabothparents``
+        argument controls whether to force compute deltas against both parents
+        for merges. By default, the current default is used.
         """
         if deltareuse not in self.DELTAREUSEALL:
             raise ValueError(_('value for deltareuse invalid: %s') % deltareuse)
@@ -2293,7 +2390,7 @@ class revlog(object):
             elif deltareuse == self.DELTAREUSESAMEREVS:
                 destrevlog._lazydeltabase = False
 
-            destrevlog._deltabothparents = deltabothparents or oldamd
+            destrevlog._deltabothparents = forcedeltabothparents or oldamd
 
             populatecachedelta = deltareuse in (self.DELTAREUSEALWAYS,
                                                 self.DELTAREUSESAMEREVS)
@@ -2412,7 +2509,7 @@ class revlog(object):
             self.opener.rename(newrl.datafile, self.datafile)
 
         self.clearcaches()
-        self._loadindex(self.version, None)
+        self._loadindex()
 
     def verifyintegrity(self, state):
         """Verifies the integrity of the revlog.

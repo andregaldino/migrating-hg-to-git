@@ -41,54 +41,58 @@ Test basic extension support
   $ echo '[extensions]' >> $HGRCPATH
   $ echo "foobar = $abspath" >> $HGRCPATH
 
+  $ filterlog () {
+  >   sed -e 's!^[0-9/]* [0-9:]* ([0-9]*)>!YYYY/MM/DD HH:MM:SS (PID)>!'
+  > }
+
 Test extension setup timings
 
-  $ hg foo --traceback --config devel.debug.extensions=yes --debug 2>&1
-  debug.extensions: loading extensions
-  debug.extensions: - processing 1 entries
-  debug.extensions:   - loading extension: 'foobar'
-  debug.extensions:   > 'foobar' extension loaded in * (glob)
-  debug.extensions:     - validating extension tables: 'foobar'
-  debug.extensions:     - invoking registered callbacks: 'foobar'
-  debug.extensions:     > callbacks completed in * (glob)
-  debug.extensions: > loaded 1 extensions, total time * (glob)
-  debug.extensions: - loading configtable attributes
-  debug.extensions: - executing uisetup hooks
-  debug.extensions:   - running uisetup for 'foobar'
+  $ hg foo --traceback --config devel.debug.extensions=yes --debug 2>&1 | filterlog
+  YYYY/MM/DD HH:MM:SS (PID)> loading extensions
+  YYYY/MM/DD HH:MM:SS (PID)> - processing 1 entries
+  YYYY/MM/DD HH:MM:SS (PID)>   - loading extension: foobar
+  YYYY/MM/DD HH:MM:SS (PID)>   > foobar extension loaded in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>     - validating extension tables: foobar
+  YYYY/MM/DD HH:MM:SS (PID)>     - invoking registered callbacks: foobar
+  YYYY/MM/DD HH:MM:SS (PID)>     > callbacks completed in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > loaded 1 extensions, total time * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - loading configtable attributes
+  YYYY/MM/DD HH:MM:SS (PID)> - executing uisetup hooks
+  YYYY/MM/DD HH:MM:SS (PID)>   - running uisetup for foobar
   uisetup called [debug]
   uisetup called
   uisetup called [status]
-  debug.extensions:   > uisetup for 'foobar' took * (glob)
-  debug.extensions: > all uisetup took * (glob)
-  debug.extensions: - executing extsetup hooks
-  debug.extensions:   - running extsetup for 'foobar'
-  debug.extensions:   > extsetup for 'foobar' took * (glob)
-  debug.extensions: > all extsetup took * (glob)
-  debug.extensions: - executing remaining aftercallbacks
-  debug.extensions: > remaining aftercallbacks completed in * (glob)
-  debug.extensions: - loading extension registration objects
-  debug.extensions: > extension registration object loading took * (glob)
-  debug.extensions: > extension foobar take a total of * to load (glob)
-  debug.extensions: extension loading complete
-  debug.extensions: loading additional extensions
-  debug.extensions: - processing 1 entries
-  debug.extensions: > loaded 0 extensions, total time * (glob)
-  debug.extensions: - loading configtable attributes
-  debug.extensions: - executing uisetup hooks
-  debug.extensions: > all uisetup took * (glob)
-  debug.extensions: - executing extsetup hooks
-  debug.extensions: > all extsetup took * (glob)
-  debug.extensions: - executing remaining aftercallbacks
-  debug.extensions: > remaining aftercallbacks completed in * (glob)
-  debug.extensions: - loading extension registration objects
-  debug.extensions: > extension registration object loading took * (glob)
-  debug.extensions: extension loading complete
-  debug.extensions: - executing reposetup hooks
-  debug.extensions:   - running reposetup for foobar
+  YYYY/MM/DD HH:MM:SS (PID)>   > uisetup for foobar took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > all uisetup took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - executing extsetup hooks
+  YYYY/MM/DD HH:MM:SS (PID)>   - running extsetup for foobar
+  YYYY/MM/DD HH:MM:SS (PID)>   > extsetup for foobar took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > all extsetup took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - executing remaining aftercallbacks
+  YYYY/MM/DD HH:MM:SS (PID)> > remaining aftercallbacks completed in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - loading extension registration objects
+  YYYY/MM/DD HH:MM:SS (PID)> > extension registration object loading took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > extension foobar take a total of * to load (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> extension loading complete
+  YYYY/MM/DD HH:MM:SS (PID)> loading additional extensions
+  YYYY/MM/DD HH:MM:SS (PID)> - processing 1 entries
+  YYYY/MM/DD HH:MM:SS (PID)> > loaded 0 extensions, total time * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - loading configtable attributes
+  YYYY/MM/DD HH:MM:SS (PID)> - executing uisetup hooks
+  YYYY/MM/DD HH:MM:SS (PID)> > all uisetup took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - executing extsetup hooks
+  YYYY/MM/DD HH:MM:SS (PID)> > all extsetup took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - executing remaining aftercallbacks
+  YYYY/MM/DD HH:MM:SS (PID)> > remaining aftercallbacks completed in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - loading extension registration objects
+  YYYY/MM/DD HH:MM:SS (PID)> > extension registration object loading took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> extension loading complete
+  YYYY/MM/DD HH:MM:SS (PID)> - executing reposetup hooks
+  YYYY/MM/DD HH:MM:SS (PID)>   - running reposetup for foobar
   reposetup called for a
   ui == repo.ui
-  debug.extensions:   > reposetup for 'foobar' took * (glob)
-  debug.extensions: > all reposetup took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>   > reposetup for foobar took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > all reposetup took * (glob)
   Foo
 
   $ cd ..

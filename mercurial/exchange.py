@@ -40,6 +40,7 @@ from . import (
     streamclone,
     url as urlmod,
     util,
+    wireprototypes,
 )
 from .utils import (
     stringutil,
@@ -333,6 +334,34 @@ def _computeoutgoing(repo, heads, common):
         heads = cl.heads()
     return discovery.outgoing(repo, common, heads)
 
+def _checkpublish(pushop):
+    repo = pushop.repo
+    ui = repo.ui
+    behavior = ui.config('experimental', 'auto-publish')
+    if pushop.publish or behavior not in ('warn', 'confirm', 'abort'):
+        return
+    remotephases = listkeys(pushop.remote, 'phases')
+    if not remotephases.get('publishing', False):
+        return
+
+    if pushop.revs is None:
+        published = repo.filtered('served').revs('not public()')
+    else:
+        published = repo.revs('::%ln - public()', pushop.revs)
+    if published:
+        if behavior == 'warn':
+            ui.warn(_('%i changesets about to be published\n')
+                    % len(published))
+        elif behavior == 'confirm':
+            if ui.promptchoice(_('push and publish %i changesets (yn)?'
+                                 '$$ &Yes $$ &No') % len(published)):
+                raise error.Abort(_('user quit'))
+        elif behavior == 'abort':
+            msg = _('push would publish %i changesets') % len(published)
+            hint = _("use --publish or adjust 'experimental.auto-publish'"
+                     " config")
+            raise error.Abort(msg, hint=hint)
+
 def _forcebundle1(op):
     """return true if a pull/push must use bundle1
 
@@ -358,7 +387,7 @@ class pushoperation(object):
     """
 
     def __init__(self, repo, remote, force=False, revs=None, newbranch=False,
-                 bookmarks=(), pushvars=None):
+                 bookmarks=(), publish=False, pushvars=None):
         # repo we push from
         self.repo = repo
         self.ui = repo.ui
@@ -420,6 +449,8 @@ class pushoperation(object):
         self.pkfailcb = {}
         # an iterable of pushvars or None
         self.pushvars = pushvars
+        # publish pushed changesets
+        self.publish = publish
 
     @util.propertycache
     def futureheads(self):
@@ -477,7 +508,7 @@ bookmsgmap = {'update': (_("updating bookmark %s\n"),
 
 
 def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
-         opargs=None):
+         publish=False, opargs=None):
     '''Push outgoing changesets (limited by revs) from a local
     repository to remote. Return an integer:
       - None means nothing to push
@@ -489,7 +520,7 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
     if opargs is None:
         opargs = {}
     pushop = pushoperation(repo, remote, force, revs, newbranch, bookmarks,
-                           **pycompat.strkwargs(opargs))
+                           publish, **pycompat.strkwargs(opargs))
     if pushop.remote.local():
         missing = (set(pushop.repo.requirements)
                    - pushop.remote.local().supported)
@@ -530,6 +561,7 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
             lock or util.nullcontextmanager(), \
             pushop.trmanager or util.nullcontextmanager():
         pushop.repo.checkpush(pushop)
+        _checkpublish(pushop)
         _pushdiscovery(pushop)
         if not _forcebundle1(pushop):
             _pushbundle2(pushop)
@@ -629,7 +661,10 @@ def _pushdiscoveryphase(pushop):
     # XXX Beware that revset break if droots is not strictly
     # XXX root we may want to ensure it is but it is costly
     fallback = list(unfi.set(revset, droots, pushop.fallbackheads))
-    if not outgoing.missing:
+    if not pushop.remotephases.publishing and pushop.publish:
+        future = list(unfi.set('%ln and (not public() or %ln::)',
+                               pushop.futureheads, droots))
+    elif not outgoing.missing:
         future = fallback
     else:
         # adds changeset we are going to push as draft
@@ -1632,6 +1667,13 @@ def _pullbundle2(pullop):
     # declare pull perimeters
     kwargs['common'] = pullop.common
     kwargs['heads'] = pullop.heads or pullop.rheads
+
+    # check server supports narrow and then adding includepats and excludepats
+    servernarrow = pullop.remote.capable(wireprototypes.NARROWCAP)
+    if servernarrow and pullop.includepats:
+        kwargs['includepats'] = pullop.includepats
+    if servernarrow and pullop.excludepats:
+        kwargs['excludepats'] = pullop.excludepats
 
     if streaming:
         kwargs['cg'] = False

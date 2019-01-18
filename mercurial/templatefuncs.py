@@ -20,6 +20,7 @@ from . import (
     error,
     minirst,
     obsutil,
+    pycompat,
     registrar,
     revset as revsetmod,
     revsetlang,
@@ -559,7 +560,6 @@ def revset(context, mapping, args):
     if len(args) > 1:
         formatargs = [evalfuncarg(context, mapping, a) for a in args[1:]]
         revs = query(revsetlang.formatspec(raw, *formatargs))
-        revs = list(revs)
     else:
         cache = context.resource(mapping, 'cache')
         revsetcache = cache.setdefault("revsetcache", {})
@@ -567,7 +567,6 @@ def revset(context, mapping, args):
             revs = revsetcache[raw]
         else:
             revs = query(raw)
-            revs = list(revs)
             revsetcache[raw] = revs
     return templatekw.showrevslist(context, mapping, "revision", revs)
 
@@ -582,6 +581,40 @@ def rstdoc(context, mapping, args):
     style = evalstring(context, mapping, args[1])
 
     return minirst.format(text, style=style, keep=['verbose'])
+
+@templatefunc('search(pattern, text)')
+def search(context, mapping, args):
+    """Look for the first text matching the regular expression pattern.
+    Groups are accessible as ``{1}``, ``{2}``, ... in %-mapped template."""
+    if len(args) != 2:
+        # i18n: "search" is a keyword
+        raise error.ParseError(_(b'search expects two arguments'))
+
+    pat = evalstring(context, mapping, args[0])
+    src = evalstring(context, mapping, args[1])
+    try:
+        patre = re.compile(pat)
+    except re.error:
+        # i18n: "search" is a keyword
+        raise error.ParseError(_(b'search got an invalid pattern: %s') % pat)
+    # named groups shouldn't shadow *reserved* resource keywords
+    badgroups = (context.knownresourcekeys()
+                 & set(pycompat.byteskwargs(patre.groupindex)))
+    if badgroups:
+        raise error.ParseError(
+            # i18n: "search" is a keyword
+            _(b'invalid group %(group)s in search pattern: %(pat)s')
+            % {b'group': b', '.join("'%s'" % g for g in sorted(badgroups)),
+               b'pat': pat})
+
+    match = patre.search(src)
+    if not match:
+        return templateutil.mappingnone()
+
+    lm = {b'0': match.group(0)}
+    lm.update((b'%d' % i, v) for i, v in enumerate(match.groups(), 1))
+    lm.update(pycompat.byteskwargs(match.groupdict()))
+    return templateutil.mappingdict(lm, tmpl=b'{0}')
 
 @templatefunc('separate(sep, args...)', argspec='sep *args')
 def separate(context, mapping, args):

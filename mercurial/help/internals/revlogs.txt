@@ -11,8 +11,8 @@ Metadata includes the hash of the revision's content, sizes, and
 links to its *parent* entries. The collective metadata is referred
 to as the *index* and the revision data is the *data*.
 
-Revision data is stored as a series of compressed deltas against previous
-revisions.
+Revision data is stored as a series of compressed deltas against
+ancestor revisions.
 
 Revlogs are written in an append-only fashion. We never need to rewrite
 a file to insert nor do we need to remove data. Rolling back in-progress
@@ -35,9 +35,6 @@ This integer is logically divided into 2 16-bit shorts. The least
 significant half of the integer is the format/version short. The other
 short holds feature flags that dictate behavior of the revlog.
 
-Only 1 bit of the format/version short is currently used. Remaining
-bits are reserved for future use.
-
 The following values for the format/version short are defined:
 
 0
@@ -53,15 +50,22 @@ The following values for the format/version short are defined:
    beyond 32-bit header.
 
 The feature flags short consists of bit flags. Where 0 is the least
-significant bit, the following bit offsets define flags:
+significant bit. The bit flags vary by revlog version.
+
+Version 0 revlogs have no defined flags and the presence of a flag
+is considered an error.
+
+Version 1 revlogs have the following flags at the specified bit offsets:
 
 0
    Store revision data inline.
 1
    Generaldelta encoding.
 
-2-15
-   Reserved for future use.
+Version 2 revlogs have the following flags at the specified bit offsets:
+
+0
+   Store revision data inline.
 
 The following header values are common:
 
@@ -153,8 +157,10 @@ Version 2 Format
 
 (In development. Format not finalized or stable.)
 
-Version 2 is currently identical to version 1. This will obviously
-change.
+Version 2 is identical to version 2 with the following differences.
+
+There is no dedicated *generaldelta* revlog format flag. Instead,
+the feature is implied enabled by default.
 
 Delta Chains
 ============

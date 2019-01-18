@@ -157,6 +157,18 @@ verify update will accept invalid legacy branch names
   summary:     Adding b branch
   
 
+---- going to test branch listing by rev
+  $ hg branches -r0
+  default                        0:19709c5a4e75 (inactive)
+  $ hg branches -qr0
+  default
+--- now more than one rev
+  $ hg branches -r2:5
+  b                              4:aee39cd168d0
+  a                              5:d8cbc61dbaa6 (inactive)
+  $ hg branches -qr2:5
+  b
+  a
 ---- going to test branch closing
 
   $ hg branches

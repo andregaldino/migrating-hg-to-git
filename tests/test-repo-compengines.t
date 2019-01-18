@@ -7,6 +7,7 @@ A new repository uses zlib storage, which doesn't need a requirement
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
@@ -47,6 +48,7 @@ A requirement specifying an unknown compression engine results in bail
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
@@ -71,6 +73,7 @@ with that engine or a requirement
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 

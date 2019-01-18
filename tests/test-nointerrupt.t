@@ -13,7 +13,7 @@ Dummy extension simulating unsafe long running command
   > 
   > @command(b'sleep', [], _(b'TIME'), norepo=True)
   > def sleep(ui, sleeptime=b"1", **opts):
-  >     with ui.uninterruptable():
+  >     with ui.uninterruptible():
   >         for _i in itertools.repeat(None, int(sleeptime)):
   >             time.sleep(1)
   >         ui.warn(b"end of unsafe operation\n")

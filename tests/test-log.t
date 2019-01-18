@@ -2637,3 +2637,123 @@ Log -f on B should reports current changesets
      summary:     A1B1C1
   
   $ cd ..
+
+--- going to test line wrap fix on using both --stat and -G (issue5800)
+  $ hg init issue5800
+  $ cd issue5800
+  $ touch a
+  $ hg ci -Am 'add a'
+  adding a
+---- now we are going to add 300 lines to a
+  $ for i in `$TESTDIR/seq.py 1 300`; do echo $i >> a; done
+  $ hg ci -m 'modify a'
+  $ hg log
+  changeset:   1:a98683e6a834
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     modify a
+  
+  changeset:   0:ac82d8b1f7c4
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a
+  
+---- now visualise the changes we made without template
+  $ hg log -l1 -r a98683e6a834 --stat -G
+  @  changeset:   1:a98683e6a834
+  |  tag:         tip
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     modify a
+  
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+---- with template
+  $ hg log -l1 -r a98683e6a834 --stat -G -T bisect
+  @  changeset:   1:a98683e6a834
+  |  bisect:
+  ~  tag:         tip
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     modify a
+  
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+  $ hg log -l1 -r a98683e6a834 --stat -G -T changelog
+  1970-01-01  test  <test>
+  
+  @  	* a:
+  |  	modify a
+  ~  	[a98683e6a834] [tip]
+  
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+  $ hg log -l1 -r a98683e6a834 --stat -G -T compact
+  @  1[tip]   a98683e6a834   1970-01-01 00:00 +0000   test
+  |    modify a
+  ~
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+  $ hg log -l1 -r a98683e6a834 --stat -G -T default
+  @  changeset:   1:a98683e6a834
+  |  tag:         tip
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     modify a
+  
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+  $ hg log -l1 -r a98683e6a834 --stat -G -T phases
+  @  changeset:   1:a98683e6a834
+  |  tag:         tip
+  ~  phase:       draft
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     modify a
+  
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+  $ hg log -l1 -r a98683e6a834 --stat -G -T show
+  @  changeset:   1:a98683e6a834
+  |  tag:         tip
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     modify a
+  
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+  $ hg log -l1 -r a98683e6a834 --stat -G -T status
+  @  changeset:   1:a98683e6a834
+  |  tag:         tip
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     modify a
+     files:
+     M a
+  
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+  $ hg log -l1 -r a98683e6a834 --stat -G -T xml
+  <?xml version="1.0"?>
+  <log>
+  @  <logentry revision="1" node="a98683e6a8340830a7683909768b62871e84bc9d">
+  |  <tag>tip</tag>
+  ~  <author email="test">test</author>
+     <date>1970-01-01T00:00:00+00:00</date>
+     <msg xml:space="preserve">modify a</msg>
+     </logentry>
+      a |  300 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      1 files changed, 300 insertions(+), 0 deletions(-)
+  
+  </log>
+
+  $ cd ..

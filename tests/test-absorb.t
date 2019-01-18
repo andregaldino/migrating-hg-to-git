@@ -129,6 +129,20 @@ Non 1:1 map changes will be ignored:
   nothing applied
   [1]
 
+The prompt is not given if there are no changes to be applied, even if there
+are some changes that won't be applied:
+
+  $ hg absorb
+  showing changes for a
+          @@ -0,2 +0,1 @@
+          -2b
+          -4d
+          +1
+  
+  0 changesets affected
+  nothing applied
+  [1]
+
 Insertaions:
 
   $ cat > a << EOF

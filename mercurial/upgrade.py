@@ -142,7 +142,7 @@ class improvement(object):
         return self.name == other.name
 
     def __ne__(self, other):
-        return not self == other
+        return not (self == other)
 
     def __hash__(self):
         return hash(self.name)
@@ -269,7 +269,7 @@ class sparserevlog(requirementformatvariant):
 
     _requirement = localrepo.SPARSEREVLOG_REQUIREMENT
 
-    default = False
+    default = True
 
     description = _('in order to limit disk reading and memory usage on older '
                     'version, the span of a delta chain from its root to its '
@@ -348,6 +348,19 @@ def finddeficiencies(repo):
 
     return deficiencies
 
+# search without '-' to support older form on newer client.
+#
+# We don't enforce backward compatibility for debug command so this
+# might eventually be dropped. However, having to use two different
+# forms in script when comparing result is anoying enough to add
+# backward compatibility for a while.
+legacy_opts_map = {
+    'redeltaparent': 're-delta-parent',
+    'redeltamultibase': 're-delta-multibase',
+    'redeltaall': 're-delta-all',
+    'redeltafulladd': 're-delta-fulladd',
+}
+
 def findoptimizations(repo):
     """Determine optimisation that could be used during upgrade"""
     # These are unconditionally added. There is logic later that figures out
@@ -355,7 +368,7 @@ def findoptimizations(repo):
     optimizations = []
 
     optimizations.append(improvement(
-        name='redeltaparent',
+        name='re-delta-parent',
         type=optimisation,
         description=_('deltas within internal storage will be recalculated to '
                       'choose an optimal base revision where this was not '
@@ -368,7 +381,7 @@ def findoptimizations(repo):
                          'base revision if needed')))
 
     optimizations.append(improvement(
-        name='redeltamultibase',
+        name='re-delta-multibase',
         type=optimisation,
         description=_('deltas within internal storage will be recalculated '
                       'against multiple base revision and the smallest '
@@ -385,7 +398,7 @@ def findoptimizations(repo):
                          'significantly')))
 
     optimizations.append(improvement(
-        name='redeltaall',
+        name='re-delta-all',
         type=optimisation,
         description=_('deltas within internal storage will always be '
                       'recalculated without reusing prior deltas; this will '
@@ -396,12 +409,12 @@ def findoptimizations(repo):
                          'execution time')))
 
     optimizations.append(improvement(
-        name='redeltafulladd',
+        name='re-delta-fulladd',
         type=optimisation,
         description=_('every revision will be re-added as if it was new '
                       'content. It will go through the full storage '
                       'mechanism giving extensions a chance to process it '
-                      '(eg. lfs). This is similar to "redeltaall" but even '
+                      '(eg. lfs). This is similar to "re-delta-all" but even '
                       'slower since more logic is involved.'),
         upgrademessage=_('each revision will be added as new content to the '
                          'internal storage; this will likely drastically slow '
@@ -456,7 +469,7 @@ def _revlogfrompath(repo, path):
         #reverse of "/".join(("data", path + ".i"))
         return filelog.filelog(repo.svfs, path[5:-2])
 
-def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
+def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
     """Copy revlogs between 2 repos."""
     revcount = 0
     srcsize = 0
@@ -578,7 +591,7 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
         ui.note(_('cloning %d revisions from %s\n') % (len(oldrl), unencoded))
         oldrl.clone(tr, newrl, addrevisioncb=oncopiedrevision,
                     deltareuse=deltareuse,
-                    deltabothparents=deltabothparents)
+                    forcedeltabothparents=forcedeltabothparents)
 
         info = newrl.storageinfo(storedsize=True)
         datasize = info['storedsize'] or 0
@@ -654,20 +667,20 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
     ui.write(_('(it is safe to interrupt this process any time before '
                'data migration completes)\n'))
 
-    if 'redeltaall' in actions:
+    if 're-delta-all' in actions:
         deltareuse = revlog.revlog.DELTAREUSENEVER
-    elif 'redeltaparent' in actions:
+    elif 're-delta-parent' in actions:
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif 'redeltamultibase' in actions:
+    elif 're-delta-multibase' in actions:
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif 'redeltafulladd' in actions:
+    elif 're-delta-fulladd' in actions:
         deltareuse = revlog.revlog.DELTAREUSEFULLADD
     else:
         deltareuse = revlog.revlog.DELTAREUSEALWAYS
 
     with dstrepo.transaction('upgrade') as tr:
         _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse,
-                     'redeltamultibase' in actions)
+                     're-delta-multibase' in actions)
 
     # Now copy other files in the store directory.
     # The sorted() makes execution deterministic.
@@ -729,9 +742,11 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
 
     return backuppath
 
-def upgraderepo(ui, repo, run=False, optimize=None):
+def upgraderepo(ui, repo, run=False, optimize=None, backup=True):
     """Upgrade a repository in place."""
-    optimize = set(optimize or [])
+    if optimize is None:
+        optimize = []
+    optimize = set(legacy_opts_map.get(o, o) for o in optimize)
     repo = repo.unfiltered()
 
     # Ensure the repository can be upgraded.
@@ -884,6 +899,10 @@ def upgraderepo(ui, repo, run=False, optimize=None):
             with dstrepo.wlock(), dstrepo.lock():
                 backuppath = _upgraderepo(ui, repo, dstrepo, newreqs,
                                           upgradeactions)
+            if not (backup or backuppath is None):
+                ui.write(_('removing old repository content%s\n') % backuppath)
+                repo.vfs.rmtree(backuppath, forcibly=True)
+                backuppath = None
 
         finally:
             ui.write(_('removing temporary repository %s\n') % tmppath)

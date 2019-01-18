@@ -764,13 +764,12 @@ def headrevs(revs, parentsfn):
     the input set.
     """
     headrevs = set(revs)
+    parents = set([node.nullrev])
+    up = parents.update
 
     for rev in revs:
-        for prev in parentsfn(rev):
-            headrevs.discard(prev)
-
-    headrevs.discard(node.nullrev)
-
+        up(parentsfn(rev))
+    headrevs.difference_update(parents)
     return headrevs
 
 def headrevssubset(revsfn, parentrevsfn, startrev=None, stoprevs=None):

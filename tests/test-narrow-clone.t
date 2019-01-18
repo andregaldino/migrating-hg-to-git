@@ -43,6 +43,7 @@ narrow clone a file, f10
   fncache
   narrowhg-experimental
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 

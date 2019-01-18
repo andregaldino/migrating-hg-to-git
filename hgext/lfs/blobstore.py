@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import contextlib
 import errno
 import hashlib
 import json
@@ -17,13 +18,19 @@ import socket
 from mercurial.i18n import _
 
 from mercurial import (
+    encoding,
     error,
+    node,
     pathutil,
     pycompat,
     url as urlmod,
     util,
     vfs as vfsmod,
     worker,
+)
+
+from mercurial.utils import (
+    stringutil,
 )
 
 from ..largefiles import lfutil
@@ -150,7 +157,7 @@ class local(object):
                 fp.write(chunk)
                 sha256.update(chunk)
 
-            realoid = sha256.hexdigest()
+            realoid = node.hex(sha256.digest())
             if realoid != oid:
                 raise LfsCorruptionError(_('corrupt remote lfs object: %s')
                                          % oid)
@@ -200,7 +207,7 @@ class local(object):
             # Don't abort if corruption is detected, because `hg verify` will
             # give more useful info about the corruption- simply don't add the
             # hardlink.
-            if verify or hashlib.sha256(blob).hexdigest() == oid:
+            if verify or node.hex(hashlib.sha256(blob).digest()) == oid:
                 self.ui.note(_('lfs: found %s in the usercache\n') % oid)
                 lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
         else:
@@ -224,12 +231,36 @@ class local(object):
             for chunk in util.filechunkiter(fp, size=1048576):
                 sha256.update(chunk)
 
-        return oid == sha256.hexdigest()
+        return oid == node.hex(sha256.digest())
 
     def has(self, oid):
         """Returns True if the local blobstore contains the requested blob,
         False otherwise."""
         return self.cachevfs.exists(oid) or self.vfs.exists(oid)
+
+def _urlerrorreason(urlerror):
+    '''Create a friendly message for the given URLError to be used in an
+    LfsRemoteError message.
+    '''
+    inst = urlerror
+
+    if isinstance(urlerror.reason, Exception):
+        inst = urlerror.reason
+
+    if util.safehasattr(inst, 'reason'):
+        try: # usually it is in the form (errno, strerror)
+            reason = inst.reason.args[1]
+        except (AttributeError, IndexError):
+            # it might be anything, for example a string
+            reason = inst.reason
+        if isinstance(reason, pycompat.unicode):
+            # SSLError of Python 2.7.9 contains a unicode
+            reason = encoding.unitolocal(reason)
+        return reason
+    elif getattr(inst, "strerror", None):
+        return encoding.strtolocal(inst.strerror)
+    else:
+        return stringutil.forcebytestr(urlerror)
 
 class _gitlfsremote(object):
 
@@ -263,16 +294,27 @@ class _gitlfsremote(object):
             'objects': objects,
             'operation': action,
         })
-        batchreq = util.urlreq.request('%s/objects/batch' % self.baseurl,
-                                       data=requestdata)
+        url = '%s/objects/batch' % self.baseurl
+        batchreq = util.urlreq.request(url, data=requestdata)
         batchreq.add_header('Accept', 'application/vnd.git-lfs+json')
         batchreq.add_header('Content-Type', 'application/vnd.git-lfs+json')
         try:
-            rsp = self.urlopener.open(batchreq)
-            rawjson = rsp.read()
+            with contextlib.closing(self.urlopener.open(batchreq)) as rsp:
+                rawjson = rsp.read()
         except util.urlerr.httperror as ex:
-            raise LfsRemoteError(_('LFS HTTP error: %s (action=%s)')
-                                 % (ex, action))
+            hints = {
+                400: _('check that lfs serving is enabled on %s and "%s" is '
+                       'supported') % (self.baseurl, action),
+                404: _('the "lfs.url" config may be used to override %s')
+                       % self.baseurl,
+            }
+            hint = hints.get(ex.code, _('api=%s, action=%s') % (url, action))
+            raise LfsRemoteError(_('LFS HTTP error: %s') % ex, hint=hint)
+        except util.urlerr.urlerror as ex:
+            hint = (_('the "lfs.url" config may be used to override %s')
+                    % self.baseurl)
+            raise LfsRemoteError(_('LFS error: %s') % _urlerrorreason(ex),
+                                 hint=hint)
         try:
             response = json.loads(rawjson)
         except ValueError:
@@ -379,30 +421,37 @@ class _gitlfsremote(object):
 
         response = b''
         try:
-            req = self.urlopener.open(request)
+            with contextlib.closing(self.urlopener.open(request)) as req:
+                ui = self.ui  # Shorten debug lines
+                if self.ui.debugflag:
+                    ui.debug('Status: %d\n' % req.status)
+                    # lfs-test-server and hg serve return headers in different
+                    # order
+                    ui.debug('%s\n'
+                             % '\n'.join(sorted(str(req.info()).splitlines())))
 
-            if self.ui.debugflag:
-                self.ui.debug('Status: %d\n' % req.status)
-                # lfs-test-server and hg serve return headers in different order
-                self.ui.debug('%s\n'
-                              % '\n'.join(sorted(str(req.info()).splitlines())))
-
-            if action == 'download':
-                # If downloading blobs, store downloaded data to local blobstore
-                localstore.download(oid, req)
-            else:
-                while True:
-                    data = req.read(1048576)
-                    if not data:
-                        break
-                    response += data
-                if response:
-                    self.ui.debug('lfs %s response: %s' % (action, response))
+                if action == 'download':
+                    # If downloading blobs, store downloaded data to local
+                    # blobstore
+                    localstore.download(oid, req)
+                else:
+                    while True:
+                        data = req.read(1048576)
+                        if not data:
+                            break
+                        response += data
+                    if response:
+                        ui.debug('lfs %s response: %s' % (action, response))
         except util.urlerr.httperror as ex:
             if self.ui.debugflag:
                 self.ui.debug('%s: %s\n' % (oid, ex.read()))
-            raise LfsRemoteError(_('HTTP error: %s (oid=%s, action=%s)')
+            raise LfsRemoteError(_('LFS HTTP error: %s (oid=%s, action=%s)')
                                  % (ex, oid, action))
+        except util.urlerr.urlerror as ex:
+            hint = (_('attempted connection to %s')
+                    % util.urllibcompat.getfullurl(request))
+            raise LfsRemoteError(_('LFS error: %s') % _urlerrorreason(ex),
+                                 hint=hint)
 
     def _batch(self, pointers, localstore, action):
         if action not in ['upload', 'download']:
@@ -539,7 +588,7 @@ def _deduplicate(pointers):
     return reduced.values()
 
 def _verify(oid, content):
-    realoid = hashlib.sha256(content).hexdigest()
+    realoid = node.hex(hashlib.sha256(content).digest())
     if realoid != oid:
         raise LfsCorruptionError(_('detected corrupt lfs object: %s') % oid,
                                  hint=_('run hg verify'))

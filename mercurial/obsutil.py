@@ -148,10 +148,11 @@ def allpredecessors(obsstore, nodes, ignoreflags=0):
 
     remaining = set(nodes)
     seen = set(remaining)
+    prec = obsstore.predecessors.get
     while remaining:
         current = remaining.pop()
         yield current
-        for mark in obsstore.predecessors.get(current, ()):
+        for mark in prec(current, ()):
             # ignore marker flagged with specified flag
             if mark[2] & ignoreflags:
                 continue
@@ -396,12 +397,14 @@ def _cmpdiff(leftctx, rightctx):
 
     This is a first and basic implementation, with many shortcoming.
     """
-    diffopts = diffutil.diffallopts(leftctx.repo().ui, {'git': True})
+    # lefctx.repo() and rightctx.repo() are the same here
+    repo = leftctx.repo()
+    diffopts = diffutil.diffallopts(repo.ui, {'git': True})
     # Leftctx or right ctx might be filtered, so we need to use the contexts
     # with an unfiltered repository to safely compute the diff
-    leftunfi = leftctx._repo.unfiltered()[leftctx.rev()]
+    leftunfi = repo.unfiltered()[leftctx.rev()]
     leftdiff = leftunfi.diff(opts=diffopts)
-    rightunfi = rightctx._repo.unfiltered()[rightctx.rev()]
+    rightunfi = repo.unfiltered()[rightctx.rev()]
     rightdiff = rightunfi.diff(opts=diffopts)
 
     left, right = (0, 0)
@@ -708,7 +711,8 @@ def successorssets(repo, initialnode, closest=False, cache=None):
                                     if part not in newss:
                                         newss.append(part)
                                 productresult.append(newss)
-                        markss = productresult
+                        if productresult:
+                            markss = productresult
                     succssets.extend(markss)
                 # remove duplicated and subset
                 seen = []

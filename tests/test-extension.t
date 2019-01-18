@@ -13,27 +13,38 @@ Test basic extension support
 
   $ cat > foobar.py <<EOF
   > import os
-  > from mercurial import commands, registrar
-  > cmdtable = {}
-  > command = registrar.command(cmdtable)
-  > configtable = {}
-  > configitem = registrar.configitem(configtable)
-  > configitem(b'tests', b'foo', default=b"Foo")
-  > def uisetup(ui):
+  > from mercurial import commands, exthelper, registrar
+  > 
+  > eh = exthelper.exthelper()
+  > eh.configitem(b'tests', b'foo', default=b"Foo")
+  > 
+  > uisetup = eh.finaluisetup
+  > uipopulate = eh.finaluipopulate
+  > reposetup = eh.finalreposetup
+  > cmdtable = eh.cmdtable
+  > configtable = eh.configtable
+  > 
+  > @eh.uisetup
+  > def _uisetup(ui):
   >     ui.debug(b"uisetup called [debug]\\n")
   >     ui.write(b"uisetup called\\n")
   >     ui.status(b"uisetup called [status]\\n")
   >     ui.flush()
-  > def reposetup(ui, repo):
+  > @eh.uipopulate
+  > def _uipopulate(ui):
+  >     ui._populatecnt = getattr(ui, "_populatecnt", 0) + 1
+  >     ui.write(b"uipopulate called (%d times)\n" % ui._populatecnt)
+  > @eh.reposetup
+  > def _reposetup(ui, repo):
   >     ui.write(b"reposetup called for %s\\n" % os.path.basename(repo.root))
   >     ui.write(b"ui %s= repo.ui\\n" % (ui == repo.ui and b"=" or b"!"))
   >     ui.flush()
-  > @command(b'foo', [], b'hg foo')
+  > @eh.command(b'foo', [], b'hg foo')
   > def foo(ui, *args, **kwargs):
   >     foo = ui.config(b'tests', b'foo')
   >     ui.write(foo)
   >     ui.write(b"\\n")
-  > @command(b'bar', [], b'hg bar', norepo=True)
+  > @eh.command(b'bar', [], b'hg bar', norepo=True)
   > def bar(ui, *args, **kwargs):
   >     ui.write(b"Bar\\n")
   > EOF
@@ -54,13 +65,26 @@ Test basic extension support
   $ hg foo
   uisetup called
   uisetup called [status]
+  uipopulate called (1 times)
+  uipopulate called (1 times)
+  uipopulate called (1 times)
   reposetup called for a
   ui == repo.ui
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a (chg !)
   ui == repo.ui (chg !)
   Foo
   $ hg foo --quiet
   uisetup called (no-chg !)
+  uipopulate called (1 times)
+  uipopulate called (1 times)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a (chg !)
   ui == repo.ui
   Foo
@@ -68,6 +92,11 @@ Test basic extension support
   uisetup called [debug] (no-chg !)
   uisetup called (no-chg !)
   uisetup called [status] (no-chg !)
+  uipopulate called (1 times)
+  uipopulate called (1 times)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a (chg !)
   ui == repo.ui
   Foo
@@ -76,8 +105,12 @@ Test basic extension support
   $ hg clone a b
   uisetup called (no-chg !)
   uisetup called [status] (no-chg !)
+  uipopulate called (1 times)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a
   ui == repo.ui
+  uipopulate called (1 times)
   reposetup called for b
   ui == repo.ui
   updating to branch default
@@ -86,6 +119,8 @@ Test basic extension support
   $ hg bar
   uisetup called (no-chg !)
   uisetup called [status] (no-chg !)
+  uipopulate called (1 times)
+  uipopulate called (1 times) (chg !)
   Bar
   $ echo 'foobar = !' >> $HGRCPATH
 
@@ -96,8 +131,16 @@ module/__init__.py-style
   $ hg foo
   uisetup called
   uisetup called [status]
+  uipopulate called (1 times)
+  uipopulate called (1 times)
+  uipopulate called (1 times)
   reposetup called for a
   ui == repo.ui
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a (chg !)
   ui == repo.ui (chg !)
   Foo
@@ -108,27 +151,39 @@ Check that extensions are loaded in phases:
   $ cat > foo.py <<EOF
   > from __future__ import print_function
   > import os
+  > from mercurial import exthelper
   > name = os.path.basename(__file__).rsplit('.', 1)[0]
   > print("1) %s imported" % name, flush=True)
-  > def uisetup(ui):
+  > eh = exthelper.exthelper()
+  > @eh.uisetup
+  > def _uisetup(ui):
   >     print("2) %s uisetup" % name, flush=True)
-  > def extsetup():
+  > @eh.extsetup
+  > def _extsetup(ui):
   >     print("3) %s extsetup" % name, flush=True)
-  > def reposetup(ui, repo):
-  >    print("4) %s reposetup" % name, flush=True)
+  > @eh.uipopulate
+  > def _uipopulate(ui):
+  >     print("4) %s uipopulate" % name, flush=True)
+  > @eh.reposetup
+  > def _reposetup(ui, repo):
+  >     print("5) %s reposetup" % name, flush=True)
+  > 
+  > extsetup = eh.finalextsetup
+  > reposetup = eh.finalreposetup
+  > uipopulate = eh.finaluipopulate
+  > uisetup = eh.finaluisetup
+  > revsetpredicate = eh.revsetpredicate
   > 
   > bytesname = name.encode('utf-8')
   > # custom predicate to check registration of functions at loading
   > from mercurial import (
-  >     registrar,
   >     smartset,
   > )
-  > revsetpredicate = registrar.revsetpredicate()
-  > @revsetpredicate(bytesname, safe=True) # safe=True for query via hgweb
+  > @eh.revsetpredicate(bytesname, safe=True) # safe=True for query via hgweb
   > def custompredicate(repo, subset, x):
   >     return smartset.baseset([r for r in subset if r in {0}])
   > EOF
-  $ $PYTHON $TESTTMP/unflush.py foo.py
+  $ "$PYTHON" $TESTTMP/unflush.py foo.py
 
   $ cp foo.py bar.py
   $ echo 'foo = foo.py' >> $HGRCPATH
@@ -143,8 +198,14 @@ Check normal command's load order of extensions and registration of functions
   2) bar uisetup
   3) foo extsetup
   3) bar extsetup
-  4) foo reposetup
-  4) bar reposetup
+  4) foo uipopulate
+  4) bar uipopulate
+  4) foo uipopulate
+  4) bar uipopulate
+  4) foo uipopulate
+  4) bar uipopulate
+  5) foo reposetup
+  5) bar reposetup
   0:c24b9ac61126
 
 Check hgweb's load order of extensions and registration of functions
@@ -167,8 +228,12 @@ Check hgweb's load order of extensions and registration of functions
   2) bar uisetup
   3) foo extsetup
   3) bar extsetup
-  4) foo reposetup
-  4) bar reposetup
+  4) foo uipopulate
+  4) bar uipopulate
+  4) foo uipopulate
+  4) bar uipopulate
+  5) foo reposetup
+  5) bar reposetup
 
 (check that revset predicate foo() and bar() are available)
 
@@ -214,10 +279,10 @@ limit mark, regardless of importing module or not.)
   > NO_CHECK_EOF
   $ cat > loadabs.py <<NO_CHECK_EOF
   > import mod.ambigabs as ambigabs
-  > def extsetup():
+  > def extsetup(ui):
   >     print('ambigabs.s=%s' % ambigabs.s, flush=True)
   > NO_CHECK_EOF
-  $ $PYTHON $TESTTMP/unflush.py loadabs.py
+  $ "$PYTHON" $TESTTMP/unflush.py loadabs.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadabs=loadabs.py root)
   ambigabs.s=libroot/ambig.py
   $TESTTMP/a
@@ -230,10 +295,10 @@ limit mark, regardless of importing module or not.)
   > NO_CHECK_EOF
   $ cat > loadrel.py <<NO_CHECK_EOF
   > import mod.ambigrel as ambigrel
-  > def extsetup():
+  > def extsetup(ui):
   >     print('ambigrel.s=%s' % ambigrel.s, flush=True)
   > NO_CHECK_EOF
-  $ $PYTHON $TESTTMP/unflush.py loadrel.py
+  $ "$PYTHON" $TESTTMP/unflush.py loadrel.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadrel=loadrel.py root)
   ambigrel.s=libroot/mod/ambig.py
   $TESTTMP/a
@@ -1510,7 +1575,7 @@ Refuse to load extensions with minimum version requirements
   > minimumhgversion = b'3.6'
   > EOF
   $ hg --config extensions.minversion=minversion1.py version
-  (third party extension minversion requires version 3.6 or newer of Mercurial; disabling)
+  (third party extension minversion requires version 3.6 or newer of Mercurial (current: 3.5.2); disabling)
   Mercurial Distributed SCM (version 3.5.2)
   (see https://mercurial-scm.org for more information)
   
@@ -1524,7 +1589,7 @@ Refuse to load extensions with minimum version requirements
   > minimumhgversion = b'3.7'
   > EOF
   $ hg --config extensions.minversion=minversion2.py version 2>&1 | egrep '\(third'
-  (third party extension minversion requires version 3.7 or newer of Mercurial; disabling)
+  (third party extension minversion requires version 3.7 or newer of Mercurial (current: 3.6); disabling)
 
 Can load version that is only off by point release
 
@@ -1778,7 +1843,7 @@ Prohibit the use of unicode strings as the default value of options
   > def ext(*args, **opts):
   >     print(opts[b'opt'], flush=True)
   > EOF
-  $ $PYTHON $TESTTMP/unflush.py $TESTTMP/test_unicode_default_value.py
+  $ "$PYTHON" $TESTTMP/unflush.py $TESTTMP/test_unicode_default_value.py
   $ cat > $TESTTMP/opt-unicode-default/.hg/hgrc << EOF
   > [extensions]
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py

@@ -56,7 +56,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:        yes
   dotencode:      yes
   generaldelta:   yes
-  sparserevlog:    no
+  sparserevlog:   yes
   plain-cl-delta: yes
   compression:    zlib
   $ hg debugformat --verbose
@@ -64,23 +64,23 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:        yes    yes     yes
   dotencode:      yes    yes     yes
   generaldelta:   yes    yes     yes
-  sparserevlog:    no     no      no
+  sparserevlog:   yes    yes     yes
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
-  $ hg debugformat --verbose --config format.usegfncache=no
+  $ hg debugformat --verbose --config format.usefncache=no
   format-variant repo config default
-  fncache:        yes    yes     yes
-  dotencode:      yes    yes     yes
+  fncache:        yes     no     yes
+  dotencode:      yes     no     yes
   generaldelta:   yes    yes     yes
-  sparserevlog:    no     no      no
+  sparserevlog:   yes    yes     yes
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
-  $ hg debugformat --verbose --config format.usegfncache=no --color=debug
+  $ hg debugformat --verbose --config format.usefncache=no --color=debug
   format-variant repo config default
-  [formatvariant.name.uptodate|fncache:       ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|dotencode:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.mismatchconfig|fncache:       ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.mismatchconfig|dotencode:     ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|generaldelta:  ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:   ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   $ hg debugformat -Tjson
@@ -104,10 +104,10 @@ An upgrade of a repository created with recommended settings only suggests optim
     "repo": true
    },
    {
-    "config": false,
-    "default": false,
+    "config": true,
+    "default": true,
     "name": "sparserevlog",
-    "repo": false
+    "repo": true
    },
    {
     "config": true,
@@ -127,21 +127,21 @@ An upgrade of a repository created with recommended settings only suggests optim
   performing an upgrade with "--run" will make the following changes:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
   additional optimizations are available by specifying "--optimize <name>":
   
-  redeltaparent
+  re-delta-parent
      deltas within internal storage will be recalculated to choose an optimal base revision where this was not already done; the size of the repository may shrink and various operations may become faster; the first time this optimization is performed could slow down upgrade execution considerably; subsequent invocations should not run noticeably slower
   
-  redeltamultibase
+  re-delta-multibase
      deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
   
-  redeltafulladd
-     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "redeltaall" but even slower since more logic is involved.
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
 
 --optimize can be used to add optimizations
@@ -151,22 +151,53 @@ An upgrade of a repository created with recommended settings only suggests optim
   performing an upgrade with "--run" will make the following changes:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  redeltaparent
+  re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
   additional optimizations are available by specifying "--optimize <name>":
   
-  redeltamultibase
+  re-delta-multibase
      deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
   
-  redeltafulladd
-     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "redeltaall" but even slower since more logic is involved.
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
+
+modern form of the option
+
+  $ hg debugupgrade --optimize re-delta-parent
+  (no feature deficiencies found in existing repository)
+  performing an upgrade with "--run" will make the following changes:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  re-delta-parent
+     deltas within internal storage will choose a new base revision if needed
+  
+  additional optimizations are available by specifying "--optimize <name>":
+  
+  re-delta-multibase
+     deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
+  
+  re-delta-all
+     deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
+  
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
+  
+
+unknown optimization:
+
+  $ hg debugupgrade --optimize foobar
+  abort: unknown optimization action requested: foobar
+  (run without arguments to see valid optimizations)
+  [255]
 
 Various sub-optimal detections work
 
@@ -188,7 +219,7 @@ Various sub-optimal detections work
   fncache:         no    yes     yes
   dotencode:       no    yes     yes
   generaldelta:    no    yes     yes
-  sparserevlog:    no     no      no
+  sparserevlog:    no    yes     yes
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegeneraldelta=no
@@ -196,7 +227,7 @@ Various sub-optimal detections work
   fncache:         no    yes     yes
   dotencode:       no    yes     yes
   generaldelta:    no     no     yes
-  sparserevlog:    no     no      no
+  sparserevlog:    no     no     yes
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegeneraldelta=no --color=debug
@@ -204,7 +235,7 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchconfig|fncache:       ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchconfig|dotencode:     ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|generaldelta:  ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.mismatchdefault|sparserevlog:  ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:   ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   $ hg debugupgraderepo
@@ -219,12 +250,15 @@ Various sub-optimal detections work
   generaldelta
      deltas within internal storage are unable to choose optimal revisions; repository is larger and slower than it could be; interaction with other repositories may require extra network and CPU resources, making "hg push" and "hg pull" slower
   
+  sparserevlog
+     in order to limit disk reading and memory usage on older version, the span of a delta chain from its root to its end is limited, whatever the relevant data in this span. This can severly limit Mercurial ability to build good chain of delta resulting is much more storage space being taken and limit reusability of on disk delta during exchange.
+  
   
   performing an upgrade with "--run" will make the following changes:
   
   requirements
      preserved: revlogv1, store
-     added: dotencode, fncache, generaldelta
+     added: dotencode, fncache, generaldelta, sparserevlog
   
   fncache
      repository will be more resilient to storing certain paths and performance of certain operations should be improved
@@ -235,19 +269,22 @@ Various sub-optimal detections work
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
   
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
+  
   additional optimizations are available by specifying "--optimize <name>":
   
-  redeltaparent
+  re-delta-parent
      deltas within internal storage will be recalculated to choose an optimal base revision where this was not already done; the size of the repository may shrink and various operations may become faster; the first time this optimization is performed could slow down upgrade execution considerably; subsequent invocations should not run noticeably slower
   
-  redeltamultibase
+  re-delta-multibase
      deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
   
-  redeltafulladd
-     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "redeltaall" but even slower since more logic is involved.
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
 
   $ hg --config format.dotencode=false debugupgraderepo
@@ -259,6 +296,9 @@ Various sub-optimal detections work
   generaldelta
      deltas within internal storage are unable to choose optimal revisions; repository is larger and slower than it could be; interaction with other repositories may require extra network and CPU resources, making "hg push" and "hg pull" slower
   
+  sparserevlog
+     in order to limit disk reading and memory usage on older version, the span of a delta chain from its root to its end is limited, whatever the relevant data in this span. This can severly limit Mercurial ability to build good chain of delta resulting is much more storage space being taken and limit reusability of on disk delta during exchange.
+  
   repository lacks features used by the default config options:
   
   dotencode
@@ -269,7 +309,7 @@ Various sub-optimal detections work
   
   requirements
      preserved: revlogv1, store
-     added: fncache, generaldelta
+     added: fncache, generaldelta, sparserevlog
   
   fncache
      repository will be more resilient to storing certain paths and performance of certain operations should be improved
@@ -277,19 +317,22 @@ Various sub-optimal detections work
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
   
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
+  
   additional optimizations are available by specifying "--optimize <name>":
   
-  redeltaparent
+  re-delta-parent
      deltas within internal storage will be recalculated to choose an optimal base revision where this was not already done; the size of the repository may shrink and various operations may become faster; the first time this optimization is performed could slow down upgrade execution considerably; subsequent invocations should not run noticeably slower
   
-  redeltamultibase
+  re-delta-multibase
      deltas within internal storage will be recalculated against multiple base revision and the smallest difference will be used; the size of the repository may shrink significantly when there are many merges; this optimization will slow down execution in proportion to the number of merges in the repository and the amount of files in the repository; this slow down should not be significant unless there are tens of thousands of files and thousands of merges
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will always be recalculated without reusing prior deltas; this will likely make execution run several times slower; this optimization is typically not needed
   
-  redeltafulladd
-     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "redeltaall" but even slower since more logic is involved.
+  re-delta-fulladd
+     every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
 
   $ cd ..
@@ -301,7 +344,7 @@ Upgrading a repository that is already modern essentially no-ops
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
   beginning upgrade...
   repository locked and read-only
@@ -330,7 +373,7 @@ Upgrading a repository to generaldelta works
   $ touch f2
   $ hg -q commit -A -m 'add f2'
 
-  $ hg debugupgraderepo --run
+  $ hg debugupgraderepo --run --config format.sparse-revlog=false
   upgrade will perform the following actions:
   
   requirements
@@ -410,6 +453,8 @@ verify should be happy
 
 old store should be backed up
 
+  $ ls -d .hg/upgradebackup.*/
+  .hg/upgradebackup.*/ (glob)
   $ ls .hg/upgradebackup.*/store
   00changelog.i
   00manifest.i
@@ -421,7 +466,46 @@ old store should be backed up
   undo.backupfiles
   undo.phaseroots
 
+unless --no-backup is passed
+
+  $ rm -rf .hg/upgradebackup.*/
+  $ hg debugupgraderepo --run --no-backup
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     added: sparserevlog
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
+  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
+  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
+  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  finished migrating 3 changelog revisions; change in size: 0 bytes
+  finished migrating 9 total revisions; total change in store size: 0 bytes
+  copying phaseroots
+  data fully migrated to temporary repository
+  marking source repository as being upgraded; clients will be unable to read from repository
+  starting in-place swap of repository data
+  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  replacing store...
+  store replacement complete; repository was inconsistent for 0.0s
+  finalizing requirements file and making repository readable again
+  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  $ ls -1 .hg/ | grep upgradebackup
+  [1]
   $ cd ..
+
 
 store files with special filenames aren't encoded during copy
 
@@ -435,7 +519,7 @@ store files with special filenames aren't encoded during copy
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
   beginning upgrade...
   repository locked and read-only
@@ -466,9 +550,9 @@ store files with special filenames aren't encoded during copy
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  redeltafulladd
+  re-delta-fulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
   
   beginning upgrade...
@@ -497,6 +581,11 @@ store files with special filenames aren't encoded during copy
   copy of old repository backed up at $TESTTMP/store-filenames/.hg/upgradebackup.* (glob)
   the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
 
+fncache is valid after upgrade
+
+  $ hg debugrebuildfncache
+  fncache already up to date
+
   $ cd ..
 
 Check upgrading a large file repository
@@ -518,13 +607,14 @@ Check upgrading a large file repository
   generaldelta
   largefiles
   revlogv1
+  sparserevlog
   store
 
   $ hg debugupgraderepo --run
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, largefiles, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, largefiles, revlogv1, sparserevlog, store
   
   beginning upgrade...
   repository locked and read-only
@@ -556,6 +646,7 @@ Check upgrading a large file repository
   generaldelta
   largefiles
   revlogv1
+  sparserevlog
   store
 
   $ cat << EOF >> .hg/hgrc
@@ -576,7 +667,7 @@ Check upgrading a large file repository
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, largefiles, lfs, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, largefiles, lfs, revlogv1, sparserevlog, store
   
   beginning upgrade...
   repository locked and read-only
@@ -662,18 +753,18 @@ repository config is taken in account
   $ hg config format
   format.maxchainlen=9001
   $ hg debugdeltachain file
-      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
-        0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000
-        1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000
-        2       2        1       -1    base         84        200         84   0.42000        84         0    0.00000
+      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
+        0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000         77         77   1.00000        1
+        1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000         98         98   1.00000        1
+        2       1        2        0   other         30        200        107   0.53500       128        21    0.19626        128        128   0.83594        1
 
   $ hg debugupgraderepo --run --optimize redeltaall
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  redeltaall
+  re-delta-all
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time
   
   beginning upgrade...
@@ -681,14 +772,14 @@ repository config is taken in account
   creating temporary repository to stage migrated data: $TESTTMP/localconfig/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 1.05 KB in store; 882 bytes tracked data
-  migrating 1 filelogs containing 3 revisions (374 bytes in store; 573 bytes tracked data)
-  finished migrating 3 filelog revisions across 1 filelogs; change in size: -63 bytes
+  migrating 1019 bytes in store; 882 bytes tracked data
+  migrating 1 filelogs containing 3 revisions (320 bytes in store; 573 bytes tracked data)
+  finished migrating 3 filelog revisions across 1 filelogs; change in size: -9 bytes
   migrating 1 manifests containing 3 revisions (333 bytes in store; 138 bytes tracked data)
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
   migrating changelog containing 3 revisions (366 bytes in store; 171 bytes tracked data)
   finished migrating 3 changelog revisions; change in size: 0 bytes
-  finished migrating 9 total revisions; total change in store size: -63 bytes
+  finished migrating 9 total revisions; total change in store size: -9 bytes
   copying phaseroots
   data fully migrated to temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
@@ -701,10 +792,10 @@ repository config is taken in account
   copy of old repository backed up at $TESTTMP/localconfig/.hg/upgradebackup.* (glob)
   the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
   $ hg debugdeltachain file
-      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
-        0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000
-        1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000
-        2       1        3        1      p1         21        200        119   0.59500       119         0    0.00000
+      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
+        0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000         77         77   1.00000        1
+        1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000         98         98   1.00000        1
+        2       1        3        1      p1         21        200        119   0.59500       119         0    0.00000        119        119   1.00000        1
   $ cd ..
 
   $ cat << EOF >> $HGRCPATH
@@ -715,7 +806,7 @@ repository config is taken in account
 Check upgrading a sparse-revlog repository
 ---------------------------------------
 
-  $ hg init sparserevlogrepo
+  $ hg init sparserevlogrepo --config format.sparse-revlog=no
   $ cd sparserevlogrepo
   $ touch foo
   $ hg add foo

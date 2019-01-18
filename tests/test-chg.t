@@ -1,6 +1,23 @@
 #require chg
 
+  $ mkdir log
+  $ cp $HGRCPATH $HGRCPATH.unconfigured
+  $ cat <<'EOF' >> $HGRCPATH
+  > [cmdserver]
+  > log = $TESTTMP/log/server.log
+  > max-log-files = 1
+  > max-log-size = 10 kB
+  > EOF
   $ cp $HGRCPATH $HGRCPATH.orig
+
+  $ filterlog () {
+  >   sed -e 's!^[0-9/]* [0-9:]* ([0-9]*)>!YYYY/MM/DD HH:MM:SS (PID)>!' \
+  >       -e 's!\(setprocname\|received fds\|setenv\): .*!\1: ...!' \
+  >       -e 's!\(confighash\|mtimehash\) = [0-9a-f]*!\1 = ...!g' \
+  >       -e 's!\(in \)[0-9.]*s\b!\1 ...s!g' \
+  >       -e 's!\(pid\)=[0-9]*!\1=...!g' \
+  >       -e 's!\(/server-\)[0-9a-f]*!\1...!g'
+  > }
 
 init repo
 
@@ -201,5 +218,114 @@ since no server is reachable from socket file, new server should be started:
 shut down servers and restore environment:
 
   $ rm -R chgsock
+  $ sleep 2
   $ CHGSOCKNAME=$OLDCHGSOCKNAME
   $ cd ..
+
+check that server events are recorded:
+
+  $ ls log
+  server.log
+  server.log.1
+
+print only the last 10 lines, since we aren't sure how many records are
+preserved:
+
+  $ cat log/server.log.1 log/server.log | tail -10 | filterlog
+  YYYY/MM/DD HH:MM:SS (PID)> forked worker process (pid=...)
+  YYYY/MM/DD HH:MM:SS (PID)> setprocname: ...
+  YYYY/MM/DD HH:MM:SS (PID)> received fds: ...
+  YYYY/MM/DD HH:MM:SS (PID)> chdir to '$TESTTMP/extreload'
+  YYYY/MM/DD HH:MM:SS (PID)> setumask 18
+  YYYY/MM/DD HH:MM:SS (PID)> setenv: ...
+  YYYY/MM/DD HH:MM:SS (PID)> confighash = ... mtimehash = ...
+  YYYY/MM/DD HH:MM:SS (PID)> validate: []
+  YYYY/MM/DD HH:MM:SS (PID)> worker process exited (pid=...)
+  YYYY/MM/DD HH:MM:SS (PID)> $TESTTMP/extreload/chgsock/server-... is not owned, exiting.
+
+repository cache
+----------------
+
+  $ rm log/server.log*
+  $ cp $HGRCPATH.unconfigured $HGRCPATH
+  $ cat <<'EOF' >> $HGRCPATH
+  > [cmdserver]
+  > log = $TESTTMP/log/server.log
+  > max-repo-cache = 1
+  > track-log = command, repocache
+  > EOF
+
+isolate socket directory for stable result:
+
+  $ OLDCHGSOCKNAME=$CHGSOCKNAME
+  $ mkdir chgsock
+  $ CHGSOCKNAME=`pwd`/chgsock/server
+
+create empty repo and cache it:
+
+  $ hg init cached
+  $ hg id -R cached
+  000000000000 tip
+  $ sleep 1
+
+modify repo (and cache will be invalidated):
+
+  $ touch cached/a
+  $ hg ci -R cached -Am 'add a'
+  adding a
+  $ sleep 1
+
+read cached repo:
+
+  $ hg log -R cached
+  changeset:   0:ac82d8b1f7c4
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a
+  
+  $ sleep 1
+
+discard cached from LRU cache:
+
+  $ hg clone cached cached2
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg id -R cached2
+  ac82d8b1f7c4 tip
+  $ sleep 1
+
+read uncached repo:
+
+  $ hg log -R cached
+  changeset:   0:ac82d8b1f7c4
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a
+  
+  $ sleep 1
+
+shut down servers and restore environment:
+
+  $ rm -R chgsock
+  $ sleep 2
+  $ CHGSOCKNAME=$OLDCHGSOCKNAME
+
+check server log:
+
+  $ cat log/server.log | filterlog
+  YYYY/MM/DD HH:MM:SS (PID)> init cached
+  YYYY/MM/DD HH:MM:SS (PID)> id -R cached
+  YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)
+  YYYY/MM/DD HH:MM:SS (PID)> repo from cache: $TESTTMP/cached
+  YYYY/MM/DD HH:MM:SS (PID)> ci -R cached -Am 'add a'
+  YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)
+  YYYY/MM/DD HH:MM:SS (PID)> repo from cache: $TESTTMP/cached
+  YYYY/MM/DD HH:MM:SS (PID)> log -R cached
+  YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)
+  YYYY/MM/DD HH:MM:SS (PID)> clone cached cached2
+  YYYY/MM/DD HH:MM:SS (PID)> id -R cached2
+  YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached2 (in  ...s)
+  YYYY/MM/DD HH:MM:SS (PID)> log -R cached
+  YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)

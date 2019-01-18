@@ -100,6 +100,7 @@ Test link+rename largefile codepath
   generaldelta
   largefiles
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
@@ -125,10 +126,10 @@ add some changesets to rename/remove/merge
   $ hg rm large normal3
   $ hg commit -q -m"remove large, normal3"
   $ hg merge
-  merging sub/maybelarge.dat and stuff/maybelarge.dat to stuff/maybelarge.dat
+  tool internal:merge (for pattern stuff/maybelarge.dat) can't handle binary
+  no tool found to merge stuff/maybelarge.dat
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for stuff/maybelarge.dat? u
   merging sub/normal2 and stuff/normal2 to stuff/normal2
-  warning: stuff/maybelarge.dat looks like a binary file.
-  warning: conflicts while merging stuff/maybelarge.dat! (edit, then use 'hg resolve --mark')
   0 files updated, 1 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -356,20 +357,27 @@ Avoid a traceback if a largefile isn't available (issue3519)
 Ensure the largefile can be cached in the source if necessary
   $ hg clone -U largefiles-repo issue3519
   $ rm -f "${USERCACHE}"/*
+  $ hg -R issue3519 branch -q mybranch
+  $ hg -R issue3519 ci -m 'change branch name only'
   $ hg lfconvert --to-normal issue3519 normalized3519
   initializing destination normalized3519
   4 additional largefiles cached
   scanning source...
   sorting...
   converting...
-  7 add large, normal1
-  6 add sub/*
-  5 rename sub/ to stuff/
-  4 add normal3, modify sub/*
-  3 remove large, normal3
-  2 merge
-  1 add anotherlarge (should be a largefile)
-  0 Added tag mytag for changeset abacddda7028
+  8 add large, normal1
+  7 add sub/*
+  6 rename sub/ to stuff/
+  5 add normal3, modify sub/*
+  4 remove large, normal3
+  3 merge
+  2 add anotherlarge (should be a largefile)
+  1 Added tag mytag for changeset abacddda7028
+  0 change branch name only
+
+Ensure empty commits aren't lost in the conversion
+  $ hg -R normalized3519 log -r tip -T '{desc}\n'
+  change branch name only
 
 Ensure the abort message is useful if a largefile is entirely unavailable
   $ rm -rf normalized3519

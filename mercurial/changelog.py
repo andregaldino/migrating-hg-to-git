@@ -295,8 +295,9 @@ class changelog(revlog.revlog):
         revlog.revlog.__init__(self, opener, indexfile, datafile=datafile,
                                checkambig=True, mmaplargeindex=True)
 
-        if self._initempty:
-            # changelogs don't benefit from generaldelta
+        if self._initempty and (self.version & 0xFFFF == revlog.REVLOGV1):
+            # changelogs don't benefit from generaldelta.
+
             self.version &= ~revlog.FLAG_GENERALDELTA
             self._generaldelta = False
 
@@ -346,8 +347,8 @@ class changelog(revlog.revlog):
     def reachableroots(self, minroot, heads, roots, includepath=False):
         return self.index.reachableroots2(minroot, heads, roots, includepath)
 
-    def headrevs(self):
-        if self.filteredrevs:
+    def headrevs(self, revs=None):
+        if revs is None and self.filteredrevs:
             try:
                 return self.index.headrevsfiltered(self.filteredrevs)
             # AttributeError covers non-c-extension environments and
@@ -355,7 +356,7 @@ class changelog(revlog.revlog):
             except AttributeError:
                 return self._headrevs()
 
-        return super(changelog, self).headrevs()
+        return super(changelog, self).headrevs(revs)
 
     def strip(self, *args, **kwargs):
         # XXX make something better than assert

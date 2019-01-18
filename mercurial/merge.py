@@ -478,6 +478,13 @@ class mergestate(object):
             f.write(_pack(format, key, len(data), data))
         f.close()
 
+    @staticmethod
+    def getlocalkey(path):
+        """hash the path of a local file context for storage in the .hg/merge
+        directory."""
+
+        return hex(hashlib.sha1(path).digest())
+
     def add(self, fcl, fco, fca, fd):
         """add a new (potentially?) conflicting file the merge state
         fcl: file context for local,
@@ -488,11 +495,11 @@ class mergestate(object):
         note: also write the local version to the `.hg/merge` directory.
         """
         if fcl.isabsent():
-            hash = nullhex
+            localkey = nullhex
         else:
-            hash = hex(hashlib.sha1(fcl.path()).digest())
-            self._repo.vfs.write('merge/' + hash, fcl.data())
-        self._state[fd] = [MERGE_RECORD_UNRESOLVED, hash, fcl.path(),
+            localkey = mergestate.getlocalkey(fcl.path())
+            self._repo.vfs.write('merge/' + localkey, fcl.data())
+        self._state[fd] = [MERGE_RECORD_UNRESOLVED, localkey, fcl.path(),
                            fca.path(), hex(fca.filenode()),
                            fco.path(), hex(fco.filenode()),
                            fcl.flags()]
@@ -551,7 +558,7 @@ class mergestate(object):
                            MERGE_RECORD_DRIVER_RESOLVED):
             return True, 0
         stateentry = self._state[dfile]
-        state, hash, lfile, afile, anode, ofile, onode, flags = stateentry
+        state, localkey, lfile, afile, anode, ofile, onode, flags = stateentry
         octx = self._repo[self._other]
         extras = self.extras(dfile)
         anccommitnode = extras.get('ancestorlinknode')
@@ -559,7 +566,7 @@ class mergestate(object):
             actx = self._repo[anccommitnode]
         else:
             actx = None
-        fcd = self._filectxorabsent(hash, wctx, dfile)
+        fcd = self._filectxorabsent(localkey, wctx, dfile)
         fco = self._filectxorabsent(onode, octx, ofile)
         # TODO: move this to filectxorabsent
         fca = self._repo.filectx(afile, fileid=anode, changectx=actx)
@@ -577,8 +584,8 @@ class mergestate(object):
                 flags = flo
         if preresolve:
             # restore local
-            if hash != nullhex:
-                f = self._repo.vfs('merge/' + hash)
+            if localkey != nullhex:
+                f = self._repo.vfs('merge/' + localkey)
                 wctx[dfile].write(f.read(), flags)
                 f.close()
             else:
@@ -1538,8 +1545,27 @@ class updateresult(object):
     unresolvedcount = attr.ib()
 
     def isempty(self):
-        return (not self.updatedcount and not self.mergedcount
-                and not self.removedcount and not self.unresolvedcount)
+        return not (self.updatedcount or self.mergedcount
+                    or self.removedcount or self.unresolvedcount)
+
+def emptyactions():
+    """create an actions dict, to be populated and passed to applyupdates()"""
+    return dict((m, [])
+                for m in (
+                    ACTION_ADD,
+                    ACTION_ADD_MODIFIED,
+                    ACTION_FORGET,
+                    ACTION_GET,
+                    ACTION_CHANGED_DELETED,
+                    ACTION_DELETED_CHANGED,
+                    ACTION_REMOVE,
+                    ACTION_DIR_RENAME_MOVE_LOCAL,
+                    ACTION_LOCAL_DIR_RENAME_GET,
+                    ACTION_MERGE,
+                    ACTION_EXEC,
+                    ACTION_KEEP,
+                    ACTION_PATH_CONFLICT,
+                    ACTION_PATH_CONFLICT_RESOLVE))
 
 def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     """apply the merge action list to the working directory
@@ -2090,22 +2116,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
                     del actionbyfile[f]
 
         # Convert to dictionary-of-lists format
-        actions = dict((m, [])
-                       for m in (
-                           ACTION_ADD,
-                           ACTION_ADD_MODIFIED,
-                           ACTION_FORGET,
-                           ACTION_GET,
-                           ACTION_CHANGED_DELETED,
-                           ACTION_DELETED_CHANGED,
-                           ACTION_REMOVE,
-                           ACTION_DIR_RENAME_MOVE_LOCAL,
-                           ACTION_LOCAL_DIR_RENAME_GET,
-                           ACTION_MERGE,
-                           ACTION_EXEC,
-                           ACTION_KEEP,
-                           ACTION_PATH_CONFLICT,
-                           ACTION_PATH_CONFLICT_RESOLVE))
+        actions = emptyactions()
         for f, (m, args, msg) in actionbyfile.iteritems():
             if m not in actions:
                 actions[m] = []

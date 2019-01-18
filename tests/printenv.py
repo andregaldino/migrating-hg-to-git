@@ -13,6 +13,7 @@
 #              the file will be opened in append mode.
 #
 from __future__ import absolute_import
+import argparse
 import os
 import sys
 
@@ -24,15 +25,30 @@ try:
 except ImportError:
     pass
 
-exitcode = 0
-out = sys.stdout
-out = getattr(out, 'buffer', out)
+parser = argparse.ArgumentParser()
+parser.add_argument("name", help="the hook name, used for display")
+parser.add_argument(
+    "exitcode",
+    nargs="?",
+    default=0,
+    type=int,
+    help="the exit code for the hook",
+)
+parser.add_argument(
+    "out", nargs="?", default=None, help="where to write the output"
+)
+parser.add_argument(
+    "--line",
+    action="store_true",
+    help="print environment variables one per line instead of on a single line",
+)
+args = parser.parse_args()
 
-name = sys.argv[1]
-if len(sys.argv) > 2:
-    exitcode = int(sys.argv[2])
-    if len(sys.argv) > 3:
-        out = open(sys.argv[3], "ab")
+if args.out is None:
+    out = sys.stdout
+    out = getattr(out, "buffer", out)
+else:
+    out = open(args.out, "ab")
 
 # variables with empty values may not exist on all platforms, filter
 # them now for portability sake.
@@ -40,15 +56,24 @@ env = [(k, v) for k, v in os.environ.items()
        if k.startswith("HG_") and v]
 env.sort()
 
-out.write(b"%s hook: " % name.encode('ascii'))
+out.write(b"%s hook: " % args.name.encode('ascii'))
 if os.name == 'nt':
     filter = lambda x: x.replace('\\', '/')
 else:
     filter = lambda x: x
+
 vars = [b"%s=%s" % (k.encode('ascii'), filter(v).encode('ascii'))
         for k, v in env]
-out.write(b" ".join(vars))
+
+# Print variables on out
+if not args.line:
+    out.write(b" ".join(vars))
+else:
+    for var in vars:
+        out.write(var)
+        out.write(b"\n")
+
 out.write(b"\n")
 out.close()
 
-sys.exit(exitcode)
+sys.exit(args.exitcode)

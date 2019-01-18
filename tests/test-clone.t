@@ -43,10 +43,6 @@ Trigger branchcache creation:
   default                       10:a7949464abda
   $ ls .hg/cache
   branch2-served
-  checkisexec (execbit !)
-  checklink (symlink !)
-  checklink-target (symlink !)
-  checknoexec (execbit !)
   manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1
@@ -62,9 +58,6 @@ Ensure branchcache got copied over:
 
   $ ls .hg/cache
   branch2-served
-  checkisexec (execbit !)
-  checklink (symlink !)
-  checklink-target (symlink !)
   rbc-names-v1
   rbc-revs-v1
 
@@ -574,6 +567,7 @@ iterable in addbranchrevs()
   > from mercurial import extensions, hg, ui as uimod
   > myui = uimod.ui.load()
   > extensions.loadall(myui)
+  > extensions.populateui(myui)
   > repo = hg.repository(myui, b'a')
   > hg.clone(myui, {}, repo, dest=b"ua", branch=[b"stable",])
   > EOF

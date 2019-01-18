@@ -238,7 +238,7 @@ Show all commands + options
   bisect: reset, good, bad, skip, extend, command, noupdate
   bookmarks: force, rev, delete, rename, inactive, list, template
   branch: force, clean, rev
-  branches: active, closed, template
+  branches: active, closed, rev, template
   bundle: force, rev, branch, base, all, type, ssh, remotecmd, insecure
   cat: output, rev, decode, include, exclude, template
   clone: noupdate, updaterev, rev, branch, pull, uncompressed, stream, ssh, remotecmd, insecure
@@ -299,7 +299,7 @@ Show all commands + options
   debuguigetpass: prompt
   debuguiprompt: prompt
   debugupdatecaches: 
-  debugupgraderepo: optimize, run
+  debugupgraderepo: optimize, run, backup
   debugwalk: include, exclude
   debugwhyunstable: 
   debugwireargs: three, four, five, ssh, remotecmd, insecure
@@ -308,7 +308,7 @@ Show all commands + options
   export: bookmark, output, switch-parent, rev, text, git, binary, nodates, template
   files: rev, print0, include, exclude, template, subrepos
   forget: interactive, include, exclude, dry-run
-  graft: rev, continue, stop, abort, edit, log, no-commit, force, currentdate, currentuser, date, user, tool, dry-run
+  graft: rev, base, continue, stop, abort, edit, log, no-commit, force, currentdate, currentuser, date, user, tool, dry-run
   grep: print0, all, diff, text, follow, ignore-case, files-with-matches, line-number, rev, all-files, user, date, template, include, exclude
   heads: rev, topo, active, closed, style, template
   help: extension, command, keyword, system
@@ -325,7 +325,7 @@ Show all commands + options
   paths: template
   phase: public, draft, secret, force, rev
   pull: update, force, rev, bookmark, branch, ssh, remotecmd, insecure
-  push: force, rev, bookmark, branch, new-branch, pushvars, ssh, remotecmd, insecure
+  push: force, rev, bookmark, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
   recover: 
   remove: after, force, subrepos, include, exclude, dry-run
   rename: after, force, include, exclude, dry-run

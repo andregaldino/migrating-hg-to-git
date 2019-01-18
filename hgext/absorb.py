@@ -489,7 +489,8 @@ class filefixupstate(object):
             if l[colonpos - 1:colonpos + 2] != ' : ':
                 raise error.Abort(_('malformed line: %s') % l)
             linecontent = l[colonpos + 2:]
-            for i, ch in enumerate(l[leftpadpos:colonpos - 1]):
+            for i, ch in enumerate(
+                    pycompat.bytestr(l[leftpadpos:colonpos - 1])):
                 if ch == 'y':
                     contents[visiblefctxs[i][0]] += linecontent
         # chunkstats is hard to calculate if anything changes, therefore
@@ -971,9 +972,10 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
                      label='absorb.description')
         fm.end()
     if not opts.get('dry_run'):
-        if not opts.get('apply_changes'):
-            if ui.promptchoice("apply changes (yn)? $$ &Yes $$ &No", default=1):
-                raise error.Abort(_('absorb cancelled\n'))
+        if (not opts.get('apply_changes') and
+            state.ctxaffected and
+            ui.promptchoice("apply changes (yn)? $$ &Yes $$ &No", default=1)):
+            raise error.Abort(_('absorb cancelled\n'))
 
         state.apply()
         if state.commit():

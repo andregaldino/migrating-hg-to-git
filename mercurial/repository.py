@@ -39,6 +39,11 @@ REVISION_FLAG_EXTSTORED = 1 << 13
 REVISION_FLAGS_KNOWN = (
     REVISION_FLAG_CENSORED | REVISION_FLAG_ELLIPSIS | REVISION_FLAG_EXTSTORED)
 
+CG_DELTAMODE_STD = b'default'
+CG_DELTAMODE_PREV = b'previous'
+CG_DELTAMODE_FULL = b'fulltext'
+CG_DELTAMODE_P1 = b'p1'
+
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.
 
@@ -614,7 +619,7 @@ class ifiledata(interfaceutil.Interface):
                       nodesorder=None,
                       revisiondata=False,
                       assumehaveparentrevisions=False,
-                      deltaprevious=False):
+                      deltamode=CG_DELTAMODE_STD):
         """Produce ``irevisiondelta`` for revisions.
 
         Given an iterable of nodes, emits objects conforming to the
@@ -657,10 +662,10 @@ class ifiledata(interfaceutil.Interface):
         The ``linknode`` attribute on the returned ``irevisiondelta`` may not
         be set and it is the caller's responsibility to resolve it, if needed.
 
-        If ``deltaprevious`` is True and revision data is requested, all
-        revision data should be emitted as deltas against the revision
-        emitted just prior. The initial revision should be a delta against
-        its 1st parent.
+        If ``deltamode`` is CG_DELTAMODE_PREV and revision data is requested,
+        all revision data should be emitted as deltas against the revision
+        emitted just prior. The initial revision should be a delta against its
+        1st parent.
         """
 
 class ifilemutation(interfaceutil.Interface):
@@ -1430,6 +1435,12 @@ class ilocalrepositorymain(interfaceutil.Interface):
         Typically .hg/cache.
         """)
 
+    wcachevfs = interfaceutil.Attribute(
+        """A VFS used to access the cache directory dedicated to working copy
+
+        Typically .hg/wcache.
+        """)
+
     filteredrevcache = interfaceutil.Attribute(
         """Holds sets of revisions to be filtered.""")
 
@@ -1466,7 +1477,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
     narrowpats = interfaceutil.Attribute(
         """Matcher patterns for this repository's narrowspec.""")
 
-    def narrowmatch():
+    def narrowmatch(match=None, includeexact=False):
         """Obtain a matcher for the narrowspec."""
 
     def setnarrowpats(newincludes, newexcludes):

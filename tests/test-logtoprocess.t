@@ -14,12 +14,12 @@ Test if logtoprocess correctly captures command-related log calls.
   > command = registrar.command(cmdtable)
   > configtable = {}
   > configitem = registrar.configitem(configtable)
-  > configitem('logtoprocess', 'foo',
+  > configitem(b'logtoprocess', b'foo',
   >     default=None,
   > )
   > @command(b'foobar', [])
   > def foo(ui, repo):
-  >     ui.log('foo', 'a message: %s\n', 'spam')
+  >     ui.log(b'foo', b'a message: %s\n', b'spam')
   > EOF
   $ cp $HGRCPATH $HGRCPATH.bak
   $ cat >> $HGRCPATH << EOF
@@ -29,18 +29,14 @@ Test if logtoprocess correctly captures command-related log calls.
   > [logtoprocess]
   > command=(echo 'logtoprocess command output:';
   >     echo "\$EVENT";
-  >     echo "\$MSG1";
-  >     echo "\$MSG2") > $TESTTMP/command.log
+  >     echo "\$MSG1") > $TESTTMP/command.log
   > commandfinish=(echo 'logtoprocess commandfinish output:';
   >     echo "\$EVENT";
   >     echo "\$MSG1";
-  >     echo "\$MSG2";
-  >     echo "\$MSG3";
   >     echo "canonical: \$OPT_CANONICAL_COMMAND") > $TESTTMP/commandfinish.log
   > foo=(echo 'logtoprocess foo output:';
   >     echo "\$EVENT";
-  >     echo "\$MSG1";
-  >     echo "\$MSG2") > $TESTTMP/foo.log
+  >     echo "\$MSG1") > $TESTTMP/foo.log
   > EOF
 
 Running a command triggers both a ui.log('command') and a
@@ -53,16 +49,13 @@ Use sort to avoid ordering issues between the various processes we spawn:
   
   command
   fooba
-  fooba
   logtoprocess command output:
 
 #if no-chg
   $ cat $TESTTMP/commandfinish.log | sort
   
-  0
   canonical: foobar
   commandfinish
-  fooba
   fooba exited 0 after * seconds (glob)
   logtoprocess commandfinish output:
   $ cat $TESTTMP/foo.log | sort
@@ -70,7 +63,6 @@ Use sort to avoid ordering issues between the various processes we spawn:
   a message: spam
   foo
   logtoprocess foo output:
-  spam
 #endif
 
 Confirm that logging blocked time catches stdio properly:
@@ -97,6 +89,16 @@ another file or die after 5 seconds. If the scripts is awaited by hg, the
 script will die after the timeout before we could touch the file and the
 resulting file will not exists. If not, we will touch the file and see it.
 
+  $ cat >> fakepager.py <<EOF
+  > import sys
+  > printed = False
+  > for line in sys.stdin:
+  >     sys.stdout.write(line)
+  >     printed = True
+  > if not printed:
+  >     sys.stdout.write('paged empty output!\n')
+  > EOF
+
   $ cat > $TESTTMP/wait-output.sh << EOF
   > #!/bin/sh
   > for i in \`$TESTDIR/seq.py 50\`; do
@@ -115,6 +117,8 @@ resulting file will not exists. If not, we will touch the file and see it.
   > [extensions]
   > logtoprocess=
   > pager=
+  > [pager]
+  > pager = "$PYTHON" $TESTTMP/fakepager.py
   > [logtoprocess]
   > commandfinish=$TESTTMP/wait-output.sh
   > EOF

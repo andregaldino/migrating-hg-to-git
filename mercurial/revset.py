@@ -125,6 +125,13 @@ def stringset(repo, subset, x, order):
         return baseset([x])
     return baseset()
 
+def rawsmartset(repo, subset, x, order):
+    """argument is already a smartset, use that directly"""
+    if order == followorder:
+        return subset & x
+    else:
+        return x & subset
+
 def rangeset(repo, subset, x, y, order):
     m = getset(repo, fullreposet(repo), x)
     n = getset(repo, fullreposet(repo), y)
@@ -218,6 +225,15 @@ def notset(repo, subset, x, order):
 def relationset(repo, subset, x, y, order):
     raise error.ParseError(_("can't use a relation in this context"))
 
+def generationsrel(repo, subset, x, rel, n, order):
+    # TODO: support range, rewrite tests, and drop startdepth argument
+    # from ancestors() and descendants() predicates
+    if n <= 0:
+        n = -n
+        return _ancestors(repo, subset, x, startdepth=n, stopdepth=n + 1)
+    else:
+        return _descendants(repo, subset, x, startdepth=n, stopdepth=n + 1)
+
 def relsubscriptset(repo, subset, x, y, z, order):
     # this is pretty basic implementation of 'x#y[z]' operator, still
     # experimental so undocumented. see the wiki for further ideas.
@@ -225,17 +241,11 @@ def relsubscriptset(repo, subset, x, y, z, order):
     rel = getsymbol(y)
     n = getinteger(z, _("relation subscript must be an integer"))
 
-    # TODO: perhaps this should be a table of relation functions
-    if rel in ('g', 'generations'):
-        # TODO: support range, rewrite tests, and drop startdepth argument
-        # from ancestors() and descendants() predicates
-        if n <= 0:
-            n = -n
-            return _ancestors(repo, subset, x, startdepth=n, stopdepth=n + 1)
-        else:
-            return _descendants(repo, subset, x, startdepth=n, stopdepth=n + 1)
+    if rel in subscriptrelations:
+        return subscriptrelations[rel](repo, subset, x, rel, n, order)
 
-    raise error.UnknownIdentifier(rel, ['generations'])
+    relnames = [r for r in subscriptrelations.keys() if len(r) > 1]
+    raise error.UnknownIdentifier(rel, relnames)
 
 def subscriptset(repo, subset, x, y, order):
     raise error.ParseError(_("can't use a subscript in this context"))
@@ -466,9 +476,6 @@ def bookmark(repo, subset, x):
             for name, bmrev in repo._bookmarks.iteritems():
                 if matcher(name):
                     matchrevs.add(bmrev)
-            if not matchrevs:
-                raise error.RepoLookupError(_("no bookmarks exist"
-                                              " that match '%s'") % pattern)
             for bmrev in matchrevs:
                 bms.add(repo[bmrev].rev())
     else:
@@ -1161,9 +1168,19 @@ def heads(repo, subset, x, order):
     # argument set should never define order
     if order == defineorder:
         order = followorder
-    s = getset(repo, subset, x, order=order)
-    ps = parents(repo, subset, x)
-    return s - ps
+    inputset = getset(repo, fullreposet(repo), x, order=order)
+    wdirparents = None
+    if node.wdirrev in inputset:
+        # a bit slower, but not common so good enough for now
+        wdirparents = [p.rev() for p in repo[None].parents()]
+        inputset = set(inputset)
+        inputset.discard(node.wdirrev)
+    heads = repo.changelog.headrevs(inputset)
+    if wdirparents is not None:
+        heads.difference_update(wdirparents)
+        heads.add(node.wdirrev)
+    heads = baseset(heads)
+    return subset & heads
 
 @predicate('hidden()', safe=True)
 def hidden(repo, subset, x):
@@ -1330,9 +1347,6 @@ def named(repo, subset, x):
         for name, ns in repo.names.iteritems():
             if matcher(name):
                 namespaces.add(ns)
-        if not namespaces:
-            raise error.RepoLookupError(_("no namespace exists"
-                                          " that match '%s'") % pattern)
 
     names = set()
     for ns in namespaces:
@@ -2219,6 +2233,12 @@ methods = {
     "ancestor": ancestorspec,
     "parent": parentspec,
     "parentpost": parentpost,
+    "smartset": rawsmartset,
+}
+
+subscriptrelations = {
+    "g": generationsrel,
+    "generations": generationsrel,
 }
 
 def lookupfn(repo):

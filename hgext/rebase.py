@@ -177,7 +177,7 @@ class rebaseruntime(object):
         if e:
             self.extrafns = [e]
 
-        self.backupf = ui.configbool('ui', 'history-editing-backup')
+        self.backupf = ui.configbool('rewrite', 'backup-bundle')
         self.keepf = opts.get('keep', False)
         self.keepbranchesf = opts.get('keepbranches', False)
         self.obsoletenotrebased = {}
@@ -347,9 +347,7 @@ class rebaseruntime(object):
 
         if isabort:
             backup = backup and self.backupf
-            return abort(self.repo, self.originalwd, self.destmap, self.state,
-                         activebookmark=self.activebookmark, backup=backup,
-                         suppwarns=suppwarns)
+            return self._abort(backup=backup, suppwarns=suppwarns)
 
     def _preparenewrebase(self, destmap):
         if not destmap:
@@ -404,7 +402,9 @@ class rebaseruntime(object):
         else:
             self.wctx = self.repo[None]
             self.repo.ui.debug("rebasing on disk\n")
-        self.repo.ui.log("rebase", "", rebase_imm_used=self.inmemory)
+        self.repo.ui.log("rebase",
+                         "using in-memory rebase: %r\n", self.inmemory,
+                         rebase_imm_used=self.inmemory)
 
     def _performrebase(self, tr):
         self._assignworkingcopy()
@@ -573,8 +573,8 @@ class rebaseruntime(object):
                 ui.debug('rebased as %s\n' % short(newnode))
             else:
                 if not self.collapsef:
-                    ui.warn(_('note: rebase of %d:%s created no changes '
-                              'to commit\n') % (rev, ctx))
+                    ui.warn(_('note: not rebasing %s, its destination already '
+                              'has all its changes\n') % desc)
                     self.skipped.add(rev)
                 self.state[rev] = p1
                 ui.debug('next revision set to %d\n' % p1)
@@ -650,6 +650,63 @@ class rebaseruntime(object):
         if (self.activebookmark and self.activebookmark in repo._bookmarks and
             repo['.'].node() == repo._bookmarks[self.activebookmark]):
                 bookmarks.activate(repo, self.activebookmark)
+
+    def _abort(self, backup=True, suppwarns=False):
+        '''Restore the repository to its original state.'''
+
+        repo = self.repo
+        try:
+            # If the first commits in the rebased set get skipped during the
+            # rebase, their values within the state mapping will be the dest
+            # rev id. The rebased list must must not contain the dest rev
+            # (issue4896)
+            rebased = [s for r, s in self.state.items()
+                       if s >= 0 and s != r and s != self.destmap[r]]
+            immutable = [d for d in rebased if not repo[d].mutable()]
+            cleanup = True
+            if immutable:
+                repo.ui.warn(_("warning: can't clean up public changesets %s\n")
+                             % ', '.join(bytes(repo[r]) for r in immutable),
+                             hint=_("see 'hg help phases' for details"))
+                cleanup = False
+
+            descendants = set()
+            if rebased:
+                descendants = set(repo.changelog.descendants(rebased))
+            if descendants - set(rebased):
+                repo.ui.warn(_("warning: new changesets detected on "
+                               "destination branch, can't strip\n"))
+                cleanup = False
+
+            if cleanup:
+                shouldupdate = False
+                if rebased:
+                    strippoints = [
+                        c.node() for c in repo.set('roots(%ld)', rebased)]
+
+                updateifonnodes = set(rebased)
+                updateifonnodes.update(self.destmap.values())
+                updateifonnodes.add(self.originalwd)
+                shouldupdate = repo['.'].rev() in updateifonnodes
+
+                # Update away from the rebase if necessary
+                if shouldupdate or needupdate(repo, self.state):
+                    mergemod.update(repo, self.originalwd, branchmerge=False,
+                                    force=True)
+
+                # Strip from the first rebased revision
+                if rebased:
+                    repair.strip(repo.ui, repo, strippoints, backup=backup)
+
+            if self.activebookmark and self.activebookmark in repo._bookmarks:
+                bookmarks.activate(repo, self.activebookmark)
+
+        finally:
+            clearstatus(repo)
+            clearcollapsemsg(repo)
+            if not suppwarns:
+                repo.ui.warn(_('rebase aborted\n'))
+        return 0
 
 @command('rebase',
     [('s', 'source', '',
@@ -1080,7 +1137,8 @@ def _definedestmap(ui, repo, inmemory, destf=None, srcf=None, basef=None,
             return None
 
     rebasingwcp = repo['.'].rev() in rebaseset
-    ui.log("rebase", "", rebase_rebasing_wcp=rebasingwcp)
+    ui.log("rebase", "rebasing working copy parent: %r\n", rebasingwcp,
+           rebase_rebasing_wcp=rebasingwcp)
     if inmemory and rebasingwcp:
         # Check these since we did not before.
         cmdutil.checkunfinished(repo)
@@ -1605,64 +1663,6 @@ def needupdate(repo, state):
         return True
 
     return False
-
-def abort(repo, originalwd, destmap, state, activebookmark=None, backup=True,
-          suppwarns=False):
-    '''Restore the repository to its original state.  Additional args:
-
-    activebookmark: the name of the bookmark that should be active after the
-        restore'''
-
-    try:
-        # If the first commits in the rebased set get skipped during the rebase,
-        # their values within the state mapping will be the dest rev id. The
-        # rebased list must must not contain the dest rev (issue4896)
-        rebased = [s for r, s in state.items()
-                   if s >= 0 and s != r and s != destmap[r]]
-        immutable = [d for d in rebased if not repo[d].mutable()]
-        cleanup = True
-        if immutable:
-            repo.ui.warn(_("warning: can't clean up public changesets %s\n")
-                        % ', '.join(bytes(repo[r]) for r in immutable),
-                        hint=_("see 'hg help phases' for details"))
-            cleanup = False
-
-        descendants = set()
-        if rebased:
-            descendants = set(repo.changelog.descendants(rebased))
-        if descendants - set(rebased):
-            repo.ui.warn(_("warning: new changesets detected on destination "
-                           "branch, can't strip\n"))
-            cleanup = False
-
-        if cleanup:
-            shouldupdate = False
-            if rebased:
-                strippoints = [
-                        c.node() for c in repo.set('roots(%ld)', rebased)]
-
-            updateifonnodes = set(rebased)
-            updateifonnodes.update(destmap.values())
-            updateifonnodes.add(originalwd)
-            shouldupdate = repo['.'].rev() in updateifonnodes
-
-            # Update away from the rebase if necessary
-            if shouldupdate or needupdate(repo, state):
-                mergemod.update(repo, originalwd, branchmerge=False, force=True)
-
-            # Strip from the first rebased revision
-            if rebased:
-                repair.strip(repo.ui, repo, strippoints, backup=backup)
-
-        if activebookmark and activebookmark in repo._bookmarks:
-            bookmarks.activate(repo, activebookmark)
-
-    finally:
-        clearstatus(repo)
-        clearcollapsemsg(repo)
-        if not suppwarns:
-            repo.ui.warn(_('rebase aborted\n'))
-    return 0
 
 def sortsource(destmap):
     """yield source revisions in an order that we only rebase things once

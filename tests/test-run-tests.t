@@ -644,12 +644,14 @@ Running In Debug Mode
 
   $ rt --debug 2>&1 | grep -v pwd
   running 2 tests using 1 parallel processes 
+  + alias hg=hg.exe (windows !)
   + echo *SALT* 0 0 (glob)
   *SALT* 0 0 (glob)
   + echo babar
   babar
   + echo *SALT* 10 0 (glob)
   *SALT* 10 0 (glob)
+  .+ alias hg=hg.exe (windows !)
   *+ echo *SALT* 0 0 (glob)
   *SALT* 0 0 (glob)
   + echo babar
@@ -714,6 +716,12 @@ failures in parallel with --first should only print one failure
 (delete the duplicated test file)
   $ rm test-failure-copy.t
 
+multiple runs per test should be parallelized
+
+  $ rt --jobs 2 --runs-per-test 2 test-success.t
+  running 2 tests using 2 parallel processes 
+  ..
+  # Ran 2 tests, 0 skipped, 0 failed.
 
 Interactive run
 ===============

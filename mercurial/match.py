@@ -25,6 +25,7 @@ from .utils import (
 )
 
 allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
+                   'rootglob',
                    'listfile', 'listfile0', 'set', 'include', 'subinclude',
                    'rootfilesin')
 cwdrelativepatternkinds = ('relpath', 'glob')
@@ -221,7 +222,7 @@ def _donormalize(patterns, default, root, cwd, auditor, warn):
     for kind, pat in [_patsplit(p, default) for p in patterns]:
         if kind in cwdrelativepatternkinds:
             pat = pathutil.canonpath(root, cwd, pat, auditor)
-        elif kind in ('relglob', 'path', 'rootfilesin'):
+        elif kind in ('relglob', 'path', 'rootfilesin', 'rootglob'):
             pat = util.normpath(pat)
         elif kind in ('listfile', 'listfile0'):
             try:
@@ -1057,14 +1058,14 @@ def _globre(pat):
     i, n = 0, len(pat)
     res = ''
     group = 0
-    escape = util.stringutil.reescape
+    escape = util.stringutil.regexbytesescapemap.get
     def peek():
         return i < n and pat[i:i + 1]
     while i < n:
         c = pat[i:i + 1]
         i += 1
         if c not in '*?[{},\\':
-            res += escape(c)
+            res += escape(c, c)
         elif c == '*':
             if peek() == '*':
                 i += 1
@@ -1105,11 +1106,11 @@ def _globre(pat):
             p = peek()
             if p:
                 i += 1
-                res += escape(p)
+                res += escape(p, p)
             else:
-                res += escape(c)
+                res += escape(c, c)
         else:
-            res += escape(c)
+            res += escape(c, c)
     return res
 
 def _regex(kind, pat, globsuffix):
@@ -1137,7 +1138,7 @@ def _regex(kind, pat, globsuffix):
         if pat.startswith('^'):
             return pat
         return '.*' + pat
-    if kind == 'glob':
+    if kind in ('glob', 'rootglob'):
         return _globre(pat) + globsuffix
     raise error.ProgrammingError('not a regex pattern: %s:%s' % (kind, pat))
 
@@ -1184,33 +1185,59 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
     else:
         return regex, lambda f: any(mf(f) for mf in matchfuncs)
 
+MAX_RE_SIZE = 20000
+
+def _joinregexes(regexps):
+    """gather multiple regular expressions into a single one"""
+    return '|'.join(regexps)
+
 def _buildregexmatch(kindpats, globsuffix):
     """Build a match function from a list of kinds and kindpats,
-    return regexp string and a matcher function."""
+    return regexp string and a matcher function.
+
+    Test too large input
+    >>> _buildregexmatch([
+    ...     (b'relglob', b'?' * MAX_RE_SIZE, b'')
+    ... ], b'$')
+    Traceback (most recent call last):
+    ...
+    Abort: matcher pattern is too long (20009 bytes)
+    """
     try:
-        regex = '(?:%s)' % '|'.join([_regex(k, p, globsuffix)
-                                     for (k, p, s) in kindpats])
-        if len(regex) > 20000:
-            raise OverflowError
-        return regex, _rematcher(regex)
-    except OverflowError:
-        # We're using a Python with a tiny regex engine and we
-        # made it explode, so we'll divide the pattern list in two
-        # until it works
-        l = len(kindpats)
-        if l < 2:
-            raise
-        regexa, a = _buildregexmatch(kindpats[:l//2], globsuffix)
-        regexb, b = _buildregexmatch(kindpats[l//2:], globsuffix)
-        return regex, lambda s: a(s) or b(s)
+        allgroups = []
+        regexps = [_regex(k, p, globsuffix) for (k, p, s) in kindpats]
+        fullregexp = _joinregexes(regexps)
+
+        startidx = 0
+        groupsize = 0
+        for idx, r in enumerate(regexps):
+            piecesize = len(r)
+            if piecesize > MAX_RE_SIZE:
+                msg = _("matcher pattern is too long (%d bytes)") % piecesize
+                raise error.Abort(msg)
+            elif (groupsize + piecesize) > MAX_RE_SIZE:
+                group = regexps[startidx:idx]
+                allgroups.append(_joinregexes(group))
+                startidx = idx
+                groupsize = 0
+            groupsize += piecesize + 1
+
+        if startidx == 0:
+            func = _rematcher(fullregexp)
+        else:
+            group = regexps[startidx:]
+            allgroups.append(_joinregexes(group))
+            allmatchers = [_rematcher(g) for g in allgroups]
+            func = lambda s: any(m(s) for m in allmatchers)
+        return fullregexp, func
     except re.error:
         for k, p, s in kindpats:
             try:
-                _rematcher('(?:%s)' % _regex(k, p, globsuffix))
+                _rematcher(_regex(k, p, globsuffix))
             except re.error:
                 if s:
                     raise error.Abort(_("%s: invalid pattern (%s): %s") %
-                                     (s, k, p))
+                                      (s, k, p))
                 else:
                     raise error.Abort(_("invalid pattern (%s): %s") % (k, p))
         raise error.Abort(_("invalid pattern"))
@@ -1226,7 +1253,7 @@ def _patternrootsanddirs(kindpats):
     r = []
     d = []
     for kind, pat, source in kindpats:
-        if kind == 'glob': # find the non-glob prefix
+        if kind in ('glob', 'rootglob'): # find the non-glob prefix
             root = []
             for p in pat.split('/'):
                 if '[' in p or '{' in p or '*' in p or '?' in p:
@@ -1325,14 +1352,21 @@ def readpatternfile(filepath, warn, sourceinfo=False):
     syntax: glob   # defaults following lines to non-rooted globs
     re:pattern     # non-rooted regular expression
     glob:pattern   # non-rooted glob
+    rootglob:pat   # rooted glob (same root as ^ in regexps)
     pattern        # pattern of the current default type
 
     if sourceinfo is set, returns a list of tuples:
     (pattern, lineno, originalline). This is useful to debug ignore patterns.
     '''
 
-    syntaxes = {'re': 'relre:', 'regexp': 'relre:', 'glob': 'relglob:',
-                'include': 'include', 'subinclude': 'subinclude'}
+    syntaxes = {
+        're': 'relre:',
+        'regexp': 'relre:',
+        'glob': 'relglob:',
+        'rootglob': 'rootglob:',
+        'include': 'include',
+        'subinclude': 'subinclude',
+    }
     syntax = 'relre:'
     patterns = []
 

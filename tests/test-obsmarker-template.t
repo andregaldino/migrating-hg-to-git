@@ -2501,14 +2501,14 @@ Check templates
   $ hg up 'desc("A0")' --hidden
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   updated to hidden changeset 471597cad322
-  (hidden revision '471597cad322' is pruned)
+  (hidden revision '471597cad322' was rewritten as: 617adc3a144c)
 
 # todo: the obsfate output is not ideal
   $ hg fatelog
   o  617adc3a144c
   |
   | @  471597cad322
-  |/     Obsfate: pruned;
+  |/     Obsfate: rewritten as 2:617adc3a144c by test (at 1970-01-01 00:00 +0000);
   o  ea207398892e
   
   $ hg up -r 'desc("A2")' --hidden

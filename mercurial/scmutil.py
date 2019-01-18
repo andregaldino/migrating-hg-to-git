@@ -12,7 +12,6 @@ import glob
 import hashlib
 import os
 import re
-import socket
 import subprocess
 import weakref
 
@@ -212,6 +211,8 @@ def callcatch(ui, func):
         ui.error(_("abort: file censored %s!\n") % inst)
     except error.StorageError as inst:
         ui.error(_("abort: %s!\n") % inst)
+        if inst.hint:
+            ui.error(_("(%s)\n") % inst.hint)
     except error.InterventionRequired as inst:
         ui.error("%s\n" % inst)
         if inst.hint:
@@ -268,8 +269,6 @@ def callcatch(ui, func):
         # Commands shouldn't sys.exit directly, but give a return code.
         # Just in case catch this and and pass exit code to caller.
         return inst.code
-    except socket.error as inst:
-        ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst.args[-1]))
 
     return -1
 
@@ -721,7 +720,7 @@ def revrange(repo, specs, localalias=None):
     allspecs = []
     for spec in specs:
         if isinstance(spec, int):
-            spec = revsetlang.formatspec('rev(%d)', spec)
+            spec = revsetlang.formatspec('%d', spec)
         allspecs.append(spec)
     return repo.anyrevs(allspecs, user=True, localalias=localalias)
 
@@ -812,21 +811,29 @@ def parsefollowlinespattern(repo, rev, pat, msg):
             raise error.ParseError(msg)
         return files[0]
 
+def getorigvfs(ui, repo):
+    """return a vfs suitable to save 'orig' file
+
+    return None if no special directory is configured"""
+    origbackuppath = ui.config('ui', 'origbackuppath')
+    if not origbackuppath:
+        return None
+    return vfs.vfs(repo.wvfs.join(origbackuppath))
+
 def origpath(ui, repo, filepath):
     '''customize where .orig files are created
 
     Fetch user defined path from config file: [ui] origbackuppath = <path>
     Fall back to default (filepath with .orig suffix) if not specified
     '''
-    origbackuppath = ui.config('ui', 'origbackuppath')
-    if not origbackuppath:
+    origvfs = getorigvfs(ui, repo)
+    if origvfs is None:
         return filepath + ".orig"
 
     # Convert filepath from an absolute path into a path inside the repo.
     filepathfromroot = util.normpath(os.path.relpath(filepath,
                                                      start=repo.root))
 
-    origvfs = vfs.vfs(repo.wjoin(origbackuppath))
     origbackupdir = origvfs.dirname(filepathfromroot)
     if not origvfs.isdir(origbackupdir) or origvfs.islink(origbackupdir):
         ui.note(_('creating directory: %s\n') % origvfs.join(origbackupdir))
@@ -891,32 +898,33 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             repls[key] = value
         replacements = repls
 
+    # Unfiltered repo is needed since nodes in replacements might be hidden.
+    unfi = repo.unfiltered()
+
     # Calculate bookmark movements
     if moves is None:
         moves = {}
-    # Unfiltered repo is needed since nodes in replacements might be hidden.
-    unfi = repo.unfiltered()
-    for oldnodes, newnodes in replacements.items():
-        for oldnode in oldnodes:
-            if oldnode in moves:
-                continue
-            if len(newnodes) > 1:
-                # usually a split, take the one with biggest rev number
-                newnode = next(unfi.set('max(%ln)', newnodes)).node()
-            elif len(newnodes) == 0:
-                # move bookmark backwards
-                allreplaced = []
-                for rep in replacements:
-                    allreplaced.extend(rep)
-                roots = list(unfi.set('max((::%n) - %ln)', oldnode,
-                                      allreplaced))
-                if roots:
-                    newnode = roots[0].node()
+        for oldnodes, newnodes in replacements.items():
+            for oldnode in oldnodes:
+                if oldnode in moves:
+                    continue
+                if len(newnodes) > 1:
+                    # usually a split, take the one with biggest rev number
+                    newnode = next(unfi.set('max(%ln)', newnodes)).node()
+                elif len(newnodes) == 0:
+                    # move bookmark backwards
+                    allreplaced = []
+                    for rep in replacements:
+                        allreplaced.extend(rep)
+                    roots = list(unfi.set('max((::%n) - %ln)', oldnode,
+                                          allreplaced))
+                    if roots:
+                        newnode = roots[0].node()
+                    else:
+                        newnode = nullid
                 else:
-                    newnode = nullid
-            else:
-                newnode = newnodes[0]
-            moves[oldnode] = newnode
+                    newnode = newnodes[0]
+                moves[oldnode] = newnode
 
     allnewnodes = [n for ns in replacements.values() for n in ns]
     toretract = {}
@@ -1166,7 +1174,7 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
             wctx.copy(origsrc, dst)
 
 def writerequires(opener, requirements):
-    with opener('requires', 'w') as fp:
+    with opener('requires', 'w', atomictemp=True) as fp:
         for r in sorted(requirements):
             fp.write("%s\n" % r)
 
@@ -1249,16 +1257,15 @@ class filecache(object):
     results cached. The decorated function is called. The results are stashed
     away in a ``_filecache`` dict on the object whose method is decorated.
 
-    On subsequent access, the cached result is returned.
+    On subsequent access, the cached result is used as it is set to the
+    instance dictionary.
 
-    On external property set operations, stat() calls are performed and the new
-    value is cached.
+    On external property set/delete operations, the caller must update the
+    corresponding _filecache entry appropriately. Use __class__.<attr>.set()
+    instead of directly setting <attr>.
 
-    On property delete operations, cached data is removed.
-
-    When using the property API, cached data is always returned, if available:
-    no stat() is performed to check if the file has changed and if the function
-    needs to be called to reflect file changes.
+    When using the property API, the cached data is always used if available.
+    No stat() is performed to check if the file has changed.
 
     Others can muck about with the state of the ``_filecache`` dict. e.g. they
     can populate an entry before the property's getter is called. In this case,
@@ -1291,10 +1298,8 @@ class filecache(object):
         # if accessed on the class, return the descriptor itself.
         if obj is None:
             return self
-        # do we need to check if the file changed?
-        if self.sname in obj.__dict__:
-            assert self.name in obj._filecache, self.name
-            return obj.__dict__[self.sname]
+
+        assert self.sname not in obj.__dict__
 
         entry = obj._filecache.get(self.name)
 
@@ -1314,7 +1319,10 @@ class filecache(object):
         obj.__dict__[self.sname] = entry.obj
         return entry.obj
 
-    def __set__(self, obj, value):
+    # don't implement __set__(), which would make __dict__ lookup as slow as
+    # function call.
+
+    def set(self, obj, value):
         if self.name not in obj._filecache:
             # we add an entry for the missing value because X in __dict__
             # implies X in _filecache
@@ -1326,12 +1334,6 @@ class filecache(object):
 
         ce.obj = value # update cached copy
         obj.__dict__[self.sname] = value # update copy returned by obj.x
-
-    def __delete__(self, obj):
-        try:
-            del obj.__dict__[self.sname]
-        except KeyError:
-            raise AttributeError(self.sname)
 
 def extdatasource(repo, source):
     """Gather a map of rev -> value dict from the specified source
@@ -1410,12 +1412,14 @@ def wlocksub(repo, cmd, *args, **kwargs):
                     **kwargs)
 
 class progress(object):
-    def __init__(self, ui, topic, unit="", total=None):
+    def __init__(self, ui, updatebar, topic, unit="", total=None):
         self.ui = ui
         self.pos = 0
         self.topic = topic
         self.unit = unit
         self.total = total
+        self.debug = ui.configbool('progress', 'debug')
+        self._updatebar = updatebar
 
     def __enter__(self):
         return self
@@ -1428,25 +1432,38 @@ class progress(object):
         if total:
             self.total = total
         self.pos = pos
-        self._print(item)
+        self._updatebar(self.topic, self.pos, item, self.unit, self.total)
+        if self.debug:
+            self._printdebug(item)
 
     def increment(self, step=1, item="", total=None):
         self.update(self.pos + step, item, total)
 
     def complete(self):
-        self.ui.progress(self.topic, None)
+        self.pos = None
+        self.unit = ""
+        self.total = None
+        self._updatebar(self.topic, self.pos, "", self.unit, self.total)
 
-    def _print(self, item):
-        self.ui.progress(self.topic, self.pos, item, self.unit,
-                         self.total)
+    def _printdebug(self, item):
+        if self.unit:
+            unit = ' ' + self.unit
+        if item:
+            item = ' ' + item
+
+        if self.total:
+            pct = 100.0 * self.pos / self.total
+            self.ui.debug('%s:%s %d/%d%s (%4.2f%%)\n'
+                       % (self.topic, item, self.pos, self.total, unit, pct))
+        else:
+            self.ui.debug('%s:%s %d%s\n' % (self.topic, item, self.pos, unit))
 
 def gdinitconfig(ui):
     """helper function to know if a repo should be created as general delta
     """
     # experimental config: format.generaldelta
     return (ui.configbool('format', 'generaldelta')
-            or ui.configbool('format', 'usegeneraldelta')
-            or ui.configbool('format', 'sparse-revlog'))
+            or ui.configbool('format', 'usegeneraldelta'))
 
 def gddeltaconfig(ui):
     """helper function to know if incoming delta should be optimised

@@ -46,9 +46,9 @@ The extension requires a repo (currently unused)
   $ hg bundle -a --type="none-v2;stream=v2" bundle.hg
   $ hg debugbundle bundle.hg
   Stream params: {}
-  stream2 -- {bytecount: 1693, filecount: 11, requirements: dotencode%2Cfncache%2Cgeneraldelta%2Crevlogv1%2Cstore} (mandatory: True)
+  stream2 -- {bytecount: 1693, filecount: 11, requirements: dotencode%2Cfncache%2Cgeneraldelta%2Crevlogv1%2Csparserevlog%2Cstore} (mandatory: True)
   $ hg debugbundle --spec bundle.hg
-  none-v2;stream=v2;requirements%3Ddotencode%2Cfncache%2Cgeneraldelta%2Crevlogv1%2Cstore
+  none-v2;stream=v2;requirements%3Ddotencode%2Cfncache%2Cgeneraldelta%2Crevlogv1%2Csparserevlog%2Cstore
 
 Test that we can apply the bundle as a stream clone bundle
 

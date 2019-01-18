@@ -1236,3 +1236,70 @@ Shallow clone doesn't work with revlogs
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
   abort: revlog storage does not support missing parents write mode
   [255]
+
+  $ killdaemons.py
+
+Repo with 2 DAG branches introducing same filenode, to test linknode adjustment
+
+  $ hg init server-linknode
+  $ enablehttpv2 server-linknode
+  $ cd server-linknode
+  $ touch foo
+  $ hg -q commit -Am initial
+  $ echo foo > dupe-file
+  $ hg commit -Am 'dupe 1'
+  adding dupe-file
+  $ hg -q up -r 0
+  $ echo foo > dupe-file
+  $ hg commit -Am 'dupe 2'
+  adding dupe-file
+  created new head
+  $ hg serve -p $HGPORT -d --pid-file hg.pid -E error.log
+  $ cat hg.pid > $DAEMON_PIDS
+  $ cd ..
+
+Perform an incremental pull of both heads and ensure linkrev is written out properly
+
+  $ hg clone -r 96ee1d7354c4 http://localhost:$HGPORT client-linknode-1
+  new changesets 96ee1d7354c4
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd client-linknode-1
+  $ touch extra
+  $ hg commit -Am extra
+  adding extra
+  $ cd ..
+
+  $ hg clone -r 96ee1d7354c4 http://localhost:$HGPORT client-linknode-2
+  new changesets 96ee1d7354c4
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd client-linknode-2
+  $ touch extra
+  $ hg commit -Am extra
+  adding extra
+  $ cd ..
+
+  $ hg -R client-linknode-1 pull -r 1681c33f9f80
+  pulling from http://localhost:$HGPORT/
+  searching for changes
+  new changesets 1681c33f9f80
+  (run 'hg update' to get a working copy)
+
+#if reporevlogstore
+  $ hg -R client-linknode-1 debugrevlogindex dupe-file
+     rev linkrev nodeid       p1           p2
+       0       2 2ed2a3912a0b 000000000000 000000000000
+#endif
+
+  $ hg -R client-linknode-2 pull -r 639c8990d6a5
+  pulling from http://localhost:$HGPORT/
+  searching for changes
+  new changesets 639c8990d6a5
+  (run 'hg update' to get a working copy)
+
+#if reporevlogstore
+  $ hg -R client-linknode-2 debugrevlogindex dupe-file
+     rev linkrev nodeid       p1           p2
+       0       2 2ed2a3912a0b 000000000000 000000000000
+#endif

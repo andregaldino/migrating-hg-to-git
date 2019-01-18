@@ -40,8 +40,6 @@ allowsymbolimports = (
     # third-party imports should be directly imported
     'mercurial.thirdparty',
     'mercurial.thirdparty.attr',
-    'mercurial.thirdparty.cbor',
-    'mercurial.thirdparty.cbor.cbor2',
     'mercurial.thirdparty.zope',
     'mercurial.thirdparty.zope.interface',
 )
@@ -260,10 +258,12 @@ def list_stdlib_modules():
                 break
         else:
             stdlib_prefixes.add(dirname)
+    sourceroot = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     for libpath in sys.path:
-        # We want to walk everything in sys.path that starts with
-        # something in stdlib_prefixes.
-        if not any(libpath.startswith(p) for p in stdlib_prefixes):
+        # We want to walk everything in sys.path that starts with something in
+        # stdlib_prefixes, but not directories from the hg sources.
+        if (os.path.abspath(libpath).startswith(sourceroot)
+            or not any(libpath.startswith(p) for p in stdlib_prefixes)):
             continue
         for top, dirs, files in os.walk(libpath):
             for i, d in reversed(list(enumerate(dirs))):
@@ -674,6 +674,8 @@ def embedded(f, modname, src):
         # "starts" is "line number" (1-origin), but embedded() is
         # expected to return "line offset" (0-origin). Therefore, this
         # yields "starts - 1".
+        if not isinstance(modname, str):
+            modname = modname.decode('utf8')
         yield code, "%s[%d]" % (modname, starts), name, starts - 1
 
 def sources(f, modname):
@@ -694,7 +696,7 @@ def sources(f, modname):
     if py or f.endswith('.t'):
         with open(f, 'rb') as src:
             for script, modname, t, line in embedded(f, modname, src):
-                yield script, modname, t, line
+                yield script, modname.encode('utf8'), t, line
 
 def main(argv):
     if len(argv) < 2 or (argv[1] == '-' and len(argv) > 2):

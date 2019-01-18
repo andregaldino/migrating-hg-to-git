@@ -26,22 +26,16 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    loggingutil,
+    pycompat,
+    repocache,
     util,
+    vfs as vfsmod,
 )
 from .utils import (
+    cborutil,
     procutil,
 )
-
-logfile = None
-
-def log(*args):
-    if not logfile:
-        return
-
-    for a in args:
-        logfile.write(str(a))
-
-    logfile.flush()
 
 class channeledoutput(object):
     """
@@ -69,6 +63,34 @@ class channeledoutput(object):
         if attr in (r'isatty', r'fileno', r'tell', r'seek'):
             raise AttributeError(attr)
         return getattr(self.out, attr)
+
+class channeledmessage(object):
+    """
+    Write encoded message and metadata to out in the following format:
+
+    data length (unsigned int),
+    encoded message and metadata, as a flat key-value dict.
+
+    Each message should have 'type' attribute. Messages of unknown type
+    should be ignored.
+    """
+
+    # teach ui that write() can take **opts
+    structured = True
+
+    def __init__(self, out, channel, encodename, encodefn):
+        self._cout = channeledoutput(out, channel)
+        self.encoding = encodename
+        self._encodefn = encodefn
+
+    def write(self, data, **opts):
+        opts = pycompat.byteskwargs(opts)
+        if data is not None:
+            opts[b'data'] = data
+        self._cout.write(self._encodefn(opts))
+
+    def __getattr__(self, attr):
+        return getattr(self._cout, attr)
 
 class channeledinput(object):
     """
@@ -156,23 +178,27 @@ class channeledinput(object):
             raise AttributeError(attr)
         return getattr(self.in_, attr)
 
+_messageencoders = {
+    b'cbor': lambda v: b''.join(cborutil.streamencode(v)),
+}
+
+def _selectmessageencoder(ui):
+    # experimental config: cmdserver.message-encodings
+    encnames = ui.configlist(b'cmdserver', b'message-encodings')
+    for n in encnames:
+        f = _messageencoders.get(n)
+        if f:
+            return n, f
+    raise error.Abort(b'no supported message encodings: %s'
+                      % b' '.join(encnames))
+
 class server(object):
     """
     Listens for commands on fin, runs them and writes the output on a channel
     based stream to fout.
     """
-    def __init__(self, ui, repo, fin, fout):
+    def __init__(self, ui, repo, fin, fout, prereposetups=None):
         self.cwd = encoding.getcwd()
-
-        # developer config: cmdserver.log
-        logpath = ui.config("cmdserver", "log")
-        if logpath:
-            global logfile
-            if logpath == '-':
-                # write log on a special 'd' (debug) channel
-                logfile = channeledoutput(fout, 'd')
-            else:
-                logfile = open(logpath, 'a')
 
         if repo:
             # the ui here is really the repo ui so take its baseui so we don't
@@ -183,11 +209,27 @@ class server(object):
         else:
             self.ui = ui
             self.repo = self.repoui = None
+        self._prereposetups = prereposetups
 
+        self.cdebug = channeledoutput(fout, 'd')
         self.cerr = channeledoutput(fout, 'e')
         self.cout = channeledoutput(fout, 'o')
         self.cin = channeledinput(fin, fout, 'I')
         self.cresult = channeledoutput(fout, 'r')
+
+        if self.ui.config(b'cmdserver', b'log') == b'-':
+            # switch log stream of server's ui to the 'd' (debug) channel
+            # (don't touch repo.ui as its lifetime is longer than the server)
+            self.ui = self.ui.copy()
+            setuplogging(self.ui, repo=None, fp=self.cdebug)
+
+        # TODO: add this to help/config.txt when stabilized
+        # ``channel``
+        #   Use separate channel for structured output. (Command-server only)
+        self.cmsg = None
+        if ui.config(b'ui', b'message-output') == b'channel':
+            encname, encfn = _selectmessageencoder(ui)
+            self.cmsg = channeledmessage(fout, b'm', encname, encfn)
 
         self.client = fin
 
@@ -254,7 +296,8 @@ class server(object):
                 ui.setconfig('ui', 'nontty', 'true', 'commandserver')
 
         req = dispatch.request(args[:], copiedui, self.repo, self.cin,
-                               self.cout, self.cerr)
+                               self.cout, self.cerr, self.cmsg,
+                               prereposetups=self._prereposetups)
 
         try:
             ret = dispatch.dispatch(req) & 255
@@ -289,6 +332,8 @@ class server(object):
         hellomsg += '\n'
         hellomsg += 'encoding: ' + encoding.encoding
         hellomsg += '\n'
+        if self.cmsg:
+            hellomsg += 'message-encoding: %s\n' % self.cmsg.encoding
         hellomsg += 'pid: %d' % procutil.getpid()
         if util.safehasattr(os, 'getpgid'):
             hellomsg += '\n'
@@ -307,6 +352,41 @@ class server(object):
 
         return 0
 
+def setuplogging(ui, repo=None, fp=None):
+    """Set up server logging facility
+
+    If cmdserver.log is '-', log messages will be sent to the given fp.
+    It should be the 'd' channel while a client is connected, and otherwise
+    is the stderr of the server process.
+    """
+    # developer config: cmdserver.log
+    logpath = ui.config(b'cmdserver', b'log')
+    if not logpath:
+        return
+    # developer config: cmdserver.track-log
+    tracked = set(ui.configlist(b'cmdserver', b'track-log'))
+
+    if logpath == b'-' and fp:
+        logger = loggingutil.fileobjectlogger(fp, tracked)
+    elif logpath == b'-':
+        logger = loggingutil.fileobjectlogger(ui.ferr, tracked)
+    else:
+        logpath = os.path.abspath(util.expandpath(logpath))
+        # developer config: cmdserver.max-log-files
+        maxfiles = ui.configint(b'cmdserver', b'max-log-files')
+        # developer config: cmdserver.max-log-size
+        maxsize = ui.configbytes(b'cmdserver', b'max-log-size')
+        vfs = vfsmod.vfs(os.path.dirname(logpath))
+        logger = loggingutil.filelogger(vfs, os.path.basename(logpath), tracked,
+                                        maxfiles=maxfiles, maxsize=maxsize)
+
+    targetuis = {ui}
+    if repo:
+        targetuis.add(repo.baseui)
+        targetuis.add(repo.ui)
+    for u in targetuis:
+        u.setlogger(b'cmdserver', logger)
+
 class pipeservice(object):
     def __init__(self, ui, repo, opts):
         self.ui = ui
@@ -319,9 +399,9 @@ class pipeservice(object):
         ui = self.ui
         # redirect stdio to null device so that broken extensions or in-process
         # hooks will never cause corruption of channel protocol.
-        with procutil.protectedstdio(ui.fin, ui.fout) as (fin, fout):
+        with ui.protectedfinout() as (fin, fout):
+            sv = server(ui, self.repo, fin, fout)
             try:
-                sv = server(ui, self.repo, fin, fout)
                 return sv.serve()
             finally:
                 sv.cleanup()
@@ -343,12 +423,12 @@ def _initworkerprocess():
     # same state inherited from parent.
     random.seed()
 
-def _serverequest(ui, repo, conn, createcmdserver):
+def _serverequest(ui, repo, conn, createcmdserver, prereposetups):
     fin = conn.makefile(r'rb')
     fout = conn.makefile(r'wb')
     sv = None
     try:
-        sv = createcmdserver(repo, conn, fin, fout)
+        sv = createcmdserver(repo, conn, fin, fout, prereposetups)
         try:
             sv.serve()
         # handle exceptions that may be raised by command server. most of
@@ -407,10 +487,10 @@ class unixservicehandler(object):
     def newconnection(self):
         """Called when main process notices new connection"""
 
-    def createcmdserver(self, repo, conn, fin, fout):
+    def createcmdserver(self, repo, conn, fin, fout, prereposetups):
         """Create new command server instance; called in the process that
         serves for the current connection"""
-        return server(self.ui, repo, fin, fout)
+        return server(self.ui, repo, fin, fout, prereposetups)
 
 class unixforkingservice(object):
     """
@@ -427,18 +507,31 @@ class unixforkingservice(object):
             raise error.Abort(_('no socket path specified with --address'))
         self._servicehandler = handler or unixservicehandler(ui)
         self._sock = None
+        self._mainipc = None
+        self._workeripc = None
         self._oldsigchldhandler = None
         self._workerpids = set()  # updated by signal handler; do not iterate
         self._socketunlinked = None
+        # experimental config: cmdserver.max-repo-cache
+        maxlen = ui.configint(b'cmdserver', b'max-repo-cache')
+        if maxlen < 0:
+            raise error.Abort(_('negative max-repo-cache size not allowed'))
+        self._repoloader = repocache.repoloader(ui, maxlen)
 
     def init(self):
         self._sock = socket.socket(socket.AF_UNIX)
+        # IPC channel from many workers to one main process; this is actually
+        # a uni-directional pipe, but is backed by a DGRAM socket so each
+        # message can be easily separated.
+        o = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self._mainipc, self._workeripc = o
         self._servicehandler.bindsocket(self._sock, self.address)
         if util.safehasattr(procutil, 'unblocksignal'):
             procutil.unblocksignal(signal.SIGCHLD)
         o = signal.signal(signal.SIGCHLD, self._sigchldhandler)
         self._oldsigchldhandler = o
         self._socketunlinked = False
+        self._repoloader.start()
 
     def _unlinksocket(self):
         if not self._socketunlinked:
@@ -448,7 +541,10 @@ class unixforkingservice(object):
     def _cleanup(self):
         signal.signal(signal.SIGCHLD, self._oldsigchldhandler)
         self._sock.close()
+        self._mainipc.close()
+        self._workeripc.close()
         self._unlinksocket()
+        self._repoloader.stop()
         # don't kill child processes as they have active clients, just wait
         self._reapworkers(0)
 
@@ -462,7 +558,10 @@ class unixforkingservice(object):
         exiting = False
         h = self._servicehandler
         selector = selectors.DefaultSelector()
-        selector.register(self._sock, selectors.EVENT_READ)
+        selector.register(self._sock, selectors.EVENT_READ,
+                          self._acceptnewconnection)
+        selector.register(self._mainipc, selectors.EVENT_READ,
+                          self._handlemainipc)
         while True:
             if not exiting and h.shouldexit():
                 # clients can no longer connect() to the domain socket, so
@@ -473,47 +572,69 @@ class unixforkingservice(object):
                 self._unlinksocket()
                 exiting = True
             try:
-                ready = selector.select(timeout=h.pollinterval)
+                events = selector.select(timeout=h.pollinterval)
             except OSError as inst:
                 # selectors2 raises ETIMEDOUT if timeout exceeded while
                 # handling signal interrupt. That's probably wrong, but
                 # we can easily get around it.
                 if inst.errno != errno.ETIMEDOUT:
                     raise
-                ready = []
-            if not ready:
+                events = []
+            if not events:
                 # only exit if we completed all queued requests
                 if exiting:
                     break
                 continue
-            try:
-                conn, _addr = self._sock.accept()
-            except socket.error as inst:
-                if inst.args[0] == errno.EINTR:
-                    continue
-                raise
-
-            pid = os.fork()
-            if pid:
-                try:
-                    self.ui.debug('forked worker process (pid=%d)\n' % pid)
-                    self._workerpids.add(pid)
-                    h.newconnection()
-                finally:
-                    conn.close()  # release handle in parent process
-            else:
-                try:
-                    selector.close()
-                    self._sock.close()
-                    self._runworker(conn)
-                    conn.close()
-                    os._exit(0)
-                except:  # never return, hence no re-raises
-                    try:
-                        self.ui.traceback(force=True)
-                    finally:
-                        os._exit(255)
+            for key, _mask in events:
+                key.data(key.fileobj, selector)
         selector.close()
+
+    def _acceptnewconnection(self, sock, selector):
+        h = self._servicehandler
+        try:
+            conn, _addr = sock.accept()
+        except socket.error as inst:
+            if inst.args[0] == errno.EINTR:
+                return
+            raise
+
+        # Future improvement: On Python 3.7, maybe gc.freeze() can be used
+        # to prevent COW memory from being touched by GC.
+        # https://instagram-engineering.com/
+        #   copy-on-write-friendly-python-garbage-collection-ad6ed5233ddf
+        pid = os.fork()
+        if pid:
+            try:
+                self.ui.log(b'cmdserver', b'forked worker process (pid=%d)\n',
+                            pid)
+                self._workerpids.add(pid)
+                h.newconnection()
+            finally:
+                conn.close()  # release handle in parent process
+        else:
+            try:
+                selector.close()
+                sock.close()
+                self._mainipc.close()
+                self._runworker(conn)
+                conn.close()
+                self._workeripc.close()
+                os._exit(0)
+            except:  # never return, hence no re-raises
+                try:
+                    self.ui.traceback(force=True)
+                finally:
+                    os._exit(255)
+
+    def _handlemainipc(self, sock, selector):
+        """Process messages sent from a worker"""
+        try:
+            path = sock.recv(32768)  # large enough to receive path
+        except socket.error as inst:
+            if inst.args[0] == errno.EINTR:
+                return
+            raise
+        self._repoloader.load(path)
 
     def _sigchldhandler(self, signal, frame):
         self._reapworkers(os.WNOHANG)
@@ -533,7 +654,7 @@ class unixforkingservice(object):
             if pid == 0:
                 # no waitable child processes
                 return
-            self.ui.debug('worker process exited (pid=%d)\n' % pid)
+            self.ui.log(b'cmdserver', b'worker process exited (pid=%d)\n', pid)
             self._workerpids.discard(pid)
 
     def _runworker(self, conn):
@@ -541,6 +662,29 @@ class unixforkingservice(object):
         _initworkerprocess()
         h = self._servicehandler
         try:
-            _serverequest(self.ui, self.repo, conn, h.createcmdserver)
+            _serverequest(self.ui, self.repo, conn, h.createcmdserver,
+                          prereposetups=[self._reposetup])
         finally:
             gc.collect()  # trigger __del__ since worker process uses os._exit
+
+    def _reposetup(self, ui, repo):
+        if not repo.local():
+            return
+
+        class unixcmdserverrepo(repo.__class__):
+            def close(self):
+                super(unixcmdserverrepo, self).close()
+                try:
+                    self._cmdserveripc.send(self.root)
+                except socket.error:
+                    self.ui.log(b'cmdserver',
+                                b'failed to send repo root to master\n')
+
+        repo.__class__ = unixcmdserverrepo
+        repo._cmdserveripc = self._workeripc
+
+        cachedrepo = self._repoloader.get(repo.root)
+        if cachedrepo is None:
+            return
+        repo.ui.log(b'repocache', b'repo from cache: %s\n', repo.root)
+        repocache.copycache(cachedrepo, repo)

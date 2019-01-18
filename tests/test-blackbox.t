@@ -22,6 +22,9 @@ setup
   > [alias]
   > confuse = log --limit 3
   > so-confusing = confuse --style compact
+  > [blackbox]
+  > track = backupbundle, branchcache, command, commandalias, commandexception,
+  >         commandfinish, debug, exthook, incoming, pythonhook, tagscache
   > EOF
 
   $ hg init blackboxtest
@@ -80,6 +83,16 @@ recursive aliases work correctly
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> alias 'so-confusing' expands to 'confuse --style compact'
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> alias 'confuse' expands to 'log --limit 3'
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> so-confusing exited 0 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+
+custom date format
+  $ rm ./.hg/blackbox.log
+  $ hg --config blackbox.date-format='%Y-%m-%d @ %H:%M:%S' \
+  >    --config devel.default-date='1334347993 0' --traceback status
+  A a
+  $ hg blackbox
+  2012-04-13 @ 20:13:13 bob @0000000000000000000000000000000000000000 (5000)> --config *blackbox.date-format=%Y-%m-%d @ %H:%M:%S* --config *devel.default-date=1334347993 0* --traceback status (glob)
+  2012-04-13 @ 20:13:13 bob @0000000000000000000000000000000000000000 (5000)> --config *blackbox.date-format=%Y-%m-%d @ %H:%M:%S* --config *devel.default-date=1334347993 0* --traceback status exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox
 
 incoming change tracking
@@ -315,6 +328,30 @@ Test log recursion from dirty status check
   45589e459b2e tip
 
 cleanup
+  $ cd ..
+
+Test missing log directory, which shouldn't be created automatically
+
+  $ cat <<'EOF' > closeremove.py
+  > def reposetup(ui, repo):
+  >     class rmrepo(repo.__class__):
+  >         def close(self):
+  >             super(rmrepo, self).close()
+  >             self.ui.debug(b'removing %s\n' % self.vfs.base)
+  >             self.vfs.rmtree()
+  >     repo.__class__ = rmrepo
+  > EOF
+
+  $ hg init gone
+  $ cd gone
+  $ cat <<'EOF' > .hg/hgrc
+  > [extensions]
+  > closeremove = ../closeremove.py
+  > EOF
+  $ hg log --debug
+  removing $TESTTMP/gone/.hg
+  warning: cannot write to blackbox.log: $ENOENT$ (no-windows !)
+  warning: cannot write to blackbox.log: $TESTTMP/gone/.hg/blackbox.log: $ENOTDIR$ (windows !)
   $ cd ..
 
 #if chg

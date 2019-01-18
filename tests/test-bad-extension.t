@@ -1,3 +1,7 @@
+  $ filterlog () {
+  >   sed -e 's!^[0-9/]* [0-9:]* ([0-9]*)>!YYYY/MM/DD HH:MM:SS (PID)>!'
+  > }
+
 ensure that failing ui.atexit handlers report sensibly
 
   $ cat > $TESTTMP/bailatexit.py <<EOF
@@ -82,29 +86,30 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
 
   $ (hg help help --traceback --debug --config devel.debug.extensions=yes 2>&1) \
   > | grep -v '^ ' \
-  > | egrep 'extension..[^p]|^Exception|Traceback|ImportError|not import|ModuleNotFound'
-  debug.extensions: loading extensions
-  debug.extensions: - processing 5 entries
-  debug.extensions:   - loading extension: 'gpg'
-  debug.extensions:   > 'gpg' extension loaded in * (glob)
-  debug.extensions:     - validating extension tables: 'gpg'
-  debug.extensions:     - invoking registered callbacks: 'gpg'
-  debug.extensions:     > callbacks completed in * (glob)
-  debug.extensions:   - loading extension: 'badext'
+  > | filterlog \
+  > | egrep 'extension..[^p]|^Exception|Traceback|ImportError|^YYYY|not import|ModuleNotFound'
+  YYYY/MM/DD HH:MM:SS (PID)> loading extensions
+  YYYY/MM/DD HH:MM:SS (PID)> - processing 5 entries
+  YYYY/MM/DD HH:MM:SS (PID)>   - loading extension: gpg
+  YYYY/MM/DD HH:MM:SS (PID)>   > gpg extension loaded in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>     - validating extension tables: gpg
+  YYYY/MM/DD HH:MM:SS (PID)>     - invoking registered callbacks: gpg
+  YYYY/MM/DD HH:MM:SS (PID)>     > callbacks completed in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>   - loading extension: badext
   *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
   Traceback (most recent call last):
   Exception: bit bucket overflow
-  debug.extensions:   - loading extension: 'baddocext'
-  debug.extensions:   > 'baddocext' extension loaded in * (glob)
-  debug.extensions:     - validating extension tables: 'baddocext'
-  debug.extensions:     - invoking registered callbacks: 'baddocext'
-  debug.extensions:     > callbacks completed in * (glob)
-  debug.extensions:   - loading extension: 'badext2'
-  debug.extensions:     - could not import hgext.badext2 (No module named *badext2*): trying hgext3rd.badext2 (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>   - loading extension: baddocext
+  YYYY/MM/DD HH:MM:SS (PID)>   > baddocext extension loaded in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>     - validating extension tables: baddocext
+  YYYY/MM/DD HH:MM:SS (PID)>     - invoking registered callbacks: baddocext
+  YYYY/MM/DD HH:MM:SS (PID)>     > callbacks completed in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>   - loading extension: badext2
+  YYYY/MM/DD HH:MM:SS (PID)>     - could not import hgext.badext2 (No module named *badext2*): trying hgext3rd.badext2 (glob)
   Traceback (most recent call last):
   ImportError: No module named badext2 (no-py3 !)
   ModuleNotFoundError: No module named 'hgext.badext2' (py3 !)
-  debug.extensions:     - could not import hgext3rd.badext2 (No module named *badext2*): trying badext2 (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>     - could not import hgext3rd.badext2 (No module named *badext2*): trying badext2 (glob)
   Traceback (most recent call last):
   ImportError: No module named badext2 (no-py3 !)
   ModuleNotFoundError: No module named 'hgext.badext2' (py3 !)
@@ -118,27 +123,27 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   Traceback (most recent call last): (py3 !)
   ModuleNotFoundError: No module named 'badext2' (py3 !)
   ImportError: No module named badext2 (no-py3 !)
-  debug.extensions: > loaded 2 extensions, total time * (glob)
-  debug.extensions: - loading configtable attributes
-  debug.extensions: - executing uisetup hooks
-  debug.extensions:   - running uisetup for 'gpg'
-  debug.extensions:   > uisetup for 'gpg' took * (glob)
-  debug.extensions:   - running uisetup for 'baddocext'
-  debug.extensions:   > uisetup for 'baddocext' took * (glob)
-  debug.extensions: > all uisetup took * (glob)
-  debug.extensions: - executing extsetup hooks
-  debug.extensions:   - running extsetup for 'gpg'
-  debug.extensions:   > extsetup for 'gpg' took * (glob)
-  debug.extensions:   - running extsetup for 'baddocext'
-  debug.extensions:   > extsetup for 'baddocext' took * (glob)
-  debug.extensions: > all extsetup took * (glob)
-  debug.extensions: - executing remaining aftercallbacks
-  debug.extensions: > remaining aftercallbacks completed in * (glob)
-  debug.extensions: - loading extension registration objects
-  debug.extensions: > extension registration object loading took * (glob)
-  debug.extensions: > extension baddocext take a total of * to load (glob)
-  debug.extensions: > extension gpg take a total of * to load (glob)
-  debug.extensions: extension loading complete
+  YYYY/MM/DD HH:MM:SS (PID)> > loaded 2 extensions, total time * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - loading configtable attributes
+  YYYY/MM/DD HH:MM:SS (PID)> - executing uisetup hooks
+  YYYY/MM/DD HH:MM:SS (PID)>   - running uisetup for gpg
+  YYYY/MM/DD HH:MM:SS (PID)>   > uisetup for gpg took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>   - running uisetup for baddocext
+  YYYY/MM/DD HH:MM:SS (PID)>   > uisetup for baddocext took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > all uisetup took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - executing extsetup hooks
+  YYYY/MM/DD HH:MM:SS (PID)>   - running extsetup for gpg
+  YYYY/MM/DD HH:MM:SS (PID)>   > extsetup for gpg took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)>   - running extsetup for baddocext
+  YYYY/MM/DD HH:MM:SS (PID)>   > extsetup for baddocext took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > all extsetup took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - executing remaining aftercallbacks
+  YYYY/MM/DD HH:MM:SS (PID)> > remaining aftercallbacks completed in * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> - loading extension registration objects
+  YYYY/MM/DD HH:MM:SS (PID)> > extension registration object loading took * (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > extension baddocext take a total of * to load (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> > extension gpg take a total of * to load (glob)
+  YYYY/MM/DD HH:MM:SS (PID)> extension loading complete
 #endif
 
 confirm that there's no crash when an extension's documentation is bad

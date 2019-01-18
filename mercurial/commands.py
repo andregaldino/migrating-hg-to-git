@@ -320,11 +320,20 @@ def annotate(ui, repo, *pats, **opts):
         # to mimic the behavior of Mercurial before version 1.5
         opts['file'] = True
 
+    if (not opts.get('user') and not opts.get('changeset')
+        and not opts.get('date') and not opts.get('file')):
+        opts['number'] = True
+
+    linenumber = opts.get('line_number') is not None
+    if linenumber and (not opts.get('changeset')) and (not opts.get('number')):
+        raise error.Abort(_('at least one of -n/-c is required for -l'))
+
     rev = opts.get('rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
     ctx = scmutil.revsingle(repo, rev)
 
+    ui.pager('annotate')
     rootfm = ui.formatter('annotate', opts)
     if ui.debugflag:
         shorthex = pycompat.identity
@@ -358,25 +367,20 @@ def annotate(ui, repo, *pats, **opts):
         formatrev = b'%d'.__mod__
         formathex = shorthex
 
-    opmap = [('user', ' ', lambda x: x.fctx.user(), ui.shortuser),
-             ('rev', ' ', lambda x: scmutil.intrev(x.fctx), formatrev),
-             ('node', ' ', lambda x: hex(scmutil.binnode(x.fctx)), formathex),
-             ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
-             ('path', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
-             ('lineno', ':', lambda x: x.lineno, pycompat.bytestr),
-            ]
-    opnamemap = {'rev': 'number', 'node': 'changeset', 'path': 'file',
-                 'lineno': 'line_number'}
-
-    if (not opts.get('user') and not opts.get('changeset')
-        and not opts.get('date') and not opts.get('file')):
-        opts['number'] = True
-
-    linenumber = opts.get('line_number') is not None
-    if linenumber and (not opts.get('changeset')) and (not opts.get('number')):
-        raise error.Abort(_('at least one of -n/-c is required for -l'))
-
-    ui.pager('annotate')
+    opmap = [
+        ('user', ' ', lambda x: x.fctx.user(), ui.shortuser),
+        ('rev', ' ', lambda x: scmutil.intrev(x.fctx), formatrev),
+        ('node', ' ', lambda x: hex(scmutil.binnode(x.fctx)), formathex),
+        ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
+        ('path', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
+        ('lineno', ':', lambda x: x.lineno, pycompat.bytestr),
+    ]
+    opnamemap = {
+        'rev': 'number',
+        'node': 'changeset',
+        'path': 'file',
+        'lineno': 'line_number',
+    }
 
     if rootfm.isplain():
         def makefunc(get, fmt):
@@ -408,8 +412,7 @@ def annotate(ui, repo, *pats, **opts):
         rootfm.startitem()
         rootfm.data(path=abs)
         if not opts.get('text') and fctx.isbinary():
-            rootfm.plain(_("%s: binary file\n")
-                         % ((pats and m.rel(abs)) or abs))
+            rootfm.plain(_("%s: binary file\n") % m.rel(abs))
             continue
 
         fm = rootfm.nested('lines', tmpl='{rev}: {line}')
@@ -1129,6 +1132,7 @@ def branch(ui, repo, label=None, **opts):
     [('a', 'active', False,
       _('show only branches that have unmerged heads (DEPRECATED)')),
      ('c', 'closed', False, _('show normal and closed branches')),
+     ('r', 'rev', [], _('show branch name(s) of the given rev'))
     ] + formatteropts,
     _('[-c]'),
     helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
@@ -1158,6 +1162,13 @@ def branches(ui, repo, active=False, closed=False, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
+    revs = opts.get('rev')
+    selectedbranches = None
+    if revs:
+        revs = scmutil.revrange(repo, revs)
+        getbi = repo.revbranchcache().branchinfo
+        selectedbranches = {getbi(r)[0] for r in revs}
+
     ui.pager('branches')
     fm = ui.formatter('branches', opts)
     hexfunc = fm.hexfunc
@@ -1165,6 +1176,8 @@ def branches(ui, repo, active=False, closed=False, **opts):
     allheads = set(repo.heads())
     branches = []
     for tag, heads, tip, isclosed in repo.branchmap().iterbranches():
+        if selectedbranches is not None and tag not in selectedbranches:
+            continue
         isactive = False
         if not isclosed:
             openheads = set(repo.branchmap().iteropen(heads))
@@ -2249,6 +2262,8 @@ def forget(ui, repo, *pats, **opts):
 @command(
     'graft',
     [('r', 'rev', [], _('revisions to graft'), _('REV')),
+     ('', 'base', '',
+      _('base revision when doing the graft merge (ADVANCED)'), _('REV')),
      ('c', 'continue', False, _('resume interrupted graft')),
      ('', 'stop', False, _('stop interrupted graft')),
      ('', 'abort', False, _('abort interrupted graft')),
@@ -2294,6 +2309,35 @@ def graft(ui, repo, *revs, **opts):
 
     .. container:: verbose
 
+      The --base option exposes more of how graft internally uses merge with a
+      custom base revision. --base can be used to specify another ancestor than
+      the first and only parent.
+
+      The command::
+
+        hg graft -r 345 --base 234
+
+      is thus pretty much the same as::
+
+        hg diff -r 234 -r 345 | hg import
+
+      but using merge to resolve conflicts and track moved files.
+
+      The result of a merge can thus be backported as a single commit by
+      specifying one of the merge parents as base, and thus effectively
+      grafting the changes from the other side.
+
+      It is also possible to collapse multiple changesets and clean up history
+      by specifying another ancestor as base, much like rebase --collapse
+      --keep.
+
+      The commit message can be tweaked after the fact using commit --amend .
+
+      For using non-ancestors as the base to backout changes, see the backout
+      command and the hidden --parent option.
+
+    .. container:: verbose
+
       Examples:
 
       - copy a single change to the stable branch and edit its description::
@@ -2317,6 +2361,15 @@ def graft(ui, repo, *revs, **opts):
 
           hg log -r "sort(all(), date)"
 
+      - backport the result of a merge as a single commit::
+
+          hg graft -r 123 --base 123^
+
+      - land a feature branch as one changeset::
+
+          hg up -cr default
+          hg graft -r featureX --base "ancestor('featureX', 'default')"
+
     See :hg:`help revisions` for more about specifying revisions.
 
     Returns 0 on successful completion.
@@ -2332,11 +2385,18 @@ def _dograft(ui, repo, *revs, **opts):
 
     revs = list(revs)
     revs.extend(opts.get('rev'))
+    basectx = None
+    if opts.get('base'):
+        basectx = scmutil.revsingle(repo, opts['base'], None)
     # a dict of data to be stored in state file
     statedata = {}
     # list of new nodes created by ongoing graft
     statedata['newnodes'] = []
 
+    if opts.get('user') and opts.get('currentuser'):
+        raise error.Abort(_('--user and --currentuser are mutually exclusive'))
+    if opts.get('date') and opts.get('currentdate'):
+        raise error.Abort(_('--date and --currentdate are mutually exclusive'))
     if not opts.get('user') and opts.get('currentuser'):
         opts['user'] = ui.username()
     if not opts.get('date') and opts.get('currentdate'):
@@ -2411,13 +2471,16 @@ def _dograft(ui, repo, *revs, **opts):
         revs = scmutil.revrange(repo, revs)
 
     skipped = set()
-    # check for merges
-    for rev in repo.revs('%ld and merge()', revs):
-        ui.warn(_('skipping ungraftable merge revision %d\n') % rev)
-        skipped.add(rev)
+    if basectx is None:
+        # check for merges
+        for rev in repo.revs('%ld and merge()', revs):
+            ui.warn(_('skipping ungraftable merge revision %d\n') % rev)
+            skipped.add(rev)
     revs = [r for r in revs if r not in skipped]
     if not revs:
         return -1
+    if basectx is not None and len(revs) != 1:
+        raise error.Abort(_('only one revision allowed with --base '))
 
     # Don't check in the --continue case, in effect retaining --force across
     # --continues. That's because without --force, any revisions we decided to
@@ -2425,7 +2488,7 @@ def _dograft(ui, repo, *revs, **opts):
     # way to the graftstate. With --force, any revisions we would have otherwise
     # skipped would not have been filtered out, and if they hadn't been applied
     # already, they'd have been in the graftstate.
-    if not (cont or opts.get('force')):
+    if not (cont or opts.get('force')) and basectx is None:
         # check for ancestors of dest branch
         crev = repo['.'].rev()
         ancestors = repo.changelog.ancestors([crev], inclusive=True)
@@ -2522,8 +2585,9 @@ def _dograft(ui, repo, *revs, **opts):
         if not cont:
             # perform the graft merge with p1(rev) as 'ancestor'
             overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+            base = ctx.p1() if basectx is None else basectx
             with ui.configoverride(overrides, 'graft'):
-                stats = mergemod.graft(repo, ctx, ctx.p1(), ['local', 'graft'])
+                stats = mergemod.graft(repo, ctx, base, ['local', 'graft'])
             # report any conflicts
             if stats.unresolvedcount > 0:
                 # write out state for --continue
@@ -4222,8 +4286,8 @@ def phase(ui, repo, *revs, **opts):
     opts = pycompat.byteskwargs(opts)
     # search for a unique phase argument
     targetphase = None
-    for idx, name in enumerate(phases.phasenames):
-        if opts.get(name, False):
+    for idx, name in enumerate(phases.cmdphasenames):
+        if opts[name]:
             if targetphase is not None:
                 raise error.Abort(_('only one phase can be specified'))
             targetphase = idx
@@ -4364,49 +4428,47 @@ def pull(ui, repo, source="default", **opts):
         revs, checkout = hg.addbranchrevs(repo, other, branches,
                                           opts.get('rev'))
 
-
         pullopargs = {}
-        if opts.get('bookmark'):
-            if not revs:
-                revs = []
-            # The list of bookmark used here is not the one used to actually
-            # update the bookmark name. This can result in the revision pulled
-            # not ending up with the name of the bookmark because of a race
-            # condition on the server. (See issue 4689 for details)
-            remotebookmarks = other.listkeys('bookmarks')
-            remotebookmarks = bookmarks.unhexlifybookmarks(remotebookmarks)
-            pullopargs['remotebookmarks'] = remotebookmarks
-            for b in opts['bookmark']:
-                b = repo._bookmarks.expandname(b)
-                if b not in remotebookmarks:
-                    raise error.Abort(_('remote bookmark %s not found!') % b)
-                revs.append(hex(remotebookmarks[b]))
 
-        if revs:
-            try:
-                # When 'rev' is a bookmark name, we cannot guarantee that it
-                # will be updated with that name because of a race condition
-                # server side. (See issue 4689 for details)
-                oldrevs = revs
-                revs = [] # actually, nodes
-                for r in oldrevs:
-                    with other.commandexecutor() as e:
-                        node = e.callcommand('lookup', {'key': r}).result()
-
-                    revs.append(node)
-                    if r == checkout:
-                        checkout = node
-            except error.CapabilityError:
+        nodes = None
+        if opts.get('bookmark') or revs:
+            # The list of bookmark used here is the same used to actually update
+            # the bookmark names, to avoid the race from issue 4689 and we do
+            # all lookup and bookmark queries in one go so they see the same
+            # version of the server state (issue 4700).
+            nodes = []
+            fnodes = []
+            revs = revs or []
+            if revs and not other.capable('lookup'):
                 err = _("other repository doesn't support revision lookup, "
                         "so a rev cannot be specified.")
                 raise error.Abort(err)
+            with other.commandexecutor() as e:
+                fremotebookmarks = e.callcommand('listkeys', {
+                    'namespace': 'bookmarks'
+                })
+                for r in revs:
+                    fnodes.append(e.callcommand('lookup', {'key': r}))
+            remotebookmarks = fremotebookmarks.result()
+            remotebookmarks = bookmarks.unhexlifybookmarks(remotebookmarks)
+            pullopargs['remotebookmarks'] = remotebookmarks
+            for b in opts.get('bookmark', []):
+                b = repo._bookmarks.expandname(b)
+                if b not in remotebookmarks:
+                    raise error.Abort(_('remote bookmark %s not found!') % b)
+                nodes.append(remotebookmarks[b])
+            for i, rev in enumerate(revs):
+                node = fnodes[i].result()
+                nodes.append(node)
+                if rev == checkout:
+                    checkout = node
 
         wlock = util.nullcontextmanager()
         if opts.get('update'):
             wlock = repo.wlock()
         with wlock:
             pullopargs.update(opts.get('opargs', {}))
-            modheads = exchange.pull(repo, other, heads=revs,
+            modheads = exchange.pull(repo, other, heads=nodes,
                                      force=opts.get('force'),
                                      bookmarks=opts.get('bookmark', ()),
                                      opargs=pullopargs).cgresult
@@ -4450,6 +4512,7 @@ def pull(ui, repo, source="default", **opts):
      _('a specific branch you would like to push'), _('BRANCH')),
     ('', 'new-branch', False, _('allow pushing a new branch')),
     ('', 'pushvars', [], _('variables that can be sent to server (ADVANCED)')),
+    ('', 'publish', False, _('push the changeset as public (EXPERIMENTAL)')),
     ] + remoteopts,
     _('[-f] [-r REV]... [-e CMD] [--remotecmd CMD] [DEST]'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
@@ -4567,6 +4630,7 @@ def push(ui, repo, dest=None, **opts):
     pushop = exchange.push(repo, other, opts.get('force'), revs=revs,
                            newbranch=opts.get('new_branch'),
                            bookmarks=opts.get('bookmark', ()),
+                           publish=opts.get('publish'),
                            opargs=opargs)
 
     result = not pushop.cgresult
@@ -4871,8 +4935,7 @@ def resolve(ui, repo, *pats, **opts):
 
             if mark:
                 if markcheck:
-                    with repo.wvfs(f) as fobj:
-                        fdata = fobj.read()
+                    fdata = repo.wvfs.tryread(f)
                     if filemerge.hasconflictmarkers(fdata) and \
                         ms[f] != mergemod.MERGE_RECORD_RESOLVED:
                         hasconflictmarkers.append(f)

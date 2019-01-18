@@ -53,7 +53,7 @@ confused with a file with the exec bit set
   >     context,
   >     extensions,
   > )
-  > def extsetup():
+  > def extsetup(ui):
   >     extensions.wrapfunction(context.workingctx, '_checklookup', overridechecklookup)
   > def overridechecklookup(orig, self, files):
   >     # make an update that changes the dirstate from underneath

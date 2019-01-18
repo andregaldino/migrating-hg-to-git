@@ -1,3 +1,17 @@
+% removeancestorsfrom(), example 1
+remaining (sorted): [5, 6, 8, 9]
+% removeancestorsfrom(), example 2
+remaining (sorted): [11, 12, 13, 14]
+% removeancestorsfrom(), example 3
+remaining (sorted): [3, 5]
+% missingancestors(), example 1
+return [3, 7, 11]
+% missingancestors(), example 2
+return [5, 10]
+% missingancestors(), example 3
+return [3, 6, 9, 11]
+% removeancestorsfrom(), bigger graph
+Ok
 % lazy ancestor set for [], stoprev = 0, inclusive = False
 membership: []
 iteration:  []

@@ -13,10 +13,21 @@ from mercurial.i18n import _
 from mercurial.node import bin, hex, nullid, short
 
 from mercurial import (
+    bundle2,
+    changegroup,
+    cmdutil,
+    context,
     error,
+    exchange,
+    exthelper,
+    localrepo,
     repository,
     revlog,
+    scmutil,
+    upgrade,
     util,
+    vfs as vfsmod,
+    wireprotov1server,
 )
 
 from mercurial.utils import (
@@ -31,17 +42,22 @@ from . import (
     pointer,
 )
 
+eh = exthelper.exthelper()
+
+@eh.wrapfunction(localrepo, 'makefilestorage')
 def localrepomakefilestorage(orig, requirements, features, **kwargs):
     if b'lfs' in requirements:
         features.add(repository.REPO_FEATURE_LFS)
 
     return orig(requirements=requirements, features=features, **kwargs)
 
+@eh.wrapfunction(changegroup, 'allsupportedversions')
 def allsupportedversions(orig, ui):
     versions = orig(ui)
     versions.add('03')
     return versions
 
+@eh.wrapfunction(wireprotov1server, '_capabilities')
 def _capabilities(orig, repo, proto):
     '''Wrap server command to announce lfs server capability'''
     caps = orig(repo, proto)
@@ -130,6 +146,7 @@ def _islfs(rlog, node=None, rev=None):
     flags = rlog._revlog.flags(rev)
     return bool(flags & revlog.REVIDX_EXTSTORED)
 
+# Wrapping may also be applied by remotefilelog
 def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
                        cachedelta=None, node=None,
                        flags=revlog.REVIDX_DEFAULT_FLAGS, **kwds):
@@ -149,6 +166,7 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
                 node=node, flags=flags, **kwds)
 
+# Wrapping may also be applied by remotefilelog
 def filelogrenamed(orig, self, node):
     if _islfs(self, node):
         rawtext = self._revlog.revision(node, raw=True)
@@ -161,6 +179,7 @@ def filelogrenamed(orig, self, node):
             return False
     return orig(self, node)
 
+# Wrapping may also be applied by remotefilelog
 def filelogsize(orig, self, rev):
     if _islfs(self, rev=rev):
         # fast path: use lfs metadata to answer size
@@ -169,6 +188,7 @@ def filelogsize(orig, self, rev):
         return int(metadata['size'])
     return orig(self, rev)
 
+@eh.wrapfunction(context.basefilectx, 'cmp')
 def filectxcmp(orig, self, fctx):
     """returns True if text is different than fctx"""
     # some fctx (ex. hg-git) is not based on basefilectx and do not have islfs
@@ -179,6 +199,7 @@ def filectxcmp(orig, self, fctx):
         return p1.oid() != p2.oid()
     return orig(self, fctx)
 
+@eh.wrapfunction(context.basefilectx, 'isbinary')
 def filectxisbinary(orig, self):
     if self.islfs():
         # fast path: use lfs metadata to answer isbinary
@@ -190,10 +211,12 @@ def filectxisbinary(orig, self):
 def filectxislfs(self):
     return _islfs(self.filelog(), self.filenode())
 
+@eh.wrapfunction(cmdutil, '_updatecatformatter')
 def _updatecatformatter(orig, fm, ctx, matcher, path, decode):
     orig(fm, ctx, matcher, path, decode)
     fm.data(rawdata=ctx[path].rawdata())
 
+@eh.wrapfunction(scmutil, 'wrapconvertsink')
 def convertsink(orig, sink):
     sink = orig(sink)
     if sink.repotype == 'hg':
@@ -219,6 +242,9 @@ def convertsink(orig, sink):
 
     return sink
 
+# bundlerepo uses "vfsmod.readonlyvfs(othervfs)", we need to make sure lfs
+# options and blob stores are passed from othervfs to the new readonlyvfs.
+@eh.wrapfunction(vfsmod.readonlyvfs, '__init__')
 def vfsinit(orig, self, othervfs):
     orig(self, othervfs)
     # copy lfs related options
@@ -290,6 +316,7 @@ def prepush(pushop):
     """
     return uploadblobsfromrevs(pushop.repo, pushop.outgoing.missing)
 
+@eh.wrapfunction(exchange, 'push')
 def push(orig, repo, remote, *args, **kwargs):
     """bail on push if the extension isn't enabled on remote when needed, and
     update the remote store based on the destination path."""
@@ -316,6 +343,8 @@ def push(orig, repo, remote, *args, **kwargs):
     else:
         return orig(repo, remote, *args, **kwargs)
 
+# when writing a bundle via "hg bundle" command, upload related LFS blobs
+@eh.wrapfunction(bundle2, 'writenewbundle')
 def writenewbundle(orig, ui, repo, source, filename, bundletype, outgoing,
                    *args, **kwargs):
     """upload LFS blobs added by outgoing revisions on 'hg bundle'"""
@@ -393,6 +422,7 @@ def uploadblobs(repo, pointers):
     remoteblob = repo.svfs.lfsremoteblobstore
     remoteblob.writebatch(pointers, repo.svfs.lfslocalblobstore)
 
+@eh.wrapfunction(upgrade, '_finishdatamigration')
 def upgradefinishdatamigration(orig, ui, srcrepo, dstrepo, requirements):
     orig(ui, srcrepo, dstrepo, requirements)
 
@@ -407,6 +437,8 @@ def upgradefinishdatamigration(orig, ui, srcrepo, dstrepo, requirements):
                 ui.write(_('copying lfs blob %s\n') % oid)
                 lfutil.link(srclfsvfs.join(oid), dstlfsvfs.join(oid))
 
+@eh.wrapfunction(upgrade, 'preservedrequirements')
+@eh.wrapfunction(upgrade, 'supporteddestrequirements')
 def upgraderequirements(orig, repo):
     reqs = orig(repo)
     if 'lfs' in repo.requirements:

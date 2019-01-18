@@ -1,6 +1,3 @@
-Integration with the share extension needs improvement. Right now
-we've seen some odd bugs.
-
 Address commentary in manifest.excludedmanifestrevlog.add -
 specifically we should improve the collaboration with core so that
 add() never gets called on an excluded directory and we can improve

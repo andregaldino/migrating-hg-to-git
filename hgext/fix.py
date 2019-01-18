@@ -15,13 +15,15 @@ formatting fixes to modified lines in C++ code::
   [fix]
   clang-format:command=clang-format --assume-filename={rootpath}
   clang-format:linerange=--lines={first}:{last}
-  clang-format:fileset=set:**.cpp or **.hpp
+  clang-format:pattern=set:**.cpp or **.hpp
 
 The :command suboption forms the first part of the shell command that will be
 used to fix a file. The content of the file is passed on standard input, and the
-fixed file content is expected on standard output. If there is any output on
-standard error, the file will not be affected. Some values may be substituted
-into the command::
+fixed file content is expected on standard output. Any output on standard error
+will be displayed as a warning. If the exit status is not zero, the file will
+not be affected. A placeholder warning is displayed if there is a non-zero exit
+status but no standard error output. Some values may be substituted into the
+command::
 
   {rootpath}  The path of the file being fixed, relative to the repo root
   {basename}  The name of the file being fixed, without the directory path
@@ -34,16 +36,42 @@ substituted into the command::
   {first}   The 1-based line number of the first line in the modified range
   {last}    The 1-based line number of the last line in the modified range
 
-The :fileset suboption determines which files will be passed through each
-configured tool. See :hg:`help fileset` for possible values. If there are file
-arguments to :hg:`fix`, the intersection of these filesets is used.
+The :pattern suboption determines which files will be passed through each
+configured tool. See :hg:`help patterns` for possible values. If there are file
+arguments to :hg:`fix`, the intersection of these patterns is used.
 
 There is also a configurable limit for the maximum size of file that will be
 processed by :hg:`fix`::
 
   [fix]
-  maxfilesize=2MB
+  maxfilesize = 2MB
 
+Normally, execution of configured tools will continue after a failure (indicated
+by a non-zero exit status). It can also be configured to abort after the first
+such failure, so that no files will be affected if any tool fails. This abort
+will also cause :hg:`fix` to exit with a non-zero status::
+
+  [fix]
+  failure = abort
+
+When multiple tools are configured to affect a file, they execute in an order
+defined by the :priority suboption. The priority suboption has a default value
+of zero for each tool. Tools are executed in order of descending priority. The
+execution order of tools with equal priority is unspecified. For example, you
+could use the 'sort' and 'head' utilities to keep only the 10 smallest numbers
+in a text file by ensuring that 'sort' runs before 'head'::
+
+  [fix]
+  sort:command = sort -n
+  head:command = head -n 10
+  sort:pattern = numbers.txt
+  head:pattern = numbers.txt
+  sort:priority = 2
+  head:priority = 1
+
+To account for changes made by each tool, the line numbers used for incremental
+formatting are recomputed before executing the next tool. So, each tool may see
+different values for the arguments added by the :linerange suboption.
 """
 
 from __future__ import absolute_import
@@ -90,15 +118,35 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 # Register the suboptions allowed for each configured fixer.
-FIXER_ATTRS = ('command', 'linerange', 'fileset')
+FIXER_ATTRS = {
+    'command': None,
+    'linerange': None,
+    'fileset': None,
+    'pattern': None,
+    'priority': 0,
+}
 
-for key in FIXER_ATTRS:
-    configitem('fix', '.*(:%s)?' % key, default=None, generic=True)
+for key, default in FIXER_ATTRS.items():
+    configitem('fix', '.*(:%s)?' % key, default=default, generic=True)
 
 # A good default size allows most source code files to be fixed, but avoids
 # letting fixer tools choke on huge inputs, which could be surprising to the
 # user.
 configitem('fix', 'maxfilesize', default='2MB')
+
+# Allow fix commands to exit non-zero if an executed fixer tool exits non-zero.
+# This helps users do shell scripts that stop when a fixer tool signals a
+# problem.
+configitem('fix', 'failure', default='continue')
+
+def checktoolfailureaction(ui, message, hint=None):
+    """Abort with 'message' if fix.failure=abort"""
+    action = ui.config('fix', 'failure')
+    if action not in ('continue', 'abort'):
+        raise error.Abort(_('unknown fix.failure action: %s') % (action,),
+                          hint=_('use "continue" or "abort"'))
+    if action == 'abort':
+        raise error.Abort(message, hint=hint)
 
 allopt = ('', 'all', False, _('fix all non-public non-obsolete revisions'))
 baseopt = ('', 'base', [], _('revisions to diff against (overrides automatic '
@@ -465,9 +513,14 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
                 showstderr(ui, fixctx.rev(), fixername, stderr)
             if proc.returncode == 0:
                 newdata = newerdata
-            elif not stderr:
-                showstderr(ui, fixctx.rev(), fixername,
-                           _('exited with status %d\n') % (proc.returncode,))
+            else:
+                if not stderr:
+                    message = _('exited with status %d\n') % (proc.returncode,)
+                    showstderr(ui, fixctx.rev(), fixername, message)
+                checktoolfailureaction(
+                    ui, _('no fixes will be applied'),
+                    hint=_('use --config fix.failure=continue to apply any '
+                           'successful fixes anyway'))
     return newdata
 
 def showstderr(ui, rev, fixername, stderr):
@@ -533,6 +586,17 @@ def replacerev(ui, repo, ctx, filedata, replacements):
     newp1node = replacements.get(p1ctx.node(), p1ctx.node())
     newp2node = replacements.get(p2ctx.node(), p2ctx.node())
 
+    # We don't want to create a revision that has no changes from the original,
+    # but we should if the original revision's parent has been replaced.
+    # Otherwise, we would produce an orphan that needs no actual human
+    # intervention to evolve. We can't rely on commit() to avoid creating the
+    # un-needed revision because the extra field added below produces a new hash
+    # regardless of file content changes.
+    if (not filedata and
+        p1ctx.node() not in replacements and
+        p2ctx.node() not in replacements):
+        return
+
     def filectxfn(repo, memctx, path):
         if path not in ctx:
             return None
@@ -549,6 +613,9 @@ def replacerev(ui, repo, ctx, filedata, replacements):
             isexec=fctx.isexec(),
             copied=copied)
 
+    extra = ctx.extra().copy()
+    extra['fix_source'] = ctx.hex()
+
     memctx = context.memctx(
         repo,
         parents=(newp1node, newp2node),
@@ -557,7 +624,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
         filectxfn=filectxfn,
         user=ctx.user(),
         date=ctx.date(),
-        extra=ctx.extra(),
+        extra=extra,
         branch=ctx.branch(),
         editor=None)
     sucnode = memctx.commit()
@@ -573,14 +640,21 @@ def getfixers(ui):
     Each value is a Fixer object with methods that implement the behavior of the
     fixer's config suboptions. Does not validate the config values.
     """
-    result = {}
+    fixers = {}
     for name in fixernames(ui):
-        result[name] = Fixer()
+        fixers[name] = Fixer()
         attrs = ui.configsuboptions('fix', name)[1]
-        for key in FIXER_ATTRS:
-            setattr(result[name], pycompat.sysstr('_' + key),
-                    attrs.get(key, ''))
-    return result
+        if 'fileset' in attrs and 'pattern' not in attrs:
+            ui.warn(_('the fix.tool:fileset config name is deprecated; '
+                      'please rename it to fix.tool:pattern\n'))
+            attrs['pattern'] = attrs['fileset']
+        for key, default in FIXER_ATTRS.items():
+            setattr(fixers[name], pycompat.sysstr('_' + key),
+                    attrs.get(key, default))
+        fixers[name]._priority = int(fixers[name]._priority)
+    return collections.OrderedDict(
+        sorted(fixers.items(), key=lambda item: item[1]._priority,
+               reverse=True))
 
 def fixernames(ui):
     """Returns the names of [fix] config options that have suboptions"""
@@ -595,7 +669,7 @@ class Fixer(object):
 
     def affects(self, opts, fixctx, path):
         """Should this fixer run on the file at the given path and context?"""
-        return scmutil.match(fixctx, [self._fileset], opts)(path)
+        return scmutil.match(fixctx, [self._pattern], opts)(path)
 
     def command(self, ui, path, rangesfn):
         """A shell command to use to invoke this fixer on the given file/lines

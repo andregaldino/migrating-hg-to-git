@@ -2193,7 +2193,7 @@ capabilities
   lookup
   pushkey
   stream-preferred
-  streamreqs=generaldelta,revlogv1
+  streamreqs=generaldelta,revlogv1,sparserevlog
   unbundle=HG10GZ,HG10BZ,HG10UN
   unbundlehash
 

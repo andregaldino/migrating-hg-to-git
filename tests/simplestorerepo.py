@@ -23,7 +23,6 @@ from mercurial.node import (
 )
 from mercurial.thirdparty import (
     attr,
-    cbor,
 )
 from mercurial import (
     ancestor,
@@ -39,6 +38,7 @@ from mercurial import (
     verify,
 )
 from mercurial.utils import (
+    cborutil,
     interfaceutil,
     storageutil,
 )
@@ -66,17 +66,24 @@ class simplestoreerror(error.StorageError):
     pass
 
 @interfaceutil.implementer(repository.irevisiondelta)
-@attr.s(slots=True, frozen=True)
+@attr.s(slots=True)
 class simplestorerevisiondelta(object):
     node = attr.ib()
     p1node = attr.ib()
     p2node = attr.ib()
     basenode = attr.ib()
-    linknode = attr.ib()
     flags = attr.ib()
     baserevisionsize = attr.ib()
     revision = attr.ib()
     delta = attr.ib()
+    linknode = attr.ib(default=None)
+
+@interfaceutil.implementer(repository.iverifyproblem)
+@attr.s(frozen=True)
+class simplefilestoreproblem(object):
+    warning = attr.ib(default=None)
+    error = attr.ib(default=None)
+    node = attr.ib(default=None)
 
 @interfaceutil.implementer(repository.ifilestorage)
 class filestorage(object):
@@ -99,7 +106,7 @@ class filestorage(object):
 
         indexdata = self._svfs.tryread(self._indexpath)
         if indexdata:
-            indexdata = cbor.loads(indexdata)
+            indexdata = cborutil.decodeall(indexdata)
 
         self._indexdata = indexdata or []
         self._indexbynode = {}
@@ -191,6 +198,13 @@ class filestorage(object):
         validaterev(rev)
 
         return self._indexbyrev[rev][b'node']
+
+    def hasnode(self, node):
+        validatenode(node)
+        return node in self._indexbynode
+
+    def censorrevision(self, tr, censornode, tombstone=b''):
+        raise NotImplementedError('TODO')
 
     def lookup(self, node):
         if isinstance(node, int):
@@ -290,7 +304,11 @@ class filestorage(object):
             raise simplestoreerror(_("integrity check failed on %s") %
                 self._path)
 
-    def revision(self, node, raw=False):
+    def revision(self, nodeorrev, raw=False):
+        if isinstance(nodeorrev, int):
+            node = self.node(nodeorrev)
+        else:
+            node = nodeorrev
         validatenode(node)
 
         if node == nullid:
@@ -409,6 +427,44 @@ class filestorage(object):
 
         return [b'/'.join((self._storepath, f)) for f in entries]
 
+    def storageinfo(self, exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        # TODO do a real implementation of this
+        return {
+            'exclusivefiles': [],
+            'sharedfiles': [],
+            'revisionscount': len(self),
+            'trackedsize': 0,
+            'storedsize': None,
+        }
+
+    def verifyintegrity(self, state):
+        state['skipread'] = set()
+        for rev in self:
+            node = self.node(rev)
+            try:
+                self.revision(node)
+            except Exception as e:
+                yield simplefilestoreproblem(
+                    error='unpacking %s: %s' % (node, e),
+                    node=node)
+                state['skipread'].add(node)
+
+    def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
+                      assumehaveparentrevisions=False,
+                      deltamode=repository.CG_DELTAMODE_STD):
+        # TODO this will probably break on some ordering options.
+        nodes = [n for n in nodes if n != nullid]
+        if not nodes:
+            return
+        for delta in storageutil.emitrevisions(
+                self, nodes, nodesorder, simplestorerevisiondelta,
+                revisiondata=revisiondata,
+                assumehaveparentrevisions=assumehaveparentrevisions,
+                deltamode=deltamode):
+            yield delta
+
     def add(self, text, meta, transaction, linkrev, p1, p2):
         if meta or text.startswith(b'\1\n'):
             text = storageutil.packmeta(meta, text)
@@ -457,7 +513,8 @@ class filestorage(object):
 
     def _reflectindexupdate(self):
         self._refreshindex()
-        self._svfs.write(self._indexpath, cbor.dumps(self._indexdata))
+        self._svfs.write(self._indexpath,
+                         ''.join(cborutil.streamencode(self._indexdata)))
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
                  maybemissingparents=False):
@@ -489,15 +546,26 @@ class filestorage(object):
 
             if addrevisioncb:
                 addrevisioncb(self, node)
-
         return nodes
+
+    def _headrevs(self):
+        # Assume all revisions are heads by default.
+        revishead = {rev: True for rev in self._indexbyrev}
+
+        for rev, entry in self._indexbyrev.items():
+            # Unset head flag for all seen parents.
+            revishead[self.rev(entry[b'p1'])] = False
+            revishead[self.rev(entry[b'p2'])] = False
+
+        return [rev for rev, ishead in sorted(revishead.items())
+                if ishead]
 
     def heads(self, start=None, stop=None):
         # This is copied from revlog.py.
         if start is None and stop is None:
             if not len(self):
                 return [nullid]
-            return [self.node(r) for r in self.headrevs()]
+            return [self.node(r) for r in self._headrevs()]
 
         if start is None:
             start = nullid
@@ -537,41 +605,9 @@ class filestorage(object):
         return c
 
     def getstrippoint(self, minlink):
-
-        # This is largely a copy of revlog.getstrippoint().
-        brokenrevs = set()
-        strippoint = len(self)
-
-        heads = {}
-        futurelargelinkrevs = set()
-        for head in self.heads():
-            headlinkrev = self.linkrev(self.rev(head))
-            heads[head] = headlinkrev
-            if headlinkrev >= minlink:
-                futurelargelinkrevs.add(headlinkrev)
-
-        # This algorithm involves walking down the rev graph, starting at the
-        # heads. Since the revs are topologically sorted according to linkrev,
-        # once all head linkrevs are below the minlink, we know there are
-        # no more revs that could have a linkrev greater than minlink.
-        # So we can stop walking.
-        while futurelargelinkrevs:
-            strippoint -= 1
-            linkrev = heads.pop(strippoint)
-
-            if linkrev < minlink:
-                brokenrevs.add(strippoint)
-            else:
-                futurelargelinkrevs.remove(linkrev)
-
-            for p in self.parentrevs(strippoint):
-                if p != nullrev:
-                    plinkrev = self.linkrev(p)
-                    heads[p] = plinkrev
-                    if plinkrev >= minlink:
-                        futurelargelinkrevs.add(plinkrev)
-
-        return strippoint, brokenrevs
+        return storageutil.resolvestripinfo(
+            minlink, len(self) - 1, self._headrevs(), self.linkrev,
+            self.parentrevs)
 
     def strip(self, minlink, transaction):
         if not len(self):
@@ -631,9 +667,9 @@ def reposetup(ui, repo):
 def featuresetup(ui, supported):
     supported.add(REQUIREMENT)
 
-def newreporequirements(orig, ui):
+def newreporequirements(orig, ui, createopts):
     """Modifies default requirements for new repos to use the simple store."""
-    requirements = orig(ui)
+    requirements = orig(ui, createopts)
 
     # These requirements are only used to affect creation of the store
     # object. We have our own store. So we can remove them.
@@ -665,5 +701,5 @@ def extsetup(ui):
 
     extensions.wrapfunction(localrepo, 'newreporequirements',
                             newreporequirements)
-    extensions.wrapfunction(store, 'store', makestore)
+    extensions.wrapfunction(localrepo, 'makestore', makestore)
     extensions.wrapfunction(verify.verifier, '__init__', verifierinit)

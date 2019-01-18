@@ -20,12 +20,12 @@ from mercurial import (
     cmdutil,
     context,
     error,
+    exthelper,
     hg,
     lock,
     match as matchmod,
     node,
     pycompat,
-    registrar,
     scmutil,
     util,
 )
@@ -44,10 +44,9 @@ release = lock.release
 
 # -- Commands ----------------------------------------------------------
 
-cmdtable = {}
-command = registrar.command(cmdtable)
+eh = exthelper.exthelper()
 
-@command('lfconvert',
+@eh.command('lfconvert',
     [('s', 'size', '',
       _('minimum size (MB) for files to be converted as largefiles'), 'SIZE'),
     ('', 'to-normal', False,
@@ -240,7 +239,7 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
                 # largefile was modified, update standins
                 m = hashlib.sha1('')
                 m.update(ctx[f].data())
-                hash = m.hexdigest()
+                hash = node.hex(m.digest())
                 if f not in lfiletohash or lfiletohash[f] != hash:
                     rdst.wwrite(f, ctx[f].data(), ctx[f].flags())
                     executable = 'x' in ctx[f].flags()
@@ -560,7 +559,7 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
             statuswriter(_('%d largefiles updated, %d removed\n') % (updated,
                 removed))
 
-@command('lfpull',
+@eh.command('lfpull',
     [('r', 'rev', [], _('pull largefiles for these revisions'))
     ] + cmdutil.remoteopts,
     _('-r REV... [-e CMD] [--remotecmd CMD] [SOURCE]'))
@@ -599,7 +598,7 @@ def lfpull(ui, repo, source="default", **opts):
         numcached += len(cached)
     ui.status(_("%d largefiles cached\n") % numcached)
 
-@command('debuglfput',
+@eh.command('debuglfput',
     [] + cmdutil.remoteopts,
     _('FILE'))
 def debuglfput(ui, repo, filepath, **kwargs):

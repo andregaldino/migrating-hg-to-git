@@ -47,6 +47,12 @@ class mockui(object):
         self.fout = io.BytesIO()
         self.ferr = io.BytesIO()
 
+    def protectfinout(self):
+        return self.fin, self.fout
+
+    def restorefinout(self, fin, fout):
+        pass
+
 if __name__ == '__main__':
     # Don't call into msvcrt to set BytesIO to binary mode
     procutil.setbinary = lambda fp: True

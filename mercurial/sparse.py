@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import collections
 import hashlib
 import os
 
@@ -247,7 +246,7 @@ def prunetemporaryincludes(repo):
             actions.append((file, None, message))
             dropped.append(file)
 
-    typeactions = collections.defaultdict(list)
+    typeactions = mergemod.emptyactions()
     typeactions['r'] = actions
     mergemod.applyupdates(repo, typeactions, repo[None], repo['.'], False)
 
@@ -380,7 +379,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
                 fctx = repo[None][file]
                 actions.append((file, (fctx.flags(), False), message))
 
-        typeactions = collections.defaultdict(list)
+        typeactions = mergemod.emptyactions()
         typeactions['g'] = actions
         mergemod.applyupdates(repo, typeactions, repo[None], repo['.'],
                               False)
@@ -483,11 +482,8 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
                 dropped.append(file)
 
     # Apply changes to disk
-    typeactions = dict((m, [])
-                       for m in 'a f g am cd dc r dm dg m e k p pr'.split())
+    typeactions = mergemod.emptyactions()
     for f, (m, args, msg) in actions.iteritems():
-        if m not in typeactions:
-            typeactions[m] = []
         typeactions[m].append((f, args, msg))
 
     mergemod.applyupdates(repo, typeactions, repo[None], repo['.'], False)

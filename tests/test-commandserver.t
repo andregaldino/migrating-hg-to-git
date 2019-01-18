@@ -211,6 +211,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   lfs.usercache=$TESTTMP/.cache/lfs
   ui.slash=True
   ui.interactive=False
+  ui.merge=internal:merge
   ui.mergemarkers=detailed
   ui.foo=bar
   ui.nontty=true
@@ -221,6 +222,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   *** runcommand -R foo showconfig ui defaults
   ui.slash=True
   ui.interactive=False
+  ui.merge=internal:merge
   ui.mergemarkers=detailed
   ui.nontty=true
 #endif
@@ -605,7 +607,7 @@ changelog and manifest would have invalid node:
   *** runcommand qqueue --active
   foo
 
-  $ cat <<EOF > dbgui.py
+  $ cat <<'EOF' > ../dbgui.py
   > import os
   > import sys
   > from mercurial import commands, registrar
@@ -613,10 +615,14 @@ changelog and manifest would have invalid node:
   > command = registrar.command(cmdtable)
   > @command(b"debuggetpass", norepo=True)
   > def debuggetpass(ui):
-  >     ui.write(b"%s\\n" % ui.getpass())
+  >     ui.write(b"%s\n" % ui.getpass())
   > @command(b"debugprompt", norepo=True)
   > def debugprompt(ui):
-  >     ui.write(b"%s\\n" % ui.prompt(b"prompt:"))
+  >     ui.write(b"%s\n" % ui.prompt(b"prompt:"))
+  > @command(b"debugpromptchoice", norepo=True)
+  > def debugpromptchoice(ui):
+  >     msg = b"promptchoice (y/n)? $$ &Yes $$ &No"
+  >     ui.write(b"%d\n" % ui.promptchoice(msg))
   > @command(b"debugreadstdin", norepo=True)
   > def debugreadstdin(ui):
   >     ui.write(b"read: %r\n" % sys.stdin.read(1))
@@ -628,7 +634,7 @@ changelog and manifest would have invalid node:
   > EOF
   $ cat <<EOF >> .hg/hgrc
   > [extensions]
-  > dbgui = dbgui.py
+  > dbgui = ../dbgui.py
   > EOF
 
   >>> from hgclient import check, readchannel, runcommand, stringio
@@ -722,6 +728,70 @@ don't fall back to cwd if invalid -R path is specified (issue4805):
   $ cd ..
 
 
+structured message channel:
+
+  $ cat <<'EOF' >> repo2/.hg/hgrc
+  > [ui]
+  > # server --config should precede repository option
+  > message-output = stdio
+  > EOF
+
+  >>> from hgclient import bprint, checkwith, readchannel, runcommand
+  >>> @checkwith(extraargs=[b'--config', b'ui.message-output=channel',
+  ...                       b'--config', b'cmdserver.message-encodings=foo cbor'])
+  ... def verify(server):
+  ...     _ch, data = readchannel(server)
+  ...     bprint(data)
+  ...     runcommand(server, [b'-R', b'repo2', b'verify'])
+  capabilities: getencoding runcommand
+  encoding: ascii
+  message-encoding: cbor
+  pid: * (glob)
+  pgid: * (glob) (no-windows !)
+  *** runcommand -R repo2 verify
+  message: '\xa2DdataTchecking changesets\nDtypeFstatus'
+  message: '\xa6Ditem@Cpos\xf6EtopicHcheckingEtotal\xf6DtypeHprogressDunit@'
+  message: '\xa2DdataSchecking manifests\nDtypeFstatus'
+  message: '\xa6Ditem@Cpos\xf6EtopicHcheckingEtotal\xf6DtypeHprogressDunit@'
+  message: '\xa2DdataX0crosschecking files in changesets and manifests\nDtypeFstatus'
+  message: '\xa6Ditem@Cpos\xf6EtopicMcrosscheckingEtotal\xf6DtypeHprogressDunit@'
+  message: '\xa2DdataOchecking files\nDtypeFstatus'
+  message: '\xa6Ditem@Cpos\xf6EtopicHcheckingEtotal\xf6DtypeHprogressDunit@'
+  message: '\xa2DdataX/checked 0 changesets with 0 changes to 0 files\nDtypeFstatus'
+
+  >>> from hgclient import checkwith, readchannel, runcommand, stringio
+  >>> @checkwith(extraargs=[b'--config', b'ui.message-output=channel',
+  ...                       b'--config', b'cmdserver.message-encodings=cbor',
+  ...                       b'--config', b'extensions.dbgui=dbgui.py'])
+  ... def prompt(server):
+  ...     readchannel(server)
+  ...     interactive = [b'--config', b'ui.interactive=True']
+  ...     runcommand(server, [b'debuggetpass'] + interactive,
+  ...                input=stringio(b'1234\n'))
+  ...     runcommand(server, [b'debugprompt'] + interactive,
+  ...                input=stringio(b'5678\n'))
+  ...     runcommand(server, [b'debugpromptchoice'] + interactive,
+  ...                input=stringio(b'n\n'))
+  *** runcommand debuggetpass --config ui.interactive=True
+  message: '\xa3DdataJpassword: Hpassword\xf5DtypeFprompt'
+  1234
+  *** runcommand debugprompt --config ui.interactive=True
+  message: '\xa3DdataGprompt:GdefaultAyDtypeFprompt'
+   5678
+  *** runcommand debugpromptchoice --config ui.interactive=True
+  message: '\xa4Gchoices\x82\x82AyCYes\x82AnBNoDdataTpromptchoice (y/n)? GdefaultAyDtypeFprompt'
+   1
+
+bad message encoding:
+
+  $ hg serve --cmdserver pipe --config ui.message-output=channel
+  abort: no supported message encodings: 
+  [255]
+  $ hg serve --cmdserver pipe --config ui.message-output=channel \
+  > --config cmdserver.message-encodings='foo bar'
+  abort: no supported message encodings: foo bar
+  [255]
+
 unix domain socket:
 
   $ cd repo
@@ -776,9 +846,18 @@ unix domain socket:
  if server crashed before hello, traceback will be sent to 'e' channel as
  last ditch:
 
+  $ cat <<'EOF' > ../earlycrasher.py
+  > from mercurial import commandserver, extensions
+  > def _serverequest(orig, ui, repo, conn, createcmdserver, prereposetups):
+  >     def createcmdserver(*args, **kwargs):
+  >         raise Exception('crash')
+  >     return orig(ui, repo, conn, createcmdserver, prereposetups)
+  > def extsetup(ui):
+  >     extensions.wrapfunction(commandserver, b'_serverequest', _serverequest)
+  > EOF
   $ cat <<EOF >> .hg/hgrc
-  > [cmdserver]
-  > log = inexistent/path.log
+  > [extensions]
+  > earlycrasher = ../earlycrasher.py
   > EOF
   >>> from hgclient import bprint, check, readchannel, unixserver
   >>> server = unixserver(b'.hg/server.sock', b'.hg/server.log')
@@ -793,13 +872,13 @@ unix domain socket:
   ...             break
   >>> check(earlycrash, server.connect)
   e, 'Traceback (most recent call last):\n'
-  e, "(IOError|FileNotFoundError): .*" (re)
+  e, 'Exception: crash\n'
   >>> server.shutdown()
 
   $ cat .hg/server.log | grep -v '^  '
   listening at .hg/server.sock
   Traceback (most recent call last):
-  (IOError|FileNotFoundError): .* (re)
+  Exception: crash
   killed!
 #endif
 #if no-unix-socket

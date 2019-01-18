@@ -17,8 +17,10 @@ from mercurial.hgweb import (
 )
 
 from mercurial import (
+    exthelper,
     pycompat,
     util,
+    wireprotoserver,
 )
 
 from . import blobstore
@@ -31,6 +33,9 @@ HTTP_METHOD_NOT_ALLOWED = hgwebcommon.HTTP_METHOD_NOT_ALLOWED
 HTTP_NOT_ACCEPTABLE = hgwebcommon.HTTP_NOT_ACCEPTABLE
 HTTP_UNSUPPORTED_MEDIA_TYPE = hgwebcommon.HTTP_UNSUPPORTED_MEDIA_TYPE
 
+eh = exthelper.exthelper()
+
+@eh.wrapfunction(wireprotoserver, 'handlewsgirequest')
 def handlewsgirequest(orig, rctx, req, res, checkperm):
     """Wrap wireprotoserver.handlewsgirequest() to possibly process an LFS
     request if it is left unprocessed by the wrapped method.

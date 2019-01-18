@@ -161,7 +161,10 @@ fix up
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   Fix up the change (pick 7b4e2f4b7bcd)
   (hg histedit --continue to resume)
-  $ hg histedit --continue 2>&1 | fixbundle
+We forcibly enable curses here so we can verify that continuing works
+with curses enabled.
+  $ hg histedit --continue --config ui.interactive=true \
+  >   --config ui.interface=curses 2>&1 | fixbundle
   abort: unresolved merge conflicts (see 'hg help resolve')
 
 This failure is caused by 7b4e2f4b7bcd "e" not rebasing the non commutative

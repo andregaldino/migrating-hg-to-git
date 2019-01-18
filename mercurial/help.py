@@ -119,7 +119,6 @@ TOPIC_CATEGORY_NAMES = {
     TOPIC_CATEGORY_CONCEPTS: 'Concepts',
     TOPIC_CATEGORY_MISC: 'Miscellaneous',
     TOPIC_CATEGORY_NONE: 'Uncategorized topics',
-    TOPIC_CATEGORY_NONE: 'Uncategorized topics',
 }
 
 def listexts(header, exts, indent=1, showdeprecated=False):
@@ -160,6 +159,8 @@ def optrst(header, options, verbose):
         if shortopt:
             so = '-' + shortopt
         lo = '--' + longopt
+        if default is True:
+            lo = '--[no-]' + longopt
 
         if isinstance(default, fancyopts.customopt):
             default = default.getdefaultvalue()
@@ -168,7 +169,10 @@ def optrst(header, options, verbose):
             # the %s-shows-repr property to handle integers etc. To
             # match that behavior on Python 3, we do str(default) and
             # then convert it to bytes.
-            desc += _(" (default: %s)") % pycompat.bytestr(default)
+            defaultstr = pycompat.bytestr(default)
+            if default is True:
+                defaultstr = _("on")
+            desc += _(" (default: %s)") % defaultstr
 
         if isinstance(default, list):
             lo += " %s [+]" % optlabel
@@ -191,12 +195,30 @@ def indicateomitted(rst, omitted, notomitted=None):
     if notomitted:
         rst.append('\n\n.. container:: notomitted\n\n    %s\n\n' % notomitted)
 
-def filtercmd(ui, cmd, kw, doc):
+def filtercmd(ui, cmd, func, kw, doc):
     if not ui.debugflag and cmd.startswith("debug") and kw != "debug":
+        # Debug command, and user is not looking for those.
         return True
-    if not ui.verbose and doc and any(w in doc for w in _exclkeywords):
+    if not ui.verbose:
+        if not kw and not doc:
+            # Command had no documentation, no point in showing it by default.
+            return True
+        if getattr(func, 'alias', False) and not getattr(func, 'owndoc', False):
+            # Alias didn't have its own documentation.
+            return True
+        if doc and any(w in doc for w in _exclkeywords):
+            # Documentation has excluded keywords.
+            return True
+    if kw == "shortlist" and not getattr(func, 'helpbasic', False):
+        # We're presenting the short list but the command is not basic.
+        return True
+    if ui.configbool('help', 'hidden-command.%s' % cmd):
+        # Configuration explicitly hides the command.
         return True
     return False
+
+def filtertopic(ui, topic):
+    return ui.configbool('help', 'hidden-topic.%s' % topic, False)
 
 def topicmatch(ui, commands, kw):
     """Return help topics matching kw.
@@ -218,20 +240,23 @@ def topicmatch(ui, commands, kw):
         if (sum(map(lowercontains, names))
             or lowercontains(header)
             or (callable(doc) and lowercontains(doc(ui)))):
-            results['topics'].append((names[0], header))
+            name = names[0]
+            if not filtertopic(ui, name):
+                results['topics'].append((names[0], header))
     for cmd, entry in commands.table.iteritems():
         if len(entry) == 3:
             summary = entry[2]
         else:
             summary = ''
         # translate docs *before* searching there
-        docs = _(pycompat.getdoc(entry[0])) or ''
+        func = entry[0]
+        docs = _(pycompat.getdoc(func)) or ''
         if kw in cmd or lowercontains(summary) or lowercontains(docs):
             doclines = docs.splitlines()
             if doclines:
                 summary = doclines[0]
             cmdname = cmdutil.parsealiases(cmd)[0]
-            if filtercmd(ui, cmdname, kw, docs):
+            if filtercmd(ui, cmdname, func, kw, docs):
                 continue
             results['commands'].append((cmdname, summary))
     for name, docs in itertools.chain(
@@ -251,12 +276,13 @@ def topicmatch(ui, commands, kw):
         for cmd, entry in getattr(mod, 'cmdtable', {}).iteritems():
             if kw in cmd or (len(entry) > 2 and lowercontains(entry[2])):
                 cmdname = cmdutil.parsealiases(cmd)[0]
-                cmddoc = pycompat.getdoc(entry[0])
+                func = entry[0]
+                cmddoc = pycompat.getdoc(func)
                 if cmddoc:
                     cmddoc = gettext(cmddoc).splitlines()[0]
                 else:
                     cmddoc = _('(no help text available)')
-                if filtercmd(ui, cmdname, kw, cmddoc):
+                if filtercmd(ui, cmdname, func, kw, cmddoc):
                     continue
                 results['extensioncommands'].append((cmdname, cmddoc))
     return results
@@ -289,6 +315,8 @@ internalstable = sorted([
      loaddoc('changegroups', subdir='internals')),
     (['config'], _('Config Registrar'),
      loaddoc('config', subdir='internals')),
+    (['extensions', 'extension'], _('Extension API'),
+     loaddoc('extensions', subdir='internals')),
     (['requirements'], _('Repository Requirements'),
      loaddoc('requirements', subdir='internals')),
     (['revlogs'], _('Revision Logs'),
@@ -530,14 +558,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             func = e[0]
             if select and not select(f):
                 continue
-            if (not select and name != 'shortlist' and
-                func.__module__ != commands.__name__):
-                continue
-            if name == "shortlist":
-                if not getattr(func, 'helpbasic', False):
-                    continue
             doc = pycompat.getdoc(func)
-            if filtercmd(ui, f, name, doc):
+            if filtercmd(ui, f, func, name, doc):
                 continue
             doc = gettext(doc)
             if not doc:
@@ -594,7 +616,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
         ex = opts.get
         anyopts = (ex(r'keyword') or not (ex(r'command') or ex(r'extension')))
         if not name and anyopts:
-            exts = listexts(_('enabled extensions:'), extensions.enabled())
+            exts = listexts(_('enabled extensions:'), extensions.enabled(),
+                            showdeprecated=ui.verbose)
             if exts:
                 rst.append('\n')
                 rst.extend(exts)
@@ -609,7 +632,10 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
                 else:
                     category = TOPIC_CATEGORY_NONE
 
-                topiccats.setdefault(category, []).append((names[0], header))
+                topicname = names[0]
+                if not filtertopic(ui, topicname):
+                    topiccats.setdefault(category, []).append(
+                        (topicname, header))
 
             # Check that all categories have an order.
             missing_order = set(topiccats.keys()) - set(TOPIC_CATEGORY_ORDER)

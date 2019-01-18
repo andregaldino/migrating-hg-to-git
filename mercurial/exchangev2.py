@@ -98,7 +98,7 @@ def pull(pullop):
         relevantcsetnodes = set()
         clnode = repo.changelog.node
 
-        for rev in repo.revs(b'ancestors(%ln, %d)',
+        for rev in repo.revs(b'ancestors(%ln, %s)',
                              pullheads, pullop.depth - 1):
             relevantcsetnodes.add(clnode(rev))
 

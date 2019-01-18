@@ -20,7 +20,7 @@ from mercurial import (
     changegroup,
     error,
     exchange,
-    extensions,
+    localrepo,
     narrowspec,
     repair,
     repository,
@@ -31,10 +31,9 @@ from mercurial.utils import (
     stringutil,
 )
 
-NARROWCAP = 'narrow'
 _NARROWACL_SECTION = 'narrowhgacl'
-_CHANGESPECPART = NARROWCAP + ':changespec'
-_SPECPART = NARROWCAP + ':spec'
+_CHANGESPECPART = 'narrow:changespec'
+_SPECPART = 'narrow:spec'
 _SPECPART_INCLUDE = 'include'
 _SPECPART_EXCLUDE = 'exclude'
 _KILLNODESIGNAL = 'KILL'
@@ -43,12 +42,6 @@ _ELIDEDCSHEADER = '>20s20s20sl' # cset id, p1, p2, len(text)
 _ELIDEDMFHEADER = '>20s20s20s20sl' # manifest id, p1, p2, link id, len(text)
 _CSHEADERSIZE = struct.calcsize(_ELIDEDCSHEADER)
 _MFHEADERSIZE = struct.calcsize(_ELIDEDMFHEADER)
-
-# When advertising capabilities, always include narrow clone support.
-def getrepocaps_narrow(orig, repo, **kwargs):
-    caps = orig(repo, **kwargs)
-    caps[NARROWCAP] = ['v0']
-    return caps
 
 # Serve a changegroup for a client with a narrow clone.
 def getbundlechangegrouppart_narrow(bundler, repo, source,
@@ -158,6 +151,7 @@ def _handlechangespec_2(op, inpart):
         op.repo.requirements.add(repository.NARROW_REQUIREMENT)
         op.repo._writerequirements()
     op.repo.setnarrowpats(includepats, excludepats)
+    narrowspec.copytoworkingcopy(op.repo)
 
 @bundle2.parthandler(_CHANGESPECPART)
 def _handlechangespec(op, inpart):
@@ -187,18 +181,15 @@ def _handlechangespec(op, inpart):
 
     if clkills:
         # preserve bookmarks that repair.strip() would otherwise strip
-        bmstore = repo._bookmarks
+        op._bookmarksbackup = repo._bookmarks
         class dummybmstore(dict):
             def applychanges(self, repo, tr, changes):
                 pass
-            def recordchange(self, tr): # legacy version
-                pass
-        repo._bookmarks = dummybmstore()
+        localrepo.localrepository._bookmarks.set(repo, dummybmstore())
         chgrpfile = repair.strip(op.ui, repo, list(clkills), backup=True,
                                  topic='widen')
-        repo._bookmarks = bmstore
         if chgrpfile:
-            op._widen_uninterr = repo.ui.uninterruptable()
+            op._widen_uninterr = repo.ui.uninterruptible()
             op._widen_uninterr.__enter__()
             # presence of _widen_bundle attribute activates widen handler later
             op._widen_bundle = chgrpfile
@@ -252,16 +243,12 @@ def handlechangegroup_widen(op, inpart):
 
 def setup():
     """Enable narrow repo support in bundle2-related extension points."""
-    extensions.wrapfunction(bundle2, 'getrepocaps', getrepocaps_narrow)
-
     getbundleargs = wireprototypes.GETBUNDLE_ARGUMENTS
 
     getbundleargs['narrow'] = 'boolean'
     getbundleargs['depth'] = 'plain'
     getbundleargs['oldincludepats'] = 'csv'
     getbundleargs['oldexcludepats'] = 'csv'
-    getbundleargs['includepats'] = 'csv'
-    getbundleargs['excludepats'] = 'csv'
     getbundleargs['known'] = 'csv'
 
     # Extend changegroup serving to handle requests from narrow clients.
@@ -284,5 +271,10 @@ def setup():
         origcghandler(op, inpart)
         if util.safehasattr(op, '_widen_bundle'):
             handlechangegroup_widen(op, inpart)
+        if util.safehasattr(op, '_bookmarksbackup'):
+            localrepo.localrepository._bookmarks.set(op.repo,
+                                                     op._bookmarksbackup)
+            del op._bookmarksbackup
+
     wrappedcghandler.params = origcghandler.params
     bundle2.parthandlermapping['changegroup'] = wrappedcghandler

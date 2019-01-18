@@ -41,7 +41,6 @@ from mercurial import (
     lock as lockmod,
     mdiff,
     merge,
-    narrowspec,
     node as nodemod,
     patch,
     phases,
@@ -137,7 +136,7 @@ class shelvedfile(object):
                 raise
             raise error.Abort(_("shelved change '%s' not found") % self.name)
 
-    def applybundle(self):
+    def applybundle(self, tr):
         fp = self.opener()
         try:
             targetphase = phases.internal
@@ -145,7 +144,6 @@ class shelvedfile(object):
                 targetphase = phases.secret
             gen = exchange.readbundle(self.repo.ui, fp, self.fname, self.vfs)
             pretip = self.repo['tip']
-            tr = self.repo.currenttransaction()
             bundle2.applybundle(self.repo, gen, tr,
                                 source='unshelve',
                                 url='bundle:' + self.vfs.join(self.fname),
@@ -324,16 +322,12 @@ def _restoreactivebookmark(repo, mark):
     if mark:
         bookmarks.activate(repo, mark)
 
-def _aborttransaction(repo):
+def _aborttransaction(repo, tr):
     '''Abort current transaction for shelve/unshelve, but keep dirstate
     '''
-    tr = repo.currenttransaction()
     dirstatebackupname = 'dirstate.shelve'
-    narrowspecbackupname = 'narrowspec.shelve'
     repo.dirstate.savebackup(tr, dirstatebackupname)
-    narrowspec.savebackup(repo, narrowspecbackupname)
     tr.abort()
-    narrowspec.restorebackup(repo, narrowspecbackupname)
     repo.dirstate.restorebackup(None, dirstatebackupname)
 
 def getshelvename(repo, parent, opts):
@@ -430,8 +424,12 @@ def _shelvecreatedcommit(repo, node, name):
     shelvedfile(repo, name, 'shelve').writeinfo(info)
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, 'hg').writebundle(bases, node)
+    # Create a matcher so that prefetch doesn't attempt to fetch the entire
+    # repository pointlessly.
+    match = scmutil.matchfiles(repo, repo[node].files())
     with shelvedfile(repo, name, patchextension).opener('wb') as fp:
-        cmdutil.exportfile(repo, [node], fp, opts=mdiff.diffopts(git=True))
+        cmdutil.exportfile(repo, [node], fp, opts=mdiff.diffopts(git=True),
+                           match=match)
 
 def _includeunknownfiles(repo, pats, opts, extra):
     s = repo.status(match=scmutil.match(repo[None], pats, opts),
@@ -440,15 +438,11 @@ def _includeunknownfiles(repo, pats, opts, extra):
         extra['shelve_unknown'] = '\0'.join(s.unknown)
         repo[None].add(s.unknown)
 
-def _finishshelve(repo):
+def _finishshelve(repo, tr):
     if phases.supportinternal(repo):
-        backupname = 'dirstate.shelve'
-        tr = repo.currenttransaction()
-        repo.dirstate.savebackup(tr, backupname)
         tr.close()
-        repo.dirstate.restorebackup(None, backupname)
     else:
-        _aborttransaction(repo)
+        _aborttransaction(repo, tr)
 
 def createcmd(ui, repo, pats, opts):
     """subcommand that creates a new shelve"""
@@ -478,7 +472,7 @@ def _docreatecmd(ui, repo, pats, opts):
 
         # use an uncommitted transaction to generate the bundle to avoid
         # pull races. ensure we don't print the abort message to stderr.
-        tr = repo.transaction('commit', report=lambda x: None)
+        tr = repo.transaction('shelve', report=lambda x: None)
 
         interactive = opts.get('interactive', False)
         includeunknown = (opts.get('unknown', False) and
@@ -515,7 +509,7 @@ def _docreatecmd(ui, repo, pats, opts):
         if origbranch != repo['.'].branch() and not _isbareshelve(pats, opts):
             repo.dirstate.setbranch(origbranch)
 
-        _finishshelve(repo)
+        _finishshelve(repo, tr)
     finally:
         _restoreactivebookmark(repo, activebookmark)
         lockmod.release(tr, lock)
@@ -790,7 +784,7 @@ def _commitworkingcopychanges(ui, repo, opts, tmpwctx):
     tmpwctx = repo[node]
     return tmpwctx, addedbefore
 
-def _unshelverestorecommit(ui, repo, basename):
+def _unshelverestorecommit(ui, repo, tr, basename):
     """Recreate commit in the repository during the unshelve"""
     repo = repo.unfiltered()
     node = None
@@ -798,7 +792,7 @@ def _unshelverestorecommit(ui, repo, basename):
         node = shelvedfile(repo, basename, 'shelve').readinfo()['node']
     if node is None or node not in repo:
         with ui.configoverride({('ui', 'quiet'): True}):
-            shelvectx = shelvedfile(repo, basename, 'hg').applybundle()
+            shelvectx = shelvedfile(repo, basename, 'hg').applybundle(tr)
         # We might not strip the unbundled changeset, so we should keep track of
         # the unshelve node in case we need to reuse it (eg: unshelve --keep)
         if node is None:
@@ -878,7 +872,7 @@ def _finishunshelve(repo, oldtiprev, tr, activebookmark):
     # hooks still fire and try to operate on the missing commits.
     # Clean up manually to prevent this.
     repo.unfiltered().changelog.strip(oldtiprev, tr)
-    _aborttransaction(repo)
+    _aborttransaction(repo, tr)
 
 def _checkunshelveuntrackedproblems(ui, repo, shelvectx):
     """Check potential problems which may result from working
@@ -1022,7 +1016,7 @@ def _dounshelve(ui, repo, *shelved, **opts):
         activebookmark = _backupactivebookmark(repo)
         tmpwctx, addedbefore = _commitworkingcopychanges(ui, repo, opts,
                                                          tmpwctx)
-        repo, shelvectx = _unshelverestorecommit(ui, repo, basename)
+        repo, shelvectx = _unshelverestorecommit(ui, repo, tr, basename)
         _checkunshelveuntrackedproblems(ui, repo, shelvectx)
         branchtorestore = ''
         if shelvectx.branch() != shelvectx.p1().branch():

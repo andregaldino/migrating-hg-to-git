@@ -1,10 +1,19 @@
 from __future__ import absolute_import
 
+import os
+import sys
 import unittest
 
-from mercurial.thirdparty import (
-    cbor,
-)
+# TODO migrate to canned cbor test strings and stop using thirdparty.cbor
+tpp = os.path.normpath(os.path.join(os.path.dirname(__file__),
+                                    '..', 'mercurial', 'thirdparty'))
+if not os.path.exists(tpp):
+    # skip, not in a repo
+    sys.exit(80)
+sys.path[0:0] = [tpp]
+import cbor
+del sys.path[0]
+
 from mercurial.utils import (
     cborutil,
 )

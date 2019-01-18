@@ -732,11 +732,10 @@ def changebranch(ui, repo, revs, label):
         rewriteutil.precheck(repo, revs, 'change branch of')
 
         root = repo[roots.first()]
-        if not root.p1().branch() == label and label in repo.branchmap():
+        rpb = {parent.branch() for parent in root.parents()}
+        if label not in rpb and label in repo.branchmap():
             raise error.Abort(_("a branch of the same name already exists"))
 
-        if repo.revs('merge() and %ld', revs):
-            raise error.Abort(_("cannot change branch of a merge commit"))
         if repo.revs('obsolete() and %ld', revs):
             raise error.Abort(_("cannot change branch of a obsolete changeset"))
 
@@ -2442,10 +2441,21 @@ def amend(ui, repo, old, extra, pats, opts):
         extra.update(wctx.extra())
 
         user = opts.get('user') or old.user()
-        date = opts.get('date') or old.date()
 
-        # Parse the date to allow comparison between date and old.date()
-        date = dateutil.parsedate(date)
+        datemaydiffer = False  # date-only change should be ignored?
+        if opts.get('date') and opts.get('currentdate'):
+            raise error.Abort(_('--date and --currentdate are mutually '
+                                'exclusive'))
+        if opts.get('date'):
+            date = dateutil.parsedate(opts.get('date'))
+        elif opts.get('currentdate'):
+            date = dateutil.makedate()
+        elif (ui.configbool('rewrite', 'update-timestamp')
+              and opts.get('currentdate') is None):
+            date = dateutil.makedate()
+            datemaydiffer = True
+        else:
+            date = old.date()
 
         if len(old.parents()) > 1:
             # ctx.files() isn't reliable for merges, so fall back to the
@@ -2559,7 +2569,7 @@ def amend(ui, repo, old, extra, pats, opts):
         if ((not changes)
             and newdesc == old.description()
             and user == old.user()
-            and date == old.date()
+            and (date == old.date() or datemaydiffer)
             and pureextra == old.extra()):
             # nothing changed. continuing here would create a new node
             # anyway because of the amend_source noise.
@@ -2578,7 +2588,7 @@ def amend(ui, repo, old, extra, pats, opts):
         obsmetadata = None
         if opts.get('note'):
             obsmetadata = {'note': encoding.fromlocal(opts['note'])}
-        backup = ui.configbool('ui', 'history-editing-backup')
+        backup = ui.configbool('rewrite', 'backup-bundle')
         scmutil.cleanupnodes(repo, mapping, 'amend', metadata=obsmetadata,
                              fixphase=True, targetphase=commitphase,
                              backup=backup)

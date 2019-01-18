@@ -294,6 +294,7 @@ The requirement is added to the destination repo.
   generaldelta
   lfs
   revlogv1
+  sparserevlog
   store
 
   $ hg log -r 'all()' -G -T '{rev} {join(lfs_files, ", ")} ({desc})\n'

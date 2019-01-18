@@ -197,7 +197,7 @@ Test relative ignore path (issue4473):
   A b.o
 
   $ hg debugignore
-  <includematcher includes='(?:(?:|.*/)[^/]*(?:/|$))'>
+  <includematcher includes='(?:|.*/)[^/]*(?:/|$)'>
 
   $ hg debugignore b.o
   b.o is ignored
@@ -239,6 +239,17 @@ Check recursive glob pattern matches no directories (dir/**/c.o matches dir/c.o)
   dir/c.o is ignored
   (ignore rule in $TESTTMP/ignorerepo/.hgignore, line 2: 'dir/**/c.o') (glob)
 
+Check rooted globs
+
+  $ hg purge --all --config extensions.purge=
+  $ echo "syntax: rootglob" > .hgignore
+  $ echo "a/*.ext" >> .hgignore
+  $ for p in a b/a aa; do mkdir -p $p; touch $p/b.ext; done
+  $ hg status -A 'set:**.ext'
+  ? aa/b.ext
+  ? b/a/b.ext
+  I a/b.ext
+
 Check using 'include:' in ignore file
 
   $ hg purge --all --config extensions.purge=
@@ -257,10 +268,15 @@ Check using 'include:' in ignore file
 Check recursive uses of 'include:'
 
   $ echo "include:nested/ignore" >> otherignore
-  $ mkdir nested
+  $ mkdir nested nested/more
   $ echo "glob:*ignore" > nested/ignore
+  $ echo "rootglob:a" >> nested/ignore
+  $ touch a nested/a nested/more/a
   $ hg status
   A dir/b.o
+  ? nested/a
+  ? nested/more/a
+  $ rm a nested/a nested/more/a
 
   $ cp otherignore goodignore
   $ echo "include:badignore" >> otherignore
@@ -291,18 +307,26 @@ Check including subincludes
   ? dir1/file2
   ? dir2/file1
 
-Check including subincludes with regexs
+Check including subincludes with other patterns
 
   $ echo "subinclude:dir1/.hgignore" >> .hgignore
-  $ echo "regexp:f.le1" > dir1/.hgignore
 
+  $ mkdir dir1/subdir
+  $ touch dir1/subdir/file1
+  $ echo "rootglob:f?le1" > dir1/.hgignore
+  $ hg status
+  ? dir1/file2
+  ? dir1/subdir/file1
+  ? dir2/file1
+  $ rm dir1/subdir/file1
+
+  $ echo "regexp:f.le1" > dir1/.hgignore
   $ hg status
   ? dir1/file2
   ? dir2/file1
 
 Check multiple levels of sub-ignores
 
-  $ mkdir dir1/subdir
   $ touch dir1/subdir/subfile1 dir1/subdir/subfile3 dir1/subdir/subfile4
   $ echo "subinclude:subdir/.hgignore" >> dir1/.hgignore
   $ echo "glob:subfil*3" >> dir1/subdir/.hgignore

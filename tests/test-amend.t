@@ -332,9 +332,9 @@ working directory should be all clean (with some missing/untracked files)
   ? missing_content2_content3-untracked
   ? missing_missing_content3-untracked
 
-==========================================
-Test history-editing-backup config option|
-==========================================
+=================================
+Test backup-bundle config option|
+=================================
   $ hg init $TESTTMP/repo4
   $ cd $TESTTMP/repo4
   $ echo a>a
@@ -346,22 +346,106 @@ Test history-editing-backup config option|
 #if obsstore-off
   $ hg amend
   saved backup bundle to $TESTTMP/repo4/.hg/strip-backup/95e899acf2ce-f11cb050-amend.hg
-When history-editing-backup config option is set:
+When backup-bundle config option is set:
   $ cat << EOF >> $HGRCPATH
-  > [ui]
-  > history-editing-backup = False
+  > [rewrite]
+  > backup-bundle = False
   > EOF
   $ echo fixed > b
   $ hg amend
 
 #else
   $ hg amend
-When history-editing-backup config option is set:
+When backup-bundle config option is set:
   $ cat << EOF >> $HGRCPATH
-  > [ui]
-  > history-editing-backup = False
+  > [rewrite]
+  > backup-bundle = False
   > EOF
   $ echo fixed > b
   $ hg amend
 
 #endif
+==========================================
+Test update-timestamp config option|
+==========================================
+
+  $ cat >> $HGRCPATH << EOF
+  > [extensions]
+  > amend=
+  > mockmakedate = $TESTDIR/mockmakedate.py
+  > EOF
+
+  $ hg init $TESTTMP/repo5
+  $ cd $TESTTMP/repo5
+  $ cat <<'EOF' >> .hg/hgrc
+  > [ui]
+  > logtemplate = 'user:        {user}
+  >                date:        {date|date}
+  >                summary:     {desc|firstline}\n'
+  > EOF
+
+  $ echo a>a
+  $ hg ci -Am 'commit 1'
+  adding a
+
+When updatetimestamp is False
+
+  $ hg amend --date '1997-1-1 0:1'
+  $ hg log --limit 1
+  user:        test
+  date:        Wed Jan 01 00:01:00 1997 +0000
+  summary:     commit 1
+
+ When update-timestamp is True and no other change than the date
+
+  $ hg amend --config rewrite.update-timestamp=True
+  nothing changed
+  [1]
+  $ hg log --limit 1
+  user:        test
+  date:        Wed Jan 01 00:01:00 1997 +0000
+  summary:     commit 1
+
+When update-timestamp is True and there is other change than the date
+  $ hg amend --user foobar --config rewrite.update-timestamp=True
+  $ hg log --limit 1
+  user:        foobar
+  date:        Thu Jan 01 00:00:02 1970 +0000
+  summary:     commit 1
+
+When date option is applicable and update-timestamp is True
+  $ hg amend  --date '1998-1-1 0:1' --config rewrite.update-timestamp=True
+  $ hg log --limit 1
+  user:        foobar
+  date:        Thu Jan 01 00:01:00 1998 +0000
+  summary:     commit 1
+
+Unlike rewrite.update-timestamp, -D/--currentdate always updates the timestamp
+
+  $ hg amend -D
+  $ hg log --limit 1
+  user:        foobar
+  date:        Thu Jan 01 00:00:04 1970 +0000
+  summary:     commit 1
+
+  $ hg amend -D --config rewrite.update-timestamp=True
+  $ hg log --limit 1
+  user:        foobar
+  date:        Thu Jan 01 00:00:05 1970 +0000
+  summary:     commit 1
+
+rewrite.update-timestamp can be negated by --no-currentdate
+
+  $ hg amend --config rewrite.update-timestamp=True --no-currentdate -u baz
+  $ hg log --limit 1
+  user:        baz
+  date:        Thu Jan 01 00:00:05 1970 +0000
+  summary:     commit 1
+
+Bad combination of date options:
+
+  $ hg amend -D --date '0 0'
+  abort: --date and --currentdate are mutually exclusive
+  [255]
+
+  $ cd ..

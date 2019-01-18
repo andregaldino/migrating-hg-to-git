@@ -11,6 +11,7 @@ import heapq
 
 from .node import nullrev
 from . import (
+    dagop,
     policy,
     pycompat,
 )
@@ -161,6 +162,9 @@ class incrementalmissingancestors(object):
     def addbases(self, newbases):
         '''grow the ancestor set by adding new bases'''
         self.bases.update(newbases)
+
+    def basesheads(self):
+        return dagop.headrevs(self.bases, self.pfunc)
 
     def removeancestorsfrom(self, revs):
         '''remove all ancestors of bases from the set revs (in place)'''

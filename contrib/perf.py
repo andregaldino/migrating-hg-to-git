@@ -24,8 +24,10 @@ import functools
 import gc
 import os
 import random
+import shutil
 import struct
 import sys
+import tempfile
 import threading
 import time
 from mercurial import (
@@ -35,6 +37,7 @@ from mercurial import (
     copies,
     error,
     extensions,
+    hg,
     mdiff,
     merge,
     revlog,
@@ -65,6 +68,11 @@ try:
     from mercurial import scmutil # since 1.9 (or 8b252e826c68)
 except ImportError:
     pass
+try:
+    from mercurial import setdiscovery # since 1.9 (or cb98fed52495)
+except ImportError:
+    pass
+
 
 def identity(a):
     return a
@@ -273,7 +281,9 @@ def gettimer(ui, opts=None):
     displayall = ui.configbool(b"perf", b"all-timing", False)
     return functools.partial(_timer, fm, displayall=displayall), fm
 
-def stub_timer(fm, func, title=None):
+def stub_timer(fm, func, setup=None, title=None):
+    if setup is not None:
+        setup()
     func()
 
 @contextlib.contextmanager
@@ -287,12 +297,14 @@ def timeone():
     a, b = ostart, ostop
     r.append((cstop - cstart, b[0] - a[0], b[1]-a[1]))
 
-def _timer(fm, func, title=None, displayall=False):
+def _timer(fm, func, setup=None, title=None, displayall=False):
     gc.collect()
     results = []
     begin = util.timer()
     count = 0
     while True:
+        if setup is not None:
+            setup()
         with timeone() as item:
             r = func()
         count += 1
@@ -453,11 +465,19 @@ def repocleartagscachefunc(repo):
 
 # utilities to clear cache
 
-def clearfilecache(repo, attrname):
-    unfi = repo.unfiltered()
-    if attrname in vars(unfi):
-        delattr(unfi, attrname)
-    unfi._filecache.pop(attrname, None)
+def clearfilecache(obj, attrname):
+    unfiltered = getattr(obj, 'unfiltered', None)
+    if unfiltered is not None:
+        obj = obj.unfiltered()
+    if attrname in vars(obj):
+        delattr(obj, attrname)
+    obj._filecache.pop(attrname, None)
+
+def clearchangelog(repo):
+    if repo is not repo.unfiltered():
+        object.__setattr__(repo, r'_clcachekey', None)
+        object.__setattr__(repo, r'_clcache', None)
+    clearfilecache(repo.unfiltered(), 'changelog')
 
 # perf commands
 
@@ -524,23 +544,23 @@ def perfheads(ui, repo, **opts):
     timer(d)
     fm.end()
 
-@command(b'perftags', formatteropts)
+@command(b'perftags', formatteropts+
+        [
+            (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
+        ])
 def perftags(ui, repo, **opts):
-    import mercurial.changelog
-    import mercurial.manifest
-
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    svfs = getsvfs(repo)
     repocleartagscache = repocleartagscachefunc(repo)
-    def t():
-        repo.changelog = mercurial.changelog.changelog(svfs)
-        rootmanifest = mercurial.manifest.manifestrevlog(svfs)
-        repo.manifestlog = mercurial.manifest.manifestlog(svfs, repo,
-                                                          rootmanifest)
+    clearrevlogs = opts[b'clear_revlogs']
+    def s():
+        if clearrevlogs:
+            clearchangelog(repo)
+            clearfilecache(repo.unfiltered(), 'manifest')
         repocleartagscache()
+    def t():
         return len(repo.tags())
-    timer(t)
+    timer(t, setup=s)
     fm.end()
 
 @command(b'perfancestors', formatteropts)
@@ -567,15 +587,38 @@ def perfancestorset(ui, repo, revset, **opts):
     timer(d)
     fm.end()
 
-@command(b'perfbookmarks', formatteropts)
+@command(b'perfdiscovery', formatteropts, b'PATH')
+def perfdiscovery(ui, repo, path, **opts):
+    """benchmark discovery between local repo and the peer at given path
+    """
+    repos = [repo, None]
+    timer, fm = gettimer(ui, opts)
+    path = ui.expandpath(path)
+
+    def s():
+        repos[1] = hg.peer(ui, opts, path)
+    def d():
+        setdiscovery.findcommonheads(ui, *repos)
+    timer(d, setup=s)
+    fm.end()
+
+@command(b'perfbookmarks', formatteropts +
+        [
+            (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
+        ])
 def perfbookmarks(ui, repo, **opts):
     """benchmark parsing bookmarks from disk to memory"""
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    def d():
+
+    clearrevlogs = opts[b'clear_revlogs']
+    def s():
+        if clearrevlogs:
+            clearchangelog(repo)
         clearfilecache(repo, b'_bookmarks')
+    def d():
         repo._bookmarks
-    timer(d)
+    timer(d, setup=s)
     fm.end()
 
 @command(b'perfbundleread', formatteropts, b'BUNDLE')
@@ -697,9 +740,9 @@ def perfbundleread(ui, repo, bundlepath, **opts):
         fm.end()
 
 @command(b'perfchangegroupchangelog', formatteropts +
-         [(b'', b'version', b'02', b'changegroup version'),
+         [(b'', b'cgversion', b'02', b'changegroup version'),
           (b'r', b'rev', b'', b'revisions to add to changegroup')])
-def perfchangegroupchangelog(ui, repo, version=b'02', rev=None, **opts):
+def perfchangegroupchangelog(ui, repo, cgversion=b'02', rev=None, **opts):
     """Benchmark producing a changelog group for a changegroup.
 
     This measures the time spent processing the changelog during a
@@ -712,7 +755,7 @@ def perfchangegroupchangelog(ui, repo, version=b'02', rev=None, **opts):
     opts = _byteskwargs(opts)
     cl = repo.changelog
     nodes = [cl.lookup(r) for r in repo.revs(rev or b'all()')]
-    bundler = changegroup.getbundler(version, repo)
+    bundler = changegroup.getbundler(cgversion, repo)
 
     def d():
         state, chunks = bundler._generatechangelog(cl, nodes)
@@ -819,6 +862,7 @@ def perfmergecalculate(ui, repo, rev, **opts):
 
 @command(b'perfpathcopies', [], b"REV REV")
 def perfpathcopies(ui, repo, rev1, rev2, **opts):
+    """benchmark the copy tracing logic"""
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     ctx1 = scmutil.revsingle(repo, rev1, rev1)
@@ -952,18 +996,48 @@ def perfchangeset(ui, repo, rev, **opts):
     timer(d)
     fm.end()
 
-@command(b'perfindex', formatteropts)
+@command(b'perfignore', formatteropts)
+def perfignore(ui, repo, **opts):
+    """benchmark operation related to computing ignore"""
+    opts = _byteskwargs(opts)
+    timer, fm = gettimer(ui, opts)
+    dirstate = repo.dirstate
+
+    def setupone():
+        dirstate.invalidate()
+        clearfilecache(dirstate, b'_ignore')
+
+    def runone():
+        dirstate._ignore
+
+    timer(runone, setup=setupone, title=b"load")
+    fm.end()
+
+@command(b'perfindex', [
+            (b'', b'rev', b'', b'revision to be looked up (default tip)'),
+         ] + formatteropts)
 def perfindex(ui, repo, **opts):
     import mercurial.revlog
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
-    n = repo[b"tip"].node()
-    svfs = getsvfs(repo)
+    if opts[b'rev'] is None:
+        n = repo[b"tip"].node()
+    else:
+        rev = scmutil.revsingle(repo, opts[b'rev'])
+        n = repo[rev].node()
+
+    unfi = repo.unfiltered()
+    # find the filecache func directly
+    # This avoid polluting the benchmark with the filecache logic
+    makecl = unfi.__class__.changelog.func
+    def setup():
+        # probably not necessary, but for good measure
+        clearchangelog(unfi)
     def d():
-        cl = mercurial.revlog.revlog(svfs, b"00changelog.i")
+        cl = makecl(unfi)
         cl.rev(n)
-    timer(d)
+    timer(d, setup=setup)
     fm.end()
 
 @command(b'perfstartup', formatteropts)
@@ -1142,6 +1216,82 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
 
     timer, fm = gettimer(ui, opts)
     timer(format)
+    fm.end()
+
+@command(b'perfhelper-pathcopies', formatteropts +
+         [
+          (b'r', b'revs', [], b'restrict search to these revisions'),
+          (b'', b'timing', False, b'provides extra data (costly)'),
+         ])
+def perfhelperpathcopies(ui, repo, revs=[], **opts):
+    """find statistic about potential parameters for the `perftracecopies`
+
+    This command find source-destination pair relevant for copytracing testing.
+    It report value for some of the parameters that impact copy tracing time.
+
+    If `--timing` is set, rename detection is run and the associated timing
+    will be reported. The extra details comes at the cost of a slower command
+    execution.
+
+    Since the rename detection is only run once, other factors might easily
+    affect the precision of the timing. However it should give a good
+    approximation of which revision pairs are very costly.
+    """
+    opts = _byteskwargs(opts)
+    fm = ui.formatter(b'perf', opts)
+    dotiming = opts[b'timing']
+
+    if dotiming:
+        header = '%12s %12s %12s %12s %12s %12s\n'
+        output = ("%(source)12s %(destination)12s "
+                  "%(nbrevs)12d %(nbmissingfiles)12d "
+                  "%(nbrenamedfiles)12d %(time)18.5f\n")
+        header_names = ("source", "destination", "nb-revs", "nb-files",
+                        "nb-renames", "time")
+        fm.plain(header % header_names)
+    else:
+        header = '%12s %12s %12s %12s\n'
+        output = ("%(source)12s %(destination)12s "
+                  "%(nbrevs)12d %(nbmissingfiles)12d\n")
+        fm.plain(header % ("source", "destination", "nb-revs", "nb-files"))
+
+    if not revs:
+        revs = ['all()']
+    revs = scmutil.revrange(repo, revs)
+
+    roi = repo.revs('merge() and %ld', revs)
+    for r in roi:
+        ctx = repo[r]
+        p1 = ctx.p1().rev()
+        p2 = ctx.p2().rev()
+        bases = repo.changelog._commonancestorsheads(p1, p2)
+        for p in (p1, p2):
+            for b in bases:
+                base = repo[b]
+                parent = repo[p]
+                missing = copies._computeforwardmissing(base, parent)
+                if not missing:
+                    continue
+                data = {
+                    b'source': base.hex(),
+                    b'destination': parent.hex(),
+                    b'nbrevs': len(repo.revs('%d::%d', b, p)),
+                    b'nbmissingfiles': len(missing),
+                }
+                if dotiming:
+                    begin = util.timer()
+                    renames = copies.pathcopies(base, parent)
+                    end = util.timer()
+                    # not very stable timing since we did only one run
+                    data['time'] = end - begin
+                    data['nbrenamedfiles'] = len(renames)
+                fm.startitem()
+                fm.data(**data)
+                out = data.copy()
+                out['source'] = fm.hexfunc(base.node())
+                out['destination'] = fm.hexfunc(parent.node())
+                fm.plain(output % out)
+
     fm.end()
 
 @command(b'perfcca', formatteropts)
@@ -1402,7 +1552,7 @@ def perfdiffwd(ui, repo, **opts):
             ui.popbuffer()
         diffopt = diffopt.encode('ascii')
         title = b'diffopts: %s' % (diffopt and (b'-' + diffopt) or b'none')
-        timer(d, title)
+        timer(d, title=title)
     fm.end()
 
 @command(b'perfrevlogindex', revlogopts + formatteropts,
@@ -1553,7 +1703,7 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
         dist = opts[b'dist']
 
         if reverse:
-            beginrev, endrev = endrev, beginrev
+            beginrev, endrev = endrev - 1, beginrev - 1
             dist = -1 * dist
 
         for x in _xrange(beginrev, endrev, dist):
@@ -1564,6 +1714,241 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
     timer, fm = gettimer(ui, opts)
     timer(d)
     fm.end()
+
+@command(b'perfrevlogwrite', revlogopts + formatteropts +
+         [(b's', b'startrev', 1000, b'revision to start writing at'),
+          (b'', b'stoprev', -1, b'last revision to write'),
+          (b'', b'count', 3, b'last revision to write'),
+          (b'', b'details', False, b'print timing for every revisions tested'),
+          (b'', b'source', b'full', b'the kind of data feed in the revlog'),
+          (b'', b'lazydeltabase', True, b'try the provided delta first'),
+          (b'', b'clear-caches', True, b'clear revlog cache between calls'),
+         ],
+         b'-c|-m|FILE')
+def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
+    """Benchmark writing a series of revisions to a revlog.
+
+    Possible source values are:
+    * `full`: add from a full text (default).
+    * `parent-1`: add from a delta to the first parent
+    * `parent-2`: add from a delta to the second parent if it exists
+                  (use a delta from the first parent otherwise)
+    * `parent-smallest`: add from the smallest delta (either p1 or p2)
+    * `storage`: add from the existing precomputed deltas
+    """
+    opts = _byteskwargs(opts)
+
+    rl = cmdutil.openrevlog(repo, b'perfrevlogwrite', file_, opts)
+    rllen = getlen(ui)(rl)
+    if startrev < 0:
+        startrev = rllen + startrev
+    if stoprev < 0:
+        stoprev = rllen + stoprev
+
+    lazydeltabase = opts['lazydeltabase']
+    source = opts['source']
+    clearcaches = opts['clear_caches']
+    validsource = (b'full', b'parent-1', b'parent-2', b'parent-smallest',
+                   b'storage')
+    if source not in validsource:
+        raise error.Abort('invalid source type: %s' % source)
+
+    ### actually gather results
+    count = opts['count']
+    if count <= 0:
+        raise error.Abort('invalide run count: %d' % count)
+    allresults = []
+    for c in range(count):
+        timing = _timeonewrite(ui, rl, source, startrev, stoprev, c + 1,
+                               lazydeltabase=lazydeltabase,
+                               clearcaches=clearcaches)
+        allresults.append(timing)
+
+    ### consolidate the results in a single list
+    results = []
+    for idx, (rev, t) in enumerate(allresults[0]):
+        ts = [t]
+        for other in allresults[1:]:
+            orev, ot = other[idx]
+            assert orev == rev
+            ts.append(ot)
+        results.append((rev, ts))
+    resultcount = len(results)
+
+    ### Compute and display relevant statistics
+
+    # get a formatter
+    fm = ui.formatter(b'perf', opts)
+    displayall = ui.configbool(b"perf", b"all-timing", False)
+
+    # print individual details if requested
+    if opts['details']:
+        for idx, item in enumerate(results, 1):
+            rev, data = item
+            title = 'revisions #%d of %d, rev %d' % (idx, resultcount, rev)
+            formatone(fm, data, title=title, displayall=displayall)
+
+    # sorts results by median time
+    results.sort(key=lambda x: sorted(x[1])[len(x[1]) // 2])
+    # list of (name, index) to display)
+    relevants = [
+        ("min", 0),
+        ("10%", resultcount * 10 // 100),
+        ("25%", resultcount * 25 // 100),
+        ("50%", resultcount * 70 // 100),
+        ("75%", resultcount * 75 // 100),
+        ("90%", resultcount * 90 // 100),
+        ("95%", resultcount * 95 // 100),
+        ("99%", resultcount * 99 // 100),
+        ("99.9%", resultcount * 999 // 1000),
+        ("99.99%", resultcount * 9999 // 10000),
+        ("99.999%", resultcount * 99999 // 100000),
+        ("max", -1),
+    ]
+    if not ui.quiet:
+        for name, idx in relevants:
+            data = results[idx]
+            title = '%s of %d, rev %d' % (name, resultcount, data[0])
+            formatone(fm, data[1], title=title, displayall=displayall)
+
+    # XXX summing that many float will not be very precise, we ignore this fact
+    # for now
+    totaltime = []
+    for item in allresults:
+        totaltime.append((sum(x[1][0] for x in item),
+                          sum(x[1][1] for x in item),
+                          sum(x[1][2] for x in item),)
+        )
+    formatone(fm, totaltime, title="total time (%d revs)" % resultcount,
+              displayall=displayall)
+    fm.end()
+
+class _faketr(object):
+    def add(s, x, y, z=None):
+        return None
+
+def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None,
+                  lazydeltabase=True, clearcaches=True):
+    timings = []
+    tr = _faketr()
+    with _temprevlog(ui, orig, startrev) as dest:
+        dest._lazydeltabase = lazydeltabase
+        revs = list(orig.revs(startrev, stoprev))
+        total = len(revs)
+        topic = 'adding'
+        if runidx is not None:
+            topic += ' (run #%d)' % runidx
+         # Support both old and new progress API
+        if util.safehasattr(ui, 'makeprogress'):
+            progress = ui.makeprogress(topic, unit='revs', total=total)
+            def updateprogress(pos):
+                progress.update(pos)
+            def completeprogress():
+                progress.complete()
+        else:
+            def updateprogress(pos):
+                ui.progress(topic, pos, unit='revs', total=total)
+            def completeprogress():
+                ui.progress(topic, None, unit='revs', total=total)
+
+        for idx, rev in enumerate(revs):
+            updateprogress(idx)
+            addargs, addkwargs = _getrevisionseed(orig, rev, tr, source)
+            if clearcaches:
+                dest.index.clearcaches()
+                dest.clearcaches()
+            with timeone() as r:
+                dest.addrawrevision(*addargs, **addkwargs)
+            timings.append((rev, r[0]))
+        updateprogress(total)
+        completeprogress()
+    return timings
+
+def _getrevisionseed(orig, rev, tr, source):
+    from mercurial.node import nullid
+
+    linkrev = orig.linkrev(rev)
+    node = orig.node(rev)
+    p1, p2 = orig.parents(node)
+    flags = orig.flags(rev)
+    cachedelta = None
+    text = None
+
+    if source == b'full':
+        text = orig.revision(rev)
+    elif source == b'parent-1':
+        baserev = orig.rev(p1)
+        cachedelta = (baserev, orig.revdiff(p1, rev))
+    elif source == b'parent-2':
+        parent = p2
+        if p2 == nullid:
+            parent = p1
+        baserev = orig.rev(parent)
+        cachedelta = (baserev, orig.revdiff(parent, rev))
+    elif source == b'parent-smallest':
+        p1diff = orig.revdiff(p1, rev)
+        parent = p1
+        diff = p1diff
+        if p2 != nullid:
+            p2diff = orig.revdiff(p2, rev)
+            if len(p1diff) > len(p2diff):
+                parent = p2
+                diff = p2diff
+        baserev = orig.rev(parent)
+        cachedelta = (baserev, diff)
+    elif source == b'storage':
+        baserev = orig.deltaparent(rev)
+        cachedelta = (baserev, orig.revdiff(orig.node(baserev), rev))
+
+    return ((text, tr, linkrev, p1, p2),
+            {'node': node, 'flags': flags, 'cachedelta': cachedelta})
+
+@contextlib.contextmanager
+def _temprevlog(ui, orig, truncaterev):
+    from mercurial import vfs as vfsmod
+
+    if orig._inline:
+        raise error.Abort('not supporting inline revlog (yet)')
+
+    origindexpath = orig.opener.join(orig.indexfile)
+    origdatapath = orig.opener.join(orig.datafile)
+    indexname = 'revlog.i'
+    dataname = 'revlog.d'
+
+    tmpdir = tempfile.mkdtemp(prefix='tmp-hgperf-')
+    try:
+        # copy the data file in a temporary directory
+        ui.debug('copying data in %s\n' % tmpdir)
+        destindexpath = os.path.join(tmpdir, 'revlog.i')
+        destdatapath = os.path.join(tmpdir, 'revlog.d')
+        shutil.copyfile(origindexpath, destindexpath)
+        shutil.copyfile(origdatapath, destdatapath)
+
+        # remove the data we want to add again
+        ui.debug('truncating data to be rewritten\n')
+        with open(destindexpath, 'ab') as index:
+            index.seek(0)
+            index.truncate(truncaterev * orig._io.size)
+        with open(destdatapath, 'ab') as data:
+            data.seek(0)
+            data.truncate(orig.start(truncaterev))
+
+        # instantiate a new revlog from the temporary copy
+        ui.debug('truncating adding to be rewritten\n')
+        vfs = vfsmod.vfs(tmpdir)
+        vfs.options = getattr(orig.opener, 'options', None)
+
+        dest = revlog.revlog(vfs,
+                             indexfile=indexname,
+                             datafile=dataname)
+        if dest._inline:
+            raise error.Abort('not supporting inline revlog (yet)')
+        # make sure internals are initialized
+        dest.revision(len(dest) - 1)
+        yield dest
+        del dest, vfs
+    finally:
+        shutil.rmtree(tmpdir, True)
 
 @command(b'perfrevlogchunks', revlogopts + formatteropts +
          [(b'e', b'engines', b'', b'compression engines to use'),
@@ -1692,10 +2077,11 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
     Obtaining a revlog revision consists of roughly the following steps:
 
     1. Compute the delta chain
-    2. Obtain the raw chunks for that delta chain
-    3. Decompress each raw chunk
-    4. Apply binary patches to obtain fulltext
-    5. Verify hash of fulltext
+    2. Slice the delta chain if applicable
+    3. Obtain the raw chunks for that delta chain
+    4. Decompress each raw chunk
+    5. Apply binary patches to obtain fulltext
+    6. Verify hash of fulltext
 
     This command measures the time spent in each of these phases.
     """
@@ -1723,17 +2109,18 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         inline = r._inline
         iosize = r._io.size
         buffer = util.buffer
-        offset = start(chain[0])
 
         chunks = []
         ladd = chunks.append
-
-        for rev in chain:
-            chunkstart = start(rev)
-            if inline:
-                chunkstart += (rev + 1) * iosize
-            chunklength = length(rev)
-            ladd(buffer(data, chunkstart - offset, chunklength))
+        for idx, item in enumerate(chain):
+            offset = start(item[0])
+            bits = data[idx]
+            for rev in item:
+                chunkstart = start(rev)
+                if inline:
+                    chunkstart += (rev + 1) * iosize
+                chunklength = length(rev)
+                ladd(buffer(bits, chunkstart - offset, chunklength))
 
         return chunks
 
@@ -1745,7 +2132,12 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
     def doread(chain):
         if not cache:
             r.clearcaches()
-        segmentforrevs(chain[0], chain[-1])
+        for item in slicedchain:
+            segmentforrevs(item[0], item[-1])
+
+    def doslice(r, chain, size):
+        for s in slicechunk(r, chain, targetsize=size):
+            pass
 
     def dorawchunks(data, chain):
         if not cache:
@@ -1772,9 +2164,19 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
             r.clearcaches()
         r.revision(node)
 
+    try:
+        from mercurial.revlogutils.deltas import slicechunk
+    except ImportError:
+        slicechunk = getattr(revlog, '_slicechunk', None)
+
+    size = r.length(rev)
     chain = r._deltachain(rev)[0]
-    data = segmentforrevs(chain[0], chain[-1])[1]
-    rawchunks = getrawchunks(data, chain)
+    if not getattr(r, '_withsparseread', False):
+        slicedchain = (chain,)
+    else:
+        slicedchain = tuple(slicechunk(r, chain, targetsize=size))
+    data = [segmentforrevs(seg[0], seg[-1])[1] for seg in slicedchain]
+    rawchunks = getrawchunks(data, slicedchain)
     bins = r._chunks(chain)
     text = bytes(bins[0])
     bins = bins[1:]
@@ -1784,16 +2186,23 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         (lambda: dorevision(), b'full'),
         (lambda: dodeltachain(rev), b'deltachain'),
         (lambda: doread(chain), b'read'),
-        (lambda: dorawchunks(data, chain), b'rawchunks'),
+    ]
+
+    if getattr(r, '_withsparseread', False):
+        slicing = (lambda: doslice(r, chain, size), b'slice-sparse-chain')
+        benches.append(slicing)
+
+    benches.extend([
+        (lambda: dorawchunks(data, slicedchain), b'rawchunks'),
         (lambda: dodecompress(rawchunks), b'decompress'),
         (lambda: dopatch(text, bins), b'patch'),
         (lambda: dohash(text), b'hash'),
-    ]
+    ])
 
+    timer, fm = gettimer(ui, opts)
     for fn, title in benches:
-        timer, fm = gettimer(ui, opts)
         timer(fn, title=title)
-        fm.end()
+    fm.end()
 
 @command(b'perfrevset',
          [(b'C', b'clear', False, b'clear volatile cache between each call.'),
@@ -1929,13 +2338,120 @@ def perfbranchmap(ui, repo, *filternames, **opts):
         branchcachewrite.restore()
     fm.end()
 
+@command(b'perfbranchmapupdate', [
+     (b'', b'base', [], b'subset of revision to start from'),
+     (b'', b'target', [], b'subset of revision to end with'),
+     (b'', b'clear-caches', False, b'clear cache between each runs')
+    ] + formatteropts)
+def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
+    """benchmark branchmap update from for <base> revs to <target> revs
+
+    If `--clear-caches` is passed, the following items will be reset before
+    each update:
+        * the changelog instance and associated indexes
+        * the rev-branch-cache instance
+
+    Examples:
+
+       # update for the one last revision
+       $ hg perfbranchmapupdate --base 'not tip' --target 'tip'
+
+       $ update for change coming with a new branch
+       $ hg perfbranchmapupdate --base 'stable' --target 'default'
+    """
+    from mercurial import branchmap
+    from mercurial import repoview
+    opts = _byteskwargs(opts)
+    timer, fm = gettimer(ui, opts)
+    clearcaches = opts[b'clear_caches']
+    unfi = repo.unfiltered()
+    x = [None] # used to pass data between closure
+
+    # we use a `list` here to avoid possible side effect from smartset
+    baserevs = list(scmutil.revrange(repo, base))
+    targetrevs = list(scmutil.revrange(repo, target))
+    if not baserevs:
+        raise error.Abort(b'no revisions selected for --base')
+    if not targetrevs:
+        raise error.Abort(b'no revisions selected for --target')
+
+    # make sure the target branchmap also contains the one in the base
+    targetrevs = list(set(baserevs) | set(targetrevs))
+    targetrevs.sort()
+
+    cl = repo.changelog
+    allbaserevs = list(cl.ancestors(baserevs, inclusive=True))
+    allbaserevs.sort()
+    alltargetrevs = frozenset(cl.ancestors(targetrevs, inclusive=True))
+
+    newrevs = list(alltargetrevs.difference(allbaserevs))
+    newrevs.sort()
+
+    allrevs = frozenset(unfi.changelog.revs())
+    basefilterrevs = frozenset(allrevs.difference(allbaserevs))
+    targetfilterrevs = frozenset(allrevs.difference(alltargetrevs))
+
+    def basefilter(repo, visibilityexceptions=None):
+        return basefilterrevs
+
+    def targetfilter(repo, visibilityexceptions=None):
+        return targetfilterrevs
+
+    msg = b'benchmark of branchmap with %d revisions with %d new ones\n'
+    ui.status(msg % (len(allbaserevs), len(newrevs)))
+    if targetfilterrevs:
+        msg = b'(%d revisions still filtered)\n'
+        ui.status(msg % len(targetfilterrevs))
+
+    try:
+        repoview.filtertable[b'__perf_branchmap_update_base'] = basefilter
+        repoview.filtertable[b'__perf_branchmap_update_target'] = targetfilter
+
+        baserepo = repo.filtered(b'__perf_branchmap_update_base')
+        targetrepo = repo.filtered(b'__perf_branchmap_update_target')
+
+        # try to find an existing branchmap to reuse
+        subsettable = getbranchmapsubsettable()
+        candidatefilter = subsettable.get(None)
+        while candidatefilter is not None:
+            candidatebm = repo.filtered(candidatefilter).branchmap()
+            if candidatebm.validfor(baserepo):
+                filtered = repoview.filterrevs(repo, candidatefilter)
+                missing = [r for r in allbaserevs if r in filtered]
+                base = candidatebm.copy()
+                base.update(baserepo, missing)
+                break
+            candidatefilter = subsettable.get(candidatefilter)
+        else:
+            # no suitable subset where found
+            base = branchmap.branchcache()
+            base.update(baserepo, allbaserevs)
+
+        def setup():
+            x[0] = base.copy()
+            if clearcaches:
+                unfi._revbranchcache = None
+                clearchangelog(repo)
+
+        def bench():
+            x[0].update(targetrepo, newrevs)
+
+        timer(bench, setup=setup)
+        fm.end()
+    finally:
+        repoview.filtertable.pop(b'__perf_branchmap_update_base', None)
+        repoview.filtertable.pop(b'__perf_branchmap_update_target', None)
+
 @command(b'perfbranchmapload', [
      (b'f', b'filter', b'', b'Specify repoview filter'),
      (b'', b'list', False, b'List brachmap filter caches'),
+     (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
+
     ] + formatteropts)
-def perfbranchmapread(ui, repo, filter=b'', list=False, **opts):
+def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
     """benchmark reading the branchmap"""
     opts = _byteskwargs(opts)
+    clearrevlogs = opts[b'clear_revlogs']
 
     if list:
         for name, kind, st in repo.cachevfs.readdir(stat=True):
@@ -1944,16 +2460,31 @@ def perfbranchmapread(ui, repo, filter=b'', list=False, **opts):
                 ui.status(b'%s - %s\n'
                           % (filtername, util.bytecount(st.st_size)))
         return
-    if filter:
-        repo = repoview.repoview(repo, filter)
-    else:
+    if not filter:
+        filter = None
+    subsettable = getbranchmapsubsettable()
+    if filter is None:
         repo = repo.unfiltered()
+    else:
+        repo = repoview.repoview(repo, filter)
+
+    repo.branchmap() # make sure we have a relevant, up to date branchmap
+
+    currentfilter = filter
     # try once without timer, the filter may not be cached
-    if branchmap.read(repo) is None:
-        raise error.Abort(b'No brachmap cached for %s repo'
-                          % (filter or b'unfiltered'))
+    while branchmap.read(repo) is None:
+        currentfilter = subsettable.get(currentfilter)
+        if currentfilter is None:
+            raise error.Abort(b'No branchmap cached for %s repo'
+                              % (filter or b'unfiltered'))
+        repo = repo.filtered(currentfilter)
     timer, fm = gettimer(ui, opts)
-    timer(lambda: branchmap.read(repo) and None)
+    def setup():
+        if clearrevlogs:
+            clearchangelog(repo)
+    def bench():
+        branchmap.read(repo)
+    timer(bench, setup=setup)
     fm.end()
 
 @command(b'perfloadmarkers')
@@ -2124,3 +2655,21 @@ def uisetup(ui):
                                   hint=b"use 3.5 or later")
             return orig(repo, cmd, file_, opts)
         extensions.wrapfunction(cmdutil, b'openrevlog', openrevlog)
+
+@command(b'perfprogress', formatteropts + [
+    (b'', b'topic', b'topic', b'topic for progress messages'),
+    (b'c', b'total', 1000000, b'total value we are progressing to'),
+], norepo=True)
+def perfprogress(ui, topic=None, total=None, **opts):
+    """printing of progress bars"""
+    opts = _byteskwargs(opts)
+
+    timer, fm = gettimer(ui, opts)
+
+    def doprogress():
+        with ui.makeprogress(topic, total=total) as progress:
+            for i in pycompat.xrange(total):
+                progress.increment()
+
+    timer(doprogress)
+    fm.end()

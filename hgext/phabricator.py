@@ -41,6 +41,7 @@ Config::
 
 from __future__ import absolute_import
 
+import contextlib
 import itertools
 import json
 import operator
@@ -58,6 +59,7 @@ from mercurial import (
     obsutil,
     parser,
     patch,
+    phases,
     registrar,
     scmutil,
     smartset,
@@ -121,7 +123,7 @@ _VCR_FLAGS = [
      )),
 ]
 
-def vcrcommand(name, flags, spec):
+def vcrcommand(name, flags, spec, helpcategory=None):
     fullflags = flags + _VCR_FLAGS
     def decorate(fn):
         def inner(*args, **kwargs):
@@ -143,7 +145,7 @@ def vcrcommand(name, flags, spec):
             return fn(*args, **kwargs)
         inner.__name__ = fn.__name__
         inner.__doc__ = fn.__doc__
-        return command(name, fullflags, spec)(inner)
+        return command(name, fullflags, spec, helpcategory=helpcategory)(inner)
     return decorate
 
 def urlencodenested(params):
@@ -214,7 +216,8 @@ def callconduit(repo, name, params):
     else:
         urlopener = urlmod.opener(repo.ui, authinfo)
         request = util.urlreq.request(url, data=data)
-        body = urlopener.open(request).read()
+        with contextlib.closing(urlopener.open(request)) as rsp:
+            body = rsp.read()
     repo.ui.debug(b'Conduit Response: %s\n' % body)
     parsed = json.loads(body)
     if parsed.get(r'error_code'):
@@ -465,7 +468,8 @@ def userphids(repo, names):
           (b'', b'amend', True, _(b'update commit messages')),
           (b'', b'reviewer', [], _(b'specify reviewers')),
           (b'', b'confirm', None, _(b'ask for confirmation before sending'))],
-         _(b'REV [OPTIONS]'))
+         _(b'REV [OPTIONS]'),
+         helpcategory=command.CATEGORY_IMPORT_EXPORT)
 def phabsend(ui, repo, *revs, **opts):
     """upload changesets to Phabricator
 
@@ -581,6 +585,10 @@ def phabsend(ui, repo, *revs, **opts):
                 newdesc = encoding.unitolocal(newdesc)
                 # Make sure commit message contain "Differential Revision"
                 if old.description() != newdesc:
+                    if old.phase() == phases.public:
+                        ui.warn(_("warning: not updating public commit %s\n")
+                                % scmutil.formatchangeid(old))
+                        continue
                     parents = [
                         mapping.get(old.p1().node(), (old.p1(),))[0],
                         mapping.get(old.p2().node(), (old.p2(),))[0],
@@ -919,7 +927,8 @@ def readpatch(repo, drevs, write):
 
 @vcrcommand(b'phabread',
          [(b'', b'stack', False, _(b'read dependencies'))],
-         _(b'DREVSPEC [OPTIONS]'))
+         _(b'DREVSPEC [OPTIONS]'),
+         helpcategory=command.CATEGORY_IMPORT_EXPORT)
 def phabread(ui, repo, spec, **opts):
     """print patches from Phabricator suitable for importing
 
@@ -950,7 +959,8 @@ def phabread(ui, repo, spec, **opts):
           (b'', b'abandon', False, _(b'abandon revisions')),
           (b'', b'reclaim', False, _(b'reclaim revisions')),
           (b'm', b'comment', b'', _(b'comment on the last revision')),
-          ], _(b'DREVSPEC [OPTIONS]'))
+          ], _(b'DREVSPEC [OPTIONS]'),
+          helpcategory=command.CATEGORY_IMPORT_EXPORT)
 def phabupdate(ui, repo, spec, **opts):
     """update Differential Revision in batch
 
@@ -987,3 +997,17 @@ def template_review(context, mapping):
             b'url': m.group(b'url'),
             b'id': b"D{}".format(m.group(b'id')),
         })
+    else:
+        tags = ctx.repo().nodetags(ctx.node())
+        for t in tags:
+            if _differentialrevisiontagre.match(t):
+                url = ctx.repo().ui.config(b'phabricator', b'url')
+                if not url.endswith(b'/'):
+                    url += b'/'
+                url += t
+
+                return templateutil.hybriddict({
+                    b'url': url,
+                    b'id': t,
+                })
+    return None
