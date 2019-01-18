@@ -2925,7 +2925,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             fm.data(matched=False)
         fm.end()
 
-    skip = {}
+    skip = set()
     revfiles = {}
     match = scmutil.match(repo[None], pats, opts)
     found = False
@@ -2954,7 +2954,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                 if copy:
                     copies.setdefault(rev, {})[fn] = copy
                     if fn in skip:
-                        skip[copy] = True
+                        skip.add(copy)
             if fn in skip:
                 continue
             files.append(fn)
@@ -2984,16 +2984,16 @@ def grep(ui, repo, pattern, *pats, **opts):
             copy = copies.get(rev, {}).get(fn)
             if fn in skip:
                 if copy:
-                    skip[copy] = True
+                    skip.add(copy)
                 continue
             pstates = matches.get(parent, {}).get(copy or fn, [])
             if pstates or states:
                 r = display(fm, fn, ctx, pstates, states)
                 found = found or r
                 if r and not diff and not all_files:
-                    skip[fn] = True
+                    skip.add(fn)
                     if copy:
-                        skip[copy] = True
+                        skip.add(copy)
         del revfiles[rev]
         # We will keep the matches dict for the duration of the window
         # clear the matches dict once the window is over
