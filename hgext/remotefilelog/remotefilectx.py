@@ -452,8 +452,8 @@ class remotefilectx(context.filectx):
 class remoteworkingfilectx(context.workingfilectx, remotefilectx):
     def __init__(self, repo, path, filelog=None, workingctx=None):
         self._ancestormap = None
-        return super(remoteworkingfilectx, self).__init__(repo, path,
-            filelog, workingctx)
+        super(remoteworkingfilectx, self).__init__(repo, path, filelog,
+                                                   workingctx)
 
     def parents(self):
         return remotefilectx.parents(self)
