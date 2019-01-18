@@ -556,6 +556,9 @@ coreconfigitem('experimental', 'maxdeltachainspan',
 coreconfigitem('experimental', 'mergetempdirprefix',
     default=None,
 )
+coreconfigitem('experimental', 'mmapindexthreshold',
+    default=None,
+)
 coreconfigitem('experimental', 'narrow',
     default=False,
 )
@@ -986,10 +989,6 @@ coreconfigitem('progress', 'width',
 )
 coreconfigitem('push', 'pushvars.server',
     default=False,
-)
-coreconfigitem('storage', 'mmap-threshold',
-    default=None,
-    alias=[('experimental', 'mmapindexthreshold')],
 )
 coreconfigitem('rewrite', 'backup-bundle',
     default=True,
