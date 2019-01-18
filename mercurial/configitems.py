@@ -988,7 +988,7 @@ coreconfigitem('push', 'pushvars.server',
     default=False,
 )
 coreconfigitem('storage', 'mmap-threshold',
-    default='1MB',
+    default=None,
     alias=[('experimental', 'mmapindexthreshold')],
 )
 coreconfigitem('rewrite', 'backup-bundle',
