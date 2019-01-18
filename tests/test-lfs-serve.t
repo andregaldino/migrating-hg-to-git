@@ -51,7 +51,7 @@ make command server magic visible
   >     opts[b'manifest'] = False
   >     opts[b'dir'] = False
   >     rl = cmdutil.openrevlog(repo, b'debugprocessors', file_, opts)
-  >     for flag, proc in rl._flagprocessors.iteritems():
+  >     for flag, proc in rl._flagprocessors.items():
   >         ui.status(b"registered processor '%#x'\n" % (flag))
   > EOF
 
