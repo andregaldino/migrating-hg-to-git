@@ -103,6 +103,8 @@ Show debug commands if there are no other candidates
   debugmergestate
   debugnamecomplete
   debugobsolete
+  debugp1copies
+  debugp2copies
   debugpathcomplete
   debugpathcopies
   debugpeer
@@ -280,6 +282,8 @@ Show all commands + options
   debugmergestate: 
   debugnamecomplete: 
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template
+  debugp1copies: rev
+  debugp2copies: rev
   debugpathcomplete: full, normal, added, removed
   debugpathcopies: include, exclude
   debugpeer: 

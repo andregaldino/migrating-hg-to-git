@@ -1741,6 +1741,28 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             cmdutil.showmarker(fm, m, index=ind)
         fm.end()
 
+@command('debugp1copies',
+         [('r', 'rev', '', _('revision to debug'), _('REV'))],
+         _('[-r REV]'))
+def debugp1copies(ui, repo, **opts):
+    """dump copy information compared to p1"""
+
+    opts = pycompat.byteskwargs(opts)
+    ctx = scmutil.revsingle(repo, opts.get('rev'), default=None)
+    for dst, src in ctx.p1copies().items():
+        ui.write('%s -> %s\n' % (src, dst))
+
+@command('debugp2copies',
+         [('r', 'rev', '', _('revision to debug'), _('REV'))],
+         _('[-r REV]'))
+def debugp1copies(ui, repo, **opts):
+    """dump copy information compared to p2"""
+
+    opts = pycompat.byteskwargs(opts)
+    ctx = scmutil.revsingle(repo, opts.get('rev'), default=None)
+    for dst, src in ctx.p2copies().items():
+        ui.write('%s -> %s\n' % (src, dst))
+
 @command('debugpathcomplete',
          [('f', 'full', None, _('complete an entire path')),
           ('n', 'normal', None, _('show only normal files')),

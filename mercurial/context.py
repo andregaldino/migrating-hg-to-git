@@ -439,6 +439,29 @@ class changectx(basectx):
         return self._changeset.date
     def files(self):
         return self._changeset.files
+    @propertycache
+    def _copies(self):
+        p1copies = {}
+        p2copies = {}
+        p1 = self.p1()
+        p2 = self.p2()
+        narrowmatch = self._repo.narrowmatch()
+        for dst in self.files():
+            if not narrowmatch(dst) or dst not in self:
+                continue
+            copied = self[dst].renamed()
+            if not copied:
+                continue
+            src, srcnode = copied
+            if src in p1 and p1[src].filenode() == srcnode:
+                p1copies[dst] = src
+            elif src in p2 and p2[src].filenode() == srcnode:
+                p2copies[dst] = src
+        return p1copies, p2copies
+    def p1copies(self):
+        return self._copies[0]
+    def p2copies(self):
+        return self._copies[1]
     def description(self):
         return self._changeset.description
     def branch(self):
@@ -1158,7 +1181,26 @@ class committablectx(basectx):
     def files(self):
         return sorted(self._status.modified + self._status.added +
                       self._status.removed)
-
+    @propertycache
+    def _copies(self):
+        p1copies = {}
+        p2copies = {}
+        parents = self._repo.dirstate.parents()
+        p1manifest = self._repo[parents[0]].manifest()
+        p2manifest = self._repo[parents[1]].manifest()
+        narrowmatch = self._repo.narrowmatch()
+        for dst, src in self._repo.dirstate.copies().items():
+            if not narrowmatch(dst):
+                continue
+            if src in p1manifest:
+                p1copies[dst] = src
+            elif src in p2manifest:
+                p2copies[dst] = src
+        return p1copies, p2copies
+    def p1copies(self):
+        return self._copies[0]
+    def p2copies(self):
+        return self._copies[1]
     def modified(self):
         return self._status.modified
     def added(self):
@@ -1809,6 +1851,30 @@ class overlayworkingctx(committablectx):
     def removed(self):
         return [f for f in self._cache.keys() if
                 not self._cache[f]['exists'] and self._existsinparent(f)]
+
+    def p1copies(self):
+        copies = self._repo._wrappedctx.p1copies().copy()
+        narrowmatch = self._repo.narrowmatch()
+        for f in self._cache.keys():
+            if not narrowmatch(f):
+                continue
+            copies.pop(f, None) # delete if it exists
+            source = self._cache[f]['copied']
+            if source:
+                copies[f] = source
+        return copies
+
+    def p2copies(self):
+        copies = self._repo._wrappedctx.p2copies().copy()
+        narrowmatch = self._repo.narrowmatch()
+        for f in self._cache.keys():
+            if not narrowmatch(f):
+                continue
+            copies.pop(f, None) # delete if it exists
+            source = self._cache[f]['copied']
+            if source:
+                copies[f] = source
+        return copies
 
     def isinmemory(self):
         return True

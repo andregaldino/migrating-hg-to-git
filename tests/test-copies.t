@@ -17,12 +17,17 @@ Simple rename case
   $ echo x > x
   $ hg ci -Aqm 'add x'
   $ hg mv x y
+  $ hg debugp1copies
+  x -> y
+  $ hg debugp2copies
   $ hg ci -m 'rename x to y'
   $ hg l
   @  1 rename x to y
   |  x y
   o  0 add x
      x
+  $ hg debugp1copies -r 1
+  x -> y
   $ hg debugpathcopies 0 1
   x -> y
   $ hg debugpathcopies 1 0
@@ -41,12 +46,17 @@ Copy a file onto another file
   $ echo y > y
   $ hg ci -Aqm 'add x and y'
   $ hg cp -f x y
+  $ hg debugp1copies
+  x -> y
+  $ hg debugp2copies
   $ hg ci -m 'copy x onto y'
   $ hg l
   @  1 copy x onto y
   |  y
   o  0 add x and y
      x y
+  $ hg debugp1copies -r 1
+  x -> y
 Incorrectly doesn't show the rename
   $ hg debugpathcopies 0 1
 
@@ -63,6 +73,8 @@ produce a new filelog entry. The changeset's "files" entry should still list the
   |  x2
   o  0 add x and x2 with same content
      x x2
+  $ hg debugp1copies -r 1
+  x -> x2
 Incorrectly doesn't show the rename
   $ hg debugpathcopies 0 1
 
@@ -85,6 +97,8 @@ Copy a file, then delete destination, then copy again. This does not create a ne
   |  y
   o  0 add x
      x
+  $ hg debugp1copies -r 3
+  x -> y
   $ hg debugpathcopies 0 3
   x -> y
 
@@ -93,6 +107,9 @@ Rename file in a loop: x->y->z->x
   $ echo x > x
   $ hg ci -Aqm 'add x'
   $ hg mv x y
+  $ hg debugp1copies
+  x -> y
+  $ hg debugp2copies
   $ hg ci -m 'rename x to y'
   $ hg mv y z
   $ hg ci -m 'rename y to z'
@@ -129,6 +146,7 @@ end up reporting y as copied from x (if we don't unmark it as a copy when it's r
   |  x y
   o  0 add x
      x
+  $ hg debugp1copies -r 3
   $ hg debugpathcopies 0 3
 
 Copy x to z, then remove z, then copy x2 (same content as x) to z. With copy metadata in the
@@ -153,6 +171,8 @@ to the first commit that added the file. We should still report the copy as bein
   |  z
   o  0 add x and x2 with same content
      x x2
+  $ hg debugp1copies -r 3
+  x2 -> z
   $ hg debugpathcopies 0 3
   x2 -> z
 
@@ -225,6 +245,8 @@ Merge rename from other branch
   $ echo z > z
   $ hg ci -Aqm 'add z'
   $ hg merge -q 1
+  $ hg debugp1copies
+  $ hg debugp2copies
   $ hg ci -m 'merge rename from p2'
   $ hg l
   @    3 merge rename from p2
@@ -237,6 +259,8 @@ Merge rename from other branch
      x
 Perhaps we should indicate the rename here, but `hg status` is documented to be weird during
 merges, so...
+  $ hg debugp1copies -r 3
+  $ hg debugp2copies -r 3
   $ hg debugpathcopies 0 3
   x -> y
   $ hg debugpathcopies 1 2
@@ -254,10 +278,16 @@ Copy file from either side in a merge
   $ hg ci -Aqm 'add y'
   $ hg merge -q 0
   $ hg cp y z
+  $ hg debugp1copies
+  y -> z
+  $ hg debugp2copies
   $ hg ci -m 'copy file from p1 in merge'
   $ hg co -q 1
   $ hg merge -q 0
   $ hg cp x z
+  $ hg debugp1copies
+  $ hg debugp2copies
+  x -> z
   $ hg ci -qm 'copy file from p2 in merge'
   $ hg l
   @    3 copy file from p2 in merge
@@ -268,9 +298,15 @@ Copy file from either side in a merge
   |    y
   o  0 add x
      x
+  $ hg debugp1copies -r 2
+  y -> z
+  $ hg debugp2copies -r 2
   $ hg debugpathcopies 1 2
   y -> z
   $ hg debugpathcopies 0 2
+  $ hg debugp1copies -r 3
+  $ hg debugp2copies -r 3
+  x -> z
   $ hg debugpathcopies 1 3
   $ hg debugpathcopies 0 3
   x -> z
@@ -284,6 +320,9 @@ Copy file that exists on both sides of the merge, same content on both sides
   $ hg ci -Aqm 'add x on branch 2'
   $ hg merge -q 0
   $ hg cp x z
+  $ hg debugp1copies
+  x -> z
+  $ hg debugp2copies
   $ hg ci -qm 'merge'
   $ hg l
   @    2 merge
@@ -292,6 +331,9 @@ Copy file that exists on both sides of the merge, same content on both sides
   |    x
   o  0 add x on branch 1
      x
+  $ hg debugp1copies -r 2
+  x -> z
+  $ hg debugp2copies -r 2
 It's a little weird that it shows up on both sides
   $ hg debugpathcopies 1 2
   x -> z
@@ -312,6 +354,9 @@ Copy file that exists on both sides of the merge, different content
   $ hg resolve -m x
   (no more unresolved files)
   $ hg cp x z
+  $ hg debugp1copies
+  x -> z
+  $ hg debugp2copies
   $ hg ci -qm 'merge'
   $ hg l
   @    2 merge
@@ -320,6 +365,9 @@ Copy file that exists on both sides of the merge, different content
   |    x
   o  0 add x on branch 1
      x
+  $ hg debugp1copies -r 2
+  $ hg debugp2copies -r 2
+  x -> z
   $ hg debugpathcopies 1 2
   $ hg debugpathcopies 0 2
   x -> z
@@ -345,6 +393,8 @@ of the merge to the merge should include the copy from the other side.
   |/   y
   o  0 add x
      x
+  $ hg debugp1copies -r 3
+  $ hg debugp2copies -r 3
   $ hg debugpathcopies 2 3
   x -> y
   $ hg debugpathcopies 1 3
@@ -375,6 +425,9 @@ first side should not include the y->z rename since y didn't exist in the merge 
   |/   y
   o  0 add x
      x
+  $ hg debugp1copies -r 3
+  y -> z
+  $ hg debugp2copies -r 3
   $ hg debugpathcopies 2 3
   y -> z
   $ hg debugpathcopies 1 3

@@ -1011,6 +1011,10 @@ Test list of internal help commands
    debugoptADV   (no help text available)
    debugoptDEP   (no help text available)
    debugoptEXP   (no help text available)
+   debugp1copies
+                 dump copy information compared to p1
+   debugp2copies
+                 dump copy information compared to p2
    debugpathcomplete
                  complete part or all of a tracked path
    debugpathcopies
