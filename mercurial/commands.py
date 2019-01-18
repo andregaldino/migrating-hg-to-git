@@ -2940,6 +2940,7 @@ def grep(ui, repo, pattern, *pats, **opts):
     found = False
     follow = opts.get('follow')
 
+    getrenamed = scmutil.getrenamedfn(repo)
     def prep(ctx, fns):
         rev = ctx.rev()
         pctx = ctx.p1()
@@ -2953,13 +2954,10 @@ def grep(ui, repo, pattern, *pats, **opts):
                 fnode = ctx.filenode(fn)
             except error.LookupError:
                 continue
+
             copy = None
             if follow:
-                try:
-                    copied = flog.renamed(fnode)
-                except error.WdirUnsupported:
-                    copied = ctx[fn].renamed()
-                copy = copied and copied[0]
+                copy = getrenamed(fn, rev)
                 if copy:
                     copies.setdefault(rev, {})[fn] = copy
                     if fn in skip:
