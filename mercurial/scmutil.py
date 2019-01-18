@@ -1205,6 +1205,18 @@ def _markchanges(repo, unknown, deleted, renames):
             wctx.copy(old, new)
 
 def getrenamedfn(repo, endrev=None):
+    if repo.ui.config('experimental', 'copies.read-from') == 'compatibility':
+        def getrenamed(fn, rev):
+            ctx = repo[rev]
+            p1copies = ctx.p1copies()
+            if fn in p1copies:
+                return p1copies[fn]
+            p2copies = ctx.p2copies()
+            if fn in p2copies:
+                return p2copies[fn]
+            return None
+        return getrenamed
+
     rcache = {}
     if endrev is None:
         endrev = len(repo)
