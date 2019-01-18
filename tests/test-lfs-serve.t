@@ -110,14 +110,14 @@ non-lfs content, and the extension enabled.
   ... def diff(server):
   ...     readchannel(server)
   ...     # run an arbitrary command in the repo with the extension loaded
-  ...     runcommand(server, ['id', '-R', '../cmdservelfs'])
+  ...     runcommand(server, [b'id', b'-R', b'../cmdservelfs'])
   ...     # now run a command in a repo without the extension to ensure that
   ...     # files are added safely..
-  ...     runcommand(server, ['ci', '-Aqm', 'non-lfs'])
+  ...     runcommand(server, [b'ci', b'-Aqm', b'non-lfs'])
   ...     # .. and that scmutil.prefetchfiles() safely no-ops..
-  ...     runcommand(server, ['diff', '-r', '.~1'])
+  ...     runcommand(server, [b'diff', b'-r', b'.~1'])
   ...     # .. and that debugupgraderepo safely no-ops.
-  ...     runcommand(server, ['debugupgraderepo', '-q', '--run'])
+  ...     runcommand(server, [b'debugupgraderepo', b'-q', b'--run'])
   *** runcommand id -R ../cmdservelfs
   000000000000 tip
   *** runcommand ci -Aqm non-lfs
@@ -257,12 +257,12 @@ times.
   ... def addrequirement(server):
   ...     readchannel(server)
   ...     # change the repo in a way that adds the lfs requirement
-  ...     runcommand(server, ['pull', '-qu'])
+  ...     runcommand(server, [b'pull', b'-qu'])
   ...     # Now cause the requirement adding hook to fire again, without going
   ...     # through reposetup() again.
   ...     with open('file.txt', 'wb') as fp:
-  ...         fp.write('data')
-  ...     runcommand(server, ['ci', '-Aqm', 'non-lfs'])
+  ...         fp.write(b'data')
+  ...     runcommand(server, [b'ci', b'-Aqm', b'non-lfs'])
   *** runcommand pull -qu
   *** runcommand ci -Aqm non-lfs
 
@@ -365,16 +365,16 @@ lfs content, and the extension enabled.
   ...     readchannel(server)
   ...     print('')
   ...     print('# LFS required- both lfs and non-lfs revlogs have 0x2000 flag')
-  ...     runcommand(server, ['debugprocessors', 'lfs.bin', '-R',
-  ...                '../server'])
-  ...     runcommand(server, ['debugprocessors', 'nonlfs2.txt', '-R',
-  ...                '../server'])
-  ...     runcommand(server, ['config', 'extensions', '--cwd',
-  ...                '../server'])
+  ...     runcommand(server, [b'debugprocessors', b'lfs.bin', b'-R',
+  ...                b'../server'])
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs2.txt', b'-R',
+  ...                b'../server'])
+  ...     runcommand(server, [b'config', b'extensions', b'--cwd',
+  ...                b'../server'])
   ... 
   ...     print("\n# LFS not enabled- revlogs don't have 0x2000 flag")
-  ...     runcommand(server, ['debugprocessors', 'nonlfs3.txt'])
-  ...     runcommand(server, ['config', 'extensions'])
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs3.txt'])
+  ...     runcommand(server, [b'config', b'extensions'])
   
   # LFS required- both lfs and non-lfs revlogs have 0x2000 flag
   *** runcommand debugprocessors lfs.bin -R ../server
@@ -409,16 +409,16 @@ lfs content, and the extension enabled.
   ...     readchannel(server)
   ...     print('')
   ...     print('# LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag')
-  ...     runcommand(server, ['debugprocessors', 'lfs.bin', '-R',
-  ...                '../server'])
-  ...     runcommand(server, ['debugprocessors', 'nonlfs2.txt', '-R',
-  ...                '../server'])
-  ...     runcommand(server, ['config', 'extensions', '--cwd',
-  ...                '../server'])
+  ...     runcommand(server, [b'debugprocessors', b'lfs.bin', b'-R',
+  ...                b'../server'])
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs2.txt', b'-R',
+  ...                b'../server'])
+  ...     runcommand(server, [b'config', b'extensions', b'--cwd',
+  ...                b'../server'])
   ... 
   ...     print('\n# LFS enabled without requirement- revlogs have 0x2000 flag')
-  ...     runcommand(server, ['debugprocessors', 'nonlfs3.txt'])
-  ...     runcommand(server, ['config', 'extensions'])
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs3.txt'])
+  ...     runcommand(server, [b'config', b'extensions'])
   ... 
   ...     print("\n# LFS disabled locally- revlogs don't have 0x2000 flag")
   ...     runcommand(server, ['debugprocessors', 'nonlfs.txt', '-R',
