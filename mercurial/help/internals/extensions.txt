@@ -28,11 +28,16 @@ registered to the ``cmdtable`` by ``@command`` decorator.
 
 Example using ``@command`` decorator (requires Mercurial 1.9)::
 
-    from mercurial import cmdutil
     from mercurial.i18n import _
 
     cmdtable = {}
-    command = cmdutil.command(cmdtable)
+    try:
+        from mercurial import registrar
+        command = registrar.command(cmdtable)
+    except (AttributeError, ImportError):
+        # Fallback to hg < 4.3 support
+        from mercurial import cmdutil
+        command = cmdutil.command(cmdtable)
 
     @command('print-parents',
         [('s', 'short', None, _('print short form')),
