@@ -398,3 +398,43 @@ Add and expect uncommit to fail on both merge working dir and merge changeset
   |/
   o  0:ea4e33293d4d274a2ba73150733c2612231f398c a 1
   
+
+Rename a->b, then remove b in working copy. Result should remove a.
+
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'move a to b'
+  $ hg rm b
+  $ hg uncommit --config experimental.uncommitondirtywdir=True
+  $ hg st --copies
+  R a
+  $ hg revert a
+
+Rename a->b, then rename b->c in working copy. Result should rename a->c.
+
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'move a to b'
+  $ hg mv b c
+  $ hg uncommit --config experimental.uncommitondirtywdir=True
+  $ hg st --copies
+  A c
+    a
+  R a
+  $ hg revert a
+  $ hg forget c
+  $ rm c
+
+Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b2 and a->c.
+
+  $ hg co -q 0
+  $ hg cp a b1
+  $ hg cp a b2
+  $ hg ci -qm 'move a to b1 and b2'
+  $ hg mv b1 c
+  $ hg uncommit --config experimental.uncommitondirtywdir=True
+  $ hg st --copies
+  A b2
+    a
+  A c
+    a

@@ -372,3 +372,40 @@ Retained copies in working directoy
   rename to wat
   $ hg revert -qa
   $ rm foobar wat
+
+Rename a->b, then amend b->c. After unamend, should look like b->c.
+
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'move to a b'
+  $ hg mv b c
+  $ hg amend
+  $ hg unamend
+  $ hg st --copies --change .
+  A b
+    a
+  R a
+BROKEN: should indicate that b was renamed to c
+  $ hg st --copies
+  A c
+  R b
+  $ hg revert -qa
+  $ rm c
+
+Rename a->b, then amend b->c, and working copy change c->d. After unamend, should look like b->d
+
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'move to a b'
+  $ hg mv b c
+  $ hg amend
+  $ hg mv c d
+  $ hg unamend
+  $ hg st --copies --change .
+  A b
+    a
+  R a
+BROKEN: should indicate that b was renamed to d
+  $ hg st --copies
+  A d
+  R b
