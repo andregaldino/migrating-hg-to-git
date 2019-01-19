@@ -25,7 +25,7 @@ from mercurial import (
     cmdutil,
     commands,
     context,
-    copies,
+    copies as copiesmod,
     error,
     node,
     obsutil,
@@ -70,7 +70,7 @@ def _commitfiltered(repo, ctx, match, keepcommit):
         return ctx.parents()[0].node()
 
     # Filter copies
-    copied = copies.pathcopies(base, ctx)
+    copied = copiesmod.pathcopies(base, ctx)
     copied = dict((dst, src) for dst, src in copied.iteritems()
                   if dst in files)
     def filectxfn(repo, memctx, path, contentctx=ctx, redirect=()):
