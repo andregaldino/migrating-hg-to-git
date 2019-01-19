@@ -166,7 +166,7 @@ Dirstate should be left alone when upgrading from version of hg that didn't supp
   R d7/f
 Make it look like a repo from before narrow+share was supported
   $ rm .hg/narrowspec.dirstate
-  $ hg st
+  $ hg ci -Am test
   abort: working copy's narrowspec is stale
   (run 'hg tracked --update-working-copy')
   [255]

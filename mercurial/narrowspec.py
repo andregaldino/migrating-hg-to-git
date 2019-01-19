@@ -190,12 +190,14 @@ def savewcbackup(repo, backupname):
 def restorewcbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    util.rename(repo.vfs.join(backupname), repo.vfs.join(DIRSTATE_FILENAME))
+    # It may not exist in old repos
+    if repo.vfs.exists(backupname):
+        util.rename(repo.vfs.join(backupname), repo.vfs.join(DIRSTATE_FILENAME))
 
 def clearwcbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    repo.vfs.unlink(backupname)
+    repo.vfs.tryunlink(backupname)
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     r""" Restricts the patterns according to repo settings,
