@@ -313,6 +313,14 @@ error message if the extension produces errors::
 
     buglink = 'https://bitbucket.org/USER/REPO/issues'
 
+If an extension requires a minimum version of Mercurial, it can be declared
+with the ``minimumhgversion`` variable::
+
+    minimumhgversion = '4.6'
+
+Older clients will print a warning that the extension requires a new version,
+instead of attempting to load it.
+
 Wrap up: what belongs where?
 ============================
 
