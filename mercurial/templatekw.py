@@ -81,8 +81,15 @@ def getlatesttags(context, mapping, pattern=None):
                     pdate, pdist, ptag = max(ptags)
                 else:
                     def key(x):
-                        changessincetag = len(repo.revs('only(%d, %s)',
-                                                        ctx.rev(), x[2][0]))
+                        tag = x[2][0]
+                        if ctx.rev() is None:
+                            # only() doesn't support wdir
+                            prevs = [c.rev() for c in ctx.parents()]
+                            changes = repo.revs('only(%ld, %s)', prevs, tag)
+                            changessincetag = len(changes) + 1
+                        else:
+                            changes = repo.revs('only(%d, %s)', ctx.rev(), tag)
+                            changessincetag = len(changes)
                         # Smallest number of changes since tag wins. Date is
                         # used as tiebreaker.
                         return [-changessincetag, x[0]]
