@@ -1056,6 +1056,31 @@ Merged tag overrides:
   o  0: null+1,1
   
 
+Tags of working-directory parents (issue6055):
+
+  $ hg update -q 3
+  $ echo a > head3
+  $ hg ci -qAm h3a
+  $ hg merge -q 2
+  $ hg log -Gr'::wdir()' -T "{rev}: {latesttag % '{tag}+{distance},{changes} '}\n"
+  hg: parse error: invalid argument for revspec
+  [255]
+
+  $ hg ci -m merge
+  $ hg log -Gr'::.' -T "{rev}: {latesttag % '{tag}+{distance},{changes} '}\n"
+  @    13: at3+2,3 t3+2,3
+  |\
+  | o  12: at3+1,1 t3+1,1
+  | |
+  | o  3: at3+0,0 t3+0,0
+  | |
+  o |  2: t2+0,0
+  |/
+  o  1: t1+0,0
+  |
+  o  0: null+1,1
+  
+
   $ cd ..
 
 Set up repository containing template fragments in commit metadata:
