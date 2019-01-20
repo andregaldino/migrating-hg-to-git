@@ -896,6 +896,8 @@ class revlog(object):
             common = [nullrev]
 
         if rustext is not None:
+            # TODO: WdirUnsupported should be raised instead of GraphError
+            # if common includes wdirrev
             return rustext.ancestor.MissingAncestors(self.index, common)
         return ancestor.incrementalmissingancestors(self.parentrevs, common)
 
