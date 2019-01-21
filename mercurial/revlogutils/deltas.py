@@ -960,6 +960,12 @@ class deltacomputer(object):
                 delta = revinfo.cachedelta[1]
         if delta is None:
             delta = self._builddeltadiff(base, revinfo, fh)
+        # snapshotdept need to be neither None nor 0 level snapshot
+        if revlog.upperboundcomp is not None and snapshotdepth:
+            lowestrealisticdeltalen = len(delta) // revlog.upperboundcomp
+            snapshotlimit = revinfo.textlen >> snapshotdepth
+            if snapshotlimit < lowestrealisticdeltalen:
+                return None
         header, data = revlog.compress(delta)
         deltalen = len(header) + len(data)
         offset = revlog.end(len(revlog) - 1)
