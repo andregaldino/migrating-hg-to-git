@@ -385,9 +385,9 @@ Rename a->b, then amend b->c. After unamend, should look like b->c.
   A b
     a
   R a
-BROKEN: should indicate that b was renamed to c
   $ hg st --copies
   A c
+    b
   R b
   $ hg revert -qa
   $ rm c
@@ -405,7 +405,7 @@ Rename a->b, then amend b->c, and working copy change c->d. After unamend, shoul
   A b
     a
   R a
-BROKEN: should indicate that b was renamed to d
   $ hg st --copies
   A d
+    b
   R b
