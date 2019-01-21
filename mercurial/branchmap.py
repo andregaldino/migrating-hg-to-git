@@ -63,7 +63,6 @@ def updatecache(repo):
     revs.extend(cl.revs(start=bcache.tiprev + 1))
     if revs:
         bcache.update(repo, revs)
-        bcache.write(repo)
 
     assert bcache.validfor(repo), filtername
     repo._branchcaches[repo.filtername] = bcache
@@ -242,8 +241,9 @@ class branchcache(dict):
 
     def copy(self):
         """return an deep copy of the branchcache object"""
-        return branchcache(self, self.tipnode, self.tiprev, self.filteredhash,
-                           self._closednodes)
+        return type(self)(
+            self, self.tipnode, self.tiprev, self.filteredhash,
+            self._closednodes)
 
     def write(self, repo):
         try:
@@ -331,6 +331,15 @@ class branchcache(dict):
         duration = util.timer() - starttime
         repo.ui.log('branchcache', 'updated %s branch cache in %.4f seconds\n',
                     repo.filtername, duration)
+
+        self.write(repo)
+
+
+class remotebranchcache(branchcache):
+    """Branchmap info for a remote connection, should not write locally"""
+    def write(self, repo):
+        pass
+
 
 # Revision branch info cache
 

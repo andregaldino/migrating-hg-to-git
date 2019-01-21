@@ -238,7 +238,7 @@ def _headssummary(pushop):
 
     # D. Update newmap with outgoing changes.
     # This will possibly add new heads and remove existing ones.
-    newmap = branchmap.branchcache((branch, heads[1])
+    newmap = branchmap.remotebranchcache((branch, heads[1])
                                  for branch, heads in headssum.iteritems()
                                  if heads[0] is not None)
     newmap.update(repo, (ctx.rev() for ctx in missingctx))
