@@ -44,22 +44,33 @@ subsettable = {None: 'visible',
                'immutable': 'base'}
 
 def updatecache(repo):
+    """Update the cache for the given filtered view on a repository"""
+    # This can trigger updates for the caches for subsets of the filtered
+    # view, e.g. when there is no cache for this filtered view or the cache
+    # is stale.
+
     cl = repo.changelog
     filtername = repo.filtername
     bcache = repo._branchcaches.get(filtername)
+    if bcache is None or not bcache.validfor(repo):
+        # cache object missing or cache object stale? Read from disk
+        bcache = branchcache.fromfile(repo)
 
     revs = []
-    if bcache is None or not bcache.validfor(repo):
-        bcache = branchcache.fromfile(repo)
-        if bcache is None:
-            subsetname = subsettable.get(filtername)
-            if subsetname is None:
-                bcache = branchcache()
-            else:
-                subset = repo.filtered(subsetname)
-                bcache = subset.branchmap().copy()
-                extrarevs = subset.changelog.filteredrevs - cl.filteredrevs
-                revs.extend(r for  r in extrarevs if r <= bcache.tiprev)
+    if bcache is None:
+        # no (fresh) cache available anymore, perhaps we can re-use
+        # the cache for a subset, then extend that to add info on missing
+        # revisions.
+        subsetname = subsettable.get(filtername)
+        if subsetname is not None:
+            subset = repo.filtered(subsetname)
+            bcache = subset.branchmap().copy()
+            extrarevs = subset.changelog.filteredrevs - cl.filteredrevs
+            revs.extend(r for r in extrarevs if r <= bcache.tiprev)
+        else:
+            # nothing to fall back on, start empty.
+            bcache = branchcache()
+
     revs.extend(cl.revs(start=bcache.tiprev + 1))
     if revs:
         bcache.update(repo, revs)
