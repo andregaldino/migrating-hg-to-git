@@ -396,6 +396,11 @@ class revlog(object):
             newversionflags = REVLOGV1 | FLAG_INLINE_DATA
             if 'generaldelta' in opts:
                 newversionflags |= FLAG_GENERALDELTA
+        elif getattr(self.opener, 'options', None) is not None:
+            # If options provided but no 'revlog*' found, the repository
+            # would have no 'requires' file in it, which means we have to
+            # stick to the old format.
+            newversionflags = REVLOGV0
         else:
             newversionflags = REVLOG_DEFAULT_VERSION
 
