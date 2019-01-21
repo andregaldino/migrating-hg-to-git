@@ -2409,10 +2409,15 @@ def perfbranchmap(ui, repo, *filternames, **opts):
         # add unfiltered
         allfilters.append(None)
 
-    branchcacheread = safeattrsetter(branchmap, b'read')
+    if util.safehasattr(branchmap.branchcache, 'fromfile'):
+        branchcacheread = safeattrsetter(branchmap.branchcache, b'fromfile')
+        branchcacheread.set(classmethod(lambda *args: None))
+    else:
+        # older versions
+        branchcacheread = safeattrsetter(branchmap, b'read')
+        branchcacheread.set(lambda *args: None)
     branchcachewrite = safeattrsetter(branchmap.branchcache, b'write')
-    branchcacheread.set(lambda repo: None)
-    branchcachewrite.set(lambda bc, repo: None)
+    branchcachewrite.set(lambda *args: None)
     try:
         for name in allfilters:
             printname = name
@@ -2556,9 +2561,15 @@ def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
 
     repo.branchmap() # make sure we have a relevant, up to date branchmap
 
+    try:
+        fromfile = branchmap.branchcache.fromfile
+    except AttributeError:
+        # older versions
+        fromfile = branchmap.read
+
     currentfilter = filter
     # try once without timer, the filter may not be cached
-    while branchmap.read(repo) is None:
+    while fromfile(repo) is None:
         currentfilter = subsettable.get(currentfilter)
         if currentfilter is None:
             raise error.Abort(b'No branchmap cached for %s repo'
@@ -2569,7 +2580,7 @@ def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
         if clearrevlogs:
             clearchangelog(repo)
     def bench():
-        branchmap.read(repo)
+        fromfile(repo)
     timer(bench, setup=setup)
     fm.end()
 

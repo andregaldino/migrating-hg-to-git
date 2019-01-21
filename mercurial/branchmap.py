@@ -30,63 +30,6 @@ calcsize = struct.calcsize
 pack_into = struct.pack_into
 unpack_from = struct.unpack_from
 
-def _filename(repo):
-    """name of a branchcache file for a given repo or repoview"""
-    filename = "branch2"
-    if repo.filtername:
-        filename = '%s-%s' % (filename, repo.filtername)
-    return filename
-
-def read(repo):
-    f = None
-    try:
-        f = repo.cachevfs(_filename(repo))
-        lineiter = iter(f)
-        cachekey = next(lineiter).rstrip('\n').split(" ", 2)
-        last, lrev = cachekey[:2]
-        last, lrev = bin(last), int(lrev)
-        filteredhash = None
-        if len(cachekey) > 2:
-            filteredhash = bin(cachekey[2])
-        bcache = branchcache(tipnode=last, tiprev=lrev,
-                              filteredhash=filteredhash)
-        if not bcache.validfor(repo):
-            # invalidate the cache
-            raise ValueError(r'tip differs')
-        cl = repo.changelog
-        for l in lineiter:
-            l = l.rstrip('\n')
-            if not l:
-                continue
-            node, state, label = l.split(" ", 2)
-            if state not in 'oc':
-                raise ValueError(r'invalid branch state')
-            label = encoding.tolocal(label.strip())
-            node = bin(node)
-            if not cl.hasnode(node):
-                raise ValueError(
-                    r'node %s does not exist' % pycompat.sysstr(hex(node)))
-            bcache.setdefault(label, []).append(node)
-            if state == 'c':
-                bcache._closednodes.add(node)
-
-    except (IOError, OSError):
-        return None
-
-    except Exception as inst:
-        if repo.ui.debugflag:
-            msg = 'invalid branchheads cache'
-            if repo.filtername is not None:
-                msg += ' (%s)' % repo.filtername
-            msg += ': %s\n'
-            repo.ui.debug(msg % pycompat.bytestr(inst))
-        bcache = None
-
-    finally:
-        if f:
-            f.close()
-
-    return bcache
 
 ### Nearest subset relation
 # Nearest subset of filter X is a filter Y so that:
@@ -107,7 +50,7 @@ def updatecache(repo):
 
     revs = []
     if bcache is None or not bcache.validfor(repo):
-        bcache = read(repo)
+        bcache = branchcache.fromfile(repo)
         if bcache is None:
             subsetname = subsettable.get(filtername)
             if subsetname is None:
@@ -181,6 +124,64 @@ class branchcache(dict):
     This field can be used to avoid changelog reads when determining if a
     branch head closes a branch or not.
     """
+    @classmethod
+    def fromfile(cls, repo):
+        f = None
+        try:
+            f = repo.cachevfs(cls._filename(repo))
+            lineiter = iter(f)
+            cachekey = next(lineiter).rstrip('\n').split(" ", 2)
+            last, lrev = cachekey[:2]
+            last, lrev = bin(last), int(lrev)
+            filteredhash = None
+            if len(cachekey) > 2:
+                filteredhash = bin(cachekey[2])
+            bcache = cls(tipnode=last, tiprev=lrev, filteredhash=filteredhash)
+            if not bcache.validfor(repo):
+                # invalidate the cache
+                raise ValueError(r'tip differs')
+            cl = repo.changelog
+            for line in lineiter:
+                line = line.rstrip('\n')
+                if not line:
+                    continue
+                node, state, label = line.split(" ", 2)
+                if state not in 'oc':
+                    raise ValueError(r'invalid branch state')
+                label = encoding.tolocal(label.strip())
+                node = bin(node)
+                if not cl.hasnode(node):
+                    raise ValueError(
+                        r'node %s does not exist' % pycompat.sysstr(hex(node)))
+                bcache.setdefault(label, []).append(node)
+                if state == 'c':
+                    bcache._closednodes.add(node)
+
+        except (IOError, OSError):
+            return None
+
+        except Exception as inst:
+            if repo.ui.debugflag:
+                msg = 'invalid branchheads cache'
+                if repo.filtername is not None:
+                    msg += ' (%s)' % repo.filtername
+                msg += ': %s\n'
+                repo.ui.debug(msg % pycompat.bytestr(inst))
+            bcache = None
+
+        finally:
+            if f:
+                f.close()
+
+        return bcache
+
+    @staticmethod
+    def _filename(repo):
+        """name of a branchcache file for a given repo or repoview"""
+        filename = "branch2"
+        if repo.filtername:
+            filename = '%s-%s' % (filename, repo.filtername)
+        return filename
 
     def __init__(self, entries=(), tipnode=nullid, tiprev=nullrev,
                  filteredhash=None, closednodes=None):
@@ -246,7 +247,7 @@ class branchcache(dict):
 
     def write(self, repo):
         try:
-            f = repo.cachevfs(_filename(repo), "w", atomictemp=True)
+            f = repo.cachevfs(self._filename(repo), "w", atomictemp=True)
             cachekey = [hex(self.tipnode), '%d' % self.tiprev]
             if self.filteredhash is not None:
                 cachekey.append(hex(self.filteredhash))
