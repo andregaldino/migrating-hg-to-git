@@ -1025,8 +1025,9 @@ class deltacomputer(object):
                 nominateddeltas.append(deltainfo)
             for candidaterev in candidaterevs:
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
-                if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
-                    nominateddeltas.append(candidatedelta)
+                if candidatedelta is not None:
+                    if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
+                        nominateddeltas.append(candidatedelta)
             if nominateddeltas:
                 deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
             if deltainfo is not None:
