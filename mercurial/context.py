@@ -2178,8 +2178,6 @@ def memfilefromctx(ctx):
     """
     def getfilectx(repo, memctx, path):
         fctx = ctx[path]
-        # this is weird but apparently we only keep track of one parent
-        # (why not only store that instead of a tuple?)
         copied = fctx.renamed()
         if copied:
             copied = copied[0]
