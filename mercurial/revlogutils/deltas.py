@@ -966,6 +966,8 @@ class deltacomputer(object):
             snapshotlimit = revinfo.textlen >> snapshotdepth
             if snapshotlimit < lowestrealisticdeltalen:
                 return None
+            if revlog.length(base) < lowestrealisticdeltalen:
+                return None
         header, data = revlog.compress(delta)
         deltalen = len(header) + len(data)
         offset = revlog.end(len(revlog) - 1)
