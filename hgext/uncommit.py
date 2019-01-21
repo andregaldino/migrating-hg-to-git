@@ -98,6 +98,7 @@ def _fixdirstate(repo, oldctx, newctx, match=None):
     newctx which can be result of either unamend or uncommit.
     """
     ds = repo.dirstate
+    ds.setparents(newctx.node(), node.nullid)
     copies = dict(ds.copies())
     s = newctx.status(oldctx, match=match)
     for f in s.modified:
@@ -176,7 +177,6 @@ def uncommit(ui, repo, *pats, **opts):
                 mapping[old.node()] = ()
 
             with repo.dirstate.parentchange():
-                repo.dirstate.setparents(newid, node.nullid)
                 _fixdirstate(repo, old, repo[newid], match)
 
             scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
@@ -239,7 +239,6 @@ def unamend(ui, repo, **opts):
         dirstate = repo.dirstate
 
         with dirstate.parentchange():
-            dirstate.setparents(newprednode, node.nullid)
             _fixdirstate(repo, curctx, newpredctx)
 
         mapping = {curctx.node(): (newprednode,)}
