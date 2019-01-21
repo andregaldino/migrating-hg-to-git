@@ -179,12 +179,12 @@ def uncommit(ui, repo, *pats, **opts):
                 # Fully removed the old commit
                 mapping[old.node()] = ()
 
-            scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
-
             with repo.dirstate.parentchange():
                 repo.dirstate.setparents(newid, node.nullid)
                 s = old.p1().status(old, match=match)
                 _fixdirstate(repo, old, repo[newid], s)
+
+            scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
 
 def predecessormarkers(ctx):
     """yields the obsolete markers marking the given changeset as a successor"""
