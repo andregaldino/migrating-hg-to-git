@@ -2376,13 +2376,18 @@ def perfbranchmap(ui, repo, *filternames, **opts):
             view = repo
         else:
             view = repo.filtered(filtername)
+        if util.safehasattr(view._branchcaches, '_per_filter'):
+            filtered = view._branchcaches._per_filter
+        else:
+            # older versions
+            filtered = view._branchcaches
         def d():
             if clear_revbranch:
                 repo.revbranchcache()._clear()
             if full:
                 view._branchcaches.clear()
             else:
-                view._branchcaches.pop(filtername, None)
+                filtered.pop(filtername, None)
             view.branchmap()
         return d
     # add filter in smaller subset to bigger subset

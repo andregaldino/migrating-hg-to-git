@@ -13,7 +13,6 @@ import struct
 
 from .i18n import _
 from . import (
-    branchmap,
     cacheutil,
     error,
     narrowspec,
@@ -174,7 +173,7 @@ def maybeperformlegacystreamclone(pullop):
         repo._writerequirements()
 
         if rbranchmap:
-            branchmap.replacecache(repo, rbranchmap)
+            repo._branchcaches.replace(repo, rbranchmap)
 
         repo.invalidate()
 

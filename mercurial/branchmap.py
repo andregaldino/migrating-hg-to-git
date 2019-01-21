@@ -43,75 +43,89 @@ subsettable = {None: 'visible',
                'served': 'immutable',
                'immutable': 'base'}
 
-def updatecache(repo):
-    """Update the cache for the given filtered view on a repository"""
-    # This can trigger updates for the caches for subsets of the filtered
-    # view, e.g. when there is no cache for this filtered view or the cache
-    # is stale.
 
-    cl = repo.changelog
-    filtername = repo.filtername
-    bcache = repo._branchcaches.get(filtername)
-    if bcache is None or not bcache.validfor(repo):
-        # cache object missing or cache object stale? Read from disk
-        bcache = branchcache.fromfile(repo)
+class BranchMapCache(object):
+    """Cache mapping"""
+    def __init__(self):
+        self._per_filter = {}
 
-    revs = []
-    if bcache is None:
-        # no (fresh) cache available anymore, perhaps we can re-use
-        # the cache for a subset, then extend that to add info on missing
-        # revisions.
-        subsetname = subsettable.get(filtername)
-        if subsetname is not None:
-            subset = repo.filtered(subsetname)
-            bcache = subset.branchmap().copy()
-            extrarevs = subset.changelog.filteredrevs - cl.filteredrevs
-            revs.extend(r for r in extrarevs if r <= bcache.tiprev)
-        else:
-            # nothing to fall back on, start empty.
-            bcache = branchcache()
+    def __getitem__(self, repo):
+        self.updatecache(repo)
+        return self._per_filter[repo.filtername]
 
-    revs.extend(cl.revs(start=bcache.tiprev + 1))
-    if revs:
-        bcache.update(repo, revs)
+    def updatecache(self, repo):
+        """Update the cache for the given filtered view on a repository"""
+        # This can trigger updates for the caches for subsets of the filtered
+        # view, e.g. when there is no cache for this filtered view or the cache
+        # is stale.
 
-    assert bcache.validfor(repo), filtername
-    repo._branchcaches[repo.filtername] = bcache
+        cl = repo.changelog
+        filtername = repo.filtername
+        bcache = self._per_filter.get(filtername)
+        if bcache is None or not bcache.validfor(repo):
+            # cache object missing or cache object stale? Read from disk
+            bcache = branchcache.fromfile(repo)
 
-def replacecache(repo, bm):
-    """Replace the branchmap cache for a repo with a branch mapping.
+        revs = []
+        if bcache is None:
+            # no (fresh) cache available anymore, perhaps we can re-use
+            # the cache for a subset, then extend that to add info on missing
+            # revisions.
+            subsetname = subsettable.get(filtername)
+            if subsetname is not None:
+                subset = repo.filtered(subsetname)
+                bcache = self[subset].copy()
+                extrarevs = subset.changelog.filteredrevs - cl.filteredrevs
+                revs.extend(r for r in extrarevs if r <= bcache.tiprev)
+            else:
+                # nothing to fall back on, start empty.
+                bcache = branchcache()
 
-    This is likely only called during clone with a branch map from a remote.
-    """
-    cl = repo.changelog
-    clrev = cl.rev
-    clbranchinfo = cl.branchinfo
-    rbheads = []
-    closed = []
-    for bheads in bm.itervalues():
-        rbheads.extend(bheads)
-        for h in bheads:
-            r = clrev(h)
-            b, c = clbranchinfo(r)
-            if c:
-                closed.append(h)
+        revs.extend(cl.revs(start=bcache.tiprev + 1))
+        if revs:
+            bcache.update(repo, revs)
 
-    if rbheads:
-        rtiprev = max((int(clrev(node))
-                for node in rbheads))
-        cache = branchcache(bm,
-                            repo[rtiprev].node(),
-                            rtiprev,
-                            closednodes=closed)
+        assert bcache.validfor(repo), filtername
+        self._per_filter[repo.filtername] = bcache
 
-        # Try to stick it as low as possible
-        # filter above served are unlikely to be fetch from a clone
-        for candidate in ('base', 'immutable', 'served'):
-            rview = repo.filtered(candidate)
-            if cache.validfor(rview):
-                repo._branchcaches[candidate] = cache
-                cache.write(rview)
-                break
+    def replace(self, repo, remotebranchmap):
+        """Replace the branchmap cache for a repo with a branch mapping.
+
+        This is likely only called during clone with a branch map from a
+        remote.
+
+        """
+        cl = repo.changelog
+        clrev = cl.rev
+        clbranchinfo = cl.branchinfo
+        rbheads = []
+        closed = []
+        for bheads in remotebranchmap.itervalues():
+            rbheads += bheads
+            for h in bheads:
+                r = clrev(h)
+                b, c = clbranchinfo(r)
+                if c:
+                    closed.append(h)
+
+        if rbheads:
+            rtiprev = max((int(clrev(node)) for node in rbheads))
+            cache = branchcache(
+                remotebranchmap, repo[rtiprev].node(), rtiprev,
+                closednodes=closed)
+
+            # Try to stick it as low as possible
+            # filter above served are unlikely to be fetch from a clone
+            for candidate in ('base', 'immutable', 'served'):
+                rview = repo.filtered(candidate)
+                if cache.validfor(rview):
+                    self._per_filter[candidate] = cache
+                    cache.write(rview)
+                    return
+
+    def clear(self):
+        self._per_filter.clear()
+
 
 class branchcache(dict):
     """A dict like object that hold branches heads cache.

@@ -13,6 +13,7 @@ import errno
 
 from .i18n import _
 from . import (
+    branchmap,
     changelog,
     error,
     localrepo,
@@ -193,7 +194,7 @@ class statichttprepository(localrepo.localrepository,
         self.changelog = changelog.changelog(self.svfs)
         self._tags = None
         self.nodetagscache = None
-        self._branchcaches = {}
+        self._branchcaches = branchmap.BranchMapCache()
         self._revbranchcache = None
         self.encodepats = None
         self.decodepats = None

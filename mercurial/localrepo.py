@@ -992,7 +992,7 @@ class localrepository(object):
 
         self._dirstatevalidatewarned = False
 
-        self._branchcaches = {}
+        self._branchcaches = branchmap.BranchMapCache()
         self._revbranchcache = None
         self._filterpats = {}
         self._datafilters = {}
@@ -1520,8 +1520,7 @@ class localrepository(object):
     def branchmap(self):
         '''returns a dictionary {branch: [branchheads]} with branchheads
         ordered by increasing revision number'''
-        branchmap.updatecache(self)
-        return self._branchcaches[self.filtername]
+        return self._branchcaches[self]
 
     @unfilteredmethod
     def revbranchcache(self):
@@ -2073,9 +2072,9 @@ class localrepository(object):
             return
 
         if tr is None or tr.changes['origrepolen'] < len(self):
-            # updating the unfiltered branchmap should refresh all the others,
+            # accessing the 'ser ved' branchmap should refresh all the others,
             self.ui.debug('updating the branch cache\n')
-            branchmap.updatecache(self.filtered('served'))
+            self.filtered('served').branchmap()
 
         if full:
             rbc = self.revbranchcache()
@@ -2093,7 +2092,7 @@ class localrepository(object):
             # can't use delattr on proxy
             del self.__dict__[r'_tagscache']
 
-        self.unfiltered()._branchcaches.clear()
+        self._branchcaches.clear()
         self.invalidatevolatilesets()
         self._sparsesignaturecache.clear()
 
