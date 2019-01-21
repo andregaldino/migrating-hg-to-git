@@ -48,9 +48,9 @@ def read(repo):
         filteredhash = None
         if len(cachekey) > 2:
             filteredhash = bin(cachekey[2])
-        partial = branchcache(tipnode=last, tiprev=lrev,
+        bcache = branchcache(tipnode=last, tiprev=lrev,
                               filteredhash=filteredhash)
-        if not partial.validfor(repo):
+        if not bcache.validfor(repo):
             # invalidate the cache
             raise ValueError(r'tip differs')
         cl = repo.changelog
@@ -66,9 +66,9 @@ def read(repo):
             if not cl.hasnode(node):
                 raise ValueError(
                     r'node %s does not exist' % pycompat.sysstr(hex(node)))
-            partial.setdefault(label, []).append(node)
+            bcache.setdefault(label, []).append(node)
             if state == 'c':
-                partial._closednodes.add(node)
+                bcache._closednodes.add(node)
 
     except (IOError, OSError):
         return None
@@ -80,13 +80,13 @@ def read(repo):
                 msg += ' (%s)' % repo.filtername
             msg += ': %s\n'
             repo.ui.debug(msg % pycompat.bytestr(inst))
-        partial = None
+        bcache = None
 
     finally:
         if f:
             f.close()
 
-    return partial
+    return bcache
 
 ### Nearest subset relation
 # Nearest subset of filter X is a filter Y so that:
@@ -103,27 +103,27 @@ subsettable = {None: 'visible',
 def updatecache(repo):
     cl = repo.changelog
     filtername = repo.filtername
-    partial = repo._branchcaches.get(filtername)
+    bcache = repo._branchcaches.get(filtername)
 
     revs = []
-    if partial is None or not partial.validfor(repo):
-        partial = read(repo)
-        if partial is None:
+    if bcache is None or not bcache.validfor(repo):
+        bcache = read(repo)
+        if bcache is None:
             subsetname = subsettable.get(filtername)
             if subsetname is None:
-                partial = branchcache()
+                bcache = branchcache()
             else:
                 subset = repo.filtered(subsetname)
-                partial = subset.branchmap().copy()
+                bcache = subset.branchmap().copy()
                 extrarevs = subset.changelog.filteredrevs - cl.filteredrevs
-                revs.extend(r for  r in extrarevs if r <= partial.tiprev)
-    revs.extend(cl.revs(start=partial.tiprev + 1))
+                revs.extend(r for  r in extrarevs if r <= bcache.tiprev)
+    revs.extend(cl.revs(start=bcache.tiprev + 1))
     if revs:
-        partial.update(repo, revs)
-        partial.write(repo)
+        bcache.update(repo, revs)
+        bcache.write(repo)
 
-    assert partial.validfor(repo), filtername
-    repo._branchcaches[repo.filtername] = partial
+    assert bcache.validfor(repo), filtername
+    repo._branchcaches[repo.filtername] = bcache
 
 def replacecache(repo, bm):
     """Replace the branchmap cache for a repo with a branch mapping.
