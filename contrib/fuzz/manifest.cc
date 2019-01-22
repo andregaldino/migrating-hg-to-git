@@ -39,6 +39,11 @@ except Exception as e:
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
+	// Don't allow fuzzer inputs larger than 100k, since we'll just bog
+	// down and not accomplish much.
+	if (Size > 100000) {
+		return 0;
+	}
 	PyObject *mtext =
 	    PyBytes_FromStringAndSize((const char *)Data, (Py_ssize_t)Size);
 	PyObject *locals = PyDict_New();
