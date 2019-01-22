@@ -758,7 +758,8 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if 0 <= chainspan:
         options[b'maxdeltachainspan'] = chainspan
 
-    mmapindexthreshold = ui.configbytes(b'storage', b'mmap-threshold')
+    mmapindexthreshold = ui.configbytes(b'experimental',
+                                        b'mmapindexthreshold')
     if mmapindexthreshold is not None:
         options[b'mmapindexthreshold'] = mmapindexthreshold
 

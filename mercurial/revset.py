@@ -1765,6 +1765,20 @@ def rev(repo, subset, x):
         return baseset()
     return subset & baseset([l])
 
+@predicate('_rev(number)', safe=True)
+def _rev(repo, subset, x):
+    # internal version of "rev(x)" that raise error if "x" is invalid
+    # i18n: "rev" is a keyword
+    l = getargs(x, 1, 1, _("rev requires one argument"))
+    try:
+        # i18n: "rev" is a keyword
+        l = int(getstring(l[0], _("rev requires a number")))
+    except (TypeError, ValueError):
+        # i18n: "rev" is a keyword
+        raise error.ParseError(_("rev expects a number"))
+    repo.changelog.node(l) # check that the rev exists
+    return subset & baseset([l])
+
 @predicate('revset(set)', safe=True, takeorder=True)
 def revsetpredicate(repo, subset, x, order):
     """Strictly interpret the content as a revset.
