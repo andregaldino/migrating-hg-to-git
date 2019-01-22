@@ -19,6 +19,11 @@ from parsers import parse_index2
 for inline in (True, False):
     try:
         index, cache = parse_index2(data, inline)
+        index.slicechunktodensity(list(range(len(index))), 0.5, 262144)
+        for rev in range(len(index)):
+            node = index[rev][7]
+            partial = index.shortest(node)
+            index.partialmatch(node[:partial])
     except Exception as e:
         pass
         # uncomment this print if you're editing this Python code
