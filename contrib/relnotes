@@ -14,6 +14,7 @@ rules = {
     r"\(issue": 100,
     r"\(BC\)": 100,
     r"\(API\)": 100,
+    r"\(SEC\)": 100,
     # core commands, bump up
     r"(commit|files|log|pull|push|patch|status|tag|summary)(|s|es):": 20,
     r"(annotate|alias|branch|bookmark|clone|graft|import|verify).*:": 20,
@@ -21,6 +22,7 @@ rules = {
     r"(mq|shelve|rebase):": 20,
     # newsy
     r": deprecate": 20,
+    r": new.*(extension|flag|module)": 10,
     r"( ability|command|feature|option|support)": 10,
     # experimental
     r"hg-experimental": 20,
@@ -29,22 +31,23 @@ rules = {
     # bug-like?
     r"(fix|don't break|improve)": 7,
     r"(not|n't|avoid|fix|prevent).*crash": 10,
+    r"vulnerab": 10,
     # boring stuff, bump down
     r"^contrib": -5,
     r"debug": -5,
     r"help": -5,
+    r"minor": -5,
     r"(doc|metavar|bundle2|obsolete|obsmarker|rpm|setup|debug\S+:)": -15,
     r"(check-code|check-commit|check-config|import-checker)": -20,
     r"(flake8|lintian|pyflakes|pylint)": -20,
     # cleanups and refactoring
-    r"(cleanup|white ?space|spelling|quoting)": -20,
+    r"(clean ?up|white ?space|spelling|quoting)": -20,
     r"(flatten|dedent|indent|nesting|unnest)": -20,
     r"(typo|hint|note|comment|TODO|FIXME)": -20,
     r"(style:|convention|one-?liner)": -20,
-    r"_": -10,
     r"(argument|absolute_import|attribute|assignment|mutable)": -15,
     r"(scope|True|False)": -10,
-    r"(unused|useless|unnecessary|superfluous|duplicate|deprecated)": -10,
+    r"(unused|useless|unnecessar|superfluous|duplicate|deprecated)": -10,
     r"(redundant|pointless|confusing|uninitialized|meaningless|dead)": -10,
     r": (drop|remove|delete|rip out)": -10,
     r": (inherit|rename|simplify|naming|inline)": -10,
@@ -54,9 +57,12 @@ rules = {
     r": (move|extract) .* (to|into|from|out of)": -20,
     r": implement ": -5,
     r": use .* implementation": -20,
-    r"\S\S\S+\.\S\S\S\S+": -5,
     r": use .* instead of": -20,
+    # code
+    r"_": -10,
     r"__": -5,
+    r"\(\)": -5,
+    r"\S\S\S+\.\S\S\S\S+": -5,
     # dumb keywords
     r"\S+/\S+:": -10,
     r"\S+\.\S+:": -10,
@@ -91,6 +97,15 @@ groupings = [
     (r"rebase|mq|convert|eol|histedit|largefiles", "extensions"),
     (r"shelve|unshelve", "extensions"),
 ]
+
+def wikify(desc):
+    desc = desc.replace("(issue", "(Bts:issue")
+    desc = re.sub(r"\b([0-9a-f]{12})\b", r"Cset:\1", desc)
+    # stop ParseError from being recognized as a (nonexistent) wiki page
+    desc = re.sub(r" ([A-Z][a-z]+[A-Z][a-z]+)\b", r" !\1", desc)
+    # prevent wiki markup of magic methods
+    desc = re.sub(r"\b(\S*__\S*)\b", r"`\1`", desc)
+    return desc
 
 def main():
     desc = "example: %(prog)s 4.7.2 --stoprev 4.8rc0"
@@ -148,10 +163,8 @@ def main():
             if re.search(rule, desc):
                 score += val
 
-        desc = desc.replace("(issue", "(Bts:issue")
-
         if score >= cutoff:
-            commits.append(desc)
+            commits.append(wikify(desc))
     # Group unflagged notes.
     groups = {}
     bcs = []
