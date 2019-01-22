@@ -288,12 +288,9 @@ def _getchangedfiles(ctx, parents):
     files = set(ctx.files())
     if node.nullid not in parents:
         mc = ctx.manifest()
-        mp1 = ctx.p1().manifest()
-        mp2 = ctx.p2().manifest()
-        files |= (set(mp1) | set(mp2)) - set(mc)
-        for f in mc:
-            if mc[f] != mp1.get(f, None) or mc[f] != mp2.get(f, None):
-                files.add(f)
+        for pctx in ctx.parents():
+            for fn in pctx.manifest().diff(mc):
+                files.add(fn)
     return files
 
 # Convert src parents to dst parents
