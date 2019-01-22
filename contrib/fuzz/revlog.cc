@@ -31,6 +31,11 @@ for inline in (True, False):
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
+	// Don't allow fuzzer inputs larger than 60k, since we'll just bog
+	// down and not accomplish much.
+	if (Size > 60000) {
+		return 0;
+	}
 	PyObject *text =
 	    PyBytes_FromStringAndSize((const char *)Data, (Py_ssize_t)Size);
 	PyObject *locals = PyDict_New();
