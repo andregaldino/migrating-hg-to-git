@@ -161,6 +161,7 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   > import subprocess
   > import sys
   > import xml.etree.ElementTree as ET
+  > from mercurial import pycompat
   > 
   > # MSYS mangles the path if it expands $TESTDIR
   > testdir = os.environ['TESTDIR']
@@ -177,7 +178,7 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   >     files = node.findall('./{%(wix)s}Component/{%(wix)s}File' % ns)
   > 
   >     for f in files:
-  >         yield relpath + f.attrib['Name']
+  >         yield pycompat.sysbytes(relpath + f.attrib['Name'])
   > 
   > def hgdirectory(relpath):
   >     '''generator of tracked files, rooted at relpath'''
@@ -204,11 +205,11 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   > 
   > print('Not installed:')
   > for f in sorted(set(tracked) - set(installed)):
-  >     print('  %s' % f)
+  >     print('  %s' % pycompat.sysstr(f))
   > 
   > print('Not tracked:')
   > for f in sorted(set(installed) - set(tracked)):
-  >     print('  %s' % f)
+  >     print('  %s' % pycompat.sysstr(f))
   > EOF
 
   $ ( testrepohgenv; "$PYTHON" wixxml.py help )
