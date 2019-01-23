@@ -52,7 +52,7 @@ class histpacktests(unittest.TestCase):
         node, p1node, p2node, and linknode.
         """
         if revisions is None:
-            revisions = [("filename", self.getFakeHash(), nullid, nullid,
+            revisions = [(b"filename", self.getFakeHash(), nullid, nullid,
                           self.getFakeHash(), None)]
 
         packdir = pycompat.fsencode(self.makeTempDir())
@@ -68,7 +68,7 @@ class histpacktests(unittest.TestCase):
     def testAddSingle(self):
         """Test putting a single entry into a pack and reading it out.
         """
-        filename = "foo"
+        filename = b"foo"
         node = self.getFakeHash()
         p1 = self.getFakeHash()
         p2 = self.getFakeHash()
@@ -88,7 +88,7 @@ class histpacktests(unittest.TestCase):
         """
         revisions = []
         for i in range(10):
-            filename = "foo-%s" % i
+            filename = b"foo-%d" % i
             node = self.getFakeHash()
             p1 = self.getFakeHash()
             p2 = self.getFakeHash()
@@ -218,8 +218,8 @@ class histpacktests(unittest.TestCase):
         self.assertEqual(missing, [(filename, fakenode)])
 
         # Test getmissing on a non-existant filename
-        missing = pack.getmissing([("bar", fakenode)])
-        self.assertEqual(missing, [("bar", fakenode)])
+        missing = pack.getmissing([(b"bar", fakenode)])
+        self.assertEqual(missing, [(b"bar", fakenode)])
 
     def testAddThrows(self):
         pack = self.createPack()
