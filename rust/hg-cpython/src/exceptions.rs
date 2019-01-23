@@ -8,6 +8,8 @@
 //! Bindings for Rust errors
 //!
 //! [`GraphError`] exposes `hg::GraphError` as a subclass of `ValueError`
+//! but some variants of `hg::GraphError` can be converted directly to other
+//! existing Python exceptions if appropriate.
 //!
 //! [`GraphError`]: struct.GraphError.html
 use cpython::exc::ValueError;
@@ -21,6 +23,15 @@ impl GraphError {
         match inner {
             hg::GraphError::ParentOutOfRange(r) => {
                 GraphError::new(py, ("ParentOutOfRange", r))
+            }
+            hg::GraphError::WorkingDirectoryUnsupported => {
+                match py
+                    .import("mercurial.error")
+                    .and_then(|m| m.get(py, "WdirUnsupported"))
+                {
+                    Err(e) => e,
+                    Ok(cls) => PyErr::from_instance(py, cls),
+                }
             }
         }
     }

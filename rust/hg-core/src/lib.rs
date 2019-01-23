@@ -33,4 +33,5 @@ pub trait Graph {
 #[derive(Clone, Debug, PartialEq)]
 pub enum GraphError {
     ParentOutOfRange(Revision),
+    WorkingDirectoryUnsupported,
 }
