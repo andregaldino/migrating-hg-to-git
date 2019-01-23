@@ -16,6 +16,12 @@ pub type Revision = i32;
 
 pub const NULL_REVISION: Revision = -1;
 
+/// Same as `mercurial.node.wdirrev`
+///
+/// This is also equal to `i32::max_value()`, but it's better to spell
+/// it out explicitely, same as in `mercurial.node`
+pub const WORKING_DIRECTORY_REVISION: Revision = 0x7fffffff;
+
 /// The simplest expression of what we need of Mercurial DAGs.
 pub trait Graph {
     /// Return the two parents of the given `Revision`.
