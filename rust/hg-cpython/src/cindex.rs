@@ -16,7 +16,7 @@ extern crate python3_sys as python_sys;
 
 use self::python_sys::PyCapsule_Import;
 use cpython::{PyClone, PyErr, PyObject, PyResult, Python};
-use hg::{Graph, GraphError, Revision};
+use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
 use libc::c_int;
 use std::ffi::CStr;
 use std::mem::transmute;
@@ -86,6 +86,9 @@ impl Clone for Index {
 impl Graph for Index {
     /// wrap a call to the C extern parents function
     fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
+        if rev == WORKING_DIRECTORY_REVISION {
+            return Err(GraphError::WorkingDirectoryUnsupported);
+        }
         let mut res: [c_int; 2] = [0; 2];
         let code = unsafe {
             (self.parents)(
