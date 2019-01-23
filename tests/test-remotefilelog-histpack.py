@@ -232,12 +232,12 @@ class histpacktests(unittest.TestCase):
 
     def testBadVersionThrows(self):
         pack = self.createPack()
-        path = pack.path + '.histpack'
-        with open(path) as f:
+        path = pack.path + b'.histpack'
+        with open(path, 'rb') as f:
             raw = f.read()
         raw = struct.pack('!B', 255) + raw[1:]
         os.chmod(path, os.stat(path).st_mode | stat.S_IWRITE)
-        with open(path, 'w+') as f:
+        with open(path, 'wb+') as f:
             f.write(raw)
 
         try:
