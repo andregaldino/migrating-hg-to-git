@@ -78,9 +78,9 @@ class histpacktests(unittest.TestCase):
         pack = self.createPack(revisions)
 
         actual = pack.getancestors(filename, node)[node]
-        self.assertEquals(p1, actual[0])
-        self.assertEquals(p2, actual[1])
-        self.assertEquals(linknode, actual[2])
+        self.assertEqual(p1, actual[0])
+        self.assertEqual(p2, actual[1])
+        self.assertEqual(linknode, actual[2])
 
     def testAddMultiple(self):
         """Test putting multiple unrelated revisions into a pack and reading
@@ -99,10 +99,10 @@ class histpacktests(unittest.TestCase):
 
         for filename, node, p1, p2, linknode, copyfrom in revisions:
             actual = pack.getancestors(filename, node)[node]
-            self.assertEquals(p1, actual[0])
-            self.assertEquals(p2, actual[1])
-            self.assertEquals(linknode, actual[2])
-            self.assertEquals(copyfrom, actual[3])
+            self.assertEqual(p1, actual[0])
+            self.assertEqual(p2, actual[1])
+            self.assertEqual(linknode, actual[2])
+            self.assertEqual(copyfrom, actual[3])
 
     def testAddAncestorChain(self):
         """Test putting multiple revisions in into a pack and read the ancestor
@@ -124,10 +124,10 @@ class histpacktests(unittest.TestCase):
         ancestors = pack.getancestors(revisions[0][0], revisions[0][1])
         for filename, node, p1, p2, linknode, copyfrom in revisions:
             ap1, ap2, alinknode, acopyfrom = ancestors[node]
-            self.assertEquals(ap1, p1)
-            self.assertEquals(ap2, p2)
-            self.assertEquals(alinknode, linknode)
-            self.assertEquals(acopyfrom, copyfrom)
+            self.assertEqual(ap1, p1)
+            self.assertEqual(ap2, p2)
+            self.assertEqual(alinknode, linknode)
+            self.assertEqual(acopyfrom, copyfrom)
 
     def testPackMany(self):
         """Pack many related and unrelated ancestors.
@@ -163,14 +163,14 @@ class histpacktests(unittest.TestCase):
         # Verify the pack contents
         for (filename, node), (p1, p2, lastnode) in allentries.items():
             ancestors = pack.getancestors(filename, node)
-            self.assertEquals(ancestorcounts[(filename, node)],
-                              len(ancestors))
+            self.assertEqual(ancestorcounts[(filename, node)],
+                             len(ancestors))
             for anode, (ap1, ap2, alinknode, copyfrom) in ancestors.items():
                 ep1, ep2, elinknode = allentries[(filename, anode)]
-                self.assertEquals(ap1, ep1)
-                self.assertEquals(ap2, ep2)
-                self.assertEquals(alinknode, elinknode)
-                self.assertEquals(copyfrom, None)
+                self.assertEqual(ap1, ep1)
+                self.assertEqual(ap2, ep2)
+                self.assertEqual(alinknode, elinknode)
+                self.assertEqual(copyfrom, None)
 
     def testGetNodeInfo(self):
         revisions = []
@@ -186,10 +186,10 @@ class histpacktests(unittest.TestCase):
         # Test that getnodeinfo returns the expected results
         for filename, node, p1, p2, linknode, copyfrom in revisions:
             ap1, ap2, alinknode, acopyfrom = pack.getnodeinfo(filename, node)
-            self.assertEquals(ap1, p1)
-            self.assertEquals(ap2, p2)
-            self.assertEquals(alinknode, linknode)
-            self.assertEquals(acopyfrom, copyfrom)
+            self.assertEqual(ap1, p1)
+            self.assertEqual(ap2, p2)
+            self.assertEqual(alinknode, linknode)
+            self.assertEqual(acopyfrom, copyfrom)
 
     def testGetMissing(self):
         """Test the getmissing() api.
@@ -215,11 +215,11 @@ class histpacktests(unittest.TestCase):
         fakenode = self.getFakeHash()
         missing = pack.getmissing([(filename, revisions[0][1]),
                                    (filename, fakenode)])
-        self.assertEquals(missing, [(filename, fakenode)])
+        self.assertEqual(missing, [(filename, fakenode)])
 
         # Test getmissing on a non-existant filename
         missing = pack.getmissing([("bar", fakenode)])
-        self.assertEquals(missing, [("bar", fakenode)])
+        self.assertEqual(missing, [("bar", fakenode)])
 
     def testAddThrows(self):
         pack = self.createPack()
@@ -260,14 +260,14 @@ class histpacktests(unittest.TestCase):
             revisions.append((filename, node, p1, p2, linknode, None))
 
         pack = self.createPack(revisions)
-        self.assertEquals(pack.params.fanoutprefix, basepack.LARGEFANOUTPREFIX)
+        self.assertEqual(pack.params.fanoutprefix, basepack.LARGEFANOUTPREFIX)
 
         for filename, node, p1, p2, linknode, copyfrom in revisions:
             actual = pack.getancestors(filename, node)[node]
-            self.assertEquals(p1, actual[0])
-            self.assertEquals(p2, actual[1])
-            self.assertEquals(linknode, actual[2])
-            self.assertEquals(copyfrom, actual[3])
+            self.assertEqual(p1, actual[0])
+            self.assertEqual(p2, actual[1])
+            self.assertEqual(linknode, actual[2])
+            self.assertEqual(copyfrom, actual[3])
 # TODO:
 # histpack store:
 # - repack two packs into one
