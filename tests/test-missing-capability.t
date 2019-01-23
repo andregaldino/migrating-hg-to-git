@@ -15,7 +15,7 @@ some capability (because it's running an older hg version, usually).
   > from mercurial import extensions, wireprotov1server
   > def wcapabilities(orig, *args, **kwargs):
   >   cap = orig(*args, **kwargs)
-  >   cap.remove('$1')
+  >   cap.remove(b'$1')
   >   return cap
   > extensions.wrapfunction(wireprotov1server, '_capabilities', wcapabilities)
   > EOF
