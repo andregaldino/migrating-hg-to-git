@@ -816,8 +816,8 @@ class httpv2peer(object):
             return
 
         raise error.CapabilityError(
-            _('cannot %s; client or remote repository does not support the %r '
-              'capability') % (purpose, name))
+            _('cannot %s; client or remote repository does not support the '
+              '\'%s\' capability') % (purpose, name))
 
     # End of ipeercapabilities.
 

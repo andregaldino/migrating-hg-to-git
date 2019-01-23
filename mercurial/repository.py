@@ -346,8 +346,8 @@ class peer(object):
             return
 
         raise error.CapabilityError(
-            _('cannot %s; remote repository does not support the %r '
-              'capability') % (purpose, name))
+            _('cannot %s; remote repository does not support the '
+              '\'%s\' capability') % (purpose, name))
 
 class iverifyproblem(interfaceutil.Interface):
     """Represents a problem with the integrity of the repository.
