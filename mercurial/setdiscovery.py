@@ -183,7 +183,8 @@ class partialdiscovery(object):
     def addcommons(self, commons):
         """registrer nodes known as common"""
         self._common.addbases(commons)
-        self._common.removeancestorsfrom(self.undecided)
+        if self._undecided is not None:
+            self._common.removeancestorsfrom(self._undecided)
 
     def addmissings(self, missings):
         """registrer some nodes as missing"""
