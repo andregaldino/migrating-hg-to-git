@@ -57,7 +57,9 @@ test-bundle2-pushback.t
 test-bundle2-remote-changegroup.t
 test-cache-abuse.t
 test-cappedreader.py
+test-casecollision-merge.t
 test-casecollision.t
+test-casefolding.t
 test-cat.t
 test-cbor.py
 test-censor.t
