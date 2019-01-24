@@ -39,7 +39,7 @@
   >     try:
   >         return acl._getusersorig(ui, group)
   >     except:
-  >         return ["fred", "betty"]
+  >         return [b"fred", b"betty"]
   > acl._getusersorig = acl._getusers
   > acl._getusers = fakegetusers
   > EOF
