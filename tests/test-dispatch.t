@@ -188,7 +188,7 @@ OSError "No such file or directory" / "The system cannot find the path
 specified" should include filename even when it is empty
 
   $ hg -R a archive ''
-  abort: *: '' (glob)
+  abort: $ENOENT$: ''
   [255]
 
 #if no-outer-repo
