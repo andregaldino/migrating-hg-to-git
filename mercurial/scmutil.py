@@ -672,17 +672,8 @@ def revpair(repo, revs):
 
     l = revrange(repo, revs)
 
-    if not l:
-        first = second = None
-    elif l.isascending():
-        first = l.min()
-        second = l.max()
-    elif l.isdescending():
-        first = l.max()
-        second = l.min()
-    else:
-        first = l.first()
-        second = l.last()
+    first = l.first()
+    second = l.last()
 
     if first is None:
         raise error.Abort(_('empty revision range'))
