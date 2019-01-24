@@ -690,6 +690,7 @@ test-unified-test.t
 test-unionrepo.t
 test-unrelated-pull.t
 test-up-local-change.t
+test-update-atomic.t
 test-update-branches.t
 test-update-dest.t
 test-update-issue1456.t

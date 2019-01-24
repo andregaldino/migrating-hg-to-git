@@ -10,7 +10,7 @@ Checking that experimental.atomic-file works.
   > 
   > for file_path in sys.argv[1:]:
   >     file_stat = os.stat(file_path)
-  >     octal_mode = oct(file_stat[ST_MODE] & 0o777)
+  >     octal_mode = oct(file_stat[ST_MODE] & 0o777).replace('o', '')
   >     print("%s:%s" % (file_path, octal_mode))
   > 
   > EOF
@@ -19,11 +19,15 @@ Checking that experimental.atomic-file works.
   $ cd repo
 
   $ cat > .hg/showwrites.py <<EOF
+  > from __future__ import print_function
+  > from mercurial import pycompat
+  > from mercurial.utils import stringutil
   > def uisetup(ui):
   >   from mercurial import vfs
   >   class newvfs(vfs.vfs):
   >     def __call__(self, *args, **kwargs):
-  >       print('vfs open', args, sorted(list(kwargs.items())))
+  >       print(pycompat.sysstr(stringutil.pprint(
+  >           ('vfs open', args, sorted(list(kwargs.items()))))))
   >       return super(newvfs, self).__call__(*args, **kwargs)
   >   vfs.vfs = newvfs
   > EOF
