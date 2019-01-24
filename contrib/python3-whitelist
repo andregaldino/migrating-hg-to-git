@@ -14,6 +14,7 @@ test-amend.t
 test-ancestor.py
 test-annotate.py
 test-annotate.t
+test-arbitraryfilectx.t
 test-archive-symlinks.t
 test-archive.t
 test-atomictempfile.py
