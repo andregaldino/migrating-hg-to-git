@@ -672,11 +672,12 @@ def revpair(repo, revs):
 
     l = revrange(repo, revs)
 
+    if not l:
+        raise error.Abort(_('empty revision range'))
+
     first = l.first()
     second = l.last()
 
-    if first is None:
-        raise error.Abort(_('empty revision range'))
     if (first == second and len(revs) >= 2
         and not all(revrange(repo, [r]) for r in revs)):
         raise error.Abort(_('empty revision on one side of range'))
