@@ -456,13 +456,13 @@ def changelistentry(web, ctx):
     files = listfilediffs(ctx.files(), n, web.maxfiles)
 
     entry = commonentry(repo, ctx)
-    entry.update(
-        allparents=_kwfunc(lambda context, mapping: parents(ctx)),
-        parent=_kwfunc(lambda context, mapping: parents(ctx, rev - 1)),
-        child=_kwfunc(lambda context, mapping: children(ctx, rev + 1)),
-        changelogtag=showtags,
-        files=files,
-    )
+    entry.update({
+        'allparents': _kwfunc(lambda context, mapping: parents(ctx)),
+        'parent': _kwfunc(lambda context, mapping: parents(ctx, rev - 1)),
+        'child': _kwfunc(lambda context, mapping: children(ctx, rev + 1)),
+        'changelogtag': showtags,
+        'files': files,
+    })
     return entry
 
 def changelistentries(web, revs, maxcount, parityfn):
