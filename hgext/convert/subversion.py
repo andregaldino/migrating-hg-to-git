@@ -1183,12 +1183,12 @@ class svn_sink(converter_sink, commandline):
         m = set()
         output = self.run0('ls', recursive=True, xml=True)
         doc = xml.dom.minidom.parseString(output)
-        for e in doc.getElementsByTagName('entry'):
+        for e in doc.getElementsByTagName(r'entry'):
             for n in e.childNodes:
-                if n.nodeType != n.ELEMENT_NODE or n.tagName != 'name':
+                if n.nodeType != n.ELEMENT_NODE or n.tagName != r'name':
                     continue
-                name = ''.join(c.data for c in n.childNodes
-                               if c.nodeType == c.TEXT_NODE)
+                name = r''.join(c.data for c in n.childNodes
+                                if c.nodeType == c.TEXT_NODE)
                 # Entries are compared with names coming from
                 # mercurial, so bytes with undefined encoding. Our
                 # best bet is to assume they are in local
