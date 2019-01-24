@@ -44,6 +44,7 @@ test-branch-change.t
 test-branch-option.t
 test-branch-tag-confict.t
 test-branches.t
+test-bugzilla.t
 test-bundle-phases.t
 test-bundle-r.t
 test-bundle-type.t
