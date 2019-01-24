@@ -23,10 +23,17 @@ handle svn subrepos safely
   $ svnadmin create svn-repo-2499
 
   $ SVNREPOPATH=`pwd`/svn-repo-2499/project
-#if windows
-  $ SVNREPOURL=file:///`"$PYTHON" -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
+
+#if py3
+  $ pathquoted=`"$PYTHON" -c "import sys, urllib.parse; sys.stdout.write(urllib.parse.quote(sys.argv[1]))" "$SVNREPOPATH"`
 #else
-  $ SVNREPOURL=file://`"$PYTHON" -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
+  $ pathquoted=`"$PYTHON" -c "import sys, urllib; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
+#endif
+
+#if windows
+  $ SVNREPOURL=file:///$pathquoted
+#else
+  $ SVNREPOURL=file://$pathquoted
 #endif
 
   $ mkdir -p svn-project-2499/trunk
