@@ -999,12 +999,23 @@ class ui(object):
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
         '''
-        self._write(self._fout, *args, **opts)
+        dest = self._fout
+
+        # inlined _write() for speed
+        if self._isbuffered(dest):
+            label = opts.get(r'label', '')
+            if label and self._bufferapplylabels:
+                self._buffers[-1].extend(self.label(a, label) for a in args)
+            else:
+                self._buffers[-1].extend(args)
+        else:
+            self._writenobuf(dest, *args, **opts)
 
     def write_err(self, *args, **opts):
         self._write(self._ferr, *args, **opts)
 
     def _write(self, dest, *args, **opts):
+        # update write() as well if you touch this code
         if self._isbuffered(dest):
             label = opts.get(r'label', '')
             if label and self._bufferapplylabels:
