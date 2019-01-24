@@ -115,6 +115,7 @@ test-convert-hg-sink.t
 test-convert-hg-source.t
 test-convert-hg-startrev.t
 test-convert-splicemap.t
+test-convert-svn-sink.t
 test-convert-tagsbranch-topology.t
 test-copy-move-merge.t
 test-copy.t
@@ -252,16 +253,21 @@ test-hgk.t
 test-hgrc.t
 test-hgweb-annotate-whitespace.t
 test-hgweb-bundle.t
+test-hgweb-commands.t
 test-hgweb-csp.t
 test-hgweb-descend-empties.t
 test-hgweb-diffs.t
 test-hgweb-empty.t
 test-hgweb-filelog.t
+test-hgweb-no-path-info.t
+test-hgweb-no-request-uri.t
 test-hgweb-non-interactive.t
 test-hgweb-raw.t
 test-hgweb-removed.t
+test-hgweb-symrev.t
 test-hgweb.t
 test-hgwebdir-paths.py
+test-hgwebdir.t
 test-hgwebdirsym.t
 test-histedit-arguments.t
 test-histedit-base.t
@@ -278,6 +284,7 @@ test-histedit-non-commute.t
 test-histedit-obsolete.t
 test-histedit-outgoing.t
 test-histedit-templates.t
+test-http-api.t
 test-http-branchmap.t
 test-http-bundle1.t
 test-http-clone-r.t
@@ -300,6 +307,7 @@ test-infinitepush-ci.t
 test-infinitepush.t
 test-inherit-mode.t
 test-init.t
+test-install.t
 test-issue1089.t
 test-issue1102.t
 test-issue1175.t
@@ -381,11 +389,13 @@ test-merge8.t
 test-merge9.t
 test-minifileset.py
 test-minirst.py
+test-missing-capability.t
 test-mq-git.t
 test-mq-guards.t
 test-mq-header-date.t
 test-mq-header-from.t
 test-mq-merge.t
+test-mq-missingfiles.t
 test-mq-pull-from-bundle.t
 test-mq-qclone-http.t
 test-mq-qdelete.t
@@ -393,6 +403,7 @@ test-mq-qdiff.t
 test-mq-qfold.t
 test-mq-qgoto.t
 test-mq-qimport-fail-cleanup.t
+test-mq-qimport.t
 test-mq-qnew.t
 test-mq-qpush-exact.t
 test-mq-qpush-fail.t
@@ -558,6 +569,7 @@ test-remotefilelog-cacheprocess.t
 test-remotefilelog-clone-tree.t
 test-remotefilelog-clone.t
 test-remotefilelog-gcrepack.t
+test-remotefilelog-histpack.py
 test-remotefilelog-http.t
 test-remotefilelog-keepset.t
 test-remotefilelog-local.t
@@ -658,6 +670,8 @@ test-template-keywords.t
 test-template-map.t
 test-tools.t
 test-transplant.t
+test-treediscovery-legacy.t
+test-treediscovery.t
 test-treemanifest.t
 test-ui-color.py
 test-ui-config.py
@@ -699,5 +713,6 @@ test-wireproto-command-rawstorefiledata.t
 test-wireproto-framing.py
 test-wireproto-serverreactor.py
 test-wireproto.py
+test-wireproto.t
 test-wsgirequest.py
 test-xdg.t
