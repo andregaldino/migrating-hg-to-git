@@ -20,10 +20,10 @@ def parseentry(entry):
     if paths:
         paths = paths[0]
         for p in paths.getElementsByTagName('path'):
-            action = p.getAttribute('action')
-            path = xmltext(p)
-            frompath = p.getAttribute('copyfrom-path')
-            fromrev = p.getAttribute('copyfrom-rev')
+            action = p.getAttribute('action').encode('utf-8')
+            path = xmltext(p).encode('utf-8')
+            frompath = p.getAttribute('copyfrom-path').encode('utf-8')
+            fromrev = p.getAttribute('copyfrom-rev').encode('utf-8')
             e['paths'].append((path, action, frompath, fromrev))
     return e
 
@@ -43,11 +43,11 @@ def printentries(entries):
         for k in ('revision', 'author', 'msg'):
             fp.write(('%s: %s\n' % (k, e[k])).encode('utf-8'))
         for path, action, fpath, frev in sorted(e['paths']):
-            frominfo = ''
+            frominfo = b''
             if frev:
-                frominfo = ' (from %s@%s)' % (fpath, frev)
-            p = ' %s %s%s\n' % (action, path, frominfo)
-            fp.write(p.encode('utf-8'))
+                frominfo = b' (from %s@%s)' % (fpath, frev)
+            p = b' %s %s%s\n' % (action, path, frominfo)
+            fp.write(p)
 
 if __name__ == '__main__':
     data = sys.stdin.read()
