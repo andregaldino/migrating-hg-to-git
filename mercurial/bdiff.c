@@ -35,15 +35,19 @@ int bdiff_splitlines(const char *a, ssize_t len, struct bdiff_line **lr)
 
 	/* count the lines */
 	i = 1; /* extra line for sentinel */
-	for (p = a; p < plast; p++)
-		if (*p == '\n')
+	for (p = a; p < plast; p++) {
+		if (*p == '\n') {
 			i++;
-	if (p == plast)
+		}
+	}
+	if (p == plast) {
 		i++;
+	}
 
 	*lr = l = (struct bdiff_line *)calloc(i, sizeof(struct bdiff_line));
-	if (!l)
+	if (!l) {
 		return -1;
+	}
 
 	/* build the line array and calculate hashes */
 	hash = 0;
@@ -90,18 +94,21 @@ static int equatelines(struct bdiff_line *a, int an, struct bdiff_line *b,
 	struct pos *h = NULL;
 
 	/* build a hash table of the next highest power of 2 */
-	while (buckets < bn + 1)
+	while (buckets < bn + 1) {
 		buckets *= 2;
+	}
 
 	/* try to allocate a large hash table to avoid collisions */
 	for (scale = 4; scale; scale /= 2) {
 		h = (struct pos *)calloc(buckets, scale * sizeof(struct pos));
-		if (h)
+		if (h) {
 			break;
+		}
 	}
 
-	if (!h)
+	if (!h) {
 		return 0;
+	}
 
 	buckets = buckets * scale - 1;
 
@@ -115,9 +122,11 @@ static int equatelines(struct bdiff_line *a, int an, struct bdiff_line *b,
 	for (i = 0; i < bn; i++) {
 		/* find the equivalence class */
 		for (j = b[i].hash & buckets; h[j].pos != -1;
-		     j = (j + 1) & buckets)
-			if (!cmp(b + i, b + h[j].pos))
+		     j = (j + 1) & buckets) {
+			if (!cmp(b + i, b + h[j].pos)) {
 				break;
+			}
+		}
 
 		/* add to the head of the equivalence class */
 		b[i].n = h[j].pos;
@@ -133,15 +142,18 @@ static int equatelines(struct bdiff_line *a, int an, struct bdiff_line *b,
 	for (i = 0; i < an; i++) {
 		/* find the equivalence class */
 		for (j = a[i].hash & buckets; h[j].pos != -1;
-		     j = (j + 1) & buckets)
-			if (!cmp(a + i, b + h[j].pos))
+		     j = (j + 1) & buckets) {
+			if (!cmp(a + i, b + h[j].pos)) {
 				break;
+			}
+		}
 
 		a[i].e = j; /* use equivalence class for quick compare */
-		if (h[j].len <= t)
+		if (h[j].len <= t) {
 			a[i].n = h[j].pos; /* point to head of match list */
-		else
+		} else {
 			a[i].n = -1; /* too popular */
+		}
 	}
 
 	/* discard hash tables */
@@ -158,16 +170,18 @@ static int longest_match(struct bdiff_line *a, struct bdiff_line *b,
 	/* window our search on large regions to better bound
 	   worst-case performance. by choosing a window at the end, we
 	   reduce skipping overhead on the b chains. */
-	if (a2 - a1 > 30000)
+	if (a2 - a1 > 30000) {
 		a1 = a2 - 30000;
+	}
 
 	half = (a1 + a2 - 1) / 2;
 	bhalf = (b1 + b2 - 1) / 2;
 
 	for (i = a1; i < a2; i++) {
 		/* skip all lines in b after the current block */
-		for (j = a[i].n; j >= b2; j = b[j].n)
+		for (j = a[i].n; j >= b2; j = b[j].n) {
 			;
+		}
 
 		/* loop through all lines match a[i] in b */
 		for (; j >= b1; j = b[j].n) {
@@ -179,8 +193,9 @@ static int longest_match(struct bdiff_line *a, struct bdiff_line *b,
 					break;
 				}
 				/* previous line mismatch? */
-				if (a[i - k].e != b[j - k].e)
+				if (a[i - k].e != b[j - k].e) {
 					break;
+				}
 			}
 
 			pos[j].pos = i;
@@ -212,8 +227,9 @@ static int longest_match(struct bdiff_line *a, struct bdiff_line *b,
 	}
 
 	/* expand match to include subsequent popular lines */
-	while (mi + mk < a2 && mj + mk < b2 && a[mi + mk].e == b[mj + mk].e)
+	while (mi + mk < a2 && mj + mk < b2 && a[mi + mk].e == b[mj + mk].e) {
 		mk++;
+	}
 
 	*omi = mi;
 	*omj = mj;
@@ -230,18 +246,21 @@ static struct bdiff_hunk *recurse(struct bdiff_line *a, struct bdiff_line *b,
 	while (1) {
 		/* find the longest match in this chunk */
 		k = longest_match(a, b, pos, a1, a2, b1, b2, &i, &j);
-		if (!k)
+		if (!k) {
 			return l;
+		}
 
 		/* and recurse on the remaining chunks on either side */
 		l = recurse(a, b, pos, a1, i, b1, j, l);
-		if (!l)
+		if (!l) {
 			return NULL;
+		}
 
 		l->next =
 		    (struct bdiff_hunk *)malloc(sizeof(struct bdiff_hunk));
-		if (!l->next)
+		if (!l->next) {
 			return NULL;
+		}
 
 		l = l->next;
 		l->a1 = i;
@@ -271,14 +290,16 @@ int bdiff_diff(struct bdiff_line *a, int an, struct bdiff_line *b, int bn,
 		/* generate the matching block list */
 
 		curr = recurse(a, b, pos, 0, an, 0, bn, base);
-		if (!curr)
+		if (!curr) {
 			return -1;
+		}
 
 		/* sentinel end hunk */
 		curr->next =
 		    (struct bdiff_hunk *)malloc(sizeof(struct bdiff_hunk));
-		if (!curr->next)
+		if (!curr->next) {
 			return -1;
+		}
 		curr = curr->next;
 		curr->a1 = curr->a2 = an;
 		curr->b1 = curr->b2 = bn;
@@ -291,10 +312,11 @@ int bdiff_diff(struct bdiff_line *a, int an, struct bdiff_line *b, int bn,
 	for (curr = base->next; curr; curr = curr->next) {
 		struct bdiff_hunk *next = curr->next;
 
-		if (!next)
+		if (!next) {
 			break;
+		}
 
-		if (curr->a2 == next->a1 || curr->b2 == next->b1)
+		if (curr->a2 == next->a1 || curr->b2 == next->b1) {
 			while (curr->a2 < an && curr->b2 < bn &&
 			       next->a1 < next->a2 && next->b1 < next->b2 &&
 			       !cmp(a + curr->a2, b + curr->b2)) {
@@ -303,10 +325,12 @@ int bdiff_diff(struct bdiff_line *a, int an, struct bdiff_line *b, int bn,
 				curr->b2++;
 				next->b1++;
 			}
+		}
 	}
 
-	for (curr = base->next; curr; curr = curr->next)
+	for (curr = base->next; curr; curr = curr->next) {
 		count++;
+	}
 	return count;
 }
 

@@ -55,13 +55,16 @@ struct mpatch_flist *cpygetitem(void *bins, ssize_t pos)
 	int r;
 
 	PyObject *tmp = PyList_GetItem((PyObject *)bins, pos);
-	if (!tmp)
+	if (!tmp) {
 		return NULL;
-	if (PyObject_GetBuffer(tmp, &buffer, PyBUF_CONTIG_RO))
+	}
+	if (PyObject_GetBuffer(tmp, &buffer, PyBUF_CONTIG_RO)) {
 		return NULL;
+	}
 	if ((r = mpatch_decode(buffer.buf, buffer.len, &res)) < 0) {
-		if (!PyErr_Occurred())
+		if (!PyErr_Occurred()) {
 			setpyerr(r);
+		}
 		res = NULL;
 	}
 
@@ -78,8 +81,9 @@ static PyObject *patches(PyObject *self, PyObject *args)
 	char *out;
 	Py_ssize_t len, outlen;
 
-	if (!PyArg_ParseTuple(args, "OO:mpatch", &text, &bins))
+	if (!PyArg_ParseTuple(args, "OO:mpatch", &text, &bins)) {
 		return NULL;
+	}
 
 	len = PyList_Size(bins);
 	if (!len) {
@@ -94,8 +98,9 @@ static PyObject *patches(PyObject *self, PyObject *args)
 
 	patch = mpatch_fold(bins, cpygetitem, 0, len);
 	if (!patch) { /* error already set or memory error */
-		if (!PyErr_Occurred())
+		if (!PyErr_Occurred()) {
 			PyErr_NoMemory();
+		}
 		result = NULL;
 		goto cleanup;
 	}
@@ -126,8 +131,9 @@ static PyObject *patches(PyObject *self, PyObject *args)
 cleanup:
 	mpatch_lfree(patch);
 	PyBuffer_Release(&buffer);
-	if (!result && !PyErr_Occurred())
+	if (!result && !PyErr_Occurred()) {
 		setpyerr(r);
+	}
 	return result;
 }
 
@@ -138,15 +144,18 @@ static PyObject *patchedsize(PyObject *self, PyObject *args)
 	Py_ssize_t patchlen;
 	char *bin;
 
-	if (!PyArg_ParseTuple(args, PY23("ls#", "ly#"), &orig, &bin, &patchlen))
+	if (!PyArg_ParseTuple(args, PY23("ls#", "ly#"), &orig, &bin,
+	                      &patchlen)) {
 		return NULL;
+	}
 
 	while (pos >= 0 && pos < patchlen) {
 		start = getbe32(bin + pos);
 		end = getbe32(bin + pos + 4);
 		len = getbe32(bin + pos + 8);
-		if (start > end)
+		if (start > end) {
 			break; /* sanity check */
+		}
 		pos += 12 + len;
 		outlen += start - last;
 		last = end;
@@ -154,9 +163,10 @@ static PyObject *patchedsize(PyObject *self, PyObject *args)
 	}
 
 	if (pos != patchlen) {
-		if (!PyErr_Occurred())
+		if (!PyErr_Occurred()) {
 			PyErr_SetString(mpatch_Error,
 			                "patch cannot be decoded");
+		}
 		return NULL;
 	}
 

@@ -29,22 +29,26 @@ static PyObject *blocks(PyObject *self, PyObject *args)
 
 	l.next = NULL;
 
-	if (!PyArg_ParseTuple(args, "SS:bdiff", &sa, &sb))
+	if (!PyArg_ParseTuple(args, "SS:bdiff", &sa, &sb)) {
 		return NULL;
+	}
 
 	an = bdiff_splitlines(PyBytes_AsString(sa), PyBytes_Size(sa), &a);
 	bn = bdiff_splitlines(PyBytes_AsString(sb), PyBytes_Size(sb), &b);
 
-	if (!a || !b)
+	if (!a || !b) {
 		goto nomem;
+	}
 
 	count = bdiff_diff(a, an, b, bn, &l);
-	if (count < 0)
+	if (count < 0) {
 		goto nomem;
+	}
 
 	rl = PyList_New(count);
-	if (!rl)
+	if (!rl) {
 		goto nomem;
+	}
 
 	for (h = l.next; h; h = h->next) {
 		m = Py_BuildValue("iiii", h->a1, h->a2, h->b1, h->b2);
@@ -72,8 +76,10 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 
 	l.next = NULL;
 
-	if (!PyArg_ParseTuple(args, PY23("s*s*:bdiff", "y*y*:bdiff"), &ba, &bb))
+	if (!PyArg_ParseTuple(args, PY23("s*s*:bdiff", "y*y*:bdiff"), &ba,
+	                      &bb)) {
 		return NULL;
+	}
 
 	if (!PyBuffer_IsContiguous(&ba, 'C') || ba.ndim > 1) {
 		PyErr_SetString(PyExc_ValueError, "bdiff input not contiguous");
@@ -98,8 +104,9 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 	lmax = la > lb ? lb : la;
 	for (ia = ba.buf, ib = bb.buf; li < lmax && *ia == *ib;
 	     ++li, ++ia, ++ib) {
-		if (*ia == '\n')
+		if (*ia == '\n') {
 			lcommon = li + 1;
+		}
 	}
 	/* we can almost add: if (li == lmax) lcommon = li; */
 
@@ -119,8 +126,9 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 	/* calculate length of output */
 	la = lb = 0;
 	for (h = l.next; h; h = h->next) {
-		if (h->a1 != la || h->b1 != lb)
+		if (h->a1 != la || h->b1 != lb) {
 			len += 12 + bl[h->b1].l - bl[lb].l;
+		}
 		la = h->a2;
 		lb = h->b2;
 	}
@@ -129,8 +137,9 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 
 	result = PyBytes_FromStringAndSize(NULL, len);
 
-	if (!result)
+	if (!result) {
 		goto cleanup;
+	}
 
 	/* build binary patch */
 	rb = PyBytes_AsString(result);
@@ -151,8 +160,9 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 	}
 
 cleanup:
-	if (_save)
+	if (_save) {
 		PyEval_RestoreThread(_save);
+	}
 	PyBuffer_Release(&ba);
 	PyBuffer_Release(&bb);
 	free(al);
@@ -174,20 +184,23 @@ static PyObject *fixws(PyObject *self, PyObject *args)
 	Py_ssize_t i, rlen, wlen = 0;
 	char *w;
 
-	if (!PyArg_ParseTuple(args, "Sb:fixws", &s, &allws))
+	if (!PyArg_ParseTuple(args, "Sb:fixws", &s, &allws)) {
 		return NULL;
+	}
 	r = PyBytes_AsString(s);
 	rlen = PyBytes_Size(s);
 
 	w = (char *)PyMem_Malloc(rlen ? rlen : 1);
-	if (!w)
+	if (!w) {
 		goto nomem;
+	}
 
 	for (i = 0; i != rlen; i++) {
 		c = r[i];
 		if (c == ' ' || c == '\t' || c == '\r') {
-			if (!allws && (wlen == 0 || w[wlen - 1] != ' '))
+			if (!allws && (wlen == 0 || w[wlen - 1] != ' ')) {
 				w[wlen++] = ' ';
+			}
 		} else if (c == '\n' && !allws && wlen > 0 &&
 		           w[wlen - 1] == ' ') {
 			w[wlen - 1] = '\n';
@@ -207,8 +220,9 @@ static bool sliceintolist(PyObject *list, Py_ssize_t destidx,
                           const char *source, Py_ssize_t len)
 {
 	PyObject *sliced = PyBytes_FromStringAndSize(source, len);
-	if (sliced == NULL)
+	if (sliced == NULL) {
 		return false;
+	}
 	PyList_SET_ITEM(list, destidx, sliced);
 	return true;
 }
@@ -232,19 +246,22 @@ static PyObject *splitnewlines(PyObject *self, PyObject *args)
 			++nelts;
 		}
 	}
-	if ((result = PyList_New(nelts + 1)) == NULL)
+	if ((result = PyList_New(nelts + 1)) == NULL) {
 		goto abort;
+	}
 	nelts = 0;
 	for (i = 0; i < size - 1; ++i) {
 		if (text[i] == '\n') {
 			if (!sliceintolist(result, nelts++, text + start,
-			                   i - start + 1))
+			                   i - start + 1)) {
 				goto abort;
+			}
 			start = i + 1;
 		}
 	}
-	if (!sliceintolist(result, nelts++, text + start, size - start))
+	if (!sliceintolist(result, nelts++, text + start, size - start)) {
 		goto abort;
+	}
 	return result;
 abort:
 	Py_XDECREF(result);
@@ -257,8 +274,9 @@ static int hunk_consumer(int64_t a1, int64_t a2, int64_t b1, int64_t b2,
 	PyObject *rl = (PyObject *)priv;
 	PyObject *m = Py_BuildValue("LLLL", a1, a2, b1, b2);
 	int r;
-	if (!m)
+	if (!m) {
 		return -1;
+	}
 	r = PyList_Append(rl, m);
 	Py_DECREF(m);
 	return r;
@@ -282,15 +300,17 @@ static PyObject *xdiffblocks(PyObject *self, PyObject *args)
 	};
 
 	if (!PyArg_ParseTuple(args, PY23("s#s#", "y#y#"), &a.ptr, &la, &b.ptr,
-	                      &lb))
+	                      &lb)) {
 		return NULL;
+	}
 
 	a.size = la;
 	b.size = lb;
 
 	rl = PyList_New(0);
-	if (!rl)
+	if (!rl) {
 		return PyErr_NoMemory();
+	}
 
 	ecb.priv = rl;
 

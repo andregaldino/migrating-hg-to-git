@@ -24,8 +24,9 @@ static void b85prep(void)
 	unsigned i;
 
 	memset(b85dec, 0, sizeof(b85dec));
-	for (i = 0; i < sizeof(b85chars); i++)
+	for (i = 0; i < sizeof(b85chars); i++) {
 		b85dec[(int)(b85chars[i])] = i + 1;
+	}
 }
 
 static PyObject *b85encode(PyObject *self, PyObject *args)
@@ -37,19 +38,22 @@ static PyObject *b85encode(PyObject *self, PyObject *args)
 	unsigned int acc, val, ch;
 	int pad = 0;
 
-	if (!PyArg_ParseTuple(args, PY23("s#|i", "y#|i"), &text, &len, &pad))
+	if (!PyArg_ParseTuple(args, PY23("s#|i", "y#|i"), &text, &len, &pad)) {
 		return NULL;
+	}
 
-	if (pad)
+	if (pad) {
 		olen = ((len + 3) / 4 * 5) - 3;
-	else {
+	} else {
 		olen = len % 4;
-		if (olen)
+		if (olen) {
 			olen++;
+		}
 		olen += len / 4 * 5;
 	}
-	if (!(out = PyBytes_FromStringAndSize(NULL, olen + 3)))
+	if (!(out = PyBytes_FromStringAndSize(NULL, olen + 3))) {
 		return NULL;
+	}
 
 	dst = PyBytes_AsString(out);
 
@@ -58,8 +62,9 @@ static PyObject *b85encode(PyObject *self, PyObject *args)
 		for (i = 24; i >= 0; i -= 8) {
 			ch = *text++;
 			acc |= ch << i;
-			if (--len == 0)
+			if (--len == 0) {
 				break;
+			}
 		}
 		for (i = 4; i >= 0; i--) {
 			val = acc % 85;
@@ -69,8 +74,9 @@ static PyObject *b85encode(PyObject *self, PyObject *args)
 		dst += 5;
 	}
 
-	if (!pad)
+	if (!pad) {
 		_PyBytes_Resize(&out, olen);
+	}
 
 	return out;
 }
@@ -84,15 +90,18 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 	int c;
 	unsigned int acc;
 
-	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &text, &len))
+	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &text, &len)) {
 		return NULL;
+	}
 
 	olen = len / 5 * 4;
 	i = len % 5;
-	if (i)
+	if (i) {
 		olen += i - 1;
-	if (!(out = PyBytes_FromStringAndSize(NULL, olen)))
+	}
+	if (!(out = PyBytes_FromStringAndSize(NULL, olen))) {
 		return NULL;
+	}
 
 	dst = PyBytes_AsString(out);
 
@@ -100,8 +109,9 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 	while (i < len) {
 		acc = 0;
 		cap = len - i - 1;
-		if (cap > 4)
+		if (cap > 4) {
 			cap = 4;
+		}
 		for (j = 0; j < cap; i++, j++) {
 			c = b85dec[(int)*text++] - 1;
 			if (c < 0) {
@@ -136,10 +146,12 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 
 		cap = olen < 4 ? olen : 4;
 		olen -= cap;
-		for (j = 0; j < 4 - cap; j++)
+		for (j = 0; j < 4 - cap; j++) {
 			acc *= 85;
-		if (cap && cap < 4)
+		}
+		if (cap && cap < 4) {
 			acc += 0xffffff >> (cap - 1) * 8;
+		}
 		for (j = 0; j < cap; j++) {
 			acc = (acc << 8) | (acc >> 24);
 			*dst++ = acc;
