@@ -27,7 +27,7 @@ We approximate that by reducing the read buffer to 1 byte.
   
   $ cat >> test.py << EOF
   > from __future__ import print_function
-  > from mercurial import changelog, node, vfs
+  > from mercurial import changelog, node, pycompat, vfs
   > 
   > class singlebyteread(object):
   >     def __init__(self, real):
@@ -55,10 +55,10 @@ We approximate that by reducing the read buffer to 1 byte.
   >         return singlebyteread(f)
   >     return wrapper
   > 
-  > cl = changelog.changelog(opener('.hg/store'))
+  > cl = changelog.changelog(opener(b'.hg/store'))
   > print(len(cl), 'revisions:')
   > for r in cl:
-  >     print(node.short(cl.node(r)))
+  >     print(pycompat.sysstr(node.short(cl.node(r))))
   > EOF
   $ "$PYTHON" test.py
   2 revisions:
@@ -76,7 +76,7 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
   $ "$PYTHON" <<EOF
   > from __future__ import print_function
   > from mercurial import changelog, vfs
-  > cl = changelog.changelog(vfs.vfs('.hg/store'))
+  > cl = changelog.changelog(vfs.vfs(b'.hg/store'))
   > print('good heads:')
   > for head in [0, len(cl) - 1, -1]:
   >     print('%s: %r' % (head, cl.reachableroots(0, [head], [0])))
@@ -112,7 +112,7 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
   10000: head out of range
   -2: head out of range
   -10000: head out of range
-  None: an integer is required
+  None: an integer is required( .got type NoneType.)? (re)
   good roots:
   0: [0]
   1: [1]
@@ -123,7 +123,7 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
   -2: []
   -10000: []
   bad roots:
-  None: an integer is required
+  None: an integer is required( .got type NoneType.)? (re)
 
   $ cd ..
 
@@ -178,8 +178,8 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   $ cat <<EOF > test.py
   > from __future__ import print_function
   > import sys
-  > from mercurial import changelog, vfs
-  > cl = changelog.changelog(vfs.vfs(sys.argv[1]))
+  > from mercurial import changelog, pycompat, vfs
+  > cl = changelog.changelog(vfs.vfs(pycompat.fsencode(sys.argv[1])))
   > n0, n1 = cl.node(0), cl.node(1)
   > ops = [
   >     ('reachableroots',
