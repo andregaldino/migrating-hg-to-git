@@ -26,6 +26,7 @@ test-backwards-remove.t
 test-bad-extension.t
 test-bad-pull.t
 test-basic.t
+test-batching.py
 test-bdiff.py
 test-bheads.t
 test-bisect.t
