@@ -268,3 +268,25 @@ clone bookmarks
   exporting bookmark test
   $ hg -R remote-bookmarks bookmarks
      test                      0:08b9e9f63b32
+
+Check format constraint
+-----------------------
+
+  $ hg init issue6056 --config format.usegeneraldelta=0 --config format.sparse-revlog=0
+  $ cd issue6056
+  $ echo foo > 1
+  $ echo foo > 2
+  $ echo foo > 3
+  $ echo foo > 4
+  $ echo foo > 5
+  $ hg add *
+
+Build a bogus repository (sparserevlog without general delta)
+
+  $ hg commit -m 'initial changesets'
+  $ echo 'sparserevlog' >> .hg/requires
+  $ for x in `$TESTDIR/seq.py 100`; do
+  >     echo $x >> `expr $x % 5 + 1`
+  >     hg commit -m $x
+  > done
+  $ cd ..

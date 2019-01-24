@@ -755,7 +755,8 @@ def _rawgroups(revlog, p1, p2, cachedelta, snapshots=None):
     The group order aims at providing fast or small candidates first.
     """
     gdelta = revlog._generaldelta
-    sparse = revlog._sparserevlog
+    # gate sparse behind general-delta because of issue6056
+    sparse = gdelta and revlog._sparserevlog
     curr = len(revlog)
     prev = curr - 1
     deltachain = lambda rev: revlog._deltachain(rev)[0]
