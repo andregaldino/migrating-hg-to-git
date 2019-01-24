@@ -165,6 +165,7 @@ test-empty-file.t
 test-empty-group.t
 test-empty.t
 test-encode.t
+test-encoding-align.t
 test-encoding-func.py
 test-encoding-textwrap.t
 test-encoding.t
