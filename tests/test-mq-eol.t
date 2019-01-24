@@ -30,10 +30,14 @@ Test interactions between mq and patch.eol
 
   $ cat > cateol.py <<EOF
   > import sys
+  > try:
+  >     stdout = sys.stdout.buffer
+  > except AttributeError:
+  >     stdout = sys.stdout
   > for line in open(sys.argv[1], 'rb'):
   >     line = line.replace(b'\r', b'<CR>')
   >     line = line.replace(b'\n', b'<LF>')
-  >     print(line)
+  >     stdout.write(line + b'\n')
   > EOF
 
   $ hg init repo
