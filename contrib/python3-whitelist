@@ -630,6 +630,7 @@ test-revlog.t
 test-revset-dirstate-parents.t
 test-revset-legacy-lookup.t
 test-revset-outgoing.t
+test-revset2.t
 test-rollback.t
 test-run-tests.py
 test-run-tests.t
