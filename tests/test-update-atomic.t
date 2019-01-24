@@ -4,9 +4,10 @@ Checking that experimental.atomic-file works.
 
   $ cat > $TESTTMP/show_mode.py <<EOF
   > from __future__ import print_function
-  > import sys
   > import os
-  > from stat import ST_MODE
+  > import stat
+  > import sys
+  > ST_MODE = stat.ST_MODE
   > 
   > for file_path in sys.argv[1:]:
   >     file_stat = os.stat(file_path)
