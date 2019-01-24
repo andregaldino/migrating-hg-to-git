@@ -1,5 +1,9 @@
   $ cat > writelines.py <<EOF
   > import sys
+  > if sys.version_info[0] >= 3:
+  >     encode = lambda x: x.encode('utf-8').decode('unicode_escape').encode('utf-8')
+  > else:
+  >     encode = lambda x: x.decode('string_escape')
   > path = sys.argv[1]
   > args = sys.argv[2:]
   > assert (len(args) % 2) == 0
@@ -8,7 +12,7 @@
   > for i in range(len(args)//2):
   >    count, s = args[2*i:2*i+2]
   >    count = int(count)
-  >    s = s.decode('string_escape')
+  >    s = encode(s)
   >    f.write(s*count)
   > f.close()
   > 
