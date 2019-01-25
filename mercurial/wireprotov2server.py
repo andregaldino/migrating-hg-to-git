@@ -390,7 +390,8 @@ def dispatch(repo, proto, command, redirect):
         return
 
     with cacher:
-        cachekey = entry.cachekeyfn(repo, proto, cacher, **args)
+        cachekey = entry.cachekeyfn(repo, proto, cacher,
+                                    **pycompat.strkwargs(args))
 
         # No cache key or the cacher doesn't like it. Do default handling.
         if cachekey is None or not cacher.setcachekey(cachekey):
