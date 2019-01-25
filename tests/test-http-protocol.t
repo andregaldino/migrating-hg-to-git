@@ -389,7 +389,7 @@ HTTP client follows HTTP redirect on handshake to new repo
   >     relpath = path[len(b'/redirector'):]
   >     res.status = b'301 Redirect'
   >     newurl = b'%s/redirected%s' % (req.baseurl, relpath)
-  >     if not repo.ui.configbool('testing', 'redirectqs', True) and b'?' in newurl:
+  >     if not repo.ui.configbool(b'testing', b'redirectqs', True) and b'?' in newurl:
   >         newurl = newurl[0:newurl.index(b'?')]
   >     res.headers[b'Location'] = newurl
   >     res.headers[b'Content-Type'] = b'text/plain'
