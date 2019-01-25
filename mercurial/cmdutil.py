@@ -607,11 +607,9 @@ def _unshelvemsg():
     return _helpmessage('hg unshelve --continue', 'hg unshelve --abort')
 
 def _graftmsg():
-    # tweakdefaults requires `update` to have a rev hence the `.`
     return _helpmessage('hg graft --continue', 'hg graft --abort')
 
 def _mergemsg():
-    # tweakdefaults requires `update` to have a rev hence the `.`
     return _helpmessage('hg commit', 'hg merge --abort')
 
 def _bisectmsg():
