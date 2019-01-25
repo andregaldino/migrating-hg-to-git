@@ -510,7 +510,7 @@ def decodeknown(objs):
     # Bytestring where each byte is a 0 or 1.
     raw = next(objs)
 
-    return [True if c == '1' else False for c in raw]
+    return [True if raw[i:i + 1] == b'1' else False for i in range(len(raw))]
 
 def decodelistkeys(objs):
     # Map with bytestring keys and values.
