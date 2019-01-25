@@ -38,6 +38,7 @@ from . import (
     cmdutil,
     color,
     context,
+    copies,
     dagparser,
     encoding,
     error,
@@ -1803,6 +1804,18 @@ def debugpathcomplete(ui, repo, *specs, **opts):
     files.update(dirs)
     ui.write('\n'.join(repo.pathto(p, cwd) for p in sorted(files)))
     ui.write('\n')
+
+@command('debugpathcopies',
+         cmdutil.walkopts,
+         'hg debugcopies REV1 REV2 [FILE]',
+         inferrepo=True)
+def debugpathcopies(ui, repo, rev1, rev2, *pats, **opts):
+    """show copies between two revisions"""
+    ctx1 = scmutil.revsingle(repo, rev1)
+    ctx2 = scmutil.revsingle(repo, rev2)
+    m = scmutil.match(ctx1, pats, opts)
+    for dst, src in copies.pathcopies(ctx1, ctx2, m).items():
+        ui.write('%s -> %s\n' % (src, dst))
 
 @command('debugpeer', [], _('PATH'), norepo=True)
 def debugpeer(ui, path):

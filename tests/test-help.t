@@ -1014,6 +1014,8 @@ Test list of internal help commands
    debugoptEXP   (no help text available)
    debugpathcomplete
                  complete part or all of a tracked path
+   debugpathcopies
+                 show copies between two revisions
    debugpeer     establish a connection to a peer repository
    debugpickmergetool
                  examine which merge tool is chosen for specified file
