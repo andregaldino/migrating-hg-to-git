@@ -396,6 +396,11 @@ class revlog(object):
             newversionflags = REVLOGV1 | FLAG_INLINE_DATA
             if 'generaldelta' in opts:
                 newversionflags |= FLAG_GENERALDELTA
+        elif getattr(self.opener, 'options', None) is not None:
+            # If options provided but no 'revlog*' found, the repository
+            # would have no 'requires' file in it, which means we have to
+            # stick to the old format.
+            newversionflags = REVLOGV0
         else:
             newversionflags = REVLOG_DEFAULT_VERSION
 
@@ -896,8 +901,6 @@ class revlog(object):
             common = [nullrev]
 
         if rustext is not None:
-            # TODO: WdirUnsupported should be raised instead of GraphError
-            # if common includes wdirrev
             return rustext.ancestor.MissingAncestors(self.index, common)
         return ancestor.incrementalmissingancestors(self.parentrevs, common)
 

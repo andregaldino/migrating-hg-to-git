@@ -999,15 +999,47 @@ class ui(object):
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
         '''
-        self._write(self._fout, *args, **opts)
+        dest = self._fout
+
+        # inlined _write() for speed
+        if self._buffers:
+            label = opts.get(r'label', '')
+            if label and self._bufferapplylabels:
+                self._buffers[-1].extend(self.label(a, label) for a in args)
+            else:
+                self._buffers[-1].extend(args)
+            return
+
+        # inliend _writenobuf() for speed
+        self._progclear()
+        msg = b''.join(args)
+
+        # opencode timeblockedsection because this is a critical path
+        starttime = util.timer()
+        try:
+            if self._colormode == 'win32':
+                # windows color printing is its own can of crab, defer to
+                # the color module and that is it.
+                color.win32print(self, dest.write, msg, **opts)
+            else:
+                if self._colormode is not None:
+                    label = opts.get(r'label', '')
+                    msg = self.label(msg, label)
+                dest.write(msg)
+        except IOError as err:
+            raise error.StdioError(err)
+        finally:
+            self._blockedtimes['stdio_blocked'] += \
+                (util.timer() - starttime) * 1000
 
     def write_err(self, *args, **opts):
         self._write(self._ferr, *args, **opts)
 
     def _write(self, dest, *args, **opts):
+        # update write() as well if you touch this code
         if self._isbuffered(dest):
-            if self._bufferapplylabels:
-                label = opts.get(r'label', '')
+            label = opts.get(r'label', '')
+            if label and self._bufferapplylabels:
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
                 self._buffers[-1].extend(args)
@@ -1015,6 +1047,7 @@ class ui(object):
             self._writenobuf(dest, *args, **opts)
 
     def _writenobuf(self, dest, *args, **opts):
+        # update write() as well if you touch this code
         self._progclear()
         msg = b''.join(args)
 

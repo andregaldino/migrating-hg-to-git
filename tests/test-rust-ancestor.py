@@ -2,6 +2,11 @@ from __future__ import absolute_import
 import sys
 import unittest
 
+from mercurial import (
+    error,
+    node,
+)
+
 try:
     from mercurial import rustext
     rustext.__name__  # trigger immediate actual import
@@ -153,6 +158,12 @@ class rustancestorstest(unittest.TestCase):
         # rust-cpython issues appropriate str instances for Python 2 and 3
         self.assertEqual(exc.args, ('ParentOutOfRange', 1))
 
+    def testwdirunsupported(self):
+        # trying to access ancestors of the working directory raises
+        # WdirUnsupported directly
+        idx = self.parseindex()
+        with self.assertRaises(error.WdirUnsupported):
+            list(AncestorsIterator(idx, [node.wdirrev], -1, False))
 
 if __name__ == '__main__':
     import silenttestrunner
