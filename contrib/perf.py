@@ -1036,7 +1036,8 @@ def perfindex(ui, repo, **opts):
     * -10000:
     * -10000: + 0
 
-    It is not currently possible to check for lookup of a missing node."""
+    It is not currently possible to check for lookup of a missing node. For
+    deeper lookup benchmarking, checkout the `perfnodemap` command."""
     import mercurial.revlog
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -1063,6 +1064,58 @@ def perfindex(ui, repo, **opts):
         cl = makecl(unfi)
         for n in nodes:
             cl.rev(n)
+    timer(d, setup=setup)
+    fm.end()
+
+@command(b'perfnodemap', [
+            (b'', b'rev', [], b'revision to be looked up (default tip)'),
+    ] + formatteropts)
+def perfnodemap(ui, repo, **opts):
+    """benchmark the time necessary to look up revision from a cold nodemap
+
+    Depending on the implementation, the amount and order of revision we look
+    up can varies. Example of useful set to test:
+    * tip
+    * 0
+    * -10:
+    * :10
+    * -10: + :10
+    * :10: + -10:
+    * -10000:
+    * -10000: + 0
+
+    The command currently focus on valid binary lookup. Benchmarking for
+    hexlookup, prefix lookup and missing lookup would also be valuable.
+    """
+    import mercurial.revlog
+    opts = _byteskwargs(opts)
+    timer, fm = gettimer(ui, opts)
+    mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
+
+    unfi = repo.unfiltered()
+    # find the filecache func directly
+    # This avoid polluting the benchmark with the filecache logic
+    makecl = unfi.__class__.changelog.func
+    if not opts[b'rev']:
+        raise error.Abort('use --rev to specify revisions to look up')
+    revs = scmutil.revrange(repo, opts[b'rev'])
+    cl = repo.changelog
+    nodes = [cl.node(r) for r in revs]
+
+    # use a list to pass reference to a nodemap from one closure to the next
+    nodeget = [None]
+    def setnodeget():
+        # probably not necessary, but for good measure
+        clearchangelog(unfi)
+        nodeget[0] = makecl(unfi).nodemap.get
+
+    def setup():
+        setnodeget()
+    def d():
+        get = nodeget[0]
+        for n in nodes:
+            get(n)
+
     timer(d, setup=setup)
     fm.end()
 

@@ -109,6 +109,8 @@ perfstatus
    perfmoonwalk  benchmark walking the changelog backwards
    perfnodelookup
                  (no help text available)
+   perfnodemap   benchmark the time necessary to look up revision from a cold
+                 nodemap
    perfparents   (no help text available)
    perfpathcopies
                  benchmark the copy tracing logic
