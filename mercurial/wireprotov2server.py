@@ -745,7 +745,7 @@ def makecommandcachekeyfn(command, localversion=None, allargs=False):
             # More granular cache key invalidation.
             b'localversion': localversion,
             # Cache keys are segmented by command.
-            b'command': pycompat.sysbytes(command),
+            b'command': command,
             # Throw in the media type and API version strings so changes
             # to exchange semantics invalid cache.
             b'mediatype': FRAMINGTYPE,
