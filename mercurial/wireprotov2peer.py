@@ -304,7 +304,7 @@ class clienthandler(object):
                 # TODO tell reactor?
                 self._frameseof = True
             else:
-                self._ui.note(_('received %r\n') % frame)
+                self._ui.debug('received %r\n' % frame)
                 self._processframe(frame)
 
         # Also try to read the first redirect.

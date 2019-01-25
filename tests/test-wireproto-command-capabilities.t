@@ -507,23 +507,19 @@ capabilities command returns expected info
   s>     \t\x00\x00\x01\x00\x02\x01\x92
   s>     Hidentity
   s>     \r\n
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     13\r\n
   s>     \x0b\x00\x00\x01\x00\x02\x041
   s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     65e\r\n
   s>     V\x06\x00\x01\x00\x02\x041
   s>     \xa4Hcommands\xacIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x83HlinknodeGparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullIfilesdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84NfirstchangesetHlinknodeGparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolJpathfilter\xa3Gdefault\xf6Hrequired\xf4DtypeDdictIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullTrecommendedbatchsize\x19\xc3PEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushPrawstorefiledata\xa2Dargs\xa2Efiles\xa2Hrequired\xf5DtypeDlistJpathfilter\xa3Gdefault\xf6Hrequired\xf4DtypeDlistKpermissions\x81DpullQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x83LgeneraldeltaHrevlogv1Lsparserevlog
   s>     \r\n
-  received frame(size=1622; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
   s>     0\r\n
   s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'commands': {

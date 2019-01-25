@@ -216,23 +216,19 @@ Request to read-only command works out of the box
   s>     \t\x00\x00\x01\x00\x02\x01\x92
   s>     Hidentity
   s>     \r\n
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     13\r\n
   s>     \x0b\x00\x00\x01\x00\x02\x041
   s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     27\r\n
   s>     \x1f\x00\x00\x01\x00\x02\x041
   s>     X\x1dcustomreadonly bytes response
   s>     \r\n
-  received frame(size=31; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
   s>     0\r\n
   s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     b'customreadonly bytes response'
   ]
@@ -665,23 +661,19 @@ Defining an invalid content encoding results in warning
   s>     \t\x00\x00\x01\x00\x02\x01\x92
   s>     Hidentity
   s>     \r\n
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     13\r\n
   s>     \x0b\x00\x00\x01\x00\x02\x041
   s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     1e\r\n
   s>     \x16\x00\x00\x01\x00\x02\x041
   s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
   s>     \r\n
-  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
   s>     0\r\n
   s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: [
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
   ]
@@ -714,12 +706,10 @@ Defining an invalid content encoding results in warning
   s>     \t\x00\x00\x01\x00\x02\x01\x92
   s>     Hzstd-8mb
   s>     \r\n
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     25\r\n
   s>     \x1d\x00\x00\x01\x00\x02\x042
   s>     (\xb5/\xfd\x00P\xa4\x00\x00p\xa1FstatusBok\x81T\x00\x01\x00\tP\x02
   s>     \r\n
-  received frame(size=29; request=1; stream=2; streamflags=encoded; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [
