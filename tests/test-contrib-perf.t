@@ -88,7 +88,7 @@ perfstatus
                  (no help text available)
    perffncachewrite
                  (no help text available)
-   perfheads     (no help text available)
+   perfheads     benchmark the computation of a changelog heads
    perfhelper-pathcopies
                  find statistic about potential parameters for the
                  'perftracecopies'

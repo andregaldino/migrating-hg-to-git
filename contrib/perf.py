@@ -535,6 +535,7 @@ def clearcaches(cl):
 
 @command(b'perfheads', formatteropts)
 def perfheads(ui, repo, **opts):
+    """benchmark the computation of a changelog heads"""
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     cl = repo.changelog
