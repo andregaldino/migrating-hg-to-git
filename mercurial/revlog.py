@@ -607,6 +607,9 @@ class revlog(object):
         self._pcache = {}
 
         try:
+            # If we are using the native C version, you are in a fun case
+            # where self.index, self.nodemap and self._nodecaches is the same
+            # object.
             self._nodecache.clearcaches()
         except AttributeError:
             self._nodecache = {nullid: nullrev}
