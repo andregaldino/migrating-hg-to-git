@@ -539,10 +539,11 @@ def perfheads(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     cl = repo.changelog
+    def s():
+        clearcaches(cl)
     def d():
         len(cl.headrevs())
-        clearcaches(cl)
-    timer(d)
+    timer(d, setup=s)
     fm.end()
 
 @command(b'perftags', formatteropts+
