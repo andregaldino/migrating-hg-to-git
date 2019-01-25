@@ -39,12 +39,12 @@
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg transplant 1
-  abort: outstanding uncommitted merges
+  abort: outstanding uncommitted merge
   [255]
   $ hg up -qC tip
   $ echo b0 > b1
   $ hg transplant 1
-  abort: outstanding local changes
+  abort: uncommitted changes
   [255]
   $ hg up -qC tip
   $ echo b2 > b2

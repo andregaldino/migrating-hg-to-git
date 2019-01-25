@@ -676,11 +676,7 @@ def _dotransplant(ui, repo, *revs, **opts):
             raise error.Abort(_('no transplant to continue'))
     else:
         cmdutil.checkunfinished(repo)
-        if p2 != revlog.nullid:
-            raise error.Abort(_('outstanding uncommitted merges'))
-        m, a, r, d = repo.status()[:4]
-        if m or a or r or d:
-            raise error.Abort(_('outstanding local changes'))
+        cmdutil.bailifchanged(repo)
 
     sourcerepo = opts.get('source')
     if sourcerepo:
