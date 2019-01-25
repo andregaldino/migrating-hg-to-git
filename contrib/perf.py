@@ -1015,6 +1015,7 @@ def perfignore(ui, repo, **opts):
 
 @command(b'perfindex', [
             (b'', b'rev', b'', b'revision to be looked up (default tip)'),
+            (b'', b'no-lookup', None, b'do not revision lookup post creation'),
          ] + formatteropts)
 def perfindex(ui, repo, **opts):
     """benchmark index creation time followed by a lookup
@@ -1029,7 +1030,9 @@ def perfindex(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
-    if opts[b'rev'] is None:
+    if opts[b'no_lookup']:
+        n = None
+    elif opts[b'rev'] is None:
         n = repo[b"tip"].node()
     else:
         rev = scmutil.revsingle(repo, opts[b'rev'])
@@ -1044,7 +1047,8 @@ def perfindex(ui, repo, **opts):
         clearchangelog(unfi)
     def d():
         cl = makecl(unfi)
-        cl.rev(n)
+        if n is not None:
+            cl.rev(n)
     timer(d, setup=setup)
     fm.end()
 
