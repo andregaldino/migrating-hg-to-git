@@ -2011,8 +2011,7 @@ class localrepository(object):
             self.svfs.rename('undo.phaseroots', 'phaseroots', checkambig=True)
         self.invalidate()
 
-        parentgone = (parents[0] not in self.changelog.nodemap or
-                      parents[1] not in self.changelog.nodemap)
+        parentgone = any(p not in self.changelog.nodemap for p in parents)
         if parentgone:
             # prevent dirstateguard from overwriting already restored one
             dsguard.close()
