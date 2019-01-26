@@ -232,9 +232,9 @@ def callcatch(ui, func):
         elif m in "zlib".split():
             ui.error(_("(is your Python install correct?)\n"))
     except IOError as inst:
-        if util.safehasattr(inst, "code"):
+        if util.safehasattr(inst, "code"): # HTTPError
             ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst))
-        elif util.safehasattr(inst, "reason"):
+        elif util.safehasattr(inst, "reason"): # URLError or SSLError
             try: # usually it is in the form (errno, strerror)
                 reason = inst.reason.args[1]
             except (AttributeError, IndexError):
@@ -247,14 +247,14 @@ def callcatch(ui, func):
         elif (util.safehasattr(inst, "args")
               and inst.args and inst.args[0] == errno.EPIPE):
             pass
-        elif getattr(inst, "strerror", None):
+        elif getattr(inst, "strerror", None): # common IOError
             if getattr(inst, "filename", None):
                 ui.error(_("abort: %s: %s\n") % (
                     encoding.strtolocal(inst.strerror),
                     stringutil.forcebytestr(inst.filename)))
             else:
                 ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
-        else:
+        else: # suspicious IOError
             raise
     except OSError as inst:
         if getattr(inst, "filename", None) is not None:
