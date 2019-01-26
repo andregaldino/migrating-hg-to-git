@@ -589,7 +589,7 @@ annotate missing file
 
   $ hg annotate -ncr "wdir()" baz
   abort: $TESTTMP\repo\baz: $ENOENT$ (windows !)
-  abort: $ENOENT$: $TESTTMP/repo/baz (no-windows !)
+  abort: $ENOENT$: '$TESTTMP/repo/baz' (no-windows !)
   [255]
 
 annotate removed file
@@ -598,7 +598,7 @@ annotate removed file
 
   $ hg annotate -ncr "wdir()" baz
   abort: $TESTTMP\repo\baz: $ENOENT$ (windows !)
-  abort: $ENOENT$: $TESTTMP/repo/baz (no-windows !)
+  abort: $ENOENT$: '$TESTTMP/repo/baz' (no-windows !)
   [255]
 
   $ hg revert --all --no-backup --quiet

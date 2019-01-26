@@ -248,8 +248,8 @@ def callcatch(ui, func):
               and inst.args and inst.args[0] == errno.EPIPE):
             pass
         elif getattr(inst, "strerror", None): # common IOError
-            if getattr(inst, "filename", None):
-                ui.error(_("abort: %s: %s\n") % (
+            if getattr(inst, "filename", None) is not None:
+                ui.error(_("abort: %s: '%s'\n") % (
                     encoding.strtolocal(inst.strerror),
                     stringutil.forcebytestr(inst.filename)))
             else:

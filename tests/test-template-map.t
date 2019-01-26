@@ -1039,7 +1039,7 @@ Error if style not readable:
   $ touch q
   $ chmod 0 q
   $ hg log --style ./q
-  abort: Permission denied: ./q
+  abort: Permission denied: './q'
   [255]
 #endif
 

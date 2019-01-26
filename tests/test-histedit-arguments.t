@@ -362,7 +362,7 @@ Corrupt histedit state file
   $ hg histedit --abort
   warning: encountered an exception during histedit --abort; the repository may not have been completely cleaned up
   abort: $TESTTMP/foo/.hg/strip-backup/*-histedit.hg: $ENOENT$ (glob) (windows !)
-  abort: $ENOENT$: $TESTTMP/foo/.hg/strip-backup/*-histedit.hg (glob) (no-windows !)
+  abort: $ENOENT$: '$TESTTMP/foo/.hg/strip-backup/*-histedit.hg' (glob) (no-windows !)
   [255]
 Histedit state has been exited
   $ hg summary -q
