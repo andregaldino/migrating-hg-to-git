@@ -1102,7 +1102,7 @@ def branch(ui, repo, label=None, **opts):
 
     with repo.wlock():
         if opts.get('clean'):
-            label = repo[None].p1().branch()
+            label = repo['.'].branch()
             repo.dirstate.setbranch(label)
             ui.status(_('reset working directory to branch %s\n') % label)
         elif label:
@@ -1672,8 +1672,8 @@ def _docommit(ui, repo, *pats, **opts):
         if not bheads:
             raise error.Abort(_('can only close branch heads'))
         elif opts.get('amend'):
-            if repo[None].p1().p1().branch() != branch and \
-                    repo[None].p1().p2().branch() != branch:
+            if repo['.'].p1().branch() != branch and \
+                    repo['.'].p2().branch() != branch:
                 raise error.Abort(_('can only close branch heads'))
 
     if opts.get('amend'):

@@ -38,8 +38,8 @@ class defaultformatter(object):
         if self.opts.get('rev') == 'wdir()':
             orig = hexfunc
             hexfunc = lambda x: None if x is None else orig(x)
-            wnode = hexfunc(repo[None].p1().node()) + '+'
-            wrev = '%d' % repo[None].p1().rev()
+            wnode = hexfunc(repo['.'].node()) + '+'
+            wrev = '%d' % repo['.'].rev()
             wrevpad = ''
             if not opts.get('changeset'): # only show + if changeset is hidden
                 wrev += '+'
