@@ -156,7 +156,7 @@ class ConnectionManager(object):
         try:
             for c in self._hostmap[host]:
                 if self._readymap[c]:
-                    self._readymap[c] = 0
+                    self._readymap[c] = False
                     conn = c
                     break
         finally:
@@ -200,7 +200,7 @@ class KeepAliveHandler(object):
     def _request_closed(self, request, host, connection):
         """tells us that this request is now closed and that the
         connection is ready for another request"""
-        self._cm.set_ready(connection, 1)
+        self._cm.set_ready(connection, True)
 
     def _remove_connection(self, host, connection, close=0):
         if close:
@@ -237,7 +237,7 @@ class KeepAliveHandler(object):
                 if DEBUG:
                     DEBUG.info("creating new connection to %s (%d)",
                                host, id(h))
-                self._cm.add(host, h, 0)
+                self._cm.add(host, h, False)
                 self._start_transaction(h, req)
                 r = h.getresponse()
         # The string form of BadStatusLine is the status line. Add some context
