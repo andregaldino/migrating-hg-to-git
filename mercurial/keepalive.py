@@ -84,6 +84,7 @@ EXTRA ATTRIBUTES AND METHODS
 
 from __future__ import absolute_import, print_function
 
+import collections
 import errno
 import hashlib
 import socket
@@ -114,15 +115,13 @@ class ConnectionManager(object):
       """
     def __init__(self):
         self._lock = threading.Lock()
-        self._hostmap = {} # map hosts to a list of connections
+        self._hostmap = collections.defaultdict(list) # host -> [connection]
         self._connmap = {} # map connections to host
         self._readymap = {} # map connection to ready state
 
     def add(self, host, connection, ready):
         self._lock.acquire()
         try:
-            if host not in self._hostmap:
-                self._hostmap[host] = []
             self._hostmap[host].append(connection)
             self._connmap[connection] = host
             self._readymap[connection] = ready
@@ -155,19 +154,18 @@ class ConnectionManager(object):
         conn = None
         self._lock.acquire()
         try:
-            if host in self._hostmap:
-                for c in self._hostmap[host]:
-                    if self._readymap[c]:
-                        self._readymap[c] = 0
-                        conn = c
-                        break
+            for c in self._hostmap[host]:
+                if self._readymap[c]:
+                    self._readymap[c] = 0
+                    conn = c
+                    break
         finally:
             self._lock.release()
         return conn
 
     def get_all(self, host=None):
         if host:
-            return list(self._hostmap.get(host, []))
+            return list(self._hostmap[host])
         else:
             return dict(self._hostmap)
 
