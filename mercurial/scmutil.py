@@ -231,7 +231,7 @@ def callcatch(ui, func):
             ui.error(_("(did you forget to compile extensions?)\n"))
         elif m in "zlib".split():
             ui.error(_("(is your Python install correct?)\n"))
-    except IOError as inst:
+    except (IOError, OSError) as inst:
         if util.safehasattr(inst, "code"): # HTTPError
             ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst))
         elif util.safehasattr(inst, "reason"): # URLError or SSLError
@@ -247,7 +247,7 @@ def callcatch(ui, func):
         elif (util.safehasattr(inst, "args")
               and inst.args and inst.args[0] == errno.EPIPE):
             pass
-        elif getattr(inst, "strerror", None): # common IOError
+        elif getattr(inst, "strerror", None): # common IOError or OSError
             if getattr(inst, "filename", None) is not None:
                 ui.error(_("abort: %s: '%s'\n") % (
                     encoding.strtolocal(inst.strerror),
@@ -256,13 +256,6 @@ def callcatch(ui, func):
                 ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
         else: # suspicious IOError
             raise
-    except OSError as inst:
-        if getattr(inst, "filename", None) is not None:
-            ui.error(_("abort: %s: '%s'\n") % (
-                encoding.strtolocal(inst.strerror),
-                stringutil.forcebytestr(inst.filename)))
-        else:
-            ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
     except MemoryError:
         ui.error(_("abort: out of memory\n"))
     except SystemExit as inst:
