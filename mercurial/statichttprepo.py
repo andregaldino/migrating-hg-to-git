@@ -19,6 +19,7 @@ from . import (
     manifest,
     namespaces,
     pathutil,
+    pycompat,
     url,
     util,
     vfs as vfsmod,
@@ -44,12 +45,12 @@ class httprangereader(object):
     def seek(self, pos):
         self.pos = pos
     def read(self, bytes=None):
-        req = urlreq.request(self.url)
+        req = urlreq.request(pycompat.strurl(self.url))
         end = ''
         if bytes:
             end = self.pos + bytes - 1
         if self.pos or end:
-            req.add_header('Range', 'bytes=%d-%s' % (self.pos, end))
+            req.add_header(r'Range', r'bytes=%d-%s' % (self.pos, end))
 
         try:
             f = self.opener.open(req)
