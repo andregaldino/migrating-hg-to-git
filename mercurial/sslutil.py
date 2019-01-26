@@ -430,6 +430,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
                           'error)\n'))
         except ssl.SSLError:
             pass
+
         # Try to print more helpful error messages for known failures.
         if util.safehasattr(e, 'reason'):
             # This error occurs when the client and server don't share a
@@ -437,7 +438,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             # outright. Hopefully the reason for this error is that we require
             # TLS 1.1+ and the server only supports TLS 1.0. Whatever the
             # reason, try to emit an actionable warning.
-            if e.reason == 'UNSUPPORTED_PROTOCOL':
+            if e.reason == r'UNSUPPORTED_PROTOCOL':
                 # We attempted TLS 1.0+.
                 if settings['protocolui'] == 'tls1.0':
                     # We support more than just TLS 1.0+. If this happens,
@@ -484,7 +485,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
                         '(see https://mercurial-scm.org/wiki/SecureConnections '
                         'for more info)\n'))
 
-            elif (e.reason == 'CERTIFICATE_VERIFY_FAILED' and
+            elif (e.reason == r'CERTIFICATE_VERIFY_FAILED' and
                 pycompat.iswindows):
 
                 ui.warn(_('(the full certificate chain may not be available '
