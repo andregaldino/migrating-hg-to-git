@@ -25,6 +25,7 @@ from mercurial import (
     encoding,
     error,
     fancyopts,
+    pycompat,
     registrar,
     scmutil,
 )
@@ -83,20 +84,22 @@ def parseoptions(ui, cmdoptions, args):
             args = fancyopts.fancyopts(list(args), cmdoptions, opts, True)
             break
         except getopt.GetoptError as ex:
-            if "requires argument" in ex.msg:
+            if r"requires argument" in ex.msg:
                 raise
-            if ('--' + ex.opt) in ex.msg:
-                flag = '--' + ex.opt
-            elif ('-' + ex.opt) in ex.msg:
-                flag = '-' + ex.opt
+            if (r'--' + ex.opt) in ex.msg:
+                flag = '--' + pycompat.bytestr(ex.opt)
+            elif (r'-' + ex.opt) in ex.msg:
+                flag = '-' + pycompat.bytestr(ex.opt)
             else:
-                raise error.Abort(_("unknown option %s") % ex.opt)
+                raise error.Abort(_("unknown option %s") %
+                                  pycompat.bytestr(ex.opt))
             try:
                 args.remove(flag)
             except Exception:
                 msg = _("unknown option '%s' packed with other options")
                 hint = _("please try passing the option as its own flag: -%s")
-                raise error.Abort(msg % ex.opt, hint=hint % ex.opt)
+                raise error.Abort(msg % pycompat.bytestr(ex.opt),
+                                  hint=hint % pycompat.bytestr(ex.opt))
 
             ui.warn(_("ignoring unknown option %s\n") % flag)
 
