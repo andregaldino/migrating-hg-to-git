@@ -403,6 +403,11 @@ class HTTPResponse(httplib.HTTPResponse):
     _raw_read = httplib.HTTPResponse.read
     _raw_readinto = getattr(httplib.HTTPResponse, 'readinto', None)
 
+    # Python 2.7 has a single close() which closes the socket handle.
+    # This method was effectively renamed to _close_conn() in Python 3. But
+    # there is also a close(). _close_conn() is called by methods like
+    # read().
+
     def close(self):
         if self.fp:
             self.fp.close()
@@ -410,6 +415,9 @@ class HTTPResponse(httplib.HTTPResponse):
             if self._handler:
                 self._handler._request_closed(self, self._host,
                                               self._connection)
+
+    def _close_conn(self):
+        self.close()
 
     def close_connection(self):
         self._handler._remove_connection(self._host, self._connection, close=1)
