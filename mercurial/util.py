@@ -789,6 +789,12 @@ class fileobjectobserver(baseproxyobserver):
                                                       res))
 
         data = dest[0:res] if res is not None else b''
+
+        # _writedata() uses "in" operator and is confused by memoryview because
+        # characters are ints on Python 3.
+        if isinstance(data, memoryview):
+            data = data.tobytes()
+
         self._writedata(data)
 
     def write(self, res, data):
