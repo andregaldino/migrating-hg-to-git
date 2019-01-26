@@ -1300,6 +1300,7 @@ test ancestors/descendants relation subscript:
   5
   6
   7
+  $ log 'tip#generations[1:-1]'
 
   $ hg debugrevspec -p parsed 'roots(:)#g[2]'
   * parsed:
