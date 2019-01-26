@@ -121,7 +121,12 @@ class Command(object):
             for k, values in sorted(self.opts.iteritems()):
                 for v in values:
                     if v:
-                        cmd += " %s %s" % (k, v)
+                        if isinstance(v, int):
+                            fmt = ' %s %d'
+                        else:
+                            fmt = ' %s %s'
+
+                        cmd += fmt % (k, v)
                     else:
                         cmd += " %s" % (k,)
         if self.args:
