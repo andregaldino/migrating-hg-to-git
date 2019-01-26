@@ -188,10 +188,9 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   >                             stderr=subprocess.PIPE)
   >     output = proc.communicate()[0]
   > 
-  >     slash = '/'
   >     for line in output.splitlines():
   >         if os.name == 'nt':
-  >             yield line.replace(os.sep, slash)
+  >             yield line.replace(pycompat.sysbytes(os.sep), b'/')
   >         else:
   >             yield line
   > 
