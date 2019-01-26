@@ -454,7 +454,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
                             'server; see '
                             'https://mercurial-scm.org/wiki/SecureConnections '
                             'for more info)\n') % (
-                                serverhostname,
+                                pycompat.bytesurl(serverhostname),
                                 ', '.join(sorted(supportedprotocols))))
                     else:
                         ui.warn(_(
@@ -463,7 +463,8 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
                             'supports TLS 1.0 because it has known security '
                             'vulnerabilities; see '
                             'https://mercurial-scm.org/wiki/SecureConnections '
-                            'for more info)\n') % serverhostname)
+                            'for more info)\n') %
+                                pycompat.bytesurl(serverhostname))
                 else:
                     # We attempted TLS 1.1+. We can only get here if the client
                     # supports the configured protocol. So the likely reason is
@@ -473,14 +474,15 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
                         '(could not negotiate a common security protocol (%s+) '
                         'with %s; the likely cause is Mercurial is configured '
                         'to be more secure than the server can support)\n') % (
-                        settings['protocolui'], serverhostname))
+                        settings['protocolui'],
+                        pycompat.bytesurl(serverhostname)))
                     ui.warn(_('(consider contacting the operator of this '
                               'server and ask them to support modern TLS '
                               'protocol versions; or, set '
                               'hostsecurity.%s:minimumprotocol=tls1.0 to allow '
                               'use of legacy, less secure protocols when '
                               'communicating with this server)\n') %
-                            serverhostname)
+                            pycompat.bytesurl(serverhostname))
                     ui.warn(_(
                         '(see https://mercurial-scm.org/wiki/SecureConnections '
                         'for more info)\n'))
