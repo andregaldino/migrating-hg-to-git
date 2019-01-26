@@ -243,6 +243,13 @@ def mimetextqp(body, subtype, charset):
             cs.body_encoding = email.charset.QP
             break
 
+    # On Python 2, this simply assigns a value. Python 3 inspects
+    # body and does different things depending on whether it has
+    # encode() or decode() attributes. We can get the old behavior
+    # if we pass a str and charset is None and we call set_charset().
+    # But we may get into  trouble later due to Python attempting to
+    # encode/decode using the registered charset (or attempting to
+    # use ascii in the absence of a charset).
     msg.set_payload(body, cs)
 
     return msg
