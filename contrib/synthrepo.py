@@ -349,7 +349,7 @@ def synthesize(ui, repo, descpath, **opts):
     # to the modeled directory structure.
     initcount = int(opts['initfiles'])
     if initcount and initdirs:
-        pctx = repo[None].parents()[0]
+        pctx = repo[None].p1()
         dirs = set(pctx.dirs())
         files = {}
 

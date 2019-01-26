@@ -67,7 +67,7 @@ def _commitfiltered(repo, ctx, match, keepcommit):
     files = (initialfiles - exclude)
     # return the p1 so that we don't create an obsmarker later
     if not keepcommit:
-        return ctx.parents()[0].node()
+        return ctx.p1().node()
 
     # Filter copies
     copied = copiesmod.pathcopies(base, ctx)

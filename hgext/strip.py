@@ -39,7 +39,7 @@ def checksubstate(repo, baserev=None):
     if baserev:
         bctx = repo[baserev]
     else:
-        bctx = wctx.parents()[0]
+        bctx = wctx.p1()
     for s in sorted(wctx.substate):
         wctx.sub(s).bailifchanged(True)
         if s not in bctx.substate or bctx.sub(s).dirty():

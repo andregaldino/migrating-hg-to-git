@@ -336,7 +336,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
     if branchmerge:
         # If we're merging, use the wctx filter, since we're merging into
         # the wctx.
-        sparsematch = matcher(repo, [wctx.parents()[0].rev()])
+        sparsematch = matcher(repo, [wctx.p1().rev()])
     else:
         # If we're updating, use the target context's filter, since we're
         # moving to the target context.

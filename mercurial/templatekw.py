@@ -796,7 +796,7 @@ def showsubrepos(context, mapping):
     substate = ctx.substate
     if not substate:
         return compatlist(context, mapping, 'subrepo', [])
-    psubstate = ctx.parents()[0].substate or {}
+    psubstate = ctx.p1().substate or {}
     subrepos = []
     for sub in substate:
         if sub not in psubstate or substate[sub] != psubstate[sub]:

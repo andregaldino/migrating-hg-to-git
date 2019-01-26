@@ -63,7 +63,7 @@ for enc in "ASCII", "Latin-1", "UTF-8":
 # test performing a status
 
 def getfilectx(repo, memctx, f):
-    fctx = memctx.parents()[0][f]
+    fctx = memctx.p1()[f]
     data, flags = fctx.data(), fctx.flags()
     if f == b'foo':
         data += b'bar\n'

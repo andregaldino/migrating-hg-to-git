@@ -518,8 +518,8 @@ def getlfilestoupload(repo, missing, addfunc):
             files = set(ctx.files())
             if len(parents) == 2:
                 mc = ctx.manifest()
-                mp1 = ctx.parents()[0].manifest()
-                mp2 = ctx.parents()[1].manifest()
+                mp1 = ctx.p1().manifest()
+                mp2 = ctx.p2().manifest()
                 for f in mp1:
                     if f not in mc:
                         files.add(f)
