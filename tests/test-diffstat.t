@@ -255,3 +255,19 @@ When a file is renamed, --git shouldn't loss the info about old file
   $ hg diff --stat --git
    a => b |  0 
    1 files changed, 0 insertions(+), 0 deletions(-)
+-- filename may contain whitespaces
+  $ echo > c
+  $ hg ci -Am 'add c'
+  adding c
+  $ hg mv c 'new c'
+  $ hg diff --git
+  diff --git a/c b/new c
+  rename from c
+  rename to new c
+  $ hg diff --stat
+   c     |  1 -
+   new c |  1 +
+   2 files changed, 1 insertions(+), 1 deletions(-)
+  $ hg diff --stat --git
+   c => new c |  0 
+   1 files changed, 0 insertions(+), 0 deletions(-)

@@ -2806,9 +2806,9 @@ def diffstatdata(lines):
               line.startswith('Binary file')):
             isbinary = True
         elif line.startswith('rename from'):
-            filename = line.split()[-1]
+            filename = line[12:]
         elif line.startswith('rename to'):
-            filename += ' => %s' % line.split()[-1]
+            filename += ' => %s' % line[10:]
     addresult()
     return results
 
