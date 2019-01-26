@@ -367,8 +367,12 @@ class notifier(object):
             raise error.Abort(inst)
 
         # store sender and subject
-        sender = encoding.strtolocal(msg[r'From'])
-        subject = encoding.strtolocal(msg[r'Subject'])
+        sender = msg[r'From']
+        subject = msg[r'Subject']
+        if sender is not None:
+            sender = encoding.strtolocal(sender)
+        if subject is not None:
+            subject = encoding.strtolocal(subject)
         del msg[r'From'], msg[r'Subject']
 
         if not msg.is_multipart():
