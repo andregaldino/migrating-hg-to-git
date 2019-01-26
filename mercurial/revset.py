@@ -258,6 +258,11 @@ def _splitrange(a, b):
 def generationsrel(repo, subset, x, rel, a, b, order):
     # TODO: rewrite tests, and drop startdepth argument from ancestors() and
     # descendants() predicates
+    if a is None:
+        a = -(dagop.maxlogdepth - 1)
+    if b is None:
+        b = +(dagop.maxlogdepth - 1)
+
     (ancstart, ancstop), (descstart, descstop) = _splitrange(a, b)
 
     if ancstart is None and descstart is None:
@@ -294,10 +299,6 @@ def relsubscriptset(repo, subset, x, y, z, order):
             msg = _("relation subscript bounds must be integers")
             return getinteger(i, msg)
         a, b = [getbound(i) for i in (a, b)]
-        if a is None:
-            a = -(dagop.maxlogdepth - 1)
-        if b is None:
-            b = +(dagop.maxlogdepth - 1)
 
     if rel in subscriptrelations:
         return subscriptrelations[rel](repo, subset, x, rel, a, b, order)
