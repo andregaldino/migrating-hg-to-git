@@ -23,6 +23,7 @@ from . import (
     narrowspec,
     pycompat,
     streamclone,
+    templatefilters,
     util,
     wireprotoframing,
     wireprototypes,
@@ -148,8 +149,6 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
     tracker. We then dump the log of all that activity back out to the
     client.
     """
-    import json
-
     # Reflection APIs have a history of being abused, accidentally disclosing
     # sensitive data, etc. So we have a config knob.
     if not ui.configbool('experimental', 'web.api.debugreflect'):
@@ -175,12 +174,11 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
                                                   frame.payload))
 
         action, meta = reactor.onframerecv(frame)
-        states.append(json.dumps((action, meta), sort_keys=True,
-                                 separators=(', ', ': ')))
+        states.append(templatefilters.json((action, meta)))
 
     action, meta = reactor.oninputeof()
     meta['action'] = action
-    states.append(json.dumps(meta, sort_keys=True, separators=(', ',': ')))
+    states.append(templatefilters.json(meta))
 
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = b'text/plain'
