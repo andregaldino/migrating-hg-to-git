@@ -970,7 +970,7 @@ class queue(object):
                         repo.dirstate.remove(f)
                     for f in merged:
                         repo.dirstate.merge(f)
-                    p1, p2 = repo.dirstate.parents()
+                    p1 = repo.dirstate.p1()
                     repo.setparents(p1, merge)
 
             if all_files and '.hgsubstate' in all_files:

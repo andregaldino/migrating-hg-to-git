@@ -68,7 +68,7 @@ def fetch(ui, repo, source='default', **opts):
     if date:
         opts['date'] = dateutil.parsedate(date)
 
-    parent, _p2 = repo.dirstate.parents()
+    parent = repo.dirstate.p1()
     branch = repo.dirstate.branch()
     try:
         branchnode = repo.branchtip(branch)

@@ -1459,7 +1459,7 @@ def _chistedit(ui, repo, *freeargs, **opts):
                 'exactly one common root'))
         root = rr[0].node()
 
-        topmost, empty = repo.dirstate.parents()
+        topmost = repo.dirstate.p1()
         revs = between(repo, root, topmost, keep)
         if not revs:
             raise error.Abort(_('%s is not an ancestor of working directory') %
@@ -1873,7 +1873,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     cmdutil.checkunfinished(repo)
     cmdutil.bailifchanged(repo)
 
-    topmost, empty = repo.dirstate.parents()
+    topmost = repo.dirstate.p1()
     if outg:
         if freeargs:
             remote = freeargs[0]
