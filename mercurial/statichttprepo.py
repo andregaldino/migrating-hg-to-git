@@ -59,7 +59,7 @@ class httprangereader(object):
             num = inst.code == 404 and errno.ENOENT or None
             raise IOError(num, inst)
         except urlerr.urlerror as inst:
-            raise IOError(None, inst.reason[1])
+            raise IOError(None, inst.reason)
 
         if code == 200:
             # HTTPRangeHandler does nothing if remote does not support
