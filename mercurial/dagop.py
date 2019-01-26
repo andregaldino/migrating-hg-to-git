@@ -221,7 +221,7 @@ def revdescendants(repo, revs, followfirst, startdepth=None, stopdepth=None):
     Scan ends at the stopdepth (exlusive) if specified. Revisions found
     earlier than the startdepth are omitted.
     """
-    if startdepth is None and (stopdepth is None or stopdepth == maxlogdepth):
+    if startdepth is None and (stopdepth is None or stopdepth >= maxlogdepth):
         gen = _genrevdescendants(repo, revs, followfirst)
     else:
         gen = _genrevdescendantsofdepth(repo, revs, followfirst,
