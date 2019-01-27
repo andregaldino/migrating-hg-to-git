@@ -246,6 +246,9 @@ def getintrange(x, err1, err2, deffirst=_notset, deflast=_notset):
     If any of the sides omitted, and if no default provided, ParseError will
     be raised.
     """
+    if x and (x[0] == 'string' or x[0] == 'symbol'):
+        n = getinteger(x, err1)
+        return n, n
     a, b = getrange(x, err1)
     return getinteger(a, err2, deffirst), getinteger(b, err2, deflast)
 

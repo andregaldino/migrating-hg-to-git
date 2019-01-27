@@ -1071,7 +1071,7 @@ def followlines(repo, subset, x):
     fromline, toline = util.processlinerange(
         *getintrange(args['lines'][0],
                      # i18n: "followlines" is a keyword
-                     _("followlines expects a line range"),
+                     _("followlines expects a line number or a range"),
                      _("line range bounds must be integers")))
 
     fctx = repo[rev].filectx(fname)
