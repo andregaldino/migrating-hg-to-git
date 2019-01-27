@@ -291,15 +291,16 @@ class _gitlfsremote(object):
         Return decoded JSON object like {'objects': [{'oid': '', 'size': 1}]}
         See https://github.com/git-lfs/git-lfs/blob/master/docs/api/batch.md
         """
-        objects = [{'oid': p.oid(), 'size': p.size()} for p in pointers]
-        requestdata = json.dumps({
-            'objects': objects,
-            'operation': action,
-        })
+        objects = [{r'oid': pycompat.strurl(p.oid()),
+                    r'size': p.size()} for p in pointers]
+        requestdata = pycompat.bytesurl(json.dumps({
+            r'objects': objects,
+            r'operation': pycompat.strurl(action),
+        }))
         url = b'%s/objects/batch' % self.baseurl
         batchreq = util.urlreq.request(pycompat.strurl(url), data=requestdata)
-        batchreq.add_header('Accept', 'application/vnd.git-lfs+json')
-        batchreq.add_header('Content-Type', 'application/vnd.git-lfs+json')
+        batchreq.add_header(r'Accept', r'application/vnd.git-lfs+json')
+        batchreq.add_header(r'Content-Type', r'application/vnd.git-lfs+json')
         try:
             with contextlib.closing(self.urlopener.open(batchreq)) as rsp:
                 rawjson = rsp.read()
@@ -332,12 +333,14 @@ class _gitlfsremote(object):
             self.ui.debug(b'%s\n'
                           % b'\n'.join(sorted(headers.splitlines())))
 
-            if 'objects' in response:
-                response['objects'] = sorted(response['objects'],
-                                             key=lambda p: p['oid'])
-            self.ui.debug('%s\n'
-                          % json.dumps(response, indent=2,
-                                       separators=('', ': '), sort_keys=True))
+            if r'objects' in response:
+                response[r'objects'] = sorted(response[r'objects'],
+                                              key=lambda p: p[r'oid'])
+            self.ui.debug(b'%s\n'
+                          % pycompat.bytesurl(
+                              json.dumps(response, indent=2,
+                                         separators=(r'', r': '),
+                                         sort_keys=True)))
 
         return response
 
@@ -419,8 +422,8 @@ class _gitlfsremote(object):
                 raise error.Abort(_(b'detected corrupt lfs object: %s') % oid,
                                   hint=_(b'run hg verify'))
             request.data = filewithprogress(localstore.open(oid), None)
-            request.get_method = lambda: 'PUT'
-            request.add_header('Content-Type', 'application/octet-stream')
+            request.get_method = lambda: r'PUT'
+            request.add_header(r'Content-Type', r'application/octet-stream')
 
         for k, v in headers:
             request.add_header(k, v)
