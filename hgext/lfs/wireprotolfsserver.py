@@ -43,7 +43,7 @@ def handlewsgirequest(orig, rctx, req, res, checkperm):
     if orig(rctx, req, res, checkperm):
         return True
 
-    if not rctx.repo.ui.configbool('experimental', 'lfs.serve'):
+    if not rctx.repo.ui.configbool(b'experimental', b'lfs.serve'):
         return False
 
     if not util.safehasattr(rctx.repo.svfs, 'lfslocalblobstore'):
@@ -54,7 +54,7 @@ def handlewsgirequest(orig, rctx, req, res, checkperm):
 
     try:
         if req.dispatchpath == b'.git/info/lfs/objects/batch':
-            checkperm(rctx, req, 'pull')
+            checkperm(rctx, req, b'pull')
             return _processbatchrequest(rctx.repo, req, res)
         # TODO: reserve and use a path in the proposed http wireprotocol /api/
         #       namespace?
@@ -81,7 +81,7 @@ def _sethttperror(res, code, message=None):
 def _logexception(req):
     """Write information about the current exception to wsgi.errors."""
     tb = pycompat.sysbytes(traceback.format_exc())
-    errorlog = req.rawenv[r'wsgi.errors']
+    errorlog = req.rawenv[b'wsgi.errors']
 
     uri = b''
     if req.apppath:
@@ -209,7 +209,7 @@ def _batchresponseobjects(req, objects, action, store):
         # verified as the file is streamed to the caller.
         try:
             verifies = store.verify(oid)
-            if verifies and action == 'upload':
+            if verifies and action == b'upload':
                 # The client will skip this upload, but make sure it remains
                 # available locally.
                 store.linkfromusercache(oid)
@@ -228,7 +228,7 @@ def _batchresponseobjects(req, objects, action, store):
 
         # Items are always listed for downloads.  They are dropped for uploads
         # IFF they already exist locally.
-        if action == 'download':
+        if action == b'download':
             if not exists:
                 rsp['error'] = {
                     'code': 404,
@@ -259,8 +259,8 @@ def _batchresponseobjects(req, objects, action, store):
                 'Accept': 'application/vnd.git-lfs'
             }
 
-            auth = req.headers.get('Authorization', '')
-            if auth.startswith('Basic '):
+            auth = req.headers.get(b'Authorization', b'')
+            if auth.startswith(b'Basic '):
                 hdr['Authorization'] = auth
 
             return hdr
@@ -297,7 +297,7 @@ def _processbasictransfer(repo, req, res, checkperm):
         return True
 
     if method == b'PUT':
-        checkperm('upload')
+        checkperm(b'upload')
 
         # TODO: verify Content-Type?
 
@@ -324,7 +324,7 @@ def _processbasictransfer(repo, req, res, checkperm):
 
         return True
     elif method == b'GET':
-        checkperm('pull')
+        checkperm(b'pull')
 
         res.status = hgwebcommon.statusmessage(HTTP_OK)
         res.headers[b'Content-Type'] = b'application/octet-stream'
