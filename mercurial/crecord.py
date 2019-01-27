@@ -487,7 +487,7 @@ class uihunk(patchnode):
         return getattr(self._hunk, name)
 
     def __repr__(self):
-        return '<hunk %r@%d>' % (self.filename(), self.fromline)
+        return r'<hunk %r@%d>' % (self.filename(), self.fromline)
 
 def filterpatch(ui, chunks, chunkselector, operation=None):
     """interactively filter patch chunks into applied-only chunks"""
