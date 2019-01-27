@@ -54,7 +54,7 @@ class _error_logger(object):
         self.writelines(str.split('\n'))
     def writelines(self, seq):
         for msg in seq:
-            self.handler.log_error("HG error:  %s", msg)
+            self.handler.log_error(r"HG error:  %s", encoding.strfromlocal(msg))
 
 class _httprequesthandler(httpservermod.basehttprequesthandler):
 
