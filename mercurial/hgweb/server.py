@@ -165,7 +165,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         if length:
             env[r'CONTENT_LENGTH'] = length
         for header in [h for h in self.headers.keys()
-                       if h not in (r'content-type', r'content-length')]:
+                      if h.lower() not in (r'content-type', r'content-length')]:
             hkey = r'HTTP_' + header.replace(r'-', r'_').upper()
             hval = self.headers.get(header)
             hval = hval.replace(r'\n', r'').strip()
