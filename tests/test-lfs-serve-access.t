@@ -374,7 +374,7 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$ERRDATE$] HG error:      res.setbodybytes(localstore.read(oid)) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      blob = self._read(self.vfs, oid, verify) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      blobstore._verify(oid, b'dummy content') (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      hint=_('run hg verify')) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      hint=_(b'run hg verify')) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d (glob)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
 
