@@ -421,10 +421,10 @@ lfs content, and the extension enabled.
   ...     runcommand(server, [b'config', b'extensions'])
   ... 
   ...     print("\n# LFS disabled locally- revlogs don't have 0x2000 flag")
-  ...     runcommand(server, ['debugprocessors', 'nonlfs.txt', '-R',
-  ...                '../nonlfs'])
-  ...     runcommand(server, ['config', 'extensions', '--cwd',
-  ...                '../nonlfs'])
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs.txt', b'-R',
+  ...                b'../nonlfs'])
+  ...     runcommand(server, [b'config', b'extensions', b'--cwd',
+  ...                b'../nonlfs'])
   
   # LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag
   *** runcommand debugprocessors lfs.bin -R ../server

@@ -226,9 +226,9 @@ though the client doesn't send the blob.
   >             # One time simulation of a read error
   >             if _readerr:
   >                 _readerr = False
-  >                 raise IOError(errno.EIO, '%s: I/O error' % oid)
+  >                 raise IOError(errno.EIO, r'%s: I/O error' % oid.decode("utf-8"))
   >             # Simulate corrupt content on client download
-  >             blobstore._verify(oid, 'dummy content')
+  >             blobstore._verify(oid, b'dummy content')
   > 
   >         def verify(self, oid):
   >             '''Called in the server to populate the Batch API response,
@@ -239,7 +239,7 @@ though the client doesn't send the blob.
   >             global _numverifies
   >             _numverifies += 1
   >             if _numverifies <= 2:
-  >                 raise IOError(errno.EIO, '%s: I/O error' % oid)
+  >                 raise IOError(errno.EIO, r'%s: I/O error' % oid.decode("utf-8"))
   >             return super(badstore, self).verify(oid)
   > 
   >     store.__class__ = badstore
@@ -339,13 +339,13 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.git/info/lfs/objects/batch': (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      verifies = store.verify(oid) (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, '%s: I/O error' % oid) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, r'%s: I/O error' % oid.decode("utf-8")) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  IOError: [Errno 5] f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e: I/O error (glob)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.git/info/lfs/objects/batch': (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      verifies = store.verify(oid) (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, '%s: I/O error' % oid) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, r'%s: I/O error' % oid.decode("utf-8")) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  IOError: [Errno 5] b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c: I/O error (glob)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.hg/lfs/objects/b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c': (glob)
@@ -366,14 +366,14 @@ Test a checksum failure during the processing of the GET request
       lambda perm:
       res.setbodybytes(localstore.read(oid))
       blob = self._read(self.vfs, oid, verify)
-      raise IOError(errno.EIO, '%s: I/O error' % oid)
+      raise IOError(errno.EIO, r'%s: I/O error' % oid.decode("utf-8"))
   IOError: [Errno 5] 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d: I/O error
   
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d': (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      res.setbodybytes(localstore.read(oid)) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      blob = self._read(self.vfs, oid, verify) (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      blobstore._verify(oid, 'dummy content') (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      blobstore._verify(oid, b'dummy content') (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      hint=_('run hg verify')) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d (glob)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
