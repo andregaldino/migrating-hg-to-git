@@ -44,6 +44,7 @@ getinteger = revsetlang.getinteger
 getboolean = revsetlang.getboolean
 getlist = revsetlang.getlist
 getrange = revsetlang.getrange
+getintrange = revsetlang.getintrange
 getargs = revsetlang.getargs
 getargsdict = revsetlang.getargsdict
 
@@ -1067,11 +1068,11 @@ def followlines(repo, subset, x):
     # i18n: "followlines" is a keyword
     msg = _("followlines expects exactly one file")
     fname = scmutil.parsefollowlinespattern(repo, rev, pat, msg)
-    # i18n: "followlines" is a keyword
-    lr = getrange(args['lines'][0], _("followlines expects a line range"))
-    fromline, toline = [getinteger(a, _("line range bounds must be integers"))
-                        for a in lr]
-    fromline, toline = util.processlinerange(fromline, toline)
+    fromline, toline = util.processlinerange(
+        *getintrange(args['lines'][0],
+                     # i18n: "followlines" is a keyword
+                     _("followlines expects a line range"),
+                     _("line range bounds must be integers")))
 
     fctx = repo[rev].filectx(fname)
     descend = False
