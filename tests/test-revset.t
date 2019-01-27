@@ -643,10 +643,10 @@ parse errors of relation, subscript and relation-subscript operators:
   [255]
 
   $ hg debugrevspec '.#generations[a]'
-  hg: parse error: relation subscript must be an integer
+  hg: parse error: relation subscript must be an integer or a range
   [255]
   $ hg debugrevspec '.#generations[1-2]'
-  hg: parse error: relation subscript must be an integer
+  hg: parse error: relation subscript must be an integer or a range
   [255]
   $ hg debugrevspec '.#generations[foo:bar]'
   hg: parse error: relation subscript bounds must be integers

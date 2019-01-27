@@ -43,7 +43,6 @@ getstring = revsetlang.getstring
 getinteger = revsetlang.getinteger
 getboolean = revsetlang.getboolean
 getlist = revsetlang.getlist
-getrange = revsetlang.getrange
 getintrange = revsetlang.getintrange
 getargs = revsetlang.getargs
 getargsdict = revsetlang.getargsdict
@@ -256,14 +255,14 @@ def _splitrange(a, b):
         descdepths = (max(a, 0), b + 1)
     return ancdepths, descdepths
 
-def generationsrel(repo, subset, x, rel, a, b, order):
+def generationsrel(repo, subset, x, rel, z, order):
     # TODO: rewrite tests, and drop startdepth argument from ancestors() and
     # descendants() predicates
-    if a is None:
-        a = -(dagop.maxlogdepth - 1)
-    if b is None:
-        b = +(dagop.maxlogdepth - 1)
-
+    a, b = getintrange(z,
+                       _('relation subscript must be an integer or a range'),
+                       _('relation subscript bounds must be integers'),
+                       deffirst=-(dagop.maxlogdepth - 1),
+                       deflast=+(dagop.maxlogdepth - 1))
     (ancstart, ancstop), (descstart, descstop) = _splitrange(a, b)
 
     if ancstart is None and descstart is None:
@@ -288,21 +287,8 @@ def relsubscriptset(repo, subset, x, y, z, order):
     # experimental so undocumented. see the wiki for further ideas.
     # https://www.mercurial-scm.org/wiki/RevsetOperatorPlan
     rel = getsymbol(y)
-    try:
-        a, b = getrange(z, '')
-    except error.ParseError:
-        a = getinteger(z, _("relation subscript must be an integer"))
-        b = a
-    else:
-        def getbound(i):
-            if i is None:
-                return None
-            msg = _("relation subscript bounds must be integers")
-            return getinteger(i, msg)
-        a, b = [getbound(i) for i in (a, b)]
-
     if rel in subscriptrelations:
-        return subscriptrelations[rel](repo, subset, x, rel, a, b, order)
+        return subscriptrelations[rel](repo, subset, x, rel, z, order)
 
     relnames = [r for r in subscriptrelations.keys() if len(r) > 1]
     raise error.UnknownIdentifier(rel, relnames)
