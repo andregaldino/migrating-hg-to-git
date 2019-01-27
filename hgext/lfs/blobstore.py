@@ -307,7 +307,7 @@ class _gitlfsremote(object):
         except util.urlerr.httperror as ex:
             hints = {
                 400: _(b'check that lfs serving is enabled on %s and "%s" is '
-                       'supported') % (self.baseurl, action),
+                       b'supported') % (self.baseurl, action),
                 404: _(b'the "lfs.url" config may be used to override %s')
                        % self.baseurl,
             }
@@ -342,7 +342,12 @@ class _gitlfsremote(object):
                                          separators=(r'', r': '),
                                          sort_keys=True)))
 
-        return response
+        def encodestr(x):
+            if isinstance(x, pycompat.unicode):
+                return x.encode(u'utf-8')
+            return x
+
+        return pycompat.rapply(encodestr, response)
 
     def _checkforservererror(self, pointers, responses, action):
         """Scans errors from objects
@@ -410,12 +415,11 @@ class _gitlfsremote(object):
         See https://github.com/git-lfs/git-lfs/blob/master/docs/api/\
         basic-transfers.md
         """
-        oid = pycompat.bytestr(obj['oid'])
+        oid = obj[b'oid']
+        href = obj[b'actions'][action].get(b'href')
+        headers = obj[b'actions'][action].get(b'header', {}).items()
 
-        href = pycompat.bytestr(obj['actions'][action].get('href'))
-        headers = obj['actions'][action].get('header', {}).items()
-
-        request = util.urlreq.request(href)
+        request = util.urlreq.request(pycompat.strurl(href))
         if action == b'upload':
             # If uploading blobs, read data from local blobstore.
             if not localstore.verify(oid):
@@ -426,7 +430,7 @@ class _gitlfsremote(object):
             request.add_header(r'Content-Type', r'application/octet-stream')
 
         for k, v in headers:
-            request.add_header(k, v)
+            request.add_header(pycompat.strurl(k), pycompat.strurl(v))
 
         response = b''
         try:
