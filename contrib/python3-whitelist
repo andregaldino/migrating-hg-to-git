@@ -242,6 +242,7 @@ test-gendoc.t
 test-generaldelta.t
 test-getbundle.t
 test-git-export.t
+test-githelp.t
 test-globalopts.t
 test-glog-beautifygraph.t
 test-glog-topological.t
@@ -290,6 +291,7 @@ test-histedit-non-commute.t
 test-histedit-obsolete.t
 test-histedit-outgoing.t
 test-histedit-templates.t
+test-http-api-httpv2.t
 test-http-api.t
 test-http-branchmap.t
 test-http-bundle1.t
@@ -460,6 +462,7 @@ test-newbranch.t
 test-newcgi.t
 test-newercgi.t
 test-nointerrupt.t
+test-notify-changegroup.t
 test-obshistory.t
 test-obsmarker-template.t
 test-obsmarkers-effectflag.t
@@ -471,6 +474,7 @@ test-obsolete-distributed.t
 test-obsolete-divergent.t
 test-obsolete-tag-cache.t
 test-obsolete.t
+test-oldcgi.t
 test-origbackup-conflict.t
 test-pager-legacy.t
 test-pager.t
@@ -653,6 +657,7 @@ test-ssh-repoerror.t
 test-ssh.t
 test-sshserver.py
 test-stack.t
+test-static-http.t
 test-status-color.t
 test-status-inprocess.py
 test-status-rev.t
