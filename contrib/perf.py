@@ -1014,7 +1014,7 @@ def perfignore(ui, repo, **opts):
     fm.end()
 
 @command(b'perfindex', [
-            (b'', b'rev', b'', b'revision to be looked up (default tip)'),
+            (b'', b'rev', [], b'revision to be looked up (default tip)'),
             (b'', b'no-lookup', None, b'do not revision lookup post creation'),
          ] + formatteropts)
 def perfindex(ui, repo, **opts):
@@ -1023,7 +1023,18 @@ def perfindex(ui, repo, **opts):
     The default is to look `tip` up. Depending on the index implementation,
     the revision looked up can matters. For example, an implementation
     scanning the index will have a faster lookup time for `--rev tip` than for
-    `--rev 0`.
+    `--rev 0`. The number of looked up revisions and their order can also
+    matters.
+
+    Example of useful set to test:
+    * tip
+    * 0
+    * -10:
+    * :10
+    * -10: + :10
+    * :10: + -10:
+    * -10000:
+    * -10000: + 0
 
     It is not currently possible to check for lookup of a missing node."""
     import mercurial.revlog
@@ -1031,12 +1042,15 @@ def perfindex(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
     if opts[b'no_lookup']:
-        n = None
-    elif opts[b'rev'] is None:
-        n = repo[b"tip"].node()
+        if opts['rev']:
+            raise error.Abort('--no-lookup and --rev are mutually exclusive')
+        nodes = []
+    elif not opts[b'rev']:
+        nodes = [repo[b"tip"].node()]
     else:
-        rev = scmutil.revsingle(repo, opts[b'rev'])
-        n = repo[rev].node()
+        revs = scmutil.revrange(repo, opts[b'rev'])
+        cl = repo.changelog
+        nodes = [cl.node(r) for r in revs]
 
     unfi = repo.unfiltered()
     # find the filecache func directly
@@ -1047,7 +1061,7 @@ def perfindex(ui, repo, **opts):
         clearchangelog(unfi)
     def d():
         cl = makecl(unfi)
-        if n is not None:
+        for n in nodes:
             cl.rev(n)
     timer(d, setup=setup)
     fm.end()
