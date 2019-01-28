@@ -1068,7 +1068,8 @@ def perfindex(ui, repo, **opts):
     fm.end()
 
 @command(b'perfnodemap', [
-            (b'', b'rev', [], b'revision to be looked up (default tip)'),
+          (b'', b'rev', [], b'revision to be looked up (default tip)'),
+          (b'', b'clear-caches', True, b'clear revlog cache between calls'),
     ] + formatteropts)
 def perfnodemap(ui, repo, **opts):
     """benchmark the time necessary to look up revision from a cold nodemap
@@ -1093,6 +1094,7 @@ def perfnodemap(ui, repo, **opts):
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
 
     unfi = repo.unfiltered()
+    clearcaches = opts['clear_caches']
     # find the filecache func directly
     # This avoid polluting the benchmark with the filecache logic
     makecl = unfi.__class__.changelog.func
@@ -1109,13 +1111,18 @@ def perfnodemap(ui, repo, **opts):
         clearchangelog(unfi)
         nodeget[0] = makecl(unfi).nodemap.get
 
-    def setup():
-        setnodeget()
     def d():
         get = nodeget[0]
         for n in nodes:
             get(n)
 
+    setup = None
+    if clearcaches:
+        def setup():
+            setnodeget()
+    else:
+        setnodeget()
+        d() # prewarm the data structure
     timer(d, setup=setup)
     fm.end()
 
