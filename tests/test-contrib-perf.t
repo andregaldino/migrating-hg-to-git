@@ -93,7 +93,7 @@ perfstatus
                  find statistic about potential parameters for the
                  'perftracecopies'
    perfignore    benchmark operation related to computing ignore
-   perfindex     (no help text available)
+   perfindex     benchmark index creation time followed by a lookup
    perflinelogedits
                  (no help text available)
    perfloadmarkers

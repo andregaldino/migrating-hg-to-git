@@ -1017,6 +1017,14 @@ def perfignore(ui, repo, **opts):
             (b'', b'rev', b'', b'revision to be looked up (default tip)'),
          ] + formatteropts)
 def perfindex(ui, repo, **opts):
+    """benchmark index creation time followed by a lookup
+
+    The default is to look `tip` up. Depending on the index implementation,
+    the revision looked up can matters. For example, an implementation
+    scanning the index will have a faster lookup time for `--rev tip` than for
+    `--rev 0`.
+
+    It is not currently possible to check for lookup of a missing node."""
     import mercurial.revlog
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
