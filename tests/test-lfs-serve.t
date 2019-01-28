@@ -359,12 +359,13 @@ lfs content, and the extension enabled.
   $ cp $HGRCPATH.orig $HGRCPATH
 
   >>> from __future__ import absolute_import
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand, stdout
   >>> @check
   ... def checkflags(server):
   ...     readchannel(server)
-  ...     print('')
-  ...     print('# LFS required- both lfs and non-lfs revlogs have 0x2000 flag')
+  ...     bprint(b'')
+  ...     bprint(b'# LFS required- both lfs and non-lfs revlogs have 0x2000 flag')
+  ...     stdout.flush()
   ...     runcommand(server, [b'debugprocessors', b'lfs.bin', b'-R',
   ...                b'../server'])
   ...     runcommand(server, [b'debugprocessors', b'nonlfs2.txt', b'-R',
@@ -372,7 +373,8 @@ lfs content, and the extension enabled.
   ...     runcommand(server, [b'config', b'extensions', b'--cwd',
   ...                b'../server'])
   ... 
-  ...     print("\n# LFS not enabled- revlogs don't have 0x2000 flag")
+  ...     bprint(b"\n# LFS not enabled- revlogs don't have 0x2000 flag")
+  ...     stdout.flush()
   ...     runcommand(server, [b'debugprocessors', b'nonlfs3.txt'])
   ...     runcommand(server, [b'config', b'extensions'])
   
@@ -403,12 +405,13 @@ lfs content, and the extension enabled.
   > EOF
 
   >>> from __future__ import absolute_import, print_function
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand, stdout
   >>> @check
   ... def checkflags2(server):
   ...     readchannel(server)
-  ...     print('')
-  ...     print('# LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag')
+  ...     bprint(b'')
+  ...     bprint(b'# LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag')
+  ...     stdout.flush()
   ...     runcommand(server, [b'debugprocessors', b'lfs.bin', b'-R',
   ...                b'../server'])
   ...     runcommand(server, [b'debugprocessors', b'nonlfs2.txt', b'-R',
@@ -416,11 +419,13 @@ lfs content, and the extension enabled.
   ...     runcommand(server, [b'config', b'extensions', b'--cwd',
   ...                b'../server'])
   ... 
-  ...     print('\n# LFS enabled without requirement- revlogs have 0x2000 flag')
+  ...     bprint(b'\n# LFS enabled without requirement- revlogs have 0x2000 flag')
+  ...     stdout.flush()
   ...     runcommand(server, [b'debugprocessors', b'nonlfs3.txt'])
   ...     runcommand(server, [b'config', b'extensions'])
   ... 
-  ...     print("\n# LFS disabled locally- revlogs don't have 0x2000 flag")
+  ...     bprint(b"\n# LFS disabled locally- revlogs don't have 0x2000 flag")
+  ...     stdout.flush()
   ...     runcommand(server, [b'debugprocessors', b'nonlfs.txt', b'-R',
   ...                b'../nonlfs'])
   ...     runcommand(server, [b'config', b'extensions', b'--cwd',
