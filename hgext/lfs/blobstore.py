@@ -329,7 +329,7 @@ class _gitlfsremote(object):
         if self.ui.debugflag:
             self.ui.debug(b'Status: %d\n' % rsp.status)
             # lfs-test-server and hg serve return headers in different order
-            headers = pycompat.bytestr(rsp.info())
+            headers = pycompat.bytestr(rsp.info()).strip()
             self.ui.debug(b'%s\n'
                           % b'\n'.join(sorted(headers.splitlines())))
 
@@ -440,7 +440,7 @@ class _gitlfsremote(object):
                     ui.debug(b'Status: %d\n' % req.status)
                     # lfs-test-server and hg serve return headers in different
                     # order
-                    headers = pycompat.bytestr(req.info())
+                    headers = pycompat.bytestr(req.info()).strip()
                     ui.debug(b'%s\n'
                              % b'\n'.join(sorted(headers.splitlines())))
 
