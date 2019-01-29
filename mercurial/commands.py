@@ -5414,10 +5414,8 @@ def status(ui, repo, *pats, **opts):
         repo = scmutil.unhidehashlikerevs(repo, revs, 'nowarn')
         ctx1, ctx2 = scmutil.revpair(repo, revs)
 
-    if pats or ui.configbool('commands', 'status.relative'):
-        cwd = repo.getcwd()
-    else:
-        cwd = ''
+    relative = pats or ui.configbool('commands', 'status.relative')
+    uipathfn = scmutil.getuipathfn(repo, relative)
 
     if opts.get('print0'):
         end = '\0'
@@ -5468,10 +5466,10 @@ def status(ui, repo, *pats, **opts):
                 fm.context(ctx=ctx2)
                 fm.data(path=f)
                 fm.condwrite(showchar, 'status', '%s ', char, label=label)
-                fm.plain(fmt % repo.pathto(f, cwd), label=label)
+                fm.plain(fmt % uipathfn(f), label=label)
                 if f in copy:
                     fm.data(source=copy[f])
-                    fm.plain(('  %s' + end) % repo.pathto(copy[f], cwd),
+                    fm.plain(('  %s' + end) % uipathfn(copy[f]),
                              label='status.copied')
 
     if ((ui.verbose or ui.configbool('commands', 'status.verbose'))

@@ -725,6 +725,14 @@ def meaningfulparents(repo, ctx):
         return []
     return parents
 
+def getuipathfn(repo, relative):
+    if relative:
+        cwd = repo.getcwd()
+        pathto = repo.pathto
+        return lambda f: pathto(f, cwd)
+    else:
+        return lambda f: f
+
 def expandpats(pats):
     '''Expand bare globs when running on windows.
     On posix we assume it already has already been done by sh.'''
