@@ -817,13 +817,13 @@ class cgpacker(object):
         self._verbosenote(_('uncompressed size of bundle content:\n'))
         size = 0
 
-        clstate, deltas = self._generatechangelog(cl, clnodes)
+        clstate, deltas = self._generatechangelog(cl, clnodes,
+                                                  generate=changelog)
         for delta in deltas:
-            if changelog:
-                for chunk in _revisiondeltatochunks(delta,
-                                                    self._builddeltaheader):
-                    size += len(chunk)
-                    yield chunk
+            for chunk in _revisiondeltatochunks(delta,
+                                                self._builddeltaheader):
+                size += len(chunk)
+                yield chunk
 
         close = closechunk()
         size += len(close)
@@ -917,12 +917,15 @@ class cgpacker(object):
         if clnodes:
             repo.hook('outgoing', node=hex(clnodes[0]), source=source)
 
-    def _generatechangelog(self, cl, nodes):
+    def _generatechangelog(self, cl, nodes, generate=True):
         """Generate data for changelog chunks.
 
         Returns a 2-tuple of a dict containing state and an iterable of
         byte chunks. The state will not be fully populated until the
         chunk stream has been fully consumed.
+
+        if generate is False, the state will be fully populated and no chunk
+        stream will be yielded
         """
         clrevorder = {}
         manifests = {}
@@ -936,6 +939,20 @@ class cgpacker(object):
             'changedfiles': changedfiles,
             'clrevtomanifestrev': clrevtomanifestrev,
         }
+
+        if not (generate or self._ellipses):
+            # sort the nodes in storage order
+            nodes = sorted(nodes, key=cl.rev)
+            for node in nodes:
+                c = cl.changelogrevision(node)
+                clrevorder[node] = len(clrevorder)
+                # record the first changeset introducing this manifest version
+                manifests.setdefault(c.manifest, node)
+                # Record a complete list of potentially-changed files in
+                # this manifest.
+                changedfiles.update(c.files)
+
+            return state, ()
 
         # Callback for the changelog, used to collect changed files and
         # manifest nodes.
