@@ -62,6 +62,7 @@ class passwordmgr(object):
         assert isinstance(authuri, str)
         authinfo = self.passwddb.find_user_password(realm, authuri)
         user, passwd = authinfo
+        user, passwd = pycompat.bytesurl(user), pycompat.bytesurl(passwd)
         if user and passwd:
             self._writedebug(user, passwd)
             return (user, passwd)
