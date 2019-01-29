@@ -725,7 +725,9 @@ def meaningfulparents(repo, ctx):
         return []
     return parents
 
-def getuipathfn(repo, relative):
+def getuipathfn(repo, relative=None):
+    if relative is None:
+        relative = repo.ui.configbool('ui', 'relative-paths')
     if relative:
         cwd = repo.getcwd()
         pathto = repo.pathto

@@ -1233,6 +1233,9 @@ coreconfigitem('ui', 'quiet',
 coreconfigitem('ui', 'quietbookmarkmove',
     default=False,
 )
+coreconfigitem('ui', 'relative-paths',
+    default=False,
+)
 coreconfigitem('ui', 'remotecmd',
     default='hg',
 )

@@ -2331,6 +2331,9 @@ User interface controls.
     Reduce the amount of output printed.
     (default: False)
 
+``relative-paths``
+    Prefer relative paths in the UI.
+
 ``remotecmd``
     Remote command to use for clone/push/pull operations.
     (default: ``hg``)
