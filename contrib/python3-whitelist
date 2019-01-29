@@ -352,6 +352,7 @@ test-lfconvert.t
 test-lfs-bundle.t
 test-lfs-largefiles.t
 test-lfs-pointer.py
+test-lfs-test-server.t
 test-lfs.t
 test-linelog.py
 test-linerange.py

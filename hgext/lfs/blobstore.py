@@ -428,6 +428,7 @@ class _gitlfsremote(object):
             request.data = filewithprogress(localstore.open(oid), None)
             request.get_method = lambda: r'PUT'
             request.add_header(r'Content-Type', r'application/octet-stream')
+            request.add_header(r'Content-Length', len(request.data))
 
         for k, v in headers:
             request.add_header(pycompat.strurl(k), pycompat.strurl(v))
