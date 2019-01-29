@@ -122,6 +122,7 @@ test-convert-hg-startrev.t
 test-convert-splicemap.t
 test-convert-svn-sink.t
 test-convert-tagsbranch-topology.t
+test-convert.t
 test-copy-move-merge.t
 test-copy.t
 test-copytrace-heuristics.t
@@ -155,6 +156,7 @@ test-dirstate-nonnormalset.t
 test-dirstate-race.t
 test-dirstate.t
 test-dispatch.py
+test-dispatch.t
 test-doctest.py
 test-double-merge.t
 test-drawdag.t
