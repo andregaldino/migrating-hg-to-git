@@ -2164,6 +2164,7 @@ def files(ui, ctx, m, fm, fmt, subrepos):
     ret = 1
 
     needsfctx = ui.verbose or {'size', 'flags'} & fm.datahint()
+    uipathfn = scmutil.getuipathfn(ctx.repo(), legacyrelativevalue=True)
     for f in ctx.matches(m):
         fm.startitem()
         fm.context(ctx=ctx)
@@ -2171,7 +2172,7 @@ def files(ui, ctx, m, fm, fmt, subrepos):
             fc = ctx[f]
             fm.write('size flags', '% 10d % 1s ', fc.size(), fc.flags())
         fm.data(path=f)
-        fm.plain(fmt % m.rel(f))
+        fm.plain(fmt % uipathfn(f))
         ret = 0
 
     for subpath in sorted(ctx.substate):
