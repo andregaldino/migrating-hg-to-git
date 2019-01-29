@@ -103,6 +103,12 @@ Split a head
   abort: cannot split multiple revisions
   [255]
 
+This function splits a bit strangely primarily to avoid changing the behavior of
+the test after a bug was fixed with how split/commit --interactive handled
+`diff.unified=0`: when there were no context lines, it kept only the last diff
+hunk. When running split, this meant that runsplit was always recording three commits,
+one for each diff hunk, in reverse order (the base commit was the last diff hunk
+in the file).
   $ runsplit() {
   > cat > $TESTTMP/messages <<EOF
   > split 1
@@ -113,8 +119,11 @@ Split a head
   > EOF
   > cat <<EOF | hg split "$@"
   > y
+  > n
+  > n
   > y
   > y
+  > n
   > y
   > y
   > y
@@ -123,13 +132,23 @@ Split a head
 
   $ HGEDITOR=false runsplit
   diff --git a/a b/a
-  1 hunks, 1 lines changed
+  3 hunks, 3 lines changed
   examine changes to 'a'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -1
+  +11
+  record change 1/3 to 'a'? [Ynesfdaq?] n
+  
+  @@ -3,1 +3,1 @@ 2
+  -3
+  +33
+  record change 2/3 to 'a'? [Ynesfdaq?] n
   
   @@ -5,1 +5,1 @@ 4
   -5
   +55
-  record this change to 'a'? [Ynesfdaq?] y
+  record change 3/3 to 'a'? [Ynesfdaq?] y
   
   transaction abort!
   rollback completed
@@ -140,13 +159,23 @@ Split a head
   $ HGEDITOR="\"$PYTHON\" $TESTTMP/editor.py"
   $ runsplit
   diff --git a/a b/a
-  1 hunks, 1 lines changed
+  3 hunks, 3 lines changed
   examine changes to 'a'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -1
+  +11
+  record change 1/3 to 'a'? [Ynesfdaq?] n
+  
+  @@ -3,1 +3,1 @@ 2
+  -3
+  +33
+  record change 2/3 to 'a'? [Ynesfdaq?] n
   
   @@ -5,1 +5,1 @@ 4
   -5
   +55
-  record this change to 'a'? [Ynesfdaq?] y
+  record change 3/3 to 'a'? [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. Write commit message for the first split changeset.
   EDITOR: a2
@@ -160,13 +189,18 @@ Split a head
   EDITOR: HG: changed a
   created new head
   diff --git a/a b/a
-  1 hunks, 1 lines changed
+  2 hunks, 2 lines changed
   examine changes to 'a'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -1
+  +11
+  record change 1/2 to 'a'? [Ynesfdaq?] n
   
   @@ -3,1 +3,1 @@ 2
   -3
   +33
-  record this change to 'a'? [Ynesfdaq?] y
+  record change 2/2 to 'a'? [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. So far it has been split into:
   EDITOR: HG: - e704349bd21b: split 1

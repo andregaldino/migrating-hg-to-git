@@ -1609,6 +1609,7 @@ def parsepatch(originalchunks, maxcontext=None):
             self.headers = []
 
         def addrange(self, limits):
+            self.addcontext([])
             fromstart, fromend, tostart, toend, proc = limits
             self.fromline = int(fromstart)
             self.toline = int(tostart)
@@ -1629,6 +1630,8 @@ def parsepatch(originalchunks, maxcontext=None):
             if self.context:
                 self.before = self.context
                 self.context = []
+            if self.hunk:
+                self.addcontext([])
             self.hunk = hunk
 
         def newfile(self, hdr):

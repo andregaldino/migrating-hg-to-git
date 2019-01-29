@@ -1807,3 +1807,38 @@ even if none of mode, size and timestamp is changed on the filesystem
   n   0         -1 unset               subdir/f1
   $ hg status -A subdir/f1
   M subdir/f1
+
+Test diff.unified=0
+
+  $ hg init $TESTTMP/b
+  $ cd $TESTTMP/b
+  $ cat > foo <<EOF
+  > 1
+  > 2
+  > 3
+  > 4
+  > 5
+  > EOF
+  $ hg ci -qAm initial
+  $ cat > foo <<EOF
+  > 1
+  > change1
+  > 2
+  > 3
+  > change2
+  > 4
+  > 5
+  > EOF
+  $ printf 'y\ny\ny\n' | hg ci -im initial --config diff.unified=0
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] y
+  
+  @@ -1,0 +2,1 @@ 1
+  +change1
+  record change 1/2 to 'foo'? [Ynesfdaq?] y
+  
+  @@ -3,0 +5,1 @@ 3
+  +change2
+  record change 2/2 to 'foo'? [Ynesfdaq?] y
+  
