@@ -4840,6 +4840,8 @@ def resolve(ui, repo, *pats, **opts):
                                  b'$$ &Yes $$ &No')):
                 raise error.Abort(_('user quit'))
 
+    uipathfn = scmutil.getuipathfn(repo)
+
     if show:
         ui.pager('resolve')
         fm = ui.formatter('resolve', opts)
@@ -4867,7 +4869,8 @@ def resolve(ui, repo, *pats, **opts):
             fm.startitem()
             fm.context(ctx=wctx)
             fm.condwrite(not nostatus, 'mergestatus', '%s ', key, label=label)
-            fm.write('path', '%s\n', f, label=label)
+            fm.data(path=f)
+            fm.plain('%s\n' % uipathfn(f), label=label)
         fm.end()
         return 0
 

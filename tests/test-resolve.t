@@ -67,6 +67,9 @@ tell users how they could have used resolve
   $ hg resolve -l
   R file1
   U file2
+  $ hg resolve -l --config ui.relative-paths=yes
+  R ../file1
+  U ../file2
   $ hg resolve --re-merge filez file2
   arguments do not match paths that need resolving
   (try: hg resolve --re-merge path:filez path:file2)
