@@ -156,6 +156,15 @@ configuration file::
   [histedit]
   linelen = 120      # truncate rule lines at 120 characters
 
+The summary of a change can be customized as well::
+
+  [histedit]
+  summary-template = '{rev} {bookmarks} {desc|firstline}'
+
+The customized summary should be kept short enough that rule lines
+will fit in the configured line length. See above if that requires
+customization.
+
 ``hg histedit`` attempts to automatically choose an appropriate base
 revision to use. To change which base revision is used, define a
 revset in your configuration file::
@@ -248,6 +257,8 @@ configitem('histedit', 'singletransaction',
 configitem('ui', 'interface.histedit',
     default=None,
 )
+configitem('histedit', 'summary-template',
+           default='{rev} {desc|firstline}')
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -480,8 +491,11 @@ class histeditaction(object):
         <hash> <rev> <summary>
         """
         ctx = self.repo[self.node]
-        summary = _getsummary(ctx)
-        line = '%s %s %d %s' % (self.verb, ctx, ctx.rev(), summary)
+        ui = self.repo.ui
+        summary = cmdutil.rendertemplate(
+            ctx, ui.config('histedit', 'summary-template')) or ''
+        summary = summary.splitlines()[0]
+        line = '%s %s %s' % (self.verb, ctx, summary)
         # trim to 75 columns by default so it's not stupidly wide in my editor
         # (the 5 more are left for verb)
         maxlen = self.repo.ui.configint('histedit', 'linelen')
