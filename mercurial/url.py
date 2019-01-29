@@ -58,6 +58,8 @@ class passwordmgr(object):
         return self.passwddb.add_password(realm, uri, user, passwd)
 
     def find_user_password(self, realm, authuri):
+        assert isinstance(realm, (type(None), str))
+        assert isinstance(authuri, str)
         authinfo = self.passwddb.find_user_password(realm, authuri)
         user, passwd = authinfo
         if user and passwd:
