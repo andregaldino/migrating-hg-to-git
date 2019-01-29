@@ -93,9 +93,9 @@ class monotone_source(common.converter_source, common.commandline):
         kwargs = pycompat.byteskwargs(kwargs)
         command = []
         for k, v in kwargs.iteritems():
-            command.append("%s:%s" % (len(k), k))
+            command.append("%d:%s" % (len(k), k))
             if v:
-                command.append("%s:%s" % (len(v), v))
+                command.append("%d:%s" % (len(v), v))
         if command:
             command.insert(0, 'o')
             command.append('e')
