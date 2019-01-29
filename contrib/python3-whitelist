@@ -261,6 +261,7 @@ test-hgignore.t
 test-hgk.t
 test-hgrc.t
 test-hgweb-annotate-whitespace.t
+test-hgweb-auth.py
 test-hgweb-bundle.t
 test-hgweb-commands.t
 test-hgweb-csp.t
