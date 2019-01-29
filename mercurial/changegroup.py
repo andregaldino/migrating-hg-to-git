@@ -930,6 +930,13 @@ class cgpacker(object):
         changedfiles = set()
         clrevtomanifestrev = {}
 
+        state = {
+            'clrevorder': clrevorder,
+            'manifests': manifests,
+            'changedfiles': changedfiles,
+            'clrevtomanifestrev': clrevtomanifestrev,
+        }
+
         # Callback for the changelog, used to collect changed files and
         # manifest nodes.
         # Returns the linkrev node (identity in the changelog case).
@@ -969,13 +976,6 @@ class cgpacker(object):
                 changedfiles.update(c.files)
 
             return x
-
-        state = {
-            'clrevorder': clrevorder,
-            'manifests': manifests,
-            'changedfiles': changedfiles,
-            'clrevtomanifestrev': clrevtomanifestrev,
-        }
 
         gen = deltagroup(
             self._repo, cl, nodes, True, lookupcl,
