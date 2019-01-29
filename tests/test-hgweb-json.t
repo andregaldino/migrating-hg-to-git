@@ -2196,7 +2196,8 @@ Error page shouldn't crash
 Commit message with Japanese Kanji 'Noh', which ends with '\x5c'
 
   $ echo foo >> da/foo
-  $ HGENCODING=cp932 hg ci -m `"$PYTHON" -c 'print("\x94\x5c")'`
+  >>> open('msg', 'wb').write(b'\x94\x5c\x0a') and None
+  $ HGENCODING=cp932 hg ci -l msg
 
 Commit message with null character
 
