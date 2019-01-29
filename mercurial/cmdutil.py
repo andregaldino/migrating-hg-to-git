@@ -282,7 +282,7 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         status = repo.status(match=match)
         if not force:
             repo.checkcommitpatterns(wctx, vdirs, match, status, fail)
-        diffopts = patch.difffeatureopts(ui, opts=opts, whitespace=True)
+        diffopts = patch.difffeatureopts(ui, opts=opts)
         diffopts.nodates = True
         diffopts.git = True
         diffopts.showfunc = True
@@ -3126,7 +3126,7 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
         # Prompt the user for changes to revert
         torevert = [f for f in actions['revert'][0] if f not in excluded_files]
         m = scmutil.matchfiles(repo, torevert)
-        diffopts = patch.difffeatureopts(repo.ui, whitespace=True)
+        diffopts = patch.difffeatureopts(repo.ui)
         diffopts.nodates = True
         diffopts.git = True
         operation = 'discard'

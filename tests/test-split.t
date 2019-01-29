@@ -599,3 +599,111 @@ Do not move things to secret even if phases.new-commit=secret
   a09ad58faae3 draft
   e704349bd21b draft
   a61bcde8c529 draft
+
+`hg split` with ignoreblanklines=1 does not infinite loop
+
+  $ mkdir $TESTTMP/f
+  $ hg init $TESTTMP/f/a
+  $ cd $TESTTMP/f/a
+  $ printf '1\n2\n3\n4\n5\n' > foo
+  $ cp foo bar
+  $ hg ci -qAm initial
+  $ printf '1\n\n2\n3\ntest\n4\n5\n' > bar
+  $ printf '1\n2\n3\ntest\n4\n5\n' > foo
+  $ hg ci -qm splitme
+  $ cat > $TESTTMP/messages <<EOF
+  > split 1
+  > --
+  > split 2
+  > EOF
+  $ printf 'f\nn\nf\n' | hg --config extensions.split= --config diff.ignoreblanklines=1 split
+  diff --git a/bar b/bar
+  2 hunks, 2 lines changed
+  examine changes to 'bar'? [Ynesfdaq?] f
+  
+  diff --git a/foo b/foo
+  1 hunks, 1 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] n
+  
+  EDITOR: HG: Splitting dd3c45017cbf. Write commit message for the first split changeset.
+  EDITOR: splitme
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed bar
+  created new head
+  diff --git a/foo b/foo
+  1 hunks, 1 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] f
+  
+  EDITOR: HG: Splitting dd3c45017cbf. So far it has been split into:
+  EDITOR: HG: - f205aea1c624: split 1
+  EDITOR: HG: Write commit message for the next split changeset.
+  EDITOR: splitme
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed foo
+  saved backup bundle to $TESTTMP/f/a/.hg/strip-backup/dd3c45017cbf-463441b5-split.hg (obsstore-off !)
+
+Let's try that again, with a slightly different set of patches, to ensure that
+the ignoreblanklines thing isn't somehow position dependent.
+
+  $ hg init $TESTTMP/f/b
+  $ cd $TESTTMP/f/b
+  $ printf '1\n2\n3\n4\n5\n' > foo
+  $ cp foo bar
+  $ hg ci -qAm initial
+  $ printf '1\n2\n3\ntest\n4\n5\n' > bar
+  $ printf '1\n2\n3\ntest\n4\n\n5\n' > foo
+  $ hg ci -qm splitme
+  $ cat > $TESTTMP/messages <<EOF
+  > split 1
+  > --
+  > split 2
+  > EOF
+  $ printf 'f\nn\nf\n' | hg --config extensions.split= --config diff.ignoreblanklines=1 split
+  diff --git a/bar b/bar
+  1 hunks, 1 lines changed
+  examine changes to 'bar'? [Ynesfdaq?] f
+  
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] n
+  
+  EDITOR: HG: Splitting 904c80b40a4a. Write commit message for the first split changeset.
+  EDITOR: splitme
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed bar
+  created new head
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] f
+  
+  EDITOR: HG: Splitting 904c80b40a4a. So far it has been split into:
+  EDITOR: HG: - ffecf40fa954: split 1
+  EDITOR: HG: Write commit message for the next split changeset.
+  EDITOR: splitme
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed foo
+  saved backup bundle to $TESTTMP/f/b/.hg/strip-backup/904c80b40a4a-47fb907f-split.hg (obsstore-off !)

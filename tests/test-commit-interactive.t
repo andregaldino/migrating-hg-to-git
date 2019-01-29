@@ -1842,3 +1842,47 @@ Test diff.unified=0
   +change2
   record change 2/2 to 'foo'? [Ynesfdaq?] y
   
+  $ cd $TESTTMP
+
+Test diff.ignoreblanklines=1
+
+  $ hg init c
+  $ cd c
+  $ cat > foo <<EOF
+  > 1
+  > 2
+  > 3
+  > 4
+  > 5
+  > EOF
+  $ hg ci -qAm initial
+  $ cat > foo <<EOF
+  > 1
+  > 
+  > 2
+  > 3
+  > change2
+  > 4
+  > 5
+  > EOF
+  $ printf 'y\ny\ny\n' | hg ci -im initial --config diff.ignoreblanklines=1
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] y
+  
+  @@ -1,3 +1,4 @@
+   1
+  +
+   2
+   3
+  record change 1/2 to 'foo'? [Ynesfdaq?] y
+  
+  @@ -2,4 +3,5 @@
+   2
+   3
+  +change2
+   4
+   5
+  record change 2/2 to 'foo'? [Ynesfdaq?] y
+  
+
