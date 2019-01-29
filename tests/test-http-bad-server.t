@@ -94,7 +94,7 @@ Same failure, but server reads full HTTP request line
 
   $ cat error.log
   readline(40 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(7 from -1) -> (7) Accept-
+  readline(7 from *) -> (7) Accept- (glob)
   read limit reached; closing socket
 
   $ rm -f error.log
@@ -111,11 +111,11 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
 
   $ cat error.log
   readline(210 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(177 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(150 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(115 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
+  readline(177 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(150 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(115 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
@@ -124,15 +124,15 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   write(2) -> \r\n
   write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(4? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1? from -1) -> (1?) Accept-Encoding* (glob)
+  readline(1? from *) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
   readline(223 from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(197 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(170 from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(141 from -1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(100 from -1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(39 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(4 from -1) -> (4) host
+  readline(197 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(170 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(141 from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(100 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(39 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(4 from *) -> (4) host (glob)
   read limit reached; closing socket
 
   $ rm -f error.log
@@ -152,11 +152,11 @@ Failure to read getbundle HTTP request
   readline(1 from -1) -> (1) x (?)
   readline(1 from -1) -> (1) x (?)
   readline(308 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(275 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(248 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(213 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
+  readline(275 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(248 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(213 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
@@ -165,20 +165,20 @@ Failure to read getbundle HTTP request
   write(2) -> \r\n
   write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(13? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(8? from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
-  readline(5? from -1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
-  readline(1? from -1) -> (1?) x-hgproto-1:* (glob)
+  readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(8? from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(5? from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(1? from *) -> (1?) x-hgproto-1:* (glob)
   read limit reached; closing socket
   readline(317 from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(291 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(264 from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(235 from -1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(194 from -1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(133 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(98 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
+  readline(291 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(264 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(235 from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(194 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(133 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(98 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
@@ -189,9 +189,9 @@ Failure to read getbundle HTTP request
   readline(* from 65537) -> (*) GET /?cmd=getbundle HTTP* (glob)
   read limit reached; closing socket
   readline(304 from 65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
-  readline(274 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(247 from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(218 from -1) -> (218) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtag
+  readline(274 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(247 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(218 from *) -> (218) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtag (glob)
   read limit reached; closing socket
 
   $ rm -f error.log
@@ -209,11 +209,11 @@ Now do a variation using POST to send arguments
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(329 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(296 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(269 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(234 from -1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
+  readline(296 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(269 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(234 from *) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
@@ -222,23 +222,23 @@ Now do a variation using POST to send arguments
   write(2) -> \r\n
   write(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(1?? from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(1?? from -1) -> (41) content-type: application/mercurial-0.1\r\n (glob)
-  readline(6? from -1) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
-  readline(3? from -1) -> (19) x-hgargs-post: 28\r\n (glob)
-  readline(1? from -1) -> (1?) x-hgproto-1: * (glob)
+  readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(1?? from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
+  readline(6? from *) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
+  readline(3? from *) -> (19) x-hgargs-post: 28\r\n (glob)
+  readline(1? from *) -> (1?) x-hgproto-1: * (glob)
   read limit reached; closing socket
   readline(344 from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n
-  readline(317 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(290 from -1) -> (41) content-type: application/mercurial-0.1\r\n
-  readline(249 from -1) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n
-  readline(216 from -1) -> (19) x-hgargs-post: 28\r\n
-  readline(197 from -1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(136 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(101 from -1) -> (20) content-length: 28\r\n
-  readline(81 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
+  readline(317 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(290 from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
+  readline(249 from *) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
+  readline(216 from *) -> (19) x-hgargs-post: 28\r\n (glob)
+  readline(197 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(136 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(101 from *) -> (20) content-length: 28\r\n (glob)
+  readline(81 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
   read(* from 28) -> (*) cmds=* (glob)
   read limit reached, closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
@@ -264,11 +264,11 @@ Server sends a single character from the HTTP response line
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(1 from 36) -> (0) H
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=capabilities': (glob)
@@ -293,11 +293,11 @@ Server sends an incomplete capabilities response body
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (144) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (121) Server: badhttpserver\r\n
   write(37 from 37) -> (84) Date: $HTTP_DATE$\r\n
@@ -332,11 +332,11 @@ TODO this output is horrible
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (692) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (669) Server: badhttpserver\r\n
   write(37 from 37) -> (632) Date: $HTTP_DATE$\r\n
@@ -345,14 +345,14 @@ TODO this output is horrible
   write(2 from 2) -> (568) \r\n
   write(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (82) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (59) Server: badhttpserver\r\n
   write(37 from 37) -> (22) Date: $HTTP_DATE$\r\n
@@ -384,11 +384,11 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (757) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (734) Server: badhttpserver\r\n
   write(37 from 37) -> (697) Date: $HTTP_DATE$\r\n
@@ -397,14 +397,14 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   write(2 from 2) -> (633) \r\n
   write(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (147) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (124) Server: badhttpserver\r\n
   write(37 from 37) -> (87) Date: $HTTP_DATE$\r\n
@@ -440,11 +440,11 @@ TODO this output is terrible
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (904) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (881) Server: badhttpserver\r\n
   write(37 from 37) -> (844) Date: $HTTP_DATE$\r\n
@@ -453,14 +453,14 @@ TODO this output is terrible
   write(2 from 2) -> (780) \r\n
   write(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (294) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (271) Server: badhttpserver\r\n
   write(37 from 37) -> (234) Date: $HTTP_DATE$\r\n
@@ -469,14 +469,14 @@ TODO this output is terrible
   write(2 from 2) -> (171) \r\n
   write(42 from 42) -> (129) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n;
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (93) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (70) Server: badhttpserver\r\n
   write(37 from 37) -> (33) Date: $HTTP_DATE$\r\n
@@ -525,11 +525,11 @@ Server sends empty HTTP body for getbundle
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (942) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (919) Server: badhttpserver\r\n
   write(37 from 37) -> (882) Date: $HTTP_DATE$\r\n
@@ -538,14 +538,14 @@ Server sends empty HTTP body for getbundle
   write(2 from 2) -> (818) \r\n
   write(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (332) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (309) Server: badhttpserver\r\n
   write(37 from 37) -> (272) Date: $HTTP_DATE$\r\n
@@ -554,14 +554,14 @@ Server sends empty HTTP body for getbundle
   write(2 from 2) -> (209) \r\n
   write(42 from 42) -> (167) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n;
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (131) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (108) Server: badhttpserver\r\n
   write(37 from 37) -> (71) Date: $HTTP_DATE$\r\n
@@ -592,11 +592,11 @@ Server sends partial compression string
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (966) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (943) Server: badhttpserver\r\n
   write(37 from 37) -> (906) Date: $HTTP_DATE$\r\n
@@ -605,14 +605,14 @@ Server sends partial compression string
   write(2 from 2) -> (842) \r\n
   write(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (356) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (333) Server: badhttpserver\r\n
   write(37 from 37) -> (296) Date: $HTTP_DATE$\r\n
@@ -621,14 +621,14 @@ Server sends partial compression string
   write(2 from 2) -> (233) \r\n
   write(42 from 42) -> (191) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n;
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   write(36 from 36) -> (155) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (132) Server: badhttpserver\r\n
   write(37 from 37) -> (95) Date: $HTTP_DATE$\r\n
