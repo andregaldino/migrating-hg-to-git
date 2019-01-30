@@ -158,7 +158,7 @@ class datapacktestsbase(object):
         pack = self.createPack(revisions)
 
         # Verify the pack contents
-        for (filename, node, lastnode), content in sorted(blobs.iteritems()):
+        for (filename, node, lastnode), content in sorted(blobs.items()):
             chain = pack.getdeltachain(filename, node)
             for entry in chain:
                 expectedcontent = blobs[(entry[0], entry[1], entry[3])]
@@ -259,7 +259,7 @@ class datapacktestsbase(object):
             self.assertEqual(pack.params.fanoutprefix,
                              basepack.LARGEFANOUTPREFIX)
 
-        for (filename, node), content in blobs.iteritems():
+        for (filename, node), content in blobs.items():
             actualcontent = pack.getdeltachain(filename, node)[0][4]
             self.assertEqual(actualcontent, content)
 
