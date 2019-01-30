@@ -40,7 +40,7 @@ class datapacktestsbase(object):
             shutil.rmtree(d)
 
     def makeTempDir(self):
-        tempdir = tempfile.mkdtemp()
+        tempdir = pycompat.bytestr(tempfile.mkdtemp())
         self.tempdirs.append(tempdir)
         return tempdir
 
@@ -48,7 +48,8 @@ class datapacktestsbase(object):
         return hashlib.sha1(content).digest()
 
     def getFakeHash(self):
-        return ''.join(chr(random.randint(0, 255)) for _ in range(20))
+        return b''.join(pycompat.bytechr(random.randint(0, 255))
+                        for _ in range(20))
 
     def createPack(self, revisions=None, packdir=None):
         if revisions is None:
@@ -221,11 +222,11 @@ class datapacktestsbase(object):
     def testBadVersionThrows(self):
         pack = self.createPack()
         path = pack.path + b'.datapack'
-        with open(path) as f:
+        with open(path, 'rb') as f:
             raw = f.read()
         raw = struct.pack('!B', 255) + raw[1:]
         os.chmod(path, os.stat(path).st_mode | stat.S_IWRITE)
-        with open(path, 'w+') as f:
+        with open(path, 'wb+') as f:
             f.write(raw)
 
         try:
