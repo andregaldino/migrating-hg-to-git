@@ -243,7 +243,7 @@ class datapack(basepack.basepack):
         else:
             while start < end - entrylen:
                 mid = start  + (end - start) / 2
-                mid = mid - ((mid - params.indexstart) % entrylen)
+                mid = int(mid - ((mid - params.indexstart) % entrylen))
                 midnode = index[mid:mid + NODELENGTH]
                 if midnode == node:
                     entry = index[mid:mid + entrylen]

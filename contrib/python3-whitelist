@@ -588,6 +588,7 @@ test-remotefilelog-bundles.t
 test-remotefilelog-cacheprocess.t
 test-remotefilelog-clone-tree.t
 test-remotefilelog-clone.t
+test-remotefilelog-datapack.py
 test-remotefilelog-gcrepack.t
 test-remotefilelog-histpack.py
 test-remotefilelog-http.t
