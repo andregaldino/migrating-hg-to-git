@@ -504,6 +504,7 @@ test-profile.t
 test-progress.t
 test-propertycache.py
 test-pull-branch.t
+test-pull-bundle.t
 test-pull-http.t
 test-pull-permission.t
 test-pull-pull-corruption.t

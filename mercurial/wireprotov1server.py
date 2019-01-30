@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import binascii
 import os
 
 from .i18n import _
@@ -344,7 +345,7 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
       one specific branch of many.
     """
     def decodehexstring(s):
-        return set([h.decode('hex') for h in s.split(';')])
+        return set([binascii.unhexlify(h) for h in s.split(';')])
 
     manifest = repo.vfs.tryread('pullbundles.manifest')
     if not manifest:
