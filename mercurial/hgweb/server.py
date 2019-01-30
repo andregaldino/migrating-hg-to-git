@@ -101,9 +101,8 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         try:
             self.do_write()
         except Exception:
-            self._start_response(r"500 Internal Server Error", [])
-            self._write(b"Internal Server Error")
-            self._done()
+            # I/O below could raise another exception. So log the original
+            # exception first to ensure it is recorded.
             tb = r"".join(traceback.format_exception(*sys.exc_info()))
             # We need a native-string newline to poke in the log
             # message, because we won't get a newline when using an
@@ -111,6 +110,10 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             newline = chr(10)
             self.log_error(r"Exception happened during processing "
                            r"request '%s':%s%s", self.path, newline, tb)
+
+            self._start_response(r"500 Internal Server Error", [])
+            self._write(b"Internal Server Error")
+            self._done()
 
     def do_PUT(self):
         self.do_POST()

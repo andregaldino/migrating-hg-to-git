@@ -910,7 +910,20 @@ Test signal-safe-lock in web and non-web processes
 
 errors
 
-  $ cat errors.log
+  $ cat errors.log | "$PYTHON" $TESTDIR/filtertraceback.py
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=spam': (glob)
+  Traceback (most recent call last):
+  error: [Errno 104] $ECONNRESET$
+  
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/spam': (glob)
+  Traceback (most recent call last):
+  error: [Errno 104] $ECONNRESET$
+  
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/spam/tip/foo': (glob)
+  Traceback (most recent call last):
+  error: [Errno 104] $ECONNRESET$
+  
+  $ rm -f errors.log
 
 Uncaught exceptions result in a logged error and canned HTTP response
 
@@ -925,8 +938,11 @@ Uncaught exceptions result in a logged error and canned HTTP response
   [1]
 
   $ killdaemons.py
-  $ head -1 errors.log
+  $ cat errors.log | "$PYTHON" $TESTDIR/filtertraceback.py
   .* Exception happened during processing request '/raiseerror': (re)
+  Traceback (most recent call last):
+  AttributeError: I am an uncaught error!
+  
 
 Uncaught exception after partial content sent
 

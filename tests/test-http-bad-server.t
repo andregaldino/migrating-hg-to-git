@@ -207,7 +207,7 @@ Now do a variation using POST to send arguments
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(329 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(296 from -1) -> (27) Accept-Encoding: identity\r\n
   readline(269 from -1) -> (35) accept: application/mercurial-0.1\r\n
@@ -241,6 +241,10 @@ Now do a variation using POST to send arguments
   readline(* from -1) -> (2) \r\n (glob)
   read(* from 28) -> (*) cmds=* (glob)
   read limit reached, closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after receiving N bytes
+  
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n
 
   $ rm -f error.log
@@ -258,7 +262,7 @@ Server sends a single character from the HTTP response line
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
@@ -267,6 +271,10 @@ Server sends a single character from the HTTP response line
   readline(-1) -> (2) \r\n
   write(1 from 36) -> (0) H
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=capabilities': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n
 
   $ rm -f error.log
@@ -283,7 +291,7 @@ Server sends an incomplete capabilities response body
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
@@ -298,6 +306,10 @@ Server sends an incomplete capabilities response body
   write(2 from 2) -> (20) \r\n
   write(20 from 450) -> (0) batch branchmap bund
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=capabilities': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
 
   $ rm -f error.log
 
@@ -318,7 +330,7 @@ TODO this output is horrible
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
@@ -346,6 +358,10 @@ TODO this output is horrible
   write(37 from 37) -> (22) Date: $HTTP_DATE$\r\n
   write(22 from 41) -> (0) Content-Type: applicat
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n
 
   $ rm -f error.log
@@ -366,7 +382,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
@@ -397,6 +413,10 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   write(2 from 2) -> (24) \r\n
   write(24 from 42) -> (0) 96ee1d7354c4ad7372047672
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
 
   $ rm -f error.log
 
@@ -418,7 +438,7 @@ TODO this output is terrible
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
@@ -462,6 +482,10 @@ TODO this output is terrible
   write(37 from 37) -> (33) Date: $HTTP_DATE$\r\n
   write(33 from 41) -> (0) Content-Type: application/mercuri
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n
 
   $ rm -f error.log
@@ -478,10 +502,10 @@ Server stops before it sends transfer encoding
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -4 error.log
-  write(41 from 41) -> (25) Content-Type: application/mercurial-0.2\r\n
-  write(25 from 28) -> (0) Transfer-Encoding: chunke
-  write limit reached; closing socket
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -4
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n
 
   $ rm -f error.log
@@ -499,7 +523,7 @@ Server sends empty HTTP body for getbundle
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
@@ -545,6 +569,10 @@ Server sends empty HTTP body for getbundle
   write(28 from 28) -> (2) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (0) \r\n
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n
 
   $ rm -f error.log
@@ -562,7 +590,7 @@ Server sends partial compression string
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
@@ -611,6 +639,10 @@ Server sends partial compression string
   write(9 from 9) -> (9) 4\r\nnone\r\n
   write(9 from 9) -> (0) 4\r\nHG20\r\n
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -628,13 +660,17 @@ Server sends partial bundle2 header magic
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -7 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -11
   write(28 from 28) -> (23) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (21) \r\n
   write(6 from 6) -> (15) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (6) 4\r\nnone\r\n
   write(6 from 9) -> (0) 4\r\nHG2
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -652,7 +688,7 @@ Server sends incomplete bundle2 stream params length
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -8 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
   write(28 from 28) -> (32) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (30) \r\n
   write(6 from 6) -> (24) 1\\r\\n\x04\\r\\n (esc)
@@ -660,6 +696,10 @@ Server sends incomplete bundle2 stream params length
   write(9 from 9) -> (6) 4\r\nHG20\r\n
   write(6 from 9) -> (0) 4\\r\\n\x00\x00\x00 (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -677,7 +717,7 @@ Servers stops after bundle2 stream params header
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -8 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
   write(28 from 28) -> (35) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (33) \r\n
   write(6 from 6) -> (27) 1\\r\\n\x04\\r\\n (esc)
@@ -685,6 +725,10 @@ Servers stops after bundle2 stream params header
   write(9 from 9) -> (9) 4\r\nHG20\r\n
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -702,7 +746,7 @@ Server stops sending after bundle2 part header length
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -9 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -13
   write(28 from 28) -> (44) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (42) \r\n
   write(6 from 6) -> (36) 1\\r\\n\x04\\r\\n (esc)
@@ -711,6 +755,10 @@ Server stops sending after bundle2 part header length
   write(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -731,7 +779,7 @@ Server stops sending after bundle2 part header
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -10 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -14
   write(28 from 28) -> (91) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (89) \r\n
   write(6 from 6) -> (83) 1\\r\\n\x04\\r\\n (esc)
@@ -741,6 +789,10 @@ Server stops sending after bundle2 part header
   write(9 from 9) -> (47) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write(47 from 47) -> (0) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -761,7 +813,7 @@ Server stops after bundle2 part payload chunk size
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -11 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -15
   write(2 from 2) -> (110) \r\n
   write(6 from 6) -> (104) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (95) 4\r\nnone\r\n
@@ -772,6 +824,10 @@ Server stops after bundle2 part payload chunk size
   write(9 from 9) -> (12) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
   write(12 from 473) -> (0) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1d (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -792,7 +848,7 @@ Server stops sending in middle of bundle2 payload chunk
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -12 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -16
   write(28 from 28) -> (573) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (571) \r\n
   write(6 from 6) -> (565) 1\\r\\n\x04\\r\\n (esc)
@@ -804,6 +860,10 @@ Server stops sending in middle of bundle2 payload chunk
   write(9 from 9) -> (473) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
   write(473 from 473) -> (0) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -827,7 +887,7 @@ Server stops sending after 0 length payload chunk size
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -13 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -17
   write(6 from 6) -> (596) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (587) 4\r\nnone\r\n
   write(9 from 9) -> (578) 4\r\nHG20\r\n
@@ -840,6 +900,10 @@ Server stops sending after 0 length payload chunk size
   write(9 from 9) -> (13) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
   write(13 from 38) -> (0) 20\\r\\n\x08LISTKEYS (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -863,7 +927,7 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -22 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -26
   write(9 from 9) -> (851) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (842) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write(47 from 47) -> (795) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
@@ -885,6 +949,10 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
   write(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
@@ -907,7 +975,7 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -23 error.log
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -27
   write(9 from 9) -> (854) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (845) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write(47 from 47) -> (798) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
@@ -930,6 +998,10 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
   write(9 from 9) -> (3) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(3 from 5) -> (0) 0\r\n
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
 
   $ rm -f error.log
