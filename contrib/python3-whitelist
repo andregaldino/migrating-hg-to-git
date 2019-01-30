@@ -296,6 +296,7 @@ test-histedit-outgoing.t
 test-histedit-templates.t
 test-http-api-httpv2.t
 test-http-api.t
+test-http-bad-server.t
 test-http-branchmap.t
 test-http-bundle1.t
 test-http-clone-r.t
