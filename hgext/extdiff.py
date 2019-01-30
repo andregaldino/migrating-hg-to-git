@@ -80,6 +80,7 @@ from mercurial.node import (
 from mercurial import (
     archival,
     cmdutil,
+    encoding,
     error,
     filemerge,
     formatter,
@@ -175,6 +176,65 @@ def formatcmdline(cmdline, repo_root, do3way,
         cmdline += ' $parent1 $child'
     return re.sub(regex, quote, cmdline)
 
+def _runperfilediff(cmdline, repo_root, ui, do3way, confirm,
+                    commonfiles, tmproot, dir1a, dir1b,
+                    dir2root, dir2,
+                    rev1a, rev1b, rev2):
+    # Note that we need to sort the list of files because it was
+    # built in an "unstable" way and it's annoying to get files in a
+    # random order, especially when "confirm" mode is enabled.
+    totalfiles = len(commonfiles)
+    for idx, commonfile in enumerate(sorted(commonfiles)):
+        path1a = os.path.join(tmproot, dir1a, commonfile)
+        label1a = commonfile + rev1a
+        if not os.path.isfile(path1a):
+            path1a = os.devnull
+
+        path1b = ''
+        label1b = ''
+        if do3way:
+            path1b = os.path.join(tmproot, dir1b, commonfile)
+            label1b = commonfile + rev1b
+            if not os.path.isfile(path1b):
+                path1b = os.devnull
+
+        path2 = os.path.join(dir2root, dir2, commonfile)
+        label2 = commonfile + rev2
+
+        if confirm:
+            # Prompt before showing this diff
+            difffiles = _('diff %s (%d of %d)') % (commonfile, idx + 1,
+                                                   totalfiles)
+            responses = _('[Yns?]'
+                          '$$ &Yes, show diff'
+                          '$$ &No, skip this diff'
+                          '$$ &Skip remaining diffs'
+                          '$$ &? (display help)')
+            r = ui.promptchoice('%s %s' % (difffiles, responses))
+            if r == 3: # ?
+                while r == 3:
+                    for c, t in ui.extractchoices(responses)[1]:
+                        ui.write('%s - %s\n' % (c, encoding.lower(t)))
+                    r = ui.promptchoice('%s %s' % (difffiles, responses))
+            if r == 0: # yes
+                pass
+            elif r == 1: # no
+                continue
+            elif r == 2: # skip
+                break
+
+        curcmdline = formatcmdline(
+            cmdline, repo_root, do3way=do3way,
+            parent1=path1a, plabel1=label1a,
+            parent2=path1b, plabel2=label1b,
+            child=path2, clabel=label2)
+        ui.debug('running %r in %s\n' % (pycompat.bytestr(curcmdline),
+                                         tmproot))
+
+        # Run the comparison program and wait for it to exit
+        # before we show the next file.
+        ui.system(curcmdline, cwd=tmproot, blockedtag='extdiff')
+
 def dodiff(ui, repo, cmdline, pats, opts):
     '''Do the actual diff:
 
@@ -201,6 +261,9 @@ def dodiff(ui, repo, cmdline, pats, opts):
         else:
             ctx1b = repo[nullid]
 
+    perfile = opts.get('per_file')
+    confirm = opts.get('confirm')
+
     node1a = ctx1a.node()
     node1b = ctx1b.node()
     node2 = ctx2.node()
@@ -217,6 +280,8 @@ def dodiff(ui, repo, cmdline, pats, opts):
     if opts.get('patch'):
         if subrepos:
             raise error.Abort(_('--patch cannot be used with --subrepos'))
+        if perfile:
+            raise error.Abort(_('--patch cannot be used with --per-file'))
         if node2 is None:
             raise error.Abort(_('--patch requires two revisions'))
     else:
@@ -304,15 +369,23 @@ def dodiff(ui, repo, cmdline, pats, opts):
             label1b = None
             fnsandstat = []
 
-        # Run the external tool on the 2 temp directories or the patches
-        cmdline = formatcmdline(
-            cmdline, repo.root, do3way=do3way,
-            parent1=dir1a, plabel1=label1a,
-            parent2=dir1b, plabel2=label1b,
-            child=dir2, clabel=label2)
-        ui.debug('running %r in %s\n' % (pycompat.bytestr(cmdline),
-                                         tmproot))
-        ui.system(cmdline, cwd=tmproot, blockedtag='extdiff')
+        if not perfile:
+            # Run the external tool on the 2 temp directories or the patches
+            cmdline = formatcmdline(
+                cmdline, repo.root, do3way=do3way,
+                parent1=dir1a, plabel1=label1a,
+                parent2=dir1b, plabel2=label1b,
+                child=dir2, clabel=label2)
+            ui.debug('running %r in %s\n' % (pycompat.bytestr(cmdline),
+                                             tmproot))
+            ui.system(cmdline, cwd=tmproot, blockedtag='extdiff')
+        else:
+            # Run the external tool once for each pair of files
+            _runperfilediff(
+                cmdline, repo.root, ui, do3way=do3way, confirm=confirm,
+                commonfiles=common, tmproot=tmproot, dir1a=dir1a, dir1b=dir1b,
+                dir2root=dir2root, dir2=dir2,
+                rev1a=rev1a, rev1b=rev1b, rev2=rev2)
 
         for copy_fn, working_fn, st in fnsandstat:
             cpstat = os.lstat(copy_fn)
@@ -340,6 +413,10 @@ extdiffopts = [
      _('pass option to comparison program'), _('OPT')),
     ('r', 'rev', [], _('revision'), _('REV')),
     ('c', 'change', '', _('change made by revision'), _('REV')),
+    ('', 'per-file', False,
+     _('compare each file instead of revision snapshots')),
+    ('', 'confirm', False,
+     _('prompt user before each external program invocation')),
     ('', 'patch', None, _('compare patches for two revisions'))
     ] + cmdutil.walkopts + cmdutil.subrepoopts
 
@@ -357,15 +434,23 @@ def extdiff(ui, repo, *pats, **opts):
     default options "-Npru".
 
     To select a different program, use the -p/--program option. The
-    program will be passed the names of two directories to compare. To
-    pass additional options to the program, use -o/--option. These
-    will be passed before the names of the directories to compare.
+    program will be passed the names of two directories to compare,
+    unless the --per-file option is specified (see below). To pass
+    additional options to the program, use -o/--option. These will be
+    passed before the names of the directories or files to compare.
 
     When two revision arguments are given, then changes are shown
     between those revisions. If only one revision is specified then
     that revision is compared to the working directory, and, when no
     revisions are specified, the working directory files are compared
-    to its parent.'''
+    to its parent.
+
+    The --per-file option runs the external program repeatedly on each
+    file to diff, instead of once on two directories.
+
+    The --confirm option will prompt the user before each invocation of
+    the external program. It is ignored if --per-file isn't specified.
+    '''
     opts = pycompat.byteskwargs(opts)
     program = opts.get('program')
     option = opts.get('option')

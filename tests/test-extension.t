@@ -805,14 +805,21 @@ Extension module help vs command help:
       "-Npru".
   
       To select a different program, use the -p/--program option. The program
-      will be passed the names of two directories to compare. To pass additional
-      options to the program, use -o/--option. These will be passed before the
-      names of the directories to compare.
+      will be passed the names of two directories to compare, unless the --per-
+      file option is specified (see below). To pass additional options to the
+      program, use -o/--option. These will be passed before the names of the
+      directories or files to compare.
   
       When two revision arguments are given, then changes are shown between
       those revisions. If only one revision is specified then that revision is
       compared to the working directory, and, when no revisions are specified,
       the working directory files are compared to its parent.
+  
+      The --per-file option runs the external program repeatedly on each file to
+      diff, instead of once on two directories.
+  
+      The --confirm option will prompt the user before each invocation of the
+      external program. It is ignored if --per-file isn't specified.
   
   (use 'hg help -e extdiff' to show help for the extdiff extension)
   
@@ -822,6 +829,8 @@ Extension module help vs command help:
    -o --option OPT [+]      pass option to comparison program
    -r --rev REV [+]         revision
    -c --change REV          change made by revision
+      --per-file            compare each file instead of revision snapshots
+      --confirm             prompt user before each external program invocation
       --patch               compare patches for two revisions
    -I --include PATTERN [+] include names matching the given patterns
    -X --exclude PATTERN [+] exclude names matching the given patterns
