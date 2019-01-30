@@ -857,6 +857,16 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Enabled by default.
 
+``sparse-revlog``
+    Enable or disable the ``sparse-revlog`` delta strategy. This format improves
+    delta re-use inside revlog. For very branchy repositories, it results in a
+    smaller store. For repositories with many revisions, it also helps
+    performance (by using shortened delta chains.)
+
+    Repositories with this on-disk format require Mercurial version 4.7
+
+    Enabled by default.
+
 ``graph``
 ---------
 

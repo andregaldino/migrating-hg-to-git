@@ -2920,7 +2920,6 @@ def newreporequirements(ui, createopts):
 
     if scmutil.gdinitconfig(ui):
         requirements.add('generaldelta')
-        # experimental config: format.sparse-revlog
         if ui.configbool('format', 'sparse-revlog'):
             requirements.add(SPARSEREVLOG_REQUIREMENT)
     if ui.configbool('experimental', 'treemanifest'):

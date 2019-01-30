@@ -1502,6 +1502,8 @@ Separate sections from subsections
   
       "usestore"
   
+      "sparse-revlog"
+  
       "profiling"
       -----------
   
