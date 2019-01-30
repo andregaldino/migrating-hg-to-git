@@ -292,7 +292,7 @@ class datapacktestsbase(object):
 
         class testdatapackstore(datapack.datapackstore):
             # Ensures that we are not keeping everything in the cache.
-            DEFAULTCACHESIZE = numpacks / 2
+            DEFAULTCACHESIZE = int(numpacks / 2)
 
         store = testdatapackstore(uimod.ui(), packdir)
 
