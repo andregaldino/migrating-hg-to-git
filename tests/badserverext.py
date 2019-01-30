@@ -34,6 +34,7 @@ from __future__ import absolute_import
 import socket
 
 from mercurial import(
+    pycompat,
     registrar,
 )
 
@@ -115,7 +116,7 @@ class fileobjectproxy(object):
         object.__setattr__(self, '_closeaftersendbytes', closeaftersendbytes)
 
     def __getattribute__(self, name):
-        if name in ('read', 'readline', 'write', '_writelog'):
+        if name in ('_close', 'read', 'readline', 'write', '_writelog'):
             return object.__getattribute__(self, name)
 
         return getattr(object.__getattribute__(self, '_orig'), name)
@@ -132,6 +133,19 @@ class fileobjectproxy(object):
         object.__getattribute__(self, '_logfp').write(msg)
         object.__getattribute__(self, '_logfp').write(b'\n')
         object.__getattribute__(self, '_logfp').flush()
+
+    def _close(self):
+        # Python 3 uses an io.BufferedIO instance. Python 2 uses some file
+        # object wrapper.
+        if pycompat.ispy3:
+            orig = object.__getattribute__(self, '_orig')
+
+            if hasattr(orig, 'raw'):
+                orig.raw._sock.shutdown(socket.SHUT_RDWR)
+            else:
+                self.close()
+        else:
+            self._sock.shutdown(socket.SHUT_RDWR)
 
     def read(self, size=-1):
         remaining = object.__getattribute__(self, '_closeafterrecvbytes')
@@ -161,7 +175,8 @@ class fileobjectproxy(object):
 
         if remaining <= 0:
             self._writelog(b'read limit reached, closing socket')
-            self._sock.close()
+            self._close()
+
             # This is the easiest way to abort the current request.
             raise Exception('connection closed after receiving N bytes')
 
@@ -194,7 +209,8 @@ class fileobjectproxy(object):
 
         if remaining <= 0:
             self._writelog(b'read limit reached; closing socket')
-            self._sock.close()
+            self._close()
+
             # This is the easiest way to abort the current request.
             raise Exception('connection closed after receiving N bytes')
 
@@ -225,7 +241,8 @@ class fileobjectproxy(object):
 
         if remaining <= 0:
             self._writelog(b'write limit reached; closing socket')
-            self._sock.close()
+            self._close()
+
             raise Exception('connection closed after sending N bytes')
 
         return result
