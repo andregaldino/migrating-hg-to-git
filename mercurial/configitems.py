@@ -201,6 +201,7 @@ coreconfigitem('color', 'mode',
 coreconfigitem('color', 'pagermode',
     default=dynamicdefault,
 )
+_registerdiffopts(section='commands', configprefix='commit.interactive.')
 coreconfigitem('commands', 'grep.all-files',
     default=False,
 )
@@ -213,6 +214,7 @@ coreconfigitem('commands', 'resolve.explicit-re-merge',
 coreconfigitem('commands', 'resolve.mark-check',
     default='none',
 )
+_registerdiffopts(section='commands', configprefix='revert.interactive.')
 coreconfigitem('commands', 'show.aliasprefix',
     default=list,
 )

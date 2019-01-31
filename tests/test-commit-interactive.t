@@ -1808,7 +1808,7 @@ even if none of mode, size and timestamp is changed on the filesystem
   $ hg status -A subdir/f1
   M subdir/f1
 
-Test diff.unified=0
+Test commands.commit.interactive.unified=0
 
   $ hg init $TESTTMP/b
   $ cd $TESTTMP/b
@@ -1829,7 +1829,7 @@ Test diff.unified=0
   > 4
   > 5
   > EOF
-  $ printf 'y\ny\ny\n' | hg ci -im initial --config diff.unified=0
+  $ printf 'y\ny\ny\n' | hg ci -im initial --config commands.commit.interactive.unified=0
   diff --git a/foo b/foo
   2 hunks, 2 lines changed
   examine changes to 'foo'? [Ynesfdaq?] y

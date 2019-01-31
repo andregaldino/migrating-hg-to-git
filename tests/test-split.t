@@ -26,6 +26,8 @@
   > [diff]
   > git=1
   > unified=0
+  > [commands]
+  > commit.interactive.unified=0
   > [alias]
   > glog=log -G -T '{rev}:{node|short} {desc} {bookmarks}\n'
   > EOF
@@ -105,10 +107,10 @@ Split a head
 
 This function splits a bit strangely primarily to avoid changing the behavior of
 the test after a bug was fixed with how split/commit --interactive handled
-`diff.unified=0`: when there were no context lines, it kept only the last diff
-hunk. When running split, this meant that runsplit was always recording three commits,
-one for each diff hunk, in reverse order (the base commit was the last diff hunk
-in the file).
+`commands.commit.interactive.unified=0`: when there were no context lines,
+it kept only the last diff hunk. When running split, this meant that runsplit
+was always recording three commits, one for each diff hunk, in reverse order
+(the base commit was the last diff hunk in the file).
   $ runsplit() {
   > cat > $TESTTMP/messages <<EOF
   > split 1
