@@ -146,10 +146,21 @@ diffstat within directories:
   $ hg diff --stat .
    dir1/new |  1 +
    1 files changed, 1 insertions(+), 0 deletions(-)
+  $ hg diff --stat . --config ui.relative-paths=yes
+   new |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
   $ hg diff --stat --root .
    new |  1 +
    1 files changed, 1 insertions(+), 0 deletions(-)
 
+  $ hg diff --stat --root . --config ui.relative-paths=yes
+   new |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
+--root trumps ui.relative-paths
+  $ hg diff --stat --root .. --config ui.relative-paths=yes
+   new         |  1 +
+   ../dir2/new |  1 +
+   2 files changed, 2 insertions(+), 0 deletions(-)
   $ hg diff --stat --root ../dir1 ../dir2
   warning: ../dir2 not inside relative root .
 

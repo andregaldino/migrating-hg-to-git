@@ -99,6 +99,9 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         width = 80
         if not ui.plain():
             width = ui.termwidth() - graphwidth
+        # If an explicit --root was given, don't respect ui.relative-paths
+        if not relroot:
+            pathfn = compose(scmutil.getuipathfn(repo), pathfn)
 
     chunks = ctx2.diff(ctx1, match, changes, opts=diffopts, pathfn=pathfn,
                        copysourcematch=copysourcematch,
