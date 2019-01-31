@@ -2051,7 +2051,11 @@ class path(object):
         This is its own function so that extensions can change the definition of
         'valid' in this case (like when pulling from a git repo into a hg
         one)."""
-        return os.path.isdir(os.path.join(path, '.hg'))
+        try:
+            return os.path.isdir(os.path.join(path, '.hg'))
+        # Python 2 may return TypeError. Python 3, ValueError.
+        except (TypeError, ValueError):
+            return False
 
     @property
     def suboptions(self):

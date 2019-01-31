@@ -38,6 +38,7 @@ from . import (
     narrowspec,
     node,
     phases,
+    pycompat,
     repository as repositorymod,
     scmutil,
     sshpeer,
@@ -57,7 +58,15 @@ sharedbookmarks = 'bookmarks'
 
 def _local(path):
     path = util.expandpath(util.urllocalpath(path))
-    return (os.path.isfile(path) and bundlerepo or localrepo)
+
+    try:
+        isfile = os.path.isfile(path)
+    # Python 2 raises TypeError, Python 3 ValueError.
+    except (TypeError, ValueError) as e:
+        raise error.Abort(_('invalid path %s: %s') % (
+            path, pycompat.bytestr(e)))
+
+    return isfile and bundlerepo or localrepo
 
 def addbranchrevs(lrepo, other, branches, revs):
     peer = other.peer() # a courtesy to callers using a localrepo for other
