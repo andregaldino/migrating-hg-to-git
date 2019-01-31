@@ -2848,6 +2848,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                 for i in pycompat.xrange(blo, bhi):
                     yield ('+', b[i])
 
+    uipathfn = scmutil.getuipathfn(repo)
     def display(fm, fn, ctx, pstates, states):
         rev = scmutil.intrev(ctx)
         if fm.isplain():
@@ -2875,8 +2876,8 @@ def grep(ui, repo, pattern, *pats, **opts):
         for change, l in iter:
             fm.startitem()
             fm.context(ctx=ctx)
-            fm.data(node=fm.hexfunc(scmutil.binnode(ctx)))
-            fm.write('path', '%s', fn, label='grep.filename')
+            fm.data(node=fm.hexfunc(scmutil.binnode(ctx)), path=fn)
+            fm.plain(uipathfn(fn), label='grep.filename')
 
             cols = [
                 ('rev', '%d', rev, not plaingrep),

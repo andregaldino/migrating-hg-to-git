@@ -32,6 +32,20 @@ simple
   port:4:vaportight
   port:4:import/export
 
+simple from subdirectory
+
+  $ mkdir dir
+  $ cd dir
+  $ hg grep -r tip:0 port
+  port:4:export
+  port:4:vaportight
+  port:4:import/export
+  $ hg grep -r tip:0 port --config ui.relative-paths=yes
+  ../port:4:export
+  ../port:4:vaportight
+  ../port:4:import/export
+  $ cd ..
+
 simple with color
 
   $ hg --config extensions.color= grep --config color.mode=ansi \
