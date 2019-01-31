@@ -58,12 +58,12 @@ rollback = False
 statuscopies = yes
 # Prefer curses UIs when available. Revert to plain-text with `text`.
 interface = curses
+# Make compatible commands emit cwd-relative paths by default.
+relative-paths = yes
 
 [commands]
 # Grep working directory by default.
 grep.all-files = True
-# Make `hg status` emit cwd-relative paths by default.
-status.relative = yes
 # Refuse to perform an `hg update` that would cause a file content merge
 update.check = noconflict
 # Show conflicts information in `hg status`
