@@ -354,6 +354,17 @@ Test missing log directory, which shouldn't be created automatically
   warning: cannot write to blackbox.log: $TESTTMP/gone/.hg/blackbox.log: $ENOTDIR$ (windows !)
   $ cd ..
 
+blackbox should disable itself if track is empty
+
+  $ hg --config blackbox.track= init nothing_tracked
+  $ cd nothing_tracked
+  $ cat >> .hg/hgrc << EOF
+  > [blackbox]
+  > track =
+  > EOF
+  $ hg blackbox
+  $ cd $TESTTMP
+
 #if chg
 
 when using chg, blackbox.log should get rotated correctly
