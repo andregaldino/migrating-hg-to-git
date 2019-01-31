@@ -961,6 +961,7 @@ class svnsubrepo(abstractsubrepo):
                              universal_newlines=True,
                              env=procutil.tonativeenv(env), **extrakw)
         stdout, stderr = p.communicate()
+        stdout, stderr = pycompat.fsencode(stdout), pycompat.fsencode(stderr)
         stderr = stderr.strip()
         if not failok:
             if p.returncode:
@@ -987,13 +988,14 @@ class svnsubrepo(abstractsubrepo):
         # both. We used to store the working directory one.
         output, err = self._svncommand(['info', '--xml'])
         doc = xml.dom.minidom.parseString(output)
-        entries = doc.getElementsByTagName('entry')
+        entries = doc.getElementsByTagName(r'entry')
         lastrev, rev = '0', '0'
         if entries:
-            rev = str(entries[0].getAttribute('revision')) or '0'
-            commits = entries[0].getElementsByTagName('commit')
+            rev = pycompat.bytestr(entries[0].getAttribute(r'revision')) or '0'
+            commits = entries[0].getElementsByTagName(r'commit')
             if commits:
-                lastrev = str(commits[0].getAttribute('revision')) or '0'
+                lastrev = pycompat.bytestr(
+                    commits[0].getAttribute(r'revision')) or '0'
         return (lastrev, rev)
 
     def _wcrev(self):
@@ -1008,19 +1010,19 @@ class svnsubrepo(abstractsubrepo):
         output, err = self._svncommand(['status', '--xml'])
         externals, changes, missing = [], [], []
         doc = xml.dom.minidom.parseString(output)
-        for e in doc.getElementsByTagName('entry'):
-            s = e.getElementsByTagName('wc-status')
+        for e in doc.getElementsByTagName(r'entry'):
+            s = e.getElementsByTagName(r'wc-status')
             if not s:
                 continue
-            item = s[0].getAttribute('item')
-            props = s[0].getAttribute('props')
-            path = e.getAttribute('path')
-            if item == 'external':
+            item = s[0].getAttribute(r'item')
+            props = s[0].getAttribute(r'props')
+            path = e.getAttribute(r'path').encode('utf8')
+            if item == r'external':
                 externals.append(path)
-            elif item == 'missing':
+            elif item == r'missing':
                 missing.append(path)
-            if (item not in ('', 'normal', 'unversioned', 'external')
-                or props not in ('', 'none', 'normal')):
+            if (item not in (r'', r'normal', r'unversioned', r'external')
+                or props not in (r'', r'none', r'normal')):
                 changes.append(path)
         for path in changes:
             for ext in externals:
@@ -1141,14 +1143,14 @@ class svnsubrepo(abstractsubrepo):
         output = self._svncommand(['list', '--recursive', '--xml'])[0]
         doc = xml.dom.minidom.parseString(output)
         paths = []
-        for e in doc.getElementsByTagName('entry'):
-            kind = pycompat.bytestr(e.getAttribute('kind'))
+        for e in doc.getElementsByTagName(r'entry'):
+            kind = pycompat.bytestr(e.getAttribute(r'kind'))
             if kind != 'file':
                 continue
-            name = ''.join(c.data for c
-                           in e.getElementsByTagName('name')[0].childNodes
-                           if c.nodeType == c.TEXT_NODE)
-            paths.append(name.encode('utf-8'))
+            name = r''.join(c.data for c
+                            in e.getElementsByTagName(r'name')[0].childNodes
+                            if c.nodeType == c.TEXT_NODE)
+            paths.append(name.encode('utf8'))
         return paths
 
     def filedata(self, name, decode):
