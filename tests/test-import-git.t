@@ -826,7 +826,7 @@ Test email metadata
 
   $ hg revert -qa
   $ hg --encoding utf-8 import - <<EOF
-  > From: =?UTF-8?q?Rapha=C3=ABl=20Hertzog?= <hertzog@debian.org>
+  > From: =?utf-8?q?Rapha=C3=ABl_Hertzog_=3Chertzog=40debian=2Eorg=3E?=
   > Subject: [PATCH] =?UTF-8?q?=C5=A7=E2=82=AC=C3=9F=E1=B9=AA?=
   > 
   > diff --git a/a b/a

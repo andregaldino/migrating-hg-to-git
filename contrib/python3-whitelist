@@ -311,6 +311,7 @@ test-impexp-branch.t
 test-import-bypass.t
 test-import-context.t
 test-import-eol.t
+test-import-git.t
 test-import-merge.t
 test-import-unknown.t
 test-import.t
