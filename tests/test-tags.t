@@ -759,3 +759,69 @@ Check that local clone includes cache data
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ (cd tags-local-clone/.hg/cache/; ls -1 tag*)
   tags2-visible
+
+Avoid writing logs on trying to delete an already deleted tag
+  $ hg init issue5752
+  $ cd issue5752
+  $ echo > a
+  $ hg commit -Am 'add a'
+  adding a
+  $ hg tag a
+  $ hg tags
+  tip                                1:bd7ee4f3939b
+  a                                  0:a8a82d372bb3
+  $ hg log
+  changeset:   1:bd7ee4f3939b
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Added tag a for changeset a8a82d372bb3
+  
+  changeset:   0:a8a82d372bb3
+  tag:         a
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a
+  
+  $ hg tag --remove a
+  $ hg log
+  changeset:   2:e7feacc7ec9e
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Removed tag a
+  
+  changeset:   1:bd7ee4f3939b
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Added tag a for changeset a8a82d372bb3
+  
+  changeset:   0:a8a82d372bb3
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a
+  
+  $ hg tag --remove a
+  abort: tag 'a' is already removed
+  [255]
+  $ hg log
+  changeset:   2:e7feacc7ec9e
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Removed tag a
+  
+  changeset:   1:bd7ee4f3939b
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Added tag a for changeset a8a82d372bb3
+  
+  changeset:   0:a8a82d372bb3
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a
+  
+  $ cat .hgtags
+  a8a82d372bb35b42ff736e74f07c23bcd99c371f a
+  a8a82d372bb35b42ff736e74f07c23bcd99c371f a
+  0000000000000000000000000000000000000000 a

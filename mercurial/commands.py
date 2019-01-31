@@ -5830,6 +5830,10 @@ def tag(ui, repo, name1, *names, **opts):
                 expectedtype = 'global'
 
             for n in names:
+                if repo.tagtype(n) == 'global':
+                    alltags = tagsmod.findglobaltags(ui, repo)
+                    if alltags[n][0] == nullid:
+                        raise error.Abort(_("tag '%s' is already removed") % n)
                 if not repo.tagtype(n):
                     raise error.Abort(_("tag '%s' does not exist") % n)
                 if repo.tagtype(n) != expectedtype:
