@@ -113,46 +113,49 @@ def getitemregister(configtable):
 
 coreconfigitem = getitemregister(coreitems)
 
+def _registerdiffopts(section, configprefix=''):
+    coreconfigitem(section, configprefix + 'nodates',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'showfunc',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'unified',
+        default=None,
+    )
+    coreconfigitem(section, configprefix + 'git',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'ignorews',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'ignorewsamount',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'ignoreblanklines',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'ignorewseol',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'nobinary',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'noprefix',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'word-diff',
+        default=False,
+    )
+
 coreconfigitem('alias', '.*',
     default=dynamicdefault,
     generic=True,
 )
-coreconfigitem('annotate', 'nodates',
-    default=False,
-)
-coreconfigitem('annotate', 'showfunc',
-    default=False,
-)
-coreconfigitem('annotate', 'unified',
-    default=None,
-)
-coreconfigitem('annotate', 'git',
-    default=False,
-)
-coreconfigitem('annotate', 'ignorews',
-    default=False,
-)
-coreconfigitem('annotate', 'ignorewsamount',
-    default=False,
-)
-coreconfigitem('annotate', 'ignoreblanklines',
-    default=False,
-)
-coreconfigitem('annotate', 'ignorewseol',
-    default=False,
-)
-coreconfigitem('annotate', 'nobinary',
-    default=False,
-)
-coreconfigitem('annotate', 'noprefix',
-    default=False,
-)
-coreconfigitem('annotate', 'word-diff',
-    default=False,
-)
 coreconfigitem('auth', 'cookiefile',
     default=None,
 )
+_registerdiffopts(section='annotate')
 # bookmarks.pushing: internal hack for discovery
 coreconfigitem('bookmarks', 'pushing',
     default=list,
@@ -404,39 +407,7 @@ coreconfigitem('devel', 'debug.extensions',
 coreconfigitem('devel', 'debug.peer-request',
     default=False,
 )
-coreconfigitem('diff', 'nodates',
-    default=False,
-)
-coreconfigitem('diff', 'showfunc',
-    default=False,
-)
-coreconfigitem('diff', 'unified',
-    default=None,
-)
-coreconfigitem('diff', 'git',
-    default=False,
-)
-coreconfigitem('diff', 'ignorews',
-    default=False,
-)
-coreconfigitem('diff', 'ignorewsamount',
-    default=False,
-)
-coreconfigitem('diff', 'ignoreblanklines',
-    default=False,
-)
-coreconfigitem('diff', 'ignorewseol',
-    default=False,
-)
-coreconfigitem('diff', 'nobinary',
-    default=False,
-)
-coreconfigitem('diff', 'noprefix',
-    default=False,
-)
-coreconfigitem('diff', 'word-diff',
-    default=False,
-)
+_registerdiffopts(section='diff')
 coreconfigitem('email', 'bcc',
     default=None,
 )
