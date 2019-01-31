@@ -2258,14 +2258,17 @@ class TextTestRunner(unittest.TextTestRunner):
             self.stream.writeln('')
 
             if not self._runner.options.noskips:
-                for test, msg in self._result.skipped:
+                for test, msg in sorted(self._result.skipped,
+                                        key=lambda s: s[0].name):
                     formatted = 'Skipped %s: %s\n' % (test.name, msg)
                     msg = highlightmsg(formatted, self._result.color)
                     self.stream.write(msg)
-            for test, msg in self._result.failures:
+            for test, msg in sorted(self._result.failures,
+                                    key=lambda f: f[0].name):
                 formatted = 'Failed %s: %s\n' % (test.name, msg)
                 self.stream.write(highlightmsg(formatted, self._result.color))
-            for test, msg in self._result.errors:
+            for test, msg in sorted(self._result.errors,
+                                    key=lambda e: e[0].name):
                 self.stream.writeln('Errored %s: %s' % (test.name, msg))
 
             if self._runner.options.xunit:

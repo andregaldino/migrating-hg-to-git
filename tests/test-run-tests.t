@@ -324,8 +324,8 @@ basic failing test
   
   ERROR: test-failure-unicode.t output changed
   !
-  Failed test-failure.t: output changed
   Failed test-failure-unicode.t: output changed
+  Failed test-failure.t: output changed
   # Ran 3 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
@@ -356,8 +356,8 @@ test --outputdir
   
   ERROR: test-failure-unicode.t output changed
   !
-  Failed test-failure.t: output changed
   Failed test-failure-unicode.t: output changed
+  Failed test-failure.t: output changed
   # Ran 3 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
@@ -393,8 +393,8 @@ test --xunit support
   
   ERROR: test-failure-unicode.t output changed
   !
-  Failed test-failure.t: output changed
   Failed test-failure-unicode.t: output changed
+  Failed test-failure.t: output changed
   # Ran 3 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
