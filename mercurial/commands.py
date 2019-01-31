@@ -3683,11 +3683,12 @@ def locate(ui, repo, *pats, **opts):
         filesgen = sorted(repo.dirstate.matches(m))
     else:
         filesgen = ctx.matches(m)
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=bool(pats))
     for abs in filesgen:
         if opts.get('fullpath'):
             ui.write(repo.wjoin(abs), end)
         else:
-            ui.write(((pats and m.rel(abs)) or abs), end)
+            ui.write(uipathfn(abs), end)
         ret = 0
 
     return ret
