@@ -410,16 +410,18 @@ class baseunionstore(object):
         def wrapped(self, *args, **kwargs):
             retrylog = self.retrylog or noop
             funcname = fn.__name__
-            for i in pycompat.xrange(self.numattempts):
+            i = 0
+            while i < self.numattempts:
                 if i > 0:
                     retrylog('re-attempting (n=%d) %s\n' % (i, funcname))
                     self.markforrefresh()
+                i += 1
                 try:
                     return fn(self, *args, **kwargs)
                 except KeyError:
-                    pass
-            # retries exhausted
-            retrylog('retries exhausted in %s, raising KeyError\n' %
-                     pycompat.sysbytes(funcname))
-            raise
+                    if i == self.numattempts:
+                        # retries exhausted
+                        retrylog('retries exhausted in %s, raising KeyError\n' %
+                                 pycompat.sysbytes(funcname))
+                        raise
         return wrapped

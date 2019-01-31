@@ -603,6 +603,7 @@ test-remotefilelog-permissions.t
 test-remotefilelog-permisssions.t
 test-remotefilelog-prefetch.t
 test-remotefilelog-pull-noshallow.t
+test-remotefilelog-repack.t
 test-remotefilelog-share.t
 test-remotefilelog-sparse.t
 test-remotefilelog-tags.t
