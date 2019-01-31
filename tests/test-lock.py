@@ -290,7 +290,7 @@ class testlock(unittest.TestCase):
             self.fail("unexpected lock acquisition")
         except error.LockHeld as why:
             self.assertTrue(why.errno == errno.ETIMEDOUT)
-            self.assertTrue(why.locker == "")
+            self.assertTrue(why.locker == b"")
             state.assertlockexists(False)
 
 if __name__ == '__main__':
