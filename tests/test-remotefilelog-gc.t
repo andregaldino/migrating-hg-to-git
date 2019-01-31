@@ -108,5 +108,6 @@
 
   $ printf "asdas\0das" >> $CACHEDIR/repos
   $ hg gc
-  abort: invalid path asdas\x00da: stat() argument 1 must be encoded string without null bytes, not str (esc)
+  abort: invalid path asdas\x00da: stat: embedded null character in path (esc) (py3 !)
+  abort: invalid path asdas\x00da: stat() argument 1 must be encoded string without null bytes, not str (esc) (no-py3 !)
   [255]
