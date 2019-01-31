@@ -2867,7 +2867,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             except error.WdirUnsupported:
                 return ctx[fn].isbinary()
 
-        fieldnamemap = {'filename': 'path', 'linenumber': 'lineno'}
+        fieldnamemap = {'linenumber': 'lineno'}
         if diff:
             iter = difflinestates(pstates, states)
         else:
@@ -2876,9 +2876,9 @@ def grep(ui, repo, pattern, *pats, **opts):
             fm.startitem()
             fm.context(ctx=ctx)
             fm.data(node=fm.hexfunc(scmutil.binnode(ctx)))
+            fm.write('path', '%s', fn, label='grep.filename')
 
             cols = [
-                ('filename', '%s', fn, True),
                 ('rev', '%d', rev, not plaingrep),
                 ('linenumber', '%d', l.linenum, opts.get('line_number')),
             ]
@@ -2889,13 +2889,11 @@ def grep(ui, repo, pattern, *pats, **opts):
                 ('date', '%s', fm.formatdate(ctx.date(), datefmt),
                  opts.get('date')),
             ])
-            lastcol = next(
-                name for name, fmt, data, cond in reversed(cols) if cond)
             for name, fmt, data, cond in cols:
+                if cond:
+                    fm.plain(sep, label='grep.sep')
                 field = fieldnamemap.get(name, name)
                 fm.condwrite(cond, field, fmt, data, label='grep.%s' % name)
-                if cond and name != lastcol:
-                    fm.plain(sep, label='grep.sep')
             if not opts.get('files_with_matches'):
                 fm.plain(sep, label='grep.sep')
                 if not opts.get('text') and binary():
