@@ -1284,7 +1284,7 @@ class gitsubrepo(abstractsubrepo):
         if stream:
             return p.stdout, None
 
-        retdata = p.stdout.read().strip()
+        retdata = pycompat.fsencode(p.stdout.read().strip())
         # wait for the child to exit to avoid race condition.
         p.wait()
 
@@ -1660,13 +1660,14 @@ class gitsubrepo(abstractsubrepo):
         for info in tar:
             if info.isdir():
                 continue
-            if match and not match(info.name):
+            bname = pycompat.fsencode(info.name)
+            if match and not match(bname):
                 continue
             if info.issym():
                 data = info.linkname
             else:
                 data = tar.extractfile(info).read()
-            archiver.addfile(prefix + self._path + '/' + info.name,
+            archiver.addfile(prefix + self._path + '/' + bname,
                              info.mode, info.issym(), data)
             total += 1
             progress.increment()

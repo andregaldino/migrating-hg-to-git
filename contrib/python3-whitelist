@@ -679,6 +679,7 @@ test-strict.t
 test-strip-cross.t
 test-strip.t
 test-subrepo-deep-nested-change.t
+test-subrepo-git.t
 test-subrepo-missing.t
 test-subrepo-paths.t
 test-subrepo-recursion.t
