@@ -854,4 +854,78 @@ Check that we can remove the sparse-revlog format requirement
   generaldelta
   revlogv1
   store
+
+#if zstd
+
+Check upgrading to a zstd revlog
+--------------------------------
+
+upgrade
+
+  $ hg --config format.revlog-compression=zstd debugupgraderepo --run  --no-backup >/dev/null
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  plain-cl-delta:    yes    yes     yes
+  compression:       zstd   zlib    zlib
+  compression-level: default default default
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlog-compression-zstd
+  revlogv1
+  sparserevlog
+  store
+
+downgrade
+
+  $ hg debugupgraderepo --run --no-backup > /dev/null
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+
+upgrade from hgrc
+
+  $ cat >> .hg/hgrc << EOF
+  > [format]
+  > revlog-compression=zstd
+  > EOF
+  $ hg debugupgraderepo --run --no-backup > /dev/null
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  plain-cl-delta:    yes    yes     yes
+  compression:       zstd   zstd    zlib
+  compression-level: default default default
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlog-compression-zstd
+  revlogv1
+  sparserevlog
+  store
+
   $ cd ..
+
+#endif

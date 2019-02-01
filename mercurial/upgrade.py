@@ -24,6 +24,10 @@ from . import (
     vfs as vfsmod,
 )
 
+from .utils import (
+    compression,
+)
+
 def requiredsourcerequirements(repo):
     """Obtain requirements required to be present to upgrade a repo.
 
@@ -61,9 +65,16 @@ def supportremovedrequirements(repo):
     the dropped requirement must appear in the returned set for the upgrade
     to be allowed.
     """
-    return {
+    supported = {
         localrepo.SPARSEREVLOG_REQUIREMENT,
     }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == 'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
 
 def supporteddestrequirements(repo):
     """Obtain requirements that upgrade supports in the destination.
@@ -73,7 +84,7 @@ def supporteddestrequirements(repo):
 
     Extensions should monkeypatch this to add their custom requirements.
     """
-    return {
+    supported = {
         'dotencode',
         'fncache',
         'generaldelta',
@@ -81,6 +92,13 @@ def supporteddestrequirements(repo):
         'store',
         localrepo.SPARSEREVLOG_REQUIREMENT,
     }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == 'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
 
 def allowednewrequirements(repo):
     """Obtain requirements that can be added to a repository during upgrade.
@@ -92,12 +110,19 @@ def allowednewrequirements(repo):
     bad additions because the whitelist approach is safer and will prevent
     future, unknown requirements from accidentally being added.
     """
-    return {
+    supported = {
         'dotencode',
         'fncache',
         'generaldelta',
         localrepo.SPARSEREVLOG_REQUIREMENT,
     }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == 'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
 
 def preservedrequirements(repo):
     return set()
