@@ -2772,8 +2772,8 @@ class TestRunner(object):
         """
         if not args:
             if self.options.changed:
-                proc = Popen4('hg st --rev "%s" -man0 .' %
-                              self.options.changed, None, 0)
+                proc = Popen4(b'hg st --rev "%s" -man0 .' %
+                              _bytespath(self.options.changed), None, 0)
                 stdout, stderr = proc.communicate()
                 args = stdout.strip(b'\0').split(b'\0')
             else:
