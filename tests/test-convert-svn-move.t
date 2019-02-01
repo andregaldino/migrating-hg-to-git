@@ -8,7 +8,7 @@
   $ svnadmin create svn-repo
   $ svnadmin load -q svn-repo < "$TESTDIR/svn/move.svndump"
   $ SVNREPOPATH=`pwd`/svn-repo
-  $ SVNREPOURL="`$PYTHON $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
+  $ SVNREPOURL="`"$PYTHON" $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
 
 Convert trunk and branches
 

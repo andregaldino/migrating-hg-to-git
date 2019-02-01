@@ -11,7 +11,7 @@
   > EOF
 
   $ SVNREPOPATH=`pwd`/svn-repo
-  $ SVNREPOURL="`$PYTHON $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
+  $ SVNREPOURL="`"$PYTHON" $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
 
   $ svnadmin create "$SVNREPOPATH"
   $ cat > "$SVNREPOPATH"/hooks/pre-revprop-change <<EOF

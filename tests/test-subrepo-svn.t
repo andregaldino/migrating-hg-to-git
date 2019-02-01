@@ -1,7 +1,7 @@
 #require svn15
 
   $ SVNREPOPATH=`pwd`/svn-repo
-  $ SVNREPOURL="`$PYTHON $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
+  $ SVNREPOURL="`"$PYTHON" $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
 
   $ filter_svn_output () {
   >     egrep -v 'Committing|Transmitting|Updating|(^$)' || true

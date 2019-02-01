@@ -13,7 +13,7 @@
 
   $ svnadmin create svn-repo
   $ SVNREPOPATH=`pwd`/svn-repo
-  $ SVNREPOURL="`$PYTHON $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
+  $ SVNREPOURL="`"$PYTHON" $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
   $ INVALIDREVISIONID=svn:x2147622-4a9f-4db4-a8d3-13562ff547b2/proj%20B/mytrunk@1
   $ VALIDREVISIONID=svn:a2147622-4a9f-4db4-a8d3-13562ff547b2/proj%20B/mytrunk/mytrunk@1
 

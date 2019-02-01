@@ -23,7 +23,7 @@ handle svn subrepos safely
   $ svnadmin create svn-repo-2499
 
   $ SVNREPOPATH=`pwd`/svn-repo-2499/project
-  $ SVNREPOURL="`$PYTHON $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
+  $ SVNREPOURL="`"$PYTHON" $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
 
   $ mkdir -p svn-project-2499/trunk
   $ svn import -qm 'init project' svn-project-2499 "$SVNREPOURL"
