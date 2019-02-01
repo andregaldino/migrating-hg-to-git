@@ -32,6 +32,7 @@ from . import (
     encoding,
     error,
     mail,
+    match as matchmod,
     mdiff,
     pathutil,
     pycompat,
@@ -2319,12 +2320,9 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
     ctx1 = repo[node1]
     ctx2 = repo[node2]
 
-    relfiltered = False
-    if relroot != '' and match.always():
-        # as a special case, create a new matcher with just the relroot
-        pats = [relroot]
-        match = scmutil.match(ctx2, pats, default='path')
-        relfiltered = True
+    if relroot:
+        relrootmatch = scmutil.match(ctx2, pats=[relroot], default='path')
+        match = matchmod.intersectmatchers(match, relrootmatch)
 
     if not changes:
         changes = ctx1.status(ctx2, match=match)
@@ -2344,16 +2342,7 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
         if opts.git or opts.upgrade:
             copy = copies.pathcopies(ctx1, ctx2, match=match)
 
-    if relroot is not None:
-        if not relfiltered:
-            # XXX this would ideally be done in the matcher, but that is
-            # generally meant to 'or' patterns, not 'and' them. In this case we
-            # need to 'and' all the patterns from the matcher with relroot.
-            def filterrel(l):
-                return [f for f in l if f.startswith(relroot)]
-            modified = filterrel(modified)
-            added = filterrel(added)
-            removed = filterrel(removed)
+    if relroot:
         # filter out copies where either side isn't inside the relative root
         copy = dict(((dst, src) for (dst, src) in copy.iteritems()
                      if dst.startswith(relroot)
