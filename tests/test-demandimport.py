@@ -194,20 +194,21 @@ else:
     )
     assert f(re) == "<proxied module 'sys'>", f(re)
 
-import contextlib
+assert 'telnetlib' not in sys.modules
+import telnetlib
 
 if ispy3:
-    assert not isinstance(contextlib, _LazyModule)
-    assert f(contextlib) == "<module 'contextlib' from '?'>"
+    assert not isinstance(telnetlib, _LazyModule)
+    assert f(telnetlib) == "<module 'telnetlib' from '?'>"
 else:
-    assert f(contextlib) == "<unloaded module 'contextlib'>", f(contextlib)
+    assert f(telnetlib) == "<unloaded module 'telnetlib'>", f(telnetlib)
 
 try:
-    from contextlib import unknownattr
+    from telnetlib import unknownattr
 
     assert False, (
         'no demandmod should be created for attribute of non-package '
-        'module:\ncontextlib.unknownattr = %s' % f(unknownattr)
+        'module:\ntelnetlib.unknownattr = %s' % f(unknownattr)
     )
 except ImportError as inst:
     assert rsub(r"'", '', str(inst)).startswith(
@@ -219,6 +220,7 @@ from mercurial import util
 # Unlike the import statement, __import__() function should not raise
 # ImportError even if fromlist has an unknown item
 # (see Python/import.c:import_module_level() and ensure_fromlist())
-contextlibimp = __import__('contextlib', globals(), locals(), ['unknownattr'])
-assert f(contextlibimp) == "<module 'contextlib' from '?'>", f(contextlibimp)
-assert not util.safehasattr(contextlibimp, 'unknownattr')
+assert 'zipfile' not in sys.modules
+zipfileimp = __import__('zipfile', globals(), locals(), ['unknownattr'])
+assert f(zipfileimp) == "<module 'zipfile' from '?'>", f(zipfileimp)
+assert not util.safehasattr(zipfileimp, 'unknownattr')
