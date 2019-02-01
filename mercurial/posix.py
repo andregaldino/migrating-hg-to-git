@@ -583,6 +583,7 @@ def groupmembers(name):
     """Return the list of members of the group with the given
     name, KeyError if the group does not exist.
     """
+    name = pycompat.sysstr(name)
     return list(grp.getgrnam(name).gr_mem)
 
 def spawndetached(args):

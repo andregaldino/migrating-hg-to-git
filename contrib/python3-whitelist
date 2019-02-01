@@ -5,6 +5,7 @@ test-absorb-phase.t
 test-absorb-rename.t
 test-absorb-strip.t
 test-absorb.t
+test-acl.t
 test-add.t
 test-addremove-similar.t
 test-addremove.t
