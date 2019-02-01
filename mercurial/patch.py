@@ -2343,10 +2343,10 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
             copy = copies.pathcopies(ctx1, ctx2, match=match)
 
     if relroot:
-        # filter out copies where either side isn't inside the relative root
-        copy = dict(((dst, src) for (dst, src) in copy.iteritems()
-                     if dst.startswith(relroot)
-                     and src.startswith(relroot)))
+        # filter out copies where source side isn't inside the relative root
+        # (copies.pathcopies() already filtered out the destination)
+        copy = {dst: src for dst, src in copy.iteritems()
+                if src.startswith(relroot)}
 
     modifiedset = set(modified)
     addedset = set(added)
