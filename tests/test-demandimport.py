@@ -12,6 +12,10 @@ if subprocess.call(['python', '%s/hghave' % os.environ['TESTDIR'],
                     'demandimport']):
     sys.exit(80)
 
+# We rely on assert, which gets optimized out.
+if sys.flags.optimize:
+    sys.exit(80)
+
 if os.name != 'nt':
     try:
         import distutils.msvc9compiler
@@ -36,69 +40,80 @@ os.environ['HGDEMANDIMPORT'] = 'disable'
 # this enable call should not actually enable demandimport!
 demandimport.enable()
 from mercurial import node
-print("node =", f(node))
+
+# We use assert instead of a unittest test case because having imports inside
+# functions changes behavior of the demand importer.
+assert f(node) == "<module 'mercurial.node' from '?'>", f(node)
+
 # now enable it for real
 del os.environ['HGDEMANDIMPORT']
 demandimport.enable()
 
 # Test access to special attributes through demandmod proxy
 from mercurial import error as errorproxy
-print("errorproxy =", f(errorproxy))
-print("errorproxy.__doc__ = %r"
-      % (' '.join(errorproxy.__doc__.split()[:3]) + ' ...'))
-print("errorproxy.__name__ = %r" % errorproxy.__name__)
+assert f(errorproxy) == "<unloaded module 'error'>", f(errorproxy)
+doc = ' '.join(errorproxy.__doc__.split()[:3])
+assert doc == 'Mercurial exceptions. This', doc
+assert errorproxy.__name__ == 'mercurial.error', errorproxy.__name__
+
 # __name__ must be accessible via __dict__ so the relative imports can be
 # resolved
-print("errorproxy.__dict__['__name__'] = %r" % errorproxy.__dict__['__name__'])
-print("errorproxy =", f(errorproxy))
+name = errorproxy.__dict__['__name__']
+assert name == 'mercurial.error', name
+
+assert f(errorproxy) == "<proxied module 'error'>", f(errorproxy)
 
 import os
 
-print("os =", f(os))
-print("os.system =", f(os.system))
-print("os =", f(os))
+assert f(os) == "<unloaded module 'os'>", f(os)
+assert f(os.system) == '<built-in function system>', f(os.system)
+assert f(os) == "<module 'os' from '?'>", f(os)
 
 from mercurial.utils import procutil
 
-print("procutil =", f(procutil))
-print("procutil.system =", f(procutil.system))
-print("procutil =", f(procutil))
-print("procutil.system =", f(procutil.system))
+assert f(procutil) == "<unloaded module 'procutil'>", f(procutil)
+assert f(procutil.system) == '<function system at 0x?>', f(procutil.system)
+assert f(procutil) == "<module 'mercurial.utils.procutil' from '?'>", f(
+    procutil
+)
+assert f(procutil.system) == '<function system at 0x?>', f(procutil.system)
 
 from mercurial import hgweb
-print("hgweb =", f(hgweb))
-print("hgweb_mod =", f(hgweb.hgweb_mod))
-print("hgweb =", f(hgweb))
+assert f(hgweb) == "<unloaded module 'hgweb'>", f(hgweb)
+assert f(hgweb.hgweb_mod) == "<unloaded module 'hgweb_mod'>", f(hgweb.hgweb_mod)
+assert f(hgweb) == "<module 'mercurial.hgweb' from '?'>", f(hgweb)
 
 import re as fred
-print("fred =", f(fred))
+assert f(fred) == "<unloaded module 're'>", f(fred)
 
 import re as remod
-print("remod =", f(remod))
+assert f(remod) == "<unloaded module 're'>", f(remod)
 
 import sys as re
-print("re =", f(re))
+assert f(re) == "<unloaded module 'sys'>", f(re)
 
-print("fred =", f(fred))
-print("fred.sub =", f(fred.sub))
-print("fred =", f(fred))
+assert f(fred) == "<unloaded module 're'>", f(fred)
+assert f(fred.sub) == '<function sub at 0x?>', f(fred.sub)
+assert f(fred) == "<proxied module 're'>", f(fred)
 
 remod.escape  # use remod
-print("remod =", f(remod))
+assert f(remod) == "<module 're' from '?'>", f(remod)
 
-print("re =", f(re))
-print("re.stderr =", f(re.stderr))
-print("re =", f(re))
+assert f(re) == "<unloaded module 'sys'>", f(re)
+assert f(re.stderr) == "<open file '<whatever>', mode 'w' at 0x?>", f(re.stderr)
+assert f(re) == "<proxied module 'sys'>", f(re)
 
 import contextlib
-print("contextlib =", f(contextlib))
+assert f(contextlib) == "<unloaded module 'contextlib'>", f(contextlib)
 try:
     from contextlib import unknownattr
-    print('no demandmod should be created for attribute of non-package '
-          'module:\ncontextlib.unknownattr =', f(unknownattr))
+
+    assert False, (
+        'no demandmod should be created for attribute of non-package '
+        'module:\ncontextlib.unknownattr = %s' % f(unknownattr)
+    )
 except ImportError as inst:
-    print('contextlib.unknownattr = ImportError: %s'
-          % rsub(r"'", '', str(inst)))
+    assert rsub(r"'", '', str(inst)) == 'cannot import name unknownattr'
 
 from mercurial import util
 
@@ -106,6 +121,5 @@ from mercurial import util
 # ImportError even if fromlist has an unknown item
 # (see Python/import.c:import_module_level() and ensure_fromlist())
 contextlibimp = __import__('contextlib', globals(), locals(), ['unknownattr'])
-print("__import__('contextlib', ..., ['unknownattr']) =", f(contextlibimp))
-print("hasattr(contextlibimp, 'unknownattr') =",
-      util.safehasattr(contextlibimp, 'unknownattr'))
+assert f(contextlibimp) == "<module 'contextlib' from '?'>", f(contextlibimp)
+assert not util.safehasattr(contextlibimp, 'unknownattr')
