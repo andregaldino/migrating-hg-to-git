@@ -271,6 +271,7 @@ test-hgweb-descend-empties.t
 test-hgweb-diffs.t
 test-hgweb-empty.t
 test-hgweb-filelog.t
+test-hgweb-json.t
 test-hgweb-no-path-info.t
 test-hgweb-no-request-uri.t
 test-hgweb-non-interactive.t
@@ -305,6 +306,7 @@ test-http-clone-r.t
 test-http-permissions.t
 test-http-protocol.t
 test-http.t
+test-https.t
 test-hybridencode.py
 test-i18n.t
 test-identify.t
@@ -433,6 +435,7 @@ test-mq-qrefresh.t
 test-mq-qrename.t
 test-mq-qsave.t
 test-mq-safety.t
+test-mq-subrepo-svn.t
 test-mq-subrepo.t
 test-mq-symlinks.t
 test-mq.t
@@ -592,7 +595,9 @@ test-remotefilelog-bundles.t
 test-remotefilelog-cacheprocess.t
 test-remotefilelog-clone-tree.t
 test-remotefilelog-clone.t
+test-remotefilelog-corrupt-cache.t
 test-remotefilelog-datapack.py
+test-remotefilelog-gc.t
 test-remotefilelog-gcrepack.t
 test-remotefilelog-histpack.py
 test-remotefilelog-http.t
@@ -604,6 +609,7 @@ test-remotefilelog-permissions.t
 test-remotefilelog-permisssions.t
 test-remotefilelog-prefetch.t
 test-remotefilelog-pull-noshallow.t
+test-remotefilelog-repack-fast.t
 test-remotefilelog-repack.t
 test-remotefilelog-share.t
 test-remotefilelog-sparse.t
@@ -687,6 +693,7 @@ test-subrepo-missing.t
 test-subrepo-paths.t
 test-subrepo-recursion.t
 test-subrepo-relative-path.t
+test-subrepo-svn.t
 test-subrepo.t
 test-symlink-os-yes-fs-no.py
 test-symlink-placeholder.t
@@ -702,6 +709,7 @@ test-transplant.t
 test-treediscovery-legacy.t
 test-treediscovery.t
 test-treemanifest.t
+test-trusted.py
 test-ui-color.py
 test-ui-config.py
 test-ui-verbosity.py
