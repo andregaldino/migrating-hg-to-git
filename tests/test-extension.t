@@ -610,7 +610,8 @@ See also issue5208 for detail about example case on Python 3.x.
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > 
-  > # demand import avoids failure of importing notexist here
+  > # demand import avoids failure of importing notexist here, but only on
+  > # Python 2.
   > import extlibroot.lsub1.lsub2.notexist
   > 
   > @command(b'checkrelativity', [], norepo=True)
@@ -622,7 +623,13 @@ See also issue5208 for detail about example case on Python 3.x.
   >         pass # intentional failure
   > NO_CHECK_EOF
 
-  $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.checkrelativity=$TESTTMP/checkrelativity.py checkrelativity)
+Python 3's lazy importer verifies modules exist before returning the lazy
+module stub. Our custom lazy importer for Python 2 always returns a stub.
+
+  $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.checkrelativity=$TESTTMP/checkrelativity.py checkrelativity) || true
+  *** failed to import extension checkrelativity from $TESTTMP/checkrelativity.py: No module named 'extlibroot.lsub1.lsub2.notexist' (py3 !)
+  hg: unknown command 'checkrelativity' (py3 !)
+  (use 'hg help' for a list of commands) (py3 !)
 
 #endif
 
