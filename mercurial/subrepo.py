@@ -958,10 +958,8 @@ class svnsubrepo(abstractsubrepo):
         p = subprocess.Popen(pycompat.rapply(procutil.tonativestr, cmd),
                              bufsize=-1, close_fds=procutil.closefds,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             universal_newlines=True,
                              env=procutil.tonativeenv(env), **extrakw)
-        stdout, stderr = p.communicate()
-        stdout, stderr = pycompat.fsencode(stdout), pycompat.fsencode(stderr)
+        stdout, stderr = map(util.fromnativeeol, p.communicate())
         stderr = stderr.strip()
         if not failok:
             if p.returncode:
