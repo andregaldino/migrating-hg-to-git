@@ -5421,7 +5421,7 @@ def status(ui, repo, *pats, **opts):
         relative = True
     elif ui.hasconfig('commands', 'status.relative'):
         relative = ui.configbool('commands', 'status.relative')
-    uipathfn = scmutil.getuipathfn(repo, relative)
+    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=relative)
 
     if opts.get('print0'):
         end = '\0'

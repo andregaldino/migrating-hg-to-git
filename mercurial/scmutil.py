@@ -725,9 +725,32 @@ def meaningfulparents(repo, ctx):
         return []
     return parents
 
-def getuipathfn(repo, relative=None):
-    if relative is None:
-        relative = repo.ui.configbool('ui', 'relative-paths')
+def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
+    """Return a function that produced paths for presenting to the user.
+
+    The returned function takes a repo-relative path and produces a path
+    that can be presented in the UI.
+
+    Depending on the value of ui.relative-paths, either a repo-relative or
+    cwd-relative path will be produced.
+
+    legacyrelativevalue is the value to use if ui.relative-paths=legacy
+
+    If forcerelativevalue is not None, then that value will be used regardless
+    of what ui.relative-paths is set to.
+    """
+    if forcerelativevalue is not None:
+        relative = forcerelativevalue
+    else:
+        config = repo.ui.config('ui', 'relative-paths')
+        if config == 'legacy':
+            relative = legacyrelativevalue
+        else:
+            relative = stringutil.parsebool(config)
+            if relative is None:
+                raise error.ConfigError(
+                    _("ui.relative-paths is not a boolean ('%s')") % config)
+
     if relative:
         cwd = repo.getcwd()
         pathto = repo.pathto
