@@ -424,3 +424,24 @@ When specified pattern does not exist, we should exit early (issue5789).
   b: no such file in rev b40d1912accf
 
   $ cd ..
+
+Prompt before undeleting file(issue6008)
+  $ hg init repo
+  $ cd repo
+  $ echo a > a
+  $ hg ci -qAm a
+  $ hg rm a
+  $ hg revert -i<<EOF
+  > y
+  > EOF
+  add back removed file a (Yn)? y
+  undeleting a
+  $ ls
+  a
+  $ hg rm a
+  $ hg revert -i<<EOF
+  > n
+  > EOF
+  add back removed file a (Yn)? n
+  $ ls
+  $ cd ..

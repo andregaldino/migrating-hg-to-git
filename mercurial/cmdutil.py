@@ -3194,9 +3194,19 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
     if node == parent and p2 == nullid:
         normal = repo.dirstate.normal
     for f in actions['undelete'][0]:
-        prntstatusmsg('undelete', f)
-        checkout(f)
-        normal(f)
+        if interactive:
+            choice = repo.ui.promptchoice(
+                _("add back removed file %s (Yn)?$$ &Yes $$ &No") % f)
+            if choice == 0:
+                prntstatusmsg('undelete', f)
+                checkout(f)
+                normal(f)
+            else:
+                excluded_files.append(f)
+        else:
+            prntstatusmsg('undelete', f)
+            checkout(f)
+            normal(f)
 
     copied = copies.pathcopies(repo[parent], ctx)
 
