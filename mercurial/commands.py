@@ -5416,12 +5416,11 @@ def status(ui, repo, *pats, **opts):
         repo = scmutil.unhidehashlikerevs(repo, revs, 'nowarn')
         ctx1, ctx2 = scmutil.revpair(repo, revs)
 
-    relative = None
-    if pats:
-        relative = True
-    elif ui.hasconfig('commands', 'status.relative'):
-        relative = ui.configbool('commands', 'status.relative')
-    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=relative)
+    forcerelativevalue = None
+    if ui.hasconfig('commands', 'status.relative'):
+        forcerelativevalue = ui.configbool('commands', 'status.relative')
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=bool(pats),
+                                   forcerelativevalue=forcerelativevalue)
 
     if opts.get('print0'):
         end = '\0'

@@ -132,17 +132,20 @@ tweaking defaults works
 
 relative paths can be requested
 
-  $ cat >> $HGRCPATH <<EOF
-  > [ui]
-  > relative-paths = True
-  > EOF
-  $ hg status --cwd a
+  $ hg status --cwd a --config ui.relative-paths=yes
   ? 1/in_a_1
   ? in_a
   ? ../b/1/in_b_1
   ? ../b/2/in_b_2
   ? ../b/in_b
   ? ../in_root
+
+  $ hg status --cwd a . --config ui.relative-paths=legacy
+  ? 1/in_a_1
+  ? in_a
+  $ hg status --cwd a . --config ui.relative-paths=no
+  ? a/1/in_a_1
+  ? a/in_a
 
 commands.status.relative overrides ui.relative-paths
 
