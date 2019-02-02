@@ -1286,7 +1286,7 @@ class gitsubrepo(abstractsubrepo):
         if stream:
             return p.stdout, None
 
-        retdata = pycompat.fsencode(p.stdout.read().strip())
+        retdata = p.stdout.read().strip()
         # wait for the child to exit to avoid race condition.
         p.wait()
 
