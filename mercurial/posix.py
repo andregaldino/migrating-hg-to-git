@@ -583,8 +583,8 @@ def groupmembers(name):
     """Return the list of members of the group with the given
     name, KeyError if the group does not exist.
     """
-    name = pycompat.sysstr(name)
-    return list(grp.getgrnam(name).gr_mem)
+    name = pycompat.fsdecode(name)
+    return pycompat.rapply(pycompat.fsencode, list(grp.getgrnam(name).gr_mem))
 
 def spawndetached(args):
     return os.spawnvp(os.P_NOWAIT | getattr(os, 'P_DETACH', 0),
