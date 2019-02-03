@@ -861,6 +861,37 @@ def contentdivergent(repo, subset, x):
     contentdivergent = obsmod.getrevs(repo, 'contentdivergent')
     return subset & contentdivergent
 
+@predicate('expectsize(set[, size])', safe=True, takeorder=True)
+def expectsize(repo, subset, x, order):
+    """Abort if the revset doesn't expect given size"""
+    args = getargsdict(x, 'expectsize', 'set size')
+    minsize = 0
+    maxsize = len(repo) + 1
+    err = ''
+    if 'size' not in args or 'set' not in args:
+        raise error.ParseError(_('invalid set of arguments'))
+    minsize, maxsize = getintrange(args['size'],
+                                   _('expectsize requires a size range'
+                                     ' or a positive integer'),
+                                   _('size range bounds must be integers'),
+                                   minsize, maxsize)
+    if minsize < 0 or maxsize < 0:
+        raise error.ParseError(_('negative size'))
+    rev = getset(repo, fullreposet(repo), args['set'], order=order)
+    if minsize != maxsize and (len(rev) < minsize or len(rev) > maxsize):
+        err = _('revset size mismatch.'
+                ' expected between %d and %d, got %d') % (minsize, maxsize,
+                                                          len(rev))
+    elif minsize == maxsize and len(rev) != minsize:
+        err = _('revset size mismatch.'
+                ' expected %d, got %d') % (minsize, len(rev))
+    if err:
+        raise error.RepoLookupError(err)
+    if order == followorder:
+        return subset & rev
+    else:
+        return rev & subset
+
 @predicate('extdata(source)', safe=False, weight=100)
 def extdata(repo, subset, x):
     """Changesets in the specified extdata source. (EXPERIMENTAL)"""

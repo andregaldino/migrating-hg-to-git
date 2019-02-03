@@ -2978,3 +2978,63 @@ test multiline revset with errors
   * set:
   <baseset+ [0]>
   0
+
+abort if the revset doesn't expect given size
+  $ log 'expectsize()'
+  hg: parse error: invalid set of arguments
+  [255]
+  $ log 'expectsize(0:2, a)'
+  hg: parse error: expectsize requires a size range or a positive integer
+  [255]
+  $ log 'expectsize(0:2, 3)'
+  0
+  1
+  2
+
+  $ log 'expectsize(2:0, 3)'
+  2
+  1
+  0
+  $ log 'expectsize(0:1, 1)'
+  abort: revset size mismatch. expected 1, got 2!
+  [255]
+  $ log 'expectsize(0:4, -1)'
+  hg: parse error: negative size
+  [255]
+  $ log 'expectsize(0:2, 2:4)'
+  0
+  1
+  2
+  $ log 'expectsize(0:1, 3:5)'
+  abort: revset size mismatch. expected between 3 and 5, got 2!
+  [255]
+  $ log 'expectsize(0:1, -1:2)'
+  hg: parse error: negative size
+  [255]
+  $ log 'expectsize(0:1, 1:-2)'
+  hg: parse error: negative size
+  [255]
+  $ log 'expectsize(0:2, a:4)'
+  hg: parse error: size range bounds must be integers
+  [255]
+  $ log 'expectsize(0:2, 2:b)'
+  hg: parse error: size range bounds must be integers
+  [255]
+  $ log 'expectsize(0:2, 2:)'
+  0
+  1
+  2
+  $ log 'expectsize(0:2, :5)'
+  0
+  1
+  2
+  $ log 'expectsize(0:2, :)'
+  0
+  1
+  2
+  $ log 'expectsize(0:2, 4:)'
+  abort: revset size mismatch. expected between 4 and 11, got 3!
+  [255]
+  $ log 'expectsize(0:2, :2)'
+  abort: revset size mismatch. expected between 0 and 2, got 3!
+  [255]
