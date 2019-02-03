@@ -59,6 +59,22 @@ sections for diff tool arguments, when none are specified in [extdiff].
   [diff-tools]
   kdiff3.diffargs=--L1 '$plabel1' --L2 '$clabel' $parent $child
 
+If a program has a graphical interface, it might be interesting to tell
+Mercurial about it. It will prevent the program from being mistakenly
+used in a terminal-only environment (such as an SSH terminal session),
+and will make :hg:`extdiff --per-file` open multiple file diffs at once
+instead of one by one (if you still want to open file diffs one by one,
+you can use the --confirm option).
+
+Declaring that a tool has a graphical interface can be done with the
+``gui`` flag next to where ``diffargs`` are specified:
+
+::
+
+  [diff-tools]
+  kdiff3.diffargs=--L1 '$plabel1' --L2 '$clabel' $parent $child
+  kdiff3.gui = true
+
 You can use -I/-X and list of file or directory names like normal
 :hg:`diff` command. The extdiff extension makes snapshots of only
 needed files, so running the external diff program will actually be
@@ -71,6 +87,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 
 from mercurial.i18n import _
 from mercurial.node import (
@@ -105,8 +122,16 @@ configitem('extdiff', br'opts\..*',
     generic=True,
 )
 
+configitem('extdiff', br'gui\..*',
+    generic=True,
+)
+
 configitem('diff-tools', br'.*\.diffargs$',
     default=None,
+    generic=True,
+)
+
+configitem('diff-tools', br'.*\.gui$',
     generic=True,
 )
 
@@ -176,13 +201,26 @@ def formatcmdline(cmdline, repo_root, do3way,
         cmdline += ' $parent1 $child'
     return re.sub(regex, quote, cmdline)
 
-def _runperfilediff(cmdline, repo_root, ui, do3way, confirm,
+def _systembackground(cmd, environ=None, cwd=None):
+    ''' like 'procutil.system', but returns the Popen object directly
+        so we don't have to wait on it.
+    '''
+    cmd = procutil.quotecommand(cmd)
+    env = procutil.shellenviron(environ)
+    proc = subprocess.Popen(procutil.tonativestr(cmd),
+                            shell=True, close_fds=procutil.closefds,
+                            env=procutil.tonativeenv(env),
+                            cwd=pycompat.rapply(procutil.tonativestr, cwd))
+    return proc
+
+def _runperfilediff(cmdline, repo_root, ui, guitool, do3way, confirm,
                     commonfiles, tmproot, dir1a, dir1b,
                     dir2root, dir2,
                     rev1a, rev1b, rev2):
     # Note that we need to sort the list of files because it was
     # built in an "unstable" way and it's annoying to get files in a
     # random order, especially when "confirm" mode is enabled.
+    waitprocs = []
     totalfiles = len(commonfiles)
     for idx, commonfile in enumerate(sorted(commonfiles)):
         path1a = os.path.join(tmproot, dir1a, commonfile)
@@ -228,14 +266,32 @@ def _runperfilediff(cmdline, repo_root, ui, do3way, confirm,
             parent1=path1a, plabel1=label1a,
             parent2=path1b, plabel2=label1b,
             child=path2, clabel=label2)
-        ui.debug('running %r in %s\n' % (pycompat.bytestr(curcmdline),
-                                         tmproot))
 
-        # Run the comparison program and wait for it to exit
-        # before we show the next file.
-        ui.system(curcmdline, cwd=tmproot, blockedtag='extdiff')
+        if confirm or not guitool:
+            # Run the comparison program and wait for it to exit
+            # before we show the next file.
+            # This is because either we need to wait for confirmation
+            # from the user between each invocation, or because, as far
+            # as we know, the tool doesn't have a GUI, in which case
+            # we can't run multiple CLI programs at the same time.
+            ui.debug('running %r in %s\n' %
+                     (pycompat.bytestr(curcmdline), tmproot))
+            ui.system(curcmdline, cwd=tmproot, blockedtag='extdiff')
+        else:
+            # Run the comparison program but don't wait, as we're
+            # going to rapid-fire each file diff and then wait on
+            # the whole group.
+            ui.debug('running %r in %s (backgrounded)\n' %
+                     (pycompat.bytestr(curcmdline), tmproot))
+            proc = _systembackground(curcmdline, cwd=tmproot)
+            waitprocs.append(proc)
 
-def dodiff(ui, repo, cmdline, pats, opts):
+    if waitprocs:
+        with ui.timeblockedsection('extdiff'):
+            for proc in waitprocs:
+                proc.wait()
+
+def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
     '''Do the actual diff:
 
     - copy to a temp structure if diffing 2 internal revisions
@@ -382,7 +438,8 @@ def dodiff(ui, repo, cmdline, pats, opts):
         else:
             # Run the external tool once for each pair of files
             _runperfilediff(
-                cmdline, repo.root, ui, do3way=do3way, confirm=confirm,
+                cmdline, repo.root, ui, guitool=guitool,
+                do3way=do3way, confirm=confirm,
                 commonfiles=common, tmproot=tmproot, dir1a=dir1a, dir1b=dir1b,
                 dir2root=dir2root, dir2=dir2,
                 rev1a=rev1a, rev1b=rev1b, rev2=rev2)
@@ -446,7 +503,13 @@ def extdiff(ui, repo, *pats, **opts):
     to its parent.
 
     The --per-file option runs the external program repeatedly on each
-    file to diff, instead of once on two directories.
+    file to diff, instead of once on two directories. By default,
+    this happens one by one, where the next file diff is open in the
+    external program only once the previous external program (for the
+    previous file diff) has exited. If the external program has a
+    graphical interface, it can open all the file diffs at once instead
+    of one by one. See :hg:`help -e extdiff` for information about how
+    to tell Mercurial that a given program has a graphical interface.
 
     The --confirm option will prompt the user before each invocation of
     the external program. It is ignored if --per-file isn't specified.
@@ -475,20 +538,22 @@ class savedcmd(object):
     to its parent.
     """
 
-    def __init__(self, path, cmdline):
+    def __init__(self, path, cmdline, isgui):
         # We can't pass non-ASCII through docstrings (and path is
         # in an unknown encoding anyway), but avoid double separators on
         # Windows
         docpath = stringutil.escapestr(path).replace(b'\\\\', b'\\')
         self.__doc__ %= {r'path': pycompat.sysstr(stringutil.uirepr(docpath))}
         self._cmdline = cmdline
+        self._isgui = isgui
 
     def __call__(self, ui, repo, *pats, **opts):
         opts = pycompat.byteskwargs(opts)
         options = ' '.join(map(procutil.shellquote, opts['option']))
         if options:
             options = ' ' + options
-        return dodiff(ui, repo, self._cmdline + options, pats, opts)
+        return dodiff(ui, repo, self._cmdline + options, pats, opts,
+                      guitool=self._isgui)
 
 def uisetup(ui):
     for cmd, path in ui.configitems('extdiff'):
@@ -503,7 +568,8 @@ def uisetup(ui):
             cmdline = procutil.shellquote(path)
             if diffopts:
                 cmdline += ' ' + diffopts
-        elif cmd.startswith('opts.'):
+            isgui = ui.configbool('extdiff', 'gui.' + cmd)
+        elif cmd.startswith('opts.') or cmd.startswith('gui.'):
             continue
         else:
             if path:
@@ -517,15 +583,20 @@ def uisetup(ui):
                     path = filemerge.findexternaltool(ui, cmd) or cmd
                 cmdline = procutil.shellquote(path)
                 diffopts = False
+            isgui = ui.configbool('extdiff', 'gui.' + cmd)
         # look for diff arguments in [diff-tools] then [merge-tools]
         if not diffopts:
-            args = ui.config('diff-tools', cmd+'.diffargs') or \
-                   ui.config('merge-tools', cmd+'.diffargs')
-            if args:
-                cmdline += ' ' + args
+            key = cmd + '.diffargs'
+            for section in ('diff-tools', 'merge-tools'):
+                args = ui.config(section, key)
+                if args:
+                    cmdline += ' ' + args
+                    if isgui is None:
+                        isgui = ui.configbool(section, cmd + '.gui') or False
+                    break
         command(cmd, extdiffopts[:], _('hg %s [OPTION]... [FILE]...') % cmd,
                 helpcategory=command.CATEGORY_FILE_CONTENTS,
-                inferrepo=True)(savedcmd(path, cmdline))
+                inferrepo=True)(savedcmd(path, cmdline, isgui))
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = [savedcmd]

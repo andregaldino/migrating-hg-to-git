@@ -823,7 +823,13 @@ Extension module help vs command help:
       the working directory files are compared to its parent.
   
       The --per-file option runs the external program repeatedly on each file to
-      diff, instead of once on two directories.
+      diff, instead of once on two directories. By default, this happens one by
+      one, where the next file diff is open in the external program only once
+      the previous external program (for the previous file diff) has exited. If
+      the external program has a graphical interface, it can open all the file
+      diffs at once instead of one by one. See 'hg help -e extdiff' for
+      information about how to tell Mercurial that a given program has a
+      graphical interface.
   
       The --confirm option will prompt the user before each invocation of the
       external program. It is ignored if --per-file isn't specified.
@@ -904,6 +910,20 @@ Extension module help vs command help:
   
     [diff-tools]
     kdiff3.diffargs=--L1 '$plabel1' --L2 '$clabel' $parent $child
+  
+  If a program has a graphical interface, it might be interesting to tell
+  Mercurial about it. It will prevent the program from being mistakenly used in
+  a terminal-only environment (such as an SSH terminal session), and will make
+  'hg extdiff --per-file' open multiple file diffs at once instead of one by one
+  (if you still want to open file diffs one by one, you can use the --confirm
+  option).
+  
+  Declaring that a tool has a graphical interface can be done with the "gui"
+  flag next to where "diffargs" are specified:
+  
+    [diff-tools]
+    kdiff3.diffargs=--L1 '$plabel1' --L2 '$clabel' $parent $child
+    kdiff3.gui = true
   
   You can use -I/-X and list of file or directory names like normal 'hg diff'
   command. The extdiff extension makes snapshots of only needed files, so

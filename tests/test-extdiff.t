@@ -22,6 +22,10 @@ Should diff cloned directories:
   > opts.falabala = diffing
   > cmd.edspace = echo
   > opts.edspace = "name  <user@example.com>"
+  > alabalaf =
+  > [merge-tools]
+  > alabalaf.executable = echo
+  > alabalaf.diffargs = diffing
   > EOF
 
   $ hg falabala
@@ -142,6 +146,42 @@ Test --per-file option:
   diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob) (no-windows !)
   diffing "*\\extdiff.*\\a.46c0e4daeb72\\b" "a.81906f2b98ac\\b" (glob) (windows !)
   diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob) (no-windows !)
+  [1]
+
+Test --per-file option for gui tool:
+
+  $ hg --config extdiff.gui.alabalaf=True alabalaf -c 6 --per-file --debug
+  diffing "*\\extdiff.*\\a.46c0e4daeb72\\a" "a.81906f2b98ac\\a" (glob) (windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob) (no-windows !)
+  diffing "*\\extdiff.*\\a.46c0e4daeb72\\b" "a.81906f2b98ac\\b" (glob) (windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob) (no-windows !)
+  making snapshot of 2 files from rev 46c0e4daeb72
+    a
+    b
+  making snapshot of 2 files from rev 81906f2b98ac
+    a
+    b
+  running '* diffing * *' in * (backgrounded) (glob)
+  running '* diffing * *' in * (backgrounded) (glob)
+  cleaning up temp directory
+  [1]
+
+Test --per-file option for gui tool again:
+
+  $ hg --config merge-tools.alabalaf.gui=True alabalaf -c 6 --per-file --debug
+  diffing "*\\extdiff.*\\a.46c0e4daeb72\\a" "a.81906f2b98ac\\a" (glob) (windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob) (no-windows !)
+  diffing "*\\extdiff.*\\a.46c0e4daeb72\\b" "a.81906f2b98ac\\b" (glob) (windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob) (no-windows !)
+  making snapshot of 2 files from rev 46c0e4daeb72
+    a
+    b
+  making snapshot of 2 files from rev 81906f2b98ac
+    a
+    b
+  running '* diffing * *' in * (backgrounded) (glob)
+  running '* diffing * *' in * (backgrounded) (glob)
+  cleaning up temp directory
   [1]
 
 Test --per-file and --confirm options:
