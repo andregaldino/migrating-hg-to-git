@@ -136,6 +136,7 @@ test-debugextensions.t
 test-debugindexdot.t
 test-debugrename.t
 test-default-push.t
+test-demandimport.py
 test-diff-antipatience.t
 test-diff-binary-file.t
 test-diff-change.t
@@ -209,6 +210,7 @@ test-export.t
 test-extdata.t
 test-extdiff.t
 test-extension-timing.t
+test-extension.t
 test-extensions-afterloaded.t
 test-extensions-wrapfunction.py
 test-extra-filelog-entry.t
@@ -228,6 +230,7 @@ test-fileset-generated.t
 test-fileset.t
 test-fix-topology.t
 test-fix.t
+test-flagprocessor.t
 test-flags.t
 test-fncache.t
 test-gendoc-da.t
