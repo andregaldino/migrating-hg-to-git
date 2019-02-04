@@ -926,7 +926,7 @@ class SemanticTagTests(TestCase):
                                  (False, None, -1, cborutil.SPECIAL_NONE))
 
             with self.assertRaisesRegex(cborutil.CBORDecodeError,
-                                        'semantic tag \d+ not allowed'):
+                                        r'semantic tag \d+ not allowed'):
                 cborutil.decodeitem(encoded)
 
 class SpecialTypesTests(TestCase):
@@ -942,7 +942,7 @@ class SpecialTypesTests(TestCase):
             encoded = cborutil.encodelength(cborutil.MAJOR_TYPE_SPECIAL, i)
 
             with self.assertRaisesRegex(cborutil.CBORDecodeError,
-                                        'special type \d+ not allowed'):
+                                        r'special type \d+ not allowed'):
                 cborutil.decodeitem(encoded)
 
 class SansIODecoderTests(TestCase):
