@@ -64,12 +64,12 @@ class p4_source(common.converter_source):
         self.encoding = self.ui.config('convert', 'p4.encoding',
                                        convcmd.orig_encoding)
         self.re_type = re.compile(
-            "([a-z]+)?(text|binary|symlink|apple|resource|unicode|utf\d+)"
-            "(\+\w+)?$")
+            br"([a-z]+)?(text|binary|symlink|apple|resource|unicode|utf\d+)"
+            br"(\+\w+)?$")
         self.re_keywords = re.compile(
-            r"\$(Id|Header|Date|DateTime|Change|File|Revision|Author)"
-            r":[^$\n]*\$")
-        self.re_keywords_old = re.compile("\$(Id|Header):[^$\n]*\$")
+            br"\$(Id|Header|Date|DateTime|Change|File|Revision|Author)"
+            br":[^$\n]*\$")
+        self.re_keywords_old = re.compile(br"\$(Id|Header):[^$\n]*\$")
 
         if revs and len(revs) > 1:
             raise error.Abort(_("p4 source does not support specifying "
