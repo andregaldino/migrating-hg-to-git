@@ -115,6 +115,10 @@ def _sanitize(ui, vfs, ignore):
                 vfs.unlink(vfs.reljoin(dirname, f))
 
 def _auditsubrepopath(repo, path):
+    # sanity check for potentially unsafe paths such as '~' and '$FOO'
+    if path.startswith('~') or '$' in path or util.expandpath(path) != path:
+        raise error.Abort(_('subrepo path contains illegal component: %s')
+                          % path)
     # auditor doesn't check if the path itself is a symlink
     pathutil.pathauditor(repo.root)(path)
     if repo.wvfs.islink(path):
@@ -403,7 +407,16 @@ class hgsubrepo(abstractsubrepo):
         r = ctx.repo()
         root = r.wjoin(path)
         create = allowcreate and not r.wvfs.exists('%s/.hg' % path)
+        # repository constructor does expand variables in path, which is
+        # unsafe since subrepo path might come from untrusted source.
+        if os.path.realpath(util.expandpath(root)) != root:
+            raise error.Abort(_('subrepo path contains illegal component: %s')
+                              % path)
         self._repo = hg.repository(r.baseui, root, create=create)
+        if self._repo.root != root:
+            raise error.ProgrammingError('failed to reject unsafe subrepo '
+                                         'path: %s (expanded to %s)'
+                                         % (root, self._repo.root))
 
         # Propagate the parent's --hidden option
         if r is r.unfiltered():

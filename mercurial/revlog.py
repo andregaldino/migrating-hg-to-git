@@ -497,6 +497,9 @@ class revlog(object):
         else:
             raise error.RevlogError(_('unknown version (%d) in revlog %s') %
                                     (fmt, self.indexfile))
+        # sparse-revlog can't be on without general-delta (issue6056)
+        if not self._generaldelta:
+            self._sparserevlog = False
 
         self._storedeltachains = True
 
