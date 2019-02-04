@@ -464,27 +464,26 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
         wvfs = repo.wvfs
         wctx = repo[None]
         for lfile in lfiles:
-            rellfile = lfile
-            rellfileorig = os.path.relpath(
-                scmutil.origpath(ui, repo, wvfs.join(rellfile)),
+            lfileorig = os.path.relpath(
+                scmutil.origpath(ui, repo, wvfs.join(lfile)),
                 start=repo.root)
-            relstandin = lfutil.standin(lfile)
-            relstandinorig = os.path.relpath(
-                scmutil.origpath(ui, repo, wvfs.join(relstandin)),
+            standin = lfutil.standin(lfile)
+            standinorig = os.path.relpath(
+                scmutil.origpath(ui, repo, wvfs.join(standin)),
                 start=repo.root)
-            if wvfs.exists(relstandin):
-                if (wvfs.exists(relstandinorig) and
-                    wvfs.exists(rellfile)):
-                    shutil.copyfile(wvfs.join(rellfile),
-                                    wvfs.join(rellfileorig))
-                    wvfs.unlinkpath(relstandinorig)
-                expecthash = lfutil.readasstandin(wctx[relstandin])
+            if wvfs.exists(standin):
+                if (wvfs.exists(standinorig) and
+                    wvfs.exists(lfile)):
+                    shutil.copyfile(wvfs.join(lfile),
+                                    wvfs.join(lfileorig))
+                    wvfs.unlinkpath(standinorig)
+                expecthash = lfutil.readasstandin(wctx[standin])
                 if expecthash != '':
                     if lfile not in wctx: # not switched to normal file
-                        if repo.dirstate[relstandin] != '?':
-                            wvfs.unlinkpath(rellfile, ignoremissing=True)
+                        if repo.dirstate[standin] != '?':
+                            wvfs.unlinkpath(lfile, ignoremissing=True)
                         else:
-                            dropped.add(rellfile)
+                            dropped.add(lfile)
 
                     # use normallookup() to allocate an entry in largefiles
                     # dirstate to prevent lfilesrepo.status() from reporting
@@ -496,9 +495,9 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
                 # lfile is added to the repository again. This happens when a
                 # largefile is converted back to a normal file: the standin
                 # disappears, but a new (normal) file appears as the lfile.
-                if (wvfs.exists(rellfile) and
+                if (wvfs.exists(lfile) and
                     repo.dirstate.normalize(lfile) not in wctx):
-                    wvfs.unlinkpath(rellfile)
+                    wvfs.unlinkpath(lfile)
                     removed += 1
 
         # largefile processing might be slow and be interrupted - be prepared
@@ -532,19 +531,18 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
 
             # copy the exec mode of largefile standin from the repository's
             # dirstate to its state in the lfdirstate.
-            rellfile = lfile
-            relstandin = lfutil.standin(lfile)
-            if wvfs.exists(relstandin):
+            standin = lfutil.standin(lfile)
+            if wvfs.exists(standin):
                 # exec is decided by the users permissions using mask 0o100
-                standinexec = wvfs.stat(relstandin).st_mode & 0o100
-                st = wvfs.stat(rellfile)
+                standinexec = wvfs.stat(standin).st_mode & 0o100
+                st = wvfs.stat(lfile)
                 mode = st.st_mode
                 if standinexec != mode & 0o100:
                     # first remove all X bits, then shift all R bits to X
                     mode &= ~0o111
                     if standinexec:
                         mode |= (mode >> 2) & 0o111 & ~util.umask
-                    wvfs.chmod(rellfile, mode)
+                    wvfs.chmod(lfile, mode)
                     update1 = 1
 
             updated += update1
