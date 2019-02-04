@@ -1674,7 +1674,7 @@ Test unfound keyword
 Test omit indicating for help
 
   $ cat > addverboseitems.py <<EOF
-  > '''extension to test omit indicating.
+  > r'''extension to test omit indicating.
   > 
   > This paragraph is never omitted (for extension)
   > 
@@ -1687,7 +1687,7 @@ Test omit indicating for help
   > '''
   > from __future__ import absolute_import
   > from mercurial import commands, help
-  > testtopic = b"""This paragraph is never omitted (for topic).
+  > testtopic = br"""This paragraph is never omitted (for topic).
   > 
   > .. container:: verbose
   > 
