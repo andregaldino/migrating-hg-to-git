@@ -38,6 +38,7 @@ pub struct LazyAncestors<G: Graph + Clone> {
 pub struct MissingAncestors<G: Graph> {
     graph: G,
     bases: HashSet<Revision>,
+    max_base: Revision,
 }
 
 impl<G: Graph> AncestorsIterator<G> {
@@ -209,7 +210,13 @@ impl<G: Graph + Clone> LazyAncestors<G> {
 
 impl<G: Graph> MissingAncestors<G> {
     pub fn new(graph: G, bases: impl IntoIterator<Item = Revision>) -> Self {
-        MissingAncestors { graph: graph, bases: bases.into_iter().collect() }
+        let mut created = MissingAncestors {
+            graph: graph,
+            bases: HashSet::new(),
+            max_base: NULL_REVISION,
+        };
+        created.add_bases(bases);
+        created
     }
 
     pub fn has_bases(&self) -> bool {
@@ -232,17 +239,33 @@ impl<G: Graph> MissingAncestors<G> {
     }
 
     /// Consumes the object and returns the relative heads of its bases.
-    pub fn into_bases_heads(mut self) -> Result<HashSet<Revision>, GraphError> {
+    pub fn into_bases_heads(
+        mut self,
+    ) -> Result<HashSet<Revision>, GraphError> {
         dagops::retain_heads(&self.graph, &mut self.bases)?;
         Ok(self.bases)
     }
 
+    /// Add some revisions to `self.bases`
+    ///
+    /// Takes care of keeping `self.max_base` up to date.
     pub fn add_bases(
         &mut self,
         new_bases: impl IntoIterator<Item = Revision>,
     ) {
-        self.bases
-            .extend(new_bases.into_iter().filter(|&rev| rev != NULL_REVISION));
+        let mut max_base = self.max_base;
+        self.bases.extend(
+            new_bases
+                .into_iter()
+                .filter(|&rev| rev != NULL_REVISION)
+                .map(|r| {
+                    if r > max_base {
+                        max_base = r;
+                    }
+                    r
+                }),
+        );
+        self.max_base = max_base;
     }
 
     /// Remove all ancestors of self.bases from the revs set (in place)
@@ -261,20 +284,16 @@ impl<G: Graph> MissingAncestors<G> {
         }
         // anything in revs > start is definitely not an ancestor of bases
         // revs <= start need to be investigated
-        // TODO optim: if a missingancestors is to be used several times,
-        // we shouldn't need to iterate each time on bases
-        let start = match self.bases.iter().cloned().max() {
-            Some(m) => m,
-            None => {  // self.bases is empty
-                return Ok(());
-            }
-        };
+        if self.max_base == NULL_REVISION {
+            return Ok(());
+        }
+
         // whatever happens, we'll keep at least keepcount of them
         // knowing this gives us a earlier stop condition than
         // going all the way to the root
-        let keepcount = revs.iter().filter(|r| **r > start).count();
+        let keepcount = revs.iter().filter(|r| **r > self.max_base).count();
 
-        let mut curr = start;
+        let mut curr = self.max_base;
         while curr != NULL_REVISION && revs.len() > keepcount {
             if self.bases.contains(&curr) {
                 revs.remove(&curr);
@@ -285,12 +304,17 @@ impl<G: Graph> MissingAncestors<G> {
         Ok(())
     }
 
-    /// Add rev's parents to self.bases
+    /// Add the parents of `rev` to `self.bases`
+    ///
+    /// This has no effect on `self.max_base`
     #[inline]
     fn add_parents(&mut self, rev: Revision) -> Result<(), GraphError> {
-        // No need to bother the set with inserting NULL_REVISION over and
-        // over
+        if rev == NULL_REVISION {
+            return Ok(());
+        }
         for p in self.graph.parents(rev)?.iter().cloned() {
+            // No need to bother the set with inserting NULL_REVISION over and
+            // over
             if p != NULL_REVISION {
                 self.bases.insert(p);
             }
@@ -320,12 +344,8 @@ impl<G: Graph> MissingAncestors<G> {
         if revs_visit.is_empty() {
             return Ok(Vec::new());
         }
-
-        let max_bases =
-            bases_visit.iter().cloned().max().unwrap_or(NULL_REVISION);
-        let max_revs =
-            revs_visit.iter().cloned().max().unwrap_or(NULL_REVISION);
-        let start = max(max_bases, max_revs);
+        let max_revs = revs_visit.iter().cloned().max().unwrap();
+        let start = max(self.max_base, max_revs);
 
         // TODO heuristics for with_capacity()?
         let mut missing: Vec<Revision> = Vec::new();
@@ -571,11 +591,13 @@ mod tests {
             missing_ancestors.get_bases().iter().cloned().collect();
         as_vec.sort();
         assert_eq!(as_vec, [1, 3, 5]);
+        assert_eq!(missing_ancestors.max_base, 5);
 
         missing_ancestors.add_bases([3, 7, 8].iter().cloned());
         as_vec = missing_ancestors.get_bases().iter().cloned().collect();
         as_vec.sort();
         assert_eq!(as_vec, [1, 3, 5, 7, 8]);
+        assert_eq!(missing_ancestors.max_base, 8);
 
         as_vec = missing_ancestors.bases_heads()?.iter().cloned().collect();
         as_vec.sort();

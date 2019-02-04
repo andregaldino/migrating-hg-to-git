@@ -13,6 +13,11 @@ pub mod testing;  // unconditionally built, for use from integration tests
 /// 4 bytes, and are liberally converted to ints, whence the i32
 pub type Revision = i32;
 
+
+/// Marker expressing the absence of a parent
+///
+/// Independently of the actual representation, `NULL_REVISION` is guaranteed
+/// to be smaller that all existing revisions.
 pub const NULL_REVISION: Revision = -1;
 
 /// Same as `mercurial.node.wdirrev`

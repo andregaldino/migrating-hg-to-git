@@ -46,7 +46,9 @@ pub fn heads<'a>(
     let mut heads: HashSet<Revision> = iter_revs.clone().cloned().collect();
     heads.remove(&NULL_REVISION);
     for rev in iter_revs {
-        remove_parents(graph, *rev, &mut heads)?;
+        if *rev != NULL_REVISION {
+            remove_parents(graph, *rev, &mut heads)?;
+        }
     }
     Ok(heads)
 }
@@ -71,7 +73,9 @@ pub fn retain_heads(
     // mutating
     let as_vec: Vec<Revision> = revs.iter().cloned().collect();
     for rev in as_vec {
-        remove_parents(graph, rev, revs)?;
+        if rev != NULL_REVISION {
+            remove_parents(graph, rev, revs)?;
+        }
     }
     Ok(())
 }
