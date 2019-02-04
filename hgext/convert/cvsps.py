@@ -122,7 +122,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     re_31 = re.compile(b'----------------------------$')
     re_32 = re.compile(b'======================================='
                        b'======================================$')
-    re_50 = re.compile(b'revision ([\\d.]+)(\s+locked by:\s+.+;)?$')
+    re_50 = re.compile(br'revision ([\d.]+)(\s+locked by:\s+.+;)?$')
     re_60 = re.compile(br'date:\s+(.+);\s+author:\s+(.+);\s+state:\s+(.+?);'
                        br'(\s+lines:\s+(\+\d+)?\s+(-\d+)?;)?'
                        br'(\s+commitid:\s+([^;]+);)?'

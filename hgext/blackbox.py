@@ -190,7 +190,7 @@ def blackbox(ui, repo, *revs, **opts):
             break
 
         # count the commands by matching lines like: 2013/01/23 19:13:36 root>
-        if re.match('^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} .*> .*', line):
+        if re.match(br'^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} .*> .*', line):
             count += 1
         output.append(line)
 

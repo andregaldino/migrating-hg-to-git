@@ -638,8 +638,8 @@ class repobackend(abstractbackend):
         return self.changed | self.removed
 
 # @@ -start,len +start,len @@ or @@ -start +start @@ if len is 1
-unidesc = re.compile('@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
-contextdesc = re.compile('(?:---|\*\*\*) (\d+)(?:,(\d+))? (?:---|\*\*\*)')
+unidesc = re.compile(br'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
+contextdesc = re.compile(br'(?:---|\*\*\*) (\d+)(?:,(\d+))? (?:---|\*\*\*)')
 eolmodes = ['strict', 'crlf', 'lf', 'auto']
 
 class patchfile(object):
@@ -2762,7 +2762,7 @@ def diffstatsum(stats):
     return maxfile, maxtotal, addtotal, removetotal, binary
 
 def diffstatdata(lines):
-    diffre = re.compile('^diff .*-r [a-z0-9]+\s(.*)$')
+    diffre = re.compile(br'^diff .*-r [a-z0-9]+\s(.*)$')
 
     results = []
     filename, adds, removes, isbinary = None, 0, 0, False

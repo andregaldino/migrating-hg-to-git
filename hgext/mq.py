@@ -1181,7 +1181,7 @@ class queue(object):
     def makepatchname(self, title, fallbackname):
         """Return a suitable filename for title, adding a suffix to make
         it unique in the existing list"""
-        namebase = re.sub('[\s\W_]+', '_', title.lower()).strip('_')
+        namebase = re.sub(br'[\s\W_]+', b'_', title.lower()).strip(b'_')
         namebase = namebase[:75] # avoid too long name (issue5117)
         if namebase:
             try:

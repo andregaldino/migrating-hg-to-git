@@ -484,7 +484,7 @@ if pycompat.iswindows:
             w32effects = None
         else:
             origattr = csbi.wAttributes
-            ansire = re.compile(b'\033\[([^m]*)m([^\033]*)(.*)',
+            ansire = re.compile(br'\033\[([^m]*)m([^\033]*)(.*)',
                                 re.MULTILINE | re.DOTALL)
 
     def win32print(ui, writefunc, text, **opts):

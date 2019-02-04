@@ -255,9 +255,9 @@ def getrepophid(repo):
     repo.ui.setconfig(b'phabricator', b'repophid', repophid)
     return repophid
 
-_differentialrevisiontagre = re.compile(b'\AD([1-9][0-9]*)\Z')
+_differentialrevisiontagre = re.compile(br'\AD([1-9][0-9]*)\Z')
 _differentialrevisiondescre = re.compile(
-    b'^Differential Revision:\s*(?P<url>(?:.*)D(?P<id>[1-9][0-9]*))$', re.M)
+    br'^Differential Revision:\s*(?P<url>(?:.*)D(?P<id>[1-9][0-9]*))$', re.M)
 
 def getoldnodedrevmap(repo, nodelist):
     """find previous nodes that has been sent to Phabricator
