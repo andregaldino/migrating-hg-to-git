@@ -56,7 +56,7 @@ Sentinel to indicate the lack of a value when ``None`` is ambiguous.
 def attr(default=NOTHING, validator=None,
          repr=True, cmp=True, hash=None, init=True,
          convert=None, metadata={}):
-    """
+    r"""
     Create a new attribute on a class.
 
     ..  warning::
