@@ -334,12 +334,9 @@ impl<G: Graph> MissingAncestors<G> {
             if revs_visit.is_empty() {
                 break;
             }
-            if both_visit.contains(&curr) {
+            if both_visit.remove(&curr) {
                 // curr's parents might have made it into revs_visit through
                 // another path
-                // TODO optim: Rust's HashSet.remove returns a boolean telling
-                // if it happened. This will spare us one set lookup
-                both_visit.remove(&curr);
                 for p in self.graph.parents(curr)?.iter().cloned() {
                     if p == NULL_REVISION {
                         continue;
@@ -354,13 +351,14 @@ impl<G: Graph> MissingAncestors<G> {
                     if p == NULL_REVISION {
                         continue;
                     }
-                    if bases_visit.contains(&p) || both_visit.contains(&p) {
-                        // p is an ancestor of revs_visit, and is implicitly
-                        // in bases_visit, which means p is ::revs & ::bases.
-                        // TODO optim: hence if bothvisit, we look up twice
+                    if bases_visit.contains(&p) {
+                        // p is already known to be an ancestor of revs_visit
+                        revs_visit.remove(&p);
+                        both_visit.insert(p);
+                    } else if both_visit.contains(&p) {
+                        // p should have been in bases_visit
                         revs_visit.remove(&p);
                         bases_visit.insert(p);
-                        both_visit.insert(p);
                     } else {
                         // visit later
                         revs_visit.insert(p);
@@ -371,11 +369,9 @@ impl<G: Graph> MissingAncestors<G> {
                     if p == NULL_REVISION {
                         continue;
                     }
-                    if revs_visit.contains(&p) || both_visit.contains(&p) {
+                    if revs_visit.remove(&p) || both_visit.contains(&p) {
                         // p is an ancestor of bases_visit, and is implicitly
                         // in revs_visit, which means p is ::revs & ::bases.
-                        // TODO optim: hence if bothvisit, we look up twice
-                        revs_visit.remove(&p);
                         bases_visit.insert(p);
                         both_visit.insert(p);
                     } else {
