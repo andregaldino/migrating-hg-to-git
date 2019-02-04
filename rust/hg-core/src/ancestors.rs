@@ -79,8 +79,7 @@ impl<G: Graph> AncestorsIterator<G> {
 
     #[inline]
     fn conditionally_push_rev(&mut self, rev: Revision) {
-        if self.stoprev <= rev && !self.seen.contains(&rev) {
-            self.seen.insert(rev);
+        if self.stoprev <= rev && self.seen.insert(rev) {
             self.visit.push(rev);
         }
     }
@@ -154,11 +153,10 @@ impl<G: Graph> Iterator for AncestorsIterator<G> {
             Ok(ps) => ps,
             Err(e) => return Some(Err(e)),
         };
-        if p1 < self.stoprev || self.seen.contains(&p1) {
+        if p1 < self.stoprev || !self.seen.insert(p1) {
             self.visit.pop();
         } else {
             *(self.visit.peek_mut().unwrap()) = p1;
-            self.seen.insert(p1);
         };
 
         self.conditionally_push_rev(p2);
