@@ -677,6 +677,9 @@ class differencematcher(basematcher):
     def visitdir(self, dir):
         if self._m2.visitdir(dir) == 'all':
             return False
+        elif not self._m2.visitdir(dir):
+            # m2 does not match dir, we can return 'all' here if possible
+            return self._m1.visitdir(dir)
         return bool(self._m1.visitdir(dir))
 
     def visitchildrenset(self, dir):

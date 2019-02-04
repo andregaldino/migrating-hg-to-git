@@ -255,20 +255,19 @@ class DifferenceMatcherTests(unittest.TestCase):
         m1 = matchmod.alwaysmatcher(b'', b'')
         m2 = matchmod.nevermatcher(b'', b'')
         dm = matchmod.differencematcher(m1, m2)
-        # dm should be equivalent to a alwaysmatcher. OPT: if m2 is a
-        # nevermatcher, we could return 'all' for these.
+        # dm should be equivalent to a alwaysmatcher.
         #
         # We're testing Equal-to-True instead of just 'assertTrue' since
         # assertTrue does NOT verify that it's a bool, just that it's truthy.
         # While we may want to eventually make these return 'all', they should
         # not currently do so.
-        self.assertEqual(dm.visitdir(b'.'), True)
-        self.assertEqual(dm.visitdir(b'dir'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir/z'), True)
-        self.assertEqual(dm.visitdir(b'dir/foo'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir/x'), True)
-        self.assertEqual(dm.visitdir(b'folder'), True)
+        self.assertEqual(dm.visitdir(b'.'), 'all')
+        self.assertEqual(dm.visitdir(b'dir'), 'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir'), 'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir/z'), 'all')
+        self.assertEqual(dm.visitdir(b'dir/foo'), 'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir/x'), 'all')
+        self.assertEqual(dm.visitdir(b'folder'), 'all')
 
     def testVisitchildrensetM2never(self):
         m1 = matchmod.alwaysmatcher(b'', b'')
@@ -295,9 +294,8 @@ class DifferenceMatcherTests(unittest.TestCase):
         # an 'all' pattern, just True.
         self.assertEqual(dm.visitdir(b'dir/subdir/z'), True)
         self.assertEqual(dm.visitdir(b'dir/subdir/x'), True)
-        # OPT: We could return 'all' for these.
-        self.assertEqual(dm.visitdir(b'dir/foo'), True)
-        self.assertEqual(dm.visitdir(b'folder'), True)
+        self.assertEqual(dm.visitdir(b'dir/foo'), 'all')
+        self.assertEqual(dm.visitdir(b'folder'), 'all')
 
     def testVisitchildrensetM2SubdirPrefix(self):
         m1 = matchmod.alwaysmatcher(b'', b'')
@@ -322,7 +320,7 @@ class DifferenceMatcherTests(unittest.TestCase):
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitdir(b'.'), True)
         self.assertEqual(dm.visitdir(b'dir'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir'), True)
+        self.assertEqual(dm.visitdir(b'dir/subdir'), 'all')
         self.assertFalse(dm.visitdir(b'dir/foo'))
         self.assertFalse(dm.visitdir(b'folder'))
         # OPT: We should probably return False for these; we don't because
