@@ -130,13 +130,36 @@ unshelve should keep a copy of unknown files
   e
   $ cat e.orig
   z
+  $ rm e.orig
 
+restores backup of unknown file to right directory
+
+  $ hg shelve
+  shelved as default
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo z > e
+  $ mkdir dir
+BROKEN: should work the same as when not using --cwd
+  $ hg unshelve --cwd dir
+  unshelving change 'default'
+  abort: $ENOENT$
+  [255]
+  $ rmdir dir
+  $ cat e
+  z
+  $ test -f e.orig && cat e.orig
+  [1]
+restore broken state
+  $ touch d
+  $ echo e > e
+  $ hg add d e
+  $ hg shelve --delete default
 
 unshelve and conflicts with tracked and untracked files
 
  preparing:
 
-  $ rm *.orig
+  $ rm -f *.orig
   $ hg ci -qm 'commit stuff'
   $ hg phase -p null:
 
