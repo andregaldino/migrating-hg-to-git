@@ -238,6 +238,7 @@ ancient virtualenv from their linux distro or similar and it's not yet
 the default for them.
   $ unset PYTHONPATH
   $ "$PYTHON" -m virtualenv --no-site-packages --never-download installenv >> pip.log
+  DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
 Note: we use this weird path to run pip and hg to avoid platform differences,
 since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log
