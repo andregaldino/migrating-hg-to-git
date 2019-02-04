@@ -47,7 +47,7 @@ errors = [
      "adds a function with foo_bar naming"),
 ]
 
-word = re.compile('\S')
+word = re.compile(r'\S')
 def nonempty(first, second):
     if word.search(first):
         return first
