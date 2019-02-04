@@ -142,7 +142,7 @@ def _genrevancestors(repo, revs, followfirst, startdepth, stopdepth, cutfunc):
 
 def revancestors(repo, revs, followfirst=False, startdepth=None,
                  stopdepth=None, cutfunc=None):
-    """Like revlog.ancestors(), but supports additional options, includes
+    r"""Like revlog.ancestors(), but supports additional options, includes
     the given revs themselves, and returns a smartset
 
     Scan ends at the stopdepth (exlusive) if specified. Revisions found

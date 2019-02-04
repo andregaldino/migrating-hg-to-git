@@ -666,7 +666,7 @@ class buildhgexe(build_ext):
             self.addlongpathsmanifest()
 
     def addlongpathsmanifest(self):
-        """Add manifest pieces so that hg.exe understands long paths
+        r"""Add manifest pieces so that hg.exe understands long paths
 
         This is an EXPERIMENTAL feature, use with care.
         To enable long paths support, one needs to do two things:
