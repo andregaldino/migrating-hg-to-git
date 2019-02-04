@@ -2378,12 +2378,12 @@ class TextTestRunner(unittest.TextTestRunner):
         timesd = dict((t[0], t[3]) for t in result.times)
         doc = minidom.Document()
         s = doc.createElement('testsuite')
-        s.setAttribute('name', 'run-tests')
-        s.setAttribute('tests', str(result.testsRun))
         s.setAttribute('errors', "0") # TODO
         s.setAttribute('failures', str(len(result.failures)))
+        s.setAttribute('name', 'run-tests')
         s.setAttribute('skipped', str(len(result.skipped) +
                                       len(result.ignored)))
+        s.setAttribute('tests', str(result.testsRun))
         doc.appendChild(s)
         for tc in result.successes:
             t = doc.createElement('testcase')
