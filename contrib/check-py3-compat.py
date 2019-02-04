@@ -45,7 +45,7 @@ def check_compat_py3(f):
         content = fh.read()
 
     try:
-        ast.parse(content)
+        ast.parse(content, filename=f)
     except SyntaxError as e:
         print('%s: invalid syntax: %s' % (f, e))
         return
