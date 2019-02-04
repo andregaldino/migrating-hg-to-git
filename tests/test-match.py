@@ -261,13 +261,13 @@ class DifferenceMatcherTests(unittest.TestCase):
         # assertTrue does NOT verify that it's a bool, just that it's truthy.
         # While we may want to eventually make these return 'all', they should
         # not currently do so.
-        self.assertEqual(dm.visitdir(b'.'), 'all')
-        self.assertEqual(dm.visitdir(b'dir'), 'all')
-        self.assertEqual(dm.visitdir(b'dir/subdir'), 'all')
-        self.assertEqual(dm.visitdir(b'dir/subdir/z'), 'all')
-        self.assertEqual(dm.visitdir(b'dir/foo'), 'all')
-        self.assertEqual(dm.visitdir(b'dir/subdir/x'), 'all')
-        self.assertEqual(dm.visitdir(b'folder'), 'all')
+        self.assertEqual(dm.visitdir(b'.'), b'all')
+        self.assertEqual(dm.visitdir(b'dir'), b'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir'), b'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir/z'), b'all')
+        self.assertEqual(dm.visitdir(b'dir/foo'), b'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir/x'), b'all')
+        self.assertEqual(dm.visitdir(b'folder'), b'all')
 
     def testVisitchildrensetM2never(self):
         m1 = matchmod.alwaysmatcher(b'', b'')
@@ -294,8 +294,8 @@ class DifferenceMatcherTests(unittest.TestCase):
         # an 'all' pattern, just True.
         self.assertEqual(dm.visitdir(b'dir/subdir/z'), True)
         self.assertEqual(dm.visitdir(b'dir/subdir/x'), True)
-        self.assertEqual(dm.visitdir(b'dir/foo'), 'all')
-        self.assertEqual(dm.visitdir(b'folder'), 'all')
+        self.assertEqual(dm.visitdir(b'dir/foo'), b'all')
+        self.assertEqual(dm.visitdir(b'folder'), b'all')
 
     def testVisitchildrensetM2SubdirPrefix(self):
         m1 = matchmod.alwaysmatcher(b'', b'')
@@ -320,7 +320,7 @@ class DifferenceMatcherTests(unittest.TestCase):
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitdir(b'.'), True)
         self.assertEqual(dm.visitdir(b'dir'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir'), 'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir'), b'all')
         self.assertFalse(dm.visitdir(b'dir/foo'))
         self.assertFalse(dm.visitdir(b'folder'))
         # OPT: We should probably return False for these; we don't because
