@@ -78,16 +78,6 @@ def composenormalfilematcher(match, manifest, exclude=None):
     m.matchfn = lambda f: notlfile(f) and origmatchfn(f)
     return m
 
-def installnormalfilesmatchfn(manifest):
-    '''installmatchfn with a matchfn that ignores all largefiles'''
-    def overridematch(ctx, pats=(), opts=None, globbed=False,
-            default='relpath', badfn=None):
-        if opts is None:
-            opts = {}
-        match = oldmatch(ctx, pats, opts, globbed, default, badfn=badfn)
-        return composenormalfilematcher(match, manifest)
-    oldmatch = installmatchfn(overridematch)
-
 def installmatchfn(f):
     '''monkey patch the scmutil module with a custom match function.
     Warning: it is monkey patching the _module_ on runtime! Not thread safe!'''
@@ -616,17 +606,22 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
     # match largefiles and run it again.
     nonormalfiles = False
     nolfiles = False
-    installnormalfilesmatchfn(repo[None].manifest())
-    try:
-        result = orig(ui, repo, pats, opts, rename)
-    except error.Abort as e:
-        if pycompat.bytestr(e) != _('no files to copy'):
-            raise e
-        else:
-            nonormalfiles = True
-        result = 0
-    finally:
-        restorematchfn()
+    manifest = repo[None].manifest()
+    def normalfilesmatchfn(orig, ctx, pats=(), opts=None, globbed=False,
+        default='relpath', badfn=None):
+        if opts is None:
+            opts = {}
+        match = orig(ctx, pats, opts, globbed, default, badfn=badfn)
+        return composenormalfilematcher(match, manifest)
+    with extensions.wrappedfunction(scmutil, 'match', normalfilesmatchfn):
+        try:
+            result = orig(ui, repo, pats, opts, rename)
+        except error.Abort as e:
+            if pycompat.bytestr(e) != _('no files to copy'):
+                raise e
+            else:
+                nonormalfiles = True
+            result = 0
 
     # The first rename can cause our current working directory to be removed.
     # In that case there is nothing left to copy/rename so just quit.
