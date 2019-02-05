@@ -743,8 +743,7 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
     # TODO: Break this import cycle somehow. (filectx -> ctx -> fileset ->
     # merge -> filemerge). (I suspect the fileset import is the weakest link)
     from . import context
-    a = _workingpath(repo, fcd)
-    back = scmutil.origpath(ui, repo, a)
+    back = scmutil.backuppath(ui, repo, fcd.path())
     inworkingdir = (back.startswith(repo.wvfs.base) and not
         back.startswith(repo.vfs.base))
     if isinstance(fcd, context.overlayworkingfilectx) and inworkingdir:
@@ -764,6 +763,7 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
             if isinstance(fcd, context.overlayworkingfilectx):
                 util.writefile(back, fcd.data())
             else:
+                a = _workingpath(repo, fcd)
                 util.copyfile(a, back)
         # A arbitraryfilectx is returned, so we can run the same functions on
         # the backup context regardless of where it lives.
