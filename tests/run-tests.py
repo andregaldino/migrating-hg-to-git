@@ -1902,8 +1902,9 @@ class TestResult(unittest._TextTestResult):
                 pass
             elif self._options.view:
                 v = self._options.view
-                os.system(r"%s %s %s" %
-                          (v, _strpath(test.refpath), _strpath(test.errpath)))
+                subprocess.call(r'"%s" "%s" "%s"' %
+                                (v, _strpath(test.refpath),
+                                 _strpath(test.errpath)), shell=True)
             else:
                 servefail, lines = getdiff(expected, got,
                                            test.refpath, test.errpath)
