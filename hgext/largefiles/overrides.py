@@ -652,7 +652,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
         wlock = repo.wlock()
 
         manifest = repo[None].manifest()
-        def overridematch(ctx, pats=(), opts=None, globbed=False,
+        def overridematch(orig, ctx, pats=(), opts=None, globbed=False,
                 default='relpath', badfn=None):
             if opts is None:
                 opts = {}
@@ -664,7 +664,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                     newpats.append(pat.replace(lfutil.shortname, ''))
                 else:
                     newpats.append(pat)
-            match = oldmatch(ctx, newpats, opts, globbed, default, badfn=badfn)
+            match = orig(ctx, newpats, opts, globbed, default, badfn=badfn)
             m = copy.copy(match)
             lfile = lambda f: lfutil.standin(f) in manifest
             m._files = [lfutil.standin(f) for f in m._files if lfile(f)]
@@ -678,7 +678,6 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                         None)
             m.matchfn = matchfn
             return m
-        oldmatch = installmatchfn(overridematch)
         listpats = []
         for pat in pats:
             if matchmod.patkind(pat) is not None:
@@ -696,7 +695,8 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                                   _('destination largefile already exists'))
             copiedfiles.append((src, dest))
             orig(src, dest, *args, **kwargs)
-        with extensions.wrappedfunction(util, 'copyfile', overridecopyfile):
+        with extensions.wrappedfunction(util, 'copyfile', overridecopyfile), \
+             extensions.wrappedfunction(scmutil, 'match', overridematch):
             result += orig(ui, repo, listpats, opts, rename)
 
         lfdirstate = lfutil.openlfdirstate(ui, repo)
@@ -727,7 +727,6 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
         else:
             nolfiles = True
     finally:
-        restorematchfn()
         wlock.release()
 
     if nolfiles and nonormalfiles:
