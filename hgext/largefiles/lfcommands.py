@@ -465,11 +465,11 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
         wctx = repo[None]
         for lfile in lfiles:
             lfileorig = os.path.relpath(
-                scmutil.origpath(ui, repo, wvfs.join(lfile)),
+                scmutil.backuppath(ui, repo, lfile),
                 start=repo.root)
             standin = lfutil.standin(lfile)
             standinorig = os.path.relpath(
-                scmutil.origpath(ui, repo, wvfs.join(standin)),
+                scmutil.backuppath(ui, repo, standin),
                 start=repo.root)
             if wvfs.exists(standin):
                 if (wvfs.exists(standinorig) and
