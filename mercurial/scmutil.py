@@ -873,41 +873,6 @@ def backuppath(ui, repo, filepath):
 
     return origvfs.join(filepath)
 
-def origpath(ui, repo, filepath):
-    '''customize where .orig files are created
-
-    Fetch user defined path from config file: [ui] origbackuppath = <path>
-    Fall back to default (filepath with .orig suffix) if not specified
-    '''
-    origvfs = getorigvfs(ui, repo)
-    if origvfs is None:
-        return filepath + ".orig"
-
-    # Convert filepath from an absolute path into a path inside the repo.
-    filepathfromroot = util.normpath(os.path.relpath(filepath,
-                                                     start=repo.root))
-
-    origbackupdir = origvfs.dirname(filepathfromroot)
-    if not origvfs.isdir(origbackupdir) or origvfs.islink(origbackupdir):
-        ui.note(_('creating directory: %s\n') % origvfs.join(origbackupdir))
-
-        # Remove any files that conflict with the backup file's path
-        for f in reversed(list(util.finddirs(filepathfromroot))):
-            if origvfs.isfileorlink(f):
-                ui.note(_('removing conflicting file: %s\n')
-                        % origvfs.join(f))
-                origvfs.unlink(f)
-                break
-
-        origvfs.makedirs(origbackupdir)
-
-    if origvfs.isdir(filepathfromroot) and not origvfs.islink(filepathfromroot):
-        ui.note(_('removing conflicting directory: %s\n')
-                % origvfs.join(filepathfromroot))
-        origvfs.rmtree(filepathfromroot, forcibly=True)
-
-    return origvfs.join(filepathfromroot)
-
 class _containsnode(object):
     """proxy __contains__(node) to container.__contains__ which accepts revs"""
 
