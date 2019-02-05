@@ -225,9 +225,8 @@ test http authentication
   >     return opener
   > EOF
 
-  $ hg id http://localhost:$HGPORT2/ --config extensions.x=use_digests.py || true
-  abort: HTTP Error 403: bad user (py3 !)
-  5fed3813f7f5 (no-py3 !)
+  $ hg id http://localhost:$HGPORT2/ --config extensions.x=use_digests.py
+  5fed3813f7f5
 
 #if no-reposimplestore
   $ hg clone http://user:pass@localhost:$HGPORT2/ dest 2>&1
@@ -383,14 +382,13 @@ test http authentication
   "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgtest-authtype:Digest
-  "GET /?cmd=capabilities HTTP/1.1" 403 - x-hgtest-authtype:Digest (py3 !)
-  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgtest-authtype:Digest (no-py3 !)
-  "GET /?cmd=lookup HTTP/1.1" 401 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (no-py3 !)
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (no-py3 !)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (no-py3 !)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (no-py3 !)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (no-py3 !)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (no-py3 !)
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgtest-authtype:Digest
+  "GET /?cmd=lookup HTTP/1.1" 401 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest
   "GET /?cmd=capabilities HTTP/1.1" 401 - (no-reposimplestore !)
   "GET /?cmd=capabilities HTTP/1.1" 200 - (no-reposimplestore !)
   "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
@@ -461,7 +459,6 @@ check error log
   $ cat error.log
 
   $ cat errors2.log
-  $LOCALIP - - [$ERRDATE$] HG error:  No hash found for user/realm "b'user'/mercurial" (glob) (py3 !)
 
 check abort error reporting while pulling/cloning
 

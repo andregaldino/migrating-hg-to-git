@@ -65,7 +65,7 @@ class passwordmgr(object):
         user, passwd = pycompat.bytesurl(user), pycompat.bytesurl(passwd)
         if user and passwd:
             self._writedebug(user, passwd)
-            return (user, passwd)
+            return (pycompat.strurl(user), pycompat.strurl(passwd))
 
         if not user or not passwd:
             res = httpconnectionmod.readauthforuri(self.ui, authuri, user)
@@ -93,7 +93,7 @@ class passwordmgr(object):
 
         self.passwddb.add_password(realm, authuri, user, passwd)
         self._writedebug(user, passwd)
-        return (user, passwd)
+        return (pycompat.strurl(user), pycompat.strurl(passwd))
 
     def _writedebug(self, user, passwd):
         msg = _('http auth: user %s, password %s\n')
