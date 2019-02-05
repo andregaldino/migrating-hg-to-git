@@ -209,15 +209,11 @@ impl<G: Graph + Clone> LazyAncestors<G> {
 
 impl<G: Graph> MissingAncestors<G> {
     pub fn new(graph: G, bases: impl IntoIterator<Item = Revision>) -> Self {
-        let mut bases: HashSet<Revision> = bases.into_iter().collect();
-        if bases.is_empty() {
-            bases.insert(NULL_REVISION);
-        }
-        MissingAncestors { graph, bases }
+        MissingAncestors { graph: graph, bases: bases.into_iter().collect() }
     }
 
     pub fn has_bases(&self) -> bool {
-        self.bases.iter().any(|&b| b != NULL_REVISION)
+        !self.bases.is_empty()
     }
 
     /// Return a reference to current bases.
@@ -245,7 +241,8 @@ impl<G: Graph> MissingAncestors<G> {
         &mut self,
         new_bases: impl IntoIterator<Item = Revision>,
     ) {
-        self.bases.extend(new_bases);
+        self.bases
+            .extend(new_bases.into_iter().filter(|&rev| rev != NULL_REVISION));
     }
 
     /// Remove all ancestors of self.bases from the revs set (in place)
@@ -254,7 +251,10 @@ impl<G: Graph> MissingAncestors<G> {
         revs: &mut HashSet<Revision>,
     ) -> Result<(), GraphError> {
         revs.retain(|r| !self.bases.contains(r));
-        // the null revision is always an ancestor
+        // the null revision is always an ancestor. Logically speaking
+        // it's debatable in case bases is empty, but the Python
+        // implementation always adds NULL_REVISION to bases, making it
+        // unconditionnally true.
         revs.remove(&NULL_REVISION);
         if revs.is_empty() {
             return Ok(());
@@ -265,8 +265,7 @@ impl<G: Graph> MissingAncestors<G> {
         // we shouldn't need to iterate each time on bases
         let start = match self.bases.iter().cloned().max() {
             Some(m) => m,
-            None => {
-                // bases is empty (shouldn't happen, but let's be safe)
+            None => {  // self.bases is empty
                 return Ok(());
             }
         };
