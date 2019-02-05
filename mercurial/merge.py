@@ -1506,9 +1506,8 @@ def batchget(repo, mctx, wctx, actions):
                             conflicting = p
                             break
                 if repo.wvfs.lexists(conflicting):
-                    absf = repo.wjoin(conflicting)
-                    orig = scmutil.origpath(ui, repo, absf)
-                    util.rename(absf, orig)
+                    orig = scmutil.backuppath(ui, repo, conflicting)
+                    util.rename(repo.wjoin(conflicting), orig)
             wctx[f].clearunknown()
             atomictemp = ui.configbool("experimental", "update.atomic-file")
             wctx[f].write(fctx(f).data(), flags, backgroundclose=True,
