@@ -838,6 +838,41 @@ def getorigvfs(ui, repo):
         return None
     return vfs.vfs(repo.wvfs.join(origbackuppath))
 
+def backuppath(ui, repo, filepath):
+    '''customize where working copy backup files (.orig files) are created
+
+    Fetch user defined path from config file: [ui] origbackuppath = <path>
+    Fall back to default (filepath with .orig suffix) if not specified
+
+    filepath is repo-relative
+
+    Returns an absolute path
+    '''
+    origvfs = getorigvfs(ui, repo)
+    if origvfs is None:
+        return repo.wjoin(filepath + ".orig")
+
+    origbackupdir = origvfs.dirname(filepath)
+    if not origvfs.isdir(origbackupdir) or origvfs.islink(origbackupdir):
+        ui.note(_('creating directory: %s\n') % origvfs.join(origbackupdir))
+
+        # Remove any files that conflict with the backup file's path
+        for f in reversed(list(util.finddirs(filepath))):
+            if origvfs.isfileorlink(f):
+                ui.note(_('removing conflicting file: %s\n')
+                        % origvfs.join(f))
+                origvfs.unlink(f)
+                break
+
+        origvfs.makedirs(origbackupdir)
+
+    if origvfs.isdir(filepath) and not origvfs.islink(filepath):
+        ui.note(_('removing conflicting directory: %s\n')
+                % origvfs.join(filepath))
+        origvfs.rmtree(filepath, forcibly=True)
+
+    return origvfs.join(filepath)
+
 def origpath(ui, repo, filepath):
     '''customize where .orig files are created
 
