@@ -738,7 +738,7 @@ class queue(object):
         for f in sorted(files):
             absf = repo.wjoin(f)
             if os.path.lexists(absf):
-                absorig = scmutil.origpath(self.ui, repo, absf)
+                absorig = scmutil.backuppath(self.ui, repo, f)
                 self.ui.note(_('saving current version of %s as %s\n') %
                              (f, os.path.relpath(absorig)))
 
