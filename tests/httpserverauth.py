@@ -85,8 +85,22 @@ class digestauthserver(object):
 
         return True
 
+digest = digestauthserver()
+
 def perform_authentication(hgweb, req, op):
     auth = req.headers.get(b'Authorization')
+
+    if req.headers.get(b'X-HgTest-AuthType') == b'Digest':
+        if not auth:
+            challenge = digest.makechallenge(b'mercurial')
+            raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, b'who',
+                    [(b'WWW-Authenticate', b'Digest %s' % challenge)])
+
+        if not digest.checkauth(req, auth[7:]):
+            raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
+
+        return
+
     if not auth:
         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, b'who',
                 [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
@@ -96,3 +110,4 @@ def perform_authentication(hgweb, req, op):
 
 def extsetup(ui):
     common.permhooks.insert(0, perform_authentication)
+    digest.adduser(b'user', b'pass', b'mercurial')
