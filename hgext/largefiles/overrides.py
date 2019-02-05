@@ -24,6 +24,7 @@ from mercurial import (
     copies as copiesmod,
     error,
     exchange,
+    extensions,
     exthelper,
     filemerge,
     hg,
@@ -102,22 +103,6 @@ def restorematchfn():
     Note that n calls to installmatchfn will require n calls to
     restore the original matchfn.'''
     scmutil.match = getattr(scmutil.match, 'oldmatch')
-
-def installmatchandpatsfn(f):
-    oldmatchandpats = scmutil.matchandpats
-    setattr(f, 'oldmatchandpats', oldmatchandpats)
-    scmutil.matchandpats = f
-    return oldmatchandpats
-
-def restorematchandpatsfn():
-    '''restores scmutil.matchandpats to what it was before
-    installmatchandpatsfn was called. No-op if scmutil.matchandpats
-    is its original function.
-
-    Note that n calls to installmatchandpatsfn will require n calls
-    to restore the original matchfn.'''
-    scmutil.matchandpats = getattr(scmutil.matchandpats, 'oldmatchandpats',
-            scmutil.matchandpats)
 
 def addlargefiles(ui, repo, isaddremove, matcher, **opts):
     large = opts.get(r'large')
@@ -324,7 +309,7 @@ def overridedirty(orig, repo, ignoreupdate=False, missing=False):
 
 @eh.wrapcommand('log')
 def overridelog(orig, ui, repo, *pats, **opts):
-    def overridematchandpats(ctx, pats=(), opts=None, globbed=False,
+    def overridematchandpats(orig, ctx, pats=(), opts=None, globbed=False,
             default='relpath', badfn=None):
         """Matcher that merges root directory with .hglf, suitable for log.
         It is still possible to match .hglf directly.
@@ -333,8 +318,7 @@ def overridelog(orig, ui, repo, *pats, **opts):
         """
         if opts is None:
             opts = {}
-        matchandpats = oldmatchandpats(ctx, pats, opts, globbed, default,
-                                       badfn=badfn)
+        matchandpats = orig(ctx, pats, opts, globbed, default, badfn=badfn)
         m, p = copy.copy(matchandpats)
 
         if m.always():
@@ -414,20 +398,18 @@ def overridelog(orig, ui, repo, *pats, **opts):
     # (2) to determine what files to print out diffs for.
     # The magic matchandpats override should be used for case (1) but not for
     # case (2).
-    def overridemakefilematcher(repo, pats, opts, badfn=None):
+    oldmatchandpats = scmutil.matchandpats
+    def overridemakefilematcher(orig, repo, pats, opts, badfn=None):
         wctx = repo[None]
         match, pats = oldmatchandpats(wctx, pats, opts, badfn=badfn)
         return lambda ctx: match
 
-    oldmatchandpats = installmatchandpatsfn(overridematchandpats)
-    oldmakefilematcher = logcmdutil._makenofollowfilematcher
-    setattr(logcmdutil, '_makenofollowfilematcher', overridemakefilematcher)
-
-    try:
+    wrappedmatchandpats = extensions.wrappedfunction(scmutil, 'matchandpats',
+                                                     overridematchandpats)
+    wrappedmakefilematcher = extensions.wrappedfunction(
+        logcmdutil, '_makenofollowfilematcher', overridemakefilematcher)
+    with wrappedmatchandpats, wrappedmakefilematcher:
         return orig(ui, repo, *pats, **opts)
-    finally:
-        restorematchandpatsfn()
-        setattr(logcmdutil, '_makenofollowfilematcher', oldmakefilematcher)
 
 @eh.wrapcommand('verify',
     opts=[('', 'large', None,
