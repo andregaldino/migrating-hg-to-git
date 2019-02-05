@@ -1499,13 +1499,14 @@ def batchget(repo, mctx, wctx, actions):
                 # If a file or directory exists with the same name, back that
                 # up.  Otherwise, look to see if there is a file that conflicts
                 # with a directory this file is in, and if so, back that up.
-                absf = repo.wjoin(f)
+                conflicting = f
                 if not repo.wvfs.lexists(f):
                     for p in util.finddirs(f):
                         if repo.wvfs.isfileorlink(p):
-                            absf = repo.wjoin(p)
+                            conflicting = p
                             break
-                if repo.wvfs.lexists(absf):
+                if repo.wvfs.lexists(conflicting):
+                    absf = repo.wjoin(conflicting)
                     orig = scmutil.origpath(ui, repo, absf)
                     util.rename(absf, orig)
             wctx[f].clearunknown()
