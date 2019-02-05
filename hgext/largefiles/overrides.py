@@ -78,22 +78,6 @@ def composenormalfilematcher(match, manifest, exclude=None):
     m.matchfn = lambda f: notlfile(f) and origmatchfn(f)
     return m
 
-def installmatchfn(f):
-    '''monkey patch the scmutil module with a custom match function.
-    Warning: it is monkey patching the _module_ on runtime! Not thread safe!'''
-    oldmatch = scmutil.match
-    setattr(f, 'oldmatch', oldmatch)
-    scmutil.match = f
-    return oldmatch
-
-def restorematchfn():
-    '''restores scmutil.match to what it was before installmatchfn
-    was called.  no-op if scmutil.match is its original function.
-
-    Note that n calls to installmatchfn will require n calls to
-    restore the original matchfn.'''
-    scmutil.match = getattr(scmutil.match, 'oldmatch')
-
 def addlargefiles(ui, repo, isaddremove, matcher, **opts):
     large = opts.get(r'large')
     lfsize = lfutil.getminsize(
@@ -756,11 +740,11 @@ def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
 
         oldstandins = lfutil.getstandinsstate(repo)
 
-        def overridematch(mctx, pats=(), opts=None, globbed=False,
+        def overridematch(orig, mctx, pats=(), opts=None, globbed=False,
                 default='relpath', badfn=None):
             if opts is None:
                 opts = {}
-            match = oldmatch(mctx, pats, opts, globbed, default, badfn=badfn)
+            match = orig(mctx, pats, opts, globbed, default, badfn=badfn)
             m = copy.copy(match)
 
             # revert supports recursing into subrepos, and though largefiles
@@ -791,11 +775,8 @@ def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
                 return origmatchfn(f)
             m.matchfn = matchfn
             return m
-        oldmatch = installmatchfn(overridematch)
-        try:
+        with extensions.wrappedfunction(scmutil, 'match', overridematch):
             orig(ui, repo, ctx, parents, *pats, **opts)
-        finally:
-            restorematchfn()
 
         newstandins = lfutil.getstandinsstate(repo)
         filelist = lfutil.getlfilestoupdate(oldstandins, newstandins)
