@@ -154,7 +154,7 @@ class monotone_source(common.converter_source, common.commandline):
         retval = []
         while True:
             commandnbr, stream, length, output = self.mtnstdioreadpacket()
-            self.ui.debug('mtn: read packet %s:%s:%s\n' %
+            self.ui.debug('mtn: read packet %s:%s:%d\n' %
                 (commandnbr, stream, length))
 
             if stream == 'l':
