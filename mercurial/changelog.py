@@ -70,7 +70,10 @@ def decodeextra(text):
 
 def encodeextra(d):
     # keys must be sorted to produce a deterministic changelog entry
-    items = [_string_escape('%s:%s' % (k, d[k])) for k in sorted(d)]
+    items = [
+        _string_escape('%s:%s' % (k, pycompat.bytestr(d[k])))
+        for k in sorted(d)
+    ]
     return "\0".join(items)
 
 def stripdesc(desc):
