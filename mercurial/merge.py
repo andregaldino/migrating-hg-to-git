@@ -1505,8 +1505,8 @@ def batchget(repo, mctx, wctx, actions):
                         if repo.wvfs.isfileorlink(p):
                             absf = repo.wjoin(p)
                             break
-                orig = scmutil.origpath(ui, repo, absf)
                 if repo.wvfs.lexists(absf):
+                    orig = scmutil.origpath(ui, repo, absf)
                     util.rename(absf, orig)
             wctx[f].clearunknown()
             atomictemp = ui.configbool("experimental", "update.atomic-file")
