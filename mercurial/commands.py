@@ -4971,7 +4971,7 @@ def resolve(ui, repo, *pats, **opts):
                 if complete:
                     try:
                         util.rename(a + ".resolve",
-                                    scmutil.origpath(ui, repo, a))
+                                    scmutil.backuppath(ui, repo, f))
                     except OSError as inst:
                         if inst.errno != errno.ENOENT:
                             raise
@@ -4997,7 +4997,7 @@ def resolve(ui, repo, *pats, **opts):
             # replace filemerge's .orig file with our resolve file
             a = repo.wjoin(f)
             try:
-                util.rename(a + ".resolve", scmutil.origpath(ui, repo, a))
+                util.rename(a + ".resolve", scmutil.backuppath(ui, repo, f))
             except OSError as inst:
                 if inst.errno != errno.ENOENT:
                     raise
