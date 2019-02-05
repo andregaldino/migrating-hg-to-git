@@ -219,8 +219,8 @@ class monotone_source(common.converter_source, common.commandline):
             m = self.cert_re.match(e)
             if m:
                 name, value = m.groups()
-                value = value.replace(r'\"', '"')
-                value = value.replace(r'\\', '\\')
+                value = value.replace(br'\"', '"')
+                value = value.replace(br'\\', '\\')
                 certs[name] = value
         # Monotone may have subsecond dates: 2005-02-05T09:39:12.364306
         # and all times are stored in UTC
