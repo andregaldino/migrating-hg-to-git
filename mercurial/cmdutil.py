@@ -2782,6 +2782,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
     # The mapping is in the form:
     #   <abs path in repo> -> (<path from CWD>, <exactly specified by matcher?>)
     names = {}
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
 
     with repo.wlock():
         ## filling of the `names` mapping
@@ -2797,7 +2798,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
         if not m.always():
             matcher = matchmod.badmatch(m, lambda x, y: False)
             for abs in wctx.walk(matcher):
-                names[abs] = m.rel(abs), m.exact(abs)
+                names[abs] = m.exact(abs)
 
             # walk target manifest to fill `names`
 
@@ -2814,7 +2815,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
 
             for abs in ctx.walk(matchmod.badmatch(m, badfn)):
                 if abs not in names:
-                    names[abs] = m.rel(abs), m.exact(abs)
+                    names[abs] = m.exact(abs)
 
             # Find status of all file in `names`.
             m = scmutil.matchfiles(repo, names)
@@ -2825,7 +2826,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             changes = repo.status(node1=node, match=m)
             for kind in changes:
                 for abs in kind:
-                    names[abs] = m.rel(abs), m.exact(abs)
+                    names[abs] = m.exact(abs)
 
             m = scmutil.matchfiles(repo, names)
 
@@ -2887,13 +2888,12 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             dsmodified -= mergeadd
 
         # if f is a rename, update `names` to also revert the source
-        cwd = repo.getcwd()
         for f in localchanges:
             src = repo.dirstate.copied(f)
             # XXX should we check for rename down to target node?
             if src and src not in names and repo.dirstate[src] == 'r':
                 dsremoved.add(src)
-                names[src] = (repo.pathto(src, cwd), True)
+                names[src] = True
 
         # determine the exact nature of the deleted changesets
         deladded = set(_deleted)
@@ -3000,7 +3000,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             (unknown,       actions['unknown'],  discard),
             )
 
-        for abs, (rel, exact) in sorted(names.items()):
+        for abs, exact in sorted(names.items()):
             # target file to be touch on disk (relative to cwd)
             target = repo.wjoin(abs)
             # search the entry in the dispatch table.
@@ -3017,20 +3017,21 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                         if dobackup == backupinteractive:
                             tobackup.add(abs)
                         elif (backup <= dobackup or wctx[abs].cmp(ctx[abs])):
-                            bakname = scmutil.backuppath(ui, repo, abs)
-                            relbakname = os.path.relpath(bakname)
+                            absbakname = scmutil.backuppath(ui, repo, abs)
+                            bakname = os.path.relpath(absbakname,
+                                                      start=repo.root)
                             ui.note(_('saving current version of %s as %s\n') %
-                                    (rel, relbakname))
+                                    (uipathfn(abs), uipathfn(bakname)))
                             if not opts.get('dry_run'):
                                 if interactive:
-                                    util.copyfile(target, bakname)
+                                    util.copyfile(target, absbakname)
                                 else:
-                                    util.rename(target, bakname)
+                                    util.rename(target, absbakname)
                     if opts.get('dry_run'):
                         if ui.verbose or not exact:
-                            ui.status(msg % rel)
+                            ui.status(msg % uipathfn(abs))
                 elif exact:
-                    ui.warn(msg % rel)
+                    ui.warn(msg % uipathfn(abs))
                 break
 
         if not opts.get('dry_run'):
@@ -3041,8 +3042,8 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             prefetch(repo, [ctx.rev()],
                      matchfiles(repo,
                                 [f for sublist in oplist for f in sublist]))
-            _performrevert(repo, parents, ctx, names, actions, interactive,
-                           tobackup)
+            _performrevert(repo, parents, ctx, names, uipathfn, actions,
+                           interactive, tobackup)
 
         if targetsubs:
             # Revert the subrepos on the revert list
@@ -3054,8 +3055,8 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                     raise error.Abort("subrepository '%s' does not exist in %s!"
                                       % (sub, short(ctx.node())))
 
-def _performrevert(repo, parents, ctx, names, actions, interactive=False,
-                   tobackup=None):
+def _performrevert(repo, parents, ctx, names, uipathfn, actions,
+                   interactive=False, tobackup=None):
     """function that actually perform all the actions computed for revert
 
     This is an independent function to let extension to plug in and react to
@@ -3080,15 +3081,15 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
         repo.dirstate.remove(f)
 
     def prntstatusmsg(action, f):
-        rel, exact = names[f]
+        exact = names[f]
         if repo.ui.verbose or not exact:
-            repo.ui.status(actions[action][1] % rel)
+            repo.ui.status(actions[action][1] % uipathfn(f))
 
     audit_path = pathutil.pathauditor(repo.root, cached=True)
     for f in actions['forget'][0]:
         if interactive:
             choice = repo.ui.promptchoice(
-                _("forget added file %s (Yn)?$$ &Yes $$ &No") % f)
+                _("forget added file %s (Yn)?$$ &Yes $$ &No") % uipathfn(f))
             if choice == 0:
                 prntstatusmsg('forget', f)
                 repo.dirstate.drop(f)
@@ -3101,7 +3102,7 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
         audit_path(f)
         if interactive:
             choice = repo.ui.promptchoice(
-                _("remove added file %s (Yn)?$$ &Yes $$ &No") % f)
+                _("remove added file %s (Yn)?$$ &Yes $$ &No") % uipathfn(f))
             if choice == 0:
                 prntstatusmsg('remove', f)
                 doremove(f)
