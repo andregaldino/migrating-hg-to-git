@@ -3017,7 +3017,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                         if dobackup == backupinteractive:
                             tobackup.add(abs)
                         elif (backup <= dobackup or wctx[abs].cmp(ctx[abs])):
-                            bakname = scmutil.origpath(ui, repo, rel)
+                            bakname = scmutil.backuppath(ui, repo, abs)
                             relbakname = os.path.relpath(bakname)
                             ui.note(_('saving current version of %s as %s\n') %
                                     (rel, relbakname))
@@ -3170,7 +3170,7 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
                 # Create a backup file only if this hunk should be backed up
                 if c.header.filename() in tobackup:
                     target = repo.wjoin(abs)
-                    bakname = scmutil.origpath(repo.ui, repo, m.rel(abs))
+                    bakname = scmutil.backuppath(repo.ui, repo, abs)
                     util.copyfile(target, bakname)
                     tobackup.remove(abs)
             c.write(fp)
