@@ -760,5 +760,6 @@ test-wireproto-framing.py
 test-wireproto-serverreactor.py
 test-wireproto.py
 test-wireproto.t
+test-worker.t
 test-wsgirequest.py
 test-xdg.t
