@@ -925,7 +925,7 @@ revert moves orig files to the right place
   $ hg revert --all --verbose --config 'ui.origbackuppath=.hg/origbackups'
   reverting subrepo ../gitroot
   creating directory: $TESTTMP/tc/.hg/origbackups
-  saving current version of foobar as $TESTTMP/tc/.hg/origbackups/foobar
+  saving current version of foobar as .hg/origbackups/foobar
   $ ls .hg/origbackups
   foobar
   $ rm -rf .hg/origbackups

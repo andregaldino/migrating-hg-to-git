@@ -1830,7 +1830,7 @@ class gitsubrepo(abstractsubrepo):
             for name in names:
                 bakname = scmutil.origpath(self.ui, self._subparent, name)
                 self.ui.note(_('saving current version of %s as %s\n') %
-                        (name, bakname))
+                        (name, os.path.relpath(bakname)))
                 name = self.wvfs.join(name)
                 origvfs.rename(name, bakname)
 
