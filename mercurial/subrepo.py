@@ -405,7 +405,7 @@ class hgsubrepo(abstractsubrepo):
         super(hgsubrepo, self).__init__(ctx, path)
         self._state = state
         r = ctx.repo()
-        root = r.wjoin(path)
+        root = r.wjoin(util.localpath(path))
         create = allowcreate and not r.wvfs.exists('%s/.hg' % path)
         # repository constructor does expand variables in path, which is
         # unsafe since subrepo path might come from untrusted source.
