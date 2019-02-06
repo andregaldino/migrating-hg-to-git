@@ -3018,8 +3018,9 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                             tobackup.add(abs)
                         elif (backup <= dobackup or wctx[abs].cmp(ctx[abs])):
                             bakname = scmutil.origpath(ui, repo, rel)
+                            relbakname = os.path.relpath(bakname)
                             ui.note(_('saving current version of %s as %s\n') %
-                                    (rel, bakname))
+                                    (rel, relbakname))
                             if not opts.get('dry_run'):
                                 if interactive:
                                     util.copyfile(target, bakname)
