@@ -2268,8 +2268,14 @@ def diff(repo, node1=None, node2=None, match=None, changes=None,
     hunksfilterfn, if not None, should be a function taking a filectx and
     hunks generator that may yield filtered hunks.
     '''
+    if not node1 and not node2:
+        node1 = repo.dirstate.p1()
+
+    ctx1 = repo[node1]
+    ctx2 = repo[node2]
+
     for fctx1, fctx2, hdr, hunks in diffhunks(
-            repo, node1=node1, node2=node2,
+            repo, ctx1=ctx1, ctx2=ctx2,
             match=match, changes=changes, opts=opts,
             losedatafn=losedatafn, prefix=prefix, relroot=relroot, copy=copy,
     ):
@@ -2286,7 +2292,7 @@ def diff(repo, node1=None, node2=None, match=None, changes=None,
         if text:
             yield text
 
-def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
+def diffhunks(repo, ctx1, ctx2, match=None, changes=None,
               opts=None, losedatafn=None, prefix='', relroot='', copy=None):
     """Yield diff of changes to files in the form of (`header`, `hunks`) tuples
     where `header` is a list of diff headers and `hunks` is an iterable of
@@ -2297,9 +2303,6 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
 
     if opts is None:
         opts = mdiff.defaultopts
-
-    if not node1 and not node2:
-        node1 = repo.dirstate.p1()
 
     def lrugetfilectx():
         cache = {}
@@ -2316,9 +2319,6 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
             return fctx
         return getfilectx
     getfilectx = lrugetfilectx()
-
-    ctx1 = repo[node1]
-    ctx2 = repo[node2]
 
     if relroot:
         relrootmatch = scmutil.match(ctx2, pats=[relroot], default='path')

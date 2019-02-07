@@ -570,11 +570,9 @@ def _diffsgen(context, repo, ctx, basectx, files, style, stripecount,
         m = match.always(repo.root, repo.getcwd())
 
     diffopts = patch.diffopts(repo.ui, untrusted=True)
-    node1 = basectx.node()
-    node2 = ctx.node()
     parity = paritygen(stripecount)
 
-    diffhunks = patch.diffhunks(repo, node1, node2, m, opts=diffopts)
+    diffhunks = patch.diffhunks(repo, basectx, ctx, m, opts=diffopts)
     for blockno, (fctx1, fctx2, header, hunks) in enumerate(diffhunks, 1):
         if style != 'raw':
             header = header[1:]
