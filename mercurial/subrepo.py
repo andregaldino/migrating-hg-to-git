@@ -287,7 +287,7 @@ class abstractsubrepo(object):
         """
         raise NotImplementedError
 
-    def add(self, ui, match, prefix, explicitonly, **opts):
+    def add(self, ui, match, prefix, uipathfn, explicitonly, **opts):
         return []
 
     def addremove(self, matcher, prefix, opts):
@@ -516,8 +516,9 @@ class hgsubrepo(abstractsubrepo):
             self._repo.vfs.write('hgrc', util.tonativeeol(''.join(lines)))
 
     @annotatesubrepoerror
-    def add(self, ui, match, prefix, explicitonly, **opts):
-        return cmdutil.add(ui, self._repo, match, prefix, explicitonly, **opts)
+    def add(self, ui, match, prefix, uipathfn, explicitonly, **opts):
+        return cmdutil.add(ui, self._repo, match, prefix, uipathfn,
+                           explicitonly, **opts)
 
     @annotatesubrepoerror
     def addremove(self, m, prefix, opts):
@@ -1590,7 +1591,7 @@ class gitsubrepo(abstractsubrepo):
             return False
 
     @annotatesubrepoerror
-    def add(self, ui, match, prefix, explicitonly, **opts):
+    def add(self, ui, match, prefix, uipathfn, explicitonly, **opts):
         if self._gitmissing():
             return []
 
@@ -1614,7 +1615,7 @@ class gitsubrepo(abstractsubrepo):
             if exact:
                 command.append("-f") #should be added, even if ignored
             if ui.verbose or not exact:
-                ui.status(_('adding %s\n') % match.rel(f))
+                ui.status(_('adding %s\n') % uipathfn(f))
 
             if f in tracked:  # hg prints 'adding' even if already tracked
                 if exact:
@@ -1624,7 +1625,7 @@ class gitsubrepo(abstractsubrepo):
                 self._gitcommand(command + [f])
 
         for f in rejected:
-            ui.warn(_("%s already tracked!\n") % match.rel(f))
+            ui.warn(_("%s already tracked!\n") % uipathfn(f))
 
         return rejected
 

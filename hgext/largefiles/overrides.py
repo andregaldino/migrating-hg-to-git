@@ -235,15 +235,15 @@ def overrideadd(orig, ui, repo, *pats, **opts):
     return orig(ui, repo, *pats, **opts)
 
 @eh.wrapfunction(cmdutil, 'add')
-def cmdutiladd(orig, ui, repo, matcher, prefix, explicitonly, **opts):
+def cmdutiladd(orig, ui, repo, matcher, prefix, uipathfn, explicitonly, **opts):
     # The --normal flag short circuits this override
     if opts.get(r'normal'):
-        return orig(ui, repo, matcher, prefix, explicitonly, **opts)
+        return orig(ui, repo, matcher, prefix, uipathfn, explicitonly, **opts)
 
     ladded, lbad = addlargefiles(ui, repo, False, matcher, **opts)
     normalmatcher = composenormalfilematcher(matcher, repo[None].manifest(),
                                              ladded)
-    bad = orig(ui, repo, normalmatcher, prefix, explicitonly, **opts)
+    bad = orig(ui, repo, normalmatcher, prefix, uipathfn, explicitonly, **opts)
 
     bad.extend(f for f in lbad)
     return bad

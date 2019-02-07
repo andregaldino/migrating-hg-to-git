@@ -180,7 +180,8 @@ def add(ui, repo, *pats, **opts):
     """
 
     m = scmutil.match(repo[None], pats, pycompat.byteskwargs(opts))
-    rejected = cmdutil.add(ui, repo, m, "", False, **opts)
+    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=True)
+    rejected = cmdutil.add(ui, repo, m, "", uipathfn, False, **opts)
     return rejected and 1 or 0
 
 @command('addremove',

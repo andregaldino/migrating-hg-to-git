@@ -2027,7 +2027,7 @@ def walkchangerevs(repo, match, opts, prepare):
 
     return iterate()
 
-def add(ui, repo, match, prefix, explicitonly, **opts):
+def add(ui, repo, match, prefix, uipathfn, explicitonly, **opts):
     bad = []
 
     badfn = lambda x, y: bad.append(x) or match.bad(x, y)
@@ -2051,7 +2051,7 @@ def add(ui, repo, match, prefix, explicitonly, **opts):
                 cca(f)
             names.append(f)
             if ui.verbose or not exact:
-                ui.status(_('adding %s\n') % match.rel(f),
+                ui.status(_('adding %s\n') % uipathfn(f),
                           label='ui.addremove.added')
 
     for subpath in sorted(wctx.substate):
@@ -2059,13 +2059,16 @@ def add(ui, repo, match, prefix, explicitonly, **opts):
         try:
             submatch = matchmod.subdirmatcher(subpath, match)
             subprefix = repo.wvfs.reljoin(prefix, subpath)
+            subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
             if opts.get(r'subrepos'):
-                bad.extend(sub.add(ui, submatch, subprefix, False, **opts))
+                bad.extend(sub.add(ui, submatch, subprefix, subuipathfn, False,
+                                   **opts))
             else:
-                bad.extend(sub.add(ui, submatch, subprefix, True, **opts))
+                bad.extend(sub.add(ui, submatch, subprefix, subuipathfn, True,
+                                   **opts))
         except error.LookupError:
             ui.status(_("skipping missing subrepository: %s\n")
-                           % match.rel(subpath))
+                           % uipathfn(subpath))
 
     if not opts.get(r'dry_run'):
         rejected = wctx.add(names, prefix)

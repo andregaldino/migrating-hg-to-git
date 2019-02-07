@@ -11,6 +11,7 @@ import errno
 import glob
 import hashlib
 import os
+import posixpath
 import re
 import subprocess
 import weakref
@@ -757,6 +758,10 @@ def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
         return lambda f: pathto(f, cwd)
     else:
         return lambda f: f
+
+def subdiruipathfn(subpath, uipathfn):
+    '''Create a new uipathfn that treats the file as relative to subpath.'''
+    return lambda f: uipathfn(posixpath.join(subpath, f))
 
 def expandpats(pats):
     '''Expand bare globs when running on windows.
