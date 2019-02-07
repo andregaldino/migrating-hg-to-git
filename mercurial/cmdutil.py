@@ -2059,10 +2059,11 @@ def add(ui, repo, match, prefix, explicitonly, **opts):
         sub = wctx.sub(subpath)
         try:
             submatch = matchmod.subdirmatcher(subpath, match)
+            subprefix = repo.wvfs.reljoin(prefix, subpath)
             if opts.get(r'subrepos'):
-                bad.extend(sub.add(ui, submatch, prefix, False, **opts))
+                bad.extend(sub.add(ui, submatch, subprefix, False, **opts))
             else:
-                bad.extend(sub.add(ui, submatch, prefix, True, **opts))
+                bad.extend(sub.add(ui, submatch, subprefix, True, **opts))
         except error.LookupError:
             ui.status(_("skipping missing subrepository: %s\n")
                            % join(subpath))

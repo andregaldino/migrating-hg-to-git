@@ -518,9 +518,7 @@ class hgsubrepo(abstractsubrepo):
 
     @annotatesubrepoerror
     def add(self, ui, match, prefix, explicitonly, **opts):
-        return cmdutil.add(ui, self._repo, match,
-                           self.wvfs.reljoin(prefix, self._path),
-                           explicitonly, **opts)
+        return cmdutil.add(ui, self._repo, match, prefix, explicitonly, **opts)
 
     @annotatesubrepoerror
     def addremove(self, m, prefix, opts):
