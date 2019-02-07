@@ -151,10 +151,8 @@ Test --per-file option:
 Test --per-file option for gui tool:
 
   $ hg --config extdiff.gui.alabalaf=True alabalaf -c 6 --per-file --debug
-  diffing "*\\extdiff.*\\a.46c0e4daeb72\\a" "a.81906f2b98ac\\a" (glob) (windows !)
-  diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob) (no-windows !)
-  diffing "*\\extdiff.*\\a.46c0e4daeb72\\b" "a.81906f2b98ac\\b" (glob) (windows !)
-  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob) (no-windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob)
+  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob)
   making snapshot of 2 files from rev 46c0e4daeb72
     a
     b
@@ -169,10 +167,8 @@ Test --per-file option for gui tool:
 Test --per-file option for gui tool again:
 
   $ hg --config merge-tools.alabalaf.gui=True alabalaf -c 6 --per-file --debug
-  diffing "*\\extdiff.*\\a.46c0e4daeb72\\a" "a.81906f2b98ac\\a" (glob) (windows !)
-  diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob) (no-windows !)
-  diffing "*\\extdiff.*\\a.46c0e4daeb72\\b" "a.81906f2b98ac\\b" (glob) (windows !)
-  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob) (no-windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob)
+  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob)
   making snapshot of 2 files from rev 46c0e4daeb72
     a
     b
