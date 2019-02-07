@@ -264,6 +264,24 @@ def _urlerrorreason(urlerror):
     else:
         return stringutil.forcebytestr(urlerror)
 
+class lfsauthhandler(util.urlreq.basehandler):
+    handler_order = 480  # Before HTTPDigestAuthHandler (== 490)
+
+    def http_error_401(self, req, fp, code, msg, headers):
+        """Enforces that any authentication performed is HTTP Basic
+        Authentication.  No authentication is also acceptable.
+        """
+        authreq = headers.get(r'www-authenticate', None)
+        if authreq:
+            scheme = authreq.split()[0]
+
+            if scheme.lower() != r'basic':
+                msg = _(b'the server must support Basic Authentication')
+                raise util.urlerr.httperror(req.get_full_url(), code,
+                                            encoding.strfromlocal(msg), headers,
+                                            fp)
+        return None
+
 class _gitlfsremote(object):
 
     def __init__(self, repo, url):
@@ -275,6 +293,7 @@ class _gitlfsremote(object):
         if not useragent:
             useragent = b'git-lfs/2.3.4 (Mercurial %s)' % util.version()
         self.urlopener = urlmod.opener(ui, authinfo, useragent)
+        self.urlopener.add_handler(lfsauthhandler())
         self.retry = ui.configint(b'lfs', b'retry')
 
     def writebatch(self, pointers, fromstore):

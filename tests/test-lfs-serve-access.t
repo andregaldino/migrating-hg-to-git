@@ -421,6 +421,32 @@ the GET/PUT request.
 
   $ echo 'another blob' > auth_clone/lfs.blob
   $ hg -R auth_clone ci -Aqm 'add blob'
+
+  $ cat > use_digests.py << EOF
+  > from mercurial import (
+  >     exthelper,
+  >     url,
+  > )
+  > 
+  > eh = exthelper.exthelper()
+  > uisetup = eh.finaluisetup
+  > 
+  > @eh.wrapfunction(url, 'opener')
+  > def urlopener(orig, *args, **kwargs):
+  >     opener = orig(*args, **kwargs)
+  >     opener.addheaders.append((r'X-HgTest-AuthType', r'Digest'))
+  >     return opener
+  > EOF
+
+Test that Digest Auth fails gracefully before testing the successful Basic Auth
+
+  $ hg -R auth_clone push --config extensions.x=use_digests.py
+  pushing to http://localhost:$HGPORT1/
+  searching for changes
+  abort: LFS HTTP error: HTTP Error 401: the server must support Basic Authentication!
+  (api=http://localhost:$HGPORT1/.git/info/lfs/objects/batch, action=upload)
+  [255]
+
   $ hg -R auth_clone --debug push | egrep '^[{}]|  '
   {
     "objects": [
@@ -452,6 +478,19 @@ the GET/PUT request.
   $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 401 - (glob)
   $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 200 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 401 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D525251863cad618e55d483555f3d00a2ca99597e+4d9397055dc0c205f3132f331f36353ab1a525a3 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D525251863cad618e55d483555f3d00a2ca99597e+4d9397055dc0c205f3132f331f36353ab1a525a3 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=branchmap HTTP/1.1" 401 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull x-hgtest-authtype:Digest (glob)
+  $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 401 - x-hgtest-authtype:Digest (glob)
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 401 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D525251863cad618e55d483555f3d00a2ca99597e+4d9397055dc0c205f3132f331f36353ab1a525a3 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
