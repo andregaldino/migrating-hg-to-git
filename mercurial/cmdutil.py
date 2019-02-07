@@ -2138,13 +2138,14 @@ def forget(ui, repo, match, prefix, uipathfn, explicitonly, dryrun,
                       '$$ Include &all remaining files'
                       '$$ &? (display help)')
         for filename in forget[:]:
-            r = ui.promptchoice(_('forget %s %s') % (filename, responses))
+            r = ui.promptchoice(_('forget %s %s') %
+                                (uipathfn(filename), responses))
             if r == 4: # ?
                 while r == 4:
                     for c, t in ui.extractchoices(responses)[1]:
                         ui.write('%s - %s\n' % (c, encoding.lower(t)))
-                    r = ui.promptchoice(_('forget %s %s') % (filename,
-                                                                 responses))
+                    r = ui.promptchoice(_('forget %s %s') %
+                                        (uipathfn(filename), responses))
             if r == 0: # yes
                 continue
             elif r == 1: # no
