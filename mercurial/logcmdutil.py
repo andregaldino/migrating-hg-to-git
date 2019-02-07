@@ -64,6 +64,7 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         relroot = pathutil.canonpath(repo.root, repo.getcwd(), root)
     else:
         relroot = ''
+    copysourcematch = None
     if relroot != '':
         # XXX relative roots currently don't work if the root is within a
         # subrepo
@@ -76,6 +77,7 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
 
         relrootmatch = scmutil.match(ctx2, pats=[relroot], default='path')
         match = matchmod.intersectmatchers(match, relrootmatch)
+        copysourcematch = relrootmatch
 
     if stat:
         diffopts = diffopts.copy(context=0, noprefix=False)
@@ -84,7 +86,8 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
             width = ui.termwidth() - graphwidth
 
     chunks = ctx2.diff(ctx1, match, changes, opts=diffopts, prefix=prefix,
-                       relroot=relroot, hunksfilterfn=hunksfilterfn)
+                       relroot=relroot, copysourcematch=copysourcematch,
+                       hunksfilterfn=hunksfilterfn)
 
     if fp is not None or ui.canwritewithoutlabels():
         out = fp or ui

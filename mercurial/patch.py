@@ -2240,7 +2240,7 @@ difffeatureopts = diffutil.difffeatureopts
 
 def diff(repo, node1=None, node2=None, match=None, changes=None,
          opts=None, losedatafn=None, prefix='', relroot='', copy=None,
-         hunksfilterfn=None):
+         copysourcematch=None, hunksfilterfn=None):
     '''yields diff of changes to files between two nodes, or node and
     working directory.
 
@@ -2264,6 +2264,9 @@ def diff(repo, node1=None, node2=None, match=None, changes=None,
     copy, if not empty, should contain mappings {dst@y: src@x} of copy
     information.
 
+    if copysourcematch is not None, then copy sources will be filtered by this
+    matcher
+
     hunksfilterfn, if not None, should be a function taking a filectx and
     hunks generator that may yield filtered hunks.
     '''
@@ -2277,7 +2280,7 @@ def diff(repo, node1=None, node2=None, match=None, changes=None,
             repo, ctx1=ctx1, ctx2=ctx2,
             match=match, changes=changes, opts=opts,
             losedatafn=losedatafn, prefix=prefix, relroot=relroot, copy=copy,
-    ):
+            copysourcematch=copysourcematch):
         if hunksfilterfn is not None:
             # If the file has been removed, fctx2 is None; but this should
             # not occur here since we catch removed files early in
@@ -2292,7 +2295,8 @@ def diff(repo, node1=None, node2=None, match=None, changes=None,
             yield text
 
 def diffhunks(repo, ctx1, ctx2, match=None, changes=None,
-              opts=None, losedatafn=None, prefix='', relroot='', copy=None):
+              opts=None, losedatafn=None, prefix='', relroot='', copy=None,
+              copysourcematch=None):
     """Yield diff of changes to files in the form of (`header`, `hunks`) tuples
     where `header` is a list of diff headers and `hunks` is an iterable of
     (`hunkrange`, `hunklines`) tuples.
@@ -2337,11 +2341,11 @@ def diffhunks(repo, ctx1, ctx2, match=None, changes=None,
         if opts.git or opts.upgrade:
             copy = copies.pathcopies(ctx1, ctx2, match=match)
 
-    if relroot:
-        # filter out copies where source side isn't inside the relative root
+    if copysourcematch:
+        # filter out copies where source side isn't inside the matcher
         # (copies.pathcopies() already filtered out the destination)
         copy = {dst: src for dst, src in copy.iteritems()
-                if src.startswith(relroot)}
+                if copysourcematch(src)}
 
     modifiedset = set(modified)
     addedset = set(added)

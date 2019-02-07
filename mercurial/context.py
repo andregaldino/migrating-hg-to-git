@@ -295,7 +295,7 @@ class basectx(object):
 
     def diff(self, ctx2=None, match=None, changes=None, opts=None,
              losedatafn=None, prefix='', relroot='', copy=None,
-             hunksfilterfn=None):
+             copysourcematch=None, hunksfilterfn=None):
         """Returns a diff generator for the given contexts and matcher"""
         if ctx2 is None:
             ctx2 = self.p1()
@@ -304,6 +304,7 @@ class basectx(object):
         return patch.diff(self._repo, ctx2, self, match=match, changes=changes,
                           opts=opts, losedatafn=losedatafn, prefix=prefix,
                           relroot=relroot, copy=copy,
+                          copysourcematch=copysourcematch,
                           hunksfilterfn=hunksfilterfn)
 
     def dirs(self):
