@@ -32,7 +32,6 @@ from . import (
     encoding,
     error,
     mail,
-    match as matchmod,
     mdiff,
     pathutil,
     pycompat,
@@ -2319,10 +2318,6 @@ def diffhunks(repo, ctx1, ctx2, match=None, changes=None,
             return fctx
         return getfilectx
     getfilectx = lrugetfilectx()
-
-    if relroot:
-        relrootmatch = scmutil.match(ctx2, pats=[relroot], default='path')
-        match = matchmod.intersectmatchers(match, relrootmatch)
 
     if not changes:
         changes = ctx1.status(ctx2, match=match)

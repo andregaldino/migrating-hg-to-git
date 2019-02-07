@@ -74,6 +74,9 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
                 ui.warn(_('warning: %s not inside relative root %s\n') % (
                     match.uipath(matchroot), uirelroot))
 
+        relrootmatch = scmutil.match(ctx2, pats=[relroot], default='path')
+        match = matchmod.intersectmatchers(match, relrootmatch)
+
     if stat:
         diffopts = diffopts.copy(context=0, noprefix=False)
         width = 80
