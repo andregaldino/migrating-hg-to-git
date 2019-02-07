@@ -1206,10 +1206,18 @@ class svn_sink(converter_sink, commandline):
                     os.unlink(filename)
             except OSError:
                 pass
+
+            if self.is_exec:
+                # We need to check executability of the file before the change,
+                # because `vfs.write` is able to reset exec bit.
+                wasexec = False
+                if os.path.exists(self.wjoin(filename)):
+                    wasexec = self.is_exec(self.wjoin(filename))
+
             self.wopener.write(filename, data)
 
             if self.is_exec:
-                if self.is_exec(self.wjoin(filename)):
+                if wasexec:
                     if 'x' not in flags:
                         self.delexec.append(filename)
                 else:
