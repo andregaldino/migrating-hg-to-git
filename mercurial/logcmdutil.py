@@ -123,8 +123,9 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
                 # subpath. The best we can do is to ignore it.
                 tempnode2 = None
             submatch = matchmod.subdirmatcher(subpath, match)
+            subprefix = repo.wvfs.reljoin(prefix, subpath)
             sub.diff(ui, diffopts, tempnode2, submatch, changes=changes,
-                     stat=stat, fp=fp, prefix=prefix)
+                     stat=stat, fp=fp, prefix=subprefix)
 
 class changesetdiffer(object):
     """Generate diff of changeset with pre-configured filtering functions"""

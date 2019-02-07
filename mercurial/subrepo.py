@@ -11,7 +11,6 @@ import copy
 import errno
 import hashlib
 import os
-import posixpath
 import re
 import stat
 import subprocess
@@ -556,10 +555,9 @@ class hgsubrepo(abstractsubrepo):
             # in hex format
             if node2 is not None:
                 node2 = node.bin(node2)
-            logcmdutil.diffordiffstat(ui, self._repo, diffopts,
-                                      node1, node2, match,
-                                      prefix=posixpath.join(prefix, self._path),
-                                      listsubrepos=True, **opts)
+            logcmdutil.diffordiffstat(ui, self._repo, diffopts, node1, node2,
+                                      match, prefix=prefix, listsubrepos=True,
+                                      **opts)
         except error.RepoLookupError as inst:
             self.ui.warn(_('warning: error "%s" in subrepository "%s"\n')
                           % (inst, subrelpath(self)))
@@ -1779,14 +1777,12 @@ class gitsubrepo(abstractsubrepo):
             # for Git, this also implies '-p'
             cmd.append('-U%d' % diffopts.context)
 
-        gitprefix = self.wvfs.reljoin(prefix, self._path)
-
         if diffopts.noprefix:
-            cmd.extend(['--src-prefix=%s/' % gitprefix,
-                        '--dst-prefix=%s/' % gitprefix])
+            cmd.extend(['--src-prefix=%s/' % prefix,
+                        '--dst-prefix=%s/' % prefix])
         else:
-            cmd.extend(['--src-prefix=a/%s/' % gitprefix,
-                        '--dst-prefix=b/%s/' % gitprefix])
+            cmd.extend(['--src-prefix=a/%s/' % prefix,
+                        '--dst-prefix=b/%s/' % prefix])
 
         if diffopts.ignorews:
             cmd.append('--ignore-all-space')
