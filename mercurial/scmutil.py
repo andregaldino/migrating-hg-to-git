@@ -1047,8 +1047,9 @@ def addremove(repo, matcher, prefix, opts=None):
         submatch = matchmod.subdirmatcher(subpath, m)
         if opts.get('subrepos') or m.exact(subpath) or any(submatch.files()):
             sub = wctx.sub(subpath)
+            subprefix = repo.wvfs.reljoin(prefix, subpath)
             try:
-                if sub.addremove(submatch, prefix, opts):
+                if sub.addremove(submatch, subprefix, opts):
                     ret = 1
             except error.LookupError:
                 repo.ui.status(_("skipping missing subrepository: %s\n")

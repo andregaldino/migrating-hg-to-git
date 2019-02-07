@@ -527,8 +527,7 @@ class hgsubrepo(abstractsubrepo):
         # be used to process sibling subrepos however.
         opts = copy.copy(opts)
         opts['subrepos'] = True
-        return scmutil.addremove(self._repo, m,
-                                 self.wvfs.reljoin(prefix, self._path), opts)
+        return scmutil.addremove(self._repo, m, prefix, opts)
 
     @annotatesubrepoerror
     def cat(self, match, fm, fntemplate, prefix, **opts):
