@@ -28,9 +28,9 @@ gethgversion() {
         distance=''
         node=''
     fi
-    if echo $hgversion | grep -- '-' > /dev/null 2>&1; then
-        version=`echo $hgversion | cut -d- -f1`
-        type=`echo $hgversion | cut -d- -f2`
+    if echo $hgversion | grep -E -- '[0-9]\.[0-9](\.[0-9])?rc' > /dev/null 2>&1; then
+        version=`echo $hgversion | cut -d'r' -f1`
+        type="rc`echo $hgversion | cut -d'c' -f2-`"
     else
         version=$hgversion
         type=''
