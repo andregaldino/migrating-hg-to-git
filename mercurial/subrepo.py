@@ -343,8 +343,8 @@ class abstractsubrepo(object):
             flags = self.fileflags(name)
             mode = 'x' in flags and 0o755 or 0o644
             symlink = 'l' in flags
-            archiver.addfile(prefix + self._path + '/' + name,
-                             mode, symlink, self.filedata(name, decode))
+            archiver.addfile(prefix + name, mode, symlink,
+                             self.filedata(name, decode))
             progress.increment()
         progress.complete()
         return total
@@ -576,7 +576,8 @@ class hgsubrepo(abstractsubrepo):
         for subpath in ctx.substate:
             s = subrepo(ctx, subpath, True)
             submatch = matchmod.subdirmatcher(subpath, match)
-            total += s.archive(archiver, prefix + self._path + '/', submatch,
+            subprefix = prefix + subpath + '/'
+            total += s.archive(archiver, subprefix, submatch,
                                decode)
         return total
 
@@ -1673,8 +1674,7 @@ class gitsubrepo(abstractsubrepo):
                 data = info.linkname
             else:
                 data = tar.extractfile(info).read()
-            archiver.addfile(prefix + self._path + '/' + bname,
-                             info.mode, info.issym(), data)
+            archiver.addfile(prefix + bname, info.mode, info.issym(), data)
             total += 1
             progress.increment()
         progress.complete()
