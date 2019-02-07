@@ -66,6 +66,8 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
     else:
         relroot = ''
     copysourcematch = None
+    def compose(f, g):
+        return lambda x: f(g(x))
     def pathfn(f):
         return posixpath.join(prefix, f)
     if relroot != '':
@@ -84,11 +86,12 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
 
         checkroot = (repo.ui.configbool('devel', 'all-warnings') or
                      repo.ui.configbool('devel', 'check-relroot'))
-        def pathfn(f):
+        def relrootpathfn(f):
             if checkroot and not f.startswith(relroot):
                 raise AssertionError(
                     "file %s doesn't start with relroot %s" % (f, relroot))
-            return posixpath.join(prefix, f[len(relroot):])
+            return f[len(relroot):]
+        pathfn = compose(relrootpathfn, pathfn)
 
     if stat:
         diffopts = diffopts.copy(context=0, noprefix=False)
