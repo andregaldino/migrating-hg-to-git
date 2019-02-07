@@ -377,9 +377,9 @@ class uihunk(patchnode):
     def countchanges(self):
         """changedlines -> (n+,n-)"""
         add = len([l for l in self.changedlines if l.applied
-                   and l.prettystr()[0] == '+'])
+                    and l.prettystr().startswith('+')])
         rem = len([l for l in self.changedlines if l.applied
-                   and l.prettystr()[0] == '-'])
+                    and l.prettystr().startswith('-')])
         return add, rem
 
     def getfromtoline(self):
@@ -423,7 +423,7 @@ class uihunk(patchnode):
             changedlinestr = changedline.prettystr()
             if changedline.applied:
                 hunklinelist.append(changedlinestr)
-            elif changedlinestr[0] == "-":
+            elif changedlinestr.startswith("-"):
                 hunklinelist.append(" " + changedlinestr[1:])
 
         fp.write(''.join(self.before + hunklinelist + self.after))
@@ -471,11 +471,11 @@ class uihunk(patchnode):
         for line in self.changedlines:
             text = line.linetext
             if line.applied:
-                if text[0] == '+':
+                if text.startswith('+'):
                     dels.append(text[1:])
-                elif text[0] == '-':
+                elif text.startswith('-'):
                     adds.append(text[1:])
-            elif text[0] == '+':
+            elif text.startswith('+'):
                 dels.append(text[1:])
                 adds.append(text[1:])
         hunk = ['-%s' % l for l in dels] + ['+%s' % l for l in adds]
