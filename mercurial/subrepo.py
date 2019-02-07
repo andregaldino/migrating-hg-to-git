@@ -840,8 +840,7 @@ class hgsubrepo(abstractsubrepo):
 
     @annotatesubrepoerror
     def forget(self, match, prefix, dryrun, interactive):
-        return cmdutil.forget(self.ui, self._repo, match,
-                              self.wvfs.reljoin(prefix, self._path),
+        return cmdutil.forget(self.ui, self._repo, match, prefix,
                               True, dryrun=dryrun, interactive=interactive)
 
     @annotatesubrepoerror

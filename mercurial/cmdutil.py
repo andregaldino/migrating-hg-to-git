@@ -2097,9 +2097,10 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
 
     for subpath in sorted(wctx.substate):
         sub = wctx.sub(subpath)
+        submatch = matchmod.subdirmatcher(subpath, match)
+        subprefix = repo.wvfs.reljoin(prefix, subpath)
         try:
-            submatch = matchmod.subdirmatcher(subpath, match)
-            subbad, subforgot = sub.forget(submatch, prefix, dryrun=dryrun,
+            subbad, subforgot = sub.forget(submatch, subprefix, dryrun=dryrun,
                                            interactive=interactive)
             bad.extend([subpath + '/' + f for f in subbad])
             forgot.extend([subpath + '/' + f for f in subforgot])
