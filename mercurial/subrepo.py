@@ -847,8 +847,7 @@ class hgsubrepo(abstractsubrepo):
     @annotatesubrepoerror
     def removefiles(self, matcher, prefix, after, force, subrepos,
                     dryrun, warnings):
-        return cmdutil.remove(self.ui, self._repo, matcher,
-                              self.wvfs.reljoin(prefix, self._path),
+        return cmdutil.remove(self.ui, self._repo, matcher, prefix,
                               after, force, subrepos, dryrun)
 
     @annotatesubrepoerror

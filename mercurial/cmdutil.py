@@ -2208,11 +2208,12 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                                unit=_('subrepos'))
     for subpath in subs:
         submatch = matchmod.subdirmatcher(subpath, m)
+        subprefix = repo.wvfs.reljoin(prefix, subpath)
         if subrepos or m.exact(subpath) or any(submatch.files()):
             progress.increment()
             sub = wctx.sub(subpath)
             try:
-                if sub.removefiles(submatch, prefix, after, force, subrepos,
+                if sub.removefiles(submatch, subprefix, after, force, subrepos,
                                    dryrun, warnings):
                     ret = 1
             except error.LookupError:
