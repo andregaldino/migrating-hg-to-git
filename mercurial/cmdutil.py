@@ -2361,14 +2361,12 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         sub = ctx.sub(subpath)
         try:
             submatch = matchmod.subdirmatcher(subpath, matcher)
-
-            if not sub.cat(submatch, basefm, fntemplate,
-                           os.path.join(prefix, sub._path),
+            subprefix = os.path.join(prefix, sub._path)
+            if not sub.cat(submatch, basefm, fntemplate, subprefix,
                            **pycompat.strkwargs(opts)):
                 err = 0
         except error.RepoLookupError:
-            ui.status(_("skipping missing subrepository: %s\n")
-                           % os.path.join(prefix, subpath))
+            ui.status(_("skipping missing subrepository: %s\n") % subprefix)
 
     return err
 
