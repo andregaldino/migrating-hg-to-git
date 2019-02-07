@@ -363,7 +363,7 @@ class patchmeta(object):
         return self._ispatchinga(afile) and self._ispatchingb(bfile)
 
     def __repr__(self):
-        return "<patchmeta %s %r>" % (self.op, self.path)
+        return r"<patchmeta %s %r>" % (self.op, self.path)
 
 def readgitpatch(lr):
     """extract git-style metadata about patches from <patchname>"""
