@@ -58,6 +58,8 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
                    changes=None, stat=False, fp=None, graphwidth=0,
                    prefix='', root='', listsubrepos=False, hunksfilterfn=None):
     '''show diff or diffstat.'''
+    ctx1 = repo[node1]
+    ctx2 = repo[node2]
     if root:
         relroot = pathutil.canonpath(repo.root, repo.getcwd(), root)
     else:
@@ -78,9 +80,8 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         if not ui.plain():
             width = ui.termwidth() - graphwidth
 
-    chunks = repo[node2].diff(repo[node1], match, changes, opts=diffopts,
-                              prefix=prefix, relroot=relroot,
-                              hunksfilterfn=hunksfilterfn)
+    chunks = ctx2.diff(ctx1, match, changes, opts=diffopts, prefix=prefix,
+                       relroot=relroot, hunksfilterfn=hunksfilterfn)
 
     if fp is not None or ui.canwritewithoutlabels():
         out = fp or ui
@@ -105,8 +106,6 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
                 ui.write(chunk, label=label)
 
     if listsubrepos:
-        ctx1 = repo[node1]
-        ctx2 = repo[node2]
         for subpath, sub in scmutil.itersubrepos(ctx1, ctx2):
             tempnode2 = node2
             try:
