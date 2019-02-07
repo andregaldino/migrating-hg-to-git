@@ -15,7 +15,6 @@ import email
 import errno
 import hashlib
 import os
-import posixpath
 import re
 import shutil
 import zlib
@@ -2239,7 +2238,7 @@ diffallopts = diffutil.diffallopts
 difffeatureopts = diffutil.difffeatureopts
 
 def diff(repo, node1=None, node2=None, match=None, changes=None,
-         opts=None, losedatafn=None, prefix='', relroot='', copy=None,
+         opts=None, losedatafn=None, pathfn=None, copy=None,
          copysourcematch=None, hunksfilterfn=None):
     '''yields diff of changes to files between two nodes, or node and
     working directory.
@@ -2277,9 +2276,8 @@ def diff(repo, node1=None, node2=None, match=None, changes=None,
     ctx2 = repo[node2]
 
     for fctx1, fctx2, hdr, hunks in diffhunks(
-            repo, ctx1=ctx1, ctx2=ctx2,
-            match=match, changes=changes, opts=opts,
-            losedatafn=losedatafn, prefix=prefix, relroot=relroot, copy=copy,
+            repo, ctx1=ctx1, ctx2=ctx2, match=match, changes=changes, opts=opts,
+            losedatafn=losedatafn, pathfn=pathfn, copy=copy,
             copysourcematch=copysourcematch):
         if hunksfilterfn is not None:
             # If the file has been removed, fctx2 is None; but this should
@@ -2294,9 +2292,8 @@ def diff(repo, node1=None, node2=None, match=None, changes=None,
         if text:
             yield text
 
-def diffhunks(repo, ctx1, ctx2, match=None, changes=None,
-              opts=None, losedatafn=None, prefix='', relroot='', copy=None,
-              copysourcematch=None):
+def diffhunks(repo, ctx1, ctx2, match=None, changes=None, opts=None,
+              losedatafn=None, pathfn=None, copy=None, copysourcematch=None):
     """Yield diff of changes to files in the form of (`header`, `hunks`) tuples
     where `header` is a list of diff headers and `hunks` is an iterable of
     (`hunkrange`, `hunklines`) tuples.
@@ -2376,7 +2373,7 @@ def diffhunks(repo, ctx1, ctx2, match=None, changes=None,
 
     def difffn(opts, losedata):
         return trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
-                       copy, getfilectx, opts, losedata, prefix, relroot)
+                       copy, getfilectx, opts, losedata, pathfn)
     if opts.upgrade and not opts.git:
         try:
             def losedata(fn):
@@ -2591,16 +2588,14 @@ def _filepairs(modified, added, removed, copy, opts):
         yield f1, f2, copyop
 
 def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
-            copy, getfilectx, opts, losedatafn, prefix, relroot):
+            copy, getfilectx, opts, losedatafn, pathfn):
     '''given input data, generate a diff and yield it in blocks
 
     If generating a diff would lose data like flags or binary data and
     losedatafn is not None, it will be called.
 
-    relroot is removed and prefix is added to every path in the diff output.
-
-    If relroot is not empty, this function expects every path in modified,
-    added, removed and copy to start with it.'''
+    pathfn is applied to every path in the diff output.
+    '''
 
     def gitindex(text):
         if not text:
@@ -2628,12 +2623,8 @@ def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
 
     gitmode = {'l': '120000', 'x': '100755', '': '100644'}
 
-    if relroot != '' and (repo.ui.configbool('devel', 'all-warnings')
-                          or repo.ui.configbool('devel', 'check-relroot')):
-        for f in modified + added + removed + list(copy) + list(copy.values()):
-            if f is not None and not f.startswith(relroot):
-                raise AssertionError(
-                    "file %s doesn't start with relroot %s" % (f, relroot))
+    if not pathfn:
+        pathfn = lambda f: f
 
     for f1, f2, copyop in _filepairs(modified, added, removed, copy, opts):
         content1 = None
@@ -2670,10 +2661,8 @@ def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
                 (f1 and f2 and flag1 != flag2)):
                 losedatafn(f2 or f1)
 
-        path1 = f1 or f2
-        path2 = f2 or f1
-        path1 = posixpath.join(prefix, path1[len(relroot):])
-        path2 = posixpath.join(prefix, path2[len(relroot):])
+        path1 = pathfn(f1 or f2)
+        path2 = pathfn(f2 or f1)
         header = []
         if opts.git:
             header.append('diff --git %s%s %s%s' %

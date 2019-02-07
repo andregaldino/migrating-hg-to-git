@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import itertools
 import os
+import posixpath
 
 from .i18n import _
 from .node import (
@@ -65,6 +66,8 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
     else:
         relroot = ''
     copysourcematch = None
+    def pathfn(f):
+        return posixpath.join(prefix, f)
     if relroot != '':
         # XXX relative roots currently don't work if the root is within a
         # subrepo
@@ -79,14 +82,22 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         match = matchmod.intersectmatchers(match, relrootmatch)
         copysourcematch = relrootmatch
 
+        checkroot = (repo.ui.configbool('devel', 'all-warnings') or
+                     repo.ui.configbool('devel', 'check-relroot'))
+        def pathfn(f):
+            if checkroot and not f.startswith(relroot):
+                raise AssertionError(
+                    "file %s doesn't start with relroot %s" % (f, relroot))
+            return posixpath.join(prefix, f[len(relroot):])
+
     if stat:
         diffopts = diffopts.copy(context=0, noprefix=False)
         width = 80
         if not ui.plain():
             width = ui.termwidth() - graphwidth
 
-    chunks = ctx2.diff(ctx1, match, changes, opts=diffopts, prefix=prefix,
-                       relroot=relroot, copysourcematch=copysourcematch,
+    chunks = ctx2.diff(ctx1, match, changes, opts=diffopts, pathfn=pathfn,
+                       copysourcematch=copysourcematch,
                        hunksfilterfn=hunksfilterfn)
 
     if fp is not None or ui.canwritewithoutlabels():
