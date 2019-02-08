@@ -277,11 +277,6 @@ class basematcher(object):
     # by recursive traversal is visited.
     traversedir = None
 
-    def abs(self, f):
-        '''Convert a repo path back to path that is relative to the root of the
-        matcher.'''
-        return f
-
     def rel(self, f):
         '''Convert repo path back to path that is relative to cwd of matcher.'''
         return util.pathto(self._root, self._cwd, f)
@@ -715,7 +710,6 @@ def intersectmatchers(m1, m2):
         m.bad = m1.bad
         m.explicitdir = m1.explicitdir
         m.traversedir = m1.traversedir
-        m.abs = m1.abs
         m.rel = m1.rel
         return m
     if m2.always():
@@ -811,8 +805,6 @@ class subdirmatcher(basematcher):
     >>> m1.bad = bad
     >>> m2.bad(b'x.txt', b'No such file')
     sub/x.txt: No such file
-    >>> m2.abs(b'c.txt')
-    'sub/c.txt'
     """
 
     def __init__(self, path, matcher):
@@ -831,9 +823,6 @@ class subdirmatcher(basematcher):
 
     def bad(self, f, msg):
         self._matcher.bad(self._path + "/" + f, msg)
-
-    def abs(self, f):
-        return self._matcher.abs(self._path + "/" + f)
 
     def rel(self, f):
         return self._matcher.rel(self._path + "/" + f)
