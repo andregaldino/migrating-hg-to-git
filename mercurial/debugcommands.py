@@ -1086,6 +1086,7 @@ def debugignore(ui, repo, *files, **opts):
         ui.write("%s\n" % pycompat.byterepr(ignore))
     else:
         m = scmutil.match(repo[None], pats=files)
+        uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
         for f in m.files():
             nf = util.normpath(f)
             ignored = None
@@ -1102,16 +1103,16 @@ def debugignore(ui, repo, *files, **opts):
                             break
             if ignored:
                 if ignored == nf:
-                    ui.write(_("%s is ignored\n") % m.uipath(f))
+                    ui.write(_("%s is ignored\n") % uipathfn(f))
                 else:
                     ui.write(_("%s is ignored because of "
                                "containing folder %s\n")
-                             % (m.uipath(f), ignored))
+                             % (uipathfn(f), ignored))
                 ignorefile, lineno, line = ignoredata
                 ui.write(_("(ignore rule in %s, line %d: '%s')\n")
                          % (ignorefile, lineno, line))
             else:
-                ui.write(_("%s is not ignored\n") % m.uipath(f))
+                ui.write(_("%s is not ignored\n") % uipathfn(f))
 
 @command('debugindex', cmdutil.debugrevlogopts + cmdutil.formatteropts,
          _('-c|-m|FILE'))
