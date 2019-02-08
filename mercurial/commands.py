@@ -255,7 +255,9 @@ def addremove(ui, repo, *pats, **opts):
     if not opts.get('similarity'):
         opts['similarity'] = '100'
     matcher = scmutil.match(repo[None], pats, opts)
-    return scmutil.addremove(repo, matcher, "", opts)
+    relative = scmutil.anypats(pats, opts)
+    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=relative)
+    return scmutil.addremove(repo, matcher, "", uipathfn, opts)
 
 @command('annotate|blame',
     [('r', 'rev', '', _('annotate the specified revision'), _('REV')),

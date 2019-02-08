@@ -519,7 +519,11 @@ def perfaddremove(ui, repo, **opts):
         repo.ui.quiet = True
         matcher = scmutil.match(repo[None])
         opts[b'dry_run'] = True
-        timer(lambda: scmutil.addremove(repo, matcher, b"", opts))
+        if b'uipathfn' in getargspec(scmutil.addremove).args:
+            uipathfn = scmutil.getuipathfn(repo)
+            timer(lambda: scmutil.addremove(repo, matcher, b"", uipathfn, opts))
+        else:
+            timer(lambda: scmutil.addremove(repo, matcher, b"", opts))
     finally:
         repo.ui.quiet = oldquiet
         fm.end()

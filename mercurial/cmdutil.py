@@ -2391,7 +2391,9 @@ def commit(ui, repo, commitfunc, pats, opts):
         dsguard = dirstateguard.dirstateguard(repo, 'commit')
     with dsguard or util.nullcontextmanager():
         if dsguard:
-            if scmutil.addremove(repo, matcher, "", opts) != 0:
+            relative = scmutil.anypats(pats, opts)
+            uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=relative)
+            if scmutil.addremove(repo, matcher, "", uipathfn, opts) != 0:
                 raise error.Abort(
                     _("failed to mark all new/missing files as added/removed"))
 
@@ -2469,8 +2471,10 @@ def amend(ui, repo, old, extra, pats, opts):
         # add/remove the files to the working copy if the "addremove" option
         # was specified.
         matcher = scmutil.match(wctx, pats, opts)
+        relative = scmutil.anypats(pats, opts)
+        uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=relative)
         if (opts.get('addremove')
-            and scmutil.addremove(repo, matcher, "", opts)):
+            and scmutil.addremove(repo, matcher, "", uipathfn, opts)):
             raise error.Abort(
                 _("failed to mark all new/missing files as added/removed"))
 

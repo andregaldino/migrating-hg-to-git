@@ -763,6 +763,14 @@ def subdiruipathfn(subpath, uipathfn):
     '''Create a new uipathfn that treats the file as relative to subpath.'''
     return lambda f: uipathfn(posixpath.join(subpath, f))
 
+def anypats(pats, opts):
+    '''Checks if any patterns, including --include and --exclude were given.
+
+    Some commands (e.g. addremove) use this condition for deciding whether to
+    print absolute or relative paths.
+    '''
+    return bool(pats or opts.get('include') or opts.get('exclude'))
+
 def expandpats(pats):
     '''Expand bare globs when running on windows.
     On posix we assume it already has already been done by sh.'''
@@ -1031,7 +1039,7 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
                 repair.delayedstrip(repo.ui, repo, tostrip, operation,
                                     backup=backup)
 
-def addremove(repo, matcher, prefix, opts=None):
+def addremove(repo, matcher, prefix, uipathfn, opts=None):
     if opts is None:
         opts = {}
     m = matcher
@@ -1052,12 +1060,13 @@ def addremove(repo, matcher, prefix, opts=None):
         if opts.get('subrepos') or m.exact(subpath) or any(submatch.files()):
             sub = wctx.sub(subpath)
             subprefix = repo.wvfs.reljoin(prefix, subpath)
+            subuipathfn = subdiruipathfn(subpath, uipathfn)
             try:
-                if sub.addremove(submatch, subprefix, opts):
+                if sub.addremove(submatch, subprefix, subuipathfn, opts):
                     ret = 1
             except error.LookupError:
                 repo.ui.status(_("skipping missing subrepository: %s\n")
-                                 % m.uipath(subpath))
+                                 % uipathfn(subpath))
 
     rejected = []
     def badfn(f, msg):
@@ -1075,10 +1084,10 @@ def addremove(repo, matcher, prefix, opts=None):
     for abs in sorted(toprint):
         if repo.ui.verbose or not m.exact(abs):
             if abs in unknownset:
-                status = _('adding %s\n') % m.uipath(abs)
+                status = _('adding %s\n') % uipathfn(abs)
                 label = 'ui.addremove.added'
             else:
-                status = _('removing %s\n') % m.uipath(abs)
+                status = _('removing %s\n') % uipathfn(abs)
                 label = 'ui.addremove.removed'
             repo.ui.status(status, label=label)
 
