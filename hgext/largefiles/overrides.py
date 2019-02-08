@@ -249,11 +249,11 @@ def cmdutiladd(orig, ui, repo, matcher, prefix, uipathfn, explicitonly, **opts):
     return bad
 
 @eh.wrapfunction(cmdutil, 'remove')
-def cmdutilremove(orig, ui, repo, matcher, prefix, after, force, subrepos,
-                  dryrun):
+def cmdutilremove(orig, ui, repo, matcher, prefix, uipathfn, after, force,
+                  subrepos, dryrun):
     normalmatcher = composenormalfilematcher(matcher, repo[None].manifest())
-    result = orig(ui, repo, normalmatcher, prefix, after, force, subrepos,
-                  dryrun)
+    result = orig(ui, repo, normalmatcher, prefix, uipathfn, after, force,
+                  subrepos, dryrun)
     return removelargefiles(ui, repo, False, matcher, dryrun, after=after,
                             force=force) or result
 

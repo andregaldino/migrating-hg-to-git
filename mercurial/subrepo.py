@@ -358,7 +358,7 @@ class abstractsubrepo(object):
     def forget(self, match, prefix, dryrun, interactive):
         return ([], [])
 
-    def removefiles(self, matcher, prefix, after, force, subrepos,
+    def removefiles(self, matcher, prefix, uipathfn, after, force, subrepos,
                     dryrun, warnings):
         """remove the matched files from the subrepository and the filesystem,
         possibly by force and/or after the file has been removed from the
@@ -841,9 +841,9 @@ class hgsubrepo(abstractsubrepo):
                               True, dryrun=dryrun, interactive=interactive)
 
     @annotatesubrepoerror
-    def removefiles(self, matcher, prefix, after, force, subrepos,
+    def removefiles(self, matcher, prefix, uipathfn, after, force, subrepos,
                     dryrun, warnings):
-        return cmdutil.remove(self.ui, self._repo, matcher, prefix,
+        return cmdutil.remove(self.ui, self._repo, matcher, prefix, uipathfn,
                               after, force, subrepos, dryrun)
 
     @annotatesubrepoerror

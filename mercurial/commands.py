@@ -4717,7 +4717,8 @@ def remove(ui, repo, *pats, **opts):
 
     m = scmutil.match(repo[None], pats, opts)
     subrepos = opts.get('subrepos')
-    return cmdutil.remove(ui, repo, m, "", after, force, subrepos,
+    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=True)
+    return cmdutil.remove(ui, repo, m, "", uipathfn, after, force, subrepos,
                           dryrun=dryrun)
 
 @command('rename|move|mv',

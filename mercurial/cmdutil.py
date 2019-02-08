@@ -2192,7 +2192,8 @@ def files(ui, ctx, m, fm, fmt, subrepos):
 
     return ret
 
-def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
+def remove(ui, repo, m, prefix, uipathfn, after, force, subrepos, dryrun,
+           warnings=None):
     ret = 0
     s = repo.status(match=m, clean=True)
     modified, added, deleted, clean = s[0], s[1], s[3], s[6]
@@ -2211,16 +2212,17 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
     for subpath in subs:
         submatch = matchmod.subdirmatcher(subpath, m)
         subprefix = repo.wvfs.reljoin(prefix, subpath)
+        subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
         if subrepos or m.exact(subpath) or any(submatch.files()):
             progress.increment()
             sub = wctx.sub(subpath)
             try:
-                if sub.removefiles(submatch, subprefix, after, force, subrepos,
-                                   dryrun, warnings):
+                if sub.removefiles(submatch, subprefix, subuipathfn, after,
+                                   force, subrepos, dryrun, warnings):
                     ret = 1
             except error.LookupError:
                 warnings.append(_("skipping missing subrepository: %s\n")
-                               % m.rel(subpath))
+                               % uipathfn(subpath))
     progress.complete()
 
     # warn about failure to delete explicit files/dirs
@@ -2244,10 +2246,10 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
         if repo.wvfs.exists(f):
             if repo.wvfs.isdir(f):
                 warnings.append(_('not removing %s: no tracked files\n')
-                        % m.rel(f))
+                        % uipathfn(f))
             else:
                 warnings.append(_('not removing %s: file is untracked\n')
-                        % m.rel(f))
+                        % uipathfn(f))
         # missing files will generate a warning elsewhere
         ret = 1
     progress.complete()
@@ -2263,7 +2265,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
             progress.increment()
             if ui.verbose or (f in files):
                 warnings.append(_('not removing %s: file still exists\n')
-                                % m.rel(f))
+                                % uipathfn(f))
             ret = 1
         progress.complete()
     else:
@@ -2274,12 +2276,12 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
         for f in modified:
             progress.increment()
             warnings.append(_('not removing %s: file is modified (use -f'
-                      ' to force removal)\n') % m.rel(f))
+                      ' to force removal)\n') % uipathfn(f))
             ret = 1
         for f in added:
             progress.increment()
             warnings.append(_("not removing %s: file has been marked for add"
-                      " (use 'hg forget' to undo add)\n") % m.rel(f))
+                      " (use 'hg forget' to undo add)\n") % uipathfn(f))
             ret = 1
         progress.complete()
 
@@ -2289,7 +2291,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
     for f in list:
         if ui.verbose or not m.exact(f):
             progress.increment()
-            ui.status(_('removing %s\n') % m.rel(f),
+            ui.status(_('removing %s\n') % uipathfn(f),
                       label='ui.addremove.removed')
     progress.complete()
 
