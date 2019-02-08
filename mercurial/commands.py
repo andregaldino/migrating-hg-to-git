@@ -407,12 +407,13 @@ def annotate(ui, repo, *pats, **opts):
     if skiprevs:
         skiprevs = scmutil.revrange(repo, skiprevs)
 
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     for abs in ctx.walk(m):
         fctx = ctx[abs]
         rootfm.startitem()
         rootfm.data(path=abs)
         if not opts.get('text') and fctx.isbinary():
-            rootfm.plain(_("%s: binary file\n") % m.rel(abs))
+            rootfm.plain(_("%s: binary file\n") % uipathfn(abs))
             continue
 
         fm = rootfm.nested('lines', tmpl='{rev}: {line}')
