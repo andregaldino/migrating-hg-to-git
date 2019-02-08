@@ -1364,19 +1364,6 @@ class workingctx(committablectx):
                     self._repo.dirstate.drop(f)
             return rejected
 
-    def undelete(self, list):
-        pctxs = self.parents()
-        with self._repo.wlock():
-            ds = self._repo.dirstate
-            for f in list:
-                if self._repo.dirstate[f] != 'r':
-                    self._repo.ui.warn(_("%s not removed!\n") % ds.pathto(f))
-                else:
-                    fctx = f in pctxs[0] and pctxs[0][f] or pctxs[1][f]
-                    t = fctx.data()
-                    self._repo.wwrite(f, t, fctx.flags())
-                    self._repo.dirstate.normal(f)
-
     def copy(self, source, dest):
         try:
             st = self._repo.wvfs.lstat(dest)
