@@ -170,7 +170,7 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
     if patterns:
         kindpats = normalize(patterns, default, root, cwd, auditor, warn)
         if _kindpatsalwaysmatch(kindpats):
-            m = alwaysmatcher(root, cwd, badfn, relativeuipath=True)
+            m = alwaysmatcher(root, cwd, badfn)
         else:
             m = _buildkindpatsmatcher(patternmatcher, root, cwd, kindpats,
                                       ctx=ctx, listsubrepos=listsubrepos,
@@ -252,12 +252,11 @@ def _donormalize(patterns, default, root, cwd, auditor, warn):
 
 class basematcher(object):
 
-    def __init__(self, root, cwd, badfn=None, relativeuipath=True):
+    def __init__(self, root, cwd, badfn=None):
         self._root = root
         self._cwd = cwd
         if badfn is not None:
             self.bad = badfn
-        self._relativeuipath = relativeuipath
 
     def __call__(self, fn):
         return self.matchfn(fn)
@@ -286,12 +285,6 @@ class basematcher(object):
     def rel(self, f):
         '''Convert repo path back to path that is relative to cwd of matcher.'''
         return util.pathto(self._root, self._cwd, f)
-
-    def uipath(self, f):
-        '''Convert repo path to a display path.  If patterns or -I/-X were used
-        to create this matcher, the display path will be relative to cwd.
-        Otherwise it is relative to the root of the repo.'''
-        return (self._relativeuipath and self.rel(f)) or self.abs(f)
 
     @propertycache
     def _files(self):
@@ -393,9 +386,8 @@ class basematcher(object):
 class alwaysmatcher(basematcher):
     '''Matches everything.'''
 
-    def __init__(self, root, cwd, badfn=None, relativeuipath=False):
-        super(alwaysmatcher, self).__init__(root, cwd, badfn,
-                                            relativeuipath=relativeuipath)
+    def __init__(self, root, cwd, badfn=None):
+        super(alwaysmatcher, self).__init__(root, cwd, badfn)
 
     def always(self):
         return True
@@ -725,11 +717,9 @@ def intersectmatchers(m1, m2):
         m.traversedir = m1.traversedir
         m.abs = m1.abs
         m.rel = m1.rel
-        m._relativeuipath |= m1._relativeuipath
         return m
     if m2.always():
         m = copy.copy(m1)
-        m._relativeuipath |= m2._relativeuipath
         return m
     return intersectionmatcher(m1, m2)
 
@@ -847,9 +837,6 @@ class subdirmatcher(basematcher):
 
     def rel(self, f):
         return self._matcher.rel(self._path + "/" + f)
-
-    def uipath(self, f):
-        return self._matcher.uipath(self._path + "/" + f)
 
     def matchfn(self, f):
         # Some information is lost in the superclass's constructor, so we
