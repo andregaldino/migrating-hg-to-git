@@ -78,7 +78,7 @@ def composenormalfilematcher(match, manifest, exclude=None):
     m.matchfn = lambda f: notlfile(f) and origmatchfn(f)
     return m
 
-def addlargefiles(ui, repo, isaddremove, matcher, **opts):
+def addlargefiles(ui, repo, isaddremove, matcher, uipathfn, **opts):
     large = opts.get(r'large')
     lfsize = lfutil.getminsize(
         ui, lfutil.islfilesrepo(repo), opts.get(r'lfsize'))
@@ -99,17 +99,11 @@ def addlargefiles(ui, repo, isaddremove, matcher, **opts):
         nfile = f in wctx
         exists = lfile or nfile
 
-        # addremove in core gets fancy with the name, add doesn't
-        if isaddremove:
-            name = m.uipath(f)
-        else:
-            name = m.rel(f)
-
         # Don't warn the user when they attempt to add a normal tracked file.
         # The normal add code will do that for us.
         if exact and exists:
             if lfile:
-                ui.warn(_('%s already a largefile\n') % name)
+                ui.warn(_('%s already a largefile\n') % uipathfn(f))
             continue
 
         if (exact or not exists) and not lfutil.isstandin(f):
@@ -123,7 +117,7 @@ def addlargefiles(ui, repo, isaddremove, matcher, **opts):
             if large or abovemin or (lfmatcher and lfmatcher(f)):
                 lfnames.append(f)
                 if ui.verbose or not exact:
-                    ui.status(_('adding %s as a largefile\n') % name)
+                    ui.status(_('adding %s as a largefile\n') % uipathfn(f))
 
     bad = []
 
@@ -150,7 +144,7 @@ def addlargefiles(ui, repo, isaddremove, matcher, **opts):
         added = [f for f in lfnames if f not in bad]
     return added, bad
 
-def removelargefiles(ui, repo, isaddremove, matcher, dryrun, **opts):
+def removelargefiles(ui, repo, isaddremove, matcher, uipathfn, dryrun, **opts):
     after = opts.get(r'after')
     m = composelargefilematcher(matcher, repo[None].manifest())
     try:
@@ -166,7 +160,7 @@ def removelargefiles(ui, repo, isaddremove, matcher, dryrun, **opts):
 
     def warn(files, msg):
         for f in files:
-            ui.warn(msg % m.rel(f))
+            ui.warn(msg % uipathfn(f))
         return int(len(files) > 0)
 
     if after:
@@ -186,12 +180,7 @@ def removelargefiles(ui, repo, isaddremove, matcher, dryrun, **opts):
         lfdirstate = lfutil.openlfdirstate(ui, repo)
         for f in sorted(remove):
             if ui.verbose or not m.exact(f):
-                # addremove in core gets fancy with the name, remove doesn't
-                if isaddremove:
-                    name = m.uipath(f)
-                else:
-                    name = m.rel(f)
-                ui.status(_('removing %s\n') % name)
+                ui.status(_('removing %s\n') % uipathfn(f))
 
             if not dryrun:
                 if not after:
@@ -240,7 +229,7 @@ def cmdutiladd(orig, ui, repo, matcher, prefix, uipathfn, explicitonly, **opts):
     if opts.get(r'normal'):
         return orig(ui, repo, matcher, prefix, uipathfn, explicitonly, **opts)
 
-    ladded, lbad = addlargefiles(ui, repo, False, matcher, **opts)
+    ladded, lbad = addlargefiles(ui, repo, False, matcher, uipathfn, **opts)
     normalmatcher = composenormalfilematcher(matcher, repo[None].manifest(),
                                              ladded)
     bad = orig(ui, repo, normalmatcher, prefix, uipathfn, explicitonly, **opts)
@@ -254,8 +243,8 @@ def cmdutilremove(orig, ui, repo, matcher, prefix, uipathfn, after, force,
     normalmatcher = composenormalfilematcher(matcher, repo[None].manifest())
     result = orig(ui, repo, normalmatcher, prefix, uipathfn, after, force,
                   subrepos, dryrun)
-    return removelargefiles(ui, repo, False, matcher, dryrun, after=after,
-                            force=force) or result
+    return removelargefiles(ui, repo, False, matcher, uipathfn, dryrun,
+                            after=after, force=force) or result
 
 @eh.wrapfunction(subrepo.hgsubrepo, 'status')
 def overridestatusfn(orig, repo, rev2, **opts):
@@ -1250,11 +1239,11 @@ def scmutiladdremove(orig, repo, matcher, prefix, uipathfn, opts=None):
         matchfn = m.matchfn
         m.matchfn = lambda f: f in s.deleted and matchfn(f)
 
-        removelargefiles(repo.ui, repo, True, m, opts.get('dry_run'),
+        removelargefiles(repo.ui, repo, True, m, uipathfn, opts.get('dry_run'),
                          **pycompat.strkwargs(opts))
     # Call into the normal add code, and any files that *should* be added as
     # largefiles will be
-    added, bad = addlargefiles(repo.ui, repo, True, matcher,
+    added, bad = addlargefiles(repo.ui, repo, True, matcher, uipathfn,
                                **pycompat.strkwargs(opts))
     # Now that we've handled largefiles, hand off to the original addremove
     # function to take care of the rest.  Make sure it doesn't do anything with
