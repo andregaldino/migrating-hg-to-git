@@ -802,8 +802,9 @@ def matchandpats(ctx, pats=(), opts=None, globbed=False, default='relpath',
     if not globbed and default == 'relpath':
         pats = expandpats(pats or [])
 
+    uipathfn = getuipathfn(ctx.repo(), legacyrelativevalue=True)
     def bad(f, msg):
-        ctx.repo().ui.warn("%s: %s\n" % (m.rel(f), msg))
+        ctx.repo().ui.warn("%s: %s\n" % (uipathfn(f), msg))
 
     if badfn is None:
         badfn = bad
