@@ -2028,7 +2028,6 @@ def walkchangerevs(repo, match, opts, prepare):
     return iterate()
 
 def add(ui, repo, match, prefix, explicitonly, **opts):
-    join = lambda f: os.path.join(prefix, f)
     bad = []
 
     badfn = lambda x, y: bad.append(x) or match.bad(x, y)
@@ -2066,7 +2065,7 @@ def add(ui, repo, match, prefix, explicitonly, **opts):
                 bad.extend(sub.add(ui, submatch, subprefix, True, **opts))
         except error.LookupError:
             ui.status(_("skipping missing subrepository: %s\n")
-                           % join(subpath))
+                           % match.rel(subpath))
 
     if not opts.get(r'dry_run'):
         rejected = wctx.add(names, prefix)
@@ -2085,7 +2084,6 @@ def addwebdirpath(repo, serverpath, webconf):
 def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
     if dryrun and interactive:
         raise error.Abort(_("cannot specify both --dry-run and --interactive"))
-    join = lambda f: os.path.join(prefix, f)
     bad = []
     badfn = lambda x, y: bad.append(x) or match.bad(x, y)
     wctx = repo[None]
@@ -2107,7 +2105,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
             forgot.extend([subpath + '/' + f for f in subforgot])
         except error.LookupError:
             ui.status(_("skipping missing subrepository: %s\n")
-                           % join(subpath))
+                           % match.rel(subpath))
 
     if not explicitonly:
         for f in match.files():
@@ -2187,12 +2185,11 @@ def files(ui, ctx, m, fm, fmt, subrepos):
                     ret = 0
             except error.LookupError:
                 ui.status(_("skipping missing subrepository: %s\n")
-                               % m.abs(subpath))
+                               % m.rel(subpath))
 
     return ret
 
 def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
-    join = lambda f: os.path.join(prefix, f)
     ret = 0
     s = repo.status(match=m, clean=True)
     modified, added, deleted, clean = s[0], s[1], s[3], s[6]
@@ -2220,7 +2217,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                     ret = 1
             except error.LookupError:
                 warnings.append(_("skipping missing subrepository: %s\n")
-                               % join(subpath))
+                               % m.rel(subpath))
     progress.complete()
 
     # warn about failure to delete explicit files/dirs
@@ -2364,12 +2361,13 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         sub = ctx.sub(subpath)
         try:
             submatch = matchmod.subdirmatcher(subpath, matcher)
-            subprefix = os.path.join(prefix, sub._path)
+            subprefix = os.path.join(prefix, subpath)
             if not sub.cat(submatch, basefm, fntemplate, subprefix,
                            **pycompat.strkwargs(opts)):
                 err = 0
         except error.RepoLookupError:
-            ui.status(_("skipping missing subrepository: %s\n") % subprefix)
+            ui.status(_("skipping missing subrepository: %s\n") %
+                      matcher.rel(subpath))
 
     return err
 

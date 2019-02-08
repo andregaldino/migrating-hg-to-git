@@ -1040,7 +1040,6 @@ def addremove(repo, matcher, prefix, opts=None):
     similarity /= 100.0
 
     ret = 0
-    join = lambda f: os.path.join(prefix, f)
 
     wctx = repo[None]
     for subpath in sorted(wctx.substate):
@@ -1053,7 +1052,7 @@ def addremove(repo, matcher, prefix, opts=None):
                     ret = 1
             except error.LookupError:
                 repo.ui.status(_("skipping missing subrepository: %s\n")
-                                 % join(subpath))
+                                 % m.uipath(subpath))
 
     rejected = []
     def badfn(f, msg):
