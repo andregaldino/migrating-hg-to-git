@@ -2020,7 +2020,7 @@ def debugrename(ui, repo, file1, *pats, **opts):
     for abs in ctx.walk(m):
         fctx = ctx[abs]
         o = fctx.filelog().renamed(fctx.filenode())
-        rel = m.rel(abs)
+        rel = repo.pathto(abs)
         if o:
             ui.write(_("%s renamed from %s:%s\n") % (rel, o[0], hex(o[1])))
         else:
@@ -2796,9 +2796,9 @@ def debugwalk(ui, repo, *pats, **opts):
         f = lambda fn: util.normpath(fn)
     fmt = 'f  %%-%ds  %%-%ds  %%s' % (
         max([len(abs) for abs in items]),
-        max([len(m.rel(abs)) for abs in items]))
+        max([len(repo.pathto(abs)) for abs in items]))
     for abs in items:
-        line = fmt % (abs, f(m.rel(abs)), m.exact(abs) and 'exact' or '')
+        line = fmt % (abs, f(repo.pathto(abs)), m.exact(abs) and 'exact' or '')
         ui.write("%s\n" % line.rstrip())
 
 @command('debugwhyunstable', [], _('REV'))
