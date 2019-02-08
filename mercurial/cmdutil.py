@@ -2193,7 +2193,7 @@ def files(ui, ctx, m, fm, fmt, subrepos):
                     ret = 0
             except error.LookupError:
                 ui.status(_("skipping missing subrepository: %s\n")
-                               % m.rel(subpath))
+                               % uipathfn(subpath))
 
     return ret
 
@@ -2825,7 +2825,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                 for f in names:
                     if f.startswith(path_):
                         return
-                ui.warn("%s: %s\n" % (m.rel(path), msg))
+                ui.warn("%s: %s\n" % (uipathfn(path), msg))
 
             for abs in ctx.walk(matchmod.badmatch(m, badfn)):
                 if abs not in names:
