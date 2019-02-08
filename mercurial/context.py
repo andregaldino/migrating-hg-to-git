@@ -1355,13 +1355,13 @@ class workingctx(committablectx):
             uipath = lambda f: ds.pathto(pathutil.join(prefix, f))
             rejected = []
             for f in files:
-                if f not in self._repo.dirstate:
+                if f not in ds:
                     self._repo.ui.warn(_("%s not tracked!\n") % uipath(f))
                     rejected.append(f)
-                elif self._repo.dirstate[f] != 'a':
-                    self._repo.dirstate.remove(f)
+                elif ds[f] != 'a':
+                    ds.remove(f)
                 else:
-                    self._repo.dirstate.drop(f)
+                    ds.drop(f)
             return rejected
 
     def copy(self, source, dest):
@@ -1379,11 +1379,12 @@ class workingctx(committablectx):
                                % self._repo.dirstate.pathto(dest))
         else:
             with self._repo.wlock():
-                if self._repo.dirstate[dest] in '?':
-                    self._repo.dirstate.add(dest)
-                elif self._repo.dirstate[dest] in 'r':
-                    self._repo.dirstate.normallookup(dest)
-                self._repo.dirstate.copy(source, dest)
+                ds = self._repo.dirstate
+                if ds[dest] in '?':
+                    ds.add(dest)
+                elif ds[dest] in 'r':
+                    ds.normallookup(dest)
+                ds.copy(source, dest)
 
     def match(self, pats=None, include=None, exclude=None, default='glob',
               listsubrepos=False, badfn=None):
