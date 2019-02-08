@@ -2367,6 +2367,7 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         write(abs)
         err = 0
 
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     for subpath in sorted(ctx.substate):
         sub = ctx.sub(subpath)
         try:
@@ -2377,7 +2378,7 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
                 err = 0
         except error.RepoLookupError:
             ui.status(_("skipping missing subrepository: %s\n") %
-                      matcher.rel(subpath))
+                      uipathfn(subpath))
 
     return err
 
