@@ -1624,7 +1624,7 @@ class gitsubrepo(abstractsubrepo):
                 self._gitcommand(command + [f])
 
         for f in rejected:
-            ui.warn(_("%s already tracked!\n") % match.abs(f))
+            ui.warn(_("%s already tracked!\n") % match.rel(f))
 
         return rejected
 
