@@ -73,12 +73,13 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
     if relroot != '':
         # XXX relative roots currently don't work if the root is within a
         # subrepo
-        uirelroot = match.uipath(relroot)
+        uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
+        uirelroot = uipathfn(pathfn(relroot))
         relroot += '/'
         for matchroot in match.files():
             if not matchroot.startswith(relroot):
-                ui.warn(_('warning: %s not inside relative root %s\n') % (
-                    match.uipath(matchroot), uirelroot))
+                ui.warn(_('warning: %s not inside relative root %s\n') %
+                        (uipathfn(pathfn(matchroot)), uirelroot))
 
         relrootmatch = scmutil.match(ctx2, pats=[relroot], default='path')
         match = matchmod.intersectmatchers(match, relrootmatch)
