@@ -355,7 +355,7 @@ class abstractsubrepo(object):
         matched by the match function
         '''
 
-    def forget(self, match, prefix, dryrun, interactive):
+    def forget(self, match, prefix, uipathfn, dryrun, interactive):
         return ([], [])
 
     def removefiles(self, matcher, prefix, uipathfn, after, force, subrepos,
@@ -836,8 +836,8 @@ class hgsubrepo(abstractsubrepo):
         return ctx.walk(match)
 
     @annotatesubrepoerror
-    def forget(self, match, prefix, dryrun, interactive):
-        return cmdutil.forget(self.ui, self._repo, match, prefix,
+    def forget(self, match, prefix, uipathfn, dryrun, interactive):
+        return cmdutil.forget(self.ui, self._repo, match, prefix, uipathfn,
                               True, dryrun=dryrun, interactive=interactive)
 
     @annotatesubrepoerror

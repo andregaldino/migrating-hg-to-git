@@ -1078,11 +1078,11 @@ def postcommitstatus(orig, repo, *args, **kwargs):
         repo.lfstatus = False
 
 @eh.wrapfunction(cmdutil, 'forget')
-def cmdutilforget(orig, ui, repo, match, prefix, explicitonly, dryrun,
+def cmdutilforget(orig, ui, repo, match, prefix, uipathfn, explicitonly, dryrun,
                   interactive):
     normalmatcher = composenormalfilematcher(match, repo[None].manifest())
-    bad, forgot = orig(ui, repo, normalmatcher, prefix, explicitonly, dryrun,
-                       interactive)
+    bad, forgot = orig(ui, repo, normalmatcher, prefix, uipathfn, explicitonly,
+                       dryrun, interactive)
     m = composelargefilematcher(match, repo[None].manifest())
 
     try:
@@ -1098,12 +1098,12 @@ def cmdutilforget(orig, ui, repo, match, prefix, explicitonly, dryrun,
         fstandin = lfutil.standin(f)
         if fstandin not in repo.dirstate and not repo.wvfs.isdir(fstandin):
             ui.warn(_('not removing %s: file is already untracked\n')
-                    % m.rel(f))
+                    % uipathfn(f))
             bad.append(f)
 
     for f in forget:
         if ui.verbose or not m.exact(f):
-            ui.status(_('removing %s\n') % m.rel(f))
+            ui.status(_('removing %s\n') % uipathfn(f))
 
     # Need to lock because standin files are deleted then removed from the
     # repository and we could race in-between.

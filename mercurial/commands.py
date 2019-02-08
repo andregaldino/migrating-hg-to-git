@@ -2258,7 +2258,8 @@ def forget(ui, repo, *pats, **opts):
 
     m = scmutil.match(repo[None], pats, opts)
     dryrun, interactive = opts.get('dry_run'), opts.get('interactive')
-    rejected = cmdutil.forget(ui, repo, m, prefix="",
+    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=True)
+    rejected = cmdutil.forget(ui, repo, m, prefix="", uipathfn=uipathfn,
                               explicitonly=False, dryrun=dryrun,
                               interactive=interactive)[0]
     return rejected and 1 or 0

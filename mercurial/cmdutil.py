@@ -2084,7 +2084,8 @@ def addwebdirpath(repo, serverpath, webconf):
         for subpath in ctx.substate:
             ctx.sub(subpath).addwebdirpath(serverpath, webconf)
 
-def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
+def forget(ui, repo, match, prefix, uipathfn, explicitonly, dryrun,
+           interactive):
     if dryrun and interactive:
         raise error.Abort(_("cannot specify both --dry-run and --interactive"))
     bad = []
@@ -2101,14 +2102,16 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
         sub = wctx.sub(subpath)
         submatch = matchmod.subdirmatcher(subpath, match)
         subprefix = repo.wvfs.reljoin(prefix, subpath)
+        subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
         try:
-            subbad, subforgot = sub.forget(submatch, subprefix, dryrun=dryrun,
+            subbad, subforgot = sub.forget(submatch, subprefix, subuipathfn,
+                                           dryrun=dryrun,
                                            interactive=interactive)
             bad.extend([subpath + '/' + f for f in subbad])
             forgot.extend([subpath + '/' + f for f in subforgot])
         except error.LookupError:
             ui.status(_("skipping missing subrepository: %s\n")
-                           % match.rel(subpath))
+                           % uipathfn(subpath))
 
     if not explicitonly:
         for f in match.files():
@@ -2123,7 +2126,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
                             continue
                         ui.warn(_('not removing %s: '
                                   'file is already untracked\n')
-                                % match.rel(f))
+                                % uipathfn(f))
                     bad.append(f)
 
     if interactive:
@@ -2154,7 +2157,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
 
     for f in forget:
         if ui.verbose or not match.exact(f) or interactive:
-            ui.status(_('removing %s\n') % match.rel(f),
+            ui.status(_('removing %s\n') % uipathfn(f),
                       label='ui.addremove.removed')
 
     if not dryrun:
