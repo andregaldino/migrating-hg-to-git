@@ -1092,7 +1092,7 @@ def addremove(repo, matcher, prefix, uipathfn, opts=None):
             repo.ui.status(status, label=label)
 
     renames = _findrenames(repo, m, added + unknown, removed + deleted,
-                           similarity)
+                           similarity, uipathfn)
 
     if not dry_run:
         _markchanges(repo, unknown + forgotten, deleted, renames)
@@ -1121,8 +1121,12 @@ def marktouched(repo, files, similarity=0.0):
                 status = _('removing %s\n') % abs
             repo.ui.status(status)
 
+    # TODO: We should probably have the caller pass in uipathfn and apply it to
+    # the messages above too. forcerelativevalue=True is consistent with how
+    # it used to work.
+    uipathfn = getuipathfn(repo, forcerelativevalue=True)
     renames = _findrenames(repo, m, added + unknown, removed + deleted,
-                           similarity)
+                           similarity, uipathfn)
 
     _markchanges(repo, unknown + forgotten, deleted, renames)
 
@@ -1161,7 +1165,7 @@ def _interestingfiles(repo, matcher):
 
     return added, unknown, deleted, removed, forgotten
 
-def _findrenames(repo, matcher, added, removed, similarity):
+def _findrenames(repo, matcher, added, removed, similarity, uipathfn):
     '''Find renames from removed files to added ones.'''
     renames = {}
     if similarity > 0:
@@ -1171,7 +1175,7 @@ def _findrenames(repo, matcher, added, removed, similarity):
                 or not matcher.exact(new)):
                 repo.ui.status(_('recording removal of %s as rename to %s '
                                  '(%d%% similar)\n') %
-                               (matcher.rel(old), matcher.rel(new),
+                               (uipathfn(old), uipathfn(new),
                                 score * 100))
             renames[new] = old
     return renames
