@@ -1135,6 +1135,7 @@ def copy(ui, repo, pats, opts, rename=False):
     dryrun = opts.get("dry_run")
     wctx = repo[None]
 
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     def walkpat(pat):
         srcs = []
         if after:
@@ -1144,7 +1145,7 @@ def copy(ui, repo, pats, opts, rename=False):
         m = scmutil.match(wctx, [pat], opts, globbed=True)
         for abs in wctx.walk(m):
             state = repo.dirstate[abs]
-            rel = m.rel(abs)
+            rel = uipathfn(abs)
             exact = m.exact(abs)
             if state in badstates:
                 if exact and state == '?':

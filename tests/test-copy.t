@@ -118,6 +118,23 @@ should fail - foo is not managed
   [255]
   $ hg st -A
   ? foo
+respects ui.relative-paths
+  $ mkdir dir
+  $ cd dir
+  $ hg mv ../foo ../bar
+  ../foo: not copying - file is not managed
+  abort: no files to copy
+  [255]
+  $ hg mv ../foo ../bar --config ui.relative-paths=yes
+  ../foo: not copying - file is not managed
+  abort: no files to copy
+  [255]
+  $ hg mv ../foo ../bar --config ui.relative-paths=no
+  foo: not copying - file is not managed
+  abort: no files to copy
+  [255]
+  $ cd ..
+  $ rmdir dir
   $ hg add foo
 dry-run; print a warning that this is not a real copy; foo is added
   $ hg mv --dry-run foo bar
