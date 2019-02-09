@@ -185,8 +185,7 @@ class IncludeMatcherTests(unittest.TestCase):
 class ExactMatcherTests(unittest.TestCase):
 
     def testVisitdir(self):
-        m = matchmod.match(b'x', b'', patterns=[b'dir/subdir/foo.txt'],
-                           exact=True)
+        m = matchmod.exact(b'x', b'', files=[b'dir/subdir/foo.txt'])
         assert isinstance(m, matchmod.exactmatcher)
         self.assertTrue(m.visitdir(b'.'))
         self.assertTrue(m.visitdir(b'dir'))
@@ -197,8 +196,7 @@ class ExactMatcherTests(unittest.TestCase):
         self.assertFalse(m.visitdir(b'folder'))
 
     def testVisitchildrenset(self):
-        m = matchmod.match(b'x', b'', patterns=[b'dir/subdir/foo.txt'],
-                           exact=True)
+        m = matchmod.exact(b'x', b'', files=[b'dir/subdir/foo.txt'])
         assert isinstance(m, matchmod.exactmatcher)
         self.assertEqual(m.visitchildrenset(b'.'), {b'dir'})
         self.assertEqual(m.visitchildrenset(b'dir'), {b'subdir'})
@@ -208,12 +206,11 @@ class ExactMatcherTests(unittest.TestCase):
         self.assertEqual(m.visitchildrenset(b'folder'), set())
 
     def testVisitchildrensetFilesAndDirs(self):
-        m = matchmod.match(b'x', b'', patterns=[b'rootfile.txt',
-                                                b'a/file1.txt',
-                                                b'a/b/file2.txt',
-                                                # no file in a/b/c
-                                                b'a/b/c/d/file4.txt'],
-                           exact=True)
+        m = matchmod.exact(b'x', b'', files=[b'rootfile.txt',
+                                             b'a/file1.txt',
+                                             b'a/b/file2.txt',
+                                             # no file in a/b/c
+                                             b'a/b/c/d/file4.txt'])
         assert isinstance(m, matchmod.exactmatcher)
         self.assertEqual(m.visitchildrenset(b'.'), {b'a', b'rootfile.txt'})
         self.assertEqual(m.visitchildrenset(b'a'), {b'b', b'file1.txt'})
