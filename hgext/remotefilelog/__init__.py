@@ -902,8 +902,7 @@ def log(orig, ui, repo, *pats, **opts):
         # If this is a non-follow log without any revs specified, recommend that
         # the user add -f to speed it up.
         if not follow and not revs:
-            match, pats = scmutil.matchandpats(repo['.'], pats,
-                                               pycompat.byteskwargs(opts))
+            match = scmutil.match(repo['.'], pats, pycompat.byteskwargs(opts))
             isfile = not match.anypats()
             if isfile:
                 for file in match.files():
