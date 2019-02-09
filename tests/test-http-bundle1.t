@@ -151,7 +151,7 @@ pull
   $ cd copy-pull
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
-  > changegroup = sh -c "printenv.py changegroup"
+  > changegroup = sh -c "printenv.py --line changegroup"
   > EOF
   $ hg pull
   pulling from http://localhost:$HGPORT1/
@@ -161,7 +161,14 @@ pull
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets 5fed3813f7f5
-  changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=5fed3813f7f5e1824344fdc9cf8f63bb662c292d HG_NODE_LAST=5fed3813f7f5e1824344fdc9cf8f63bb662c292d HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=http://localhost:$HGPORT1/
+  changegroup hook: HG_HOOKNAME=changegroup
+  HG_HOOKTYPE=changegroup
+  HG_NODE=5fed3813f7f5e1824344fdc9cf8f63bb662c292d
+  HG_NODE_LAST=5fed3813f7f5e1824344fdc9cf8f63bb662c292d
+  HG_SOURCE=pull
+  HG_TXNID=TXN:$ID$
+  HG_URL=http://localhost:$HGPORT1/
+  
   (run 'hg update' to get a working copy)
   $ cd ..
 
