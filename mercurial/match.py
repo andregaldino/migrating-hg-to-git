@@ -115,7 +115,7 @@ def _buildkindpatsmatcher(matchercls, root, cwd, kindpats, ctx=None,
     return unionmatcher(matchers)
 
 def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
-          exact=False, auditor=None, ctx=None, listsubrepos=False, warn=None,
+          auditor=None, ctx=None, listsubrepos=False, warn=None,
           badfn=None, icasefs=False):
     """build an object to match a set of file patterns
 
@@ -126,7 +126,6 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
     include - patterns to include (unless they are excluded)
     exclude - patterns to exclude (even if they are included)
     default - if a pattern in patterns has no explicit type, assume this one
-    exact - patterns are actually filenames (include/exclude still apply)
     warn - optional function used for printing warnings
     badfn - optional bad() callback for this matcher instead of the default
     icasefs - make a matcher for wdir on case insensitive filesystems, which
@@ -150,9 +149,6 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
     """
     normalize = _donormalize
     if icasefs:
-        if exact:
-            raise error.ProgrammingError("a case-insensitive exact matcher "
-                                         "doesn't make sense")
         dirstate = ctx.repo().dirstate
         dsnormalize = dirstate.normalize
 
@@ -171,9 +167,7 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
                 kindpats.append((kind, pats, source))
             return kindpats
 
-    if exact:
-        m = exactmatcher(root, cwd, patterns, badfn)
-    elif patterns:
+    if patterns:
         kindpats = normalize(patterns, default, root, cwd, auditor, warn)
         if _kindpatsalwaysmatch(kindpats):
             m = alwaysmatcher(root, cwd, badfn, relativeuipath=True)
