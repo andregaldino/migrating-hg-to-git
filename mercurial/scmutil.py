@@ -795,8 +795,6 @@ def matchandpats(ctx, pats=(), opts=None, globbed=False, default='relpath',
     '''Return a matcher and the patterns that were used.
     The matcher will warn about bad matches, unless an alternate badfn callback
     is provided.'''
-    if pats == ("",):
-        pats = []
     if opts is None:
         opts = {}
     if not globbed and default == 'relpath':
