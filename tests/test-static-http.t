@@ -57,7 +57,7 @@ check for HTTP opener failures when cachefile does not exist
   $ cd ../local
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
-  > changegroup = sh -c "printenv.py changegroup"
+  > changegroup = sh -c "printenv.py --line changegroup"
   > EOF
   $ hg pull
   pulling from static-http://localhost:$HGPORT/remote
@@ -67,7 +67,14 @@ check for HTTP opener failures when cachefile does not exist
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets 4ac2e3648604
-  changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=4ac2e3648604439c580c69b09ec9d93a88d93432 HG_NODE_LAST=4ac2e3648604439c580c69b09ec9d93a88d93432 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=http://localhost:$HGPORT/remote
+  changegroup hook: HG_HOOKNAME=changegroup
+  HG_HOOKTYPE=changegroup
+  HG_NODE=4ac2e3648604439c580c69b09ec9d93a88d93432
+  HG_NODE_LAST=4ac2e3648604439c580c69b09ec9d93a88d93432
+  HG_SOURCE=pull
+  HG_TXNID=TXN:$ID$
+  HG_URL=http://localhost:$HGPORT/remote
+  
   (run 'hg update' to get a working copy)
 
 trying to push
