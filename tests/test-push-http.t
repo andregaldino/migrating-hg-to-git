@@ -101,6 +101,8 @@ expect success
   remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob)
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   % serve errors
@@ -128,6 +130,8 @@ expect success
   remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob)
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   % serve errors
@@ -159,6 +163,7 @@ expect success
   remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   % serve errors
@@ -187,6 +192,8 @@ expect success, server lacks the httpheader capability
   remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob) (no-bundle2 !)
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   % serve errors
@@ -214,6 +221,8 @@ expect success, server lacks the unbundlehash capability
   remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob) (no-bundle2 !)
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   % serve errors
@@ -253,6 +262,8 @@ has no parameter
   remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob) (no-bundle2 !)
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   % serve errors
@@ -312,6 +323,7 @@ and fails the entire push.
   remote: HG_PHASES_MOVED=1
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   remote: pushkey-abort: prepushkey hook exited with status 1
@@ -353,6 +365,7 @@ We don't need to test bundle1 because it succeeded above.
   remote: HG_PHASES_MOVED=1
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   % serve errors
@@ -411,6 +424,7 @@ Now do a variant of the above, except on a non-publishing repository
   remote: HG_PHASES_MOVED=1
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   remote: pushkey-abort: prepushkey hook exited with status 1
@@ -465,6 +479,7 @@ Make phases updates work
   remote: HG_PHASES_MOVED=1
   remote: HG_SOURCE=serve
   remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
   % serve errors

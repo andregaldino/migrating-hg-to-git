@@ -252,6 +252,8 @@ test generic hooks
   HG_HOOKTYPE=prechangegroup
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/a (glob)
   HG_URL=file:$TESTTMP/a
   
   adding changesets
@@ -265,6 +267,8 @@ test generic hooks
   HG_NODE_LAST=07f3376c1e655977439df2a814e3cc14b27abac2
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/a (glob)
   HG_URL=file:$TESTTMP/a
   
   incoming hook: HG_HOOKNAME=incoming
@@ -272,6 +276,8 @@ test generic hooks
   HG_NODE=ab228980c14deea8b9555d91c9581127383e40fd
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/a (glob)
   HG_URL=file:$TESTTMP/a
   
   incoming hook: HG_HOOKNAME=incoming
@@ -279,6 +285,8 @@ test generic hooks
   HG_NODE=ee9deb46ab31e4cc3310f3cf0c3d668e4d8fffc2
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/a (glob)
   HG_URL=file:$TESTTMP/a
   
   incoming hook: HG_HOOKNAME=incoming
@@ -286,6 +294,8 @@ test generic hooks
   HG_NODE=07f3376c1e655977439df2a814e3cc14b27abac2
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/a (glob)
   HG_URL=file:$TESTTMP/a
   
   (run 'hg update' to get a working copy)
@@ -543,6 +553,7 @@ pushkey hook
   HG_PUSHKEYCOMPAT=1
   HG_SOURCE=push
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=push
   HG_URL=file:$TESTTMP/a
   
   txnclose hook: HG_BOOKMARK_MOVED=1
@@ -629,6 +640,7 @@ test that prepushkey can prevent incoming keys
   HG_PUSHKEYCOMPAT=1
   HG_SOURCE=push
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=push
   HG_URL=file:$TESTTMP/a
   
   abort: prepushkey hook exited with status 1
@@ -687,6 +699,8 @@ prechangegroup hook can prevent incoming changes
   HG_HOOKTYPE=prechangegroup
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/a (glob)
   HG_URL=file:$TESTTMP/a
   
   abort: prechangegroup.forbid hook exited with status 1
@@ -715,6 +729,8 @@ incoming changes no longer there after
   HG_PENDING=$TESTTMP/b
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/a (glob)
   HG_URL=file:$TESTTMP/a
   
   transaction abort!

@@ -232,6 +232,8 @@ pull without cacert
   HG_NODE_LAST=5fed3813f7f5e1824344fdc9cf8f63bb662c292d
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  https://localhost:$HGPORT/
   HG_URL=https://localhost:$HGPORT/
   
   (run 'hg update' to get a working copy)

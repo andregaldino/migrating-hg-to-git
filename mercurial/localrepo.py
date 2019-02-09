@@ -1818,7 +1818,6 @@ class localrepository(object):
                     args = tr.hookargs.copy()
                     args.update(bookmarks.preparehookargs(name, old, new))
                     repo.hook('pretxnclose-bookmark', throw=True,
-                              txnname=desc,
                               **pycompat.strkwargs(args))
             if hook.hashook(repo.ui, 'pretxnclose-phase'):
                 cl = repo.unfiltered().changelog
@@ -1826,11 +1825,11 @@ class localrepository(object):
                     args = tr.hookargs.copy()
                     node = hex(cl.node(rev))
                     args.update(phases.preparehookargs(node, old, new))
-                    repo.hook('pretxnclose-phase', throw=True, txnname=desc,
+                    repo.hook('pretxnclose-phase', throw=True,
                               **pycompat.strkwargs(args))
 
             repo.hook('pretxnclose', throw=True,
-                      txnname=desc, **pycompat.strkwargs(tr.hookargs))
+                      **pycompat.strkwargs(tr.hookargs))
         def releasefn(tr, success):
             repo = reporef()
             if success:
@@ -1864,6 +1863,7 @@ class localrepository(object):
         tr.changes['bookmarks'] = {}
 
         tr.hookargs['txnid'] = txnid
+        tr.hookargs['txnname'] = desc
         # note: writing the fncache only during finalize mean that the file is
         # outdated when running hooks. As fncache is used for streaming clone,
         # this is not expected to break anything that happen during the hooks.
@@ -1885,7 +1885,7 @@ class localrepository(object):
                         args = tr.hookargs.copy()
                         args.update(bookmarks.preparehookargs(name, old, new))
                         repo.hook('txnclose-bookmark', throw=False,
-                                  txnname=desc, **pycompat.strkwargs(args))
+                                  **pycompat.strkwargs(args))
 
                 if hook.hashook(repo.ui, 'txnclose-phase'):
                     cl = repo.unfiltered().changelog
@@ -1894,10 +1894,10 @@ class localrepository(object):
                         args = tr.hookargs.copy()
                         node = hex(cl.node(rev))
                         args.update(phases.preparehookargs(node, old, new))
-                        repo.hook('txnclose-phase', throw=False, txnname=desc,
+                        repo.hook('txnclose-phase', throw=False,
                                   **pycompat.strkwargs(args))
 
-                repo.hook('txnclose', throw=False, txnname=desc,
+                repo.hook('txnclose', throw=False,
                           **pycompat.strkwargs(hookargs))
             reporef()._afterlock(hookfunc)
         tr.addfinalize('txnclose-hook', txnclosehook)
@@ -1909,7 +1909,7 @@ class localrepository(object):
         def txnaborthook(tr2):
             """To be run if transaction is aborted
             """
-            reporef().hook('txnabort', throw=False, txnname=desc,
+            reporef().hook('txnabort', throw=False,
                            **pycompat.strkwargs(tr2.hookargs))
         tr.addabort('txnabort-hook', txnaborthook)
         # avoid eager cache invalidation. in-memory data should be identical

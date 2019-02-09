@@ -88,6 +88,8 @@ Pull the new commits in the clone
   HG_PENDING=$TESTTMP/clone
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   remote: changegroup2
@@ -103,6 +105,8 @@ Pull the new commits in the clone
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   new changesets 27547f69f254:f838bfaca5c7
@@ -112,6 +116,8 @@ Pull the new commits in the clone
   HG_NODE_LAST=27547f69f25460a52fff66ad004e58da7ad3fb56
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -119,6 +125,8 @@ Pull the new commits in the clone
   HG_NODE=27547f69f25460a52fff66ad004e58da7ad3fb56
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   changegroup hook: HG_HOOKNAME=changegroup
@@ -128,6 +136,8 @@ Pull the new commits in the clone
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -136,6 +146,8 @@ Pull the new commits in the clone
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   pullop.cgresult is 1
@@ -204,6 +216,8 @@ pullop.cgresult
   HG_PENDING=$TESTTMP/clone
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   remote: changegroup2
@@ -219,6 +233,8 @@ pullop.cgresult
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   new changesets b3325c91a4d9:5cd59d311f65
@@ -228,6 +244,8 @@ pullop.cgresult
   HG_NODE_LAST=8a5212ebc8527f9fb821601504794e3eb11a1ed3
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -235,6 +253,8 @@ pullop.cgresult
   HG_NODE=b3325c91a4d916bcc4cdc83ea3fe4ece46a42f6e
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -242,6 +262,8 @@ pullop.cgresult
   HG_NODE=8a5212ebc8527f9fb821601504794e3eb11a1ed3
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   changegroup hook: HG_HOOKNAME=changegroup
@@ -251,6 +273,8 @@ pullop.cgresult
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -259,6 +283,8 @@ pullop.cgresult
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -267,6 +293,8 @@ pullop.cgresult
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -275,6 +303,8 @@ pullop.cgresult
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   pullop.cgresult is 3
@@ -343,6 +373,8 @@ pullop.cgresult
   HG_PENDING=$TESTTMP/clone
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   remote: changegroup2
@@ -358,6 +390,8 @@ pullop.cgresult
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   new changesets 71bd7b46de72:9d18e5bd9ab0
@@ -367,6 +401,8 @@ pullop.cgresult
   HG_NODE_LAST=71bd7b46de72e69a32455bf88d04757d542e6cf4
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -374,6 +410,8 @@ pullop.cgresult
   HG_NODE=71bd7b46de72e69a32455bf88d04757d542e6cf4
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   changegroup hook: HG_HOOKNAME=changegroup
@@ -383,6 +421,8 @@ pullop.cgresult
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   incoming hook: HG_HOOKNAME=incoming
@@ -391,6 +431,8 @@ pullop.cgresult
   HG_PHASES_MOVED=1
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
   pullop.cgresult is -2

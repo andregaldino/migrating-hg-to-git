@@ -73,6 +73,8 @@ check for HTTP opener failures when cachefile does not exist
   HG_NODE_LAST=4ac2e3648604439c580c69b09ec9d93a88d93432
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  http://localhost:$HGPORT/remote
   HG_URL=http://localhost:$HGPORT/remote
   
   (run 'hg update' to get a working copy)

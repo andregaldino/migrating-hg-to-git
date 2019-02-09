@@ -240,6 +240,8 @@ hg -R bundle://../full.hg verify
   HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  bundle:../full.hg
   HG_URL=bundle:../full.hg (no-msys !)
   HG_URL=bundle;../full.hg (msys !)
   
@@ -272,6 +274,8 @@ Pull full.hg into empty again (using -R; with hook)
   HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  bundle:empty+full.hg
   HG_URL=bundle:empty+full.hg
   
   (run 'hg heads' to see heads, 'hg merge' to merge)
