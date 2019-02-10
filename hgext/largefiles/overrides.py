@@ -301,9 +301,10 @@ def overridelog(orig, ui, repo, *pats, **opts):
                 return kindpat[0] + ':' + tostandin(kindpat[1])
             return tostandin(kindpat[1])
 
-        if m._cwd:
+        cwd = repo.getcwd()
+        if cwd:
             hglf = lfutil.shortname
-            back = util.pconvert(m.rel(hglf)[:-len(hglf)])
+            back = util.pconvert(repo.pathto(hglf)[:-len(hglf)])
 
             def tostandin(f):
                 # The file may already be a standin, so truncate the back
@@ -316,10 +317,10 @@ def overridelog(orig, ui, repo, *pats, **opts):
                 # path to the root before building the standin.  Otherwise cwd
                 # is somewhere in the repo, relative to root, and needs to be
                 # prepended before building the standin.
-                if os.path.isabs(m._cwd):
+                if os.path.isabs(cwd):
                     f = f[len(back):]
                 else:
-                    f = m._cwd + '/' + f
+                    f = cwd + '/' + f
                 return back + lfutil.standin(f)
         else:
             def tostandin(f):
