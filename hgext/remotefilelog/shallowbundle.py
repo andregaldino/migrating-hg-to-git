@@ -162,7 +162,7 @@ def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
                 repo.shallowmatch = match.match(repo.root, '', None,
                     includepattern, excludepattern)
             else:
-                repo.shallowmatch = match.always(repo.root, '')
+                repo.shallowmatch = match.always()
         return orig(repo, outgoing, version, source, *args, **kwargs)
     finally:
         repo.shallowmatch = original

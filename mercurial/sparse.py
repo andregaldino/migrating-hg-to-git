@@ -277,7 +277,7 @@ def matcher(repo, revs=None, includetemp=True):
     """
     # If sparse isn't enabled, sparse matcher matches everything.
     if not enabled:
-        return matchmod.always(repo.root, '')
+        return matchmod.always()
 
     if not revs or revs == [None]:
         revs = [repo.changelog.rev(node)
@@ -305,7 +305,7 @@ def matcher(repo, revs=None, includetemp=True):
             pass
 
     if not matchers:
-        result = matchmod.always(repo.root, '')
+        result = matchmod.always()
     elif len(matchers) == 1:
         result = matchers[0]
     else:

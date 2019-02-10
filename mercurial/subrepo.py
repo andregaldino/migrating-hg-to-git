@@ -323,7 +323,7 @@ class abstractsubrepo(object):
 
     def matchfileset(self, expr, badfn=None):
         """Resolve the fileset expression for this repo"""
-        return matchmod.never(self.wvfs.base, '', badfn=badfn)
+        return matchmod.never(badfn=badfn)
 
     def printfiles(self, ui, m, fm, fmt, subrepos):
         """handle the files command for this subrepo"""
@@ -807,12 +807,11 @@ class hgsubrepo(abstractsubrepo):
 
     @annotatesubrepoerror
     def matchfileset(self, expr, badfn=None):
-        repo = self._repo
         if self._ctx.rev() is None:
-            ctx = repo[None]
+            ctx = self._repo[None]
         else:
             rev = self._state[1]
-            ctx = repo[rev]
+            ctx = self._repo[rev]
 
         matchers = [ctx.matchfileset(expr, badfn=badfn)]
 

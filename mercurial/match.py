@@ -190,14 +190,14 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
         m = differencematcher(m, em)
     return m
 
-def exact(root, cwd, files, badfn=None):
+def exact(files, badfn=None):
     return exactmatcher(files, badfn=badfn)
 
-def always(root, cwd, badfn=None):
-    return alwaysmatcher(badfn=badfn)
+def always(badfn=None):
+    return alwaysmatcher(badfn)
 
-def never(root, cwd, badfn=None):
-    return nevermatcher(badfn=badfn)
+def never(badfn=None):
+    return nevermatcher(badfn)
 
 def badmatch(match, badfn):
     """Make a copy of the given matcher, replacing its bad method with the given

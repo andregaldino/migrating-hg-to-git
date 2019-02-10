@@ -1227,14 +1227,14 @@ class localrepository(object):
     @storecache(narrowspec.FILENAME)
     def _storenarrowmatch(self):
         if repository.NARROW_REQUIREMENT not in self.requirements:
-            return matchmod.always(self.root, '')
+            return matchmod.always()
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)
 
     @storecache(narrowspec.FILENAME)
     def _narrowmatch(self):
         if repository.NARROW_REQUIREMENT not in self.requirements:
-            return matchmod.always(self.root, '')
+            return matchmod.always()
         narrowspec.checkworkingcopynarrowspec(self)
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)
@@ -1252,7 +1252,7 @@ class localrepository(object):
             if includeexact and not self._narrowmatch.always():
                 # do not exclude explicitly-specified paths so that they can
                 # be warned later on
-                em = matchmod.exact(None, None, match.files())
+                em = matchmod.exact(match.files())
                 nm = matchmod.unionmatcher([self._narrowmatch, em])
                 return matchmod.intersectmatchers(match, nm)
             return matchmod.intersectmatchers(match, self._narrowmatch)
@@ -2400,7 +2400,7 @@ class localrepository(object):
             raise error.Abort('%s: %s' % (f, msg))
 
         if not match:
-            match = matchmod.always(self.root, '')
+            match = matchmod.always()
 
         if not force:
             vdirs = []

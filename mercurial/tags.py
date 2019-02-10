@@ -536,7 +536,7 @@ def tag(repo, names, node, message, local, user, date, editor=False):
     date: date tuple to use if committing'''
 
     if not local:
-        m = matchmod.exact(repo.root, '', ['.hgtags'])
+        m = matchmod.exact(['.hgtags'])
         if any(repo.status(match=m, unknown=True, ignored=True)):
             raise error.Abort(_('working copy of .hgtags is changed'),
                              hint=_('please commit .hgtags manually'))
@@ -610,7 +610,7 @@ def _tag(repo, names, node, message, local, user, date, extra=None,
     if '.hgtags' not in repo.dirstate:
         repo[None].add(['.hgtags'])
 
-    m = matchmod.exact(repo.root, '', ['.hgtags'])
+    m = matchmod.exact(['.hgtags'])
     tagnode = repo.commit(message, user, date, extra=extra, match=m,
                           editor=editor)
 

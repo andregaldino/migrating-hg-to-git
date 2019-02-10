@@ -127,7 +127,7 @@ def match(root, include=None, exclude=None):
         # Passing empty include and empty exclude to matchmod.match()
         # gives a matcher that matches everything, so explicitly use
         # the nevermatcher.
-        return matchmod.never(root, '')
+        return matchmod.never()
     return matchmod.match(root, '', [], include=include or [],
                           exclude=exclude or [])
 

@@ -565,9 +565,9 @@ def _prettyprintdifflines(context, lines, blockno, lineidprefix):
 def _diffsgen(context, repo, ctx, basectx, files, style, stripecount,
               linerange, lineidprefix):
     if files:
-        m = match.exact(repo.root, repo.getcwd(), files)
+        m = match.exact(files)
     else:
-        m = match.always(repo.root, repo.getcwd())
+        m = match.always()
 
     diffopts = patch.diffopts(repo.ui, untrusted=True)
     parity = paritygen(stripecount)

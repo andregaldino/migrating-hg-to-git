@@ -1313,9 +1313,9 @@ def getbundler(version, repo, bundlecaps=None, oldmatcher=None,
     assert version in supportedoutgoingversions(repo)
 
     if matcher is None:
-        matcher = matchmod.always(repo.root, '')
+        matcher = matchmod.always()
     if oldmatcher is None:
-        oldmatcher = matchmod.never(repo.root, '')
+        oldmatcher = matchmod.never()
 
     if version == '01' and not matcher.always():
         raise error.ProgrammingError('version 01 changegroups do not support '

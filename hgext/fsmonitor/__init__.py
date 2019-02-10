@@ -476,7 +476,7 @@ def overridestatus(
 
     working = ctx2.rev() is None
     parentworking = working and ctx1 == self['.']
-    match = match or matchmod.always(self.root, self.getcwd())
+    match = match or matchmod.always()
 
     # Maybe we can use this opportunity to update Watchman's state.
     # Mercurial uses workingcommitctx and/or memctx to represent the part of

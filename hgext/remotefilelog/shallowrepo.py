@@ -289,7 +289,7 @@ def wraprepo(repo):
 
     repo.__class__ = shallowrepository
 
-    repo.shallowmatch = match.always(repo.root, '')
+    repo.shallowmatch = match.always()
 
     makeunionstores(repo)
 

@@ -325,9 +325,9 @@ class transplanter(object):
         if merge:
             p1 = repo.dirstate.p1()
             repo.setparents(p1, node)
-            m = match.always(repo.root, '')
+            m = match.always()
         else:
-            m = match.exact(repo.root, '', files)
+            m = match.exact(files)
 
         n = repo.commit(message, user, date, extra=extra, match=m,
                         editor=self.getcommiteditor())

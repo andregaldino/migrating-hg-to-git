@@ -1222,9 +1222,8 @@ def scmutiladdremove(orig, repo, matcher, prefix, uipathfn, opts=None):
         return orig(repo, matcher, prefix, uipathfn, opts)
     # Get the list of missing largefiles so we can remove them
     lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
-    unsure, s = lfdirstate.status(matchmod.always(repo.root, repo.getcwd()),
-                                  subrepos=[], ignored=False, clean=False,
-                                  unknown=False)
+    unsure, s = lfdirstate.status(matchmod.always(), subrepos=[],
+                                  ignored=False, clean=False, unknown=False)
 
     # Call into the normal remove code, but the removing of the standin, we want
     # to have handled by original addremove.  Monkey patching here makes sure
@@ -1414,10 +1413,8 @@ def mergeupdate(orig, repo, node, branchmerge, force,
         # (*1) deprecated, but used internally (e.g: "rebase --collapse")
 
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
-        unsure, s = lfdirstate.status(matchmod.always(repo.root,
-                                                    repo.getcwd()),
-                                      subrepos=[], ignored=False,
-                                      clean=True, unknown=False)
+        unsure, s = lfdirstate.status(matchmod.always(), subrepos=[],
+                                      ignored=False, clean=True, unknown=False)
         oldclean = set(s.clean)
         pctx = repo['.']
         dctx = repo[node]

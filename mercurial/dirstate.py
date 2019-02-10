@@ -148,7 +148,7 @@ class dirstate(object):
     def _ignore(self):
         files = self._ignorefiles()
         if not files:
-            return matchmod.never(self._root, '')
+            return matchmod.never()
 
         pats = ['include:%s' % f for f in files]
         return matchmod.match(self._root, '', [], pats, warn=self._ui.warn)

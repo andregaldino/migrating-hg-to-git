@@ -103,7 +103,7 @@ def reposetup(ui, repo):
             parentworking = working and ctx1 == self['.']
 
             if match is None:
-                match = matchmod.always(self.root, self.getcwd())
+                match = matchmod.always()
 
             wlock = None
             try:

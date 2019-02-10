@@ -538,8 +538,7 @@ class matchctx(object):
 
     def never(self):
         """Create a matcher to select nothing"""
-        repo = self.ctx.repo()
-        return matchmod.never(repo.root, repo.getcwd(), badfn=self._badfn)
+        return matchmod.never(badfn=self._badfn)
 
 def match(ctx, expr, badfn=None):
     """Create a matcher for a single fileset expression"""

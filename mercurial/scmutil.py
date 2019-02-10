@@ -821,11 +821,11 @@ def match(ctx, pats=(), opts=None, globbed=False, default='relpath',
 
 def matchall(repo):
     '''Return a matcher that will efficiently match everything.'''
-    return matchmod.always(repo.root, repo.getcwd())
+    return matchmod.always()
 
 def matchfiles(repo, files, badfn=None):
     '''Return a matcher that will efficiently match exactly these files.'''
-    return matchmod.exact(repo.root, repo.getcwd(), files, badfn=badfn)
+    return matchmod.exact(files, badfn=badfn)
 
 def parsefollowlinespattern(repo, rev, pat, msg):
     """Return a file name from `pat` pattern suitable for usage in followlines

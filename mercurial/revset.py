@@ -2073,7 +2073,7 @@ def subrepo(repo, subset, x):
     if len(args) != 0:
         pat = getstring(args[0], _("subrepo requires a pattern"))
 
-    m = matchmod.exact(repo.root, repo.root, ['.hgsubstate'])
+    m = matchmod.exact(['.hgsubstate'])
 
     def submatches(names):
         k, p, m = stringutil.stringmatcher(pat)
