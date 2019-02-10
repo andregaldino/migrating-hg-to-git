@@ -821,8 +821,7 @@ class hgsubrepo(abstractsubrepo):
 
             try:
                 sm = sub.matchfileset(expr, badfn=badfn)
-                pm = matchmod.prefixdirmatcher(repo.root, repo.getcwd(),
-                                               subpath, sm, badfn=badfn)
+                pm = matchmod.prefixdirmatcher(subpath, sm, badfn=badfn)
                 matchers.append(pm)
             except error.LookupError:
                 self.ui.status(_("skipping missing subrepository: %s\n")

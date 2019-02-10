@@ -499,9 +499,8 @@ class matchctx(object):
         """Create a matcher to select files by predfn(filename)"""
         if cache:
             predfn = util.cachefunc(predfn)
-        repo = self.ctx.repo()
-        return matchmod.predicatematcher(repo.root, repo.getcwd(), predfn,
-                                         predrepr=predrepr, badfn=self._badfn)
+        return matchmod.predicatematcher(predfn, predrepr=predrepr,
+                                         badfn=self._badfn)
 
     def fpredicate(self, predfn, predrepr=None, cache=False):
         """Create a matcher to select files by predfn(fctx) at the current

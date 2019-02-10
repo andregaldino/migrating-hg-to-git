@@ -199,7 +199,7 @@ def _setupdirstate(ui):
     def walk(orig, self, match, subrepos, unknown, ignored, full=True):
         # hack to not exclude explicitly-specified paths so that they can
         # be warned later on e.g. dirstate.add()
-        em = matchmod.exact(match._root, match._cwd, match.files())
+        em = matchmod.exact(None, None, match.files())
         sm = matchmod.unionmatcher([self._sparsematcher, em])
         match = matchmod.intersectmatchers(match, sm)
         return orig(self, match, subrepos, unknown, ignored, full)

@@ -1252,7 +1252,7 @@ class localrepository(object):
             if includeexact and not self._narrowmatch.always():
                 # do not exclude explicitly-specified paths so that they can
                 # be warned later on
-                em = matchmod.exact(match._root, match._cwd, match.files())
+                em = matchmod.exact(None, None, match.files())
                 nm = matchmod.unionmatcher([self._narrowmatch, em])
                 return matchmod.intersectmatchers(match, nm)
             return matchmod.intersectmatchers(match, self._narrowmatch)

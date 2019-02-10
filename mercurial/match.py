@@ -42,7 +42,7 @@ def _rematcher(regex):
     except AttributeError:
         return m.match
 
-def _expandsets(root, cwd, kindpats, ctx, listsubrepos, badfn):
+def _expandsets(kindpats, ctx, listsubrepos, badfn):
     '''Returns the kindpats list with the 'set' patterns expanded to matchers'''
     matchers = []
     other = []
@@ -57,7 +57,7 @@ def _expandsets(root, cwd, kindpats, ctx, listsubrepos, badfn):
             if listsubrepos:
                 for subpath in ctx.substate:
                     sm = ctx.sub(subpath).matchfileset(pat, badfn=badfn)
-                    pm = prefixdirmatcher(root, cwd, subpath, sm, badfn=badfn)
+                    pm = prefixdirmatcher(subpath, sm, badfn=badfn)
                     matchers.append(pm)
 
             continue
@@ -97,18 +97,18 @@ def _kindpatsalwaysmatch(kindpats):
             return False
     return True
 
-def _buildkindpatsmatcher(matchercls, root, cwd, kindpats, ctx=None,
+def _buildkindpatsmatcher(matchercls, root, kindpats, ctx=None,
                           listsubrepos=False, badfn=None):
     matchers = []
-    fms, kindpats = _expandsets(root, cwd, kindpats, ctx=ctx,
+    fms, kindpats = _expandsets(kindpats, ctx=ctx,
                                 listsubrepos=listsubrepos, badfn=badfn)
     if kindpats:
-        m = matchercls(root, cwd, kindpats, badfn=badfn)
+        m = matchercls(root, kindpats, badfn=badfn)
         matchers.append(m)
     if fms:
         matchers.extend(fms)
     if not matchers:
-        return nevermatcher(root, cwd, badfn=badfn)
+        return nevermatcher(badfn=badfn)
     if len(matchers) == 1:
         return matchers[0]
     return unionmatcher(matchers)
@@ -169,36 +169,35 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
     if patterns:
         kindpats = normalize(patterns, default, root, cwd, auditor, warn)
         if _kindpatsalwaysmatch(kindpats):
-            m = alwaysmatcher(root, cwd, badfn)
+            m = alwaysmatcher(badfn)
         else:
-            m = _buildkindpatsmatcher(patternmatcher, root, cwd, kindpats,
-                                      ctx=ctx, listsubrepos=listsubrepos,
-                                      badfn=badfn)
+            m = _buildkindpatsmatcher(patternmatcher, root, kindpats, ctx=ctx,
+                                      listsubrepos=listsubrepos, badfn=badfn)
     else:
         # It's a little strange that no patterns means to match everything.
         # Consider changing this to match nothing (probably using nevermatcher).
-        m = alwaysmatcher(root, cwd, badfn)
+        m = alwaysmatcher(badfn)
 
     if include:
         kindpats = normalize(include, 'glob', root, cwd, auditor, warn)
-        im = _buildkindpatsmatcher(includematcher, root, cwd, kindpats, ctx=ctx,
+        im = _buildkindpatsmatcher(includematcher, root, kindpats, ctx=ctx,
                                    listsubrepos=listsubrepos, badfn=None)
         m = intersectmatchers(m, im)
     if exclude:
         kindpats = normalize(exclude, 'glob', root, cwd, auditor, warn)
-        em = _buildkindpatsmatcher(includematcher, root, cwd, kindpats, ctx=ctx,
+        em = _buildkindpatsmatcher(includematcher, root, kindpats, ctx=ctx,
                                    listsubrepos=listsubrepos, badfn=None)
         m = differencematcher(m, em)
     return m
 
 def exact(root, cwd, files, badfn=None):
-    return exactmatcher(root, cwd, files, badfn=badfn)
+    return exactmatcher(files, badfn=badfn)
 
 def always(root, cwd, badfn=None):
-    return alwaysmatcher(root, cwd, badfn=badfn)
+    return alwaysmatcher(badfn=badfn)
 
 def never(root, cwd, badfn=None):
-    return nevermatcher(root, cwd, badfn=badfn)
+    return nevermatcher(badfn=badfn)
 
 def badmatch(match, badfn):
     """Make a copy of the given matcher, replacing its bad method with the given
@@ -251,9 +250,7 @@ def _donormalize(patterns, default, root, cwd, auditor, warn):
 
 class basematcher(object):
 
-    def __init__(self, root, cwd, badfn=None):
-        self._root = root
-        self._cwd = cwd
+    def __init__(self, badfn=None):
         if badfn is not None:
             self.bad = badfn
 
@@ -376,8 +373,8 @@ class basematcher(object):
 class alwaysmatcher(basematcher):
     '''Matches everything.'''
 
-    def __init__(self, root, cwd, badfn=None):
-        super(alwaysmatcher, self).__init__(root, cwd, badfn)
+    def __init__(self, badfn=None):
+        super(alwaysmatcher, self).__init__(badfn)
 
     def always(self):
         return True
@@ -397,8 +394,8 @@ class alwaysmatcher(basematcher):
 class nevermatcher(basematcher):
     '''Matches nothing.'''
 
-    def __init__(self, root, cwd, badfn=None):
-        super(nevermatcher, self).__init__(root, cwd, badfn)
+    def __init__(self, badfn=None):
+        super(nevermatcher, self).__init__(badfn)
 
     # It's a little weird to say that the nevermatcher is an exact matcher
     # or a prefix matcher, but it seems to make sense to let callers take
@@ -423,8 +420,8 @@ class nevermatcher(basematcher):
 class predicatematcher(basematcher):
     """A matcher adapter for a simple boolean function"""
 
-    def __init__(self, root, cwd, predfn, predrepr=None, badfn=None):
-        super(predicatematcher, self).__init__(root, cwd, badfn)
+    def __init__(self, predfn, predrepr=None, badfn=None):
+        super(predicatematcher, self).__init__(badfn)
         self.matchfn = predfn
         self._predrepr = predrepr
 
@@ -436,8 +433,8 @@ class predicatematcher(basematcher):
 
 class patternmatcher(basematcher):
 
-    def __init__(self, root, cwd, kindpats, badfn=None):
-        super(patternmatcher, self).__init__(root, cwd, badfn)
+    def __init__(self, root, kindpats, badfn=None):
+        super(patternmatcher, self).__init__(badfn)
 
         self._files = _explicitfiles(kindpats)
         self._prefix = _prefix(kindpats)
@@ -514,8 +511,8 @@ class _dirchildren(object):
 
 class includematcher(basematcher):
 
-    def __init__(self, root, cwd, kindpats, badfn=None):
-        super(includematcher, self).__init__(root, cwd, badfn)
+    def __init__(self, root, kindpats, badfn=None):
+        super(includematcher, self).__init__(badfn)
 
         self._pats, self.matchfn = _buildmatch(kindpats, '(?:/|$)', root)
         self._prefix = _prefix(kindpats)
@@ -575,8 +572,8 @@ class exactmatcher(basematcher):
     patterns (so no kind-prefixes).
     '''
 
-    def __init__(self, root, cwd, files, badfn=None):
-        super(exactmatcher, self).__init__(root, cwd, badfn)
+    def __init__(self, files, badfn=None):
+        super(exactmatcher, self).__init__(badfn)
 
         if isinstance(files, list):
             self._files = files
@@ -623,11 +620,11 @@ class differencematcher(basematcher):
     '''Composes two matchers by matching if the first matches and the second
     does not.
 
-    The second matcher's non-matching-attributes (root, cwd, bad, explicitdir,
+    The second matcher's non-matching-attributes (bad, explicitdir,
     traversedir) are ignored.
     '''
     def __init__(self, m1, m2):
-        super(differencematcher, self).__init__(m1._root, m1._cwd)
+        super(differencematcher, self).__init__()
         self._m1 = m1
         self._m2 = m2
         self.bad = m1.bad
@@ -691,7 +688,7 @@ class differencematcher(basematcher):
 def intersectmatchers(m1, m2):
     '''Composes two matchers by matching if both of them match.
 
-    The second matcher's non-matching-attributes (root, cwd, bad, explicitdir,
+    The second matcher's non-matching-attributes (bad, explicitdir,
     traversedir) are ignored.
     '''
     if m1 is None or m2 is None:
@@ -711,7 +708,7 @@ def intersectmatchers(m1, m2):
 
 class intersectionmatcher(basematcher):
     def __init__(self, m1, m2):
-        super(intersectionmatcher, self).__init__(m1._root, m1._cwd)
+        super(intersectionmatcher, self).__init__()
         self._m1 = m1
         self._m2 = m2
         self.bad = m1.bad
@@ -798,7 +795,7 @@ class subdirmatcher(basematcher):
     """
 
     def __init__(self, path, matcher):
-        super(subdirmatcher, self).__init__(matcher._root, matcher._cwd)
+        super(subdirmatcher, self).__init__()
         self._path = path
         self._matcher = matcher
         self._always = matcher.always()
@@ -849,14 +846,14 @@ class subdirmatcher(basematcher):
 class prefixdirmatcher(basematcher):
     """Adapt a matcher to work on a parent directory.
 
-    The matcher's non-matching-attributes (root, cwd, bad, explicitdir,
-    traversedir) are ignored.
+    The matcher's non-matching-attributes (bad, explicitdir, traversedir) are
+    ignored.
 
     The prefix path should usually be the relative path from the root of
     this matcher to the root of the wrapped matcher.
 
     >>> m1 = match(util.localpath(b'root/d/e'), b'f', [b'../a.txt', b'b.txt'])
-    >>> m2 = prefixdirmatcher(b'root', b'd/e/f', b'd/e', m1)
+    >>> m2 = prefixdirmatcher(b'd/e', m1)
     >>> bool(m2(b'a.txt'),)
     False
     >>> bool(m2(b'd/e/a.txt'))
@@ -879,8 +876,8 @@ class prefixdirmatcher(basematcher):
     False
     """
 
-    def __init__(self, root, cwd, path, matcher, badfn=None):
-        super(prefixdirmatcher, self).__init__(root, cwd, badfn)
+    def __init__(self, path, matcher, badfn=None):
+        super(prefixdirmatcher, self).__init__(badfn)
         if not path:
             raise error.ProgrammingError('prefix path must not be empty')
         self._path = path
@@ -930,13 +927,13 @@ class prefixdirmatcher(basematcher):
 class unionmatcher(basematcher):
     """A matcher that is the union of several matchers.
 
-    The non-matching-attributes (root, cwd, bad, explicitdir, traversedir) are
-    taken from the first matcher.
+    The non-matching-attributes (bad, explicitdir, traversedir) are taken from
+    the first matcher.
     """
 
     def __init__(self, matchers):
         m1 = matchers[0]
-        super(unionmatcher, self).__init__(m1._root, m1._cwd)
+        super(unionmatcher, self).__init__()
         self.explicitdir = m1.explicitdir
         self.traversedir = m1.traversedir
         self._matchers = matchers

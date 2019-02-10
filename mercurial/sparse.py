@@ -264,7 +264,7 @@ def forceincludematcher(matcher, includes):
     """Returns a matcher that returns true for any of the forced includes
     before testing against the actual matcher."""
     kindpats = [('path', include, '') for include in includes]
-    includematcher = matchmod.includematcher('', '', kindpats)
+    includematcher = matchmod.includematcher('', kindpats)
     return matchmod.unionmatcher([includematcher, matcher])
 
 def matcher(repo, revs=None, includetemp=True):
