@@ -277,10 +277,6 @@ class basematcher(object):
     # by recursive traversal is visited.
     traversedir = None
 
-    def rel(self, f):
-        '''Convert repo path back to path that is relative to cwd of matcher.'''
-        return util.pathto(self._root, self._cwd, f)
-
     @propertycache
     def _files(self):
         return []
@@ -710,7 +706,6 @@ def intersectmatchers(m1, m2):
         m.bad = m1.bad
         m.explicitdir = m1.explicitdir
         m.traversedir = m1.traversedir
-        m.rel = m1.rel
         return m
     if m2.always():
         m = copy.copy(m1)
@@ -798,8 +793,6 @@ class subdirmatcher(basematcher):
     ['b.txt']
     >>> m2.exact(b'b.txt')
     True
-    >>> util.pconvert(m2.rel(b'b.txt'))
-    'sub/b.txt'
     >>> def bad(f, msg):
     ...     print(pycompat.sysstr(b"%s: %s" % (f, msg)))
     >>> m1.bad = bad
@@ -823,9 +816,6 @@ class subdirmatcher(basematcher):
 
     def bad(self, f, msg):
         self._matcher.bad(self._path + "/" + f, msg)
-
-    def rel(self, f):
-        return self._matcher.rel(self._path + "/" + f)
 
     def matchfn(self, f):
         # Some information is lost in the superclass's constructor, so we
