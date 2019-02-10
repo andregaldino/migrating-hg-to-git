@@ -194,11 +194,11 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
 def exact(root, cwd, files, badfn=None):
     return exactmatcher(root, cwd, files, badfn=badfn)
 
-def always(root, cwd):
-    return alwaysmatcher(root, cwd)
+def always(root, cwd, badfn=None):
+    return alwaysmatcher(root, cwd, badfn=badfn)
 
-def never(root, cwd):
-    return nevermatcher(root, cwd)
+def never(root, cwd, badfn=None):
+    return nevermatcher(root, cwd, badfn=badfn)
 
 def badmatch(match, badfn):
     """Make a copy of the given matcher, replacing its bad method with the given
