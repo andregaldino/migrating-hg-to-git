@@ -2474,15 +2474,15 @@ def debugrevspec(ui, repo, expr, **opts):
         ui.write(('+++ optimized\n'), label='diff.file_b')
         sm = difflib.SequenceMatcher(None, arevs, brevs)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
-            if tag in ('delete', 'replace'):
+            if tag in (r'delete', r'replace'):
                 for c in arevs[alo:ahi]:
-                    ui.write('-%s\n' % c, label='diff.deleted')
-            if tag in ('insert', 'replace'):
+                    ui.write('-%d\n' % c, label='diff.deleted')
+            if tag in (r'insert', r'replace'):
                 for c in brevs[blo:bhi]:
-                    ui.write('+%s\n' % c, label='diff.inserted')
-            if tag == 'equal':
+                    ui.write('+%d\n' % c, label='diff.inserted')
+            if tag == r'equal':
                 for c in arevs[alo:ahi]:
-                    ui.write(' %s\n' % c)
+                    ui.write(' %d\n' % c)
         return 1
 
     func = revset.makematcher(tree)
