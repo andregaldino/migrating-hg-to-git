@@ -323,7 +323,7 @@ class abstractsubrepo(object):
 
     def matchfileset(self, expr, badfn=None):
         """Resolve the fileset expression for this repo"""
-        return matchmod.nevermatcher(self.wvfs.base, '', badfn=badfn)
+        return matchmod.never(self.wvfs.base, '', badfn=badfn)
 
     def printfiles(self, ui, m, fm, fmt, subrepos):
         """handle the files command for this subrepo"""
