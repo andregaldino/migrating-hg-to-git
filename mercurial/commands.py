@@ -4985,9 +4985,8 @@ def resolve(ui, repo, *pats, **opts):
 
         if hasconflictmarkers:
             ui.warn(_('warning: the following files still have conflict '
-                      'markers:\n  ') +
-                    '\n  '.join(uipathfn(f) for f in hasconflictmarkers) +
-                    '\n')
+                      'markers:\n') + ''.join('  ' + uipathfn(f) + '\n'
+                                              for f in hasconflictmarkers))
             if markcheck == 'abort' and not all and not pats:
                 raise error.Abort(_('conflict markers detected'),
                                   hint=_('use --all to mark anyway'))
