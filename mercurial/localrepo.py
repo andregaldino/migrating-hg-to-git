@@ -2455,10 +2455,11 @@ class localrepository(object):
 
             # commit subs and write new state
             if subs:
+                uipathfn = scmutil.getuipathfn(self)
                 for s in sorted(commitsubs):
                     sub = wctx.sub(s)
                     self.ui.status(_('committing subrepository %s\n') %
-                                   subrepoutil.subrelpath(sub))
+                                   uipathfn(subrepoutil.subrelpath(sub)))
                     sr = sub.commit(cctx._text, user, date)
                     newstate[s] = (newstate[s][0], sr)
                 subrepoutil.writestate(self, newstate)
@@ -2526,8 +2527,9 @@ class localrepository(object):
                 removed = list(ctx.removed())
                 linkrev = len(self)
                 self.ui.note(_("committing files:\n"))
+                uipathfn = scmutil.getuipathfn(self)
                 for f in sorted(ctx.modified() + ctx.added()):
-                    self.ui.note(f + "\n")
+                    self.ui.note(uipathfn(f) + "\n")
                     try:
                         fctx = ctx[f]
                         if fctx is None:
@@ -2538,12 +2540,14 @@ class localrepository(object):
                                                     trp, changed)
                             m.setflag(f, fctx.flags())
                     except OSError:
-                        self.ui.warn(_("trouble committing %s!\n") % f)
+                        self.ui.warn(_("trouble committing %s!\n") %
+                                     uipathfn(f))
                         raise
                     except IOError as inst:
                         errcode = getattr(inst, 'errno', errno.ENOENT)
                         if error or errcode and errcode != errno.ENOENT:
-                            self.ui.warn(_("trouble committing %s!\n") % f)
+                            self.ui.warn(_("trouble committing %s!\n") %
+                                         uipathfn(f))
                         raise
 
                 # update manifest
