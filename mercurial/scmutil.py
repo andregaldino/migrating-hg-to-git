@@ -756,8 +756,10 @@ def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
         cwd = repo.getcwd()
         pathto = repo.pathto
         return lambda f: pathto(f, cwd)
-    else:
+    elif repo.ui.configbool('ui', 'slash'):
         return lambda f: f
+    else:
+        return util.localpath
 
 def subdiruipathfn(subpath, uipathfn):
     '''Create a new uipathfn that treats the file as relative to subpath.'''
