@@ -218,3 +218,13 @@ Testing with passing a out of wdir file
   adding file changes
   added 3 changesets with 0 changes to 0 files
   new changesets *:* (glob)
+
+  $ cd ..
+
+Testing tracked command on a non-narrow repo
+
+  $ hg init non-narrow
+  $ cd non-narrow
+  $ hg tracked --addinclude foobar
+  abort: the tracked command is only supported on respositories cloned with --narrow
+  [255]
