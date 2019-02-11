@@ -450,12 +450,13 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
 
 def userphids(repo, names):
     """convert user names to PHIDs"""
+    names = [name.lower() for name in names]
     query = {b'constraints': {b'usernames': names}}
     result = callconduit(repo, b'user.search', query)
     # username not found is not an error of the API. So check if we have missed
     # some names here.
     data = result[r'data']
-    resolved = set(entry[r'fields'][r'username'] for entry in data)
+    resolved = set(entry[r'fields'][r'username'].lower() for entry in data)
     unresolved = set(names) - resolved
     if unresolved:
         raise error.Abort(_(b'unknown username: %s')
