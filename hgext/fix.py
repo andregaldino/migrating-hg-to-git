@@ -601,9 +601,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
         if path not in ctx:
             return None
         fctx = ctx[path]
-        copied = fctx.renamed()
-        if copied:
-            copied = copied[0]
+        copied = fctx.copysource()
         return context.memfilectx(
             repo,
             memctx,
