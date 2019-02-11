@@ -180,7 +180,7 @@ def add(ui, repo, *pats, **opts):
     """
 
     m = scmutil.match(repo[None], pats, pycompat.byteskwargs(opts))
-    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=True)
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     rejected = cmdutil.add(ui, repo, m, "", uipathfn, False, **opts)
     return rejected and 1 or 0
 
@@ -256,7 +256,7 @@ def addremove(ui, repo, *pats, **opts):
         opts['similarity'] = '100'
     matcher = scmutil.match(repo[None], pats, opts)
     relative = scmutil.anypats(pats, opts)
-    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=relative)
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=relative)
     return scmutil.addremove(repo, matcher, "", uipathfn, opts)
 
 @command('annotate|blame',
@@ -2258,7 +2258,7 @@ def forget(ui, repo, *pats, **opts):
 
     m = scmutil.match(repo[None], pats, opts)
     dryrun, interactive = opts.get('dry_run'), opts.get('interactive')
-    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=True)
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     rejected = cmdutil.forget(ui, repo, m, prefix="", uipathfn=uipathfn,
                               explicitonly=False, dryrun=dryrun,
                               interactive=interactive)[0]
@@ -4720,7 +4720,7 @@ def remove(ui, repo, *pats, **opts):
 
     m = scmutil.match(repo[None], pats, opts)
     subrepos = opts.get('subrepos')
-    uipathfn = scmutil.getuipathfn(repo, forcerelativevalue=True)
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     return cmdutil.remove(ui, repo, m, "", uipathfn, after, force, subrepos,
                           dryrun=dryrun)
 
