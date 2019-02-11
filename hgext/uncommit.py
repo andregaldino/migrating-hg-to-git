@@ -158,9 +158,12 @@ def uncommit(ui, repo, *pats, **opts):
 
     with repo.wlock(), repo.lock():
 
-        if not pats and not repo.ui.configbool('experimental',
-                                               'uncommitondirtywdir'):
-            cmdutil.bailifchanged(repo)
+        m, a, r, d = repo.status()[:4]
+        isdirtypath = any(set(m + a + r + d) & set(pats))
+        if (not repo.ui.configbool('experimental', 'uncommitondirtywdir') and
+            (not pats or isdirtypath)):
+            cmdutil.bailifchanged(repo, hint=_('requires '
+                                'experimental.uncommitondirtywdir to uncommit'))
         old = repo['.']
         rewriteutil.precheck(repo, [old.rev()], 'uncommit')
         if len(old.parents()) > 1:
