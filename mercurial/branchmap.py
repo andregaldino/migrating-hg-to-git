@@ -280,14 +280,14 @@ class branchcache(dict):
             f.write(" ".join(cachekey) + '\n')
             nodecount = 0
             for label, nodes in sorted(self.iteritems()):
+                label = encoding.fromlocal(label)
                 for node in nodes:
                     nodecount += 1
                     if node in self._closednodes:
                         state = 'c'
                     else:
                         state = 'o'
-                    f.write("%s %s %s\n" % (hex(node), state,
-                                            encoding.fromlocal(label)))
+                    f.write("%s %s %s\n" % (hex(node), state, label))
             f.close()
             repo.ui.log('branchcache',
                         'wrote %s branch cache with %d labels and %d nodes\n',
