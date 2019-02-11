@@ -81,6 +81,10 @@ class dirstate(object):
         self._origpl = None
         self._updatedfiles = set()
         self._mapcls = dirstatemap
+        # Access and cache cwd early, so we don't access it for the first time
+        # after a working-copy update caused it to not exist (accessing it then
+        # raises an exception).
+        self._cwd
 
     @contextlib.contextmanager
     def parentchange(self):
