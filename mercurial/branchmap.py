@@ -45,7 +45,7 @@ subsettable = {None: 'visible',
 
 
 class BranchMapCache(object):
-    """Cache mapping"""
+    """mapping of filtered views of repo with their branchcache"""
     def __init__(self):
         self._per_filter = {}
 
