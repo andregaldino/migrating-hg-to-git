@@ -4922,11 +4922,11 @@ def resolve(ui, repo, *pats, **opts):
                 if mark:
                     if exact:
                         ui.warn(_('not marking %s as it is driver-resolved\n')
-                                % f)
+                                % uipathfn(f))
                 elif unmark:
                     if exact:
                         ui.warn(_('not unmarking %s as it is driver-resolved\n')
-                                % f)
+                                % uipathfn(f))
                 else:
                     runconclude = True
                 continue
@@ -4940,7 +4940,7 @@ def resolve(ui, repo, *pats, **opts):
                     ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED_PATH)
                 elif ms[f] == mergemod.MERGE_RECORD_UNRESOLVED_PATH:
                     ui.warn(_('%s: path conflict must be resolved manually\n')
-                            % f)
+                            % uipathfn(f))
                 continue
 
             if mark:
@@ -4985,7 +4985,9 @@ def resolve(ui, repo, *pats, **opts):
 
         if hasconflictmarkers:
             ui.warn(_('warning: the following files still have conflict '
-                      'markers:\n  ') + '\n  '.join(hasconflictmarkers) + '\n')
+                      'markers:\n  ') +
+                    '\n  '.join(uipathfn(f) for f in hasconflictmarkers) +
+                    '\n')
             if markcheck == 'abort' and not all and not pats:
                 raise error.Abort(_('conflict markers detected'),
                                   hint=_('use --all to mark anyway'))
