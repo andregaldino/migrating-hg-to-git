@@ -148,6 +148,21 @@ class branchcache(dict):
     This field can be used to avoid changelog reads when determining if a
     branch head closes a branch or not.
     """
+
+    def __init__(self, entries=(), tipnode=nullid, tiprev=nullrev,
+                 filteredhash=None, closednodes=None):
+        super(branchcache, self).__init__(entries)
+        self.tipnode = tipnode
+        self.tiprev = tiprev
+        self.filteredhash = filteredhash
+        # closednodes is a set of nodes that close their branch. If the branch
+        # cache has been updated, it may contain nodes that are no longer
+        # heads.
+        if closednodes is None:
+            self._closednodes = set()
+        else:
+            self._closednodes = closednodes
+
     @classmethod
     def fromfile(cls, repo):
         f = None
@@ -206,20 +221,6 @@ class branchcache(dict):
         if repo.filtername:
             filename = '%s-%s' % (filename, repo.filtername)
         return filename
-
-    def __init__(self, entries=(), tipnode=nullid, tiprev=nullrev,
-                 filteredhash=None, closednodes=None):
-        super(branchcache, self).__init__(entries)
-        self.tipnode = tipnode
-        self.tiprev = tiprev
-        self.filteredhash = filteredhash
-        # closednodes is a set of nodes that close their branch. If the branch
-        # cache has been updated, it may contain nodes that are no longer
-        # heads.
-        if closednodes is None:
-            self._closednodes = set()
-        else:
-            self._closednodes = closednodes
 
     def validfor(self, repo):
         """Is the cache content valid regarding a repo
