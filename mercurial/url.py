@@ -179,10 +179,10 @@ class httpconnection(keepalive.HTTPConnection):
             return proxyres
         return keepalive.HTTPConnection.getresponse(self)
 
-# general transaction handler to support different ways to handle
-# HTTPS proxying before and after Python 2.6.3.
+# Large parts of this function have their origin from before Python 2.6
+# and could potentially be removed.
 def _generic_start_transaction(handler, h, req):
-    tunnel_host = getattr(req, '_tunnel_host', None)
+    tunnel_host = req._tunnel_host
     if tunnel_host:
         if tunnel_host[:7] not in ['http://', 'https:/']:
             tunnel_host = 'https://' + tunnel_host
