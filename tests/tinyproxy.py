@@ -20,7 +20,10 @@ import select
 import socket
 import sys
 
-from mercurial import util
+from mercurial import (
+    pycompat,
+    util,
+)
 
 httpserver = util.httpserver
 socketserver = util.socketserver
@@ -77,10 +80,11 @@ class ProxyHandler (httpserver.basehttprequesthandler):
         try:
             if self._connect_to(self.path, soc):
                 self.log_request(200)
-                self.wfile.write(self.protocol_version +
-                                 " 200 Connection established\r\n")
-                self.wfile.write("Proxy-agent: %s\r\n" % self.version_string())
-                self.wfile.write("\r\n")
+                self.wfile.write(pycompat.bytestr(self.protocol_version) +
+                                 b" 200 Connection established\r\n")
+                self.wfile.write(b"Proxy-agent: %s\r\n" %
+                                 pycompat.bytestr(self.version_string()))
+                self.wfile.write(b"\r\n")
                 self._read_write(soc, 300)
         finally:
             print("\t" "bye")
@@ -97,15 +101,17 @@ class ProxyHandler (httpserver.basehttprequesthandler):
         try:
             if self._connect_to(netloc, soc):
                 self.log_request()
-                soc.send("%s %s %s\r\n" % (
-                    self.command,
-                    urlreq.urlunparse(('', '', path, params, query, '')),
-                    self.request_version))
+                url = urlreq.urlunparse(('', '', path, params, query, ''))
+                soc.send(b"%s %s %s\r\n" % (
+                    pycompat.bytestr(self.command),
+                    pycompat.bytestr(url),
+                    pycompat.bytestr(self.request_version)))
                 self.headers['Connection'] = 'close'
                 del self.headers['Proxy-Connection']
-                for key_val in self.headers.items():
-                    soc.send("%s: %s\r\n" % key_val)
-                soc.send("\r\n")
+                for key, val in self.headers.items():
+                    soc.send(b"%s: %s\r\n" % (pycompat.bytestr(key),
+                                              pycompat.bytestr(val)))
+                soc.send(b"\r\n")
                 self._read_write(soc)
         finally:
             print("\t" "bye")
