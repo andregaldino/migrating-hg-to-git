@@ -1808,7 +1808,7 @@ def debugpathcomplete(ui, repo, *specs, **opts):
 
 @command('debugpathcopies',
          cmdutil.walkopts,
-         'hg debugcopies REV1 REV2 [FILE]',
+         'hg debugpathcopies REV1 REV2 [FILE]',
          inferrepo=True)
 def debugpathcopies(ui, repo, rev1, rev2, *pats, **opts):
     """show copies between two revisions"""
