@@ -1340,7 +1340,7 @@ class revlog(object):
             return True
 
         def maybewdir(prefix):
-            return all(c == 'f' for c in prefix)
+            return all(c == 'f' for c in pycompat.iterbytestr(prefix))
 
         hexnode = hex(node)
 
