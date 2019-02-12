@@ -342,7 +342,8 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
                                      action)
 
 def getdispatchrepo(repo, proto, command):
-    return repo.filtered('served')
+    viewconfig = repo.ui.config('server', 'view')
+    return repo.filtered(viewconfig)
 
 def dispatch(repo, proto, command, redirect):
     """Run a wire protocol command.

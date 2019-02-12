@@ -64,7 +64,8 @@ def getdispatchrepo(repo, proto, command):
     extensions that need commands to operate on different repo views under
     specialized circumstances.
     """
-    return repo.filtered('served')
+    viewconfig = repo.ui.config('server', 'view')
+    return repo.filtered(viewconfig)
 
 def dispatch(repo, proto, command):
     repo = getdispatchrepo(repo, proto, command)
@@ -166,7 +167,6 @@ def wireprotocommand(name, args=None, permission='push'):
 @wireprotocommand('batch', 'cmds *', permission='pull')
 def batch(repo, proto, cmds, others):
     unescapearg = wireprototypes.unescapebatcharg
-    repo = repo.filtered("served")
     res = []
     for pair in cmds.split(';'):
         op, args = pair.split(' ', 1)

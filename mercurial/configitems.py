@@ -1041,6 +1041,9 @@ coreconfigitem('server', 'uncompressed',
 coreconfigitem('server', 'uncompressedallowsecret',
     default=False,
 )
+coreconfigitem('server', 'view',
+    default='served',
+)
 coreconfigitem('server', 'validate',
     default=False,
 )
