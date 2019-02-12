@@ -2010,13 +2010,13 @@ def debugrebuildfncache(ui, repo):
 
 @command('debugrename',
     [('r', 'rev', '', _('revision to debug'), _('REV'))],
-    _('[-r REV] FILE'))
-def debugrename(ui, repo, file1, *pats, **opts):
+    _('[-r REV] [FILE]...'))
+def debugrename(ui, repo, *pats, **opts):
     """dump rename information"""
 
     opts = pycompat.byteskwargs(opts)
     ctx = scmutil.revsingle(repo, opts.get('rev'))
-    m = scmutil.match(ctx, (file1,) + pats, opts)
+    m = scmutil.match(ctx, pats, opts)
     for abs in ctx.walk(m):
         fctx = ctx[abs]
         o = fctx.filelog().renamed(fctx.filenode())
