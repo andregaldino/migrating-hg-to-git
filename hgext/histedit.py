@@ -957,7 +957,7 @@ ACTION_LABELS = {
     'roll': '^roll',
 }
 
-COLOR_HELP, COLOR_SELECTED, COLOR_OK, COLOR_WARN  = 1, 2, 3, 4
+COLOR_HELP, COLOR_SELECTED, COLOR_OK, COLOR_WARN, COLOR_CURRENT  = 1, 2, 3, 4, 5
 
 E_QUIT, E_HISTEDIT = 1, 2
 E_PAGEDOWN, E_PAGEUP, E_LINEUP, E_LINEDOWN, E_RESIZE = 3, 4, 5, 6, 7
@@ -1237,6 +1237,7 @@ def _chisteditmain(repo, rules, stdscr):
     curses.init_pair(COLOR_SELECTED, curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.init_pair(COLOR_WARN, curses.COLOR_BLACK, curses.COLOR_YELLOW)
     curses.init_pair(COLOR_OK, curses.COLOR_BLACK, curses.COLOR_GREEN)
+    curses.init_pair(COLOR_CURRENT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
 
     # don't display the cursor
     try:
@@ -1327,7 +1328,8 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             if y + start == selected:
                 addln(rulesscr, y, 2, rule, curses.color_pair(COLOR_SELECTED))
             elif y + start == pos:
-                addln(rulesscr, y, 2, rule, curses.A_BOLD)
+                addln(rulesscr, y, 2, rule,
+                      curses.color_pair(COLOR_CURRENT) | curses.A_BOLD)
             else:
                 addln(rulesscr, y, 2, rule)
         rulesscr.noutrefresh()
