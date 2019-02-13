@@ -1486,7 +1486,7 @@ def _chistedit(ui, repo, *freeargs, **opts):
         curses.echo()
         curses.endwin()
         if rc is False:
-            ui.write(_("chistedit aborted\n"))
+            ui.write(_("histedit aborted\n"))
             return 0
         if type(rc) is list:
             ui.status(_("running histedit\n"))
