@@ -608,7 +608,7 @@ def _fullcopytracing(repo, c1, c2, base):
     if dirtyc1:
         _combinecopies(data2['incomplete'], data1['incomplete'], copy, diverge,
                        incompletediverge)
-    else:
+    if dirtyc2:
         _combinecopies(data1['incomplete'], data2['incomplete'], copy, diverge,
                        incompletediverge)
 
@@ -647,7 +647,13 @@ def _fullcopytracing(repo, c1, c2, base):
     for f in bothnew:
         _checkcopies(c1, c2, f, base, tca, dirtyc1, limit, both1)
         _checkcopies(c2, c1, f, base, tca, dirtyc2, limit, both2)
-    if dirtyc1:
+    if dirtyc1 and dirtyc2:
+        remainder = _combinecopies(both2['incomplete'], both1['incomplete'],
+                                   copy, bothdiverge, bothincompletediverge)
+        remainder1 = _combinecopies(both1['incomplete'], both2['incomplete'],
+                                   copy, bothdiverge, bothincompletediverge)
+        remainder.update(remainder1)
+    elif dirtyc1:
         # incomplete copies may only be found on the "dirty" side for bothnew
         assert not both2['incomplete']
         remainder = _combinecopies({}, both1['incomplete'], copy, bothdiverge,

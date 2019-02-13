@@ -554,8 +554,9 @@ Grafting revision 4 on top of revision 2, showing that it respect the rename:
       b
      +baba
   
-Test which demonstrate that fullcopytracing algorithm can fail to handle a case when both the csets are dirty
-----------------------------------------------------------------------------------------------------------
+Test to make sure that fullcopytracing algorithm don't fail when both the merging csets are dirty
+(a dirty cset is one who is not the descendant of merge base)
+-------------------------------------------------------------------------------------------------
 
   $ newrepo
   $ echo a > a
@@ -628,6 +629,5 @@ Test which demonstrate that fullcopytracing algorithm can fail to handle a case 
 Now if we trigger a merge between cset revision 3 and 6 using base revision 4, in this case
 both the merging csets will be dirty as no one is descendent of base revision:
 
-  $ hg graft -r 6 --base 4 --hidden 2>&1 | grep "AssertionError"
-  AssertionError
-
+  $ hg graft -r 6 --base 4 --hidden -t :other
+  grafting 6:99802e4f1e46 "added willconflict and d" (tip)
