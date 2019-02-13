@@ -863,7 +863,13 @@ def contentdivergent(repo, subset, x):
 
 @predicate('expectsize(set[, size])', safe=True, takeorder=True)
 def expectsize(repo, subset, x, order):
-    """Abort if the revset doesn't expect given size"""
+    """Return the given revset if size matches the revset size.
+    Abort if the revset doesn't expect given size.
+    size can either be an integer range or an integer.
+
+    For example, ``expectsize(0:1, 3:5)`` will abort as revset size is 2 and
+    2 is not between 3 and 5 inclusive."""
+
     args = getargsdict(x, 'expectsize', 'set size')
     minsize = 0
     maxsize = len(repo) + 1
