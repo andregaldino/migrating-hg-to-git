@@ -1123,7 +1123,7 @@ def marktouched(repo, files, similarity=0.0):
             repo.ui.status(status)
 
     # TODO: We should probably have the caller pass in uipathfn and apply it to
-    # the messages above too. forcerelativevalue=True is consistent with how
+    # the messages above too. legacyrelativevalue=True is consistent with how
     # it used to work.
     uipathfn = getuipathfn(repo, legacyrelativevalue=True)
     renames = _findrenames(repo, m, added + unknown, removed + deleted,
