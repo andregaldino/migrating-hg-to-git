@@ -1549,4 +1549,31 @@ pad width:
   $ HGENCODING=utf-8 hg debugtemplate "{pad('`cat utf-8`', 2, '-')}\n"
   \xc3\xa9- (esc)
 
+read config options:
+
+  $ hg log -T "{config('templateconfig', 'knob', 'foo')}\n"
+  foo
+  $ hg log -T "{config('templateconfig', 'knob', 'foo')}\n" \
+  > --config templateconfig.knob=bar
+  bar
+  $ hg log -T "{configbool('templateconfig', 'knob', True)}\n"
+  True
+  $ hg log -T "{configbool('templateconfig', 'knob', True)}\n" \
+  > --config templateconfig.knob=0
+  False
+  $ hg log -T "{configint('templateconfig', 'knob', 123)}\n"
+  123
+  $ hg log -T "{configint('templateconfig', 'knob', 123)}\n" \
+  > --config templateconfig.knob=456
+  456
+  $ hg log -T "{config('templateconfig', 'knob')}\n"
+  devel-warn: config item requires an explicit default value: 'templateconfig.knob' at: * (glob)
+  
+  $ hg log -T "{configbool('ui', 'interactive')}\n"
+  False
+  $ hg log -T "{configbool('ui', 'interactive')}\n" --config ui.interactive=1
+  True
+  $ hg log -T "{config('templateconfig', 'knob', if(true, 'foo', 'bar'))}\n"
+  foo
+
   $ cd ..

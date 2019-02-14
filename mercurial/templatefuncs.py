@@ -295,6 +295,39 @@ def get(context, mapping, args):
         hint = _("get() expects a dict as first argument")
         raise error.ParseError(bytes(err), hint=hint)
 
+@templatefunc('config(section, name[, default])', requires={'ui'})
+def config(context, mapping, args):
+    """Returns the requested hgrc config option as a string."""
+    fn = context.resource(mapping, 'ui').config
+    return _config(context, mapping, args, fn, evalstring)
+
+@templatefunc('configbool(section, name[, default])', requires={'ui'})
+def configbool(context, mapping, args):
+    """Returns the requested hgrc config option as a boolean."""
+    fn = context.resource(mapping, 'ui').configbool
+    return _config(context, mapping, args, fn, evalboolean)
+
+@templatefunc('configint(section, name[, default])', requires={'ui'})
+def configint(context, mapping, args):
+    """Returns the requested hgrc config option as an integer."""
+    fn = context.resource(mapping, 'ui').configint
+    return _config(context, mapping, args, fn, evalinteger)
+
+def _config(context, mapping, args, configfn, defaultfn):
+    if not (2 <= len(args) <= 3):
+        raise error.ParseError(_("config expects two or three arguments"))
+
+    # The config option can come from any section, though we specifically
+    # reserve the [templateconfig] section for dynamically defining options
+    # for this function without also requiring an extension.
+    section = evalstringliteral(context, mapping, args[0])
+    name = evalstringliteral(context, mapping, args[1])
+    if len(args) == 3:
+        default = defaultfn(context, mapping, args[2])
+        return configfn(section, name, default)
+    else:
+        return configfn(section, name)
+
 @templatefunc('if(expr, then[, else])')
 def if_(context, mapping, args):
     """Conditionally execute based on the result of

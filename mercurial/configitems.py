@@ -1081,6 +1081,10 @@ coreconfigitem('templates', '.*',
     default=None,
     generic=True,
 )
+coreconfigitem('templateconfig', '.*',
+    default=dynamicdefault,
+    generic=True,
+)
 coreconfigitem('trusted', 'groups',
     default=list,
 )
