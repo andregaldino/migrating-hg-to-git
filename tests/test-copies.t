@@ -1,6 +1,8 @@
 #testcases filelog compatibility
 
   $ cat >> $HGRCPATH << EOF
+  > [extensions]
+  > rebase=
   > [alias]
   > l = log -G -T '{rev} {desc}\n{files}\n'
   > EOF
@@ -552,3 +554,80 @@ Grafting revision 4 on top of revision 2, showing that it respect the rename:
       b
      +baba
   
+Test which demonstrate that fullcopytracing algorithm can fail to handle a case when both the csets are dirty
+----------------------------------------------------------------------------------------------------------
+
+  $ newrepo
+  $ echo a > a
+  $ hg add a
+  $ hg ci -m "added a"
+  $ echo b > b
+  $ hg add b
+  $ hg ci -m "added b"
+
+  $ echo foobar > willconflict
+  $ hg add willconflict
+  $ hg ci -m "added willconflict"
+  $ echo c > c
+  $ hg add c
+  $ hg ci -m "added c"
+
+  $ hg l
+  @  3 added c
+  |  c
+  o  2 added willconflict
+  |  willconflict
+  o  1 added b
+  |  b
+  o  0 added a
+     a
+
+  $ hg up ".^^"
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo d > d
+  $ hg add d
+  $ hg ci -m "added d"
+  created new head
+
+  $ echo barfoo > willconflict
+  $ hg add willconflict
+  $ hg ci --amend -m "added willconflict and d"
+
+  $ hg l
+  @  5 added willconflict and d
+  |  d willconflict
+  | o  3 added c
+  | |  c
+  | o  2 added willconflict
+  |/   willconflict
+  o  1 added b
+  |  b
+  o  0 added a
+     a
+
+  $ hg rebase -r . -d 2 -t :other
+  rebasing 5:5018b1509e94 "added willconflict and d" (tip)
+
+  $ hg up 3 -q
+  $ hg l --hidden
+  o  6 added willconflict and d
+  |  d willconflict
+  | x  5 added willconflict and d
+  | |  d willconflict
+  | | x  4 added d
+  | |/   d
+  +---@  3 added c
+  | |    c
+  o |  2 added willconflict
+  |/   willconflict
+  o  1 added b
+  |  b
+  o  0 added a
+     a
+
+Now if we trigger a merge between cset revision 3 and 6 using base revision 4, in this case
+both the merging csets will be dirty as no one is descendent of base revision:
+
+  $ hg graft -r 6 --base 4 --hidden 2>&1 | grep "AssertionError"
+  AssertionError
+
