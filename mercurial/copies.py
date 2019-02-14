@@ -776,7 +776,7 @@ def _related(f1, f2):
     """
 
     if f1 == f2:
-        return f1 # a match
+        return True # a match
 
     g1, g2 = f1.ancestors(), f2.ancestors()
     try:
