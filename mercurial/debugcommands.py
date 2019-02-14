@@ -1815,7 +1815,7 @@ def debugpathcopies(ui, repo, rev1, rev2, *pats, **opts):
     ctx1 = scmutil.revsingle(repo, rev1)
     ctx2 = scmutil.revsingle(repo, rev2)
     m = scmutil.match(ctx1, pats, opts)
-    for dst, src in copies.pathcopies(ctx1, ctx2, m).items():
+    for dst, src in sorted(copies.pathcopies(ctx1, ctx2, m).items()):
         ui.write('%s -> %s\n' % (src, dst))
 
 @command('debugpeer', [], _('PATH'), norepo=True)
