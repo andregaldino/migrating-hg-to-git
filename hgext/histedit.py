@@ -1260,7 +1260,7 @@ def _chisteditmain(repo, rules, stdscr):
         line = "changeset: {0}:{1:<12}".format(ctx.rev(), ctx)
         win.addstr(1, 1, line[:length])
 
-        line = "user:      {0}".format(stringutil.shortuser(ctx.user()))
+        line = "user:      {0}".format(ctx.user())
         win.addstr(2, 1, line[:length])
 
         bms = repo.nodebookmarks(ctx.node())
