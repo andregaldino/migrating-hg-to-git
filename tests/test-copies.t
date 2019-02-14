@@ -491,3 +491,64 @@ Try merging the other direction too
   $ hg debugpathcopies 0 5
   x -> z
 
+
+Test for a case in fullcopytracing algorithm where both the merging csets are
+"dirty"; where a dirty cset means that cset is descendant of merge base. This
+test reflect that for this particular case this algorithm correctly find the copies:
+
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > evolution.createmarkers=True
+  > evolution.allowunstable=True
+  > EOF
+
+  $ newrepo
+  $ echo a > a
+  $ hg add a
+  $ hg ci -m "added a"
+  $ echo b > b
+  $ hg add b
+  $ hg ci -m "added b"
+
+  $ hg mv b b1
+  $ hg ci -m "rename b to b1"
+
+  $ hg up ".^"
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo d > d
+  $ hg add d
+  $ hg ci -m "added d"
+  created new head
+
+  $ echo baba >> b
+  $ hg ci --amend -m "added d, modified b"
+
+  $ hg l --hidden
+  @  4 added d, modified b
+  |  b d
+  | x  3 added d
+  |/   d
+  | o  2 rename b to b1
+  |/   b b1
+  o  1 added b
+  |  b
+  o  0 added a
+     a
+
+Grafting revision 4 on top of revision 2, showing that it respect the rename:
+
+  $ hg up 2 -q
+  $ hg graft -r 4 --base 3 --hidden
+  grafting 4:af28412ec03c "added d, modified b" (tip)
+  merging b1 and b to b1
+
+  $ hg l -l1 -p
+  @  5 added d, modified b
+  |  b1
+  ~  diff -r 5a4825cc2926 -r 94a2f1a0e8e2 b1
+     --- a/b1	Thu Jan 01 00:00:00 1970 +0000
+     +++ b/b1	Thu Jan 01 00:00:00 1970 +0000
+     @@ -1,1 +1,2 @@
+      b
+     +baba
+  
