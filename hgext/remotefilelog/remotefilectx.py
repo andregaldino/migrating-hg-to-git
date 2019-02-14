@@ -15,7 +15,6 @@ from mercurial import (
     context,
     error,
     phases,
-    pycompat,
     util,
 )
 from . import shallowutil
@@ -316,7 +315,7 @@ class remotefilectx(context.filectx):
         finally:
             elapsed = time.time() - start
             repo.ui.log('linkrevfixup', logmsg + '\n', elapsed=elapsed * 1000,
-                        **pycompat.strkwargs(commonlogkwargs))
+                        **commonlogkwargs)
 
     def _verifylinknode(self, revs, linknode):
         """
