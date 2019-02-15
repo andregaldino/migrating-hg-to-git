@@ -2885,21 +2885,25 @@ def grep(ui, repo, pattern, *pats, **opts):
             fm.plain(uipathfn(fn), label='grep.filename')
 
             cols = [
-                ('rev', '%d', rev, not plaingrep),
-                ('linenumber', '%d', l.linenum, opts.get('line_number')),
+                ('rev', '%d', rev, not plaingrep, ''),
+                ('linenumber', '%d', l.linenum, opts.get('line_number'), ''),
             ]
             if diff:
-                cols.append(('change', '%s', change, True))
+                cols.append(
+                    ('change', '%s', change, True,
+                     'grep.inserted ' if change == '+' else 'grep.deleted ')
+                )
             cols.extend([
-                ('user', '%s', formatuser(ctx.user()), opts.get('user')),
+                ('user', '%s', formatuser(ctx.user()), opts.get('user'), ''),
                 ('date', '%s', fm.formatdate(ctx.date(), datefmt),
-                 opts.get('date')),
+                 opts.get('date'), ''),
             ])
-            for name, fmt, data, cond in cols:
+            for name, fmt, data, cond, extra_label in cols:
                 if cond:
                     fm.plain(sep, label='grep.sep')
                 field = fieldnamemap.get(name, name)
-                fm.condwrite(cond, field, fmt, data, label='grep.%s' % name)
+                label = extra_label + ('grep.%s' % name)
+                fm.condwrite(cond, field, fmt, data, label=label)
             if not opts.get('files_with_matches'):
                 fm.plain(sep, label='grep.sep')
                 if not opts.get('text') and binary():

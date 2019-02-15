@@ -299,6 +299,10 @@ Test wdir
   color:3:+:orange
   color:2:-:orange
   color:1:+:orange
+  $ hg grep --diff orange --color=debug
+  [grep.filename|color][grep.sep|:][grep.rev|3][grep.sep|:][grep.inserted grep.change|+][grep.sep|:][grep.match|orange]
+  [grep.filename|color][grep.sep|:][grep.rev|2][grep.sep|:][grep.deleted grep.change|-][grep.sep|:][grep.match|orange]
+  [grep.filename|color][grep.sep|:][grep.rev|1][grep.sep|:][grep.inserted grep.change|+][grep.sep|:][grep.match|orange]
 
   $ hg grep --diff orange
   color:3:+:orange
