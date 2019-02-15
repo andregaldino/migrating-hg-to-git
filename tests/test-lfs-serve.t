@@ -56,11 +56,10 @@ make command server magic visible
   > EOF
 
 Skip the experimental.changegroup3=True config.  Failure to agree on this comes
-first, and causes a "ValueError: no common changegroup version" or "abort:
-HTTP Error 500: Internal Server Error", if the extension is only loaded on one
-side.  If that *is* enabled, the subsequent failure is "abort: missing processor
-for flag '0x2000'!" if the extension is only loaded on one side (possibly also
-masked by the Internal Server Error message).
+first, and causes an "abort: no common changegroup version" if the extension is
+only loaded on one side. If that *is* enabled, the subsequent failure is "abort:
+missing processor for flag '0x2000'!" if the extension is only loaded on one side
+(possibly also masked by the Internal Server Error message).
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > debugprocessors = $TESTTMP/debugprocessors.py
@@ -320,7 +319,8 @@ TODO: fail more gracefully.
   $ hg -R $TESTTMP/client4_pull pull http://localhost:$HGPORT
   pulling from http://localhost:$HGPORT/
   requesting all changes
-  abort: HTTP Error 500: Internal Server Error
+  remote: abort: no common changegroup version
+  abort: pull failed on remote
   [255]
   $ grep 'lfs' $TESTTMP/client4_pull/.hg/requires $SERVER_REQUIRES
   $TESTTMP/server/.hg/requires:lfs
@@ -664,10 +664,4 @@ Only the files required by diff are prefetched
 
   $ "$PYTHON" $TESTDIR/killdaemons.py $DAEMON_PIDS
 
-#if lfsremote-on
-  $ cat $TESTTMP/errors.log | grep '^[A-Z]'
-  Traceback (most recent call last):
-  ValueError: no common changegroup version
-#else
   $ cat $TESTTMP/errors.log
-#endif

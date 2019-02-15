@@ -920,7 +920,7 @@ def _pushb2ctx(pushop, bundler):
                       if v in changegroup.supportedoutgoingversions(
                           pushop.repo)]
         if not cgversions:
-            raise ValueError(_('no common changegroup version'))
+            raise error.Abort(_('no common changegroup version'))
         version = max(cgversions)
     cgstream = changegroup.makestream(pushop.repo, pushop.outgoing, version,
                                       'push')
@@ -2184,7 +2184,7 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
         cgversions = [v for v in cgversions
                       if v in changegroup.supportedoutgoingversions(repo)]
         if not cgversions:
-            raise ValueError(_('no common changegroup version'))
+            raise error.Abort(_('no common changegroup version'))
         version = max(cgversions)
 
     outgoing = _computeoutgoing(repo, heads, common)
@@ -2228,7 +2228,7 @@ def _getbundlebookmarkpart(bundler, repo, source, bundlecaps=None,
     if not kwargs.get(r'bookmarks', False):
         return
     if 'bookmarks' not in b2caps:
-        raise ValueError(_('no common bookmarks exchange method'))
+        raise error.Abort(_('no common bookmarks exchange method'))
     books  = bookmod.listbinbookmarks(repo)
     data = bookmod.binaryencode(books)
     if data:
@@ -2263,7 +2263,7 @@ def _getbundlephasespart(bundler, repo, source, bundlecaps=None,
     """add phase heads part to the requested bundle"""
     if kwargs.get(r'phases', False):
         if not 'heads' in b2caps.get('phases'):
-            raise ValueError(_('no common phases exchange method'))
+            raise error.Abort(_('no common phases exchange method'))
         if heads is None:
             heads = repo.heads()
 
