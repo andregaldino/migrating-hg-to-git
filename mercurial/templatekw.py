@@ -554,6 +554,14 @@ def shownamespaces(context, mapping):
 
     return _hybrid(f, namespaces, makemap, pycompat.identity)
 
+@templatekeyword('negrev', requires={'repo', 'ctx'})
+def shownegrev(context, mapping):
+    """Integer. The repository-local changeset negative revision number,
+    which counts in the opposite direction."""
+    ctx = context.resource(mapping, 'ctx')
+    repo = context.resource(mapping, 'repo')
+    return scmutil.intrev(ctx) - len(repo)
+
 @templatekeyword('node', requires={'ctx'})
 def shownode(context, mapping):
     """String. The changeset identification hash, as a 40 hexadecimal
