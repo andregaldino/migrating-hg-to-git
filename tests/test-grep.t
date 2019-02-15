@@ -50,9 +50,9 @@ simple with color
 
   $ hg --config extensions.color= grep --config color.mode=ansi \
   >     --color=always port port -r tip:0
-  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
-  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mva\x1b[0;31;1mport\x1b[0might (esc)
-  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mva\x1b[0;31;1mport\x1b[0might (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
 
 simple templated
 
@@ -305,9 +305,9 @@ Test wdir
   [grep.filename|color][grep.sep|:][grep.rev|1][grep.sep|:][grep.inserted grep.change|+][grep.sep|:][grep.match|orange]
 
   $ hg grep --diff orange --color=yes
-  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m3\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32;1m+\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
-  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m2\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1m-\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
-  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32;1m+\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m3\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32;1m+\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m2\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1m-\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m1\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32;1m+\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
 
   $ hg grep --diff orange
   color:3:+:orange

@@ -77,7 +77,7 @@ _effects = {
 _defaultstyles = {
     'grep.match': 'red bold',
     'grep.linenumber': 'green',
-    'grep.rev': 'green',
+    'grep.rev': 'blue',
     'grep.sep': 'cyan',
     'grep.filename': 'magenta',
     'grep.user': 'magenta',
