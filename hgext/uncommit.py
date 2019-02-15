@@ -64,11 +64,11 @@ def _commitfiltered(repo, ctx, match, keepcommit):
     if not exclude:
         return None
 
-    files = (initialfiles - exclude)
     # return the p1 so that we don't create an obsmarker later
     if not keepcommit:
         return ctx.p1().node()
 
+    files = (initialfiles - exclude)
     # Filter copies
     copied = copiesmod.pathcopies(base, ctx)
     copied = dict((dst, src) for dst, src in copied.iteritems()
@@ -82,6 +82,9 @@ def _commitfiltered(repo, ctx, match, keepcommit):
                                   fctx.isexec(),
                                   copied=copied.get(path))
         return mctx
+
+    if not files:
+        repo.ui.status(_("note: keeping empty commit\n"))
 
     new = context.memctx(repo,
                          parents=[base.node(), node.nullid],

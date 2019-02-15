@@ -158,6 +158,7 @@ Uncommit with dirty state
   abort: uncommitted changes
   [255]
   $ hg uncommit files
+  note: keeping empty commit
   $ cat files
   abcde
   foo
@@ -281,6 +282,7 @@ Uncommit with draft parent
 Phase is preserved
 
   $ hg uncommit --keep --config phases.new-commit=secret
+  note: keeping empty commit
   $ hg phase -r .
   15: draft
   $ hg commit --amend -m 'update ab again'
@@ -317,6 +319,7 @@ Uncommit leaving an empty changeset
   > EOS
   $ hg up Q -q
   $ hg uncommit --keep
+  note: keeping empty commit
   $ hg log -G -T '{desc} FILES: {files}'
   @  Q FILES:
   |
