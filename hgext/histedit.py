@@ -948,6 +948,12 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
 # Curses Support
 try:
     import curses
+
+    # Curses requires setting the locale or it will default to the C
+    # locale. This sets the locale to the user's default system
+    # locale.
+    import locale
+    locale.setlocale(locale.LC_ALL, u'')
 except ImportError:
     curses = None
 
