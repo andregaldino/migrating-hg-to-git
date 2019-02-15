@@ -124,9 +124,12 @@ def _chain(src, dst, a, b):
             # file is a copy of an existing file
             t[k] = v
 
-    # remove criss-crossed copies
     for k, v in list(t.items()):
+        # remove criss-crossed copies
         if k in src and v in dst:
+            del t[k]
+        # remove copies to files that were then removed
+        elif k not in dst:
             del t[k]
 
     return t

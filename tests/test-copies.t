@@ -194,9 +194,7 @@ Fork renames x to y on one side and removes x on the other
   |/   x y
   o  0 add x
      x
-BROKEN: x doesn't exist here
   $ hg debugpathcopies 1 2
-  y -> x
 
 Copies via null revision (there shouldn't be any)
   $ newrepo
