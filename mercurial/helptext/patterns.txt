@@ -1,8 +1,10 @@
 Mercurial accepts several notations for identifying one or more files
 at a time.
 
-By default, Mercurial treats filenames as shell-style extended glob
-patterns.
+By default, Mercurial treats filenames verbatim without pattern
+matching, relative to the current working directory. Note that your
+system shell might perform pattern matching of its own before passing
+filenames into Mercurial.
 
 Alternate pattern notations must be specified explicitly.
 
