@@ -131,9 +131,11 @@ class proxyhandler(urlreq.proxyhandler):
             else:
                 self.no_list = no_list
 
-            proxyurl = bytes(proxy)
-            proxies = {'http': proxyurl, 'https': proxyurl}
-            ui.debug('proxying through %s\n' % util.hidepassword(proxyurl))
+            # Keys and values need to be str because the standard library
+            # expects them to be.
+            proxyurl = str(proxy)
+            proxies = {r'http': proxyurl, r'https': proxyurl}
+            ui.debug('proxying through %s\n' % util.hidepassword(bytes(proxy)))
         else:
             proxies = {}
 
@@ -141,7 +143,7 @@ class proxyhandler(urlreq.proxyhandler):
         self.ui = ui
 
     def proxy_open(self, req, proxy, type_):
-        host = urllibcompat.gethost(req).split(':')[0]
+        host = pycompat.bytesurl(urllibcompat.gethost(req)).split(':')[0]
         for e in self.no_list:
             if host == e:
                 return None
@@ -184,15 +186,15 @@ class httpconnection(keepalive.HTTPConnection):
 def _generic_start_transaction(handler, h, req):
     tunnel_host = req._tunnel_host
     if tunnel_host:
-        if tunnel_host[:7] not in ['http://', 'https:/']:
-            tunnel_host = 'https://' + tunnel_host
+        if tunnel_host[:7] not in [r'http://', r'https:/']:
+            tunnel_host = r'https://' + tunnel_host
         new_tunnel = True
     else:
         tunnel_host = urllibcompat.getselector(req)
         new_tunnel = False
 
     if new_tunnel or tunnel_host == urllibcompat.getfullurl(req): # has proxy
-        u = util.url(tunnel_host)
+        u = util.url(pycompat.bytesurl(tunnel_host))
         if new_tunnel or u.scheme == 'https': # only use CONNECT for HTTPS
             h.realhostport = ':'.join([u.host, (u.port or '443')])
             h.headers = req.headers.copy()
@@ -205,7 +207,7 @@ def _generic_start_transaction(handler, h, req):
 def _generic_proxytunnel(self):
     proxyheaders = dict(
             [(x, self.headers[x]) for x in self.headers
-             if x.lower().startswith('proxy-')])
+             if x.lower().startswith(r'proxy-')])
     self.send('CONNECT %s HTTP/1.0\r\n' % self.realhostport)
     for header in proxyheaders.iteritems():
         self.send('%s: %s\r\n' % header)
