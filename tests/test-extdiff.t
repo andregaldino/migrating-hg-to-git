@@ -167,8 +167,8 @@ Test --per-file option for gui tool:
 Test --per-file option for gui tool again:
 
   $ hg --config merge-tools.alabalaf.gui=True alabalaf -c 6 --per-file --debug
-  diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob)
-  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob)
+  diffing */extdiff.*/a.46c0e4daeb72/* a.81906f2b98ac/* (glob)
+  diffing */extdiff.*/a.46c0e4daeb72/* a.81906f2b98ac/* (glob)
   making snapshot of 2 files from rev 46c0e4daeb72
     a
     b
