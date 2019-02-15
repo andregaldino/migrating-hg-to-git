@@ -304,6 +304,11 @@ Test wdir
   [grep.filename|color][grep.sep|:][grep.rev|2][grep.sep|:][grep.deleted grep.change|-][grep.sep|:][grep.match|orange]
   [grep.filename|color][grep.sep|:][grep.rev|1][grep.sep|:][grep.inserted grep.change|+][grep.sep|:][grep.match|orange]
 
+  $ hg grep --diff orange --color=yes
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m3\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32;1m+\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m2\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1m-\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m1\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32;1m+\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
+
   $ hg grep --diff orange
   color:3:+:orange
   color:2:-:orange
