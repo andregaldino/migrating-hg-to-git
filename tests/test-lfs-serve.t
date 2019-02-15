@@ -317,7 +317,9 @@ lfs content, and the extension enabled.
 TODO: fail more gracefully.
 
   $ hg init $TESTTMP/client4_pull
-  $ hg -R $TESTTMP/client4_pull pull -q http://localhost:$HGPORT
+  $ hg -R $TESTTMP/client4_pull pull http://localhost:$HGPORT
+  pulling from http://localhost:$HGPORT/
+  requesting all changes
   abort: HTTP Error 500: Internal Server Error
   [255]
   $ grep 'lfs' $TESTTMP/client4_pull/.hg/requires $SERVER_REQUIRES
