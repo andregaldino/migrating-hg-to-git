@@ -23,9 +23,9 @@ Test interactions between mq and patch.eol
   > w(b' c\r\n')
   > w(b' d\n')
   > w(b'-e\n')
-  > w(b'\\ No newline at end of file\n')
+  > w(b'\\\\ No newline at end of file\n')
   > w(b'+z\r\n')
-  > w(b'\\ No newline at end of file\r\n')
+  > w(b'\\\\ No newline at end of file\r\n')
   > EOF
 
   $ cat > cateol.py <<EOF
