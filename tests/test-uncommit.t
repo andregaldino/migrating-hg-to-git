@@ -307,7 +307,7 @@ Partial uncommit with public parent
   $ hg phase -r ".^"
   12: public
 
-Uncommit leaving an empty changeset
+Uncommit with --keep or experimental.uncommit.keep leaves an empty changeset
 
   $ cd $TESTTMP
   $ hg init repo1
@@ -327,9 +327,31 @@ Uncommit leaving an empty changeset
   |/
   o  P FILES: P
   
+  $ cat >> .hg/hgrc <<EOF
+  > [experimental]
+  > uncommit.keep=True
+  > EOF
+  $ hg ci --amend
+  $ hg uncommit
+  note: keeping empty commit
+  $ hg log -G -T '{desc} FILES: {files}'
+  @  Q FILES:
+  |
+  | x  Q FILES: Q
+  |/
+  o  P FILES: P
+  
   $ hg status
   A Q
-
+  $ hg ci --amend
+  $ hg uncommit --no-keep
+  $ hg log -G -T '{desc} FILES: {files}'
+  x  Q FILES: Q
+  |
+  @  P FILES: P
+  
+  $ hg status
+  A Q
   $ cd ..
   $ rm -rf repo1
 

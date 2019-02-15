@@ -44,6 +44,9 @@ configitem = registrar.configitem(configtable)
 configitem('experimental', 'uncommitondirtywdir',
     default=False,
 )
+configitem('experimental', 'uncommit.keep',
+    default=False,
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -136,7 +139,7 @@ def _fixdirstate(repo, oldctx, newctx, match=None):
         ds.copy(src, dst)
 
 @command('uncommit',
-    [('', 'keep', False, _('allow an empty commit after uncommiting')),
+    [('', 'keep', None, _('allow an empty commit after uncommiting')),
     ] + commands.walkopts,
     _('[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
@@ -165,7 +168,12 @@ def uncommit(ui, repo, *pats, **opts):
 
         with repo.transaction('uncommit'):
             match = scmutil.match(old, pats, opts)
-            keepcommit = opts.get('keep') or pats
+            keepcommit = pats
+            if not keepcommit:
+                if opts.get('keep') is not None:
+                    keepcommit = opts.get('keep')
+                else:
+                    keepcommit = ui.configbool('experimental', 'uncommit.keep')
             newid = _commitfiltered(repo, old, match, keepcommit)
             if newid is None:
                 ui.status(_("nothing to uncommit\n"))
