@@ -82,7 +82,8 @@ Create an extension to test bundle2 API
   >           (b'', b'genraise', False, b'includes a part that raise an exception during generation'),
   >           (b'', b'timeout', False, b'emulate a timeout during bundle generation'),
   >           (b'r', b'rev', [], b'includes those changeset in the bundle'),
-  >           (b'', b'compress', b'', b'compress the stream'),],
+  >           (b'', b'compress', b'', b'compress the stream'),
+  >          ],
   >          b'[OUTPUTFILE]')
   > def cmdbundle2(ui, repo, path=None, **opts):
   >     """write a bundle2 container on standard output"""
