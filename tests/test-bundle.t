@@ -222,6 +222,7 @@ Pull ../full.hg into empty (with hook)
   > EOF
 
 doesn't work (yet ?)
+NOTE: msys is mangling the URL below
 
 hg -R bundle://../full.hg verify
 
@@ -239,7 +240,8 @@ hg -R bundle://../full.hg verify
   HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
-  HG_URL=bundle:../full.hg
+  HG_URL=bundle:../full.hg (no-msys !)
+  HG_URL=bundle;../full.hg (msys !)
   
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
