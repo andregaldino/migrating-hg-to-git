@@ -38,7 +38,7 @@
   > def fakegetusers(ui, group):
   >     try:
   >         return acl._getusersorig(ui, group)
-  >     except:
+  >     except BaseException:
   >         return [b"fred", b"betty"]
   > acl._getusersorig = acl._getusers
   > acl._getusers = fakegetusers
