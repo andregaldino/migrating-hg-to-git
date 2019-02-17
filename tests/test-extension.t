@@ -688,13 +688,11 @@ hide outer repo
   > @command(b'debugfoobar', [], b'hg debugfoobar')
   > def debugfoobar(ui, repo, *args, **opts):
   >     "yet another debug command"
-  >     pass
   > @command(b'foo', [], b'hg foo')
   > def foo(ui, repo, *args, **opts):
   >     """yet another foo command
   >     This command has been DEPRECATED since forever.
   >     """
-  >     pass
   > EOF
   $ debugpath=`pwd`/debugextension.py
   $ echo "debugextension = $debugpath" >> $HGRCPATH
@@ -964,7 +962,6 @@ Test help topic with same name as extension
   > @command(b'multirevs', [], b'ARG', norepo=True)
   > def multirevs(ui, repo, arg, *args, **opts):
   >     """multirevs command"""
-  >     pass
   > EOF
   $ echo "multirevs = multirevs.py" >> $HGRCPATH
 

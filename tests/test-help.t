@@ -825,7 +825,6 @@ this is a section and erroring out weirdly.
   > @command(b'hashelp', [], b'hg hashelp', norepo=True)
   > def hashelp(ui, *args, **kwargs):
   >     """Extension command's help"""
-  >     pass
   > 
   > def uisetup(ui):
   >     ui.setconfig(b'alias', b'shellalias', b'!echo hi', b'helpext')
