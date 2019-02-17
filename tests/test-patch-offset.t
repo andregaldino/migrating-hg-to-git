@@ -9,7 +9,7 @@
   > for pattern in patterns:
   >     count = int(pattern[0:-1])
   >     char = pattern[-1].encode('utf8') + b'\n'
-  >     fp.write(char*count)
+  >     fp.write(char * count)
   > fp.close()
   > EOF
 

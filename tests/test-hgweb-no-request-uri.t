@@ -62,12 +62,12 @@ should be used from d74fc8dec2b4 onward to route the request.
   > output = stringio()
   > env['PATH_INFO'] = '/'
   > env['QUERY_STRING'] = 'style=atom'
-  > process(hgweb.hgweb(b'.', name = b'repo'))
+  > process(hgweb.hgweb(b'.', name=b'repo'))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/file/tip/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgweb.hgweb(b'.', name = b'repo'))
+  > process(hgweb.hgweb(b'.', name=b'repo'))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/'

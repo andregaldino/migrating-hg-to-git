@@ -12,9 +12,9 @@ Test applying context diffs
   >     count = int(pattern[0:-1])
   >     char = pattern[-1].encode('utf8') + b'\n'
   >     if not lasteol and i == len(patterns) - 1:
-  >         fp.write((char*count)[:-1])
+  >         fp.write((char * count)[:-1])
   >     else:
-  >         fp.write(char*count)
+  >         fp.write(char * count)
   > fp.close()
   > EOF
   $ cat > cat.py <<EOF

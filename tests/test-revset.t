@@ -12,9 +12,9 @@
   >     """
   >     if 3 not in subset:
   >        if 2 in subset:
-  >            return baseset([2,2])
+  >            return baseset([2, 2])
   >        return baseset()
-  >     return baseset([3,3,2,2])
+  >     return baseset([3, 3, 2, 2])
   > 
   > mercurial.revset.symbols[b'r3232'] = r3232
   > EOF

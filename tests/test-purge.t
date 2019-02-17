@@ -52,7 +52,7 @@ delete an untracked file
   $ "$PYTHON" <<EOF
   > import os
   > import stat
-  > f= 'untracked_file_readonly'
+  > f = 'untracked_file_readonly'
   > os.chmod(f, stat.S_IMODE(os.stat(f).st_mode) & ~stat.S_IWRITE)
   > EOF
   $ hg purge -p

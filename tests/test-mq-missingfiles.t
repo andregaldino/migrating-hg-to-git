@@ -15,10 +15,10 @@ future qrefresh.
   > 
   > f = open(path, 'wb')
   > for i in range(len(args) // 2):
-  >    count, s = args[2*i:2*i+2]
+  >    count, s = args[2 * i:2 * i + 2]
   >    count = int(count)
   >    s = encode(s)
-  >    f.write(s*count)
+  >    f.write(s * count)
   > f.close()
   > EOF
 

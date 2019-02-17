@@ -640,7 +640,7 @@ import-checker.py or so on their contents)
 Make sure a broken uisetup doesn't globally break hg:
   $ cat > $TESTTMP/baduisetup.py <<EOF
   > def uisetup(ui):
-  >     1/0
+  >     1 / 0
   > EOF
 
 Even though the extension fails during uisetup, hg is still basically usable:
@@ -649,7 +649,7 @@ Even though the extension fails during uisetup, hg is still basically usable:
     File "*/mercurial/extensions.py", line *, in _runuisetup (glob)
       uisetup(ui)
     File "$TESTTMP/baduisetup.py", line 2, in uisetup
-      1/0
+      1 / 0
   ZeroDivisionError: * by zero (glob)
   *** failed to set up extension baduisetup: * by zero (glob)
   Mercurial Distributed SCM (version *) (glob)

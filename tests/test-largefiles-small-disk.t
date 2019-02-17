@@ -9,7 +9,7 @@ Test how largefiles abort in case the disk runs full
   > #
   > # this makes the original largefiles code abort:
   > _origcopyfileobj = shutil.copyfileobj
-  > def copyfileobj(fsrc, fdst, length=16*1024):
+  > def copyfileobj(fsrc, fdst, length=16 * 1024):
   >     # allow journal files (used by transaction) to be written
   >     if b'journal.' in fdst.name:
   >         return _origcopyfileobj(fsrc, fdst, length)
