@@ -31,6 +31,13 @@ Issue2232: committing a subrepo without .hgsub
   a
   s/a
 
+`hg files` respects ui.relative-paths
+BROKEN: shows subrepo paths relative to the subrepo
+  $ hg files -S --config ui.relative-paths=no
+  .hgsub
+  a
+  a
+
   $ hg -R s ci -Ams0
   $ hg sum
   parent: 0:f7b1eb17ad24 tip
