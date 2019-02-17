@@ -2213,8 +2213,10 @@ def files(ui, repo, *pats, **opts):
 
     m = scmutil.match(ctx, pats, opts)
     ui.pager('files')
+    uipathfn = scmutil.getuipathfn(ctx.repo(), legacyrelativevalue=True)
     with ui.formatter('files', opts) as fm:
-        return cmdutil.files(ui, ctx, m, fm, fmt, opts.get('subrepos'))
+        return cmdutil.files(ui, ctx, m, uipathfn, fm, fmt,
+                             opts.get('subrepos'))
 
 @command(
     'forget',

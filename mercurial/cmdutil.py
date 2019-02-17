@@ -2171,11 +2171,10 @@ def forget(ui, repo, match, prefix, uipathfn, explicitonly, dryrun,
         forgot.extend(f for f in forget if f not in rejected)
     return bad, forgot
 
-def files(ui, ctx, m, fm, fmt, subrepos):
+def files(ui, ctx, m, uipathfn, fm, fmt, subrepos):
     ret = 1
 
     needsfctx = ui.verbose or {'size', 'flags'} & fm.datahint()
-    uipathfn = scmutil.getuipathfn(ctx.repo(), legacyrelativevalue=True)
     for f in ctx.matches(m):
         fm.startitem()
         fm.context(ctx=ctx)
@@ -2188,11 +2187,13 @@ def files(ui, ctx, m, fm, fmt, subrepos):
 
     for subpath in sorted(ctx.substate):
         submatch = matchmod.subdirmatcher(subpath, m)
+        subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
         if (subrepos or m.exact(subpath) or any(submatch.files())):
             sub = ctx.sub(subpath)
             try:
                 recurse = m.exact(subpath) or subrepos
-                if sub.printfiles(ui, submatch, fm, fmt, recurse) == 0:
+                if sub.printfiles(ui, submatch, subuipathfn, fm, fmt,
+                                  recurse) == 0:
                     ret = 0
             except error.LookupError:
                 ui.status(_("skipping missing subrepository: %s\n")

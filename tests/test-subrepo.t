@@ -36,7 +36,7 @@ BROKEN: shows subrepo paths relative to the subrepo
   $ hg files -S --config ui.relative-paths=no
   .hgsub
   a
-  a
+  s/a
 
   $ hg -R s ci -Ams0
   $ hg sum
