@@ -379,7 +379,7 @@ a '*' entry in blackbox.track is interpreted as log everything
 (only look for entries with specific logged sources, otherwise this test is
 pretty brittle)
   $ hg blackbox | egrep '\[command(finish)?\]'
-  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000) [commandfinish]> --config 'blackbox.track=*' --config 'blackbox.logsource=True' init track_star exited 0 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000) [commandfinish]> --config *blackbox.track=* --config *blackbox.logsource=True* init track_star exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000) [command]> blackbox
   $ cd $TESTTMP
 
