@@ -310,6 +310,7 @@ test-http-bundle1.t
 test-http-clone-r.t
 test-http-permissions.t
 test-http-protocol.t
+test-http-proxy.t
 test-http.t
 test-https.t
 test-hybridencode.py
@@ -366,6 +367,7 @@ test-lfconvert.t
 test-lfs-bundle.t
 test-lfs-largefiles.t
 test-lfs-pointer.py
+test-lfs-serve.t
 test-lfs-test-server.t
 test-lfs.t
 test-linelog.py
@@ -607,6 +609,7 @@ test-remotefilelog-gcrepack.t
 test-remotefilelog-histpack.py
 test-remotefilelog-http.t
 test-remotefilelog-keepset.t
+test-remotefilelog-linknodes.t
 test-remotefilelog-local.t
 test-remotefilelog-log.t
 test-remotefilelog-partial-shallow.t
@@ -614,6 +617,7 @@ test-remotefilelog-permissions.t
 test-remotefilelog-permisssions.t
 test-remotefilelog-prefetch.t
 test-remotefilelog-pull-noshallow.t
+test-remotefilelog-push-pull.t
 test-remotefilelog-repack-fast.t
 test-remotefilelog-repack.t
 test-remotefilelog-share.t
@@ -646,6 +650,7 @@ test-revlog.t
 test-revset-dirstate-parents.t
 test-revset-legacy-lookup.t
 test-revset-outgoing.t
+test-revset.t
 test-revset2.t
 test-rollback.t
 test-run-tests.py
