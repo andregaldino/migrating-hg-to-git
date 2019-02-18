@@ -356,7 +356,7 @@ Windows paths are accepted on input
   $ rm dir1/.hgignore
   $ echo "dir1/file*" >> .hgignore
   $ hg debugignore "dir1\file2"
-  dir1\file2 is ignored
+  dir1/file2 is ignored
   (ignore rule in $TESTTMP\ignorerepo\.hgignore, line 4: 'dir1/file*')
   $ hg up -qC .
 

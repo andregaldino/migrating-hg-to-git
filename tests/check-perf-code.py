@@ -24,7 +24,7 @@ perfpypats = [
 
 def modulewhitelist(names):
     replacement = [('.py', ''), ('.c', ''), # trim suffix
-                   ('mercurial%s' % (os.sep), ''), # trim "mercurial/" path
+                   ('mercurial%s' % ('/'), ''), # trim "mercurial/" path
                   ]
     ignored = {'__init__'}
     modules = {}
