@@ -141,8 +141,8 @@ def _tracefile(fctx, am, limit=node.nullrev):
         if limit >= 0 and not f.isintroducedafter(limit):
             return None
 
-def _dirstatecopies(d, match=None):
-    ds = d._repo.dirstate
+def _dirstatecopies(repo, match=None):
+    ds = repo.dirstate
     c = ds.copies().copy()
     for k in list(c):
         if ds[k] not in 'anm' or (match and not match(k)):
@@ -221,11 +221,11 @@ def _forwardcopies(a, b, match=None):
     if b.rev() is None:
         if a == b.p1():
             # short-circuit to avoid issues with merge states
-            return _dirstatecopies(b, match)
+            return _dirstatecopies(b._repo, match)
 
         cm = _committedforwardcopies(a, b.p1(), match)
         # combine copies from dirstate if necessary
-        return _chain(a, b, cm, _dirstatecopies(b, match))
+        return _chain(a, b, cm, _dirstatecopies(b._repo, match))
     return _committedforwardcopies(a, b, match)
 
 def _backwardrenames(a, b):
@@ -391,9 +391,11 @@ def mergecopies(repo, c1, c2, base):
     if not c1 or not c2 or c1 == c2:
         return {}, {}, {}, {}, {}
 
+    narrowmatch = c1.repo().narrowmatch()
+
     # avoid silly behavior for parent -> working dir
     if c2.node() is None and c1.node() == repo.dirstate.p1():
-        return repo.dirstate.copies(), {}, {}, {}, {}
+        return _dirstatecopies(repo, narrowmatch), {}, {}, {}, {}
 
     copytracing = repo.ui.config('experimental', 'copytrace')
     boolctrace = stringutil.parsebool(copytracing)
