@@ -228,16 +228,21 @@ def _forwardcopies(a, b, match=None):
         return _chain(a, b, cm, _dirstatecopies(b._repo, match))
     return _committedforwardcopies(a, b, match)
 
-def _backwardrenames(a, b):
+def _backwardrenames(a, b, match):
     if a._repo.ui.config('experimental', 'copytrace') == 'off':
         return {}
 
     # Even though we're not taking copies into account, 1:n rename situations
     # can still exist (e.g. hg cp a b; hg mv a c). In those cases we
     # arbitrarily pick one of the renames.
+    # We don't want to pass in "match" here, since that would filter
+    # the destination by it. Since we're reversing the copies, we want
+    # to filter the source instead.
     f = _forwardcopies(b, a)
     r = {}
     for k, v in sorted(f.iteritems()):
+        if match and not match(v):
+            continue
         # remove copies
         if v in a:
             continue
@@ -261,10 +266,10 @@ def pathcopies(x, y, match=None):
     if a == y:
         if debug:
             repo.ui.debug('debug.copies: search mode: backward\n')
-        return _backwardrenames(x, y)
+        return _backwardrenames(x, y, match=match)
     if debug:
         repo.ui.debug('debug.copies: search mode: combined\n')
-    return _chain(x, y, _backwardrenames(x, a),
+    return _chain(x, y, _backwardrenames(x, a, match=match),
                   _forwardcopies(a, y, match=match))
 
 def _computenonoverlap(repo, c1, c2, addedinm1, addedinm2, baselabel=''):

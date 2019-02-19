@@ -33,9 +33,7 @@ Test filtering copies by path. We do filtering by destination.
   y -> x
   $ hg debugpathcopies 0 1 y
   x -> y
-BROKEN: the following command should not include the copy
   $ hg debugpathcopies 1 0 y
-  y -> x
 
 Copy a file onto another file
   $ newrepo
