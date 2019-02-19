@@ -6,6 +6,7 @@ mod ancestors;
 pub mod dagops;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
 pub mod testing;  // unconditionally built, for use from integration tests
+pub mod discovery;
 
 /// Mercurial revision numbers
 ///
