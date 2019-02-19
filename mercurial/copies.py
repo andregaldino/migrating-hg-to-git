@@ -166,6 +166,10 @@ def _committedforwardcopies(a, b, match):
     # files might have to be traced back to the fctx parent of the last
     # one-side-only changeset, but not further back than that
     repo = a._repo
+
+    if repo.ui.config('experimental', 'copies.read-from') == 'compatibility':
+        return _changesetforwardcopies(a, b, match)
+
     debug = repo.ui.debugflag and repo.ui.configbool('devel', 'debug.copies')
     dbg = repo.ui.debug
     if debug:
@@ -215,6 +219,76 @@ def _committedforwardcopies(a, b, match):
             dbg('debug.copies:          time: %f seconds\n'
                 % (util.timer() - start))
     return cm
+
+def _changesetforwardcopies(a, b, match):
+    if a.rev() == node.nullrev:
+        return {}
+
+    repo = a.repo()
+    children = {}
+    cl = repo.changelog
+    missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
+    for r in missingrevs:
+        for p in cl.parentrevs(r):
+            if p == node.nullrev:
+                continue
+            if p not in children:
+                children[p] = [r]
+            else:
+                children[p].append(r)
+
+    roots = set(children) - set(missingrevs)
+    # 'work' contains 3-tuples of a (revision number, parent number, copies).
+    # The parent number is only used for knowing which parent the copies dict
+    # came from.
+    work = [(r, 1, {}) for r in roots]
+    heapq.heapify(work)
+    while work:
+        r, i1, copies1 = heapq.heappop(work)
+        if work and work[0][0] == r:
+            # We are tracing copies from both parents
+            r, i2, copies2 = heapq.heappop(work)
+            copies = {}
+            ctx = repo[r]
+            p1man, p2man = ctx.p1().manifest(), ctx.p2().manifest()
+            allcopies = set(copies1) | set(copies2)
+            # TODO: perhaps this filtering should be done as long as ctx
+            # is merge, whether or not we're tracing from both parent.
+            for dst in allcopies:
+                if not match(dst):
+                    continue
+                if dst not in copies2:
+                    # Copied on p1 side: mark as copy from p1 side if it didn't
+                    # already exist on p2 side
+                    if dst not in p2man:
+                        copies[dst] = copies1[dst]
+                elif dst not in copies1:
+                    # Copied on p2 side: mark as copy from p2 side if it didn't
+                    # already exist on p1 side
+                    if dst not in p1man:
+                        copies[dst] = copies2[dst]
+                else:
+                    # Copied on both sides: mark as copy from p1 side
+                    copies[dst] = copies1[dst]
+        else:
+            copies = copies1
+        if r == b.rev():
+            return copies
+        for c in children[r]:
+            childctx = repo[c]
+            if r == childctx.p1().rev():
+                parent = 1
+                childcopies = childctx.p1copies()
+            else:
+                assert r == childctx.p2().rev()
+                parent = 2
+                childcopies = childctx.p2copies()
+            if not match.always():
+                childcopies = {dst: src for dst, src in childcopies.items()
+                               if match(dst)}
+            childcopies = _chain(a, childctx, copies, childcopies)
+            heapq.heappush(work, (c, parent, childcopies))
+    assert False
 
 def _forwardcopies(a, b, match=None):
     """find {dst@b: src@a} copy mapping where a is an ancestor of b"""

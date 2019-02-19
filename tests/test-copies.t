@@ -1,8 +1,16 @@
+#testcases filelog compatibility
 
   $ cat >> $HGRCPATH << EOF
   > [alias]
   > l = log -G -T '{rev} {desc}\n{files}\n'
   > EOF
+
+#if compatibility
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > copies.read-from = compatibility
+  > EOF
+#endif
 
   $ REPONUM=0
   $ newrepo() {
@@ -338,7 +346,7 @@ It's a little weird that it shows up on both sides
   $ hg debugpathcopies 1 2
   x -> z
   $ hg debugpathcopies 0 2
-  x -> z
+  x -> z (filelog !)
 
 Copy file that exists on both sides of the merge, different content
   $ newrepo
@@ -476,7 +484,8 @@ Try merging the other direction too
   $ hg debugpathcopies 1 4
   $ hg debugpathcopies 2 4
   $ hg debugpathcopies 0 4
-  x -> z
+  x -> z (filelog !)
+  y -> z (compatibility !)
   $ hg debugpathcopies 1 5
   $ hg debugpathcopies 2 5
   $ hg debugpathcopies 0 5

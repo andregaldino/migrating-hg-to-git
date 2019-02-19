@@ -482,6 +482,9 @@ coreconfigitem('experimental', 'copytrace.movecandidateslimit',
 coreconfigitem('experimental', 'copytrace.sourcecommitlimit',
     default=100,
 )
+coreconfigitem('experimental', 'copies.read-from',
+    default="filelog-only",
+)
 coreconfigitem('experimental', 'crecordtest',
     default=None,
 )
