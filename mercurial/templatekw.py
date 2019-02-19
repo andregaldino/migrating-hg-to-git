@@ -559,8 +559,11 @@ def shownegrev(context, mapping):
     """Integer. The repository-local changeset negative revision number,
     which counts in the opposite direction."""
     ctx = context.resource(mapping, 'ctx')
+    rev = ctx.rev()
+    if rev is None or rev < 0:  # wdir() or nullrev?
+        return None
     repo = context.resource(mapping, 'repo')
-    return scmutil.intrev(ctx) - len(repo)
+    return rev - len(repo)
 
 @templatekeyword('node', requires={'ctx'})
 def shownode(context, mapping):
