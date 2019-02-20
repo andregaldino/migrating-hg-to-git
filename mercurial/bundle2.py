@@ -1664,6 +1664,7 @@ def addpartrevbranchcache(repo, bundler, outgoing):
                     mandatory=False)
 
 def _formatrequirementsspec(requirements):
+    requirements = [req for req in requirements if req != "shared"]
     return urlreq.quote(','.join(sorted(requirements)))
 
 def _formatrequirementsparams(requirements):
