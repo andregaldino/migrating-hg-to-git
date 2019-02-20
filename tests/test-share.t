@@ -124,6 +124,16 @@ hg serve shared clone
   -rw-r--r-- 2 b
   
   
+Cloning a shared repo via bundle2 wrongly adds "shared" to the clone's requirements
+
+  $ cd ..
+  $ hg clone -q --stream --config ui.ssh="$PYTHON \"$TESTDIR/dummyssh\"" ssh://user@dummy/`pwd`/repo2 cloned-via-bundle2
+  $ cat ./cloned-via-bundle2/.hg/requires | grep "shared"
+  shared
+  $ hg id --cwd cloned-via-bundle2 -r tip
+  abort: $ENOENT$: '$TESTTMP/cloned-via-bundle2/.hg/sharedpath'
+  [255]
+  $ cd repo2
 
 test unshare command
 
