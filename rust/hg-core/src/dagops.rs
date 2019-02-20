@@ -81,6 +81,27 @@ pub fn retain_heads(
     Ok(())
 }
 
+/// Roots of `revs`, passed as a `HashSet`
+///
+/// They are returned in arbitrary order
+pub fn roots<G: Graph>(
+    graph: &G,
+    revs: &HashSet<Revision>,
+) -> Result<Vec<Revision>, GraphError> {
+    let mut roots: Vec<Revision> = Vec::new();
+    for rev in revs {
+        if graph
+            .parents(*rev)?
+            .iter()
+            .filter(|p| **p != NULL_REVISION)
+            .all(|p| !revs.contains(p))
+        {
+            roots.push(*rev);
+        }
+    }
+    Ok(roots)
+}
+
 /// Compute the topological range between two collections of revisions
 ///
 /// This is equivalent to the revset `<roots>::<heads>`.
@@ -199,6 +220,30 @@ mod tests {
         assert_eq!(
             heads_sorted(&SampleGraph, &[1, 2, 3, 4, 5, 6, 7, 8, 9])?,
             vec![3, 5, 8, 9]
+        );
+        Ok(())
+    }
+
+    /// Apply `roots()` and sort the result for easier comparison
+    fn roots_sorted(
+        graph: &impl Graph,
+        revs: &[Revision],
+    ) -> Result<Vec<Revision>, GraphError> {
+        let mut as_vec = roots(graph, &revs.iter().cloned().collect())?;
+        as_vec.sort();
+        Ok(as_vec)
+    }
+
+    #[test]
+    fn test_roots() -> Result<(), GraphError> {
+        assert_eq!(roots_sorted(&SampleGraph, &[4, 5, 6])?, vec![4]);
+        assert_eq!(
+            roots_sorted(&SampleGraph, &[4, 1, 6, 12, 0])?,
+            vec![0, 4, 12]
+        );
+        assert_eq!(
+            roots_sorted(&SampleGraph, &[1, 2, 3, 4, 5, 6, 7, 8, 9])?,
+            vec![1, 8]
         );
         Ok(())
     }
