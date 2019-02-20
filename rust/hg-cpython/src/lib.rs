@@ -28,6 +28,7 @@ pub mod ancestors;
 mod cindex;
 mod conversion;
 pub mod dagops;
+pub mod discovery;
 pub mod exceptions;
 
 py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
@@ -40,6 +41,7 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     let dotted_name: String = m.get(py, "__name__")?.extract(py)?;
     m.add(py, "ancestor", ancestors::init_module(py, &dotted_name)?)?;
     m.add(py, "dagop", dagops::init_module(py, &dotted_name)?)?;
+    m.add(py, "discovery", discovery::init_module(py, &dotted_name)?)?;
     m.add(py, "GraphError", py.get_type::<exceptions::GraphError>())?;
     Ok(())
 });
