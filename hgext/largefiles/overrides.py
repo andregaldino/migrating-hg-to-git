@@ -664,9 +664,9 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                                   _('destination largefile already exists'))
             copiedfiles.append((src, dest))
             orig(src, dest, *args, **kwargs)
-        with extensions.wrappedfunction(util, 'copyfile', overridecopyfile), \
-             extensions.wrappedfunction(scmutil, 'match', overridematch):
-            result += orig(ui, repo, listpats, opts, rename)
+        with extensions.wrappedfunction(util, 'copyfile', overridecopyfile):
+            with extensions.wrappedfunction(scmutil, 'match', overridematch):
+                result += orig(ui, repo, listpats, opts, rename)
 
         lfdirstate = lfutil.openlfdirstate(ui, repo)
         for (src, dest) in copiedfiles:

@@ -278,9 +278,9 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
             p1, p2 = ds.p1(), ds.p2()
             with ds.parentchange():
                 ds.setparents(node.nullid, node.nullid)
-            with wrappedextraprepare,\
-                 repo.ui.configoverride(overrides, 'widen'):
-                exchange.pull(repo, remote, heads=common)
+            with wrappedextraprepare:
+                with repo.ui.configoverride(overrides, 'widen'):
+                    exchange.pull(repo, remote, heads=common)
             with ds.parentchange():
                 ds.setparents(p1, p2)
         else:
@@ -296,11 +296,11 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                     'ellipses': False,
                 }).result()
 
-            with repo.transaction('widening') as tr,\
-                 repo.ui.configoverride(overrides, 'widen'):
-                tgetter = lambda: tr
-                bundle2.processbundle(repo, bundle,
-                        transactiongetter=tgetter)
+            with repo.transaction('widening') as tr:
+                with repo.ui.configoverride(overrides, 'widen'):
+                    tgetter = lambda: tr
+                    bundle2.processbundle(repo, bundle,
+                            transactiongetter=tgetter)
 
         with repo.transaction('widening'):
             repo.setnewnarrowpats()

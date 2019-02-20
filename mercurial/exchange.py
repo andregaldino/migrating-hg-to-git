@@ -556,18 +556,18 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
                % stringutil.forcebytestr(err))
         pushop.ui.debug(msg)
 
-    with wlock or util.nullcontextmanager(), \
-            lock or util.nullcontextmanager(), \
-            pushop.trmanager or util.nullcontextmanager():
-        pushop.repo.checkpush(pushop)
-        _checkpublish(pushop)
-        _pushdiscovery(pushop)
-        if not _forcebundle1(pushop):
-            _pushbundle2(pushop)
-        _pushchangeset(pushop)
-        _pushsyncphase(pushop)
-        _pushobsolete(pushop)
-        _pushbookmark(pushop)
+    with wlock or util.nullcontextmanager():
+        with lock or util.nullcontextmanager():
+            with pushop.trmanager or util.nullcontextmanager():
+                pushop.repo.checkpush(pushop)
+                _checkpublish(pushop)
+                _pushdiscovery(pushop)
+                if not _forcebundle1(pushop):
+                    _pushbundle2(pushop)
+                _pushchangeset(pushop)
+                _pushsyncphase(pushop)
+                _pushobsolete(pushop)
+                _pushbookmark(pushop)
 
     if repo.ui.configbool('experimental', 'remotenames'):
         logexchange.pullremotenames(repo, remote)
