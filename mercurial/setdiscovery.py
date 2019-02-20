@@ -52,6 +52,7 @@ from .node import (
 )
 from . import (
     error,
+    policy,
     util,
 )
 
@@ -268,6 +269,10 @@ class partialdiscovery(object):
                 takefrom.sort()
                 sample.update(takefrom[:more])
         return sample
+
+partialdiscovery = policy.importrust('discovery',
+                                     member='PartialDiscovery',
+                                     default=partialdiscovery)
 
 def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
