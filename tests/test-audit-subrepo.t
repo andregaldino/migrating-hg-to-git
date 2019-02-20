@@ -660,3 +660,44 @@ then pull (and update):
   $ cd ..
 
 #endif
+
+Test drive letter
+-----------------
+
+Windows has a weird relative path that can change the drive letter, which
+should also be prohibited on Windows.
+
+prepare tampered repo:
+
+  $ hg init driveletter
+  $ cd driveletter
+  $ hg import --bypass -qm 'add subrepo "X:"' - <<'EOF'
+  > diff --git a/.hgsub b/.hgsub
+  > new file mode 100644
+  > --- /dev/null
+  > +++ b/.hgsub
+  > @@ -0,0 +1,1 @@
+  > +X: = foo
+  > diff --git a/.hgsubstate b/.hgsubstate
+  > new file mode 100644
+  > --- /dev/null
+  > +++ b/.hgsubstate
+  > @@ -0,0 +1,1 @@
+  > +0000000000000000000000000000000000000000 X:
+  > EOF
+  $ cd ..
+
+on clone (and update):
+
+#if windows
+
+  $ hg clone -q driveletter driveletter2
+  abort: path contains illegal component: X:
+
+#else
+
+  $ hg clone -q driveletter driveletter2
+  $ ls driveletter2
+  X:
+
+#endif
