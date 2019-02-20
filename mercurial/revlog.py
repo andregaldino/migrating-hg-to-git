@@ -1121,7 +1121,7 @@ class revlog(object):
                 return self.index.headrevs()
             except AttributeError:
                 return self._headrevs()
-        return dagop.headrevs(revs, self.parentrevs)
+        return dagop.headrevs(revs, self._uncheckedparentrevs)
 
     def computephases(self, roots):
         return self.index.computephasesmapsets(roots)
