@@ -1183,6 +1183,14 @@ class committablectx(basectx):
     def files(self):
         return sorted(self._status.modified + self._status.added +
                       self._status.removed)
+    def modified(self):
+        return self._status.modified
+    def added(self):
+        return self._status.added
+    def removed(self):
+        return self._status.removed
+    def deleted(self):
+        return self._status.deleted
     @propertycache
     def _copies(self):
         p1copies = {}
@@ -1203,14 +1211,6 @@ class committablectx(basectx):
         return self._copies[0]
     def p2copies(self):
         return self._copies[1]
-    def modified(self):
-        return self._status.modified
-    def added(self):
-        return self._status.added
-    def removed(self):
-        return self._status.removed
-    def deleted(self):
-        return self._status.deleted
     def branch(self):
         return encoding.tolocal(self._extra['branch'])
     def closesbranch(self):
