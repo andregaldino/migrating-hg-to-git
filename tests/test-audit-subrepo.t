@@ -693,6 +693,7 @@ on clone (and update):
 
   $ hg clone -q driveletter driveletter2
   abort: path contains illegal component: X:
+  [255]
 
 #else
 
