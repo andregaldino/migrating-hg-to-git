@@ -289,3 +289,6 @@ Make sure `diff --stat -q --config diff.git-0` shows stat (issue4037)
   A new c
   R c
   $ hg diff --stat -q
+   c     |  1 -
+   new c |  1 +
+   2 files changed, 1 insertions(+), 1 deletions(-)

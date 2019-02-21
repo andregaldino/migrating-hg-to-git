@@ -13,6 +13,7 @@
   $ hg ci -m 'change foo'
 
   $ hg --quiet diff -r 0 -r 1
+  diff -r a99fb63adac3 -r 9b8568d3af2f foo
   --- a/foo	Thu Jan 01 00:00:00 1970 +0000
   +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
   @@ -1,1 +1,1 @@

@@ -599,6 +599,7 @@ test interactive transplant
   > EOF
   0:17ab29e464c6
   apply changeset? [ynmpcq?]: p
+  diff -r 000000000000 -r 17ab29e464c6 r1
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/r1	Thu Jan 01 00:00:00 1970 +0000
   @@ -0,0 +1,1 @@

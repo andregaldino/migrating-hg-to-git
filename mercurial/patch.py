@@ -2682,7 +2682,7 @@ def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
                         header.append('similarity index %d%%' % sim)
                     header.append('%s from %s' % (copyop, path1))
                     header.append('%s to %s' % (copyop, path2))
-        elif revs and not repo.ui.quiet:
+        elif revs:
             header.append(diffline(path1, revs))
 
         #  fctx.is  | diffopts                | what to   | is fctx.data()

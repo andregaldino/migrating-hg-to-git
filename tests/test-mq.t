@@ -305,6 +305,7 @@ patch:
 working dir diff:
 
   $ hg diff --nodates -q
+  diff -r dde259bd5934 a
   --- a/a
   +++ b/a
   @@ -1,1 +1,2 @@
