@@ -1191,6 +1191,37 @@ def _markchanges(repo, unknown, deleted, renames):
         for new, old in renames.iteritems():
             wctx.copy(old, new)
 
+def getrenamedfn(repo, endrev=None):
+    rcache = {}
+    if endrev is None:
+        endrev = len(repo)
+
+    def getrenamed(fn, rev):
+        '''looks up all renames for a file (up to endrev) the first
+        time the file is given. It indexes on the changerev and only
+        parses the manifest if linkrev != changerev.
+        Returns rename info for fn at changerev rev.'''
+        if fn not in rcache:
+            rcache[fn] = {}
+            fl = repo.file(fn)
+            for i in fl:
+                lr = fl.linkrev(i)
+                renamed = fl.renamed(fl.node(i))
+                rcache[fn][lr] = renamed and renamed[0]
+                if lr >= endrev:
+                    break
+        if rev in rcache[fn]:
+            return rcache[fn][rev]
+
+        # If linkrev != rev (i.e. rev not found in rcache) fallback to
+        # filectx logic.
+        try:
+            return repo[rev][fn].copysource()
+        except error.LookupError:
+            return None
+
+    return getrenamed
+
 def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
     """Update the dirstate to reflect the intent of copying src to dst. For
     different reasons it might not end with dst being marked as copied from src.

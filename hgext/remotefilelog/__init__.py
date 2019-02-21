@@ -159,7 +159,6 @@ from mercurial import (
     scmutil,
     smartset,
     streamclone,
-    templatekw,
     util,
 )
 from . import (
@@ -557,7 +556,7 @@ def onetimeclientsetup(ui):
     extensions.wrapfunction(dispatch, 'runcommand', runcommand)
 
     # disappointing hacks below
-    templatekw.getrenamedfn = getrenamedfn
+    scmutil.getrenamedfn = getrenamedfn
     extensions.wrapfunction(revset, 'filelog', filelogrevset)
     revset.symbols['filelog'] = revset.filelog
     extensions.wrapfunction(cmdutil, 'walkfilerevs', walkfilerevs)

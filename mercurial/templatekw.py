@@ -104,37 +104,6 @@ def getlatesttags(context, mapping, pattern=None):
         latesttags[rev] = pdate, pdist + 1, ptag
     return latesttags[rev]
 
-def getrenamedfn(repo, endrev=None):
-    rcache = {}
-    if endrev is None:
-        endrev = len(repo)
-
-    def getrenamed(fn, rev):
-        '''looks up all renames for a file (up to endrev) the first
-        time the file is given. It indexes on the changerev and only
-        parses the manifest if linkrev != changerev.
-        Returns rename info for fn at changerev rev.'''
-        if fn not in rcache:
-            rcache[fn] = {}
-            fl = repo.file(fn)
-            for i in fl:
-                lr = fl.linkrev(i)
-                renamed = fl.renamed(fl.node(i))
-                rcache[fn][lr] = renamed and renamed[0]
-                if lr >= endrev:
-                    break
-        if rev in rcache[fn]:
-            return rcache[fn][rev]
-
-        # If linkrev != rev (i.e. rev not found in rcache) fallback to
-        # filectx logic.
-        try:
-            return repo[rev][fn].copysource()
-        except error.LookupError:
-            return None
-
-    return getrenamed
-
 def getlogcolumns():
     """Return a dict of log column labels"""
     _ = pycompat.identity  # temporarily disable gettext
@@ -343,7 +312,7 @@ def showfilecopies(context, mapping):
     copies = context.resource(mapping, 'revcache').get('copies')
     if copies is None:
         if 'getrenamed' not in cache:
-            cache['getrenamed'] = getrenamedfn(repo)
+            cache['getrenamed'] = scmutil.getrenamedfn(repo)
         copies = []
         getrenamed = cache['getrenamed']
         for fn in ctx.files():

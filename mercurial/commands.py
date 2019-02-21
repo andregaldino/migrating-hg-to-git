@@ -61,7 +61,6 @@ from . import (
     state as statemod,
     streamclone,
     tags as tagsmod,
-    templatekw,
     ui as uimod,
     util,
     wireprotoserver,
@@ -3884,7 +3883,7 @@ def log(ui, repo, *pats, **opts):
         endrev = None
         if revs:
             endrev = revs.max() + 1
-        getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
+        getrenamed = scmutil.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts, differ,
