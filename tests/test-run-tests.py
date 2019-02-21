@@ -37,8 +37,8 @@ def lm(expected, output):
     """
     assert (expected.endswith(b'\n')
             and output.endswith(b'\n')), 'missing newline'
-    assert not re.search(br'[^ \w\\/\r\n()*?]', expected + output), \
-           b'single backslash or unknown char'
+    assert not re.search(br'[^ \w\\/\r\n()*?]', expected + output), (
+           b'single backslash or unknown char')
     test = run_tests.TTest(b'test-run-test.t', b'.', b'.')
     match, exact = test.linematch(expected, output)
     if isinstance(match, str):

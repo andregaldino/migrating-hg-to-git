@@ -929,8 +929,8 @@ class Test(unittest.TestCase):
             self.fail('no result code from test')
         elif out != self._refout:
             # Diff generation may rely on written .err file.
-            if (ret != 0 or out != self._refout) and not self._skipped \
-                and not self._debug:
+            if ((ret != 0 or out != self._refout) and not self._skipped
+                and not self._debug):
                 with open(self.errpath, 'wb') as f:
                     for line in out:
                         f.write(line)
@@ -978,8 +978,8 @@ class Test(unittest.TestCase):
             # files are deleted
             shutil.rmtree(self._chgsockdir, True)
 
-        if (self._ret != 0 or self._out != self._refout) and not self._skipped \
-            and not self._debug and self._out:
+        if ((self._ret != 0 or self._out != self._refout) and not self._skipped
+            and not self._debug and self._out):
             with open(self.errpath, 'wb') as f:
                 for line in self._out:
                     f.write(line)
@@ -1105,8 +1105,8 @@ class Test(unittest.TestCase):
         if 'HGTESTCATAPULTSERVERPIPE' not in env:
             # If we don't have HGTESTCATAPULTSERVERPIPE explicitly set, pull the
             # non-test one in as a default, otherwise set to devnull
-            env['HGTESTCATAPULTSERVERPIPE'] = \
-                env.get('HGCATAPULTSERVERPIPE', os.devnull)
+            env['HGTESTCATAPULTSERVERPIPE'] = env.get(
+                'HGCATAPULTSERVERPIPE', os.devnull)
 
         extraextensions = []
         for opt in self._extraconfigopts:

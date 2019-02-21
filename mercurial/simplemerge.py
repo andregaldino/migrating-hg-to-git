@@ -289,15 +289,15 @@ class Merge3Text(object):
 
             # find matches at the front
             ii = 0
-            while ii < alen and ii < blen and \
-                  self.a[a1 + ii] == self.b[b1 + ii]:
+            while (ii < alen and ii < blen and
+                   self.a[a1 + ii] == self.b[b1 + ii]):
                 ii += 1
             startmatches = ii
 
             # find matches at the end
             ii = 0
-            while ii < alen and ii < blen and \
-                  self.a[a2 - ii - 1] == self.b[b2 - ii - 1]:
+            while (ii < alen and ii < blen and
+                   self.a[a2 - ii - 1] == self.b[b2 - ii - 1]):
                 ii += 1
             endmatches = ii
 
@@ -350,8 +350,8 @@ class Merge3Text(object):
                 aend = asub + intlen
                 bend = bsub + intlen
 
-                assert self.base[intbase:intend] == self.a[asub:aend], \
-                       (self.base[intbase:intend], self.a[asub:aend])
+                assert self.base[intbase:intend] == self.a[asub:aend], (
+                        (self.base[intbase:intend], self.a[asub:aend]))
 
                 assert self.base[intbase:intend] == self.b[bsub:bend]
 

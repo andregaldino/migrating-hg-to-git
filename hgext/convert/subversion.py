@@ -790,7 +790,7 @@ class svn_source(converter_source):
                         if childpath:
                             removed.add(self.recode(childpath))
                 else:
-                    self.ui.debug('unknown path in revision %d: %s\n' % \
+                    self.ui.debug('unknown path in revision %d: %s\n' %
                                   (revnum, path))
             elif kind == svn.core.svn_node_dir:
                 if ent.action == 'M':

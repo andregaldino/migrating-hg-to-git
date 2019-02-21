@@ -76,8 +76,8 @@ def _usercachedir(ui, name=longname):
     if path:
         return path
     if pycompat.iswindows:
-        appdata = encoding.environ.get('LOCALAPPDATA',\
-                        encoding.environ.get('APPDATA'))
+        appdata = encoding.environ.get('LOCALAPPDATA',
+                                       encoding.environ.get('APPDATA'))
         if appdata:
             return os.path.join(appdata, name)
     elif pycompat.isdarwin:

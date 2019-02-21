@@ -82,8 +82,8 @@ class testsimplekeyvaluefile(unittest.TestCase):
         dw = {b'key1': b'value1'}
         scmutil.simplekeyvaluefile(self.vfs, b'fl').write(dw, firstline=b'1.0')
         self.assertEqual(self.vfs.read(b'fl'), b'1.0\nkey1=value1\n')
-        dr = scmutil.simplekeyvaluefile(self.vfs, b'fl')\
-                    .read(firstlinenonkeyval=True)
+        dr = scmutil.simplekeyvaluefile(
+            self.vfs, b'fl').read(firstlinenonkeyval=True)
         self.assertEqual(dr, {b'__firstline': b'1.0', b'key1': b'value1'})
 
 if __name__ == "__main__":

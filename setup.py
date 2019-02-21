@@ -437,10 +437,9 @@ class hgdist(Distribution):
     pure = False
     cffi = ispypy
 
-    global_options = Distribution.global_options + \
-                     [('pure', None, "use pure (slow) Python "
-                        "code instead of C extensions"),
-                     ]
+    global_options = Distribution.global_options + [
+        ('pure', None, "use pure (slow) Python code instead of C extensions"),
+    ]
 
     def has_ext_modules(self):
         # self.ext_modules is emptied in hgbuildpy.finalize_options which is

@@ -1676,8 +1676,8 @@ def _docommit(ui, repo, *pats, **opts):
         if not bheads:
             raise error.Abort(_('can only close branch heads'))
         elif opts.get('amend'):
-            if repo['.'].p1().branch() != branch and \
-                    repo['.'].p2().branch() != branch:
+            if (repo['.'].p1().branch() != branch and
+                repo['.'].p2().branch() != branch):
                 raise error.Abort(_('can only close branch heads'))
 
     if opts.get('amend'):
@@ -4822,8 +4822,8 @@ def resolve(ui, repo, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     confirm = ui.configbool('commands', 'resolve.confirm')
     flaglist = 'all mark unmark list no_status re_merge'.split()
-    all, mark, unmark, show, nostatus, remerge = \
-        [opts.get(o) for o in flaglist]
+    all, mark, unmark, show, nostatus, remerge = [
+        opts.get(o) for o in flaglist]
 
     actioncount = len(list(filter(None, [show, mark, unmark, remerge])))
     if actioncount > 1:
@@ -4952,8 +4952,8 @@ def resolve(ui, repo, *pats, **opts):
             if mark:
                 if markcheck:
                     fdata = repo.wvfs.tryread(f)
-                    if filemerge.hasconflictmarkers(fdata) and \
-                        ms[f] != mergemod.MERGE_RECORD_RESOLVED:
+                    if (filemerge.hasconflictmarkers(fdata) and
+                        ms[f] != mergemod.MERGE_RECORD_RESOLVED):
                         hasconflictmarkers.append(f)
                 ms.mark(f, mergemod.MERGE_RECORD_RESOLVED)
             elif unmark:

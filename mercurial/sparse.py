@@ -643,8 +643,8 @@ def updateconfig(repo, pats, opts, include=False, exclude=False, reset=False,
             for kindpat in pats:
                 kind, pat = matchmod._patsplit(kindpat, None)
                 if kind in matchmod.cwdrelativepatternkinds or kind is None:
-                    ap = (kind + ':' if kind else '') +\
-                            pathutil.canonpath(root, cwd, pat)
+                    ap = ((kind + ':' if kind else '') +
+                          pathutil.canonpath(root, cwd, pat))
                     abspats.append(ap)
                 else:
                     abspats.append(kindpat)

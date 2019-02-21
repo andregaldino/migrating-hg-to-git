@@ -138,8 +138,8 @@ class cacheconnection(object):
     def connect(self, cachecommand):
         if self.pipeo:
             raise error.Abort(_("cache connection already open"))
-        self.pipei, self.pipeo, self.pipee, self.subprocess = \
-            procutil.popen4(cachecommand)
+        self.pipei, self.pipeo, self.pipee, self.subprocess = (
+            procutil.popen4(cachecommand))
         self.connected = True
 
     def close(self):

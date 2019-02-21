@@ -248,8 +248,8 @@ class shelvedstate(object):
         if version < cls._version:
             d = cls._readold(repo)
         elif version == cls._version:
-            d = scmutil.simplekeyvaluefile(repo.vfs, cls._filename)\
-                       .read(firstlinenonkeyval=True)
+            d = scmutil.simplekeyvaluefile(
+                repo.vfs, cls._filename).read(firstlinenonkeyval=True)
         else:
             raise error.Abort(_('this version of shelve is incompatible '
                                 'with the version used in this repo'))
@@ -287,8 +287,9 @@ class shelvedstate(object):
             "keep": cls._keep if keep else cls._nokeep,
             "activebook": activebook or cls._noactivebook
         }
-        scmutil.simplekeyvaluefile(repo.vfs, cls._filename)\
-               .write(info, firstline=("%d" % cls._version))
+        scmutil.simplekeyvaluefile(
+            repo.vfs, cls._filename).write(info,
+                                           firstline=("%d" % cls._version))
 
     @classmethod
     def clear(cls, repo):

@@ -114,9 +114,9 @@ def findliteralblocks(blocks):
                 # Partially minimized form: remove space and both
                 # colons.
                 blocks[i]['lines'][-1] = blocks[i]['lines'][-1][:-3]
-            elif len(blocks[i]['lines']) == 1 and \
-                 blocks[i]['lines'][0].lstrip(' ').startswith('.. ') and \
-                 blocks[i]['lines'][0].find(' ', 3) == -1:
+            elif (len(blocks[i]['lines']) == 1 and
+                  blocks[i]['lines'][0].lstrip(' ').startswith('.. ') and
+                  blocks[i]['lines'][0].find(' ', 3) == -1):
                 # directive on its own line, not a literal block
                 i += 1
                 continue
@@ -790,8 +790,8 @@ def _getsections(blocks):
                     if section['type'] != 'margin':
                         sindent = section['indent']
                         if len(section['lines']) > 1:
-                            sindent += len(section['lines'][1]) - \
-                              len(section['lines'][1].lstrip(' '))
+                            sindent += (len(section['lines'][1]) -
+                                        len(section['lines'][1].lstrip(' ')))
                         if bindent >= sindent:
                             break
                     pointer += 1

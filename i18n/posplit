@@ -77,7 +77,7 @@ if __name__ == "__main__":
                             continue
                         else:
                             # lines following directly, unexpected
-                            print('Warning: text follows line with directive' \
+                            print('Warning: text follows line with directive'
                                   ' %s' % directive)
                     comment = 'do not translate: .. %s::' % directive
                     if not newentry.comment:

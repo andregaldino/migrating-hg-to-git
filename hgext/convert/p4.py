@@ -198,8 +198,8 @@ class p4_source(common.converter_source):
             for filename in copiedfiles:
                 oldname = depotname[filename]
 
-                flcmd = 'p4 -G filelog %s' \
-                      % procutil.shellquote(oldname)
+                flcmd = ('p4 -G filelog %s'
+                         % procutil.shellquote(oldname))
                 flstdout = procutil.popen(flcmd, mode='rb')
 
                 copiedfilename = None
@@ -272,8 +272,8 @@ class p4_source(common.converter_source):
         return self.heads
 
     def getfile(self, name, rev):
-        cmd = 'p4 -G print %s' \
-            % procutil.shellquote("%s#%s" % (self.depotname[name], rev))
+        cmd = ('p4 -G print %s'
+               % procutil.shellquote("%s#%s" % (self.depotname[name], rev)))
 
         lasterror = None
         while True:

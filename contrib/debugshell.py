@@ -34,9 +34,9 @@ def ipdb(ui, repo, msg, **opts):
 
 @command('debugshell|dbsh', [])
 def debugshell(ui, repo, **opts):
-    bannermsg = "loaded repo : %s\n" \
-                "using source: %s" % (repo.root,
-                                      mercurial.__path__[0])
+    bannermsg = ("loaded repo : %s\n"
+                 "using source: %s" % (repo.root,
+                                       mercurial.__path__[0]))
 
     pdbmap = {
         'pdb'  : 'code',

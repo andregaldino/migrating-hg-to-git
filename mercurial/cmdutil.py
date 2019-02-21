@@ -179,8 +179,8 @@ def ishunk(x):
 def newandmodified(chunks, originalchunks):
     newlyaddedandmodifiedfiles = set()
     for chunk in chunks:
-        if ishunk(chunk) and chunk.header.isnewfile() and chunk not in \
-            originalchunks:
+        if (ishunk(chunk) and chunk.header.isnewfile() and chunk not in
+            originalchunks):
             newlyaddedandmodifiedfiles.add(chunk.header.filename())
     return newlyaddedandmodifiedfiles
 
@@ -322,8 +322,8 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         if backupall:
             tobackup = changed
         else:
-            tobackup = [f for f in newfiles if f in modified or f in \
-                    newlyaddedandmodifiedfiles]
+            tobackup = [f for f in newfiles if f in modified or f in
+                        newlyaddedandmodifiedfiles]
         backups = {}
         if tobackup:
             backupdir = repo.vfs.join('record-backups')

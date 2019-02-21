@@ -2547,8 +2547,8 @@ def isstreamclonespec(bundlespec):
         return True
 
     # Stream clone v2
-    if (bundlespec.wirecompression == 'UN' and \
-        bundlespec.wireversion == '02' and \
+    if (bundlespec.wirecompression == 'UN' and
+        bundlespec.wireversion == '02' and
         bundlespec.contentopts.get('streamv2')):
         return True
 

@@ -229,7 +229,7 @@ class branchcache(dict):
         - True when cache is up to date or a subset of current repo."""
         try:
             return ((self.tipnode == repo.changelog.node(self.tiprev))
-                    and (self.filteredhash == \
+                    and (self.filteredhash ==
                          scmutil.filteredhash(repo, self.tiprev)))
         except IndexError:
             return False

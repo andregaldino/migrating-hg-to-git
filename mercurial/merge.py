@@ -391,9 +391,9 @@ class mergestate(object):
         """
         # Check local variables before looking at filesystem for performance
         # reasons.
-        return bool(self._local) or bool(self._state) or \
-               self._repo.vfs.exists(self.statepathv1) or \
-               self._repo.vfs.exists(self.statepathv2)
+        return (bool(self._local) or bool(self._state) or
+                self._repo.vfs.exists(self.statepathv1) or
+                self._repo.vfs.exists(self.statepathv2))
 
     def commit(self):
         """Write current state on disk (if necessary)"""

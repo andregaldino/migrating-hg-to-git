@@ -343,8 +343,8 @@ def has_svn_range(v):
 
 @check("svn", "subversion client and admin tools")
 def has_svn():
-    return matchoutput('svn --version 2>&1', br'^svn, version') and \
-        matchoutput('svnadmin --version 2>&1', br'^svnadmin, version')
+    return (matchoutput('svn --version 2>&1', br'^svn, version') and
+            matchoutput('svnadmin --version 2>&1', br'^svnadmin, version'))
 
 @check("svn-bindings", "subversion python bindings")
 def has_svn_bindings():

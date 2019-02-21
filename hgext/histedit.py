@@ -1782,7 +1782,7 @@ def _continuehistedit(ui, repo, state):
             state.write(tr=tr)
             actobj = state.actions[0]
             progress.increment(item=actobj.torule())
-            ui.debug('histedit: processing %s %s\n' % (actobj.verb,\
+            ui.debug('histedit: processing %s %s\n' % (actobj.verb,
                                                        actobj.torule()))
             parentctx, replacement_ = actobj.run()
             state.parentctxnode = parentctx.node()
@@ -1881,7 +1881,7 @@ def _edithisteditplan(ui, repo, state, rules):
     else:
         rules = _readfile(ui, rules)
     actions = parserules(rules, state)
-    ctxs = [repo[act.node] \
+    ctxs = [repo[act.node]
             for act in state.actions if act.node]
     warnverifyactions(ui, repo, actions, state, ctxs)
     state.actions = actions

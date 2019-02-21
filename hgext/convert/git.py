@@ -387,7 +387,7 @@ class convert_git(common.converter_source, common.commandline):
     def numcommits(self):
         output, ret = self.gitrunlines('rev-list', '--all')
         if ret:
-            raise error.Abort(_('cannot retrieve number of commits in %s') \
+            raise error.Abort(_('cannot retrieve number of commits in %s')
                               % self.path)
         return len(output)
 

@@ -1397,8 +1397,8 @@ class seekableunbundlepart(unbundlepart):
             assert chunknum == 0, 'Must start with chunk 0'
             self._chunkindex.append((0, self._tellfp()))
         else:
-            assert chunknum < len(self._chunkindex), \
-                   'Unknown chunk %d' % chunknum
+            assert chunknum < len(self._chunkindex), (
+                   'Unknown chunk %d' % chunknum)
             self._seekfp(self._chunkindex[chunknum][1])
 
         pos = self._chunkindex[chunknum][0]

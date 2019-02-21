@@ -600,8 +600,8 @@ class bzmysql_2_18(bzmysql):
 
     def __init__(self, ui):
         bzmysql.__init__(self, ui)
-        self.default_notify = \
-            "cd %(bzdir)s && perl -T contrib/sendbugmail.pl %(id)s %(user)s"
+        self.default_notify = (
+            "cd %(bzdir)s && perl -T contrib/sendbugmail.pl %(id)s %(user)s")
 
 class bzmysql_3_0(bzmysql_2_18):
     '''support for bugzilla 3.0 series.'''

@@ -282,8 +282,8 @@ def commonsetup(ui):
     scratchbranchpat = ui.config('infinitepush', 'branchpattern')
     if scratchbranchpat:
         global _scratchbranchmatcher
-        kind, pat, _scratchbranchmatcher = \
-                stringutil.stringmatcher(scratchbranchpat)
+        kind, pat, _scratchbranchmatcher = (
+                stringutil.stringmatcher(scratchbranchpat))
 
 def serverextsetup(ui):
     origpushkeyhandler = bundle2.parthandlermapping['pushkey']
@@ -294,8 +294,8 @@ def serverextsetup(ui):
     bundle2.parthandlermapping['pushkey'] = newpushkeyhandler
 
     orighandlephasehandler = bundle2.parthandlermapping['phase-heads']
-    newphaseheadshandler = lambda *args, **kwargs: \
-        bundle2handlephases(orighandlephasehandler, *args, **kwargs)
+    newphaseheadshandler = lambda *args, **kwargs: bundle2handlephases(
+        orighandlephasehandler, *args, **kwargs)
     newphaseheadshandler.params = orighandlephasehandler.params
     bundle2.parthandlermapping['phase-heads'] = newphaseheadshandler
 
@@ -754,10 +754,10 @@ def _deleteinfinitepushbookmarks(ui, repo, path, names):
     nametype_idx = 1
     remote_idx = 2
     name_idx = 3
-    remotenames = [remotename for remotename in \
-                   remotenamesext.readremotenames(repo) \
+    remotenames = [remotename for remotename in
+                   remotenamesext.readremotenames(repo)
                    if remotename[remote_idx] == path]
-    remote_bm_names = [remotename[name_idx] for remotename in \
+    remote_bm_names = [remotename[name_idx] for remotename in
                        remotenames if remotename[nametype_idx] == "bookmarks"]
 
     for name in names:

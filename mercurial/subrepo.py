@@ -369,8 +369,8 @@ class abstractsubrepo(object):
         return 1
 
     def revert(self, substate, *pats, **opts):
-        self.ui.warn(_('%s: reverting %s subrepos is unsupported\n') \
-            % (substate[0], substate[2]))
+        self.ui.warn(_('%s: reverting %s subrepos is unsupported\n')
+                     % (substate[0], substate[2]))
         return []
 
     def shortid(self, revid):
@@ -697,7 +697,7 @@ class hgsubrepo(abstractsubrepo):
             ctx = urepo[revision]
             if ctx.hidden():
                 urepo.ui.warn(
-                    _('revision %s in subrepository "%s" is hidden\n') \
+                    _('revision %s in subrepository "%s" is hidden\n')
                     % (revision[0:12], self._path))
                 repo = urepo
         hg.updaterepo(repo, revision, overwrite)
@@ -1787,8 +1787,8 @@ class gitsubrepo(abstractsubrepo):
             cmd.append('--ignore-all-space')
         if diffopts.ignorewsamount:
             cmd.append('--ignore-space-change')
-        if self._gitversion(self._gitcommand(['--version'])) >= (1, 8, 4) \
-                and diffopts.ignoreblanklines:
+        if (self._gitversion(self._gitcommand(['--version'])) >= (1, 8, 4)
+            and diffopts.ignoreblanklines):
             cmd.append('--ignore-blank-lines')
 
         cmd.append(node1)

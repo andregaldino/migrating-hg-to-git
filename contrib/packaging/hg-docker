@@ -76,7 +76,7 @@ def build_docker_image(dockerfile: pathlib.Path, params: list, tag: str):
     p.communicate(input=dockerfile)
     if p.returncode:
         raise subprocess.CalledProcessException(
-                p.returncode, 'failed to build docker image: %s %s' \
+                p.returncode, 'failed to build docker image: %s %s'
                 % (p.stdout, p.stderr))
 
 def command_build(args):

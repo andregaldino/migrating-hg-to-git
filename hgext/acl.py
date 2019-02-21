@@ -293,15 +293,15 @@ def _usermatch(ui, user, usersorgroups):
             # if ug is a user  name: !username
             # if ug is a group name: !@groupname
             ug = ug[1:]
-            if not ug.startswith('@') and user != ug \
-                or ug.startswith('@') and user not in _getusers(ui, ug[1:]):
+            if (not ug.startswith('@') and user != ug
+                or ug.startswith('@') and user not in _getusers(ui, ug[1:])):
                 return True
 
         # Test for user or group. Format:
         # if ug is a user  name: username
         # if ug is a group name: @groupname
-        elif user == ug \
-             or ug.startswith('@') and user in _getusers(ui, ug[1:]):
+        elif (user == ug
+              or ug.startswith('@') and user in _getusers(ui, ug[1:])):
             return True
 
     return False

@@ -344,8 +344,8 @@ class ui(object):
         try:
             yield
         finally:
-            self._blockedtimes[key + '_blocked'] += \
-                (util.timer() - starttime) * 1000
+            self._blockedtimes[key + '_blocked'] += (
+                (util.timer() - starttime) * 1000)
 
     @contextlib.contextmanager
     def uninterruptible(self):
@@ -1027,8 +1027,8 @@ class ui(object):
         except IOError as err:
             raise error.StdioError(err)
         finally:
-            self._blockedtimes['stdio_blocked'] += \
-                (util.timer() - starttime) * 1000
+            self._blockedtimes['stdio_blocked'] += (
+                (util.timer() - starttime) * 1000)
 
     def write_err(self, *args, **opts):
         self._write(self._ferr, *args, **opts)
@@ -1078,8 +1078,8 @@ class ui(object):
                 return
             raise error.StdioError(err)
         finally:
-            self._blockedtimes['stdio_blocked'] += \
-                (util.timer() - starttime) * 1000
+            self._blockedtimes['stdio_blocked'] += (
+                (util.timer() - starttime) * 1000)
 
     def _writemsg(self, dest, *args, **opts):
         _writemsgwith(self._write, dest, *args, **opts)
@@ -1103,8 +1103,8 @@ class ui(object):
                     if err.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
                         raise error.StdioError(err)
         finally:
-            self._blockedtimes['stdio_blocked'] += \
-                (util.timer() - starttime) * 1000
+            self._blockedtimes['stdio_blocked'] += (
+                (util.timer() - starttime) * 1000)
 
     def _isatty(self, fh):
         if self.configbool('ui', 'nontty'):
