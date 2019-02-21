@@ -119,6 +119,7 @@ def _qrecord(cmdsuggest, ui, repo, patch, *pats, **opts):
 
     overrides = {('experimental', 'crecord'): False}
     with ui.configoverride(overrides, 'record'):
+        cmdutil.checkunfinished(repo)
         cmdutil.dorecord(ui, repo, committomq, cmdsuggest, False,
                          cmdutil.recordfilter, *pats, **opts)
 
