@@ -240,19 +240,19 @@ Test reporting of path conflicts
   |/
   o  0: b173517d0057 'a'
   
-  $ mkdir c
-  $ echo c > c/c
-  $ hg add c/c
-  $ hg ci -m 'c/c'
+  $ mkdir -p c/subdir
+  $ echo c > c/subdir/file.txt
+  $ hg add c/subdir/file.txt
+  $ hg ci -m 'c/subdir/file.txt'
   $ hg rebase -r . -d 3 -n
   starting dry-run rebase; repository will not be changed
-  rebasing 8:755f0104af9b "c/c" (tip)
-  abort: error: 'c/c' conflicts with file 'c' in 3.
+  rebasing 8:e147e6e3c490 "c/subdir/file.txt" (tip)
+  abort: error: 'c/subdir/file.txt' conflicts with file 'c' in 3.
   [255]
   $ hg rebase -r 3 -d . -n
   starting dry-run rebase; repository will not be changed
   rebasing 3:844a7de3e617 "c"
-  abort: error: file 'c' cannot be written because  'c/' is a folder in 755f0104af9b (containing 1 entries: c/c)
+  abort: error: file 'c' cannot be written because  'c/' is a folder in e147e6e3c490 (containing 1 entries: c/subdir/file.txt)
   [255]
 
   $ cd ..
