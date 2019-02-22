@@ -1073,11 +1073,6 @@ class cgpacker(object):
                 # because of narrow clones). Do this even for the root
                 # directory (tree=='')
                 prunednodes = []
-            elif not self._ellipses:
-                # In non-ellipses case and large repositories, it is better to
-                # prevent calling of store.rev and store.linkrev on a lot of
-                # nodes as compared to sending some extra data
-                prunednodes = nodes.copy()
             else:
                 # Avoid sending any manifest nodes we can prove the
                 # client already has by checking linkrevs. See the
@@ -1110,6 +1105,11 @@ class cgpacker(object):
                     yield tree, []
 
     def _prunemanifests(self, store, nodes, commonrevs):
+        if not self._ellipses:
+            # In non-ellipses case and large repositories, it is better to
+            # prevent calling of store.rev and store.linkrev on a lot of
+            # nodes as compared to sending some extra data
+            return nodes.copy()
         # This is split out as a separate method to allow filtering
         # commonrevs in extension code.
         #
