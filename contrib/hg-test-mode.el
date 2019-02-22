@@ -54,6 +54,11 @@
   (run-hooks 'hg-test-mode-hook))
 
 (with-eval-after-load "compile"
+  ;; Link to Python sources in tracebacks in .t failures.
+  (add-to-list 'compilation-error-regexp-alist-alist
+               '(hg-test-output-python-tb
+                 "^\\+ +File ['\"]\\([^'\"]+\\)['\"], line \\([0-9]+\\)," 1 2))
+  (add-to-list 'compilation-error-regexp-alist 'hg-test-output-python-tb)
   ;; Link to source files in test-check-code.t violations.
   (add-to-list 'compilation-error-regexp-alist-alist
                '(hg-test-check-code-output
