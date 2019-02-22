@@ -282,3 +282,10 @@ When a file is renamed, --git shouldn't loss the info about old file
   $ hg diff --stat --git
    c => new c |  0 
    1 files changed, 0 insertions(+), 0 deletions(-)
+
+Make sure `diff --stat -q --config diff.git-0` shows stat (issue4037)
+
+  $ hg status
+  A new c
+  R c
+  $ hg diff --stat -q
