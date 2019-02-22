@@ -822,3 +822,7 @@ def has_vcr():
     except (ImportError, AttributeError):
         pass
     return False
+
+@check('emacs', 'GNU Emacs')
+def has_emacs():
+    return matchoutput('emacs --version', b'GNU Emacs')
