@@ -53,4 +53,11 @@
   (setq mode-name "hg-test")
   (run-hooks 'hg-test-mode-hook))
 
+(with-eval-after-load "compile"
+  ;; Link to source files in test-check-code.t violations.
+  (add-to-list 'compilation-error-regexp-alist-alist
+               '(hg-test-check-code-output
+                 "\\+  \\([^:\n]+\\):\\([0-9]+\\):$" 1 2))
+  (add-to-list 'compilation-error-regexp-alist 'hg-test-check-code-output))
+
 (provide 'hg-test-mode)
