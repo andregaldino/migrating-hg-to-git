@@ -191,9 +191,9 @@ def getfilestack(stack, path, seenfctxs=None):
             pctx = None # do not add another immutable fctx
             break
         fctxmap[ctx] = fctx # only for mutable fctxs
-        renamed = fctx.renamed()
-        if renamed:
-            path = renamed[0] # follow rename
+        copy = fctx.copysource()
+        if copy:
+            path = copy # follow rename
             if path in ctx: # but do not follow copy
                 pctx = ctx.p1()
                 break
@@ -232,8 +232,8 @@ class overlaystore(patch.filestore):
         else:
             content = fctx.data()
         mode = (fctx.islink(), fctx.isexec())
-        renamed = fctx.renamed() # False or (path, node)
-        return content, mode, (renamed and renamed[0])
+        copy = fctx.copysource()
+        return content, mode, copy
 
 def overlaycontext(memworkingcopy, ctx, parents=None, extra=None):
     """({path: content}, ctx, (p1node, p2node)?, {}?) -> memctx
