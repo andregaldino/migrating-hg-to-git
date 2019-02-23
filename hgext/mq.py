@@ -1700,8 +1700,8 @@ class queue(object):
             # but we do it backwards to take advantage of manifest/changelog
             # caching against the next repo.status call
             mm, aa, dd = repo.status(patchparent, top)[:3]
-            changes = repo.changelog.read(top)
-            man = repo.manifestlog[changes[0]].read()
+            ctx = repo[top]
+            man = ctx.manifest()
             aaa = aa[:]
             match1 = scmutil.match(repo[None], pats, opts)
             # in short mode, we only diff the files included in the
@@ -1813,7 +1813,7 @@ class queue(object):
                 for f in forget:
                     repo.dirstate.drop(f)
 
-                user = ph.user or changes[1]
+                user = ph.user or ctx.user()
 
                 oldphase = repo[top].phase()
 
