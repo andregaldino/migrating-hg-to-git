@@ -1701,7 +1701,6 @@ class queue(object):
             # caching against the next repo.status call
             mm, aa, dd = repo.status(patchparent, top)[:3]
             ctx = repo[top]
-            man = ctx.manifest()
             aaa = aa[:]
             match1 = scmutil.match(repo[None], pats, opts)
             # in short mode, we only diff the files included in the
@@ -1778,13 +1777,12 @@ class queue(object):
                         repo.dirstate.add(dst)
                     # remember the copies between patchparent and qtip
                     for dst in aaa:
-                        f = repo.file(dst)
-                        src = f.renamed(man[dst])
+                        src = ctx[dst].copysource()
                         if src:
-                            copies.setdefault(src[0], []).extend(
+                            copies.setdefault(src, []).extend(
                                 copies.get(dst, []))
                             if dst in a:
-                                copies[src[0]].append(dst)
+                                copies[src].append(dst)
                         # we can't copy a file created by the patch itself
                         if dst in copies:
                             del copies[dst]
