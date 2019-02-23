@@ -338,7 +338,7 @@ def _runrepack(repo, data, history, packpath, category, fullhistory=None,
     packer = repacker(repo, data, history, fullhistory, category,
                       gc=garbagecollect, isold=isold, options=options)
 
-    with datapack.mutabledatapack(repo.ui, packpath, version=2) as dpack:
+    with datapack.mutabledatapack(repo.ui, packpath) as dpack:
         with historypack.mutablehistorypack(repo.ui, packpath) as hpack:
             try:
                 packer.run(dpack, hpack)
