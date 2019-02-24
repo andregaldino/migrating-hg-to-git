@@ -1353,6 +1353,9 @@ class TTest(Test):
 
     def _hghave(self, reqs):
         allreqs = b' '.join(reqs)
+
+        self._detectslow(reqs)
+
         if allreqs in self._have:
             return self._have.get(allreqs)
 
@@ -1373,8 +1376,6 @@ class TTest(Test):
         if ret != 0:
             self._have[allreqs] = (False, stdout)
             return False, stdout
-
-        self._detectslow(reqs)
 
         self._have[allreqs] = (True, None)
         return True, None
