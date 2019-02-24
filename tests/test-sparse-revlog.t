@@ -78,7 +78,7 @@ repeatedly while some of it changes rarely.
   
 
   $ f -s .hg/store/data/*.d
-  .hg/store/data/_s_p_a_r_s_e-_r_e_v_l_o_g-_t_e_s_t-_f_i_l_e.d: size=63002924
+  .hg/store/data/_s_p_a_r_s_e-_r_e_v_l_o_g-_t_e_s_t-_f_i_l_e.d: size=65281524
   $ hg debugrevlog *
   format : 1
   flags  : generaldelta
@@ -90,45 +90,45 @@ repeatedly while some of it changes rarely.
       empty     :        0 ( 0.00%)
                      text  :        0 (100.00%)
                      delta :        0 (100.00%)
-      snapshot  :      374 ( 7.48%)
+      snapshot  :      372 ( 7.44%)
         lvl-0   :              4 ( 0.08%)
-        lvl-1   :             23 ( 0.46%)
-        lvl-2   :             63 ( 1.26%)
-        lvl-3   :            118 ( 2.36%)
-        lvl-4   :            166 ( 3.32%)
-      deltas    :     4627 (92.52%)
-  revision size : 63002924
-      snapshot  :  9888099 (15.69%)
-        lvl-0   :         804262 ( 1.28%)
-        lvl-1   :        1561380 ( 2.48%)
-        lvl-2   :        2096696 ( 3.33%)
-        lvl-3   :        2749539 ( 4.36%)
-        lvl-4   :        2676222 ( 4.25%)
-      deltas    : 53114825 (84.31%)
+        lvl-1   :             25 ( 0.50%)
+        lvl-2   :             74 ( 1.48%)
+        lvl-3   :            117 ( 2.34%)
+        lvl-4   :            152 ( 3.04%)
+      deltas    :     4629 (92.56%)
+  revision size : 65281524
+      snapshot  :  9910992 (15.18%)
+        lvl-0   :         804162 ( 1.23%)
+        lvl-1   :        1816378 ( 2.78%)
+        lvl-2   :        2355855 ( 3.61%)
+        lvl-3   :        2557680 ( 3.92%)
+        lvl-4   :        2376917 ( 3.64%)
+      deltas    : 55370532 (84.82%)
   
   chunks        :     5001
       0x78 (x)  :     5001 (100.00%)
-  chunks size   : 63002924
-      0x78 (x)  : 63002924 (100.00%)
+  chunks size   : 65281524
+      0x78 (x)  : 65281524 (100.00%)
   
   avg chain length  :        9
   max chain length  :       15
-  max chain reach   : 28907121
-  compression ratio :       27
+  max chain reach   : 27873839
+  compression ratio :       26
   
   uncompressed data size (min/max/avg) : 346468 / 346472 / 346471
-  full revision size (min/max/avg)     : 201008 / 201141 / 201065
-  inter-snapshot size (min/max/avg)    : 11601 / 157413 / 24550
-      level-1   (min/max/avg)          : 13061 / 157413 / 67886
-      level-2   (min/max/avg)          : 11674 / 85631 / 33280
-      level-3   (min/max/avg)          : 11602 / 42957 / 23301
-      level-4   (min/max/avg)          : 11601 / 21475 / 16121
-  delta size (min/max/avg)             : 10649 / 105465 / 11479
+  full revision size (min/max/avg)     : 200973 / 201094 / 201040
+  inter-snapshot size (min/max/avg)    : 11586 / 170448 / 24746
+      level-1   (min/max/avg)          : 14021 / 170448 / 72655
+      level-2   (min/max/avg)          : 11616 / 81152 / 31835
+      level-3   (min/max/avg)          : 11607 / 42813 / 21860
+      level-4   (min/max/avg)          : 11586 / 21590 / 15637
+  delta size (min/max/avg)             : 10649 / 166014 / 11961
   
-  deltas against prev  : 3966 (85.71%)
-      where prev = p1  : 3922     (98.89%)
+  deltas against prev  : 3839 (82.93%)
+      where prev = p1  : 3839     (100.00%)
       where prev = p2  :    0     ( 0.00%)
-      other            :   44     ( 1.11%)
-  deltas against p1    :  611 (13.21%)
-  deltas against p2    :   50 ( 1.08%)
-  deltas against other :    0 ( 0.00%)
+      other            :    0     ( 0.00%)
+  deltas against p1    :  634 (13.70%)
+  deltas against p2    :   62 ( 1.34%)
+  deltas against other :   94 ( 2.03%)
