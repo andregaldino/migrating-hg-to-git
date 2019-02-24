@@ -1374,11 +1374,15 @@ class TTest(Test):
             self._have[allreqs] = (False, stdout)
             return False, stdout
 
-        if b'slow' in reqs:
-            self._timeout = self._slowtimeout
+        self._detectslow(reqs)
 
         self._have[allreqs] = (True, None)
         return True, None
+
+    def _detectslow(self, reqs):
+        """update the timeout of slow test when appropriate"""
+        if b'slow' in reqs:
+            self._timeout = self._slowtimeout
 
     def _iftest(self, args):
         # implements "#if"
