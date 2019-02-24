@@ -1397,6 +1397,7 @@ class TTest(Test):
                     return False
             else:
                 reqs.append(arg)
+        self._detectslow(reqs)
         return self._hghave(reqs)[0]
 
     def _parsetest(self, lines):
