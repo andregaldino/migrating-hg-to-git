@@ -119,7 +119,7 @@ def run(target):
                 hg('merge', 'min(head())')
             updatefile(FILENAME, idx)
             hg('commit', '--message', 'commit #%d' % idx)
-        hg('bundle', '--all', target)
+        hg('bundle', '--all', target, '--config', 'devel.bundle.delta=p1')
         with open(target, 'rb') as bundle:
             data = bundle.read()
             digest = hashlib.md5(data).hexdigest()
