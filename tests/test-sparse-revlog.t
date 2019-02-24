@@ -12,10 +12,22 @@ repeatedly while some of it changes rarely.
   $ bundlepath="$TESTDIR/artifacts/cache/big-file-churn.hg"
 
   $ expectedhash=`cat "$bundlepath".md5`
+
+#if slow
+
+  $ if [ ! -f "$bundlepath" ]; then
+  >     "$TESTDIR"/artifacts/scripts/generate-churning-bundle.py > /dev/null
+  > fi
+
+#else
+
   $ if [ ! -f "$bundlepath" ]; then
   >     echo 'skipped: missing artifact, run "'"$TESTDIR"'/artifacts/scripts/generate-churning-bundle.py"'
   >     exit 80
   > fi
+
+#endif
+
   $ currenthash=`f -M "$bundlepath" | cut -d = -f 2`
   $ if [ "$currenthash" != "$expectedhash" ]; then
   >     echo 'skipped: outdated artifact, md5 "'"$currenthash"'" expected "'"$expectedhash"'" run "'"$TESTDIR"'/artifacts/scripts/generate-churning-bundle.py"'
