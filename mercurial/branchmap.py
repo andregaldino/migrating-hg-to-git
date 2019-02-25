@@ -179,23 +179,7 @@ class branchcache(dict):
             if not bcache.validfor(repo):
                 # invalidate the cache
                 raise ValueError(r'tip differs')
-            cl = repo.changelog
-            for line in lineiter:
-                line = line.rstrip('\n')
-                if not line:
-                    continue
-                node, state, label = line.split(" ", 2)
-                if state not in 'oc':
-                    raise ValueError(r'invalid branch state')
-                label = encoding.tolocal(label.strip())
-                node = bin(node)
-                if not cl.hasnode(node):
-                    raise ValueError(
-                        r'node %s does not exist' % pycompat.sysstr(hex(node)))
-                bcache.setdefault(label, []).append(node)
-                if state == 'c':
-                    bcache._closednodes.add(node)
-
+            bcache.load(repo, f)
         except (IOError, OSError):
             return None
 
@@ -213,6 +197,26 @@ class branchcache(dict):
                 f.close()
 
         return bcache
+
+    def load(self, repo, f):
+        """ fully loads the branchcache by reading from the file f """
+        cl = repo.changelog
+        lineiter = iter(f)
+        for line in lineiter:
+            line = line.rstrip('\n')
+            if not line:
+                continue
+            node, state, label = line.split(" ", 2)
+            if state not in 'oc':
+                raise ValueError(r'invalid branch state')
+            label = encoding.tolocal(label.strip())
+            node = bin(node)
+            if not cl.hasnode(node):
+                raise ValueError(
+                    r'node %s does not exist' % pycompat.sysstr(hex(node)))
+            self.setdefault(label, []).append(node)
+            if state == 'c':
+                self._closednodes.add(node)
 
     @staticmethod
     def _filename(repo):
