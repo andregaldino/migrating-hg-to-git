@@ -179,7 +179,7 @@ class branchcache(dict):
             if not bcache.validfor(repo):
                 # invalidate the cache
                 raise ValueError(r'tip differs')
-            bcache.load(repo, f)
+            bcache.load(repo, lineiter)
         except (IOError, OSError):
             return None
 
@@ -198,10 +198,10 @@ class branchcache(dict):
 
         return bcache
 
-    def load(self, repo, f):
-        """ fully loads the branchcache by reading from the file f """
+    def load(self, repo, lineiter):
+        """ fully loads the branchcache by reading from the file using the line
+        iterator passed"""
         cl = repo.changelog
-        lineiter = iter(f)
         for line in lineiter:
             line = line.rstrip('\n')
             if not line:
