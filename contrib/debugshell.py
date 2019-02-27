@@ -7,6 +7,7 @@ import mercurial
 import sys
 from mercurial import (
     demandimport,
+    pycompat,
     registrar,
 )
 
@@ -32,10 +33,10 @@ def ipdb(ui, repo, msg, **opts):
 
     IPython.embed()
 
-@command('debugshell|dbsh', [])
+@command(b'debugshell|dbsh', [])
 def debugshell(ui, repo, **opts):
     bannermsg = ("loaded repo : %s\n"
-                 "using source: %s" % (repo.root,
+                 "using source: %s" % (pycompat.sysstr(repo.root),
                                        mercurial.__path__[0]))
 
     pdbmap = {
@@ -43,17 +44,19 @@ def debugshell(ui, repo, **opts):
         'ipdb' : 'IPython'
     }
 
-    debugger = ui.config("ui", "debugger")
+    debugger = ui.config(b"ui", b"debugger")
     if not debugger:
         debugger = 'pdb'
+    else:
+        debugger = pycompat.sysstr(debugger)
 
     # if IPython doesn't exist, fallback to code.interact
     try:
         with demandimport.deactivated():
             __import__(pdbmap[debugger])
     except ImportError:
-        ui.warn(("%s debugger specified but %s module was not found\n")
+        ui.warn((b"%s debugger specified but %s module was not found\n")
                 % (debugger, pdbmap[debugger]))
-        debugger = 'pdb'
+        debugger = b'pdb'
 
     getattr(sys.modules[__name__], debugger)(ui, repo, bannermsg, **opts)
