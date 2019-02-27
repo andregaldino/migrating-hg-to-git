@@ -1865,6 +1865,22 @@ category impact performance and repository size.
     considered.  Even when disabled, the existing delta from the source will be
     reused if the same delta parent is selected.
 
+``revlog.reuse-external-delta``
+    Control the reuse of delta from external source.
+    (typically: apply bundle from `hg pull` or `hg push`).
+
+    New revisions are usually provided as a delta against another revision. By
+    default, Mercurial will not recompute the same delta again, trusting
+    externally provided deltas. There have been rare cases of small adjustment
+    to the diffing algorithm in the past. So in some rare case, recomputing
+    delta provided by ancient clients can provides better results. Disabling
+    this option means going through a full delta recomputation for all incoming
+    revisions. It means a large increase in CPU usage and will slow operations
+    down.
+
+    This option is enabled by default. When disabled, it also disables the
+    related ``storage.revlog.reuse-external-delta-parent`` option.
+
 ``server``
 ----------
 

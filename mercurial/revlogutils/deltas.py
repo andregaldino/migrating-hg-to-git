@@ -916,7 +916,7 @@ class deltacomputer(object):
                     and currentbase != base
                     and self.revlog.length(currentbase) == 0):
                 currentbase = self.revlog.deltaparent(currentbase)
-            if currentbase == base:
+            if self.revlog._lazydelta and currentbase == base:
                 delta = revinfo.cachedelta[1]
         if delta is None:
             delta = self._builddeltadiff(base, revinfo, fh)

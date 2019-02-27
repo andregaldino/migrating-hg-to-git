@@ -410,7 +410,10 @@ class revlog(object):
             self._maxchainlen = opts['maxchainlen']
         if 'deltabothparents' in opts:
             self._deltabothparents = opts['deltabothparents']
-        self._lazydeltabase = bool(opts.get('lazydeltabase', False))
+        self._lazydelta = bool(opts.get('lazydelta', True))
+        self._lazydeltabase = False
+        if self._lazydelta:
+            self._lazydeltabase = bool(opts.get('lazydeltabase', False))
         if 'compengine' in opts:
             self._compengine = opts['compengine']
         if 'maxdeltachainspan' in opts:
