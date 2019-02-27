@@ -464,13 +464,17 @@ class fncache(object):
             self.entries = set()
             return
         self.entries = set(decodedir(fp.read()).splitlines())
+        self._checkentries(fp)
+        fp.close()
+
+    def _checkentries(self, fp):
+        """ make sure there is no empty string in entries """
         if '' in self.entries:
             fp.seek(0)
             for n, line in enumerate(util.iterfile(fp)):
                 if not line.rstrip('\n'):
                     t = _('invalid entry in fncache, line %d') % (n + 1)
                     raise error.Abort(t)
-        fp.close()
 
     def write(self, tr):
         if self._dirty:
