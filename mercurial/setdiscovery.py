@@ -193,7 +193,7 @@ class partialdiscovery(object):
         sample = set(repo.revs('heads(%ld)', revs))
 
         # update from heads
-        revsheads = set(repo.revs('heads(%ld)', revs))
+        revsheads = sample.copy()
         _updatesample(revs, revsheads, sample, repo.changelog.parentrevs)
 
         # update from roots
