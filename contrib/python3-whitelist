@@ -127,6 +127,7 @@ test-convert-splicemap.t
 test-convert-svn-sink.t
 test-convert-tagsbranch-topology.t
 test-convert.t
+test-copies.t
 test-copy-move-merge.t
 test-copy.t
 test-copytrace-heuristics.t
@@ -512,6 +513,7 @@ test-pathconflicts-update.t
 test-pathencode.py
 test-pending.t
 test-permissions.t
+test-phase-archived.t
 test-phases-exchange.t
 test-phases.t
 test-profile.t
