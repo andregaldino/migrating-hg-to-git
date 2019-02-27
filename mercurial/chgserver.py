@@ -140,7 +140,7 @@ def _getmtimepaths(ui):
     files = [pycompat.sysexecutable]
     for m in modules:
         try:
-            files.append(inspect.getabsfile(m))
+            files.append(pycompat.fsencode(inspect.getabsfile(m)))
         except TypeError:
             pass
     return sorted(set(files))
