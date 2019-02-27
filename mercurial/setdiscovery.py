@@ -92,69 +92,6 @@ def _updatesample(revs, heads, sample, parentfn, quicksamplesize=0):
                 dist.setdefault(p, d + 1)
                 visit.append(p)
 
-def _takequicksample(repo, headrevs, revs, size):
-    """takes a quick sample of size <size>
-
-    It is meant for initial sampling and focuses on querying heads and close
-    ancestors of heads.
-
-    :dag: a dag object
-    :headrevs: set of head revisions in local DAG to consider
-    :revs: set of revs to discover
-    :size: the maximum size of the sample"""
-    if len(revs) <= size:
-        return list(revs)
-    sample = set(repo.revs('heads(%ld)', revs))
-
-    if len(sample) >= size:
-        return _limitsample(sample, size)
-
-    _updatesample(None, headrevs, sample, repo.changelog.parentrevs,
-                  quicksamplesize=size)
-    return sample
-
-def _takefullsample(repo, headrevs, revs, size):
-    if len(revs) <= size:
-        return list(revs)
-    sample = set(repo.revs('heads(%ld)', revs))
-
-    # update from heads
-    revsheads = set(repo.revs('heads(%ld)', revs))
-    _updatesample(revs, revsheads, sample, repo.changelog.parentrevs)
-
-    # update from roots
-    revsroots = set(repo.revs('roots(%ld)', revs))
-
-    # _updatesample() essentially does interaction over revisions to look up
-    # their children. This lookup is expensive and doing it in a loop is
-    # quadratic. We precompute the children for all relevant revisions and
-    # make the lookup in _updatesample() a simple dict lookup.
-    #
-    # Because this function can be called multiple times during discovery, we
-    # may still perform redundant work and there is room to optimize this by
-    # keeping a persistent cache of children across invocations.
-    children = {}
-
-    parentrevs = repo.changelog.parentrevs
-    for rev in repo.changelog.revs(start=min(revsroots)):
-        # Always ensure revision has an entry so we don't need to worry about
-        # missing keys.
-        children.setdefault(rev, [])
-
-        for prev in parentrevs(rev):
-            if prev == nullrev:
-                continue
-
-            children.setdefault(prev, []).append(rev)
-
-    _updatesample(revs, revsroots, sample, children.__getitem__)
-    assert sample
-    sample = _limitsample(sample, size)
-    if len(sample) < size:
-        more = size - len(sample)
-        sample.update(random.sample(list(revs - sample), more))
-    return sample
-
 def _limitsample(sample, desiredlen):
     """return a random subset of sample of at most desiredlen item"""
     if len(sample) > desiredlen:
@@ -227,6 +164,70 @@ class partialdiscovery(object):
         # heads(common) == heads(common.bases) since common represents
         # common.bases and all its ancestors
         return self._common.basesheads()
+
+    def takequicksample(self, headrevs, size):
+        """takes a quick sample of size <size>
+
+        It is meant for initial sampling and focuses on querying heads and close
+        ancestors of heads.
+
+        :headrevs: set of head revisions in local DAG to consider
+        :size: the maximum size of the sample"""
+        revs = self.undecided
+        if len(revs) <= size:
+            return list(revs)
+        sample = set(self._repo.revs('heads(%ld)', revs))
+
+        if len(sample) >= size:
+            return _limitsample(sample, size)
+
+        _updatesample(None, headrevs, sample, self._repo.changelog.parentrevs,
+                      quicksamplesize=size)
+        return sample
+
+    def takefullsample(self, headrevs, size):
+        revs = self.undecided
+        if len(revs) <= size:
+            return list(revs)
+        repo = self._repo
+        sample = set(repo.revs('heads(%ld)', revs))
+
+        # update from heads
+        revsheads = set(repo.revs('heads(%ld)', revs))
+        _updatesample(revs, revsheads, sample, repo.changelog.parentrevs)
+
+        # update from roots
+        revsroots = set(repo.revs('roots(%ld)', revs))
+
+        # _updatesample() essentially does interaction over revisions to look
+        # up their children. This lookup is expensive and doing it in a loop is
+        # quadratic. We precompute the children for all relevant revisions and
+        # make the lookup in _updatesample() a simple dict lookup.
+        #
+        # Because this function can be called multiple times during discovery,
+        # we may still perform redundant work and there is room to optimize
+        # this by keeping a persistent cache of children across invocations.
+        children = {}
+
+        parentrevs = repo.changelog.parentrevs
+        for rev in repo.changelog.revs(start=min(revsroots)):
+            # Always ensure revision has an entry so we don't need to worry
+            # about missing keys.
+            children.setdefault(rev, [])
+
+            for prev in parentrevs(rev):
+                if prev == nullrev:
+                    continue
+
+                children.setdefault(prev, []).append(rev)
+
+        _updatesample(revs, revsroots, sample, children.__getitem__)
+        assert sample
+        sample = _limitsample(sample, size)
+        if len(sample) < size:
+            more = size - len(sample)
+            sample.update(random.sample(list(revs - sample), more))
+        return sample
 
 def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
@@ -309,14 +310,14 @@ def findcommonheads(ui, local, remote,
                 ui.note(_("sampling from both directions\n"))
             else:
                 ui.debug("taking initial sample\n")
-            samplefunc = _takefullsample
+            samplefunc = disco.takefullsample
             targetsize = fullsamplesize
         else:
             # use even cheaper initial sample
             ui.debug("taking quick initial sample\n")
-            samplefunc = _takequicksample
+            samplefunc = disco.takequicksample
             targetsize = initialsamplesize
-        sample = samplefunc(local, ownheads, disco.undecided, targetsize)
+        sample = samplefunc(ownheads, targetsize)
 
         roundtrips += 1
         progress.update(roundtrips)
