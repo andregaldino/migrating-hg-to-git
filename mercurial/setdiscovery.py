@@ -272,18 +272,18 @@ def findcommonheads(ui, local, remote,
     # compatibility reasons)
     ui.status(_("searching for changes\n"))
 
-    srvheads = []
+    knownsrvheads = []  # revnos of remote heads that are known locally
     for node in srvheadhashes:
         if node == nullid:
             continue
 
         try:
-            srvheads.append(clrev(node))
+            knownsrvheads.append(clrev(node))
         # Catches unknown and filtered nodes.
         except error.LookupError:
             continue
 
-    if len(srvheads) == len(srvheadhashes):
+    if len(knownsrvheads) == len(srvheadhashes):
         ui.debug("all remote heads known locally\n")
         return srvheadhashes, False, srvheadhashes
 
@@ -297,7 +297,7 @@ def findcommonheads(ui, local, remote,
     disco = partialdiscovery(local, ownheads)
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
-    disco.addcommons(srvheads)
+    disco.addcommons(knownsrvheads)
     disco.addinfo(zip(sample, yesno))
 
     full = False
@@ -340,7 +340,7 @@ def findcommonheads(ui, local, remote,
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
     msg = ('found %d common and %d unknown server heads,'
            ' %d roundtrips in %.4fs\n')
-    missing = set(result) - set(srvheads)
+    missing = set(result) - set(knownsrvheads)
     ui.log('discovery', msg, len(result), len(missing), roundtrips,
            elapsed)
 
