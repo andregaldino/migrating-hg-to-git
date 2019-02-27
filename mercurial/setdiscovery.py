@@ -165,6 +165,12 @@ class partialdiscovery(object):
         # common.bases and all its ancestors
         return self._common.basesheads()
 
+    def _parentsgetter(self):
+        getrev = self._repo.changelog.index.__getitem__
+        def getparents(r):
+            return getrev(r)[5:6]
+        return getparents
+
     def takequicksample(self, headrevs, size):
         """takes a quick sample of size <size>
 
@@ -181,7 +187,7 @@ class partialdiscovery(object):
         if len(sample) >= size:
             return _limitsample(sample, size)
 
-        _updatesample(None, headrevs, sample, self._repo.changelog.parentrevs,
+        _updatesample(None, headrevs, sample, self._parentsgetter(),
                       quicksamplesize=size)
         return sample
 
@@ -191,10 +197,11 @@ class partialdiscovery(object):
             return list(revs)
         repo = self._repo
         sample = set(repo.revs('heads(%ld)', revs))
+        parentrevs = self._parentsgetter()
 
         # update from heads
         revsheads = sample.copy()
-        _updatesample(revs, revsheads, sample, repo.changelog.parentrevs)
+        _updatesample(revs, revsheads, sample, parentrevs)
 
         # update from roots
         revsroots = set(repo.revs('roots(%ld)', revs))
@@ -209,7 +216,6 @@ class partialdiscovery(object):
         # this by keeping a persistent cache of children across invocations.
         children = {}
 
-        parentrevs = repo.changelog.parentrevs
         for rev in repo.changelog.revs(start=min(revsroots)):
             # Always ensure revision has an entry so we don't need to worry
             # about missing keys.
