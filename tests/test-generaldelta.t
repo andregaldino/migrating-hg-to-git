@@ -339,7 +339,7 @@ test maxdeltachainspan
        52       5        1       -1    base        369        640        369   0.57656       369         0    0.00000
        53       6        1       -1    base          0          0          0   0.00000         0         0    0.00000
        54       7        1       -1    base        369        640        369   0.57656       369         0    0.00000
-  $ hg clone --pull source-repo --config experimental.maxdeltachainspan=0 noconst-chain --config format.generaldelta=yes
+  $ hg clone --pull source-repo --config experimental.maxdeltachainspan=0 noconst-chain --config format.usegeneraldelta=yes --config storage.revlog.reuse-external-delta-parent=no
   requesting all changes
   adding changesets
   adding manifests

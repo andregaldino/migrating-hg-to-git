@@ -40,8 +40,7 @@ repeatedly while some of it changes rarely.
   > maxchainlen = 15
   > [storage]
   > revlog.optimize-delta-parent-choice = yes
-  > [format]
-  > generaldelta = yes
+  > revlog.reuse-external-delta-parent = no
   > EOF
   $ hg init sparse-repo
   $ cd sparse-repo

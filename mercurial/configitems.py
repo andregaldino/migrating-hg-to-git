@@ -983,6 +983,9 @@ coreconfigitem('storage', 'revlog.optimize-delta-parent-choice',
     default=True,
     alias=[('format', 'aggressivemergedeltas')],
 )
+coreconfigitem('storage', 'revlog.reuse-external-delta-parent',
+    default=None,
+)
 coreconfigitem('server', 'bookmarks-pushkey-compat',
     default=True,
 )

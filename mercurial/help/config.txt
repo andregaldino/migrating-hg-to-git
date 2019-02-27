@@ -1843,6 +1843,28 @@ category impact performance and repository size.
     Turning this option off can result in large increase of repository size for
     repository with many merges.
 
+``revlog.reuse-external-delta-parent``
+    Control the order in which delta parents are considered when adding new
+    revisions from an external source.
+    (typically: apply bundle from `hg pull` or `hg push`).
+
+    New revisions are usually provided as a delta against other revisions. By
+    default, Mercurial will try to reuse this delta first, therefore using the
+    same "delta parent" as the source. Directly using delta's from the source
+    reduces CPU usage and usually speeds up operation. However, in some case,
+    the source might have sub-optimal delta bases and forcing their reevaluation
+    is useful. For example, pushes from an old client could have sub-optimal
+    delta's parent that the server want to optimize. (lack of general delta, bad
+    parents, choice, lack of sparse-revlog, etc).
+
+    This option is enabled by default. Turning it off will ensure bad delta
+    parent choices from older client do not propagate to this repository, at
+    the cost of a small increase in CPU consumption.
+
+    Note: this option only control the order in which delta parents are
+    considered.  Even when disabled, the existing delta from the source will be
+    reused if the same delta parent is selected.
+
 ``server``
 ----------
 

@@ -752,7 +752,11 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
                                      b'revlog.optimize-delta-parent-choice')
     options[b'deltabothparents'] = deltabothparents
 
-    options[b'lazydeltabase'] = not scmutil.gddeltaconfig(ui)
+    lazydeltabase = ui.configbool(b'storage',
+                                  b'revlog.reuse-external-delta-parent')
+    if lazydeltabase is None:
+        lazydeltabase = not scmutil.gddeltaconfig(ui)
+    options[b'lazydeltabase'] = lazydeltabase
 
     chainspan = ui.configbytes(b'experimental', b'maxdeltachainspan')
     if 0 <= chainspan:
