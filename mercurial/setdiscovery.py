@@ -172,7 +172,7 @@ class partialdiscovery(object):
             return getrev(r)[5:6]
         return getparents
 
-    def _childrengetter(self, revs):
+    def _childrengetter(self):
 
         if self._childrenmap is not None:
             return self._childrenmap.__getitem__
@@ -184,6 +184,7 @@ class partialdiscovery(object):
         self._childrenmap = children = {}
 
         parentrevs = self._parentsgetter()
+        revs = self.undecided
 
         for rev in sorted(revs):
             # Always ensure revision has an entry so we don't need to worry
@@ -232,7 +233,7 @@ class partialdiscovery(object):
         # update from roots
         revsroots = set(repo.revs('roots(%ld)', revs))
 
-        childrenrevs = self._childrengetter(revs)
+        childrenrevs = self._childrengetter()
 
         _updatesample(revs, revsroots, sample, childrenrevs)
         assert sample
