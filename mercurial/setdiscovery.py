@@ -116,6 +116,7 @@ class partialdiscovery(object):
         self._common = repo.changelog.incrementalmissingrevs()
         self._undecided = None
         self.missing = set()
+        self._childrenmap = None
 
     def addcommons(self, commons):
         """registrer nodes known as common"""
@@ -173,15 +174,14 @@ class partialdiscovery(object):
 
     def _childrengetter(self, revs):
 
+        if self._childrenmap is not None:
+            return self._childrenmap.__getitem__
+
         # _updatesample() essentially does interaction over revisions to look
         # up their children. This lookup is expensive and doing it in a loop is
         # quadratic. We precompute the children for all relevant revisions and
         # make the lookup in _updatesample() a simple dict lookup.
-        #
-        # Because this function can be called multiple times during discovery,
-        # we may still perform redundant work and there is room to optimize
-        # this by keeping a persistent cache of children across invocations.
-        children = {}
+        self._childrenmap = children = {}
 
         parentrevs = self._parentsgetter()
 
