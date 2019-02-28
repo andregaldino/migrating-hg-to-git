@@ -677,7 +677,8 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
     return result
 
 def _checkfiledata(name, f, filedata, filters, pats, context,
-                   logfunc, maxerr, warnings, blame, debug, lineno):
+                   logfunc, maxerr, warnings, blame, debug, lineno,
+                   offset=None):
     """Execute actual error check for file data
 
     :name: of the checking category
@@ -695,10 +696,17 @@ def _checkfiledata(name, f, filedata, filters, pats, context,
     :blame: whether blame information should be displayed at error reporting
     :debug: whether debug information should be displayed
     :lineno: whether lineno should be displayed at error reporting
+    :offset: line number offset of 'filedata' in 'f' for checking
+             an embedded code fragment, or None (offset=0 is different
+             from offset=None)
 
     returns number of detected errors.
     """
     blamecache = context['blamecache']
+    if offset is None:
+        lineoffset = 0
+    else:
+        lineoffset = offset
 
     fc = 0
     pre = post = filedata
@@ -746,7 +754,7 @@ def _checkfiledata(name, f, filedata, filters, pats, context,
                 if ignore and re.search(ignore, l, re.MULTILINE):
                     if debug:
                         print("Skipping %s for %s:%s (ignore pattern)" % (
-                            name, f, n))
+                            name, f, (n + lineoffset)))
                     continue
                 bd = ""
                 if blame:
@@ -754,12 +762,22 @@ def _checkfiledata(name, f, filedata, filters, pats, context,
                     if blamecache is None:
                         blamecache = getblame(f)
                         context['blamecache'] = blamecache
-                    if n < len(blamecache):
-                        bl, bu, br = blamecache[n]
-                        if bl == l:
+                    if (n + lineoffset) < len(blamecache):
+                        bl, bu, br = blamecache[(n + lineoffset)]
+                        if offset is None and bl == l:
                             bd = '%s@%s' % (bu, br)
+                        elif offset is not None and bl.endswith(l):
+                            # "offset is not None" means "checking
+                            # embedded code fragment". In this case,
+                            # "l" does not have information about the
+                            # beginning of an *original* line in the
+                            # file (e.g. '  > ').
+                            # Therefore, use "str.endswith()", and
+                            # show "maybe" for a little loose
+                            # examination.
+                            bd = '%s@%s, maybe' % (bu, br)
 
-                errors.append((f, lineno and n + 1, l, msg, bd))
+                errors.append((f, lineno and (n + lineoffset + 1), l, msg, bd))
 
         errors.sort()
         for e in errors:
