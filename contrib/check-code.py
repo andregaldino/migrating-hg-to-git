@@ -669,8 +669,9 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
             print("Skipping %s it has no-che?k-code (glob)" % f)
             return "Skip" # skip checking this file
 
-        if not _checkfiledata(name, f, pre, filters, pats, context,
-                              logfunc, maxerr, warnings, blame, debug, lineno):
+        fc = _checkfiledata(name, f, pre, filters, pats, context,
+                            logfunc, maxerr, warnings, blame, debug, lineno)
+        if fc:
             result = False
 
     return result
@@ -695,13 +696,12 @@ def _checkfiledata(name, f, filedata, filters, pats, context,
     :debug: whether debug information should be displayed
     :lineno: whether lineno should be displayed at error reporting
 
-    return True if no error is found, False otherwise.
+    returns number of detected errors.
     """
     blamecache = context['blamecache']
 
     fc = 0
     pre = post = filedata
-    result = True
 
     if True: # TODO: get rid of this redundant 'if' block
         for p, r in filters:
@@ -760,7 +760,6 @@ def _checkfiledata(name, f, filedata, filters, pats, context,
                             bd = '%s@%s' % (bu, br)
 
                 errors.append((f, lineno and n + 1, l, msg, bd))
-                result = False
 
         errors.sort()
         for e in errors:
@@ -770,7 +769,7 @@ def _checkfiledata(name, f, filedata, filters, pats, context,
                 print(" (too many errors, giving up)")
                 break
 
-    return result
+    return fc
 
 def main():
     parser = optparse.OptionParser("%prog [options] [files | -]")
