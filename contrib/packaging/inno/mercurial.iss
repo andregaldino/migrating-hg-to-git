@@ -53,6 +53,7 @@ SetupIconFile=contrib\win32\mercurial.ico
 AllowNoIcons=true
 DefaultGroupName=Mercurial
 PrivilegesRequired=none
+ChangesEnvironment=true
 
 [Files]
 Source: contrib\mercurial.el; DestDir: {app}/Contrib
@@ -80,7 +81,6 @@ Source: dist\python*.dll; Destdir: {app}; Flags: skipifsourcedoesntexist
 Source: dist\msvc*.dll; DestDir: {app}; Flags: skipifsourcedoesntexist
 Source: dist\Microsoft.VC*.CRT.manifest; DestDir: {app}; Flags: skipifsourcedoesntexist
 Source: dist\lib\library.zip; DestDir: {app}\lib
-Source: dist\add_path.exe; DestDir: {app}
 Source: doc\*.html; DestDir: {app}\Docs
 Source: doc\style.css; DestDir: {app}\Docs
 Source: mercurial\help\*.txt; DestDir: {app}\help
@@ -107,14 +107,22 @@ Name: {group}\Mercurial Configuration Files; Filename: {app}\Docs\hgrc.5.html
 Name: {group}\Mercurial Ignore Files; Filename: {app}\Docs\hgignore.5.html
 Name: {group}\Mercurial Web Site; Filename: {app}\Mercurial.url
 
-[Run]
-Filename: "{app}\add_path.exe"; Parameters: "{app}"; Flags: postinstall; Description: "Add the installation path to the search path"
-
-[UninstallRun]
-Filename: "{app}\add_path.exe"; Parameters: "/del {app}"
+[Tasks]
+Name: modifypath; Description: Add the installation path to the search path; Flags: unchecked
 
 [Code]
 procedure Touch(fn: String);
 begin
   SaveStringToFile(ExpandConstant(fn), '', False);
 end;
+
+const
+    ModPathName = 'modifypath';
+    ModPathType = 'user';
+
+function ModPathDir(): TArrayOfString;
+begin
+    setArrayLength(Result, 1)
+    Result[0] := ExpandConstant('{app}');
+end;
+#include "modpath.iss"

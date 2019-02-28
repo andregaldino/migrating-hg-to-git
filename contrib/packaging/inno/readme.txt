@@ -40,9 +40,6 @@ matching the mercurial version you want to build (32-bit or 64-bit).
   ISTool - optional
       http://www.istool.org/default.aspx/
 
-  add_path (you need only add_path.exe in the zip file)
-      http://www.barisione.org/apps.html#add_path
-
   Docutils
       http://docutils.sourceforge.net/
 
@@ -76,7 +73,7 @@ Building instructions with MSVC 2008 Express Edition:
     "C:\Program Files\Microsoft Visual Studio 9.0\VC\vcvarsall.bat" x86_amd64
     python setup.py py2exe -b 3
 
-Copy add_path.exe and cacert.pem files into the dist directory that just got created.
+Copy cacert.pem files into the dist directory that just got created.
 
 If you are using Python 2.6 or later, or if you are using MSVC 2008 to compile
 mercurial, you must include the C runtime libraries in the installer. To do so,
@@ -99,13 +96,13 @@ Before building the installer, you have to build Mercurial HTML documentation
   cd ..
 
 If you use ISTool, you open the
-C:\hg\hg-release\contrib\packaging\inno\mercurial.iss
+C:\hg\hg-release\contrib\packaging\inno-installer\mercurial.iss
 file and type Ctrl-F9 to compile the installer file.
 
 Otherwise you run the Inno Setup compiler.  Assuming it's in the path
 you should execute:
 
-  iscc contrib\packaging\inno\mercurial.iss /dVERSION=foo
+  iscc contrib\packaging\inno-installer\mercurial.iss /dVERSION=foo
 
 Where 'foo' is the version number you would like to see in the
 'Add/Remove Applications' tool.  The installer will be placed into
@@ -115,7 +112,7 @@ installer will retrieve the version information from the __version__.py file.
 
 If you want to build an installer for a 64-bit mercurial, add /dARCH=x64 to
 your command line:
-  iscc contrib\packaging\inno\mercurial.iss /dARCH=x64
+  iscc contrib\packaging\inno-installer\mercurial.iss /dARCH=x64
 
 To automate the steps above you may want to create a batchfile based on the
 following (MinGW build chain):
@@ -126,6 +123,6 @@ following (MinGW build chain):
   cd doc
   mingw32-make html
   cd ..
-  iscc contrib\packaging\inno\mercurial.iss /dVERSION=snapshot
+  iscc contrib\packaging\inno-installer\mercurial.iss /dVERSION=snapshot
 
 and run it from the root of the hg repository (c:\hg\hg-release).
