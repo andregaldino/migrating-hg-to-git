@@ -688,9 +688,6 @@ class fixupstate(object):
                 self._movebookmarks(tr)
                 if self.repo['.'].node() in self.replacemap:
                     self._moveworkingdirectoryparent()
-                if self._useobsolete:
-                    self._cleanupoldcommits()
-            if not self._useobsolete: # strip must be outside transactions
                 self._cleanupoldcommits()
         return self.finalnode
 
