@@ -635,7 +635,6 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
 
     return True if no error is found, False otherwise.
     """
-    blamecache = None
     result = True
 
     try:
@@ -649,11 +648,12 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
         print("Skipping %s, %s" % (f, str(e).split(':', 1)[0]))
         return result
 
+    # context information shared while single checkfile() invocation
+    context = {'blamecache': None}
+
     for name, match, magic, filters, pats in checks:
-        post = pre # discard filtering result of previous check
         if debug:
             print(name, f)
-        fc = 0
         if not (re.match(match, f) or (magic and re.search(magic, pre))):
             if debug:
                 print("Skipping %s for %s it doesn't match %s" % (
@@ -668,6 +668,42 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
             # tests/test-check-code.t
             print("Skipping %s it has no-che?k-code (glob)" % f)
             return "Skip" # skip checking this file
+
+        if not _checkfiledata(name, f, pre, filters, pats, context,
+                              logfunc, maxerr, warnings, blame, debug, lineno):
+            result = False
+
+    return result
+
+def _checkfiledata(name, f, filedata, filters, pats, context,
+                   logfunc, maxerr, warnings, blame, debug, lineno):
+    """Execute actual error check for file data
+
+    :name: of the checking category
+    :f: filepath
+    :filedata: content of a file
+    :filters: to be applied before checking
+    :pats: to detect errors
+    :context: a dict of information shared while single checkfile() invocation
+              Valid keys: 'blamecache'.
+    :logfunc: function used to report error
+              logfunc(filename, linenumber, linecontent, errormessage)
+    :maxerr: number of error to display before aborting, or False to
+             report all errors
+    :warnings: whether warning level checks should be applied
+    :blame: whether blame information should be displayed at error reporting
+    :debug: whether debug information should be displayed
+    :lineno: whether lineno should be displayed at error reporting
+
+    return True if no error is found, False otherwise.
+    """
+    blamecache = context['blamecache']
+
+    fc = 0
+    pre = post = filedata
+    result = True
+
+    if True: # TODO: get rid of this redundant 'if' block
         for p, r in filters:
             post = re.sub(p, r, post)
         nerrs = len(pats[0]) # nerr elements are errors
@@ -715,8 +751,9 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
                 bd = ""
                 if blame:
                     bd = 'working directory'
-                    if not blamecache:
+                    if blamecache is None:
                         blamecache = getblame(f)
+                        context['blamecache'] = blamecache
                     if n < len(blamecache):
                         bl, bu, br = blamecache[n]
                         if bl == l:
