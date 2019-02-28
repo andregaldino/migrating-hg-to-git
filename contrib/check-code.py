@@ -561,8 +561,7 @@ checks = [
 ]
 
 def _preparepats():
-    for c in checks:
-        failandwarn = c[-1]
+    def preparefailandwarn(failandwarn):
         for pats in failandwarn:
             for i, pseq in enumerate(pats):
                 # fix-up regexes for multi-line searches
@@ -576,9 +575,18 @@ def _preparepats():
                 p = re.sub(r'(?<!\\)\[\^', r'[^\\n', p)
 
                 pats[i] = (re.compile(p, re.MULTILINE),) + pseq[1:]
-        filters = c[3]
+
+    def preparefilters(filters):
         for i, flt in enumerate(filters):
             filters[i] = re.compile(flt[0]), flt[1]
+
+    for cs in (checks,):
+        for c in cs:
+            failandwarn = c[-1]
+            preparefailandwarn(failandwarn)
+
+            filters = c[-2]
+            preparefilters(filters)
 
 class norepeatlogger(object):
     def __init__(self):
