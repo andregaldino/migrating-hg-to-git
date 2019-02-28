@@ -860,10 +860,10 @@ class fixupstate(object):
         return obsolete.isenabled(self.repo, obsolete.createmarkersopt)
 
     def _obsoleteoldcommits(self):
-        relations = [(self.repo[k], v and (self.repo[v],) or ())
-                     for k, v in self.replacemap.iteritems()]
-        if relations:
-            obsolete.createmarkers(self.repo, relations)
+        replacements = {k: ([v] if v is not None else [])
+                        for k, v in self.replacemap.iteritems()}
+        if replacements:
+            scmutil.cleanupnodes(self.repo, replacements, operation='absorb')
 
     def _stripoldcommits(self):
         nodelist = self.replacemap.keys()
