@@ -848,10 +848,7 @@ class fixupstate(object):
         if self._useobsolete and self.ui.configbool('absorb', 'add-noise'):
             extra['absorb_source'] = ctx.hex()
         mctx = overlaycontext(memworkingcopy, ctx, parents, extra=extra)
-        # preserve phase
-        with mctx.repo().ui.configoverride({
-            ('phases', 'new-commit'): ctx.phase()}):
-            return mctx.commit()
+        return mctx.commit()
 
     @util.propertycache
     def _useobsolete(self):
@@ -862,7 +859,8 @@ class fixupstate(object):
         replacements = {k: ([v] if v is not None else [])
                         for k, v in self.replacemap.iteritems()}
         if replacements:
-            scmutil.cleanupnodes(self.repo, replacements, operation='absorb')
+            scmutil.cleanupnodes(self.repo, replacements, operation='absorb',
+                                 fixphase=True)
 
 def _parsechunk(hunk):
     """(crecord.uihunk or patch.recordhunk) -> (path, (a1, a2, [bline]))"""
