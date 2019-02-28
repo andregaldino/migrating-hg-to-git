@@ -50,7 +50,6 @@ from mercurial import (
     phases,
     pycompat,
     registrar,
-    repair,
     scmutil,
     util,
 )
@@ -690,9 +689,9 @@ class fixupstate(object):
                 if self.repo['.'].node() in self.replacemap:
                     self._moveworkingdirectoryparent()
                 if self._useobsolete:
-                    self._obsoleteoldcommits()
+                    self._cleanupoldcommits()
             if not self._useobsolete: # strip must be outside transactions
-                self._stripoldcommits()
+                self._cleanupoldcommits()
         return self.finalnode
 
     def printchunkstats(self):
@@ -859,21 +858,11 @@ class fixupstate(object):
         """() -> bool"""
         return obsolete.isenabled(self.repo, obsolete.createmarkersopt)
 
-    def _obsoleteoldcommits(self):
+    def _cleanupoldcommits(self):
         replacements = {k: ([v] if v is not None else [])
                         for k, v in self.replacemap.iteritems()}
         if replacements:
             scmutil.cleanupnodes(self.repo, replacements, operation='absorb')
-
-    def _stripoldcommits(self):
-        nodelist = self.replacemap.keys()
-        # make sure we don't strip innocent children
-        revs = self.repo.revs('%ln - (::(heads(%ln::)-%ln))', nodelist,
-                              nodelist, nodelist)
-        tonode = self.repo.changelog.node
-        nodelist = [tonode(r) for r in revs]
-        if nodelist:
-            repair.strip(self.repo.ui, self.repo, nodelist)
 
 def _parsechunk(hunk):
     """(crecord.uihunk or patch.recordhunk) -> (path, (a1, a2, [bline]))"""

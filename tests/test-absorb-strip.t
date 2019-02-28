@@ -23,6 +23,7 @@ Do not strip innocent children. See https://bitbucket.org/facebook/hg-experiment
   $ echo 1 >> B
   $ echo 2 >> D
   $ hg absorb -a
+  warning: orphaned descendants detected, not stripping 112478962961, 26805aba1e60
   saved backup bundle to * (glob)
   2 of 2 chunk(s) applied
 
