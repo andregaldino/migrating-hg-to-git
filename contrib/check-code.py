@@ -231,7 +231,8 @@ utestfilters = [
     (r"( +)(#([^!][^\n]*\S)?)", repcomment),
 ]
 
-pypats = [
+# common patterns to check *.py
+commonpypats = [
   [
     (r'\\$', 'Use () to wrap long lines in Python, not \\'),
     (r'^\s*def\s*\w+\s*\(.*,\s*\(',
@@ -262,7 +263,6 @@ pypats = [
         # a pass at the same indent level, which is bogus
         r'(?P=indent)pass[ \t\n#]'
       ), 'omit superfluous pass'),
-    (r'.{81}', "line too long"),
     (r'[^\n]\Z', "no trailing newline"),
     (r'(\S[ \t]+|^[ \t]+)\n', "trailing whitespace"),
 #    (r'^\s+[^_ \n][^_. \n]+_[^_\n]+\s*=',
@@ -300,7 +300,6 @@ pypats = [
      "wrong whitespace around ="),
     (r'\([^()]*( =[^=]|[^<>!=]= )',
      "no whitespace around = for named parameters"),
-    (r'raise Exception', "don't raise generic exceptions"),
     (r'raise [^,(]+, (\([^\)]+\)|[^,\(\)]+)$',
      "don't use old-style two-argument raise, use Exception(message)"),
     (r' is\s+(not\s+)?["\'0-9-]', "object comparison with literal"),
@@ -316,21 +315,12 @@ pypats = [
      "use opener.read() instead"),
     (r'opener\([^)]*\).write\(',
      "use opener.write() instead"),
-    (r'[\s\(](open|file)\([^)]*\)\.read\(',
-     "use util.readfile() instead"),
-    (r'[\s\(](open|file)\([^)]*\)\.write\(',
-     "use util.writefile() instead"),
-    (r'^[\s\(]*(open(er)?|file)\([^)]*\)(?!\.close\(\))',
-     "always assign an opened file to a variable, and close it afterwards"),
-    (r'[\s\(](open|file)\([^)]*\)\.(?!close\(\))',
-     "always assign an opened file to a variable, and close it afterwards"),
     (r'(?i)descend[e]nt', "the proper spelling is descendAnt"),
     (r'\.debug\(\_', "don't mark debug messages for translation"),
     (r'\.strip\(\)\.split\(\)', "no need to strip before splitting"),
     (r'^\s*except\s*:', "naked except clause", r'#.*re-raises'),
     (r'^\s*except\s([^\(,]+|\([^\)]+\))\s*,',
      'legacy exception syntax; use "as" instead of ","'),
-    (r':\n(    )*( ){1,3}[^ ]', "must indent 4 spaces"),
     (r'release\(.*wlock, .*lock\)', "wrong lock release order"),
     (r'\bdef\s+__bool__\b', "__bool__ should be __nonzero__ in Python 2"),
     (r'os\.path\.join\(.*, *(""|\'\')\)',
@@ -340,7 +330,6 @@ pypats = [
     (r'def.*[( ]\w+=\{\}', "don't use mutable default arguments"),
     (r'\butil\.Abort\b', "directly use error.Abort"),
     (r'^@(\w*\.)?cachefunc', "module-level @cachefunc is risky, please avoid"),
-    (r'^import atexit', "don't use atexit, use ui.atexit"),
     (r'^import Queue', "don't use Queue, use pycompat.queue.Queue + "
                        "pycompat.queue.Empty"),
     (r'^import cStringIO', "don't use cStringIO.StringIO, use util.stringio"),
@@ -358,6 +347,34 @@ pypats = [
     (r'([a-z]*).revision\(\1\.node\(',
      "don't convert rev to node before passing to revision(nodeorrev)"),
     (r'platform\.system\(\)', "don't use platform.system(), use pycompat"),
+
+  ],
+  # warnings
+  [
+  ]
+]
+
+# patterns to check normal *.py files
+pypats = [
+  [
+    # Ideally, these should be placed in "commonpypats" for
+    # consistency of coding rules in Mercurial source tree.
+    # But on the other hand, these are not so seriously required for
+    # python code fragments embedded in test scripts. Fixing test
+    # scripts for these patterns requires many changes, and has less
+    # profit than effort.
+    (r'.{81}', "line too long"),
+    (r'raise Exception', "don't raise generic exceptions"),
+    (r'[\s\(](open|file)\([^)]*\)\.read\(',
+     "use util.readfile() instead"),
+    (r'[\s\(](open|file)\([^)]*\)\.write\(',
+     "use util.writefile() instead"),
+    (r'^[\s\(]*(open(er)?|file)\([^)]*\)(?!\.close\(\))',
+     "always assign an opened file to a variable, and close it afterwards"),
+    (r'[\s\(](open|file)\([^)]*\)\.(?!close\(\))',
+     "always assign an opened file to a variable, and close it afterwards"),
+    (r':\n(    )*( ){1,3}[^ ]', "must indent 4 spaces"),
+    (r'^import atexit', "don't use atexit, use ui.atexit"),
 
     # rules depending on implementation of repquote()
     (r' x+[xpqo%APM][\'"]\n\s+[\'"]x',
@@ -377,20 +394,25 @@ pypats = [
            # because _preparepats forcibly adds "\n" into [^...],
            # even though this regexp wants match it against "\n")''',
      "missing _() in ui message (use () to hide false-positives)"),
-  ],
+  ] + commonpypats[0],
   # warnings
   [
     # rules depending on implementation of repquote()
     (r'(^| )pp +xxxxqq[ \n][^\n]', "add two newlines after '.. note::'"),
-  ]
+  ] + commonpypats[1]
 ]
 
-pyfilters = [
+# common filters to convert *.py
+commonpyfilters = [
     (r"""(?msx)(?P<comment>\#.*?$)|
          ((?P<quote>('''|\"\"\"|(?<!')'(?!')|(?<!")"(?!")))
           (?P<text>(([^\\]|\\.)*?))
           (?P=quote))""", reppython),
 ]
+
+# filters to convert normal *.py files
+pyfilters = [
+] + commonpyfilters
 
 # non-filter patterns
 pynfpats = [
