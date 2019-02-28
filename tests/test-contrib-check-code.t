@@ -379,3 +379,51 @@ should break rules depending on result of repquote(), in this case)
    > class empty(object):
    omit superfluous pass
   [1]
+
+Check code fragments embedded in test script
+
+  $ cat > embedded-code.t <<NO_CHECK_EOF
+  > code fragment in doctest style
+  >   >>> x = (1,2)
+  >   ... 
+  >   ... x = (1,2)
+  > 
+  > code fragment in heredoc style
+  >   $ python <<EOF
+  >   > x = (1,2)
+  >   > EOF
+  > 
+  > code fragment in file heredoc style
+  >   $ python > file.py <<EOF
+  >   > x = (1,2)
+  >   > EOF
+  > NO_CHECK_EOF
+  $ "$check_code" embedded-code.t
+  embedded-code.t:2:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:4:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:8:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:13:
+   > x = (1,2)
+   missing whitespace after ,
+  [1]
+
+"max warnings per file" is shared by all embedded code fragments
+
+  $ "$check_code" --per-file=3 embedded-code.t
+  embedded-code.t:2:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:4:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:8:
+   > x = (1,2)
+   missing whitespace after ,
+   (too many errors, giving up)
+  [1]

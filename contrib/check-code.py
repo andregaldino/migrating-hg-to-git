@@ -40,6 +40,8 @@ try:
 except ImportError:
     re2 = None
 
+import testparseutil
+
 def compilere(pat, multiline=False):
     if multiline:
         pat = '(?m)' + pat
@@ -402,6 +404,15 @@ pypats = [
   ] + commonpypats[1]
 ]
 
+# patterns to check *.py for embedded ones in test script
+embeddedpypats = [
+  [
+  ] + commonpypats[0],
+  # warnings
+  [
+  ] + commonpypats[1]
+]
+
 # common filters to convert *.py
 commonpyfilters = [
     (r"""(?msx)(?P<comment>\#.*?$)|
@@ -425,6 +436,10 @@ pynfpats = [
     # warnings
     [],
 ]
+
+# filters to convert *.py for embedded ones in test script
+embeddedpyfilters = [
+] + commonpyfilters
 
 # extension non-filter patterns
 pyextnfpats = [
@@ -560,6 +575,15 @@ checks = [
      allfilesfilters, allfilespats),
 ]
 
+# (desc,
+#  func to pick up embedded code fragments,
+#  list of patterns to convert target files
+#  list of patterns to detect errors/warnings)
+embeddedchecks = [
+    ('embedded python',
+     testparseutil.pyembedded, embeddedpyfilters, embeddedpypats)
+]
+
 def _preparepats():
     def preparefailandwarn(failandwarn):
         for pats in failandwarn:
@@ -580,7 +604,7 @@ def _preparepats():
         for i, flt in enumerate(filters):
             filters[i] = re.compile(flt[0]), flt[1]
 
-    for cs in (checks,):
+    for cs in (checks, embeddedchecks):
         for c in cs:
             failandwarn = c[-1]
             preparefailandwarn(failandwarn)
@@ -673,6 +697,30 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
                             logfunc, maxerr, warnings, blame, debug, lineno)
         if fc:
             result = False
+
+    if f.endswith('.t') and "no-" "check-code" not in pre:
+        if debug:
+            print("Checking embedded code in %s" % (f))
+
+        prelines = pre.splitlines()
+        embeddederros = []
+        for name, embedded, filters, pats in embeddedchecks:
+            # "reset curmax at each repetition" treats maxerr as "max
+            # nubmer of errors in an actual file per entry of
+            # (embedded)checks"
+            curmaxerr = maxerr
+
+            for found in embedded(f, prelines, embeddederros):
+                filename, starts, ends, code = found
+                fc = _checkfiledata(name, f, code, filters, pats, context,
+                                    logfunc, curmaxerr, warnings, blame, debug,
+                                    lineno, offset=starts - 1)
+                if fc:
+                    result = False
+                    if curmaxerr:
+                        if fc >= curmaxerr:
+                            break
+                        curmaxerr -= fc
 
     return result
 
