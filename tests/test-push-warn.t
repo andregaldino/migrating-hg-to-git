@@ -791,3 +791,57 @@ Test fail hook
   [255]
 
   $ cd ..
+
+Test regarding pushing of closed branch/branches(Issue6080)
+
+  $ hg init x
+  $ cd x
+  $ hg -q branch a
+  $ echo 0 > foo
+  $ hg -q ci -Am 0
+  $ hg -q up 0
+  $ cd ..
+
+  $ hg -q clone x z
+  $ cd z
+
+When there is a single closed branch
+
+  $ hg -q branch foo
+  $ echo 0 > foo
+  $ hg -q ci -Am 0
+  $ hg ci --close-branch -m 'closing branch foo'
+  $ hg -q up 0
+  $ hg push ../x
+  pushing to ../x
+  searching for changes
+  abort: push creates new remote branches: foo (1 closed)!
+  (use 'hg push --new-branch' to create new remote branches)
+  [255]
+
+When there is more than one closed branches
+  $ hg -q branch bar
+  $ echo 0 > bar
+  $ hg -q ci -Am 0
+  $ hg ci --close-branch -m 'closing branch bar'
+  $ hg -q up 0
+  $ hg push ../x
+  pushing to ../x
+  searching for changes
+  abort: push creates new remote branches: bar, foo (2 closed)!
+  (use 'hg push --new-branch' to create new remote branches)
+  [255]
+
+When there are more than one new branches and not all are closed
+  $ hg -q branch bar1
+  $ echo 0 > bar1
+  $ hg -q ci -Am 0
+  $ hg -q up 0
+  $ hg push ../x
+  pushing to ../x
+  searching for changes
+  abort: push creates new remote branches: bar, bar1, foo (2 closed)!
+  (use 'hg push --new-branch' to create new remote branches)
+  [255]
+
+  $ cd ..
