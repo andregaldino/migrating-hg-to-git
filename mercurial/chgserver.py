@@ -64,11 +64,12 @@ from . import (
 
 from .utils import (
     procutil,
+    stringutil,
 )
 
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
-    return node.hex(hashlib.sha1(str(items)).digest())
+    return node.hex(hashlib.sha1(stringutil.pprint(items)).digest())
 
 # sensitive config sections affecting confighash
 _configsections = [
@@ -83,7 +84,7 @@ _configsectionitems = [
 ]
 
 # sensitive environment variables affecting confighash
-_envre = re.compile(r'''\A(?:
+_envre = re.compile(br'''\A(?:
                     CHGHG
                     |HG(?:DEMANDIMPORT|EMITWARNINGS|MODULEPOLICY|PROF|RCPATH)?
                     |HG(?:ENCODING|PLAIN).*
@@ -449,7 +450,7 @@ class chgcmdserver(commandserver.server):
         if newhash.confighash != self.hashstate.confighash:
             addr = _hashaddress(self.baseaddress, newhash.confighash)
             insts.append('redirect %s' % addr)
-        self.ui.log('chgserver', 'validate: %s\n', insts)
+        self.ui.log('chgserver', 'validate: %s\n', stringutil.pprint(insts))
         self.cresult.write('\0'.join(insts) or '\0')
 
     def chdir(self):
