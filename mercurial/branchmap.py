@@ -360,7 +360,7 @@ class branchcache(dict):
 
         duration = util.timer() - starttime
         repo.ui.log('branchcache', 'updated %s branch cache in %.4f seconds\n',
-                    repo.filtername, duration)
+                    repo.filtername or b'None', duration)
 
         self.write(repo)
 
