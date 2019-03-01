@@ -1553,7 +1553,7 @@ class ui(object):
                         raise EOFError
                     return l.rstrip('\n')
                 else:
-                    return getpass.getpass('')
+                    return getpass.getpass(r'')
         except EOFError:
             raise error.ResponseExpected()
 
