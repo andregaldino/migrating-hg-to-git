@@ -575,9 +575,9 @@ def groupname(gid=None):
     if gid is None:
         gid = os.getgid()
     try:
-        return grp.getgrgid(gid)[0]
+        return pycompat.fsencode(grp.getgrgid(gid)[0])
     except KeyError:
-        return str(gid)
+        return pycompat.bytestr(gid)
 
 def groupmembers(name):
     """Return the list of members of the group with the given
