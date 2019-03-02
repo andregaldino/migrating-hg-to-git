@@ -221,7 +221,7 @@ def mainfrozen():
     """
     return (pycompat.safehasattr(sys, "frozen") or # new py2exe
             pycompat.safehasattr(sys, "importers") or # old py2exe
-            imp.is_frozen(u"__main__")) # tools/freeze
+            imp.is_frozen(r"__main__")) # tools/freeze
 
 _hgexecutable = None
 
