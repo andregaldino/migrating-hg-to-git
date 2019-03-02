@@ -767,7 +767,7 @@ def rebase(ui, repo, **opts):
       3. Use ``--base`` to select a changeset; rebase will find ancestors
          and their descendants which are not also ancestors of the destination.
 
-      4. If you do not specify any of ``--rev``, ``source``, or ``--base``,
+      4. If you do not specify any of ``--rev``, ``--source``, or ``--base``,
          rebase will use ``--base .`` as above.
 
     If ``--source`` or ``--rev`` is used, special names ``SRC`` and ``ALLSRC``
