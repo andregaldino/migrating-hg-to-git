@@ -3211,9 +3211,9 @@ def finddirs(path):
 SERVERROLE = 'server'
 CLIENTROLE = 'client'
 
-compewireprotosupport = collections.namedtuple(u'compenginewireprotosupport',
-                                               (u'name', u'serverpriority',
-                                                u'clientpriority'))
+compewireprotosupport = collections.namedtuple(r'compenginewireprotosupport',
+                                               (r'name', r'serverpriority',
+                                                r'clientpriority'))
 
 class compressormanager(object):
     """Holds registrations of various compression engines.

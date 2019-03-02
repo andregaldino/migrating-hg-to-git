@@ -194,8 +194,8 @@ def unsharejournal(orig, ui, repo, repopath):
     return orig(ui, repo, repopath)
 
 class journalentry(collections.namedtuple(
-        u'journalentry',
-        u'timestamp user command namespace name oldhashes newhashes')):
+        r'journalentry',
+        r'timestamp user command namespace name oldhashes newhashes')):
     """Individual journal entry
 
     * timestamp: a mercurial (time, timezone) tuple
