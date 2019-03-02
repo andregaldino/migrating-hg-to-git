@@ -1762,7 +1762,7 @@ def walkfilerevs(repo, match, follow, revs, fncache):
     wanted = set()
     copies = []
     minrev, maxrev = min(revs), max(revs)
-    def filerevgen(filelog, last):
+    def filerevs(filelog, last):
         """
         Only files, no patterns.  Check the history of each file.
 
@@ -1825,7 +1825,7 @@ def walkfilerevs(repo, match, follow, revs, fncache):
         ancestors = {filelog.linkrev(last)}
 
         # iterate from latest to oldest revision
-        for rev, flparentlinkrevs, copied in filerevgen(filelog, last):
+        for rev, flparentlinkrevs, copied in filerevs(filelog, last):
             if not follow:
                 if rev > maxrev:
                     continue
