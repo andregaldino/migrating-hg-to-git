@@ -953,7 +953,7 @@ try:
     # locale. This sets the locale to the user's default system
     # locale.
     import locale
-    locale.setlocale(locale.LC_ALL, u'')
+    locale.setlocale(locale.LC_ALL, r'')
 except ImportError:
     curses = None
 
