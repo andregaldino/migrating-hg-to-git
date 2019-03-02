@@ -183,8 +183,8 @@ class changelogrevision(object):
     """
 
     __slots__ = (
-        u'_offsets',
-        u'_text',
+        r'_offsets',
+        r'_text',
     )
 
     def __new__(cls, text):

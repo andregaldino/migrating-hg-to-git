@@ -203,7 +203,7 @@ state = ProfileState()
 class CodeSite(object):
     cache = {}
 
-    __slots__ = (u'path', u'lineno', u'function', u'source')
+    __slots__ = (r'path', r'lineno', r'function', r'source')
 
     def __init__(self, path, lineno, function):
         assert isinstance(path, bytes)
@@ -263,7 +263,7 @@ class CodeSite(object):
         return r'%s:%s' % (self.filename(), self.function)
 
 class Sample(object):
-    __slots__ = (u'stack', u'time')
+    __slots__ = (r'stack', r'time')
 
     def __init__(self, stack, time):
         self.stack = stack
