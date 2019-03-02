@@ -555,7 +555,10 @@ def _add_init(cls, frozen):
 
     # We cache the generated init methods for the same kinds of attributes.
     sha1 = hashlib.sha1()
-    sha1.update(repr(attrs).encode("utf-8"))
+    r = repr(attrs)
+    if not isinstance(r, bytes):
+        r = r.encode('utf-8')
+    sha1.update(r)
     unique_filename = "<attrs generated init {0}>".format(
         sha1.hexdigest()
     )
