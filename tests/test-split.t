@@ -709,3 +709,45 @@ the ignoreblanklines thing isn't somehow position dependent.
   EDITOR: HG: branch 'default'
   EDITOR: HG: changed foo
   saved backup bundle to $TESTTMP/f/b/.hg/strip-backup/904c80b40a4a-47fb907f-split.hg (obsstore-off !)
+
+
+Testing the case in split when commiting flag-only file changes (issue5864)
+---------------------------------------------------------------------------
+  $ hg init $TESTTMP/issue5864
+  $ cd $TESTTMP/issue5864
+  $ echo foo > foo
+  $ hg add foo
+  $ hg ci -m "initial"
+  $ chmod +x foo
+  $ hg ci -m "make executable"
+
+  $ hg glog
+  @  1:3a2125f0f4cb make executable
+  |
+  o  0:51f273a58d82 initial
+  
+
+  $ printf 'y\ny\ny\n' | hg split
+  diff --git a/foo b/foo
+  old mode 100644
+  new mode 100755
+  examine changes to 'foo'? [Ynesfdaq?] y
+  
+  no changes to record
+  diff --git a/foo b/foo
+  old mode 100644
+  new mode 100755
+  examine changes to 'foo'? [Ynesfdaq?] y
+  
+  no changes to record
+  diff --git a/foo b/foo
+  old mode 100644
+  new mode 100755
+  examine changes to 'foo'? [Ynesfdaq?] y
+  
+  no changes to record
+  diff --git a/foo b/foo
+  old mode 100644
+  new mode 100755
+  examine changes to 'foo'? [Ynesfdaq?] abort: response expected
+  [255]
