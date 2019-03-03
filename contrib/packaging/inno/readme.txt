@@ -13,9 +13,6 @@ matching the mercurial version you want to build (32-bit or 64-bit).
     or Microsoft Visual C++ 2008 SP1 Express Edition
       http://www.microsoft.com/express/Downloads/Download-2008.aspx
 
-  Python for Windows Extensions
-      http://sourceforge.net/projects/pywin32/
-
   mfc71.dll (just download, don't install; not needed for Python 2.6)
       http://starship.python.net/crew/mhammond/win32/
 

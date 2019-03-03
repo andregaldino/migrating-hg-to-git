@@ -6,7 +6,6 @@
 #
 # Requirements:
 # - Python 2.7, preferably 64 bit
-# - PyWin32 for Python 2.7 (32 or 64 bit)
 # - Mercurial installed from source (python setup.py install) or download the
 #   python module installer from https://www.mercurial-scm.org/wiki/Download
 # - IIS 7 or newer
