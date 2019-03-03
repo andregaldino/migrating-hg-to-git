@@ -1240,8 +1240,20 @@ setupversion = version.decode('ascii')
 
 extra = {}
 
+py2exepackages = [
+    'hgdemandimport',
+    'hgext',
+    'email',
+    # implicitly imported per module policy
+    # (cffi wouldn't be used as a frozen exe)
+    'mercurial.cext',
+    #'mercurial.cffi',
+    'mercurial.pure',
+]
+
 if issetuptools:
     extra['python_requires'] = supportedpy
+
 if py2exeloaded:
     extra['console'] = [
         {'script':'hg',
@@ -1251,6 +1263,34 @@ if py2exeloaded:
     build.sub_commands.insert(0, ('build_hgextindex', None))
     # put dlls in sub directory so that they won't pollute PATH
     extra['zipfile'] = 'lib/library.zip'
+
+    try:
+        import dulwich
+        dulwich.__version__
+        py2exepackages.append('dulwich')
+    except ImportError:
+        pass
+
+    try:
+        import keyring
+        keyring.util
+        py2exepackages.append('keyring')
+    except ImportError:
+        pass
+
+    try:
+        import pygments
+        pygments.__version__
+        py2exepackages.append('pygments')
+    except ImportError:
+        pass
+
+    try:
+        import pywintypes
+        pywintypes.TRUE
+        py2exepackages.append('pywintypes')
+    except ImportError:
+        pass
 
 if os.name == 'nt':
     # Windows binary file versions for exe/dll files must have the
@@ -1331,16 +1371,7 @@ setup(name='mercurial',
       distclass=hgdist,
       options={
           'py2exe': {
-              'packages': [
-                  'hgdemandimport',
-                  'hgext',
-                  'email',
-                  # implicitly imported per module policy
-                  # (cffi wouldn't be used as a frozen exe)
-                  'mercurial.cext',
-                  #'mercurial.cffi',
-                  'mercurial.pure',
-              ],
+              'packages': py2exepackages,
           },
           'bdist_mpkg': {
               'zipdist': False,
