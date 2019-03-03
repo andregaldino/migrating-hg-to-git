@@ -43,9 +43,6 @@ matching the mercurial version you want to build (32-bit or 64-bit).
   Docutils
       http://docutils.sourceforge.net/
 
-  CA Certs file
-      http://curl.haxx.se/ca/cacert.pem
-
 And, of course, Mercurial itself.
 
 Once you have all this installed and built, clone a copy of the
@@ -72,8 +69,6 @@ Building instructions with MSVC 2008 Express Edition:
   for 64-bit:
     "C:\Program Files\Microsoft Visual Studio 9.0\VC\vcvarsall.bat" x86_amd64
     python setup.py py2exe -b 3
-
-Copy cacert.pem files into the dist directory that just got created.
 
 If you are using Python 2.6 or later, or if you are using MSVC 2008 to compile
 mercurial, you must include the C runtime libraries in the installer. To do so,
