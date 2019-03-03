@@ -17,6 +17,7 @@ man: $(MAN)
 
 html: $(HTML)
 
+# This logic is duplicated in setup.py:hgbuilddoc()
 common.txt $(SOURCES) $(SOURCES:%.txt=%.gendoc.txt): $(GENDOC)
 	${PYTHON} gendoc.py "$(basename $@)" > $@.tmp
 	mv $@.tmp $@

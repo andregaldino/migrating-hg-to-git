@@ -240,9 +240,9 @@ try:
 except ImportError:
     py2exeloaded = False
 
-def runcmd(cmd, env):
+def runcmd(cmd, env, cwd=None):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE, env=env)
+                         stderr=subprocess.PIPE, env=env, cwd=cwd)
     out, err = p.communicate()
     return p.returncode, out, err
 
@@ -702,6 +702,117 @@ class buildhgexe(build_ext):
         dir = os.path.dirname(self.get_ext_fullpath('dummy'))
         return os.path.join(self.build_temp, dir, 'hg.exe')
 
+class hgbuilddoc(Command):
+    description = 'build documentation'
+    user_options = [
+        ('man', None, 'generate man pages'),
+        ('html', None, 'generate html pages'),
+    ]
+
+    def initialize_options(self):
+        self.man = None
+        self.html = None
+
+    def finalize_options(self):
+        # If --man or --html are set, only generate what we're told to.
+        # Otherwise generate everything.
+        have_subset = self.man is not None or self.html is not None
+
+        if have_subset:
+            self.man = True if self.man else False
+            self.html = True if self.html else False
+        else:
+            self.man = True
+            self.html = True
+
+    def run(self):
+        def normalizecrlf(p):
+            with open(p, 'rb') as fh:
+                orig = fh.read()
+
+            if b'\r\n' not in orig:
+                return
+
+            log.info('normalizing %s to LF line endings' % p)
+            with open(p, 'wb') as fh:
+                fh.write(orig.replace(b'\r\n', b'\n'))
+
+        def gentxt(root):
+            txt = 'doc/%s.txt' % root
+            log.info('generating %s' % txt)
+            res, out, err = runcmd(
+                [sys.executable, 'gendoc.py', root],
+                os.environ,
+                cwd='doc')
+            if res:
+                raise SystemExit('error running gendoc.py: %s' %
+                                 '\n'.join([out, err]))
+
+            with open(txt, 'wb') as fh:
+                fh.write(out)
+
+        def gengendoc(root):
+            gendoc = 'doc/%s.gendoc.txt' % root
+
+            log.info('generating %s' % gendoc)
+            res, out, err = runcmd(
+                [sys.executable, 'gendoc.py', '%s.gendoc' % root],
+                os.environ,
+                cwd='doc')
+            if res:
+                raise SystemExit('error running gendoc: %s' %
+                                 '\n'.join([out, err]))
+
+            with open(gendoc, 'wb') as fh:
+                fh.write(out)
+
+        def genman(root):
+            log.info('generating doc/%s' % root)
+            res, out, err = runcmd(
+                [sys.executable, 'runrst', 'hgmanpage', '--halt', 'warning',
+                 '--strip-elements-with-class', 'htmlonly',
+                 '%s.txt' % root, root],
+                os.environ,
+                cwd='doc')
+            if res:
+                raise SystemExit('error running runrst: %s' %
+                                 '\n'.join([out, err]))
+
+            normalizecrlf('doc/%s' % root)
+
+        def genhtml(root):
+            log.info('generating doc/%s.html' % root)
+            res, out, err = runcmd(
+                [sys.executable, 'runrst', 'html', '--halt', 'warning',
+                 '--link-stylesheet', '--stylesheet-path', 'style.css',
+                 '%s.txt' % root, '%s.html' % root],
+                os.environ,
+                cwd='doc')
+            if res:
+                raise SystemExit('error running runrst: %s' %
+                                 '\n'.join([out, err]))
+
+            normalizecrlf('doc/%s.html' % root)
+
+        # This logic is duplicated in doc/Makefile.
+        sources = {f for f in os.listdir('mercurial/help')
+                   if re.search('[0-9]\.txt$', f)}
+
+        # common.txt is a one-off.
+        gentxt('common')
+
+        for source in sorted(sources):
+            assert source[-4:] == '.txt'
+            root = source[:-4]
+
+            gentxt(root)
+            gengendoc(root)
+
+            if self.man:
+                genman(root)
+            if self.html:
+                genhtml(root)
+
 class hginstall(install):
 
     user_options = install.user_options + [
@@ -827,6 +938,7 @@ class hginstallscripts(install_scripts):
                 fp.write(data)
 
 cmdclass = {'build': hgbuild,
+            'build_doc': hgbuilddoc,
             'build_mo': hgbuildmo,
             'build_ext': hgbuildext,
             'build_py': hgbuildpy,
