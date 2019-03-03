@@ -1286,9 +1286,9 @@ if py2exeloaded:
         pass
 
     try:
-        import pywintypes
-        pywintypes.TRUE
-        py2exepackages.append('pywintypes')
+        import win32ctypes
+        win32ctypes.__version__
+        py2exepackages.append('win32ctypes')
     except ImportError:
         pass
 
@@ -1372,14 +1372,6 @@ setup(name='mercurial',
       options={
           'py2exe': {
               'packages': py2exepackages,
-              'dll_excludes': [
-                  'api-ms-win-core-apiquery-l1-1-0.dll',
-                  'api-ms-win-core-delayload-l1-1-0.dll',
-                  'api-ms-win-core-delayload-l1-1-1.dll',
-                  'api-ms-win-core-heap-l2-1-0.dll',
-                  'api-ms-win-core-libraryloader-l1-2-0.dll',
-                  'api-ms-win-core-registry-l1-1-0.dll',
-              ]
           },
           'bdist_mpkg': {
               'zipdist': False,

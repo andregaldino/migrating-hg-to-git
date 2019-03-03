@@ -124,20 +124,6 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
     if py_version != 2:
         raise Exception('Only Python 2 is currently supported')
 
-    # Some extensions may require DLLs from the Universal C Runtime (UCRT).
-    # These are typically not in PATH and py2exe will have trouble finding
-    # them. We find the Windows 10 SDK and the UCRT files within.
-    sdk_path = (pathlib.Path(os.environ['ProgramFiles(x86)']) /
-                'Windows Kits' / '10' / 'Redist' / 'ucrt' / 'DLLs')
-
-    if vc_x64:
-        sdk_path = sdk_path / 'x64'
-    else:
-        sdk_path = sdk_path / 'x86'
-
-    if not sdk_path.is_dir():
-        raise Exception('UCRT files could not be found at %s' % sdk_path)
-
     build_dir.mkdir(exist_ok=True)
 
     gettext_pkg = download_entry(DOWNLOADS['gettext'], build_dir)
@@ -195,11 +181,6 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
                            cwd=py2exe_source_path,
                            env=env,
                            check=True)
-
-        if str(sdk_path) not in os.environ['PATH'].split(os.pathsep):
-            print('adding %s to PATH' % sdk_path)
-            env['PATH'] = '%s%s%s' % (
-                os.environ['PATH'], os.pathsep, str(sdk_path))
 
         # Register location of msgfmt and other binaries.
         env['PATH'] = '%s%s%s' % (

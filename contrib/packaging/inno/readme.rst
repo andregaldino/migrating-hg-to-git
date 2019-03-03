@@ -8,9 +8,6 @@ The following system dependencies must be installed:
 * Python 2.7 (download from https://www.python.org/downloads/)
 * Microsoft Visual C++ Compiler for Python 2.7
   (https://www.microsoft.com/en-us/download/details.aspx?id=44266)
-* Windows 10 SDK (download from
-  https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
-  or install via a modern version of Visual Studio)
 * Inno Setup (http://jrsoftware.org/isdl.php) version 5.4 or newer.
   Be sure to install the optional Inno Setup Preprocessor feature,
   which is required.
