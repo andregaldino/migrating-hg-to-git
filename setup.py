@@ -1372,6 +1372,14 @@ setup(name='mercurial',
       options={
           'py2exe': {
               'packages': py2exepackages,
+              'dll_excludes': [
+                  'api-ms-win-core-apiquery-l1-1-0.dll',
+                  'api-ms-win-core-delayload-l1-1-0.dll',
+                  'api-ms-win-core-delayload-l1-1-1.dll',
+                  'api-ms-win-core-heap-l2-1-0.dll',
+                  'api-ms-win-core-libraryloader-l1-2-0.dll',
+                  'api-ms-win-core-registry-l1-1-0.dll',
+              ]
           },
           'bdist_mpkg': {
               'zipdist': False,
