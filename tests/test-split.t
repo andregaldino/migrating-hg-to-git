@@ -732,30 +732,33 @@ Testing the case in split when commiting flag-only file changes (issue5864)
   
 
 #if no-windows
-  $ printf 'y\ny\ny\n' | hg split
+  $ cat > $TESTTMP/messages <<EOF
+  > split 1
+  > EOF
+  $ printf 'y\n' | hg split
   diff --git a/foo b/foo
   old mode 100644
   new mode 100755
   examine changes to 'foo'? [Ynesfdaq?] y
   
-  no changes to record
-  diff --git a/foo b/foo
-  old mode 100644
-  new mode 100755
-  examine changes to 'foo'? [Ynesfdaq?] y
+  EDITOR: HG: Splitting 3a2125f0f4cb. Write commit message for the first split changeset.
+  EDITOR: make executable
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed foo
+  created new head
+  saved backup bundle to $TESTTMP/issue5864/.hg/strip-backup/3a2125f0f4cb-629e4432-split.hg (obsstore-off !)
+
+  $ hg log -G -T "{node|short} {desc}\n"
+  @  b154670c87da split 1
+  |
+  o  51f273a58d82 initial
   
-  no changes to record
-  diff --git a/foo b/foo
-  old mode 100644
-  new mode 100755
-  examine changes to 'foo'? [Ynesfdaq?] y
-  
-  no changes to record
-  diff --git a/foo b/foo
-  old mode 100644
-  new mode 100755
-  examine changes to 'foo'? [Ynesfdaq?] abort: response expected
-  [255]
 #else
 
 TODO: Fix this on Windows. See issue 2020 and 5883

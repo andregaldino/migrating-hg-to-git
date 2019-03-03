@@ -863,7 +863,7 @@ class header(object):
     diff_re = re.compile('diff -r .* (.*)$')
     allhunks_re = re.compile('(?:index|deleted file) ')
     pretty_re = re.compile('(?:new file|deleted file) ')
-    special_re = re.compile('(?:index|deleted|copy|rename) ')
+    special_re = re.compile('(?:index|deleted|copy|rename|new mode) ')
     newfile_re = re.compile('(?:new file)')
 
     def __init__(self, header):
