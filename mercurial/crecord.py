@@ -20,6 +20,7 @@ from . import (
     encoding,
     error,
     patch as patchmod,
+    pycompat,
     scmutil,
     util,
 )
@@ -1667,6 +1668,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
 
         Return true to exit the main loop.
         """
+        keypressed = pycompat.bytestr(keypressed)
         if keypressed in ["k", "KEY_UP"]:
             self.uparrowevent()
         if keypressed in ["K", "KEY_PPAGE"]:
