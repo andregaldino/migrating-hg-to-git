@@ -548,7 +548,7 @@ def tag(repo, names, node, message, local, user, date, editor=False):
 
 def _tag(repo, names, node, message, local, user, date, extra=None,
          editor=False):
-    if isinstance(names, str):
+    if isinstance(names, bytes):
         names = (names,)
 
     branches = repo.branchmap()
