@@ -2224,8 +2224,12 @@ class localrepository(object):
             l.lock()
             return l
 
-        l = self._lock(self.svfs, "lock", wait, None,
-                       self.invalidate, _('repository %s') % self.origroot)
+        l = self._lock(vfs=self.svfs,
+                       lockname="lock",
+                       wait=wait,
+                       releasefn=None,
+                       acquirefn=self.invalidate,
+                       desc=_('repository %s') % self.origroot)
         self._lockref = weakref.ref(l)
         return l
 
