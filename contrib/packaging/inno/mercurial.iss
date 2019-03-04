@@ -5,7 +5,7 @@
 #define FileHandle
 #define FileLine
 #define VERSION = "unknown"
-#if FileHandle = FileOpen(SourcePath + "\..\..\mercurial\__version__.py")
+#if FileHandle = FileOpen(SourcePath + "\..\..\..\mercurial\__version__.py")
   #expr FileLine = FileRead(FileHandle)
   #expr FileLine = FileRead(FileHandle)
   #define VERSION = Copy(FileLine, Pos('"', FileLine)+1, Len(FileLine)-Pos('"', FileLine)-1)
@@ -43,7 +43,7 @@ AppUpdatesURL=https://mercurial-scm.org/
 AppID={{4B95A5F1-EF59-4B08-BED8-C891C46121B3}
 AppContact=mercurial@mercurial-scm.org
 DefaultDirName={pf}\Mercurial
-SourceDir=..\..
+SourceDir=..\..\..
 VersionInfoDescription=Mercurial distributed SCM (version {#VERSION})
 VersionInfoCopyright=Copyright 2005-2019 Matt Mackall and others
 VersionInfoCompany=Matt Mackall and others

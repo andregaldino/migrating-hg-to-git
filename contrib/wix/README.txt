@@ -10,9 +10,7 @@ the stable branch WXS files.  Storing them within the same repository is
 the only sane way to keep the source tree and the installer in sync.
 
 The MSI installer builder uses only the mercurial.ini file from the
-contrib/win32 folder, the contents of which have been historically used
-to create an InnoSetup based installer.  The rest of the files there are
-ignored.
+contrib/win32 folder.
 
 The MSI packages built by thg-winbuild require elevated (admin)
 privileges to be installed due to the installation of MSVC CRT libraries
