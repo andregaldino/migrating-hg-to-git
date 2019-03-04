@@ -2396,20 +2396,24 @@ class revlog(object):
         if getattr(destrevlog, 'filteredrevs', None):
             raise ValueError(_('destination revlog has filtered revisions'))
 
-        # lazydeltabase controls whether to reuse a cached delta, if possible.
+        # lazydelta and lazydeltabase controls whether to reuse a cached delta,
+        # if possible.
+        oldlazydelta = destrevlog._lazydelta
         oldlazydeltabase = destrevlog._lazydeltabase
         oldamd = destrevlog._deltabothparents
 
         try:
             if deltareuse == self.DELTAREUSEALWAYS:
                 destrevlog._lazydeltabase = True
+                destrevlog._lazydelta = True
             elif deltareuse == self.DELTAREUSESAMEREVS:
                 destrevlog._lazydeltabase = False
+                destrevlog._lazydelta = True
+            elif deltareuse == self.DELTAREUSENEVER:
+                destrevlog._lazydeltabase = False
+                destrevlog._lazydelta = False
 
             destrevlog._deltabothparents = forcedeltabothparents or oldamd
-
-            populatecachedelta = deltareuse in (self.DELTAREUSEALWAYS,
-                                                self.DELTAREUSESAMEREVS)
 
             deltacomputer = deltautil.deltacomputer(destrevlog)
             index = self.index
@@ -2428,7 +2432,7 @@ class revlog(object):
                 # the revlog chunk is a delta.
                 cachedelta = None
                 rawtext = None
-                if populatecachedelta:
+                if destrevlog._lazydelta:
                     dp = self.deltaparent(rev)
                     if dp != nullrev:
                         cachedelta = (dp, bytes(self._chunk(rev)))
@@ -2460,6 +2464,7 @@ class revlog(object):
                 if addrevisioncb:
                     addrevisioncb(self, rev, node)
         finally:
+            destrevlog._lazydelta = oldlazydelta
             destrevlog._lazydeltabase = oldlazydeltabase
             destrevlog._deltabothparents = oldamd
 
