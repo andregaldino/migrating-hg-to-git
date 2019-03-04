@@ -290,7 +290,8 @@ hg status -A:
 
   $ hg status -A -Tpickle > pickle
   >>> from __future__ import print_function
-  >>> from mercurial.util import pickle
+  >>> from mercurial import util
+  >>> pickle = util.pickle
   >>> data = sorted((x[b'status'].decode(), x[b'path'].decode()) for x in pickle.load(open("pickle", r"rb")))
   >>> for s, p in data: print("%s %s" % (s, p))
   ! deleted
