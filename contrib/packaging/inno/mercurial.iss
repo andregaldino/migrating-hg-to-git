@@ -74,8 +74,6 @@ Source: dist\hg.exe; DestDir: {app}; AfterInstall: Touch('{app}\hg.exe.local')
 #if ARCH == "x64"
 Source: dist\lib\*.dll; Destdir: {app}\lib
 Source: dist\lib\*.pyd; Destdir: {app}\lib
-#else
-Source: dist\w9xpopen.exe; DestDir: {app}
 #endif
 Source: dist\python*.dll; Destdir: {app}; Flags: skipifsourcedoesntexist
 Source: dist\msvc*.dll; DestDir: {app}; Flags: skipifsourcedoesntexist
