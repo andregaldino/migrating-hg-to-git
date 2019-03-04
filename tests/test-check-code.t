@@ -12,6 +12,8 @@ New errors are not allowed. Warnings are strongly discouraged.
   > -X hgext/fsmonitor/pywatchman \
   > -X mercurial/thirdparty \
   > | sed 's-\\-/-g' | "$check_code" --warnings --per-file=0 - || false
+  Skipping contrib/packaging/inno/build.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/packagingutil.py it has no-che?k-code (glob)
   Skipping i18n/polib.py it has no-che?k-code (glob)
   Skipping mercurial/statprof.py it has no-che?k-code (glob)
   Skipping tests/badserverext.py it has no-che?k-code (glob)

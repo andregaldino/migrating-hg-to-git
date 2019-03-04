@@ -21,6 +21,8 @@ outputs, which should be fixed later.
   > -X contrib/debugshell.py \
   > -X contrib/hgweb.fcgi \
   > -X contrib/packaging/hg-docker \
+  > -X contrib/packaging/inno/ \
+  > -X contrib/packaging/packagingutil.py \
   > -X contrib/python-zstandard/ \
   > -X contrib/win32/hgwebdir_wsgi.py \
   > -X contrib/perf-utils/perf-revlog-write-plot.py \

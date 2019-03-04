@@ -5,6 +5,8 @@
 
 #if no-py3
   $ testrepohg files 'set:(**.py)' \
+  > -X contrib/packaging/inno/ \
+  > -X contrib/packaging/packagingutil.py \
   > -X hgdemandimport/demandimportpy2.py \
   > -X mercurial/thirdparty/cbor \
   > | sed 's|\\|/|g' | xargs "$PYTHON" contrib/check-py3-compat.py
