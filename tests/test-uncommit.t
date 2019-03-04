@@ -34,9 +34,10 @@ Help for uncommit
   
   options ([+] can be repeated):
   
-      --keep                allow an empty commit after uncommiting
-   -I --include PATTERN [+] include names matching the given patterns
-   -X --exclude PATTERN [+] exclude names matching the given patterns
+      --keep                     allow an empty commit after uncommiting
+      --allow-dirty-working-copy allow uncommit with outstanding changes
+   -I --include PATTERN [+]      include names matching the given patterns
+   -X --exclude PATTERN [+]      exclude names matching the given patterns
   
   (some details hidden, use --verbose to show complete help)
 
@@ -156,11 +157,11 @@ Uncommit with dirty state
   M files
   $ hg uncommit
   abort: uncommitted changes
-  (requires experimental.uncommitondirtywdir to uncommit)
+  (requires --allow-dirty-working-copy to uncommit)
   [255]
   $ hg uncommit files
   abort: uncommitted changes
-  (requires experimental.uncommitondirtywdir to uncommit)
+  (requires --allow-dirty-working-copy to uncommit)
   [255]
   $ cat files
   abcde
@@ -172,7 +173,7 @@ Testing the 'experimental.uncommitondirtywdir' config
   $ echo "bar" >> files
   $ hg uncommit
   abort: uncommitted changes
-  (requires experimental.uncommitondirtywdir to uncommit)
+  (requires --allow-dirty-working-copy to uncommit)
   [255]
   $ hg uncommit --config experimental.uncommitondirtywdir=True
   $ hg commit -m "files abcde + foo"
@@ -395,7 +396,7 @@ Add and expect uncommit to fail on both merge working dir and merge changeset
 
   $ hg uncommit
   abort: outstanding uncommitted merge
-  (requires experimental.uncommitondirtywdir to uncommit)
+  (requires --allow-dirty-working-copy to uncommit)
   [255]
 
   $ hg uncommit --config experimental.uncommitondirtywdir=True
@@ -483,7 +484,7 @@ experimental.uncommitondirtywdir should also work on a dirty PATH
   note: keeping empty commit
   $ hg unc b
   abort: uncommitted changes
-  (requires experimental.uncommitondirtywdir to uncommit)
+  (requires --allow-dirty-working-copy to uncommit)
   [255]
   $ cat a
   super critical info!
@@ -497,7 +498,7 @@ experimental.uncommitondirtywdir should also work on a dirty PATH
   
   $ hg ci -Am 'add b'
   $ echo 'foo bar' > b
-  $ hg unc --config experimental.uncommitondirtywdir=True b
+  $ hg unc --allow-dirty-working-copy b
   $ hg log
   changeset:   3:30fa958635b2
   tag:         tip

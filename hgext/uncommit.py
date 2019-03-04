@@ -140,6 +140,8 @@ def _fixdirstate(repo, oldctx, newctx, match=None):
 
 @command('uncommit',
     [('', 'keep', None, _('allow an empty commit after uncommiting')),
+     ('', 'allow-dirty-working-copy', False,
+    _('allow uncommit with outstanding changes'))
     ] + commands.walkopts,
     _('[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
@@ -160,10 +162,11 @@ def uncommit(ui, repo, *pats, **opts):
 
         m, a, r, d = repo.status()[:4]
         isdirtypath = any(set(m + a + r + d) & set(pats))
-        if (not repo.ui.configbool('experimental', 'uncommitondirtywdir') and
-            (not pats or isdirtypath)):
+        allowdirtywcopy = (opts['allow_dirty_working_copy'] or
+                    repo.ui.configbool('experimental', 'uncommitondirtywdir'))
+        if not allowdirtywcopy and (not pats or isdirtypath):
             cmdutil.bailifchanged(repo, hint=_('requires '
-                                'experimental.uncommitondirtywdir to uncommit'))
+                                '--allow-dirty-working-copy to uncommit'))
         old = repo['.']
         rewriteutil.precheck(repo, [old.rev()], 'uncommit')
         if len(old.parents()) > 1:
