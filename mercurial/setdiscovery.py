@@ -216,7 +216,7 @@ class partialdiscovery(object):
         # this by keeping a persistent cache of children across invocations.
         children = {}
 
-        for rev in repo.changelog.revs(start=min(revsroots)):
+        for rev in sorted(revs):
             # Always ensure revision has an entry so we don't need to worry
             # about missing keys.
             children.setdefault(rev, [])
