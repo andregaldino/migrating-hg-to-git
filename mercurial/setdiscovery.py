@@ -219,13 +219,13 @@ class partialdiscovery(object):
         for rev in sorted(revs):
             # Always ensure revision has an entry so we don't need to worry
             # about missing keys.
-            children.setdefault(rev, [])
-
+            children[rev] = []
             for prev in parentrevs(rev):
                 if prev == nullrev:
                     continue
-
-                children.setdefault(prev, []).append(rev)
+                c = children.get(prev)
+                if c is not None:
+                    c.append(rev)
 
         _updatesample(revs, revsroots, sample, children.__getitem__)
         assert sample
