@@ -135,10 +135,9 @@ class verifier(object):
         This method run all verifications, displaying issues as they are found.
 
         return 1 if any error have been encountered, 0 otherwise."""
+        # initial validation and generic report
         repo = self.repo
-
         ui = repo.ui
-
         if not repo.url().startswith('file:'):
             raise error.Abort(_("cannot verify bundle or remote repos"))
 
@@ -149,15 +148,14 @@ class verifier(object):
             ui.status(_("repository uses revlog format %d\n") %
                            (self.revlogv1 and 1 or 0))
 
+        # data verification
         mflinkrevs, filelinkrevs = self._verifychangelog()
-
         filenodes = self._verifymanifest(mflinkrevs)
         del mflinkrevs
-
         self._crosscheckfiles(filelinkrevs, filenodes)
-
         totalfiles, filerevisions = self._verifyfiles(filenodes, filelinkrevs)
 
+        # final report
         ui.status(_("checked %d changesets with %d changes to %d files\n") %
                        (len(repo.changelog), filerevisions, totalfiles))
         if self.warnings:
