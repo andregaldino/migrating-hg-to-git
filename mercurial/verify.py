@@ -130,6 +130,11 @@ class verifier(object):
         return lr
 
     def verify(self):
+        """verify the content of the Mercurial repository
+
+        This method run all verifications, displaying issues as they are found.
+
+        return 1 if any error have been encountered"""
         repo = self.repo
 
         ui = repo.ui
