@@ -134,7 +134,7 @@ class verifier(object):
 
         This method run all verifications, displaying issues as they are found.
 
-        return 1 if any error have been encountered"""
+        return 1 if any error have been encountered, 0 otherwise."""
         repo = self.repo
 
         ui = repo.ui
@@ -171,6 +171,7 @@ class verifier(object):
                 ui.warn(_("(first damaged changeset appears to be %d)\n")
                         % min(self.badrevs))
             return 1
+        return 0
 
     def _verifychangelog(self):
         ui = self.ui
