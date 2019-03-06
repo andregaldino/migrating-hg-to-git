@@ -469,7 +469,7 @@ Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b
     a
   $ cd ..
 
-experimental.uncommitondirtywdir should also work on a dirty PATH
+--allow-dirty-working-copy should also work on a dirty PATH
 
   $ hg init issue5977
   $ cd issue5977
