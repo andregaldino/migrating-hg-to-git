@@ -57,6 +57,7 @@ class verifier(object):
         self.warnings += 1
 
     def err(self, linkrev, msg, filename=None):
+        """record a "error" level issue"""
         if linkrev is not None:
             self.badrevs.add(linkrev)
             linkrev = "%d" % linkrev
