@@ -337,6 +337,16 @@ class verifier(object):
                         filenodes.setdefault(fullpath, {}).setdefault(fn, lr)
             except Exception as inst:
                 self._exc(lr, _("reading delta %s") % short(n), inst, label)
+            if self._level >= VERIFY_FULL:
+                try:
+                    # Various issues can affect manifest. So we read each full
+                    # text from storage. This triggers the checks from the core
+                    # code (eg: hash verification, filename are ordered, etc.)
+                    mfdelta = mfl.get(dir, n).read()
+                except Exception as inst:
+                    self._exc(lr, _("reading full manifest %s") % short(n),
+                              inst, label)
+
         if not dir:
             progress.complete()
 
