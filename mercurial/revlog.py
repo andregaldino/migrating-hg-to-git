@@ -2272,6 +2272,14 @@ class revlog(object):
         self._nodepos = None
 
     def checksize(self):
+        """Check size of index and data files
+
+        return a (dd, di) tuple.
+        - dd: extra bytes for the "data" file
+        - di: extra bytes for the "index" file
+
+        A healthy revlog will return (0, 0).
+        """
         expected = 0
         if len(self):
             expected = max(0, self.end(len(self) - 1))
