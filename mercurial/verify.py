@@ -334,8 +334,10 @@ class verifier(object):
             progress.complete()
 
         if self.havemf:
-            for c, m in sorted([(c, m) for m in mflinkrevs
-                        for c in mflinkrevs[m]]):
+            # since we delete entry in `mflinkrevs` during iteration, any
+            # remaining entries are "missing". We need to issue errors for them.
+            changesetpairs = [(c, m) for m in mflinkrevs for c in mflinkrevs[m]]
+            for c, m in sorted(changesetpairs):
                 if dir:
                     self._err(c, _("parent-directory manifest refers to unknown"
                                    " revision %s") % short(m), label)
