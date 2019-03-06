@@ -482,10 +482,6 @@ Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b
   A b
   $ hg unc a
   note: keeping empty commit
-  $ hg unc b
-  abort: uncommitted changes
-  (requires --allow-dirty-working-copy to uncommit)
-  [255]
   $ cat a
   super critical info!
   $ hg log
@@ -498,6 +494,10 @@ Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b
   
   $ hg ci -Am 'add b'
   $ echo 'foo bar' > b
+  $ hg unc b
+  abort: uncommitted changes
+  (requires --allow-dirty-working-copy to uncommit)
+  [255]
   $ hg unc --allow-dirty-working-copy b
   $ hg log
   changeset:   3:30fa958635b2
