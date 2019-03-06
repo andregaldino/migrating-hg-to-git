@@ -198,6 +198,21 @@ class verifier(object):
         return 0
 
     def _verifychangelog(self):
+        """verify the changelog of a repository
+
+        The following checks are performed:
+        - all of `_checkrevlog` checks,
+        - all of `_checkentry` checks (for each revisions),
+        - each revision can be read.
+
+        The function returns some of the data observed in the changesets as a
+        (mflinkrevs, filelinkrevs) tuples:
+        - mflinkrevs:   is a { manifest-node -> [changelog-rev] } mapping
+        - filelinkrevs: is a { file-path -> [changelog-rev] } mapping
+
+        If a matcher was specified, filelinkrevs will only contains matched
+        files.
+        """
         ui = self.ui
         repo = self.repo
         match = self.match
