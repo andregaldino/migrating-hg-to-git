@@ -93,7 +93,7 @@ class verifier(object):
         elif self.revlogv1:
             self._warn(_("warning: `%s' uses revlog format 0") % name)
 
-    def checkentry(self, obj, i, node, seen, linkrevs, f):
+    def _checkentry(self, obj, i, node, seen, linkrevs, f):
         """verify a single revlog entry
 
         arguments are:
@@ -206,7 +206,7 @@ class verifier(object):
         for i in repo:
             progress.update(i)
             n = cl.node(i)
-            self.checkentry(cl, i, n, seen, [i], "changelog")
+            self._checkentry(cl, i, n, seen, [i], "changelog")
 
             try:
                 changes = cl.read(n)
@@ -253,7 +253,7 @@ class verifier(object):
             if not dir:
                 progress.update(i)
             n = mf.node(i)
-            lr = self.checkentry(mf, i, n, seen, mflinkrevs.get(n, []), label)
+            lr = self._checkentry(mf, i, n, seen, mflinkrevs.get(n, []), label)
             if n in mflinkrevs:
                 del mflinkrevs[n]
             elif dir:
@@ -430,7 +430,7 @@ class verifier(object):
             for i in fl:
                 revisions += 1
                 n = fl.node(i)
-                lr = self.checkentry(fl, i, n, seen, linkrevs, f)
+                lr = self._checkentry(fl, i, n, seen, linkrevs, f)
                 if f in filenodes:
                     if havemf and n not in filenodes[f]:
                         self._err(lr, _("%s not in manifests") % (short(n)), f)
