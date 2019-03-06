@@ -76,7 +76,7 @@ class verifier(object):
             fmsg = pycompat.byterepr(inst)
         self._err(linkrev, "%s: %s" % (msg, fmsg), filename)
 
-    def checklog(self, obj, name, linkrev):
+    def _checkrevlog(self, obj, name, linkrev):
         """verify high level property of a revlog
 
         - revlog is present,
@@ -207,7 +207,7 @@ class verifier(object):
         mflinkrevs = {}
         filelinkrevs = {}
         seen = {}
-        self.checklog(cl, "changelog", 0)
+        self._checkrevlog(cl, "changelog", 0)
         progress = ui.makeprogress(_('checking'), unit=_('changesets'),
                                    total=len(repo))
         for i in repo:
@@ -253,7 +253,7 @@ class verifier(object):
         if self.refersmf:
             # Do not check manifest if there are only changelog entries with
             # null manifests.
-            self.checklog(mf, label, 0)
+            self._checkrevlog(mf, label, 0)
         progress = ui.makeprogress(_('checking'), unit=_('manifests'),
                                    total=len(mf))
         for i in mf:
