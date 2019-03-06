@@ -52,6 +52,7 @@ class verifier(object):
         self.warnorphanstorefiles = True
 
     def warn(self, msg):
+        """record a "warning" level issue"""
         self.ui.warn(msg + "\n")
         self.warnings += 1
 
