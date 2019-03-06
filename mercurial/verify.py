@@ -246,6 +246,33 @@ class verifier(object):
 
     def _verifymanifest(self, mflinkrevs, dir="", storefiles=None,
                         subdirprogress=None):
+        """verify the manifestlog content
+
+        Inputs:
+        - mflinkrevs:     a {manifest-node -> [changelog-revisions]} mapping
+        - dir:            a subdirectory to check (for tree manifest repo)
+        - storefiles:     set of currently "orphan" files.
+        - subdirprogress: a progress object
+
+        This function checks:
+        * all of `_checkrevlog` checks (for all manifest related revlogs)
+        * all of `_checkentry` checks (for all manifest related revisions)
+        * nodes for subdirectory exists in the sub-directory manifest
+        * each manifest entries have a file path
+        * each manifest node refered in mflinkrevs exist in the manifest log
+
+        If tree manifest is in use and a matchers is specified, only the
+        sub-directories matching it will be verified.
+
+        return a two level mapping:
+            {"path" -> { filenode -> changelog-revision}}
+
+        This mapping primarily contains entries for every files in the
+        repository. In addition, when tree-manifest is used, it also contains
+        sub-directory entries.
+
+        If a matcher is provided, only matching paths will be included.
+        """
         repo = self.repo
         ui = self.ui
         match = self.match
