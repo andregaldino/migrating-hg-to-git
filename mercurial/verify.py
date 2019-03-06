@@ -77,6 +77,13 @@ class verifier(object):
         self._err(linkrev, "%s: %s" % (msg, fmsg), filename)
 
     def checklog(self, obj, name, linkrev):
+        """verify high level property of a revlog
+
+        - revlog is present,
+        - revlog is non-empty,
+        - sizes (index and data) are correct,
+        - revlog's format version is correct.
+        """
         if not len(obj) and (self.havecl or self.havemf):
             self._err(linkrev, _("empty or missing %s") % name)
             return
