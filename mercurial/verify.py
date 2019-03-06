@@ -69,7 +69,7 @@ class verifier(object):
         self.ui.warn(" " + msg + "\n")
         self.errors += 1
 
-    def exc(self, linkrev, msg, inst, filename=None):
+    def _exc(self, linkrev, msg, inst, filename=None):
         """record exception raised during the verify process"""
         fmsg = pycompat.bytestr(inst)
         if not fmsg:
@@ -122,7 +122,7 @@ class verifier(object):
                 self._err(lr, _("unknown parent 2 %s of %s") %
                     (short(p2), short(node)), f)
         except Exception as inst:
-            self.exc(lr, _("checking parents of %s") % short(node), inst, f)
+            self._exc(lr, _("checking parents of %s") % short(node), inst, f)
 
         if node in seen:
             self._err(lr, _("duplicate revision %d (%d)") % (i, seen[node]), f)
@@ -195,7 +195,7 @@ class verifier(object):
                         filelinkrevs.setdefault(_normpath(f), []).append(i)
             except Exception as inst:
                 self.refersmf = True
-                self.exc(i, _("unpacking changeset %s") % short(n), inst)
+                self._exc(i, _("unpacking changeset %s") % short(n), inst)
         progress.complete()
         return mflinkrevs, filelinkrevs
 
@@ -257,7 +257,7 @@ class verifier(object):
                             continue
                         filenodes.setdefault(fullpath, {}).setdefault(fn, lr)
             except Exception as inst:
-                self.exc(lr, _("reading delta %s") % short(n), inst, label)
+                self._exc(lr, _("reading delta %s") % short(n), inst, label)
         if not dir:
             progress.complete()
 
@@ -443,7 +443,8 @@ class verifier(object):
                         else:
                             fl2.rev(rp[1])
                 except Exception as inst:
-                    self.exc(lr, _("checking rename of %s") % short(n), inst, f)
+                    self._exc(lr, _("checking rename of %s") % short(n),
+                              inst, f)
 
             # cross-check
             if f in filenodes:
