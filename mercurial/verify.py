@@ -70,6 +70,7 @@ class verifier(object):
         self.errors += 1
 
     def exc(self, linkrev, msg, inst, filename=None):
+        """record exception raised during the verify process"""
         fmsg = pycompat.bytestr(inst)
         if not fmsg:
             fmsg = pycompat.byterepr(inst)
