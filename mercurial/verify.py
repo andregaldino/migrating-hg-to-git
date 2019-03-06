@@ -94,6 +94,25 @@ class verifier(object):
             self._warn(_("warning: `%s' uses revlog format 0") % name)
 
     def checkentry(self, obj, i, node, seen, linkrevs, f):
+        """verify a single revlog entry
+
+        arguments are:
+        - obj:      the source revlog
+        - i:        the revision number
+        - node:        the revision node id
+        - seen:     nodes previously seen for this revlog
+        - linkrevs: [changelog-revisions] introducing "node"
+        - f:        string label ("changelog", "manifest", or filename)
+
+        Performs the following checks:
+        - linkrev points to an existing changelog revision,
+        - linkrev points to a changelog revision that introduces this revision,
+        - linkrev points to the lowest of these changesets,
+        - both parents exist in the revlog,
+        - the revision is not duplicated.
+
+        Return the linkrev of the revision (or None for changelog's revisions).
+        """
         lr = obj.linkrev(obj.rev(node))
         if lr < 0 or (self.havecl and lr not in linkrevs):
             if lr < 0 or lr >= len(self.repo.changelog):
