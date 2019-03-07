@@ -42,8 +42,8 @@ shift
 depth="$1"
 shift
 
-leftrepo="${repo}-left"
-rightrepo="${repo}-right"
+leftrepo="${repo}-${nbheads}h-${depth}d-left"
+rightrepo="${repo}-${nbheads}h-${depth}d-right"
 
 left="first(sort(heads(all()), 'desc'), $nbheads)"
 right="last(sort(heads(all()), 'desc'), $nbheads)"
