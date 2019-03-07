@@ -11,7 +11,6 @@ import os
 import pathlib
 import shutil
 import subprocess
-import tempfile
 
 from .downloads import (
     download_entry,
@@ -99,73 +98,70 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
     if not py2exe_source_path.exists():
         extract_zip_to_directory(py2exe_pkg, build_dir)
 
-    with tempfile.TemporaryDirectory() as td:
-        td = pathlib.Path(td)
-
-        if not venv_path.exists():
-            print('creating virtualenv with dependencies')
-            subprocess.run(
-                [str(python_exe), str(virtualenv_py), str(venv_path)],
-                check=True)
-
-        venv_python = venv_path / 'Scripts' / 'python.exe'
-        venv_pip = venv_path / 'Scripts' / 'pip.exe'
-
-        requirements_txt = (source_dir / 'contrib' / 'packaging' /
-                            'inno' / 'requirements.txt')
-        subprocess.run([str(venv_pip), 'install', '-r', str(requirements_txt)],
-                       check=True)
-
-        # Force distutils to use VC++ settings from environment, which was
-        # validated above.
-        env = dict(os.environ)
-        env['DISTUTILS_USE_SDK'] = '1'
-        env['MSSdk'] = '1'
-
-        py2exe_py_path = venv_path / 'Lib' / 'site-packages' / 'py2exe'
-        if not py2exe_py_path.exists():
-            print('building py2exe')
-            subprocess.run([str(venv_python), 'setup.py', 'install'],
-                           cwd=py2exe_source_path,
-                           env=env,
-                           check=True)
-
-        # Register location of msgfmt and other binaries.
-        env['PATH'] = '%s%s%s' % (
-            env['PATH'], os.pathsep, str(gettext_root / 'bin'))
-
-        print('building Mercurial')
+    if not venv_path.exists():
+        print('creating virtualenv with dependencies')
         subprocess.run(
-            [str(venv_python), 'setup.py',
-             'py2exe', '-b', '3' if vc_x64 else '2',
-             'build_doc', '--html'],
-            cwd=str(source_dir),
-            env=env,
+            [str(python_exe), str(virtualenv_py), str(venv_path)],
             check=True)
 
-        # hg.exe depends on VC9 runtime DLLs. Copy those into place.
-        for f in find_vc_runtime_files(vc_x64):
-            if f.name.endswith('.manifest'):
-                basename = 'Microsoft.VC90.CRT.manifest'
-            else:
-                basename = f.name
+    venv_python = venv_path / 'Scripts' / 'python.exe'
+    venv_pip = venv_path / 'Scripts' / 'pip.exe'
 
-            dest_path = source_dir / 'dist' / basename
+    requirements_txt = (source_dir / 'contrib' / 'packaging' /
+                        'inno' / 'requirements.txt')
+    subprocess.run([str(venv_pip), 'install', '-r', str(requirements_txt)],
+                   check=True)
 
-            print('copying %s to %s' % (f, dest_path))
-            shutil.copyfile(f, dest_path)
+    # Force distutils to use VC++ settings from environment, which was
+    # validated above.
+    env = dict(os.environ)
+    env['DISTUTILS_USE_SDK'] = '1'
+    env['MSSdk'] = '1'
 
-        print('creating installer')
+    py2exe_py_path = venv_path / 'Lib' / 'site-packages' / 'py2exe'
+    if not py2exe_py_path.exists():
+        print('building py2exe')
+        subprocess.run([str(venv_python), 'setup.py', 'install'],
+                       cwd=py2exe_source_path,
+                       env=env,
+                       check=True)
 
-        args = [str(iscc_exe)]
+    # Register location of msgfmt and other binaries.
+    env['PATH'] = '%s%s%s' % (
+        env['PATH'], os.pathsep, str(gettext_root / 'bin'))
 
-        if vc_x64:
-            args.append('/dARCH=x64')
+    print('building Mercurial')
+    subprocess.run(
+        [str(venv_python), 'setup.py',
+         'py2exe', '-b', '3' if vc_x64 else '2',
+         'build_doc', '--html'],
+        cwd=str(source_dir),
+        env=env,
+        check=True)
 
-        if version:
-            args.append('/dVERSION=%s' % version)
+    # hg.exe depends on VC9 runtime DLLs. Copy those into place.
+    for f in find_vc_runtime_files(vc_x64):
+        if f.name.endswith('.manifest'):
+            basename = 'Microsoft.VC90.CRT.manifest'
+        else:
+            basename = f.name
 
-        args.append('/Odist')
-        args.append('contrib/packaging/inno/mercurial.iss')
+        dest_path = source_dir / 'dist' / basename
 
-        subprocess.run(args, cwd=str(source_dir), check=True)
+        print('copying %s to %s' % (f, dest_path))
+        shutil.copyfile(f, dest_path)
+
+    print('creating installer')
+
+    args = [str(iscc_exe)]
+
+    if vc_x64:
+        args.append('/dARCH=x64')
+
+    if version:
+        args.append('/dVERSION=%s' % version)
+
+    args.append('/Odist')
+    args.append('contrib/packaging/inno/mercurial.iss')
+
+    subprocess.run(args, cwd=str(source_dir), check=True)
