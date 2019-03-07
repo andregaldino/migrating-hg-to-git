@@ -13,6 +13,7 @@ New errors are not allowed. Warnings are strongly discouraged.
   > -X mercurial/thirdparty \
   > | sed 's-\\-/-g' | "$check_code" --warnings --per-file=0 - || false
   Skipping contrib/packaging/hgpackaging/downloads.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/hgpackaging/inno.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/util.py it has no-che?k-code (glob)
   Skipping contrib/packaging/inno/build.py it has no-che?k-code (glob)
   Skipping i18n/polib.py it has no-che?k-code (glob)
