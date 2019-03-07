@@ -175,6 +175,10 @@ class partialdiscovery(object):
     def _childrengetter(self):
 
         if self._childrenmap is not None:
+            # During discovery, the `undecided` set keep shrinking.
+            # Therefore, the map computed for an iteration N will be
+            # valid for iteration N+1. Instead of computing the same
+            # data over and over we cached it the first time.
             return self._childrenmap.__getitem__
 
         # _updatesample() essentially does interaction over revisions to look
