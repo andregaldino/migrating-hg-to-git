@@ -7,8 +7,10 @@
 
 # no-check-code because Python 3 native.
 
+import distutils.version
 import os
 import pathlib
+import subprocess
 import tarfile
 import zipfile
 
@@ -46,3 +48,26 @@ def find_vc_runtime_files(x64=False):
         d / 'msvcr90.dll',
         winsxs / 'Manifests' / ('%s.manifest' % version),
     ]
+
+
+PRINT_PYTHON_INFO = '''
+import platform; print("%s:%s" % (platform.architecture()[0], platform.python_version()))
+'''.strip()
+
+
+def python_exe_info(python_exe: pathlib.Path):
+    """Obtain information about a Python executable."""
+
+    res = subprocess.run(
+        [str(python_exe), '-c', PRINT_PYTHON_INFO],
+        capture_output=True, check=True)
+
+    arch, version = res.stdout.decode('utf-8').split(':')
+
+    version = distutils.version.LooseVersion(version)
+
+    return {
+        'arch': arch,
+        'version': version,
+        'py3': version >= distutils.version.LooseVersion('3'),
+    }

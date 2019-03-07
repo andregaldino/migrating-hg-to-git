@@ -19,12 +19,8 @@ from .util import (
     extract_tar_to_directory,
     extract_zip_to_directory,
     find_vc_runtime_files,
+    python_exe_info,
 )
-
-
-PRINT_PYTHON_INFO = '''
-import platform, sys; print("%s:%d" % (platform.architecture()[0], sys.version_info[0]))
-'''.strip()
 
 
 def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
@@ -50,23 +46,18 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
     # architecture.
     vc_x64 = r'\x64' in os.environ['LIB']
 
-    res = subprocess.run(
-        [str(python_exe), '-c', PRINT_PYTHON_INFO],
-        capture_output=True, check=True)
-
-    py_arch, py_version = res.stdout.decode('utf-8').split(':')
-    py_version = int(py_version)
+    py_info = python_exe_info(python_exe)
 
     if vc_x64:
-        if py_arch != '64bit':
+        if py_info['arch'] != '64bit':
             raise Exception('architecture mismatch: Visual C++ environment '
                             'is configured for 64-bit but Python is 32-bit')
     else:
-        if py_arch != '32bit':
+        if py_info['arch'] != '32bit':
             raise Exception('architecture mismatch: Visual C++ environment '
                             'is configured for 32-bit but Python is 64-bit')
 
-    if py_version != 2:
+    if py_info['py3']:
         raise Exception('Only Python 2 is currently supported')
 
     build_dir.mkdir(exist_ok=True)
