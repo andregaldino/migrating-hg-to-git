@@ -1,4 +1,4 @@
-# packagingutil.py - Common packaging utility code.
+# util.py - Common packaging utility code.
 #
 # Copyright 2019 Gregory Szorc <gregory.szorc@gmail.com>
 #

@@ -87,7 +87,7 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
     for finding the Python 2.7 toolchain. So, we require the environment
     to already be configured with an active toolchain.
     """
-    from packagingutil import (
+    from hgpackaging.util import (
         download_entry,
         extract_tar_to_directory,
         extract_zip_to_directory,
