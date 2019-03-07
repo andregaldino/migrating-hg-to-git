@@ -24,31 +24,6 @@ import platform, sys; print("%s:%d" % (platform.architecture()[0], sys.version_i
 '''.strip()
 
 
-def find_vc_runtime_files(x64=False):
-    """Finds Visual C++ Runtime DLLs to include in distribution."""
-    winsxs = pathlib.Path(os.environ['SYSTEMROOT']) / 'WinSxS'
-
-    prefix = 'amd64' if x64 else 'x86'
-
-    candidates = sorted(p for p in os.listdir(winsxs)
-                  if p.lower().startswith('%s_microsoft.vc90.crt_' % prefix))
-
-    for p in candidates:
-        print('found candidate VC runtime: %s' % p)
-
-    # Take the newest version.
-    version = candidates[-1]
-
-    d = winsxs / version
-
-    return [
-        d / 'msvcm90.dll',
-        d / 'msvcp90.dll',
-        d / 'msvcr90.dll',
-        winsxs / 'Manifests' / ('%s.manifest' % version),
-    ]
-
-
 def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
           python_exe: pathlib.Path, iscc_exe: pathlib.Path,
           version=None):
@@ -66,6 +41,7 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
     from hgpackaging.util import (
         extract_tar_to_directory,
         extract_zip_to_directory,
+        find_vc_runtime_files,
     )
 
     if not iscc.exists():
