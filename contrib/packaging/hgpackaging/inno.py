@@ -86,19 +86,21 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
         extract_zip_to_directory(gettext_pkg, gettext_root)
         extract_zip_to_directory(gettext_dep_pkg, gettext_root)
 
+    # This assumes Python 2. We don't need virtualenv on Python 3.
+    virtualenv_src_path = build_dir / (
+        'virtualenv-%s' % virtualenv_entry['version'])
+    virtualenv_py = virtualenv_src_path / 'virtualenv.py'
+
+    if not virtualenv_src_path.exists():
+        extract_tar_to_directory(virtualenv_pkg, build_dir)
+
+    py2exe_source_path = build_dir / ('py2exe-%s' % py2exe_entry['version'])
+
+    if not py2exe_source_path.exists():
+        extract_zip_to_directory(py2exe_pkg, build_dir)
+
     with tempfile.TemporaryDirectory() as td:
         td = pathlib.Path(td)
-
-        # This assumes Python 2.
-        extract_tar_to_directory(virtualenv_pkg, td)
-        extract_zip_to_directory(py2exe_pkg, td)
-
-        virtualenv_src_path = td / ('virtualenv-%s' %
-            virtualenv_entry['version'])
-        py2exe_source_path = td / ('py2exe-%s' %
-            py2exe_entry['version'])
-
-        virtualenv_py = virtualenv_src_path / 'virtualenv.py'
 
         if not venv_path.exists():
             print('creating virtualenv with dependencies')
