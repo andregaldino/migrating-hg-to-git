@@ -69,7 +69,7 @@
                     KeyPath='yes'/>
           </Component>
           <Component Id='COPYING' Guid='$(var.COPYING.guid)' Win64='$(var.IsX64)'>
-            <File Id='COPYING' Name='COPYING.rtf' Source='contrib\wix\COPYING.rtf'
+            <File Id='COPYING' Name='COPYING.rtf' Source='contrib\packaging\wix\COPYING.rtf'
                   KeyPath='yes'/>
           </Component>
 
@@ -144,7 +144,7 @@
     <UIRef Id="WixUI_FeatureTree" />
     <UIRef Id="WixUI_ErrorProgressText" />
 
-    <WixVariable Id="WixUILicenseRtf" Value="contrib\wix\COPYING.rtf" />
+    <WixVariable Id="WixUILicenseRtf" Value="contrib\packaging\wix\COPYING.rtf" />
 
     <Icon Id="hgIcon.ico" SourceFile="contrib/win32/mercurial.ico" />
 

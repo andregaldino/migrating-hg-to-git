@@ -196,7 +196,7 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   > 
   > tracked = [f for f in hgdirectory(sys.argv[1])]
   > 
-  > xml = ET.parse("%s/../contrib/wix/%s.wxs" % (testdir, sys.argv[1]))
+  > xml = ET.parse("%s/../contrib/packaging/wix/%s.wxs" % (testdir, sys.argv[1]))
   > root = xml.getroot()
   > dir = root.find('.//{%(wix)s}DirectoryRef' % ns)
   > 
