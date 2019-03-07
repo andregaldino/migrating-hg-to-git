@@ -1251,6 +1251,9 @@ py2exepackages = [
     'mercurial.pure',
 ]
 
+py2exeexcludes = []
+py2exedllexcludes = []
+
 if issetuptools:
     extra['python_requires'] = supportedpy
 
@@ -1264,33 +1267,20 @@ if py2exeloaded:
     # put dlls in sub directory so that they won't pollute PATH
     extra['zipfile'] = 'lib/library.zip'
 
-    try:
-        import dulwich
-        dulwich.__version__
-        py2exepackages.append('dulwich')
-    except ImportError:
-        pass
+    # We allow some configuration to be supplemented via environment
+    # variables. This is better than setup.cfg files because it allows
+    # supplementing configs instead of replacing them.
+    extrapackages = os.environ.get('HG_PY2EXE_EXTRA_PACKAGES')
+    if extrapackages:
+        py2exepackages.extend(extrapackages.split(' '))
 
-    try:
-        import keyring
-        keyring.util
-        py2exepackages.append('keyring')
-    except ImportError:
-        pass
+    excludes = os.environ.get('HG_PY2EXE_EXTRA_EXCLUDES')
+    if excludes:
+        py2exeexcludes.extend(excludes.split(' '))
 
-    try:
-        import pygments
-        pygments.__version__
-        py2exepackages.append('pygments')
-    except ImportError:
-        pass
-
-    try:
-        import win32ctypes
-        win32ctypes.__version__
-        py2exepackages.append('win32ctypes')
-    except ImportError:
-        pass
+    dllexcludes = os.environ.get('HG_PY2EXE_EXTRA_DLL_EXCLUDES')
+    if dllexcludes:
+        py2exedllexcludes.extend(dllexcludes.split(' '))
 
 if os.name == 'nt':
     # Windows binary file versions for exe/dll files must have the
@@ -1371,6 +1361,8 @@ setup(name='mercurial',
       distclass=hgdist,
       options={
           'py2exe': {
+              'dll_excludes': py2exedllexcludes,
+              'excludes': py2exeexcludes,
               'packages': py2exepackages,
           },
           'bdist_mpkg': {

@@ -20,6 +20,14 @@ from .util import (
 )
 
 
+EXTRA_PACKAGES = {
+    'dulwich',
+    'keyring',
+    'pygments',
+    'win32ctypes',
+}
+
+
 def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
           python_exe: pathlib.Path, iscc_exe: pathlib.Path,
           version=None):
@@ -40,7 +48,7 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
                         'inno' / 'requirements.txt')
 
     build_py2exe(source_dir, build_dir, python_exe, 'inno',
-                 requirements_txt)
+                 requirements_txt, extra_packages=EXTRA_PACKAGES)
 
     # hg.exe depends on VC9 runtime DLLs. Copy those into place.
     for f in find_vc_runtime_files(vc_x64):
