@@ -1242,6 +1242,7 @@ extra = {}
 
 py2exepackages = [
     'hgdemandimport',
+    'hgext3rd',
     'hgext',
     'email',
     # implicitly imported per module policy
