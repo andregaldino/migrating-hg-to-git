@@ -19,33 +19,6 @@ import sys
 import tempfile
 
 
-DOWNLOADS = {
-    'gettext': {
-        'url': 'https://versaweb.dl.sourceforge.net/project/gnuwin32/gettext/0.14.4/gettext-0.14.4-bin.zip',
-        'size': 1606131,
-        'sha256': '60b9ef26bc5cceef036f0424e542106cf158352b2677f43a01affd6d82a1d641',
-        'version': '0.14.4',
-    },
-    'gettext-dep': {
-        'url': 'https://versaweb.dl.sourceforge.net/project/gnuwin32/gettext/0.14.4/gettext-0.14.4-dep.zip',
-        'size': 715086,
-        'sha256': '411f94974492fd2ecf52590cb05b1023530aec67e64154a88b1e4ebcd9c28588',
-    },
-    'py2exe': {
-        'url': 'https://versaweb.dl.sourceforge.net/project/py2exe/py2exe/0.6.9/py2exe-0.6.9.zip',
-        'size': 149687,
-        'sha256': '6bd383312e7d33eef2e43a5f236f9445e4f3e0f6b16333c6f183ed445c44ddbd',
-        'version': '0.6.9',
-    },
-    'virtualenv': {
-        'url': 'https://files.pythonhosted.org/packages/37/db/89d6b043b22052109da35416abc3c397655e4bd3cff031446ba02b9654fa/virtualenv-16.4.3.tar.gz',
-        'size': 3713208,
-        'sha256': '984d7e607b0a5d1329425dd8845bd971b957424b5ba664729fab51ab8c11bc39',
-        'version': '16.4.3',
-    },
-}
-
-
 PRINT_PYTHON_INFO = '''
 import platform, sys; print("%s:%d" % (platform.architecture()[0], sys.version_info[0]))
 '''.strip()
@@ -128,15 +101,15 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
 
     build_dir.mkdir(exist_ok=True)
 
-    gettext_pkg = download_entry(DOWNLOADS['gettext'], build_dir)
-    gettext_dep_pkg = download_entry(DOWNLOADS['gettext-dep'], build_dir)
-    virtualenv_pkg = download_entry(DOWNLOADS['virtualenv'], build_dir)
-    py2exe_pkg = download_entry(DOWNLOADS['py2exe'], build_dir)
+    gettext_pkg, gettext_entry = download_entry('gettext', build_dir)
+    gettext_dep_pkg = download_entry('gettext-dep', build_dir)[0]
+    virtualenv_pkg, virtualenv_entry = download_entry('virtualenv', build_dir)
+    py2exe_pkg, py2exe_entry = download_entry('py2exe', build_dir)
 
     venv_path = build_dir / ('venv-inno-%s' % ('x64' if vc_x64 else 'x86'))
 
     gettext_root = build_dir / (
-        'gettext-win-%s' % DOWNLOADS['gettext']['version'])
+        'gettext-win-%s' % gettext_entry['version'])
 
     if not gettext_root.exists():
         extract_zip_to_directory(gettext_pkg, gettext_root)
@@ -150,9 +123,9 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
         extract_zip_to_directory(py2exe_pkg, td)
 
         virtualenv_src_path = td / ('virtualenv-%s' %
-            DOWNLOADS['virtualenv']['version'])
+            virtualenv_entry['version'])
         py2exe_source_path = td / ('py2exe-%s' %
-            DOWNLOADS['py2exe']['version'])
+            py2exe_entry['version'])
 
         virtualenv_py = virtualenv_src_path / 'virtualenv.py'
 
