@@ -1262,8 +1262,10 @@ if py2exeloaded:
         {'script':'hg',
          'copyright':'Copyright (C) 2005-2019 Matt Mackall and others',
          'product_version':version}]
-    # sub command of 'build' because 'py2exe' does not handle sub_commands
-    build.sub_commands.insert(0, ('build_hgextindex', None))
+    # Sub command of 'build' because 'py2exe' does not handle sub_commands.
+    # Need to override hgbuild because it has a private copy of
+    # build.sub_commands.
+    hgbuild.sub_commands.insert(0, ('build_hgextindex', None))
     # put dlls in sub directory so that they won't pollute PATH
     extra['zipfile'] = 'lib/library.zip'
 
