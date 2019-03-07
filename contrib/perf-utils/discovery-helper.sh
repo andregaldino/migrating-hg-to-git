@@ -51,6 +51,10 @@ right="last(sort(heads(all()), 'desc'), $nbheads)"
 leftsubset="ancestors($left, $depth) and only($left, heads(all() - $left))"
 rightsubset="ancestors($right, $depth) and only($right, heads(all() - $right))"
 
+echo '### creating left/right repositories with missing changesets:'
+echo '# left  revset:' '"'${leftsubset}'"'
+echo '# right revset:' '"'${rightsubset}'"'
+
 echo '### building left repository:' $left-repo
 echo '# cloning'
 hg clone --noupdate "${repo}" "${leftrepo}"
