@@ -37,7 +37,6 @@ SUPPORT_WXS = [
 
 EXTRA_PACKAGES = {
     'distutils',
-    'enum',
     'pygments',
 }
 
