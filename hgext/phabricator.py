@@ -505,6 +505,7 @@ def phabsend(ui, repo, *revs, **opts):
     phabsend will check obsstore and the above association to decide whether to
     update an existing Differential Revision, or create a new one.
     """
+    opts = pycompat.byteskwargs(opts)
     revs = list(revs) + opts.get(b'rev', [])
     revs = scmutil.revrange(repo, revs)
 
@@ -955,6 +956,7 @@ def phabread(ui, repo, spec, **opts):
     If --stack is given, follow dependencies information and read all patches.
     It is equivalent to the ``:`` operator.
     """
+    opts = pycompat.byteskwargs(opts)
     if opts.get(b'stack'):
         spec = b':(%s)' % spec
     drevs = querydrev(repo, spec)
@@ -973,6 +975,7 @@ def phabupdate(ui, repo, spec, **opts):
 
     DREVSPEC selects revisions. See :hg:`help phabread` for its usage.
     """
+    opts = pycompat.byteskwargs(opts)
     flags = [n for n in b'accept reject abandon reclaim'.split() if opts.get(n)]
     if len(flags) > 1:
         raise error.Abort(_(b'%s cannot be used together') % b', '.join(flags))
