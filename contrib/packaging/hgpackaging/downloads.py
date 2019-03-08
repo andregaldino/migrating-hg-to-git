@@ -31,11 +31,41 @@ DOWNLOADS = {
         'sha256': '6bd383312e7d33eef2e43a5f236f9445e4f3e0f6b16333c6f183ed445c44ddbd',
         'version': '0.6.9',
     },
+    # The VC9 CRT merge modules aren't readily available on most systems because
+    # they are only installed as part of a full Visual Studio 2008 install.
+    # While we could potentially extract them from a Visual Studio 2008
+    # installer, it is easier to just fetch them from a known URL.
+    'vc9-crt-x86-msm': {
+        'url': 'https://github.com/indygreg/vc90-merge-modules/raw/9232f8f0b2135df619bf7946eaa176b4ac35ccff/Microsoft_VC90_CRT_x86.msm',
+        'size': 615424,
+        'sha256': '837e887ef31b332feb58156f429389de345cb94504228bb9a523c25a9dd3d75e',
+    },
+    'vc9-crt-x86-msm-policy': {
+        'url': 'https://github.com/indygreg/vc90-merge-modules/raw/9232f8f0b2135df619bf7946eaa176b4ac35ccff/policy_9_0_Microsoft_VC90_CRT_x86.msm',
+        'size': 71168,
+        'sha256': '3fbcf92e3801a0757f36c5e8d304e134a68d5cafd197a6df7734ae3e8825c940',
+    },
+    'vc9-crt-x64-msm': {
+        'url': 'https://github.com/indygreg/vc90-merge-modules/raw/9232f8f0b2135df619bf7946eaa176b4ac35ccff/Microsoft_VC90_CRT_x86_x64.msm',
+        'size': 662528,
+        'sha256': '50d9639b5ad4844a2285269c7551bf5157ec636e32396ddcc6f7ec5bce487a7c',
+    },
+    'vc9-crt-x64-msm-policy': {
+        'url': 'https://github.com/indygreg/vc90-merge-modules/raw/9232f8f0b2135df619bf7946eaa176b4ac35ccff/policy_9_0_Microsoft_VC90_CRT_x86_x64.msm',
+        'size': 71168,
+        'sha256': '0550ea1929b21239134ad3a678c944ba0f05f11087117b6cf0833e7110686486',
+    },
     'virtualenv': {
         'url': 'https://files.pythonhosted.org/packages/37/db/89d6b043b22052109da35416abc3c397655e4bd3cff031446ba02b9654fa/virtualenv-16.4.3.tar.gz',
         'size': 3713208,
         'sha256': '984d7e607b0a5d1329425dd8845bd971b957424b5ba664729fab51ab8c11bc39',
         'version': '16.4.3',
+    },
+    'wix': {
+        'url': 'https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311-binaries.zip',
+        'size': 34358269,
+        'sha256': '37f0a533b0978a454efb5dc3bd3598becf9660aaf4287e55bf68ca6b527d051d',
+        'version': '3.11.1',
     },
 }
 
