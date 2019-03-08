@@ -128,7 +128,7 @@ def vcrcommand(name, flags, spec, helpcategory=None):
     fullflags = flags + _VCR_FLAGS
     def decorate(fn):
         def inner(*args, **kwargs):
-            cassette = kwargs.pop(r'test_vcr', None)
+            cassette = pycompat.fsdecode(kwargs.pop(r'test_vcr', None))
             if cassette:
                 import hgdemandimport
                 with hgdemandimport.deactivated():
@@ -137,8 +137,9 @@ def vcrcommand(name, flags, spec, helpcategory=None):
                     vcr = vcrmod.VCR(
                         serializer=r'json',
                         custom_patches=[
-                            (urlmod, 'httpconnection', stubs.VCRHTTPConnection),
-                            (urlmod, 'httpsconnection',
+                            (urlmod, r'httpconnection',
+                             stubs.VCRHTTPConnection),
+                            (urlmod, r'httpsconnection',
                              stubs.VCRHTTPSConnection),
                         ])
                     with vcr.use_cassette(cassette):
