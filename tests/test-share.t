@@ -127,7 +127,7 @@ hg serve shared clone
 Cloning a shared repo via bundle2 results in a non-shared clone
 
   $ cd ..
-  $ hg clone -q --stream --config ui.ssh="$PYTHON \"$TESTDIR/dummyssh\"" ssh://user@dummy/`pwd`/repo2 cloned-via-bundle2
+  $ hg clone -q --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/`pwd`/repo2 cloned-via-bundle2
   $ cat ./cloned-via-bundle2/.hg/requires | grep "shared"
   [1]
   $ hg id --cwd cloned-via-bundle2 -r tip
