@@ -28,9 +28,13 @@
 
 set -euo pipefail
 
+printusage () {
+     echo "usage: `basename $0` REPO NBHEADS DEPTH [left|right]" >&2
+}
+
 if [ $# -lt 3 ]; then
-     echo "usage: `basename $0` REPO NBHEADS DEPTH"
-     exit 64
+    printusage
+    exit 64
 fi
 
 repo="$1"
@@ -42,6 +46,24 @@ shift
 depth="$1"
 shift
 
+doleft=1
+doright=1
+if [ $# -gt 1 ]; then
+    printusage
+    exit 64
+elif [ $# -eq 1 ]; then
+    if [ "$1" == "left" ]; then
+        doleft=1
+        doright=0
+    elif [ "$1" == "right" ]; then
+        doleft=0
+        doright=1
+    else
+        printusage
+        exit 64
+    fi
+fi
+
 leftrepo="${repo}-${nbheads}h-${depth}d-left"
 rightrepo="${repo}-${nbheads}h-${depth}d-right"
 
@@ -52,17 +74,25 @@ leftsubset="ancestors($left, $depth) and only($left, heads(all() - $left))"
 rightsubset="ancestors($right, $depth) and only($right, heads(all() - $right))"
 
 echo '### creating left/right repositories with missing changesets:'
-echo '# left  revset:' '"'${leftsubset}'"'
-echo '# right revset:' '"'${rightsubset}'"'
+if [ $doleft -eq 1 ]; then
+    echo '# left  revset:' '"'${leftsubset}'"'
+fi
+if [ $doright -eq 1 ]; then
+    echo '# right revset:' '"'${rightsubset}'"'
+fi
 
-echo '### building left repository:' $left-repo
-echo '# cloning'
-hg clone --noupdate "${repo}" "${leftrepo}"
-echo '# stripping' '"'${leftsubset}'"'
-hg -R "${leftrepo}" --config extensions.strip= strip --rev "$leftsubset" --no-backup
+if [ $doleft -eq 1 ]; then
+    echo '### building left repository:' $left-repo
+    echo '# cloning'
+    hg clone --noupdate "${repo}" "${leftrepo}"
+    echo '# stripping' '"'${leftsubset}'"'
+    hg -R "${leftrepo}" --config extensions.strip= strip --rev "$leftsubset" --no-backup
+fi
 
-echo '### building right repository:' $right-repo
-echo '# cloning'
-hg clone --noupdate "${repo}" "${rightrepo}"
-echo '# stripping:' '"'${rightsubset}'"'
-hg -R "${rightrepo}" --config extensions.strip= strip --rev "$rightsubset" --no-backup
+if [ $doright -eq 1 ]; then
+    echo '### building right repository:' $right-repo
+    echo '# cloning'
+    hg clone --noupdate "${repo}" "${rightrepo}"
+    echo '# stripping:' '"'${rightsubset}'"'
+    hg -R "${rightrepo}" --config extensions.strip= strip --rev "$rightsubset" --no-backup
+fi
