@@ -204,7 +204,7 @@ def callconduit(repo, name, params):
     """call Conduit API, params is a dict. return json.loads result, or None"""
     host, token = readurltoken(repo)
     url, authinfo = util.url(b'/'.join([host, b'api', name])).authinfo()
-    repo.ui.debug(b'Conduit Call: %s %s\n' % (url, params))
+    repo.ui.debug(b'Conduit Call: %s %s\n' % (url, pycompat.byterepr(params)))
     params = params.copy()
     params[b'api.token'] = token
     data = urlencodenested(params)
