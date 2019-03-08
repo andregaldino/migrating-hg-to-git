@@ -304,7 +304,7 @@ def getoldnodedrevmap(repo, nodelist):
         # Check commit message
         m = _differentialrevisiondescre.search(ctx.description())
         if m:
-            toconfirm[node] = (1, set(precnodes), int(m.group(b'id')))
+            toconfirm[node] = (1, set(precnodes), int(m.group(r'id')))
 
     # Double check if tags are genuine by collecting all old nodes from
     # Phabricator, and expect precursors overlap with it.
@@ -555,7 +555,7 @@ def phabsend(ui, repo, *revs, **opts):
             # Create a local tag to note the association, if commit message
             # does not have it already
             m = _differentialrevisiondescre.search(ctx.description())
-            if not m or int(m.group(b'id')) != newrevid:
+            if not m or int(m.group(r'id')) != newrevid:
                 tagname = b'D%d' % newrevid
                 tags.tag(repo, tagname, ctx.node(), message=None, user=None,
                          date=None, local=True)
@@ -1001,8 +1001,8 @@ def template_review(context, mapping):
     m = _differentialrevisiondescre.search(ctx.description())
     if m:
         return templateutil.hybriddict({
-            b'url': m.group(b'url'),
-            b'id': b"D{}".format(m.group(b'id')),
+            b'url': m.group(r'url'),
+            b'id': b"D{}".format(m.group(r'id')),
         })
     else:
         tags = ctx.repo().nodetags(ctx.node())
