@@ -38,15 +38,7 @@ SUPPORT_WXS = [
 EXTRA_PACKAGES = {
     'distutils',
     'enum',
-    'imagesize',
     'pygments',
-    'sphinx',
-}
-
-
-EXCLUDES = {
-    # Python 3 only.
-    'jinja2.asyncsupport',
 }
 
 
@@ -161,7 +153,7 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
 
     build_py2exe(source_dir, hg_build_dir,
                  python_exe, 'wix', requirements_txt,
-                 extra_packages=EXTRA_PACKAGES, extra_excludes=EXCLUDES)
+                 extra_packages=EXTRA_PACKAGES)
 
     version = version or normalize_version(find_version(source_dir))
     print('using version string: %s' % version)

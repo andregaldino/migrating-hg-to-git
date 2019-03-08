@@ -3,4 +3,3 @@ enum
 future
 pygments
 pypiwin32
-sphinx
