@@ -218,7 +218,7 @@ def callconduit(repo, name, params):
         body = sout.read()
     else:
         urlopener = urlmod.opener(repo.ui, authinfo)
-        request = util.urlreq.request(url, data=data)
+        request = util.urlreq.request(pycompat.strurl(url), data=data)
         with contextlib.closing(urlopener.open(request)) as rsp:
             body = rsp.read()
     repo.ui.debug(b'Conduit Response: %s\n' % body)
