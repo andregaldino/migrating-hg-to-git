@@ -371,10 +371,10 @@ def writediffproperties(ctx, diff):
         b'diff_id': diff[b'id'],
         b'name': b'hg:meta',
         b'data': json.dumps({
-            b'user': ctx.user(),
-            b'date': b'%d %d' % ctx.date(),
-            b'node': ctx.hex(),
-            b'parent': ctx.p1().hex(),
+            u'user': encoding.unifromlocal(ctx.user()),
+            u'date': u'{:.0f} {}'.format(*ctx.date()),
+            u'node': encoding.unifromlocal(ctx.hex()),
+            u'parent': encoding.unifromlocal(ctx.p1().hex()),
         }),
     }
     callconduit(ctx.repo(), b'differential.setdiffproperty', params)
@@ -383,10 +383,11 @@ def writediffproperties(ctx, diff):
         b'diff_id': diff[b'id'],
         b'name': b'local:commits',
         b'data': json.dumps({
-            ctx.hex(): {
-                b'author': stringutil.person(ctx.user()),
-                b'authorEmail': stringutil.email(ctx.user()),
-                b'time': ctx.date()[0],
+            encoding.unifromlocal(ctx.hex()): {
+                u'author': encoding.unifromlocal(stringutil.person(ctx.user())),
+                u'authorEmail': encoding.unifromlocal(
+                    stringutil.email(ctx.user())),
+                u'time': u'{:.0f}'.format(ctx.date()[0]),
             },
         }),
     }
