@@ -430,7 +430,7 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
     # existing revision (revid is not None) since that introduces visible
     # churns (someone edited "Summary" twice) on the web page.
     if parentrevid and revid is None:
-        summary = b'Depends on D%s' % parentrevid
+        summary = b'Depends on D%d' % parentrevid
         transactions += [{b'type': b'summary', b'value': summary},
                          {b'type': b'summary', b'value': b' '}]
 
@@ -570,7 +570,7 @@ def phabsend(ui, repo, *revs, **opts):
              b'skipped': _(b'skipped'),
              b'updated': _(b'updated')}[action],
             b'phabricator.action.%s' % action)
-        drevdesc = ui.label(b'D%s' % newrevid, b'phabricator.drev')
+        drevdesc = ui.label(b'D%d' % newrevid, b'phabricator.drev')
         nodedesc = ui.label(bytes(ctx), b'phabricator.node')
         desc = ui.label(ctx.description().split(b'\n')[0], b'phabricator.desc')
         ui.write(_(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc,
