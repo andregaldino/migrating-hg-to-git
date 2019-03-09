@@ -240,10 +240,20 @@ def debugcallconduit(ui, repo, name):
     Call parameters are read from stdin as a JSON blob. Result will be written
     to stdout as a JSON blob.
     """
-    params = json.loads(ui.fin.read())
-    result = callconduit(repo, name, params)
-    s = json.dumps(result, sort_keys=True, indent=2, separators=(b',', b': '))
-    ui.write(b'%s\n' % s)
+    # json.loads only accepts bytes from 3.6+
+    rawparams = encoding.unifromlocal(ui.fin.read())
+    # json.loads only returns unicode strings
+    params = pycompat.rapply(lambda x:
+        encoding.unitolocal(x) if isinstance(x, pycompat.unicode) else x,
+        json.loads(rawparams)
+    )
+    # json.dumps only accepts unicode strings
+    result = pycompat.rapply(lambda x:
+        encoding.unifromlocal(x) if isinstance(x, bytes) else x,
+        callconduit(repo, name, params)
+    )
+    s = json.dumps(result, sort_keys=True, indent=2, separators=(u',', u': '))
+    ui.write(b'%s\n' % encoding.unitolocal(s))
 
 def getrepophid(repo):
     """given callsign, return repository PHID or None"""
