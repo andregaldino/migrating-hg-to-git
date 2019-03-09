@@ -762,7 +762,7 @@ def querydrev(repo, spec):
     """
     def fetch(params):
         """params -> single drev or None"""
-        key = (params.get(r'ids') or params.get(r'phids') or [None])[0]
+        key = (params.get(b'ids') or params.get(b'phids') or [None])[0]
         if key in prefetched:
             return prefetched[key]
         drevs = callconduit(repo, b'differential.query', params)
@@ -779,7 +779,7 @@ def querydrev(repo, spec):
         """given a top, get a stack from the bottom, [id] -> [id]"""
         visited = set()
         result = []
-        queue = [{r'ids': [i]} for i in topdrevids]
+        queue = [{b'ids': [i]} for i in topdrevids]
         while queue:
             params = queue.pop()
             drev = fetch(params)
@@ -923,7 +923,7 @@ def readpatch(repo, drevs, write):
         # Try to preserve metadata from hg:meta property. Write hg patch
         # headers that can be read by the "import" command. See patchheadermap
         # and extract in mercurial/patch.py for supported headers.
-        meta = getdiffmeta(diffs[str(diffid)])
+        meta = getdiffmeta(diffs[b'%d' % diffid])
         for k in _metanamemap.keys():
             if k in meta:
                 header += b'# %s %s\n' % (_metanamemap[k], meta[k])
