@@ -718,8 +718,12 @@ Testing the case in split when commiting flag-only file changes (issue5864)
   $ echo foo > foo
   $ hg add foo
   $ hg ci -m "initial"
-  $ chmod +x foo
-  $ hg ci -m "make executable"
+  $ hg import -q --bypass -m "make executable" - <<EOF
+  > diff --git a/foo b/foo
+  > old mode 100644
+  > new mode 100755
+  > EOF
+  $ hg up -q
 
   $ hg glog
   @  1:3a2125f0f4cb make executable
@@ -727,6 +731,7 @@ Testing the case in split when commiting flag-only file changes (issue5864)
   o  0:51f273a58d82 initial
   
 
+#if no-windows
   $ printf 'y\ny\ny\n' | hg split
   diff --git a/foo b/foo
   old mode 100644
@@ -751,3 +756,11 @@ Testing the case in split when commiting flag-only file changes (issue5864)
   new mode 100755
   examine changes to 'foo'? [Ynesfdaq?] abort: response expected
   [255]
+#else
+
+TODO: Fix this on Windows. See issue 2020 and 5883
+
+  $ printf 'y\ny\ny\n' | hg split
+  abort: cannot split an empty revision
+  [255]
+#endif
