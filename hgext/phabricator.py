@@ -1002,7 +1002,7 @@ def template_review(context, mapping):
     if m:
         return templateutil.hybriddict({
             b'url': m.group(r'url'),
-            b'id': b"D{}".format(m.group(r'id')),
+            b'id': b"D%s" % m.group(r'id'),
         })
     else:
         tags = ctx.repo().nodetags(ctx.node())
