@@ -675,7 +675,7 @@ def _tokenize(text):
     length = len(text)
     while pos < length:
         symbol = b''.join(itertools.takewhile(lambda ch: ch not in special,
-                                              view[pos:]))
+                                              pycompat.iterbytestr(view[pos:])))
         if symbol:
             yield (b'symbol', symbol, pos)
             pos += len(symbol)
