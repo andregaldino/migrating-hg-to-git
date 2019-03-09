@@ -512,6 +512,7 @@ test-pathconflicts-update.t
 test-pathencode.py
 test-pending.t
 test-permissions.t
+test-phabricator.t
 test-phase-archived.t
 test-phases-exchange.t
 test-phases.t
