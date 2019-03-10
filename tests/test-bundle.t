@@ -241,7 +241,8 @@ hg -R bundle://../full.hg verify
   HG_SOURCE=pull
   HG_TXNID=TXN:$ID$
   HG_TXNNAME=pull
-  bundle:../full.hg
+  bundle:../full.hg (no-msys !)
+  bundle;../full.hg (msys !)
   HG_URL=bundle:../full.hg (no-msys !)
   HG_URL=bundle;../full.hg (msys !)
   
