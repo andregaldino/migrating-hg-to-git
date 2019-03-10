@@ -81,18 +81,21 @@ if [ $doright -eq 1 ]; then
     echo '# right revset:' '"'${rightsubset}'"'
 fi
 
-if [ $doleft -eq 1 ]; then
-    echo '### building left repository:' $left-repo
+buildone() {
+    side=$1
+    dest=$2
+    revset=$3
+    echo "### building $side repository: $dest"
     echo '# cloning'
-    hg clone --noupdate "${repo}" "${leftrepo}"
-    echo '# stripping' '"'${leftsubset}'"'
-    hg -R "${leftrepo}" --config extensions.strip= strip --rev "$leftsubset" --no-backup
+    hg clone --noupdate "${repo}" "${dest}"
+    echo '# stripping' '"'${revset}'"'
+    hg -R "${dest}" --config extensions.strip= strip --rev "$revset" --no-backup
+}
+
+if [ $doleft -eq 1 ]; then
+    buildone left $leftrepo $leftsubset
 fi
 
 if [ $doright -eq 1 ]; then
-    echo '### building right repository:' $right-repo
-    echo '# cloning'
-    hg clone --noupdate "${repo}" "${rightrepo}"
-    echo '# stripping:' '"'${rightsubset}'"'
-    hg -R "${rightrepo}" --config extensions.strip= strip --rev "$rightsubset" --no-backup
+    buildone right $rightrepo $rightsubset
 fi
