@@ -1978,10 +1978,9 @@ def update(repo, node, branchmerge, force, ancestor=None,
         pl = wc.parents()
         p1 = pl[0]
         p2 = repo[node]
-        pas = [None]
         if ancestor is not None:
             pas = [repo[ancestor]]
-        if pas[0] is None:
+        else:
             if repo.ui.configlist('merge', 'preferancestor') == ['*']:
                 cahs = repo.changelog.commonancestorsheads(p1.node(), p2.node())
                 pas = [repo[anc] for anc in (sorted(cahs) or [nullid])]
