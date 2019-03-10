@@ -1977,13 +1977,10 @@ def update(repo, node, branchmerge, force, ancestor=None,
             wc = repo[None]
         pl = wc.parents()
         p1 = pl[0]
+        p2 = repo[node]
         pas = [None]
         if ancestor is not None:
             pas = [repo[ancestor]]
-
-        overwrite = force and not branchmerge
-
-        p2 = repo[node]
         if pas[0] is None:
             if repo.ui.configlist('merge', 'preferancestor') == ['*']:
                 cahs = repo.changelog.commonancestorsheads(p1.node(), p2.node())
@@ -1993,6 +1990,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
 
         fp1, fp2, xp1, xp2 = p1.node(), p2.node(), bytes(p1), bytes(p2)
 
+        overwrite = force and not branchmerge
         ### check phase
         if not overwrite:
             if len(pl) > 1:
