@@ -1495,6 +1495,32 @@ Test with non-strings like dates
      1200000.00
      1300000.00
 
+Test cbor filter:
+
+  $ cat <<'EOF' > "$TESTTMP/decodecbor.py"
+  > from __future__ import absolute_import
+  > from mercurial import pycompat
+  > from mercurial.utils import (
+  >     cborutil,
+  >     stringutil,
+  > )
+  > items = cborutil.decodeall(pycompat.stdin.read())
+  > pycompat.stdout.write(stringutil.pprint(items, indent=1) + b'\n')
+  > EOF
+
+  $ hg log -T "{rev|cbor}" -R a -l2 | "$PYTHON" "$TESTTMP/decodecbor.py"
+  [
+   10,
+   9
+  ]
+
+  $ hg log -T "{extras|cbor}" -R a -l1 | "$PYTHON" "$TESTTMP/decodecbor.py"
+  [
+   {
+    'branch': 'default'
+   }
+  ]
+
 json filter should escape HTML tags so that the output can be embedded in hgweb:
 
   $ hg log -T "{'<foo@example.org>'|json}\n" -R a -l1
