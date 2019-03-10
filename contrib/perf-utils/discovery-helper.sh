@@ -91,7 +91,9 @@ buildone() {
         exit 1
     fi
     echo '# cloning'
-    hg clone --noupdate "${repo}" "${dest}"
+    if ! cp --recursive --reflink=always ${repo} ${dest}; then
+        hg clone --noupdate "${repo}" "${dest}"
+    fi
     echo '# stripping' '"'${revset}'"'
     hg -R "${dest}" --config extensions.strip= strip --rev "$revset" --no-backup
 }
