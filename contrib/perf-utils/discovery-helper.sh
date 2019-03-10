@@ -82,10 +82,14 @@ if [ $doright -eq 1 ]; then
 fi
 
 buildone() {
-    side=$1
-    dest=$2
-    revset=$3
+    side="$1"
+    dest="$2"
+    revset="$3"
     echo "### building $side repository: $dest"
+    if [ -e "$dest" ]; then
+        echo "destination repo already exists: $dest" >&2
+        exit 1
+    fi
     echo '# cloning'
     hg clone --noupdate "${repo}" "${dest}"
     echo '# stripping' '"'${revset}'"'
@@ -93,9 +97,9 @@ buildone() {
 }
 
 if [ $doleft -eq 1 ]; then
-    buildone left $leftrepo $leftsubset
+    buildone left "$leftrepo" "$leftsubset"
 fi
 
 if [ $doright -eq 1 ]; then
-    buildone right $rightrepo $rightsubset
+    buildone right "$rightrepo" "$rightsubset"
 fi
