@@ -142,9 +142,11 @@ output containing authors, dates, descriptions, etc.
    using templates to make your life easier.
 
 The ``-T/--template`` argument allows specifying pre-defined styles.
-Mercurial ships with the machine-readable styles ``json`` and ``xml``,
-which provide JSON and XML output, respectively. These are useful for
-producing output that is machine readable as-is.
+Mercurial ships with the machine-readable styles ``cbor``, ``json``,
+and ``xml``, which provide CBOR, JSON, and XML output, respectively.
+These are useful for producing output that is machine readable as-is.
+
+(Mercurial 5.0 is required for CBOR style.)
 
 .. important::
 

@@ -669,6 +669,70 @@ Test xml styles:
   </log>
 
 
+test CBOR style:
+
+  $ cat <<'EOF' > "$TESTTMP/decodecborarray.py"
+  > from __future__ import absolute_import
+  > from mercurial import pycompat
+  > from mercurial.utils import (
+  >     cborutil,
+  >     stringutil,
+  > )
+  > data = pycompat.stdin.read()
+  > # our CBOR decoder doesn't support parsing indefinite-length arrays,
+  > # but the log output is indefinite stream by nature.
+  > assert data[:1] == cborutil.BEGIN_INDEFINITE_ARRAY
+  > assert data[-1:] == cborutil.BREAK
+  > items = cborutil.decodeall(data[1:-1])
+  > pycompat.stdout.write(stringutil.pprint(items, indent=1) + b'\n')
+  > EOF
+
+  $ hg log -k nosuch -Tcbor | "$PYTHON" "$TESTTMP/decodecborarray.py"
+  []
+
+  $ hg log -qr0:1 -Tcbor | "$PYTHON" "$TESTTMP/decodecborarray.py"
+  [
+   {
+    'node': '1e4e1b8f71e05681d422154f5421e385fec3454f',
+    'rev': 0
+   },
+   {
+    'node': 'b608e9d1a3f0273ccf70fb85fd6866b3482bf965',
+    'rev': 1
+   }
+  ]
+
+  $ hg log -vpr . -Tcbor --stat | "$PYTHON" "$TESTTMP/decodecborarray.py"
+  [
+   {
+    'bookmarks': [],
+    'branch': 'default',
+    'date': [
+     1577872860,
+     0
+    ],
+    'desc': 'third',
+    'diff': 'diff -r 29114dbae42b -r 95c24699272e fourth\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/fourth\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+second\ndiff -r 29114dbae42b -r 95c24699272e second\n--- a/second\tMon Jan 12 13:46:40 1970 +0000\n+++ /dev/null\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +0,0 @@\n-second\ndiff -r 29114dbae42b -r 95c24699272e third\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/third\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+third\n',
+    'diffstat': ' fourth |  1 +\n second |  1 -\n third  |  1 +\n 3 files changed, 2 insertions(+), 1 deletions(-)\n',
+    'files': [
+     'fourth',
+     'second',
+     'third'
+    ],
+    'node': '95c24699272ef57d062b8bccc32c878bf841784a',
+    'parents': [
+     '29114dbae42b9f078cf2714dbe3a86bba8ec7453'
+    ],
+    'phase': 'draft',
+    'rev': 8,
+    'tags': [
+     'tip'
+    ],
+    'user': 'test'
+   }
+  ]
+
+
 Test JSON style:
 
   $ hg log -k nosuch -Tjson

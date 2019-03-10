@@ -542,7 +542,7 @@ def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
     regular display via changesetprinter() is done.
     """
     postargs = (differ, opts, buffered)
-    if opts.get('template') == 'json':
+    if opts.get('template') in {'cbor', 'json'}:
         fm = ui.formatter('log', opts)
         return changesetformatter(ui, repo, fm, *postargs)
 
