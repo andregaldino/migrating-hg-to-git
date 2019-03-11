@@ -2085,8 +2085,9 @@ class localrepository(object):
             self.filtered('served').branchmap()
 
         if full:
-            rbc = self.revbranchcache()
-            for r in self.changelog:
+            unfi = self.unfiltered()
+            rbc = unfi.revbranchcache()
+            for r in unfi.changelog:
                 rbc.branchinfo(r)
             rbc.write()
 
