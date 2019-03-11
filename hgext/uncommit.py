@@ -99,10 +99,9 @@ def _commitfiltered(repo, ctx, match, keepcommit):
                          extra=ctx.extra())
     return repo.commitctx(new)
 
-def _fixdirstate(repo, oldctx, newctx, match=None):
-    """ fix the dirstate after switching the working directory from oldctx to
-    newctx which can be result of either unamend or uncommit.
-    """
+def _movedirstate(repo, newctx, match=None):
+    """Move the dirstate to newctx and adjust it as necessary."""
+    oldctx = repo['.']
     ds = repo.dirstate
     ds.setparents(newctx.node(), node.nullid)
     copies = dict(ds.copies())
@@ -194,7 +193,7 @@ def uncommit(ui, repo, *pats, **opts):
                 mapping[old.node()] = ()
 
             with repo.dirstate.parentchange():
-                _fixdirstate(repo, old, repo[newid], match)
+                _movedirstate(repo, repo[newid], match)
 
             scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
 
@@ -256,7 +255,7 @@ def unamend(ui, repo, **opts):
         dirstate = repo.dirstate
 
         with dirstate.parentchange():
-            _fixdirstate(repo, curctx, newpredctx)
+            _movedirstate(repo, newpredctx)
 
         mapping = {curctx.node(): (newprednode,)}
         scmutil.cleanupnodes(repo, mapping, 'unamend', fixphase=True)
