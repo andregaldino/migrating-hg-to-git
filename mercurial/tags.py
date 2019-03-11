@@ -18,6 +18,7 @@ from .node import (
     bin,
     hex,
     nullid,
+    nullrev,
     short,
 )
 from .i18n import _
@@ -718,12 +719,33 @@ class hgtagsfnodescache(object):
         if not computemissing:
             return None
 
-        # Populate missing entry.
-        try:
-            fnode = ctx.filenode('.hgtags')
-        except error.LookupError:
-            # No .hgtags file on this revision.
-            fnode = nullid
+        fnode = None
+        cl = self._repo.changelog
+        p1rev, p2rev = cl._uncheckedparentrevs(rev)
+        p1node = cl.node(p1rev)
+        p1fnode = self.getfnode(p1node, computemissing=False)
+        if p2rev != nullrev:
+            # There is some no-merge changeset where p1 is null and p2 is set
+            # Processing them as merge is just slower, but still gives a good
+            # result.
+            p2node = cl.node(p1rev)
+            p2fnode = self.getfnode(p2node, computemissing=False)
+            if p1fnode != p2fnode:
+                # we cannot rely on readfast because we don't know against what
+                # parent the readfast delta is computed
+                p1fnode = None
+        if p1fnode is not None:
+            mctx = ctx.manifestctx()
+            fnode = mctx.readfast().get('.hgtags')
+            if fnode is None:
+                fnode = p1fnode
+        if fnode is None:
+            # Populate missing entry.
+            try:
+                fnode = ctx.filenode('.hgtags')
+            except error.LookupError:
+                # No .hgtags file on this revision.
+                fnode = nullid
 
         self._writeentry(offset, properprefix, fnode)
         return fnode

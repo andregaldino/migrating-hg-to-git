@@ -145,7 +145,7 @@ Tag cache debug info written to blackbox log
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> identify
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> writing 48 bytes to cache/hgtagsfnodes1
-  1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> 0/1 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> 0/2 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> identify exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> blackbox -l 6
@@ -159,7 +159,7 @@ Failure to acquire lock results in no write
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> identify
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> not writing .hg/cache/hgtagsfnodes1 because lock cannot be acquired
-  1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> 0/1 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> 0/2 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> identify exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @b9154636be938d3d431e75a7c906504a079bfe07 (5000)> blackbox -l 6
@@ -363,7 +363,7 @@ Extra junk data at the end should get overwritten on next cache update
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> tags
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> writing 24 bytes to cache/hgtagsfnodes1
-  1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> 2/3 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> 3/4 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> blackbox -l 6
@@ -384,7 +384,7 @@ Errors writing to .hgtags fnodes cache are silently ignored
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> tags
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> couldn't write cache/hgtagsfnodes1: [Errno *] * (glob)
-  1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> 2/3 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> 3/4 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> blackbox -l 6
@@ -399,7 +399,7 @@ Errors writing to .hgtags fnodes cache are silently ignored
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> tags
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> writing 24 bytes to cache/hgtagsfnodes1
-  1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> 2/3 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> 3/4 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> blackbox -l 6
@@ -427,7 +427,7 @@ Stripping doesn't truncate the tags cache until new data is available
 
   $ hg blackbox -l 5
   1970/01/01 00:00:00 bob @0c192d7d5e6b78a714de54a2e9627952a877e25a (5000)> writing 24 bytes to cache/hgtagsfnodes1
-  1970/01/01 00:00:00 bob @0c192d7d5e6b78a714de54a2e9627952a877e25a (5000)> 2/3 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @0c192d7d5e6b78a714de54a2e9627952a877e25a (5000)> 2/4 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @0c192d7d5e6b78a714de54a2e9627952a877e25a (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @0c192d7d5e6b78a714de54a2e9627952a877e25a (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @0c192d7d5e6b78a714de54a2e9627952a877e25a (5000)> blackbox -l 5
@@ -445,7 +445,7 @@ Stripping doesn't truncate the tags cache until new data is available
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @035f65efb448350f4772141702a81ab1df48c465 (5000)> tags
   1970/01/01 00:00:00 bob @035f65efb448350f4772141702a81ab1df48c465 (5000)> writing 24 bytes to cache/hgtagsfnodes1
-  1970/01/01 00:00:00 bob @035f65efb448350f4772141702a81ab1df48c465 (5000)> 2/3 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @035f65efb448350f4772141702a81ab1df48c465 (5000)> 3/4 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @035f65efb448350f4772141702a81ab1df48c465 (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @035f65efb448350f4772141702a81ab1df48c465 (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @035f65efb448350f4772141702a81ab1df48c465 (5000)> blackbox -l 6
