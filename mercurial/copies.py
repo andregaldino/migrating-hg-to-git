@@ -17,7 +17,6 @@ from . import (
     match as matchmod,
     node,
     pathutil,
-    scmutil,
     util,
 )
 from .utils import (
@@ -193,7 +192,7 @@ def _committedforwardcopies(a, b, match):
     # this comparison.
     forwardmissingmatch = match
     if b.p1() == a and b.p2().node() == node.nullid:
-        filesmatcher = scmutil.matchfiles(a._repo, b.files())
+        filesmatcher = matchmod.exact(b.files())
         forwardmissingmatch = matchmod.intersectmatchers(match, filesmatcher)
     missing = _computeforwardmissing(a, b, match=forwardmissingmatch)
 
