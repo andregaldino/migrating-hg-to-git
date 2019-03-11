@@ -99,44 +99,6 @@ def _commitfiltered(repo, ctx, match, keepcommit):
                          extra=ctx.extra())
     return repo.commitctx(new)
 
-def _movedirstate(repo, newctx, match=None):
-    """Move the dirstate to newctx and adjust it as necessary."""
-    oldctx = repo['.']
-    ds = repo.dirstate
-    ds.setparents(newctx.node(), node.nullid)
-    copies = dict(ds.copies())
-    s = newctx.status(oldctx, match=match)
-    for f in s.modified:
-        if ds[f] == 'r':
-            # modified + removed -> removed
-            continue
-        ds.normallookup(f)
-
-    for f in s.added:
-        if ds[f] == 'r':
-            # added + removed -> unknown
-            ds.drop(f)
-        elif ds[f] != 'a':
-            ds.add(f)
-
-    for f in s.removed:
-        if ds[f] == 'a':
-            # removed + added -> normal
-            ds.normallookup(f)
-        elif ds[f] != 'r':
-            ds.remove(f)
-
-    # Merge old parent and old working dir copies
-    oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
-    oldcopies.update(copies)
-    copies = dict((dst, oldcopies.get(src, src))
-                  for dst, src in oldcopies.iteritems())
-    # Adjust the dirstate copies
-    for dst, src in copies.iteritems():
-        if (src not in newctx or dst in newctx or ds[dst] != 'a'):
-            src = None
-        ds.copy(src, dst)
-
 @command('uncommit',
     [('', 'keep', None, _('allow an empty commit after uncommiting')),
      ('', 'allow-dirty-working-copy', False,
@@ -193,7 +155,7 @@ def uncommit(ui, repo, *pats, **opts):
                 mapping[old.node()] = ()
 
             with repo.dirstate.parentchange():
-                _movedirstate(repo, repo[newid], match)
+                scmutil.movedirstate(repo, repo[newid], match)
 
             scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
 
@@ -255,7 +217,7 @@ def unamend(ui, repo, **opts):
         dirstate = repo.dirstate
 
         with dirstate.parentchange():
-            _movedirstate(repo, newpredctx)
+            scmutil.movedirstate(repo, newpredctx)
 
         mapping = {curctx.node(): (newprednode,)}
         scmutil.cleanupnodes(repo, mapping, 'unamend', fixphase=True)
