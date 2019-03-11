@@ -541,6 +541,8 @@ Test cache warming command
   $ hg debugupdatecaches --debug
   updating the branch cache
   $ ls -r .hg/cache/*
+  .hg/cache/tags2-served
+  .hg/cache/tags2
   .hg/cache/rbc-revs-v1
   .hg/cache/rbc-names-v1
   .hg/cache/manifestfulltextcache (reporevlogstore !)

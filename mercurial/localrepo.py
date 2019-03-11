@@ -2095,6 +2095,10 @@ class localrepository(object):
             for ctx in self['.'].parents():
                 ctx.manifest()  # accessing the manifest is enough
 
+            # accessing tags warm the cache
+            self.tags()
+            self.filtered('served').tags()
+
     def invalidatecaches(self):
 
         if r'_tagscache' in vars(self):
