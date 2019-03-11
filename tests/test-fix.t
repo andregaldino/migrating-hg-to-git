@@ -370,7 +370,6 @@ it clean.
   M hello.whole
   $ hg fix -s . *
   $ hg st
-  M hello.whole (known-bad-output !)
   $ hg diff
 
   $ cd ..

@@ -759,13 +759,12 @@ def writeworkingdir(repo, ctx, filedata, replacements):
     for path, data in pycompat.iteritems(filedata):
         fctx = ctx[path]
         fctx.write(data, fctx.flags())
-        if repo.dirstate[path] == b'n':
-            repo.dirstate.set_possibly_dirty(path)
 
     oldp1 = repo.dirstate.p1()
     newp1 = replacements.get(oldp1, oldp1)
     if newp1 != oldp1:
-        repo.setparents(newp1, nullid)
+        with repo.dirstate.parentchange():
+            scmutil.movedirstate(repo, repo[newp1])
 
 
 def replacerev(ui, repo, ctx, filedata, replacements):
