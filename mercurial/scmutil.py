@@ -1255,7 +1255,12 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
             wctx.copy(origsrc, dst)
 
 def movedirstate(repo, newctx, match=None):
-    """Move the dirstate to newctx and adjust it as necessary."""
+    """Move the dirstate to newctx and adjust it as necessary.
+
+    A matcher can be provided as an optimization. It is probably a bug to pass
+    a matcher that doesn't match all the differences between the parent of the
+    working copy and newctx.
+    """
     oldctx = repo['.']
     ds = repo.dirstate
     ds.setparents(newctx.node(), nullid)
