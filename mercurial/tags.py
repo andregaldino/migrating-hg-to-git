@@ -691,6 +691,9 @@ class hgtagsfnodescache(object):
         If an .hgtags does not exist at the specified revision, nullid is
         returned.
         """
+        if node == nullid:
+            return nullid
+
         ctx = self._repo[node]
         rev = ctx.rev()
 
