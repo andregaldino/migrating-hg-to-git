@@ -51,6 +51,7 @@ Check same result using `experimental.extra-filter-revs`
   $ ls -1 test/.hg/cache/
   branch2-base%89c45d2fa07e
   branch2-served
+  hgtagsfnodes1
   rbc-names-v1
   rbc-revs-v1
   tags2

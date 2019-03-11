@@ -2132,6 +2132,8 @@ class localrepository(object):
             for ctx in self['.'].parents():
                 ctx.manifest()  # accessing the manifest is enough
 
+            # accessing fnode cache warms the cache
+            tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
             # accessing tags warm the cache
             self.tags()
             self.filtered('served').tags()
