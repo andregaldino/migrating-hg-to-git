@@ -1117,7 +1117,8 @@ the hunk is left unchanged.
                     f = util.nativeeolwriter(os.fdopen(patchfd, r'wb'))
                     chunk.header.write(f)
                     chunk.write(f)
-                    f.write('\n'.join(['# ' + i for i in phelp.splitlines()]))
+                    f.write(''.join(['# ' + i + '\n'
+                                     for i in phelp.splitlines()]))
                     f.close()
                     # Start the editor and wait for it to complete
                     editor = ui.geteditor()
