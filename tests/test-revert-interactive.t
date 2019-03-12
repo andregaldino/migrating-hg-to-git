@@ -444,4 +444,52 @@ Prompt before undeleting file(issue6008)
   > EOF
   add back removed file a (Yn)? n
   $ ls
+  $ hg revert -a
+  undeleting a
   $ cd ..
+
+Test "keep" mode
+
+  $ cat <<EOF >> $HGRCPATH
+  > [experimental]
+  > revert.interactive.select-to-keep = true
+  > EOF
+
+  $ cd repo
+  $ printf "x\na\ny\n" > a
+  $ hg diff
+  diff -r cb9a9f314b8b a
+  --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,3 @@
+  +x
+   a
+  +y
+  $ cat > $TESTTMP/editor.sh << '__EOF__'
+  > echo "+new line" >> "$1"
+  > __EOF__
+
+  $ HGEDITOR="\"sh\" \"${TESTTMP}/editor.sh\"" hg revert -i  <<EOF
+  > y
+  > n
+  > e
+  > EOF
+  diff --git a/a b/a
+  2 hunks, 2 lines changed
+  examine changes to 'a'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,2 @@
+  +x
+   a
+  keep change 1/2 to 'a'? [Ynesfdaq?] n
+  
+  @@ -1,1 +2,2 @@
+   a
+  +y
+  keep change 2/2 to 'a'? [Ynesfdaq?] e
+  
+  reverting a
+  $ cat a
+  a
+  y
+  new line

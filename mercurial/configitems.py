@@ -595,6 +595,9 @@ coreconfigitem('experimental', 'remotenames',
 coreconfigitem('experimental', 'removeemptydirs',
     default=True,
 )
+coreconfigitem('experimental', 'revert.interactive.select-to-keep',
+    default=False,
+)
 coreconfigitem('experimental', 'revisions.prefixhexnode',
     default=False,
 )

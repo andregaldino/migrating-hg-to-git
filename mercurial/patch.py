@@ -1012,11 +1012,13 @@ def getmessages():
         'multiple': {
             'apply': _("apply change %d/%d to '%s'?"),
             'discard': _("discard change %d/%d to '%s'?"),
+            'keep': _("keep change %d/%d to '%s'?"),
             'record': _("record change %d/%d to '%s'?"),
         },
         'single': {
             'apply': _("apply this change to '%s'?"),
             'discard': _("discard this change to '%s'?"),
+            'keep': _("keep this change to '%s'?"),
             'record': _("record this change to '%s'?"),
         },
         'help': {
@@ -1039,6 +1041,16 @@ def getmessages():
                          '$$ &Done, skip remaining changes and files'
                          '$$ Discard &all changes to all remaining files'
                          '$$ &Quit, discarding no changes'
+                         '$$ &? (display help)'),
+            'keep': _('[Ynesfdaq?]'
+                         '$$ &Yes, keep this change'
+                         '$$ &No, skip this change'
+                         '$$ &Edit this change manually'
+                         '$$ &Skip remaining changes to this file'
+                         '$$ Keep remaining changes to this &file'
+                         '$$ &Done, skip remaining changes and files'
+                         '$$ Keep &all changes to all remaining files'
+                         '$$ &Quit, keeping all changes'
                          '$$ &? (display help)'),
             'record': _('[Ynesfdaq?]'
                         '$$ &Yes, record this change'

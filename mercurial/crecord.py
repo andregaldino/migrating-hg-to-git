@@ -566,6 +566,7 @@ def testchunkselector(testfn, ui, headerlist, operation=None):
 _headermessages = { # {operation: text}
     'apply': _('Select hunks to apply'),
     'discard': _('Select hunks to discard'),
+    'keep': _('Select hunks to keep'),
     None: _('Select hunks to record'),
 }
 

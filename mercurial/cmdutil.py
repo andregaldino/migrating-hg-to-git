@@ -3176,22 +3176,25 @@ def _performrevert(repo, parents, ctx, names, uipathfn, actions,
                                          configprefix='revert.interactive.')
         diffopts.nodates = True
         diffopts.git = True
-        operation = 'discard'
-        reversehunks = True
-        if node != parent:
-            operation = 'apply'
-            reversehunks = False
-        if reversehunks:
-            diff = patch.diff(repo, ctx.node(), None, m, opts=diffopts)
-        else:
+        operation = 'apply'
+        if node == parent:
+            if repo.ui.configbool('experimental',
+                                  'revert.interactive.select-to-keep'):
+                operation = 'keep'
+            else:
+                operation = 'discard'
+
+        if operation == 'apply':
             diff = patch.diff(repo, None, ctx.node(), m, opts=diffopts)
+        else:
+            diff = patch.diff(repo, ctx.node(), None, m, opts=diffopts)
         originalchunks = patch.parsepatch(diff)
 
         try:
 
             chunks, opts = recordfilter(repo.ui, originalchunks,
                                         operation=operation)
-            if reversehunks:
+            if operation == 'discard':
                 chunks = patch.reversehunks(chunks)
 
         except error.PatchError as err:
@@ -3205,6 +3208,7 @@ def _performrevert(repo, parents, ctx, names, uipathfn, actions,
         # chunks are serialized per file, but files aren't sorted
         for f in sorted(set(c.header.filename() for c in chunks if ishunk(c))):
             prntstatusmsg('revert', f)
+        files = set()
         for c in chunks:
             if ishunk(c):
                 abs = c.header.filename()
@@ -3214,6 +3218,10 @@ def _performrevert(repo, parents, ctx, names, uipathfn, actions,
                     bakname = scmutil.backuppath(repo.ui, repo, abs)
                     util.copyfile(target, bakname)
                     tobackup.remove(abs)
+                if abs not in files:
+                    files.add(abs)
+                    if operation == 'keep':
+                        checkout(abs)
             c.write(fp)
         dopatch = fp.tell()
         fp.seek(0)
