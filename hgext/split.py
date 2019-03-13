@@ -134,13 +134,10 @@ def dosplit(ui, repo, tr, ctx, opts):
     committed = [] # [ctx]
 
     # Set working parent to ctx.p1(), and keep working copy as ctx's content
-    # NOTE: if we can have "update without touching working copy" API, the
-    # revert step could be cheaper.
-    hg.clean(repo, ctx.p1().node(), show_stats=False)
-    parents = repo.changelog.parents(ctx.node())
-    ui.pushbuffer()
-    cmdutil.revert(ui, repo, ctx, parents)
-    ui.popbuffer() # discard "reverting ..." messages
+    if ctx.node() != repo.dirstate.p1():
+        hg.clean(repo, ctx.node(), show_stats=False)
+    with repo.dirstate.parentchange():
+        scmutil.movedirstate(repo, ctx.p1())
 
     # Any modified, added, removed, deleted result means split is incomplete
     incomplete = lambda repo: any(repo.status()[:4])
