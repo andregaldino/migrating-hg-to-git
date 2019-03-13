@@ -289,8 +289,8 @@ class dirstate(object):
         See localrepo.setparents()
         """
         if self._parentwriters == 0:
-            raise ValueError("cannot set dirstate parent without "
-                             "calling dirstate.beginparentchange")
+            raise ValueError("cannot set dirstate parent outside of "
+                             "dirstate.parentchange context manager")
 
         self._dirty = True
         oldp2 = self._pl[1]
