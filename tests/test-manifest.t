@@ -108,6 +108,10 @@ Showing the content of the caches after the above operations
   $ hg debugmanifestfulltextcache
   cache empty
 
+(Clearing the cache in case of any content)
+
+  $ hg debugmanifestfulltextcache --clear
+
 Adding a new persistent entry in the cache
 
   $ hg debugmanifestfulltextcache --add 1e01206b1d2f72bd55f2a33fa8ccad74144825b7
