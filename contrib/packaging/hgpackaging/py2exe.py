@@ -128,7 +128,7 @@ def build_py2exe(source_dir: pathlib.Path, build_dir: pathlib.Path,
     print('building Mercurial')
     subprocess.run(
         [str(venv_python), 'setup.py',
-         'py2exe', '-b', '3' if vc_x64 else '2',
+         'py2exe',
          'build_doc', '--html'],
         cwd=str(source_dir),
         env=env,

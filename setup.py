@@ -1364,6 +1364,7 @@ setup(name='mercurial',
       distclass=hgdist,
       options={
           'py2exe': {
+              'bundle_files': 3,
               'dll_excludes': py2exedllexcludes,
               'excludes': py2exeexcludes,
               'packages': py2exepackages,

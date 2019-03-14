@@ -71,10 +71,8 @@ Source: contrib\hgweb.wsgi; DestDir: {app}/Contrib
 Source: contrib\win32\ReadMe.html; DestDir: {app}; Flags: isreadme
 Source: contrib\win32\postinstall.txt; DestDir: {app}; DestName: ReleaseNotes.txt
 Source: dist\hg.exe; DestDir: {app}; AfterInstall: Touch('{app}\hg.exe.local')
-#if ARCH == "x64"
 Source: dist\lib\*.dll; Destdir: {app}\lib
 Source: dist\lib\*.pyd; Destdir: {app}\lib
-#endif
 Source: dist\python*.dll; Destdir: {app}; Flags: skipifsourcedoesntexist
 Source: dist\msvc*.dll; DestDir: {app}; Flags: skipifsourcedoesntexist
 Source: dist\Microsoft.VC*.CRT.manifest; DestDir: {app}; Flags: skipifsourcedoesntexist
