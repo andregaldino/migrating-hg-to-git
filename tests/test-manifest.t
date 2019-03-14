@@ -142,3 +142,9 @@ Accessing the initial entry again, refresh their order
   id: 1e01206b1d2f72bd55f2a33fa8ccad74144825b7, size 133 bytes
   id: fce2a30dedad1eef4da95ca1dc0004157aa527cf, size 87 bytes
   total cache data size 268 bytes, on-disk 268 bytes
+
+Check cache clearing
+
+  $ hg debugmanifestfulltextcache --clear
+  $ hg debugmanifestfulltextcache
+  cache empty

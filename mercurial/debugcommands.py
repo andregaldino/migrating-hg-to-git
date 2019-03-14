@@ -1478,7 +1478,8 @@ def debugmanifestfulltextcache(ui, repo, add=None, **opts):
     if opts.get(r'clear'):
         with repo.lock():
             cache = getcache()
-            cache.clear()
+            cache.clear(clear_persisted_data=True)
+            return
 
     if add:
         with repo.lock():
