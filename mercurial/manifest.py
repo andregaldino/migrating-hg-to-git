@@ -1438,7 +1438,7 @@ class manifestrevlog(object):
         if not util.safehasattr(repo, '_wlockref'):
             return
 
-        self._fulltextcache._opener = repo.cachevfs
+        self._fulltextcache._opener = repo.wcachevfs
         if repo._currentlock(repo._wlockref) is None:
             return
 

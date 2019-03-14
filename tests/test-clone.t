@@ -43,7 +43,6 @@ Trigger branchcache creation:
   default                       10:a7949464abda
   $ ls .hg/cache
   branch2-served
-  manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1
 
@@ -58,7 +57,6 @@ Ensure branchcache got copied over:
 
   $ ls .hg/cache
   branch2-served
-  manifestfulltextcache
   rbc-names-v1
   rbc-revs-v1
 

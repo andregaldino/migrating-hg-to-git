@@ -88,7 +88,6 @@ Non store repo:
   .hg/00manifest.i
   .hg/cache
   .hg/cache/branch2-served
-  .hg/cache/manifestfulltextcache (reporevlogstore !)
   .hg/cache/rbc-names-v1
   .hg/cache/rbc-revs-v1
   .hg/data
@@ -111,6 +110,7 @@ Non store repo:
   .hg/wcache/checkisexec (execbit !)
   .hg/wcache/checklink (symlink !)
   .hg/wcache/checklink-target (symlink !)
+  .hg/wcache/manifestfulltextcache (reporevlogstore !)
   $ cd ..
 
 Non fncache repo:
@@ -126,7 +126,6 @@ Non fncache repo:
   .hg/00changelog.i
   .hg/cache
   .hg/cache/branch2-served
-  .hg/cache/manifestfulltextcache (reporevlogstore !)
   .hg/cache/rbc-names-v1
   .hg/cache/rbc-revs-v1
   .hg/dirstate
@@ -152,6 +151,7 @@ Non fncache repo:
   .hg/wcache/checkisexec (execbit !)
   .hg/wcache/checklink (symlink !)
   .hg/wcache/checklink-target (symlink !)
+  .hg/wcache/manifestfulltextcache (reporevlogstore !)
   $ cd ..
 
 Encoding of reserved / long paths in the store

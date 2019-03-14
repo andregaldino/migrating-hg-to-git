@@ -34,9 +34,9 @@ share shouldn't have a full cache dir, original repo should
   checkisexec (execbit !)
   checklink (symlink !)
   checklink-target (symlink !)
+  manifestfulltextcache (reporevlogstore !)
   $ ls -1 ../repo1/.hg/cache
   branch2-served
-  manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1
   tags2-visible
