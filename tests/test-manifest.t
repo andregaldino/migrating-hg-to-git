@@ -133,3 +133,12 @@ Adding a second entry
   id: fce2a30dedad1eef4da95ca1dc0004157aa527cf, size 87 bytes
   id: 1e01206b1d2f72bd55f2a33fa8ccad74144825b7, size 133 bytes
   total cache data size 268 bytes, on-disk 268 bytes
+
+Accessing the initial entry again, refresh their order
+
+  $ hg debugmanifestfulltextcache --add 1e01206b1d2f72bd55f2a33fa8ccad74144825b7
+  $ hg debugmanifestfulltextcache
+  cache contains 2 manifest entries, in order of most to least recent:
+  id: 1e01206b1d2f72bd55f2a33fa8ccad74144825b7, size 133 bytes
+  id: fce2a30dedad1eef4da95ca1dc0004157aa527cf, size 87 bytes
+  total cache data size 268 bytes, on-disk 268 bytes
