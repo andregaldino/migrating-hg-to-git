@@ -169,7 +169,7 @@ class partialdiscovery(object):
     def _parentsgetter(self):
         getrev = self._repo.changelog.index.__getitem__
         def getparents(r):
-            return getrev(r)[5:6]
+            return getrev(r)[5:7]
         return getparents
 
     def _childrengetter(self):
