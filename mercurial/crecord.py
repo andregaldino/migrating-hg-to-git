@@ -1730,8 +1730,11 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             self.stdscr.clear()
             self.stdscr.refresh()
         elif curses.unctrl(keypressed) in ["^L"]:
-            # scroll the current line to the top of the screen
+            # scroll the current line to the top of the screen, and redraw
+            # everything
             self.scrolllines(self.selecteditemstartline)
+            self.stdscr.clear()
+            self.stdscr.refresh()
 
     def main(self, stdscr):
         """
