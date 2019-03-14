@@ -554,6 +554,14 @@ def testchunkselector(testfn, ui, headerlist, operation=None):
     of the chosen chunks.
     """
     chunkselector = curseschunkselector(headerlist, ui, operation)
+
+    class dummystdscr(object):
+        def clear(self):
+            pass
+        def refresh(self):
+            pass
+
+    chunkselector.stdscr = dummystdscr()
     if testfn and os.path.exists(testfn):
         testf = open(testfn, 'rb')
         testcommands = [x.rstrip('\n') for x in testf.readlines()]
@@ -1606,6 +1614,9 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             except error.Abort as exc:
                 self.errorstr = str(exc)
                 return None
+            finally:
+                self.stdscr.clear()
+                self.stdscr.refresh()
 
             # remove comment lines
             patch = [line + '\n' for line in patch.splitlines()
