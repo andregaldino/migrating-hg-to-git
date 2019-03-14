@@ -82,6 +82,14 @@ class rustdiscoverytest(unittest.TestCase):
 
         self.assertEqual(disco.commonheads(), {1})
 
+    def testaddmissingsstats(self):
+        idx = self.parseindex()
+        disco = PartialDiscovery(idx, [3])
+        self.assertIsNone(disco.stats()['undecided'], None)
+
+        disco.addmissings([2])
+        self.assertEqual(disco.stats()['undecided'], 2)
+
     def testaddinfocommonfirst(self):
         idx = self.parseindex()
         disco = PartialDiscovery(idx, [3])

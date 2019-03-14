@@ -14,7 +14,9 @@
 
 use crate::conversion::{py_set, rev_pyiter_collect};
 use cindex::Index;
-use cpython::{ObjectProtocol, PyDict, PyModule, PyObject, PyResult, Python};
+use cpython::{
+    ObjectProtocol, PyDict, PyModule, PyObject, PyResult, Python, ToPyObject,
+};
 use exceptions::GraphError;
 use hg::discovery::PartialDiscovery as CorePartialDiscovery;
 use hg::Revision;
@@ -81,6 +83,15 @@ py_class!(pub class PartialDiscovery |py| {
 
     def iscomplete(&self) -> PyResult<bool> {
         Ok(self.inner(py).borrow().is_complete())
+    }
+
+    def stats(&self) -> PyResult<PyDict> {
+        let stats = self.inner(py).borrow().stats();
+        let as_dict: PyDict = PyDict::new(py);
+        as_dict.set_item(py, "undecided",
+                         stats.undecided.map(|l| l.to_py_object(py))
+                              .unwrap_or_else(|| py.None()))?;
+        Ok(as_dict)
     }
 
     def commonheads(&self) -> PyResult<PyObject> {

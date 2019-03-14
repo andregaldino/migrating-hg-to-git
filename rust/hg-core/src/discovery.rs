@@ -23,6 +23,10 @@ pub struct PartialDiscovery<G: Graph + Clone> {
     missing: HashSet<Revision>,
 }
 
+pub struct DiscoveryStats {
+    pub undecided: Option<usize>,
+}
+
 impl<G: Graph + Clone> PartialDiscovery<G> {
     /// Create a PartialDiscovery object, with the intent
     /// of comparing our `::<target_heads>` revset to the contents of another
@@ -119,6 +123,13 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
             Some(self.common.missing_ancestors(tgt)?.into_iter().collect());
         Ok(())
     }
+
+    /// Provide statistics about the current state of the discovery process
+    pub fn stats(&self) -> DiscoveryStats {
+        DiscoveryStats {
+            undecided: self.undecided.as_ref().map(|s| s.len()),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -161,6 +172,7 @@ mod tests {
         let mut disco = full_disco();
         assert_eq!(disco.undecided, None);
         assert!(!disco.has_info());
+        assert_eq!(disco.stats().undecided, None);
 
         disco.add_common_revisions(vec![11, 12])?;
         assert!(disco.has_info());
@@ -172,6 +184,7 @@ mod tests {
         assert_eq!(disco.undecided, None);
         disco.ensure_undecided()?;
         assert_eq!(sorted_undecided(&disco), vec![5, 8, 10, 13]);
+        assert_eq!(disco.stats().undecided, Some(4));
         Ok(())
     }
 
