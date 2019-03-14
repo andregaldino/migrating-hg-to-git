@@ -1486,7 +1486,7 @@ def debugmanifestfulltextcache(ui, repo, add=None, **opts):
             manifest.read()  # stores revisision in cache too
 
         if not len(cache):
-            ui.write(_('Cache empty'))
+            ui.write(_('cache empty\n'))
         else:
             ui.write(
                 _('Cache contains %d manifest entries, in order of most to '

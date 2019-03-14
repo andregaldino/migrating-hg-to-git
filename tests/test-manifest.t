@@ -93,3 +93,17 @@ The next two calls are expected to abort:
   $ hg manifest -r tip tip
   abort: please specify just one revision
   [255]
+
+Testing the manifest full text cache utility
+--------------------------------------------
+
+Reminder of the manifest log content
+
+  $ hg log --debug | grep 'manifest:'
+  manifest:    1:1e01206b1d2f72bd55f2a33fa8ccad74144825b7
+  manifest:    0:fce2a30dedad1eef4da95ca1dc0004157aa527cf
+
+Showing the content of the caches after the above operations
+
+  $ hg debugmanifestfulltextcache
+  cache empty
