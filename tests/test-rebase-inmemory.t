@@ -756,5 +756,7 @@ Test rebasing a commit with copy information, but no content changes
   |
   o  0: b173517d0057 'a'
   
-  $ hg rebase -b 5 -d tip 2>&1 | grep '** ProgrammingError'
-  ** ProgrammingError: markcopied() called on clean context
+  $ hg rebase -b 5 -d tip
+  rebasing 3:ca58782ad1e4 "b"
+  rebasing 5:71cb43376053 "merge"
+  note: not rebasing 5:71cb43376053 "merge", its destination already has all its changes

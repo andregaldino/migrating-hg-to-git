@@ -1891,10 +1891,8 @@ class overlayworkingctx(committablectx):
             return self._wrappedctx[path].date()
 
     def markcopied(self, path, origin):
-        if self.isdirty(path):
-            self._cache[path]['copied'] = origin
-        else:
-            raise error.ProgrammingError('markcopied() called on clean context')
+        self._markdirty(path, exists=True, date=self.filedate(path),
+                        flags=self.flags(path), copied=origin)
 
     def copydata(self, path):
         if self.isdirty(path):
@@ -2098,7 +2096,8 @@ class overlayworkingctx(committablectx):
             del self._cache[path]
         return keys
 
-    def _markdirty(self, path, exists, data=None, date=None, flags=''):
+    def _markdirty(self, path, exists, data=None, date=None, flags='',
+        copied=None):
         # data not provided, let's see if we already have some; if not, let's
         # grab it from our underlying context, so that we always have data if
         # the file is marked as existing.
@@ -2111,7 +2110,7 @@ class overlayworkingctx(committablectx):
             'data': data,
             'date': date,
             'flags': flags,
-            'copied': None,
+            'copied': copied,
         }
 
     def filectx(self, path, filelog=None):
