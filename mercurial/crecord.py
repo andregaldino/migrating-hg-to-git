@@ -1764,6 +1764,12 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         except curses.error:
             self.usecolor = False
 
+        # In some situations we may have some cruft left on the "alternate
+        # screen" from another program (or previous iterations of ourself), and
+        # we won't clear it if the scroll region is small enough to comfortably
+        # fit on the terminal.
+        self.stdscr.clear()
+
         # available colors: black, blue, cyan, green, magenta, white, yellow
         # init_pair(color_id, foreground_color, background_color)
         self.initcolorpair(None, None, name="normal")
