@@ -1489,7 +1489,7 @@ def debugmanifestfulltextcache(ui, repo, add=None, **opts):
             ui.write(_('cache empty\n'))
         else:
             ui.write(
-                _('Cache contains %d manifest entries, in order of most to '
+                _('cache contains %d manifest entries, in order of most to '
                   'least recent:\n') % (len(cache),))
             totalsize = 0
             for nodeid in cache:
@@ -1501,7 +1501,7 @@ def debugmanifestfulltextcache(ui, repo, add=None, **opts):
                     hex(nodeid), util.bytecount(size)))
             ondisk = cache._opener.stat('manifestfulltextcache').st_size
             ui.write(
-                _('Total cache data size %s, on-disk %s\n') % (
+                _('total cache data size %s, on-disk %s\n') % (
                     util.bytecount(totalsize), util.bytecount(ondisk))
             )
 
