@@ -1488,6 +1488,7 @@ def debugmanifestfulltextcache(ui, repo, add=None, **opts):
             except error.LookupError as e:
                 raise error.Abort(e, hint="Check your manifest node id")
             manifest.read()  # stores revisision in cache too
+            return
 
     cache = getcache()
     if not len(cache):

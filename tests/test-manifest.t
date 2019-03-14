@@ -111,9 +111,6 @@ Showing the content of the caches after the above operations
 Adding a new persistent entry in the cache
 
   $ hg debugmanifestfulltextcache --add 1e01206b1d2f72bd55f2a33fa8ccad74144825b7
-  cache contains 1 manifest entries, in order of most to least recent:
-  id: 1e01206b1d2f72bd55f2a33fa8ccad74144825b7, size 133 bytes
-  total cache data size 157 bytes, on-disk 157 bytes
 
   $ hg debugmanifestfulltextcache
   cache contains 1 manifest entries, in order of most to least recent:
