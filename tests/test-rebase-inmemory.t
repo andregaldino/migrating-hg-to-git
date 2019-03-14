@@ -718,3 +718,43 @@ issue5960: this was raising an AttributeError exception
   diff --git a/foo.txt b/foo.txt
   old mode 100644
   new mode 100755
+
+Test rebasing a commit with copy information, but no content changes
+
+  $ cd ..
+  $ hg clone -q repo1 merge-and-rename
+  $ cd merge-and-rename
+  $ cat << EOF >> .hg/hgrc
+  > [experimental]
+  > evolution.createmarkers=True
+  > evolution.allowunstable=True
+  > EOF
+  $ hg co -q 1
+  $ hg mv d e
+  $ hg ci -qm 'rename d to e'
+  $ hg co -q 3
+  $ hg merge -q 4
+  $ hg ci -m 'merge'
+  $ hg co -q 2
+  $ mv d e
+  $ hg addremove -qs 0
+  $ hg ci -qm 'untracked rename of d to e'
+  $ hg debugobsolete -q `hg log -T '{node}' -r 4` `hg log -T '{node}' -r .`
+  1 new orphan changesets
+  $ hg tglog
+  @  6: 676538af172d 'untracked rename of d to e'
+  |
+  | *    5: 71cb43376053 'merge'
+  | |\
+  | | x  4: 2c8b5dad7956 'rename d to e'
+  | | |
+  | o |  3: ca58782ad1e4 'b'
+  |/ /
+  o /  2: 814f6bd05178 'c'
+  |/
+  o  1: 02952614a83d 'd'
+  |
+  o  0: b173517d0057 'a'
+  
+  $ hg rebase -b 5 -d tip 2>&1 | grep '** ProgrammingError'
+  ** ProgrammingError: markcopied() called on clean context
