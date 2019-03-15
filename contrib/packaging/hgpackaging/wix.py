@@ -146,9 +146,9 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
 
     hg_build_dir = source_dir / 'build'
     dist_dir = source_dir / 'dist'
+    wix_dir = source_dir / 'contrib' / 'packaging' / 'wix'
 
-    requirements_txt = (source_dir / 'contrib' / 'packaging' /
-                        'wix' / 'requirements.txt')
+    requirements_txt = wix_dir / 'requirements.txt'
 
     build_py2exe(source_dir, hg_build_dir,
                  python_exe, 'wix', requirements_txt,
@@ -177,11 +177,11 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
     defines = {'Platform': arch}
 
     for wxs, rel_path in SUPPORT_WXS:
-        wxs = source_dir / 'contrib' / 'packaging' / 'wix' / wxs
+        wxs = wix_dir / wxs
         wxs_source_dir = source_dir / rel_path
         run_candle(wix_path, build_dir, wxs, wxs_source_dir, defines=defines)
 
-    source = source_dir / 'contrib' / 'packaging' / 'wix' / 'mercurial.wxs'
+    source = wix_dir / 'mercurial.wxs'
     defines['Version'] = version
     defines['Comments'] = 'Installs Mercurial version %s' % version
     defines['VCRedistSrcDir'] = str(hg_build_dir)
