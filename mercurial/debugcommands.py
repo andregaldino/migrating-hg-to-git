@@ -1460,10 +1460,10 @@ def debuglocks(ui, repo, **opts):
 
 @command('debugmanifestfulltextcache', [
         ('', 'clear', False, _('clear the cache')),
-        ('a', 'add', '', _('add the given manifest node to the cache'),
+        ('a', 'add', [], _('add the given manifest nodes to the cache'),
          _('NODE'))
     ], '')
-def debugmanifestfulltextcache(ui, repo, add=None, **opts):
+def debugmanifestfulltextcache(ui, repo, add=(), **opts):
     """show, clear or amend the contents of the manifest fulltext cache"""
 
     def getcache():
@@ -1483,12 +1483,14 @@ def debugmanifestfulltextcache(ui, repo, add=None, **opts):
 
     if add:
         with repo.lock():
-            try:
-                m = repo.manifestlog
-                manifest = m[m.getstorage(b'').lookup(add)]
-            except error.LookupError as e:
-                raise error.Abort(e, hint="Check your manifest node id")
-            manifest.read()  # stores revisision in cache too
+            m = repo.manifestlog
+            store = m.getstorage(b'')
+            for n in add:
+                try:
+                    manifest = m[store.lookup(n)]
+                except error.LookupError as e:
+                    raise error.Abort(e, hint="Check your manifest node id")
+                manifest.read()  # stores revisision in cache too
             return
 
     cache = getcache()
