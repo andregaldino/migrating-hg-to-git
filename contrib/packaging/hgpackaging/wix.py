@@ -11,6 +11,8 @@ import os
 import pathlib
 import re
 import subprocess
+import tempfile
+import xml.dom.minidom
 
 from .downloads import (
     download_entry,
@@ -128,6 +130,52 @@ def make_post_build_signing_fn(name, subject_name=None, cert_path=None,
     return post_build_sign
 
 
+LIBRARIES_XML = '''
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <?include {wix_dir}/guids.wxi ?>
+  <?include {wix_dir}/defines.wxi ?>
+
+  <Fragment>
+    <DirectoryRef Id="INSTALLDIR" FileSource="$(var.SourceDir)">
+      <Directory Id="libdir" Name="lib" FileSource="$(var.SourceDir)/lib">
+        <Component Id="libOutput" Guid="$(var.lib.guid)" Win64='$(var.IsX64)'>
+        </Component>
+      </Directory>
+    </DirectoryRef>
+  </Fragment>
+</Wix>
+'''.lstrip()
+
+
+def make_libraries_xml(wix_dir: pathlib.Path, dist_dir: pathlib.Path):
+    """Make XML data for library components WXS."""
+    # We can't use ElementTree because it doesn't handle the
+    # <?include ?> directives.
+    doc = xml.dom.minidom.parseString(
+        LIBRARIES_XML.format(wix_dir=str(wix_dir)))
+
+    component = doc.getElementsByTagName('Component')[0]
+
+    f = doc.createElement('File')
+    f.setAttribute('Name', 'library.zip')
+    f.setAttribute('KeyPath', 'yes')
+    component.appendChild(f)
+
+    lib_dir = dist_dir / 'lib'
+
+    for p in sorted(lib_dir.iterdir()):
+        if not p.name.endswith(('.dll', '.pyd')):
+            continue
+
+        f = doc.createElement('File')
+        f.setAttribute('Name', p.name)
+        component.appendChild(f)
+
+    return doc.toprettyxml()
+
+
 def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
                     msi_name='mercurial', version=None, post_build_fn=None):
     """Build a WiX MSI installer.
@@ -181,6 +229,17 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
         wxs_source_dir = source_dir / rel_path
         run_candle(wix_path, build_dir, wxs, wxs_source_dir, defines=defines)
 
+    # candle.exe doesn't like when we have an open handle on the file.
+    # So use TemporaryDirectory() instead of NamedTemporaryFile().
+    with tempfile.TemporaryDirectory() as td:
+        td = pathlib.Path(td)
+
+        tf = td / 'library.wxs'
+        with tf.open('w') as fh:
+            fh.write(make_libraries_xml(wix_dir, dist_dir))
+
+        run_candle(wix_path, build_dir, tf, dist_dir, defines=defines)
+
     source = wix_dir / 'mercurial.wxs'
     defines['Version'] = version
     defines['Comments'] = 'Installs Mercurial version %s' % version
@@ -204,7 +263,10 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
         assert source.endswith('.wxs')
         args.append(str(build_dir / ('%s.wixobj' % source[:-4])))
 
-    args.append(str(build_dir / 'mercurial.wixobj'))
+    args.extend([
+        str(build_dir / 'library.wixobj'),
+        str(build_dir / 'mercurial.wixobj'),
+    ])
 
     subprocess.run(args, cwd=str(source_dir), check=True)
 
