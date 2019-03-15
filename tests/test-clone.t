@@ -58,6 +58,7 @@ Ensure branchcache got copied over:
 
   $ ls .hg/cache
   branch2-served
+  manifestfulltextcache
   rbc-names-v1
   rbc-revs-v1
 

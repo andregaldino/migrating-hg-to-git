@@ -106,7 +106,9 @@ Reminder of the manifest log content
 Showing the content of the caches after the above operations
 
   $ hg debugmanifestfulltextcache
-  cache empty
+  cache contains 1 manifest entries, in order of most to least recent:
+  id: 1e01206b1d2f72bd55f2a33fa8ccad74144825b7, size 133 bytes
+  total cache data size 157 bytes, on-disk 157 bytes
 
 (Clearing the cache in case of any content)
 
@@ -183,3 +185,19 @@ Commit should have the new node cached:
   $ hg log -r 'ancestors(., 1)' --debug | grep 'manifest:'
   manifest:    1:1e01206b1d2f72bd55f2a33fa8ccad74144825b7
   manifest:    2:26b8653b67af8c1a0a0317c4ee8dac50a41fdb65
+
+hg update should warm the cache too
+
+(force dirstate check to avoid flackiness in manifest order)
+  $ hg debugrebuilddirstate
+
+  $ hg update 0
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg debugmanifestfulltextcache
+  cache contains 3 manifest entries, in order of most to least recent:
+  id: fce2a30dedad1eef4da95ca1dc0004157aa527cf, size 87 bytes
+  id: 26b8653b67af8c1a0a0317c4ee8dac50a41fdb65, size 133 bytes
+  id: 1e01206b1d2f72bd55f2a33fa8ccad74144825b7, size 133 bytes
+  total cache data size 425 bytes, on-disk 425 bytes
+  $ hg log -r '0' --debug | grep 'manifest:'
+  manifest:    0:fce2a30dedad1eef4da95ca1dc0004157aa527cf

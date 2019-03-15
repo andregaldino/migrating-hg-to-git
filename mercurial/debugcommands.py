@@ -1476,13 +1476,13 @@ def debugmanifestfulltextcache(ui, repo, add=(), **opts):
             raise error.Abort(msg)
 
     if opts.get(r'clear'):
-        with repo.lock():
+        with repo.wlock():
             cache = getcache()
             cache.clear(clear_persisted_data=True)
             return
 
     if add:
-        with repo.lock():
+        with repo.wlock():
             m = repo.manifestlog
             store = m.getstorage(b'')
             for n in add:
