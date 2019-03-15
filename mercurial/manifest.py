@@ -1437,6 +1437,9 @@ class manifestrevlog(object):
             return
 
         self._fulltextcache._opener = repo.cachevfs
+        if repo._currentlock(repo._lockref) is None:
+            return
+
         reporef = weakref.ref(repo)
         manifestrevlogref = weakref.ref(self)
 
@@ -1450,8 +1453,7 @@ class manifestrevlog(object):
                 return
             self._fulltextcache.write()
 
-        if repo._currentlock(repo._lockref) is not None:
-            repo._afterlock(persistmanifestcache)
+        repo._afterlock(persistmanifestcache)
 
     @property
     def fulltextcache(self):
