@@ -1253,7 +1253,7 @@ py2exepackages = [
 ]
 
 py2exeexcludes = []
-py2exedllexcludes = []
+py2exedllexcludes = ['crypt32.dll']
 
 if issetuptools:
     extra['python_requires'] = supportedpy
