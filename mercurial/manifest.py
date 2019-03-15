@@ -1276,6 +1276,9 @@ class manifestfulltextcache(util.lrucachedict):
     These are written in reverse cache order (oldest to newest).
 
     """
+
+    _file = 'manifestfulltextcache'
+
     def __init__(self, max):
         super(manifestfulltextcache, self).__init__(max)
         self._dirty = False
@@ -1287,7 +1290,7 @@ class manifestfulltextcache(util.lrucachedict):
             return
 
         try:
-            with self._opener('manifestfulltextcache') as fp:
+            with self._opener(self._file) as fp:
                 set = super(manifestfulltextcache, self).__setitem__
                 # ignore trailing data, this is a cache, corruption is skipped
                 while True:
@@ -1313,8 +1316,7 @@ class manifestfulltextcache(util.lrucachedict):
         if not self._dirty or self._opener is None:
             return
         # rotate backwards to the first used node
-        with self._opener(
-                'manifestfulltextcache', 'w', atomictemp=True, checkambig=True
+        with self._opener(self._file, 'w', atomictemp=True, checkambig=True
             ) as fp:
             node = self._head.prev
             while True:
