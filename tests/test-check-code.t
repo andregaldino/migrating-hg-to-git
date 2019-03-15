@@ -12,6 +12,11 @@ New errors are not allowed. Warnings are strongly discouraged.
   > -X hgext/fsmonitor/pywatchman \
   > -X mercurial/thirdparty \
   > | sed 's-\\-/-g' | "$check_code" --warnings --per-file=0 - || false
+  Skipping contrib/automation/hgautomation/__init__.py it has no-che?k-code (glob)
+  Skipping contrib/automation/hgautomation/aws.py it has no-che?k-code (glob)
+  Skipping contrib/automation/hgautomation/cli.py it has no-che?k-code (glob)
+  Skipping contrib/automation/hgautomation/windows.py it has no-che?k-code (glob)
+  Skipping contrib/automation/hgautomation/winrm.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/downloads.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/inno.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/py2exe.py it has no-che?k-code (glob)

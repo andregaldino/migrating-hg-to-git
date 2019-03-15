@@ -18,6 +18,7 @@ outputs, which should be fixed later.
   > 'tests/**.t' \
   > -X hgweb.cgi \
   > -X setup.py \
+  > -X contrib/automation/ \
   > -X contrib/debugshell.py \
   > -X contrib/hgweb.fcgi \
   > -X contrib/packaging/hg-docker \

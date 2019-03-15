@@ -5,6 +5,7 @@
 
 #if no-py3
   $ testrepohg files 'set:(**.py)' \
+  > -X contrib/automation/ \
   > -X contrib/packaging/hgpackaging/ \
   > -X contrib/packaging/inno/ \
   > -X contrib/packaging/wix/ \
