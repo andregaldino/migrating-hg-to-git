@@ -1503,7 +1503,7 @@ def debugmanifestfulltextcache(ui, repo, add=(), **opts):
         totalsize = 0
         for nodeid in cache:
             # Use cache.get to not update the LRU order
-            data = cache.get(nodeid)
+            data = cache.peek(nodeid)
             size = len(data)
             totalsize += size + 24   # 20 bytes nodeid, 4 bytes size
             ui.write(_('id: %s, size %s\n') % (
