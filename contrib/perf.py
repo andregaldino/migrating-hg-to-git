@@ -315,12 +315,20 @@ def timeone():
     a, b = ostart, ostop
     r.append((cstop - cstart, b[0] - a[0], b[1]-a[1]))
 
+
+# list of stop condition (elapsed time, minimal run count)
+DEFAULTLIMITS = (
+    (3.0, 100),
+    (10.0, 3),
+)
+
 def _timer(fm, func, setup=None, title=None, displayall=False):
     gc.collect()
     results = []
     begin = util.timer()
     count = 0
-    while True:
+    keepgoing = True
+    while keepgoing:
         if setup is not None:
             setup()
         with timeone() as item:
@@ -328,10 +336,12 @@ def _timer(fm, func, setup=None, title=None, displayall=False):
         count += 1
         results.append(item[0])
         cstop = util.timer()
-        if cstop - begin > 3 and count >= 100:
-            break
-        if cstop - begin > 10 and count >= 3:
-            break
+        # Look for a stop condition.
+        elapsed = cstop - begin
+        for t, mincount in DEFAULTLIMITS:
+            if elapsed >= t and count >= mincount:
+                keepgoing = False
+                break
 
     formatone(fm, results, title=title, result=r,
               displayall=displayall)
