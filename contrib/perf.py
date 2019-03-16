@@ -322,7 +322,8 @@ DEFAULTLIMITS = (
     (10.0, 3),
 )
 
-def _timer(fm, func, setup=None, title=None, displayall=False):
+def _timer(fm, func, setup=None, title=None, displayall=False,
+           limits=DEFAULTLIMITS):
     gc.collect()
     results = []
     begin = util.timer()
@@ -338,7 +339,7 @@ def _timer(fm, func, setup=None, title=None, displayall=False):
         cstop = util.timer()
         # Look for a stop condition.
         elapsed = cstop - begin
-        for t, mincount in DEFAULTLIMITS:
+        for t, mincount in limits:
             if elapsed >= t and count >= mincount:
                 keepgoing = False
                 break
