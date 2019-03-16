@@ -21,7 +21,7 @@ from .node import (
     nullrev,
     short,
     wdirfilenodeids,
-    wdirid,
+    wdirhex,
 )
 from . import (
     dagop,
@@ -1324,7 +1324,7 @@ class workingctx(committablectx):
         return self._repo.dirstate[key] not in "?r"
 
     def hex(self):
-        return hex(wdirid)
+        return wdirhex
 
     @propertycache
     def _parents(self):
