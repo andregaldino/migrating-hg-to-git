@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import copy as copymod
 import errno
 import os
 import re
@@ -270,6 +271,28 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
             raise error.Abort(_('cannot partially commit a merge '
                                '(use "hg commit" instead)'))
 
+        status = repo.status(match=match)
+
+        overrides = {(b'ui', b'commitsubrepos'): True}
+
+        with repo.ui.configoverride(overrides, b'record'):
+            # subrepoutil.precommit() modifies the status
+            tmpstatus = scmutil.status(copymod.copy(status[0]),
+                                       copymod.copy(status[1]),
+                                       copymod.copy(status[2]),
+                                       copymod.copy(status[3]),
+                                       copymod.copy(status[4]),
+                                       copymod.copy(status[5]),
+                                       copymod.copy(status[6]))
+
+            # Force allows -X subrepo to skip the subrepo.
+            subs, commitsubs, newstate = subrepoutil.precommit(
+                repo.ui, wctx, tmpstatus, match, force=True)
+            for s in subs:
+                if s in commitsubs:
+                    dirtyreason = wctx.sub(s).dirtyreason(True)
+                    raise error.Abort(dirtyreason)
+
         def fail(f, msg):
             raise error.Abort('%s: %s' % (f, msg))
 
@@ -279,7 +302,6 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
             match.explicitdir = vdirs.append
             match.bad = fail
 
-        status = repo.status(match=match)
         if not force:
             repo.checkcommitpatterns(wctx, vdirs, match, status, fail)
         diffopts = patch.difffeatureopts(ui, opts=opts, whitespace=True)
