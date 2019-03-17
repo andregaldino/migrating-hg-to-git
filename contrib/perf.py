@@ -15,6 +15,16 @@ Configurations
 ``presleep``
   number of second to wait before any group of run (default: 1)
 
+``run-limits``
+  Control the number of run each benchmark will perform. The option value
+  should be a list of `<time>-<numberofrun>` pairs. After each run the
+  condition are considered in order with the following logic:
+
+      If benchmark have been running for <time> seconds, and we have performed
+      <numberofrun> iterations, stop the benchmark,
+
+  The default value is: `3.0-100, 10.0-3`
+
 ``stub``
     When set, benchmark will only be run once, useful for testing (default: off)
 '''
@@ -225,6 +235,9 @@ try:
     configitem(b'perf', b'all-timing',
         default=mercurial.configitems.dynamicdefault,
     )
+    configitem(b'perf', b'run-limits',
+        default=mercurial.configitems.dynamicdefault,
+    )
 except (ImportError, AttributeError):
     pass
 
@@ -297,7 +310,34 @@ def gettimer(ui, opts=None):
 
     # experimental config: perf.all-timing
     displayall = ui.configbool(b"perf", b"all-timing", False)
-    return functools.partial(_timer, fm, displayall=displayall), fm
+
+    # experimental config: perf.run-limits
+    limitspec = ui.configlist(b"perf", b"run-limits", [])
+    limits = []
+    for item in limitspec:
+        parts = item.split('-', 1)
+        if len(parts) < 2:
+            ui.warn(('malformatted run limit entry, missing "-": %s\n'
+                     % item))
+            continue
+        try:
+            time_limit = float(parts[0])
+        except ValueError as e:
+            ui.warn(('malformatted run limit entry, %s: %s\n'
+                     % (e, item)))
+            continue
+        try:
+            run_limit = int(parts[1])
+        except ValueError as e:
+            ui.warn(('malformatted run limit entry, %s: %s\n'
+                     % (e, item)))
+            continue
+        limits.append((time_limit, run_limit))
+    if not limits:
+        limits = DEFAULTLIMITS
+
+    t = functools.partial(_timer, fm, displayall=displayall, limits=limits)
+    return t, fm
 
 def stub_timer(fm, func, setup=None, title=None):
     if setup is not None:

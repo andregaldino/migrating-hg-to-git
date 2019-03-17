@@ -55,6 +55,16 @@ perfstatus
   "presleep"
     number of second to wait before any group of run (default: 1)
   
+  "run-limits"
+    Control the number of run each benchmark will perform. The option value
+    should be a list of '<time>-<numberofrun>' pairs. After each run the
+    condition are considered in order with the following logic:
+  
+        If benchmark have been running for <time> seconds, and we have performed
+        <numberofrun> iterations, stop the benchmark,
+  
+    The default value is: '3.0-100, 10.0-3'
+  
   "stub"
       When set, benchmark will only be run once, useful for testing (default:
       off)
@@ -230,6 +240,31 @@ perfstatus
   $ hg perfwalk
   $ hg perfparents
   $ hg perfdiscovery -q .
+
+Test run control
+----------------
+
+Simple single entry
+
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='0.000000001-15'
+  ! wall * comb * user * sys * (best of 15) (glob)
+
+Multiple entries
+
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='500000-1, 0.000000001-5'
+  ! wall * comb * user * sys * (best of 5) (glob)
+
+error case are ignored
+
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='500, 0.000000001-5'
+  malformatted run limit entry, missing "-": 500
+  ! wall * comb * user * sys * (best of 5) (glob)
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='aaa-12, 0.000000001-5'
+  malformatted run limit entry, could not convert string to float: aaa: aaa-12
+  ! wall * comb * user * sys * (best of 5) (glob)
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='12-aaaaaa, 0.000000001-5'
+  malformatted run limit entry, invalid literal for int() with base 10: 'aaaaaa': 12-aaaaaa
+  ! wall * comb * user * sys * (best of 5) (glob)
 
 test actual output
 ------------------
