@@ -208,14 +208,11 @@ def _headssummary(pushop):
         ctx = repo[n]
         missingctx.add(ctx)
         branches.add(ctx.branch())
-    nbranches = branches.copy()
 
     with remote.commandexecutor() as e:
         remotemap = e.callcommand('branchmap', {}).result()
 
     remotebranches = set(remotemap)
-    newbranches = branches - remotebranches
-    branches.difference_update(newbranches)
 
     # A. register remote heads
     for branch, heads in remotemap.iteritems():
@@ -229,12 +226,12 @@ def _headssummary(pushop):
                 unsynced.append(h)
         headssum[branch] = (known, list(known), unsynced)
     # B. add new branch data
-    for branch in nbranches:
+    for branch in branches:
         if branch not in headssum:
             headssum[branch] = (None, [], [])
 
     # C drop data about untouched branches:
-    for branch in remotebranches - nbranches:
+    for branch in remotebranches - branches:
         del headssum[branch]
 
     # D. Update newmap with outgoing changes.
