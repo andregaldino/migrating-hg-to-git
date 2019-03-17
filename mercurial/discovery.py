@@ -201,19 +201,24 @@ def _headssummary(pushop):
     outgoing = pushop.outgoing
     cl = repo.changelog
     headssum = {}
+    missingctx = set()
     # A. Create set of branches involved in the push.
-    branches = set(repo[n].branch() for n in outgoing.missing)
+    branches = set()
+    for n in outgoing.missing:
+        ctx = repo[n]
+        missingctx.add(ctx)
+        branches.add(ctx.branch())
+    nbranches = branches.copy()
 
     with remote.commandexecutor() as e:
         remotemap = e.callcommand('branchmap', {}).result()
 
-    newbranches = branches - set(remotemap)
+    remotebranches = set(remotemap)
+    newbranches = branches - remotebranches
     branches.difference_update(newbranches)
 
     # A. register remote heads
-    remotebranches = set()
     for branch, heads in remotemap.iteritems():
-        remotebranches.add(branch)
         known = []
         unsynced = []
         knownnode = cl.hasnode # do not use nodemap until it is filtered
@@ -224,16 +229,12 @@ def _headssummary(pushop):
                 unsynced.append(h)
         headssum[branch] = (known, list(known), unsynced)
     # B. add new branch data
-    missingctx = list(repo[n] for n in outgoing.missing)
-    touchedbranches = set()
-    for ctx in missingctx:
-        branch = ctx.branch()
-        touchedbranches.add(branch)
+    for branch in nbranches:
         if branch not in headssum:
             headssum[branch] = (None, [], [])
 
     # C drop data about untouched branches:
-    for branch in remotebranches - touchedbranches:
+    for branch in remotebranches - nbranches:
         del headssum[branch]
 
     # D. Update newmap with outgoing changes.
