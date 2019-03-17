@@ -630,7 +630,7 @@ without client certificate:
 
   $ P="$CERTSDIR" hg id https://localhost:$HGPORT/
   warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
-  abort: error: *handshake failure* (glob)
+  abort: error: .*(\$ECONNRESET\$|certificate required|handshake failure).* (re)
   [255]
 
 with client certificate:
