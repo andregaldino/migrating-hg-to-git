@@ -212,6 +212,7 @@ def _headssummary(pushop):
     with remote.commandexecutor() as e:
         remotemap = e.callcommand('branchmap', {}).result()
 
+    knownnode = cl.hasnode # do not use nodemap until it is filtered
     # A. register remote heads of branches which are in outgoing set
     for branch, heads in remotemap.iteritems():
         # don't add head info about branches which we don't have locally
@@ -219,7 +220,6 @@ def _headssummary(pushop):
             continue
         known = []
         unsynced = []
-        knownnode = cl.hasnode # do not use nodemap until it is filtered
         for h in heads:
             if knownnode(h):
                 known.append(h)
