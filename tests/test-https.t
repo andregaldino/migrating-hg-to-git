@@ -2,6 +2,12 @@
 
 Proper https client requires the built-in ssl from Python 2.6.
 
+Disable the system configuration which may set stricter TLS requirements.
+This test expects that legacy TLS versions are supported.
+
+  $ OPENSSL_CONF=
+  $ export OPENSSL_CONF
+
 Make server certificates:
 
   $ CERTSDIR="$TESTDIR/sslcerts"
