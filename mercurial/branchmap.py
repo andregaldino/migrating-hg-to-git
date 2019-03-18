@@ -178,9 +178,6 @@ class branchcache(object):
     def iteritems(self):
         return self.entries.iteritems()
 
-    def itervalues(self):
-        return self.entries.itervalues()
-
     @classmethod
     def fromfile(cls, repo):
         f = None
@@ -287,6 +284,10 @@ class branchcache(object):
         for bn, heads in self.iteritems():
             yield (bn, heads) + self._branchtip(heads)
 
+    def iterheads(self):
+        """ returns all the heads """
+        return self.entries.itervalues()
+
     def copy(self):
         """return an deep copy of the branchcache object"""
         return branchcache(
@@ -369,7 +370,7 @@ class branchcache(object):
             # cache key are not valid anymore
             self.tipnode = nullid
             self.tiprev = nullrev
-            for heads in self.itervalues():
+            for heads in self.iterheads():
                 tiprev = max(cl.rev(node) for node in heads)
                 if tiprev > self.tiprev:
                     self.tipnode = cl.node(tiprev)

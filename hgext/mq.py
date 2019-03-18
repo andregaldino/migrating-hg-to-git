@@ -1394,7 +1394,7 @@ class queue(object):
         diffopts = self.diffopts()
         with repo.wlock():
             heads = []
-            for hs in repo.branchmap().itervalues():
+            for hs in repo.branchmap().iterheads():
                 heads.extend(hs)
             if not heads:
                 heads = [nullid]

@@ -1980,7 +1980,7 @@ def handlecheckupdatedheads(op, inpart):
         op.gettransaction()
 
     currentheads = set()
-    for ls in op.repo.branchmap().itervalues():
+    for ls in op.repo.branchmap().iterheads():
         currentheads.update(ls)
 
     for h in heads:
