@@ -172,9 +172,6 @@ class branchcache(object):
     def __getitem__(self, key):
         return self.entries[key]
 
-    def setdefault(self, *args):
-        return self.entries.setdefault(*args)
-
     def iteritems(self):
         return self.entries.iteritems()
 
@@ -229,7 +226,7 @@ class branchcache(object):
             if not cl.hasnode(node):
                 raise ValueError(
                     r'node %s does not exist' % pycompat.sysstr(hex(node)))
-            self.setdefault(label, []).append(node)
+            self.entries.setdefault(label, []).append(node)
             if state == 'c':
                 self._closednodes.add(node)
 
@@ -343,7 +340,7 @@ class branchcache(object):
         # really branchheads. Note checking parents is insufficient:
         # 1 (branch a) -> 2 (branch b) -> 3 (branch a)
         for branch, newheadrevs in newbranches.iteritems():
-            bheads = self.setdefault(branch, [])
+            bheads = self.entries.setdefault(branch, [])
             bheadset = set(cl.rev(node) for node in bheads)
 
             # This have been tested True on all internal usage of this function.
