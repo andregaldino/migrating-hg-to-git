@@ -161,23 +161,23 @@ class branchcache(object):
             self._closednodes = set()
         else:
             self._closednodes = closednodes
-        self.entries = dict(entries)
+        self._entries = dict(entries)
 
     def __iter__(self):
-        return iter(self.entries)
+        return iter(self._entries)
 
     def __setitem__(self, key, value):
-        self.entries[key] = value
+        self._entries[key] = value
 
     def __getitem__(self, key):
-        return self.entries[key]
+        return self._entries[key]
 
     def iteritems(self):
-        return self.entries.iteritems()
+        return self._entries.iteritems()
 
     def hasbranch(self, label):
         """ checks whether a branch of this name exists or not """
-        return label in self.entries
+        return label in self._entries
 
     @classmethod
     def fromfile(cls, repo):
@@ -230,7 +230,7 @@ class branchcache(object):
             if not cl.hasnode(node):
                 raise ValueError(
                     r'node %s does not exist' % pycompat.sysstr(hex(node)))
-            self.entries.setdefault(label, []).append(node)
+            self._entries.setdefault(label, []).append(node)
             if state == 'c':
                 self._closednodes.add(node)
 
@@ -287,12 +287,12 @@ class branchcache(object):
 
     def iterheads(self):
         """ returns all the heads """
-        return self.entries.itervalues()
+        return self._entries.itervalues()
 
     def copy(self):
         """return an deep copy of the branchcache object"""
         return branchcache(
-            self.entries, self.tipnode, self.tiprev, self.filteredhash,
+            self._entries, self.tipnode, self.tiprev, self.filteredhash,
             self._closednodes)
 
     def write(self, repo):
@@ -315,7 +315,7 @@ class branchcache(object):
             f.close()
             repo.ui.log('branchcache',
                         'wrote %s branch cache with %d labels and %d nodes\n',
-                        repo.filtername, len(self.entries), nodecount)
+                        repo.filtername, len(self._entries), nodecount)
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
             repo.ui.debug("couldn't write branch cache: %s\n" %
@@ -344,7 +344,7 @@ class branchcache(object):
         # really branchheads. Note checking parents is insufficient:
         # 1 (branch a) -> 2 (branch b) -> 3 (branch a)
         for branch, newheadrevs in newbranches.iteritems():
-            bheads = self.entries.setdefault(branch, [])
+            bheads = self._entries.setdefault(branch, [])
             bheadset = set(cl.rev(node) for node in bheads)
 
             # This have been tested True on all internal usage of this function.
