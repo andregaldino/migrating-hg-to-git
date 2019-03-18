@@ -555,7 +555,7 @@ def branch(repo, subset, x):
         if kind == 'literal':
             # note: falls through to the revspec case if no branch with
             # this name exists and pattern kind is not specified explicitly
-            if pattern in repo.branchmap():
+            if repo.branchmap().hasbranch(pattern):
                 return subset.filter(lambda r: matcher(getbranch(r)),
                                      condrepr=('<branch %r>', b))
             if b.startswith('literal:'):

@@ -175,6 +175,10 @@ class branchcache(object):
     def iteritems(self):
         return self.entries.iteritems()
 
+    def hasbranch(self, label):
+        """ checks whether a branch of this name exists or not """
+        return label in self.entries
+
     @classmethod
     def fromfile(cls, repo):
         f = None
