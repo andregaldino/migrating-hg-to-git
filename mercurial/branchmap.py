@@ -127,7 +127,7 @@ class BranchMapCache(object):
         self._per_filter.clear()
 
 
-class branchcache(dict):
+class branchcache(object):
     """A dict like object that hold branches heads cache.
 
     This cache is used to avoid costly computations to determine all the
@@ -151,7 +151,6 @@ class branchcache(dict):
 
     def __init__(self, entries=(), tipnode=nullid, tiprev=nullrev,
                  filteredhash=None, closednodes=None):
-        super(branchcache, self).__init__(entries)
         self.tipnode = tipnode
         self.tiprev = tiprev
         self.filteredhash = filteredhash
@@ -162,6 +161,25 @@ class branchcache(dict):
             self._closednodes = set()
         else:
             self._closednodes = closednodes
+        self.entries = dict(entries)
+
+    def __iter__(self):
+        return iter(self.entries)
+
+    def __setitem__(self, key, value):
+        self.entries[key] = value
+
+    def __getitem__(self, key):
+        return self.entries[key]
+
+    def setdefault(self, *args):
+        return self.entries.setdefault(*args)
+
+    def iteritems(self):
+        return self.entries.iteritems()
+
+    def itervalues(self):
+        return self.entries.itervalues()
 
     @classmethod
     def fromfile(cls, repo):
@@ -271,8 +289,8 @@ class branchcache(dict):
 
     def copy(self):
         """return an deep copy of the branchcache object"""
-        return type(self)(
-            self, self.tipnode, self.tiprev, self.filteredhash,
+        return branchcache(
+            self.entries, self.tipnode, self.tiprev, self.filteredhash,
             self._closednodes)
 
     def write(self, repo):
@@ -295,7 +313,7 @@ class branchcache(dict):
             f.close()
             repo.ui.log('branchcache',
                         'wrote %s branch cache with %d labels and %d nodes\n',
-                        repo.filtername, len(self), nodecount)
+                        repo.filtername, len(self.entries), nodecount)
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
             repo.ui.debug("couldn't write branch cache: %s\n" %
@@ -351,7 +369,7 @@ class branchcache(dict):
             # cache key are not valid anymore
             self.tipnode = nullid
             self.tiprev = nullrev
-            for heads in self.values():
+            for heads in self.itervalues():
                 tiprev = max(cl.rev(node) for node in heads)
                 if tiprev > self.tiprev:
                     self.tipnode = cl.node(tiprev)

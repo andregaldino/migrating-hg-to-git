@@ -1556,7 +1556,7 @@ class localrepository(object):
         return scmutil.revsymbol(self, key).node()
 
     def lookupbranch(self, key):
-        if key in self.branchmap():
+        if key in self.branchmap().entries:
             return key
 
         return scmutil.revsymbol(self, key).branch()
@@ -2730,7 +2730,7 @@ class localrepository(object):
         if branch is None:
             branch = self[None].branch()
         branches = self.branchmap()
-        if branch not in branches:
+        if branch not in branches.entries:
             return []
         # the cache returns heads ordered lowest to highest
         bheads = list(reversed(branches.branchheads(branch, closed=closed)))
