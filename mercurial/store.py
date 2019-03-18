@@ -481,6 +481,8 @@ class fncache(object):
                 # chunksize, so let's keep iterating
                 pass
 
+        if chunk:
+            raise error.Abort(_("fncache does not ends with a newline"))
         self._checkentries(fp)
         fp.close()
 
