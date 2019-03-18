@@ -345,6 +345,10 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     and replaced by the new ones specified to --addinclude and --addexclude.
     If --clear is specified without any further options, the narrowspec will be
     empty and will not match any files.
+
+    --import-rules accepts a path to a file containing rules, allowing you to
+    add --addinclude, --addexclude rules in bulk. Like the other include and
+    exclude switches, the changes are applied immediately.
     """
     opts = pycompat.byteskwargs(opts)
     if repository.NARROW_REQUIREMENT not in repo.requirements:
