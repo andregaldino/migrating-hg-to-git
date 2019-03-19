@@ -150,7 +150,10 @@ class branchcache(object):
     """
 
     def __init__(self, entries=(), tipnode=nullid, tiprev=nullrev,
-                 filteredhash=None, closednodes=None):
+                 filteredhash=None, closednodes=None, hasnode=None):
+        """ hasnode is a function which can be used to verify whether changelog
+        has a given node or not. If it's not provided, we assume that every node
+        we have exists in changelog """
         self.tipnode = tipnode
         self.tiprev = tiprev
         self.filteredhash = filteredhash
@@ -166,6 +169,9 @@ class branchcache(object):
         self._closedverified = False
         # branches for which nodes are verified
         self._verifiedbranches = set()
+        self._hasnode = hasnode
+        if self._hasnode is None:
+            self._hasnode = lambda x: True
 
     def __iter__(self):
         return iter(self._entries)
@@ -193,9 +199,11 @@ class branchcache(object):
             last, lrev = cachekey[:2]
             last, lrev = bin(last), int(lrev)
             filteredhash = None
+            hasnode = repo.changelog.hasnode
             if len(cachekey) > 2:
                 filteredhash = bin(cachekey[2])
-            bcache = cls(tipnode=last, tiprev=lrev, filteredhash=filteredhash)
+            bcache = cls(tipnode=last, tiprev=lrev, filteredhash=filteredhash,
+                         hasnode=hasnode)
             if not bcache.validfor(repo):
                 # invalidate the cache
                 raise ValueError(r'tip differs')
