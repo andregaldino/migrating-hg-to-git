@@ -121,9 +121,22 @@ add new commit to be amended
   $ echo a >> a
   $ hg ci -m3
 
+  $ echo 't = t' > .hgsub
+
+--interactive won't silently ignore dirty subrepos
+
+  $ echo modified > t/b
+  $ hg amend --interactive --config ui.interactive=True
+  abort: uncommitted changes in subrepository "t"
+  [255]
+  $ hg amend --interactive --config ui.interactive=True --config ui.commitsubrepos=True
+  abort: uncommitted changes in subrepository "t"
+  [255]
+
+  $ hg -R t revert -q --all --no-backup
+
 amend with one subrepo dropped
 
-  $ echo 't = t' > .hgsub
   $ hg amend
   saved backup bundle to * (glob) (obsstore-off !)
   $ hg status --change .

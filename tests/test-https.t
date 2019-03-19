@@ -2,6 +2,12 @@
 
 Proper https client requires the built-in ssl from Python 2.6.
 
+Disable the system configuration which may set stricter TLS requirements.
+This test expects that legacy TLS versions are supported.
+
+  $ OPENSSL_CONF=
+  $ export OPENSSL_CONF
+
 Make server certificates:
 
   $ CERTSDIR="$TESTDIR/sslcerts"
@@ -633,7 +639,7 @@ without client certificate:
 
   $ P="$CERTSDIR" hg id https://localhost:$HGPORT/
   warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
-  abort: error: *handshake failure* (glob)
+  abort: error: .*(\$ECONNRESET\$|certificate required|handshake failure).* (re)
   [255]
 
 with client certificate:
