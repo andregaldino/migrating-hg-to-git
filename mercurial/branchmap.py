@@ -126,6 +126,10 @@ class BranchMapCache(object):
     def clear(self):
         self._per_filter.clear()
 
+def _unknownnode(node):
+    """ raises ValueError when branchcache found a node which does not exists
+    """
+    raise ValueError(r'node %s does not exist' % pycompat.sysstr(hex(node)))
 
 class branchcache(object):
     """A dict like object that hold branches heads cache.
@@ -172,6 +176,32 @@ class branchcache(object):
         self._hasnode = hasnode
         if self._hasnode is None:
             self._hasnode = lambda x: True
+
+    def _verifyclosed(self):
+        """ verify the closed nodes we have """
+        if self._closedverified:
+            return
+        for node in self._closednodes:
+            if not self._hasnode(node):
+                _unknownnode(node)
+
+        self._closedverified = True
+
+    def _verifybranch(self, branch):
+        """ verify head nodes for the given branch. If branch is None, verify
+        for all the branches """
+        if branch not in self._entries or branch in self._verifiedbranches:
+            return
+        for n in self._entries[branch]:
+            if not self._hasnode(n):
+                _unknownnode(n)
+
+        self._verifiedbranches.add(branch)
+
+    def _verifyall(self):
+        """ verifies nodes of all the branches """
+        for b in self._entries:
+            self._verifybranch(b)
 
     def __iter__(self):
         return iter(self._entries)
