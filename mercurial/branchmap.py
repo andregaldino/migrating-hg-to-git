@@ -162,6 +162,10 @@ class branchcache(object):
         else:
             self._closednodes = closednodes
         self._entries = dict(entries)
+        # whether closed nodes are verified or not
+        self._closedverified = False
+        # branches for which nodes are verified
+        self._verifiedbranches = set()
 
     def __iter__(self):
         return iter(self._entries)
@@ -231,8 +235,10 @@ class branchcache(object):
                 raise ValueError(
                     r'node %s does not exist' % pycompat.sysstr(hex(node)))
             self._entries.setdefault(label, []).append(node)
+            self._verifiedbranches.add(label)
             if state == 'c':
                 self._closednodes.add(node)
+        self._closedverified = True
 
     @staticmethod
     def _filename(repo):
