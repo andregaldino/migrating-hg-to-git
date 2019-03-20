@@ -160,13 +160,18 @@ def _computeforwardmissing(a, b, match=None):
     mb = b.manifest()
     return mb.filesnotin(ma, match=match)
 
+def usechangesetcentricalgo(repo):
+    """Checks if we should use changeset-centric copy algorithms"""
+    return (repo.ui.config('experimental', 'copies.read-from') ==
+            'compatibility')
+
 def _committedforwardcopies(a, b, match):
     """Like _forwardcopies(), but b.rev() cannot be None (working copy)"""
     # files might have to be traced back to the fctx parent of the last
     # one-side-only changeset, but not further back than that
     repo = a._repo
 
-    if repo.ui.config('experimental', 'copies.read-from') == 'compatibility':
+    if usechangesetcentricalgo(repo):
         return _changesetforwardcopies(a, b, match)
 
     debug = repo.ui.debugflag and repo.ui.configbool('devel', 'debug.copies')

@@ -1205,7 +1205,7 @@ def _markchanges(repo, unknown, deleted, renames):
             wctx.copy(old, new)
 
 def getrenamedfn(repo, endrev=None):
-    if repo.ui.config('experimental', 'copies.read-from') == 'compatibility':
+    if copiesmod.usechangesetcentricalgo(repo):
         def getrenamed(fn, rev):
             ctx = repo[rev]
             p1copies = ctx.p1copies()
