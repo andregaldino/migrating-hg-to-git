@@ -2233,10 +2233,10 @@ def memfilefromctx(ctx):
     """
     def getfilectx(repo, memctx, path):
         fctx = ctx[path]
-        copied = fctx.copysource()
+        copysource = fctx.copysource()
         return memfilectx(repo, memctx, path, fctx.data(),
                           islink=fctx.islink(), isexec=fctx.isexec(),
-                          copied=copied)
+                          copysource=copysource)
 
     return getfilectx
 
@@ -2246,12 +2246,12 @@ def memfilefrompatch(patchstore):
     This is a convenience method for building a memctx based on a patchstore.
     """
     def getfilectx(repo, memctx, path):
-        data, mode, copied = patchstore.getfile(path)
+        data, mode, copysource = patchstore.getfile(path)
         if data is None:
             return None
         islink, isexec = mode
         return memfilectx(repo, memctx, path, data, islink=islink,
-                          isexec=isexec, copied=copied)
+                          isexec=isexec, copysource=copysource)
 
     return getfilectx
 
@@ -2377,7 +2377,7 @@ class memfilectx(committablefilectx):
     See memctx and committablefilectx for more details.
     """
     def __init__(self, repo, changectx, path, data, islink=False,
-                 isexec=False, copied=None):
+                 isexec=False, copysource=None):
         """
         path is the normalized file path relative to repository root.
         data is the file content as a string.
@@ -2394,8 +2394,8 @@ class memfilectx(committablefilectx):
         else:
             self._flags = ''
         self._copied = None
-        if copied:
-            self._copied = (copied, nullid)
+        if copysource:
+            self._copied = (copysource, nullid)
 
     def cmp(self, fctx):
         return self.data() != fctx.data()

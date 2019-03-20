@@ -2563,7 +2563,7 @@ def amend(ui, repo, old, extra, pats, opts):
                                               fctx.path(), fctx.data(),
                                               islink='l' in flags,
                                               isexec='x' in flags,
-                                              copied=copied.get(path))
+                                              copysource=copied.get(path))
                     return mctx
                 except KeyError:
                     return None

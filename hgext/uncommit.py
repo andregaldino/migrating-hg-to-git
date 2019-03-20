@@ -83,7 +83,7 @@ def _commitfiltered(repo, ctx, match, keepcommit):
         mctx = context.memfilectx(repo, memctx, fctx.path(), fctx.data(),
                                   fctx.islink(),
                                   fctx.isexec(),
-                                  copied=copied.get(path))
+                                  copysource=copied.get(path))
         return mctx
 
     if not files:

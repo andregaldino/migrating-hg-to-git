@@ -645,7 +645,7 @@ def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
                                       fctx.path(), fctx.data(),
                                       islink='l' in flags,
                                       isexec='x' in flags,
-                                      copied=copied.get(path))
+                                      copysource=copied.get(path))
             return mctx
         return None
 

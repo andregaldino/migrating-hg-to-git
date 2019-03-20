@@ -601,7 +601,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
         if path not in ctx:
             return None
         fctx = ctx[path]
-        copied = fctx.copysource()
+        copysource = fctx.copysource()
         return context.memfilectx(
             repo,
             memctx,
@@ -609,7 +609,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
             data=filedata.get(path, fctx.data()),
             islink=fctx.islink(),
             isexec=fctx.isexec(),
-            copied=copied)
+            copysource=copysource)
 
     extra = ctx.extra().copy()
     extra['fix_source'] = ctx.hex()
