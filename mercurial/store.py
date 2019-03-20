@@ -482,7 +482,9 @@ class fncache(object):
                 pass
 
         if chunk:
-            raise error.Abort(_("fncache does not ends with a newline"))
+            raise error.Abort(_("fncache does not ends with a newline"),
+                              hint=_("use 'hg debugrebuildfncache' to rebuild"
+                                     " the fncache"))
         self._checkentries(fp)
         fp.close()
 
