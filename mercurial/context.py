@@ -2393,9 +2393,10 @@ class memfilectx(committablefilectx):
             self._flags = 'x'
         else:
             self._flags = ''
-        self._copied = None
-        if copysource:
-            self._copied = (copysource, nullid)
+        self._copysource = copysource
+
+    def copysource(self):
+        return self._copysource
 
     def cmp(self, fctx):
         return self.data() != fctx.data()
