@@ -25,7 +25,8 @@ def build_py2exe(source_dir: pathlib.Path, build_dir: pathlib.Path,
                  python_exe: pathlib.Path, build_name: str,
                  venv_requirements_txt: pathlib.Path,
                  extra_packages=None, extra_excludes=None,
-                 extra_dll_excludes=None):
+                 extra_dll_excludes=None,
+                 extra_packages_script=None):
     """Build Mercurial with py2exe.
 
     Build files will be placed in ``build_dir``.
@@ -104,6 +105,16 @@ def build_py2exe(source_dir: pathlib.Path, build_dir: pathlib.Path,
     env = dict(os.environ)
     env['DISTUTILS_USE_SDK'] = '1'
     env['MSSdk'] = '1'
+
+    if extra_packages_script:
+        more_packages = set(subprocess.check_output(
+            extra_packages_script,
+            cwd=build_dir).split(b'\0')[-1].strip().decode('utf-8').splitlines())
+        if more_packages:
+            if not extra_packages:
+                extra_packages = more_packages
+            else:
+                extra_packages |= more_packages
 
     if extra_packages:
         env['HG_PY2EXE_EXTRA_PACKAGES'] = ' '.join(sorted(extra_packages))

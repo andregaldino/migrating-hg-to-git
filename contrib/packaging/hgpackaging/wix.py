@@ -177,7 +177,8 @@ def make_libraries_xml(wix_dir: pathlib.Path, dist_dir: pathlib.Path):
 
 
 def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
-                    msi_name='mercurial', version=None, post_build_fn=None):
+                    msi_name='mercurial', version=None, post_build_fn=None,
+                    extra_packages_script=None):
     """Build a WiX MSI installer.
 
     ``source_dir`` is the path to the Mercurial source tree to use.
@@ -189,6 +190,10 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
     Mercurial but before invoking WiX. It can be used to e.g. facilitate
     signing. It is passed the paths to the Mercurial source, build, and
     dist directories and the resolved Mercurial version.
+    ``extra_packages_script`` is a command to be run to inject extra packages
+    into the py2exe binary. It should stage packages into the virtualenv and
+    print a null byte followed by a newline-separated list of packages that
+    should be included in the exe.
     """
     arch = 'x64' if r'\x64' in os.environ.get('LIB', '') else 'x86'
 
@@ -200,7 +205,8 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
 
     build_py2exe(source_dir, hg_build_dir,
                  python_exe, 'wix', requirements_txt,
-                 extra_packages=EXTRA_PACKAGES)
+                 extra_packages=EXTRA_PACKAGES,
+                 extra_packages_script=extra_packages_script)
 
     version = version or normalize_version(find_version(source_dir))
     print('using version string: %s' % version)
@@ -280,7 +286,7 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
 def build_signed_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
                            name: str, version=None, subject_name=None,
                            cert_path=None, cert_password=None,
-                           timestamp_url=None):
+                           timestamp_url=None, extra_packages_script=None):
     """Build an installer with signed executables."""
 
     post_build_fn = make_post_build_signing_fn(
@@ -292,7 +298,8 @@ def build_signed_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
 
     info = build_installer(source_dir, python_exe=python_exe,
                            msi_name=name.lower(), version=version,
-                           post_build_fn=post_build_fn)
+                           post_build_fn=post_build_fn,
+                           extra_packages_script=extra_packages_script)
 
     description = '%s %s' % (name, version)
 

@@ -34,6 +34,9 @@ if __name__ == '__main__':
                         help='URL of timestamp server to use for signing')
     parser.add_argument('--version',
                         help='Version string to use')
+    parser.add_argument('--extra-packages-script',
+                        help=('Script to execute to include extra packages in '
+                              'py2exe binary.'))
 
     args = parser.parse_args()
 
@@ -53,6 +56,9 @@ if __name__ == '__main__':
         'python_exe': pathlib.Path(args.python),
         'version': args.version,
     }
+
+    if args.extra_packages_script:
+        kwargs['extra_packages_script'] = args.extra_packages_script
 
     if args.sign_sn or args.sign_cert:
         fn = build_signed_installer
