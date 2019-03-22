@@ -280,8 +280,8 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     for rev in sorted(revstofix):
         fixctx = repo[rev]
         match = scmutil.match(fixctx, pats, opts)
-        for path in pathstofix(ui, repo, pats, opts, match, basectxs[rev],
-                               fixctx):
+        for path in sorted(pathstofix(
+                        ui, repo, pats, opts, match, basectxs[rev], fixctx)):
             fctx = fixctx[path]
             if fctx.islink():
                 continue
