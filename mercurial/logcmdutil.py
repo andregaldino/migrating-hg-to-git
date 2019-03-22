@@ -129,19 +129,19 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
             for chunk, label in chunks:
                 ui.write(chunk, label=label)
 
-    if listsubrepos:
-        for subpath, sub in scmutil.itersubrepos(ctx1, ctx2):
-            tempnode2 = node2
-            try:
-                if node2 is not None:
-                    tempnode2 = ctx2.substate[subpath][1]
-            except KeyError:
-                # A subrepo that existed in node1 was deleted between node1 and
-                # node2 (inclusive). Thus, ctx2's substate won't contain that
-                # subpath. The best we can do is to ignore it.
-                tempnode2 = None
-            submatch = matchmod.subdirmatcher(subpath, match)
-            subprefix = repo.wvfs.reljoin(prefix, subpath)
+    for subpath, sub in scmutil.itersubrepos(ctx1, ctx2):
+        tempnode2 = node2
+        try:
+            if node2 is not None:
+                tempnode2 = ctx2.substate[subpath][1]
+        except KeyError:
+            # A subrepo that existed in node1 was deleted between node1 and
+            # node2 (inclusive). Thus, ctx2's substate won't contain that
+            # subpath. The best we can do is to ignore it.
+            tempnode2 = None
+        submatch = matchmod.subdirmatcher(subpath, match)
+        subprefix = repo.wvfs.reljoin(prefix, subpath)
+        if listsubrepos or match.exact(subpath) or any(submatch.files()):
             sub.diff(ui, diffopts, tempnode2, submatch, changes=changes,
                      stat=stat, fp=fp, prefix=subprefix)
 

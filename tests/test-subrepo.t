@@ -1875,6 +1875,19 @@ Test that '[paths]' is configured correctly at subrepo creation
   @@ -0,0 +1,1 @@
   +bar
 
+  $ hg diff -X '.hgsub*' --nodates s
+  diff -r 000000000000 s/a
+  --- /dev/null
+  +++ b/s/a
+  @@ -0,0 +1,1 @@
+  +a
+  $ hg diff -X '.hgsub*' --nodates s/a
+  diff -r 000000000000 s/a
+  --- /dev/null
+  +++ b/s/a
+  @@ -0,0 +1,1 @@
+  +a
+
   $ cd ..
 
 test for ssh exploit 2017-07-25
