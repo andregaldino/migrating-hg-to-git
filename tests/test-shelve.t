@@ -928,6 +928,20 @@ with general delta
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       330882a04d2ce8487636b1fb292e5beea77fa1e3
+
+Test shelve --keep
+
+  $ hg unshelve
+  unshelving change 'default'
+  $ hg shelve --keep
+  shelved as default
+  $ hg diff
+  diff --git a/jungle b/jungle
+  new file mode 100644
+  --- /dev/null
+  +++ b/jungle
+  @@ -0,0 +1,1 @@
+  +babar
   $ cd ..
 
 Test visibility of in-memory changes inside transaction to external hook

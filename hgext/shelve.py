@@ -499,14 +499,19 @@ def _docreatecmd(ui, repo, pats, opts):
             return 1
 
         # Create a matcher so that prefetch doesn't attempt to fetch
-        # the entire repository pointlessly
+        # the entire repository pointlessly, and as an optimisation
+        # for movedirstate, if needed.
         match = scmutil.matchfiles(repo, repo[node].files())
         _shelvecreatedcommit(repo, node, name, match)
 
         if ui.formatted():
             desc = stringutil.ellipsis(desc, ui.termwidth())
         ui.status(_('shelved as %s\n') % name)
-        hg.update(repo, parent.node())
+        if opts['keep']:
+            with repo.dirstate.parentchange():
+                scmutil.movedirstate(repo, parent, match)
+        else:
+            hg.update(repo, parent.node())
         if origbranch != repo['.'].branch() and not _isbareshelve(pats, opts):
             repo.dirstate.setbranch(origbranch)
 
