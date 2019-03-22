@@ -100,7 +100,10 @@ username =
 # uncomment the lines below to enable some popular extensions
 # (see 'hg help extensions' for more info)
 #
-# churn =
+# histedit =
+# rebase =
+# shelve =
+# uncommit =
 """,
 
     'cloned':
