@@ -97,7 +97,7 @@ username =
 # paginate = never
 
 [extensions]
-# uncomment these lines to enable some popular extensions
+# uncomment the lines below to enable some popular extensions
 # (see 'hg help extensions' for more info)
 #
 # churn =
@@ -149,7 +149,7 @@ b"""# example system-wide hg config (see 'hg help config' for more info)
 # paginate = never
 
 [extensions]
-# uncomment these lines to enable some popular extensions
+# uncomment the lines below to enable some popular extensions
 # (see 'hg help extensions' for more info)
 #
 # blackbox =
