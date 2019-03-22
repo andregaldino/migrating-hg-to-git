@@ -420,14 +420,11 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
     else:
         ui.status(_("nothing changed\n"))
 
-def _shelvecreatedcommit(repo, node, name):
+def _shelvecreatedcommit(repo, node, name, match):
     info = {'node': nodemod.hex(node)}
     shelvedfile(repo, name, 'shelve').writeinfo(info)
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, 'hg').writebundle(bases, node)
-    # Create a matcher so that prefetch doesn't attempt to fetch the entire
-    # repository pointlessly.
-    match = scmutil.matchfiles(repo, repo[node].files())
     with shelvedfile(repo, name, patchextension).opener('wb') as fp:
         cmdutil.exportfile(repo, [node], fp, opts=mdiff.diffopts(git=True),
                            match=match)
@@ -501,7 +498,10 @@ def _docreatecmd(ui, repo, pats, opts):
             _nothingtoshelvemessaging(ui, repo, pats, opts)
             return 1
 
-        _shelvecreatedcommit(repo, node, name)
+        # Create a matcher so that prefetch doesn't attempt to fetch
+        # the entire repository pointlessly
+        match = scmutil.matchfiles(repo, repo[node].files())
+        _shelvecreatedcommit(repo, node, name, match)
 
         if ui.formatted():
             desc = stringutil.ellipsis(desc, ui.termwidth())
