@@ -282,8 +282,6 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
         match = scmutil.match(fixctx, pats, opts)
         for path in pathstofix(ui, repo, pats, opts, match, basectxs[rev],
                                fixctx):
-            if path not in fixctx:
-                continue
             fctx = fixctx[path]
             if fctx.islink():
                 continue

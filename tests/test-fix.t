@@ -354,6 +354,10 @@ and without providing explicit file arguments.
 
   $ printf "modified!!!\n" > modified.whole
   $ printf "added\n" > added.whole
+
+Listing the files explicitly causes untracked files to also be fixed, but
+ignored files are still unaffected.
+
   $ hg fix --working-dir *.whole
 
   $ hg status --all
@@ -366,13 +370,12 @@ and without providing explicit file arguments.
   I ignored.whole
   C .hgignore
 
-It would be better if this also fixed the unknown file.
   $ cat *.whole
   ADDED
   CLEAN
   ignored
   MODIFIED!!!
-  unknown
+  UNKNOWN
 
   $ cd ..
 
