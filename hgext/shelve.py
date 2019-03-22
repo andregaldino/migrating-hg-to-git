@@ -1055,6 +1055,8 @@ def _dounshelve(ui, repo, *shelved, **opts):
            _('delete the named shelved change(s)')),
           ('e', 'edit', False,
            _('invoke editor on commit messages')),
+          ('k', 'keep', False,
+           _('shelve, but keep changes in the working directory')),
           ('l', 'list', None,
            _('list current shelves')),
           ('m', 'message', '',
