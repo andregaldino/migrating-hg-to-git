@@ -72,12 +72,43 @@ in a text file by ensuring that 'sort' runs before 'head'::
 To account for changes made by each tool, the line numbers used for incremental
 formatting are recomputed before executing the next tool. So, each tool may see
 different values for the arguments added by the :linerange suboption.
+
+Each fixer tool is allowed to return some metadata in addition to the fixed file
+content. The metadata must be placed before the file content on stdout,
+separated from the file content by a zero byte. The metadata is parsed as a JSON
+value (so, it should be UTF-8 encoded and contain no zero bytes). A fixer tool
+is expected to produce this metadata encoding if and only if the :metadata
+suboption is true::
+
+  [fix]
+  tool:command = tool --prepend-json-metadata
+  tool:metadata = true
+
+The metadata values are passed to hooks, which can be used to print summaries or
+perform other post-fixing work. The supported hooks are::
+
+  "postfixfile"
+    Run once for each file in each revision where any fixer tools made changes
+    to the file content. Provides "$HG_REV" and "$HG_PATH" to identify the file,
+    and "$HG_METADATA" with a map of fixer names to metadata values from fixer
+    tools that affected the file. Fixer tools that didn't affect the file have a
+    valueof None. Only fixer tools that executed are present in the metadata.
+
+  "postfix"
+    Run once after all files and revisions have been handled. Provides
+    "$HG_REPLACEMENTS" with information about what revisions were created and
+    made obsolete. Provides a boolean "$HG_WDIRWRITTEN" to indicate whether any
+    files in the working copy were updated. Provides a list "$HG_METADATA"
+    mapping fixer tool names to lists of metadata values returned from
+    executions that modified a file. This aggregates the same metadata
+    previously passed to the "postfixfile" hook.
 """
 
 from __future__ import absolute_import
 
 import collections
 import itertools
+import json
 import os
 import re
 import subprocess
@@ -117,13 +148,14 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-# Register the suboptions allowed for each configured fixer.
+# Register the suboptions allowed for each configured fixer, and default values.
 FIXER_ATTRS = {
     'command': None,
     'linerange': None,
     'fileset': None,
     'pattern': None,
     'priority': 0,
+    'metadata': False,
 }
 
 for key, default in FIXER_ATTRS.items():
@@ -201,10 +233,12 @@ def fix(ui, repo, *pats, **opts):
             for rev, path in items:
                 ctx = repo[rev]
                 olddata = ctx[path].data()
-                newdata = fixfile(ui, opts, fixers, ctx, path, basectxs[rev])
+                metadata, newdata = fixfile(ui, opts, fixers, ctx, path,
+                                            basectxs[rev])
                 # Don't waste memory/time passing unchanged content back, but
                 # produce one result per item either way.
-                yield (rev, path, newdata if newdata != olddata else None)
+                yield (rev, path, metadata,
+                       newdata if newdata != olddata else None)
         results = worker.worker(ui, 1.0, getfixes, tuple(), workqueue,
                                 threadsafe=False)
 
@@ -215,15 +249,25 @@ def fix(ui, repo, *pats, **opts):
         # the tests deterministic. It might also be considered a feature since
         # it makes the results more easily reproducible.
         filedata = collections.defaultdict(dict)
+        aggregatemetadata = collections.defaultdict(list)
         replacements = {}
         wdirwritten = False
         commitorder = sorted(revstofix, reverse=True)
         with ui.makeprogress(topic=_('fixing'), unit=_('files'),
                              total=sum(numitems.values())) as progress:
-            for rev, path, newdata in results:
+            for rev, path, filerevmetadata, newdata in results:
                 progress.increment(item=path)
+                for fixername, fixermetadata in filerevmetadata.items():
+                    aggregatemetadata[fixername].append(fixermetadata)
                 if newdata is not None:
                     filedata[rev][path] = newdata
+                    hookargs = {
+                      'rev': rev,
+                      'path': path,
+                      'metadata': filerevmetadata,
+                    }
+                    repo.hook('postfixfile', throw=False,
+                              **pycompat.strkwargs(hookargs))
                 numitems[rev] -= 1
                 # Apply the fixes for this and any other revisions that are
                 # ready and sitting at the front of the queue. Using a loop here
@@ -240,6 +284,12 @@ def fix(ui, repo, *pats, **opts):
                     del filedata[rev]
 
         cleanup(repo, replacements, wdirwritten)
+        hookargs = {
+            'replacements': replacements,
+            'wdirwritten': wdirwritten,
+            'metadata': aggregatemetadata,
+        }
+        repo.hook('postfix', throw=True, **pycompat.strkwargs(hookargs))
 
 def cleanup(repo, replacements, wdirwritten):
     """Calls scmutil.cleanupnodes() with the given replacements.
@@ -491,6 +541,7 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
     A fixer tool's stdout will become the file's new content if and only if it
     exits with code zero.
     """
+    metadata = {}
     newdata = fixctx[path].data()
     for fixername, fixer in fixers.iteritems():
         if fixer.affects(opts, fixctx, path):
@@ -506,9 +557,20 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
-            newerdata, stderr = proc.communicate(newdata)
+            stdout, stderr = proc.communicate(newdata)
             if stderr:
                 showstderr(ui, fixctx.rev(), fixername, stderr)
+            newerdata = stdout
+            if fixer.shouldoutputmetadata():
+                try:
+                    metadatajson, newerdata = stdout.split('\0', 1)
+                    metadata[fixername] = json.loads(metadatajson)
+                except ValueError:
+                    ui.warn(_('ignored invalid output from fixer tool: %s\n') %
+                            (fixername,))
+                    continue
+            else:
+                metadata[fixername] = None
             if proc.returncode == 0:
                 newdata = newerdata
             else:
@@ -519,7 +581,7 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
                     ui, _('no fixes will be applied'),
                     hint=_('use --config fix.failure=continue to apply any '
                            'successful fixes anyway'))
-    return newdata
+    return metadata, newdata
 
 def showstderr(ui, rev, fixername, stderr):
     """Writes the lines of the stderr string as warnings on the ui
@@ -666,6 +728,10 @@ class Fixer(object):
     def affects(self, opts, fixctx, path):
         """Should this fixer run on the file at the given path and context?"""
         return scmutil.match(fixctx, [self._pattern], opts)(path)
+
+    def shouldoutputmetadata(self):
+        """Should the stdout of this fixer start with JSON and a null byte?"""
+        return self._metadata
 
     def command(self, ui, path, rangesfn):
         """A shell command to use to invoke this fixer on the given file/lines
