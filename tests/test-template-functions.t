@@ -1499,11 +1499,15 @@ Test cbor filter:
 
   $ cat <<'EOF' > "$TESTTMP/decodecbor.py"
   > from __future__ import absolute_import
-  > from mercurial import pycompat
+  > from mercurial import (
+  >     dispatch,
+  >     pycompat,
+  > )
   > from mercurial.utils import (
   >     cborutil,
   >     stringutil,
   > )
+  > dispatch.initstdio()
   > items = cborutil.decodeall(pycompat.stdin.read())
   > pycompat.stdout.write(stringutil.pprint(items, indent=1) + b'\n')
   > EOF

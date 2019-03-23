@@ -673,11 +673,15 @@ test CBOR style:
 
   $ cat <<'EOF' > "$TESTTMP/decodecborarray.py"
   > from __future__ import absolute_import
-  > from mercurial import pycompat
+  > from mercurial import (
+  >     dispatch,
+  >     pycompat,
+  > )
   > from mercurial.utils import (
   >     cborutil,
   >     stringutil,
   > )
+  > dispatch.initstdio()
   > data = pycompat.stdin.read()
   > # our CBOR decoder doesn't support parsing indefinite-length arrays,
   > # but the log output is indefinite stream by nature.
