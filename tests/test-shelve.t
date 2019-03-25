@@ -1111,3 +1111,49 @@ Keep active bookmark while (un)shelving even on shared repo (issue4940)
      test                      (4|13):33f7f61e6c5e (re)
 
   $ cd ..
+
+Abort unshelve while merging (issue5123)
+----------------------------------------
+
+  $ hg init issue5123
+  $ cd issue5123
+  $ echo > a
+  $ hg ci -Am a
+  adding a
+  $ hg co null
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo > b
+  $ hg ci -Am b
+  adding b
+  created new head
+  $ echo > c
+  $ hg add c
+  $ hg shelve
+  shelved as default
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg co 1
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 0
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+-- successful merge with two parents
+  $ hg log -G
+  @  changeset:   1:406bf70c274f
+     tag:         tip
+     parent:      -1:000000000000
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     b
+  
+  @  changeset:   0:ada8c9eb8252
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     a
+  
+-- trying to pull in the shelve bits
+-- unshelve should abort otherwise, it'll eat my second parent.
+  $ hg unshelve
+  abort: cannot unshelve while merging
+  [255]
+
+  $ cd ..

@@ -978,6 +978,12 @@ def _dounshelve(ui, repo, *shelved, **opts):
             return unshelvecontinue(ui, repo, state, opts)
     elif len(shelved) > 1:
         raise error.Abort(_('can only unshelve one change at a time'))
+
+    # abort unshelve while merging (issue5123)
+    parents = repo[None].parents()
+    if len(parents) > 1:
+        raise error.Abort(_('cannot unshelve while merging'))
+
     elif not shelved:
         shelved = listshelves(repo)
         if not shelved:
