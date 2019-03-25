@@ -32,14 +32,14 @@ perfstatus
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
-  > perfstatusext=$CONTRIBDIR/perf.py
+  > perf=$CONTRIBDIR/perf.py
   > [perf]
   > presleep=0
   > stub=on
   > parentscount=1
   > EOF
-  $ hg help perfstatusext
-  perfstatusext extension - helper extension to measure performance
+  $ hg help -e perf
+  perf extension - helper extension to measure performance
   
   list of commands:
   
@@ -142,7 +142,7 @@ perfstatus
    perfwalk      (no help text available)
    perfwrite     microbenchmark ui.write
   
-  (use 'hg help -v perfstatusext' to show built-in aliases and global options)
+  (use 'hg help -v perf' to show built-in aliases and global options)
   $ hg perfaddremove
   $ hg perfancestors
   $ hg perfancestorset 2
