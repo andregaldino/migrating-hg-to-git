@@ -933,6 +933,15 @@ Test shelve --keep
 
   $ hg unshelve
   unshelving change 'default'
+  $ hg shelve --keep --list
+  abort: options '--list' and '--keep' may not be used together
+  [255]
+  $ hg shelve --keep --patch
+  abort: options '--patch' and '--keep' may not be used together
+  [255]
+  $ hg shelve --keep --delete
+  abort: options '--delete' and '--keep' may not be used together
+  [255]
   $ hg shelve --keep
   shelved as default
   $ hg diff

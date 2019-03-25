@@ -1120,6 +1120,7 @@ def shelvecmd(ui, repo, *pats, **opts):
 #       ('date', {'create'}), # ignored for passing '--date "0 0"' in tests
         ('delete', {'delete'}),
         ('edit', {'create'}),
+        ('keep', {'create'}),
         ('list', {'list'}),
         ('message', {'create'}),
         ('name', {'create'}),
