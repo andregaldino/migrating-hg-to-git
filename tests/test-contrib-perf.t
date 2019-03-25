@@ -129,7 +129,7 @@ perfstatus
                  (no help text available)
    perfnodemap   benchmark the time necessary to look up revision from a cold
                  nodemap
-   perfparents   (no help text available)
+   perfparents   benchmark the time necessary to fetch one changeset's parents.
    perfpathcopies
                  benchmark the copy tracing logic
    perfphases    benchmark phasesets computation

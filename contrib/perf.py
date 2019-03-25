@@ -1164,6 +1164,13 @@ def perfstartup(ui, repo, **opts):
 
 @command(b'perfparents', formatteropts)
 def perfparents(ui, repo, **opts):
+    """benchmark the time necessary to fetch one changeset's parents.
+
+    The fetch is done using the `node identifier`, traversing all object layer
+    from the repository object. The N first revision will be used for this
+    benchmark. N is controlled by the ``perf.parentscount`` config option
+    (default: 1000).
+    """
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     # control the number of commits perfparents iterates over
