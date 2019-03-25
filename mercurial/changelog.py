@@ -35,16 +35,24 @@ def _string_escape(text):
     """
     >>> from .pycompat import bytechr as chr
     >>> d = {b'nl': chr(10), b'bs': chr(92), b'cr': chr(13), b'nul': chr(0)}
-    >>> s = b"ab%(nl)scd%(bs)s%(bs)sn%(nul)sab%(cr)scd%(bs)s%(nl)s" % d
+    >>> s = b"ab%(nl)scd%(bs)s%(bs)sn%(nul)s12ab%(cr)scd%(bs)s%(nl)s" % d
     >>> s
-    'ab\\ncd\\\\\\\\n\\x00ab\\rcd\\\\\\n'
+    'ab\\ncd\\\\\\\\n\\x0012ab\\rcd\\\\\\n'
     >>> res = _string_escape(s)
-    >>> s == stringutil.unescapestr(res)
+    >>> s == _string_unescape(res)
     True
     """
     # subset of the string_escape codec
     text = text.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
     return text.replace('\0', '\\0')
+
+def _string_unescape(text):
+    if '\\0' in text:
+        # fix up \0 without getting into trouble with \\0
+        text = text.replace('\\\\', '\\\\\n')
+        text = text.replace('\\0', '\0')
+        text = text.replace('\n', '')
+    return stringutil.unescapestr(text)
 
 def decodeextra(text):
     """
@@ -60,12 +68,7 @@ def decodeextra(text):
     extra = _defaultextra.copy()
     for l in text.split('\0'):
         if l:
-            if '\\0' in l:
-                # fix up \0 without getting into trouble with \\0
-                l = l.replace('\\\\', '\\\\\n')
-                l = l.replace('\\0', '\0')
-                l = l.replace('\n', '')
-            k, v = stringutil.unescapestr(l).split(':', 1)
+            k, v = _string_unescape(l).split(':', 1)
             extra[k] = v
     return extra
 
