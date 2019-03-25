@@ -41,6 +41,24 @@ perfstatus
   $ hg help -e perf
   perf extension - helper extension to measure performance
   
+  Configurations
+  ==============
+  
+  "perf"
+  ------
+  
+  "all-timing"
+      When set, additional statistic will be reported for each benchmark: best,
+      worst, median average. If not set only the best timing is reported
+      (default: off).
+  
+  "presleep"
+    number of second to wait before any group of run (default: 1)
+  
+  "stub"
+      When set, benchmark will only be run once, useful for testing (default:
+      off)
+  
   list of commands:
   
    perfaddremove
