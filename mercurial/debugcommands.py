@@ -817,9 +817,38 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     localrevs = opts['rev']
     common, hds = doit(localrevs, remoterevs)
 
+    # compute all statistics
     common = set(common)
     rheads = set(hds)
     lheads = set(repo.heads())
+
+    data = {}
+    data['nb-common'] = len(common)
+    data['nb-common-local'] = len(common & lheads)
+    data['nb-common-remote'] = len(common & rheads)
+    data['nb-local'] = len(lheads)
+    data['nb-local-missing'] = data['nb-local'] - data['nb-common-local']
+    data['nb-remote'] = len(rheads)
+    data['nb-remote-unknown'] = data['nb-remote'] - data['nb-common-remote']
+    data['nb-revs'] = len(repo.revs('all()'))
+    data['nb-revs-common'] = len(repo.revs('::%ln', common))
+    data['nb-revs-missing'] = data['nb-revs'] - data['nb-revs-common']
+
+    # display discovery summary
+    ui.write(("heads summary:\n"))
+    ui.write(("  total common heads:  %(nb-common)9d\n") % data)
+    ui.write(("    also local heads:  %(nb-common-local)9d\n") % data)
+    ui.write(("    also remote heads: %(nb-common-remote)9d\n") % data)
+    ui.write(("  local heads:         %(nb-local)9d\n") % data)
+    ui.write(("    common:            %(nb-common-local)9d\n") % data)
+    ui.write(("    missing:           %(nb-local-missing)9d\n") % data)
+    ui.write(("  remote heads:        %(nb-remote)9d\n") % data)
+    ui.write(("    common:            %(nb-common-remote)9d\n") % data)
+    ui.write(("    unknown:           %(nb-remote-unknown)9d\n") % data)
+    ui.write(("local changesets:      %(nb-revs)9d\n") % data)
+    ui.write(("  common:              %(nb-revs-common)9d\n") % data)
+    ui.write(("  missing:             %(nb-revs-missing)9d\n") % data)
+
     ui.write(("common heads: %s\n") %
              " ".join(sorted(short(n) for n in common)))
     if lheads <= common:
