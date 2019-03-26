@@ -851,10 +851,6 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
 
     ui.write(("common heads: %s\n") %
              " ".join(sorted(short(n) for n in common)))
-    if lheads <= common:
-        ui.write(("local is subset\n"))
-    elif rheads <= common:
-        ui.write(("remote is subset\n"))
 
 _chunksize = 4 << 10
 

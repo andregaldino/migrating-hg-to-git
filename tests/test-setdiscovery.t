@@ -57,7 +57,6 @@ Small superset:
     common:                      7
     missing:                     0
   common heads: 01241442b3c2 b5714e113bc0
-  local is subset
   
   % -- a -> b set
   comparing with b
@@ -78,7 +77,6 @@ Small superset:
     common:                      7
     missing:                     0
   common heads: 01241442b3c2 b5714e113bc0
-  local is subset
   
   % -- a -> b set (tip only)
   comparing with b
@@ -118,7 +116,6 @@ Small superset:
     common:                      7
     missing:                     8
   common heads: 01241442b3c2 b5714e113bc0
-  remote is subset
   
   % -- b -> a set
   comparing with a
@@ -139,7 +136,6 @@ Small superset:
     common:                      7
     missing:                     8
   common heads: 01241442b3c2 b5714e113bc0
-  remote is subset
   
   % -- b -> a set (tip only)
   comparing with a
@@ -160,7 +156,6 @@ Small superset:
     common:                      7
     missing:                     8
   common heads: 01241442b3c2 b5714e113bc0
-  remote is subset
 
 
 Many new:
