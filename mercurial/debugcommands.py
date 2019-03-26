@@ -849,8 +849,9 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     ui.write(("  common:              %(nb-revs-common)9d\n") % data)
     ui.write(("  missing:             %(nb-revs-missing)9d\n") % data)
 
-    ui.write(("common heads: %s\n") %
-             " ".join(sorted(short(n) for n in common)))
+    if ui.verbose:
+        ui.write(("common heads: %s\n") %
+                 " ".join(sorted(short(n) for n in common)))
 
 _chunksize = 4 << 10
 
