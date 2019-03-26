@@ -785,8 +785,10 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     # make sure tests are repeatable
     random.seed(int(opts['seed']))
 
-    def doit(pushedrevs, remoteheads, remote=remote):
-        if opts.get('old'):
+
+
+    if opts.get('old'):
+        def doit(pushedrevs, remoteheads, remote=remote):
             if not util.safehasattr(remote, 'branches'):
                 # enable in-client legacy support
                 remote = localrepo.locallegacypeer(remote.local())
@@ -800,26 +802,30 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
                 clnode = repo.changelog.node
                 common = repo.revs('heads(::%ln)', common)
                 common = {clnode(r) for r in common}
-        else:
+            return common, hds
+    else:
+        def doit(pushedrevs, remoteheads, remote=remote):
             nodes = None
             if pushedrevs:
                 revs = scmutil.revrange(repo, pushedrevs)
                 nodes = [repo[r].node() for r in revs]
             common, any, hds = setdiscovery.findcommonheads(ui, repo, remote,
                                                             ancestorsof=nodes)
-        common = set(common)
-        rheads = set(hds)
-        lheads = set(repo.heads())
-        ui.write(("common heads: %s\n") %
-                 " ".join(sorted(short(n) for n in common)))
-        if lheads <= common:
-            ui.write(("local is subset\n"))
-        elif rheads <= common:
-            ui.write(("remote is subset\n"))
+            return common, hds
 
     remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
     localrevs = opts['rev']
-    doit(localrevs, remoterevs)
+    common, hds = doit(localrevs, remoterevs)
+
+    common = set(common)
+    rheads = set(hds)
+    lheads = set(repo.heads())
+    ui.write(("common heads: %s\n") %
+             " ".join(sorted(short(n) for n in common)))
+    if lheads <= common:
+        ui.write(("local is subset\n"))
+    elif rheads <= common:
+        ui.write(("remote is subset\n"))
 
 _chunksize = 4 << 10
 
