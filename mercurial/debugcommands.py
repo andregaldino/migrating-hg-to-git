@@ -815,7 +815,8 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
 
     remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
     localrevs = opts['rev']
-    common, hds = doit(localrevs, remoterevs)
+    with util.timedcm('debug-discovery') as t:
+        common, hds = doit(localrevs, remoterevs)
 
     # compute all statistics
     common = set(common)
@@ -823,6 +824,7 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     lheads = set(repo.heads())
 
     data = {}
+    data['elapsed'] = t.elapsed
     data['nb-common'] = len(common)
     data['nb-common-local'] = len(common & lheads)
     data['nb-common-remote'] = len(common & rheads)
@@ -835,6 +837,7 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     data['nb-revs-missing'] = data['nb-revs'] - data['nb-revs-common']
 
     # display discovery summary
+    ui.write(("elapsed time:  %(elapsed)f seconds\n") % data)
     ui.write(("heads summary:\n"))
     ui.write(("  total common heads:  %(nb-common)9d\n") % data)
     ui.write(("    also local heads:  %(nb-common-local)9d\n") % data)
