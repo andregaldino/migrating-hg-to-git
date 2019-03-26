@@ -8,25 +8,26 @@ Configurations
 --------
 
 ``all-timing``
-    When set, additional statistic will be reported for each benchmark: best,
+    When set, additional statistics will be reported for each benchmark: best,
     worst, median average. If not set only the best timing is reported
     (default: off).
 
 ``presleep``
-  number of second to wait before any group of run (default: 1)
+  number of second to wait before any group of runs (default: 1)
 
 ``run-limits``
-  Control the number of run each benchmark will perform. The option value
+  Control the number of runs each benchmark will perform. The option value
   should be a list of `<time>-<numberofrun>` pairs. After each run the
-  condition are considered in order with the following logic:
+  conditions are considered in order with the following logic:
 
-      If benchmark have been running for <time> seconds, and we have performed
+      If benchmark has been running for <time> seconds, and we have performed
       <numberofrun> iterations, stop the benchmark,
 
   The default value is: `3.0-100, 10.0-3`
 
 ``stub``
-    When set, benchmark will only be run once, useful for testing (default: off)
+    When set, benchmarks will only be run once, useful for testing
+    (default: off)
 '''
 
 # "historical portability" policy of perf.py:
@@ -1217,8 +1218,8 @@ def perfstartup(ui, repo, **opts):
 def perfparents(ui, repo, **opts):
     """benchmark the time necessary to fetch one changeset's parents.
 
-    The fetch is done using the `node identifier`, traversing all object layer
-    from the repository object. The N first revision will be used for this
+    The fetch is done using the `node identifier`, traversing all object layers
+    from the repository object. The first N revisions will be used for this
     benchmark. N is controlled by the ``perf.parentscount`` config option
     (default: 1000).
     """
