@@ -1497,7 +1497,7 @@ def _chistedit(ui, repo, *freeargs, **opts):
             ui.write(_("histedit aborted\n"))
             return 0
         if type(rc) is list:
-            ui.status(_("running histedit\n"))
+            ui.status(_("performing changes\n"))
             rules = makecommands(rc)
             filename = repo.vfs.join('chistedit')
             with open(filename, 'w+') as fp:
