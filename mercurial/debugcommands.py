@@ -772,6 +772,7 @@ def debugstate(ui, repo, **opts):
     ('', 'nonheads', None,
      _('use old-style discovery with non-heads included')),
     ('', 'rev', [], 'restrict discovery to this set of revs'),
+    ('', 'seed', '12323', 'specify the random seed use for discovery'),
     ] + cmdutil.remoteopts,
     _('[--rev REV] [OTHER]'))
 def debugdiscovery(ui, repo, remoteurl="default", **opts):
@@ -782,7 +783,7 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     ui.status(_('comparing with %s\n') % util.hidepassword(remoteurl))
 
     # make sure tests are repeatable
-    random.seed(12323)
+    random.seed(int(opts['seed']))
 
     def doit(pushedrevs, remoteheads, remote=remote):
         if opts.get('old'):
