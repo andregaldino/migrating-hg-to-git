@@ -645,6 +645,8 @@ def gathersupportedrequirements(ui):
         engine = util.compengines[name]
         if engine.available() and engine.revlogheader():
             supported.add(b'exp-compression-%s' % name)
+            if engine.name() == 'zstd':
+                supported.add(b'revlog-compression-zstd')
 
     return supported
 
@@ -794,8 +796,13 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         options[b'maxchainlen'] = maxchainlen
 
     for r in requirements:
-        if r.startswith(b'exp-compression-'):
-            options[b'compengine'] = r[len(b'exp-compression-'):]
+        # we allow multiple compression engine requirement to co-exist because
+        # strickly speaking, revlog seems to support mixed compression style.
+        #
+        # The compression used for new entries will be "the last one"
+        prefix = r.startswith
+        if prefix('revlog-compression-') or prefix('exp-compression-'):
+            options[b'compengine'] = r.split('-', 2)[2]
 
     options[b'zlib.level'] = ui.configint(b'storage', b'revlog.zlib.level')
     if options[b'zlib.level'] is not None:
@@ -2943,7 +2950,9 @@ def newreporequirements(ui, createopts):
                                  'compression engines'))
 
     # zlib is the historical default and doesn't need an explicit requirement.
-    if compengine != 'zlib':
+    elif compengine == 'zstd':
+        requirements.add('revlog-compression-zstd')
+    elif compengine != 'zlib':
         requirements.add('exp-compression-%s' % compengine)
 
     if scmutil.gdinitconfig(ui):

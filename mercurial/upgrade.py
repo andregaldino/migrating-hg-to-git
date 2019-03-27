@@ -325,10 +325,16 @@ class compressionengine(formatvariant):
 
     @classmethod
     def fromrepo(cls, repo):
+        # we allow multiple compression engine requirement to co-exist because
+        # strickly speaking, revlog seems to support mixed compression style.
+        #
+        # The compression used for new entries will be "the last one"
+        compression = 'zlib'
         for req in repo.requirements:
-            if req.startswith('exp-compression-'):
-                return req.split('-', 2)[2]
-        return 'zlib'
+            prefix = req.startswith
+            if prefix('revlog-compression-') or prefix('exp-compression-'):
+                compression = req.split('-', 2)[2]
+        return compression
 
     @classmethod
     def fromconfig(cls, repo):

@@ -44,9 +44,9 @@ A requirement specifying an unknown compression engine results in bail
   $ cd zstd
   $ cat .hg/requires
   dotencode
-  exp-compression-zstd
   fncache
   generaldelta
+  revlog-compression-zstd
   revlogv1
   sparserevlog
   store
