@@ -456,6 +456,10 @@ class _zlibengine(compressionengine):
         return _GzipCompressedStreamReader(fh)
 
     class zlibrevlogcompressor(object):
+
+        def __init__(self, level=None):
+            self._level = level
+
         def compress(self, data):
             insize = len(data)
             # Caller handles empty input case.
@@ -465,7 +469,10 @@ class _zlibengine(compressionengine):
                 return None
 
             elif insize <= 1000000:
-                compressed = zlib.compress(data)
+                if self._level is None:
+                    compressed = zlib.compress(data)
+                else:
+                    compressed = zlib.compress(data, self._level)
                 if len(compressed) < insize:
                     return compressed
                 return None
@@ -474,7 +481,10 @@ class _zlibengine(compressionengine):
             # memory usage for large inputs. So do streaming compression
             # on large inputs.
             else:
-                z = zlib.compressobj()
+                if self._level is None:
+                    z = zlib.compressobj()
+                else:
+                    z = zlib.compressobj(level=self._level)
                 parts = []
                 pos = 0
                 while pos < insize:
