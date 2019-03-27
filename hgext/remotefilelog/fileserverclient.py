@@ -544,7 +544,7 @@ class fileserverclient(object):
                     if fetchwarning:
                         self.ui.warn(fetchwarning + '\n')
                 self.logstacktrace()
-            missingids = [(file, hex(id)) for file, id in missingids]
+            missingids = [(file, hex(id)) for file, id in sorted(missingids)]
             fetched += len(missingids)
             start = time.time()
             missingids = self.request(missingids)
