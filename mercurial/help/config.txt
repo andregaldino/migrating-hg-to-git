@@ -1881,6 +1881,11 @@ category impact performance and repository size.
     This option is enabled by default. When disabled, it also disables the
     related ``storage.revlog.reuse-external-delta-parent`` option.
 
+``revlog.zlib.level``
+    Zlib compression level used when storing data into the repository. Accepted
+    Value range from 1 (lowest compression) to 9 (highest compression). Zlib
+    default value is 6.
+
 ``server``
 ----------
 

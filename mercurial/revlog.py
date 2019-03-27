@@ -371,6 +371,7 @@ class revlog(object):
         self._nodecache = {nullid: nullrev}
         self._nodepos = None
         self._compengine = 'zlib'
+        self._compengineopts = {}
         self._maxdeltachainspan = -1
         self._withsparseread = False
         self._sparserevlog = False
@@ -416,6 +417,8 @@ class revlog(object):
             self._lazydeltabase = bool(opts.get('lazydeltabase', False))
         if 'compengine' in opts:
             self._compengine = opts['compengine']
+        if 'zlib.level' in opts:
+            self._compengineopts['zlib.level'] = opts['zlib.level']
         if 'maxdeltachainspan' in opts:
             self._maxdeltachainspan = opts['maxdeltachainspan']
         if self._mmaplargeindex and 'mmapindexthreshold' in opts:
@@ -526,7 +529,8 @@ class revlog(object):
 
     @util.propertycache
     def _compressor(self):
-        return util.compengines[self._compengine].revlogcompressor()
+        engine = util.compengines[self._compengine]
+        return engine.revlogcompressor(self._compengineopts)
 
     def _indexfp(self, mode='r'):
         """file object for the revlog's index file"""
@@ -1981,7 +1985,7 @@ class revlog(object):
         except KeyError:
             try:
                 engine = util.compengines.forrevlogheader(t)
-                compressor = engine.revlogcompressor()
+                compressor = engine.revlogcompressor(self._compengineopts)
                 self._decompressors[t] = compressor
             except KeyError:
                 raise error.RevlogError(_('unknown compression type %r') % t)

@@ -82,3 +82,59 @@ with that engine or a requirement
       0x78 (x)  : 199 (100.00%)
 
 #endif
+
+checking zlib options
+=====================
+
+  $ hg init zlib-level-default
+  $ hg init zlib-level-1
+  $ cat << EOF >> zlib-level-1/.hg/hgrc
+  > [storage]
+  > revlog.zlib.level=1
+  > EOF
+  $ hg init zlib-level-9
+  $ cat << EOF >> zlib-level-9/.hg/hgrc
+  > [storage]
+  > revlog.zlib.level=9
+  > EOF
+
+
+  $ commitone() {
+  >    repo=$1
+  >    cp $RUNTESTDIR/bundles/issue4438-r1.hg $repo/a
+  >    hg -R $repo add $repo/a
+  >    hg -R $repo commit -m some-commit
+  > }
+
+  $ for repo in zlib-level-default zlib-level-1 zlib-level-9; do
+  >     commitone $repo
+  > done
+
+  $ $RUNTESTDIR/f -s */.hg/store/data/*
+  zlib-level-1/.hg/store/data/a.i: size=4146
+  zlib-level-9/.hg/store/data/a.i: size=4138
+  zlib-level-default/.hg/store/data/a.i: size=4138
+
+Test error cases
+
+  $ hg init zlib-level-invalid
+  $ cat << EOF >> zlib-level-invalid/.hg/hgrc
+  > [storage]
+  > revlog.zlib.level=foobar
+  > EOF
+  $ commitone zlib-level-invalid
+  abort: storage.revlog.zlib.level is not a valid integer ('foobar')
+  abort: storage.revlog.zlib.level is not a valid integer ('foobar')
+  [255]
+
+  $ hg init zlib-level-out-of-range
+  $ cat << EOF >> zlib-level-out-of-range/.hg/hgrc
+  > [storage]
+  > revlog.zlib.level=42
+  > EOF
+
+  $ commitone zlib-level-out-of-range
+  abort: invalid value for `storage.revlog.zlib.level` config: 42
+  abort: invalid value for `storage.revlog.zlib.level` config: 42
+  [255]
+

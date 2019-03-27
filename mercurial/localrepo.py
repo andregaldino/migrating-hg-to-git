@@ -797,6 +797,12 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         if r.startswith(b'exp-compression-'):
             options[b'compengine'] = r[len(b'exp-compression-'):]
 
+    options[b'zlib.level'] = ui.configint(b'storage', b'revlog.zlib.level')
+    if options[b'zlib.level'] is not None:
+        if not (0 <= options[b'zlib.level'] <= 9):
+            msg = _('invalid value for `storage.revlog.zlib.level` config: %d')
+            raise error.Abort(msg % options[b'zlib.level'])
+
     if repository.NARROW_REQUIREMENT in requirements:
         options[b'enableellipsis'] = True
 

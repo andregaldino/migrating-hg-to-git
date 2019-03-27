@@ -505,7 +505,10 @@ class _zlibengine(compressionengine):
                                          stringutil.forcebytestr(e))
 
     def revlogcompressor(self, opts=None):
-        return self.zlibrevlogcompressor()
+        level = None
+        if opts is not None:
+            level = opts.get('zlib.level')
+        return self.zlibrevlogcompressor(level)
 
 compengines.register(_zlibengine())
 
