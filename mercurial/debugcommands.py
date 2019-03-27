@@ -82,6 +82,7 @@ from . import (
 )
 from .utils import (
     cborutil,
+    compression,
     dateutil,
     procutil,
     stringutil,
@@ -1299,7 +1300,8 @@ def debuginstall(ui, **opts):
              fm.formatlist(sorted(e.name() for e in compengines
                                   if e.available()),
                            name='compengine', fmt='%s', sep=', '))
-    wirecompengines = util.compengines.supportedwireengines(util.SERVERROLE)
+    wirecompengines = compression.compengines.supportedwireengines(
+        compression.SERVERROLE)
     fm.write('compenginesserver', _('checking available compression engines '
                                     'for wire protocol (%s)\n'),
              fm.formatlist([e.name() for e in wirecompengines
