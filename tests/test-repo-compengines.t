@@ -138,3 +138,58 @@ Test error cases
   abort: invalid value for `storage.revlog.zlib.level` config: 42
   [255]
 
+checking zstd options
+=====================
+
+  $ hg init zstd-level-default --config experimental.format.compression=zstd
+  $ hg init zstd-level-1 --config experimental.format.compression=zstd
+  $ cat << EOF >> zstd-level-1/.hg/hgrc
+  > [storage]
+  > revlog.zstd.level=1
+  > EOF
+  $ hg init zstd-level-22 --config experimental.format.compression=zstd
+  $ cat << EOF >> zstd-level-22/.hg/hgrc
+  > [storage]
+  > revlog.zstd.level=22
+  > EOF
+
+
+  $ commitone() {
+  >    repo=$1
+  >    cp $RUNTESTDIR/bundles/issue4438-r1.hg $repo/a
+  >    hg -R $repo add $repo/a
+  >    hg -R $repo commit -m some-commit
+  > }
+
+  $ for repo in zstd-level-default zstd-level-1 zstd-level-22; do
+  >     commitone $repo
+  > done
+
+  $ $RUNTESTDIR/f -s zstd-*/.hg/store/data/*
+  zstd-level-1/.hg/store/data/a.i: size=4097
+  zstd-level-22/.hg/store/data/a.i: size=4091
+  zstd-level-default/.hg/store/data/a.i: size=4094
+
+Test error cases
+
+  $ hg init zstd-level-invalid --config experimental.format.compression=zstd
+  $ cat << EOF >> zstd-level-invalid/.hg/hgrc
+  > [storage]
+  > revlog.zstd.level=foobar
+  > EOF
+  $ commitone zstd-level-invalid
+  abort: storage.revlog.zstd.level is not a valid integer ('foobar')
+  abort: storage.revlog.zstd.level is not a valid integer ('foobar')
+  [255]
+
+  $ hg init zstd-level-out-of-range --config experimental.format.compression=zstd
+  $ cat << EOF >> zstd-level-out-of-range/.hg/hgrc
+  > [storage]
+  > revlog.zstd.level=42
+  > EOF
+
+  $ commitone zstd-level-out-of-range
+  abort: invalid value for `storage.revlog.zstd.level` config: 42
+  abort: invalid value for `storage.revlog.zstd.level` config: 42
+  [255]
+

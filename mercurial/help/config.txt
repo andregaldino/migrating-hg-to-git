@@ -1886,6 +1886,12 @@ category impact performance and repository size.
     Value range from 1 (lowest compression) to 9 (highest compression). Zlib
     default value is 6.
 
+
+``revlog.zstd.level``
+    zstd compression level used when storing data into the repository. Accepted
+    Value range from 1 (lowest compression) to 22 (highest compression).
+    (default 3)
+
 ``server``
 ----------
 

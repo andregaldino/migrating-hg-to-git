@@ -721,8 +721,12 @@ class _zstdengine(compressionengine):
 
     def revlogcompressor(self, opts=None):
         opts = opts or {}
-        return self.zstdrevlogcompressor(self._module,
-                                         level=opts.get('level', 3))
+        level = opts.get('zstd.level')
+        if level is None:
+            level = opts.get('level')
+        if level is None:
+            level = 3
+        return self.zstdrevlogcompressor(self._module, level=level)
 
 compengines.register(_zstdengine())
 

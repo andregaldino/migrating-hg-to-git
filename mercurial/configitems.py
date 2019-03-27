@@ -995,6 +995,9 @@ coreconfigitem('storage', 'revlog.reuse-external-delta-parent',
 coreconfigitem('storage', 'revlog.zlib.level',
     default=None,
 )
+coreconfigitem('storage', 'revlog.zstd.level',
+    default=None,
+)
 coreconfigitem('server', 'bookmarks-pushkey-compat',
     default=True,
 )

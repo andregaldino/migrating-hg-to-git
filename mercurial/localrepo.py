@@ -802,6 +802,11 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         if not (0 <= options[b'zlib.level'] <= 9):
             msg = _('invalid value for `storage.revlog.zlib.level` config: %d')
             raise error.Abort(msg % options[b'zlib.level'])
+    options[b'zstd.level'] = ui.configint(b'storage', b'revlog.zstd.level')
+    if options[b'zstd.level'] is not None:
+        if not (0 <= options[b'zstd.level'] <= 22):
+            msg = _('invalid value for `storage.revlog.zstd.level` config: %d')
+            raise error.Abort(msg % options[b'zstd.level'])
 
     if repository.NARROW_REQUIREMENT in requirements:
         options[b'enableellipsis'] = True

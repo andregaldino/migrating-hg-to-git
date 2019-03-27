@@ -419,6 +419,8 @@ class revlog(object):
             self._compengine = opts['compengine']
         if 'zlib.level' in opts:
             self._compengineopts['zlib.level'] = opts['zlib.level']
+        if 'zstd.level' in opts:
+            self._compengineopts['zstd.level'] = opts['zstd.level']
         if 'maxdeltachainspan' in opts:
             self._maxdeltachainspan = opts['maxdeltachainspan']
         if self._mmaplargeindex and 'mmapindexthreshold' in opts:
