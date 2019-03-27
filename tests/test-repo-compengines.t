@@ -21,8 +21,8 @@ A new repository uses zlib storage, which doesn't need a requirement
 
 Unknown compression engine to format.compression aborts
 
-  $ hg --config experimental.format.compression=unknown init unknown
-  abort: compression engine unknown defined by experimental.format.compression not available
+  $ hg --config format.revlog-compression=unknown init unknown
+  abort: compression engine unknown defined by format.revlog-compression not available
   (run "hg debuginstall" to list available compression engines)
   [255]
 
@@ -40,7 +40,7 @@ A requirement specifying an unknown compression engine results in bail
 
 #if zstd
 
-  $ hg --config experimental.format.compression=zstd init zstd
+  $ hg --config format.revlog-compression=zstd init zstd
   $ cd zstd
   $ cat .hg/requires
   dotencode
@@ -66,7 +66,7 @@ with that engine or a requirement
 
   $ cd default
   $ touch bar
-  $ hg --config experimental.format.compression=zstd -q commit -A -m 'add bar with a lot of repeated repeated repeated text'
+  $ hg --config format.revlog-compression=zstd -q commit -A -m 'add bar with a lot of repeated repeated repeated text'
 
   $ cat .hg/requires
   dotencode
@@ -141,13 +141,13 @@ Test error cases
 checking zstd options
 =====================
 
-  $ hg init zstd-level-default --config experimental.format.compression=zstd
-  $ hg init zstd-level-1 --config experimental.format.compression=zstd
+  $ hg init zstd-level-default --config format.revlog-compression=zstd
+  $ hg init zstd-level-1 --config format.revlog-compression=zstd
   $ cat << EOF >> zstd-level-1/.hg/hgrc
   > [storage]
   > revlog.zstd.level=1
   > EOF
-  $ hg init zstd-level-22 --config experimental.format.compression=zstd
+  $ hg init zstd-level-22 --config format.revlog-compression=zstd
   $ cat << EOF >> zstd-level-22/.hg/hgrc
   > [storage]
   > revlog.zstd.level=22
@@ -172,7 +172,7 @@ checking zstd options
 
 Test error cases
 
-  $ hg init zstd-level-invalid --config experimental.format.compression=zstd
+  $ hg init zstd-level-invalid --config format.revlog-compression=zstd
   $ cat << EOF >> zstd-level-invalid/.hg/hgrc
   > [storage]
   > revlog.zstd.level=foobar
@@ -182,7 +182,7 @@ Test error cases
   abort: storage.revlog.zstd.level is not a valid integer ('foobar')
   [255]
 
-  $ hg init zstd-level-out-of-range --config experimental.format.compression=zstd
+  $ hg init zstd-level-out-of-range --config format.revlog-compression=zstd
   $ cat << EOF >> zstd-level-out-of-range/.hg/hgrc
   > [storage]
   > revlog.zstd.level=42

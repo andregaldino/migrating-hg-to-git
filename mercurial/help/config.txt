@@ -866,6 +866,13 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     Repositories with this on-disk format require Mercurial version 4.7
 
     Enabled by default.
+``revlog-compression``
+    Compression algorithm used by revlog. Supported value are `zlib` and `zstd`.
+    The `zlib` engine is the historical default of Mercurial. `zstd` is a newer
+    format that is usually a net win over `zlib` operating faster at better
+    compression rate. Use `zstd` to reduce CPU usage.
+
+    On some system, Mercurial installation may lack `zstd` supports. Default is `zlib`.
 
 ``graph``
 ---------

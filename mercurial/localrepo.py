@@ -2920,10 +2920,10 @@ def newreporequirements(ui, createopts):
             if ui.configbool('format', 'dotencode'):
                 requirements.add('dotencode')
 
-    compengine = ui.config('experimental', 'format.compression')
+    compengine = ui.config('format', 'revlog-compression')
     if compengine not in util.compengines:
         raise error.Abort(_('compression engine %s defined by '
-                            'experimental.format.compression not available') %
+                            'format.revlog-compression not available') %
                           compengine,
                           hint=_('run "hg debuginstall" to list available '
                                  'compression engines'))

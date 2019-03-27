@@ -553,9 +553,6 @@ coreconfigitem('experimental', 'extendedheader.index',
 coreconfigitem('experimental', 'extendedheader.similarity',
     default=False,
 )
-coreconfigitem('experimental', 'format.compression',
-    default='zlib',
-)
 coreconfigitem('experimental', 'graphshorten',
     default=False,
 )
@@ -683,6 +680,10 @@ coreconfigitem('format', 'obsstore-version',
 )
 coreconfigitem('format', 'sparse-revlog',
     default=True,
+)
+coreconfigitem('format', 'revlog-compression',
+    default='zlib',
+    alias=[('experimental', 'format.compression')]
 )
 coreconfigitem('format', 'usefncache',
     default=True,

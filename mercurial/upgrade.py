@@ -332,7 +332,7 @@ class compressionengine(formatvariant):
 
     @classmethod
     def fromconfig(cls, repo):
-        return repo.ui.config('experimental', 'format.compression')
+        return repo.ui.config('format', 'revlog-compression')
 
 @registerformatvariant
 class compressionlevel(formatvariant):
