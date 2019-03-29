@@ -674,18 +674,8 @@ def mergefiles(ui, repo, wctx, shelvectx):
     dirstate."""
     with ui.configoverride({('ui', 'quiet'): True}):
         hg.update(repo, wctx.node())
-        files = []
-        files.extend(shelvectx.files())
-        files.extend(shelvectx.p1().files())
-
-        # revert will overwrite unknown files, so move them out of the way
-        for file in repo.status(unknown=True).unknown:
-            if file in files:
-                util.rename(repo.wjoin(file),
-                            scmutil.backuppath(ui, repo, file))
         ui.pushbuffer(True)
-        cmdutil.revert(ui, repo, shelvectx, repo.dirstate.parents(),
-                       **{r'no_backup': True})
+        cmdutil.revert(ui, repo, shelvectx, repo.dirstate.parents())
         ui.popbuffer()
 
 def restorebranch(ui, repo, branchtorestore):
