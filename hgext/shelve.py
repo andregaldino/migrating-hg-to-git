@@ -646,10 +646,6 @@ def checkparents(repo, state):
         raise error.Abort(_('working directory parents do not match unshelve '
                            'state'))
 
-def pathtofiles(repo, files):
-    cwd = repo.getcwd()
-    return [repo.pathto(f, cwd) for f in files]
-
 def unshelveabort(ui, repo, state, opts):
     """subcommand that abort an in-progress unshelve"""
     with repo.lock():
@@ -689,7 +685,6 @@ def mergefiles(ui, repo, wctx, shelvectx):
                             scmutil.backuppath(ui, repo, file))
         ui.pushbuffer(True)
         cmdutil.revert(ui, repo, shelvectx, repo.dirstate.parents(),
-                       *pathtofiles(repo, files),
                        **{r'no_backup': True})
         ui.popbuffer()
 
