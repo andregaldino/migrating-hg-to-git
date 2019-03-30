@@ -33,6 +33,7 @@ from mercurial import (
     registrar,
     rewriteutil,
     scmutil,
+    util,
 )
 
 cmdtable = {}
@@ -133,8 +134,34 @@ def uncommit(ui, repo, *pats, **opts):
         if len(old.parents()) > 1:
             raise error.Abort(_("cannot uncommit merge changeset"))
 
+        match = scmutil.match(old, pats, opts)
+
+        # Check all explicitly given files; abort if there's a problem.
+        if match.files():
+            s = old.status(old.p1(), match, listclean=True)
+            eligible = set(s.added) | set(s.modified) | set(s.removed)
+
+            badfiles = set(match.files()) - eligible
+
+            # Naming a parent directory of an eligible file is OK, even
+            # if not everything tracked in that directory can be
+            # uncommitted.
+            if badfiles:
+                badfiles -= set([f for f in util.dirs(eligible)])
+
+            for f in sorted(badfiles):
+                if f in s.clean:
+                    hint = _(b"file was not changed in working directory "
+                             b"parent")
+                elif repo.wvfs.exists(f):
+                    hint = _(b"file was untracked in working directory parent")
+                else:
+                    hint = _(b"file does not exist")
+
+                raise error.Abort(_(b'cannot uncommit "%s"')
+                                  % scmutil.getuipathfn(repo)(f), hint=hint)
+
         with repo.transaction('uncommit'):
-            match = scmutil.match(old, pats, opts)
             keepcommit = pats
             if not keepcommit:
                 if opts.get('keep') is not None:

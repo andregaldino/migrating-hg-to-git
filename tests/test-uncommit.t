@@ -102,14 +102,16 @@ Recommit
   $ hg heads -T '{rev}:{node} {desc}'
   5:0c07a3ccda771b25f1cb1edbd02e683723344ef1 new change abcde (no-eol)
 
-Uncommit of non-existent and unchanged files has no effect
+Uncommit of non-existent and unchanged files aborts
   $ hg uncommit nothinghere
-  nothing to uncommit
-  [1]
+  abort: cannot uncommit "nothinghere"
+  (file does not exist)
+  [255]
   $ hg status
   $ hg uncommit file-abc
-  nothing to uncommit
-  [1]
+  abort: cannot uncommit "file-abc"
+  (file was not changed in working directory parent)
+  [255]
   $ hg status
 
 Try partial uncommit, also moves bookmark
@@ -513,3 +515,57 @@ Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     add a
   
+Removes can be uncommitted
+
+  $ hg ci -m 'modified b'
+  $ hg rm b
+  $ hg ci -m 'remove b'
+  $ hg uncommit b
+  note: keeping empty commit
+  $ hg status
+  R b
+
+Uncommitting a directory won't run afoul of the checks that an explicit file
+can be uncommitted.
+
+  $ mkdir dir
+  $ echo 1 > dir/file.txt
+  $ hg ci -Aqm 'add file in directory'
+  $ hg uncommit dir
+  $ hg status
+  A dir/file.txt
+
+`uncommit <dir>` and `cd <dir> && uncommit .` behave the same...
+
+  $ hg rollback -q --config ui.rollback=True
+  $ echo 2 > dir/file2.txt
+  $ hg ci -Aqm 'add file2 in directory'
+  $ hg uncommit dir
+  note: keeping empty commit
+  $ hg status
+  A dir/file2.txt
+
+  $ hg rollback -q --config ui.rollback=True
+  $ cd dir
+  $ hg uncommit .
+  note: keeping empty commit
+  $ hg status
+  A dir/file2.txt
+  $ cd ..
+
+... and errors out the same way when nothing can be uncommitted
+
+  $ hg rollback -q --config ui.rollback=True
+  $ mkdir emptydir
+  $ hg uncommit emptydir
+  abort: cannot uncommit "emptydir"
+  (file was untracked in working directory parent)
+  [255]
+
+  $ cd emptydir
+  $ hg uncommit .
+  abort: cannot uncommit "emptydir"
+  (file was untracked in working directory parent)
+  [255]
+  $ hg status
+  $ cd ..
