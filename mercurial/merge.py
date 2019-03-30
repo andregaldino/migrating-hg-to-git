@@ -2205,7 +2205,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
                   error=stats.unresolvedcount)
     return stats
 
-def graft(repo, ctx, pctx, labels, keepparent=False,
+def graft(repo, ctx, pctx, labels=None, keepparent=False,
           keepconflictparent=False):
     """Do a graft-like merge.
 
