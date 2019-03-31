@@ -182,6 +182,9 @@ class branchcache(object):
     def __getitem__(self, key):
         return self._entries[key]
 
+    def __contains__(self, key):
+        return key in self._entries
+
     def iteritems(self):
         return self._entries.iteritems()
 
