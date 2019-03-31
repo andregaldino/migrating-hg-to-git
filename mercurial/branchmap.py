@@ -290,7 +290,7 @@ class branchcache(object):
         return (n for n in nodes if n not in self._closednodes)
 
     def branchheads(self, branch, closed=False):
-        heads = self[branch]
+        heads = self._entries[branch]
         if not closed:
             heads = list(self.iteropen(heads))
         return heads
