@@ -960,9 +960,6 @@ def filelog(repo, subset, x):
     The pattern without explicit kind like ``glob:`` is expected to be
     relative to the current directory and match against a file exactly
     for efficiency.
-
-    If some linkrev points to revisions filtered by the current repoview, we'll
-    work around it to return a non-filtered value.
     """
 
     # i18n: "filelog" is a keyword
