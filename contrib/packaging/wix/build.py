@@ -37,6 +37,8 @@ if __name__ == '__main__':
     parser.add_argument('--extra-packages-script',
                         help=('Script to execute to include extra packages in '
                               'py2exe binary.'))
+    parser.add_argument('--extra-wxs',
+                        help='CSV of path_to_wxs_file=working_dir_for_wxs_file')
 
     args = parser.parse_args()
 
@@ -59,6 +61,9 @@ if __name__ == '__main__':
 
     if args.extra_packages_script:
         kwargs['extra_packages_script'] = args.extra_packages_script
+    if args.extra_wxs:
+        kwargs['extra_wxs'] = dict(
+            thing.split("=") for thing in args.extra_wxs.split(','))
 
     if args.sign_sn or args.sign_cert:
         fn = build_signed_installer

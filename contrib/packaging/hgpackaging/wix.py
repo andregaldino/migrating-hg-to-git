@@ -12,6 +12,7 @@ import pathlib
 import re
 import subprocess
 import tempfile
+import typing
 import xml.dom.minidom
 
 from .downloads import (
@@ -178,7 +179,8 @@ def make_libraries_xml(wix_dir: pathlib.Path, dist_dir: pathlib.Path):
 
 def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
                     msi_name='mercurial', version=None, post_build_fn=None,
-                    extra_packages_script=None):
+                    extra_packages_script: typing.Optional[str]=None,
+                    extra_wxs:typing.Optional[typing.Dict[str,str]]=None):
     """Build a WiX MSI installer.
 
     ``source_dir`` is the path to the Mercurial source tree to use.
@@ -194,6 +196,7 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
     into the py2exe binary. It should stage packages into the virtualenv and
     print a null byte followed by a newline-separated list of packages that
     should be included in the exe.
+    ``extra_wxs`` is a dict of {wxs_name: working_dir_for_wxs_build}.
     """
     arch = 'x64' if r'\x64' in os.environ.get('LIB', '') else 'x86'
 
@@ -235,6 +238,9 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
         wxs_source_dir = source_dir / rel_path
         run_candle(wix_path, build_dir, wxs, wxs_source_dir, defines=defines)
 
+    for source, rel_path in sorted((extra_wxs or {}).items()):
+        run_candle(wix_path, build_dir, source, rel_path, defines=defines)
+
     # candle.exe doesn't like when we have an open handle on the file.
     # So use TemporaryDirectory() instead of NamedTemporaryFile().
     with tempfile.TemporaryDirectory() as td:
@@ -269,6 +275,11 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
         assert source.endswith('.wxs')
         args.append(str(build_dir / ('%s.wixobj' % source[:-4])))
 
+    for source, rel_path in sorted((extra_wxs or {}).items()):
+        assert source.endswith('.wxs')
+        source = os.path.basename(source)
+        args.append(str(build_dir / ('%s.wixobj' % source[:-4])))
+
     args.extend([
         str(build_dir / 'library.wixobj'),
         str(build_dir / 'mercurial.wixobj'),
@@ -286,7 +297,8 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
 def build_signed_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
                            name: str, version=None, subject_name=None,
                            cert_path=None, cert_password=None,
-                           timestamp_url=None, extra_packages_script=None):
+                           timestamp_url=None, extra_packages_script=None,
+                           extra_wxs=None):
     """Build an installer with signed executables."""
 
     post_build_fn = make_post_build_signing_fn(
@@ -299,7 +311,8 @@ def build_signed_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
     info = build_installer(source_dir, python_exe=python_exe,
                            msi_name=name.lower(), version=version,
                            post_build_fn=post_build_fn,
-                           extra_packages_script=extra_packages_script)
+                           extra_packages_script=extra_packages_script,
+                           extra_wxs=extra_wxs)
 
     description = '%s %s' % (name, version)
 
