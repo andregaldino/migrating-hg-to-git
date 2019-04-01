@@ -210,16 +210,20 @@ class branchcache(object):
         self._entries[key] = value
 
     def __getitem__(self, key):
+        self._verifybranch(key)
         return self._entries[key]
 
     def __contains__(self, key):
+        self._verifybranch(key)
         return key in self._entries
 
     def iteritems(self):
+        self._verifyall()
         return self._entries.iteritems()
 
     def hasbranch(self, label):
         """ checks whether a branch of this name exists or not """
+        self._verifybranch(label)
         return label in self._entries
 
     @classmethod
@@ -262,7 +266,6 @@ class branchcache(object):
     def load(self, repo, lineiter):
         """ fully loads the branchcache by reading from the file using the line
         iterator passed"""
-        cl = repo.changelog
         for line in lineiter:
             line = line.rstrip('\n')
             if not line:
@@ -272,14 +275,9 @@ class branchcache(object):
                 raise ValueError(r'invalid branch state')
             label = encoding.tolocal(label.strip())
             node = bin(node)
-            if not cl.hasnode(node):
-                raise ValueError(
-                    r'node %s does not exist' % pycompat.sysstr(hex(node)))
             self._entries.setdefault(label, []).append(node)
-            self._verifiedbranches.add(label)
             if state == 'c':
                 self._closednodes.add(node)
-        self._closedverified = True
 
     @staticmethod
     def _filename(repo):
@@ -306,6 +304,7 @@ class branchcache(object):
         otherwise return last closed head and true.'''
         tip = heads[-1]
         closed = True
+        self._verifyclosed()
         for h in reversed(heads):
             if h not in self._closednodes:
                 tip = h
@@ -320,9 +319,11 @@ class branchcache(object):
         return self._branchtip(self[branch])[0]
 
     def iteropen(self, nodes):
+        self._verifyclosed()
         return (n for n in nodes if n not in self._closednodes)
 
     def branchheads(self, branch, closed=False):
+        self._verifybranch(branch)
         heads = self._entries[branch]
         if not closed:
             heads = list(self.iteropen(heads))
@@ -334,10 +335,12 @@ class branchcache(object):
 
     def iterheads(self):
         """ returns all the heads """
+        self._verifyall()
         return self._entries.itervalues()
 
     def copy(self):
         """return an deep copy of the branchcache object"""
+        self._verifyall()
         return type(self)(
             self._entries, self.tipnode, self.tiprev, self.filteredhash,
             self._closednodes)
