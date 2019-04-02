@@ -52,37 +52,41 @@ An upgrade of a repository created with recommended settings only suggests optim
   $ hg init empty
   $ cd empty
   $ hg debugformat
-  format-variant repo
-  fncache:        yes
-  dotencode:      yes
-  generaldelta:   yes
-  sparserevlog:   yes
-  plain-cl-delta: yes
-  compression:    zlib
+  format-variant    repo
+  fncache:           yes
+  dotencode:         yes
+  generaldelta:      yes
+  sparserevlog:      yes
+  plain-cl-delta:    yes
+  compression:       zlib
+  compression-level: default
   $ hg debugformat --verbose
-  format-variant repo config default
-  fncache:        yes    yes     yes
-  dotencode:      yes    yes     yes
-  generaldelta:   yes    yes     yes
-  sparserevlog:   yes    yes     yes
-  plain-cl-delta: yes    yes     yes
-  compression:    zlib   zlib    zlib
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
   $ hg debugformat --verbose --config format.usefncache=no
-  format-variant repo config default
-  fncache:        yes     no     yes
-  dotencode:      yes     no     yes
-  generaldelta:   yes    yes     yes
-  sparserevlog:   yes    yes     yes
-  plain-cl-delta: yes    yes     yes
-  compression:    zlib   zlib    zlib
+  format-variant    repo config default
+  fncache:           yes     no     yes
+  dotencode:         yes     no     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
   $ hg debugformat --verbose --config format.usefncache=no --color=debug
-  format-variant repo config default
-  [formatvariant.name.mismatchconfig|fncache:       ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.mismatchconfig|dotencode:     ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|generaldelta:  ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|compression:   ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
+  format-variant    repo config default
+  [formatvariant.name.mismatchconfig|fncache:          ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.mismatchconfig|dotencode:        ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|generaldelta:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sparserevlog:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|plain-cl-delta:   ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|compression:      ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
+  [formatvariant.name.uptodate|compression-level:][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
   $ hg debugformat -Tjson
   [
    {
@@ -120,6 +124,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "default": "zlib",
     "name": "compression",
     "repo": "zlib"
+   },
+   {
+    "config": "default",
+    "default": "default",
+    "name": "compression-level",
+    "repo": "default"
    }
   ]
   $ hg debugupgraderepo
@@ -207,37 +217,41 @@ Various sub-optimal detections work
   > EOF
 
   $ hg debugformat
-  format-variant repo
-  fncache:         no
-  dotencode:       no
-  generaldelta:    no
-  sparserevlog:    no
-  plain-cl-delta: yes
-  compression:    zlib
+  format-variant    repo
+  fncache:            no
+  dotencode:          no
+  generaldelta:       no
+  sparserevlog:       no
+  plain-cl-delta:    yes
+  compression:       zlib
+  compression-level: default
   $ hg debugformat --verbose
-  format-variant repo config default
-  fncache:         no    yes     yes
-  dotencode:       no    yes     yes
-  generaldelta:    no    yes     yes
-  sparserevlog:    no    yes     yes
-  plain-cl-delta: yes    yes     yes
-  compression:    zlib   zlib    zlib
+  format-variant    repo config default
+  fncache:            no    yes     yes
+  dotencode:          no    yes     yes
+  generaldelta:       no    yes     yes
+  sparserevlog:       no    yes     yes
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
   $ hg debugformat --verbose --config format.usegeneraldelta=no
-  format-variant repo config default
-  fncache:         no    yes     yes
-  dotencode:       no    yes     yes
-  generaldelta:    no     no     yes
-  sparserevlog:    no     no     yes
-  plain-cl-delta: yes    yes     yes
-  compression:    zlib   zlib    zlib
+  format-variant    repo config default
+  fncache:            no    yes     yes
+  dotencode:          no    yes     yes
+  generaldelta:       no     no     yes
+  sparserevlog:       no     no     yes
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
   $ hg debugformat --verbose --config format.usegeneraldelta=no --color=debug
-  format-variant repo config default
-  [formatvariant.name.mismatchconfig|fncache:       ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.mismatchconfig|dotencode:     ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.mismatchdefault|generaldelta:  ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.mismatchdefault|sparserevlog:  ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|compression:   ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
+  format-variant    repo config default
+  [formatvariant.name.mismatchconfig|fncache:          ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.mismatchconfig|dotencode:        ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.mismatchdefault|generaldelta:     ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.mismatchdefault|sparserevlog:     ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|plain-cl-delta:   ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|compression:      ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
+  [formatvariant.name.uptodate|compression-level:][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
   $ hg debugupgraderepo
   repository lacks features recommended by current config options:
   

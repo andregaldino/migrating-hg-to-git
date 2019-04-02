@@ -334,6 +334,39 @@ class compressionengine(formatvariant):
     def fromconfig(cls, repo):
         return repo.ui.config('experimental', 'format.compression')
 
+@registerformatvariant
+class compressionlevel(formatvariant):
+    name = 'compression-level'
+    default = 'default'
+
+    description = _('compression level')
+
+    upgrademessage = _('revlog content will be recompressed')
+
+    @classmethod
+    def fromrepo(cls, repo):
+        comp = compressionengine.fromrepo(repo)
+        level = None
+        if comp == 'zlib':
+            level = repo.ui.configint('storage', 'revlog.zlib.level')
+        elif comp == 'zstd':
+            level = repo.ui.configint('storage', 'revlog.zstd.level')
+        if level is None:
+            return 'default'
+        return bytes(level)
+
+    @classmethod
+    def fromconfig(cls, repo):
+        comp = compressionengine.fromconfig(repo)
+        level = None
+        if comp == 'zlib':
+            level = repo.ui.configint('storage', 'revlog.zlib.level')
+        elif comp == 'zstd':
+            level = repo.ui.configint('storage', 'revlog.zstd.level')
+        if level is None:
+            return 'default'
+        return bytes(level)
+
 def finddeficiencies(repo):
     """returns a list of deficiencies that the repo suffer from"""
     deficiencies = []
