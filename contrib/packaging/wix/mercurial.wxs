@@ -129,6 +129,11 @@
         <MergeRef Id='VCRuntime' />
         <MergeRef Id='VCRuntimePolicy' />
       </Feature>
+      <?if $(var.MercurialExtraFeatures)?>
+        <?foreach EXTRAFEAT in $(var.MercurialExtraFeatures)?>
+          <FeatureRef Id="$(var.EXTRAFEAT)" />
+        <?endforeach?>
+      <?endif?>
       <Feature Id='Locales' Title='Translations' Description='Translations' Level='1'>
         <ComponentGroupRef Id='localeFolder' />
         <ComponentRef Id='i18nFolder' />

@@ -39,6 +39,9 @@ if __name__ == '__main__':
                               'py2exe binary.'))
     parser.add_argument('--extra-wxs',
                         help='CSV of path_to_wxs_file=working_dir_for_wxs_file')
+    parser.add_argument('--extra-features',
+                        help=('CSV of extra feature names to include '
+                              'in the installer from the extra wxs files'))
 
     args = parser.parse_args()
 
@@ -64,6 +67,8 @@ if __name__ == '__main__':
     if args.extra_wxs:
         kwargs['extra_wxs'] = dict(
             thing.split("=") for thing in args.extra_wxs.split(','))
+    if args.extra_features:
+        kwargs['extra_features'] = args.extra_features.split(',')
 
     if args.sign_sn or args.sign_cert:
         fn = build_signed_installer

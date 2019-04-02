@@ -179,8 +179,9 @@ def make_libraries_xml(wix_dir: pathlib.Path, dist_dir: pathlib.Path):
 
 def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
                     msi_name='mercurial', version=None, post_build_fn=None,
-                    extra_packages_script: typing.Optional[str]=None,
-                    extra_wxs:typing.Optional[typing.Dict[str,str]]=None):
+                    extra_packages_script=None,
+                    extra_wxs:typing.Optional[typing.Dict[str,str]]=None,
+                    extra_features:typing.Optional[typing.List[str]]=None):
     """Build a WiX MSI installer.
 
     ``source_dir`` is the path to the Mercurial source tree to use.
@@ -197,6 +198,8 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
     print a null byte followed by a newline-separated list of packages that
     should be included in the exe.
     ``extra_wxs`` is a dict of {wxs_name: working_dir_for_wxs_build}.
+    ``extra_features`` is a list of additional named Features to include in
+    the build. These must match Feature names in one of the wxs scripts.
     """
     arch = 'x64' if r'\x64' in os.environ.get('LIB', '') else 'x86'
 
@@ -256,6 +259,9 @@ def build_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
     defines['Version'] = version
     defines['Comments'] = 'Installs Mercurial version %s' % version
     defines['VCRedistSrcDir'] = str(hg_build_dir)
+    if extra_features:
+        assert all(';' not in f for f in extra_features)
+        defines['MercurialExtraFeatures'] = ';'.join(extra_features)
 
     run_candle(wix_path, build_dir, source, source_build_rel, defines=defines)
 
@@ -298,7 +304,7 @@ def build_signed_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
                            name: str, version=None, subject_name=None,
                            cert_path=None, cert_password=None,
                            timestamp_url=None, extra_packages_script=None,
-                           extra_wxs=None):
+                           extra_wxs=None, extra_features=None):
     """Build an installer with signed executables."""
 
     post_build_fn = make_post_build_signing_fn(
@@ -312,7 +318,7 @@ def build_signed_installer(source_dir: pathlib.Path, python_exe: pathlib.Path,
                            msi_name=name.lower(), version=version,
                            post_build_fn=post_build_fn,
                            extra_packages_script=extra_packages_script,
-                           extra_wxs=extra_wxs)
+                           extra_wxs=extra_wxs, extra_features=extra_features)
 
     description = '%s %s' % (name, version)
 
