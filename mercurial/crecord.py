@@ -1467,6 +1467,8 @@ the following are valid keystrokes:
         pgup/pgdn [K/J] : go to previous/next item of same type
  right/left-arrow [l/h] : go to child item / parent item
  shift-left-arrow   [H] : go to parent header / fold selected header
+                      g : go to the top
+                      G : go to the bottom
                       f : fold / unfold item, hiding/revealing its children
                       F : fold / unfold parent item and all of its ancestors
                  ctrl-l : scroll the selected line to the top of the screen
@@ -1504,6 +1506,45 @@ the following are valid keystrokes:
         curses.cbreak()
         self.stdscr.refresh()
         self.stdscr.keypad(1) # allow arrow-keys to continue to function
+
+    def handlefirstlineevent(self):
+        """
+        Handle 'g' to navigate to the top most file in the ncurses window.
+        """
+        self.currentselecteditem = self.headerlist[0]
+        currentitem = self.currentselecteditem
+        # select the parent item recursively until we're at a header
+        while True:
+            nextitem = currentitem.parentitem()
+            if nextitem is None:
+                break
+            else:
+                currentitem = nextitem
+
+        self.currentselecteditem = currentitem
+
+    def handlelastlineevent(self):
+        """
+        Handle 'G' to navigate to the bottom most file/hunk/line depending
+        on the whether the fold is active or not.
+
+        If the bottom most file is folded, it navigates to that file and
+        stops there. If the bottom most file is unfolded, it navigates to
+        the bottom most hunk in that file and stops there. If the bottom most
+        hunk is unfolded, it navigates to the bottom most line in that hunk.
+        """
+        currentitem = self.currentselecteditem
+        nextitem = currentitem.nextitem()
+        # select the child item recursively until we're at a footer
+        while nextitem is not None:
+            nextitem = currentitem.nextitem()
+            if nextitem is None:
+                break
+            else:
+                currentitem = nextitem
+
+        self.currentselecteditem = currentitem
+        self.recenterdisplayedarea()
 
     def confirmationwindow(self, windowtext):
         "display an informational window, then wait for and return a keypress."
@@ -1725,6 +1766,10 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             self.togglefolded(foldparent=True)
         elif keypressed in ["m"]:
             self.commitMessageWindow()
+        elif keypressed in ["g", "KEY_HOME"]:
+            self.handlefirstlineevent()
+        elif keypressed in ["G", "KEY_END"]:
+            self.handlelastlineevent()
         elif keypressed in ["?"]:
             self.helpwindow()
             self.stdscr.clear()
