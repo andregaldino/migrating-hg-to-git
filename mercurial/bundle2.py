@@ -834,12 +834,21 @@ class unbundle20(unpackermixin):
         if paramssize < 0:
             raise error.BundleValueError('negative bundle param size: %i'
                                          % paramssize)
-        yield _pack(_fstreamparamsize, paramssize)
         if paramssize:
             params = self._readexact(paramssize)
             self._processallparams(params)
-            yield params
-            assert self._compengine.bundletype()[1] == 'UN'
+            # The payload itself is decompressed below, so drop
+            # the compression parameter passed down to compensate.
+            outparams = []
+            for p in params.split(' '):
+                k, v = p.split('=', 1)
+                if k.lower() != 'compression':
+                    outparams.append(p)
+            outparams = ' '.join(outparams)
+            yield _pack(_fstreamparamsize, len(outparams))
+            yield outparams
+        else:
+            yield _pack(_fstreamparamsize, paramssize)
         # From there, payload might need to be decompressed
         self._fp = self._compengine.decompressorreader(self._fp)
         emptycount = 0

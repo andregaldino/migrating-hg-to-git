@@ -120,6 +120,38 @@ Test pullbundle functionality for incremental pulls
   * sending pullbundle "1.hg" (glob)
   $ rm repo/.hg/blackbox.log
 
+Test pullbundle functionality for incoming
+
+  $ cd repo
+  $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid
+  listening at http://*:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (glob) (?)
+  $ cat ../repo.pid >> $DAEMON_PIDS
+  $ cd ..
+  $ hg clone http://localhost:$HGPORT2/ repo.pullbundle2a -r 0
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets bbd179dfa0a7 (1 drafts)
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd repo.pullbundle2a
+  $ hg incoming -r ed1b79f46b9a
+  comparing with http://localhost:$HGPORT2/
+  searching for changes
+  changeset:   1:ed1b79f46b9a
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     change foo
+  
+  $ cd ..
+  $ killdaemons.py
+  $ grep 'sending pullbundle ' repo/.hg/blackbox.log
+  * sending pullbundle "0.hg" (glob)
+  * sending pullbundle "1.hg" (glob)
+  $ rm repo/.hg/blackbox.log
+
 Test recovery from misconfigured server sending no new data
 
   $ cd repo
