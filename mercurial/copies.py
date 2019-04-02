@@ -430,8 +430,7 @@ def _combinecopies(copyfrom, copyto, finalcopy, diverge, incompletediverge):
 
 def mergecopies(repo, c1, c2, base):
     """
-    The function calling different copytracing algorithms on the basis of config
-    which find moves and copies between context c1 and c2 that are relevant for
+    Finds moves and copies between context c1 and c2 that are relevant for
     merging. 'base' will be used as the merge base.
 
     Copytracing is used in commands like rebase, merge, unshelve, etc to merge
@@ -472,6 +471,8 @@ def mergecopies(repo, c1, c2, base):
     "dirmove" is a mapping of detected source dir -> destination dir renames.
     This is needed for handling changes to new files previously grafted into
     renamed directories.
+
+    This function calls different copytracing algorithms based on config.
     """
     # avoid silly behavior for update from empty dir
     if not c1 or not c2 or c1 == c2:
