@@ -94,7 +94,6 @@ log before edit
 
 edit the history
   $ hg histedit 3 --commands $EDITED 2>&1 | fixbundle
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   Fix up the change (fold 42abbb61bede)
@@ -249,7 +248,6 @@ log before edit
 
 edit the history
   $ hg histedit 3 --commands $EDITED 2>&1 | fixbundle
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   Fix up the change (roll 42abbb61bede)

@@ -139,7 +139,6 @@ temporarily.
   > edit 08d98a8350f3 4 five
   > EOF
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  reverting alpha
   Editing (08d98a8350f3), you may commit or record as needed now.
   (hg histedit --continue to resume)
   [1]
@@ -476,7 +475,6 @@ in which case this test should be revisited.
   > pick 8cde254db839
   > edit 6f2f0241f119
   > EOF
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   Fix up the change (pick 8cde254db839)

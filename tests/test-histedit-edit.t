@@ -433,7 +433,6 @@ rollback should not work after a histedit
   > edit cb9a9f314b8b a > $EDITED
   > EOF
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  adding a
   Editing (cb9a9f314b8b), you may commit or record as needed now.
   (hg histedit --continue to resume)
   [1]

@@ -522,17 +522,14 @@ class histeditaction(object):
         rulectx = repo[self.node]
         repo.ui.pushbuffer(error=True, labeled=True)
         hg.update(repo, self.state.parentctxnode, quietempty=True)
+        repo.ui.popbuffer()
         stats = applychanges(repo.ui, repo, rulectx, {})
         repo.dirstate.setbranch(rulectx.branch())
         if stats.unresolvedcount:
-            buf = repo.ui.popbuffer()
-            repo.ui.write(buf)
             raise error.InterventionRequired(
                 _('Fix up the change (%s %s)') %
                 (self.verb, node.short(self.node)),
                 hint=_('hg histedit --continue to resume'))
-        else:
-            repo.ui.popbuffer()
 
     def continuedirty(self):
         """Continues the action when changes have been applied to the working
@@ -593,8 +590,10 @@ def applychanges(ui, repo, ctx, opts):
     if ctx.p1().node() == wcpar:
         # edits are "in place" we do not need to make any merge,
         # just applies changes on parent for editing
+        ui.pushbuffer()
         cmdutil.revert(ui, repo, ctx, (wcpar, node.nullid), all=True)
         stats = mergemod.updateresult(0, 0, 0, 0)
+        ui.popbuffer()
     else:
         try:
             # ui.forcemerge is an internal variable, do not document
