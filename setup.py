@@ -975,6 +975,12 @@ if sys.version_info[0] == 2:
     packages.extend(['mercurial.thirdparty.concurrent',
                      'mercurial.thirdparty.concurrent.futures'])
 
+if 'HG_PY2EXE_EXTRA_INSTALL_PACKAGES' in os.environ:
+    # py2exe can't cope with namespace packages very well, so we have to
+    # install any hgext3rd.* extensions that we want in the final py2exe
+    # image here. This is gross, but you gotta do what you gotta do.
+    packages.extend(os.environ['HG_PY2EXE_EXTRA_INSTALL_PACKAGES'].split(' '))
+
 common_depends = ['mercurial/bitmanipulation.h',
                   'mercurial/compat.h',
                   'mercurial/cext/util.h']

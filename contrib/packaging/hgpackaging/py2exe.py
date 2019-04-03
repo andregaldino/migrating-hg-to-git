@@ -118,6 +118,10 @@ def build_py2exe(source_dir: pathlib.Path, build_dir: pathlib.Path,
 
     if extra_packages:
         env['HG_PY2EXE_EXTRA_PACKAGES'] = ' '.join(sorted(extra_packages))
+        hgext3rd_extras = sorted(
+            e for e in extra_packages if e.startswith('hgext3rd.'))
+        if hgext3rd_extras:
+            env['HG_PY2EXE_EXTRA_INSTALL_PACKAGES'] = ' '.join(hgext3rd_extras)
     if extra_excludes:
         env['HG_PY2EXE_EXTRA_EXCLUDES'] = ' '.join(sorted(extra_excludes))
     if extra_dll_excludes:
