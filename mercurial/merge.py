@@ -815,8 +815,8 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                     fileconflicts.add(f)
 
         allconflicts = fileconflicts | pathconflicts
-        ignoredconflicts = set([c for c in allconflicts
-                                if repo.dirstate._ignore(c)])
+        ignoredconflicts = {c for c in allconflicts
+                            if repo.dirstate._ignore(c)}
         unknownconflicts = allconflicts - ignoredconflicts
         collectconflicts(ignoredconflicts, ignoredconfig)
         collectconflicts(unknownconflicts, unknownconfig)
@@ -1104,7 +1104,7 @@ def _filternarrowactions(narrowmatch, branchmerge, actions):
     Raise an exception if the merge cannot be completed because the repo is
     narrowed.
     """
-    nooptypes = set(['k']) # TODO: handle with nonconflicttypes
+    nooptypes = {'k'} # TODO: handle with nonconflicttypes
     nonconflicttypes = set('a am c cm f g r e'.split())
     # We mutate the items in the dict during iteration, so iterate
     # over a copy.

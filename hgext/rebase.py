@@ -1878,8 +1878,8 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
     obsolete successors.
     """
     obsoletenotrebased = {}
-    obsoletewithoutsuccessorindestination = set([])
-    obsoleteextinctsuccessors = set([])
+    obsoletewithoutsuccessorindestination = set()
+    obsoleteextinctsuccessors = set()
 
     assert repo.filtername is None
     cl = repo.changelog

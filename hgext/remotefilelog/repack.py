@@ -154,9 +154,9 @@ def _deletebigpacks(repo, folder, files):
 
     # Either an oversize index or datapack will trigger cleanup of the whole
     # pack:
-    oversized = set([os.path.splitext(path)[0] for path, ftype, stat in files
+    oversized = {os.path.splitext(path)[0] for path, ftype, stat in files
         if (stat.st_size > maxsize and (os.path.splitext(path)[1]
-                                        in VALIDEXTS))])
+                                        in VALIDEXTS))}
 
     for rootfname in oversized:
         rootpath = os.path.join(folder, rootfname)

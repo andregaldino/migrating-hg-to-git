@@ -764,7 +764,7 @@ def headrevs(revs, parentsfn):
     the input set.
     """
     headrevs = set(revs)
-    parents = set([node.nullrev])
+    parents = {node.nullrev}
     up = parents.update
 
     for rev in revs:

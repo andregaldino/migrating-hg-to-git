@@ -2315,7 +2315,7 @@ def widen_bundle(repo, oldmatcher, newmatcher, common, known, cgversion,
                                         oldmatcher=oldmatcher,
                                         matcher=newmatcher,
                                         fullnodes=commonnodes)
-        cgdata = packer.generate(set([nodemod.nullid]), list(commonnodes),
+        cgdata = packer.generate({nodemod.nullid}, list(commonnodes),
                                  False, 'narrow_widen', changelog=False)
 
         part = bundler.newpart('changegroup', data=cgdata)

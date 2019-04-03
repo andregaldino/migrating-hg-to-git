@@ -1940,7 +1940,7 @@ class queue(object):
                 self.ui.write(patchname, label='qseries.' + state)
             self.ui.write('\n')
 
-        applied = set([p.name for p in self.applied])
+        applied = {p.name for p in self.applied}
         if length is None:
             length = len(self.series) - start
         if not missing:
@@ -3658,7 +3658,7 @@ def revsetmq(repo, subset, x):
     """Changesets managed by MQ.
     """
     revsetlang.getargs(x, 0, 0, _("mq takes no arguments"))
-    applied = set([repo[r.node].rev() for r in repo.mq.applied])
+    applied = {repo[r.node].rev() for r in repo.mq.applied}
     return smartset.baseset([r for r in subset if r in applied])
 
 # tell hggettext to extract docstrings from these functions:

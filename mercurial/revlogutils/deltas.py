@@ -637,7 +637,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 
     deltas_limit = textlen * LIMIT_DELTA2TEXT
 
-    tested = set([nullrev])
+    tested = {nullrev}
     candidates = _refinedgroups(revlog, p1, p2, cachedelta)
     while True:
         temptative = candidates.send(good)

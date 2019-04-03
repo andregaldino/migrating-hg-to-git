@@ -147,7 +147,7 @@ def uncommit(ui, repo, *pats, **opts):
             # if not everything tracked in that directory can be
             # uncommitted.
             if badfiles:
-                badfiles -= set([f for f in util.dirs(eligible)])
+                badfiles -= {f for f in util.dirs(eligible)}
 
             for f in sorted(badfiles):
                 if f in s.clean:

@@ -136,7 +136,7 @@ class basestore(object):
         failed = self._verifyfiles(contents, filestocheck)
 
         numrevs = len(verified)
-        numlfiles = len(set([fname for (fname, fnode) in verified]))
+        numlfiles = len({fname for (fname, fnode) in verified})
         if contents:
             self.ui.status(
                 _('verified contents of %d revisions of %d largefiles\n')

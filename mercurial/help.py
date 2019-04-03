@@ -748,7 +748,7 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
                 ct = mod.cmdtable
             except AttributeError:
                 ct = {}
-            modcmds = set([c.partition('|')[0] for c in ct])
+            modcmds = {c.partition('|')[0] for c in ct}
             rst.extend(helplist(modcmds.__contains__))
         else:
             rst.append(_("(use 'hg help extensions' for information on enabling"

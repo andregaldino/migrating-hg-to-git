@@ -34,7 +34,7 @@ def bisect(repo, state):
 
     changelog = repo.changelog
     clparents = changelog.parentrevs
-    skip = set([changelog.rev(n) for n in state['skip']])
+    skip = {changelog.rev(n) for n in state['skip']}
 
     def buildancestors(bad, good):
         badrev = min([changelog.rev(n) for n in bad])

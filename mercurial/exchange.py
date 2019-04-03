@@ -707,8 +707,8 @@ def _pushdiscoverybookmarks(pushop):
 
     remotebookmark = listkeys(remote, 'bookmarks')
 
-    explicit = set([repo._bookmarks.expandname(bookmark)
-                    for bookmark in pushop.bookmarks])
+    explicit = {repo._bookmarks.expandname(bookmark)
+                for bookmark in pushop.bookmarks}
 
     remotebookmark = bookmod.unhexlifybookmarks(remotebookmark)
     comp = bookmod.comparebookmarks(repo, repo._bookmarks, remotebookmark)

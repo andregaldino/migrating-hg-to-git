@@ -804,7 +804,7 @@ def gcclient(ui, cachepath):
         return
 
     reposfile = open(repospath, 'rb')
-    repos = set([r[:-1] for r in reposfile.readlines()])
+    repos = {r[:-1] for r in reposfile.readlines()}
     reposfile.close()
 
     # build list of useful files

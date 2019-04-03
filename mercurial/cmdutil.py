@@ -458,7 +458,7 @@ class dirnode(object):
 
     def __init__(self, dirpath):
         self.path = dirpath
-        self.statuses = set([])
+        self.statuses = set()
         self.files = []
         self.subdirs = {}
 
@@ -2495,8 +2495,7 @@ def amend(ui, repo, old, extra, pats, opts):
         if len(old.parents()) > 1:
             # ctx.files() isn't reliable for merges, so fall back to the
             # slower repo.status() method
-            files = set([fn for st in base.status(old)[:3]
-                         for fn in st])
+            files = {fn for st in base.status(old)[:3] for fn in st}
         else:
             files = set(old.files())
 
