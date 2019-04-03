@@ -129,7 +129,7 @@
         <MergeRef Id='VCRuntime' />
         <MergeRef Id='VCRuntimePolicy' />
       </Feature>
-      <?if $(var.MercurialExtraFeatures)?>
+      <?ifdef MercurialExtraFeatures?>
         <?foreach EXTRAFEAT in $(var.MercurialExtraFeatures)?>
           <FeatureRef Id="$(var.EXTRAFEAT)" />
         <?endforeach?>
