@@ -478,9 +478,10 @@ def onetimeclientsetup(ui):
     def findrenames(orig, repo, matcher, added, removed, *args, **kwargs):
         if isenabled(repo):
             files = []
-            parentctx = repo['.']
+            pmf = repo['.'].manifest()
             for f in removed:
-                files.append((f, hex(parentctx.filenode(f))))
+                if f in pmf:
+                    files.append((f, hex(pmf[f])))
             # batch fetch the needed files from the server
             repo.fileservice.prefetch(files)
         return orig(repo, matcher, added, removed, *args, **kwargs)
