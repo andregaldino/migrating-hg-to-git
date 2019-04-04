@@ -335,7 +335,7 @@ class Translator(nodes.NodeVisitor):
                 elif style.endswith('roman'):
                     self._indent = 5
 
-            def next(self):
+            def __next__(self):
                 if self._style == 'bullet':
                     return self.enum_style[self._style]
                 elif self._style == 'emdash':
@@ -353,6 +353,9 @@ class Translator(nodes.NodeVisitor):
                     return res.lower()
                 else:
                     return "%d." % self._cnt
+
+            next = __next__
+
             def get_width(self):
                 return self._indent
             def __repr__(self):
