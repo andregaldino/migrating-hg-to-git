@@ -72,6 +72,20 @@ Testing the `served.hidden` view
 Test the feature
 ================
 
+Check cache pre-warm
+--------------------
+
+  $ ls -1 repo-with-hidden/.hg/cache
+  branch2
+  branch2-base
+  branch2-served
+  branch2-served.hidden
+  branch2-visible
+  rbc-names-v1
+  rbc-revs-v1
+  tags2
+  tags2-visible
+
 Check that the `served.hidden` repoview
 ---------------------------------------
 

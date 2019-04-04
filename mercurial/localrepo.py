@@ -2107,6 +2107,7 @@ class localrepository(object):
             # accessing the 'ser ved' branchmap should refresh all the others,
             self.ui.debug('updating the branch cache\n')
             self.filtered('served').branchmap()
+            self.filtered('served.hidden').branchmap()
 
         if full:
             unfi = self.unfiltered()
