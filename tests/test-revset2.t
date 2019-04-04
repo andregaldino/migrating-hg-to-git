@@ -1627,6 +1627,7 @@ Test repo.anyrevs with customized revset overrides
   > printprevset = $TESTTMP/printprevset.py
   > EOF
 
+  $ unset P
   $ hg --config revsetalias.P=1 printprevset
   P=[1]
   $ P=3 hg --config revsetalias.P=2 printprevset
