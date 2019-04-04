@@ -1090,7 +1090,8 @@ class RustExtension(Extension):
         except subprocess.CalledProcessError:
             raise RustCompilationError(
                 "Cargo failed. Working directory: %r, "
-                "command: %r, environment: %r" % (self.rustsrcdir, cmd, env))
+                "command: %r, environment: %r"
+                % (self.rustsrcdir, cargocmd, env))
 
 class RustEnhancedExtension(RustExtension):
     """A C Extension, conditionally enhanced with Rust code.
