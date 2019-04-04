@@ -963,6 +963,7 @@ ACTION_LABELS = {
 }
 
 COLOR_HELP, COLOR_SELECTED, COLOR_OK, COLOR_WARN, COLOR_CURRENT  = 1, 2, 3, 4, 5
+COLOR_DIFF_ADD_LINE, COLOR_DIFF_DEL_LINE, COLOR_DIFF_OFFSET = 6, 7, 8
 
 E_QUIT, E_HISTEDIT = 1, 2
 E_PAGEDOWN, E_PAGEUP, E_LINEUP, E_LINEDOWN, E_RESIZE = 3, 4, 5, 6, 7
@@ -1249,6 +1250,9 @@ def _chisteditmain(repo, rules, stdscr):
     curses.init_pair(COLOR_WARN, curses.COLOR_BLACK, curses.COLOR_YELLOW)
     curses.init_pair(COLOR_OK, curses.COLOR_BLACK, curses.COLOR_GREEN)
     curses.init_pair(COLOR_CURRENT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
+    curses.init_pair(COLOR_DIFF_ADD_LINE, curses.COLOR_GREEN, -1)
+    curses.init_pair(COLOR_DIFF_DEL_LINE, curses.COLOR_RED, -1)
+    curses.init_pair(COLOR_DIFF_OFFSET, curses.COLOR_MAGENTA, -1)
 
     # don't display the cursor
     try:
@@ -1345,16 +1349,30 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                 addln(rulesscr, y, 2, rule)
         rulesscr.noutrefresh()
 
-    def renderstring(win, state, output):
+    def renderstring(win, state, output, diffcolors=False):
         maxy, maxx = win.getmaxyx()
         length = min(maxy - 1, len(output))
         for y in range(0, length):
-            win.addstr(y, 0, output[y])
+            line = output[y]
+            if diffcolors:
+                if line and line[0] == '+':
+                    win.addstr(
+                        y, 0, line, curses.color_pair(COLOR_DIFF_ADD_LINE))
+                elif line and line[0] == '-':
+                    win.addstr(
+                        y, 0, line, curses.color_pair(COLOR_DIFF_DEL_LINE))
+                elif line.startswith('@@ '):
+                    win.addstr(
+                        y, 0, line, curses.color_pair(COLOR_DIFF_OFFSET))
+                else:
+                    win.addstr(y, 0, line)
+            else:
+                win.addstr(y, 0, line)
         win.noutrefresh()
 
     def renderpatch(win, state):
         start = state['modes'][MODE_PATCH]['line_offset']
-        renderstring(win, state, patchcontents(state)[start:])
+        renderstring(win, state, patchcontents(state)[start:], diffcolors=True)
 
     def layout(mode):
         maxy, maxx = stdscr.getmaxyx()
