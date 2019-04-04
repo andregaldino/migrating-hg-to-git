@@ -1229,8 +1229,9 @@ def addln(win, y, x, line, color=None):
 def patchcontents(state):
     repo = state['repo']
     rule = state['rules'][state['pos']]
+    repo.ui.verbose = True
     displayer = logcmdutil.changesetdisplayer(repo.ui, repo, {
-        'patch': True, 'verbose': True
+        "patch": True,  "template": "status"
     }, buffered=True)
     displayer.show(rule.ctx)
     displayer.close()
