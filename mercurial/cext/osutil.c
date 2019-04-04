@@ -8,6 +8,7 @@
 */
 
 #define _ATFILE_SOURCE
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -227,7 +228,7 @@ static PyObject *make_item(const WIN32_FIND_DATAA *fd, int wantstat)
 		kind, py_st);
 }
 
-static PyObject *_listdir(char *path, int plen, int wantstat, char *skip)
+static PyObject *_listdir(char *path, Py_ssize_t plen, int wantstat, char *skip)
 {
 	PyObject *rval = NULL; /* initialize - return value */
 	PyObject *list;
@@ -1181,7 +1182,8 @@ static PyObject *listdir(PyObject *self, PyObject *args, PyObject *kwargs)
 	PyObject *statobj = NULL; /* initialize - optional arg */
 	PyObject *skipobj = NULL; /* initialize - optional arg */
 	char *path, *skip = NULL;
-	int wantstat, plen;
+	Py_ssize_t plen;
+	int wantstat;
 
 	static char *kwlist[] = {"path", "stat", "skip", NULL};
 
