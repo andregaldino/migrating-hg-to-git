@@ -7,6 +7,7 @@
  the GNU General Public License, incorporated herein by reference.
 */
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <ctype.h>
 #include <stddef.h>
@@ -164,8 +165,9 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 	PyObject *fname = NULL, *cname = NULL, *entry = NULL;
 	char state, *cur, *str, *cpos;
 	int mode, size, mtime;
-	unsigned int flen, len, pos = 40;
-	int readlen;
+	unsigned int flen, pos = 40;
+	Py_ssize_t len = 40;
+	Py_ssize_t readlen;
 
 	if (!PyArg_ParseTuple(
 	        args, PY23("O!O!s#:parse_dirstate", "O!O!y#:parse_dirstate"),
@@ -585,8 +587,7 @@ bail:
 static PyObject *fm1readmarkers(PyObject *self, PyObject *args)
 {
 	const char *data, *dataend;
-	int datalen;
-	Py_ssize_t offset, stop;
+	Py_ssize_t datalen, offset, stop;
 	PyObject *markers = NULL;
 
 	if (!PyArg_ParseTuple(args, PY23("s#nn", "y#nn"), &data, &datalen,
