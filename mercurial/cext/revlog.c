@@ -7,6 +7,7 @@
  the GNU General Public License, incorporated herein by reference.
 */
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <assert.h>
 #include <ctype.h>
@@ -1947,7 +1948,7 @@ static int index_populate_nt(indexObject *self)
 static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 {
 	const char *fullnode;
-	int nodelen;
+	Py_ssize_t nodelen;
 	char *node;
 	int rev, i;
 
