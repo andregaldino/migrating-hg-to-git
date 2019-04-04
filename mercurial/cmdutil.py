@@ -201,7 +201,8 @@ def setupwrapcolorwrite(ui):
     setattr(ui, 'write', wrap)
     return oldwrite
 
-def filterchunks(ui, originalhunks, usecurses, testfile, operation=None):
+def filterchunks(ui, originalhunks, usecurses, testfile, match,
+                 operation=None):
     try:
         if usecurses:
             if testfile:
@@ -216,9 +217,9 @@ def filterchunks(ui, originalhunks, usecurses, testfile, operation=None):
         ui.warn('%s\n' % e.message)
         ui.warn(_('falling back to text mode\n'))
 
-    return patch.filterpatch(ui, originalhunks, operation)
+    return patch.filterpatch(ui, originalhunks, match, operation)
 
-def recordfilter(ui, originalhunks, operation=None):
+def recordfilter(ui, originalhunks, match, operation=None):
     """ Prompts the user to filter the originalhunks and return a list of
     selected hunks.
     *operation* is used for to build ui messages to indicate the user what
@@ -230,7 +231,7 @@ def recordfilter(ui, originalhunks, operation=None):
     oldwrite = setupwrapcolorwrite(ui)
     try:
         newchunks, newopts = filterchunks(ui, originalhunks, usecurses,
-                                          testfile, operation)
+                                          testfile, match, operation)
     finally:
         ui.write = oldwrite
     return newchunks, newopts
@@ -312,10 +313,11 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         diffopts.showfunc = True
         originaldiff = patch.diff(repo, changes=status, opts=diffopts)
         originalchunks = patch.parsepatch(originaldiff)
+        match = scmutil.match(repo[None], pats)
 
         # 1. filter patch, since we are intending to apply subset of it
         try:
-            chunks, newopts = filterfn(ui, originalchunks)
+            chunks, newopts = filterfn(ui, originalchunks, match)
         except error.PatchError as err:
             raise error.Abort(_('error parsing patch: %s') % err)
         opts.update(newopts)
@@ -3081,8 +3083,9 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             prefetch(repo, [ctx.rev()],
                      matchfiles(repo,
                                 [f for sublist in oplist for f in sublist]))
+            match = scmutil.match(repo[None], pats)
             _performrevert(repo, parents, ctx, names, uipathfn, actions,
-                           interactive, tobackup)
+                           match, interactive, tobackup)
 
         if targetsubs:
             # Revert the subrepos on the revert list
@@ -3095,7 +3098,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                                       % (sub, short(ctx.node())))
 
 def _performrevert(repo, parents, ctx, names, uipathfn, actions,
-                   interactive=False, tobackup=None):
+                   match, interactive=False, tobackup=None):
     """function that actually perform all the actions computed for revert
 
     This is an independent function to let extension to plug in and react to
@@ -3191,7 +3194,7 @@ def _performrevert(repo, parents, ctx, names, uipathfn, actions,
 
         try:
 
-            chunks, opts = recordfilter(repo.ui, originalchunks,
+            chunks, opts = recordfilter(repo.ui, originalchunks, match,
                                         operation=operation)
             if operation == 'discard':
                 chunks = patch.reversehunks(chunks)

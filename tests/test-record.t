@@ -76,10 +76,8 @@ Select no files
   > EOF
   diff --git a/empty-rw b/empty-rw
   new file mode 100644
-  examine changes to 'empty-rw'? [Ynesfdaq?] n
-  
-  no changes to record
-  [1]
+  abort: empty commit message
+  [255]
 
   $ hg tip -p
   changeset:   -1:000000000000

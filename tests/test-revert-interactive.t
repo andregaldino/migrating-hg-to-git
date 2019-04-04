@@ -149,11 +149,9 @@ Test that --interactive lift the need for --all
   g
 
 Test that a noop revert doesn't do an unnecessary backup
-  $ (echo y; echo n) | hg revert -i -r 2 folder1/g
+  $ (echo n) | hg revert -i -r 2 folder1/g
   diff --git a/folder1/g b/folder1/g
   1 hunks, 1 lines changed
-  examine changes to 'folder1/g'? [Ynesfdaq?] y
-  
   @@ -3,4 +3,3 @@
    3
    4
@@ -165,11 +163,9 @@ Test that a noop revert doesn't do an unnecessary backup
   g
 
 Test --no-backup
-  $ (echo y; echo y) | hg revert -i -C -r 2 folder1/g
+  $ (echo y) | hg revert -i -C -r 2 folder1/g
   diff --git a/folder1/g b/folder1/g
   1 hunks, 1 lines changed
-  examine changes to 'folder1/g'? [Ynesfdaq?] y
-  
   @@ -3,4 +3,3 @@
    3
    4
@@ -270,7 +266,6 @@ Test --no-backup
   M f
   M folder1/g
   $ hg revert --interactive f << EOF
-  > y
   > ?
   > y
   > n
@@ -278,8 +273,6 @@ Test --no-backup
   > EOF
   diff --git a/f b/f
   2 hunks, 2 lines changed
-  examine changes to 'f'? [Ynesfdaq?] y
-  
   @@ -1,6 +1,5 @@
   -a
    1
@@ -327,6 +320,25 @@ Test --no-backup
   4
   5
   $ rm f.orig
+
+Patterns
+
+  $ hg revert -i 'glob:f*' << EOF
+  > y
+  > n
+  > EOF
+  diff --git a/f b/f
+  1 hunks, 1 lines changed
+  examine changes to 'f'? [Ynesfdaq?] y
+  
+  @@ -4,4 +4,3 @@
+   3
+   4
+   5
+  -b
+  discard this change to 'f'? [Ynesfdaq?] n
+  
+
   $ hg update -C .
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

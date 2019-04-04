@@ -1065,7 +1065,7 @@ def getmessages():
         }
     }
 
-def filterpatch(ui, headers, operation=None):
+def filterpatch(ui, headers, match, operation=None):
     """Interactively filter patch chunks into applied-only chunks"""
     messages = getmessages()
 
@@ -1182,9 +1182,13 @@ the hunk is left unchanged.
         seen.add(hdr)
         if skipall is None:
             h.pretty(ui)
+        files = h.files()
         msg = (_('examine changes to %s?') %
-               _(' and ').join("'%s'" % f for f in h.files()))
-        r, skipfile, skipall, np = prompt(skipfile, skipall, msg, None)
+               _(' and ').join("'%s'" % f for f in files))
+        if all(match.exact(f) for f in files):
+            r, skipall, np = True, None, None
+        else:
+            r, skipfile, skipall, np = prompt(skipfile, skipall, msg, None)
         if not r:
             continue
         applied[h.filename()] = [h]

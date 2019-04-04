@@ -383,13 +383,10 @@ record chunk
   >>> open('a', 'wb').writelines(lines)
   $ hg record -d '10 1' -m rectest a<<EOF
   > y
-  > y
   > n
   > EOF
   diff --git a/a b/a
   2 hunks, 2 lines changed
-  examine changes to 'a'? [Ynesfdaq?] y
-  
   @@ -1,3 +1,4 @@
    expand $Id$
   +foo
@@ -448,8 +445,6 @@ Record all chunks in file a
   > EOF
   diff --git a/a b/a
   2 hunks, 2 lines changed
-  examine changes to 'a'? [Ynesfdaq?] y
-  
   @@ -1,3 +1,4 @@
    expand $Id$
   +foo
@@ -519,8 +514,6 @@ record added file alone
   > EOF
   diff --git a/r b/r
   new file mode 100644
-  examine changes to 'r'? [Ynesfdaq?] y
-  
   @@ -0,0 +1,1 @@
   +$Id$
   record this change to 'r'? [Ynesfdaq?] y
