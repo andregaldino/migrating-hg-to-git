@@ -316,22 +316,22 @@ def gettimer(ui, opts=None):
     limitspec = ui.configlist(b"perf", b"run-limits", [])
     limits = []
     for item in limitspec:
-        parts = item.split('-', 1)
+        parts = item.split(b'-', 1)
         if len(parts) < 2:
-            ui.warn(('malformatted run limit entry, missing "-": %s\n'
+            ui.warn((b'malformatted run limit entry, missing "-": %s\n'
                      % item))
             continue
         try:
-            time_limit = float(parts[0])
+            time_limit = float(pycompat.sysstr(parts[0]))
         except ValueError as e:
-            ui.warn(('malformatted run limit entry, %s: %s\n'
-                     % (e, item)))
+            ui.warn((b'malformatted run limit entry, %s: %s\n'
+                     % (pycompat.bytestr(e), item)))
             continue
         try:
-            run_limit = int(parts[1])
+            run_limit = int(pycompat.sysstr(parts[1]))
         except ValueError as e:
-            ui.warn(('malformatted run limit entry, %s: %s\n'
-                     % (e, item)))
+            ui.warn((b'malformatted run limit entry, %s: %s\n'
+                     % (pycompat.bytestr(e), item)))
             continue
         limits.append((time_limit, run_limit))
     if not limits:
