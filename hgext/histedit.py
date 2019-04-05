@@ -1238,6 +1238,11 @@ def patchcontents(state):
     return displayer.hunk[rule.ctx.rev()].splitlines()
 
 def _chisteditmain(repo, rules, stdscr):
+    try:
+        curses.use_default_colors()
+    except curses.error:
+        pass
+
     # initialize color pattern
     curses.init_pair(COLOR_HELP, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(COLOR_SELECTED, curses.COLOR_BLACK, curses.COLOR_WHITE)
