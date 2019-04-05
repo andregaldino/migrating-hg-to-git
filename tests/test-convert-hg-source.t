@@ -214,10 +214,14 @@ manifest -r tip
   $ hg ci -Aqm initial
   $ echo b > b
   $ hg ci -Aqm 'the previous commit was 1451231c8757'
+  $ echo c > c
+  $ hg ci -Aqm 'the working copy is called ffffffffffff'
 
   $ cd ..
+BROKEN: crashes when the "ffffffffffff" is encountered
   $ hg convert commit-references new-commit-references -q \
-  >     --config convert.hg.sourcename=yes
+  >     --config convert.hg.sourcename=yes 2>&1 | grep TypeError
+  TypeError: b2a_hex() argument 1 must be string or buffer, not None
   $ cd new-commit-references
   $ hg log -T '{node|short} {desc}\n'
   642508659503 the previous commit was c2491f685436
