@@ -598,6 +598,12 @@ def bundle(repo, subset, x):
     return subset & bundlerevs
 
 def checkstatus(repo, subset, pat, field):
+    """Helper for status-related revsets (adds, removes, modifies).
+    The field parameter says which kind is desired:
+    0: modified
+    1: added
+    2: removed
+    """
     hasset = matchmod.patkind(pat) == 'set'
 
     mcache = [None]
