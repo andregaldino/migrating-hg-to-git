@@ -118,7 +118,7 @@ IAM_INSTANCE_PROFILES = {
 # and configure WinRM.
 # Inspired by the User Data script used by Packer
 # (from https://www.packer.io/intro/getting-started/build-image.html).
-WINDOWS_USER_DATA = '''
+WINDOWS_USER_DATA = r'''
 <powershell>
 
 # TODO enable this once we figure out what is failing.

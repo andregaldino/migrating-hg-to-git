@@ -114,7 +114,7 @@ def fix_authorized_keys_permissions(winrm_client, path):
     commands = [
         '$ErrorActionPreference = "Stop"',
         'Repair-AuthorizedKeyPermission -FilePath %s -Confirm:$false' % path,
-        'icacls %s /remove:g "NT Service\sshd"' % path,
+        r'icacls %s /remove:g "NT Service\sshd"' % path,
     ]
 
     run_powershell(winrm_client, '\n'.join(commands))
@@ -192,7 +192,7 @@ def find_latest_dist(winrm_client, pattern):
     """Find path to newest file in dist/ directory matching a pattern."""
 
     res = winrm_client.execute_ps(
-        '$v = Get-ChildItem -Path C:\hgdev\src\dist -Filter "%s" '
+        r'$v = Get-ChildItem -Path C:\hgdev\src\dist -Filter "%s" '
         '| Sort-Object LastWriteTime -Descending '
         '| Select-Object -First 1\n'
         '$v.name' % pattern
@@ -270,8 +270,8 @@ def run_tests(winrm_client, python_version, arch, test_flags=''):
     ``test_flags`` is a str representing extra arguments to pass to
     ``run-tests.py``.
     """
-    if not re.match('\d\.\d', python_version):
-        raise ValueError('python_version must be \d.\d; got %s' %
+    if not re.match(r'\d\.\d', python_version):
+        raise ValueError(r'python_version must be \d.\d; got %s' %
                          python_version)
 
     if arch not in ('x86', 'x64'):
