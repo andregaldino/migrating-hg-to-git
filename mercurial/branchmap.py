@@ -319,7 +319,6 @@ class branchcache(object):
         return self._branchtip(self[branch])[0]
 
     def iteropen(self, nodes):
-        self._verifyclosed()
         return (n for n in nodes if n not in self._closednodes)
 
     def branchheads(self, branch, closed=False):
