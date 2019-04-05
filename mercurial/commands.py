@@ -1125,11 +1125,11 @@ def branch(ui, repo, label=None, **opts):
             ui.status(_('marked working directory as branch %s\n') % label)
 
             # find any open named branches aside from default
-            others = [n for n, h, t, c in repo.branchmap().iterbranches()
-                      if n != "default" and not c]
-            if not others:
-                ui.status(_('(branches are permanent and global, '
-                            'did you want a bookmark?)\n'))
+            for n, h, t, c in repo.branchmap().iterbranches():
+                if n != "default" and not c:
+                    return 0
+            ui.status(_('(branches are permanent and global, '
+                        'did you want a bookmark?)\n'))
 
 @command('branches',
     [('a', 'active', False,
