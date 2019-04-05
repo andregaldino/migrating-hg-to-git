@@ -304,7 +304,6 @@ class branchcache(object):
         otherwise return last closed head and true.'''
         tip = heads[-1]
         closed = True
-        self._verifyclosed()
         for h in reversed(heads):
             if h not in self._closednodes:
                 tip = h
