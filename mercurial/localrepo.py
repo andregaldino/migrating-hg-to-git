@@ -1564,7 +1564,10 @@ class localrepository(object):
                 pass
 
     def lookup(self, key):
-        return scmutil.revsymbol(self, key).node()
+        node = scmutil.revsymbol(self, key).node()
+        if node is None:
+            raise error.RepoLookupError(_("unknown revision '%s'") % key)
+        return node
 
     def lookupbranch(self, key):
         if self.branchmap().hasbranch(key):

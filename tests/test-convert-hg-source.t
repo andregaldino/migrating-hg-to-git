@@ -218,11 +218,10 @@ manifest -r tip
   $ hg ci -Aqm 'the working copy is called ffffffffffff'
 
   $ cd ..
-BROKEN: crashes when the "ffffffffffff" is encountered
   $ hg convert commit-references new-commit-references -q \
-  >     --config convert.hg.sourcename=yes 2>&1 | grep TypeError
-  TypeError: b2a_hex() argument 1 must be string or buffer, not None
+  >     --config convert.hg.sourcename=yes
   $ cd new-commit-references
   $ hg log -T '{node|short} {desc}\n'
+  fe295c9e6bc6 the working copy is called ffffffffffff
   642508659503 the previous commit was c2491f685436
   c2491f685436 initial

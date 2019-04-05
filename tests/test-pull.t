@@ -76,10 +76,9 @@ not are encoded like a node:
   [255]
 
 Test pull of working copy revision
-BROKEN: should give a better error message
   $ hg pull -r 'ffffffffffff'
   pulling from http://foo@localhost:$HGPORT/
-  abort: b2a_hex() argument 1 must be string or buffer, not None!
+  abort: unknown revision 'ffffffffffff'!
   [255]
 
 Issue622: hg init && hg pull -u URL doesn't checkout default branch
