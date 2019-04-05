@@ -12,9 +12,9 @@ from . common import (
 @make_cffi
 class TestModuleAttributes(unittest.TestCase):
     def test_version(self):
-        self.assertEqual(zstd.ZSTD_VERSION, (1, 3, 6))
+        self.assertEqual(zstd.ZSTD_VERSION, (1, 3, 8))
 
-        self.assertEqual(zstd.__version__, '0.10.1')
+        self.assertEqual(zstd.__version__, '0.11.0')
 
     def test_constants(self):
         self.assertEqual(zstd.MAX_COMPRESSION_LEVEL, 22)
@@ -29,6 +29,8 @@ class TestModuleAttributes(unittest.TestCase):
             'DECOMPRESSION_RECOMMENDED_INPUT_SIZE',
             'DECOMPRESSION_RECOMMENDED_OUTPUT_SIZE',
             'MAGIC_NUMBER',
+            'FLUSH_BLOCK',
+            'FLUSH_FRAME',
             'BLOCKSIZELOG_MAX',
             'BLOCKSIZE_MAX',
             'WINDOWLOG_MIN',
@@ -38,6 +40,8 @@ class TestModuleAttributes(unittest.TestCase):
             'HASHLOG_MIN',
             'HASHLOG_MAX',
             'HASHLOG3_MAX',
+            'MINMATCH_MIN',
+            'MINMATCH_MAX',
             'SEARCHLOG_MIN',
             'SEARCHLOG_MAX',
             'SEARCHLENGTH_MIN',
@@ -55,6 +59,7 @@ class TestModuleAttributes(unittest.TestCase):
             'STRATEGY_BTLAZY2',
             'STRATEGY_BTOPT',
             'STRATEGY_BTULTRA',
+            'STRATEGY_BTULTRA2',
             'DICT_TYPE_AUTO',
             'DICT_TYPE_RAWCONTENT',
             'DICT_TYPE_FULLDICT',

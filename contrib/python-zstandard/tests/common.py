@@ -79,11 +79,36 @@ def make_cffi(cls):
     return cls
 
 
-class OpCountingBytesIO(io.BytesIO):
+class NonClosingBytesIO(io.BytesIO):
+    """BytesIO that saves the underlying buffer on close().
+
+    This allows us to access written data after close().
+    """
     def __init__(self, *args, **kwargs):
+        super(NonClosingBytesIO, self).__init__(*args, **kwargs)
+        self._saved_buffer = None
+
+    def close(self):
+        self._saved_buffer = self.getvalue()
+        return super(NonClosingBytesIO, self).close()
+
+    def getvalue(self):
+        if self.closed:
+            return self._saved_buffer
+        else:
+            return super(NonClosingBytesIO, self).getvalue()
+
+
+class OpCountingBytesIO(NonClosingBytesIO):
+    def __init__(self, *args, **kwargs):
+        self._flush_count = 0
         self._read_count = 0
         self._write_count = 0
         return super(OpCountingBytesIO, self).__init__(*args, **kwargs)
+
+    def flush(self):
+        self._flush_count += 1
+        return super(OpCountingBytesIO, self).flush()
 
     def read(self, *args):
         self._read_count += 1
@@ -117,6 +142,13 @@ def random_input_data():
             except OSError:
                 pass
 
+    # Also add some actual random data.
+    _source_files.append(os.urandom(100))
+    _source_files.append(os.urandom(1000))
+    _source_files.append(os.urandom(10000))
+    _source_files.append(os.urandom(100000))
+    _source_files.append(os.urandom(1000000))
+
     return _source_files
 
 
@@ -140,12 +172,14 @@ def generate_samples():
 
 
 if hypothesis:
-    default_settings = hypothesis.settings()
+    default_settings = hypothesis.settings(deadline=10000)
     hypothesis.settings.register_profile('default', default_settings)
 
-    ci_settings = hypothesis.settings(max_examples=2500,
-                                      max_iterations=2500)
+    ci_settings = hypothesis.settings(deadline=20000, max_examples=1000)
     hypothesis.settings.register_profile('ci', ci_settings)
+
+    expensive_settings = hypothesis.settings(deadline=None, max_examples=10000)
+    hypothesis.settings.register_profile('expensive', expensive_settings)
 
     hypothesis.settings.load_profile(
         os.environ.get('HYPOTHESIS_PROFILE', 'default'))

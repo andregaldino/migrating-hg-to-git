@@ -96,7 +96,7 @@ zstd is used if available
 
   $ get-with-headers.py --hgproto '0.2 comp=zstd' $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' > resp
   $ f --size --hexdump --bytes 36 --sha1 resp
-  resp: size=248, sha1=4d8d8f87fb82bd542ce52881fdc94f850748
+  resp: size=248, sha1=f11b5c098c638068b3d5fe2f9e6241bf5228
   0000: 32 30 30 20 53 63 72 69 70 74 20 6f 75 74 70 75 |200 Script outpu|
   0010: 74 20 66 6f 6c 6c 6f 77 73 0a 0a 04 7a 73 74 64 |t follows...zstd|
   0020: 28 b5 2f fd                                     |(./.|

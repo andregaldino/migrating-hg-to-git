@@ -729,7 +729,7 @@ Defining an invalid content encoding results in warning
   s>     \r\n
   s>     25\r\n
   s>     \x1d\x00\x00\x01\x00\x02\x042
-  s>     (\xb5/\xfd\x00P\xa4\x00\x00p\xa1FstatusBok\x81T\x00\x01\x00\tP\x02
+  s>     (\xb5/\xfd\x00X\xa4\x00\x00p\xa1FstatusBok\x81T\x00\x01\x00\tP\x02
   s>     \r\n
   s>     0\r\n
   s>     \r\n

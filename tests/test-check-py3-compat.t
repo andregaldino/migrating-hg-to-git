@@ -36,14 +36,6 @@
   > -X mercurial/thirdparty \
   > | sed 's|\\|/|g' | xargs "$PYTHON" contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
-  contrib/python-zstandard/tests/test_compressor.py:324: SyntaxWarning: invalid escape sequence \( (py38 !)
-    with self.assertRaisesRegexp(zstd.ZstdError, 'cannot call compress\(\) after compressor'): (py38 !)
-  contrib/python-zstandard/tests/test_compressor.py:1329: SyntaxWarning: invalid escape sequence \( (py38 !)
-    'cannot call compress\(\) after compression finished'): (py38 !)
-  contrib/python-zstandard/tests/test_compressor.py:1341: SyntaxWarning: invalid escape sequence \( (py38 !)
-    'cannot call flush\(\) after compression finished'): (py38 !)
-  contrib/python-zstandard/tests/test_compressor.py:1353: SyntaxWarning: invalid escape sequence \( (py38 !)
-    'cannot call finish\(\) after compression finished'): (py38 !)
   hgext/convert/transport.py: error importing: <*Error> No module named 'svn.client' (error at transport.py:*) (glob) (?)
   hgext/infinitepush/sqlindexapi.py: error importing: <*Error> No module named 'mysql' (error at sqlindexapi.py:*) (glob) (?)
   mercurial/scmwindows.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)

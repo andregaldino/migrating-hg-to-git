@@ -62,6 +62,11 @@ contrib/python-zstandard/zstd/compress/zstdmt_compress.h
 contrib/python-zstandard/zstd/compress/zstd_opt.c
 contrib/python-zstandard/zstd/compress/zstd_opt.h
 contrib/python-zstandard/zstd/decompress/huf_decompress.c
+contrib/python-zstandard/zstd/decompress/zstd_ddict.c
+contrib/python-zstandard/zstd/decompress/zstd_ddict.h
+contrib/python-zstandard/zstd/decompress/zstd_decompress_block.c
+contrib/python-zstandard/zstd/decompress/zstd_decompress_block.h
+contrib/python-zstandard/zstd/decompress/zstd_decompress_internal.h
 contrib/python-zstandard/zstd/decompress/zstd_decompress.c
 contrib/python-zstandard/zstd/deprecated/zbuff_common.c
 contrib/python-zstandard/zstd/deprecated/zbuff_compress.c

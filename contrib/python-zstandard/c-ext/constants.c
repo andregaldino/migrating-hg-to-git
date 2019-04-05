@@ -32,6 +32,9 @@ void constants_module_init(PyObject* mod) {
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);
 	PyModule_AddObject(mod, "ZstdError", ZstdError);
 
+	PyModule_AddIntConstant(mod, "FLUSH_BLOCK", 0);
+	PyModule_AddIntConstant(mod, "FLUSH_FRAME", 1);
+
 	PyModule_AddIntConstant(mod, "COMPRESSOBJ_FLUSH_FINISH", compressorobj_flush_finish);
 	PyModule_AddIntConstant(mod, "COMPRESSOBJ_FLUSH_BLOCK", compressorobj_flush_block);
 
@@ -77,8 +80,11 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "HASHLOG3_MAX", ZSTD_HASHLOG3_MAX);
 	PyModule_AddIntConstant(mod, "SEARCHLOG_MIN", ZSTD_SEARCHLOG_MIN);
 	PyModule_AddIntConstant(mod, "SEARCHLOG_MAX", ZSTD_SEARCHLOG_MAX);
-	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MIN", ZSTD_SEARCHLENGTH_MIN);
-	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MAX", ZSTD_SEARCHLENGTH_MAX);
+	PyModule_AddIntConstant(mod, "MINMATCH_MIN", ZSTD_MINMATCH_MIN);
+	PyModule_AddIntConstant(mod, "MINMATCH_MAX", ZSTD_MINMATCH_MAX);
+	/* TODO SEARCHLENGTH_* is deprecated. */
+	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MIN", ZSTD_MINMATCH_MIN);
+	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MAX", ZSTD_MINMATCH_MAX);
 	PyModule_AddIntConstant(mod, "TARGETLENGTH_MIN", ZSTD_TARGETLENGTH_MIN);
 	PyModule_AddIntConstant(mod, "TARGETLENGTH_MAX", ZSTD_TARGETLENGTH_MAX);
 	PyModule_AddIntConstant(mod, "LDM_MINMATCH_MIN", ZSTD_LDM_MINMATCH_MIN);
@@ -93,6 +99,7 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "STRATEGY_BTLAZY2", ZSTD_btlazy2);
 	PyModule_AddIntConstant(mod, "STRATEGY_BTOPT", ZSTD_btopt);
 	PyModule_AddIntConstant(mod, "STRATEGY_BTULTRA", ZSTD_btultra);
+	PyModule_AddIntConstant(mod, "STRATEGY_BTULTRA2", ZSTD_btultra2);
 
 	PyModule_AddIntConstant(mod, "DICT_TYPE_AUTO", ZSTD_dct_auto);
 	PyModule_AddIntConstant(mod, "DICT_TYPE_RAWCONTENT", ZSTD_dct_rawContent);

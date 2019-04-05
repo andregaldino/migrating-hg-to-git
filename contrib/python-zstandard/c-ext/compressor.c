@@ -204,27 +204,27 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		}
 	}
 	else {
-		if (set_parameter(self->params, ZSTD_p_compressionLevel, level)) {
+		if (set_parameter(self->params, ZSTD_c_compressionLevel, level)) {
 			return -1;
 		}
 
-		if (set_parameter(self->params, ZSTD_p_contentSizeFlag,
+		if (set_parameter(self->params, ZSTD_c_contentSizeFlag,
 			writeContentSize ? PyObject_IsTrue(writeContentSize) : 1)) {
 			return -1;
 		}
 
-		if (set_parameter(self->params, ZSTD_p_checksumFlag,
+		if (set_parameter(self->params, ZSTD_c_checksumFlag,
 			writeChecksum ? PyObject_IsTrue(writeChecksum) : 0)) {
 			return -1;
 		}
 
-		if (set_parameter(self->params, ZSTD_p_dictIDFlag,
+		if (set_parameter(self->params, ZSTD_c_dictIDFlag,
 			writeDictID ? PyObject_IsTrue(writeDictID) : 1)) {
 			return -1;
 		}
 
 		if (threads) {
-			if (set_parameter(self->params, ZSTD_p_nbWorkers, threads)) {
+			if (set_parameter(self->params, ZSTD_c_nbWorkers, threads)) {
 				return -1;
 			}
 		}
@@ -344,7 +344,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		return NULL;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -391,7 +391,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 		while (input.pos < input.size) {
 			Py_BEGIN_ALLOW_THREADS
-			zresult = ZSTD_compress_generic(self->cctx, &output, &input, ZSTD_e_continue);
+			zresult = ZSTD_compressStream2(self->cctx, &output, &input, ZSTD_e_continue);
 			Py_END_ALLOW_THREADS
 
 			if (ZSTD_isError(zresult)) {
@@ -421,7 +421,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 
 	while (1) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_compress_generic(self->cctx, &output, &input, ZSTD_e_end);
+		zresult = ZSTD_compressStream2(self->cctx, &output, &input, ZSTD_e_end);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -517,7 +517,7 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 		goto except;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -577,7 +577,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		goto finally;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	destSize = ZSTD_compressBound(source.len);
 	output = PyBytes_FromStringAndSize(NULL, destSize);
@@ -605,7 +605,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 	/* By avoiding ZSTD_compress(), we don't necessarily write out content
 		size. This means the argument to ZstdCompressor to control frame
 		parameters is honored. */
-	zresult = ZSTD_compress_generic(self->cctx, &outBuffer, &inBuffer, ZSTD_e_end);
+	zresult = ZSTD_compressStream2(self->cctx, &outBuffer, &inBuffer, ZSTD_e_end);
 	Py_END_ALLOW_THREADS
 
 	if (ZSTD_isError(zresult)) {
@@ -651,7 +651,7 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, inSize);
 	if (ZSTD_isError(zresult)) {
@@ -740,7 +740,7 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 		goto except;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -794,16 +794,19 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 		"writer",
 		"size",
 		"write_size",
+		"write_return_read",
 		NULL
 	};
 
 	PyObject* writer;
 	ZstdCompressionWriter* result;
+	size_t zresult;
 	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t outSize = ZSTD_CStreamOutSize();
+	PyObject* writeReturnRead = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:stream_writer", kwlist,
-		&writer, &sourceSize, &outSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|KkO:stream_writer", kwlist,
+		&writer, &sourceSize, &outSize, &writeReturnRead)) {
 		return NULL;
 	}
 
@@ -812,12 +815,28 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 		return NULL;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
+
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
+	}
 
 	result = (ZstdCompressionWriter*)PyObject_CallObject((PyObject*)&ZstdCompressionWriterType, NULL);
 	if (!result) {
 		return NULL;
 	}
+
+	result->output.dst = PyMem_Malloc(outSize);
+	if (!result->output.dst) {
+		Py_DECREF(result);
+		return (ZstdCompressionWriter*)PyErr_NoMemory();
+	}
+
+	result->output.pos = 0;
+	result->output.size = outSize;
 
 	result->compressor = self;
 	Py_INCREF(result->compressor);
@@ -825,9 +844,9 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 	result->writer = writer;
 	Py_INCREF(result->writer);
 
-	result->sourceSize = sourceSize;
 	result->outSize = outSize;
 	result->bytesCompressed = 0;
+	result->writeReturnRead = writeReturnRead ? PyObject_IsTrue(writeReturnRead) : 0;
 
 	return result;
 }
@@ -853,7 +872,7 @@ static ZstdCompressionChunker* ZstdCompressor_chunker(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	ZSTD_CCtx_reset(self->cctx);
+	ZSTD_CCtx_reset(self->cctx, ZSTD_reset_session_only);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -1115,7 +1134,7 @@ static void compress_worker(WorkerState* state) {
 			break;
 		}
 
-		zresult = ZSTD_compress_generic(state->cctx, &opOutBuffer, &opInBuffer, ZSTD_e_end);
+		zresult = ZSTD_compressStream2(state->cctx, &opOutBuffer, &opInBuffer, ZSTD_e_end);
 		if (ZSTD_isError(zresult)) {
 			state->error = WorkerError_zstd;
 			state->zresult = zresult;
