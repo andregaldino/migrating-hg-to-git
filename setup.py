@@ -796,7 +796,7 @@ class hgbuilddoc(Command):
 
         # This logic is duplicated in doc/Makefile.
         sources = {f for f in os.listdir('mercurial/help')
-                   if re.search('[0-9]\.txt$', f)}
+                   if re.search(r'[0-9]\.txt$', f)}
 
         # common.txt is a one-off.
         gentxt('common')
