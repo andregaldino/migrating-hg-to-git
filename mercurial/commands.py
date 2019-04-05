@@ -4503,7 +4503,10 @@ def pull(ui, repo, source="default", **opts):
             try:
                 ret = postincoming(ui, repo, modheads, opts.get('update'),
                                    checkout, brev)
-
+            except error.FilteredRepoLookupError as exc:
+                msg = _('cannot update to target: %s') % exc.args[0]
+                exc.args = (msg,) + exc.args[1:]
+                raise
             finally:
                 del repo._subtoppath
 

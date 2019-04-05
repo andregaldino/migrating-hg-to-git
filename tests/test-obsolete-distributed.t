@@ -504,6 +504,21 @@ X` has to process a X that is filtered locally.
   (2 other changesets obsolete on arrival)
   (run 'hg heads' to see heads)
 
+With --update
+
+  $ hg rollback
+  repository tip rolled back to revision 4 (undo pull)
+  $ hg pull ../repo-Bob --rev 956063ac4557 --update
+  pulling from ../repo-Bob
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 2 files (+1 heads)
+  (2 other changesets obsolete on arrival)
+  abort: cannot update to target: filtered revision '6'!
+  [255]
+
   $ cd ..
 
 Test pull report consistency
