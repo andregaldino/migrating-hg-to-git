@@ -142,11 +142,9 @@ import platform; print("%s:%s" % (platform.architecture()[0], platform.python_ve
 def python_exe_info(python_exe: pathlib.Path):
     """Obtain information about a Python executable."""
 
-    res = subprocess.run(
-        [str(python_exe), '-c', PRINT_PYTHON_INFO],
-        capture_output=True, check=True)
+    res = subprocess.check_output([str(python_exe), '-c', PRINT_PYTHON_INFO])
 
-    arch, version = res.stdout.decode('utf-8').split(':')
+    arch, version = res.decode('utf-8').split(':')
 
     version = distutils.version.LooseVersion(version)
 
