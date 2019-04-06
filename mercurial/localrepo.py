@@ -1179,7 +1179,17 @@ class localrepository(object):
         return self
 
     def filtered(self, name, visibilityexceptions=None):
-        """Return a filtered version of a repository"""
+        """Return a filtered version of a repository
+
+        The `name` parameter is the identifier of the requested view. This
+        will return a repoview object set "exactly" to the specified view.
+
+        This function does not apply recursive filtering to a repository. For
+        example calling `repo.filtered("served")` will return a repoview using
+        the "served" view, regardless of the initial view used by `repo`.
+
+        In other word, there is always only one level of `repoview` "filtering".
+        """
         cls = repoview.newtype(self.unfiltered().__class__)
         return cls(self, name, visibilityexceptions)
 
