@@ -432,6 +432,37 @@ class predicatematcher(basematcher):
         return '<predicatenmatcher pred=%s>' % s
 
 class patternmatcher(basematcher):
+    """Matches a set of (kind, pat, source) against a 'root' directory.
+
+    >>> kindpats = [
+    ...     ('re', '.*\.c$', ''),
+    ...     ('path', 'foo/a', ''),
+    ...     ('relpath', 'b', ''),
+    ...     ('glob', '*.h', ''),
+    ... ]
+    >>> m = patternmatcher('foo', kindpats)
+    >>> bool(m('main.c'))  # matches re:.*\.c$
+    True
+    >>> bool(m('b.txt'))
+    False
+    >>> bool(m('foo/a'))  # matches path:foo/a
+    True
+    >>> bool(m('a'))  # does not match path:b, since 'root' is 'foo'
+    False
+    >>> bool(m('b'))  # matches relpath:b, since 'root' is 'foo'
+    True
+    >>> bool(m('lib.h'))  # matches glob:*.h
+    True
+
+    >>> m.files()
+    ['.', 'foo/a', 'b', '.']
+    >>> m.exact('foo/a')
+    True
+    >>> m.exact('b')
+    True
+    >>> m.exact('lib.h')  # exact matches are for (rel)path kinds
+    False
+    """
 
     def __init__(self, root, kindpats, badfn=None):
         super(patternmatcher, self).__init__(badfn)
