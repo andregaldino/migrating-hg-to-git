@@ -23,11 +23,10 @@
   
   $ killdaemons.py
 
-  $ cd ../test
-  $ hg --config server.view=immutable serve -p $HGPORT -d --pid-file=hg.pid -E errors.log
+  $ cd ..
+  $ hg -R test --config server.view=immutable serve -p $HGPORT -d --pid-file=hg.pid -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
-  $ cd ../test2
-  $ hg incoming http://foo:xyzzy@localhost:$HGPORT/
+  $ hg -R test2 incoming http://foo:xyzzy@localhost:$HGPORT/
   comparing with http://foo:***@localhost:$HGPORT/
   changeset:   0:1ea73414a91b
   tag:         tip
@@ -35,4 +34,5 @@
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     r0
   
+  $ cat errors.log
   $ killdaemons.py
