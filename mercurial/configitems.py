@@ -532,6 +532,13 @@ coreconfigitem('experimental', 'evolution.report-instabilities',
 coreconfigitem('experimental', 'evolution.track-operation',
     default=True,
 )
+# repo-level config to exclude a revset visibility
+#
+# The target use case is to use `share` to expose different subset of the same
+# repository, especially server side. See also `server.view`.
+coreconfigitem('experimental', 'extra-filter-revs',
+    default=None,
+)
 coreconfigitem('experimental', 'maxdeltachainspan',
     default=-1,
 )

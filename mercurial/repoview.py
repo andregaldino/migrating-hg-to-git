@@ -17,6 +17,10 @@ from . import (
     phases,
     pycompat,
     tags as tagsmod,
+    util,
+)
+from .utils import (
+    repoviewutil,
 )
 
 def hideablerevs(repo):
@@ -153,6 +157,35 @@ filtertable = {'visible': computehidden,
                'served': computeunserved,
                'immutable':  computemutable,
                'base':  computeimpactable}
+
+_basefiltername = list(filtertable)
+
+def extrafilter(ui):
+    """initialize extra filter and return its id
+
+    If extra filtering is configured, we make sure the associated filtered view
+    are declared and return the associated id.
+    """
+    frevs = ui.config('experimental', 'extra-filter-revs')
+    if frevs is None:
+        return None
+
+    fid = pycompat.sysbytes(util.DIGESTS['sha1'](frevs).hexdigest())[:12]
+
+    combine = lambda fname: fname + '%' + fid
+
+    subsettable = repoviewutil.subsettable
+
+    if combine('base') not in filtertable:
+        for name in _basefiltername:
+            def extrafilteredrevs(repo, *args, **kwargs):
+                baserevs = filtertable[name](repo, *args, **kwargs)
+                extrarevs = frozenset(repo.revs(frevs))
+                return baserevs | extrarevs
+            filtertable[combine(name)] = extrafilteredrevs
+            if name in subsettable:
+                subsettable[combine(name)] = combine(subsettable[name])
+    return fid
 
 def filterrevs(repo, filtername, visibilityexceptions=None):
     """returns set of filtered revision for this filter name

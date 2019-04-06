@@ -1050,6 +1050,8 @@ class localrepository(object):
         # Signature to cached matcher instance.
         self._sparsematchercache = {}
 
+        self._extrafilterid = repoview.extrafilter(ui)
+
     def _getvfsward(self, origfunc):
         """build a ward for self.vfs"""
         rref = weakref.ref(self)
@@ -1197,6 +1199,9 @@ class localrepository(object):
 
         In other word, there is always only one level of `repoview` "filtering".
         """
+        if self._extrafilterid is not None and '%' not in name:
+            name = name + '%'  + self._extrafilterid
+
         cls = repoview.newtype(self.unfiltered().__class__)
         return cls(self, name, visibilityexceptions)
 
