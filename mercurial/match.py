@@ -125,6 +125,9 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
     include - patterns to include (unless they are excluded)
     exclude - patterns to exclude (even if they are included)
     default - if a pattern in patterns has no explicit type, assume this one
+    auditor - optional path auditor
+    ctx - optional changecontext
+    listsubrepos - if True, recurse into subrepositories
     warn - optional function used for printing warnings
     badfn - optional bad() callback for this matcher instead of the default
     icasefs - make a matcher for wdir on case insensitive filesystems, which
