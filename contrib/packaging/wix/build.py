@@ -62,6 +62,9 @@ if __name__ == '__main__':
         'version': args.version,
     }
 
+    if not os.path.isabs(args.python):
+        raise Exception('--python arg must be an absolute path')
+
     if args.extra_packages_script:
         kwargs['extra_packages_script'] = args.extra_packages_script
     if args.extra_wxs:

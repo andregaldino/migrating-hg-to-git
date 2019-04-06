@@ -30,6 +30,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    if not os.path.isabs(args.python):
+        raise Exception('--python arg must be an absolute path')
+
     if args.iscc:
         iscc = pathlib.Path(args.iscc)
     else:
