@@ -1024,7 +1024,18 @@ class unionmatcher(basematcher):
         return ('<unionmatcher matchers=%r>' % self._matchers)
 
 def patkind(pattern, default=None):
-    '''If pattern is 'kind:pat' with a known kind, return kind.'''
+    '''If pattern is 'kind:pat' with a known kind, return kind.
+
+    >>> patkind('re:.*\.c$')
+    're'
+    >>> patkind('glob:*.c')
+    'glob'
+    >>> patkind('relpath:test.py')
+    'relpath'
+    >>> patkind('main.py')
+    >>> patkind('main.py', default='re')
+    're'
+    '''
     return _patsplit(pattern, default)[0]
 
 def _patsplit(pattern, default):
