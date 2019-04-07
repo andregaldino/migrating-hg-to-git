@@ -181,11 +181,11 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
 
     1. Calling the matcher with a file name returns True if any pattern
     matches that file name:
-    >>> bool(m('a'))
+    >>> m('a')
     True
-    >>> bool(m('main.c'))
+    >>> m('main.c')
     True
-    >>> bool(m('test.py'))
+    >>> m('test.py')
     False
 
     2. Using the exact() method only returns True if the file name matches one
@@ -490,17 +490,17 @@ class patternmatcher(basematcher):
     ...     ('glob', '*.h', ''),
     ... ]
     >>> m = patternmatcher('foo', kindpats)
-    >>> bool(m('main.c'))  # matches re:.*\.c$
+    >>> m('main.c')  # matches re:.*\.c$
     True
-    >>> bool(m('b.txt'))
+    >>> m('b.txt')
     False
-    >>> bool(m('foo/a'))  # matches path:foo/a
+    >>> m('foo/a')  # matches path:foo/a
     True
-    >>> bool(m('a'))  # does not match path:b, since 'root' is 'foo'
+    >>> m('a')  # does not match path:b, since 'root' is 'foo'
     False
-    >>> bool(m('b'))  # matches relpath:b, since 'root' is 'foo'
+    >>> m('b')  # matches relpath:b, since 'root' is 'foo'
     True
-    >>> bool(m('lib.h'))  # matches glob:*.h
+    >>> m('lib.h')  # matches glob:*.h
     True
 
     >>> m.files()
@@ -871,13 +871,13 @@ class subdirmatcher(basematcher):
     >>> from . import pycompat
     >>> m1 = match(b'root', b'', [b'a.txt', b'sub/b.txt'])
     >>> m2 = subdirmatcher(b'sub', m1)
-    >>> bool(m2(b'a.txt'))
+    >>> m2(b'a.txt')
     False
-    >>> bool(m2(b'b.txt'))
+    >>> m2(b'b.txt')
     True
-    >>> bool(m2.matchfn(b'a.txt'))
+    >>> m2.matchfn(b'a.txt')
     False
-    >>> bool(m2.matchfn(b'b.txt'))
+    >>> m2.matchfn(b'b.txt')
     True
     >>> m2.files()
     ['b.txt']
@@ -950,11 +950,11 @@ class prefixdirmatcher(basematcher):
 
     >>> m1 = match(util.localpath(b'root/d/e'), b'f', [b'../a.txt', b'b.txt'])
     >>> m2 = prefixdirmatcher(b'd/e', m1)
-    >>> bool(m2(b'a.txt'),)
+    >>> m2(b'a.txt')
     False
-    >>> bool(m2(b'd/e/a.txt'))
+    >>> m2(b'd/e/a.txt')
     True
-    >>> bool(m2(b'd/e/b.txt'))
+    >>> m2(b'd/e/b.txt')
     False
     >>> m2.files()
     ['d/e/a.txt', 'd/e/f/b.txt']
@@ -1287,7 +1287,8 @@ def _buildregexmatch(kindpats, globsuffix):
             groupsize += piecesize + 1
 
         if startidx == 0:
-            func = _rematcher(fullregexp)
+            matcher = _rematcher(fullregexp)
+            func = lambda s: matcher(s) is not None
         else:
             group = regexps[startidx:]
             allgroups.append(_joinregexes(group))
