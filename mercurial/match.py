@@ -256,13 +256,13 @@ def badmatch(match, badfn):
     m.bad = badfn
     return m
 
-def _donormalize(patterns, default, root, cwd, auditor, warn):
+def _donormalize(patterns, default, root, cwd, auditor=None, warn=None):
     '''Convert 'kind:pat' from the patterns list to tuples with kind and
     normalized and rooted patterns and with listfiles expanded.'''
     kindpats = []
     for kind, pat in [_patsplit(p, default) for p in patterns]:
         if kind in cwdrelativepatternkinds:
-            pat = pathutil.canonpath(root, cwd, pat, auditor)
+            pat = pathutil.canonpath(root, cwd, pat, auditor=auditor)
         elif kind in ('relglob', 'path', 'rootfilesin', 'rootglob'):
             pat = util.normpath(pat)
         elif kind in ('listfile', 'listfile0'):
