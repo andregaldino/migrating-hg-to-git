@@ -42,7 +42,7 @@ def _rematcher(regex):
     except AttributeError:
         return m.match
 
-def _expandsets(kindpats, ctx, listsubrepos, badfn):
+def _expandsets(kindpats, ctx=None, listsubrepos=False, badfn=None):
     '''Returns the kindpats list with the 'set' patterns expanded to matchers'''
     matchers = []
     other = []
