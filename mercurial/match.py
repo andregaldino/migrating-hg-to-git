@@ -568,8 +568,24 @@ class includematcher(basematcher):
         return ('<includematcher includes=%r>' % pycompat.bytestr(self._pats))
 
 class exactmatcher(basematcher):
-    '''Matches the input files exactly. They are interpreted as paths, not
+    r'''Matches the input files exactly. They are interpreted as paths, not
     patterns (so no kind-prefixes).
+
+    >>> m = exactmatcher(['a.txt', 're:.*\.c$'])
+    >>> m('a.txt')
+    True
+    >>> m('b.txt')
+    False
+
+    Input files that would be matched are exactly those returned by .files()
+    >>> m.files()
+    ['a.txt', 're:.*\\.c$']
+
+    So pattern 're:.*\.c$' is not considered as a regex, but as a file name
+    >>> m('main.c')
+    False
+    >>> m('re:.*\.c$')
+    True
     '''
 
     def __init__(self, files, badfn=None):
