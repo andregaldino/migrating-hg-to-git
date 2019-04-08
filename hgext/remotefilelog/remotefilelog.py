@@ -10,7 +10,12 @@ from __future__ import absolute_import
 import collections
 import os
 
-from mercurial.node import bin, nullid
+from mercurial.node import (
+    bin,
+    nullid,
+    wdirfilenodeids,
+    wdirid,
+)
 from mercurial.i18n import _
 from mercurial import (
     ancestor,
@@ -306,6 +311,8 @@ class remotefilelog(object):
         if len(node) != 20:
             raise error.LookupError(node, self.filename,
                                     _('invalid revision input'))
+        if node == wdirid or node in wdirfilenodeids:
+            raise error.WdirUnsupported
 
         store = self.repo.contentstore
         rawtext = store.get(self.filename, node)
