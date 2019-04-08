@@ -30,3 +30,16 @@ Test blame
   1: y
   2: z
   2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
+
+Test grepping the working directory.
+
+  $ hg grep --all-files x
+  x:x
+BROKEN: modifications in the wdir tries to fetch from the server.
+  $ echo foo >> x
+  $ hg grep --all-files x
+  remote: abort: working directory revision cannot be specified
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
+  abort: error downloading file contents:
+  'connection closed early'
+  [255]
