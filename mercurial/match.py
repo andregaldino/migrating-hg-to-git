@@ -116,7 +116,7 @@ def _buildkindpatsmatcher(matchercls, root, kindpats, ctx=None,
 def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
           auditor=None, ctx=None, listsubrepos=False, warn=None,
           badfn=None, icasefs=False):
-    """build an object to match a set of file patterns
+    r"""build an object to match a set of file patterns
 
     arguments:
     root - the canonical root of the tree you're matching against
@@ -148,6 +148,52 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
     'subinclude:<path>' - a file of patterns to match against files under
                           the same directory
     '<something>' - a pattern of the specified default type
+
+    Usually a patternmatcher is returned:
+    >>> match('foo', '.', ['re:.*\.c$', 'path:foo/a', '*.py'])
+    <patternmatcher patterns='.*\\.c$|foo/a(?:/|$)|[^/]*\\.py$'>
+
+    Combining 'patterns' with 'include' (resp. 'exclude') gives an
+    intersectionmatcher (resp. a differencematcher):
+    >>> type(match('foo', '.', ['re:.*\.c$'], include=['path:lib']))
+    <class 'mercurial.match.intersectionmatcher'>
+    >>> type(match('foo', '.', ['re:.*\.c$'], exclude=['path:build']))
+    <class 'mercurial.match.differencematcher'>
+
+    Notice that, if 'patterns' is empty, an alwaysmatcher is returned:
+    >>> match('foo', '.', [])
+    <alwaysmatcher>
+
+    The 'default' argument determines which kind of pattern is assumed if a
+    pattern has no prefix:
+    >>> match('foo', '.', ['.*\.c$'], default='re')
+    <patternmatcher patterns='.*\\.c$'>
+    >>> match('foo', '.', ['main.py'], default='relpath')
+    <patternmatcher patterns='main\\.py(?:/|$)'>
+    >>> match('foo', '.', ['main.py'], default='re')
+    <patternmatcher patterns='main.py'>
+
+    The primary use of matchers is to check whether a value (usually a file
+    name) matches againset one of the patterns given at initialization. There
+    are two ways of doing this check.
+
+    >>> m = match('foo', '', ['re:.*\.c$', 'relpath:a'])
+
+    1. Calling the matcher with a file name returns True if any pattern
+    matches that file name:
+    >>> bool(m('a'))
+    True
+    >>> bool(m('main.c'))
+    True
+    >>> bool(m('test.py'))
+    False
+
+    2. Using the exact() method only returns True if the file name matches one
+    of the exact patterns (i.e. not re: or glob: patterns):
+    >>> m.exact('a')
+    True
+    >>> m.exact('main.c')
+    False
     """
     normalize = _donormalize
     if icasefs:
