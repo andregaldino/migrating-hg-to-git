@@ -150,49 +150,49 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
     '<something>' - a pattern of the specified default type
 
     Usually a patternmatcher is returned:
-    >>> match('foo', '.', ['re:.*\.c$', 'path:foo/a', '*.py'])
+    >>> match(b'foo', b'.', [b're:.*\.c$', b'path:foo/a', b'*.py'])
     <patternmatcher patterns='.*\\.c$|foo/a(?:/|$)|[^/]*\\.py$'>
 
     Combining 'patterns' with 'include' (resp. 'exclude') gives an
     intersectionmatcher (resp. a differencematcher):
-    >>> type(match('foo', '.', ['re:.*\.c$'], include=['path:lib']))
+    >>> type(match(b'foo', b'.', [b're:.*\.c$'], include=[b'path:lib']))
     <class 'mercurial.match.intersectionmatcher'>
-    >>> type(match('foo', '.', ['re:.*\.c$'], exclude=['path:build']))
+    >>> type(match(b'foo', b'.', [b're:.*\.c$'], exclude=[b'path:build']))
     <class 'mercurial.match.differencematcher'>
 
     Notice that, if 'patterns' is empty, an alwaysmatcher is returned:
-    >>> match('foo', '.', [])
+    >>> match(b'foo', b'.', [])
     <alwaysmatcher>
 
     The 'default' argument determines which kind of pattern is assumed if a
     pattern has no prefix:
-    >>> match('foo', '.', ['.*\.c$'], default='re')
+    >>> match(b'foo', b'.', [b'.*\.c$'], default=b're')
     <patternmatcher patterns='.*\\.c$'>
-    >>> match('foo', '.', ['main.py'], default='relpath')
+    >>> match(b'foo', b'.', [b'main.py'], default=b'relpath')
     <patternmatcher patterns='main\\.py(?:/|$)'>
-    >>> match('foo', '.', ['main.py'], default='re')
+    >>> match(b'foo', b'.', [b'main.py'], default=b're')
     <patternmatcher patterns='main.py'>
 
     The primary use of matchers is to check whether a value (usually a file
     name) matches againset one of the patterns given at initialization. There
     are two ways of doing this check.
 
-    >>> m = match('foo', '', ['re:.*\.c$', 'relpath:a'])
+    >>> m = match(b'foo', b'', [b're:.*\.c$', b'relpath:a'])
 
     1. Calling the matcher with a file name returns True if any pattern
     matches that file name:
-    >>> m('a')
+    >>> m(b'a')
     True
-    >>> m('main.c')
+    >>> m(b'main.c')
     True
-    >>> m('test.py')
+    >>> m(b'test.py')
     False
 
     2. Using the exact() method only returns True if the file name matches one
     of the exact patterns (i.e. not re: or glob: patterns):
-    >>> m.exact('a')
+    >>> m.exact(b'a')
     True
-    >>> m.exact('main.c')
+    >>> m.exact(b'main.c')
     False
     """
     normalize = _donormalize
@@ -484,32 +484,32 @@ class patternmatcher(basematcher):
     """Matches a set of (kind, pat, source) against a 'root' directory.
 
     >>> kindpats = [
-    ...     ('re', '.*\.c$', ''),
-    ...     ('path', 'foo/a', ''),
-    ...     ('relpath', 'b', ''),
-    ...     ('glob', '*.h', ''),
+    ...     (b're', b'.*\.c$', b''),
+    ...     (b'path', b'foo/a', b''),
+    ...     (b'relpath', b'b', b''),
+    ...     (b'glob', b'*.h', b''),
     ... ]
-    >>> m = patternmatcher('foo', kindpats)
-    >>> m('main.c')  # matches re:.*\.c$
+    >>> m = patternmatcher(b'foo', kindpats)
+    >>> m(b'main.c')  # matches re:.*\.c$
     True
-    >>> m('b.txt')
+    >>> m(b'b.txt')
     False
-    >>> m('foo/a')  # matches path:foo/a
+    >>> m(b'foo/a')  # matches path:foo/a
     True
-    >>> m('a')  # does not match path:b, since 'root' is 'foo'
+    >>> m(b'a')  # does not match path:b, since 'root' is 'foo'
     False
-    >>> m('b')  # matches relpath:b, since 'root' is 'foo'
+    >>> m(b'b')  # matches relpath:b, since 'root' is 'foo'
     True
-    >>> m('lib.h')  # matches glob:*.h
+    >>> m(b'lib.h')  # matches glob:*.h
     True
 
     >>> m.files()
     ['.', 'foo/a', 'b', '.']
-    >>> m.exact('foo/a')
+    >>> m.exact(b'foo/a')
     True
-    >>> m.exact('b')
+    >>> m.exact(b'b')
     True
-    >>> m.exact('lib.h')  # exact matches are for (rel)path kinds
+    >>> m.exact(b'lib.h')  # exact matches are for (rel)path kinds
     False
     """
 
@@ -651,10 +651,10 @@ class exactmatcher(basematcher):
     r'''Matches the input files exactly. They are interpreted as paths, not
     patterns (so no kind-prefixes).
 
-    >>> m = exactmatcher(['a.txt', 're:.*\.c$'])
-    >>> m('a.txt')
+    >>> m = exactmatcher([b'a.txt', b're:.*\.c$'])
+    >>> m(b'a.txt')
     True
-    >>> m('b.txt')
+    >>> m(b'b.txt')
     False
 
     Input files that would be matched are exactly those returned by .files()
@@ -662,9 +662,9 @@ class exactmatcher(basematcher):
     ['a.txt', 're:.*\\.c$']
 
     So pattern 're:.*\.c$' is not considered as a regex, but as a file name
-    >>> m('main.c')
+    >>> m(b'main.c')
     False
-    >>> m('re:.*\.c$')
+    >>> m(b're:.*\.c$')
     True
     '''
 
@@ -1075,14 +1075,14 @@ class unionmatcher(basematcher):
 def patkind(pattern, default=None):
     '''If pattern is 'kind:pat' with a known kind, return kind.
 
-    >>> patkind('re:.*\.c$')
+    >>> patkind(b're:.*\.c$')
     're'
-    >>> patkind('glob:*.c')
+    >>> patkind(b'glob:*.c')
     'glob'
-    >>> patkind('relpath:test.py')
+    >>> patkind(b'relpath:test.py')
     'relpath'
-    >>> patkind('main.py')
-    >>> patkind('main.py', default='re')
+    >>> patkind(b'main.py')
+    >>> patkind(b'main.py', default=b're')
     're'
     '''
     return _patsplit(pattern, default)[0]
