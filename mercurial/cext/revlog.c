@@ -366,7 +366,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 
 	entry = Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
 	                      base_rev, link_rev, parent_1, parent_2, c_node_id,
-	                      20);
+	                      (Py_ssize_t)20);
 
 	if (entry) {
 		PyObject_GC_UnTrack(entry);
@@ -3017,8 +3017,9 @@ void revlog_module_init(PyObject *mod)
 	PyModule_AddObject(mod, "nodetree", (PyObject *)&nodetreeType);
 
 	if (!nullentry) {
-		nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0,
-		                          0, -1, -1, -1, -1, nullid, 20);
+		nullentry =
+		    Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0, -1,
+		                  -1, -1, -1, nullid, (Py_ssize_t)20);
 	}
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);
