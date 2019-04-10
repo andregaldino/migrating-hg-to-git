@@ -1965,7 +1965,7 @@ class overlayworkingctx(committablectx):
             if not mfiles:
                 return
             raise error.Abort("error: file '%s' cannot be written because "
-                              " '%s/' is a folder in %s (containing %d "
+                              " '%s/' is a directory in %s (containing %d "
                               "entries: %s)"
                               % (path, path, self.p1(), len(mfiles),
                                  ', '.join(mfiles)))

@@ -252,7 +252,7 @@ Test reporting of path conflicts
   $ hg rebase -r 3 -d . -n
   starting dry-run rebase; repository will not be changed
   rebasing 3:844a7de3e617 "c"
-  abort: error: file 'c' cannot be written because  'c/' is a folder in e147e6e3c490 (containing 1 entries: c/subdir/file.txt)
+  abort: error: file 'c' cannot be written because  'c/' is a directory in e147e6e3c490 (containing 1 entries: c/subdir/file.txt)
   [255]
 
   $ cd ..

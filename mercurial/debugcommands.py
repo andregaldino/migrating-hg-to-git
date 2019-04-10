@@ -1143,7 +1143,7 @@ def debugignore(ui, repo, *files, **opts):
                     ui.write(_("%s is ignored\n") % uipathfn(f))
                 else:
                     ui.write(_("%s is ignored because of "
-                               "containing folder %s\n")
+                               "containing directory %s\n")
                              % (uipathfn(f), ignored))
                 ignorefile, lineno, line = ignoredata
                 ui.write(_("(ignore rule in %s, line %d: '%s')\n")
