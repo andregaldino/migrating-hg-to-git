@@ -160,6 +160,11 @@ class partialdiscovery(object):
         self._undecided = set(self._common.missingancestors(self._targetheads))
         return self._undecided
 
+    def stats(self):
+        return {
+            'undecided': len(self.undecided),
+        }
+
     def commonheads(self):
         """the heads of the known common set"""
         # heads(common) == heads(common.bases) since common represents
@@ -339,8 +344,10 @@ def findcommonheads(ui, local, remote,
 
         roundtrips += 1
         progress.update(roundtrips)
+        stats = disco.stats()
         ui.debug("query %i; still undecided: %i, sample size is: %i\n"
-                 % (roundtrips, len(disco.undecided), len(sample)))
+                 % (roundtrips, stats['undecided'], len(sample)))
+
         # indices between sample and externalized version must match
         sample = list(sample)
 
