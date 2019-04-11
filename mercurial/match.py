@@ -1288,7 +1288,7 @@ def _buildregexmatch(kindpats, globsuffix):
 
         if startidx == 0:
             matcher = _rematcher(fullregexp)
-            func = lambda s: matcher(s) is not None
+            func = lambda s: bool(matcher(s))
         else:
             group = regexps[startidx:]
             allgroups.append(_joinregexes(group))
