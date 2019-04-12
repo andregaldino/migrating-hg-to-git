@@ -75,7 +75,6 @@ Criss cross merging
   $ hg merge -v --debug --tool internal:dump 5 --config merge.preferancestor='!'
   note: using 0f6b37dbe527 as ancestor of 3b08d01b0ab5 and adfe50279922
         alternatively, use --config merge.preferancestor=40663881a6dd
-    searching for copies back to rev 3
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 0f6b37dbe527, local: 3b08d01b0ab5+, remote: adfe50279922
@@ -137,7 +136,6 @@ Redo merge with merge.preferancestor="*" to enable bid merge
   note: merging 3b08d01b0ab5+ and adfe50279922 using bids from ancestors 0f6b37dbe527 and 40663881a6dd
   
   calculating bids for ancestor 0f6b37dbe527
-    searching for copies back to rev 3
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 0f6b37dbe527, local: 3b08d01b0ab5+, remote: adfe50279922
@@ -145,7 +143,6 @@ Redo merge with merge.preferancestor="*" to enable bid merge
    f2: versions differ -> m
   
   calculating bids for ancestor 40663881a6dd
-    searching for copies back to rev 3
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 40663881a6dd, local: 3b08d01b0ab5+, remote: adfe50279922
@@ -182,7 +179,6 @@ The other way around:
   note: merging adfe50279922+ and 3b08d01b0ab5 using bids from ancestors 0f6b37dbe527 and 40663881a6dd
   
   calculating bids for ancestor 0f6b37dbe527
-    searching for copies back to rev 3
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 0f6b37dbe527, local: adfe50279922+, remote: 3b08d01b0ab5
@@ -190,7 +186,6 @@ The other way around:
    f2: versions differ -> m
   
   calculating bids for ancestor 40663881a6dd
-    searching for copies back to rev 3
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 40663881a6dd, local: adfe50279922+, remote: 3b08d01b0ab5
@@ -249,7 +244,6 @@ Verify how the output looks and and how verbose it is:
   note: merging 3b08d01b0ab5+ and adfe50279922 using bids from ancestors 0f6b37dbe527 and 40663881a6dd
   
   calculating bids for ancestor 0f6b37dbe527
-    searching for copies back to rev 3
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 0f6b37dbe527, local: 3b08d01b0ab5+, remote: adfe50279922
@@ -257,7 +251,6 @@ Verify how the output looks and and how verbose it is:
    f2: versions differ -> m
   
   calculating bids for ancestor 40663881a6dd
-    searching for copies back to rev 3
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 40663881a6dd, local: 3b08d01b0ab5+, remote: adfe50279922
@@ -417,7 +410,6 @@ Verify that the old context ancestor works with / despite preferancestor:
   note: merging c0ef19750a22+ and 6ca01f7342b9 using bids from ancestors 11b5b303e36c and 154e6000f54e
   
   calculating bids for ancestor 11b5b303e36c
-    searching for copies back to rev 3
     unmatched files in local:
      d1/a
      d1/b
@@ -429,7 +421,6 @@ Verify that the old context ancestor works with / despite preferancestor:
    d2/b: remote created -> g
   
   calculating bids for ancestor 154e6000f54e
-    searching for copies back to rev 3
     unmatched files in other:
      d2/b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):

@@ -274,7 +274,6 @@ merge tests
   $ hg ci -m9
   created new head
   $ hg merge 6 --debug # test change
-    searching for copies back to rev 2
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 1f14a2e2d3ec, local: f0d2028bf86d+, remote: 1831e14459c4
@@ -301,7 +300,6 @@ merge tests
   $ hg ci -m10
   committing subrepository t
   $ HGMERGE=internal:merge hg merge --debug 7 # test conflict
-    searching for copies back to rev 2
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 1831e14459c4, local: e45c8b14af55+, remote: f94576341bcf
@@ -313,7 +311,6 @@ merge tests
   starting 4 threads for background file closing (?)
   (M)erge, keep (l)ocal [working copy] or keep (r)emote [merge rev]? m
   merging subrepository "t"
-    searching for copies back to rev 2
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 6747d179aa9a, local: 20a0db6fbf6c+, remote: 7af322bc1198

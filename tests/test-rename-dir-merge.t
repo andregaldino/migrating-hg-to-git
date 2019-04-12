@@ -24,7 +24,6 @@
   created new head
 
   $ hg merge --debug 1
-    searching for copies back to rev 1
     unmatched files in local:
      a/c
     unmatched files in other:
@@ -70,7 +69,6 @@
   $ hg co -C 1
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge --debug 2
-    searching for copies back to rev 1
     unmatched files in local:
      b/a
      b/b

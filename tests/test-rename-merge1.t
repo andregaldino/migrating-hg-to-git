@@ -22,7 +22,6 @@
   created new head
 
   $ hg merge -y --debug
-    searching for copies back to rev 1
     unmatched files in local:
      c2
     unmatched files in other:
@@ -168,7 +167,6 @@ Check for issue3074
   $ hg commit -m "deleted file"
   created new head
   $ hg merge --debug
-    searching for copies back to rev 1
     unmatched files in other:
      newfile
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):

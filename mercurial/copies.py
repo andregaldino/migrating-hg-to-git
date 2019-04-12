@@ -552,7 +552,6 @@ def _fullcopytracing(repo, c1, c2, base):
         tca = _c1.ancestor(_c2)
 
     limit = _findlimit(repo, c1, c2)
-    repo.ui.debug("  searching for copies back to rev %d\n" % limit)
 
     m1 = c1.manifest()
     m2 = c2.manifest()

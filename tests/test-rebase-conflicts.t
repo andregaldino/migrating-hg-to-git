@@ -248,7 +248,6 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   getting f1.txt
    merge against 9:e31216eec445
      detach base 8:8e4e2c1a07ae
-    searching for copies back to rev 3
     unmatched files in other (from topological common ancestor):
      f2.txt
   resolving manifests
@@ -268,7 +267,6 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
    already in destination
    merge against 10:2f2496ddf49d
      detach base 9:e31216eec445
-    searching for copies back to rev 3
     unmatched files in other (from topological common ancestor):
      f2.txt
   resolving manifests

@@ -23,7 +23,6 @@ Test for the full copytracing algorithm
   $ hg ci -qAm "other"
 
   $ hg merge --debug
-    searching for copies back to rev 1
     unmatched files in other:
      b
      c

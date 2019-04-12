@@ -40,7 +40,6 @@
   summary:     1
   
   $ hg --debug up
-    searching for copies back to rev 1
     unmatched files in other:
      b
   resolving manifests
@@ -68,7 +67,6 @@
   
   $ hg --debug up 0
   starting 4 threads for background file closing (?)
-    searching for copies back to rev 0
     unmatched files in local (from topological common ancestor):
      b
   resolving manifests
@@ -95,7 +93,6 @@
   summary:     1
   
   $ hg --debug up
-    searching for copies back to rev 1
     unmatched files in other:
      b
   resolving manifests

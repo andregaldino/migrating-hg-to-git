@@ -199,7 +199,6 @@ Graft out of order, skipping a merge and a duplicate
   scanning for duplicate grafts
   skipping revision 2:5c095ad7e90f (already grafted to 7:ef0ef43d49e7)
   grafting 1:5d205f8b35b6 "1"
-    searching for copies back to rev 1
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -221,7 +220,6 @@ Graft out of order, skipping a merge and a duplicate
   committing changelog
   updating the branch cache
   grafting 5:97f8bfe72746 "5"
-    searching for copies back to rev 1
     unmatched files in other (from topological common ancestor):
      c
   resolving manifests
@@ -237,7 +235,6 @@ Graft out of order, skipping a merge and a duplicate
   $ HGEDITOR=cat hg graft 4 3 --log --debug
   scanning for duplicate grafts
   grafting 4:9c233e8e184d "4"
-    searching for copies back to rev 1
     unmatched files in other (from topological common ancestor):
      c
   resolving manifests
@@ -744,7 +741,6 @@ Transplants of grafts can find a destination...
   $ hg graft -q 13 --debug
   scanning for duplicate grafts
   grafting 13:7a4785234d87 "2"
-    searching for copies back to rev 12
     unmatched files in other (from topological common ancestor):
      g
     unmatched files new in both:
