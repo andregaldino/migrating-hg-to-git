@@ -206,6 +206,18 @@ Destination is an ancestor of source:
   abort: source and destination form a cycle
   [255]
 
+BUG: cycles aren't flagged correctly when --dry-run is set:
+  $ rebasewithdag -s B -d 'SRC' --dry-run <<'EOS'
+  > C
+  > |
+  > B
+  > |
+  > Z
+  > EOS
+  abort: no rebase in progress
+  starting dry-run rebase; repository will not be changed
+  [255]
+
 Switch roots:
 
   $ rebasewithdag -s 'all() - roots(all())' -d 'roots(all()) - ::SRC' <<'EOS'
