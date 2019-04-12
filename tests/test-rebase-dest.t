@@ -214,7 +214,7 @@ BUG: cycles aren't flagged correctly when --dry-run is set:
   > |
   > Z
   > EOS
-  abort: no rebase in progress
+  abort: source and destination form a cycle
   starting dry-run rebase; repository will not be changed
   [255]
 

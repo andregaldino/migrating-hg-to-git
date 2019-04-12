@@ -949,6 +949,9 @@ def _dryrunrebase(ui, repo, action, opts):
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
             return 1
+        except error.Abort:
+            needsabort = False
+            raise
         else:
             if confirm:
                 ui.status(_('rebase completed successfully\n'))
