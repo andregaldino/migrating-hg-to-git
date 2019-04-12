@@ -373,57 +373,6 @@ def _computenonoverlap(repo, c1, c2, addedinm1, addedinm2, debug=True):
 
     return u1, u2
 
-def _makegetfctx(ctx):
-    """return a 'getfctx' function suitable for _checkcopies usage
-
-    We have to re-setup the function building 'filectx' for each
-    '_checkcopies' to ensure the linkrev adjustment is properly setup for
-    each. Linkrev adjustment is important to avoid bug in rename
-    detection. Moreover, having a proper '_ancestrycontext' setup ensures
-    the performance impact of this adjustment is kept limited. Without it,
-    each file could do a full dag traversal making the time complexity of
-    the operation explode (see issue4537).
-
-    This function exists here mostly to limit the impact on stable. Feel
-    free to refactor on default.
-    """
-    rev = ctx.rev()
-    repo = ctx._repo
-    ac = getattr(ctx, '_ancestrycontext', None)
-    if ac is None:
-        revs = [rev]
-        if rev is None:
-            revs = [p.rev() for p in ctx.parents()]
-        ac = repo.changelog.ancestors(revs, inclusive=True)
-        ctx._ancestrycontext = ac
-    def makectx(f, n):
-        if n in node.wdirfilenodeids:  # in a working context?
-            if ctx.rev() is None:
-                return ctx.filectx(f)
-            return repo[None][f]
-        fctx = repo.filectx(f, fileid=n)
-        # setup only needed for filectx not create from a changectx
-        fctx._ancestrycontext = ac
-        fctx._descendantrev = rev
-        return fctx
-    return util.lrucachefunc(makectx)
-
-def _combinecopies(copyfrom, copyto, finalcopy, diverge, incompletediverge):
-    """combine partial copy paths"""
-    remainder = {}
-    for f in copyfrom:
-        if f in copyto:
-            finalcopy[copyto[f]] = copyfrom[f]
-            del copyto[f]
-    for f in incompletediverge:
-        assert f not in diverge
-        ic = incompletediverge[f]
-        if ic[0] in copyto:
-            diverge[f] = [copyto[ic[0]], ic[1]]
-        else:
-            remainder[f] = ic
-    return remainder
-
 def mergecopies(repo, c1, c2, base):
     """
     Finds moves and copies between context c1 and c2 that are relevant for
@@ -518,6 +467,23 @@ def _isfullcopytraceable(repo, c1, base):
         return commits < sourcecommitlimit
     return False
 
+def _checksinglesidecopies(src, dsts1, m1, m2, mb, c2, base,
+                           copy, renamedelete):
+    if src not in m2:
+        # deleted on side 2
+        if src not in m1:
+            # renamed on side 1, deleted on side 2
+            renamedelete[src] = dsts1
+    elif m2[src] != mb[src]:
+        if not _related(c2[src], base[src]):
+            return
+        # modified on side 2
+        for dst in dsts1:
+            if dst not in m2:
+                # dst not added on side 2 (handle as regular
+                # "both created" case in manifestmerge otherwise)
+                copy[dst] = src
+
 def _fullcopytracing(repo, c1, c2, base):
     """ The full copytracing algorithm which finds all the new files that were
     added from merge base up to the top commit and for each file it checks if
@@ -526,168 +492,73 @@ def _fullcopytracing(repo, c1, c2, base):
     This is pretty slow when a lot of changesets are involved but will track all
     the copies.
     """
-    # In certain scenarios (e.g. graft, update or rebase), base can be
-    # overridden We still need to know a real common ancestor in this case We
-    # can't just compute _c1.ancestor(_c2) and compare it to ca, because there
-    # can be multiple common ancestors, e.g. in case of bidmerge.  Because our
-    # caller may not know if the revision passed in lieu of the CA is a genuine
-    # common ancestor or not without explicitly checking it, it's better to
-    # determine that here.
-    #
-    # base.isancestorof(wc) is False, work around that
-    _c1 = c1.p1() if c1.rev() is None else c1
-    _c2 = c2.p1() if c2.rev() is None else c2
-    # an endpoint is "dirty" if it isn't a descendant of the merge base
-    # if we have a dirty endpoint, we need to trigger graft logic, and also
-    # keep track of which endpoint is dirty
-    dirtyc1 = not base.isancestorof(_c1)
-    dirtyc2 = not base.isancestorof(_c2)
-    graft = dirtyc1 or dirtyc2
-    tca = base
-    if graft:
-        tca = _c1.ancestor(_c2)
-
-    limit = _findlimit(repo, c1, c2)
-
     m1 = c1.manifest()
     m2 = c2.manifest()
     mb = base.manifest()
 
-    # gather data from _checkcopies:
-    # - diverge = record all diverges in this dict
-    # - copy = record all non-divergent copies in this dict
-    # - fullcopy = record all copies in this dict
-    # - incomplete = record non-divergent partial copies here
-    # - incompletediverge = record divergent partial copies here
-    diverge = {} # divergence data is shared
-    incompletediverge  = {}
-    data1 = {'copy': {},
-             'fullcopy': {},
-             'incomplete': {},
-             'diverge': diverge,
-             'incompletediverge': incompletediverge,
-            }
-    data2 = {'copy': {},
-             'fullcopy': {},
-             'incomplete': {},
-             'diverge': diverge,
-             'incompletediverge': incompletediverge,
-            }
+    copies1 = pathcopies(base, c1)
+    copies2 = pathcopies(base, c2)
+
+    inversecopies1 = {}
+    inversecopies2 = {}
+    for dst, src in copies1.items():
+        inversecopies1.setdefault(src, []).append(dst)
+    for dst, src in copies2.items():
+        inversecopies2.setdefault(src, []).append(dst)
+
+    copy = {}
+    diverge = {}
+    renamedelete = {}
+    allsources = set(inversecopies1) | set(inversecopies2)
+    for src in allsources:
+        dsts1 = inversecopies1.get(src)
+        dsts2 = inversecopies2.get(src)
+        if dsts1 and dsts2:
+            # copied/renamed on both sides
+            if src not in m1 and src not in m2:
+                # renamed on both sides
+                dsts1 = set(dsts1)
+                dsts2 = set(dsts2)
+                # If there's some overlap in the rename destinations, we
+                # consider it not divergent. For example, if side 1 copies 'a'
+                # to 'b' and 'c' and deletes 'a', and side 2 copies 'a' to 'c'
+                # and 'd' and deletes 'a'.
+                if dsts1 & dsts2:
+                    for dst in (dsts1 & dsts2):
+                        copy[dst] = src
+                else:
+                    diverge[src] = sorted(dsts1 | dsts2)
+            elif src in m1 and src in m2:
+                # copied on both sides
+                dsts1 = set(dsts1)
+                dsts2 = set(dsts2)
+                for dst in (dsts1 & dsts2):
+                    copy[dst] = src
+            # TODO: Handle cases where it was renamed on one side and copied
+            # on the other side
+        elif dsts1:
+            # copied/renamed only on side 1
+            _checksinglesidecopies(src, dsts1, m1, m2, mb, c2, base,
+                                   copy, renamedelete)
+        elif dsts2:
+            # copied/renamed only on side 2
+            _checksinglesidecopies(src, dsts2, m2, m1, mb, c1, base,
+                                   copy, renamedelete)
+
+    renamedeleteset = set()
+    divergeset = set()
+    for src, dsts in diverge.items():
+        divergeset.update(dsts)
+    for src, dsts in renamedelete.items():
+        renamedeleteset.update(dsts)
 
     # find interesting file sets from manifests
     addedinm1 = m1.filesnotin(mb, repo.narrowmatch())
     addedinm2 = m2.filesnotin(mb, repo.narrowmatch())
-    bothnew = sorted(addedinm1 & addedinm2)
-    if tca == base:
-        # unmatched file from base
-        u1r, u2r = _computenonoverlap(repo, c1, c2, addedinm1, addedinm2)
-        u1u, u2u = u1r, u2r
-    else:
-        # unmatched file from base (DAG rotation in the graft case)
-        u1r, u2r = _computenonoverlap(repo, c1, c2, addedinm1, addedinm2)
-        # unmatched file from topological common ancestors (no DAG rotation)
-        # need to recompute this for directory move handling when grafting
-        mta = tca.manifest()
-        u1u, u2u = _computenonoverlap(repo, c1, c2,
-                                      m1.filesnotin(mta, repo.narrowmatch()),
-                                      m2.filesnotin(mta, repo.narrowmatch()),
-                                      debug=False)
+    u1, u2 = _computenonoverlap(repo, c1, c2, addedinm1, addedinm2)
 
-    for f in u1u:
-        _checkcopies(c1, c2, f, base, tca, dirtyc1, limit, data1)
-
-    for f in u2u:
-        _checkcopies(c2, c1, f, base, tca, dirtyc2, limit, data2)
-
-    copy = dict(data1['copy'])
-    copy.update(data2['copy'])
-    fullcopy = dict(data1['fullcopy'])
-    fullcopy.update(data2['fullcopy'])
-
-    if dirtyc1:
-        _combinecopies(data2['incomplete'], data1['incomplete'], copy, diverge,
-                       incompletediverge)
-    if dirtyc2:
-        _combinecopies(data1['incomplete'], data2['incomplete'], copy, diverge,
-                       incompletediverge)
-
-    renamedelete = {}
-    renamedeleteset = set()
-    divergeset = set()
-    for of, fl in list(diverge.items()):
-        if len(fl) == 1 or of in c1 or of in c2:
-            del diverge[of] # not actually divergent, or not a rename
-            if of not in c1 and of not in c2:
-                # renamed on one side, deleted on the other side, but filter
-                # out files that have been renamed and then deleted
-                renamedelete[of] = [f for f in fl if f in c1 or f in c2]
-                renamedeleteset.update(fl) # reverse map for below
-        else:
-            divergeset.update(fl) # reverse map for below
-
-    bothdiverge = {}
-    bothincompletediverge = {}
-    remainder = {}
-    both1 = {'copy': {},
-             'fullcopy': {},
-             'incomplete': {},
-             'diverge': bothdiverge,
-             'incompletediverge': bothincompletediverge
-            }
-    both2 = {'copy': {},
-             'fullcopy': {},
-             'incomplete': {},
-             'diverge': bothdiverge,
-             'incompletediverge': bothincompletediverge
-            }
-    for f in bothnew:
-        _checkcopies(c1, c2, f, base, tca, dirtyc1, limit, both1)
-        _checkcopies(c2, c1, f, base, tca, dirtyc2, limit, both2)
-    if dirtyc1 and dirtyc2:
-        remainder = _combinecopies(both2['incomplete'], both1['incomplete'],
-                                   copy, bothdiverge, bothincompletediverge)
-        remainder1 = _combinecopies(both1['incomplete'], both2['incomplete'],
-                                   copy, bothdiverge, bothincompletediverge)
-        remainder.update(remainder1)
-    elif dirtyc1:
-        # incomplete copies may only be found on the "dirty" side for bothnew
-        assert not both2['incomplete']
-        remainder = _combinecopies({}, both1['incomplete'], copy, bothdiverge,
-                                   bothincompletediverge)
-    elif dirtyc2:
-        assert not both1['incomplete']
-        remainder = _combinecopies({}, both2['incomplete'], copy, bothdiverge,
-                                   bothincompletediverge)
-    else:
-        # incomplete copies and divergences can't happen outside grafts
-        assert not both1['incomplete']
-        assert not both2['incomplete']
-        assert not bothincompletediverge
-    for f in remainder:
-        assert f not in bothdiverge
-        ic = remainder[f]
-        if ic[0] in (m1 if dirtyc1 else m2):
-            # backed-out rename on one side, but watch out for deleted files
-            bothdiverge[f] = ic
-    for of, fl in bothdiverge.items():
-        if len(fl) == 2 and fl[0] == fl[1]:
-            copy[fl[0]] = of # not actually divergent, just matching renames
-
-    # Sometimes we get invalid copies here (the "and not remotebase" in
-    # _checkcopies() seems suspicious). Filter them out.
-    for dst, src in fullcopy.copy().items():
-        if src not in mb:
-            del fullcopy[dst]
-    # Sometimes we forget to add entries from "copy" to "fullcopy", so fix
-    # that up here
-    for dst, src in copy.items():
-        fullcopy[dst] = src
-    # Sometimes we forget to add entries from "diverge" to "fullcopy", so fix
-    # that up here
-    for src, dsts in diverge.items():
-        for dst in dsts:
-            fullcopy[dst] = src
-
+    fullcopy = copies1.copy()
+    fullcopy.update(copies2)
     if not fullcopy:
         return copy, {}, diverge, renamedelete, {}
 
@@ -752,7 +623,7 @@ def _fullcopytracing(repo, c1, c2, base):
 
     movewithdir = {}
     # check unaccounted nonoverlapping files against directory moves
-    for f in u1r + u2r:
+    for f in u1 + u2:
         if f not in fullcopy:
             for d in dirmove:
                 if f.startswith(d):
@@ -898,99 +769,6 @@ def _related(f1, f2):
                 return f1 == f2 # true if they point to the same file
     except StopIteration:
         return False
-
-def _checkcopies(srcctx, dstctx, f, base, tca, remotebase, limit, data):
-    """
-    check possible copies of f from msrc to mdst
-
-    srcctx = starting context for f in msrc
-    dstctx = destination context for f in mdst
-    f = the filename to check (as in msrc)
-    base = the changectx used as a merge base
-    tca = topological common ancestor for graft-like scenarios
-    remotebase = True if base is outside tca::srcctx, False otherwise
-    limit = the rev number to not search beyond
-    data = dictionary of dictionary to store copy data. (see mergecopies)
-
-    note: limit is only an optimization, and provides no guarantee that
-    irrelevant revisions will not be visited
-    there is no easy way to make this algorithm stop in a guaranteed way
-    once it "goes behind a certain revision".
-    """
-
-    msrc = srcctx.manifest()
-    mdst = dstctx.manifest()
-    mb = base.manifest()
-    mta = tca.manifest()
-    # Might be true if this call is about finding backward renames,
-    # This happens in the case of grafts because the DAG is then rotated.
-    # If the file exists in both the base and the source, we are not looking
-    # for a rename on the source side, but on the part of the DAG that is
-    # traversed backwards.
-    #
-    # In the case there is both backward and forward renames (before and after
-    # the base) this is more complicated as we must detect a divergence.
-    # We use 'backwards = False' in that case.
-    backwards = not remotebase and base != tca and f in mb
-    getsrcfctx = _makegetfctx(srcctx)
-    getdstfctx = _makegetfctx(dstctx)
-
-    if msrc[f] == mb.get(f) and not remotebase:
-        # Nothing to merge
-        return
-
-    of = None
-    seen = {f}
-    for oc in getsrcfctx(f, msrc[f]).ancestors():
-        of = oc.path()
-        if of in seen:
-            # check limit late - grab last rename before
-            if oc.linkrev() < limit:
-                break
-            continue
-        seen.add(of)
-
-        # remember for dir rename detection
-        if backwards:
-            data['fullcopy'][of] = f # grafting backwards through renames
-        else:
-            data['fullcopy'][f] = of
-        if of not in mdst:
-            continue # no match, keep looking
-        if mdst[of] == mb.get(of):
-            return # no merge needed, quit early
-        c2 = getdstfctx(of, mdst[of])
-        # c2 might be a plain new file on added on destination side that is
-        # unrelated to the droids we are looking for.
-        cr = _related(oc, c2)
-        if cr and (of == f or of == c2.path()): # non-divergent
-            if backwards:
-                data['copy'][of] = f
-            elif of in mb:
-                data['copy'][f] = of
-            elif remotebase: # special case: a <- b <- a -> b "ping-pong" rename
-                data['copy'][of] = f
-                del data['fullcopy'][f]
-                data['fullcopy'][of] = f
-            else: # divergence w.r.t. graft CA on one side of topological CA
-                for sf in seen:
-                    if sf in mb:
-                        assert sf not in data['diverge']
-                        data['diverge'][sf] = [f, of]
-                        break
-            return
-
-    if of in mta:
-        if backwards or remotebase:
-            data['incomplete'][of] = f
-        else:
-            for sf in seen:
-                if sf in mb:
-                    if tca == base:
-                        data['diverge'].setdefault(sf, []).append(f)
-                    else:
-                        data['incompletediverge'][sf] = [of, f]
-                    return
 
 def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
     """reproduce copies from fromrev to rev in the dirstate

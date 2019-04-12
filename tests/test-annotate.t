@@ -273,37 +273,10 @@ annotate after merge with -l
   > EOF
   $ hg ci -mc -d '3 0'
   created new head
-BROKEN: 'a' was copied to 'b' on both sides. We should not get a merge conflict here
   $ hg merge
   merging b
-  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
-  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
-  [1]
-  $ cat b
-  <<<<<<< working copy: b80e3e32f75a - test: c
-  a
-  z
-  a
-  ||||||| base
-  =======
-  a
-  a
-  a
-  b4
-  c
-  b5
-  >>>>>>> merge rev:    64afcdf8e29e - test: mergeb
-  $ cat <<EOF > b
-  > a
-  > z
-  > a
-  > b4
-  > c
-  > b5
-  > EOF
-  $ hg resolve --mark -q
-  $ rm b.orig
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
   $ echo d >> b
   $ hg ci -mmerge2 -d '4 0'
 

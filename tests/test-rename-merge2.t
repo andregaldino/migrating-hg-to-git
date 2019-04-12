@@ -433,6 +433,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nc a b R:up b   W:       - 12 merge b no ancestor
   --------------
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 86a2aa42fc76+, remote: af30c7647fc7
@@ -469,6 +472,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up b   R:nm a b W:       - 13 merge b no ancestor
   --------------
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 59318016310c+, remote: bdb19105162a
@@ -506,6 +512,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nc a b R:up a b W:       - 14 merge b no ancestor
   --------------
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 86a2aa42fc76+, remote: 8dbce441892a
@@ -543,6 +552,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up b   R:nm a b W:       - 15 merge b no ancestor, remove a
   --------------
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 59318016310c+, remote: bdb19105162a
@@ -580,6 +592,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nc a b R:up a b W:       - 16 get a, merge b no ancestor
   --------------
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 86a2aa42fc76+, remote: 8dbce441892a
@@ -617,6 +632,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up a b R:nc a b W:       - 17 keep a, merge b no ancestor
   --------------
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 0b76e65c8289+, remote: 4ce40f5aca24
@@ -653,6 +671,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nm a b R:up a b W:       - 18 merge b no ancestor
   --------------
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 02963e448370+, remote: 8dbce441892a
@@ -695,6 +716,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up a b R:nm a b W:       - 19 merge b no ancestor, prompt remove a
   --------------
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 0b76e65c8289+, remote: bdb19105162a

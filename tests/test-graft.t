@@ -75,6 +75,8 @@ Specifying child as --base revision fails safely (perhaps slightly confusing, bu
 
   $ hg graft -r 2 --base 3
   grafting 2:5c095ad7e90f "2"
+  note: possible conflict - c was deleted and renamed to:
+   a
   note: graft of 2:5c095ad7e90f created no changes to commit
 
 Can't continue without starting:
@@ -220,6 +222,9 @@ Graft out of order, skipping a merge and a duplicate
   committing changelog
   updating the branch cache
   grafting 5:97f8bfe72746 "5"
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'c' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 4c60f11aa304, local: 6b9e5368ca4e+, remote: 97f8bfe72746
@@ -233,6 +238,9 @@ Graft out of order, skipping a merge and a duplicate
   $ HGEDITOR=cat hg graft 4 3 --log --debug
   scanning for duplicate grafts
   grafting 4:9c233e8e184d "4"
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'c' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 4c60f11aa304, local: 1905859650ec+, remote: 9c233e8e184d
@@ -1129,7 +1137,6 @@ and A.3 with a local content change to be preserved (f2x).
   grafting 2:f58c7e2b28fa "C0"
   merging f1e and f1b to f1e
   merging f2a and f2c to f2c
-  merging f5b and f5a to f5a
 
 Test the cases A.1 (f4x) and A.7 (f3x).
 

@@ -549,9 +549,6 @@ test reflect that for this particular case this algorithm correctly find the cop
 
 Grafting revision 4 on top of revision 2, showing that it respect the rename:
 
-TODO: Make this work with copy info in changesets (probably by writing a
-changeset-centric version of copies.mergecopies())
-#if no-changeset
   $ hg up 2 -q
   $ hg graft -r 4 --base 3 --hidden
   grafting 4:af28412ec03c "added d, modified b" (tip)
@@ -560,15 +557,14 @@ changeset-centric version of copies.mergecopies())
   $ hg l -l1 -p
   @  5 added d, modified b
   |  b1
-  ~  diff -r 5a4825cc2926 -r 94a2f1a0e8e2 b1
+  ~  diff -r 5a4825cc2926 -r 94a2f1a0e8e2 b1 (no-changeset !)
+  ~  diff -r f5474f5023a8 -r ef7c02d69f3d b1 (changeset !)
      --- a/b1	Thu Jan 01 00:00:00 1970 +0000
      +++ b/b1	Thu Jan 01 00:00:00 1970 +0000
      @@ -1,1 +1,2 @@
       b
      +baba
   
-#endif
-
 Test to make sure that fullcopytracing algorithm don't fail when both the merging csets are dirty
 (a dirty cset is one who is not the descendant of merge base)
 -------------------------------------------------------------------------------------------------
