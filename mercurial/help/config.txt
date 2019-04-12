@@ -2050,7 +2050,8 @@ Controls generic server settings.
     Repository filter used when exchanging revisions with the peer.
 
     The default view (``served``) excludes secret and hidden changesets.
-    Another useful value is ``immutable`` (no draft, secret or hidden changesets).
+    Another useful value is ``immutable`` (no draft, secret or hidden
+    changesets). (EXPERIMENTAL)
 
 ``smtp``
 --------
