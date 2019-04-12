@@ -2131,14 +2131,14 @@ def update(repo, node, branchmerge, force, ancestor=None,
         for f, fl in sorted(diverge.iteritems()):
             repo.ui.warn(_("note: possible conflict - %s was renamed "
                            "multiple times to:\n") % f)
-            for nf in fl:
+            for nf in sorted(fl):
                 repo.ui.warn(" %s\n" % nf)
 
         # rename and delete
         for f, fl in sorted(renamedelete.iteritems()):
             repo.ui.warn(_("note: possible conflict - %s was deleted "
                            "and renamed to:\n") % f)
-            for nf in fl:
+            for nf in sorted(fl):
                 repo.ui.warn(" %s\n" % nf)
 
         ### apply phase
