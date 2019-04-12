@@ -353,26 +353,6 @@ def pathcopies(x, y, match=None):
     return _chain(x, y, _backwardrenames(x, a, match=match),
                   _forwardcopies(a, y, match=match))
 
-def _computenonoverlap(repo, c1, c2, addedinm1, addedinm2, debug=True):
-    """Computes, based on addedinm1 and addedinm2, the files exclusive to c1
-    and c2. This is its own function so extensions can easily wrap this call
-    to see what files mergecopies is about to process.
-
-    Even though c1 and c2 are not used in this function, they are useful in
-    other extensions for being able to read the file nodes of the changed files.
-    """
-    u1 = sorted(addedinm1 - addedinm2)
-    u2 = sorted(addedinm2 - addedinm1)
-
-    if debug:
-        header = "  unmatched files in %s"
-        if u1:
-            repo.ui.debug("%s:\n   %s\n" % (header % 'local', "\n   ".join(u1)))
-        if u2:
-            repo.ui.debug("%s:\n   %s\n" % (header % 'other', "\n   ".join(u2)))
-
-    return u1, u2
-
 def mergecopies(repo, c1, c2, base):
     """
     Finds moves and copies between context c1 and c2 that are relevant for
@@ -555,7 +535,14 @@ def _fullcopytracing(repo, c1, c2, base):
     # find interesting file sets from manifests
     addedinm1 = m1.filesnotin(mb, repo.narrowmatch())
     addedinm2 = m2.filesnotin(mb, repo.narrowmatch())
-    u1, u2 = _computenonoverlap(repo, c1, c2, addedinm1, addedinm2)
+    u1 = sorted(addedinm1 - addedinm2)
+    u2 = sorted(addedinm2 - addedinm1)
+
+    header = "  unmatched files in %s"
+    if u1:
+        repo.ui.debug("%s:\n   %s\n" % (header % 'local', "\n   ".join(u1)))
+    if u2:
+        repo.ui.debug("%s:\n   %s\n" % (header % 'other', "\n   ".join(u2)))
 
     fullcopy = copies1.copy()
     fullcopy.update(copies2)

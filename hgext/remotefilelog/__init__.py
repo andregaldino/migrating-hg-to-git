@@ -487,37 +487,6 @@ def onetimeclientsetup(ui):
         return orig(repo, matcher, added, removed, *args, **kwargs)
     extensions.wrapfunction(scmutil, '_findrenames', findrenames)
 
-    # prefetch files before mergecopies check
-    def computenonoverlap(orig, repo, c1, c2, *args, **kwargs):
-        u1, u2 = orig(repo, c1, c2, *args, **kwargs)
-        if isenabled(repo):
-            m1 = c1.manifest()
-            m2 = c2.manifest()
-            files = []
-
-            sparsematch1 = repo.maybesparsematch(c1.rev())
-            if sparsematch1:
-                sparseu1 = set()
-                for f in u1:
-                    if sparsematch1(f):
-                        files.append((f, hex(m1[f])))
-                        sparseu1.add(f)
-                u1 = sparseu1
-
-            sparsematch2 = repo.maybesparsematch(c2.rev())
-            if sparsematch2:
-                sparseu2 = set()
-                for f in u2:
-                    if sparsematch2(f):
-                        files.append((f, hex(m2[f])))
-                        sparseu2.add(f)
-                u2 = sparseu2
-
-            # batch fetch the needed files from the server
-            repo.fileservice.prefetch(files)
-        return u1, u2
-    extensions.wrapfunction(copies, '_computenonoverlap', computenonoverlap)
-
     # prefetch files before pathcopies check
     def computeforwardmissing(orig, a, b, match=None):
         missing = orig(a, b, match=match)
