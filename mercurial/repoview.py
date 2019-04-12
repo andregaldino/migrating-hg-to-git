@@ -25,9 +25,9 @@ def hideablerevs(repo):
     This is a standalone function to allow extensions to wrap it.
 
     Because we use the set of immutable changesets as a fallback subset in
-    branchmap (see mercurial.branchmap.subsettable), you cannot set "public"
-    changesets as "hideable". Doing so would break multiple code assertions and
-    lead to crashes."""
+    branchmap (see mercurial.utils.repoviewutils.subsettable), you cannot set
+    "public" changesets as "hideable". Doing so would break multiple code
+    assertions and lead to crashes."""
     obsoletes = obsolete.getrevs(repo, 'obsolete')
     internals = repo._phasecache.getrevset(repo, phases.localhiddenphases)
     internals = frozenset(internals)
@@ -144,7 +144,7 @@ def computeimpactable(repo, visibilityexceptions=None):
 # function to compute filtered set
 #
 # When adding a new filter you MUST update the table at:
-#     mercurial.branchmap.subsettable
+#     mercurial.utils.repoviewutil.subsettable
 # Otherwise your filter will have to recompute all its branches cache
 # from scratch (very slow).
 filtertable = {'visible': computehidden,

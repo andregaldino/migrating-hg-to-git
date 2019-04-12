@@ -23,26 +23,15 @@ from . import (
     util,
 )
 from .utils import (
+    repoviewutil,
     stringutil,
 )
+
+subsettable = repoviewutil. subsettable
 
 calcsize = struct.calcsize
 pack_into = struct.pack_into
 unpack_from = struct.unpack_from
-
-
-### Nearest subset relation
-# Nearest subset of filter X is a filter Y so that:
-# * Y is included in X,
-# * X - Y is as small as possible.
-# This create and ordering used for branchmap purpose.
-# the ordering may be partial
-subsettable = {None: 'visible',
-               'visible-hidden': 'visible',
-               'visible': 'served',
-               'served.hidden': 'served',
-               'served': 'immutable',
-               'immutable': 'base'}
 
 
 class BranchMapCache(object):

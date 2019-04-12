@@ -94,6 +94,10 @@ try:
 except ImportError:
     pass
 try:
+    from mercurial.utils import repoviewutil # since 5.0
+except ImportError:
+    repoviewutil = None
+try:
     from mercurial import scmutil # since 1.9 (or 8b252e826c68)
 except ImportError:
     pass
@@ -471,7 +475,8 @@ def getbranchmapsubsettable():
     # subsettable is defined in:
     # - branchmap since 2.9 (or 175c6fd8cacc)
     # - repoview since 2.5 (or 59a9f18d4587)
-    for mod in (branchmap, repoview):
+    # - repoviewutil since 5.0
+    for mod in (branchmap, repoview, repoviewutil):
         subsettable = getattr(mod, 'subsettable', None)
         if subsettable:
             return subsettable
