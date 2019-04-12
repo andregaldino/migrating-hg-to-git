@@ -601,7 +601,7 @@ def opener(ui, authinfo=None, useragent=None, loggingfh=None,
 
     return opener
 
-def open(ui, url_, data=None):
+def open(ui, url_, data=None, sendaccept=True):
     u = util.url(url_)
     if u.scheme:
         u.scheme = u.scheme.lower()
@@ -610,7 +610,9 @@ def open(ui, url_, data=None):
         path = util.normpath(os.path.abspath(url_))
         url_ = 'file://' + pycompat.bytesurl(urlreq.pathname2url(path))
         authinfo = None
-    return opener(ui, authinfo).open(pycompat.strurl(url_), data)
+    return opener(ui, authinfo,
+                  sendaccept=sendaccept).open(pycompat.strurl(url_),
+                                              data)
 
 def wrapresponse(resp):
     """Wrap a response object with common error handlers.

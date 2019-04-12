@@ -153,13 +153,13 @@ def islocal(repo):
             return False
     return repo.local()
 
-def openpath(ui, path):
+def openpath(ui, path, sendaccept=True):
     '''open path with open if local, url.open if remote'''
     pathurl = util.url(path, parsequery=False, parsefragment=False)
     if pathurl.islocal():
         return util.posixfile(pathurl.localpath(), 'rb')
     else:
-        return url.open(ui, path)
+        return url.open(ui, path, sendaccept=sendaccept)
 
 # a list of (ui, repo) functions called for wire peer initialization
 wirepeersetupfuncs = []
