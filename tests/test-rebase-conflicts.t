@@ -248,8 +248,6 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   getting f1.txt
    merge against 9:e31216eec445
      detach base 8:8e4e2c1a07ae
-    unmatched files in other (from topological common ancestor):
-     f2.txt
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 8e4e2c1a07ae, local: 4bc80088dc6b+, remote: e31216eec445
@@ -267,8 +265,6 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
    already in destination
    merge against 10:2f2496ddf49d
      detach base 9:e31216eec445
-    unmatched files in other (from topological common ancestor):
-     f2.txt
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: e31216eec445, local: 19c888675e13+, remote: 2f2496ddf49d

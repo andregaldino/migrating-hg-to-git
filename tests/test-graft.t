@@ -220,8 +220,6 @@ Graft out of order, skipping a merge and a duplicate
   committing changelog
   updating the branch cache
   grafting 5:97f8bfe72746 "5"
-    unmatched files in other (from topological common ancestor):
-     c
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 4c60f11aa304, local: 6b9e5368ca4e+, remote: 97f8bfe72746
@@ -235,8 +233,6 @@ Graft out of order, skipping a merge and a duplicate
   $ HGEDITOR=cat hg graft 4 3 --log --debug
   scanning for duplicate grafts
   grafting 4:9c233e8e184d "4"
-    unmatched files in other (from topological common ancestor):
-     c
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 4c60f11aa304, local: 1905859650ec+, remote: 9c233e8e184d
@@ -741,8 +737,6 @@ Transplants of grafts can find a destination...
   $ hg graft -q 13 --debug
   scanning for duplicate grafts
   grafting 13:7a4785234d87 "2"
-    unmatched files in other (from topological common ancestor):
-     g
     unmatched files new in both:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):

@@ -353,27 +353,23 @@ def pathcopies(x, y, match=None):
     return _chain(x, y, _backwardrenames(x, a, match=match),
                   _forwardcopies(a, y, match=match))
 
-def _computenonoverlap(repo, c1, c2, addedinm1, addedinm2, baselabel=''):
+def _computenonoverlap(repo, c1, c2, addedinm1, addedinm2, debug=True):
     """Computes, based on addedinm1 and addedinm2, the files exclusive to c1
     and c2. This is its own function so extensions can easily wrap this call
     to see what files mergecopies is about to process.
 
     Even though c1 and c2 are not used in this function, they are useful in
     other extensions for being able to read the file nodes of the changed files.
-
-    "baselabel" can be passed to help distinguish the multiple computations
-    done in the graft case.
     """
     u1 = sorted(addedinm1 - addedinm2)
     u2 = sorted(addedinm2 - addedinm1)
 
-    header = "  unmatched files in %s"
-    if baselabel:
-        header += ' (from %s)' % baselabel
-    if u1:
-        repo.ui.debug("%s:\n   %s\n" % (header % 'local', "\n   ".join(u1)))
-    if u2:
-        repo.ui.debug("%s:\n   %s\n" % (header % 'other', "\n   ".join(u2)))
+    if debug:
+        header = "  unmatched files in %s"
+        if u1:
+            repo.ui.debug("%s:\n   %s\n" % (header % 'local', "\n   ".join(u1)))
+        if u2:
+            repo.ui.debug("%s:\n   %s\n" % (header % 'other', "\n   ".join(u2)))
 
     return u1, u2
 
@@ -588,15 +584,14 @@ def _fullcopytracing(repo, c1, c2, base):
         u1u, u2u = u1r, u2r
     else:
         # unmatched file from base (DAG rotation in the graft case)
-        u1r, u2r = _computenonoverlap(repo, c1, c2, addedinm1, addedinm2,
-                                      baselabel='base')
+        u1r, u2r = _computenonoverlap(repo, c1, c2, addedinm1, addedinm2)
         # unmatched file from topological common ancestors (no DAG rotation)
         # need to recompute this for directory move handling when grafting
         mta = tca.manifest()
         u1u, u2u = _computenonoverlap(repo, c1, c2,
                                       m1.filesnotin(mta, repo.narrowmatch()),
                                       m2.filesnotin(mta, repo.narrowmatch()),
-                                      baselabel='topological common ancestor')
+                                      debug=False)
 
     for f in u1u:
         _checkcopies(c1, c2, f, base, tca, dirtyc1, limit, data1)
