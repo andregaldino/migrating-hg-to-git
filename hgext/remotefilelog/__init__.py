@@ -497,20 +497,20 @@ def onetimeclientsetup(ui):
 
             sparsematch1 = repo.maybesparsematch(c1.rev())
             if sparsematch1:
-                sparseu1 = []
+                sparseu1 = set()
                 for f in u1:
                     if sparsematch1(f):
                         files.append((f, hex(m1[f])))
-                        sparseu1.append(f)
+                        sparseu1.add(f)
                 u1 = sparseu1
 
             sparsematch2 = repo.maybesparsematch(c2.rev())
             if sparsematch2:
-                sparseu2 = []
+                sparseu2 = set()
                 for f in u2:
                     if sparsematch2(f):
                         files.append((f, hex(m2[f])))
-                        sparseu2.append(f)
+                        sparseu2.add(f)
                 u2 = sparseu2
 
             # batch fetch the needed files from the server
@@ -520,7 +520,7 @@ def onetimeclientsetup(ui):
 
     # prefetch files before pathcopies check
     def computeforwardmissing(orig, a, b, match=None):
-        missing = list(orig(a, b, match=match))
+        missing = orig(a, b, match=match)
         repo = a._repo
         if isenabled(repo):
             mb = b.manifest()
@@ -528,11 +528,11 @@ def onetimeclientsetup(ui):
             files = []
             sparsematch = repo.maybesparsematch(b.rev())
             if sparsematch:
-                sparsemissing = []
+                sparsemissing = set()
                 for f in missing:
                     if sparsematch(f):
                         files.append((f, hex(mb[f])))
-                        sparsemissing.append(f)
+                        sparsemissing.add(f)
                 missing = sparsemissing
 
             # batch fetch the needed files from the server
