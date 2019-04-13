@@ -423,17 +423,10 @@ Verify that the old context ancestor works with / despite preferancestor:
      d1/b
     unmatched files in other:
      d2/b
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/b' -> dst: 'd2/b' 
-    checking for directory renames
-     discovered dir src: 'd1/' -> dst: 'd2/'
-     pending file src: 'd1/a' -> dst: 'd2/a'
-     pending file src: 'd1/b' -> dst: 'd2/b'
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 11b5b303e36c, local: c0ef19750a22+, remote: 6ca01f7342b9
-   d2/a: remote directory rename - move from d1/a -> dm
-   d2/b: remote directory rename, both created -> m
+   d2/b: remote created -> g
   
   calculating bids for ancestor 154e6000f54e
     searching for copies back to rev 3
@@ -453,8 +446,7 @@ Verify that the old context ancestor works with / despite preferancestor:
   auction for merging merge bids
    d1/a: consensus for r
    d1/b: consensus for r
-   d2/a: consensus for dm
-   d2/b: picking 'get' action
+   d2/b: consensus for g
   end of auction
   
    d1/a: other deleted -> r

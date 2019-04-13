@@ -682,6 +682,11 @@ def _fullcopytracing(repo, c1, c2, base):
         if len(fl) == 2 and fl[0] == fl[1]:
             copy[fl[0]] = of # not actually divergent, just matching renames
 
+    # Sometimes we get invalid copies here (the "and not remotebase" in
+    # _checkcopies() seems suspicious). Filter them out.
+    for dst, src in fullcopy.copy().items():
+        if src not in mb:
+            del fullcopy[dst]
     if fullcopy and repo.ui.debugflag:
         repo.ui.debug("  all copies found (* = to merge, ! = divergent, "
                       "% = renamed and deleted):\n")
