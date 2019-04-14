@@ -7,8 +7,6 @@
   > mainbranch=@
   > EOF
 
-  $ HGMERGE=true; export HGMERGE
-
 setup the server repo
 
   $ hg init repo-server

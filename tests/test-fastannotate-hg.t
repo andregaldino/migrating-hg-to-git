@@ -1,6 +1,8 @@
 (this file is backported from core hg tests/test-annotate.t)
 
   $ cat >> $HGRCPATH << EOF
+  > [ui]
+  > merge = :merge3
   > [diff]
   > git=1
   > [extensions]
@@ -10,8 +12,6 @@
   > forcefollow=False
   > mainbranch=.
   > EOF
-
-  $ HGMERGE=true; export HGMERGE
 
 init
 
@@ -157,8 +157,34 @@ annotate -nlf b
   created new head
   $ hg merge
   merging b
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat b
+  a
+  a
+  a
+  <<<<<<< working copy: 5fbdc1152d97 - test: b2.1
+  b4
+  c
+  b5
+  ||||||| base
+  =======
+  b4
+  b5
+  b6
+  >>>>>>> merge rev:    37ec9f5c3d1f - test: b2
+  $ cat <<EOF > b
+  > a
+  > a
+  > a
+  > b4
+  > c
+  > b5
+  > EOF
+  $ hg resolve --mark -q
+  $ rm b.orig
   $ hg ci -mmergeb -d '3 0'
 
 annotate after merge
@@ -247,15 +273,37 @@ annotate after merge with -l
   > EOF
   $ hg ci -mc -d '3 0'
   created new head
+BROKEN: 'a' was copied to 'b' on both sides. We should not get a merge conflict here
   $ hg merge
   merging b
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-  $ cat <<EOF >> b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat b
+  <<<<<<< working copy: b80e3e32f75a - test: c
+  a
+  z
+  a
+  ||||||| base
+  =======
+  a
+  a
+  a
+  b4
+  c
+  b5
+  >>>>>>> merge rev:    64afcdf8e29e - test: mergeb
+  $ cat <<EOF > b
+  > a
+  > z
+  > a
   > b4
   > c
   > b5
   > EOF
+  $ hg resolve --mark -q
+  $ rm b.orig
   $ echo d >> b
   $ hg ci -mmerge2 -d '4 0'
 
@@ -745,6 +793,19 @@ Issue5360: Deleted chunk in p1 of a merge changeset
   $ echo 3 >> a
   $ hg commit -m 3 -q
   $ hg merge 2 -q
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  [1]
+  $ cat a
+  <<<<<<< working copy: 0a068f0261cf - test: 3
+  1
+  2
+  3
+  ||||||| base
+  1
+  2
+  =======
+  a
+  >>>>>>> merge rev:    9409851bc20a - test: a
   $ cat > a << EOF
   > b
   > 1
@@ -753,6 +814,7 @@ Issue5360: Deleted chunk in p1 of a merge changeset
   > a
   > EOF
   $ hg resolve --mark -q
+  $ rm a.orig
   $ hg commit -m m
   $ hg annotate a
   4: b
