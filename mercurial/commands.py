@@ -1675,6 +1675,8 @@ def _docommit(ui, repo, *pats, **opts):
 
         if not bheads:
             raise error.Abort(_('can only close branch heads'))
+        elif branch == repo['.'].branch() and repo['.'].node() not in bheads:
+            raise error.Abort(_('can only close branch heads'))
         elif opts.get('amend'):
             if (repo['.'].p1().branch() != branch and
                 repo['.'].p2().branch() != branch):

@@ -956,18 +956,15 @@ Test to make sure that `--close-branch` only works on a branch head:
 
 trying to close branch from a cset which is not a branch head
 it should abort:
-XXX: it should have aborted here
   $ hg ci -m "closing branch" --close-branch
-  created new head
+  abort: can only close branch heads
+  [255]
 
   $ hg up 0
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg log -GT "{rev}: {node|short} {desc|firstline}\n\t{branch}\n\n"
-  _  3: 006876ddd20e closing branch
+  o  2: 155349b645be added c
   |  	default
-  |
-  | o  2: 155349b645be added c
-  |/   	default
   |
   o  1: 5f6d8a4bf34a added b
   |  	default
