@@ -1430,7 +1430,7 @@ class ui(object):
 
         return i
 
-    def _readline(self):
+    def _readline(self, prompt=' ', promptopts=None):
         # Replacing stdin/stdout temporarily is a hard problem on Python 3
         # because they have to be text streams with *no buffering*. Instead,
         # we use rawinput() only if call_readline() will be invoked by
@@ -1449,17 +1449,27 @@ class ui(object):
             except Exception:
                 usereadline = False
 
+        if self._colormode == 'win32' or not usereadline:
+            if not promptopts:
+                promptopts = {}
+            self._writemsgnobuf(self._fmsgout, prompt, type='prompt',
+                                **promptopts)
+            self.flush()
+            prompt = ' '
+        else:
+            prompt = self.label(prompt, 'ui.prompt') + ' '
+
         # prompt ' ' must exist; otherwise readline may delete entire line
         # - http://bugs.python.org/issue12833
         with self.timeblockedsection('stdio'):
             if usereadline:
-                line = encoding.strtolocal(pycompat.rawinput(r' '))
+                line = encoding.strtolocal(pycompat.rawinput(prompt))
                 # When stdin is in binary mode on Windows, it can cause
                 # raw_input() to emit an extra trailing carriage return
                 if pycompat.oslinesep == b'\r\n' and line.endswith(b'\r'):
                     line = line[:-1]
             else:
-                self._fout.write(b' ')
+                self._fout.write(pycompat.bytestr(prompt))
                 self._fout.flush()
                 line = self._fin.readline()
                 if not line:
@@ -1481,10 +1491,8 @@ class ui(object):
             self._writemsg(self._fmsgout, default or '', "\n",
                            type='promptecho')
             return default
-        self._writemsgnobuf(self._fmsgout, msg, type='prompt', **opts)
-        self.flush()
         try:
-            r = self._readline()
+            r = self._readline(prompt=msg, promptopts=opts)
             if not r:
                 r = default
             if self.configbool('ui', 'promptecho'):
