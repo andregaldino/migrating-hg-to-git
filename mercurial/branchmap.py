@@ -219,8 +219,9 @@ class branchcache(object):
         return key in self._entries
 
     def iteritems(self):
-        self._verifyall()
-        return self._entries.iteritems()
+        for k, v in self._entries.iteritems():
+            self._verifybranch(k)
+            yield k, v
 
     def hasbranch(self, label):
         """ checks whether a branch of this name exists or not """
