@@ -280,7 +280,7 @@ verify update will accept invalid legacy branch names
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit -d '9 0' --close-branch -m 'close this part branch too'
   $ hg commit -d '9 0' --close-branch -m 're-closing this branch'
-  abort: can only close branch heads
+  abort: current revision is already a branch closing head
   [255]
 
   $ hg log -r tip --debug
