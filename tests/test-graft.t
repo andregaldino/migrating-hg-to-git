@@ -749,6 +749,9 @@ Transplants of grafts can find a destination...
      g
     unmatched files new in both:
      b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' *
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: b592ea63bb0c, local: 7e61b508e709+, remote: 7a4785234d87

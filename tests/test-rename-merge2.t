@@ -365,6 +365,9 @@ $4 = expected result
     searching for copies back to rev 1
     unmatched files new in both:
      b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' *
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 62e7bf090eba+, remote: 49b6d8032493
@@ -952,6 +955,7 @@ Expected result:
      0/f
      1/g
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: '1/f' -> dst: '1/g' *
      src: '3/f' -> dst: '3/g' *
      src: '4/f' -> dst: '4/g' *
      src: '5/f' -> dst: '5/g' *

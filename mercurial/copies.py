@@ -687,6 +687,10 @@ def _fullcopytracing(repo, c1, c2, base):
     for dst, src in fullcopy.copy().items():
         if src not in mb:
             del fullcopy[dst]
+    # Sometimes we forget to add entries from "copy" to "fullcopy", so fix
+    # that up here
+    for dst, src in copy.items():
+        fullcopy[dst] = src
     if fullcopy and repo.ui.debugflag:
         repo.ui.debug("  all copies found (* = to merge, ! = divergent, "
                       "% = renamed and deleted):\n")
