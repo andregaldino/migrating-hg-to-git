@@ -68,7 +68,6 @@ $4 = expected result
   >         hg add $2 2> /dev/null
   >     fi
   > }
-  $ uc() { up $1; hg cp $1 $2; } # update + copy
   $ um() { up $1; hg mv $1 $2; }
   $ nc() { hg cp $1 $2; } # just copy
   $ nm() { hg mv $1 $2; } # just move
