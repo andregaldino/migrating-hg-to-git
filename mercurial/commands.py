@@ -1677,7 +1677,7 @@ def _docommit(ui, repo, *pats, **opts):
             raise error.Abort(_('current revision is already a branch closing'
                                 ' head'))
         elif not bheads:
-            raise error.Abort(_('can only close branch heads'))
+            raise error.Abort(_('branch "%s" has no heads to close') % branch)
         elif branch == repo['.'].branch() and repo['.'].node() not in bheads:
             raise error.Abort(_('can only close branch heads'))
         elif opts.get('amend'):

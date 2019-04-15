@@ -892,7 +892,7 @@ This silliness fails:
   marked working directory as branch silliness
   $ echo b >> b
   $ hg ci --close-branch -m'open and close'
-  abort: can only close branch heads
+  abort: branch "silliness" has no heads to close
   [255]
 
 Test that amend with --secret creates new secret changeset forcibly
