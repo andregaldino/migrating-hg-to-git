@@ -737,8 +737,6 @@ Transplants of grafts can find a destination...
   $ hg graft -q 13 --debug
   scanning for duplicate grafts
   grafting 13:7a4785234d87 "2"
-    unmatched files new in both:
-     b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
      src: 'a' -> dst: 'b' *
     checking for directory renames

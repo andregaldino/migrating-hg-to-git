@@ -625,9 +625,6 @@ def _fullcopytracing(repo, c1, c2, base):
         else:
             divergeset.update(fl) # reverse map for below
 
-    if bothnew:
-        repo.ui.debug("  unmatched files new in both:\n   %s\n"
-                      % "\n   ".join(bothnew))
     bothdiverge = {}
     bothincompletediverge = {}
     remainder = {}
