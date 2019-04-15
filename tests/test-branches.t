@@ -940,3 +940,38 @@ No superfluous rebuilding of cache:
   0010: 56 46 78 69 00 00 00 01                         |VFxi....|
 
   $ cd ..
+
+Test to make sure that `--close-branch` only works on a branch head:
+--------------------------------------------------------------------
+  $ hg init closebranch
+  $ cd closebranch
+  $ for ch in a b c; do
+  > echo $ch > $ch
+  > hg add $ch
+  > hg ci -m "added "$ch
+  > done;
+
+  $ hg up -r "desc('added b')"
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
+trying to close branch from a cset which is not a branch head
+it should abort:
+XXX: it should have aborted here
+  $ hg ci -m "closing branch" --close-branch
+  created new head
+
+  $ hg up 0
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg log -GT "{rev}: {node|short} {desc|firstline}\n\t{branch}\n\n"
+  _  3: 006876ddd20e closing branch
+  |  	default
+  |
+  | o  2: 155349b645be added c
+  |/   	default
+  |
+  o  1: 5f6d8a4bf34a added b
+  |  	default
+  |
+  @  0: 9092f1db7931 added a
+     	default
+  
