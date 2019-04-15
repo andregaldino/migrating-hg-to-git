@@ -233,20 +233,47 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
     }
 
     /// Register revisions known as being missing
+    ///
+    /// # Performance note
+    ///
+    /// Except in the most trivial case, the first call of this method has
+    /// the side effect of computing `self.undecided` set for the first time,
+    /// and the related caches it might need for efficiency of its internal
+    /// computation. This is typically faster if more information is
+    /// available in `self.common`. Therefore, for good performance, the
+    /// caller should avoid calling this too early.
     pub fn add_missing_revisions(
         &mut self,
         missing: impl IntoIterator<Item = Revision>,
     ) -> Result<(), GraphError> {
-        self.ensure_undecided()?;
-        let range = dagops::range(
-            &self.graph,
-            missing,
-            self.undecided.as_ref().unwrap().iter().cloned(),
-        )?;
+        self.ensure_children_cache()?;
+        self.ensure_undecided()?; // for safety of possible future refactors
+        let children = self.children_cache.as_ref().unwrap();
+        let mut seen: HashSet<Revision> = HashSet::new();
+        let mut tovisit: VecDeque<Revision> = missing.into_iter().collect();
         let undecided_mut = self.undecided.as_mut().unwrap();
-        for missrev in range {
-            self.missing.insert(missrev);
-            undecided_mut.remove(&missrev);
+        while let Some(rev) = tovisit.pop_front() {
+            if !self.missing.insert(rev) {
+                // either it's known to be missing from a previous
+                // invocation, and there's no need to iterate on its
+                // children (we now they are all missing)
+                // or it's from a previous iteration of this loop
+                // and its children have already been queued
+                continue;
+            }
+            undecided_mut.remove(&rev);
+            match children.get(&rev) {
+                None => {
+                    continue;
+                }
+                Some(this_children) => {
+                    for child in this_children.iter().cloned() {
+                        if seen.insert(child) {
+                            tovisit.push_back(child);
+                        }
+                    }
+                }
+            }
         }
         Ok(())
     }
@@ -543,6 +570,22 @@ mod tests {
         assert_eq!(sorted_missing(&disco), vec![8, 10, 13]);
         assert!(disco.is_complete());
         assert_eq!(sorted_common_heads(&disco)?, vec![5, 11, 12]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_missing_early_continue() -> Result<(), GraphError> {
+        eprintln!("test_add_missing_early_stop");
+        let mut disco = full_disco();
+        disco.add_common_revisions(vec![13, 3, 4])?;
+        disco.ensure_children_cache()?;
+        // 12 is grand-child of 6 through 9
+        // passing them in this order maximizes the chances of the
+        // early continue to do the wrong thing
+        disco.add_missing_revisions(vec![6, 9, 12])?;
+        assert_eq!(sorted_undecided(&disco), vec![5, 7, 10, 11]);
+        assert_eq!(sorted_missing(&disco), vec![6, 9, 12]);
+        assert!(!disco.is_complete());
         Ok(())
     }
 
