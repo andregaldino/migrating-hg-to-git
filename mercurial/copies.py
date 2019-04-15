@@ -691,6 +691,11 @@ def _fullcopytracing(repo, c1, c2, base):
     # that up here
     for dst, src in copy.items():
         fullcopy[dst] = src
+    # Sometimes we forget to add entries from "diverge" to "fullcopy", so fix
+    # that up here
+    for src, dsts in diverge.items():
+        for dst in dsts:
+            fullcopy[dst] = src
     if fullcopy and repo.ui.debugflag:
         repo.ui.debug("  all copies found (* = to merge, ! = divergent, "
                       "% = renamed and deleted):\n")
