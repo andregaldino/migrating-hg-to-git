@@ -643,7 +643,7 @@ def gathersupportedrequirements(ui):
     # Add derived requirements from registered compression engines.
     for name in util.compengines:
         engine = util.compengines[name]
-        if engine.revlogheader():
+        if engine.available() and engine.revlogheader():
             supported.add(b'exp-compression-%s' % name)
 
     return supported
