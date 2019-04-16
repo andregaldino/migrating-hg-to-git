@@ -682,13 +682,12 @@ class fixupstate(object):
 
     def commit(self):
         """commit changes. update self.finalnode, self.replacemap"""
-        with self.repo.wlock(), self.repo.lock():
-            with self.repo.transaction('absorb') as tr:
-                self._commitstack()
-                self._movebookmarks(tr)
-                if self.repo['.'].node() in self.replacemap:
-                    self._moveworkingdirectoryparent()
-                self._cleanupoldcommits()
+        with self.repo.transaction('absorb') as tr:
+            self._commitstack()
+            self._movebookmarks(tr)
+            if self.repo['.'].node() in self.replacemap:
+                self._moveworkingdirectoryparent()
+            self._cleanupoldcommits()
         return self.finalnode
 
     def printchunkstats(self):
@@ -1006,6 +1005,11 @@ def absorbcmd(ui, repo, *pats, **opts):
     Returns 0 on success, 1 if all chunks were ignored and nothing amended.
     """
     opts = pycompat.byteskwargs(opts)
-    state = absorb(ui, repo, pats=pats, opts=opts)
-    if sum(s[0] for s in state.chunkstats.values()) == 0:
-        return 1
+
+    with repo.wlock(), repo.lock():
+        if not opts['dry_run']:
+            cmdutil.checkunfinished(repo)
+
+        state = absorb(ui, repo, pats=pats, opts=opts)
+        if sum(s[0] for s in state.chunkstats.values()) == 0:
+            return 1
