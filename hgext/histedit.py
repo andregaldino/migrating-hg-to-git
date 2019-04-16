@@ -1230,12 +1230,13 @@ def addln(win, y, x, line, color=None):
 def patchcontents(state):
     repo = state['repo']
     rule = state['rules'][state['pos']]
-    repo.ui.verbose = True
     displayer = logcmdutil.changesetdisplayer(repo.ui, repo, {
         "patch": True,  "template": "status"
     }, buffered=True)
-    displayer.show(rule.ctx)
-    displayer.close()
+    overrides = {('ui',  'verbose'): True}
+    with repo.ui.configoverride(overrides, source='histedit'):
+        displayer.show(rule.ctx)
+        displayer.close()
     return displayer.hunk[rule.ctx.rev()].splitlines()
 
 def _chisteditmain(repo, rules, stdscr):
