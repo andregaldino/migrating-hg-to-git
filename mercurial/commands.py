@@ -63,6 +63,7 @@ from . import (
     tags as tagsmod,
     ui as uimod,
     util,
+    verify as verifymod,
     wireprotoserver,
 )
 from .utils import (
@@ -6147,8 +6148,10 @@ def update(ui, repo, node=None, **opts):
                 ui.warn("(%s)\n" % obsfatemsg)
         return ret
 
-@command('verify', [], helpcategory=command.CATEGORY_MAINTENANCE)
-def verify(ui, repo):
+@command('verify',
+         [('', 'full', False, 'perform more checks (EXPERIMENTAL)')],
+         helpcategory=command.CATEGORY_MAINTENANCE)
+def verify(ui, repo, **opts):
     """verify the integrity of the repository
 
     Verify the integrity of the current repository.
@@ -6164,7 +6167,10 @@ def verify(ui, repo):
 
     Returns 0 on success, 1 if errors are encountered.
     """
-    return hg.verify(repo)
+    level = None
+    if opts['full']:
+        level = verifymod.VERIFY_FULL
+    return hg.verify(repo, level)
 
 @command(
     'version', [] + formatteropts, helpcategory=command.CATEGORY_HELP,

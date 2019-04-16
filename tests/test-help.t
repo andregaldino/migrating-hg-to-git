@@ -615,6 +615,8 @@ Test command without options
   
       Returns 0 on success, 1 if errors are encountered.
   
+  options:
+  
   (some details hidden, use --verbose to show complete help)
 
   $ hg help diff

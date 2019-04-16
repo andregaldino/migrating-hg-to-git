@@ -347,7 +347,7 @@ Show all commands + options
   tip: patch, git, style, template
   unbundle: update
   update: clean, check, merge, date, rev, tool
-  verify: 
+  verify: full
   version: template
 
   $ hg init a

@@ -23,6 +23,7 @@ from . import (
 )
 
 VERIFY_DEFAULT = 0
+VERIFY_FULL = 1
 
 def verify(repo, level=None):
     with repo.lock():
