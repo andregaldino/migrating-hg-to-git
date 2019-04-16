@@ -696,7 +696,11 @@ def _fullcopytracing(repo, c1, c2, base):
     for src, dsts in diverge.items():
         for dst in dsts:
             fullcopy[dst] = src
-    if fullcopy and repo.ui.debugflag:
+
+    if not fullcopy:
+        return copy, {}, diverge, renamedelete, {}
+
+    if repo.ui.debugflag:
         repo.ui.debug("  all copies found (* = to merge, ! = divergent, "
                       "% = renamed and deleted):\n")
         for f in sorted(fullcopy):
@@ -710,9 +714,6 @@ def _fullcopytracing(repo, c1, c2, base):
             repo.ui.debug("   src: '%s' -> dst: '%s' %s\n" % (fullcopy[f], f,
                                                               note))
     del divergeset
-
-    if not fullcopy:
-        return copy, {}, diverge, renamedelete, {}
 
     repo.ui.debug("  checking for directory renames\n")
 
