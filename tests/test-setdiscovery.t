@@ -926,7 +926,7 @@ Both many new on top of long history:
   common heads: 7ead0cba2838
 
 
-One with >200 heads, which used to use up all of the sample:
+One with >200 heads. We now switch to send them all in the initial roundtrip, but still do sampling for the later request.
 
   $ hg init manyheads
   $ cd manyheads
@@ -974,20 +974,17 @@ One with >200 heads, which used to use up all of the sample:
   searching for changes
   taking quick initial sample
   searching: 2 queries
-  query 2; still undecided: 1240, sample size is: 100
+  query 2; still undecided: 1080, sample size is: 100
   sampling from both directions
   searching: 3 queries
-  query 3; still undecided: 1140, sample size is: 200
+  query 3; still undecided: 980, sample size is: 200
   sampling from both directions
   searching: 4 queries
   query 4; still undecided: \d+, sample size is: 200 (re)
   sampling from both directions
   searching: 5 queries
-  query 5; still undecided: \d+, sample size is: 200 (re)
-  sampling from both directions
-  searching: 6 queries
-  query 6; still undecided: \d+, sample size is: \d+ (re)
-  6 total queries in *.????s (glob)
+  query 5; still undecided: 195, sample size is: 195
+  5 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   heads summary:
     total common heads:          1
@@ -1116,6 +1113,6 @@ fixed in 86c35b7ae300:
   $ hg -R r1 --config extensions.blackbox= blackbox --config blackbox.track=
   * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> serve --cmdserver chgunix * (glob) (chg !)
   * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> -R r1 outgoing r2 *-T{rev} * --config *extensions.blackbox=* (glob)
-  * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> found 101 common and 1 unknown server heads, 2 roundtrips in *.????s (glob)
+  * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> found 101 common and 1 unknown server heads, 1 roundtrips in *.????s (glob)
   * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> -R r1 outgoing r2 *-T{rev} * --config *extensions.blackbox=* exited 0 after *.?? seconds (glob)
   $ cd ..
