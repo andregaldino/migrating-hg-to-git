@@ -189,8 +189,7 @@ class branchcache(object):
         self._closedverified = True
 
     def _verifybranch(self, branch):
-        """ verify head nodes for the given branch. If branch is None, verify
-        for all the branches """
+        """ verify head nodes for the given branch. """
         if branch not in self._entries or branch in self._verifiedbranches:
             return
         for n in self._entries[branch]:
