@@ -339,7 +339,6 @@ class branchcache(object):
 
     def copy(self):
         """return an deep copy of the branchcache object"""
-        self._verifyall()
         return type(self)(
             self._entries, self.tipnode, self.tiprev, self.filteredhash,
             self._closednodes)
