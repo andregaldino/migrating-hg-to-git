@@ -1092,9 +1092,9 @@ def outgoing(ui, repo, dest, opts):
     recurse()
     return 0 # exit code is zero since we found outgoing changes
 
-def verify(repo):
+def verify(repo, level=None):
     """verify the consistency of a repository"""
-    ret = verifymod.verify(repo)
+    ret = verifymod.verify(repo, level=level)
 
     # Broken subrepo references in hidden csets don't seem worth worrying about,
     # since they can't be pushed/pulled, and --hidden can be used if they are a

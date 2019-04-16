@@ -22,9 +22,12 @@ from . import (
     util,
 )
 
-def verify(repo):
+VERIFY_DEFAULT = 0
+
+def verify(repo, level=None):
     with repo.lock():
-        return verifier(repo).verify()
+        v = verifier(repo, level)
+        return v.verify()
 
 def _normpath(f):
     # under hg < 2.4, convert didn't sanitize paths properly, so a
@@ -34,10 +37,13 @@ def _normpath(f):
     return f
 
 class verifier(object):
-    def __init__(self, repo):
+    def __init__(self, repo, level=None):
         self.repo = repo.unfiltered()
         self.ui = repo.ui
         self.match = repo.narrowmatch()
+        if level is None:
+            level = VERIFY_DEFAULT
+        self._level = level
         self.badrevs = set()
         self.errors = 0
         self.warnings = 0
