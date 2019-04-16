@@ -200,7 +200,8 @@ class branchcache(object):
 
     def _verifyall(self):
         """ verifies nodes of all the branches """
-        for b in self._entries:
+        needverification = set(self._entries.keys()) - self._verifiedbranches
+        for b in needverification:
             self._verifybranch(b)
 
     def __iter__(self):
