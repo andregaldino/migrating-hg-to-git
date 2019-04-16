@@ -48,6 +48,7 @@ Small superset:
     total common heads:          2
       also local heads:          2
       also remote heads:         1
+      both:                      1
     local heads:                 2
       common:                    2
       missing:                   0
@@ -69,6 +70,7 @@ Small superset:
     total common heads:          2
       also local heads:          2
       also remote heads:         1
+      both:                      1
     local heads:                 2
       common:                    2
       missing:                   0
@@ -90,6 +92,7 @@ Small superset:
     total common heads:          1
       also local heads:          1
       also remote heads:         0
+      both:                      0
     local heads:                 2
       common:                    1
       missing:                   1
@@ -110,6 +113,7 @@ Small superset:
     total common heads:          2
       also local heads:          1
       also remote heads:         2
+      both:                      1
     local heads:                 3
       common:                    1
       missing:                   2
@@ -131,6 +135,7 @@ Small superset:
     total common heads:          2
       also local heads:          1
       also remote heads:         2
+      both:                      1
     local heads:                 3
       common:                    1
       missing:                   2
@@ -152,6 +157,7 @@ Small superset:
     total common heads:          2
       also local heads:          1
       also remote heads:         2
+      both:                      1
     local heads:                 3
       common:                    1
       missing:                   2
@@ -179,6 +185,7 @@ Many new:
     total common heads:          1
       also local heads:          1
       also remote heads:         0
+      both:                      0
     local heads:                 2
       common:                    1
       missing:                   1
@@ -203,6 +210,7 @@ Many new:
     total common heads:          1
       also local heads:          1
       also remote heads:         0
+      both:                      0
     local heads:                 2
       common:                    1
       missing:                   1
@@ -227,6 +235,7 @@ Many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 2
       common:                    0
       missing:                   2
@@ -247,6 +256,7 @@ Many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         1
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -271,6 +281,7 @@ Many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         1
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -295,6 +306,7 @@ Many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         1
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -321,6 +333,7 @@ Both sides many new with stub:
     total common heads:          1
       also local heads:          1
       also remote heads:         0
+      both:                      0
     local heads:                 2
       common:                    1
       missing:                   1
@@ -345,6 +358,7 @@ Both sides many new with stub:
     total common heads:          1
       also local heads:          1
       also remote heads:         0
+      both:                      0
     local heads:                 2
       common:                    1
       missing:                   1
@@ -369,6 +383,7 @@ Both sides many new with stub:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 2
       common:                    0
       missing:                   2
@@ -389,6 +404,7 @@ Both sides many new with stub:
     total common heads:          1
       also local heads:          0
       also remote heads:         1
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -413,6 +429,7 @@ Both sides many new with stub:
     total common heads:          1
       also local heads:          0
       also remote heads:         1
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -437,6 +454,7 @@ Both sides many new with stub:
     total common heads:          1
       also local heads:          0
       also remote heads:         1
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -464,6 +482,7 @@ Both many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -488,6 +507,7 @@ Both many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -512,6 +532,7 @@ Both many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -532,6 +553,7 @@ Both many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -556,6 +578,7 @@ Both many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -580,6 +603,7 @@ Both many new:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -607,6 +631,7 @@ Both many new skewed:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -631,6 +656,7 @@ Both many new skewed:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -655,6 +681,7 @@ Both many new skewed:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -675,6 +702,7 @@ Both many new skewed:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -699,6 +727,7 @@ Both many new skewed:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -723,6 +752,7 @@ Both many new skewed:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -750,6 +780,7 @@ Both many new on top of long history:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -777,6 +808,7 @@ Both many new on top of long history:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -804,6 +836,7 @@ Both many new on top of long history:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -824,6 +857,7 @@ Both many new on top of long history:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -851,6 +885,7 @@ Both many new on top of long history:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -878,6 +913,7 @@ Both many new on top of long history:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:                 1
       common:                    0
       missing:                   1
@@ -957,6 +993,7 @@ One with >200 heads, which used to use up all of the sample:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:               260
       common:                    0
       missing:                 260
@@ -983,6 +1020,7 @@ One with >200 heads, which used to use up all of the sample:
     total common heads:          1
       also local heads:          0
       also remote heads:         0
+      both:                      0
     local heads:               260
       common:                    0
       missing:                 260

@@ -829,6 +829,7 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     data['nb-common'] = len(common)
     data['nb-common-local'] = len(common & lheads)
     data['nb-common-remote'] = len(common & rheads)
+    data['nb-common-both'] = len(common & rheads & lheads)
     data['nb-local'] = len(lheads)
     data['nb-local-missing'] = data['nb-local'] - data['nb-common-local']
     data['nb-remote'] = len(rheads)
@@ -843,6 +844,7 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     ui.write(("  total common heads:  %(nb-common)9d\n") % data)
     ui.write(("    also local heads:  %(nb-common-local)9d\n") % data)
     ui.write(("    also remote heads: %(nb-common-remote)9d\n") % data)
+    ui.write(("    both:              %(nb-common-both)9d\n") % data)
     ui.write(("  local heads:         %(nb-local)9d\n") % data)
     ui.write(("    common:            %(nb-common-local)9d\n") % data)
     ui.write(("    missing:           %(nb-local-missing)9d\n") % data)
