@@ -119,13 +119,13 @@ class partialdiscovery(object):
         self._childrenmap = None
 
     def addcommons(self, commons):
-        """registrer nodes known as common"""
+        """register nodes known as common"""
         self._common.addbases(commons)
         if self._undecided is not None:
             self._common.removeancestorsfrom(self._undecided)
 
     def addmissings(self, missings):
-        """registrer some nodes as missing"""
+        """register some nodes as missing"""
         newmissing = self._repo.revs('%ld::%ld', missings, self.undecided)
         if newmissing:
             self.missing.update(newmissing)
