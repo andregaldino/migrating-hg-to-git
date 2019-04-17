@@ -527,9 +527,9 @@ def _fullcopytracing(repo, c1, c2, base):
 
     renamedeleteset = set()
     divergeset = set()
-    for src, dsts in diverge.items():
+    for dsts in diverge.values():
         divergeset.update(dsts)
-    for src, dsts in renamedelete.items():
+    for dsts in renamedelete.values():
         renamedeleteset.update(dsts)
 
     # find interesting file sets from manifests
