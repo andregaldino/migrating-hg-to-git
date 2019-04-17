@@ -410,7 +410,10 @@ def mergecopies(repo, c1, c2, base):
         return _dirstatecopies(repo, narrowmatch), {}, {}, {}, {}
 
     copytracing = repo.ui.config('experimental', 'copytrace')
-    boolctrace = stringutil.parsebool(copytracing)
+    if stringutil.parsebool(copytracing) is False:
+        # stringutil.parsebool() returns None when it is unable to parse the
+        # value, so we should rely on making sure copytracing is on such cases
+        return {}, {}, {}, {}, {}
 
     # Copy trace disabling is explicitly below the node == p1 logic above
     # because the logic above is required for a simple copy to be kept across a
@@ -422,10 +425,6 @@ def mergecopies(repo, c1, c2, base):
         if _isfullcopytraceable(repo, c1, base):
             return _fullcopytracing(repo, c1, c2, base)
         return _heuristicscopytracing(repo, c1, c2, base)
-    elif boolctrace is False:
-        # stringutil.parsebool() returns None when it is unable to parse the
-        # value, so we should rely on making sure copytracing is on such cases
-        return {}, {}, {}, {}, {}
     else:
         return _fullcopytracing(repo, c1, c2, base)
 
