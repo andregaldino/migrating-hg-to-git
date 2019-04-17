@@ -332,7 +332,7 @@ Show all commands + options
   phase: public, draft, secret, force, rev
   pull: update, force, rev, bookmark, branch, ssh, remotecmd, insecure
   push: force, rev, bookmark, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
-  recover: 
+  recover: verify
   remove: after, force, subrepos, include, exclude, dry-run
   rename: after, force, include, exclude, dry-run
   resolve: all, list, mark, unmark, no-status, re-merge, tool, include, exclude, template

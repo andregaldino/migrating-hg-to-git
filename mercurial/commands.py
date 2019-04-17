@@ -4655,8 +4655,11 @@ def push(ui, repo, dest=None, **opts):
 
     return result
 
-@command('recover', [], helpcategory=command.CATEGORY_MAINTENANCE)
-def recover(ui, repo):
+@command('recover',
+    [('','verify', True, "run `hg verify` after succesful recover"),
+    ],
+    helpcategory=command.CATEGORY_MAINTENANCE)
+def recover(ui, repo, **opts):
     """roll back an interrupted transaction
 
     Recover from an interrupted commit or pull.
@@ -4667,8 +4670,15 @@ def recover(ui, repo):
 
     Returns 0 if successful, 1 if nothing to recover or verify fails.
     """
-    if repo.recover():
-        return hg.verify(repo)
+    ret = repo.recover()
+    if ret:
+        if opts['verify']:
+            return hg.verify(repo)
+        else:
+            msg = _("(verify step skipped, run  `hg verify` to check your "
+                    "repository content)\n")
+            ui.warn(msg)
+            return 0
     return 1
 
 @command('remove|rm',
