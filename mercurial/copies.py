@@ -415,6 +415,10 @@ def mergecopies(repo, c1, c2, base):
         # value, so we should rely on making sure copytracing is on such cases
         return {}, {}, {}, {}, {}
 
+    if usechangesetcentricalgo(repo):
+        # The heuristics don't make sense when we need changeset-centric algos
+        return _fullcopytracing(repo, c1, c2, base)
+
     # Copy trace disabling is explicitly below the node == p1 logic above
     # because the logic above is required for a simple copy to be kept across a
     # rebase.
