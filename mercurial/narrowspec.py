@@ -293,8 +293,8 @@ def updateworkingcopy(repo, assumeclean=False):
     removedmatch = matchmod.differencematcher(oldmatch, newmatch)
 
     ds = repo.dirstate
-    lookup, status = ds.status(removedmatch, subrepos=[], ignored=False,
-                               clean=True, unknown=False)
+    lookup, status = ds.status(removedmatch, subrepos=[], ignored=True,
+                               clean=True, unknown=True)
     trackeddirty = status.modified + status.added
     clean = status.clean
     if assumeclean:
@@ -306,6 +306,10 @@ def updateworkingcopy(repo, assumeclean=False):
     uipathfn = scmutil.getuipathfn(repo)
     for f in sorted(trackeddirty):
         repo.ui.status(_('not deleting possibly dirty file %s\n') % uipathfn(f))
+    for f in sorted(status.unknown):
+        repo.ui.status(_('not deleting unknown file %s\n') % uipathfn(f))
+    for f in sorted(status.ignored):
+        repo.ui.status(_('not deleting ignored file %s\n') % uipathfn(f))
     for f in clean + trackeddirty:
         ds.drop(f)
 
