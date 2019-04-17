@@ -382,6 +382,7 @@ class httppeer(wireprotov1peer.wirepeer):
         self._path = path
         self._url = url
         self._caps = caps
+        self.limitedarguments = caps is not None and 'httppostargs' not in caps
         self._urlopener = opener
         self._requestbuilder = requestbuilder
 
@@ -750,6 +751,9 @@ class httpv2executor(object):
 
 @interfaceutil.implementer(repository.ipeerv2)
 class httpv2peer(object):
+
+    limitedarguments = False
+
     def __init__(self, ui, repourl, apipath, opener, requestbuilder,
                  apidescriptor):
         self.ui = ui
