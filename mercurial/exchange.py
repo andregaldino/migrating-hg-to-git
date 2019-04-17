@@ -49,7 +49,7 @@ from .utils import (
 urlerr = util.urlerr
 urlreq = util.urlreq
 
-_NARROWACL_SECTION = 'narrowhgacl'
+_NARROWACL_SECTION = 'narrowacl'
 
 # Maps bundle version human names to changegroup versions.
 _bundlespeccgversions = {'v1': '01',
@@ -2213,13 +2213,10 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
 
     if (kwargs.get(r'narrow', False) and kwargs.get(r'narrow_acl', False)
         and (include or exclude)):
-        narrowspecpart = bundler.newpart('narrow:spec')
-        if include:
-            narrowspecpart.addparam(
-                'include', '\n'.join(include), mandatory=True)
-        if exclude:
-            narrowspecpart.addparam(
-                'exclude', '\n'.join(exclude), mandatory=True)
+        # this is mandatory because otherwise ACL clients won't work
+        narrowspecpart = bundler.newpart('Narrow:responsespec')
+        narrowspecpart.data = '%s\0%s' % ('\n'.join(include),
+                                           '\n'.join(exclude))
 
 @getbundle2partsgenerator('bookmarks')
 def _getbundlebookmarkpart(bundler, repo, source, bundlecaps=None,

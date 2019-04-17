@@ -31,8 +31,9 @@ from mercurial.utils import (
     stringutil,
 )
 
-_NARROWACL_SECTION = 'narrowhgacl'
+_NARROWACL_SECTION = 'narrowacl'
 _CHANGESPECPART = 'narrow:changespec'
+_RESSPECS = 'narrow:responsespec'
 _SPECPART = 'narrow:spec'
 _SPECPART_INCLUDE = 'include'
 _SPECPART_EXCLUDE = 'exclude'
@@ -142,12 +143,31 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
 
 @bundle2.parthandler(_SPECPART, (_SPECPART_INCLUDE, _SPECPART_EXCLUDE))
 def _handlechangespec_2(op, inpart):
+    # XXX: This bundle2 handling is buggy and should be removed after hg5.2 is
+    # released. New servers will send a mandatory bundle2 part named
+    # 'Narrowspec' and will send specs as data instead of params.
+    # Refer to issue5952 and 6019
     includepats = set(inpart.params.get(_SPECPART_INCLUDE, '').splitlines())
     excludepats = set(inpart.params.get(_SPECPART_EXCLUDE, '').splitlines())
     narrowspec.validatepatterns(includepats)
     narrowspec.validatepatterns(excludepats)
 
     if not repository.NARROW_REQUIREMENT in op.repo.requirements:
+        op.repo.requirements.add(repository.NARROW_REQUIREMENT)
+        op.repo._writerequirements()
+    op.repo.setnarrowpats(includepats, excludepats)
+    narrowspec.copytoworkingcopy(op.repo)
+
+@bundle2.parthandler(_RESSPECS)
+def _handlenarrowspecs(op, inpart):
+    data = inpart.read()
+    inc, exc = data.split('\0')
+    includepats = set(inc.splitlines())
+    excludepats = set(exc.splitlines())
+    narrowspec.validatepatterns(includepats)
+    narrowspec.validatepatterns(excludepats)
+
+    if repository.NARROW_REQUIREMENT not in op.repo.requirements:
         op.repo.requirements.add(repository.NARROW_REQUIREMENT)
         op.repo._writerequirements()
     op.repo.setnarrowpats(includepats, excludepats)

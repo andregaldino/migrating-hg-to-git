@@ -10,7 +10,7 @@ Make a narrow clone then archive it
   >   hg commit -m "Add $x"
   > done
   $ cat >> .hg/hgrc << EOF
-  > [narrowhgacl]
+  > [narrowacl]
   > default.includes=f1 f2
   > EOF
   $ hg serve -a localhost -p $HGPORT1 -d --pid-file=hg.pid
