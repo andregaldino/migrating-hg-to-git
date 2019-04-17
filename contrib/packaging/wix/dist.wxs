@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <?include guids.wxi ?>
+  <?include defines.wxi ?>
+
+  <Fragment>
+    <DirectoryRef Id="INSTALLDIR" FileSource="$(var.SourceDir)">
+      <Component Id="distOutput" Guid="$(var.dist.guid)" Win64='$(var.IsX64)'>
+        <File Name="python27.dll" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+
+</Wix>

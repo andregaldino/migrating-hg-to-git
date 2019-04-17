@@ -58,11 +58,14 @@ class passwordmgr(object):
         return self.passwddb.add_password(realm, uri, user, passwd)
 
     def find_user_password(self, realm, authuri):
+        assert isinstance(realm, (type(None), str))
+        assert isinstance(authuri, str)
         authinfo = self.passwddb.find_user_password(realm, authuri)
         user, passwd = authinfo
+        user, passwd = pycompat.bytesurl(user), pycompat.bytesurl(passwd)
         if user and passwd:
             self._writedebug(user, passwd)
-            return (user, passwd)
+            return (pycompat.strurl(user), pycompat.strurl(passwd))
 
         if not user or not passwd:
             res = httpconnectionmod.readauthforuri(self.ui, authuri, user)
@@ -90,7 +93,7 @@ class passwordmgr(object):
 
         self.passwddb.add_password(realm, authuri, user, passwd)
         self._writedebug(user, passwd)
-        return (user, passwd)
+        return (pycompat.strurl(user), pycompat.strurl(passwd))
 
     def _writedebug(self, user, passwd):
         msg = _('http auth: user %s, password %s\n')
@@ -128,9 +131,11 @@ class proxyhandler(urlreq.proxyhandler):
             else:
                 self.no_list = no_list
 
-            proxyurl = bytes(proxy)
-            proxies = {'http': proxyurl, 'https': proxyurl}
-            ui.debug('proxying through %s\n' % util.hidepassword(proxyurl))
+            # Keys and values need to be str because the standard library
+            # expects them to be.
+            proxyurl = str(proxy)
+            proxies = {r'http': proxyurl, r'https': proxyurl}
+            ui.debug('proxying through %s\n' % util.hidepassword(bytes(proxy)))
         else:
             proxies = {}
 
@@ -138,7 +143,7 @@ class proxyhandler(urlreq.proxyhandler):
         self.ui = ui
 
     def proxy_open(self, req, proxy, type_):
-        host = urllibcompat.gethost(req).split(':')[0]
+        host = pycompat.bytesurl(urllibcompat.gethost(req)).split(':')[0]
         for e in self.no_list:
             if host == e:
                 return None
@@ -176,20 +181,20 @@ class httpconnection(keepalive.HTTPConnection):
             return proxyres
         return keepalive.HTTPConnection.getresponse(self)
 
-# general transaction handler to support different ways to handle
-# HTTPS proxying before and after Python 2.6.3.
+# Large parts of this function have their origin from before Python 2.6
+# and could potentially be removed.
 def _generic_start_transaction(handler, h, req):
-    tunnel_host = getattr(req, '_tunnel_host', None)
+    tunnel_host = req._tunnel_host
     if tunnel_host:
-        if tunnel_host[:7] not in ['http://', 'https:/']:
-            tunnel_host = 'https://' + tunnel_host
+        if tunnel_host[:7] not in [r'http://', r'https:/']:
+            tunnel_host = r'https://' + tunnel_host
         new_tunnel = True
     else:
         tunnel_host = urllibcompat.getselector(req)
         new_tunnel = False
 
     if new_tunnel or tunnel_host == urllibcompat.getfullurl(req): # has proxy
-        u = util.url(tunnel_host)
+        u = util.url(pycompat.bytesurl(tunnel_host))
         if new_tunnel or u.scheme == 'https': # only use CONNECT for HTTPS
             h.realhostport = ':'.join([u.host, (u.port or '443')])
             h.headers = req.headers.copy()
@@ -202,7 +207,7 @@ def _generic_start_transaction(handler, h, req):
 def _generic_proxytunnel(self):
     proxyheaders = dict(
             [(x, self.headers[x]) for x in self.headers
-             if x.lower().startswith('proxy-')])
+             if x.lower().startswith(r'proxy-')])
     self.send('CONNECT %s HTTP/1.0\r\n' % self.realhostport)
     for header in proxyheaders.iteritems():
         self.send('%s: %s\r\n' % header)
@@ -211,9 +216,14 @@ def _generic_proxytunnel(self):
     # majority of the following code is duplicated from
     # httplib.HTTPConnection as there are no adequate places to
     # override functions to provide the needed functionality
+    # strict was removed in Python 3.4.
+    kwargs = {}
+    if not pycompat.ispy3:
+        kwargs['strict'] = self.strict
+
     res = self.response_class(self.sock,
-                              strict=self.strict,
-                              method=self._method)
+                              method=self._method,
+                              **kwargs)
 
     while True:
         version, status, reason = res._read_status()
@@ -591,7 +601,7 @@ def opener(ui, authinfo=None, useragent=None, loggingfh=None,
 
     return opener
 
-def open(ui, url_, data=None):
+def open(ui, url_, data=None, sendaccept=True):
     u = util.url(url_)
     if u.scheme:
         u.scheme = u.scheme.lower()
@@ -600,7 +610,9 @@ def open(ui, url_, data=None):
         path = util.normpath(os.path.abspath(url_))
         url_ = 'file://' + pycompat.bytesurl(urlreq.pathname2url(path))
         authinfo = None
-    return opener(ui, authinfo).open(pycompat.strurl(url_), data)
+    return opener(ui, authinfo,
+                  sendaccept=sendaccept).open(pycompat.strurl(url_),
+                                              data)
 
 def wrapresponse(resp):
     """Wrap a response object with common error handlers.

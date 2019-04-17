@@ -6,7 +6,7 @@ GENDOC=gendoc.py ../mercurial/commands.py ../mercurial/help.py \
 PREFIX=/usr/local
 MANDIR=$(PREFIX)/share/man
 INSTALL=install -c -m 644
-PYTHON=python
+PYTHON?=python
 RSTARGS=
 
 export HGENCODING=UTF-8
@@ -17,6 +17,7 @@ man: $(MAN)
 
 html: $(HTML)
 
+# This logic is duplicated in setup.py:hgbuilddoc()
 common.txt $(SOURCES) $(SOURCES:%.txt=%.gendoc.txt): $(GENDOC)
 	${PYTHON} gendoc.py "$(basename $@)" > $@.tmp
 	mv $@.tmp $@

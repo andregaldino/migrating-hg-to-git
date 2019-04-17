@@ -38,6 +38,7 @@ from . import (
     narrowspec,
     node,
     phases,
+    pycompat,
     repository as repositorymod,
     scmutil,
     sshpeer,
@@ -57,7 +58,15 @@ sharedbookmarks = 'bookmarks'
 
 def _local(path):
     path = util.expandpath(util.urllocalpath(path))
-    return (os.path.isfile(path) and bundlerepo or localrepo)
+
+    try:
+        isfile = os.path.isfile(path)
+    # Python 2 raises TypeError, Python 3 ValueError.
+    except (TypeError, ValueError) as e:
+        raise error.Abort(_('invalid path %s: %s') % (
+            path, pycompat.bytestr(e)))
+
+    return isfile and bundlerepo or localrepo
 
 def addbranchrevs(lrepo, other, branches, revs):
     peer = other.peer() # a courtesy to callers using a localrepo for other
@@ -144,13 +153,13 @@ def islocal(repo):
             return False
     return repo.local()
 
-def openpath(ui, path):
+def openpath(ui, path, sendaccept=True):
     '''open path with open if local, url.open if remote'''
     pathurl = util.url(path, parsequery=False, parsefragment=False)
     if pathurl.islocal():
         return util.posixfile(pathurl.localpath(), 'rb')
     else:
-        return url.open(ui, path)
+        return url.open(ui, path, sendaccept=sendaccept)
 
 # a list of (ui, repo) functions called for wire peer initialization
 wirepeersetupfuncs = []
@@ -282,25 +291,20 @@ def unshare(ui, repo):
     called.
     """
 
-    destlock = lock = None
-    lock = repo.lock()
-    try:
+    with repo.lock():
         # we use locks here because if we race with commit, we
         # can end up with extra data in the cloned revlogs that's
         # not pointed to by changesets, thus causing verify to
         # fail
-
         destlock = copystore(ui, repo, repo.path)
+        with destlock or util.nullcontextmanager():
 
-        sharefile = repo.vfs.join('sharedpath')
-        util.rename(sharefile, sharefile + '.old')
+            sharefile = repo.vfs.join('sharedpath')
+            util.rename(sharefile, sharefile + '.old')
 
-        repo.requirements.discard('shared')
-        repo.requirements.discard('relshared')
-        repo._writerequirements()
-    finally:
-        destlock and destlock.release()
-        lock and lock.release()
+            repo.requirements.discard('shared')
+            repo.requirements.discard('relshared')
+            repo._writerequirements()
 
     # Removing share changes some fundamental properties of the repo instance.
     # So we instantiate a new repo object and operate on it rather than

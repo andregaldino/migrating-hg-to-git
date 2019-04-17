@@ -43,7 +43,7 @@ def handlewsgirequest(orig, rctx, req, res, checkperm):
     if orig(rctx, req, res, checkperm):
         return True
 
-    if not rctx.repo.ui.configbool('experimental', 'lfs.serve'):
+    if not rctx.repo.ui.configbool(b'experimental', b'lfs.serve'):
         return False
 
     if not util.safehasattr(rctx.repo.svfs, 'lfslocalblobstore'):
@@ -54,7 +54,7 @@ def handlewsgirequest(orig, rctx, req, res, checkperm):
 
     try:
         if req.dispatchpath == b'.git/info/lfs/objects/batch':
-            checkperm(rctx, req, 'pull')
+            checkperm(rctx, req, b'pull')
             return _processbatchrequest(rctx.repo, req, res)
         # TODO: reserve and use a path in the proposed http wireprotocol /api/
         #       namespace?
@@ -81,7 +81,7 @@ def _sethttperror(res, code, message=None):
 def _logexception(req):
     """Write information about the current exception to wsgi.errors."""
     tb = pycompat.sysbytes(traceback.format_exc())
-    errorlog = req.rawenv[r'wsgi.errors']
+    errorlog = req.rawenv[b'wsgi.errors']
 
     uri = b''
     if req.apppath:
@@ -133,25 +133,27 @@ def _processbatchrequest(repo, req, res):
     lfsreq = json.loads(req.bodyfh.read())
 
     # If no transfer handlers are explicitly requested, 'basic' is assumed.
-    if 'basic' not in lfsreq.get('transfers', ['basic']):
+    if r'basic' not in lfsreq.get(r'transfers', [r'basic']):
         _sethttperror(res, HTTP_BAD_REQUEST,
                       b'Only the basic LFS transfer handler is supported')
         return True
 
-    operation = lfsreq.get('operation')
-    if operation not in ('upload', 'download'):
+    operation = lfsreq.get(r'operation')
+    operation = pycompat.bytestr(operation)
+
+    if operation not in (b'upload', b'download'):
         _sethttperror(res, HTTP_BAD_REQUEST,
                       b'Unsupported LFS transfer operation: %s' % operation)
         return True
 
     localstore = repo.svfs.lfslocalblobstore
 
-    objects = [p for p in _batchresponseobjects(req, lfsreq.get('objects', []),
+    objects = [p for p in _batchresponseobjects(req, lfsreq.get(r'objects', []),
                                                 operation, localstore)]
 
     rsp = {
-        'transfer': 'basic',
-        'objects': objects,
+        r'transfer': r'basic',
+        r'objects': objects,
     }
 
     res.status = hgwebcommon.statusmessage(HTTP_OK)
@@ -190,11 +192,12 @@ def _batchresponseobjects(req, objects, action, store):
 
     for obj in objects:
         # Convert unicode to ASCII to create a filesystem path
-        oid = obj.get('oid').encode('ascii')
+        soid = obj.get(r'oid')
+        oid = soid.encode(r'ascii')
         rsp = {
-            'oid': oid,
-            'size': obj.get('size'),  # XXX: should this check the local size?
-            #'authenticated': True,
+            r'oid': soid,
+            r'size': obj.get(r'size'),  # XXX: should this check the local size?
+            #r'authenticated': True,
         }
 
         exists = True
@@ -209,7 +212,7 @@ def _batchresponseobjects(req, objects, action, store):
         # verified as the file is streamed to the caller.
         try:
             verifies = store.verify(oid)
-            if verifies and action == 'upload':
+            if verifies and action == b'upload':
                 # The client will skip this upload, but make sure it remains
                 # available locally.
                 store.linkfromusercache(oid)
@@ -217,9 +220,9 @@ def _batchresponseobjects(req, objects, action, store):
             if inst.errno != errno.ENOENT:
                 _logexception(req)
 
-                rsp['error'] = {
-                    'code': 500,
-                    'message': inst.strerror or 'Internal Server Server'
+                rsp[r'error'] = {
+                    r'code': 500,
+                    r'message': inst.strerror or r'Internal Server Server'
                 }
                 yield rsp
                 continue
@@ -228,19 +231,19 @@ def _batchresponseobjects(req, objects, action, store):
 
         # Items are always listed for downloads.  They are dropped for uploads
         # IFF they already exist locally.
-        if action == 'download':
+        if action == b'download':
             if not exists:
-                rsp['error'] = {
-                    'code': 404,
-                    'message': "The object does not exist"
+                rsp[r'error'] = {
+                    r'code': 404,
+                    r'message': r"The object does not exist"
                 }
                 yield rsp
                 continue
 
             elif not verifies:
-                rsp['error'] = {
-                    'code': 422,   # XXX: is this the right code?
-                    'message': "The object is corrupt"
+                rsp[r'error'] = {
+                    r'code': 422,   # XXX: is this the right code?
+                    r'message': r"The object is corrupt"
                 }
                 yield rsp
                 continue
@@ -256,22 +259,22 @@ def _batchresponseobjects(req, objects, action, store):
             # a gratuitous deviation from lfs-test-server in the test
             # output.
             hdr = {
-                'Accept': 'application/vnd.git-lfs'
+                r'Accept': r'application/vnd.git-lfs'
             }
 
-            auth = req.headers.get('Authorization', '')
-            if auth.startswith('Basic '):
-                hdr['Authorization'] = auth
+            auth = req.headers.get(b'Authorization', b'')
+            if auth.startswith(b'Basic '):
+                hdr[r'Authorization'] = pycompat.strurl(auth)
 
             return hdr
 
-        rsp['actions'] = {
-            '%s' % action: {
-                'href': '%s%s/.hg/lfs/objects/%s'
-                    % (req.baseurl, req.apppath, oid),
+        rsp[r'actions'] = {
+            r'%s' % pycompat.strurl(action): {
+                r'href': pycompat.strurl(b'%s%s/.hg/lfs/objects/%s'
+                    % (req.baseurl, req.apppath, oid)),
                 # datetime.isoformat() doesn't include the 'Z' suffix
-                "expires_at": expiresat.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                'header': _buildheader(),
+                r"expires_at": expiresat.strftime(r'%Y-%m-%dT%H:%M:%SZ'),
+                r'header': _buildheader(),
             }
         }
 
@@ -297,7 +300,7 @@ def _processbasictransfer(repo, req, res, checkperm):
         return True
 
     if method == b'PUT':
-        checkperm('upload')
+        checkperm(b'upload')
 
         # TODO: verify Content-Type?
 
@@ -324,7 +327,7 @@ def _processbasictransfer(repo, req, res, checkperm):
 
         return True
     elif method == b'GET':
-        checkperm('pull')
+        checkperm(b'pull')
 
         res.status = hgwebcommon.statusmessage(HTTP_OK)
         res.headers[b'Content-Type'] = b'application/octet-stream'

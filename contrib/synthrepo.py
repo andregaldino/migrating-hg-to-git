@@ -349,7 +349,7 @@ def synthesize(ui, repo, descpath, **opts):
     # to the modeled directory structure.
     initcount = int(opts['initfiles'])
     if initcount and initdirs:
-        pctx = repo[None].parents()[0]
+        pctx = repo['.']
         dirs = set(pctx.dirs())
         files = {}
 
@@ -450,7 +450,6 @@ def synthesize(ui, repo, descpath, **opts):
                 path = fctx.path()
                 changes[path] = '\n'.join(lines) + '\n'
             for __ in xrange(pick(filesremoved)):
-                path = random.choice(mfk)
                 for __ in xrange(10):
                     path = random.choice(mfk)
                     if path not in changes:

@@ -76,7 +76,6 @@ class convert_cvs(converter_source):
         d = encoding.getcwd()
         try:
             os.chdir(self.path)
-            id = None
 
             cache = 'update'
             if not self.ui.configbool('convert', 'cvsps.cache'):
@@ -219,7 +218,7 @@ class convert_cvs(converter_source):
         if "UseUnchanged" in r:
             self.writep.write("UseUnchanged\n")
             self.writep.flush()
-            r = self.readp.readline()
+            self.readp.readline()
 
     def getheads(self):
         self._parse()

@@ -55,7 +55,7 @@ DEFAULT_SECTIONS = [
     ('api', _('API Changes')),
 ]
 
-RE_DIRECTIVE = re.compile('^\.\. ([a-zA-Z0-9_]+)::\s*([^$]+)?$')
+RE_DIRECTIVE = re.compile(br'^\.\. ([a-zA-Z0-9_]+)::\s*([^$]+)?$')
 RE_ISSUE = br'\bissue ?[0-9]{4,6}(?![0-9])\b'
 
 BULLET_SECTION = _('Other Changes')
@@ -107,8 +107,9 @@ class parsedreleasenotes(object):
                       "releasenotes is disabled\n"))
 
         for section in other:
-            existingnotes = converttitled(self.titledforsection(section)) + \
-                convertnontitled(self.nontitledforsection(section))
+            existingnotes = (
+                converttitled(self.titledforsection(section)) +
+                convertnontitled(self.nontitledforsection(section)))
             for title, paragraphs in other.titledforsection(section):
                 if self.hastitledinsection(section, title):
                     # TODO prompt for resolution if different and running in

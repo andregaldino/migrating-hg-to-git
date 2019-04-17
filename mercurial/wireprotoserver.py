@@ -23,6 +23,7 @@ from . import (
 )
 from .utils import (
     cborutil,
+    compression,
     interfaceutil,
 )
 
@@ -144,7 +145,7 @@ class httpv1protocolhandler(object):
         caps.append('httpmediatype=0.1rx,0.1tx,0.2tx')
 
         compengines = wireprototypes.supportedcompengines(repo.ui,
-                                                          util.SERVERROLE)
+            compression.SERVERROLE)
         if compengines:
             comptypes = ','.join(urlreq.quote(e.wireprotosupport().name)
                                  for e in compengines)
@@ -320,11 +321,12 @@ def _httpresponsetype(ui, proto, prefer_uncompressed):
     if '0.2' in proto.getprotocaps():
         # All clients are expected to support uncompressed data.
         if prefer_uncompressed:
-            return HGTYPE2, util._noopengine(), {}
+            return HGTYPE2, compression._noopengine(), {}
 
         # Now find an agreed upon compression format.
         compformats = wireprotov1server.clientcompressionsupport(proto)
-        for engine in wireprototypes.supportedcompengines(ui, util.SERVERROLE):
+        for engine in wireprototypes.supportedcompengines(ui,
+                compression.SERVERROLE):
             if engine.wireprotosupport().name in compformats:
                 opts = {}
                 level = ui.configint('server', '%slevel' % engine.name())

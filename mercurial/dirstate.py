@@ -81,6 +81,10 @@ class dirstate(object):
         self._origpl = None
         self._updatedfiles = set()
         self._mapcls = dirstatemap
+        # Access and cache cwd early, so we don't access it for the first time
+        # after a working-copy update caused it to not exist (accessing it then
+        # raises an exception).
+        self._cwd
 
     @contextlib.contextmanager
     def parentchange(self):
@@ -144,7 +148,7 @@ class dirstate(object):
     def _ignore(self):
         files = self._ignorefiles()
         if not files:
-            return matchmod.never(self._root, '')
+            return matchmod.never()
 
         pats = ['include:%s' % f for f in files]
         return matchmod.match(self._root, '', [], pats, warn=self._ui.warn)
@@ -285,8 +289,8 @@ class dirstate(object):
         See localrepo.setparents()
         """
         if self._parentwriters == 0:
-            raise ValueError("cannot set dirstate parent without "
-                             "calling dirstate.beginparentchange")
+            raise ValueError("cannot set dirstate parent outside of "
+                             "dirstate.parentchange context manager")
 
         self._dirty = True
         oldp2 = self._pl[1]

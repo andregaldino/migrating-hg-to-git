@@ -7,6 +7,9 @@
   > def toto( arg1, arg2):
   >     del(arg2)
   >     return ( 5+6, 9)
+  > def badwrap():
+  >     return 1 + \\
+  >        2
   > NO_CHECK_EOF
   $ cat > quote.py <<NO_CHECK_EOF
   > # let's use quote in comments
@@ -42,6 +45,9 @@
    >     return ( 5+6, 9)
    gratuitous whitespace in () or []
    missing whitespace in expression
+  ./wrong.py:5:
+   >     return 1 + \
+   Use () to wrap long lines in Python, not \
   ./quote.py:5:
    > '"""', 42+1, """and
    missing whitespace in expression
@@ -372,4 +378,52 @@ should break rules depending on result of repquote(), in this case)
   superfluous_pass.py:23:
    > class empty(object):
    omit superfluous pass
+  [1]
+
+Check code fragments embedded in test script
+
+  $ cat > embedded-code.t <<NO_CHECK_EOF
+  > code fragment in doctest style
+  >   >>> x = (1,2)
+  >   ... 
+  >   ... x = (1,2)
+  > 
+  > code fragment in heredoc style
+  >   $ python <<EOF
+  >   > x = (1,2)
+  >   > EOF
+  > 
+  > code fragment in file heredoc style
+  >   $ python > file.py <<EOF
+  >   > x = (1,2)
+  >   > EOF
+  > NO_CHECK_EOF
+  $ "$check_code" embedded-code.t
+  embedded-code.t:2:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:4:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:8:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:13:
+   > x = (1,2)
+   missing whitespace after ,
+  [1]
+
+"max warnings per file" is shared by all embedded code fragments
+
+  $ "$check_code" --per-file=3 embedded-code.t
+  embedded-code.t:2:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:4:
+   > x = (1,2)
+   missing whitespace after ,
+  embedded-code.t:8:
+   > x = (1,2)
+   missing whitespace after ,
+   (too many errors, giving up)
   [1]

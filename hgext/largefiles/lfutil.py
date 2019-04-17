@@ -76,8 +76,8 @@ def _usercachedir(ui, name=longname):
     if path:
         return path
     if pycompat.iswindows:
-        appdata = encoding.environ.get('LOCALAPPDATA',\
-                        encoding.environ.get('APPDATA'))
+        appdata = encoding.environ.get('LOCALAPPDATA',
+                                       encoding.environ.get('APPDATA'))
         if appdata:
             return os.path.join(appdata, name)
     elif pycompat.isdarwin:
@@ -168,7 +168,7 @@ def openlfdirstate(ui, repo, create=True):
 
 def lfdirstatestatus(lfdirstate, repo):
     pctx = repo['.']
-    match = matchmod.always(repo.root, repo.getcwd())
+    match = matchmod.always()
     unsure, s = lfdirstate.status(match, subrepos=[], ignored=False,
                                   clean=False, unknown=False)
     modified, clean = s.modified, s.clean
@@ -518,8 +518,8 @@ def getlfilestoupload(repo, missing, addfunc):
             files = set(ctx.files())
             if len(parents) == 2:
                 mc = ctx.manifest()
-                mp1 = ctx.parents()[0].manifest()
-                mp2 = ctx.parents()[1].manifest()
+                mp1 = ctx.p1().manifest()
+                mp2 = ctx.p2().manifest()
                 for f in mp1:
                     if f not in mc:
                         files.add(f)
@@ -552,7 +552,7 @@ def updatestandinsbymatch(repo, match):
         # otherwise to update all standins if the largefiles are
         # large.
         lfdirstate = openlfdirstate(ui, repo)
-        dirtymatch = matchmod.always(repo.root, repo.getcwd())
+        dirtymatch = matchmod.always()
         unsure, s = lfdirstate.status(dirtymatch, subrepos=[], ignored=False,
                                       clean=False, unknown=False)
         modifiedfiles = unsure + s.modified + s.added + s.removed

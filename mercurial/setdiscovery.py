@@ -92,69 +92,6 @@ def _updatesample(revs, heads, sample, parentfn, quicksamplesize=0):
                 dist.setdefault(p, d + 1)
                 visit.append(p)
 
-def _takequicksample(repo, headrevs, revs, size):
-    """takes a quick sample of size <size>
-
-    It is meant for initial sampling and focuses on querying heads and close
-    ancestors of heads.
-
-    :dag: a dag object
-    :headrevs: set of head revisions in local DAG to consider
-    :revs: set of revs to discover
-    :size: the maximum size of the sample"""
-    if len(revs) <= size:
-        return list(revs)
-    sample = set(repo.revs('heads(%ld)', revs))
-
-    if len(sample) >= size:
-        return _limitsample(sample, size)
-
-    _updatesample(None, headrevs, sample, repo.changelog.parentrevs,
-                  quicksamplesize=size)
-    return sample
-
-def _takefullsample(repo, headrevs, revs, size):
-    if len(revs) <= size:
-        return list(revs)
-    sample = set(repo.revs('heads(%ld)', revs))
-
-    # update from heads
-    revsheads = set(repo.revs('heads(%ld)', revs))
-    _updatesample(revs, revsheads, sample, repo.changelog.parentrevs)
-
-    # update from roots
-    revsroots = set(repo.revs('roots(%ld)', revs))
-
-    # _updatesample() essentially does interaction over revisions to look up
-    # their children. This lookup is expensive and doing it in a loop is
-    # quadratic. We precompute the children for all relevant revisions and
-    # make the lookup in _updatesample() a simple dict lookup.
-    #
-    # Because this function can be called multiple times during discovery, we
-    # may still perform redundant work and there is room to optimize this by
-    # keeping a persistent cache of children across invocations.
-    children = {}
-
-    parentrevs = repo.changelog.parentrevs
-    for rev in repo.changelog.revs(start=min(revsroots)):
-        # Always ensure revision has an entry so we don't need to worry about
-        # missing keys.
-        children.setdefault(rev, [])
-
-        for prev in parentrevs(rev):
-            if prev == nullrev:
-                continue
-
-            children.setdefault(prev, []).append(rev)
-
-    _updatesample(revs, revsroots, sample, children.__getitem__)
-    assert sample
-    sample = _limitsample(sample, size)
-    if len(sample) < size:
-        more = size - len(sample)
-        sample.update(random.sample(list(revs - sample), more))
-    return sample
-
 def _limitsample(sample, desiredlen):
     """return a random subset of sample of at most desiredlen item"""
     if len(sample) > desiredlen:
@@ -179,6 +116,7 @@ class partialdiscovery(object):
         self._common = repo.changelog.incrementalmissingrevs()
         self._undecided = None
         self.missing = set()
+        self._childrenmap = None
 
     def addcommons(self, commons):
         """registrer nodes known as common"""
@@ -222,11 +160,97 @@ class partialdiscovery(object):
         self._undecided = set(self._common.missingancestors(self._targetheads))
         return self._undecided
 
+    def stats(self):
+        return {
+            'undecided': len(self.undecided),
+        }
+
     def commonheads(self):
         """the heads of the known common set"""
         # heads(common) == heads(common.bases) since common represents
         # common.bases and all its ancestors
         return self._common.basesheads()
+
+    def _parentsgetter(self):
+        getrev = self._repo.changelog.index.__getitem__
+        def getparents(r):
+            return getrev(r)[5:7]
+        return getparents
+
+    def _childrengetter(self):
+
+        if self._childrenmap is not None:
+            # During discovery, the `undecided` set keep shrinking.
+            # Therefore, the map computed for an iteration N will be
+            # valid for iteration N+1. Instead of computing the same
+            # data over and over we cached it the first time.
+            return self._childrenmap.__getitem__
+
+        # _updatesample() essentially does interaction over revisions to look
+        # up their children. This lookup is expensive and doing it in a loop is
+        # quadratic. We precompute the children for all relevant revisions and
+        # make the lookup in _updatesample() a simple dict lookup.
+        self._childrenmap = children = {}
+
+        parentrevs = self._parentsgetter()
+        revs = self.undecided
+
+        for rev in sorted(revs):
+            # Always ensure revision has an entry so we don't need to worry
+            # about missing keys.
+            children[rev] = []
+            for prev in parentrevs(rev):
+                if prev == nullrev:
+                    continue
+                c = children.get(prev)
+                if c is not None:
+                    c.append(rev)
+        return children.__getitem__
+
+    def takequicksample(self, headrevs, size):
+        """takes a quick sample of size <size>
+
+        It is meant for initial sampling and focuses on querying heads and close
+        ancestors of heads.
+
+        :headrevs: set of head revisions in local DAG to consider
+        :size: the maximum size of the sample"""
+        revs = self.undecided
+        if len(revs) <= size:
+            return list(revs)
+        sample = set(self._repo.revs('heads(%ld)', revs))
+
+        if len(sample) >= size:
+            return _limitsample(sample, size)
+
+        _updatesample(None, headrevs, sample, self._parentsgetter(),
+                      quicksamplesize=size)
+        return sample
+
+    def takefullsample(self, headrevs, size):
+        revs = self.undecided
+        if len(revs) <= size:
+            return list(revs)
+        repo = self._repo
+        sample = set(repo.revs('heads(%ld)', revs))
+        parentrevs = self._parentsgetter()
+
+        # update from heads
+        revsheads = sample.copy()
+        _updatesample(revs, revsheads, sample, parentrevs)
+
+        # update from roots
+        revsroots = set(repo.revs('roots(%ld)', revs))
+
+        childrenrevs = self._childrengetter()
+
+        _updatesample(revs, revsroots, sample, childrenrevs)
+        assert sample
+        sample = _limitsample(sample, size)
+        if len(sample) < size:
+            more = size - len(sample)
+            sample.update(random.sample(list(revs - sample), more))
+        return sample
 
 def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
@@ -272,18 +296,18 @@ def findcommonheads(ui, local, remote,
     # compatibility reasons)
     ui.status(_("searching for changes\n"))
 
-    srvheads = []
+    knownsrvheads = []  # revnos of remote heads that are known locally
     for node in srvheadhashes:
         if node == nullid:
             continue
 
         try:
-            srvheads.append(clrev(node))
+            knownsrvheads.append(clrev(node))
         # Catches unknown and filtered nodes.
         except error.LookupError:
             continue
 
-    if len(srvheads) == len(srvheadhashes):
+    if len(knownsrvheads) == len(srvheadhashes):
         ui.debug("all remote heads known locally\n")
         return srvheadhashes, False, srvheadhashes
 
@@ -297,7 +321,7 @@ def findcommonheads(ui, local, remote,
     disco = partialdiscovery(local, ownheads)
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
-    disco.addcommons(srvheads)
+    disco.addcommons(knownsrvheads)
     disco.addinfo(zip(sample, yesno))
 
     full = False
@@ -309,19 +333,21 @@ def findcommonheads(ui, local, remote,
                 ui.note(_("sampling from both directions\n"))
             else:
                 ui.debug("taking initial sample\n")
-            samplefunc = _takefullsample
+            samplefunc = disco.takefullsample
             targetsize = fullsamplesize
         else:
             # use even cheaper initial sample
             ui.debug("taking quick initial sample\n")
-            samplefunc = _takequicksample
+            samplefunc = disco.takequicksample
             targetsize = initialsamplesize
-        sample = samplefunc(local, ownheads, disco.undecided, targetsize)
+        sample = samplefunc(ownheads, targetsize)
 
         roundtrips += 1
         progress.update(roundtrips)
+        stats = disco.stats()
         ui.debug("query %i; still undecided: %i, sample size is: %i\n"
-                 % (roundtrips, len(disco.undecided), len(sample)))
+                 % (roundtrips, stats['undecided'], len(sample)))
+
         # indices between sample and externalized version must match
         sample = list(sample)
 
@@ -340,7 +366,7 @@ def findcommonheads(ui, local, remote,
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
     msg = ('found %d common and %d unknown server heads,'
            ' %d roundtrips in %.4fs\n')
-    missing = set(result) - set(srvheads)
+    missing = set(result) - set(knownsrvheads)
     ui.log('discovery', msg, len(result), len(missing), roundtrips,
            elapsed)
 

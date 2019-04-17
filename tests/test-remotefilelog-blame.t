@@ -30,3 +30,11 @@ Test blame
   1: y
   2: z
   2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
+
+Test grepping the working directory.
+
+  $ hg grep --all-files x
+  x:x
+  $ echo foo >> x
+  $ hg grep --all-files x
+  x:x

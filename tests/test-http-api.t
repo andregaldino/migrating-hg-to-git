@@ -156,6 +156,7 @@ Restart server with support for API server
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -177,6 +178,7 @@ Restart server with support for API server
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api/ HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -200,6 +202,7 @@ Accessing an unknown API yields a 404
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api/unknown HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -222,6 +225,7 @@ Accessing a known but not enabled API yields a different error
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api/exp-http-v2-0003 HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -255,6 +259,7 @@ Restart server with support for HTTP v2 API
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -276,6 +281,7 @@ Restart server with support for HTTP v2 API
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api/ HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n

@@ -40,7 +40,7 @@ class datapacktestsbase(object):
             shutil.rmtree(d)
 
     def makeTempDir(self):
-        tempdir = tempfile.mkdtemp()
+        tempdir = pycompat.bytestr(tempfile.mkdtemp())
         self.tempdirs.append(tempdir)
         return tempdir
 
@@ -48,11 +48,12 @@ class datapacktestsbase(object):
         return hashlib.sha1(content).digest()
 
     def getFakeHash(self):
-        return ''.join(chr(random.randint(0, 255)) for _ in range(20))
+        return b''.join(pycompat.bytechr(random.randint(0, 255))
+                        for _ in range(20))
 
     def createPack(self, revisions=None, packdir=None):
         if revisions is None:
-            revisions = [("filename", self.getFakeHash(), nullid, "content")]
+            revisions = [(b"filename", self.getFakeHash(), nullid, b"content")]
 
         if packdir is None:
             packdir = self.makeTempDir()
@@ -73,23 +74,23 @@ class datapacktestsbase(object):
     def _testAddSingle(self, content):
         """Test putting a simple blob into a pack and reading it out.
         """
-        filename = "foo"
+        filename = b"foo"
         node = self.getHash(content)
 
         revisions = [(filename, node, nullid, content)]
         pack = self.createPack(revisions)
         if self.paramsavailable:
-            self.assertEquals(pack.params.fanoutprefix,
-                              basepack.SMALLFANOUTPREFIX)
+            self.assertEqual(pack.params.fanoutprefix,
+                             basepack.SMALLFANOUTPREFIX)
 
         chain = pack.getdeltachain(filename, node)
-        self.assertEquals(content, chain[0][4])
+        self.assertEqual(content, chain[0][4])
 
     def testAddSingle(self):
-        self._testAddSingle('')
+        self._testAddSingle(b'')
 
     def testAddSingleEmpty(self):
-        self._testAddSingle('abcdef')
+        self._testAddSingle(b'abcdef')
 
     def testAddMultiple(self):
         """Test putting multiple unrelated blobs into a pack and reading them
@@ -97,8 +98,8 @@ class datapacktestsbase(object):
         """
         revisions = []
         for i in range(10):
-            filename = "foo%s" % i
-            content = "abcdef%s" % i
+            filename = b"foo%d" % i
+            content = b"abcdef%d" % i
             node = self.getHash(content)
             revisions.append((filename, node, self.getFakeHash(), content))
 
@@ -106,19 +107,19 @@ class datapacktestsbase(object):
 
         for filename, node, base, content in revisions:
             entry = pack.getdelta(filename, node)
-            self.assertEquals((content, filename, base, {}), entry)
+            self.assertEqual((content, filename, base, {}), entry)
 
             chain = pack.getdeltachain(filename, node)
-            self.assertEquals(content, chain[0][4])
+            self.assertEqual(content, chain[0][4])
 
     def testAddDeltas(self):
         """Test putting multiple delta blobs into a pack and read the chain.
         """
         revisions = []
-        filename = "foo"
+        filename = b"foo"
         lastnode = nullid
         for i in range(10):
-            content = "abcdef%s" % i
+            content = b"abcdef%d" % i
             node = self.getHash(content)
             revisions.append((filename, node, lastnode, content))
             lastnode = node
@@ -127,13 +128,13 @@ class datapacktestsbase(object):
 
         entry = pack.getdelta(filename, revisions[0][1])
         realvalue = (revisions[0][3], filename, revisions[0][2], {})
-        self.assertEquals(entry, realvalue)
+        self.assertEqual(entry, realvalue)
 
         # Test that the chain for the final entry has all the others
         chain = pack.getdeltachain(filename, node)
         for i in range(10):
-            content = "abcdef%s" % i
-            self.assertEquals(content, chain[-i - 1][4])
+            content = b"abcdef%d" % i
+            self.assertEqual(content, chain[-i - 1][4])
 
     def testPackMany(self):
         """Pack many related and unrelated objects.
@@ -143,10 +144,10 @@ class datapacktestsbase(object):
         blobs = {}
         random.seed(0)
         for i in range(100):
-            filename = "filename-%s" % i
+            filename = b"filename-%d" % i
             filerevs = []
             for j in range(random.randint(1, 100)):
-                content = "content-%s" % j
+                content = b"content-%d" % j
                 node = self.getHash(content)
                 lastnode = nullid
                 if len(filerevs) > 0:
@@ -158,22 +159,22 @@ class datapacktestsbase(object):
         pack = self.createPack(revisions)
 
         # Verify the pack contents
-        for (filename, node, lastnode), content in sorted(blobs.iteritems()):
+        for (filename, node, lastnode), content in sorted(blobs.items()):
             chain = pack.getdeltachain(filename, node)
             for entry in chain:
                 expectedcontent = blobs[(entry[0], entry[1], entry[3])]
-                self.assertEquals(entry[4], expectedcontent)
+                self.assertEqual(entry[4], expectedcontent)
 
     def testPackMetadata(self):
         revisions = []
         for i in range(100):
-            filename = '%s.txt' % i
-            content = 'put-something-here \n' * i
+            filename = b'%d.txt' % i
+            content = b'put-something-here \n' * i
             node = self.getHash(content)
             meta = {constants.METAKEYFLAG: i ** 4,
                     constants.METAKEYSIZE: len(content),
-                    'Z': 'random_string',
-                    '_': '\0' * i}
+                    b'Z': b'random_string',
+                    b'_': b'\0' * i}
             revisions.append((filename, node, nullid, content, meta))
         pack = self.createPack(revisions)
         for name, node, x, content, origmeta in revisions:
@@ -181,50 +182,51 @@ class datapacktestsbase(object):
             # flag == 0 should be optimized out
             if origmeta[constants.METAKEYFLAG] == 0:
                 del origmeta[constants.METAKEYFLAG]
-            self.assertEquals(parsedmeta, origmeta)
+            self.assertEqual(parsedmeta, origmeta)
 
     def testGetMissing(self):
         """Test the getmissing() api.
         """
         revisions = []
-        filename = "foo"
+        filename = b"foo"
         lastnode = nullid
         for i in range(10):
-            content = "abcdef%s" % i
+            content = b"abcdef%d" % i
             node = self.getHash(content)
             revisions.append((filename, node, lastnode, content))
             lastnode = node
 
         pack = self.createPack(revisions)
 
-        missing = pack.getmissing([("foo", revisions[0][1])])
+        missing = pack.getmissing([(b"foo", revisions[0][1])])
         self.assertFalse(missing)
 
-        missing = pack.getmissing([("foo", revisions[0][1]),
-                                   ("foo", revisions[1][1])])
+        missing = pack.getmissing([(b"foo", revisions[0][1]),
+                                   (b"foo", revisions[1][1])])
         self.assertFalse(missing)
 
         fakenode = self.getFakeHash()
-        missing = pack.getmissing([("foo", revisions[0][1]), ("foo", fakenode)])
-        self.assertEquals(missing, [("foo", fakenode)])
+        missing = pack.getmissing([(b"foo", revisions[0][1]),
+                                   (b"foo", fakenode)])
+        self.assertEqual(missing, [(b"foo", fakenode)])
 
     def testAddThrows(self):
         pack = self.createPack()
 
         try:
-            pack.add('filename', nullid, 'contents')
+            pack.add(b'filename', nullid, b'contents')
             self.assertTrue(False, "datapack.add should throw")
         except RuntimeError:
             pass
 
     def testBadVersionThrows(self):
         pack = self.createPack()
-        path = pack.path + '.datapack'
-        with open(path) as f:
+        path = pack.path + b'.datapack'
+        with open(path, 'rb') as f:
             raw = f.read()
         raw = struct.pack('!B', 255) + raw[1:]
         os.chmod(path, os.stat(path).st_mode | stat.S_IWRITE)
-        with open(path, 'w+') as f:
+        with open(path, 'wb+') as f:
             f.write(raw)
 
         try:
@@ -235,10 +237,10 @@ class datapacktestsbase(object):
 
     def testMissingDeltabase(self):
         fakenode = self.getFakeHash()
-        revisions = [("filename", fakenode, self.getFakeHash(), "content")]
+        revisions = [(b"filename", fakenode, self.getFakeHash(), b"content")]
         pack = self.createPack(revisions)
-        chain = pack.getdeltachain("filename", fakenode)
-        self.assertEquals(len(chain), 1)
+        chain = pack.getdeltachain(b"filename", fakenode)
+        self.assertEqual(len(chain), 1)
 
     def testLargePack(self):
         """Test creating and reading from a large pack with over X entries.
@@ -247,7 +249,7 @@ class datapacktestsbase(object):
         blobs = {}
         total = basepack.SMALLFANOUTCUTOFF + 1
         for i in pycompat.xrange(total):
-            filename = "filename-%s" % i
+            filename = b"filename-%d" % i
             content = filename
             node = self.getHash(content)
             blobs[(filename, node)] = content
@@ -255,12 +257,12 @@ class datapacktestsbase(object):
 
         pack = self.createPack(revisions)
         if self.paramsavailable:
-            self.assertEquals(pack.params.fanoutprefix,
-                              basepack.LARGEFANOUTPREFIX)
+            self.assertEqual(pack.params.fanoutprefix,
+                             basepack.LARGEFANOUTPREFIX)
 
-        for (filename, node), content in blobs.iteritems():
+        for (filename, node), content in blobs.items():
             actualcontent = pack.getdeltachain(filename, node)[0][4]
-            self.assertEquals(actualcontent, content)
+            self.assertEqual(actualcontent, content)
 
     def testPacksCache(self):
         """Test that we remember the most recent packs while fetching the delta
@@ -274,12 +276,12 @@ class datapacktestsbase(object):
 
         for i in range(numpacks):
             chain = []
-            revision = (str(i), self.getFakeHash(), nullid, "content")
+            revision = (b'%d' % i, self.getFakeHash(), nullid, b"content")
 
             for _ in range(revisionsperpack):
                 chain.append(revision)
                 revision = (
-                    str(i),
+                    b'%d' % i,
                     self.getFakeHash(),
                     revision[1],
                     self.getFakeHash()
@@ -290,7 +292,7 @@ class datapacktestsbase(object):
 
         class testdatapackstore(datapack.datapackstore):
             # Ensures that we are not keeping everything in the cache.
-            DEFAULTCACHESIZE = numpacks / 2
+            DEFAULTCACHESIZE = numpacks // 2
 
         store = testdatapackstore(uimod.ui(), packdir)
 
@@ -300,12 +302,12 @@ class datapacktestsbase(object):
             chain = store.getdeltachain(revision[0], revision[1])
 
             mostrecentpack = next(iter(store.packs), None)
-            self.assertEquals(
+            self.assertEqual(
                 mostrecentpack.getdeltachain(revision[0], revision[1]),
                 chain
             )
 
-            self.assertEquals(randomchain.index(revision) + 1, len(chain))
+            self.assertEqual(randomchain.index(revision) + 1, len(chain))
 
     # perf test off by default since it's slow
     def _testIndexPerf(self):
@@ -330,8 +332,8 @@ class datapacktestsbase(object):
         for packsize in packsizes:
             revisions = []
             for i in pycompat.xrange(packsize):
-                filename = "filename-%s" % i
-                content = "content-%s" % i
+                filename = b"filename-%d" % i
+                content = b"content-%d" % i
                 node = self.getHash(content)
                 revisions.append((filename, node, nullid, content))
 
@@ -350,9 +352,9 @@ class datapacktestsbase(object):
                 start = time.time()
                 pack.getmissing(findnodes[:lookupsize])
                 elapsed = time.time() - start
-                print ("%s pack %s lookups = %0.04f" %
-                       (('%s' % packsize).rjust(7),
-                        ('%s' % lookupsize).rjust(7),
+                print ("%s pack %d lookups = %0.04f" %
+                       (('%d' % packsize).rjust(7),
+                        ('%d' % lookupsize).rjust(7),
                         elapsed))
 
             print("")

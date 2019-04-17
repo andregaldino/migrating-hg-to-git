@@ -203,7 +203,7 @@ state = ProfileState()
 class CodeSite(object):
     cache = {}
 
-    __slots__ = (u'path', u'lineno', u'function', u'source')
+    __slots__ = (r'path', r'lineno', r'function', r'source')
 
     def __init__(self, path, lineno, function):
         assert isinstance(path, bytes)
@@ -263,7 +263,7 @@ class CodeSite(object):
         return r'%s:%s' % (self.filename(), self.function)
 
 class Sample(object):
-    __slots__ = (u'stack', u'time')
+    __slots__ = (r'stack', r'time')
 
     def __init__(self, stack, time):
         self.stack = stack
@@ -816,9 +816,6 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
             id2stack[-1].update(parent=parent)
         return myid
 
-    def endswith(a, b):
-        return list(a)[-len(b):] == list(b)
-
     # The sampling profiler can sample multiple times without
     # advancing the clock, potentially causing the Chrome trace viewer
     # to render single-pixel columns that we cannot zoom in on.  We
@@ -858,9 +855,6 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
     # events given only stack snapshots.
 
     for sample in data.samples:
-        tos = sample.stack[0]
-        name = tos.function
-        path = simplifypath(tos.path)
         stack = tuple((('%s:%d' % (simplifypath(frame.path), frame.lineno),
                         frame.function) for frame in sample.stack))
         qstack = collections.deque(stack)

@@ -71,17 +71,17 @@ Can make a local commit
 
 That results in a row being inserted into various tables
 
-  $ sqlite3 .hg/store/db.sqlite << EOF
+  $ sqlite3 .hg/store/db.sqlite -init /dev/null << EOF
   > SELECT * FROM filepath;
   > EOF
   1|foo
 
-  $ sqlite3 .hg/store/db.sqlite << EOF
+  $ sqlite3 .hg/store/db.sqlite -init /dev/null << EOF
   > SELECT * FROM fileindex;
   > EOF
   1|1|0|-1|-1|0|0|1||6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe (esc)
 
-  $ sqlite3 .hg/store/db.sqlite << EOF
+  $ sqlite3 .hg/store/db.sqlite -init /dev/null << EOF
   > SELECT * FROM delta;
   > EOF
   1|1|	\xd2\xaf\x8d\xd2"\x01\xdd\x8dH\xe5\xdc\xfc\xae\xd2\x81\xff\x94"\xc7|0 (esc)
@@ -93,7 +93,7 @@ Tracking multiple files works
   $ hg commit -A -m 'add bar'
   adding bar
 
-  $ sqlite3 .hg/store/db.sqlite << EOF
+  $ sqlite3 .hg/store/db.sqlite -init /dev/null << EOF
   > SELECT * FROM filedata ORDER BY id ASC;
   > EOF
   1|1|foo|0|6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe|-1|-1|0|0|1| (esc)
@@ -104,7 +104,7 @@ Multiple revisions of a file works
   $ echo a >> foo
   $ hg commit -m 'modify foo'
 
-  $ sqlite3 .hg/store/db.sqlite << EOF
+  $ sqlite3 .hg/store/db.sqlite -init /dev/null << EOF
   > SELECT * FROM filedata ORDER BY id ASC;
   > EOF
   1|1|foo|0|6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe|-1|-1|0|0|1| (esc)

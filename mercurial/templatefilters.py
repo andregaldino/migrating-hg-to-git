@@ -23,6 +23,7 @@ from . import (
     util,
 )
 from .utils import (
+    cborutil,
     dateutil,
     stringutil,
 )
@@ -98,6 +99,11 @@ def basename(path):
     For example, "foo/bar/baz" becomes "baz" and "foo/bar//" becomes "".
     """
     return os.path.basename(path)
+
+@templatefilter('cbor')
+def cbor(obj):
+    """Any object. Serializes the object to CBOR bytes."""
+    return b''.join(cborutil.streamencode(obj))
 
 @templatefilter('commondir')
 def commondir(filelist):

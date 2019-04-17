@@ -252,6 +252,24 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     # extensions can use it
     return backupfile
 
+def softstrip(ui, repo, nodelist, backup=True, topic='backup'):
+    """perform a "soft" strip using the archived phase"""
+    tostrip = [c.node() for c in repo.set('sort(%ln::)', nodelist)]
+    if not tostrip:
+        return None
+
+    newbmtarget, updatebm = _bookmarkmovements(repo, tostrip)
+    if backup:
+        node = tostrip[0]
+        backupfile = _createstripbackup(repo, tostrip, node, topic)
+
+    with repo.transaction('strip') as tr:
+        phases.retractboundary(repo, tr, phases.archived, tostrip)
+        bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
+        repo._bookmarks.applychanges(repo, tr, bmchanges)
+    return backupfile
+
+
 def _bookmarkmovements(repo, tostrip):
     # compute necessary bookmark movement
     bm = repo._bookmarks

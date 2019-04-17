@@ -159,7 +159,6 @@ from mercurial import (
     scmutil,
     smartset,
     streamclone,
-    templatekw,
     util,
 )
 from . import (
@@ -479,9 +478,10 @@ def onetimeclientsetup(ui):
     def findrenames(orig, repo, matcher, added, removed, *args, **kwargs):
         if isenabled(repo):
             files = []
-            parentctx = repo['.']
+            pmf = repo['.'].manifest()
             for f in removed:
-                files.append((f, hex(parentctx.filenode(f))))
+                if f in pmf:
+                    files.append((f, hex(pmf[f])))
             # batch fetch the needed files from the server
             repo.fileservice.prefetch(files)
         return orig(repo, matcher, added, removed, *args, **kwargs)
@@ -497,20 +497,20 @@ def onetimeclientsetup(ui):
 
             sparsematch1 = repo.maybesparsematch(c1.rev())
             if sparsematch1:
-                sparseu1 = []
+                sparseu1 = set()
                 for f in u1:
                     if sparsematch1(f):
                         files.append((f, hex(m1[f])))
-                        sparseu1.append(f)
+                        sparseu1.add(f)
                 u1 = sparseu1
 
             sparsematch2 = repo.maybesparsematch(c2.rev())
             if sparsematch2:
-                sparseu2 = []
+                sparseu2 = set()
                 for f in u2:
                     if sparsematch2(f):
                         files.append((f, hex(m2[f])))
-                        sparseu2.append(f)
+                        sparseu2.add(f)
                 u2 = sparseu2
 
             # batch fetch the needed files from the server
@@ -520,7 +520,7 @@ def onetimeclientsetup(ui):
 
     # prefetch files before pathcopies check
     def computeforwardmissing(orig, a, b, match=None):
-        missing = list(orig(a, b, match=match))
+        missing = orig(a, b, match=match)
         repo = a._repo
         if isenabled(repo):
             mb = b.manifest()
@@ -528,11 +528,11 @@ def onetimeclientsetup(ui):
             files = []
             sparsematch = repo.maybesparsematch(b.rev())
             if sparsematch:
-                sparsemissing = []
+                sparsemissing = set()
                 for f in missing:
                     if sparsematch(f):
                         files.append((f, hex(mb[f])))
-                        sparsemissing.append(f)
+                        sparsemissing.add(f)
                 missing = sparsemissing
 
             # batch fetch the needed files from the server
@@ -557,7 +557,7 @@ def onetimeclientsetup(ui):
     extensions.wrapfunction(dispatch, 'runcommand', runcommand)
 
     # disappointing hacks below
-    templatekw.getrenamedfn = getrenamedfn
+    scmutil.getrenamedfn = getrenamedfn
     extensions.wrapfunction(revset, 'filelog', filelogrevset)
     revset.symbols['filelog'] = revset.filelog
     extensions.wrapfunction(cmdutil, 'walkfilerevs', walkfilerevs)
@@ -805,7 +805,7 @@ def gcclient(ui, cachepath):
         return
 
     reposfile = open(repospath, 'rb')
-    repos = set([r[:-1] for r in reposfile.readlines()])
+    repos = {r[:-1] for r in reposfile.readlines()}
     reposfile.close()
 
     # build list of useful files
@@ -902,8 +902,7 @@ def log(orig, ui, repo, *pats, **opts):
         # If this is a non-follow log without any revs specified, recommend that
         # the user add -f to speed it up.
         if not follow and not revs:
-            match, pats = scmutil.matchandpats(repo['.'], pats,
-                                               pycompat.byteskwargs(opts))
+            match = scmutil.match(repo['.'], pats, pycompat.byteskwargs(opts))
             isfile = not match.anypats()
             if isfile:
                 for file in match.files():

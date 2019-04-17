@@ -265,7 +265,7 @@ heredoclimitpat = br'\s*<<\s*(?P<lquote>["\']?)(?P<limit>\w+)(?P=lquote)'
 class fileheredocmatcher(embeddedmatcher):
     """Detect "cat > FILE << LIMIT" style embedded code
 
-    >>> matcher = fileheredocmatcher(b'heredoc .py file', br'[^<]+\.py')
+    >>> matcher = fileheredocmatcher(b'heredoc .py file', br'[^<]+\\.py')
     >>> b2s(matcher.startsat(b'  $ cat > file.py << EOF\\n'))
     ('file.py', '  > EOF\\n')
     >>> b2s(matcher.startsat(b'  $ cat   >>file.py   <<EOF\\n'))

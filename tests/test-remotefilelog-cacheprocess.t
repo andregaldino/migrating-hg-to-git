@@ -56,11 +56,11 @@
   >                 log('requested %r\n' % key)
   >             sys.stdout.flush()
   >         elif cmd == 'set':
-  >             assert False, 'todo writing'
+  >             raise Exception('todo writing')
   >         else:
-  >             assert False, 'unknown command! %r' % cmd
+  >             raise Exception('unknown command! %r' % cmd)
   > except Exception as e:
-  >     log('Exception! %r\n' % e)
+  >     log('Exception! %s\n' % e)
   >     raise
   > EOF
 
@@ -79,7 +79,7 @@ Test cache keys and cache misses.
   requested 'master/39/5df8f7c51f007019cb30201c49e884b46b92fa/69a1b67522704ec122181c0890bd16e9d3e7516a'
   requested 'master/95/cb0bfd2977c761298d9624e4b4d4c72a39974a/076f5e2225b3ff0400b98c92aa6cdf403ee24cca'
   got command 'set'
-  Exception! AssertionError('todo writing',)
+  Exception! todo writing
 
 Test cache hits.
   $ mv hgcache oldhgcache
@@ -110,7 +110,7 @@ Test cache keys and cache misses with includepath.
   requested 'y\x00master/95/cb0bfd2977c761298d9624e4b4d4c72a39974a/076f5e2225b3ff0400b98c92aa6cdf403ee24cca'
   requested 'z\x00master/39/5df8f7c51f007019cb30201c49e884b46b92fa/69a1b67522704ec122181c0890bd16e9d3e7516a'
   got command 'set'
-  Exception! AssertionError('todo writing',)
+  Exception! todo writing
 
 Test cache hits with includepath.
   $ mv hgcache oldhgcache

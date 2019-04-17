@@ -1,5 +1,19 @@
 #require repofncache
 
+An extension which will set fncache chunksize to 1 byte to make sure that logic
+does not break
+
+  $ cat > chunksize.py <<EOF
+  > from __future__ import absolute_import
+  > from mercurial import store
+  > store.fncache_chunksize = 1
+  > EOF
+
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > chunksize = $TESTTMP/chunksize.py
+  > EOF
+
 Init repo1:
 
   $ hg init repo1
@@ -88,7 +102,6 @@ Non store repo:
   .hg/00manifest.i
   .hg/cache
   .hg/cache/branch2-served
-  .hg/cache/manifestfulltextcache (reporevlogstore !)
   .hg/cache/rbc-names-v1
   .hg/cache/rbc-revs-v1
   .hg/data
@@ -111,6 +124,7 @@ Non store repo:
   .hg/wcache/checkisexec (execbit !)
   .hg/wcache/checklink (symlink !)
   .hg/wcache/checklink-target (symlink !)
+  .hg/wcache/manifestfulltextcache (reporevlogstore !)
   $ cd ..
 
 Non fncache repo:
@@ -126,7 +140,6 @@ Non fncache repo:
   .hg/00changelog.i
   .hg/cache
   .hg/cache/branch2-served
-  .hg/cache/manifestfulltextcache (reporevlogstore !)
   .hg/cache/rbc-names-v1
   .hg/cache/rbc-revs-v1
   .hg/dirstate
@@ -152,6 +165,7 @@ Non fncache repo:
   .hg/wcache/checkisexec (execbit !)
   .hg/wcache/checklink (symlink !)
   .hg/wcache/checklink-target (symlink !)
+  .hg/wcache/manifestfulltextcache (reporevlogstore !)
   $ cd ..
 
 Encoding of reserved / long paths in the store

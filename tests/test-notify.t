@@ -455,7 +455,7 @@ long lines
   > test = False
   > mbox = mbox
   > EOF
-  $ "$PYTHON" -c 'open("a/a", "ab").write("no" * 500 + "\xd1\x84" + "\n")'
+  $ "$PYTHON" -c 'open("a/a", "ab").write(b"no" * 500 + b"\xd1\x84" + b"\n")'
   $ hg --cwd a commit -A -m "long line"
   $ hg --traceback --cwd b pull ../a
   pulling from ../a

@@ -107,7 +107,7 @@ def extsetup(ui):
 
     # Teach exchange to use changegroup 3
     for k in exchange._bundlespeccontentopts.keys():
-        exchange._bundlespeccontentopts[k]["cg.version"] = "03"
+        exchange._bundlespeccontentopts[k][b"cg.version"] = b"03"
 
     # Register flag processors for each extension
     revlog.addflagprocessor(

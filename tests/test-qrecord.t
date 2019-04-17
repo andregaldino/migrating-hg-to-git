@@ -422,3 +422,42 @@ After qrecord b.patch 'diff'
   $ hg diff --nodates
 
   $ cd ..
+
+qrecord should throw an error when histedit in process
+
+  $ hg init issue5981
+  $ cd issue5981
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > histedit=
+  > mq=
+  > EOF
+  $ echo > a
+  $ hg ci -Am 'foo bar'
+  adding a
+  $ hg log
+  changeset:   0:ea55e2ae468f
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     foo bar
+  
+  $ hg histedit tip --commands - 2>&1 <<EOF
+  > edit ea55e2ae468f foo bar
+  > EOF
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  Editing (ea55e2ae468f), you may commit or record as needed now.
+  (hg histedit --continue to resume)
+  [1]
+  $ echo 'foo bar' > a
+  $ hg qrecord -d '0 0' -m aaa a.patch <<EOF
+  > y
+  > y
+  > n
+  > y
+  > y
+  > n
+  > EOF
+  abort: histedit in progress
+  (use 'hg histedit --continue' or 'hg histedit --abort')
+  [255]

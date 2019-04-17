@@ -866,6 +866,13 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     Repositories with this on-disk format require Mercurial version 4.7
 
     Enabled by default.
+``revlog-compression``
+    Compression algorithm used by revlog. Supported value are `zlib` and `zstd`.
+    The `zlib` engine is the historical default of Mercurial. `zstd` is a newer
+    format that is usually a net win over `zlib` operating faster at better
+    compression rate. Use `zstd` to reduce CPU usage.
+
+    On some system, Mercurial installation may lack `zstd` supports. Default is `zlib`.
 
 ``graph``
 ---------
@@ -1843,6 +1850,55 @@ category impact performance and repository size.
     Turning this option off can result in large increase of repository size for
     repository with many merges.
 
+``revlog.reuse-external-delta-parent``
+    Control the order in which delta parents are considered when adding new
+    revisions from an external source.
+    (typically: apply bundle from `hg pull` or `hg push`).
+
+    New revisions are usually provided as a delta against other revisions. By
+    default, Mercurial will try to reuse this delta first, therefore using the
+    same "delta parent" as the source. Directly using delta's from the source
+    reduces CPU usage and usually speeds up operation. However, in some case,
+    the source might have sub-optimal delta bases and forcing their reevaluation
+    is useful. For example, pushes from an old client could have sub-optimal
+    delta's parent that the server want to optimize. (lack of general delta, bad
+    parents, choice, lack of sparse-revlog, etc).
+
+    This option is enabled by default. Turning it off will ensure bad delta
+    parent choices from older client do not propagate to this repository, at
+    the cost of a small increase in CPU consumption.
+
+    Note: this option only control the order in which delta parents are
+    considered.  Even when disabled, the existing delta from the source will be
+    reused if the same delta parent is selected.
+
+``revlog.reuse-external-delta``
+    Control the reuse of delta from external source.
+    (typically: apply bundle from `hg pull` or `hg push`).
+
+    New revisions are usually provided as a delta against another revision. By
+    default, Mercurial will not recompute the same delta again, trusting
+    externally provided deltas. There have been rare cases of small adjustment
+    to the diffing algorithm in the past. So in some rare case, recomputing
+    delta provided by ancient clients can provides better results. Disabling
+    this option means going through a full delta recomputation for all incoming
+    revisions. It means a large increase in CPU usage and will slow operations
+    down.
+
+    This option is enabled by default. When disabled, it also disables the
+    related ``storage.revlog.reuse-external-delta-parent`` option.
+
+``revlog.zlib.level``
+    Zlib compression level used when storing data into the repository. Accepted
+    Value range from 1 (lowest compression) to 9 (highest compression). Zlib
+    default value is 6.
+
+
+``revlog.zstd.level``
+    zstd compression level used when storing data into the repository. Accepted
+    Value range from 1 (lowest compression) to 22 (highest compression).
+    (default 3)
+
 ``server``
 ----------
 
@@ -1989,6 +2045,13 @@ Controls generic server settings.
     This option only impacts the HTTP server.
 
     See also ``server.zliblevel``.
+
+``view``
+    Repository filter used when exchanging revisions with the peer.
+
+    The default view (``served``) excludes secret and hidden changesets.
+    Another useful value is ``immutable`` (no draft, secret or hidden
+    changesets). (EXPERIMENTAL)
 
 ``smtp``
 --------
@@ -2340,6 +2403,9 @@ User interface controls.
 ``quiet``
     Reduce the amount of output printed.
     (default: False)
+
+``relative-paths``
+    Prefer relative paths in the UI.
 
 ``remotecmd``
     Remote command to use for clone/push/pull operations.

@@ -206,3 +206,22 @@ manifest -r tip
   a
   c
   d
+  $ cd ..
+
+  $ hg init commit-references
+  $ cd commit-references
+  $ echo a > a
+  $ hg ci -Aqm initial
+  $ echo b > b
+  $ hg ci -Aqm 'the previous commit was 1451231c8757'
+  $ echo c > c
+  $ hg ci -Aqm 'the working copy is called ffffffffffff'
+
+  $ cd ..
+  $ hg convert commit-references new-commit-references -q \
+  >     --config convert.hg.sourcename=yes
+  $ cd new-commit-references
+  $ hg log -T '{node|short} {desc}\n'
+  fe295c9e6bc6 the working copy is called ffffffffffff
+  642508659503 the previous commit was c2491f685436
+  c2491f685436 initial

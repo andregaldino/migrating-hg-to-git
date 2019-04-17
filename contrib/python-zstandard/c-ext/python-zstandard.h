@@ -16,7 +16,7 @@
 #include <zdict.h>
 
 /* Remember to change the string in zstandard/__init__ as well */
-#define PYTHON_ZSTANDARD_VERSION "0.10.1"
+#define PYTHON_ZSTANDARD_VERSION "0.11.0"
 
 typedef enum {
 	compressorobj_flush_finish,
@@ -31,27 +31,6 @@ typedef enum {
 typedef struct {
 	PyObject_HEAD
 	ZSTD_CCtx_params* params;
-	unsigned format;
-	int compressionLevel;
-	unsigned windowLog;
-	unsigned hashLog;
-	unsigned chainLog;
-	unsigned searchLog;
-	unsigned minMatch;
-	unsigned targetLength;
-	unsigned compressionStrategy;
-	unsigned contentSizeFlag;
-	unsigned checksumFlag;
-	unsigned dictIDFlag;
-	unsigned threads;
-	unsigned jobSize;
-	unsigned overlapSizeLog;
-	unsigned forceMaxWindow;
-	unsigned enableLongDistanceMatching;
-	unsigned ldmHashLog;
-	unsigned ldmMinMatch;
-	unsigned ldmBucketSizeLog;
-	unsigned ldmHashEveryLog;
 } ZstdCompressionParametersObject;
 
 extern PyTypeObject ZstdCompressionParametersType;
@@ -129,9 +108,11 @@ typedef struct {
 
 	ZstdCompressor* compressor;
 	PyObject* writer;
-	unsigned long long sourceSize;
+	ZSTD_outBuffer output;
 	size_t outSize;
 	int entered;
+	int closed;
+	int writeReturnRead;
 	unsigned long long bytesCompressed;
 } ZstdCompressionWriter;
 
@@ -235,6 +216,8 @@ typedef struct {
 	PyObject* reader;
 	/* Size for read() operations on reader. */
 	size_t readSize;
+	/* Whether a read() can return data spanning multiple zstd frames. */
+	int readAcrossFrames;
 	/* Buffer to read from (if reading from a buffer). */
 	Py_buffer buffer;
 
@@ -267,6 +250,8 @@ typedef struct {
 	PyObject* writer;
 	size_t outSize;
 	int entered;
+	int closed;
+	int writeReturnRead;
 } ZstdDecompressionWriter;
 
 extern PyTypeObject ZstdDecompressionWriterType;
@@ -360,8 +345,9 @@ typedef struct {
 
 extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
 
-int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value);
+int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, int value);
 int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj);
+int to_cparams(ZstdCompressionParametersObject* params, ZSTD_compressionParameters* cparams);
 FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs);
 int ensure_ddict(ZstdCompressionDict* dict);
 int ensure_dctx(ZstdDecompressor* decompressor, int loadDict);

@@ -17,9 +17,9 @@
   >    'empty:stripped-crlf': b'\r\n'}[sys.argv[1]])
   > w(b' d\n')
   > w(b'-e\n')
-  > w(b'\ No newline at end of file\n')
+  > w(b'\\\\ No newline at end of file\n')
   > w(b'+z\r\n')
-  > w(b'\ No newline at end of file\r\n')
+  > w(b'\\\\ No newline at end of file\r\n')
   > EOF
 
   $ hg init repo

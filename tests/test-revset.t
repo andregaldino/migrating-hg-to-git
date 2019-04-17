@@ -12,9 +12,9 @@
   >     """
   >     if 3 not in subset:
   >        if 2 in subset:
-  >            return baseset([2,2])
+  >            return baseset([2, 2])
   >        return baseset()
-  >     return baseset([3,3,2,2])
+  >     return baseset([3, 3, 2, 2])
   > 
   > mercurial.revset.symbols[b'r3232'] = r3232
   > EOF
@@ -643,10 +643,13 @@ parse errors of relation, subscript and relation-subscript operators:
   [255]
 
   $ hg debugrevspec '.#generations[a]'
-  hg: parse error: relation subscript must be an integer
+  hg: parse error: relation subscript must be an integer or a range
   [255]
   $ hg debugrevspec '.#generations[1-2]'
-  hg: parse error: relation subscript must be an integer
+  hg: parse error: relation subscript must be an integer or a range
+  [255]
+  $ hg debugrevspec '.#generations[foo:bar]'
+  hg: parse error: relation subscript bounds must be integers
   [255]
 
 suggested relations
@@ -1273,6 +1276,31 @@ test ancestors/descendants relation subscript:
   8
   $ log '.#g[(-1)]'
   8
+
+  $ log '6#generations[0:1]'
+  6
+  7
+  $ log '6#generations[-1:1]'
+  4
+  5
+  6
+  7
+  $ log '6#generations[0:]'
+  6
+  7
+  $ log '5#generations[:0]'
+  0
+  1
+  3
+  5
+  $ log '3#generations[:]'
+  0
+  1
+  3
+  5
+  6
+  7
+  $ log 'tip#generations[1:-1]'
 
   $ hg debugrevspec -p parsed 'roots(:)#g[2]'
   * parsed:
@@ -2950,3 +2978,63 @@ test multiline revset with errors
   * set:
   <baseset+ [0]>
   0
+
+abort if the revset doesn't expect given size
+  $ log 'expectsize()'
+  hg: parse error: invalid set of arguments
+  [255]
+  $ log 'expectsize(0:2, a)'
+  hg: parse error: expectsize requires a size range or a positive integer
+  [255]
+  $ log 'expectsize(0:2, 3)'
+  0
+  1
+  2
+
+  $ log 'expectsize(2:0, 3)'
+  2
+  1
+  0
+  $ log 'expectsize(0:1, 1)'
+  abort: revset size mismatch. expected 1, got 2!
+  [255]
+  $ log 'expectsize(0:4, -1)'
+  hg: parse error: negative size
+  [255]
+  $ log 'expectsize(0:2, 2:4)'
+  0
+  1
+  2
+  $ log 'expectsize(0:1, 3:5)'
+  abort: revset size mismatch. expected between 3 and 5, got 2!
+  [255]
+  $ log 'expectsize(0:1, -1:2)'
+  hg: parse error: negative size
+  [255]
+  $ log 'expectsize(0:1, 1:-2)'
+  hg: parse error: negative size
+  [255]
+  $ log 'expectsize(0:2, a:4)'
+  hg: parse error: size range bounds must be integers
+  [255]
+  $ log 'expectsize(0:2, 2:b)'
+  hg: parse error: size range bounds must be integers
+  [255]
+  $ log 'expectsize(0:2, 2:)'
+  0
+  1
+  2
+  $ log 'expectsize(0:2, :5)'
+  0
+  1
+  2
+  $ log 'expectsize(0:2, :)'
+  0
+  1
+  2
+  $ log 'expectsize(0:2, 4:)'
+  abort: revset size mismatch. expected between 4 and 11, got 3!
+  [255]
+  $ log 'expectsize(0:2, :2)'
+  abort: revset size mismatch. expected between 0 and 2, got 3!
+  [255]

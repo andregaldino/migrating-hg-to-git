@@ -198,9 +198,9 @@ def fastannotate(ui, repo, *pats, **opts):
         formatter.write(result, lines, existinglines=existinglines)
     formatter.end()
 
-_newopts = set([])
-_knownopts = set([opt[1].replace('-', '_') for opt in
-                  (fastannotatecommandargs[r'options'] + commands.globalopts)])
+_newopts = set()
+_knownopts = {opt[1].replace('-', '_') for opt in
+              (fastannotatecommandargs[r'options'] + commands.globalopts)}
 
 def _annotatewrapper(orig, ui, repo, *pats, **opts):
     """used by wrapdefault"""

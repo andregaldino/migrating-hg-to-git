@@ -10,7 +10,12 @@ from __future__ import absolute_import
 import collections
 import os
 
-from mercurial.node import bin, nullid
+from mercurial.node import (
+    bin,
+    nullid,
+    wdirfilenodeids,
+    wdirid,
+)
 from mercurial.i18n import _
 from mercurial import (
     ancestor,
@@ -61,8 +66,6 @@ class remotefilelog(object):
         return t[s + 2:]
 
     def add(self, text, meta, transaction, linknode, p1=None, p2=None):
-        hashtext = text
-
         # hash with the metadata, like in vanilla filelogs
         hashtext = shallowutil.createrevlogtext(text, meta.get('copy'),
                                                 meta.get('copyrev'))
@@ -308,6 +311,8 @@ class remotefilelog(object):
         if len(node) != 20:
             raise error.LookupError(node, self.filename,
                                     _('invalid revision input'))
+        if node == wdirid or node in wdirfilenodeids:
+            raise error.WdirUnsupported
 
         store = self.repo.contentstore
         rawtext = store.get(self.filename, node)

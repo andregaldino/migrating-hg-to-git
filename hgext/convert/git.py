@@ -13,6 +13,7 @@ from mercurial import (
     config,
     error,
     node as nodemod,
+    pycompat,
 )
 
 from . import (
@@ -175,7 +176,8 @@ class convert_git(common.converter_source, common.commandline):
         self.catfilepipe[0].flush()
         info = self.catfilepipe[1].readline().split()
         if info[1] != ftype:
-            raise error.Abort(_('cannot read %r object at %s') % (ftype, rev))
+            raise error.Abort(_('cannot read %r object at %s') % (
+                pycompat.bytestr(ftype), rev))
         size = int(info[2])
         data = self.catfilepipe[1].read(size)
         if len(data) < size:
@@ -294,7 +296,7 @@ class convert_git(common.converter_source, common.commandline):
             if not entry:
                 if not l.startswith(':'):
                     continue
-                entry = l.split()
+                entry = tuple(pycompat.bytestr(p) for p in l.split())
                 continue
             f = l
             if entry[4][0] == 'C':
@@ -385,7 +387,7 @@ class convert_git(common.converter_source, common.commandline):
     def numcommits(self):
         output, ret = self.gitrunlines('rev-list', '--all')
         if ret:
-            raise error.Abort(_('cannot retrieve number of commits in %s') \
+            raise error.Abort(_('cannot retrieve number of commits in %s')
                               % self.path)
         return len(output)
 

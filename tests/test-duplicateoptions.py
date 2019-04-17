@@ -41,8 +41,8 @@ for cmd, entry in commands.table.items():
     seenshort = globalshort.copy()
     seenlong = globallong.copy()
     for option in entry[1]:
-        if (option[0] and option[0] in seenshort) or \
-           (option[1] and option[1] in seenlong):
+        if ((option[0] and option[0] in seenshort) or
+            (option[1] and option[1] in seenlong)):
             print("command '" + cmd + "' has duplicate option " + str(option))
         seenshort.add(option[0])
         seenlong.add(option[1])

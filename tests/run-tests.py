@@ -290,7 +290,7 @@ if 'java' in sys.platform:
 defaults = {
     'jobs': ('HGTEST_JOBS', multiprocessing.cpu_count()),
     'timeout': ('HGTEST_TIMEOUT', 180),
-    'slowtimeout': ('HGTEST_SLOWTIMEOUT', 500),
+    'slowtimeout': ('HGTEST_SLOWTIMEOUT', 1500),
     'port': ('HGTEST_PORT', 20059),
     'shell': ('HGTEST_SHELL', 'sh'),
 }
@@ -634,7 +634,7 @@ CDATA_EVIL = re.compile(br"[\000-\010\013\014\016-\037]")
 # list in group 2, and the preceeding line output in group 1:
 #
 #   output..output (feature !)\n
-optline = re.compile(b'(.*) \((.+?) !\)\n$')
+optline = re.compile(br'(.*) \((.+?) !\)\n$')
 
 def cdatasafe(data):
     """Make a string safe to include in a CDATA block.
@@ -929,8 +929,8 @@ class Test(unittest.TestCase):
             self.fail('no result code from test')
         elif out != self._refout:
             # Diff generation may rely on written .err file.
-            if (ret != 0 or out != self._refout) and not self._skipped \
-                and not self._debug:
+            if ((ret != 0 or out != self._refout) and not self._skipped
+                and not self._debug):
                 with open(self.errpath, 'wb') as f:
                     for line in out:
                         f.write(line)
@@ -978,8 +978,8 @@ class Test(unittest.TestCase):
             # files are deleted
             shutil.rmtree(self._chgsockdir, True)
 
-        if (self._ret != 0 or self._out != self._refout) and not self._skipped \
-            and not self._debug and self._out:
+        if ((self._ret != 0 or self._out != self._refout) and not self._skipped
+            and not self._debug and self._out):
             with open(self.errpath, 'wb') as f:
                 for line in self._out:
                     f.write(line)
@@ -1105,8 +1105,8 @@ class Test(unittest.TestCase):
         if 'HGTESTCATAPULTSERVERPIPE' not in env:
             # If we don't have HGTESTCATAPULTSERVERPIPE explicitly set, pull the
             # non-test one in as a default, otherwise set to devnull
-            env['HGTESTCATAPULTSERVERPIPE'] = \
-                env.get('HGCATAPULTSERVERPIPE', os.devnull)
+            env['HGTESTCATAPULTSERVERPIPE'] = env.get(
+                'HGCATAPULTSERVERPIPE', os.devnull)
 
         extraextensions = []
         for opt in self._extraconfigopts:
@@ -1225,7 +1225,6 @@ class Test(unittest.TestCase):
             killdaemons(env['DAEMON_PIDS'])
             return ret
 
-        output = b''
         proc.tochild.close()
 
         try:
@@ -1354,6 +1353,9 @@ class TTest(Test):
 
     def _hghave(self, reqs):
         allreqs = b' '.join(reqs)
+
+        self._detectslow(reqs)
+
         if allreqs in self._have:
             return self._have.get(allreqs)
 
@@ -1375,11 +1377,13 @@ class TTest(Test):
             self._have[allreqs] = (False, stdout)
             return False, stdout
 
-        if b'slow' in reqs:
-            self._timeout = self._slowtimeout
-
         self._have[allreqs] = (True, None)
         return True, None
+
+    def _detectslow(self, reqs):
+        """update the timeout of slow test when appropriate"""
+        if b'slow' in reqs:
+            self._timeout = self._slowtimeout
 
     def _iftest(self, args):
         # implements "#if"
@@ -1393,6 +1397,7 @@ class TTest(Test):
                     return False
             else:
                 reqs.append(arg)
+        self._detectslow(reqs)
         return self._hghave(reqs)[0]
 
     def _parsetest(self, lines):
@@ -1409,8 +1414,8 @@ class TTest(Test):
         session = str(uuid.uuid4())
         if PYTHON3:
             session = session.encode('ascii')
-        hgcatapult = os.getenv('HGTESTCATAPULTSERVERPIPE') or \
-            os.getenv('HGCATAPULTSERVERPIPE')
+        hgcatapult = (os.getenv('HGTESTCATAPULTSERVERPIPE') or
+                      os.getenv('HGCATAPULTSERVERPIPE'))
         def toggletrace(cmd=None):
             if not hgcatapult or hgcatapult == os.devnull:
                 return
@@ -1903,8 +1908,9 @@ class TestResult(unittest._TextTestResult):
                 pass
             elif self._options.view:
                 v = self._options.view
-                os.system(r"%s %s %s" %
-                          (v, _strpath(test.refpath), _strpath(test.errpath)))
+                subprocess.call(r'"%s" "%s" "%s"' %
+                                (v, _strpath(test.refpath),
+                                 _strpath(test.errpath)), shell=True)
             else:
                 servefail, lines = getdiff(expected, got,
                                            test.refpath, test.errpath)
@@ -2259,14 +2265,17 @@ class TextTestRunner(unittest.TextTestRunner):
             self.stream.writeln('')
 
             if not self._runner.options.noskips:
-                for test, msg in self._result.skipped:
+                for test, msg in sorted(self._result.skipped,
+                                        key=lambda s: s[0].name):
                     formatted = 'Skipped %s: %s\n' % (test.name, msg)
                     msg = highlightmsg(formatted, self._result.color)
                     self.stream.write(msg)
-            for test, msg in self._result.failures:
+            for test, msg in sorted(self._result.failures,
+                                    key=lambda f: f[0].name):
                 formatted = 'Failed %s: %s\n' % (test.name, msg)
                 self.stream.write(highlightmsg(formatted, self._result.color))
-            for test, msg in self._result.errors:
+            for test, msg in sorted(self._result.errors,
+                                    key=lambda e: e[0].name):
                 self.stream.writeln('Errored %s: %s' % (test.name, msg))
 
             if self._runner.options.xunit:
@@ -2376,12 +2385,12 @@ class TextTestRunner(unittest.TextTestRunner):
         timesd = dict((t[0], t[3]) for t in result.times)
         doc = minidom.Document()
         s = doc.createElement('testsuite')
-        s.setAttribute('name', 'run-tests')
-        s.setAttribute('tests', str(result.testsRun))
         s.setAttribute('errors', "0") # TODO
         s.setAttribute('failures', str(len(result.failures)))
+        s.setAttribute('name', 'run-tests')
         s.setAttribute('skipped', str(len(result.skipped) +
                                       len(result.ignored)))
+        s.setAttribute('tests', str(result.testsRun))
         doc.appendChild(s)
         for tc in result.successes:
             t = doc.createElement('testcase')
@@ -2770,8 +2779,8 @@ class TestRunner(object):
         """
         if not args:
             if self.options.changed:
-                proc = Popen4('hg st --rev "%s" -man0 .' %
-                              self.options.changed, None, 0)
+                proc = Popen4(b'hg st --rev "%s" -man0 .' %
+                              _bytespath(self.options.changed), None, 0)
                 stdout, stderr = proc.communicate()
                 args = stdout.strip(b'\0').split(b'\0')
             else:
@@ -3110,8 +3119,8 @@ class TestRunner(object):
             # installation layout put it in bin/ directly. Fix it
             with open(hgbat, 'rb') as f:
                 data = f.read()
-            if b'"%~dp0..\python" "%~dp0hg" %*' in data:
-                data = data.replace(b'"%~dp0..\python" "%~dp0hg" %*',
+            if br'"%~dp0..\python" "%~dp0hg" %*' in data:
+                data = data.replace(br'"%~dp0..\python" "%~dp0hg" %*',
                                     b'"%~dp0python" "%~dp0hg" %*')
                 with open(hgbat, 'wb') as f:
                     f.write(data)

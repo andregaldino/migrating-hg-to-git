@@ -397,14 +397,17 @@ def _cmpdiff(leftctx, rightctx):
 
     This is a first and basic implementation, with many shortcoming.
     """
-    # lefctx.repo() and rightctx.repo() are the same here
-    repo = leftctx.repo()
-    diffopts = diffutil.diffallopts(repo.ui, {'git': True})
+    diffopts = diffutil.diffallopts(leftctx.repo().ui, {'git': True})
+
     # Leftctx or right ctx might be filtered, so we need to use the contexts
     # with an unfiltered repository to safely compute the diff
-    leftunfi = repo.unfiltered()[leftctx.rev()]
+
+    # leftctx and rightctx can be from different repository views in case of
+    # hgsubversion, do don't try to access them from same repository
+    # rightctx.repo() and leftctx.repo() are not always the same
+    leftunfi = leftctx._repo.unfiltered()[leftctx.rev()]
     leftdiff = leftunfi.diff(opts=diffopts)
-    rightunfi = repo.unfiltered()[rightctx.rev()]
+    rightunfi = rightctx._repo.unfiltered()[rightctx.rev()]
     rightdiff = rightunfi.diff(opts=diffopts)
 
     left, right = (0, 0)

@@ -78,6 +78,10 @@ class config(object):
         return list(self._data.get(section, {}).iteritems())
     def set(self, section, item, value, source=""):
         if pycompat.ispy3:
+            assert not isinstance(section, str), (
+                'config section may not be unicode strings on Python 3')
+            assert not isinstance(item, str), (
+                'config item may not be unicode strings on Python 3')
             assert not isinstance(value, str), (
                 'config values may not be unicode strings on Python 3')
         if section not in self:

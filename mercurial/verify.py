@@ -51,11 +51,13 @@ class verifier(object):
         self.skipflags = repo.ui.configint('verify', 'skipflags')
         self.warnorphanstorefiles = True
 
-    def warn(self, msg):
+    def _warn(self, msg):
+        """record a "warning" level issue"""
         self.ui.warn(msg + "\n")
         self.warnings += 1
 
-    def err(self, linkrev, msg, filename=None):
+    def _err(self, linkrev, msg, filename=None):
+        """record a "error" level issue"""
         if linkrev is not None:
             self.badrevs.add(linkrev)
             linkrev = "%d" % linkrev
@@ -67,15 +69,23 @@ class verifier(object):
         self.ui.warn(" " + msg + "\n")
         self.errors += 1
 
-    def exc(self, linkrev, msg, inst, filename=None):
+    def _exc(self, linkrev, msg, inst, filename=None):
+        """record exception raised during the verify process"""
         fmsg = pycompat.bytestr(inst)
         if not fmsg:
             fmsg = pycompat.byterepr(inst)
-        self.err(linkrev, "%s: %s" % (msg, fmsg), filename)
+        self._err(linkrev, "%s: %s" % (msg, fmsg), filename)
 
-    def checklog(self, obj, name, linkrev):
+    def _checkrevlog(self, obj, name, linkrev):
+        """verify high level property of a revlog
+
+        - revlog is present,
+        - revlog is non-empty,
+        - sizes (index and data) are correct,
+        - revlog's format version is correct.
+        """
         if not len(obj) and (self.havecl or self.havemf):
-            self.err(linkrev, _("empty or missing %s") % name)
+            self._err(linkrev, _("empty or missing %s") % name)
             return
 
         d = obj.checksize()
@@ -86,18 +96,37 @@ class verifier(object):
 
         if obj.version != revlog.REVLOGV0:
             if not self.revlogv1:
-                self.warn(_("warning: `%s' uses revlog format 1") % name)
+                self._warn(_("warning: `%s' uses revlog format 1") % name)
         elif self.revlogv1:
-            self.warn(_("warning: `%s' uses revlog format 0") % name)
+            self._warn(_("warning: `%s' uses revlog format 0") % name)
 
-    def checkentry(self, obj, i, node, seen, linkrevs, f):
+    def _checkentry(self, obj, i, node, seen, linkrevs, f):
+        """verify a single revlog entry
+
+        arguments are:
+        - obj:      the source revlog
+        - i:        the revision number
+        - node:        the revision node id
+        - seen:     nodes previously seen for this revlog
+        - linkrevs: [changelog-revisions] introducing "node"
+        - f:        string label ("changelog", "manifest", or filename)
+
+        Performs the following checks:
+        - linkrev points to an existing changelog revision,
+        - linkrev points to a changelog revision that introduces this revision,
+        - linkrev points to the lowest of these changesets,
+        - both parents exist in the revlog,
+        - the revision is not duplicated.
+
+        Return the linkrev of the revision (or None for changelog's revisions).
+        """
         lr = obj.linkrev(obj.rev(node))
         if lr < 0 or (self.havecl and lr not in linkrevs):
             if lr < 0 or lr >= len(self.repo.changelog):
                 msg = _("rev %d points to nonexistent changeset %d")
             else:
                 msg = _("rev %d points to unexpected changeset %d")
-            self.err(None, msg % (i, lr), f)
+            self._err(None, msg % (i, lr), f)
             if linkrevs:
                 if f and len(linkrevs) > 1:
                     try:
@@ -106,31 +135,35 @@ class verifier(object):
                                     if self.lrugetctx(l)[f].filenode() == node]
                     except Exception:
                         pass
-                self.warn(_(" (expected %s)") % " ".join
-                          (map(pycompat.bytestr, linkrevs)))
+                self._warn(_(" (expected %s)") % " ".join
+                           (map(pycompat.bytestr, linkrevs)))
             lr = None # can't be trusted
 
         try:
             p1, p2 = obj.parents(node)
             if p1 not in seen and p1 != nullid:
-                self.err(lr, _("unknown parent 1 %s of %s") %
+                self._err(lr, _("unknown parent 1 %s of %s") %
                     (short(p1), short(node)), f)
             if p2 not in seen and p2 != nullid:
-                self.err(lr, _("unknown parent 2 %s of %s") %
+                self._err(lr, _("unknown parent 2 %s of %s") %
                     (short(p2), short(node)), f)
         except Exception as inst:
-            self.exc(lr, _("checking parents of %s") % short(node), inst, f)
+            self._exc(lr, _("checking parents of %s") % short(node), inst, f)
 
         if node in seen:
-            self.err(lr, _("duplicate revision %d (%d)") % (i, seen[node]), f)
+            self._err(lr, _("duplicate revision %d (%d)") % (i, seen[node]), f)
         seen[node] = i
         return lr
 
     def verify(self):
+        """verify the content of the Mercurial repository
+
+        This method run all verifications, displaying issues as they are found.
+
+        return 1 if any error have been encountered, 0 otherwise."""
+        # initial validation and generic report
         repo = self.repo
-
         ui = repo.ui
-
         if not repo.url().startswith('file:'):
             raise error.Abort(_("cannot verify bundle or remote repos"))
 
@@ -141,15 +174,14 @@ class verifier(object):
             ui.status(_("repository uses revlog format %d\n") %
                            (self.revlogv1 and 1 or 0))
 
+        # data verification
         mflinkrevs, filelinkrevs = self._verifychangelog()
-
         filenodes = self._verifymanifest(mflinkrevs)
         del mflinkrevs
-
         self._crosscheckfiles(filelinkrevs, filenodes)
-
         totalfiles, filerevisions = self._verifyfiles(filenodes, filelinkrevs)
 
+        # final report
         ui.status(_("checked %d changesets with %d changes to %d files\n") %
                        (len(repo.changelog), filerevisions, totalfiles))
         if self.warnings:
@@ -163,8 +195,24 @@ class verifier(object):
                 ui.warn(_("(first damaged changeset appears to be %d)\n")
                         % min(self.badrevs))
             return 1
+        return 0
 
     def _verifychangelog(self):
+        """verify the changelog of a repository
+
+        The following checks are performed:
+        - all of `_checkrevlog` checks,
+        - all of `_checkentry` checks (for each revisions),
+        - each revision can be read.
+
+        The function returns some of the data observed in the changesets as a
+        (mflinkrevs, filelinkrevs) tuples:
+        - mflinkrevs:   is a { manifest-node -> [changelog-rev] } mapping
+        - filelinkrevs: is a { file-path -> [changelog-rev] } mapping
+
+        If a matcher was specified, filelinkrevs will only contains matched
+        files.
+        """
         ui = self.ui
         repo = self.repo
         match = self.match
@@ -174,13 +222,13 @@ class verifier(object):
         mflinkrevs = {}
         filelinkrevs = {}
         seen = {}
-        self.checklog(cl, "changelog", 0)
+        self._checkrevlog(cl, "changelog", 0)
         progress = ui.makeprogress(_('checking'), unit=_('changesets'),
                                    total=len(repo))
         for i in repo:
             progress.update(i)
             n = cl.node(i)
-            self.checkentry(cl, i, n, seen, [i], "changelog")
+            self._checkentry(cl, i, n, seen, [i], "changelog")
 
             try:
                 changes = cl.read(n)
@@ -192,12 +240,39 @@ class verifier(object):
                         filelinkrevs.setdefault(_normpath(f), []).append(i)
             except Exception as inst:
                 self.refersmf = True
-                self.exc(i, _("unpacking changeset %s") % short(n), inst)
+                self._exc(i, _("unpacking changeset %s") % short(n), inst)
         progress.complete()
         return mflinkrevs, filelinkrevs
 
     def _verifymanifest(self, mflinkrevs, dir="", storefiles=None,
                         subdirprogress=None):
+        """verify the manifestlog content
+
+        Inputs:
+        - mflinkrevs:     a {manifest-node -> [changelog-revisions]} mapping
+        - dir:            a subdirectory to check (for tree manifest repo)
+        - storefiles:     set of currently "orphan" files.
+        - subdirprogress: a progress object
+
+        This function checks:
+        * all of `_checkrevlog` checks (for all manifest related revlogs)
+        * all of `_checkentry` checks (for all manifest related revisions)
+        * nodes for subdirectory exists in the sub-directory manifest
+        * each manifest entries have a file path
+        * each manifest node refered in mflinkrevs exist in the manifest log
+
+        If tree manifest is in use and a matchers is specified, only the
+        sub-directories matching it will be verified.
+
+        return a two level mapping:
+            {"path" -> { filenode -> changelog-revision}}
+
+        This mapping primarily contains entries for every files in the
+        repository. In addition, when tree-manifest is used, it also contains
+        sub-directory entries.
+
+        If a matcher is provided, only matching paths will be included.
+        """
         repo = self.repo
         ui = self.ui
         match = self.match
@@ -220,27 +295,27 @@ class verifier(object):
         if self.refersmf:
             # Do not check manifest if there are only changelog entries with
             # null manifests.
-            self.checklog(mf, label, 0)
+            self._checkrevlog(mf, label, 0)
         progress = ui.makeprogress(_('checking'), unit=_('manifests'),
                                    total=len(mf))
         for i in mf:
             if not dir:
                 progress.update(i)
             n = mf.node(i)
-            lr = self.checkentry(mf, i, n, seen, mflinkrevs.get(n, []), label)
+            lr = self._checkentry(mf, i, n, seen, mflinkrevs.get(n, []), label)
             if n in mflinkrevs:
                 del mflinkrevs[n]
             elif dir:
-                self.err(lr, _("%s not in parent-directory manifest") %
+                self._err(lr, _("%s not in parent-directory manifest") %
                          short(n), label)
             else:
-                self.err(lr, _("%s not in changesets") % short(n), label)
+                self._err(lr, _("%s not in changesets") % short(n), label)
 
             try:
                 mfdelta = mfl.get(dir, n).readdelta(shallow=True)
                 for f, fn, fl in mfdelta.iterentries():
                     if not f:
-                        self.err(lr, _("entry without name in manifest"))
+                        self._err(lr, _("entry without name in manifest"))
                     elif f == "/dev/null":  # ignore this in very old repos
                         continue
                     fullpath = dir + _normpath(f)
@@ -254,19 +329,21 @@ class verifier(object):
                             continue
                         filenodes.setdefault(fullpath, {}).setdefault(fn, lr)
             except Exception as inst:
-                self.exc(lr, _("reading delta %s") % short(n), inst, label)
+                self._exc(lr, _("reading delta %s") % short(n), inst, label)
         if not dir:
             progress.complete()
 
         if self.havemf:
-            for c, m in sorted([(c, m) for m in mflinkrevs
-                        for c in mflinkrevs[m]]):
+            # since we delete entry in `mflinkrevs` during iteration, any
+            # remaining entries are "missing". We need to issue errors for them.
+            changesetpairs = [(c, m) for m in mflinkrevs for c in mflinkrevs[m]]
+            for c, m in sorted(changesetpairs):
                 if dir:
-                    self.err(c, _("parent-directory manifest refers to unknown "
-                                  "revision %s") % short(m), label)
+                    self._err(c, _("parent-directory manifest refers to unknown"
+                                   " revision %s") % short(m), label)
                 else:
-                    self.err(c, _("changeset refers to unknown revision %s") %
-                             short(m), label)
+                    self._err(c, _("changeset refers to unknown revision %s") %
+                              short(m), label)
 
         if not dir and subdirnodes:
             self.ui.status(_("checking directory manifests\n"))
@@ -275,7 +352,7 @@ class verifier(object):
             revlogv1 = self.revlogv1
             for f, f2, size in repo.store.datafiles():
                 if not f:
-                    self.err(None, _("cannot decode filename '%s'") % f2)
+                    self._err(None, _("cannot decode filename '%s'") % f2)
                 elif (size > 0 or not revlogv1) and f.startswith('meta/'):
                     storefiles.add(_normpath(f))
                     subdirs.add(os.path.dirname(f))
@@ -292,7 +369,7 @@ class verifier(object):
             subdirprogress.complete()
             if self.warnorphanstorefiles:
                 for f in sorted(storefiles):
-                    self.warn(_("warning: orphan data file '%s'") % f)
+                    self._warn(_("warning: orphan data file '%s'") % f)
 
         return filenodes
 
@@ -309,7 +386,7 @@ class verifier(object):
                 progress.increment()
                 if f not in filenodes:
                     lr = filelinkrevs[f][0]
-                    self.err(lr, _("in changeset but not in manifest"), f)
+                    self._err(lr, _("in changeset but not in manifest"), f)
 
         if self.havecl:
             for f in sorted(filenodes):
@@ -320,7 +397,7 @@ class verifier(object):
                         lr = min([fl.linkrev(fl.rev(n)) for n in filenodes[f]])
                     except Exception:
                         lr = None
-                    self.err(lr, _("in manifest but not in changeset"), f)
+                    self._err(lr, _("in manifest but not in changeset"), f)
 
         progress.complete()
 
@@ -335,7 +412,7 @@ class verifier(object):
         storefiles = set()
         for f, f2, size in repo.store.datafiles():
             if not f:
-                self.err(None, _("cannot decode filename '%s'") % f2)
+                self._err(None, _("cannot decode filename '%s'") % f2)
             elif (size > 0 or not revlogv1) and f.startswith('data/'):
                 storefiles.add(_normpath(f))
 
@@ -367,7 +444,7 @@ class verifier(object):
             try:
                 fl = repo.file(f)
             except error.StorageError as e:
-                self.err(lr, _("broken revlog! (%s)") % e, f)
+                self._err(lr, _("broken revlog! (%s)") % e, f)
                 continue
 
             for ff in fl.files():
@@ -375,12 +452,12 @@ class verifier(object):
                     storefiles.remove(ff)
                 except KeyError:
                     if self.warnorphanstorefiles:
-                        self.warn(_(" warning: revlog '%s' not in fncache!") %
+                        self._warn(_(" warning: revlog '%s' not in fncache!") %
                                   ff)
                         self.fncachewarned = True
 
             if not len(fl) and (self.havecl or self.havemf):
-                self.err(lr, _("empty or missing %s") % f)
+                self._err(lr, _("empty or missing %s") % f)
             else:
                 # Guard against implementations not setting this.
                 state['skipread'] = set()
@@ -391,10 +468,10 @@ class verifier(object):
                         linkrev = None
 
                     if problem.warning:
-                        self.warn(problem.warning)
+                        self._warn(problem.warning)
                     elif problem.error:
-                        self.err(linkrev if linkrev is not None else lr,
-                                 problem.error, f)
+                        self._err(linkrev if linkrev is not None else lr,
+                                  problem.error, f)
                     else:
                         raise error.ProgrammingError(
                             'problem instance does not set warning or error '
@@ -404,10 +481,10 @@ class verifier(object):
             for i in fl:
                 revisions += 1
                 n = fl.node(i)
-                lr = self.checkentry(fl, i, n, seen, linkrevs, f)
+                lr = self._checkentry(fl, i, n, seen, linkrevs, f)
                 if f in filenodes:
                     if havemf and n not in filenodes[f]:
-                        self.err(lr, _("%s not in manifests") % (short(n)), f)
+                        self._err(lr, _("%s not in manifests") % (short(n)), f)
                     else:
                         del filenodes[f][n]
 
@@ -424,12 +501,15 @@ class verifier(object):
                         if lr is not None and ui.verbose:
                             ctx = lrugetctx(lr)
                             if not any(rp[0] in pctx for pctx in ctx.parents()):
-                                self.warn(_("warning: copy source of '%s' not"
+                                self._warn(_("warning: copy source of '%s' not"
                                             " in parents of %s") % (f, ctx))
                         fl2 = repo.file(rp[0])
                         if not len(fl2):
-                            self.err(lr, _("empty or missing copy source "
-                                     "revlog %s:%s") % (rp[0], short(rp[1])), f)
+                            self._err(lr,
+                                      _("empty or missing copy source revlog "
+                                        "%s:%s") % (rp[0],
+                                      short(rp[1])),
+                                      f)
                         elif rp[1] == nullid:
                             ui.note(_("warning: %s@%s: copy source"
                                       " revision is nullid %s:%s\n")
@@ -437,18 +517,19 @@ class verifier(object):
                         else:
                             fl2.rev(rp[1])
                 except Exception as inst:
-                    self.exc(lr, _("checking rename of %s") % short(n), inst, f)
+                    self._exc(lr, _("checking rename of %s") % short(n),
+                              inst, f)
 
             # cross-check
             if f in filenodes:
                 fns = [(v, k) for k, v in filenodes[f].iteritems()]
                 for lr, node in sorted(fns):
-                    self.err(lr, _("manifest refers to unknown revision %s") %
-                             short(node), f)
+                    self._err(lr, _("manifest refers to unknown revision %s") %
+                              short(node), f)
         progress.complete()
 
         if self.warnorphanstorefiles:
             for f in sorted(storefiles):
-                self.warn(_("warning: orphan data file '%s'") % f)
+                self._warn(_("warning: orphan data file '%s'") % f)
 
         return len(files), revisions

@@ -130,6 +130,7 @@ from . import (
     util,
 )
 from .utils import (
+    cborutil,
     dateutil,
     stringutil,
 )
@@ -340,6 +341,18 @@ class pickleformatter(baseformatter):
     def end(self):
         baseformatter.end(self)
         self._out.write(pickle.dumps(self._data))
+
+class cborformatter(baseformatter):
+    '''serialize items as an indefinite-length CBOR array'''
+    def __init__(self, ui, out, topic, opts):
+        baseformatter.__init__(self, ui, topic, opts, _nullconverter)
+        self._out = out
+        self._out.write(cborutil.BEGIN_INDEFINITE_ARRAY)
+    def _showitem(self):
+        self._out.write(b''.join(cborutil.streamencode(self._item)))
+    def end(self):
+        baseformatter.end(self)
+        self._out.write(cborutil.BREAK)
 
 class jsonformatter(baseformatter):
     def __init__(self, ui, out, topic, opts):
@@ -617,7 +630,9 @@ class templateresources(templater.resourcemapper):
 
 def formatter(ui, out, topic, opts):
     template = opts.get("template", "")
-    if template == "json":
+    if template == "cbor":
+        return cborformatter(ui, out, topic, opts)
+    elif template == "json":
         return jsonformatter(ui, out, topic, opts)
     elif template == "pickle":
         return pickleformatter(ui, out, topic, opts)

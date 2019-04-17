@@ -163,8 +163,8 @@ option.
     (options, args) = optparser.parse_args()
 
     ui = uimod.ui.load()
-    ui.setconfig('ui', 'verbose', options.verbose, '--verbose')
-    ui.setconfig('ui', 'debug', options.debug, '--debug')
+    ui.setconfig(b'ui', b'verbose', options.verbose, b'--verbose')
+    ui.setconfig(b'ui', b'debug', options.debug, b'--debug')
 
     if options.file:
         if checkfile(ui, options.file, options.initlevel):

@@ -84,6 +84,7 @@ EXTRA ATTRIBUTES AND METHODS
 
 from __future__ import absolute_import, print_function
 
+import collections
 import errno
 import hashlib
 import socket
@@ -114,15 +115,13 @@ class ConnectionManager(object):
       """
     def __init__(self):
         self._lock = threading.Lock()
-        self._hostmap = {} # map hosts to a list of connections
+        self._hostmap = collections.defaultdict(list) # host -> [connection]
         self._connmap = {} # map connections to host
         self._readymap = {} # map connection to ready state
 
     def add(self, host, connection, ready):
         self._lock.acquire()
         try:
-            if host not in self._hostmap:
-                self._hostmap[host] = []
             self._hostmap[host].append(connection)
             self._connmap[connection] = host
             self._readymap[connection] = ready
@@ -155,19 +154,18 @@ class ConnectionManager(object):
         conn = None
         self._lock.acquire()
         try:
-            if host in self._hostmap:
-                for c in self._hostmap[host]:
-                    if self._readymap[c]:
-                        self._readymap[c] = 0
-                        conn = c
-                        break
+            for c in self._hostmap[host]:
+                if self._readymap[c]:
+                    self._readymap[c] = False
+                    conn = c
+                    break
         finally:
             self._lock.release()
         return conn
 
     def get_all(self, host=None):
         if host:
-            return list(self._hostmap.get(host, []))
+            return list(self._hostmap[host])
         else:
             return dict(self._hostmap)
 
@@ -202,7 +200,7 @@ class KeepAliveHandler(object):
     def _request_closed(self, request, host, connection):
         """tells us that this request is now closed and that the
         connection is ready for another request"""
-        self._cm.set_ready(connection, 1)
+        self._cm.set_ready(connection, True)
 
     def _remove_connection(self, host, connection, close=0):
         if close:
@@ -239,7 +237,7 @@ class KeepAliveHandler(object):
                 if DEBUG:
                     DEBUG.info("creating new connection to %s (%d)",
                                host, id(h))
-                self._cm.add(host, h, 0)
+                self._cm.add(host, h, False)
                 self._start_transaction(h, req)
                 r = h.getresponse()
         # The string form of BadStatusLine is the status line. Add some context
@@ -405,6 +403,11 @@ class HTTPResponse(httplib.HTTPResponse):
     _raw_read = httplib.HTTPResponse.read
     _raw_readinto = getattr(httplib.HTTPResponse, 'readinto', None)
 
+    # Python 2.7 has a single close() which closes the socket handle.
+    # This method was effectively renamed to _close_conn() in Python 3. But
+    # there is also a close(). _close_conn() is called by methods like
+    # read().
+
     def close(self):
         if self.fp:
             self.fp.close()
@@ -412,6 +415,9 @@ class HTTPResponse(httplib.HTTPResponse):
             if self._handler:
                 self._handler._request_closed(self, self._host,
                                               self._connection)
+
+    def _close_conn(self):
+        self.close()
 
     def close_connection(self):
         self._handler._remove_connection(self._host, self._connection, close=1)

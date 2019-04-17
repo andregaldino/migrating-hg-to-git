@@ -71,8 +71,8 @@ def perf(revset, target=None, contexts=False):
             print(exc.output, file=sys.stderr)
         return None
 
-outputre = re.compile(r'! wall (\d+.\d+) comb (\d+.\d+) user (\d+.\d+) '
-                      'sys (\d+.\d+) \(best of (\d+)\)')
+outputre = re.compile(br'! wall (\d+.\d+) comb (\d+.\d+) user (\d+.\d+) '
+                      br'sys (\d+.\d+) \(best of (\d+)\)')
 
 def parseoutput(output):
     """parse a textual output into a dict

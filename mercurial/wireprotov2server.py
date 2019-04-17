@@ -23,6 +23,7 @@ from . import (
     narrowspec,
     pycompat,
     streamclone,
+    templatefilters,
     util,
     wireprotoframing,
     wireprototypes,
@@ -148,8 +149,6 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
     tracker. We then dump the log of all that activity back out to the
     client.
     """
-    import json
-
     # Reflection APIs have a history of being abused, accidentally disclosing
     # sensitive data, etc. So we have a config knob.
     if not ui.configbool('experimental', 'web.api.debugreflect'):
@@ -175,12 +174,11 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
                                                   frame.payload))
 
         action, meta = reactor.onframerecv(frame)
-        states.append(json.dumps((action, meta), sort_keys=True,
-                                 separators=(', ', ': ')))
+        states.append(templatefilters.json((action, meta)))
 
     action, meta = reactor.oninputeof()
     meta['action'] = action
-    states.append(json.dumps(meta, sort_keys=True, separators=(', ',': ')))
+    states.append(templatefilters.json(meta))
 
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = b'text/plain'
@@ -344,7 +342,8 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
                                      action)
 
 def getdispatchrepo(repo, proto, command):
-    return repo.filtered('served')
+    viewconfig = repo.ui.config('server', 'view')
+    return repo.filtered(viewconfig)
 
 def dispatch(repo, proto, command, redirect):
     """Run a wire protocol command.
@@ -390,7 +389,8 @@ def dispatch(repo, proto, command, redirect):
         return
 
     with cacher:
-        cachekey = entry.cachekeyfn(repo, proto, cacher, **args)
+        cachekey = entry.cachekeyfn(repo, proto, cacher,
+                                    **pycompat.strkwargs(args))
 
         # No cache key or the cacher doesn't like it. Do default handling.
         if cachekey is None or not cacher.setcachekey(cachekey):
@@ -744,7 +744,7 @@ def makecommandcachekeyfn(command, localversion=None, allargs=False):
             # More granular cache key invalidation.
             b'localversion': localversion,
             # Cache keys are segmented by command.
-            b'command': pycompat.sysbytes(command),
+            b'command': command,
             # Throw in the media type and API version strings so changes
             # to exchange semantics invalid cache.
             b'mediatype': FRAMINGTYPE,

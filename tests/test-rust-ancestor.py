@@ -19,6 +19,7 @@ else:
         LazyAncestors,
         MissingAncestors,
     )
+    from mercurial.rustext import dagop
 
 try:
     from mercurial.cext import parsers as cparsers
@@ -164,6 +165,10 @@ class rustancestorstest(unittest.TestCase):
         idx = self.parseindex()
         with self.assertRaises(error.WdirUnsupported):
             list(AncestorsIterator(idx, [node.wdirrev], -1, False))
+
+    def testheadrevs(self):
+        idx = self.parseindex()
+        self.assertEqual(dagop.headrevs(idx, [1, 2, 3]), {3})
 
 if __name__ == '__main__':
     import silenttestrunner

@@ -31,6 +31,13 @@ Issue2232: committing a subrepo without .hgsub
   a
   s/a
 
+`hg files` respects ui.relative-paths
+BROKEN: shows subrepo paths relative to the subrepo
+  $ hg files -S --config ui.relative-paths=no
+  .hgsub
+  a
+  s/a
+
   $ hg -R s ci -Ams0
   $ hg sum
   parent: 0:f7b1eb17ad24 tip
@@ -1257,6 +1264,7 @@ Check that share works with subrepo
   ../shared/subrepo-2/.hg/wcache/checkisexec (execbit !)
   ../shared/subrepo-2/.hg/wcache/checklink (symlink !)
   ../shared/subrepo-2/.hg/wcache/checklink-target (symlink !)
+  ../shared/subrepo-2/.hg/wcache/manifestfulltextcache (reporevlogstore !)
   ../shared/subrepo-2/file
   $ hg -R ../shared in
   abort: repository default not found!
@@ -1866,6 +1874,19 @@ Test that '[paths]' is configured correctly at subrepo creation
   +++ b/bar.txt
   @@ -0,0 +1,1 @@
   +bar
+
+  $ hg diff -X '.hgsub*' --nodates s
+  diff -r 000000000000 s/a
+  --- /dev/null
+  +++ b/s/a
+  @@ -0,0 +1,1 @@
+  +a
+  $ hg diff -X '.hgsub*' --nodates s/a
+  diff -r 000000000000 s/a
+  --- /dev/null
+  +++ b/s/a
+  @@ -0,0 +1,1 @@
+  +a
 
   $ cd ..
 

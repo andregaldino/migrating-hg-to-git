@@ -287,7 +287,6 @@ folded content is dropped during a merge. The folded commit should properly disa
   > drop 888f9082bf99 2 +5
   > fold 251d831eeec5 3 +6
   > EOF
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   merging file
   warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
   Fix up the change (fold 251d831eeec5)
@@ -361,7 +360,6 @@ dropped revision.
   > drop 888f9082bf99 2 +5
   > fold 251d831eeec5 3 +6
   > EOF
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   merging file
   warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
   Fix up the change (fold 251d831eeec5)
@@ -541,6 +539,7 @@ editors.
   > fold b7389cc4d66e 3 foo2
   > fold 21679ff7675c 4 foo3
   > EOF
+  merging foo
   $ hg logt
   2:e8bedbda72c1 merged foos
   1:578c7455730c a

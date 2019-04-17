@@ -151,7 +151,7 @@ pull
   $ cd copy-pull
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
-  > changegroup = sh -c "printenv.py changegroup"
+  > changegroup = sh -c "printenv.py --line changegroup"
   > EOF
   $ hg pull
   pulling from http://localhost:$HGPORT1/
@@ -161,7 +161,16 @@ pull
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets 5fed3813f7f5
-  changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=5fed3813f7f5e1824344fdc9cf8f63bb662c292d HG_NODE_LAST=5fed3813f7f5e1824344fdc9cf8f63bb662c292d HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=http://localhost:$HGPORT1/
+  changegroup hook: HG_HOOKNAME=changegroup
+  HG_HOOKTYPE=changegroup
+  HG_NODE=5fed3813f7f5e1824344fdc9cf8f63bb662c292d
+  HG_NODE_LAST=5fed3813f7f5e1824344fdc9cf8f63bb662c292d
+  HG_SOURCE=pull
+  HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  http://localhost:$HGPORT1/
+  HG_URL=http://localhost:$HGPORT1/
+  
   (run 'hg update' to get a working copy)
   $ cd ..
 
@@ -175,22 +184,9 @@ test http authentication
 + use the same server to test server side streaming preference
 
   $ cd test
-  $ cat << EOT > userpass.py
-  > import base64
-  > from mercurial.hgweb import common
-  > def perform_authentication(hgweb, req, op):
-  >     auth = req.headers.get(b'Authorization')
-  >     if not auth:
-  >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, b'who',
-  >                 [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
-  >     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user',
-  >                                                             b'pass']:
-  >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
-  > def extsetup(ui):
-  >     common.permhooks.insert(0, perform_authentication)
-  > EOT
-  $ hg serve --config extensions.x=userpass.py -p $HGPORT2 -d --pid-file=pid \
-  >    --config server.preferuncompressed=True \
+
+  $ hg serve --config extensions.x=$TESTDIR/httpserverauth.py -p $HGPORT2 -d \
+  >    --pid-file=pid --config server.preferuncompressed=True \
   >    --config web.push_ssl=False --config web.allow_push=* -A ../access.log
   $ cat pid >> $DAEMON_PIDS
 

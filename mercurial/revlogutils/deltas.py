@@ -637,7 +637,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 
     deltas_limit = textlen * LIMIT_DELTA2TEXT
 
-    tested = set([nullrev])
+    tested = {nullrev}
     candidates = _refinedgroups(revlog, p1, p2, cachedelta)
     while True:
         temptative = candidates.send(good)
@@ -916,7 +916,7 @@ class deltacomputer(object):
                     and currentbase != base
                     and self.revlog.length(currentbase) == 0):
                 currentbase = self.revlog.deltaparent(currentbase)
-            if currentbase == base:
+            if self.revlog._lazydelta and currentbase == base:
                 delta = revinfo.cachedelta[1]
         if delta is None:
             delta = self._builddeltadiff(base, revinfo, fh)

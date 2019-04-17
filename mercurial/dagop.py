@@ -28,7 +28,7 @@ baseset = smartset.baseset
 generatorset = smartset.generatorset
 
 # possible maximum depth between null and wdir()
-_maxlogdepth = 0x80000000
+maxlogdepth = 0x80000000
 
 def _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse):
     """Walk DAG using 'pfunc' from the given 'revs' nodes
@@ -42,7 +42,7 @@ def _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse):
     if startdepth is None:
         startdepth = 0
     if stopdepth is None:
-        stopdepth = _maxlogdepth
+        stopdepth = maxlogdepth
     if stopdepth == 0:
         return
     if stopdepth < 0:
@@ -142,7 +142,7 @@ def _genrevancestors(repo, revs, followfirst, startdepth, stopdepth, cutfunc):
 
 def revancestors(repo, revs, followfirst=False, startdepth=None,
                  stopdepth=None, cutfunc=None):
-    """Like revlog.ancestors(), but supports additional options, includes
+    r"""Like revlog.ancestors(), but supports additional options, includes
     the given revs themselves, and returns a smartset
 
     Scan ends at the stopdepth (exlusive) if specified. Revisions found
@@ -221,7 +221,7 @@ def revdescendants(repo, revs, followfirst, startdepth=None, stopdepth=None):
     Scan ends at the stopdepth (exlusive) if specified. Revisions found
     earlier than the startdepth are omitted.
     """
-    if startdepth is None and stopdepth is None:
+    if startdepth is None and (stopdepth is None or stopdepth >= maxlogdepth):
         gen = _genrevdescendants(repo, revs, followfirst)
     else:
         gen = _genrevdescendantsofdepth(repo, revs, followfirst,
@@ -764,7 +764,7 @@ def headrevs(revs, parentsfn):
     the input set.
     """
     headrevs = set(revs)
-    parents = set([node.nullrev])
+    parents = {node.nullrev}
     up = parents.update
 
     for rev in revs:

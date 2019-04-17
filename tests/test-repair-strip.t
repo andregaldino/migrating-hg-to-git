@@ -53,7 +53,7 @@
   rollback failed - please run hg recover
   (failure reason: [Errno 13] Permission denied .hg/store/data/b.i')
   strip failed, backup bundle
-  abort: Permission denied .hg/store/data/b.i
+  abort: Permission denied .hg/store/data/b.i'
   % after update 0, strip 2
   abandoned transaction found - run hg recover
   checking changesets
@@ -85,7 +85,7 @@
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     a
   
-  abort: Permission denied .hg/store/data/b.i
+  abort: Permission denied .hg/store/data/b.i'
   % after update 0, strip 2
   checking changesets
   checking manifests
@@ -107,7 +107,7 @@
   rollback failed - please run hg recover
   (failure reason: [Errno 13] Permission denied .hg/store/00manifest.i')
   strip failed, backup bundle
-  abort: Permission denied .hg/store/00manifest.i
+  abort: Permission denied .hg/store/00manifest.i'
   % after update 0, strip 2
   abandoned transaction found - run hg recover
   checking changesets

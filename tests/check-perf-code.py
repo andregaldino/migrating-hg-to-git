@@ -10,7 +10,7 @@ import sys
 # write static check patterns here
 perfpypats = [
   [
-    (r'(branchmap|repoview)\.subsettable',
+    (r'(branchmap|repoview|repoviewutil)\.subsettable',
      "use getbranchmapsubsettable() for early Mercurial"),
     (r'\.(vfs|svfs|opener|sopener)',
      "use getvfs()/getsvfs() for early Mercurial"),
@@ -24,7 +24,7 @@ perfpypats = [
 
 def modulewhitelist(names):
     replacement = [('.py', ''), ('.c', ''), # trim suffix
-                   ('mercurial%s' % (os.sep), ''), # trim "mercurial/" path
+                   ('mercurial%s' % ('/'), ''), # trim "mercurial/" path
                   ]
     ignored = {'__init__'}
     modules = {}

@@ -76,6 +76,7 @@ shelve has a help message
       --date DATE           shelve with the specified commit date
    -d --delete              delete the named shelved change(s)
    -e --edit                invoke editor on commit messages
+   -k --keep                shelve, but keep changes in the working directory
    -l --list                list current shelves
    -m --message TEXT        use text as shelve message
    -n --name NAME           use the given name for the shelved commit
@@ -927,6 +928,29 @@ with general delta
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       330882a04d2ce8487636b1fb292e5beea77fa1e3
+
+Test shelve --keep
+
+  $ hg unshelve
+  unshelving change 'default'
+  $ hg shelve --keep --list
+  abort: options '--list' and '--keep' may not be used together
+  [255]
+  $ hg shelve --keep --patch
+  abort: options '--patch' and '--keep' may not be used together
+  [255]
+  $ hg shelve --keep --delete
+  abort: options '--delete' and '--keep' may not be used together
+  [255]
+  $ hg shelve --keep
+  shelved as default
+  $ hg diff
+  diff --git a/jungle b/jungle
+  new file mode 100644
+  --- /dev/null
+  +++ b/jungle
+  @@ -0,0 +1,1 @@
+  +babar
   $ cd ..
 
 Test visibility of in-memory changes inside transaction to external hook
@@ -1085,5 +1109,51 @@ Keep active bookmark while (un)shelving even on shared repo (issue4940)
   $ hg bookmarks
    \* foo                       (5|19):703117a2acfb (re)
      test                      (4|13):33f7f61e6c5e (re)
+
+  $ cd ..
+
+Abort unshelve while merging (issue5123)
+----------------------------------------
+
+  $ hg init issue5123
+  $ cd issue5123
+  $ echo > a
+  $ hg ci -Am a
+  adding a
+  $ hg co null
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo > b
+  $ hg ci -Am b
+  adding b
+  created new head
+  $ echo > c
+  $ hg add c
+  $ hg shelve
+  shelved as default
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg co 1
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 0
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+-- successful merge with two parents
+  $ hg log -G
+  @  changeset:   1:406bf70c274f
+     tag:         tip
+     parent:      -1:000000000000
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     b
+  
+  @  changeset:   0:ada8c9eb8252
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     a
+  
+-- trying to pull in the shelve bits
+-- unshelve should abort otherwise, it'll eat my second parent.
+  $ hg unshelve
+  abort: cannot unshelve while merging
+  [255]
 
   $ cd ..

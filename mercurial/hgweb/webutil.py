@@ -456,13 +456,13 @@ def changelistentry(web, ctx):
     files = listfilediffs(ctx.files(), n, web.maxfiles)
 
     entry = commonentry(repo, ctx)
-    entry.update(
-        allparents=_kwfunc(lambda context, mapping: parents(ctx)),
-        parent=_kwfunc(lambda context, mapping: parents(ctx, rev - 1)),
-        child=_kwfunc(lambda context, mapping: children(ctx, rev + 1)),
-        changelogtag=showtags,
-        files=files,
-    )
+    entry.update({
+        'allparents': _kwfunc(lambda context, mapping: parents(ctx)),
+        'parent': _kwfunc(lambda context, mapping: parents(ctx, rev - 1)),
+        'child': _kwfunc(lambda context, mapping: children(ctx, rev + 1)),
+        'changelogtag': showtags,
+        'files': files,
+    })
     return entry
 
 def changelistentries(web, revs, maxcount, parityfn):
@@ -565,16 +565,14 @@ def _prettyprintdifflines(context, lines, blockno, lineidprefix):
 def _diffsgen(context, repo, ctx, basectx, files, style, stripecount,
               linerange, lineidprefix):
     if files:
-        m = match.exact(repo.root, repo.getcwd(), files)
+        m = match.exact(files)
     else:
-        m = match.always(repo.root, repo.getcwd())
+        m = match.always()
 
     diffopts = patch.diffopts(repo.ui, untrusted=True)
-    node1 = basectx.node()
-    node2 = ctx.node()
     parity = paritygen(stripecount)
 
-    diffhunks = patch.diffhunks(repo, node1, node2, m, opts=diffopts)
+    diffhunks = patch.diffhunks(repo, basectx, ctx, m, opts=diffopts)
     for blockno, (fctx1, fctx2, header, hunks) in enumerate(diffhunks, 1):
         if style != 'raw':
             header = header[1:]

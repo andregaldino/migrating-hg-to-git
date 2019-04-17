@@ -126,8 +126,9 @@ static Py_ssize_t _encodedir(char *dest, size_t destsize, const char *src,
 			if (src[i] == 'g') {
 				state = DHGDI;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			} else
+			} else {
 				state = DDEFAULT;
+			}
 			break;
 		case DHGDI:
 			if (src[i] == '/') {
@@ -137,8 +138,9 @@ static Py_ssize_t _encodedir(char *dest, size_t destsize, const char *src,
 			state = DDEFAULT;
 			break;
 		case DDEFAULT:
-			if (src[i] == '.')
+			if (src[i] == '.') {
 				state = DDOT;
+			}
 			charcopy(dest, &destlen, destsize, src[i++]);
 			break;
 		}
@@ -153,8 +155,9 @@ PyObject *encodedir(PyObject *self, PyObject *args)
 	PyObject *pathobj, *newobj;
 	char *path;
 
-	if (!PyArg_ParseTuple(args, "O:encodedir", &pathobj))
+	if (!PyArg_ParseTuple(args, "O:encodedir", &pathobj)) {
 		return NULL;
+	}
 
 	if (PyBytes_AsStringAndSize(pathobj, &path, &len) == -1) {
 		PyErr_SetString(PyExc_TypeError, "expected a string");
@@ -235,15 +238,17 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			if (src[i] == 'u') {
 				state = AU;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case AU:
 			if (src[i] == 'x') {
 				state = THIRD;
 				i++;
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case THIRD:
 			state = DEFAULT;
@@ -262,8 +267,9 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			if (src[i] == 'o') {
 				state = CO;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case CO:
 			if (src[i] == 'm') {
@@ -272,8 +278,9 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			} else if (src[i] == 'n') {
 				state = THIRD;
 				i++;
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case COMLPT:
 			switch (src[i]) {
@@ -314,43 +321,49 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			if (src[i] == 'p') {
 				state = LP;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case LP:
 			if (src[i] == 't') {
 				state = COMLPT;
 				i++;
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case N:
 			if (src[i] == 'u') {
 				state = NU;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case NU:
 			if (src[i] == 'l') {
 				state = THIRD;
 				i++;
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case P:
 			if (src[i] == 'r') {
 				state = PR;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case PR:
 			if (src[i] == 'n') {
 				state = THIRD;
 				i++;
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case LDOT:
 			switch (src[i]) {
@@ -397,18 +410,21 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			if (src[i] == 'g') {
 				state = HGDI;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case HGDI:
 			if (src[i] == '/') {
 				state = START;
-				if (encodedir)
+				if (encodedir) {
 					memcopy(dest, &destlen, destsize, ".hg",
 					        3);
+				}
 				charcopy(dest, &destlen, destsize, src[i++]);
-			} else
+			} else {
 				state = DEFAULT;
+			}
 			break;
 		case SPACE:
 			switch (src[i]) {
@@ -427,8 +443,9 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 		case DEFAULT:
 			while (inset(onebyte, src[i])) {
 				charcopy(dest, &destlen, destsize, src[i++]);
-				if (i == len)
+				if (i == len) {
 					goto done;
+				}
 			}
 			switch (src[i]) {
 			case '.':
@@ -456,9 +473,10 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 					charcopy(dest, &destlen, destsize, '_');
 					charcopy(dest, &destlen, destsize,
 					         c == '_' ? '_' : c + 32);
-				} else
+				} else {
 					escape3(dest, &destlen, destsize,
 					        src[i++]);
+				}
 				break;
 			}
 			break;
@@ -498,12 +516,13 @@ static Py_ssize_t _lowerencode(char *dest, size_t destsize, const char *src,
 	Py_ssize_t i, destlen = 0;
 
 	for (i = 0; i < len; i++) {
-		if (inset(onebyte, src[i]))
+		if (inset(onebyte, src[i])) {
 			charcopy(dest, &destlen, destsize, src[i]);
-		else if (inset(lower, src[i]))
+		} else if (inset(lower, src[i])) {
 			charcopy(dest, &destlen, destsize, src[i] + 32);
-		else
+		} else {
 			escape3(dest, &destlen, destsize, src[i]);
+		}
 	}
 
 	return destlen;
@@ -516,13 +535,15 @@ PyObject *lowerencode(PyObject *self, PyObject *args)
 	PyObject *ret;
 
 	if (!PyArg_ParseTuple(args, PY23("s#:lowerencode", "y#:lowerencode"),
-	                      &path, &len))
+	                      &path, &len)) {
 		return NULL;
+	}
 
 	newlen = _lowerencode(NULL, 0, path, len);
 	ret = PyBytes_FromStringAndSize(NULL, newlen);
-	if (ret)
+	if (ret) {
 		_lowerencode(PyBytes_AS_STRING(ret), newlen, path, len);
+	}
 
 	return ret;
 }
@@ -551,8 +572,9 @@ static PyObject *hashmangle(const char *src, Py_ssize_t len, const char sha[20])
 	Py_ssize_t destsize, destlen = 0, slop, used;
 
 	while (lastslash >= 0 && src[lastslash] != '/') {
-		if (src[lastslash] == '.' && lastdot == -1)
+		if (src[lastslash] == '.' && lastdot == -1) {
 			lastdot = lastslash;
+		}
 		lastslash--;
 	}
 
@@ -570,12 +592,14 @@ static PyObject *hashmangle(const char *src, Py_ssize_t len, const char sha[20])
 	/* If src contains a suffix, we will append it to the end of
 	   the new string, so make room. */
 	destsize = 120;
-	if (lastdot >= 0)
+	if (lastdot >= 0) {
 		destsize += len - lastdot - 1;
+	}
 
 	ret = PyBytes_FromStringAndSize(NULL, destsize);
-	if (ret == NULL)
+	if (ret == NULL) {
 		return NULL;
+	}
 
 	dest = PyBytes_AS_STRING(ret);
 	memcopy(dest, &destlen, destsize, "dh/", 3);
@@ -587,30 +611,36 @@ static PyObject *hashmangle(const char *src, Py_ssize_t len, const char sha[20])
 			char d = dest[destlen - 1];
 			/* After truncation, a directory name may end
 			   in a space or dot, which are unportable. */
-			if (d == '.' || d == ' ')
+			if (d == '.' || d == ' ') {
 				dest[destlen - 1] = '_';
-			/* The + 3 is to account for "dh/" in the beginning */
-			if (destlen > maxshortdirslen + 3)
+				/* The + 3 is to account for "dh/" in the
+				 * beginning */
+			}
+			if (destlen > maxshortdirslen + 3) {
 				break;
+			}
 			charcopy(dest, &destlen, destsize, src[i]);
 			p = -1;
-		} else if (p < dirprefixlen)
+		} else if (p < dirprefixlen) {
 			charcopy(dest, &destlen, destsize, src[i]);
+		}
 	}
 
 	/* Rewind to just before the last slash copied. */
-	if (destlen > maxshortdirslen + 3)
+	if (destlen > maxshortdirslen + 3) {
 		do {
 			destlen--;
 		} while (destlen > 0 && dest[destlen] != '/');
+	}
 
 	if (destlen > 3) {
 		if (lastslash > 0) {
 			char d = dest[destlen - 1];
 			/* The last directory component may be
 			   truncated, so make it safe. */
-			if (d == '.' || d == ' ')
+			if (d == '.' || d == ' ') {
 				dest[destlen - 1] = '_';
+			}
 		}
 
 		charcopy(dest, &destlen, destsize, '/');
@@ -620,27 +650,32 @@ static PyObject *hashmangle(const char *src, Py_ssize_t len, const char sha[20])
 	   depends on the number of bytes left after accounting for
 	   hash and suffix. */
 	used = destlen + 40;
-	if (lastdot >= 0)
+	if (lastdot >= 0) {
 		used += len - lastdot - 1;
+	}
 	slop = maxstorepathlen - used;
 	if (slop > 0) {
 		Py_ssize_t basenamelen =
 		    lastslash >= 0 ? len - lastslash - 2 : len - 1;
 
-		if (basenamelen > slop)
+		if (basenamelen > slop) {
 			basenamelen = slop;
-		if (basenamelen > 0)
+		}
+		if (basenamelen > 0) {
 			memcopy(dest, &destlen, destsize, &src[lastslash + 1],
 			        basenamelen);
+		}
 	}
 
 	/* Add hash and suffix. */
-	for (i = 0; i < 20; i++)
+	for (i = 0; i < 20; i++) {
 		hexencode(dest, &destlen, destsize, sha[i]);
+	}
 
-	if (lastdot >= 0)
+	if (lastdot >= 0) {
 		memcopy(dest, &destlen, destsize, &src[lastdot],
 		        len - lastdot - 1);
+	}
 
 	assert(PyBytes_Check(ret));
 	Py_SIZE(ret) = destlen;
@@ -677,13 +712,15 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 
 	shaobj = PyObject_CallFunction(shafunc, PY23("s#", "y#"), str, len);
 
-	if (shaobj == NULL)
+	if (shaobj == NULL) {
 		return -1;
+	}
 
 	hashobj = PyObject_CallMethod(shaobj, "digest", "");
 	Py_DECREF(shaobj);
-	if (hashobj == NULL)
+	if (hashobj == NULL) {
 		return -1;
+	}
 
 	if (!PyBytes_Check(hashobj) || PyBytes_GET_SIZE(hashobj) != 20) {
 		PyErr_SetString(PyExc_TypeError,
@@ -714,8 +751,9 @@ static PyObject *hashencode(const char *src, Py_ssize_t len)
 	}
 
 	dirlen = _encodedir(dired, baselen, src, len);
-	if (sha1hash(sha, dired, dirlen - 1) == -1)
+	if (sha1hash(sha, dired, dirlen - 1) == -1) {
 		return NULL;
+	}
 	lowerlen = _lowerencode(lowered, baselen, dired + 5, dirlen - 5);
 	auxlen = auxencode(auxed, baselen, lowered, lowerlen);
 	return hashmangle(auxed, auxlen, sha);
@@ -727,18 +765,20 @@ PyObject *pathencode(PyObject *self, PyObject *args)
 	PyObject *pathobj, *newobj;
 	char *path;
 
-	if (!PyArg_ParseTuple(args, "O:pathencode", &pathobj))
+	if (!PyArg_ParseTuple(args, "O:pathencode", &pathobj)) {
 		return NULL;
+	}
 
 	if (PyBytes_AsStringAndSize(pathobj, &path, &len) == -1) {
 		PyErr_SetString(PyExc_TypeError, "expected a string");
 		return NULL;
 	}
 
-	if (len > maxstorepathlen)
+	if (len > maxstorepathlen) {
 		newlen = maxstorepathlen + 2;
-	else
+	} else {
 		newlen = len ? basicencode(NULL, 0, path, len + 1) : 1;
+	}
 
 	if (newlen <= maxstorepathlen + 1) {
 		if (newlen == len + 1) {
@@ -754,8 +794,9 @@ PyObject *pathencode(PyObject *self, PyObject *args)
 			basicencode(PyBytes_AS_STRING(newobj), newlen, path,
 			            len + 1);
 		}
-	} else
+	} else {
 		newobj = hashencode(path, len + 1);
+	}
 
 	return newobj;
 }

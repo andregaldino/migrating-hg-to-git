@@ -924,9 +924,9 @@ revert moves orig files to the right place
   $ echo 'bloop' > s/foobar
   $ hg revert --all --verbose --config 'ui.origbackuppath=.hg/origbackups'
   reverting subrepo ../gitroot
-  creating directory: $TESTTMP/tc/.hg/origbackups
-  saving current version of foobar as $TESTTMP/tc/.hg/origbackups/foobar
-  $ ls .hg/origbackups
+  creating directory: $TESTTMP/tc/.hg/origbackups/s
+  saving current version of foobar as .hg/origbackups/s/foobar
+  $ ls .hg/origbackups/s
   foobar
   $ rm -rf .hg/origbackups
 

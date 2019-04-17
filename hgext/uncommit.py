@@ -25,7 +25,7 @@ from mercurial import (
     cmdutil,
     commands,
     context,
-    copies,
+    copies as copiesmod,
     error,
     node,
     obsutil,
@@ -33,6 +33,7 @@ from mercurial import (
     registrar,
     rewriteutil,
     scmutil,
+    util,
 )
 
 cmdtable = {}
@@ -42,6 +43,9 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem('experimental', 'uncommitondirtywdir',
+    default=False,
+)
+configitem('experimental', 'uncommit.keep',
     default=False,
 )
 
@@ -64,13 +68,13 @@ def _commitfiltered(repo, ctx, match, keepcommit):
     if not exclude:
         return None
 
-    files = (initialfiles - exclude)
     # return the p1 so that we don't create an obsmarker later
     if not keepcommit:
-        return ctx.parents()[0].node()
+        return ctx.p1().node()
 
+    files = (initialfiles - exclude)
     # Filter copies
-    copied = copies.pathcopies(base, ctx)
+    copied = copiesmod.pathcopies(base, ctx)
     copied = dict((dst, src) for dst, src in copied.iteritems()
                   if dst in files)
     def filectxfn(repo, memctx, path, contentctx=ctx, redirect=()):
@@ -80,8 +84,11 @@ def _commitfiltered(repo, ctx, match, keepcommit):
         mctx = context.memfilectx(repo, memctx, fctx.path(), fctx.data(),
                                   fctx.islink(),
                                   fctx.isexec(),
-                                  copied=copied.get(path))
+                                  copysource=copied.get(path))
         return mctx
+
+    if not files:
+        repo.ui.status(_("note: keeping empty commit\n"))
 
     new = context.memctx(repo,
                          parents=[base.node(), node.nullid],
@@ -93,50 +100,10 @@ def _commitfiltered(repo, ctx, match, keepcommit):
                          extra=ctx.extra())
     return repo.commitctx(new)
 
-def _fixdirstate(repo, oldctx, newctx, status):
-    """ fix the dirstate after switching the working directory from oldctx to
-    newctx which can be result of either unamend or uncommit.
-    """
-    ds = repo.dirstate
-    copies = dict(ds.copies())
-    s = status
-    for f in s.modified:
-        if ds[f] == 'r':
-            # modified + removed -> removed
-            continue
-        ds.normallookup(f)
-
-    for f in s.added:
-        if ds[f] == 'r':
-            # added + removed -> unknown
-            ds.drop(f)
-        elif ds[f] != 'a':
-            ds.add(f)
-
-    for f in s.removed:
-        if ds[f] == 'a':
-            # removed + added -> normal
-            ds.normallookup(f)
-        elif ds[f] != 'r':
-            ds.remove(f)
-
-    # Merge old parent and old working dir copies
-    oldcopies = {}
-    for f in (s.modified + s.added):
-        src = oldctx[f].renamed()
-        if src:
-            oldcopies[f] = src[0]
-    oldcopies.update(copies)
-    copies = dict((dst, oldcopies.get(src, src))
-                  for dst, src in oldcopies.iteritems())
-    # Adjust the dirstate copies
-    for dst, src in copies.iteritems():
-        if (src not in newctx or dst in newctx or ds[dst] != 'a'):
-            src = None
-        ds.copy(src, dst)
-
 @command('uncommit',
-    [('', 'keep', False, _('allow an empty commit after uncommiting')),
+    [('', 'keep', None, _('allow an empty commit after uncommiting')),
+     ('', 'allow-dirty-working-copy', False,
+    _('allow uncommit with outstanding changes'))
     ] + commands.walkopts,
     _('[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
@@ -155,17 +122,52 @@ def uncommit(ui, repo, *pats, **opts):
 
     with repo.wlock(), repo.lock():
 
-        if not pats and not repo.ui.configbool('experimental',
-                                               'uncommitondirtywdir'):
-            cmdutil.bailifchanged(repo)
+        m, a, r, d = repo.status()[:4]
+        isdirtypath = any(set(m + a + r + d) & set(pats))
+        allowdirtywcopy = (opts['allow_dirty_working_copy'] or
+                    repo.ui.configbool('experimental', 'uncommitondirtywdir'))
+        if not allowdirtywcopy and (not pats or isdirtypath):
+            cmdutil.bailifchanged(repo, hint=_('requires '
+                                '--allow-dirty-working-copy to uncommit'))
         old = repo['.']
         rewriteutil.precheck(repo, [old.rev()], 'uncommit')
         if len(old.parents()) > 1:
             raise error.Abort(_("cannot uncommit merge changeset"))
 
+        match = scmutil.match(old, pats, opts)
+
+        # Check all explicitly given files; abort if there's a problem.
+        if match.files():
+            s = old.status(old.p1(), match, listclean=True)
+            eligible = set(s.added) | set(s.modified) | set(s.removed)
+
+            badfiles = set(match.files()) - eligible
+
+            # Naming a parent directory of an eligible file is OK, even
+            # if not everything tracked in that directory can be
+            # uncommitted.
+            if badfiles:
+                badfiles -= {f for f in util.dirs(eligible)}
+
+            for f in sorted(badfiles):
+                if f in s.clean:
+                    hint = _(b"file was not changed in working directory "
+                             b"parent")
+                elif repo.wvfs.exists(f):
+                    hint = _(b"file was untracked in working directory parent")
+                else:
+                    hint = _(b"file does not exist")
+
+                raise error.Abort(_(b'cannot uncommit "%s"')
+                                  % scmutil.getuipathfn(repo)(f), hint=hint)
+
         with repo.transaction('uncommit'):
-            match = scmutil.match(old, pats, opts)
-            keepcommit = opts.get('keep') or pats
+            keepcommit = pats
+            if not keepcommit:
+                if opts.get('keep') is not None:
+                    keepcommit = opts.get('keep')
+                else:
+                    keepcommit = ui.configbool('experimental', 'uncommit.keep')
             newid = _commitfiltered(repo, old, match, keepcommit)
             if newid is None:
                 ui.status(_("nothing to uncommit\n"))
@@ -179,12 +181,10 @@ def uncommit(ui, repo, *pats, **opts):
                 # Fully removed the old commit
                 mapping[old.node()] = ()
 
-            scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
-
             with repo.dirstate.parentchange():
-                repo.dirstate.setparents(newid, node.nullid)
-                s = old.p1().status(old, match=match)
-                _fixdirstate(repo, old, repo[newid], s)
+                scmutil.movedirstate(repo, repo[newid], match)
+
+            scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
 
 def predecessormarkers(ctx):
     """yields the obsolete markers marking the given changeset as a successor"""
@@ -244,9 +244,7 @@ def unamend(ui, repo, **opts):
         dirstate = repo.dirstate
 
         with dirstate.parentchange():
-            dirstate.setparents(newprednode, node.nullid)
-            s = repo.status(predctx, curctx)
-            _fixdirstate(repo, curctx, newpredctx, s)
+            scmutil.movedirstate(repo, newpredctx)
 
         mapping = {curctx.node(): (newprednode,)}
         scmutil.cleanupnodes(repo, mapping, 'unamend', fixphase=True)

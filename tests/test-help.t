@@ -825,7 +825,6 @@ this is a section and erroring out weirdly.
   > @command(b'hashelp', [], b'hg hashelp', norepo=True)
   > def hashelp(ui, *args, **kwargs):
   >     """Extension command's help"""
-  >     pass
   > 
   > def uisetup(ui):
   >     ui.setconfig(b'alias', b'shellalias', b'!echo hi', b'helpext')
@@ -1012,8 +1011,14 @@ Test list of internal help commands
    debugoptADV   (no help text available)
    debugoptDEP   (no help text available)
    debugoptEXP   (no help text available)
+   debugp1copies
+                 dump copy information compared to p1
+   debugp2copies
+                 dump copy information compared to p2
    debugpathcomplete
                  complete part or all of a tracked path
+   debugpathcopies
+                 show copies between two revisions
    debugpeer     establish a connection to a peer repository
    debugpickmergetool
                  examine which merge tool is chosen for specified file
@@ -1672,7 +1677,7 @@ Test unfound keyword
 Test omit indicating for help
 
   $ cat > addverboseitems.py <<EOF
-  > '''extension to test omit indicating.
+  > r'''extension to test omit indicating.
   > 
   > This paragraph is never omitted (for extension)
   > 
@@ -1685,7 +1690,7 @@ Test omit indicating for help
   > '''
   > from __future__ import absolute_import
   > from mercurial import commands, help
-  > testtopic = b"""This paragraph is never omitted (for topic).
+  > testtopic = br"""This paragraph is never omitted (for topic).
   > 
   > .. container:: verbose
   > 

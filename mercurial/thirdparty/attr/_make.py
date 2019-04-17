@@ -56,7 +56,7 @@ Sentinel to indicate the lack of a value when ``None`` is ambiguous.
 def attr(default=NOTHING, validator=None,
          repr=True, cmp=True, hash=None, init=True,
          convert=None, metadata={}):
-    """
+    r"""
     Create a new attribute on a class.
 
     ..  warning::
@@ -555,7 +555,10 @@ def _add_init(cls, frozen):
 
     # We cache the generated init methods for the same kinds of attributes.
     sha1 = hashlib.sha1()
-    sha1.update(repr(attrs).encode("utf-8"))
+    r = repr(attrs)
+    if not isinstance(r, bytes):
+        r = r.encode('utf-8')
+    sha1.update(r)
     unique_filename = "<attrs generated init {0}>".format(
         sha1.hexdigest()
     )

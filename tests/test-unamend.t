@@ -232,6 +232,7 @@ Unamending an added file with dirty wdir status
 
   $ hg revert --all
   forgetting bar
+  $ rm bar
 
 Unamending in middle of a stack
 
@@ -302,7 +303,6 @@ Trying to unamend a public changeset
 Testing whether unamend retains copies or not
 
   $ hg status
-  ? bar
 
   $ hg mv a foo
 
@@ -370,3 +370,42 @@ Retained copies in working directoy
   diff --git a/c b/wat
   rename from c
   rename to wat
+  $ hg revert -qa
+  $ rm foobar wat
+
+Rename a->b, then amend b->c. After unamend, should look like b->c.
+
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'move to a b'
+  $ hg mv b c
+  $ hg amend
+  $ hg unamend
+  $ hg st --copies --change .
+  A b
+    a
+  R a
+  $ hg st --copies
+  A c
+    b
+  R b
+  $ hg revert -qa
+  $ rm c
+
+Rename a->b, then amend b->c, and working copy change c->d. After unamend, should look like b->d
+
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'move to a b'
+  $ hg mv b c
+  $ hg amend
+  $ hg mv c d
+  $ hg unamend
+  $ hg st --copies --change .
+  A b
+    a
+  R a
+  $ hg st --copies
+  A d
+    b
+  R b

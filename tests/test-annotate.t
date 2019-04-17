@@ -438,15 +438,15 @@ and its ancestor by overriding "repo._filecommit".
   > def reposetup(ui, repo):
   >     class legacyrepo(repo.__class__):
   >         def _filecommit(self, fctx, manifest1, manifest2,
-  >                         linkrev, tr, changelist):
+  >                         linkrev, tr, changelist, includecopymeta):
   >             fname = fctx.path()
   >             text = fctx.data()
   >             flog = self.file(fname)
   >             fparent1 = manifest1.get(fname, node.nullid)
   >             fparent2 = manifest2.get(fname, node.nullid)
   >             meta = {}
-  >             copy = fctx.renamed()
-  >             if copy and copy[0] != fname:
+  >             copy = fctx.copysource()
+  >             if copy and copy != fname:
   >                 raise error.Abort('copying is not supported')
   >             if fparent2 != node.nullid:
   >                 changelist.append(fname)
@@ -589,7 +589,7 @@ annotate missing file
 
   $ hg annotate -ncr "wdir()" baz
   abort: $TESTTMP\repo\baz: $ENOENT$ (windows !)
-  abort: $ENOENT$: $TESTTMP/repo/baz (no-windows !)
+  abort: $ENOENT$: '$TESTTMP/repo/baz' (no-windows !)
   [255]
 
 annotate removed file
@@ -598,7 +598,7 @@ annotate removed file
 
   $ hg annotate -ncr "wdir()" baz
   abort: $TESTTMP\repo\baz: $ENOENT$ (windows !)
-  abort: $ENOENT$: $TESTTMP/repo/baz (no-windows !)
+  abort: $ENOENT$: '$TESTTMP/repo/baz' (no-windows !)
   [255]
 
   $ hg revert --all --no-backup --quiet
@@ -809,6 +809,15 @@ track of possible further descendants in specified range.
   |\
   ~ ~
 
+An integer as a line range, which is parsed as '1:1'
+
+  $ hg log -r 'followlines(baz, 1)'
+  changeset:   22:2174d0bf352a
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     added two lines with 0
+  
+
 check error cases
   $ hg up 24 --quiet
   $ hg log -r 'followlines()'
@@ -817,8 +826,8 @@ check error cases
   $ hg log -r 'followlines(baz)'
   hg: parse error: followlines requires a line range
   [255]
-  $ hg log -r 'followlines(baz, 1)'
-  hg: parse error: followlines expects a line range
+  $ hg log -r 'followlines(baz, x)'
+  hg: parse error: followlines expects a line number or a range
   [255]
   $ hg log -r 'followlines(baz, 1:2, startrev=desc("b"))'
   hg: parse error: followlines expects exactly one revision

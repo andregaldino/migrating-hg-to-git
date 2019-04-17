@@ -84,7 +84,6 @@ import errno
 import itertools
 import select
 import socket
-import string
 import struct
 import threading
 import time
@@ -106,7 +105,7 @@ _BROWSER_TIME = 500
 
 # Some DNS constants
 
-_MDNS_ADDR = '224.0.0.251'
+_MDNS_ADDR = r'224.0.0.251'
 _MDNS_PORT = 5353
 _DNS_PORT = 53
 _DNS_TTL = 60 * 60 # one hour default TTL
@@ -221,7 +220,7 @@ class DNSEntry(object):
     """A DNS entry"""
 
     def __init__(self, name, type, clazz):
-        self.key = string.lower(name)
+        self.key = name.lower()
         self.name = name
         self.type = type
         self.clazz = clazz & _CLASS_MASK
@@ -620,7 +619,7 @@ class DNSIncoming(object):
         first = off
 
         while True:
-            len = ord(self.data[off])
+            len = ord(self.data[off:off + 1])
             off += 1
             if len == 0:
                 break
@@ -631,7 +630,7 @@ class DNSIncoming(object):
             elif t == 0xC0:
                 if next < 0:
                     next = off + 1
-                off = ((len & 0x3F) << 8) | ord(self.data[off])
+                off = ((len & 0x3F) << 8) | ord(self.data[off:off + 1])
                 if off >= first:
                     raise BadDomainNameCircular(off)
                 first = off
@@ -938,7 +937,6 @@ class Listener(object):
         self.zeroconf.engine.addReader(self, self.zeroconf.socket)
 
     def handle_read(self):
-        data = addr = port = None
         sock = self.zeroconf.socket
         try:
             data, (addr, port) = sock.recvfrom(_MAX_MSG_ABSOLUTE)
@@ -1230,7 +1228,6 @@ class ServiceInfo(object):
         delay = _LISTENER_TIME
         next = now + delay
         last = now + timeout
-        result = 0
         try:
             zeroconf.addListener(self, DNSQuestion(self.name, _TYPE_ANY,
                                                    _CLASS_IN))
@@ -1335,7 +1332,7 @@ class Zeroconf(object):
             # SO_REUSEADDR and SO_REUSEPORT have been set, so ignore it
             pass
         self.socket.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP,
-            socket.inet_aton(_MDNS_ADDR) + socket.inet_aton('0.0.0.0'))
+            socket.inet_aton(_MDNS_ADDR) + socket.inet_aton(r'0.0.0.0'))
 
         self.listeners = []
         self.browsers = []
@@ -1659,7 +1656,7 @@ class Zeroconf(object):
             self.engine.notify()
             self.unregisterAllServices()
             self.socket.setsockopt(socket.SOL_IP, socket.IP_DROP_MEMBERSHIP,
-                socket.inet_aton(_MDNS_ADDR) + socket.inet_aton('0.0.0.0'))
+                socket.inet_aton(_MDNS_ADDR) + socket.inet_aton(r'0.0.0.0'))
             self.socket.close()
 
 # Test a few module features, including service registration, service

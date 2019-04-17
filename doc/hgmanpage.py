@@ -263,7 +263,7 @@ class Translator(nodes.NodeVisitor):
             # ensure we get a ".TH" as viewers require it.
             self.head.append(self.header())
         # filter body
-        for i in xrange(len(self.body) - 1, 0, -1):
+        for i in range(len(self.body) - 1, 0, -1):
             # remove superfluous vertical gaps.
             if self.body[i] == '.sp\n':
                 if self.body[i - 1][:4] in ('.BI ','.IP '):
@@ -335,7 +335,7 @@ class Translator(nodes.NodeVisitor):
                 elif style.endswith('roman'):
                     self._indent = 5
 
-            def next(self):
+            def __next__(self):
                 if self._style == 'bullet':
                     return self.enum_style[self._style]
                 elif self._style == 'emdash':
@@ -353,6 +353,9 @@ class Translator(nodes.NodeVisitor):
                     return res.lower()
                 else:
                     return "%d." % self._cnt
+
+            next = __next__
+
             def get_width(self):
                 return self._indent
             def __repr__(self):
@@ -376,7 +379,7 @@ class Translator(nodes.NodeVisitor):
         tmpl = (".TH %(title_upper)s %(manual_section)s"
                 " \"%(date)s\" \"%(version)s\" \"%(manual_group)s\"\n"
                 ".SH NAME\n"
-                "%(title)s \- %(subtitle)s\n")
+                "%(title)s \\- %(subtitle)s\n")
         return tmpl % self._docinfo
 
     def append_header(self):

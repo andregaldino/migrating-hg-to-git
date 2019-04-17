@@ -19,7 +19,7 @@ def _split_what(what):
 
 
 def include(*what):
-    """
+    r"""
     Whitelist *what*.
 
     :param what: What to whitelist.
@@ -36,7 +36,7 @@ def include(*what):
 
 
 def exclude(*what):
-    """
+    r"""
     Blacklist *what*.
 
     :param what: What to blacklist.

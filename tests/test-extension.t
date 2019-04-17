@@ -610,7 +610,8 @@ See also issue5208 for detail about example case on Python 3.x.
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > 
-  > # demand import avoids failure of importing notexist here
+  > # demand import avoids failure of importing notexist here, but only on
+  > # Python 2.
   > import extlibroot.lsub1.lsub2.notexist
   > 
   > @command(b'checkrelativity', [], norepo=True)
@@ -622,7 +623,13 @@ See also issue5208 for detail about example case on Python 3.x.
   >         pass # intentional failure
   > NO_CHECK_EOF
 
-  $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.checkrelativity=$TESTTMP/checkrelativity.py checkrelativity)
+Python 3's lazy importer verifies modules exist before returning the lazy
+module stub. Our custom lazy importer for Python 2 always returns a stub.
+
+  $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.checkrelativity=$TESTTMP/checkrelativity.py checkrelativity) || true
+  *** failed to import extension checkrelativity from $TESTTMP/checkrelativity.py: No module named 'extlibroot.lsub1.lsub2.notexist' (py3 !)
+  hg: unknown command 'checkrelativity' (py3 !)
+  (use 'hg help' for a list of commands) (py3 !)
 
 #endif
 
@@ -633,7 +640,7 @@ import-checker.py or so on their contents)
 Make sure a broken uisetup doesn't globally break hg:
   $ cat > $TESTTMP/baduisetup.py <<EOF
   > def uisetup(ui):
-  >     1/0
+  >     1 / 0
   > EOF
 
 Even though the extension fails during uisetup, hg is still basically usable:
@@ -642,7 +649,7 @@ Even though the extension fails during uisetup, hg is still basically usable:
     File "*/mercurial/extensions.py", line *, in _runuisetup (glob)
       uisetup(ui)
     File "$TESTTMP/baduisetup.py", line 2, in uisetup
-      1/0
+      1 / 0
   ZeroDivisionError: * by zero (glob)
   *** failed to set up extension baduisetup: * by zero (glob)
   Mercurial Distributed SCM (version *) (glob)
@@ -681,13 +688,11 @@ hide outer repo
   > @command(b'debugfoobar', [], b'hg debugfoobar')
   > def debugfoobar(ui, repo, *args, **opts):
   >     "yet another debug command"
-  >     pass
   > @command(b'foo', [], b'hg foo')
   > def foo(ui, repo, *args, **opts):
   >     """yet another foo command
   >     This command has been DEPRECATED since forever.
   >     """
-  >     pass
   > EOF
   $ debugpath=`pwd`/debugextension.py
   $ echo "debugextension = $debugpath" >> $HGRCPATH
@@ -805,14 +810,27 @@ Extension module help vs command help:
       "-Npru".
   
       To select a different program, use the -p/--program option. The program
-      will be passed the names of two directories to compare. To pass additional
-      options to the program, use -o/--option. These will be passed before the
-      names of the directories to compare.
+      will be passed the names of two directories to compare, unless the --per-
+      file option is specified (see below). To pass additional options to the
+      program, use -o/--option. These will be passed before the names of the
+      directories or files to compare.
   
       When two revision arguments are given, then changes are shown between
       those revisions. If only one revision is specified then that revision is
       compared to the working directory, and, when no revisions are specified,
       the working directory files are compared to its parent.
+  
+      The --per-file option runs the external program repeatedly on each file to
+      diff, instead of once on two directories. By default, this happens one by
+      one, where the next file diff is open in the external program only once
+      the previous external program (for the previous file diff) has exited. If
+      the external program has a graphical interface, it can open all the file
+      diffs at once instead of one by one. See 'hg help -e extdiff' for
+      information about how to tell Mercurial that a given program has a
+      graphical interface.
+  
+      The --confirm option will prompt the user before each invocation of the
+      external program. It is ignored if --per-file isn't specified.
   
   (use 'hg help -e extdiff' to show help for the extdiff extension)
   
@@ -822,6 +840,8 @@ Extension module help vs command help:
    -o --option OPT [+]      pass option to comparison program
    -r --rev REV [+]         revision
    -c --change REV          change made by revision
+      --per-file            compare each file instead of revision snapshots
+      --confirm             prompt user before each external program invocation
       --patch               compare patches for two revisions
    -I --include PATTERN [+] include names matching the given patterns
    -X --exclude PATTERN [+] exclude names matching the given patterns
@@ -889,6 +909,20 @@ Extension module help vs command help:
     [diff-tools]
     kdiff3.diffargs=--L1 '$plabel1' --L2 '$clabel' $parent $child
   
+  If a program has a graphical interface, it might be interesting to tell
+  Mercurial about it. It will prevent the program from being mistakenly used in
+  a terminal-only environment (such as an SSH terminal session), and will make
+  'hg extdiff --per-file' open multiple file diffs at once instead of one by one
+  (if you still want to open file diffs one by one, you can use the --confirm
+  option).
+  
+  Declaring that a tool has a graphical interface can be done with the "gui"
+  flag next to where "diffargs" are specified:
+  
+    [diff-tools]
+    kdiff3.diffargs=--L1 '$plabel1' --L2 '$clabel' $parent $child
+    kdiff3.gui = true
+  
   You can use -I/-X and list of file or directory names like normal 'hg diff'
   command. The extdiff extension makes snapshots of only needed files, so
   running the external diff program will actually be pretty fast (at least
@@ -928,7 +962,6 @@ Test help topic with same name as extension
   > @command(b'multirevs', [], b'ARG', norepo=True)
   > def multirevs(ui, repo, arg, *args, **opts):
   >     """multirevs command"""
-  >     pass
   > EOF
   $ echo "multirevs = multirevs.py" >> $HGRCPATH
 

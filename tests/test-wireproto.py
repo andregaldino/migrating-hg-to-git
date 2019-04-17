@@ -78,6 +78,9 @@ class clientpeer(wireprotov1peer.wirepeer):
         yield unmangle(f.value)
 
 class serverrepo(object):
+    def __init__(self, ui):
+        self.ui = ui
+
     def greet(self, name):
         return b"Hello, " + name
 
@@ -94,7 +97,7 @@ def greet(repo, proto, name):
 
 wireprotov1server.commands[b'greet'] = (greet, b'name')
 
-srv = serverrepo()
+srv = serverrepo(uimod.ui())
 clt = clientpeer(srv, uimod.ui())
 
 def printb(data, end=b'\n'):

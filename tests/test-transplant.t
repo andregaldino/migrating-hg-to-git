@@ -39,12 +39,12 @@
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg transplant 1
-  abort: outstanding uncommitted merges
+  abort: outstanding uncommitted merge
   [255]
   $ hg up -qC tip
   $ echo b0 > b1
   $ hg transplant 1
-  abort: outstanding local changes
+  abort: uncommitted changes
   [255]
   $ hg up -qC tip
   $ echo b2 > b2
@@ -599,6 +599,7 @@ test interactive transplant
   > EOF
   0:17ab29e464c6
   apply changeset? [ynmpcq?]: p
+  diff -r 000000000000 -r 17ab29e464c6 r1
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/r1	Thu Jan 01 00:00:00 1970 +0000
   @@ -0,0 +1,1 @@

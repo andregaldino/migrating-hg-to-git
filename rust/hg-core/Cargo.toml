@@ -6,3 +6,7 @@ description = "Mercurial pure Rust core library, with no assumption on Python bi
 
 [lib]
 name = "hg"
+
+[dev-dependencies]
+rand = "*"
+rand_pcg = "*"

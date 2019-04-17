@@ -62,7 +62,6 @@ def synthesize(vers, opts):
     vers['capabilities'] = {}
     for name in opts['optional']:
         vers['capabilities'][name] = check(parsed_version, name)
-    failed = False
     for name in opts['required']:
         have = check(parsed_version, name)
         vers['capabilities'][name] = have

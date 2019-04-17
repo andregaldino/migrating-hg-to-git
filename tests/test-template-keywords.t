@@ -76,6 +76,12 @@ experimental:
   $ hg log -r 'wdir()' -T '{manifest}\n'
   2147483647:ffffffffffff
 
+However, for negrev, we refuse to output anything (as well as for null)
+
+  $ hg log -r 'wdir() + null' -T 'bla{negrev}nk\n'
+  blank
+  blank
+
 Changectx-derived keywords are disabled within {manifest} as {node} changes:
 
   $ hg log -r0 -T 'outer:{p1node} {manifest % "inner:{p1node}"}\n'

@@ -7,6 +7,7 @@
  the GNU General Public License, incorporated herein by reference.
 */
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <ctype.h>
 #include <stddef.h>
@@ -32,8 +33,9 @@ static PyObject *dict_new_presized(PyObject *self, PyObject *args)
 {
 	Py_ssize_t expected_size;
 
-	if (!PyArg_ParseTuple(args, "n:make_presized_dict", &expected_size))
+	if (!PyArg_ParseTuple(args, "n:make_presized_dict", &expected_size)) {
 		return NULL;
+	}
 
 	return _dict_new_presized(expected_size);
 }
@@ -43,8 +45,9 @@ static inline dirstateTupleObject *make_dirstate_tuple(char state, int mode,
 {
 	dirstateTupleObject *t =
 	    PyObject_New(dirstateTupleObject, &dirstateTupleType);
-	if (!t)
+	if (!t) {
 		return NULL;
+	}
 	t->state = state;
 	t->mode = mode;
 	t->size = size;
@@ -60,12 +63,14 @@ static PyObject *dirstate_tuple_new(PyTypeObject *subtype, PyObject *args,
 	dirstateTupleObject *t;
 	char state;
 	int size, mode, mtime;
-	if (!PyArg_ParseTuple(args, "ciii", &state, &mode, &size, &mtime))
+	if (!PyArg_ParseTuple(args, "ciii", &state, &mode, &size, &mtime)) {
 		return NULL;
+	}
 
 	t = (dirstateTupleObject *)subtype->tp_alloc(subtype, 1);
-	if (!t)
+	if (!t) {
 		return NULL;
+	}
 	t->state = state;
 	t->mode = mode;
 	t->size = size;
@@ -160,13 +165,15 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 	PyObject *fname = NULL, *cname = NULL, *entry = NULL;
 	char state, *cur, *str, *cpos;
 	int mode, size, mtime;
-	unsigned int flen, len, pos = 40;
-	int readlen;
+	unsigned int flen, pos = 40;
+	Py_ssize_t len = 40;
+	Py_ssize_t readlen;
 
 	if (!PyArg_ParseTuple(
 	        args, PY23("O!O!s#:parse_dirstate", "O!O!y#:parse_dirstate"),
-	        &PyDict_Type, &dmap, &PyDict_Type, &cmap, &str, &readlen))
+	        &PyDict_Type, &dmap, &PyDict_Type, &cmap, &str, &readlen)) {
 		goto quit;
+	}
 
 	len = readlen;
 
@@ -177,9 +184,11 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 		goto quit;
 	}
 
-	parents = Py_BuildValue(PY23("s#s#", "y#y#"), str, 20, str + 20, 20);
-	if (!parents)
+	parents = Py_BuildValue(PY23("s#s#", "y#y#"), str, (Py_ssize_t)20,
+	                        str + 20, (Py_ssize_t)20);
+	if (!parents) {
 		goto quit;
+	}
 
 	/* read filenames */
 	while (pos >= 40 && pos < len) {
@@ -212,13 +221,16 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 			    cpos + 1, flen - (cpos - cur) - 1);
 			if (!fname || !cname ||
 			    PyDict_SetItem(cmap, fname, cname) == -1 ||
-			    PyDict_SetItem(dmap, fname, entry) == -1)
+			    PyDict_SetItem(dmap, fname, entry) == -1) {
 				goto quit;
+			}
 			Py_DECREF(cname);
 		} else {
 			fname = PyBytes_FromStringAndSize(cur, flen);
-			if (!fname || PyDict_SetItem(dmap, fname, entry) == -1)
+			if (!fname ||
+			    PyDict_SetItem(dmap, fname, entry) == -1) {
 				goto quit;
+			}
 		}
 		Py_DECREF(fname);
 		Py_DECREF(entry);
@@ -245,16 +257,20 @@ static PyObject *nonnormalotherparententries(PyObject *self, PyObject *args)
 	PyObject *nonnset = NULL, *otherpset = NULL, *result = NULL;
 	Py_ssize_t pos;
 
-	if (!PyArg_ParseTuple(args, "O!:nonnormalentries", &PyDict_Type, &dmap))
+	if (!PyArg_ParseTuple(args, "O!:nonnormalentries", &PyDict_Type,
+	                      &dmap)) {
 		goto bail;
+	}
 
 	nonnset = PySet_New(NULL);
-	if (nonnset == NULL)
+	if (nonnset == NULL) {
 		goto bail;
+	}
 
 	otherpset = PySet_New(NULL);
-	if (otherpset == NULL)
+	if (otherpset == NULL) {
 		goto bail;
+	}
 
 	pos = 0;
 	while (PyDict_Next(dmap, &pos, &fname, &v)) {
@@ -272,15 +288,18 @@ static PyObject *nonnormalotherparententries(PyObject *self, PyObject *args)
 			}
 		}
 
-		if (t->state == 'n' && t->mtime != -1)
+		if (t->state == 'n' && t->mtime != -1) {
 			continue;
-		if (PySet_Add(nonnset, fname) == -1)
+		}
+		if (PySet_Add(nonnset, fname) == -1) {
 			goto bail;
+		}
 	}
 
 	result = Py_BuildValue("(OO)", nonnset, otherpset);
-	if (result == NULL)
+	if (result == NULL) {
 		goto bail;
+	}
 	Py_DECREF(nonnset);
 	Py_DECREF(otherpset);
 	return result;
@@ -304,8 +323,10 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 	int now;
 
 	if (!PyArg_ParseTuple(args, "O!O!O!i:pack_dirstate", &PyDict_Type, &map,
-	                      &PyDict_Type, &copymap, &PyTuple_Type, &pl, &now))
+	                      &PyDict_Type, &copymap, &PyTuple_Type, &pl,
+	                      &now)) {
 		return NULL;
+	}
 
 	if (PyTuple_Size(pl) != 2) {
 		PyErr_SetString(PyExc_TypeError, "expected 2-element tuple");
@@ -332,8 +353,9 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 	}
 
 	packobj = PyBytes_FromStringAndSize(NULL, nbytes);
-	if (packobj == NULL)
+	if (packobj == NULL) {
 		goto bail;
+	}
 
 	p = PyBytes_AS_STRING(packobj);
 
@@ -377,10 +399,12 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 			mtime = -1;
 			mtime_unset = (PyObject *)make_dirstate_tuple(
 			    state, mode, size, mtime);
-			if (!mtime_unset)
+			if (!mtime_unset) {
 				goto bail;
-			if (PyDict_SetItem(map, k, mtime_unset) == -1)
+			}
+			if (PyDict_SetItem(map, k, mtime_unset) == -1) {
 				goto bail;
+			}
 			Py_DECREF(mtime_unset);
 			mtime_unset = NULL;
 		}
@@ -564,8 +588,7 @@ bail:
 static PyObject *fm1readmarkers(PyObject *self, PyObject *args)
 {
 	const char *data, *dataend;
-	int datalen;
-	Py_ssize_t offset, stop;
+	Py_ssize_t datalen, offset, stop;
 	PyObject *markers = NULL;
 
 	if (!PyArg_ParseTuple(args, PY23("s#nn", "y#nn"), &data, &datalen,
@@ -664,8 +687,9 @@ static void module_init(PyObject *mod)
 	manifest_module_init(mod);
 	revlog_module_init(mod);
 
-	if (PyType_Ready(&dirstateTupleType) < 0)
+	if (PyType_Ready(&dirstateTupleType) < 0) {
 		return;
+	}
 	Py_INCREF(&dirstateTupleType);
 	PyModule_AddObject(mod, "dirstatetuple",
 	                   (PyObject *)&dirstateTupleType);
@@ -675,12 +699,14 @@ static int check_python_version(void)
 {
 	PyObject *sys = PyImport_ImportModule("sys"), *ver;
 	long hexversion;
-	if (!sys)
+	if (!sys) {
 		return -1;
+	}
 	ver = PyObject_GetAttrString(sys, "hexversion");
 	Py_DECREF(sys);
-	if (!ver)
+	if (!ver) {
 		return -1;
+	}
 	hexversion = PyInt_AsLong(ver);
 	Py_DECREF(ver);
 	/* sys.hexversion is a 32-bit number by default, so the -1 case
@@ -720,8 +746,9 @@ PyMODINIT_FUNC initparsers(void)
 {
 	PyObject *mod;
 
-	if (check_python_version() == -1)
+	if (check_python_version() == -1) {
 		return;
+	}
 	mod = Py_InitModule3("parsers", methods, parsers_doc);
 	module_init(mod);
 }

@@ -25,7 +25,7 @@ def reducetest(a, b):
 
         try:
             test1(a, b)
-        except Exception as inst:
+        except Exception:
             reductions += 1
             tries = 0
             a = a2

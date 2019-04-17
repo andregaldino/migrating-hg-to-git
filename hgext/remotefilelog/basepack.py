@@ -270,9 +270,9 @@ class versionmixin(object):
                 # only affect this instance
                 self.VERSION = version
             elif self.VERSION != version:
-                raise RuntimeError('inconsistent version: %s' % version)
+                raise RuntimeError('inconsistent version: %d' % version)
         else:
-            raise RuntimeError('unsupported version: %s' % version)
+            raise RuntimeError('unsupported version: %d' % version)
 
 class basepack(versionmixin):
     # The maximum amount we should read via mmap before remmaping so the old
@@ -457,8 +457,6 @@ class mutablebasepack(versionmixin):
             pass
 
     def writeindex(self):
-        rawindex = ''
-
         largefanout = len(self.entries) > SMALLFANOUTCUTOFF
         if largefanout:
             params = indexparams(LARGEFANOUTPREFIX, self.VERSION)

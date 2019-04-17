@@ -289,8 +289,7 @@ class basemanifesttests(object):
         the resulting manifest.'''
         m = self.parsemanifest(A_HUGE_MANIFEST)
 
-        match = matchmod.match(b'/', b'',
-                [b'file1', b'file200', b'file300'], exact=True)
+        match = matchmod.exact([b'file1', b'file200', b'file300'])
         m2 = m.matches(match)
 
         w = (b'file1\0%sx\n'
@@ -304,10 +303,8 @@ class basemanifesttests(object):
         '''
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
-        match = matchmod.match(b'/', b'',
-                [b'a/b/c/bar.txt', b'a/b/d/qux.py',
-                 b'readme.txt', b'nonexistent'],
-                exact=True)
+        match = matchmod.exact([b'a/b/c/bar.txt', b'a/b/d/qux.py',
+                                b'readme.txt', b'nonexistent'])
         m2 = m.matches(match)
 
         self.assertEqual(
@@ -330,7 +327,7 @@ class basemanifesttests(object):
         m = self.parsemanifest(A_HUGE_MANIFEST)
 
         flist = m.keys()[80:300]
-        match = matchmod.match(b'/', b'', flist, exact=True)
+        match = matchmod.exact(flist)
         m2 = m.matches(match)
 
         self.assertEqual(flist, m2.keys())
@@ -364,7 +361,7 @@ class basemanifesttests(object):
         against a directory.'''
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
-        match = matchmod.match(b'/', b'', [b'a/b'], exact=True)
+        match = matchmod.exact([b'a/b'])
         m2 = m.matches(match)
 
         self.assertEqual([], m2.keys())

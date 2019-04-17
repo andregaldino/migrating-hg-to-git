@@ -52,6 +52,7 @@ log before edit
      summary:     a
   
 
+
 show the edit commands offered
   $ HGEDITOR=cat hg histedit 177f92b77385
   pick 177f92b77385 2 c
@@ -75,6 +76,33 @@ show the edit commands offered
   #  f, fold = use commit, but combine it with the one above
   #  r, roll = like fold, but discard this commit's description and date
   #
+
+
+test customization of revision summary
+  $ HGEDITOR=cat hg histedit 177f92b77385 \
+  >  --config histedit.summary-template='I am rev {rev} desc {desc} tags {tags}'
+  pick 177f92b77385 I am rev 2 desc c tags 
+  pick 055a42cdd887 I am rev 3 desc d tags 
+  pick e860deea161a I am rev 4 desc e tags 
+  pick 652413bf663e I am rev 5 desc f tags tip
+  
+  # Edit history between 177f92b77385 and 652413bf663e
+  #
+  # Commits are listed from least to most recent
+  #
+  # You can reorder changesets by reordering the lines
+  #
+  # Commands:
+  #
+  #  e, edit = use commit, but stop for amending
+  #  m, mess = edit commit message without changing commit content
+  #  p, pick = use commit
+  #  b, base = checkout changeset and apply further changesets from there
+  #  d, drop = remove commit from history
+  #  f, fold = use commit, but combine it with the one above
+  #  r, roll = like fold, but discard this commit's description and date
+  #
+
 
 edit the history
 (use a hacky editor to check histedit-last-edit.txt backup)
@@ -142,6 +170,7 @@ log after edit
      summary:     a
   
 
+
 put things back
 
   $ hg histedit 177f92b77385 --commands - 2>&1 << EOF | fixbundle
@@ -184,6 +213,7 @@ put things back
      summary:     a
   
 
+
 slightly different this time
 
   $ hg histedit 177f92b77385 --commands - << EOF 2>&1 | fixbundle
@@ -224,6 +254,7 @@ slightly different this time
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     a
   
+
 
 keep prevents stripping dead revs
   $ hg histedit 799205341b6b --keep --commands - 2>&1 << EOF | fixbundle
@@ -276,6 +307,7 @@ keep prevents stripping dead revs
      summary:     a
   
 
+
 try with --rev
   $ hg histedit --commands - --rev -2 2>&1 <<EOF | fixbundle
   > pick de71b079d9ce e
@@ -326,6 +358,7 @@ try with --rev
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     a
   
+
 Verify that revsetalias entries work with histedit:
   $ cat >> $HGRCPATH <<EOF
   > [revsetalias]
@@ -354,6 +387,7 @@ Verify that revsetalias entries work with histedit:
   #  f, fold = use commit, but combine it with the one above
   #  r, roll = like fold, but discard this commit's description and date
   #
+
 
 should also work if a commit message is missing
   $ BUNDLE="$TESTDIR/missing-comment.hg"
@@ -384,6 +418,7 @@ should also work if a commit message is missing
      date:        Mon Nov 28 16:35:28 2011 +0000
      summary:     Checked in text file
   
+
   $ hg histedit 0
   $ cd ..
 
@@ -440,6 +475,7 @@ Now, let's try to fold the second commit into the first:
   @@ -0,0 +1,1 @@
   +changed
 
+
   $ hg --config diff.git=yes export 1
   # HG changeset patch
   # User test
@@ -452,6 +488,7 @@ Now, let's try to fold the second commit into the first:
   diff --git a/another-dir/initial-file b/another-dir/renamed-file
   rename from another-dir/initial-file
   rename to another-dir/renamed-file
+
 
   $ cd ..
 

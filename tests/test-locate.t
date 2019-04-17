@@ -123,6 +123,24 @@ Issue294: hg remove --after dir fails when dir.* also exists
   ../t.h
   ../t/e.h
   ../t/x
+  $ hg files --config ui.relative-paths=yes
+  ../b
+  ../dir.h/foo
+  ../t.h
+  ../t/e.h
+  ../t/x
+  $ hg files --config ui.relative-paths=no
+  b
+  dir.h/foo
+  t.h
+  t/e.h
+  t/x
+  $ hg files --config ui.relative-paths=legacy
+  ../b
+  ../dir.h/foo
+  ../t.h
+  ../t/e.h
+  ../t/x
 
   $ hg locate b
   ../b

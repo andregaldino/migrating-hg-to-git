@@ -93,16 +93,16 @@ class monotone_source(common.converter_source, common.commandline):
         kwargs = pycompat.byteskwargs(kwargs)
         command = []
         for k, v in kwargs.iteritems():
-            command.append("%s:%s" % (len(k), k))
+            command.append("%d:%s" % (len(k), k))
             if v:
-                command.append("%s:%s" % (len(v), v))
+                command.append("%d:%s" % (len(v), v))
         if command:
             command.insert(0, 'o')
             command.append('e')
 
         command.append('l')
         for arg in args:
-            command += "%d:%s" % (len(arg), arg)
+            command.append("%d:%s" % (len(arg), arg))
         command.append('e')
         command = ''.join(command)
 
@@ -138,7 +138,7 @@ class monotone_source(common.converter_source, common.commandline):
                 raise error.Abort(_('bad mtn packet - no end of packet size'))
             lengthstr += read
         try:
-            length = long(lengthstr[:-1])
+            length = pycompat.long(lengthstr[:-1])
         except TypeError:
             raise error.Abort(_('bad mtn packet - bad packet size %s')
                 % lengthstr)
@@ -154,7 +154,7 @@ class monotone_source(common.converter_source, common.commandline):
         retval = []
         while True:
             commandnbr, stream, length, output = self.mtnstdioreadpacket()
-            self.ui.debug('mtn: read packet %s:%s:%s\n' %
+            self.ui.debug('mtn: read packet %s:%s:%d\n' %
                 (commandnbr, stream, length))
 
             if stream == 'l':
@@ -214,13 +214,13 @@ class monotone_source(common.converter_source, common.commandline):
         #   key "test@selenic.com"
         # mtn >= 0.45:
         #   key [ff58a7ffb771907c4ff68995eada1c4da068d328]
-        certlist = re.split('\n\n      key ["\[]', certlist)
+        certlist = re.split(br'\n\n      key ["\[]', certlist)
         for e in certlist:
             m = self.cert_re.match(e)
             if m:
                 name, value = m.groups()
-                value = value.replace(r'\"', '"')
-                value = value.replace(r'\\', '\\')
+                value = value.replace(br'\"', '"')
+                value = value.replace(br'\\', '\\')
                 certs[name] = value
         # Monotone may have subsecond dates: 2005-02-05T09:39:12.364306
         # and all times are stored in UTC
@@ -335,7 +335,6 @@ class monotone_source(common.converter_source, common.commandline):
 
     def before(self):
         # Check if we have a new enough version to use automate stdio
-        version = 0.0
         try:
             versionstr = self.mtnrunsingle("interface_version")
             version = float(versionstr)

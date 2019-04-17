@@ -122,7 +122,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     re_31 = re.compile(b'----------------------------$')
     re_32 = re.compile(b'======================================='
                        b'======================================$')
-    re_50 = re.compile(b'revision ([\\d.]+)(\s+locked by:\s+.+;)?$')
+    re_50 = re.compile(br'revision ([\d.]+)(\s+locked by:\s+.+;)?$')
     re_60 = re.compile(br'date:\s+(.+);\s+author:\s+(.+);\s+state:\s+(.+?);'
                        br'(\s+lines:\s+(\+\d+)?\s+(-\d+)?;)?'
                        br'(\s+commitid:\s+([^;]+);)?'
@@ -776,8 +776,8 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
 
             # Ensure no changeset has a synthetic changeset as a parent.
             while p.synthetic:
-                assert len(p.parents) <= 1, \
-                       _('synthetic changeset cannot have multiple parents')
+                assert len(p.parents) <= 1, (
+                       _('synthetic changeset cannot have multiple parents'))
                 if p.parents:
                     p = p.parents[0]
                 else:
@@ -954,12 +954,12 @@ def debugcvsps(ui, *args, **opts):
 
         # have we seen the start tag?
         if revisions and off:
-            if revisions[0] == (b"%d" % cs.id) or \
-                revisions[0] in cs.tags:
+            if (revisions[0] == (b"%d" % cs.id) or
+                revisions[0] in cs.tags):
                 off = False
 
         # see if we reached the end tag
         if len(revisions) > 1 and not off:
-            if revisions[1] == (b"%d" % cs.id) or \
-                revisions[1] in cs.tags:
+            if (revisions[1] == (b"%d" % cs.id) or
+                revisions[1] in cs.tags):
                 break

@@ -340,7 +340,8 @@ def archive(repo, dest, node, kind, decode=True, match=None,
         for subpath in sorted(ctx.substate):
             sub = ctx.workingsub(subpath)
             submatch = matchmod.subdirmatcher(subpath, match)
-            total += sub.archive(archiver, prefix, submatch, decode)
+            subprefix = prefix + subpath + '/'
+            total += sub.archive(archiver, subprefix, submatch, decode)
 
     if total == 0:
         raise error.Abort(_('no files match the archive pattern'))

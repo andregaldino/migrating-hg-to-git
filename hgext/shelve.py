@@ -248,8 +248,8 @@ class shelvedstate(object):
         if version < cls._version:
             d = cls._readold(repo)
         elif version == cls._version:
-            d = scmutil.simplekeyvaluefile(repo.vfs, cls._filename)\
-                       .read(firstlinenonkeyval=True)
+            d = scmutil.simplekeyvaluefile(
+                repo.vfs, cls._filename).read(firstlinenonkeyval=True)
         else:
             raise error.Abort(_('this version of shelve is incompatible '
                                 'with the version used in this repo'))
@@ -287,8 +287,9 @@ class shelvedstate(object):
             "keep": cls._keep if keep else cls._nokeep,
             "activebook": activebook or cls._noactivebook
         }
-        scmutil.simplekeyvaluefile(repo.vfs, cls._filename)\
-               .write(info, firstline=("%d" % cls._version))
+        scmutil.simplekeyvaluefile(
+            repo.vfs, cls._filename).write(info,
+                                           firstline=("%d" % cls._version))
 
     @classmethod
     def clear(cls, repo):
@@ -419,14 +420,11 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
     else:
         ui.status(_("nothing changed\n"))
 
-def _shelvecreatedcommit(repo, node, name):
+def _shelvecreatedcommit(repo, node, name, match):
     info = {'node': nodemod.hex(node)}
     shelvedfile(repo, name, 'shelve').writeinfo(info)
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, 'hg').writebundle(bases, node)
-    # Create a matcher so that prefetch doesn't attempt to fetch the entire
-    # repository pointlessly.
-    match = scmutil.matchfiles(repo, repo[node].files())
     with shelvedfile(repo, name, patchextension).opener('wb') as fp:
         cmdutil.exportfile(repo, [node], fp, opts=mdiff.diffopts(git=True),
                            match=match)
@@ -500,12 +498,20 @@ def _docreatecmd(ui, repo, pats, opts):
             _nothingtoshelvemessaging(ui, repo, pats, opts)
             return 1
 
-        _shelvecreatedcommit(repo, node, name)
+        # Create a matcher so that prefetch doesn't attempt to fetch
+        # the entire repository pointlessly, and as an optimisation
+        # for movedirstate, if needed.
+        match = scmutil.matchfiles(repo, repo[node].files())
+        _shelvecreatedcommit(repo, node, name, match)
 
         if ui.formatted():
             desc = stringutil.ellipsis(desc, ui.termwidth())
         ui.status(_('shelved as %s\n') % name)
-        hg.update(repo, parent.node())
+        if opts['keep']:
+            with repo.dirstate.parentchange():
+                scmutil.movedirstate(repo, parent, match)
+        else:
+            hg.update(repo, parent.node())
         if origbranch != repo['.'].branch() and not _isbareshelve(pats, opts):
             repo.dirstate.setbranch(origbranch)
 
@@ -640,10 +646,6 @@ def checkparents(repo, state):
         raise error.Abort(_('working directory parents do not match unshelve '
                            'state'))
 
-def pathtofiles(repo, files):
-    cwd = repo.getcwd()
-    return [repo.pathto(f, cwd) for f in files]
-
 def unshelveabort(ui, repo, state, opts):
     """subcommand that abort an in-progress unshelve"""
     with repo.lock():
@@ -672,18 +674,8 @@ def mergefiles(ui, repo, wctx, shelvectx):
     dirstate."""
     with ui.configoverride({('ui', 'quiet'): True}):
         hg.update(repo, wctx.node())
-        files = []
-        files.extend(shelvectx.files())
-        files.extend(shelvectx.parents()[0].files())
-
-        # revert will overwrite unknown files, so move them out of the way
-        for file in repo.status(unknown=True).unknown:
-            if file in files:
-                util.rename(file, scmutil.origpath(ui, repo, file))
         ui.pushbuffer(True)
-        cmdutil.revert(ui, repo, shelvectx, repo.dirstate.parents(),
-                       *pathtofiles(repo, files),
-                       **{r'no_backup': True})
+        cmdutil.revert(ui, repo, shelvectx, repo.dirstate.parents())
         ui.popbuffer()
 
 def restorebranch(ui, repo, branchtorestore):
@@ -809,7 +801,7 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
     """Rebase restored commit from its original location to a destination"""
     # If the shelve is not immediately on top of the commit
     # we'll be merging with, rebase it to be on top.
-    if tmpwctx.node() == shelvectx.parents()[0].node():
+    if tmpwctx.node() == shelvectx.p1().node():
         return shelvectx
 
     overrides = {
@@ -986,6 +978,12 @@ def _dounshelve(ui, repo, *shelved, **opts):
             return unshelvecontinue(ui, repo, state, opts)
     elif len(shelved) > 1:
         raise error.Abort(_('can only unshelve one change at a time'))
+
+    # abort unshelve while merging (issue5123)
+    parents = repo[None].parents()
+    if len(parents) > 1:
+        raise error.Abort(_('cannot unshelve while merging'))
+
     elif not shelved:
         shelved = listshelves(repo)
         if not shelved:
@@ -1053,6 +1051,8 @@ def _dounshelve(ui, repo, *shelved, **opts):
            _('delete the named shelved change(s)')),
           ('e', 'edit', False,
            _('invoke editor on commit messages')),
+          ('k', 'keep', False,
+           _('shelve, but keep changes in the working directory')),
           ('l', 'list', None,
            _('list current shelves')),
           ('m', 'message', '',
@@ -1111,6 +1111,7 @@ def shelvecmd(ui, repo, *pats, **opts):
 #       ('date', {'create'}), # ignored for passing '--date "0 0"' in tests
         ('delete', {'delete'}),
         ('edit', {'create'}),
+        ('keep', {'create'}),
         ('list', {'list'}),
         ('message', {'create'}),
         ('name', {'create'}),

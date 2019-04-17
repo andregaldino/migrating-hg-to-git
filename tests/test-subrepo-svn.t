@@ -1,11 +1,7 @@
 #require svn15
 
   $ SVNREPOPATH=`pwd`/svn-repo
-#if windows
-  $ SVNREPOURL=file:///`"$PYTHON" -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
-#else
-  $ SVNREPOURL=file://`"$PYTHON" -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
-#endif
+  $ SVNREPOURL="`"$PYTHON" $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
 
   $ filter_svn_output () {
   >     egrep -v 'Committing|Transmitting|Updating|(^$)' || true

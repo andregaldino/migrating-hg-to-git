@@ -11,11 +11,7 @@
   > EOF
 
   $ SVNREPOPATH=`pwd`/svn-repo
-#if windows
-  $ SVNREPOURL=file:///`"$PYTHON" -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
-#else
-  $ SVNREPOURL=file://`"$PYTHON" -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
-#endif
+  $ SVNREPOURL="`"$PYTHON" $TESTDIR/svnurlof.py \"$SVNREPOPATH\"`"
 
   $ svnadmin create "$SVNREPOPATH"
   $ cat > "$SVNREPOPATH"/hooks/pre-revprop-change <<EOF

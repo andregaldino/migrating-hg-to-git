@@ -259,10 +259,8 @@ class historypack(basepack.basepack):
                     return self._index[mid:mid + entrylen]
                 if node > midnode:
                     start = mid
-                    startnode = midnode
                 elif node < midnode:
                     end = mid
-                    endnode = midnode
         return None
 
     def markledger(self, ledger, options=None):
@@ -514,7 +512,6 @@ class mutablehistorypack(basepack.mutablebasepack):
 
             fileindexentries.append(rawentry)
 
-        nodecountraw = ''
         nodecountraw = struct.pack('!Q', nodecount)
         return (''.join(fileindexentries) + nodecountraw +
                 ''.join(nodeindexentries))

@@ -77,12 +77,13 @@ _effects = {
 _defaultstyles = {
     'grep.match': 'red bold',
     'grep.linenumber': 'green',
-    'grep.rev': 'green',
-    'grep.change': 'green',
+    'grep.rev': 'blue',
     'grep.sep': 'cyan',
     'grep.filename': 'magenta',
     'grep.user': 'magenta',
     'grep.date': 'magenta',
+    'grep.inserted': 'green bold',
+    'grep.deleted': 'red bold',
     'bookmarks.active': 'green',
     'branches.active': 'none',
     'branches.closed': 'black bold',
@@ -169,7 +170,7 @@ def _terminfosetup(ui, mode, formatted):
             ui._terminfoparams[key[9:]] = newval
     try:
         curses.setupterm()
-    except curses.error as e:
+    except curses.error:
         ui._terminfoparams.clear()
         return
 
@@ -484,7 +485,7 @@ if pycompat.iswindows:
             w32effects = None
         else:
             origattr = csbi.wAttributes
-            ansire = re.compile(b'\033\[([^m]*)m([^\033]*)(.*)',
+            ansire = re.compile(br'\033\[([^m]*)m([^\033]*)(.*)',
                                 re.MULTILINE | re.DOTALL)
 
     def win32print(ui, writefunc, text, **opts):

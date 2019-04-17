@@ -834,12 +834,21 @@ class unbundle20(unpackermixin):
         if paramssize < 0:
             raise error.BundleValueError('negative bundle param size: %i'
                                          % paramssize)
-        yield _pack(_fstreamparamsize, paramssize)
         if paramssize:
             params = self._readexact(paramssize)
             self._processallparams(params)
-            yield params
-            assert self._compengine.bundletype()[1] == 'UN'
+            # The payload itself is decompressed below, so drop
+            # the compression parameter passed down to compensate.
+            outparams = []
+            for p in params.split(' '):
+                k, v = p.split('=', 1)
+                if k.lower() != 'compression':
+                    outparams.append(p)
+            outparams = ' '.join(outparams)
+            yield _pack(_fstreamparamsize, len(outparams))
+            yield outparams
+        else:
+            yield _pack(_fstreamparamsize, paramssize)
         # From there, payload might need to be decompressed
         self._fp = self._compengine.decompressorreader(self._fp)
         emptycount = 0
@@ -1397,8 +1406,8 @@ class seekableunbundlepart(unbundlepart):
             assert chunknum == 0, 'Must start with chunk 0'
             self._chunkindex.append((0, self._tellfp()))
         else:
-            assert chunknum < len(self._chunkindex), \
-                   'Unknown chunk %d' % chunknum
+            assert chunknum < len(self._chunkindex), (
+                   'Unknown chunk %d' % chunknum)
             self._seekfp(self._chunkindex[chunknum][1])
 
         pos = self._chunkindex[chunknum][0]
@@ -1664,6 +1673,7 @@ def addpartrevbranchcache(repo, bundler, outgoing):
                     mandatory=False)
 
 def _formatrequirementsspec(requirements):
+    requirements = [req for req in requirements if req != "shared"]
     return urlreq.quote(','.join(sorted(requirements)))
 
 def _formatrequirementsparams(requirements):
@@ -1979,7 +1989,7 @@ def handlecheckupdatedheads(op, inpart):
         op.gettransaction()
 
     currentheads = set()
-    for ls in op.repo.branchmap().itervalues():
+    for ls in op.repo.branchmap().iterheads():
         currentheads.update(ls)
 
     for h in heads:
@@ -2314,7 +2324,7 @@ def widen_bundle(repo, oldmatcher, newmatcher, common, known, cgversion,
                                         oldmatcher=oldmatcher,
                                         matcher=newmatcher,
                                         fullnodes=commonnodes)
-        cgdata = packer.generate(set([nodemod.nullid]), list(commonnodes),
+        cgdata = packer.generate({nodemod.nullid}, list(commonnodes),
                                  False, 'narrow_widen', changelog=False)
 
         part = bundler.newpart('changegroup', data=cgdata)

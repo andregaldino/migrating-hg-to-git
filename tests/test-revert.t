@@ -92,7 +92,7 @@ Test creation of backup (.orig) file in configured file location
   $ echo z > e
   $ hg revert --all -v --config 'ui.origbackuppath=.hg/origbackups'
   creating directory: $TESTTMP/repo/.hg/origbackups
-  saving current version of e as $TESTTMP/repo/.hg/origbackups/e
+  saving current version of e as .hg/origbackups/e
   reverting e
   $ rm -rf .hg/origbackups
 
@@ -289,6 +289,23 @@ Issue332: confusing message when reverting directory
   $ hg revert .
   reverting b/b
 
+respects ui.relative-paths
+--------------------------
+
+  $ echo foo > newdir/newfile
+  $ hg add newdir/newfile
+  $ hg revert --all --cwd newdir
+  forgetting newfile
+
+  $ echo foo > newdir/newfile
+  $ hg add newdir/newfile
+  $ hg revert --all --cwd newdir --config ui.relative-paths=True
+  forgetting newfile
+
+  $ echo foo > newdir/newfile
+  $ hg add newdir/newfile
+  $ hg revert --all --cwd newdir --config ui.relative-paths=False
+  forgetting newdir/newfile
 
 reverting a rename target should revert the source
 --------------------------------------------------

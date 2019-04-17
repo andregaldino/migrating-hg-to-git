@@ -25,7 +25,8 @@
   >                   b'key': b'new-server-mark',
   >                   b'old': b'',
   >                   b'new': b'tip'}
-  >         encodedparams = [(k, pushkey.encode(v)) for (k,v) in params.items()]
+  >         encodedparams = [(k, pushkey.encode(v))
+  >                           for (k, v) in params.items()]
   >         op.reply.newpart(b'pushkey', mandatoryparams=encodedparams)
   >     else:
   >         op.reply.newpart(b'output', data=b'pushback not enabled')

@@ -8,8 +8,18 @@ Version History
 Actions Blocking Release
 ------------------------
 
-* compression and decompression APIs that support ``io.rawIOBase`` interface
+* compression and decompression APIs that support ``io.RawIOBase`` interface
   (#13).
+* ``stream_writer()`` APIs should support ``io.RawIOBase`` interface.
+* Properly handle non-blocking I/O and partial writes for objects implementing
+  ``io.RawIOBase``.
+* Make ``write_return_read=True`` the default for objects implementing
+  ``io.RawIOBase``.
+* Audit for consistent and proper behavior of ``flush()`` and ``close()`` for
+  all objects implementing ``io.RawIOBase``. Is calling ``close()`` on
+  wrapped stream acceptable, should ``__exit__`` always call ``close()``,
+  should ``close()`` imply ``flush()``, etc.
+* Consider making reads across frames configurable behavior.
 * Refactor module names so C and CFFI extensions live under ``zstandard``
   package.
 * Overall API design review.
@@ -43,6 +53,11 @@ Actions Blocking Release
 * Consider a ``chunker()`` API for decompression.
 * Consider stats for ``chunker()`` API, including finding the last consumed
   offset of input data.
+* Consider exposing ``ZSTD_cParam_getBounds()`` and
+  ``ZSTD_dParam_getBounds()`` APIs.
+* Consider controls over resetting compression contexts (session only, parameters,
+  or session and parameters).
+* Actually use the CFFI backend in fuzzing tests.
 
 Other Actions Not Blocking Release
 ---------------------------------------
@@ -50,6 +65,207 @@ Other Actions Not Blocking Release
 * Support for block compression APIs.
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
+
+0.11.0 (released 2019-02-24)
+============================
+
+Backwards Compatibility Nodes
+-----------------------------
+
+* ``ZstdDecompressor.read()`` now allows reading sizes of ``-1`` or ``0``
+  and defaults to ``-1``, per the documented behavior of
+  ``io.RawIOBase.read()``. Previously, we required an argument that was
+  a positive value.
+* The ``readline()``, ``readlines()``, ``__iter__``, and ``__next__`` methods
+  of ``ZstdDecompressionReader()`` now raise ``io.UnsupportedOperation``
+  instead of ``NotImplementedError``.
+* ``ZstdDecompressor.stream_reader()`` now accepts a ``read_across_frames``
+  argument. The default value will likely be changed in a future release
+  and consumers are advised to pass the argument to avoid unwanted change
+  of behavior in the future.
+* ``setup.py`` now always disables the CFFI backend if the installed
+  CFFI package does not meet the minimum version requirements. Before, it was
+  possible for the CFFI backend to be generated and a run-time error to
+  occur.
+* In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``
+  were renamed to ``ZstdCompressionReader`` and ``ZstdDecompressionReader``,
+  respectively so naming is identical to the C extension. This should have
+  no meaningful end-user impact, as instances aren't meant to be
+  constructed directly.
+* ``ZstdDecompressor.stream_writer()`` now accepts a ``write_return_read``
+  argument to control whether ``write()`` returns the number of bytes
+  read from the source / written to the decompressor. It defaults to off,
+  which preserves the existing behavior of returning the number of bytes
+  emitted from the decompressor. The default will change in a future release
+  so behavior aligns with the specified behavior of ``io.RawIOBase``.
+* ``ZstdDecompressionWriter.__exit__`` now calls ``self.close()``. This
+  will result in that stream plus the underlying stream being closed as
+  well. If this behavior is not desirable, do not use instances as
+  context managers.
+* ``ZstdCompressor.stream_writer()`` now accepts a ``write_return_read``
+  argument to control whether ``write()`` returns the number of bytes read
+  from the source / written to the compressor. It defaults to off, which
+  preserves the existing behavior of returning the number of bytes emitted
+  from the compressor. The default will change in a future release so
+  behavior aligns with the specified behavior of ``io.RawIOBase``.
+* ``ZstdCompressionWriter.__exit__`` now calls ``self.close()``. This will
+  result in that stream plus any underlying stream being closed as well. If
+  this behavior is not desirable, do not use instances as context managers.
+* ``ZstdDecompressionWriter`` no longer requires being used as a context
+  manager (#57).
+* ``ZstdCompressionWriter`` no longer requires being used as a context
+  manager (#57).
+* The ``overlap_size_log`` attribute on ``CompressionParameters`` instances
+  has been deprecated and will be removed in a future release. The
+  ``overlap_log`` attribute should be used instead.
+* The ``overlap_size_log`` argument to ``CompressionParameters`` has been
+  deprecated and will be removed in a future release. The ``overlap_log``
+  argument should be used instead.
+* The ``ldm_hash_every_log`` attribute on ``CompressionParameters`` instances
+  has been deprecated and will be removed in a future release. The
+  ``ldm_hash_rate_log`` attribute should be used instead.
+* The ``ldm_hash_every_log`` argument to ``CompressionParameters`` has been
+  deprecated and will be removed in a future release. The ``ldm_hash_rate_log``
+  argument should be used instead.
+* The ``compression_strategy`` argument to ``CompressionParameters`` has been
+  deprecated and will be removed in a future release. The ``strategy``
+  argument should be used instead.
+* The ``SEARCHLENGTH_MIN`` and ``SEARCHLENGTH_MAX`` constants are deprecated
+  and will be removed in a future release. Use ``MINMATCH_MIN`` and
+  ``MINMATCH_MAX`` instead.
+* The ``zstd_cffi`` module has been renamed to ``zstandard.cffi``. As had
+  been documented in the ``README`` file since the ``0.9.0`` release, the
+  module should not be imported directly at its new location. Instead,
+  ``import zstandard`` to cause an appropriate backend module to be loaded
+  automatically.
+
+Bug Fixes
+---------
+
+* CFFI backend could encounter a failure when sending an empty chunk into
+  ``ZstdDecompressionObj.decompress()``. The issue has been fixed.
+* CFFI backend could encounter an error when calling
+  ``ZstdDecompressionReader.read()`` if there was data remaining in an
+  internal buffer. The issue has been fixed. (#71)
+
+Changes
+-------
+
+* ``ZstDecompressionObj.decompress()`` now properly handles empty inputs in
+  the CFFI backend.
+* ``ZstdCompressionReader`` now implements ``read1()`` and ``readinto1()``.
+  These are part of the ``io.BufferedIOBase`` interface.
+* ``ZstdCompressionReader`` has gained a ``readinto(b)`` method for reading
+  compressed output into an existing buffer.
+* ``ZstdCompressionReader.read()`` now defaults to ``size=-1`` and accepts
+  read sizes of ``-1`` and ``0``. The new behavior aligns with the documented
+  behavior of ``io.RawIOBase``.
+* ``ZstdCompressionReader`` now implements ``readall()``. Previously, this
+  method raised ``NotImplementedError``.
+* ``ZstdDecompressionReader`` now implements ``read1()`` and ``readinto1()``.
+  These are part of the ``io.BufferedIOBase`` interface.
+* ``ZstdDecompressionReader.read()`` now defaults to ``size=-1`` and accepts
+  read sizes of ``-1`` and ``0``. The new behavior aligns with the documented
+  behavior of ``io.RawIOBase``.
+* ``ZstdDecompressionReader()`` now implements ``readall()``. Previously, this
+  method raised ``NotImplementedError``.
+* The ``readline()``, ``readlines()``, ``__iter__``, and ``__next__`` methods
+  of ``ZstdDecompressionReader()`` now raise ``io.UnsupportedOperation``
+  instead of ``NotImplementedError``. This reflects a decision to never
+  implement text-based I/O on (de)compressors and keep the low-level API
+  operating in the binary domain. (#13)
+* ``README.rst`` now documented how to achieve linewise iteration using
+  an ``io.TextIOWrapper`` with a ``ZstdDecompressionReader``.
+* ``ZstdDecompressionReader`` has gained a ``readinto(b)`` method for
+  reading decompressed output into an existing buffer. This allows chaining
+  to an ``io.TextIOWrapper`` on Python 3 without using an ``io.BufferedReader``.
+* ``ZstdDecompressor.stream_reader()`` now accepts a ``read_across_frames``
+  argument to control behavior when the input data has multiple zstd
+  *frames*. When ``False`` (the default for backwards compatibility), a
+  ``read()`` will stop when the end of a zstd *frame* is encountered. When
+  ``True``, ``read()`` can potentially return data spanning multiple zstd
+  *frames*. The default will likely be changed to ``True`` in a future
+  release.
+* ``setup.py`` now performs CFFI version sniffing and disables the CFFI
+  backend if CFFI is too old. Previously, we only used ``install_requires``
+  to enforce the CFFI version and not all build modes would properly enforce
+  the minimum CFFI version. (#69)
+* CFFI's ``ZstdDecompressionReader.read()`` now properly handles data
+  remaining in any internal buffer. Before, repeated ``read()`` could
+  result in *random* errors. (#71)
+* Upgraded various Python packages in CI environment.
+* Upgrade to hypothesis 4.5.11.
+* In the CFFI backend, ``CompressionReader`` and ``DecompressionReader``
+  were renamed to ``ZstdCompressionReader`` and ``ZstdDecompressionReader``,
+  respectively.
+* ``ZstdDecompressor.stream_writer()`` now accepts a ``write_return_read``
+  argument to control whether ``write()`` returns the number of bytes read
+  from the source. It defaults to ``False`` to preserve backwards
+  compatibility.
+* ``ZstdDecompressor.stream_writer()`` now implements the ``io.RawIOBase``
+  interface and behaves as a proper stream object.
+* ``ZstdCompressor.stream_writer()`` now accepts a ``write_return_read``
+  argument to control whether ``write()`` returns the number of bytes read
+  from the source. It defaults to ``False`` to preserve backwards
+  compatibility.
+* ``ZstdCompressionWriter`` now implements the ``io.RawIOBase`` interface and
+  behaves as a proper stream object. ``close()`` will now close the stream
+  and the underlying stream (if possible). ``__exit__`` will now call
+  ``close()``. Methods like ``writable()`` and ``fileno()`` are implemented.
+* ``ZstdDecompressionWriter`` no longer must be used as a context manager.
+* ``ZstdCompressionWriter`` no longer must be used as a context manager.
+  When not using as a context manager, it is important to call
+  ``flush(FRAME_FRAME)`` or the compression stream won't be properly
+  terminated and decoders may complain about malformed input.
+* ``ZstdCompressionWriter.flush()`` (what is returned from
+  ``ZstdCompressor.stream_writer()``) now accepts an argument controlling the
+  flush behavior. Its value can be one of the new constants
+  ``FLUSH_BLOCK`` or ``FLUSH_FRAME``.
+* ``ZstdDecompressionObj`` instances now have a ``flush([length=None])`` method.
+  This provides parity with standard library equivalent types. (#65)
+* ``CompressionParameters`` no longer redundantly store individual compression
+  parameters on each instance. Instead, compression parameters are stored inside
+  the underlying ``ZSTD_CCtx_params`` instance. Attributes for obtaining
+  parameters are now properties rather than instance variables.
+* Exposed the ``STRATEGY_BTULTRA2`` constant.
+* ``CompressionParameters`` instances now expose an ``overlap_log`` attribute.
+  This behaves identically to the ``overlap_size_log`` attribute.
+* ``CompressionParameters()`` now accepts an ``overlap_log`` argument that
+  behaves identically to the ``overlap_size_log`` argument. An error will be
+  raised if both arguments are specified.
+* ``CompressionParameters`` instances now expose an ``ldm_hash_rate_log``
+  attribute. This behaves identically to the ``ldm_hash_every_log`` attribute.
+* ``CompressionParameters()`` now accepts a ``ldm_hash_rate_log`` argument that
+  behaves identically to the ``ldm_hash_every_log`` argument. An error will be
+  raised if both arguments are specified.
+* ``CompressionParameters()`` now accepts a ``strategy`` argument that behaves
+  identically to the ``compression_strategy`` argument. An error will be raised
+  if both arguments are specified.
+* The ``MINMATCH_MIN`` and ``MINMATCH_MAX`` constants were added. They are
+  semantically equivalent to the old ``SEARCHLENGTH_MIN`` and
+  ``SEARCHLENGTH_MAX`` constants.
+* Bundled zstandard library upgraded from 1.3.7 to 1.3.8.
+* ``setup.py`` denotes support for Python 3.7 (Python 3.7 was supported and
+  tested in the 0.10 release).
+* ``zstd_cffi`` module has been renamed to ``zstandard.cffi``.
+* ``ZstdCompressor.stream_writer()`` now reuses a buffer in order to avoid
+  allocating a new buffer for every operation. This should result in faster
+  performance in cases where ``write()`` or ``flush()`` are being called
+  frequently. (#62)
+* Bundled zstandard library upgraded from 1.3.6 to 1.3.7.
+
+0.10.2 (released 2018-11-03)
+============================
+
+Bug Fixes
+---------
+
+* ``zstd_cffi.py`` added to ``setup.py`` (#60).
+
+Changes
+-------
+
+* Change some integer casts to avoid ``ssize_t`` (#61).
 
 0.10.1 (released 2018-10-08)
 ============================

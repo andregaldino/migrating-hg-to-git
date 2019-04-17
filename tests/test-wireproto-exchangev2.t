@@ -36,7 +36,10 @@ tests.
 
 Test basic clone
 
-  $ hg --debug clone -U http://localhost:$HGPORT client-simple
+Output is flaky, save it in a file and check part independently
+  $ hg --debug clone -U http://localhost:$HGPORT client-simple > clone-output
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   query 1; heads
@@ -45,13 +48,6 @@ Test basic clone
   sending command known: {
     'nodes': []
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
@@ -71,10 +67,6 @@ Test basic clone
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=941; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
   add changeset cd2534766bec
@@ -97,10 +89,6 @@ Test basic clone
     ],
     'tree': ''
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=992; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command filesdata: {
     'fields': set([
@@ -121,13 +109,32 @@ Test basic clone
       }
     ]
   }
+  updating the branch cache
+  new changesets 3390ef850073:caa2a465451d (3 drafts)
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=941; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=992; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=901; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  updating the branch cache
-  new changesets 3390ef850073:caa2a465451d (3 drafts)
-  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ rm clone-output
 
 All changesets should have been transferred
 
@@ -163,30 +170,22 @@ All manifests should have been transferred
 
 Cloning only a specific revision works
 
-  $ hg --debug clone -U -r 4432d83626e8 http://localhost:$HGPORT client-singlehead
+Output is flaky, save it in a file and check part independently
+  $ hg --debug clone -U -r 4432d83626e8 http://localhost:$HGPORT client-singlehead > clone-output
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   sending 1 commands
   sending command lookup: {
     'key': '4432d83626e8'
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=21; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   query 1; heads
   sending 2 commands
   sending command heads: {}
   sending command known: {
     'nodes': []
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
@@ -205,10 +204,6 @@ Cloning only a specific revision works
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=381; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
   checking for updated bookmarks
@@ -225,10 +220,6 @@ Cloning only a specific revision works
     ],
     'tree': ''
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=404; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command filesdata: {
     'fields': set([
@@ -246,13 +237,36 @@ Cloning only a specific revision works
       }
     ]
   }
+  updating the branch cache
+  new changesets 3390ef850073:4432d83626e8
+  (sent 6 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=21; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=381; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=404; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=439; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  updating the branch cache
-  new changesets 3390ef850073:4432d83626e8
-  (sent 6 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ rm clone-output
 
   $ cd client-singlehead
 
@@ -269,7 +283,10 @@ Cloning only a specific revision works
 
 Incremental pull works
 
-  $ hg --debug pull
+Output is flaky, save it in a file and check part independently
+  $ hg --debug pull > pull-output
+
+  $ cat pull-output | grep -v "received frame"
   pulling from http://localhost:$HGPORT/
   using http://localhost:$HGPORT/
   sending capabilities command
@@ -281,13 +298,6 @@ Incremental pull works
       'D2\xd86&\xe8\xa9\x86U\xf0b\xec\x1f*C\xb0\x7f\x7f\xbb\xb0'
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=2; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   searching for changes
   all local heads known remotely
   sending 1 commands
@@ -311,10 +321,6 @@ Incremental pull works
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=573; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset cd2534766bec
   add changeset e96ae20f4188
   add changeset caa2a465451d
@@ -333,10 +339,6 @@ Incremental pull works
     ],
     'tree': ''
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=601; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command filesdata: {
     'fields': set([
@@ -355,14 +357,33 @@ Incremental pull works
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=527; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets cd2534766bec:caa2a465451d (3 drafts)
   (run 'hg update' to get a working copy)
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat pull-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=2; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=573; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=601; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=527; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+
+  $ rm pull-output
 
   $ hg log -G -T '{rev} {node} {phase}\n'
   o  4 caa2a465451dd1facda0f5b12312c355584188a1 draft
@@ -459,7 +480,10 @@ Bookmarks are transferred on clone
   $ hg -R server-simple bookmark -r 3390ef850073fbc2f0dfff2244342c8e9229013a book-1
   $ hg -R server-simple bookmark -r cd2534766bece138c7c1afdc6825302f0f62d81f book-2
 
-  $ hg --debug clone -U http://localhost:$HGPORT/ client-bookmarks
+Output is flaky, save it in a file and check part independently
+  $ hg --debug clone -U http://localhost:$HGPORT/ client-bookmarks > clone-output
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   query 1; heads
@@ -468,13 +492,6 @@ Bookmarks are transferred on clone
   sending command known: {
     'nodes': []
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
@@ -494,10 +511,6 @@ Bookmarks are transferred on clone
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=979; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
   add changeset cd2534766bec
@@ -522,10 +535,6 @@ Bookmarks are transferred on clone
     ],
     'tree': ''
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=992; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command filesdata: {
     'fields': set([
@@ -546,13 +555,32 @@ Bookmarks are transferred on clone
       }
     ]
   }
+  updating the branch cache
+  new changesets 3390ef850073:caa2a465451d (1 drafts)
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=979; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=992; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=901; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  updating the branch cache
-  new changesets 3390ef850073:caa2a465451d (1 drafts)
-  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ rm clone-output
 
   $ hg -R client-bookmarks bookmarks
      book-1                    0:3390ef850073
@@ -563,7 +591,10 @@ Server-side bookmark moves are reflected during `hg pull`
   $ hg -R server-simple bookmark -r cd2534766bece138c7c1afdc6825302f0f62d81f book-1
   moving bookmark 'book-1' forward from 3390ef850073
 
-  $ hg -R client-bookmarks --debug pull
+Output is flaky, save it in a file and check part independently
+  $ hg -R client-bookmarks --debug pull > pull-output
+
+  $ cat pull-output | grep -v "received frame"
   pulling from http://localhost:$HGPORT/
   using http://localhost:$HGPORT/
   sending capabilities command
@@ -576,13 +607,6 @@ Server-side bookmark moves are reflected during `hg pull`
       '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1'
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=3; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   searching for changes
   all remote heads known locally
   sending 1 commands
@@ -607,14 +631,25 @@ Server-side bookmark moves are reflected during `hg pull`
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=65; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   checking for updated bookmarks
   updating bookmark book-1
   (run 'hg update' to get a working copy)
   (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat pull-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=43; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=3; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=65; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+
+  $ rm pull-output
 
   $ hg -R client-bookmarks bookmarks
      book-1                    2:cd2534766bec
@@ -647,7 +682,10 @@ Let's set up a slightly more complicated server
 
 Narrow clone only fetches some files
 
-  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --include dir0/ http://localhost:$HGPORT/ client-narrow-0
+Output is flaky, save it in a file and check part independently
+  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --include dir0/ http://localhost:$HGPORT/ client-narrow-0 > clone-output
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   query 1; heads
@@ -656,13 +694,6 @@ Narrow clone only fetches some files
   sending command known: {
     'nodes': []
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
@@ -681,10 +712,6 @@ Narrow clone only fetches some files
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset b709380892b1
   add changeset 47fe012ab237
@@ -705,10 +732,6 @@ Narrow clone only fetches some files
     ],
     'tree': ''
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command filesdata: {
     'fields': set([
@@ -733,13 +756,32 @@ Narrow clone only fetches some files
       }
     ]
   }
+  updating the branch cache
+  new changesets 3390ef850073:97765fc3cd62
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=449; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  updating the branch cache
-  new changesets 3390ef850073:97765fc3cd62
-  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ rm clone-output
 
 #if reporevlogstore
   $ find client-narrow-0/.hg/store -type f -name '*.i' | sort
@@ -751,7 +793,10 @@ Narrow clone only fetches some files
 
 --exclude by itself works
 
-  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --exclude dir0/ http://localhost:$HGPORT/ client-narrow-1
+Output is flaky, save it in a file and check part independently
+  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --exclude dir0/ http://localhost:$HGPORT/ client-narrow-1 > clone-output
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   query 1; heads
@@ -760,13 +805,6 @@ Narrow clone only fetches some files
   sending command known: {
     'nodes': []
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
@@ -785,10 +823,6 @@ Narrow clone only fetches some files
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset b709380892b1
   add changeset 47fe012ab237
@@ -809,10 +843,6 @@ Narrow clone only fetches some files
     ],
     'tree': ''
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command filesdata: {
     'fields': set([
@@ -840,13 +870,32 @@ Narrow clone only fetches some files
       }
     ]
   }
+  updating the branch cache
+  new changesets 3390ef850073:97765fc3cd62
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=709; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  updating the branch cache
-  new changesets 3390ef850073:97765fc3cd62
-  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ rm clone-output
 
 #if reporevlogstore
   $ find client-narrow-1/.hg/store -type f -name '*.i' | sort
@@ -860,7 +909,10 @@ Narrow clone only fetches some files
 
 Mixing --include and --exclude works
 
-  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --include dir0/ --exclude dir0/c http://localhost:$HGPORT/ client-narrow-2
+Output is flaky, save it in a file and check part independently
+  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --include dir0/ --exclude dir0/c http://localhost:$HGPORT/ client-narrow-2 > clone-output
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   query 1; heads
@@ -869,13 +921,6 @@ Mixing --include and --exclude works
   sending command known: {
     'nodes': []
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
@@ -894,10 +939,6 @@ Mixing --include and --exclude works
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset b709380892b1
   add changeset 47fe012ab237
@@ -918,10 +959,6 @@ Mixing --include and --exclude works
     ],
     'tree': ''
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command filesdata: {
     'fields': set([
@@ -949,13 +986,32 @@ Mixing --include and --exclude works
       }
     ]
   }
+  updating the branch cache
+  new changesets 3390ef850073:97765fc3cd62
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=160; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  updating the branch cache
-  new changesets 3390ef850073:97765fc3cd62
-  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ rm clone-output
 
 #if reporevlogstore
   $ find client-narrow-2/.hg/store -type f -name '*.i' | sort
@@ -967,7 +1023,10 @@ Mixing --include and --exclude works
 --stream will use rawfiledata to transfer changelog and manifestlog, then
 fall through to get files data
 
-  $ hg --debug clone --stream -U http://localhost:$HGPORT client-stream-0
+Output is flaky, save it in a file and check part independently
+  $ hg --debug clone --stream -U http://localhost:$HGPORT client-stream-0 > clone-output
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   sending 1 commands
@@ -977,10 +1036,6 @@ fall through to get files data
       'manifestlog'
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1275; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   query 1; heads
   sending 2 commands
@@ -990,13 +1045,6 @@ fall through to get files data
       '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=2; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   searching for changes
   all remote heads known locally
   sending 1 commands
@@ -1019,10 +1067,6 @@ fall through to get files data
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=13; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   checking for updated bookmarks
   sending 1 commands
   sending command filesdata: {
@@ -1043,15 +1087,37 @@ fall through to get files data
       }
     ]
   }
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1275; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=2; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=13; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=1133; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ rm clone-output
 
 --stream + --include/--exclude will only obtain some files
 
-  $ hg --debug --config extensions.pullext=$TESTDIR/pullext.py clone --stream --include dir0/ -U http://localhost:$HGPORT client-stream-2
+Output is flaky, save it in a file and check part independently
+  $ hg --debug --config extensions.pullext=$TESTDIR/pullext.py clone --stream --include dir0/ -U http://localhost:$HGPORT client-stream-2 > clone-output
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   sending 1 commands
@@ -1061,10 +1127,6 @@ fall through to get files data
       'manifestlog'
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1275; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   query 1; heads
   sending 2 commands
@@ -1074,13 +1136,6 @@ fall through to get files data
       '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=2; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   searching for changes
   all remote heads known locally
   sending 1 commands
@@ -1103,10 +1158,6 @@ fall through to get files data
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=13; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   checking for updated bookmarks
   sending 1 commands
   sending command filesdata: {
@@ -1132,11 +1183,30 @@ fall through to get files data
       }
     ]
   }
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1275; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=2; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=13; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=449; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ rm clone-output
 
 #if reporevlogstore
   $ find client-stream-2/.hg/store -type f -name '*.i' | sort
@@ -1148,7 +1218,14 @@ fall through to get files data
 
 Shallow clone doesn't work with revlogs
 
-  $ hg --debug --config extensions.pullext=$TESTDIR/pullext.py clone --depth 1 -U http://localhost:$HGPORT client-shallow-revlogs
+Output is flaky, save it in a file and check part independently
+  $ hg --debug --config extensions.pullext=$TESTDIR/pullext.py clone --depth 1 -U http://localhost:$HGPORT client-shallow-revlogs > clone-output
+  transaction abort!
+  rollback completed
+  abort: revlog storage does not support missing parents write mode
+  [255]
+
+  $ cat clone-output | grep -v "received frame"
   using http://localhost:$HGPORT/
   sending capabilities command
   query 1; heads
@@ -1157,13 +1234,6 @@ Shallow clone doesn't work with revlogs
   sending command known: {
     'nodes': []
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
@@ -1182,10 +1252,6 @@ Shallow clone doesn't work with revlogs
       }
     ]
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset b709380892b1
   add changeset 47fe012ab237
@@ -1206,10 +1272,6 @@ Shallow clone doesn't work with revlogs
     ],
     'tree': ''
   }
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 1 commands
   sending command filesdata: {
     'fields': set([
@@ -1227,15 +1289,30 @@ Shallow clone doesn't work with revlogs
       }
     ]
   }
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ cat clone-output | grep "received frame"
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=1005; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  transaction abort!
-  rollback completed
-  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
-  abort: revlog storage does not support missing parents write mode
-  [255]
+
+  $ rm clone-output
 
   $ killdaemons.py
 

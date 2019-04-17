@@ -15,7 +15,6 @@ from mercurial import (
     context,
     error,
     phases,
-    pycompat,
     util,
 )
 from . import shallowutil
@@ -39,11 +38,11 @@ class remotefilectx(context.filectx):
 
     @propertycache
     def _changeid(self):
-        if '_changeid' in self.__dict__:
+        if r'_changeid' in self.__dict__:
             return self._changeid
-        elif '_changectx' in self.__dict__:
+        elif r'_changectx' in self.__dict__:
             return self._changectx.rev()
-        elif '_descendantrev' in self.__dict__:
+        elif r'_descendantrev' in self.__dict__:
             # this file context was created from a revision with a known
             # descendant, we can (lazily) correct for linkrev aliases
             linknode = self._adjustlinknode(self._path, self._filelog,
@@ -102,7 +101,7 @@ class remotefilectx(context.filectx):
         """
         lkr = self.linkrev()
         attrs = vars(self)
-        noctx = not ('_changeid' in attrs or '_changectx' in attrs)
+        noctx = not (r'_changeid' in attrs or r'_changectx' in attrs)
         if noctx or self.rev() == lkr:
             return lkr
         linknode = self._adjustlinknode(self._path, self._filelog,
@@ -136,6 +135,10 @@ class remotefilectx(context.filectx):
             except error.LookupError:
                 pass
         return renamed
+
+    def copysource(self):
+        copy = self.renamed()
+        return copy and copy[0]
 
     def ancestormap(self):
         if not self._ancestormap:
@@ -316,7 +319,7 @@ class remotefilectx(context.filectx):
         finally:
             elapsed = time.time() - start
             repo.ui.log('linkrevfixup', logmsg + '\n', elapsed=elapsed * 1000,
-                        **pycompat.strkwargs(commonlogkwargs))
+                        **commonlogkwargs)
 
     def _verifylinknode(self, revs, linknode):
         """
@@ -452,8 +455,8 @@ class remotefilectx(context.filectx):
 class remoteworkingfilectx(context.workingfilectx, remotefilectx):
     def __init__(self, repo, path, filelog=None, workingctx=None):
         self._ancestormap = None
-        return super(remoteworkingfilectx, self).__init__(repo, path,
-            filelog, workingctx)
+        super(remoteworkingfilectx, self).__init__(repo, path, filelog,
+                                                   workingctx)
 
     def parents(self):
         return remotefilectx.parents(self)

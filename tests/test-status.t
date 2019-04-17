@@ -132,7 +132,26 @@ tweaking defaults works
 
 relative paths can be requested
 
+  $ hg status --cwd a --config ui.relative-paths=yes
+  ? 1/in_a_1
+  ? in_a
+  ? ../b/1/in_b_1
+  ? ../b/2/in_b_2
+  ? ../b/in_b
+  ? ../in_root
+
+  $ hg status --cwd a . --config ui.relative-paths=legacy
+  ? 1/in_a_1
+  ? in_a
+  $ hg status --cwd a . --config ui.relative-paths=no
+  ? a/1/in_a_1
+  ? a/in_a
+
+commands.status.relative overrides ui.relative-paths
+
   $ cat >> $HGRCPATH <<EOF
+  > [ui]
+  > relative-paths = False
   > [commands]
   > status.relative = True
   > EOF
@@ -271,7 +290,8 @@ hg status -A:
 
   $ hg status -A -Tpickle > pickle
   >>> from __future__ import print_function
-  >>> import pickle
+  >>> from mercurial import util
+  >>> pickle = util.pickle
   >>> data = sorted((x[b'status'].decode(), x[b'path'].decode()) for x in pickle.load(open("pickle", r"rb")))
   >>> for s, p in data: print("%s %s" % (s, p))
   ! deleted

@@ -23,144 +23,105 @@ from . import (
     util,
 )
 from .utils import (
+    repoviewutil,
     stringutil,
 )
+
+subsettable = repoviewutil. subsettable
 
 calcsize = struct.calcsize
 pack_into = struct.pack_into
 unpack_from = struct.unpack_from
 
-def _filename(repo):
-    """name of a branchcache file for a given repo or repoview"""
-    filename = "branch2"
-    if repo.filtername:
-        filename = '%s-%s' % (filename, repo.filtername)
-    return filename
 
-def read(repo):
-    f = None
-    try:
-        f = repo.cachevfs(_filename(repo))
-        lineiter = iter(f)
-        cachekey = next(lineiter).rstrip('\n').split(" ", 2)
-        last, lrev = cachekey[:2]
-        last, lrev = bin(last), int(lrev)
-        filteredhash = None
-        if len(cachekey) > 2:
-            filteredhash = bin(cachekey[2])
-        partial = branchcache(tipnode=last, tiprev=lrev,
-                              filteredhash=filteredhash)
-        if not partial.validfor(repo):
-            # invalidate the cache
-            raise ValueError(r'tip differs')
+class BranchMapCache(object):
+    """mapping of filtered views of repo with their branchcache"""
+    def __init__(self):
+        self._per_filter = {}
+
+    def __getitem__(self, repo):
+        self.updatecache(repo)
+        return self._per_filter[repo.filtername]
+
+    def updatecache(self, repo):
+        """Update the cache for the given filtered view on a repository"""
+        # This can trigger updates for the caches for subsets of the filtered
+        # view, e.g. when there is no cache for this filtered view or the cache
+        # is stale.
+
         cl = repo.changelog
-        for l in lineiter:
-            l = l.rstrip('\n')
-            if not l:
-                continue
-            node, state, label = l.split(" ", 2)
-            if state not in 'oc':
-                raise ValueError(r'invalid branch state')
-            label = encoding.tolocal(label.strip())
-            node = bin(node)
-            if not cl.hasnode(node):
-                raise ValueError(
-                    r'node %s does not exist' % pycompat.sysstr(hex(node)))
-            partial.setdefault(label, []).append(node)
-            if state == 'c':
-                partial._closednodes.add(node)
+        filtername = repo.filtername
+        bcache = self._per_filter.get(filtername)
+        if bcache is None or not bcache.validfor(repo):
+            # cache object missing or cache object stale? Read from disk
+            bcache = branchcache.fromfile(repo)
 
-    except (IOError, OSError):
-        return None
-
-    except Exception as inst:
-        if repo.ui.debugflag:
-            msg = 'invalid branchheads cache'
-            if repo.filtername is not None:
-                msg += ' (%s)' % repo.filtername
-            msg += ': %s\n'
-            repo.ui.debug(msg % pycompat.bytestr(inst))
-        partial = None
-
-    finally:
-        if f:
-            f.close()
-
-    return partial
-
-### Nearest subset relation
-# Nearest subset of filter X is a filter Y so that:
-# * Y is included in X,
-# * X - Y is as small as possible.
-# This create and ordering used for branchmap purpose.
-# the ordering may be partial
-subsettable = {None: 'visible',
-               'visible-hidden': 'visible',
-               'visible': 'served',
-               'served': 'immutable',
-               'immutable': 'base'}
-
-def updatecache(repo):
-    cl = repo.changelog
-    filtername = repo.filtername
-    partial = repo._branchcaches.get(filtername)
-
-    revs = []
-    if partial is None or not partial.validfor(repo):
-        partial = read(repo)
-        if partial is None:
+        revs = []
+        if bcache is None:
+            # no (fresh) cache available anymore, perhaps we can re-use
+            # the cache for a subset, then extend that to add info on missing
+            # revisions.
             subsetname = subsettable.get(filtername)
-            if subsetname is None:
-                partial = branchcache()
-            else:
+            if subsetname is not None:
                 subset = repo.filtered(subsetname)
-                partial = subset.branchmap().copy()
+                bcache = self[subset].copy()
                 extrarevs = subset.changelog.filteredrevs - cl.filteredrevs
-                revs.extend(r for  r in extrarevs if r <= partial.tiprev)
-    revs.extend(cl.revs(start=partial.tiprev + 1))
-    if revs:
-        partial.update(repo, revs)
-        partial.write(repo)
+                revs.extend(r for r in extrarevs if r <= bcache.tiprev)
+            else:
+                # nothing to fall back on, start empty.
+                bcache = branchcache()
 
-    assert partial.validfor(repo), filtername
-    repo._branchcaches[repo.filtername] = partial
+        revs.extend(cl.revs(start=bcache.tiprev + 1))
+        if revs:
+            bcache.update(repo, revs)
 
-def replacecache(repo, bm):
-    """Replace the branchmap cache for a repo with a branch mapping.
+        assert bcache.validfor(repo), filtername
+        self._per_filter[repo.filtername] = bcache
 
-    This is likely only called during clone with a branch map from a remote.
+    def replace(self, repo, remotebranchmap):
+        """Replace the branchmap cache for a repo with a branch mapping.
+
+        This is likely only called during clone with a branch map from a
+        remote.
+
+        """
+        cl = repo.changelog
+        clrev = cl.rev
+        clbranchinfo = cl.branchinfo
+        rbheads = []
+        closed = []
+        for bheads in remotebranchmap.itervalues():
+            rbheads += bheads
+            for h in bheads:
+                r = clrev(h)
+                b, c = clbranchinfo(r)
+                if c:
+                    closed.append(h)
+
+        if rbheads:
+            rtiprev = max((int(clrev(node)) for node in rbheads))
+            cache = branchcache(
+                remotebranchmap, repo[rtiprev].node(), rtiprev,
+                closednodes=closed)
+
+            # Try to stick it as low as possible
+            # filter above served are unlikely to be fetch from a clone
+            for candidate in ('base', 'immutable', 'served'):
+                rview = repo.filtered(candidate)
+                if cache.validfor(rview):
+                    self._per_filter[candidate] = cache
+                    cache.write(rview)
+                    return
+
+    def clear(self):
+        self._per_filter.clear()
+
+def _unknownnode(node):
+    """ raises ValueError when branchcache found a node which does not exists
     """
-    cl = repo.changelog
-    clrev = cl.rev
-    clbranchinfo = cl.branchinfo
-    rbheads = []
-    closed = []
-    for bheads in bm.itervalues():
-        rbheads.extend(bheads)
-        for h in bheads:
-            r = clrev(h)
-            b, c = clbranchinfo(r)
-            if c:
-                closed.append(h)
+    raise ValueError(r'node %s does not exist' % pycompat.sysstr(hex(node)))
 
-    if rbheads:
-        rtiprev = max((int(clrev(node))
-                for node in rbheads))
-        cache = branchcache(bm,
-                            repo[rtiprev].node(),
-                            rtiprev,
-                            closednodes=closed)
-
-        # Try to stick it as low as possible
-        # filter above served are unlikely to be fetch from a clone
-        for candidate in ('base', 'immutable', 'served'):
-            rview = repo.filtered(candidate)
-            if cache.validfor(rview):
-                repo._branchcaches[candidate] = cache
-                cache.write(rview)
-                break
-
-class branchcache(dict):
+class branchcache(object):
     """A dict like object that hold branches heads cache.
 
     This cache is used to avoid costly computations to determine all the
@@ -183,8 +144,10 @@ class branchcache(dict):
     """
 
     def __init__(self, entries=(), tipnode=nullid, tiprev=nullrev,
-                 filteredhash=None, closednodes=None):
-        super(branchcache, self).__init__(entries)
+                 filteredhash=None, closednodes=None, hasnode=None):
+        """ hasnode is a function which can be used to verify whether changelog
+        has a given node or not. If it's not provided, we assume that every node
+        we have exists in changelog """
         self.tipnode = tipnode
         self.tiprev = tiprev
         self.filteredhash = filteredhash
@@ -195,6 +158,125 @@ class branchcache(dict):
             self._closednodes = set()
         else:
             self._closednodes = closednodes
+        self._entries = dict(entries)
+        # whether closed nodes are verified or not
+        self._closedverified = False
+        # branches for which nodes are verified
+        self._verifiedbranches = set()
+        self._hasnode = hasnode
+        if self._hasnode is None:
+            self._hasnode = lambda x: True
+
+    def _verifyclosed(self):
+        """ verify the closed nodes we have """
+        if self._closedverified:
+            return
+        for node in self._closednodes:
+            if not self._hasnode(node):
+                _unknownnode(node)
+
+        self._closedverified = True
+
+    def _verifybranch(self, branch):
+        """ verify head nodes for the given branch. """
+        if branch not in self._entries or branch in self._verifiedbranches:
+            return
+        for n in self._entries[branch]:
+            if not self._hasnode(n):
+                _unknownnode(n)
+
+        self._verifiedbranches.add(branch)
+
+    def _verifyall(self):
+        """ verifies nodes of all the branches """
+        needverification = set(self._entries.keys()) - self._verifiedbranches
+        for b in needverification:
+            self._verifybranch(b)
+
+    def __iter__(self):
+        return iter(self._entries)
+
+    def __setitem__(self, key, value):
+        self._entries[key] = value
+
+    def __getitem__(self, key):
+        self._verifybranch(key)
+        return self._entries[key]
+
+    def __contains__(self, key):
+        self._verifybranch(key)
+        return key in self._entries
+
+    def iteritems(self):
+        for k, v in self._entries.iteritems():
+            self._verifybranch(k)
+            yield k, v
+
+    def hasbranch(self, label):
+        """ checks whether a branch of this name exists or not """
+        self._verifybranch(label)
+        return label in self._entries
+
+    @classmethod
+    def fromfile(cls, repo):
+        f = None
+        try:
+            f = repo.cachevfs(cls._filename(repo))
+            lineiter = iter(f)
+            cachekey = next(lineiter).rstrip('\n').split(" ", 2)
+            last, lrev = cachekey[:2]
+            last, lrev = bin(last), int(lrev)
+            filteredhash = None
+            hasnode = repo.changelog.hasnode
+            if len(cachekey) > 2:
+                filteredhash = bin(cachekey[2])
+            bcache = cls(tipnode=last, tiprev=lrev, filteredhash=filteredhash,
+                         hasnode=hasnode)
+            if not bcache.validfor(repo):
+                # invalidate the cache
+                raise ValueError(r'tip differs')
+            bcache.load(repo, lineiter)
+        except (IOError, OSError):
+            return None
+
+        except Exception as inst:
+            if repo.ui.debugflag:
+                msg = 'invalid branchheads cache'
+                if repo.filtername is not None:
+                    msg += ' (%s)' % repo.filtername
+                msg += ': %s\n'
+                repo.ui.debug(msg % pycompat.bytestr(inst))
+            bcache = None
+
+        finally:
+            if f:
+                f.close()
+
+        return bcache
+
+    def load(self, repo, lineiter):
+        """ fully loads the branchcache by reading from the file using the line
+        iterator passed"""
+        for line in lineiter:
+            line = line.rstrip('\n')
+            if not line:
+                continue
+            node, state, label = line.split(" ", 2)
+            if state not in 'oc':
+                raise ValueError(r'invalid branch state')
+            label = encoding.tolocal(label.strip())
+            node = bin(node)
+            self._entries.setdefault(label, []).append(node)
+            if state == 'c':
+                self._closednodes.add(node)
+
+    @staticmethod
+    def _filename(repo):
+        """name of a branchcache file for a given repo or repoview"""
+        filename = "branch2"
+        if repo.filtername:
+            filename = '%s-%s' % (filename, repo.filtername)
+        return filename
 
     def validfor(self, repo):
         """Is the cache content valid regarding a repo
@@ -203,7 +285,7 @@ class branchcache(dict):
         - True when cache is up to date or a subset of current repo."""
         try:
             return ((self.tipnode == repo.changelog.node(self.tiprev))
-                    and (self.filteredhash == \
+                    and (self.filteredhash ==
                          scmutil.filteredhash(repo, self.tiprev)))
         except IndexError:
             return False
@@ -230,7 +312,8 @@ class branchcache(dict):
         return (n for n in nodes if n not in self._closednodes)
 
     def branchheads(self, branch, closed=False):
-        heads = self[branch]
+        self._verifybranch(branch)
+        heads = self._entries[branch]
         if not closed:
             heads = list(self.iteropen(heads))
         return heads
@@ -239,32 +322,38 @@ class branchcache(dict):
         for bn, heads in self.iteritems():
             yield (bn, heads) + self._branchtip(heads)
 
+    def iterheads(self):
+        """ returns all the heads """
+        self._verifyall()
+        return self._entries.itervalues()
+
     def copy(self):
         """return an deep copy of the branchcache object"""
-        return branchcache(self, self.tipnode, self.tiprev, self.filteredhash,
-                           self._closednodes)
+        return type(self)(
+            self._entries, self.tipnode, self.tiprev, self.filteredhash,
+            self._closednodes)
 
     def write(self, repo):
         try:
-            f = repo.cachevfs(_filename(repo), "w", atomictemp=True)
+            f = repo.cachevfs(self._filename(repo), "w", atomictemp=True)
             cachekey = [hex(self.tipnode), '%d' % self.tiprev]
             if self.filteredhash is not None:
                 cachekey.append(hex(self.filteredhash))
             f.write(" ".join(cachekey) + '\n')
             nodecount = 0
             for label, nodes in sorted(self.iteritems()):
+                label = encoding.fromlocal(label)
                 for node in nodes:
                     nodecount += 1
                     if node in self._closednodes:
                         state = 'c'
                     else:
                         state = 'o'
-                    f.write("%s %s %s\n" % (hex(node), state,
-                                            encoding.fromlocal(label)))
+                    f.write("%s %s %s\n" % (hex(node), state, label))
             f.close()
             repo.ui.log('branchcache',
                         'wrote %s branch cache with %d labels and %d nodes\n',
-                        repo.filtername, len(self), nodecount)
+                        repo.filtername, len(self._entries), nodecount)
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
             repo.ui.debug("couldn't write branch cache: %s\n" %
@@ -293,7 +382,7 @@ class branchcache(dict):
         # really branchheads. Note checking parents is insufficient:
         # 1 (branch a) -> 2 (branch b) -> 3 (branch a)
         for branch, newheadrevs in newbranches.iteritems():
-            bheads = self.setdefault(branch, [])
+            bheads = self._entries.setdefault(branch, [])
             bheadset = set(cl.rev(node) for node in bheads)
 
             # This have been tested True on all internal usage of this function.
@@ -320,7 +409,7 @@ class branchcache(dict):
             # cache key are not valid anymore
             self.tipnode = nullid
             self.tiprev = nullrev
-            for heads in self.values():
+            for heads in self.iterheads():
                 tiprev = max(cl.rev(node) for node in heads)
                 if tiprev > self.tiprev:
                     self.tipnode = cl.node(tiprev)
@@ -329,7 +418,16 @@ class branchcache(dict):
 
         duration = util.timer() - starttime
         repo.ui.log('branchcache', 'updated %s branch cache in %.4f seconds\n',
-                    repo.filtername, duration)
+                    repo.filtername or b'None', duration)
+
+        self.write(repo)
+
+
+class remotebranchcache(branchcache):
+    """Branchmap info for a remote connection, should not write locally"""
+    def write(self, repo):
+        pass
+
 
 # Revision branch info cache
 

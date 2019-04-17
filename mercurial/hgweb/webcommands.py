@@ -884,7 +884,7 @@ def comparison(web):
             leftlines = filelines(pfctx)
     else:
         rightlines = ()
-        pfctx = ctx.parents()[0][path]
+        pfctx = ctx.p1()[path]
         leftlines = filelines(pfctx)
 
     comparison = webutil.compare(context, leftlines, rightlines)

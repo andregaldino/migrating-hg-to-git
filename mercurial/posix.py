@@ -575,15 +575,16 @@ def groupname(gid=None):
     if gid is None:
         gid = os.getgid()
     try:
-        return grp.getgrgid(gid)[0]
+        return pycompat.fsencode(grp.getgrgid(gid)[0])
     except KeyError:
-        return str(gid)
+        return pycompat.bytestr(gid)
 
 def groupmembers(name):
     """Return the list of members of the group with the given
     name, KeyError if the group does not exist.
     """
-    return list(grp.getgrnam(name).gr_mem)
+    name = pycompat.fsdecode(name)
+    return pycompat.rapply(pycompat.fsencode, list(grp.getgrnam(name).gr_mem))
 
 def spawndetached(args):
     return os.spawnvp(os.P_NOWAIT | getattr(os, 'P_DETACH', 0),

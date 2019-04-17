@@ -20,9 +20,9 @@ https://github.com/indygreg/python-zstandard.
 Requirements
 ============
 
-This extension is designed to run with Python 2.7, 3.4, 3.5, and 3.6
-on common platforms (Linux, Windows, and OS X). x86 and x86_64 are well-tested
-on Windows. Only x86_64 is well-tested on Linux and macOS.
+This extension is designed to run with Python 2.7, 3.4, 3.5, 3.6, and 3.7
+on common platforms (Linux, Windows, and OS X). On PyPy (both PyPy2 and PyPy3) we support version 6.0.0 and above. 
+x86 and x86_64 are well-tested on Windows. Only x86_64 is well-tested on Linux and macOS.
 
 Installing
 ==========
@@ -215,7 +215,7 @@ Instances can also be used as context managers::
 
                # Do something with compressed chunk.
 
-When the context manager exists or ``close()`` is called, the stream is closed,
+When the context manager exits or ``close()`` is called, the stream is closed,
 underlying resources are released, and future operations against the compression
 stream will fail.
 
@@ -251,8 +251,54 @@ emitted so far.
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 
-``stream_writer(fh)`` (which behaves as a context manager) allows you to *stream*
-data into a compressor.::
+``stream_writer(fh)`` allows you to *stream* data into a compressor.
+
+Returned instances implement the ``io.RawIOBase`` interface. Only methods
+that involve writing will do useful things.
+
+The argument to ``stream_writer()`` must have a ``write(data)`` method. As
+compressed data is available, ``write()`` will be called with the compressed
+data as its argument. Many common Python types implement ``write()``, including
+open file handles and ``io.BytesIO``.
+
+The ``write(data)`` method is used to feed data into the compressor.
+
+The ``flush([flush_mode=FLUSH_BLOCK])`` method can be called to evict whatever
+data remains within the compressor's internal state into the output object. This
+may result in 0 or more ``write()`` calls to the output object. This method
+accepts an optional ``flush_mode`` argument to control the flushing behavior.
+Its value can be any of the ``FLUSH_*`` constants.
+
+Both ``write()`` and ``flush()`` return the number of bytes written to the
+object's ``write()``. In many cases, small inputs do not accumulate enough
+data to cause a write and ``write()`` will return ``0``.
+
+Calling ``close()`` will mark the stream as closed and subsequent I/O
+operations will raise ``ValueError`` (per the documented behavior of
+``io.RawIOBase``). ``close()`` will also call ``close()`` on the underlying
+stream if such a method exists.
+
+Typically usage is as follows::
+
+   cctx = zstd.ZstdCompressor(level=10)
+   compressor = cctx.stream_writer(fh)
+
+   compressor.write(b'chunk 0\n')
+   compressor.write(b'chunk 1\n')
+   compressor.flush()
+   # Receiver will be able to decode ``chunk 0\nchunk 1\n`` at this point.
+   # Receiver is also expecting more data in the zstd *frame*.
+
+   compressor.write(b'chunk 2\n')
+   compressor.flush(zstd.FLUSH_FRAME)
+   # Receiver will be able to decode ``chunk 0\nchunk 1\nchunk 2``.
+   # Receiver is expecting no more data, as the zstd frame is closed.
+   # Any future calls to ``write()`` at this point will construct a new
+   # zstd frame.
+
+Instances can be used as context managers. Exiting the context manager is
+the equivalent of calling ``close()``, which is equivalent to calling
+``flush(zstd.FLUSH_FRAME)``::
 
    cctx = zstd.ZstdCompressor(level=10)
    with cctx.stream_writer(fh) as compressor:
@@ -260,22 +306,12 @@ data into a compressor.::
        compressor.write(b'chunk 1')
        ...
 
-The argument to ``stream_writer()`` must have a ``write(data)`` method. As
-compressed data is available, ``write()`` will be called with the compressed
-data as its argument. Many common Python types implement ``write()``, including
-open file handles and ``io.BytesIO``.
+.. important::
 
-``stream_writer()`` returns an object representing a streaming compressor
-instance. It **must** be used as a context manager. That object's
-``write(data)`` method is used to feed data into the compressor.
-
-A ``flush()`` method can be called to evict whatever data remains within the
-compressor's internal state into the output object. This may result in 0 or
-more ``write()`` calls to the output object.
-
-Both ``write()`` and ``flush()`` return the number of bytes written to the
-object's ``write()``. In many cases, small inputs do not accumulate enough
-data to cause a write and ``write()`` will return ``0``.
+   If ``flush(FLUSH_FRAME)`` is not called, emitted data doesn't constitute
+   a full zstd *frame* and consumers of this data may complain about malformed
+   input. It is recommended to use instances as a context manager to ensure
+   *frames* are properly finished.
 
 If the size of the data being fed to this streaming compressor is known,
 you can declare it before compression begins::
@@ -309,6 +345,14 @@ Thte total number of bytes written so far are exposed via ``tell()``::
     with cctx.stream_writer(fh) as compressor:
         ...
         total_written = compressor.tell()
+
+``stream_writer()`` accepts a ``write_return_read`` boolean argument to control
+the return value of ``write()``. When ``False`` (the default), ``write()`` returns
+the number of bytes that were ``write()``en to the underlying object. When
+``True``, ``write()`` returns the number of bytes read from the input that
+were subsequently written to the compressor. ``True`` is the *proper* behavior
+for ``write()`` as specified by the ``io.RawIOBase`` interface and will become
+the default value in a future release.
 
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
@@ -654,26 +698,62 @@ will raise ``ValueError`` if attempted.
 ``tell()`` returns the number of decompressed bytes read so far.
 
 Not all I/O methods are implemented. Notably missing is support for
-``readline()``, ``readlines()``, and linewise iteration support. Support for
-these is planned for a future release.
+``readline()``, ``readlines()``, and linewise iteration support. This is
+because streams operate on binary data - not text data. If you want to
+convert decompressed output to text, you can chain an ``io.TextIOWrapper``
+to the stream::
+
+   with open(path, 'rb') as fh:
+       dctx = zstd.ZstdDecompressor()
+       stream_reader = dctx.stream_reader(fh)
+       text_stream = io.TextIOWrapper(stream_reader, encoding='utf-8')
+
+       for line in text_stream:
+           ...
+
+The ``read_across_frames`` argument to ``stream_reader()`` controls the
+behavior of read operations when the end of a zstd *frame* is encountered.
+When ``False`` (the default), a read will complete when the end of a
+zstd *frame* is encountered. When ``True``, a read can potentially
+return data spanning multiple zstd *frames*.
 
 Streaming Input API
 ^^^^^^^^^^^^^^^^^^^
 
-``stream_writer(fh)`` can be used to incrementally send compressed data to a
-decompressor.::
+``stream_writer(fh)`` allows you to *stream* data into a decompressor.
+
+Returned instances implement the ``io.RawIOBase`` interface. Only methods
+that involve writing will do useful things.
+
+The argument to ``stream_writer()`` is typically an object that also implements
+``io.RawIOBase``. But any object with a ``write(data)`` method will work. Many
+common Python types conform to this interface, including open file handles
+and ``io.BytesIO``.
+
+Behavior is similar to ``ZstdCompressor.stream_writer()``: compressed data
+is sent to the decompressor by calling ``write(data)`` and decompressed
+output is written to the underlying stream by calling its ``write(data)``
+method.::
 
     dctx = zstd.ZstdDecompressor()
-    with dctx.stream_writer(fh) as decompressor:
-        decompressor.write(compressed_data)
+    decompressor = dctx.stream_writer(fh)
 
-This behaves similarly to ``zstd.ZstdCompressor``: compressed data is written to
-the decompressor by calling ``write(data)`` and decompressed output is written
-to the output object by calling its ``write(data)`` method.
+    decompressor.write(compressed_data)
+    ...
+
 
 Calls to ``write()`` will return the number of bytes written to the output
 object. Not all inputs will result in bytes being written, so return values
 of ``0`` are possible.
+
+Like the ``stream_writer()`` compressor, instances can be used as context
+managers. However, context managers add no extra special behavior and offer
+little to no benefit to being used.
+
+Calling ``close()`` will mark the stream as closed and subsequent I/O operations
+will raise ``ValueError`` (per the documented behavior of ``io.RawIOBase``).
+``close()`` will also call ``close()`` on the underlying stream if such a
+method exists.
 
 The size of chunks being ``write()`` to the destination can be specified::
 
@@ -686,6 +766,13 @@ You can see how much memory is being used by the decompressor::
     dctx = zstd.ZstdDecompressor()
     with dctx.stream_writer(fh) as decompressor:
         byte_size = decompressor.memory_size()
+
+``stream_writer()`` accepts a ``write_return_read`` boolean argument to control
+the return value of ``write()``. When ``False`` (the default)``, ``write()``
+returns the number of bytes that were ``write()``en to the underlying stream.
+When ``True``, ``write()`` returns the number of bytes read from the input.
+``True`` is the *proper* behavior for ``write()`` as specified by the
+``io.RawIOBase`` interface and will become the default in a future release.
 
 Streaming Output API
 ^^^^^^^^^^^^^^^^^^^^
@@ -790,6 +877,10 @@ these temporary chunks by passing ``write_size`` to ``decompressobj()``::
    Because calls to ``decompress()`` may need to perform multiple
    memory (re)allocations, this streaming decompression API isn't as
    efficient as other APIs.
+
+For compatibility with the standard library APIs, instances expose a
+``flush([length=None])`` method. This method no-ops and has no meaningful
+side-effects, making it safe to call any time.
 
 Batch Decompression API
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -1147,18 +1238,21 @@ follows:
 * search_log
 * min_match
 * target_length
-* compression_strategy
+* strategy
+* compression_strategy (deprecated: same as ``strategy``)
 * write_content_size
 * write_checksum
 * write_dict_id
 * job_size
-* overlap_size_log
+* overlap_log
+* overlap_size_log (deprecated: same as ``overlap_log``)
 * force_max_window
 * enable_ldm
 * ldm_hash_log
 * ldm_min_match
 * ldm_bucket_size_log
-* ldm_hash_every_log
+* ldm_hash_rate_log
+* ldm_hash_every_log (deprecated: same as ``ldm_hash_rate_log``)
 * threads
 
 Some of these are very low-level settings. It may help to consult the official
@@ -1240,6 +1334,13 @@ FRAME_HEADER
 MAGIC_NUMBER
     Frame header as an integer
 
+FLUSH_BLOCK
+    Flushing behavior that denotes to flush a zstd block. A decompressor will
+    be able to decode all data fed into the compressor so far.
+FLUSH_FRAME
+    Flushing behavior that denotes to end a zstd frame. Any new data fed
+    to the compressor will start a new frame.
+
 CONTENTSIZE_UNKNOWN
     Value for content size when the content size is unknown.
 CONTENTSIZE_ERROR
@@ -1261,10 +1362,18 @@ SEARCHLOG_MIN
     Minimum value for compression parameter
 SEARCHLOG_MAX
     Maximum value for compression parameter
+MINMATCH_MIN
+    Minimum value for compression parameter
+MINMATCH_MAX
+    Maximum value for compression parameter
 SEARCHLENGTH_MIN
     Minimum value for compression parameter
+
+    Deprecated: use ``MINMATCH_MIN``
 SEARCHLENGTH_MAX
     Maximum value for compression parameter
+
+    Deprecated: use ``MINMATCH_MAX``
 TARGETLENGTH_MIN
     Minimum value for compression parameter
 STRATEGY_FAST
@@ -1282,6 +1391,8 @@ STRATEGY_BTLAZY2
 STRATEGY_BTOPT
     Compression strategy
 STRATEGY_BTULTRA
+    Compression strategy
+STRATEGY_BTULTRA2
     Compression strategy
 
 FORMAT_ZSTD1

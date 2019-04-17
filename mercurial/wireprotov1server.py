@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import binascii
 import os
 
 from .i18n import _
@@ -63,7 +64,8 @@ def getdispatchrepo(repo, proto, command):
     extensions that need commands to operate on different repo views under
     specialized circumstances.
     """
-    return repo.filtered('served')
+    viewconfig = repo.ui.config('server', 'view')
+    return repo.filtered(viewconfig)
 
 def dispatch(repo, proto, command):
     repo = getdispatchrepo(repo, proto, command)
@@ -165,7 +167,6 @@ def wireprotocommand(name, args=None, permission='push'):
 @wireprotocommand('batch', 'cmds *', permission='pull')
 def batch(repo, proto, cmds, others):
     unescapearg = wireprototypes.unescapebatcharg
-    repo = repo.filtered("served")
     res = []
     for pair in cmds.split(';'):
         op, args = pair.split(' ', 1)
@@ -344,7 +345,7 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
       one specific branch of many.
     """
     def decodehexstring(s):
-        return set([h.decode('hex') for h in s.split(';')])
+        return {binascii.unhexlify(h) for h in s.split(';')}
 
     manifest = repo.vfs.tryread('pullbundles.manifest')
     if not manifest:
@@ -423,8 +424,6 @@ def getbundle(repo, proto, others):
                 return wireprototypes.ooberror(bundle2required)
             raise error.Abort(bundle2requiredmain,
                               hint=bundle2requiredhint)
-
-    prefercompressed = True
 
     try:
         clheads = set(repo.changelog.heads())
@@ -578,7 +577,6 @@ def unbundle(repo, proto, heads):
                     repo.ui.debug('redirecting incoming bundle to %s\n' %
                         tempname)
                     fp = os.fdopen(fd, pycompat.sysstr('wb+'))
-                    r = 0
                     for p in payload:
                         fp.write(p)
                     fp.seek(0)

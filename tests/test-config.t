@@ -211,3 +211,12 @@ alias has lower priority
   $ hg log --template '{author}\n'
   repo user
   $ cd ..
+
+configs should be read in lexicographical order
+
+  $ mkdir configs
+  $ for i in `$TESTDIR/seq.py 10 99`; do
+  >    printf "[section]\nkey=$i" > configs/$i.rc
+  > done
+  $ HGRCPATH=configs hg config section.key
+  99

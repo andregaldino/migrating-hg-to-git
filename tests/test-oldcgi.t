@@ -55,7 +55,7 @@ This tests if CGI files from before d0db3462d568 still work.
   > # Alternatively you can pass a list of ('virtual/path', '/real/path') tuples
   > # or use a dictionary with entries like 'virtual/path': '/real/path'
   > 
-  > h = hgweb.hgwebdir("hgweb.config")
+  > h = hgweb.hgwebdir(b"hgweb.config")
   > h.run()
   > HGWEBDIR
 

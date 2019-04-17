@@ -54,7 +54,7 @@ class _error_logger(object):
         self.writelines(str.split('\n'))
     def writelines(self, seq):
         for msg in seq:
-            self.handler.log_error("HG error:  %s", msg)
+            self.handler.log_error(r"HG error:  %s", encoding.strfromlocal(msg))
 
 class _httprequesthandler(httpservermod.basehttprequesthandler):
 
@@ -100,17 +100,22 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
     def do_POST(self):
         try:
             self.do_write()
-        except Exception:
+        except Exception as e:
+            # I/O below could raise another exception. So log the original
+            # exception first to ensure it is recorded.
+            if not (isinstance(e, (OSError, socket.error))
+                    and e.errno == errno.ECONNRESET):
+                tb = r"".join(traceback.format_exception(*sys.exc_info()))
+                # We need a native-string newline to poke in the log
+                # message, because we won't get a newline when using an
+                # r-string. This is the easy way out.
+                newline = chr(10)
+                self.log_error(r"Exception happened during processing "
+                               r"request '%s':%s%s", self.path, newline, tb)
+
             self._start_response(r"500 Internal Server Error", [])
             self._write(b"Internal Server Error")
             self._done()
-            tb = r"".join(traceback.format_exception(*sys.exc_info()))
-            # We need a native-string newline to poke in the log
-            # message, because we won't get a newline when using an
-            # r-string. This is the easy way out.
-            newline = chr(10)
-            self.log_error(r"Exception happened during processing "
-                           r"request '%s':%s%s", self.path, newline, tb)
 
     def do_PUT(self):
         self.do_POST()
@@ -165,7 +170,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         if length:
             env[r'CONTENT_LENGTH'] = length
         for header in [h for h in self.headers.keys()
-                       if h not in (r'content-type', r'content-length')]:
+                      if h.lower() not in (r'content-type', r'content-length')]:
             hkey = r'HTTP_' + header.replace(r'-', r'_').upper()
             hval = self.headers.get(header)
             hval = hval.replace(r'\n', r'').strip()

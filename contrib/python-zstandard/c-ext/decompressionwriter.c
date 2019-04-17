@@ -22,12 +22,13 @@ static void ZstdDecompressionWriter_dealloc(ZstdDecompressionWriter* self) {
 }
 
 static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
-	if (self->entered) {
-		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
 		return NULL;
 	}
 
-	if (ensure_dctx(self->decompressor, 1)) {
+	if (self->entered) {
+		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
 		return NULL;
 	}
 
@@ -39,6 +40,10 @@ static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
 
 static PyObject* ZstdDecompressionWriter_exit(ZstdDecompressionWriter* self, PyObject* args) {
 	self->entered = 0;
+
+	if (NULL == PyObject_CallMethod((PyObject*)self, "close", NULL)) {
+		return NULL;
+	}
 
 	Py_RETURN_FALSE;
 }
@@ -76,9 +81,9 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 		goto finally;
 	}
 
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "write must be called from an active context manager");
-		goto finally;
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
 	}
 
 	output.dst = PyMem_Malloc(self->outSize);
@@ -93,9 +98,9 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	input.size = source.len;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < source.len) {
+	while (input.pos < (size_t)source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompress_generic(self->decompressor->dctx, &output, &input);
+		zresult = ZSTD_decompressStream(self->decompressor->dctx, &output, &input);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -120,11 +125,92 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 
 	PyMem_Free(output.dst);
 
-	result = PyLong_FromSsize_t(totalWrite);
+	if (self->writeReturnRead) {
+		result = PyLong_FromSize_t(input.pos);
+	}
+	else {
+		result = PyLong_FromSsize_t(totalWrite);
+	}
 
 finally:
 	PyBuffer_Release(&source);
 	return result;
+}
+
+static PyObject* ZstdDecompressionWriter_close(ZstdDecompressionWriter* self) {
+	PyObject* result;
+
+	if (self->closed) {
+		Py_RETURN_NONE;
+	}
+
+	result = PyObject_CallMethod((PyObject*)self, "flush", NULL);
+	self->closed = 1;
+
+	if (NULL == result) {
+		return NULL;
+	}
+
+	/* Call close on underlying stream as well. */
+	if (PyObject_HasAttrString(self->writer, "close")) {
+		return PyObject_CallMethod(self->writer, "close", NULL);
+	}
+
+	Py_RETURN_NONE;
+}
+
+static PyObject* ZstdDecompressionWriter_fileno(ZstdDecompressionWriter* self) {
+	if (PyObject_HasAttrString(self->writer, "fileno")) {
+		return PyObject_CallMethod(self->writer, "fileno", NULL);
+	}
+	else {
+		PyErr_SetString(PyExc_OSError, "fileno not available on underlying writer");
+		return NULL;
+	}
+}
+
+static PyObject* ZstdDecompressionWriter_flush(ZstdDecompressionWriter* self) {
+	if (self->closed) {
+		PyErr_SetString(PyExc_ValueError, "stream is closed");
+		return NULL;
+	}
+
+	if (PyObject_HasAttrString(self->writer, "flush")) {
+		return PyObject_CallMethod(self->writer, "flush", NULL);
+	}
+	else {
+		Py_RETURN_NONE;
+	}
+}
+
+static PyObject* ZstdDecompressionWriter_false(PyObject* self, PyObject* args) {
+	Py_RETURN_FALSE;
+}
+
+static PyObject* ZstdDecompressionWriter_true(PyObject* self, PyObject* args) {
+	Py_RETURN_TRUE;
+}
+
+static PyObject* ZstdDecompressionWriter_unsupported(PyObject* self, PyObject* args, PyObject* kwargs) {
+	PyObject* iomod;
+	PyObject* exc;
+
+	iomod = PyImport_ImportModule("io");
+	if (NULL == iomod) {
+		return NULL;
+	}
+
+	exc = PyObject_GetAttrString(iomod, "UnsupportedOperation");
+	if (NULL == exc) {
+		Py_DECREF(iomod);
+		return NULL;
+	}
+
+	PyErr_SetNone(exc);
+	Py_DECREF(exc);
+	Py_DECREF(iomod);
+
+	return NULL;
 }
 
 static PyMethodDef ZstdDecompressionWriter_methods[] = {
@@ -134,9 +220,30 @@ static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	PyDoc_STR("Exit a decompression context.") },
 	{ "memory_size", (PyCFunction)ZstdDecompressionWriter_memory_size, METH_NOARGS,
 	PyDoc_STR("Obtain the memory size in bytes of the underlying decompressor.") },
+	{ "close", (PyCFunction)ZstdDecompressionWriter_close, METH_NOARGS, NULL },
+	{ "fileno", (PyCFunction)ZstdDecompressionWriter_fileno, METH_NOARGS, NULL },
+	{ "flush", (PyCFunction)ZstdDecompressionWriter_flush, METH_NOARGS, NULL },
+	{ "isatty", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
+	{ "readable", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
+	{ "readline", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readlines", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "seek", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "seekable", ZstdDecompressionWriter_false, METH_NOARGS, NULL },
+	{ "tell", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "truncate", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "writable", ZstdDecompressionWriter_true, METH_NOARGS, NULL },
+	{ "writelines" , (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "read", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readall", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
+	{ "readinto", (PyCFunction)ZstdDecompressionWriter_unsupported, METH_VARARGS | METH_KEYWORDS, NULL },
 	{ "write", (PyCFunction)ZstdDecompressionWriter_write, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("Compress data") },
 	{ NULL, NULL }
+};
+
+static PyMemberDef ZstdDecompressionWriter_members[] = {
+	{ "closed", T_BOOL, offsetof(ZstdDecompressionWriter, closed), READONLY, NULL },
+	{ NULL }
 };
 
 PyTypeObject ZstdDecompressionWriterType = {
@@ -168,7 +275,7 @@ PyTypeObject ZstdDecompressionWriterType = {
 	0,                              /* tp_iter */
 	0,                              /* tp_iternext */
 	ZstdDecompressionWriter_methods,/* tp_methods */
-	0,                              /* tp_members */
+	ZstdDecompressionWriter_members,/* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
 	0,                              /* tp_dict */

@@ -34,7 +34,7 @@ seems an unexpected case in real life, but we test it anyway.
   > done
 
   $ hg id ssh://user@dummy/other
-  remote: abort: Permission denied: $TESTTMP/other/.hg/requires
+  remote: abort: Permission denied: '$TESTTMP/other/.hg/requires'
   abort: no suitable response from remote hg!
   [255]
 

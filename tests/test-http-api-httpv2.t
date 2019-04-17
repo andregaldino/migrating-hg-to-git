@@ -18,6 +18,7 @@ HTTP v2 protocol not enabled by default
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api/exp-http-v2-0003 HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -46,6 +47,7 @@ Request to unknown command yields 404
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/badcommand HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -67,6 +69,7 @@ GET to read-only command yields a 405
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api/exp-http-v2-0003/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -88,6 +91,7 @@ Missing Accept header results in 406
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -110,6 +114,7 @@ Bad Accept header results in 406
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: invalid\r\n
@@ -134,6 +139,7 @@ Bad Content-Type header results in 415
   >     content-type: badmedia
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -160,6 +166,7 @@ Request to read-only command works out of the box
   >     frame 1 1 stream-begin command-request new cbor:{b'name': b'customreadonly'}
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     *\r\n (glob)
@@ -196,6 +203,7 @@ Request to read-only command works out of the box
   > EOF
   creating http peer for wire protocol version 2
   sending customreadonly command
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -216,23 +224,19 @@ Request to read-only command works out of the box
   s>     \t\x00\x00\x01\x00\x02\x01\x92
   s>     Hidentity
   s>     \r\n
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     13\r\n
   s>     \x0b\x00\x00\x01\x00\x02\x041
   s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     27\r\n
   s>     \x1f\x00\x00\x01\x00\x02\x041
   s>     X\x1dcustomreadonly bytes response
   s>     \r\n
-  received frame(size=31; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
   s>     0\r\n
   s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     b'customreadonly bytes response'
   ]
@@ -247,6 +251,7 @@ GET to read-write request yields 405
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api/exp-http-v2-0003/rw/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -268,6 +273,7 @@ Even for unknown commands
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /api/exp-http-v2-0003/rw/badcommand HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -289,6 +295,7 @@ SSL required by default
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/rw/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -327,6 +334,7 @@ Authorized request for valid read-write command works
   >     frame 1 1 stream-begin command-request new cbor:{b'name': b'customreadonly'}
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/rw/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -366,6 +374,7 @@ Authorized request for unknown command is rejected
   >     accept: $MEDIATYPE
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/rw/badcommand HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -388,6 +397,7 @@ debugreflect isn't enabled by default
   >     user-agent: test
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/debugreflect HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
@@ -428,6 +438,7 @@ Command frames can be reflected via debugreflect
   >     frame 1 1 stream-begin command-request new cbor:{b'name': b'command1', b'args': {b'foo': b'val1', b'bar1': b'val'}}
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/debugreflect HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -459,6 +470,7 @@ Multiple requests to regular command URL are not allowed
   >     frame 1 1 stream-begin command-request new cbor:{b'name': b'customreadonly'}
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -501,6 +513,7 @@ Multiple requests to "multirequest" URL are allowed
   >     frame 3 1 0 command-request new cbor:{b'name': b'customreadonly'}
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/multirequest HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     *\r\n (glob)
@@ -554,6 +567,7 @@ Interleaved requests to "multirequest" are processed
   >     frame 1 1 0 command-request continuation IbookmarksDnameHlistkeys
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/multirequest HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -619,6 +633,7 @@ Attempting to run a read-write command via multirequest on read-only URL is not 
   >     frame 1 1 stream-begin command-request new cbor:{b'name': b'pushkey'}
   > EOF
   using raw connection to peer
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/multirequest HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -645,6 +660,7 @@ Defining an invalid content encoding results in warning
   creating http peer for wire protocol version 2
   sending heads command
   wire protocol version 2 encoder referenced in config (badencoder) is not known; ignoring
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/heads HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -665,23 +681,19 @@ Defining an invalid content encoding results in warning
   s>     \t\x00\x00\x01\x00\x02\x01\x92
   s>     Hidentity
   s>     \r\n
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     13\r\n
   s>     \x0b\x00\x00\x01\x00\x02\x041
   s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     1e\r\n
   s>     \x16\x00\x00\x01\x00\x02\x041
   s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
   s>     \r\n
-  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
   s>     0\r\n
   s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: [
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
   ]
@@ -694,6 +706,7 @@ Defining an invalid content encoding results in warning
   > EOF
   creating http peer for wire protocol version 2
   sending heads command
+  s> setsockopt(6, 1, 1) -> None (?)
   s>     POST /api/exp-http-v2-0003/ro/heads HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
@@ -714,12 +727,10 @@ Defining an invalid content encoding results in warning
   s>     \t\x00\x00\x01\x00\x02\x01\x92
   s>     Hzstd-8mb
   s>     \r\n
-  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     25\r\n
   s>     \x1d\x00\x00\x01\x00\x02\x042
-  s>     (\xb5/\xfd\x00P\xa4\x00\x00p\xa1FstatusBok\x81T\x00\x01\x00\tP\x02
+  s>     (\xb5/\xfd\x00X\xa4\x00\x00p\xa1FstatusBok\x81T\x00\x01\x00\tP\x02
   s>     \r\n
-  received frame(size=29; request=1; stream=2; streamflags=encoded; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [

@@ -94,7 +94,7 @@ Same failure, but server reads full HTTP request line
 
   $ cat error.log
   readline(40 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(7 from -1) -> (7) Accept-
+  readline(7 from *) -> (7) Accept- (glob)
   read limit reached; closing socket
 
   $ rm -f error.log
@@ -111,28 +111,32 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
 
   $ cat error.log
   readline(210 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(177 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(150 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(115 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
-  write(36) -> HTTP/1.1 200 Script output follows\r\n
-  write(23) -> Server: badhttpserver\r\n
-  write(37) -> Date: $HTTP_DATE$\r\n
-  write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 450\r\n
-  write(2) -> \r\n
-  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  readline(177 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(150 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(115 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
+  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
+  sendall(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
+  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23) -> Server: badhttpserver\r\n (no-py3 !)
+  write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21) -> Content-Length: 450\r\n (no-py3 !)
+  write(2) -> \r\n (no-py3 !)
+  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(4? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1? from -1) -> (1?) Accept-Encoding* (glob)
+  readline(1? from *) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
   readline(223 from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(197 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(170 from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(141 from -1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(100 from -1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(39 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(4 from -1) -> (4) host
+  readline(197 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(170 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(141 from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(100 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(39 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(4 from *) -> (4) host (glob)
   read limit reached; closing socket
 
   $ rm -f error.log
@@ -152,46 +156,54 @@ Failure to read getbundle HTTP request
   readline(1 from -1) -> (1) x (?)
   readline(1 from -1) -> (1) x (?)
   readline(308 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(275 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(248 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(213 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
-  write(36) -> HTTP/1.1 200 Script output follows\r\n
-  write(23) -> Server: badhttpserver\r\n
-  write(37) -> Date: $HTTP_DATE$\r\n
-  write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 450\r\n
-  write(2) -> \r\n
-  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  readline(275 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(248 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(213 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
+  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
+  sendall(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
+  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23) -> Server: badhttpserver\r\n (no-py3 !)
+  write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21) -> Content-Length: 450\r\n (no-py3 !)
+  write(2) -> \r\n (no-py3 !)
+  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(13? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(8? from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
-  readline(5? from -1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
-  readline(1? from -1) -> (1?) x-hgproto-1:* (glob)
+  readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(8? from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(5? from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(1? from *) -> (1?) x-hgproto-1:* (glob)
   read limit reached; closing socket
   readline(317 from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(291 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(264 from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(235 from -1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(194 from -1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(133 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(98 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
-  write(36) -> HTTP/1.1 200 Script output follows\r\n
-  write(23) -> Server: badhttpserver\r\n
-  write(37) -> Date: $HTTP_DATE$\r\n
-  write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(20) -> Content-Length: 42\r\n
-  write(2) -> \r\n
-  write(42) -> 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n;
+  readline(291 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(264 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(235 from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(194 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(133 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(98 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
+  sendall(159) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py36 !)
+  sendall(42) -> 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (py36 !)
+  write(159) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py3 no-py36 !)
+  write(42) -> 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (py3 no-py36 !)
+  write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23) -> Server: badhttpserver\r\n (no-py3 !)
+  write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(20) -> Content-Length: 42\r\n (no-py3 !)
+  write(2) -> \r\n (no-py3 !)
+  write(42) -> 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
   readline(* from 65537) -> (*) GET /?cmd=getbundle HTTP* (glob)
   read limit reached; closing socket
   readline(304 from 65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
-  readline(274 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(247 from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(218 from -1) -> (218) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtag
+  readline(274 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(247 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(218 from *) -> (218) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtag (glob)
   read limit reached; closing socket
 
   $ rm -f error.log
@@ -207,41 +219,50 @@ Now do a variation using POST to send arguments
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(329 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(296 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(269 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(234 from -1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
-  write(36) -> HTTP/1.1 200 Script output follows\r\n
-  write(23) -> Server: badhttpserver\r\n
-  write(37) -> Date: $HTTP_DATE$\r\n
-  write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 463\r\n
-  write(2) -> \r\n
-  write(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  readline(296 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(269 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(234 from *) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
+  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 463\r\n\r\n (py36 !)
+  sendall(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 463\r\n\r\n (py3 no-py36 !)
+  write(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23) -> Server: badhttpserver\r\n (no-py3 !)
+  write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21) -> Content-Length: 463\r\n (no-py3 !)
+  write(2) -> \r\n (no-py3 !)
+  write(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(1?? from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(1?? from -1) -> (41) content-type: application/mercurial-0.1\r\n (glob)
-  readline(6? from -1) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
-  readline(3? from -1) -> (19) x-hgargs-post: 28\r\n (glob)
-  readline(1? from -1) -> (1?) x-hgproto-1: * (glob)
+  readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(1?? from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
+  readline(6? from *) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
+  readline(3? from *) -> (19) x-hgargs-post: 28\r\n (glob)
+  readline(1? from *) -> (1?) x-hgproto-1: * (glob)
   read limit reached; closing socket
   readline(344 from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n
-  readline(317 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(290 from -1) -> (41) content-type: application/mercurial-0.1\r\n
-  readline(249 from -1) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n
-  readline(216 from -1) -> (19) x-hgargs-post: 28\r\n
-  readline(197 from -1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(136 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(101 from -1) -> (20) content-length: 28\r\n
-  readline(81 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from -1) -> (2) \r\n (glob)
+  readline(317 from *) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(290 from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
+  readline(249 from *) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
+  readline(216 from *) -> (19) x-hgargs-post: 28\r\n (glob)
+  readline(197 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(136 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(101 from *) -> (20) content-length: 28\r\n (glob)
+  readline(81 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(* from *) -> (2) \r\n (glob)
   read(* from 28) -> (*) cmds=* (glob)
   read limit reached, closing socket
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after receiving N bytes
+  
+  write(126) -> HTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
+  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -258,16 +279,23 @@ Server sends a single character from the HTTP response line
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(1 from 36) -> (0) H
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(1 from 160) -> (0) H (py36 !)
+  write(1 from 160) -> (0) H (py3 no-py36 !)
+  write(1 from 36) -> (0) H (no-py3 !)
   write limit reached; closing socket
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=capabilities': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+  write(286) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
+  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -283,21 +311,29 @@ Server sends an incomplete capabilities response body
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (144) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (121) Server: badhttpserver\r\n
-  write(37 from 37) -> (84) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (43) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (22) Content-Length: 450\r\n
-  write(2 from 2) -> (20) \r\n
-  write(20 from 450) -> (0) batch branchmap bund
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(160 from 160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
+  sendall(20 from 450) -> (0) batch branchmap bund (py36 !)
+  write(160 from 160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
+  write(20 from 450) -> (0) batch branchmap bund (py3 no-py36 !)
+  write(36 from 36) -> (144) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (121) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (84) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (43) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (22) Content-Length: 450\r\n (no-py3 !)
+  write(2 from 2) -> (20) \r\n (no-py3 !)
+  write(20 from 450) -> (0) batch branchmap bund (no-py3 !)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=capabilities': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
 
   $ rm -f error.log
 
@@ -318,35 +354,46 @@ TODO this output is horrible
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (692) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (669) Server: badhttpserver\r\n
-  write(37 from 37) -> (632) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (591) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (570) Content-Length: 450\r\n
-  write(2 from 2) -> (568) \r\n
-  write(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(160 from 160) -> (568) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
+  sendall(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (568) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
+  write(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (692) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (669) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (632) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (591) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (570) Content-Length: 450\r\n (no-py3 !)
+  write(2 from 2) -> (568) \r\n (no-py3 !)
+  write(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (82) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (59) Server: badhttpserver\r\n
-  write(37 from 37) -> (22) Date: $HTTP_DATE$\r\n
-  write(22 from 41) -> (0) Content-Type: applicat
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(118 from 159) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: applicat (py36 !)
+  write(118 from 159) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: applicat (py3 no-py36 !)
+  write(36 from 36) -> (82) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (59) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (22) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(22 from 41) -> (0) Content-Type: applicat (no-py3 !)
   write limit reached; closing socket
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+  write(285) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
+  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -366,37 +413,49 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (757) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (734) Server: badhttpserver\r\n
-  write(37 from 37) -> (697) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (656) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (635) Content-Length: 450\r\n
-  write(2 from 2) -> (633) \r\n
-  write(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(160 from 160) -> (633) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
+  sendall(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (633) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
+  write(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (757) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (734) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (697) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (656) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (635) Content-Length: 450\r\n (no-py3 !)
+  write(2 from 2) -> (633) \r\n (no-py3 !)
+  write(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (147) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (124) Server: badhttpserver\r\n
-  write(37 from 37) -> (87) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (46) Content-Type: application/mercurial-0.1\r\n
-  write(20 from 20) -> (26) Content-Length: 42\r\n
-  write(2 from 2) -> (24) \r\n
-  write(24 from 42) -> (0) 96ee1d7354c4ad7372047672
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(159 from 159) -> (24) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py36 !)
+  sendall(24 from 42) -> (0) 96ee1d7354c4ad7372047672 (py36 !)
+  write(159 from 159) -> (24) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py3 no-py36 !)
+  write(24 from 42) -> (0) 96ee1d7354c4ad7372047672 (py3 no-py36 !)
+  write(36 from 36) -> (147) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (124) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (87) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (46) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(20 from 20) -> (26) Content-Length: 42\r\n (no-py3 !)
+  write(2 from 2) -> (24) \r\n (no-py3 !)
+  write(24 from 42) -> (0) 96ee1d7354c4ad7372047672 (no-py3 !)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
 
   $ rm -f error.log
 
@@ -418,51 +477,66 @@ TODO this output is terrible
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (904) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (881) Server: badhttpserver\r\n
-  write(37 from 37) -> (844) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (803) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (782) Content-Length: 450\r\n
-  write(2 from 2) -> (780) \r\n
-  write(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(160 from 160) -> (780) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
+  sendall(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (780) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
+  write(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (904) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (881) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (844) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (803) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (782) Content-Length: 450\r\n (no-py3 !)
+  write(2 from 2) -> (780) \r\n (no-py3 !)
+  write(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (294) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (271) Server: badhttpserver\r\n
-  write(37 from 37) -> (234) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (193) Content-Type: application/mercurial-0.1\r\n
-  write(20 from 20) -> (173) Content-Length: 42\r\n
-  write(2 from 2) -> (171) \r\n
-  write(42 from 42) -> (129) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n;
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(159 from 159) -> (171) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py36 !)
+  sendall(42 from 42) -> (129) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (py36 !)
+  write(159 from 159) -> (171) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py3 no-py36 !)
+  write(42 from 42) -> (129) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (py3 no-py36 !)
+  write(36 from 36) -> (294) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (271) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (234) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (193) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(20 from 20) -> (173) Content-Length: 42\r\n (no-py3 !)
+  write(2 from 2) -> (171) \r\n (no-py3 !)
+  write(42 from 42) -> (129) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (93) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (70) Server: badhttpserver\r\n
-  write(37 from 37) -> (33) Date: $HTTP_DATE$\r\n
-  write(33 from 41) -> (0) Content-Type: application/mercuri
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(129 from 167) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercuri (py36 !)
+  write(129 from 167) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercuri (py3 no-py36 !)
+  write(36 from 36) -> (93) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (70) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (33) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(33 from 41) -> (0) Content-Type: application/mercuri (no-py3 !)
   write limit reached; closing socket
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+  write(293) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
+  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -478,11 +552,20 @@ Server stops before it sends transfer encoding
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -4 error.log
-  write(41 from 41) -> (25) Content-Type: application/mercurial-0.2\r\n
-  write(25 from 28) -> (0) Transfer-Encoding: chunke
-  write limit reached; closing socket
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -3
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -4
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+  write(293) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
+#endif
 
   $ rm -f error.log
 
@@ -499,53 +582,68 @@ Server sends empty HTTP body for getbundle
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (942) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (919) Server: badhttpserver\r\n
-  write(37 from 37) -> (882) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (841) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (820) Content-Length: 450\r\n
-  write(2 from 2) -> (818) \r\n
-  write(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(160 from 160) -> (818) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
+  sendall(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (818) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
+  write(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (942) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (919) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (882) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (841) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (820) Content-Length: 450\r\n (no-py3 !)
+  write(2 from 2) -> (818) \r\n (no-py3 !)
+  write(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (332) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (309) Server: badhttpserver\r\n
-  write(37 from 37) -> (272) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (231) Content-Type: application/mercurial-0.1\r\n
-  write(20 from 20) -> (211) Content-Length: 42\r\n
-  write(2 from 2) -> (209) \r\n
-  write(42 from 42) -> (167) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n;
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(159 from 159) -> (209) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py36 !)
+  sendall(42 from 42) -> (167) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (py36 !)
+  write(159 from 159) -> (209) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py3 no-py36 !)
+  write(42 from 42) -> (167) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (py3 no-py36 !)
+  write(36 from 36) -> (332) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (309) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (272) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (231) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(20 from 20) -> (211) Content-Length: 42\r\n (no-py3 !)
+  write(2 from 2) -> (209) \r\n (no-py3 !)
+  write(42 from 42) -> (167) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (131) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (108) Server: badhttpserver\r\n
-  write(37 from 37) -> (71) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (30) Content-Type: application/mercurial-0.2\r\n
-  write(28 from 28) -> (2) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (0) \r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(167 from 167) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py36 !)
+  write(167 from 167) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
+  write(36 from 36) -> (131) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (108) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (71) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (30) Content-Type: application/mercurial-0.2\r\n (no-py3 !)
+  write(28 from 28) -> (2) Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2 from 2) -> (0) \r\n (no-py3 !)
   write limit reached; closing socket
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+  write(293) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
+  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -562,56 +660,72 @@ Server sends partial compression string
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ cat error.log
+  $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (966) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (943) Server: badhttpserver\r\n
-  write(37 from 37) -> (906) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (865) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (844) Content-Length: 450\r\n
-  write(2 from 2) -> (842) \r\n
-  write(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(160 from 160) -> (842) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
+  sendall(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (842) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
+  write(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (966) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (943) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (906) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (865) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (844) Content-Length: 450\r\n (no-py3 !)
+  write(2 from 2) -> (842) \r\n (no-py3 !)
+  write(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (356) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (333) Server: badhttpserver\r\n
-  write(37 from 37) -> (296) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (255) Content-Type: application/mercurial-0.1\r\n
-  write(20 from 20) -> (235) Content-Length: 42\r\n
-  write(2 from 2) -> (233) \r\n
-  write(42 from 42) -> (191) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n;
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(159 from 159) -> (233) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py36 !)
+  sendall(42 from 42) -> (191) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (py36 !)
+  write(159 from 159) -> (233) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py3 no-py36 !)
+  write(36 from 36) -> (356) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (333) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (296) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (255) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(20 from 20) -> (235) Content-Length: 42\r\n (no-py3 !)
+  write(2 from 2) -> (233) \r\n (no-py3 !)
+  write(42 from 42) -> (191) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
-  readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
-  readline(-1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  readline(-1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
-  readline(-1) -> (2) \r\n
-  write(36 from 36) -> (155) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (132) Server: badhttpserver\r\n
-  write(37 from 37) -> (95) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (54) Content-Type: application/mercurial-0.2\r\n
-  write(28 from 28) -> (26) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (24) \r\n
-  write(6 from 6) -> (18) 1\\r\\n\x04\\r\\n (esc)
-  write(9 from 9) -> (9) 4\r\nnone\r\n
-  write(9 from 9) -> (0) 4\r\nHG20\r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  sendall(167 from 167) -> (24) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py36 !)
+  sendall(6 from 6) -> (18) 1\\r\\n\x04\\r\\n (esc) (py36 !)
+  sendall(9 from 9) -> (9) 4\r\nnone\r\n (py36 !)
+  sendall(9 from 9) -> (0) 4\r\nHG20\r\n (py36 !)
+  write(167 from 167) -> (24) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
+  write(36 from 36) -> (155) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (132) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (95) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (54) Content-Type: application/mercurial-0.2\r\n (no-py3 !)
+  write(28 from 28) -> (26) Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2 from 2) -> (24) \r\n (no-py3 !)
+  write(6 from 6) -> (18) 1\\r\\n\x04\\r\\n (esc) (no-py3 !)
+  write(9 from 9) -> (9) 4\r\nnone\r\n (no-py3 !)
+  write(9 from 9) -> (0) 4\r\nHG20\r\n (no-py3 !)
   write limit reached; closing socket
-  write(27) -> 15\r\nInternal Server Error\r\n
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+  write(27) -> 15\r\nInternal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -622,20 +736,41 @@ Server sends partial bundle2 header magic
 
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
-  abort: HTTP request error (incomplete response; expected 4 bytes got 3)
+  abort: HTTP request error (incomplete response) (py3 !)
+  abort: HTTP request error (incomplete response; expected 4 bytes got 3) (no-py3 !)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -7 error.log
-  write(28 from 28) -> (23) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (21) \r\n
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -9
+  sendall(167 from 167) -> (21) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6 from 6) -> (15) 1\\r\\n\x04\\r\\n (esc)
+  sendall(9 from 9) -> (6) 4\r\nnone\r\n
+  sendall(6 from 9) -> (0) 4\r\nHG2
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -11
+  readline(65537) -> (2) \r\n (py3 !)
+  write(167 from 167) -> (21) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(28 from 28) -> (23) Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2 from 2) -> (21) \r\n (no-py3 !)
   write(6 from 6) -> (15) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (6) 4\r\nnone\r\n
   write(6 from 9) -> (0) 4\r\nHG2
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
 
@@ -646,21 +781,43 @@ Server sends incomplete bundle2 stream params length
 
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
-  abort: HTTP request error (incomplete response; expected 4 bytes got 3)
+  abort: HTTP request error (incomplete response) (py3 !)
+  abort: HTTP request error (incomplete response; expected 4 bytes got 3) (no-py3 !)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -8 error.log
-  write(28 from 28) -> (32) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (30) \r\n
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -10
+  sendall(167 from 167) -> (30) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6 from 6) -> (24) 1\\r\\n\x04\\r\\n (esc)
+  sendall(9 from 9) -> (15) 4\r\nnone\r\n
+  sendall(9 from 9) -> (6) 4\r\nHG20\r\n
+  sendall(6 from 9) -> (0) 4\\r\\n\x00\x00\x00 (esc)
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
+  readline(65537) -> (2) \r\n (py3 !)
+  write(167 from 167) -> (30) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(28 from 28) -> (32) Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2 from 2) -> (30) \r\n (no-py3 !)
   write(6 from 6) -> (24) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (15) 4\r\nnone\r\n
   write(9 from 9) -> (6) 4\r\nHG20\r\n
   write(6 from 9) -> (0) 4\\r\\n\x00\x00\x00 (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
 
@@ -677,15 +834,36 @@ Servers stops after bundle2 stream params header
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -8 error.log
-  write(28 from 28) -> (35) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (33) \r\n
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -10
+  sendall(167 from 167) -> (33) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6 from 6) -> (27) 1\\r\\n\x04\\r\\n (esc)
+  sendall(9 from 9) -> (18) 4\r\nnone\r\n
+  sendall(9 from 9) -> (9) 4\r\nHG20\r\n
+  sendall(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
+  readline(65537) -> (2) \r\n (py3 !)
+  write(167 from 167) -> (33) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(28 from 28) -> (35) Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2 from 2) -> (33) \r\n (no-py3 !)
   write(6 from 6) -> (27) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (18) 4\r\nnone\r\n
   write(9 from 9) -> (9) 4\r\nHG20\r\n
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
 
@@ -702,16 +880,39 @@ Server stops sending after bundle2 part header length
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -9 error.log
-  write(28 from 28) -> (44) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (42) \r\n
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -11
+  sendall(167 from 167) -> (42) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6 from 6) -> (36) 1\\r\\n\x04\\r\\n (esc)
+  sendall(9 from 9) -> (27) 4\r\nnone\r\n
+  sendall(9 from 9) -> (18) 4\r\nHG20\r\n
+  sendall(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (0) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -13
+  readline(65537) -> (2) \r\n (py3 !)
+  write(167 from 167) -> (42) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(28 from 28) -> (44) Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2 from 2) -> (42) \r\n (no-py3 !)
   write(6 from 6) -> (36) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (27) 4\r\nnone\r\n
   write(9 from 9) -> (18) 4\r\nHG20\r\n
   write(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
 
@@ -731,9 +932,27 @@ Server stops sending after bundle2 part header
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -10 error.log
-  write(28 from 28) -> (91) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (89) \r\n
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
+  sendall(167 from 167) -> (89) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6 from 6) -> (83) 1\\r\\n\x04\\r\\n (esc)
+  sendall(9 from 9) -> (74) 4\r\nnone\r\n
+  sendall(9 from 9) -> (65) 4\r\nHG20\r\n
+  sendall(9 from 9) -> (56) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (47) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47 from 47) -> (0) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -14
+  readline(65537) -> (2) \r\n (py3 !)
+  write(167 from 167) -> (89) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(28 from 28) -> (91) Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2 from 2) -> (89) \r\n (no-py3 !)
   write(6 from 6) -> (83) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (74) 4\r\nnone\r\n
   write(9 from 9) -> (65) 4\r\nHG20\r\n
@@ -741,7 +960,12 @@ Server stops sending after bundle2 part header
   write(9 from 9) -> (47) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write(47 from 47) -> (0) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
 
@@ -755,14 +979,34 @@ Server stops after bundle2 part payload chunk size
   adding changesets
   transaction abort!
   rollback completed
-  abort: HTTP request error (incomplete response; expected 466 bytes got 7)
+  abort: HTTP request error (incomplete response) (py3 !)
+  abort: HTTP request error (incomplete response; expected 466 bytes got 7) (no-py3 !)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -11 error.log
-  write(2 from 2) -> (110) \r\n
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -14
+  sendall(167 from 167) -> (110) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6 from 6) -> (104) 1\\r\\n\x04\\r\\n (esc)
+  sendall(9 from 9) -> (95) 4\r\nnone\r\n
+  sendall(9 from 9) -> (86) 4\r\nHG20\r\n
+  sendall(9 from 9) -> (77) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (68) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47 from 47) -> (21) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  sendall(9 from 9) -> (12) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  sendall(12 from 473) -> (0) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1d (esc)
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -15
+  write(167 from 167) -> (110) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(2 from 2) -> (110) \r\n (no-py3 !)
   write(6 from 6) -> (104) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (95) 4\r\nnone\r\n
   write(9 from 9) -> (86) 4\r\nHG20\r\n
@@ -772,7 +1016,12 @@ Server stops after bundle2 part payload chunk size
   write(9 from 9) -> (12) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
   write(12 from 473) -> (0) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1d (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
 
@@ -792,9 +1041,29 @@ Server stops sending in middle of bundle2 payload chunk
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -12 error.log
-  write(28 from 28) -> (573) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (571) \r\n
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -14
+  sendall(167 from 167) -> (571) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6 from 6) -> (565) 1\\r\\n\x04\\r\\n (esc)
+  sendall(9 from 9) -> (556) 4\r\nnone\r\n
+  sendall(9 from 9) -> (547) 4\r\nHG20\r\n
+  sendall(9 from 9) -> (538) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (529) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47 from 47) -> (482) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  sendall(9 from 9) -> (473) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  sendall(473 from 473) -> (0) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -16
+  readline(65537) -> (2) \r\n (py3 !)
+  write(167 from 167) -> (571) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(28 from 28) -> (573) Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2 from 2) -> (571) \r\n (no-py3 !)
   write(6 from 6) -> (565) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (556) 4\r\nnone\r\n
   write(9 from 9) -> (547) 4\r\nHG20\r\n
@@ -804,7 +1073,12 @@ Server stops sending in middle of bundle2 payload chunk
   write(9 from 9) -> (473) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
   write(473 from 473) -> (0) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
 
@@ -821,13 +1095,34 @@ Server stops sending after 0 length payload chunk size
   added 1 changesets with 1 changes to 1 files
   transaction abort!
   rollback completed
-  abort: HTTP request error (incomplete response; expected 32 bytes got 9)
+  abort: HTTP request error (incomplete response) (py3 !)
+  abort: HTTP request error (incomplete response; expected 32 bytes got 9) (no-py3 !)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -13 error.log
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -16
+  sendall(6 from 6) -> (596) 1\\r\\n\x04\\r\\n (esc)
+  sendall(9 from 9) -> (587) 4\r\nnone\r\n
+  sendall(9 from 9) -> (578) 4\r\nHG20\r\n
+  sendall(9 from 9) -> (569) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (560) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47 from 47) -> (513) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  sendall(9 from 9) -> (504) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  sendall(473 from 473) -> (31) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (22) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (13) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  sendall(13 from 38) -> (0) 20\\r\\n\x08LISTKEYS (esc)
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -17
   write(6 from 6) -> (596) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (587) 4\r\nnone\r\n
   write(9 from 9) -> (578) 4\r\nHG20\r\n
@@ -840,7 +1135,12 @@ Server stops sending after 0 length payload chunk size
   write(9 from 9) -> (13) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
   write(13 from 38) -> (0) 20\\r\\n\x08LISTKEYS (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
 
@@ -863,7 +1163,36 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -22 error.log
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -25
+  sendall(9 from 9) -> (851) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (842) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47 from 47) -> (795) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  sendall(9 from 9) -> (786) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  sendall(473 from 473) -> (313) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (304) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (295) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  sendall(38 from 38) -> (257) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
+  sendall(9 from 9) -> (248) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
+  sendall(64 from 64) -> (184) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
+  sendall(9 from 9) -> (175) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (166) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
+  sendall(41 from 41) -> (125) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
+  sendall(9 from 9) -> (116) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (107) 4\\r\\n\x00\x00\x00\x1d\\r\\n (esc)
+  sendall(35 from 35) -> (72) 1d\\r\\n\x16cache:rev-branch-cache\x00\x00\x00\x03\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (63) 4\\r\\n\x00\x00\x00'\\r\\n (esc)
+  sendall(45 from 45) -> (18) 27\\r\\n\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00\x00default\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\\r\\n (esc)
+  sendall(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -26
   write(9 from 9) -> (851) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (842) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write(47 from 47) -> (795) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
@@ -885,7 +1214,12 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
   write(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
   $ rm -rf clone
@@ -907,7 +1241,37 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
 
   $ killdaemons.py $DAEMON_PIDS
 
-  $ tail -23 error.log
+#if py36
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -26
+  sendall(9 from 9) -> (854) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (845) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47 from 47) -> (798) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  sendall(9 from 9) -> (789) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  sendall(473 from 473) -> (316) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (307) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (298) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  sendall(38 from 38) -> (260) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
+  sendall(9 from 9) -> (251) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
+  sendall(64 from 64) -> (187) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
+  sendall(9 from 9) -> (178) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (169) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
+  sendall(41 from 41) -> (128) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
+  sendall(9 from 9) -> (119) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (110) 4\\r\\n\x00\x00\x00\x1d\\r\\n (esc)
+  sendall(35 from 35) -> (75) 1d\\r\\n\x16cache:rev-branch-cache\x00\x00\x00\x03\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (66) 4\\r\\n\x00\x00\x00'\\r\\n (esc)
+  sendall(45 from 45) -> (21) 27\\r\\n\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00\x00default\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\\r\\n (esc)
+  sendall(9 from 9) -> (12) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (3) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(3 from 5) -> (0) 0\r\n
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
+
+#else
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -27
   write(9 from 9) -> (854) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (845) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write(47 from 47) -> (798) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
@@ -930,7 +1294,12 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
   write(9 from 9) -> (3) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(3 from 5) -> (0) 0\r\n
   write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
+  Traceback (most recent call last):
+  Exception: connection closed after sending N bytes
+  
   write(27) -> 15\r\nInternal Server Error\r\n
+#endif
 
   $ rm -f error.log
   $ rm -rf clone

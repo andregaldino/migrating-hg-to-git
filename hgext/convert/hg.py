@@ -105,10 +105,6 @@ class mercurial_sink(common.converter_sink):
         if not branch:
             branch = 'default'
         pbranches = [(b[0], b[1] and b[1] or 'default') for b in pbranches]
-        if pbranches:
-            pbranch = pbranches[0][1]
-        else:
-            pbranch = 'default'
 
         branchpath = os.path.join(self.path, branch)
         if setbranch:
@@ -561,7 +557,7 @@ class mercurial_source(common.converter_source):
             if name in self.ignored:
                 continue
             try:
-                copysource, _copynode = ctx.filectx(name).renamed()
+                copysource = ctx.filectx(name).copysource()
                 if copysource in self.ignored:
                     continue
                 # Ignore copy sources not in parent revisions

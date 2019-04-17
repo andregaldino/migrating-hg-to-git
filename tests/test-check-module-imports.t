@@ -18,9 +18,12 @@ outputs, which should be fixed later.
   > 'tests/**.t' \
   > -X hgweb.cgi \
   > -X setup.py \
+  > -X contrib/automation/ \
   > -X contrib/debugshell.py \
   > -X contrib/hgweb.fcgi \
   > -X contrib/packaging/hg-docker \
+  > -X contrib/packaging/hgpackaging/ \
+  > -X contrib/packaging/inno/ \
   > -X contrib/python-zstandard/ \
   > -X contrib/win32/hgwebdir_wsgi.py \
   > -X contrib/perf-utils/perf-revlog-write-plot.py \

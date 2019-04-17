@@ -119,6 +119,7 @@ def _qrecord(cmdsuggest, ui, repo, patch, *pats, **opts):
 
     overrides = {('experimental', 'crecord'): False}
     with ui.configoverride(overrides, 'record'):
+        cmdutil.checkunfinished(repo)
         cmdutil.dorecord(ui, repo, committomq, cmdsuggest, False,
                          cmdutil.recordfilter, *pats, **opts)
 
@@ -134,12 +135,12 @@ def uisetup(ui):
     except KeyError:
         return
 
-    cmdtable["qrecord"] = \
-        (qrecord,
-         # same options as qnew, but copy them so we don't get
-         # -i/--interactive for qrecord and add white space diff options
-         mq.cmdtable['qnew'][1][:] + cmdutil.diffwsopts,
-         _('hg qrecord [OPTION]... PATCH [FILE]...'))
+    cmdtable["qrecord"] = (
+        qrecord,
+        # same options as qnew, but copy them so we don't get
+        # -i/--interactive for qrecord and add white space diff options
+        mq.cmdtable['qnew'][1][:] + cmdutil.diffwsopts,
+        _('hg qrecord [OPTION]... PATCH [FILE]...'))
 
     _wrapcmd('qnew', mq.cmdtable, qnew, _("interactively record a new patch"))
     _wrapcmd('qrefresh', mq.cmdtable, qrefresh,

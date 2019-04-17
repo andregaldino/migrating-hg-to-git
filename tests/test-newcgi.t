@@ -18,7 +18,7 @@ before d74fc8dec2b4 still work.
   > from mercurial.hgweb.request import wsgiapplication
   > 
   > def make_web_app():
-  >     return hgweb("test", "Empty test repository")
+  >     return hgweb(b"test", b"Empty test repository")
   > 
   > wsgicgi.launch(wsgiapplication(make_web_app))
   > HGWEB
@@ -44,7 +44,7 @@ before d74fc8dec2b4 still work.
   > from mercurial.hgweb.request import wsgiapplication
   > 
   > def make_web_app():
-  >     return hgwebdir("hgweb.config")
+  >     return hgwebdir(b"hgweb.config")
   > 
   > wsgicgi.launch(wsgiapplication(make_web_app))
   > HGWEBDIR

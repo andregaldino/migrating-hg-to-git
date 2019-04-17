@@ -297,7 +297,7 @@ def _dosign(ui, repo, *revs, **opts):
         return
 
     if not opts["force"]:
-        msigs = match.exact(repo.root, '', ['.hgsigs'])
+        msigs = match.exact(['.hgsigs'])
         if any(repo.status(match=msigs, unknown=True, ignored=True)):
             raise error.Abort(_("working copy of .hgsigs is changed "),
                              hint=_("please commit .hgsigs manually"))

@@ -278,9 +278,9 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
             p1, p2 = ds.p1(), ds.p2()
             with ds.parentchange():
                 ds.setparents(node.nullid, node.nullid)
-            with wrappedextraprepare,\
-                 repo.ui.configoverride(overrides, 'widen'):
-                exchange.pull(repo, remote, heads=common)
+            with wrappedextraprepare:
+                with repo.ui.configoverride(overrides, 'widen'):
+                    exchange.pull(repo, remote, heads=common)
             with ds.parentchange():
                 ds.setparents(p1, p2)
         else:
@@ -296,11 +296,11 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                     'ellipses': False,
                 }).result()
 
-            with repo.transaction('widening') as tr,\
-                 repo.ui.configoverride(overrides, 'widen'):
-                tgetter = lambda: tr
-                bundle2.processbundle(repo, bundle,
-                        transactiongetter=tgetter)
+            with repo.transaction('widening') as tr:
+                with repo.ui.configoverride(overrides, 'widen'):
+                    tgetter = lambda: tr
+                    bundle2.processbundle(repo, bundle,
+                            transactiongetter=tgetter)
 
         with repo.transaction('widening'):
             repo.setnewnarrowpats()
@@ -345,10 +345,14 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     and replaced by the new ones specified to --addinclude and --addexclude.
     If --clear is specified without any further options, the narrowspec will be
     empty and will not match any files.
+
+    --import-rules accepts a path to a file containing rules, allowing you to
+    add --addinclude, --addexclude rules in bulk. Like the other include and
+    exclude switches, the changes are applied immediately.
     """
     opts = pycompat.byteskwargs(opts)
     if repository.NARROW_REQUIREMENT not in repo.requirements:
-        raise error.Abort(_('the narrow command is only supported on '
+        raise error.Abort(_('the tracked command is only supported on '
                             'respositories cloned with --narrow'))
 
     # Before supporting, decide whether it "hg tracked --clear" should mean

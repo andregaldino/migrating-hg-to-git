@@ -18,6 +18,7 @@ from . import (
     util,
 )
 from .utils import (
+    compression,
     interfaceutil,
 )
 
@@ -316,12 +317,12 @@ class commanddict(dict):
 
 def supportedcompengines(ui, role):
     """Obtain the list of supported compression engines for a request."""
-    assert role in (util.CLIENTROLE, util.SERVERROLE)
+    assert role in (compression.CLIENTROLE, compression.SERVERROLE)
 
-    compengines = util.compengines.supportedwireengines(role)
+    compengines = compression.compengines.supportedwireengines(role)
 
     # Allow config to override default list and ordering.
-    if role == util.SERVERROLE:
+    if role == compression.SERVERROLE:
         configengines = ui.configlist('server', 'compressionengines')
         config = 'server.compressionengines'
     else:

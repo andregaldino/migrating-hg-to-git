@@ -34,9 +34,10 @@ Help for uncommit
   
   options ([+] can be repeated):
   
-      --keep                allow an empty commit after uncommiting
-   -I --include PATTERN [+] include names matching the given patterns
-   -X --exclude PATTERN [+] exclude names matching the given patterns
+      --keep                     allow an empty commit after uncommiting
+      --allow-dirty-working-copy allow uncommit with outstanding changes
+   -I --include PATTERN [+]      include names matching the given patterns
+   -X --exclude PATTERN [+]      exclude names matching the given patterns
   
   (some details hidden, use --verbose to show complete help)
 
@@ -101,14 +102,16 @@ Recommit
   $ hg heads -T '{rev}:{node} {desc}'
   5:0c07a3ccda771b25f1cb1edbd02e683723344ef1 new change abcde (no-eol)
 
-Uncommit of non-existent and unchanged files has no effect
+Uncommit of non-existent and unchanged files aborts
   $ hg uncommit nothinghere
-  nothing to uncommit
-  [1]
+  abort: cannot uncommit "nothinghere"
+  (file does not exist)
+  [255]
   $ hg status
   $ hg uncommit file-abc
-  nothing to uncommit
-  [1]
+  abort: cannot uncommit "file-abc"
+  (file was not changed in working directory parent)
+  [255]
   $ hg status
 
 Try partial uncommit, also moves bookmark
@@ -156,8 +159,12 @@ Uncommit with dirty state
   M files
   $ hg uncommit
   abort: uncommitted changes
+  (requires --allow-dirty-working-copy to uncommit)
   [255]
   $ hg uncommit files
+  abort: uncommitted changes
+  (requires --allow-dirty-working-copy to uncommit)
+  [255]
   $ cat files
   abcde
   foo
@@ -168,6 +175,7 @@ Testing the 'experimental.uncommitondirtywdir' config
   $ echo "bar" >> files
   $ hg uncommit
   abort: uncommitted changes
+  (requires --allow-dirty-working-copy to uncommit)
   [255]
   $ hg uncommit --config experimental.uncommitondirtywdir=True
   $ hg commit -m "files abcde + foo"
@@ -191,16 +199,16 @@ Uncommit in the middle of a stack, does not move bookmark
   +abc
   
   $ hg bookmark
-     foo                       10:48e5bd7cd583
+     foo                       9:48e5bd7cd583
   $ hg uncommit
   3 new orphan changesets
   $ hg status
   M files
   A file-abc
   $ hg heads -T '{rev}:{node} {desc}'
-  10:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo (no-eol)
+  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo (no-eol)
   $ hg bookmark
-     foo                       10:48e5bd7cd583
+     foo                       9:48e5bd7cd583
   $ hg commit -m 'new abc'
   created new head
 
@@ -222,38 +230,36 @@ Partial uncommit in the middle, does not move bookmark
   +ab
   
   $ hg bookmark
-     foo                       10:48e5bd7cd583
+     foo                       9:48e5bd7cd583
   $ hg uncommit file-ab
   1 new orphan changesets
   $ hg status
   A file-ab
 
   $ hg heads -T '{rev}:{node} {desc}\n'
-  12:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
-  11:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
-  10:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
+  11:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
+  10:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
+  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
 
   $ hg bookmark
-     foo                       10:48e5bd7cd583
+     foo                       9:48e5bd7cd583
   $ hg commit -m 'update ab'
   $ hg status
   $ hg heads -T '{rev}:{node} {desc}\n'
-  13:f21039c59242b085491bb58f591afc4ed1c04c09 update ab
-  11:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
-  10:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
+  12:f21039c59242b085491bb58f591afc4ed1c04c09 update ab
+  10:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
+  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
 
   $ hg log -G -T '{rev}:{node} {desc}' --hidden
-  @  13:f21039c59242b085491bb58f591afc4ed1c04c09 update ab
+  @  12:f21039c59242b085491bb58f591afc4ed1c04c09 update ab
   |
-  o  12:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
+  o  11:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
   |
-  | *  11:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
+  | *  10:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
   | |
-  | | *  10:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
+  | | *  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
   | | |
-  | | | x  9:8a6b58c173ca6a2e3745d8bd86698718d664bc6c files abcde + foo
-  | | |/
-  | | | x  8:39ad452c7f684a55d161c574340c5766c4569278 update files for abcde
+  | | | x  8:84beeba0ac30e19521c036e4d2dd3a5fa02586ff files abcde + foo
   | | |/
   | | | x  7:0977fa602c2fd7d8427ed4e7ee15ea13b84c9173 update files for abcde
   | | |/
@@ -275,14 +281,15 @@ Uncommit with draft parent
 
   $ hg uncommit
   $ hg phase -r .
-  12: draft
+  11: draft
   $ hg commit -m 'update ab again'
 
 Phase is preserved
 
   $ hg uncommit --keep --config phases.new-commit=secret
+  note: keeping empty commit
   $ hg phase -r .
-  15: draft
+  14: draft
   $ hg commit --amend -m 'update ab again'
 
 Uncommit with public parent
@@ -290,7 +297,7 @@ Uncommit with public parent
   $ hg phase -p "::.^"
   $ hg uncommit
   $ hg phase -r .
-  12: public
+  11: public
 
 Partial uncommit with public parent
 
@@ -301,11 +308,11 @@ Partial uncommit with public parent
   $ hg status
   A xyz
   $ hg phase -r .
-  18: draft
+  17: draft
   $ hg phase -r ".^"
-  12: public
+  11: public
 
-Uncommit leaving an empty changeset
+Uncommit with --keep or experimental.uncommit.keep leaves an empty changeset
 
   $ cd $TESTTMP
   $ hg init repo1
@@ -317,6 +324,21 @@ Uncommit leaving an empty changeset
   > EOS
   $ hg up Q -q
   $ hg uncommit --keep
+  note: keeping empty commit
+  $ hg log -G -T '{desc} FILES: {files}'
+  @  Q FILES:
+  |
+  | x  Q FILES: Q
+  |/
+  o  P FILES: P
+  
+  $ cat >> .hg/hgrc <<EOF
+  > [experimental]
+  > uncommit.keep=True
+  > EOF
+  $ hg ci --amend
+  $ hg uncommit
+  note: keeping empty commit
   $ hg log -G -T '{desc} FILES: {files}'
   @  Q FILES:
   |
@@ -326,7 +348,15 @@ Uncommit leaving an empty changeset
   
   $ hg status
   A Q
-
+  $ hg ci --amend
+  $ hg uncommit --no-keep
+  $ hg log -G -T '{desc} FILES: {files}'
+  x  Q FILES: Q
+  |
+  @  P FILES: P
+  
+  $ hg status
+  A Q
   $ cd ..
   $ rm -rf repo1
 
@@ -368,6 +398,7 @@ Add and expect uncommit to fail on both merge working dir and merge changeset
 
   $ hg uncommit
   abort: outstanding uncommitted merge
+  (requires --allow-dirty-working-copy to uncommit)
   [255]
 
   $ hg uncommit --config experimental.uncommitondirtywdir=True
@@ -398,3 +429,143 @@ Add and expect uncommit to fail on both merge working dir and merge changeset
   |/
   o  0:ea4e33293d4d274a2ba73150733c2612231f398c a 1
   
+
+Rename a->b, then remove b in working copy. Result should remove a.
+
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'move a to b'
+  $ hg rm b
+  $ hg uncommit --config experimental.uncommitondirtywdir=True
+  $ hg st --copies
+  R a
+  $ hg revert a
+
+Rename a->b, then rename b->c in working copy. Result should rename a->c.
+
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'move a to b'
+  $ hg mv b c
+  $ hg uncommit --config experimental.uncommitondirtywdir=True
+  $ hg st --copies
+  A c
+    a
+  R a
+  $ hg revert a
+  $ hg forget c
+  $ rm c
+
+Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b2 and a->c.
+
+  $ hg co -q 0
+  $ hg cp a b1
+  $ hg cp a b2
+  $ hg ci -qm 'move a to b1 and b2'
+  $ hg mv b1 c
+  $ hg uncommit --config experimental.uncommitondirtywdir=True
+  $ hg st --copies
+  A b2
+    a
+  A c
+    a
+  $ cd ..
+
+--allow-dirty-working-copy should also work on a dirty PATH
+
+  $ hg init issue5977
+  $ cd issue5977
+  $ echo 'super critical info!' > a
+  $ hg ci -Am 'add a'
+  adding a
+  $ echo 'foo' > b
+  $ hg add b
+  $ hg status
+  A b
+  $ hg unc a
+  note: keeping empty commit
+  $ cat a
+  super critical info!
+  $ hg log
+  changeset:   1:656ba143d384
+  tag:         tip
+  parent:      -1:000000000000
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a
+  
+  $ hg ci -Am 'add b'
+  $ echo 'foo bar' > b
+  $ hg unc b
+  abort: uncommitted changes
+  (requires --allow-dirty-working-copy to uncommit)
+  [255]
+  $ hg unc --allow-dirty-working-copy b
+  $ hg log
+  changeset:   3:30fa958635b2
+  tag:         tip
+  parent:      1:656ba143d384
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add b
+  
+  changeset:   1:656ba143d384
+  parent:      -1:000000000000
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a
+  
+Removes can be uncommitted
+
+  $ hg ci -m 'modified b'
+  $ hg rm b
+  $ hg ci -m 'remove b'
+  $ hg uncommit b
+  note: keeping empty commit
+  $ hg status
+  R b
+
+Uncommitting a directory won't run afoul of the checks that an explicit file
+can be uncommitted.
+
+  $ mkdir dir
+  $ echo 1 > dir/file.txt
+  $ hg ci -Aqm 'add file in directory'
+  $ hg uncommit dir
+  $ hg status
+  A dir/file.txt
+
+`uncommit <dir>` and `cd <dir> && uncommit .` behave the same...
+
+  $ hg rollback -q --config ui.rollback=True
+  $ echo 2 > dir/file2.txt
+  $ hg ci -Aqm 'add file2 in directory'
+  $ hg uncommit dir
+  note: keeping empty commit
+  $ hg status
+  A dir/file2.txt
+
+  $ hg rollback -q --config ui.rollback=True
+  $ cd dir
+  $ hg uncommit .
+  note: keeping empty commit
+  $ hg status
+  A dir/file2.txt
+  $ cd ..
+
+... and errors out the same way when nothing can be uncommitted
+
+  $ hg rollback -q --config ui.rollback=True
+  $ mkdir emptydir
+  $ hg uncommit emptydir
+  abort: cannot uncommit "emptydir"
+  (file was untracked in working directory parent)
+  [255]
+
+  $ cd emptydir
+  $ hg uncommit .
+  abort: cannot uncommit "emptydir"
+  (file was untracked in working directory parent)
+  [255]
+  $ hg status
+  $ cd ..

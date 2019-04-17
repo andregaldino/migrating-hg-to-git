@@ -25,7 +25,7 @@ configre = re.compile(br'''
         (?:default=)?(?P<default>\S+?))?
     \)''', re.VERBOSE | re.MULTILINE)
 
-configwithre = re.compile(b'''
+configwithre = re.compile(br'''
     ui\.config(?P<ctype>with)\(
         # First argument is callback function. This doesn't parse robustly
         # if it is e.g. a function call.
@@ -61,10 +61,10 @@ def main(args):
             linenum += 1
 
             # check topic-like bits
-            m = re.match(b'\s*``(\S+)``', l)
+            m = re.match(br'\s*``(\S+)``', l)
             if m:
                 prevname = m.group(1)
-            if re.match(b'^\s*-+$', l):
+            if re.match(br'^\s*-+$', l):
                 sect = prevname
                 prevname = b''
 

@@ -74,8 +74,8 @@ expect success
   $ cat >> .hg/hgrc <<EOF
   > allow_push = *
   > [hooks]
-  > changegroup = sh -c "printenv.py changegroup 0"
-  > pushkey = sh -c "printenv.py pushkey 0"
+  > changegroup = sh -c "printenv.py --line changegroup 0"
+  > pushkey = sh -c "printenv.py --line pushkey 0"
   > txnclose-phase.test = sh $TESTTMP/hook.sh 
   > EOF
   $ req "--debug --config extensions.blackbox="
@@ -94,8 +94,17 @@ expect success
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: running hook changegroup: sh -c "printenv.py changegroup 0"
-  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: running hook changegroup: sh -c "printenv.py --line changegroup 0"
+  remote: changegroup hook: HG_HOOKNAME=changegroup
+  remote: HG_HOOKTYPE=changegroup
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob)
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -114,8 +123,17 @@ expect success
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: running hook changegroup: sh -c "printenv.py changegroup 0"
-  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: running hook changegroup: sh -c "printenv.py --line changegroup 0"
+  remote: changegroup hook: HG_HOOKNAME=changegroup
+  remote: HG_HOOKTYPE=changegroup
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob)
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -125,8 +143,8 @@ expect success
   $ cat >> .hg/hgrc <<EOF
   > allow_push = *
   > [hooks]
-  > changegroup = sh -c "printenv.py changegroup 0"
-  > pushkey = sh -c "printenv.py pushkey 0"
+  > changegroup = sh -c "printenv.py --line changegroup 0"
+  > pushkey = sh -c "printenv.py --line pushkey 0"
   > txnclose-phase.test = sh $TESTTMP/hook.sh 
   > EOF
   $ req
@@ -138,7 +156,16 @@ expect success
   remote: added 1 changesets with 1 changes to 1 files
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: changegroup hook: HG_BUNDLE2=1
+  remote: HG_HOOKNAME=changegroup
+  remote: HG_HOOKTYPE=changegroup
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -157,8 +184,18 @@ expect success, server lacks the httpheader capability
   remote: added 1 changesets with 1 changes to 1 files
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle1 !)
-  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle2 !)
+  remote: changegroup hook: HG_HOOKNAME=changegroup (no-bundle2 !)
+  remote: changegroup hook: HG_BUNDLE2=1 (bundle2 !)
+  remote: HG_HOOKNAME=changegroup (bundle2 !)
+  remote: HG_HOOKTYPE=changegroup
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob) (no-bundle2 !)
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -176,8 +213,18 @@ expect success, server lacks the unbundlehash capability
   remote: added 1 changesets with 1 changes to 1 files
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle1 !)
-  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle2 !)
+  remote: changegroup hook: HG_HOOKNAME=changegroup (no-bundle2 !)
+  remote: changegroup hook: HG_BUNDLE2=1 (bundle2 !)
+  remote: HG_HOOKNAME=changegroup (bundle2 !)
+  remote: HG_HOOKTYPE=changegroup
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob) (no-bundle2 !)
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -209,6 +256,16 @@ has no parameter
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
   remote: changegroup hook: * (glob)
+  remote: HG_HOOKNAME=changegroup (bundle2 !)
+  remote: HG_HOOKTYPE=changegroup
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: remote:http:$LOCALIP: (glob) (no-bundle2 !)
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -221,7 +278,7 @@ Test pushing to a publishing repository with a failing prepushkey hook
   > push_ssl = false
   > allow_push = *
   > [hooks]
-  > prepushkey = sh -c "printenv.py prepushkey 1"
+  > prepushkey = sh -c "printenv.py --line prepushkey 1"
   > [devel]
   > legacy.exchange=phases
   > EOF
@@ -253,7 +310,22 @@ and fails the entire push.
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  remote: prepushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_OLD=1 HG_PENDING=$TESTTMP/test HG_PHASES_MOVED=1 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: prepushkey hook: HG_BUNDLE2=1
+  remote: HG_HOOKNAME=prepushkey
+  remote: HG_HOOKTYPE=prepushkey
+  remote: HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NAMESPACE=phases
+  remote: HG_NEW=0
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_OLD=1
+  remote: HG_PENDING=$TESTTMP/test
+  remote: HG_PHASES_MOVED=1
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   remote: pushkey-abort: prepushkey hook exited with status 1
   remote: transaction abort!
   remote: rollback completed
@@ -267,7 +339,7 @@ Now remove the failing prepushkey hook.
 
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
-  > prepushkey = sh -c "printenv.py prepushkey 0"
+  > prepushkey = sh -c "printenv.py --line prepushkey 0"
   > EOF
 
 We don't need to test bundle1 because it succeeded above.
@@ -280,7 +352,22 @@ We don't need to test bundle1 because it succeeded above.
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  remote: prepushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_OLD=1 HG_PENDING=$TESTTMP/test HG_PHASES_MOVED=1 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: prepushkey hook: HG_BUNDLE2=1
+  remote: HG_HOOKNAME=prepushkey
+  remote: HG_HOOKTYPE=prepushkey
+  remote: HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NAMESPACE=phases
+  remote: HG_NEW=0
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_OLD=1
+  remote: HG_PENDING=$TESTTMP/test
+  remote: HG_PHASES_MOVED=1
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   % serve errors
 #endif
 
@@ -293,7 +380,7 @@ Now do a variant of the above, except on a non-publishing repository
   > [phases]
   > publish = false
   > [hooks]
-  > prepushkey = sh -c "printenv.py prepushkey 1"
+  > prepushkey = sh -c "printenv.py --line prepushkey 1"
   > EOF
 
 #if bundle1
@@ -304,7 +391,13 @@ Now do a variant of the above, except on a non-publishing repository
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  remote: prepushkey hook: HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_OLD=1
+  remote: prepushkey hook: HG_HOOKNAME=prepushkey
+  remote: HG_HOOKTYPE=prepushkey
+  remote: HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NAMESPACE=phases
+  remote: HG_NEW=0
+  remote: HG_OLD=1
+  remote: 
   remote: pushkey-abort: prepushkey hook exited with status 1
   updating ba677d0156c1 to public failed!
   % serve errors
@@ -318,7 +411,22 @@ Now do a variant of the above, except on a non-publishing repository
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  remote: prepushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_OLD=1 HG_PENDING=$TESTTMP/test HG_PHASES_MOVED=1 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: prepushkey hook: HG_BUNDLE2=1
+  remote: HG_HOOKNAME=prepushkey
+  remote: HG_HOOKTYPE=prepushkey
+  remote: HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NAMESPACE=phases
+  remote: HG_NEW=0
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_OLD=1
+  remote: HG_PENDING=$TESTTMP/test
+  remote: HG_PHASES_MOVED=1
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   remote: pushkey-abort: prepushkey hook exited with status 1
   remote: transaction abort!
   remote: rollback completed
@@ -331,7 +439,7 @@ Make phases updates work
 
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
-  > prepushkey = sh -c "printenv.py prepushkey 0"
+  > prepushkey = sh -c "printenv.py --line prepushkey 0"
   > EOF
 
 #if bundle1
@@ -339,7 +447,13 @@ Make phases updates work
   pushing to http://localhost:$HGPORT/
   searching for changes
   no changes found
-  remote: prepushkey hook: HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_OLD=1
+  remote: prepushkey hook: HG_HOOKNAME=prepushkey
+  remote: HG_HOOKTYPE=prepushkey
+  remote: HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NAMESPACE=phases
+  remote: HG_NEW=0
+  remote: HG_OLD=1
+  remote: 
   % serve errors
   [1]
 #endif
@@ -352,7 +466,22 @@ Make phases updates work
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  remote: prepushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_OLD=1 HG_PENDING=$TESTTMP/test HG_PHASES_MOVED=1 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: prepushkey hook: HG_BUNDLE2=1
+  remote: HG_HOOKNAME=prepushkey
+  remote: HG_HOOKTYPE=prepushkey
+  remote: HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NAMESPACE=phases
+  remote: HG_NEW=0
+  remote: HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872
+  remote: HG_OLD=1
+  remote: HG_PENDING=$TESTTMP/test
+  remote: HG_PHASES_MOVED=1
+  remote: HG_SOURCE=serve
+  remote: HG_TXNID=TXN:$ID$
+  remote: HG_TXNNAME=serve
+  remote: HG_URL=remote:http:$LOCALIP: (glob)
+  remote: 
   % serve errors
 #endif
 

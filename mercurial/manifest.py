@@ -283,7 +283,6 @@ class _lazymanifest(object):
         if len(self.extradata) == 0:
             return
         l = []
-        last_cut = 0
         i = 0
         offset = 0
         self.extrainfo = [0] * len(self.positions)
@@ -1277,6 +1276,9 @@ class manifestfulltextcache(util.lrucachedict):
     These are written in reverse cache order (oldest to newest).
 
     """
+
+    _file = 'manifestfulltextcache'
+
     def __init__(self, max):
         super(manifestfulltextcache, self).__init__(max)
         self._dirty = False
@@ -1288,7 +1290,7 @@ class manifestfulltextcache(util.lrucachedict):
             return
 
         try:
-            with self._opener('manifestfulltextcache') as fp:
+            with self._opener(self._file) as fp:
                 set = super(manifestfulltextcache, self).__setitem__
                 # ignore trailing data, this is a cache, corruption is skipped
                 while True:
@@ -1314,8 +1316,7 @@ class manifestfulltextcache(util.lrucachedict):
         if not self._dirty or self._opener is None:
             return
         # rotate backwards to the first used node
-        with self._opener(
-                'manifestfulltextcache', 'w', atomictemp=True, checkambig=True
+        with self._opener(self._file, 'w', atomictemp=True, checkambig=True
             ) as fp:
             node = self._head.prev
             while True:
@@ -1434,10 +1435,13 @@ class manifestrevlog(object):
 
     def _setupmanifestcachehooks(self, repo):
         """Persist the manifestfulltextcache on lock release"""
-        if not util.safehasattr(repo, '_lockref'):
+        if not util.safehasattr(repo, '_wlockref'):
             return
 
-        self._fulltextcache._opener = repo.cachevfs
+        self._fulltextcache._opener = repo.wcachevfs
+        if repo._currentlock(repo._wlockref) is None:
+            return
+
         reporef = weakref.ref(repo)
         manifestrevlogref = weakref.ref(self)
 
@@ -1451,8 +1455,7 @@ class manifestrevlog(object):
                 return
             self._fulltextcache.write()
 
-        if repo._currentlock(repo._lockref) is not None:
-            repo._afterlock(persistmanifestcache)
+        repo._afterlock(persistmanifestcache)
 
     @property
     def fulltextcache(self):

@@ -11,6 +11,7 @@ import errno
 import glob
 import hashlib
 import os
+import posixpath
 import re
 import subprocess
 import weakref
@@ -27,6 +28,7 @@ from .node import (
 )
 
 from . import (
+    copies as copiesmod,
     encoding,
     error,
     match as matchmod,
@@ -231,10 +233,10 @@ def callcatch(ui, func):
             ui.error(_("(did you forget to compile extensions?)\n"))
         elif m in "zlib".split():
             ui.error(_("(is your Python install correct?)\n"))
-    except IOError as inst:
-        if util.safehasattr(inst, "code"):
+    except (IOError, OSError) as inst:
+        if util.safehasattr(inst, "code"): # HTTPError
             ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst))
-        elif util.safehasattr(inst, "reason"):
+        elif util.safehasattr(inst, "reason"): # URLError or SSLError
             try: # usually it is in the form (errno, strerror)
                 reason = inst.reason.args[1]
             except (AttributeError, IndexError):
@@ -247,22 +249,15 @@ def callcatch(ui, func):
         elif (util.safehasattr(inst, "args")
               and inst.args and inst.args[0] == errno.EPIPE):
             pass
-        elif getattr(inst, "strerror", None):
-            if getattr(inst, "filename", None):
-                ui.error(_("abort: %s: %s\n") % (
+        elif getattr(inst, "strerror", None): # common IOError or OSError
+            if getattr(inst, "filename", None) is not None:
+                ui.error(_("abort: %s: '%s'\n") % (
                     encoding.strtolocal(inst.strerror),
                     stringutil.forcebytestr(inst.filename)))
             else:
                 ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
-        else:
+        else: # suspicious IOError
             raise
-    except OSError as inst:
-        if getattr(inst, "filename", None) is not None:
-            ui.error(_("abort: %s: '%s'\n") % (
-                encoding.strtolocal(inst.strerror),
-                stringutil.forcebytestr(inst.filename)))
-        else:
-            ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
     except MemoryError:
         ui.error(_("abort: out of memory\n"))
     except SystemExit as inst:
@@ -673,19 +668,11 @@ def revpair(repo, revs):
     l = revrange(repo, revs)
 
     if not l:
-        first = second = None
-    elif l.isascending():
-        first = l.min()
-        second = l.max()
-    elif l.isdescending():
-        first = l.max()
-        second = l.min()
-    else:
-        first = l.first()
-        second = l.last()
-
-    if first is None:
         raise error.Abort(_('empty revision range'))
+
+    first = l.first()
+    second = l.last()
+
     if (first == second and len(revs) >= 2
         and not all(revrange(repo, [r]) for r in revs)):
         raise error.Abort(_('empty revision on one side of range'))
@@ -740,6 +727,53 @@ def meaningfulparents(repo, ctx):
         return []
     return parents
 
+def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
+    """Return a function that produced paths for presenting to the user.
+
+    The returned function takes a repo-relative path and produces a path
+    that can be presented in the UI.
+
+    Depending on the value of ui.relative-paths, either a repo-relative or
+    cwd-relative path will be produced.
+
+    legacyrelativevalue is the value to use if ui.relative-paths=legacy
+
+    If forcerelativevalue is not None, then that value will be used regardless
+    of what ui.relative-paths is set to.
+    """
+    if forcerelativevalue is not None:
+        relative = forcerelativevalue
+    else:
+        config = repo.ui.config('ui', 'relative-paths')
+        if config == 'legacy':
+            relative = legacyrelativevalue
+        else:
+            relative = stringutil.parsebool(config)
+            if relative is None:
+                raise error.ConfigError(
+                    _("ui.relative-paths is not a boolean ('%s')") % config)
+
+    if relative:
+        cwd = repo.getcwd()
+        pathto = repo.pathto
+        return lambda f: pathto(f, cwd)
+    elif repo.ui.configbool('ui', 'slash'):
+        return lambda f: f
+    else:
+        return util.localpath
+
+def subdiruipathfn(subpath, uipathfn):
+    '''Create a new uipathfn that treats the file as relative to subpath.'''
+    return lambda f: uipathfn(posixpath.join(subpath, f))
+
+def anypats(pats, opts):
+    '''Checks if any patterns, including --include and --exclude were given.
+
+    Some commands (e.g. addremove) use this condition for deciding whether to
+    print absolute or relative paths.
+    '''
+    return bool(pats or opts.get('include') or opts.get('exclude'))
+
 def expandpats(pats):
     '''Expand bare globs when running on windows.
     On posix we assume it already has already been done by sh.'''
@@ -764,15 +798,14 @@ def matchandpats(ctx, pats=(), opts=None, globbed=False, default='relpath',
     '''Return a matcher and the patterns that were used.
     The matcher will warn about bad matches, unless an alternate badfn callback
     is provided.'''
-    if pats == ("",):
-        pats = []
     if opts is None:
         opts = {}
     if not globbed and default == 'relpath':
         pats = expandpats(pats or [])
 
+    uipathfn = getuipathfn(ctx.repo(), legacyrelativevalue=True)
     def bad(f, msg):
-        ctx.repo().ui.warn("%s: %s\n" % (m.rel(f), msg))
+        ctx.repo().ui.warn("%s: %s\n" % (uipathfn(f), msg))
 
     if badfn is None:
         badfn = bad
@@ -791,11 +824,11 @@ def match(ctx, pats=(), opts=None, globbed=False, default='relpath',
 
 def matchall(repo):
     '''Return a matcher that will efficiently match everything.'''
-    return matchmod.always(repo.root, repo.getcwd())
+    return matchmod.always()
 
 def matchfiles(repo, files, badfn=None):
     '''Return a matcher that will efficiently match exactly these files.'''
-    return matchmod.exact(repo.root, repo.getcwd(), files, badfn=badfn)
+    return matchmod.exact(files, badfn=badfn)
 
 def parsefollowlinespattern(repo, rev, pat, msg):
     """Return a file name from `pat` pattern suitable for usage in followlines
@@ -820,26 +853,26 @@ def getorigvfs(ui, repo):
         return None
     return vfs.vfs(repo.wvfs.join(origbackuppath))
 
-def origpath(ui, repo, filepath):
-    '''customize where .orig files are created
+def backuppath(ui, repo, filepath):
+    '''customize where working copy backup files (.orig files) are created
 
     Fetch user defined path from config file: [ui] origbackuppath = <path>
     Fall back to default (filepath with .orig suffix) if not specified
+
+    filepath is repo-relative
+
+    Returns an absolute path
     '''
     origvfs = getorigvfs(ui, repo)
     if origvfs is None:
-        return filepath + ".orig"
+        return repo.wjoin(filepath + ".orig")
 
-    # Convert filepath from an absolute path into a path inside the repo.
-    filepathfromroot = util.normpath(os.path.relpath(filepath,
-                                                     start=repo.root))
-
-    origbackupdir = origvfs.dirname(filepathfromroot)
+    origbackupdir = origvfs.dirname(filepath)
     if not origvfs.isdir(origbackupdir) or origvfs.islink(origbackupdir):
         ui.note(_('creating directory: %s\n') % origvfs.join(origbackupdir))
 
         # Remove any files that conflict with the backup file's path
-        for f in reversed(list(util.finddirs(filepathfromroot))):
+        for f in reversed(list(util.finddirs(filepath))):
             if origvfs.isfileorlink(f):
                 ui.note(_('removing conflicting file: %s\n')
                         % origvfs.join(f))
@@ -848,12 +881,12 @@ def origpath(ui, repo, filepath):
 
         origvfs.makedirs(origbackupdir)
 
-    if origvfs.isdir(filepathfromroot) and not origvfs.islink(filepathfromroot):
+    if origvfs.isdir(filepath) and not origvfs.islink(filepath):
         ui.note(_('removing conflicting directory: %s\n')
-                % origvfs.join(filepathfromroot))
-        origvfs.rmtree(filepathfromroot, forcibly=True)
+                % origvfs.join(filepath))
+        origvfs.rmtree(filepath, forcibly=True)
 
-    return origvfs.join(filepathfromroot)
+    return origvfs.join(filepath)
 
 class _containsnode(object):
     """proxy __contains__(node) to container.__contains__ which accepts revs"""
@@ -984,6 +1017,7 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
         for phase, nodes in toadvance.items():
             phases.advanceboundary(repo, tr, phase, nodes)
 
+        mayusearchived = repo.ui.config('experimental', 'cleanup-as-archived')
         # Obsolete or strip nodes
         if obsolete.isenabled(repo, obsolete.createmarkersopt):
             # If a node is already obsoleted, and we want to obsolete it
@@ -1001,6 +1035,17 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             if rels:
                 obsolete.createmarkers(repo, rels, operation=operation,
                                        metadata=metadata)
+        elif phases.supportinternal(repo) and mayusearchived:
+            # this assume we do not have "unstable" nodes above the cleaned ones
+            allreplaced = set()
+            for ns in replacements.keys():
+                allreplaced.update(ns)
+            if backup:
+                from . import repair # avoid import cycle
+                node = min(allreplaced, key=repo.changelog.rev)
+                repair.backupbundle(repo, allreplaced, allreplaced, node,
+                                    operation)
+            phases.retractboundary(repo, tr, phases.archived, allreplaced)
         else:
             from . import repair # avoid import cycle
             tostrip = list(n for ns in replacements for n in ns)
@@ -1008,7 +1053,7 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
                 repair.delayedstrip(repo.ui, repo, tostrip, operation,
                                     backup=backup)
 
-def addremove(repo, matcher, prefix, opts=None):
+def addremove(repo, matcher, prefix, uipathfn, opts=None):
     if opts is None:
         opts = {}
     m = matcher
@@ -1022,19 +1067,20 @@ def addremove(repo, matcher, prefix, opts=None):
     similarity /= 100.0
 
     ret = 0
-    join = lambda f: os.path.join(prefix, f)
 
     wctx = repo[None]
     for subpath in sorted(wctx.substate):
         submatch = matchmod.subdirmatcher(subpath, m)
         if opts.get('subrepos') or m.exact(subpath) or any(submatch.files()):
             sub = wctx.sub(subpath)
+            subprefix = repo.wvfs.reljoin(prefix, subpath)
+            subuipathfn = subdiruipathfn(subpath, uipathfn)
             try:
-                if sub.addremove(submatch, prefix, opts):
+                if sub.addremove(submatch, subprefix, subuipathfn, opts):
                     ret = 1
             except error.LookupError:
                 repo.ui.status(_("skipping missing subrepository: %s\n")
-                                 % join(subpath))
+                                 % uipathfn(subpath))
 
     rejected = []
     def badfn(f, msg):
@@ -1052,15 +1098,15 @@ def addremove(repo, matcher, prefix, opts=None):
     for abs in sorted(toprint):
         if repo.ui.verbose or not m.exact(abs):
             if abs in unknownset:
-                status = _('adding %s\n') % m.uipath(abs)
+                status = _('adding %s\n') % uipathfn(abs)
                 label = 'ui.addremove.added'
             else:
-                status = _('removing %s\n') % m.uipath(abs)
+                status = _('removing %s\n') % uipathfn(abs)
                 label = 'ui.addremove.removed'
             repo.ui.status(status, label=label)
 
     renames = _findrenames(repo, m, added + unknown, removed + deleted,
-                           similarity)
+                           similarity, uipathfn)
 
     if not dry_run:
         _markchanges(repo, unknown + forgotten, deleted, renames)
@@ -1089,8 +1135,12 @@ def marktouched(repo, files, similarity=0.0):
                 status = _('removing %s\n') % abs
             repo.ui.status(status)
 
+    # TODO: We should probably have the caller pass in uipathfn and apply it to
+    # the messages above too. legacyrelativevalue=True is consistent with how
+    # it used to work.
+    uipathfn = getuipathfn(repo, legacyrelativevalue=True)
     renames = _findrenames(repo, m, added + unknown, removed + deleted,
-                           similarity)
+                           similarity, uipathfn)
 
     _markchanges(repo, unknown + forgotten, deleted, renames)
 
@@ -1129,7 +1179,7 @@ def _interestingfiles(repo, matcher):
 
     return added, unknown, deleted, removed, forgotten
 
-def _findrenames(repo, matcher, added, removed, similarity):
+def _findrenames(repo, matcher, added, removed, similarity, uipathfn):
     '''Find renames from removed files to added ones.'''
     renames = {}
     if similarity > 0:
@@ -1139,7 +1189,7 @@ def _findrenames(repo, matcher, added, removed, similarity):
                 or not matcher.exact(new)):
                 repo.ui.status(_('recording removal of %s as rename to %s '
                                  '(%d%% similar)\n') %
-                               (matcher.rel(old), matcher.rel(new),
+                               (uipathfn(old), uipathfn(new),
                                 score * 100))
             renames[new] = old
     return renames
@@ -1153,6 +1203,49 @@ def _markchanges(repo, unknown, deleted, renames):
         wctx.add(unknown)
         for new, old in renames.iteritems():
             wctx.copy(old, new)
+
+def getrenamedfn(repo, endrev=None):
+    if copiesmod.usechangesetcentricalgo(repo):
+        def getrenamed(fn, rev):
+            ctx = repo[rev]
+            p1copies = ctx.p1copies()
+            if fn in p1copies:
+                return p1copies[fn]
+            p2copies = ctx.p2copies()
+            if fn in p2copies:
+                return p2copies[fn]
+            return None
+        return getrenamed
+
+    rcache = {}
+    if endrev is None:
+        endrev = len(repo)
+
+    def getrenamed(fn, rev):
+        '''looks up all renames for a file (up to endrev) the first
+        time the file is given. It indexes on the changerev and only
+        parses the manifest if linkrev != changerev.
+        Returns rename info for fn at changerev rev.'''
+        if fn not in rcache:
+            rcache[fn] = {}
+            fl = repo.file(fn)
+            for i in fl:
+                lr = fl.linkrev(i)
+                renamed = fl.renamed(fl.node(i))
+                rcache[fn][lr] = renamed and renamed[0]
+                if lr >= endrev:
+                    break
+        if rev in rcache[fn]:
+            return rcache[fn][rev]
+
+        # If linkrev != rev (i.e. rev not found in rcache) fallback to
+        # filectx logic.
+        try:
+            return repo[rev][fn].copysource()
+        except error.LookupError:
+            return None
+
+    return getrenamed
 
 def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
     """Update the dirstate to reflect the intent of copying src to dst. For
@@ -1172,6 +1265,49 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
                 wctx.add([dst])
         elif not dryrun:
             wctx.copy(origsrc, dst)
+
+def movedirstate(repo, newctx, match=None):
+    """Move the dirstate to newctx and adjust it as necessary.
+
+    A matcher can be provided as an optimization. It is probably a bug to pass
+    a matcher that doesn't match all the differences between the parent of the
+    working copy and newctx.
+    """
+    oldctx = repo['.']
+    ds = repo.dirstate
+    ds.setparents(newctx.node(), nullid)
+    copies = dict(ds.copies())
+    s = newctx.status(oldctx, match=match)
+    for f in s.modified:
+        if ds[f] == 'r':
+            # modified + removed -> removed
+            continue
+        ds.normallookup(f)
+
+    for f in s.added:
+        if ds[f] == 'r':
+            # added + removed -> unknown
+            ds.drop(f)
+        elif ds[f] != 'a':
+            ds.add(f)
+
+    for f in s.removed:
+        if ds[f] == 'a':
+            # removed + added -> normal
+            ds.normallookup(f)
+        elif ds[f] != 'r':
+            ds.remove(f)
+
+    # Merge old parent and old working dir copies
+    oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
+    oldcopies.update(copies)
+    copies = dict((dst, oldcopies.get(src, src))
+                  for dst, src in oldcopies.iteritems())
+    # Adjust the dirstate copies
+    for dst, src in copies.iteritems():
+        if (src not in newctx or dst in newctx or ds[dst] != 'a'):
+            src = None
+        ds.copy(src, dst)
 
 def writerequires(opener, requirements):
     with opener('requires', 'w', atomictemp=True) as fp:

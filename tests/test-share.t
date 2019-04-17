@@ -34,9 +34,9 @@ share shouldn't have a full cache dir, original repo should
   checkisexec (execbit !)
   checklink (symlink !)
   checklink-target (symlink !)
+  manifestfulltextcache (reporevlogstore !)
   $ ls -1 ../repo1/.hg/cache
   branch2-served
-  manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1
   tags2-visible
@@ -124,6 +124,15 @@ hg serve shared clone
   -rw-r--r-- 2 b
   
   
+Cloning a shared repo via bundle2 results in a non-shared clone
+
+  $ cd ..
+  $ hg clone -q --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/`pwd`/repo2 cloned-via-bundle2
+  $ cat ./cloned-via-bundle2/.hg/requires | grep "shared"
+  [1]
+  $ hg id --cwd cloned-via-bundle2 -r tip
+  c2e0ac586386 tip
+  $ cd repo2
 
 test unshare command
 

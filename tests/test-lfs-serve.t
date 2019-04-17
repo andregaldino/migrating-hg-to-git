@@ -51,16 +51,15 @@ make command server magic visible
   >     opts[b'manifest'] = False
   >     opts[b'dir'] = False
   >     rl = cmdutil.openrevlog(repo, b'debugprocessors', file_, opts)
-  >     for flag, proc in rl._flagprocessors.iteritems():
+  >     for flag, proc in rl._flagprocessors.items():
   >         ui.status(b"registered processor '%#x'\n" % (flag))
   > EOF
 
 Skip the experimental.changegroup3=True config.  Failure to agree on this comes
-first, and causes a "ValueError: no common changegroup version" or "abort:
-HTTP Error 500: Internal Server Error", if the extension is only loaded on one
-side.  If that *is* enabled, the subsequent failure is "abort: missing processor
-for flag '0x2000'!" if the extension is only loaded on one side (possibly also
-masked by the Internal Server Error message).
+first, and causes an "abort: no common changegroup version" if the extension is
+only loaded on one side. If that *is* enabled, the subsequent failure is "abort:
+missing processor for flag '0x2000'!" if the extension is only loaded on one side
+(possibly also masked by the Internal Server Error message).
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > debugprocessors = $TESTTMP/debugprocessors.py
@@ -110,14 +109,14 @@ non-lfs content, and the extension enabled.
   ... def diff(server):
   ...     readchannel(server)
   ...     # run an arbitrary command in the repo with the extension loaded
-  ...     runcommand(server, ['id', '-R', '../cmdservelfs'])
+  ...     runcommand(server, [b'id', b'-R', b'../cmdservelfs'])
   ...     # now run a command in a repo without the extension to ensure that
   ...     # files are added safely..
-  ...     runcommand(server, ['ci', '-Aqm', 'non-lfs'])
+  ...     runcommand(server, [b'ci', b'-Aqm', b'non-lfs'])
   ...     # .. and that scmutil.prefetchfiles() safely no-ops..
-  ...     runcommand(server, ['diff', '-r', '.~1'])
+  ...     runcommand(server, [b'diff', b'-r', b'.~1'])
   ...     # .. and that debugupgraderepo safely no-ops.
-  ...     runcommand(server, ['debugupgraderepo', '-q', '--run'])
+  ...     runcommand(server, [b'debugupgraderepo', b'-q', b'--run'])
   *** runcommand id -R ../cmdservelfs
   000000000000 tip
   *** runcommand ci -Aqm non-lfs
@@ -257,12 +256,12 @@ times.
   ... def addrequirement(server):
   ...     readchannel(server)
   ...     # change the repo in a way that adds the lfs requirement
-  ...     runcommand(server, ['pull', '-qu'])
+  ...     runcommand(server, [b'pull', b'-qu'])
   ...     # Now cause the requirement adding hook to fire again, without going
   ...     # through reposetup() again.
   ...     with open('file.txt', 'wb') as fp:
-  ...         fp.write('data')
-  ...     runcommand(server, ['ci', '-Aqm', 'non-lfs'])
+  ...         fp.write(b'data')
+  ...     runcommand(server, [b'ci', b'-Aqm', b'non-lfs'])
   *** runcommand pull -qu
   *** runcommand ci -Aqm non-lfs
 
@@ -317,8 +316,11 @@ lfs content, and the extension enabled.
 TODO: fail more gracefully.
 
   $ hg init $TESTTMP/client4_pull
-  $ hg -R $TESTTMP/client4_pull pull -q http://localhost:$HGPORT
-  abort: HTTP Error 500: Internal Server Error
+  $ hg -R $TESTTMP/client4_pull pull http://localhost:$HGPORT
+  pulling from http://localhost:$HGPORT/
+  requesting all changes
+  remote: abort: no common changegroup version
+  abort: pull failed on remote
   [255]
   $ grep 'lfs' $TESTTMP/client4_pull/.hg/requires $SERVER_REQUIRES
   $TESTTMP/server/.hg/requires:lfs
@@ -359,22 +361,24 @@ lfs content, and the extension enabled.
   $ cp $HGRCPATH.orig $HGRCPATH
 
   >>> from __future__ import absolute_import
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand, stdout
   >>> @check
   ... def checkflags(server):
   ...     readchannel(server)
-  ...     print('')
-  ...     print('# LFS required- both lfs and non-lfs revlogs have 0x2000 flag')
-  ...     runcommand(server, ['debugprocessors', 'lfs.bin', '-R',
-  ...                '../server'])
-  ...     runcommand(server, ['debugprocessors', 'nonlfs2.txt', '-R',
-  ...                '../server'])
-  ...     runcommand(server, ['config', 'extensions', '--cwd',
-  ...                '../server'])
+  ...     bprint(b'')
+  ...     bprint(b'# LFS required- both lfs and non-lfs revlogs have 0x2000 flag')
+  ...     stdout.flush()
+  ...     runcommand(server, [b'debugprocessors', b'lfs.bin', b'-R',
+  ...                b'../server'])
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs2.txt', b'-R',
+  ...                b'../server'])
+  ...     runcommand(server, [b'config', b'extensions', b'--cwd',
+  ...                b'../server'])
   ... 
-  ...     print("\n# LFS not enabled- revlogs don't have 0x2000 flag")
-  ...     runcommand(server, ['debugprocessors', 'nonlfs3.txt'])
-  ...     runcommand(server, ['config', 'extensions'])
+  ...     bprint(b"\n# LFS not enabled- revlogs don't have 0x2000 flag")
+  ...     stdout.flush()
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs3.txt'])
+  ...     runcommand(server, [b'config', b'extensions'])
   
   # LFS required- both lfs and non-lfs revlogs have 0x2000 flag
   *** runcommand debugprocessors lfs.bin -R ../server
@@ -403,28 +407,31 @@ lfs content, and the extension enabled.
   > EOF
 
   >>> from __future__ import absolute_import, print_function
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand, stdout
   >>> @check
   ... def checkflags2(server):
   ...     readchannel(server)
-  ...     print('')
-  ...     print('# LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag')
-  ...     runcommand(server, ['debugprocessors', 'lfs.bin', '-R',
-  ...                '../server'])
-  ...     runcommand(server, ['debugprocessors', 'nonlfs2.txt', '-R',
-  ...                '../server'])
-  ...     runcommand(server, ['config', 'extensions', '--cwd',
-  ...                '../server'])
+  ...     bprint(b'')
+  ...     bprint(b'# LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag')
+  ...     stdout.flush()
+  ...     runcommand(server, [b'debugprocessors', b'lfs.bin', b'-R',
+  ...                b'../server'])
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs2.txt', b'-R',
+  ...                b'../server'])
+  ...     runcommand(server, [b'config', b'extensions', b'--cwd',
+  ...                b'../server'])
   ... 
-  ...     print('\n# LFS enabled without requirement- revlogs have 0x2000 flag')
-  ...     runcommand(server, ['debugprocessors', 'nonlfs3.txt'])
-  ...     runcommand(server, ['config', 'extensions'])
+  ...     bprint(b'\n# LFS enabled without requirement- revlogs have 0x2000 flag')
+  ...     stdout.flush()
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs3.txt'])
+  ...     runcommand(server, [b'config', b'extensions'])
   ... 
-  ...     print("\n# LFS disabled locally- revlogs don't have 0x2000 flag")
-  ...     runcommand(server, ['debugprocessors', 'nonlfs.txt', '-R',
-  ...                '../nonlfs'])
-  ...     runcommand(server, ['config', 'extensions', '--cwd',
-  ...                '../nonlfs'])
+  ...     bprint(b"\n# LFS disabled locally- revlogs don't have 0x2000 flag")
+  ...     stdout.flush()
+  ...     runcommand(server, [b'debugprocessors', b'nonlfs.txt', b'-R',
+  ...                b'../nonlfs'])
+  ...     runcommand(server, [b'config', b'extensions', b'--cwd',
+  ...                b'../nonlfs'])
   
   # LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag
   *** runcommand debugprocessors lfs.bin -R ../server
@@ -657,10 +664,4 @@ Only the files required by diff are prefetched
 
   $ "$PYTHON" $TESTDIR/killdaemons.py $DAEMON_PIDS
 
-#if lfsremote-on
-  $ cat $TESTTMP/errors.log | grep '^[A-Z]'
-  Traceback (most recent call last):
-  ValueError: no common changegroup version
-#else
   $ cat $TESTTMP/errors.log
-#endif

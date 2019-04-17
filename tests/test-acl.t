@@ -38,8 +38,8 @@
   > def fakegetusers(ui, group):
   >     try:
   >         return acl._getusersorig(ui, group)
-  >     except:
-  >         return ["fred", "betty"]
+  >     except BaseException:
+  >         return [b"fred", b"betty"]
   > acl._getusersorig = acl._getusers
   > acl._getusers = fakegetusers
   > EOF
@@ -1125,7 +1125,7 @@ file specified by acl.config does not exist
   bundle2-input-bundle: 4 parts total
   transaction abort!
   rollback completed
-  abort: $ENOENT$: ../acl.config
+  abort: $ENOENT$: '../acl.config'
   no rollback information available
   0:6675d58eff77
   

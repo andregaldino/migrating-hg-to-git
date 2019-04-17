@@ -40,6 +40,8 @@ try:
 except ImportError:
     re2 = None
 
+import testparseutil
+
 def compilere(pat, multiline=False):
     if multiline:
         pat = '(?m)' + pat
@@ -231,8 +233,10 @@ utestfilters = [
     (r"( +)(#([^!][^\n]*\S)?)", repcomment),
 ]
 
-pypats = [
+# common patterns to check *.py
+commonpypats = [
   [
+    (r'\\$', 'Use () to wrap long lines in Python, not \\'),
     (r'^\s*def\s*\w+\s*\(.*,\s*\(',
      "tuple parameter unpacking not available in Python 3+"),
     (r'lambda\s*\(.*,.*\)',
@@ -261,7 +265,6 @@ pypats = [
         # a pass at the same indent level, which is bogus
         r'(?P=indent)pass[ \t\n#]'
       ), 'omit superfluous pass'),
-    (r'.{81}', "line too long"),
     (r'[^\n]\Z', "no trailing newline"),
     (r'(\S[ \t]+|^[ \t]+)\n', "trailing whitespace"),
 #    (r'^\s+[^_ \n][^_. \n]+_[^_\n]+\s*=',
@@ -299,7 +302,6 @@ pypats = [
      "wrong whitespace around ="),
     (r'\([^()]*( =[^=]|[^<>!=]= )',
      "no whitespace around = for named parameters"),
-    (r'raise Exception', "don't raise generic exceptions"),
     (r'raise [^,(]+, (\([^\)]+\)|[^,\(\)]+)$',
      "don't use old-style two-argument raise, use Exception(message)"),
     (r' is\s+(not\s+)?["\'0-9-]', "object comparison with literal"),
@@ -315,21 +317,12 @@ pypats = [
      "use opener.read() instead"),
     (r'opener\([^)]*\).write\(',
      "use opener.write() instead"),
-    (r'[\s\(](open|file)\([^)]*\)\.read\(',
-     "use util.readfile() instead"),
-    (r'[\s\(](open|file)\([^)]*\)\.write\(',
-     "use util.writefile() instead"),
-    (r'^[\s\(]*(open(er)?|file)\([^)]*\)(?!\.close\(\))',
-     "always assign an opened file to a variable, and close it afterwards"),
-    (r'[\s\(](open|file)\([^)]*\)\.(?!close\(\))',
-     "always assign an opened file to a variable, and close it afterwards"),
     (r'(?i)descend[e]nt', "the proper spelling is descendAnt"),
     (r'\.debug\(\_', "don't mark debug messages for translation"),
     (r'\.strip\(\)\.split\(\)', "no need to strip before splitting"),
     (r'^\s*except\s*:', "naked except clause", r'#.*re-raises'),
     (r'^\s*except\s([^\(,]+|\([^\)]+\))\s*,',
      'legacy exception syntax; use "as" instead of ","'),
-    (r':\n(    )*( ){1,3}[^ ]', "must indent 4 spaces"),
     (r'release\(.*wlock, .*lock\)', "wrong lock release order"),
     (r'\bdef\s+__bool__\b', "__bool__ should be __nonzero__ in Python 2"),
     (r'os\.path\.join\(.*, *(""|\'\')\)',
@@ -339,7 +332,6 @@ pypats = [
     (r'def.*[( ]\w+=\{\}', "don't use mutable default arguments"),
     (r'\butil\.Abort\b', "directly use error.Abort"),
     (r'^@(\w*\.)?cachefunc', "module-level @cachefunc is risky, please avoid"),
-    (r'^import atexit', "don't use atexit, use ui.atexit"),
     (r'^import Queue', "don't use Queue, use pycompat.queue.Queue + "
                        "pycompat.queue.Empty"),
     (r'^import cStringIO', "don't use cStringIO.StringIO, use util.stringio"),
@@ -357,6 +349,34 @@ pypats = [
     (r'([a-z]*).revision\(\1\.node\(',
      "don't convert rev to node before passing to revision(nodeorrev)"),
     (r'platform\.system\(\)', "don't use platform.system(), use pycompat"),
+
+  ],
+  # warnings
+  [
+  ]
+]
+
+# patterns to check normal *.py files
+pypats = [
+  [
+    # Ideally, these should be placed in "commonpypats" for
+    # consistency of coding rules in Mercurial source tree.
+    # But on the other hand, these are not so seriously required for
+    # python code fragments embedded in test scripts. Fixing test
+    # scripts for these patterns requires many changes, and has less
+    # profit than effort.
+    (r'.{81}', "line too long"),
+    (r'raise Exception', "don't raise generic exceptions"),
+    (r'[\s\(](open|file)\([^)]*\)\.read\(',
+     "use util.readfile() instead"),
+    (r'[\s\(](open|file)\([^)]*\)\.write\(',
+     "use util.writefile() instead"),
+    (r'^[\s\(]*(open(er)?|file)\([^)]*\)(?!\.close\(\))',
+     "always assign an opened file to a variable, and close it afterwards"),
+    (r'[\s\(](open|file)\([^)]*\)\.(?!close\(\))',
+     "always assign an opened file to a variable, and close it afterwards"),
+    (r':\n(    )*( ){1,3}[^ ]', "must indent 4 spaces"),
+    (r'^import atexit', "don't use atexit, use ui.atexit"),
 
     # rules depending on implementation of repquote()
     (r' x+[xpqo%APM][\'"]\n\s+[\'"]x',
@@ -376,20 +396,34 @@ pypats = [
            # because _preparepats forcibly adds "\n" into [^...],
            # even though this regexp wants match it against "\n")''',
      "missing _() in ui message (use () to hide false-positives)"),
-  ],
+  ] + commonpypats[0],
   # warnings
   [
     # rules depending on implementation of repquote()
     (r'(^| )pp +xxxxqq[ \n][^\n]', "add two newlines after '.. note::'"),
-  ]
+  ] + commonpypats[1]
 ]
 
-pyfilters = [
+# patterns to check *.py for embedded ones in test script
+embeddedpypats = [
+  [
+  ] + commonpypats[0],
+  # warnings
+  [
+  ] + commonpypats[1]
+]
+
+# common filters to convert *.py
+commonpyfilters = [
     (r"""(?msx)(?P<comment>\#.*?$)|
          ((?P<quote>('''|\"\"\"|(?<!')'(?!')|(?<!")"(?!")))
           (?P<text>(([^\\]|\\.)*?))
           (?P=quote))""", reppython),
 ]
+
+# filters to convert normal *.py files
+pyfilters = [
+] + commonpyfilters
 
 # non-filter patterns
 pynfpats = [
@@ -403,6 +437,10 @@ pynfpats = [
     [],
 ]
 
+# filters to convert *.py for embedded ones in test script
+embeddedpyfilters = [
+] + commonpyfilters
+
 # extension non-filter patterns
 pyextnfpats = [
     [(r'^"""\n?[A-Z]', "don't capitalize docstring title")],
@@ -414,7 +452,7 @@ txtfilters = []
 
 txtpats = [
   [
-    ('\s$', 'trailing whitespace'),
+    (r'\s$', 'trailing whitespace'),
     ('.. note::[ \n][^\n]', 'add two newlines after note::')
   ],
   []
@@ -537,9 +575,17 @@ checks = [
      allfilesfilters, allfilespats),
 ]
 
+# (desc,
+#  func to pick up embedded code fragments,
+#  list of patterns to convert target files
+#  list of patterns to detect errors/warnings)
+embeddedchecks = [
+    ('embedded python',
+     testparseutil.pyembedded, embeddedpyfilters, embeddedpypats)
+]
+
 def _preparepats():
-    for c in checks:
-        failandwarn = c[-1]
+    def preparefailandwarn(failandwarn):
         for pats in failandwarn:
             for i, pseq in enumerate(pats):
                 # fix-up regexes for multi-line searches
@@ -553,9 +599,18 @@ def _preparepats():
                 p = re.sub(r'(?<!\\)\[\^', r'[^\\n', p)
 
                 pats[i] = (re.compile(p, re.MULTILINE),) + pseq[1:]
-        filters = c[3]
+
+    def preparefilters(filters):
         for i, flt in enumerate(filters):
             filters[i] = re.compile(flt[0]), flt[1]
+
+    for cs in (checks, embeddedchecks):
+        for c in cs:
+            failandwarn = c[-1]
+            preparefailandwarn(failandwarn)
+
+            filters = c[-2]
+            preparefilters(filters)
 
 class norepeatlogger(object):
     def __init__(self):
@@ -604,13 +659,12 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
 
     return True if no error is found, False otherwise.
     """
-    blamecache = None
     result = True
 
     try:
         with opentext(f) as fp:
             try:
-                pre = post = fp.read()
+                pre = fp.read()
             except UnicodeDecodeError as e:
                 print("%s while reading %s" % (e, f))
                 return result
@@ -618,11 +672,12 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
         print("Skipping %s, %s" % (f, str(e).split(':', 1)[0]))
         return result
 
+    # context information shared while single checkfile() invocation
+    context = {'blamecache': None}
+
     for name, match, magic, filters, pats in checks:
-        post = pre # discard filtering result of previous check
         if debug:
             print(name, f)
-        fc = 0
         if not (re.match(match, f) or (magic and re.search(magic, pre))):
             if debug:
                 print("Skipping %s for %s it doesn't match %s" % (
@@ -637,6 +692,74 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
             # tests/test-check-code.t
             print("Skipping %s it has no-che?k-code (glob)" % f)
             return "Skip" # skip checking this file
+
+        fc = _checkfiledata(name, f, pre, filters, pats, context,
+                            logfunc, maxerr, warnings, blame, debug, lineno)
+        if fc:
+            result = False
+
+    if f.endswith('.t') and "no-" "check-code" not in pre:
+        if debug:
+            print("Checking embedded code in %s" % (f))
+
+        prelines = pre.splitlines()
+        embeddederros = []
+        for name, embedded, filters, pats in embeddedchecks:
+            # "reset curmax at each repetition" treats maxerr as "max
+            # nubmer of errors in an actual file per entry of
+            # (embedded)checks"
+            curmaxerr = maxerr
+
+            for found in embedded(f, prelines, embeddederros):
+                filename, starts, ends, code = found
+                fc = _checkfiledata(name, f, code, filters, pats, context,
+                                    logfunc, curmaxerr, warnings, blame, debug,
+                                    lineno, offset=starts - 1)
+                if fc:
+                    result = False
+                    if curmaxerr:
+                        if fc >= curmaxerr:
+                            break
+                        curmaxerr -= fc
+
+    return result
+
+def _checkfiledata(name, f, filedata, filters, pats, context,
+                   logfunc, maxerr, warnings, blame, debug, lineno,
+                   offset=None):
+    """Execute actual error check for file data
+
+    :name: of the checking category
+    :f: filepath
+    :filedata: content of a file
+    :filters: to be applied before checking
+    :pats: to detect errors
+    :context: a dict of information shared while single checkfile() invocation
+              Valid keys: 'blamecache'.
+    :logfunc: function used to report error
+              logfunc(filename, linenumber, linecontent, errormessage)
+    :maxerr: number of error to display before aborting, or False to
+             report all errors
+    :warnings: whether warning level checks should be applied
+    :blame: whether blame information should be displayed at error reporting
+    :debug: whether debug information should be displayed
+    :lineno: whether lineno should be displayed at error reporting
+    :offset: line number offset of 'filedata' in 'f' for checking
+             an embedded code fragment, or None (offset=0 is different
+             from offset=None)
+
+    returns number of detected errors.
+    """
+    blamecache = context['blamecache']
+    if offset is None:
+        lineoffset = 0
+    else:
+        lineoffset = offset
+
+    fc = 0
+    pre = post = filedata
+
+    if True: # TODO: get rid of this redundant 'if' block
         for p, r in filters:
             post = re.sub(p, r, post)
         nerrs = len(pats[0]) # nerr elements are errors
@@ -679,20 +802,30 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
                 if ignore and re.search(ignore, l, re.MULTILINE):
                     if debug:
                         print("Skipping %s for %s:%s (ignore pattern)" % (
-                            name, f, n))
+                            name, f, (n + lineoffset)))
                     continue
                 bd = ""
                 if blame:
                     bd = 'working directory'
-                    if not blamecache:
+                    if blamecache is None:
                         blamecache = getblame(f)
-                    if n < len(blamecache):
-                        bl, bu, br = blamecache[n]
-                        if bl == l:
+                        context['blamecache'] = blamecache
+                    if (n + lineoffset) < len(blamecache):
+                        bl, bu, br = blamecache[(n + lineoffset)]
+                        if offset is None and bl == l:
                             bd = '%s@%s' % (bu, br)
+                        elif offset is not None and bl.endswith(l):
+                            # "offset is not None" means "checking
+                            # embedded code fragment". In this case,
+                            # "l" does not have information about the
+                            # beginning of an *original* line in the
+                            # file (e.g. '  > ').
+                            # Therefore, use "str.endswith()", and
+                            # show "maybe" for a little loose
+                            # examination.
+                            bd = '%s@%s, maybe' % (bu, br)
 
-                errors.append((f, lineno and n + 1, l, msg, bd))
-                result = False
+                errors.append((f, lineno and (n + lineoffset + 1), l, msg, bd))
 
         errors.sort()
         for e in errors:
@@ -702,7 +835,7 @@ def checkfile(f, logfunc=_defaultlogger.log, maxerr=None, warnings=False,
                 print(" (too many errors, giving up)")
                 break
 
-    return result
+    return fc
 
 def main():
     parser = optparse.OptionParser("%prog [options] [files | -]")

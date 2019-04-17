@@ -109,7 +109,6 @@ def _fctxannotate(orig, self, follow=False, linenumber=False, skiprevs=None,
 
 def _remotefctxannotate(orig, self, follow=False, skiprevs=None, diffopts=None):
     # skipset: a set-like used to test if a fctx needs to be downloaded
-    skipset = None
     with context.fctxannotatecontext(self, follow, diffopts) as ac:
         skipset = revmap.revmap(ac.revmappath)
     return orig(self, follow, skiprevs=skiprevs, diffopts=diffopts,

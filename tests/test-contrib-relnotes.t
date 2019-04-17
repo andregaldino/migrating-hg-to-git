@@ -266,7 +266,6 @@
    * diff: disable diff.noprefix option for diffstat (Bts:issue5759)
    * evolution: make reporting of new unstable changesets optional
    * extdata: abort if external command exits with non-zero status (BC)
-   * fancyopts: add early-options parser compatible with getopt()
    * graphlog: add another graph node type, unstable, using character "*" (BC)
    * hgdemandimport: use correct hyperlink to python-bug in comments (Bts:issue5765)
    * httppeer: add support for tracing all http request made by the peer
@@ -277,17 +276,18 @@
    * morestatus: don't crash with different drive letters for repo.root and CWD
    * outgoing: respect ":pushurl" paths (Bts:issue5365)
    * remove: print message for each file in verbose mode only while using '-A' (BC)
-   * rewriteutil: use precheck() in uncommit and amend commands
    * scmutil: don't try to delete origbackup symlinks to directories (Bts:issue5731)
    * sshpeer: add support for request tracing
    * subrepo: add config option to reject any subrepo operations (SEC)
    * subrepo: disable git and svn subrepos by default (BC) (SEC)
+   * subrepo: disallow symlink traversal across subrepo mount point (SEC)
    * subrepo: extend config option to disable subrepos by type (SEC)
    * subrepo: handle 'C:' style paths on the command line (Bts:issue5770)
    * subrepo: use per-type config options to enable subrepos
    * svnsubrepo: check if subrepo is missing when checking dirty state (Bts:issue5657)
    * test-bookmarks-pushpull: stabilize for Windows
    * test-run-tests: stabilize the test (Bts:issue5735)
+   * tests: show symlink traversal across subrepo mount point (SEC)
    * tr-summary: keep a weakref to the unfiltered repository
    * unamend: fix command summary line
    * uncommit: unify functions _uncommitdirstate and _unamenddirstate to one

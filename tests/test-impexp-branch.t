@@ -6,7 +6,7 @@
   > import re
   > import sys
   > 
-  > head_re = re.compile('^#(?:(?:\\s+([A-Za-z][A-Za-z0-9_]*)(?:\\s.*)?)|(?:\\s*))$')
+  > head_re = re.compile(r'^#(?:(?:\\s+([A-Za-z][A-Za-z0-9_]*)(?:\\s.*)?)|(?:\\s*))$')
   > 
   > for line in sys.stdin:
   >     hmatch = head_re.match(line)

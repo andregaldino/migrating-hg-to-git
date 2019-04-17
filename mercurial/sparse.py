@@ -264,7 +264,7 @@ def forceincludematcher(matcher, includes):
     """Returns a matcher that returns true for any of the forced includes
     before testing against the actual matcher."""
     kindpats = [('path', include, '') for include in includes]
-    includematcher = matchmod.includematcher('', '', kindpats)
+    includematcher = matchmod.includematcher('', kindpats)
     return matchmod.unionmatcher([includematcher, matcher])
 
 def matcher(repo, revs=None, includetemp=True):
@@ -277,7 +277,7 @@ def matcher(repo, revs=None, includetemp=True):
     """
     # If sparse isn't enabled, sparse matcher matches everything.
     if not enabled:
-        return matchmod.always(repo.root, '')
+        return matchmod.always()
 
     if not revs or revs == [None]:
         revs = [repo.changelog.rev(node)
@@ -305,7 +305,7 @@ def matcher(repo, revs=None, includetemp=True):
             pass
 
     if not matchers:
-        result = matchmod.always(repo.root, '')
+        result = matchmod.always()
     elif len(matchers) == 1:
         result = matchers[0]
     else:
@@ -336,7 +336,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
     if branchmerge:
         # If we're merging, use the wctx filter, since we're merging into
         # the wctx.
-        sparsematch = matcher(repo, [wctx.parents()[0].rev()])
+        sparsematch = matcher(repo, [wctx.p1().rev()])
     else:
         # If we're updating, use the target context's filter, since we're
         # moving to the target context.
@@ -643,8 +643,8 @@ def updateconfig(repo, pats, opts, include=False, exclude=False, reset=False,
             for kindpat in pats:
                 kind, pat = matchmod._patsplit(kindpat, None)
                 if kind in matchmod.cwdrelativepatternkinds or kind is None:
-                    ap = (kind + ':' if kind else '') +\
-                            pathutil.canonpath(root, cwd, pat)
+                    ap = ((kind + ':' if kind else '') +
+                          pathutil.canonpath(root, cwd, pat))
                     abspats.append(ap)
                 else:
                     abspats.append(kindpat)

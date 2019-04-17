@@ -279,6 +279,7 @@ def _iprompt(repo, mynode, orig, fcd, fco, fca, toolconf, labels=None):
     keep as the merged version."""
     ui = repo.ui
     fd = fcd.path()
+    uipathfn = scmutil.getuipathfn(repo)
 
     # Avoid prompting during an in-memory merge since it doesn't support merge
     # conflicts.
@@ -287,7 +288,7 @@ def _iprompt(repo, mynode, orig, fcd, fco, fca, toolconf, labels=None):
                                                 'support file conflicts')
 
     prompts = partextras(labels)
-    prompts['fd'] = fd
+    prompts['fd'] = uipathfn(fd)
     try:
         if fco.isabsent():
             index = ui.promptchoice(
@@ -394,13 +395,14 @@ def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
 
 def _mergecheck(repo, mynode, orig, fcd, fco, fca, toolconf):
     tool, toolpath, binary, symlink, scriptfn = toolconf
+    uipathfn = scmutil.getuipathfn(repo)
     if symlink:
         repo.ui.warn(_('warning: internal %s cannot merge symlinks '
-                       'for %s\n') % (tool, fcd.path()))
+                       'for %s\n') % (tool, uipathfn(fcd.path())))
         return False
     if fcd.isabsent() or fco.isabsent():
         repo.ui.warn(_('warning: internal %s cannot merge change/delete '
-                       'conflict for %s\n') % (tool, fcd.path()))
+                       'conflict for %s\n') % (tool, uipathfn(fcd.path())))
         return False
     return True
 
@@ -462,7 +464,6 @@ def _imergeauto(repo, mynode, orig, fcd, fco, fca, toolconf, files,
     Generic driver for _imergelocal and _imergeother
     """
     assert localorother is not None
-    tool, toolpath, binary, symlink, scriptfn = toolconf
     r = simplemerge.simplemerge(repo.ui, fcd, fca, fco, label=labels,
                                 localorother=localorother)
     return True, r
@@ -581,9 +582,10 @@ def _describemerge(ui, repo, mynode, fcl, fcb, fco, env, toolpath, args):
 
 def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     tool, toolpath, binary, symlink, scriptfn = toolconf
+    uipathfn = scmutil.getuipathfn(repo)
     if fcd.isabsent() or fco.isabsent():
         repo.ui.warn(_('warning: %s cannot merge change/delete conflict '
-                       'for %s\n') % (tool, fcd.path()))
+                       'for %s\n') % (tool, uipathfn(fcd.path())))
         return False, 1, None
     unused, unused, unused, back = files
     localpath = _workingpath(repo, fcd)
@@ -623,7 +625,7 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
             lambda s: procutil.shellquote(util.localpath(s)))
         if _toolbool(ui, tool, "gui"):
             repo.ui.status(_('running merge tool %s for file %s\n') %
-                           (tool, fcd.path()))
+                           (tool, uipathfn(fcd.path())))
         if scriptfn is None:
             cmd = toolpath + ' ' + args
             repo.ui.debug('launching merge tool: %s\n' % cmd)
@@ -741,8 +743,7 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
     # TODO: Break this import cycle somehow. (filectx -> ctx -> fileset ->
     # merge -> filemerge). (I suspect the fileset import is the weakest link)
     from . import context
-    a = _workingpath(repo, fcd)
-    back = scmutil.origpath(ui, repo, a)
+    back = scmutil.backuppath(ui, repo, fcd.path())
     inworkingdir = (back.startswith(repo.wvfs.base) and not
         back.startswith(repo.vfs.base))
     if isinstance(fcd, context.overlayworkingfilectx) and inworkingdir:
@@ -762,6 +763,7 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
             if isinstance(fcd, context.overlayworkingfilectx):
                 util.writefile(back, fcd.data())
             else:
+                a = _workingpath(repo, fcd)
                 util.copyfile(a, back)
         # A arbitraryfilectx is returned, so we can run the same functions on
         # the backup context regardless of where it lives.
@@ -842,6 +844,8 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 
     ui = repo.ui
     fd = fcd.path()
+    uipathfn = scmutil.getuipathfn(repo)
+    fduipath = uipathfn(fd)
     binary = fcd.isbinary() or fco.isbinary() or fca.isbinary()
     symlink = 'l' in fcd.flags() + fco.flags()
     changedelete = fcd.isabsent() or fco.isabsent()
@@ -865,8 +869,8 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
             raise error.Abort(_("invalid 'python:' syntax: %s") % toolpath)
         toolpath = script
     ui.debug("picked tool '%s' for %s (binary %s symlink %s changedelete %s)\n"
-             % (tool, fd, pycompat.bytestr(binary), pycompat.bytestr(symlink),
-                    pycompat.bytestr(changedelete)))
+             % (tool, fduipath, pycompat.bytestr(binary),
+                pycompat.bytestr(symlink), pycompat.bytestr(changedelete)))
 
     if tool in internals:
         func = internals[tool]
@@ -892,9 +896,10 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 
     if premerge:
         if orig != fco.path():
-            ui.status(_("merging %s and %s to %s\n") % (orig, fco.path(), fd))
+            ui.status(_("merging %s and %s to %s\n") %
+                      (uipathfn(orig), uipathfn(fco.path()), fduipath))
         else:
-            ui.status(_("merging %s\n") % fd)
+            ui.status(_("merging %s\n") % fduipath)
 
     ui.debug("my %s other %s ancestor %s\n" % (fcd, fco, fca))
 
@@ -905,7 +910,7 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
                 raise error.InMemoryMergeConflictsError('in-memory merge does '
                                                         'not support merge '
                                                         'conflicts')
-            ui.warn(onfailure % fd)
+            ui.warn(onfailure % fduipath)
         return True, 1, False
 
     back = _makebackup(repo, ui, wctx, fcd, premerge)
@@ -958,7 +963,7 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
                     raise error.InMemoryMergeConflictsError('in-memory merge '
                                                             'does not support '
                                                             'merge conflicts')
-                ui.warn(onfailure % fd)
+                ui.warn(onfailure % fduipath)
             _onfilemergefailure(ui)
 
         return True, r, deleted
@@ -986,6 +991,7 @@ def hasconflictmarkers(data):
 
 def _check(repo, r, ui, tool, fcd, files):
     fd = fcd.path()
+    uipathfn = scmutil.getuipathfn(repo)
     unused, unused, unused, back = files
 
     if not r and (_toolbool(ui, tool, "checkconflicts") or
@@ -997,7 +1003,7 @@ def _check(repo, r, ui, tool, fcd, files):
     if 'prompt' in _toollist(ui, tool, "check"):
         checked = True
         if ui.promptchoice(_("was merge of '%s' successful (yn)?"
-                             "$$ &Yes $$ &No") % fd, 1):
+                             "$$ &Yes $$ &No") % uipathfn(fd), 1):
             r = 1
 
     if not r and not checked and (_toolbool(ui, tool, "checkchanged") or
@@ -1006,7 +1012,7 @@ def _check(repo, r, ui, tool, fcd, files):
         if back is not None and not fcd.cmp(back):
             if ui.promptchoice(_(" output file %s appears unchanged\n"
                                  "was merge successful (yn)?"
-                                 "$$ &Yes $$ &No") % fd, 1):
+                                 "$$ &Yes $$ &No") % uipathfn(fd), 1):
                 r = 1
 
     if back is not None and _toolbool(ui, tool, "fixeol"):

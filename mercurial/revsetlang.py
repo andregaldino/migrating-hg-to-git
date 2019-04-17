@@ -62,8 +62,8 @@ _simpleopletters = set(pycompat.iterbytestr("()[]#:=,-|&+!~^%"))
 
 # default set of valid characters for the initial letter of symbols
 _syminitletters = set(pycompat.iterbytestr(
-    string.ascii_letters.encode('ascii') +
-    string.digits.encode('ascii') +
+    pycompat.sysbytes(string.ascii_letters) +
+    pycompat.sysbytes(string.digits) +
     '._@')) | set(map(pycompat.bytechr, pycompat.xrange(128, 256)))
 
 # default set of valid characters for non-initial letters of symbols
@@ -239,6 +239,18 @@ def getrange(x, err):
     elif op == 'rangeall':
         return None, None
     raise error.ParseError(err)
+
+def getintrange(x, err1, err2, deffirst=_notset, deflast=_notset):
+    """Get [first, last] integer range (both inclusive) from a parsed tree
+
+    If any of the sides omitted, and if no default provided, ParseError will
+    be raised.
+    """
+    if x and (x[0] == 'string' or x[0] == 'symbol'):
+        n = getinteger(x, err1)
+        return n, n
+    a, b = getrange(x, err1)
+    return getinteger(a, err2, deffirst), getinteger(b, err2, deflast)
 
 def getargs(x, min, max, err):
     l = getlist(x)

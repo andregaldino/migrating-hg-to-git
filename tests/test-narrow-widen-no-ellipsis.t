@@ -406,7 +406,7 @@ Widening that fails can be recovered from
    * bookmark                  11:* (glob)
   $ hg unbundle .hg/strip-backup/*-widen.hg
   abort: .hg/strip-backup/*-widen.hg: $ENOTDIR$ (windows !)
-  abort: $ENOENT$: .hg/strip-backup/*-widen.hg (no-windows !)
+  abort: $ENOENT$: '.hg/strip-backup/*-widen.hg' (no-windows !)
   [255]
   $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
   11: local

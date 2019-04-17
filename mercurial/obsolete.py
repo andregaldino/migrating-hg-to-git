@@ -743,7 +743,7 @@ class obsstore(object):
                 pruned = [m for m in succsmarkers.get(current, ()) if not m[1]]
                 direct.update(pruned)
             direct -= seenmarkers
-            pendingnodes = set([m[0] for m in direct])
+            pendingnodes = {m[0] for m in direct}
             seenmarkers |= direct
             pendingnodes -= seennodes
             seennodes |= pendingnodes

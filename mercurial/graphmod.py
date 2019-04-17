@@ -451,7 +451,7 @@ def ascii(ui, state, type, char, text, coldata):
     # If 'graphshorten' config, only draw shift_interline
     # when there is any non vertical flow in graph.
     if state['graphshorten']:
-        if any(c in '\/' for c in shift_interline if c):
+        if any(c in br'\/' for c in shift_interline if c):
             lines.append(shift_interline)
     # Else, no 'graphshorten' config so draw shift_interline.
     else:

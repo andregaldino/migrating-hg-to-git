@@ -1495,6 +1495,36 @@ Test with non-strings like dates
      1200000.00
      1300000.00
 
+Test cbor filter:
+
+  $ cat <<'EOF' > "$TESTTMP/decodecbor.py"
+  > from __future__ import absolute_import
+  > from mercurial import (
+  >     dispatch,
+  >     pycompat,
+  > )
+  > from mercurial.utils import (
+  >     cborutil,
+  >     stringutil,
+  > )
+  > dispatch.initstdio()
+  > items = cborutil.decodeall(pycompat.stdin.read())
+  > pycompat.stdout.write(stringutil.pprint(items, indent=1) + b'\n')
+  > EOF
+
+  $ hg log -T "{rev|cbor}" -R a -l2 | "$PYTHON" "$TESTTMP/decodecbor.py"
+  [
+   10,
+   9
+  ]
+
+  $ hg log -T "{extras|cbor}" -R a -l1 | "$PYTHON" "$TESTTMP/decodecbor.py"
+  [
+   {
+    'branch': 'default'
+   }
+  ]
+
 json filter should escape HTML tags so that the output can be embedded in hgweb:
 
   $ hg log -T "{'<foo@example.org>'|json}\n" -R a -l1
@@ -1548,5 +1578,32 @@ pad width:
 
   $ HGENCODING=utf-8 hg debugtemplate "{pad('`cat utf-8`', 2, '-')}\n"
   \xc3\xa9- (esc)
+
+read config options:
+
+  $ hg log -T "{config('templateconfig', 'knob', 'foo')}\n"
+  foo
+  $ hg log -T "{config('templateconfig', 'knob', 'foo')}\n" \
+  > --config templateconfig.knob=bar
+  bar
+  $ hg log -T "{configbool('templateconfig', 'knob', True)}\n"
+  True
+  $ hg log -T "{configbool('templateconfig', 'knob', True)}\n" \
+  > --config templateconfig.knob=0
+  False
+  $ hg log -T "{configint('templateconfig', 'knob', 123)}\n"
+  123
+  $ hg log -T "{configint('templateconfig', 'knob', 123)}\n" \
+  > --config templateconfig.knob=456
+  456
+  $ hg log -T "{config('templateconfig', 'knob')}\n"
+  devel-warn: config item requires an explicit default value: 'templateconfig.knob' at: * (glob)
+  
+  $ hg log -T "{configbool('ui', 'interactive')}\n"
+  False
+  $ hg log -T "{configbool('ui', 'interactive')}\n" --config ui.interactive=1
+  True
+  $ hg log -T "{config('templateconfig', 'knob', if(true, 'foo', 'bar'))}\n"
+  foo
 
   $ cd ..

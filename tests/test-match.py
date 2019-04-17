@@ -12,36 +12,36 @@ from mercurial import (
 class BaseMatcherTests(unittest.TestCase):
 
     def testVisitdir(self):
-        m = matchmod.basematcher(b'', b'')
+        m = matchmod.basematcher()
         self.assertTrue(m.visitdir(b'.'))
         self.assertTrue(m.visitdir(b'dir'))
 
     def testVisitchildrenset(self):
-        m = matchmod.basematcher(b'', b'')
+        m = matchmod.basematcher()
         self.assertEqual(m.visitchildrenset(b'.'), b'this')
         self.assertEqual(m.visitchildrenset(b'dir'), b'this')
 
 class AlwaysMatcherTests(unittest.TestCase):
 
     def testVisitdir(self):
-        m = matchmod.alwaysmatcher(b'', b'')
+        m = matchmod.alwaysmatcher()
         self.assertEqual(m.visitdir(b'.'), b'all')
         self.assertEqual(m.visitdir(b'dir'), b'all')
 
     def testVisitchildrenset(self):
-        m = matchmod.alwaysmatcher(b'', b'')
+        m = matchmod.alwaysmatcher()
         self.assertEqual(m.visitchildrenset(b'.'), b'all')
         self.assertEqual(m.visitchildrenset(b'dir'), b'all')
 
 class NeverMatcherTests(unittest.TestCase):
 
     def testVisitdir(self):
-        m = matchmod.nevermatcher(b'', b'')
+        m = matchmod.nevermatcher()
         self.assertFalse(m.visitdir(b'.'))
         self.assertFalse(m.visitdir(b'dir'))
 
     def testVisitchildrenset(self):
-        m = matchmod.nevermatcher(b'', b'')
+        m = matchmod.nevermatcher()
         self.assertEqual(m.visitchildrenset(b'.'), set())
         self.assertEqual(m.visitchildrenset(b'dir'), set())
 
@@ -50,12 +50,12 @@ class PredicateMatcherTests(unittest.TestCase):
     # this is equivalent to BaseMatcherTests.
 
     def testVisitdir(self):
-        m = matchmod.predicatematcher(b'', b'', lambda *a: False)
+        m = matchmod.predicatematcher(lambda *a: False)
         self.assertTrue(m.visitdir(b'.'))
         self.assertTrue(m.visitdir(b'dir'))
 
     def testVisitchildrenset(self):
-        m = matchmod.predicatematcher(b'', b'', lambda *a: False)
+        m = matchmod.predicatematcher(lambda *a: False)
         self.assertEqual(m.visitchildrenset(b'.'), b'this')
         self.assertEqual(m.visitchildrenset(b'dir'), b'this')
 
@@ -185,8 +185,7 @@ class IncludeMatcherTests(unittest.TestCase):
 class ExactMatcherTests(unittest.TestCase):
 
     def testVisitdir(self):
-        m = matchmod.match(b'x', b'', patterns=[b'dir/subdir/foo.txt'],
-                           exact=True)
+        m = matchmod.exact(files=[b'dir/subdir/foo.txt'])
         assert isinstance(m, matchmod.exactmatcher)
         self.assertTrue(m.visitdir(b'.'))
         self.assertTrue(m.visitdir(b'dir'))
@@ -197,8 +196,7 @@ class ExactMatcherTests(unittest.TestCase):
         self.assertFalse(m.visitdir(b'folder'))
 
     def testVisitchildrenset(self):
-        m = matchmod.match(b'x', b'', patterns=[b'dir/subdir/foo.txt'],
-                           exact=True)
+        m = matchmod.exact(files=[b'dir/subdir/foo.txt'])
         assert isinstance(m, matchmod.exactmatcher)
         self.assertEqual(m.visitchildrenset(b'.'), {b'dir'})
         self.assertEqual(m.visitchildrenset(b'dir'), {b'subdir'})
@@ -208,12 +206,11 @@ class ExactMatcherTests(unittest.TestCase):
         self.assertEqual(m.visitchildrenset(b'folder'), set())
 
     def testVisitchildrensetFilesAndDirs(self):
-        m = matchmod.match(b'x', b'', patterns=[b'rootfile.txt',
-                                                b'a/file1.txt',
-                                                b'a/b/file2.txt',
-                                                # no file in a/b/c
-                                                b'a/b/c/d/file4.txt'],
-                           exact=True)
+        m = matchmod.exact(files=[b'rootfile.txt',
+                                  b'a/file1.txt',
+                                  b'a/b/file2.txt',
+                                  # no file in a/b/c
+                                  b'a/b/c/d/file4.txt'])
         assert isinstance(m, matchmod.exactmatcher)
         self.assertEqual(m.visitchildrenset(b'.'), {b'a', b'rootfile.txt'})
         self.assertEqual(m.visitchildrenset(b'a'), {b'b', b'file1.txt'})
@@ -226,8 +223,8 @@ class ExactMatcherTests(unittest.TestCase):
 class DifferenceMatcherTests(unittest.TestCase):
 
     def testVisitdirM2always(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.alwaysmatcher()
         dm = matchmod.differencematcher(m1, m2)
         # dm should be equivalent to a nevermatcher.
         self.assertFalse(dm.visitdir(b'.'))
@@ -239,8 +236,8 @@ class DifferenceMatcherTests(unittest.TestCase):
         self.assertFalse(dm.visitdir(b'folder'))
 
     def testVisitchildrensetM2always(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.alwaysmatcher()
         dm = matchmod.differencematcher(m1, m2)
         # dm should be equivalent to a nevermatcher.
         self.assertEqual(dm.visitchildrenset(b'.'), set())
@@ -252,27 +249,26 @@ class DifferenceMatcherTests(unittest.TestCase):
         self.assertEqual(dm.visitchildrenset(b'folder'), set())
 
     def testVisitdirM2never(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.nevermatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.nevermatcher()
         dm = matchmod.differencematcher(m1, m2)
-        # dm should be equivalent to a alwaysmatcher. OPT: if m2 is a
-        # nevermatcher, we could return 'all' for these.
+        # dm should be equivalent to a alwaysmatcher.
         #
         # We're testing Equal-to-True instead of just 'assertTrue' since
         # assertTrue does NOT verify that it's a bool, just that it's truthy.
         # While we may want to eventually make these return 'all', they should
         # not currently do so.
-        self.assertEqual(dm.visitdir(b'.'), True)
-        self.assertEqual(dm.visitdir(b'dir'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir/z'), True)
-        self.assertEqual(dm.visitdir(b'dir/foo'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir/x'), True)
-        self.assertEqual(dm.visitdir(b'folder'), True)
+        self.assertEqual(dm.visitdir(b'.'), b'all')
+        self.assertEqual(dm.visitdir(b'dir'), b'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir'), b'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir/z'), b'all')
+        self.assertEqual(dm.visitdir(b'dir/foo'), b'all')
+        self.assertEqual(dm.visitdir(b'dir/subdir/x'), b'all')
+        self.assertEqual(dm.visitdir(b'folder'), b'all')
 
     def testVisitchildrensetM2never(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.nevermatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.nevermatcher()
         dm = matchmod.differencematcher(m1, m2)
         # dm should be equivalent to a alwaysmatcher.
         self.assertEqual(dm.visitchildrenset(b'.'), b'all')
@@ -284,7 +280,7 @@ class DifferenceMatcherTests(unittest.TestCase):
         self.assertEqual(dm.visitchildrenset(b'folder'), b'all')
 
     def testVisitdirM2SubdirPrefix(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
         m2 = matchmod.match(b'', b'', patterns=[b'path:dir/subdir'])
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitdir(b'.'), True)
@@ -295,12 +291,11 @@ class DifferenceMatcherTests(unittest.TestCase):
         # an 'all' pattern, just True.
         self.assertEqual(dm.visitdir(b'dir/subdir/z'), True)
         self.assertEqual(dm.visitdir(b'dir/subdir/x'), True)
-        # OPT: We could return 'all' for these.
-        self.assertEqual(dm.visitdir(b'dir/foo'), True)
-        self.assertEqual(dm.visitdir(b'folder'), True)
+        self.assertEqual(dm.visitdir(b'dir/foo'), b'all')
+        self.assertEqual(dm.visitdir(b'folder'), b'all')
 
     def testVisitchildrensetM2SubdirPrefix(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
         m2 = matchmod.match(b'', b'', patterns=[b'path:dir/subdir'])
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitchildrenset(b'.'), b'this')
@@ -322,7 +317,7 @@ class DifferenceMatcherTests(unittest.TestCase):
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitdir(b'.'), True)
         self.assertEqual(dm.visitdir(b'dir'), True)
-        self.assertEqual(dm.visitdir(b'dir/subdir'), True)
+        self.assertEqual(dm.visitdir(b'dir/subdir'), b'all')
         self.assertFalse(dm.visitdir(b'dir/foo'))
         self.assertFalse(dm.visitdir(b'folder'))
         # OPT: We should probably return False for these; we don't because
@@ -349,8 +344,8 @@ class DifferenceMatcherTests(unittest.TestCase):
 class IntersectionMatcherTests(unittest.TestCase):
 
     def testVisitdirM2always(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.alwaysmatcher()
         im = matchmod.intersectmatchers(m1, m2)
         # im should be equivalent to a alwaysmatcher.
         self.assertEqual(im.visitdir(b'.'), b'all')
@@ -362,8 +357,8 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertEqual(im.visitdir(b'folder'), b'all')
 
     def testVisitchildrensetM2always(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.alwaysmatcher()
         im = matchmod.intersectmatchers(m1, m2)
         # im should be equivalent to a alwaysmatcher.
         self.assertEqual(im.visitchildrenset(b'.'), b'all')
@@ -375,8 +370,8 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertEqual(im.visitchildrenset(b'folder'), b'all')
 
     def testVisitdirM2never(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.nevermatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.nevermatcher()
         im = matchmod.intersectmatchers(m1, m2)
         # im should be equivalent to a nevermatcher.
         self.assertFalse(im.visitdir(b'.'))
@@ -388,8 +383,8 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertFalse(im.visitdir(b'folder'))
 
     def testVisitchildrensetM2never(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.nevermatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.nevermatcher()
         im = matchmod.intersectmatchers(m1, m2)
         # im should be equivalent to a nevermqtcher.
         self.assertEqual(im.visitchildrenset(b'.'), set())
@@ -401,7 +396,7 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertEqual(im.visitchildrenset(b'folder'), set())
 
     def testVisitdirM2SubdirPrefix(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
         m2 = matchmod.match(b'', b'', patterns=[b'path:dir/subdir'])
         im = matchmod.intersectmatchers(m1, m2)
         self.assertEqual(im.visitdir(b'.'), True)
@@ -416,7 +411,7 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertEqual(im.visitdir(b'dir/subdir/x'), True)
 
     def testVisitchildrensetM2SubdirPrefix(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
         m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
         im = matchmod.intersectmatchers(m1, m2)
         self.assertEqual(im.visitchildrenset(b'.'), {b'dir'})
@@ -541,8 +536,8 @@ class IntersectionMatcherTests(unittest.TestCase):
 class UnionMatcherTests(unittest.TestCase):
 
     def testVisitdirM2always(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.alwaysmatcher()
         um = matchmod.unionmatcher([m1, m2])
         # um should be equivalent to a alwaysmatcher.
         self.assertEqual(um.visitdir(b'.'), b'all')
@@ -554,8 +549,8 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitdir(b'folder'), b'all')
 
     def testVisitchildrensetM2always(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.alwaysmatcher()
         um = matchmod.unionmatcher([m1, m2])
         # um should be equivalent to a alwaysmatcher.
         self.assertEqual(um.visitchildrenset(b'.'), b'all')
@@ -567,8 +562,8 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitchildrenset(b'folder'), b'all')
 
     def testVisitdirM1never(self):
-        m1 = matchmod.nevermatcher(b'', b'')
-        m2 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.nevermatcher()
+        m2 = matchmod.alwaysmatcher()
         um = matchmod.unionmatcher([m1, m2])
         # um should be equivalent to a alwaysmatcher.
         self.assertEqual(um.visitdir(b'.'), b'all')
@@ -580,8 +575,8 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitdir(b'folder'), b'all')
 
     def testVisitchildrensetM1never(self):
-        m1 = matchmod.nevermatcher(b'', b'')
-        m2 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.nevermatcher()
+        m2 = matchmod.alwaysmatcher()
         um = matchmod.unionmatcher([m1, m2])
         # um should be equivalent to a alwaysmatcher.
         self.assertEqual(um.visitchildrenset(b'.'), b'all')
@@ -593,8 +588,8 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitchildrenset(b'folder'), b'all')
 
     def testVisitdirM2never(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.nevermatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.nevermatcher()
         um = matchmod.unionmatcher([m1, m2])
         # um should be equivalent to a alwaysmatcher.
         self.assertEqual(um.visitdir(b'.'), b'all')
@@ -606,8 +601,8 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitdir(b'folder'), b'all')
 
     def testVisitchildrensetM2never(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
-        m2 = matchmod.nevermatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
+        m2 = matchmod.nevermatcher()
         um = matchmod.unionmatcher([m1, m2])
         # um should be equivalent to a alwaysmatcher.
         self.assertEqual(um.visitchildrenset(b'.'), b'all')
@@ -619,7 +614,7 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitchildrenset(b'folder'), b'all')
 
     def testVisitdirM2SubdirPrefix(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
         m2 = matchmod.match(b'', b'', patterns=[b'path:dir/subdir'])
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitdir(b'.'), b'all')
@@ -631,7 +626,7 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitdir(b'dir/subdir/x'), b'all')
 
     def testVisitchildrensetM2SubdirPrefix(self):
-        m1 = matchmod.alwaysmatcher(b'', b'')
+        m1 = matchmod.alwaysmatcher()
         m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitchildrenset(b'.'), b'all')
@@ -782,7 +777,7 @@ class PrefixdirMatcherTests(unittest.TestCase):
     def testVisitdir(self):
         m = matchmod.match(util.localpath(b'root/d'), b'e/f',
                 [b'../a.txt', b'b.txt'])
-        pm = matchmod.prefixdirmatcher(b'root', b'd/e/f', b'd', m)
+        pm = matchmod.prefixdirmatcher(b'd', m)
 
         # `m` elides 'd' because it's part of the root, and the rest of the
         # patterns are relative.
@@ -814,7 +809,7 @@ class PrefixdirMatcherTests(unittest.TestCase):
     def testVisitchildrenset(self):
         m = matchmod.match(util.localpath(b'root/d'), b'e/f',
                 [b'../a.txt', b'b.txt'])
-        pm = matchmod.prefixdirmatcher(b'root', b'd/e/f', b'd', m)
+        pm = matchmod.prefixdirmatcher(b'd', m)
 
         # OPT: visitchildrenset could possibly return {'e'} and {'f'} for these
         # next two, respectively; patternmatcher does not have this

@@ -199,7 +199,7 @@ def _setupdirstate(ui):
     def walk(orig, self, match, subrepos, unknown, ignored, full=True):
         # hack to not exclude explicitly-specified paths so that they can
         # be warned later on e.g. dirstate.add()
-        em = matchmod.exact(match._root, match._cwd, match.files())
+        em = matchmod.exact(match.files())
         sm = matchmod.unionmatcher([self._sparsematcher, em])
         match = matchmod.intersectmatchers(match, sm)
         return orig(self, match, subrepos, unknown, ignored, full)
@@ -318,9 +318,10 @@ def debugsparse(ui, repo, *pats, **opts):
             if temporaryincludes:
                 ui.status(_("Temporarily Included Files (for merge/rebase):\n"))
                 ui.status(("\n".join(temporaryincludes) + "\n"))
+            return
         else:
-            ui.status(_('repo is not sparse\n'))
-        return
+            raise error.Abort(_('the debugsparse command is only supported on'
+                                ' sparse repositories'))
 
     if include or exclude or delete or reset or enableprofile or disableprofile:
         sparse.updateconfig(repo, pats, opts, include=include, exclude=exclude,

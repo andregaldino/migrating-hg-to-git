@@ -37,8 +37,9 @@ but then local changes are added in the same directory)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up -C 2
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg merge
-  merging testdir/subdir/a and testdir/a to testdir/subdir/a
+Abuse this test for also testing that merge respects ui.relative-paths
+  $ hg --cwd testdir merge --config ui.relative-paths=yes
+  merging subdir/a and a to subdir/a
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg stat

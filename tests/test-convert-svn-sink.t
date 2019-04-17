@@ -466,3 +466,85 @@ Tags are not supported, but must not break conversion
   msg: Add file a
    A /a
   $ rm -rf a a-hg a-hg-wc
+
+#if execbit
+
+Executable bit removal
+
+  $ hg init a
+
+  $ echo a > a/exec
+  $ chmod +x a/exec
+  $ hg --cwd a ci -d '1 0' -A -m 'create executable'
+  adding exec
+  $ chmod -x a/exec
+  $ hg --cwd a ci -d '2 0' -A -m 'remove executable bit'
+
+  $ hg convert -d svn a
+  assuming destination a-hg
+  initializing svn repository 'a-hg'
+  initializing svn working copy 'a-hg-wc'
+  scanning source...
+  sorting...
+  converting...
+  1 create executable
+  0 remove executable bit
+  $ svnupanddisplay a-hg-wc 0
+   2 2 test .
+   2 2 test exec
+  revision: 2
+  author: test
+  msg: remove executable bit
+   M /exec
+  revision: 1
+  author: test
+  msg: create executable
+   A /exec
+  $ test ! -x a-hg-wc/exec
+
+  $ rm -rf a a-hg a-hg-wc
+
+#endif
+
+Skipping empty commits
+
+  $ hg init a
+
+  $ hg --cwd a --config ui.allowemptycommit=True ci -d '1 0' -m 'Initial empty commit'
+
+  $ echo a > a/a
+  $ hg --cwd a ci -d '0 0' -A -m 'Some change'
+  adding a
+  $ hg --cwd a --config ui.allowemptycommit=True ci -d '2 0' -m 'Empty commit 1'
+  $ hg --cwd a --config ui.allowemptycommit=True ci -d '3 0' -m 'Empty commit 2'
+  $ echo b > a/b
+  $ hg --cwd a ci -d '0 0' -A -m 'Another change'
+  adding b
+
+  $ hg convert -d svn a
+  assuming destination a-hg
+  initializing svn repository 'a-hg'
+  initializing svn working copy 'a-hg-wc'
+  scanning source...
+  sorting...
+  converting...
+  4 Initial empty commit
+  3 Some change
+  2 Empty commit 1
+  1 Empty commit 2
+  0 Another change
+
+  $ svnupanddisplay a-hg-wc 0
+   2 1 test a
+   2 2 test .
+   2 2 test b
+  revision: 2
+  author: test
+  msg: Another change
+   A /b
+  revision: 1
+  author: test
+  msg: Some change
+   A /a
+
+  $ rm -rf a a-hg a-hg-wc

@@ -22,6 +22,10 @@ Should diff cloned directories:
   > opts.falabala = diffing
   > cmd.edspace = echo
   > opts.edspace = "name  <user@example.com>"
+  > alabalaf =
+  > [merge-tools]
+  > alabalaf.executable = echo
+  > alabalaf.diffargs = diffing
   > EOF
 
   $ hg falabala
@@ -48,6 +52,8 @@ Should diff cloned directories:
    -o --option OPT [+]      pass option to comparison program
    -r --rev REV [+]         revision
    -c --change REV          change made by revision
+      --per-file            compare each file instead of revision snapshots
+      --confirm             prompt user before each external program invocation
       --patch               compare patches for two revisions
    -I --include PATTERN [+] include names matching the given patterns
    -X --exclude PATTERN [+] exclude names matching the given patterns
@@ -126,6 +132,72 @@ issue3153: ensure using extdiff with removed subrepos doesn't crash:
   $ hg ci -m "removing subrepo"
   $ hg falabala -r 4 -r 5 -S
   diffing a.398e36faf9c6 a.5ab95fb166c4
+  [1]
+
+Test --per-file option:
+
+  $ hg up -q -C 3
+  $ echo a2 > a
+  $ echo b2 > b
+  $ hg ci -d '3 0' -mtestmode1
+  created new head
+  $ hg falabala -c 6 --per-file
+  diffing "*\\extdiff.*\\a.46c0e4daeb72\\a" "a.81906f2b98ac\\a" (glob) (windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/a a.81906f2b98ac/a (glob) (no-windows !)
+  diffing "*\\extdiff.*\\a.46c0e4daeb72\\b" "a.81906f2b98ac\\b" (glob) (windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob) (no-windows !)
+  [1]
+
+Test --per-file option for gui tool:
+
+  $ hg --config extdiff.gui.alabalaf=True alabalaf -c 6 --per-file --debug
+  diffing */extdiff.*/a.46c0e4daeb72/* a.81906f2b98ac/* (glob)
+  diffing */extdiff.*/a.46c0e4daeb72/* a.81906f2b98ac/* (glob)
+  making snapshot of 2 files from rev 46c0e4daeb72
+    a
+    b
+  making snapshot of 2 files from rev 81906f2b98ac
+    a
+    b
+  running '* diffing * *' in * (backgrounded) (glob)
+  running '* diffing * *' in * (backgrounded) (glob)
+  cleaning up temp directory
+  [1]
+
+Test --per-file option for gui tool again:
+
+  $ hg --config merge-tools.alabalaf.gui=True alabalaf -c 6 --per-file --debug
+  diffing */extdiff.*/a.46c0e4daeb72/* a.81906f2b98ac/* (glob)
+  diffing */extdiff.*/a.46c0e4daeb72/* a.81906f2b98ac/* (glob)
+  making snapshot of 2 files from rev 46c0e4daeb72
+    a
+    b
+  making snapshot of 2 files from rev 81906f2b98ac
+    a
+    b
+  running '* diffing * *' in * (backgrounded) (glob)
+  running '* diffing * *' in * (backgrounded) (glob)
+  cleaning up temp directory
+  [1]
+
+Test --per-file and --confirm options:
+
+  $ hg --config ui.interactive=True falabala -c 6 --per-file --confirm <<EOF
+  > n
+  > y
+  > EOF
+  diff a (1 of 2) [Yns?] n
+  diff b (2 of 2) [Yns?] y
+  diffing "*\\extdiff.*\\a.46c0e4daeb72\\b" "a.81906f2b98ac\\b" (glob) (windows !)
+  diffing */extdiff.*/a.46c0e4daeb72/b a.81906f2b98ac/b (glob) (no-windows !)
+  [1]
+
+Test --per-file and --confirm options with skipping:
+
+  $ hg --config ui.interactive=True falabala -c 6 --per-file --confirm <<EOF
+  > s
+  > EOF
+  diff a (1 of 2) [Yns?] s
   [1]
 
 issue4463: usage of command line configuration without additional quoting

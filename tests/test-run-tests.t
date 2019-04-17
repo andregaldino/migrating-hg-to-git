@@ -324,8 +324,8 @@ basic failing test
   
   ERROR: test-failure-unicode.t output changed
   !
-  Failed test-failure.t: output changed
   Failed test-failure-unicode.t: output changed
+  Failed test-failure.t: output changed
   # Ran 3 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
@@ -356,8 +356,8 @@ test --outputdir
   
   ERROR: test-failure-unicode.t output changed
   !
-  Failed test-failure.t: output changed
   Failed test-failure-unicode.t: output changed
+  Failed test-failure.t: output changed
   # Ran 3 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
@@ -393,8 +393,8 @@ test --xunit support
   
   ERROR: test-failure-unicode.t output changed
   !
-  Failed test-failure.t: output changed
   Failed test-failure-unicode.t: output changed
+  Failed test-failure.t: output changed
   # Ran 3 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
@@ -1174,31 +1174,31 @@ test for --json
   $ cat report.json
   testreport ={
       "test-failure.t": [\{] (re)
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "---.+\+\+\+.+", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "failure", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }, ? (re)
       "test-skip.t": {
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "skip", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }, ? (re)
       "test-success.t": [\{] (re)
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "success", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }
   } (no-eol)
 --json with --outputdir
@@ -1231,31 +1231,31 @@ test for --json
   $ cat output/report.json
   testreport ={
       "test-failure.t": [\{] (re)
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "---.+\+\+\+.+", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "failure", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }, ? (re)
       "test-skip.t": {
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "skip", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }, ? (re)
       "test-success.t": [\{] (re)
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "success", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }
   } (no-eol)
   $ ls -a output
@@ -1287,31 +1287,31 @@ Test that failed test accepted through interactive are properly reported:
   $ cat report.json
   testreport ={
       "test-failure.t": [\{] (re)
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "success", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }, ? (re)
       "test-skip.t": {
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "skip", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }, ? (re)
       "test-success.t": [\{] (re)
-          "csys": "\s*[\d\.]{4,5}", ? (re)
-          "cuser": "\s*[\d\.]{4,5}", ? (re)
+          "csys": "\s*\d+\.\d{3,4}", ? (re)
+          "cuser": "\s*\d+\.\d{3,4}", ? (re)
           "diff": "", ? (re)
-          "end": "\s*[\d\.]{4,5}", ? (re)
+          "end": "\s*\d+\.\d{3,4}", ? (re)
           "result": "success", ? (re)
-          "start": "\s*[\d\.]{4,5}", ? (re)
-          "time": "\s*[\d\.]{4,5}" (re)
+          "start": "\s*\d+\.\d{3,4}", ? (re)
+          "time": "\s*\d+\.\d{3,4}" (re)
       }
   } (no-eol)
   $ mv backup test-failure.t

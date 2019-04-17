@@ -19,7 +19,7 @@
 
 create random Python file to exercise Pygments
 
-  $ cat <<EOF > primes.py
+  $ cat <<NO_CHECK_EOF > primes.py
   > """Fun with generators. Corresponding Haskell implementation:
   > 
   > primes = 2 : sieve [3, 5..]
@@ -51,7 +51,7 @@ create random Python file to exercise Pygments
   >         n = 10
   >     p = primes()
   >     print("The first %d primes: %s" % (n, list(itertools.islice(p, n))))
-  > EOF
+  > NO_CHECK_EOF
   $ echo >> primes.py  # to test html markup with an empty line just before EOF
   $ hg ci -Ama
   adding primes.py

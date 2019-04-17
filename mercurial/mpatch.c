@@ -41,8 +41,9 @@ static struct mpatch_flist *lalloc(ssize_t size)
 {
 	struct mpatch_flist *a = NULL;
 
-	if (size < 1)
+	if (size < 1) {
 		size = 1;
+	}
 
 	a = (struct mpatch_flist *)malloc(sizeof(struct mpatch_flist));
 	if (a) {
@@ -110,10 +111,12 @@ static int gather(struct mpatch_flist *dest, struct mpatch_flist *src, int cut,
 
 	while (s != src->tail) {
 		int soffset = s->start;
-		if (!safeadd(offset, &soffset))
+		if (!safeadd(offset, &soffset)) {
 			break; /* add would overflow, oh well */
-		if (soffset >= cut)
+		}
+		if (soffset >= cut) {
 			break; /* we've gone far enough */
+		}
 
 		postend = offset;
 		if (!safeadd(s->start, &postend) ||
@@ -139,11 +142,13 @@ static int gather(struct mpatch_flist *dest, struct mpatch_flist *src, int cut,
 			if (!safesub(offset, &c)) {
 				break;
 			}
-			if (s->end < c)
+			if (s->end < c) {
 				c = s->end;
+			}
 			l = cut - offset - s->start;
-			if (s->len < l)
+			if (s->len < l) {
 				l = s->len;
+			}
 
 			offset += s->start + l - c;
 
@@ -176,8 +181,9 @@ static int discard(struct mpatch_flist *src, int cut, int offset)
 		if (!safeadd(offset, &cmpcut)) {
 			break;
 		}
-		if (cmpcut >= cut)
+		if (cmpcut >= cut) {
 			break;
+		}
 
 		postend = offset;
 		if (!safeadd(s->start, &postend)) {
@@ -205,11 +211,13 @@ static int discard(struct mpatch_flist *src, int cut, int offset)
 			if (!safesub(offset, &c)) {
 				break;
 			}
-			if (s->end < c)
+			if (s->end < c) {
 				c = s->end;
+			}
 			l = cut - offset - s->start;
-			if (s->len < l)
+			if (s->len < l) {
 				l = s->len;
+			}
 
 			offset += s->start + l - c;
 			s->start = c;
@@ -233,8 +241,9 @@ static struct mpatch_flist *combine(struct mpatch_flist *a,
 	struct mpatch_frag *bh, *ct;
 	int offset = 0, post;
 
-	if (a && b)
+	if (a && b) {
 		c = lalloc((lsize(a) + lsize(b)) * 2);
+	}
 
 	if (c) {
 
@@ -284,8 +293,9 @@ int mpatch_decode(const char *bin, ssize_t len, struct mpatch_flist **res)
 
 	/* assume worst case size, we won't have many of these lists */
 	l = lalloc(len / 12 + 1);
-	if (!l)
+	if (!l) {
 		return MPATCH_ERR_NO_MEM;
+	}
 
 	lt = l->tail;
 
@@ -295,8 +305,9 @@ int mpatch_decode(const char *bin, ssize_t len, struct mpatch_flist **res)
 		lt->start = getbe32(bin + pos);
 		lt->end = getbe32(bin + pos + 4);
 		lt->len = getbe32(bin + pos + 8);
-		if (lt->start < 0 || lt->start > lt->end || lt->len < 0)
+		if (lt->start < 0 || lt->start > lt->end || lt->len < 0) {
 			break; /* sanity check */
+		}
 		if (!safeadd(12, &pos)) {
 			break;
 		}

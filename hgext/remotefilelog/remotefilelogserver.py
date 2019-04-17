@@ -54,7 +54,7 @@ def setupserver(ui, repo):
                 elif cap.startswith("excludepattern="):
                     excludepattern = cap[len("excludepattern="):].split('\0')
 
-            m = match.always(repo.root, '')
+            m = match.always()
             if includepattern or excludepattern:
                 m = match.match(repo.root, '', None,
                     includepattern, excludepattern)
@@ -104,7 +104,7 @@ def onetimesetup(ui):
         oldnoflatmf = state.noflatmf
         try:
             state.shallowremote = True
-            state.match = match.always(repo.root, '')
+            state.match = match.always()
             state.noflatmf = other.get('noflatmanifest') == 'True'
             if includepattern or excludepattern:
                 state.match = match.match(repo.root, '', None,

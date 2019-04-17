@@ -65,7 +65,7 @@ elif _nativeenviron:
 else:
     # preferred encoding isn't known yet; use utf-8 to avoid unicode error
     # and recreate it once encoding is settled
-    environ = dict((k.encode(u'utf-8'), v.encode(u'utf-8'))
+    environ = dict((k.encode(r'utf-8'), v.encode(r'utf-8'))
                    for k, v in os.environ.items())  # re-exports
 
 _encodingrewrites = {
@@ -152,7 +152,7 @@ def tolocal(s):
             if encoding == 'UTF-8':
                 # fast path
                 return s
-            r = u.encode(_sysstr(encoding), u"replace")
+            r = u.encode(_sysstr(encoding), r"replace")
             if u == r.decode(_sysstr(encoding)):
                 # r is a safe, non-lossy encoding of s
                 return safelocalstr(r)
@@ -161,7 +161,7 @@ def tolocal(s):
             # we should only get here if we're looking at an ancient changeset
             try:
                 u = s.decode(_sysstr(fallbackencoding))
-                r = u.encode(_sysstr(encoding), u"replace")
+                r = u.encode(_sysstr(encoding), r"replace")
                 if u == r.decode(_sysstr(encoding)):
                     # r is a safe, non-lossy encoding of s
                     return safelocalstr(r)
@@ -169,7 +169,7 @@ def tolocal(s):
             except UnicodeDecodeError:
                 u = s.decode("utf-8", "replace") # last ditch
                 # can't round-trip
-                return u.encode(_sysstr(encoding), u"replace")
+                return u.encode(_sysstr(encoding), r"replace")
     except LookupError as k:
         raise error.Abort(k, hint="please check your locale settings")
 
@@ -230,7 +230,7 @@ else:
 if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
-    environ = dict((tolocal(k.encode(u'utf-8')), tolocal(v.encode(u'utf-8')))
+    environ = dict((tolocal(k.encode(r'utf-8')), tolocal(v.encode(r'utf-8')))
                    for k, v in os.environ.items())  # re-exports
 
 if pycompat.ispy3:
@@ -251,7 +251,7 @@ _wide = _sysstr(environ.get("HGENCODINGAMBIGUOUS", "narrow") == "wide"
 
 def colwidth(s):
     "Find the column width of a string for display in the local encoding"
-    return ucolwidth(s.decode(_sysstr(encoding), u'replace'))
+    return ucolwidth(s.decode(_sysstr(encoding), r'replace'))
 
 def ucolwidth(d):
     "Find the column width of a Unicode string for display"

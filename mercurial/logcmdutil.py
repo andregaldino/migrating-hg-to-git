@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import itertools
 import os
+import posixpath
 
 from .i18n import _
 from .node import (
@@ -58,29 +59,53 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
                    changes=None, stat=False, fp=None, graphwidth=0,
                    prefix='', root='', listsubrepos=False, hunksfilterfn=None):
     '''show diff or diffstat.'''
+    ctx1 = repo[node1]
+    ctx2 = repo[node2]
     if root:
         relroot = pathutil.canonpath(repo.root, repo.getcwd(), root)
     else:
         relroot = ''
+    copysourcematch = None
+    def compose(f, g):
+        return lambda x: f(g(x))
+    def pathfn(f):
+        return posixpath.join(prefix, f)
     if relroot != '':
         # XXX relative roots currently don't work if the root is within a
         # subrepo
-        uirelroot = match.uipath(relroot)
+        uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
+        uirelroot = uipathfn(pathfn(relroot))
         relroot += '/'
         for matchroot in match.files():
             if not matchroot.startswith(relroot):
-                ui.warn(_('warning: %s not inside relative root %s\n') % (
-                    match.uipath(matchroot), uirelroot))
+                ui.warn(_('warning: %s not inside relative root %s\n') %
+                        (uipathfn(pathfn(matchroot)), uirelroot))
+
+        relrootmatch = scmutil.match(ctx2, pats=[relroot], default='path')
+        match = matchmod.intersectmatchers(match, relrootmatch)
+        copysourcematch = relrootmatch
+
+        checkroot = (repo.ui.configbool('devel', 'all-warnings') or
+                     repo.ui.configbool('devel', 'check-relroot'))
+        def relrootpathfn(f):
+            if checkroot and not f.startswith(relroot):
+                raise AssertionError(
+                    "file %s doesn't start with relroot %s" % (f, relroot))
+            return f[len(relroot):]
+        pathfn = compose(relrootpathfn, pathfn)
 
     if stat:
         diffopts = diffopts.copy(context=0, noprefix=False)
         width = 80
         if not ui.plain():
             width = ui.termwidth() - graphwidth
+        # If an explicit --root was given, don't respect ui.relative-paths
+        if not relroot:
+            pathfn = compose(scmutil.getuipathfn(repo), pathfn)
 
-    chunks = repo[node2].diff(repo[node1], match, changes, opts=diffopts,
-                              prefix=prefix, relroot=relroot,
-                              hunksfilterfn=hunksfilterfn)
+    chunks = ctx2.diff(ctx1, match, changes, opts=diffopts, pathfn=pathfn,
+                       copysourcematch=copysourcematch,
+                       hunksfilterfn=hunksfilterfn)
 
     if fp is not None or ui.canwritewithoutlabels():
         out = fp or ui
@@ -104,22 +129,21 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
             for chunk, label in chunks:
                 ui.write(chunk, label=label)
 
-    if listsubrepos:
-        ctx1 = repo[node1]
-        ctx2 = repo[node2]
-        for subpath, sub in scmutil.itersubrepos(ctx1, ctx2):
-            tempnode2 = node2
-            try:
-                if node2 is not None:
-                    tempnode2 = ctx2.substate[subpath][1]
-            except KeyError:
-                # A subrepo that existed in node1 was deleted between node1 and
-                # node2 (inclusive). Thus, ctx2's substate won't contain that
-                # subpath. The best we can do is to ignore it.
-                tempnode2 = None
-            submatch = matchmod.subdirmatcher(subpath, match)
+    for subpath, sub in scmutil.itersubrepos(ctx1, ctx2):
+        tempnode2 = node2
+        try:
+            if node2 is not None:
+                tempnode2 = ctx2.substate[subpath][1]
+        except KeyError:
+            # A subrepo that existed in node1 was deleted between node1 and
+            # node2 (inclusive). Thus, ctx2's substate won't contain that
+            # subpath. The best we can do is to ignore it.
+            tempnode2 = None
+        submatch = matchmod.subdirmatcher(subpath, match)
+        subprefix = repo.wvfs.reljoin(prefix, subpath)
+        if listsubrepos or match.exact(subpath) or any(submatch.files()):
             sub.diff(ui, diffopts, tempnode2, submatch, changes=changes,
-                     stat=stat, fp=fp, prefix=prefix)
+                     stat=stat, fp=fp, prefix=subprefix)
 
 class changesetdiffer(object):
     """Generate diff of changeset with pre-configured filtering functions"""
@@ -518,7 +542,7 @@ def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
     regular display via changesetprinter() is done.
     """
     postargs = (differ, opts, buffered)
-    if opts.get('template') == 'json':
+    if opts.get('template') in {'cbor', 'json'}:
         fm = ui.formatter('log', opts)
         return changesetformatter(ui, repo, fm, *postargs)
 

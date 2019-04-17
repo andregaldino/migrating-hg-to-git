@@ -32,13 +32,27 @@ simple
   port:4:vaportight
   port:4:import/export
 
+simple from subdirectory
+
+  $ mkdir dir
+  $ cd dir
+  $ hg grep -r tip:0 port
+  port:4:export
+  port:4:vaportight
+  port:4:import/export
+  $ hg grep -r tip:0 port --config ui.relative-paths=yes
+  ../port:4:export
+  ../port:4:vaportight
+  ../port:4:import/export
+  $ cd ..
+
 simple with color
 
   $ hg --config extensions.color= grep --config color.mode=ansi \
   >     --color=always port port -r tip:0
-  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
-  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mva\x1b[0;31;1mport\x1b[0might (esc)
-  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mva\x1b[0;31;1mport\x1b[0might (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
 
 simple templated
 
@@ -285,6 +299,15 @@ Test wdir
   color:3:+:orange
   color:2:-:orange
   color:1:+:orange
+  $ hg grep --diff orange --color=debug
+  [grep.filename|color][grep.sep|:][grep.rev|3][grep.sep|:][grep.inserted grep.change|+][grep.sep|:][grep.match|orange]
+  [grep.filename|color][grep.sep|:][grep.rev|2][grep.sep|:][grep.deleted grep.change|-][grep.sep|:][grep.match|orange]
+  [grep.filename|color][grep.sep|:][grep.rev|1][grep.sep|:][grep.inserted grep.change|+][grep.sep|:][grep.match|orange]
+
+  $ hg grep --diff orange --color=yes
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m3\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32;1m+\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m2\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1m-\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
+  \x1b[0;35mcolor\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m1\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32;1m+\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;31;1morange\x1b[0m (esc)
 
   $ hg grep --diff orange
   color:3:+:orange
@@ -501,6 +524,9 @@ test -rMULTIREV with --all-files
   um:0:unmod
   um:1:unmod
   $ hg grep -r "0:2" "unmod" --all-files um
+  um:0:unmod
+  um:1:unmod
+  $ hg grep -r "0:2" "unmod" --all-files "glob:**/um" # Check that patterns also work
   um:0:unmod
   um:1:unmod
   $ cd ..

@@ -578,7 +578,7 @@ Test orig files go where we want them
   $ echo moremore >> anotherlarge
   $ hg revert anotherlarge -v --config 'ui.origbackuppath=.hg/origbackups'
   creating directory: $TESTTMP/addrm2/.hg/origbackups/.hglf/sub
-  saving current version of ../.hglf/sub/anotherlarge as $TESTTMP/addrm2/.hg/origbackups/.hglf/sub/anotherlarge
+  saving current version of ../.hglf/sub/anotherlarge as ../.hg/origbackups/.hglf/sub/anotherlarge
   reverting ../.hglf/sub/anotherlarge
   creating directory: $TESTTMP/addrm2/.hg/origbackups/sub
   found 90c622cf65cebe75c5842f9136c459333faf392e in store

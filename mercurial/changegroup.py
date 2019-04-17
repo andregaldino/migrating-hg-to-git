@@ -275,7 +275,7 @@ class cg1unpacker(object):
             # because we need to use the top level value (if they exist)
             # in this function.
             srctype = tr.hookargs.setdefault('source', srctype)
-            url = tr.hookargs.setdefault('url', url)
+            tr.hookargs.setdefault('url', url)
             repo.hook('prechangegroup',
                       throw=True, **pycompat.strkwargs(tr.hookargs))
 
@@ -817,13 +817,13 @@ class cgpacker(object):
         self._verbosenote(_('uncompressed size of bundle content:\n'))
         size = 0
 
-        clstate, deltas = self._generatechangelog(cl, clnodes)
+        clstate, deltas = self._generatechangelog(cl, clnodes,
+                                                  generate=changelog)
         for delta in deltas:
-            if changelog:
-                for chunk in _revisiondeltatochunks(delta,
-                                                    self._builddeltaheader):
-                    size += len(chunk)
-                    yield chunk
+            for chunk in _revisiondeltatochunks(delta,
+                                                self._builddeltaheader):
+                size += len(chunk)
+                yield chunk
 
         close = closechunk()
         size += len(close)
@@ -917,18 +917,42 @@ class cgpacker(object):
         if clnodes:
             repo.hook('outgoing', node=hex(clnodes[0]), source=source)
 
-    def _generatechangelog(self, cl, nodes):
+    def _generatechangelog(self, cl, nodes, generate=True):
         """Generate data for changelog chunks.
 
         Returns a 2-tuple of a dict containing state and an iterable of
         byte chunks. The state will not be fully populated until the
         chunk stream has been fully consumed.
+
+        if generate is False, the state will be fully populated and no chunk
+        stream will be yielded
         """
         clrevorder = {}
         manifests = {}
         mfl = self._repo.manifestlog
         changedfiles = set()
         clrevtomanifestrev = {}
+
+        state = {
+            'clrevorder': clrevorder,
+            'manifests': manifests,
+            'changedfiles': changedfiles,
+            'clrevtomanifestrev': clrevtomanifestrev,
+        }
+
+        if not (generate or self._ellipses):
+            # sort the nodes in storage order
+            nodes = sorted(nodes, key=cl.rev)
+            for node in nodes:
+                c = cl.changelogrevision(node)
+                clrevorder[node] = len(clrevorder)
+                # record the first changeset introducing this manifest version
+                manifests.setdefault(c.manifest, node)
+                # Record a complete list of potentially-changed files in
+                # this manifest.
+                changedfiles.update(c.files)
+
+            return state, ()
 
         # Callback for the changelog, used to collect changed files and
         # manifest nodes.
@@ -969,13 +993,6 @@ class cgpacker(object):
                 changedfiles.update(c.files)
 
             return x
-
-        state = {
-            'clrevorder': clrevorder,
-            'manifests': manifests,
-            'changedfiles': changedfiles,
-            'clrevtomanifestrev': clrevtomanifestrev,
-        }
 
         gen = deltagroup(
             self._repo, cl, nodes, True, lookupcl,
@@ -1088,6 +1105,11 @@ class cgpacker(object):
                     yield tree, []
 
     def _prunemanifests(self, store, nodes, commonrevs):
+        if not self._ellipses:
+            # In non-ellipses case and large repositories, it is better to
+            # prevent calling of store.rev and store.linkrev on a lot of
+            # nodes as compared to sending some extra data
+            return nodes.copy()
         # This is split out as a separate method to allow filtering
         # commonrevs in extension code.
         #
@@ -1296,9 +1318,9 @@ def getbundler(version, repo, bundlecaps=None, oldmatcher=None,
     assert version in supportedoutgoingversions(repo)
 
     if matcher is None:
-        matcher = matchmod.alwaysmatcher(repo.root, '')
+        matcher = matchmod.always()
     if oldmatcher is None:
-        oldmatcher = matchmod.nevermatcher(repo.root, '')
+        oldmatcher = matchmod.never()
 
     if version == '01' and not matcher.always():
         raise error.ProgrammingError('version 01 changegroups do not support '

@@ -333,9 +333,9 @@ The default interface is text
   $ cp $HGRCPATH.pretest $HGRCPATH
   $ chunkselectorinterface() {
   > "$PYTHON" <<EOF
-  > from mercurial import hg, ui;\
-  > repo = hg.repository(ui.ui.load(), ".");\
-  > print(repo.ui.interface("chunkselector"))
+  > from mercurial import hg, pycompat, ui;\
+  > repo = hg.repository(ui.ui.load(), b".");\
+  > print(pycompat.sysstr(repo.ui.interface(b"chunkselector")))
   > EOF
   > }
   $ chunkselectorinterface

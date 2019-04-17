@@ -87,7 +87,6 @@ log before edit
 
 edit the history
   $ hg histedit 3 --commands $EDITED 2>&1 | fixbundle
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   Fix up the change (pick 39522b764e3d)
@@ -145,7 +144,6 @@ second edit set
 
 edit the history
   $ hg histedit 3 --commands $EDITED 2>&1 | fixbundle
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   Fix up the change (pick 39522b764e3d)
@@ -241,7 +239,6 @@ start over
 
 edit the history, this time with a fold action
   $ hg histedit 3 --commands $EDITED 2>&1 | fixbundle
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   Fix up the change (mess 39522b764e3d)

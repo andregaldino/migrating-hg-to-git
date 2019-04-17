@@ -155,7 +155,7 @@ class transplanter(object):
         if opts is None:
             opts = {}
         revs = sorted(revmap)
-        p1, p2 = repo.dirstate.parents()
+        p1 = repo.dirstate.p1()
         pulls = []
         diffopts = patch.difffeatureopts(self.ui, opts)
         diffopts.git = True
@@ -186,7 +186,7 @@ class transplanter(object):
                             exchange.pull(repo, source.peer(), heads=pulls)
                         merge.update(repo, pulls[-1], branchmerge=False,
                                      force=False)
-                        p1, p2 = repo.dirstate.parents()
+                        p1 = repo.dirstate.p1()
                         pulls = []
 
                 domerge = False
@@ -323,11 +323,11 @@ class transplanter(object):
         else:
             files = None
         if merge:
-            p1, p2 = repo.dirstate.parents()
+            p1 = repo.dirstate.p1()
             repo.setparents(p1, node)
-            m = match.always(repo.root, '')
+            m = match.always()
         else:
-            m = match.exact(repo.root, '', files)
+            m = match.exact(files)
 
         n = repo.commit(message, user, date, extra=extra, match=m,
                         editor=self.getcommiteditor())
@@ -387,7 +387,7 @@ class transplanter(object):
 
         extra = {'transplant_source': node}
         try:
-            p1, p2 = repo.dirstate.parents()
+            p1 = repo.dirstate.p1()
             if p1 != parent:
                 raise error.Abort(_('working directory not at transplant '
                                    'parent %s') % nodemod.hex(parent))
@@ -668,7 +668,7 @@ def _dotransplant(ui, repo, *revs, **opts):
 
     tp = transplanter(ui, repo, opts)
 
-    p1, p2 = repo.dirstate.parents()
+    p1 = repo.dirstate.p1()
     if len(repo) > 0 and p1 == revlog.nullid:
         raise error.Abort(_('no revision checked out'))
     if opts.get('continue'):
@@ -676,11 +676,7 @@ def _dotransplant(ui, repo, *revs, **opts):
             raise error.Abort(_('no transplant to continue'))
     else:
         cmdutil.checkunfinished(repo)
-        if p2 != revlog.nullid:
-            raise error.Abort(_('outstanding uncommitted merges'))
-        m, a, r, d = repo.status()[:4]
-        if m or a or r or d:
-            raise error.Abort(_('outstanding local changes'))
+        cmdutil.bailifchanged(repo)
 
     sourcerepo = opts.get('source')
     if sourcerepo:

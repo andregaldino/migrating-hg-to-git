@@ -243,7 +243,7 @@ def showstack(ui, repo, displayer):
     else:
         newheads = set()
 
-    allrevs = set(stackrevs) | newheads | set([baserev])
+    allrevs = set(stackrevs) | newheads | {baserev}
     nodelen = longestshortest(repo, allrevs)
 
     try:

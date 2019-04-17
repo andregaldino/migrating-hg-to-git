@@ -26,6 +26,8 @@
   > [diff]
   > git=1
   > unified=0
+  > [commands]
+  > commit.interactive.unified=0
   > [alias]
   > glog=log -G -T '{rev}:{node|short} {desc} {bookmarks}\n'
   > EOF
@@ -103,6 +105,12 @@ Split a head
   abort: cannot split multiple revisions
   [255]
 
+This function splits a bit strangely primarily to avoid changing the behavior of
+the test after a bug was fixed with how split/commit --interactive handled
+`commands.commit.interactive.unified=0`: when there were no context lines,
+it kept only the last diff hunk. When running split, this meant that runsplit
+was always recording three commits, one for each diff hunk, in reverse order
+(the base commit was the last diff hunk in the file).
   $ runsplit() {
   > cat > $TESTTMP/messages <<EOF
   > split 1
@@ -113,8 +121,11 @@ Split a head
   > EOF
   > cat <<EOF | hg split "$@"
   > y
+  > n
+  > n
   > y
   > y
+  > n
   > y
   > y
   > y
@@ -123,13 +134,23 @@ Split a head
 
   $ HGEDITOR=false runsplit
   diff --git a/a b/a
-  1 hunks, 1 lines changed
+  3 hunks, 3 lines changed
   examine changes to 'a'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -1
+  +11
+  record change 1/3 to 'a'? [Ynesfdaq?] n
+  
+  @@ -3,1 +3,1 @@ 2
+  -3
+  +33
+  record change 2/3 to 'a'? [Ynesfdaq?] n
   
   @@ -5,1 +5,1 @@ 4
   -5
   +55
-  record this change to 'a'? [Ynesfdaq?] y
+  record change 3/3 to 'a'? [Ynesfdaq?] y
   
   transaction abort!
   rollback completed
@@ -140,13 +161,23 @@ Split a head
   $ HGEDITOR="\"$PYTHON\" $TESTTMP/editor.py"
   $ runsplit
   diff --git a/a b/a
-  1 hunks, 1 lines changed
+  3 hunks, 3 lines changed
   examine changes to 'a'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -1
+  +11
+  record change 1/3 to 'a'? [Ynesfdaq?] n
+  
+  @@ -3,1 +3,1 @@ 2
+  -3
+  +33
+  record change 2/3 to 'a'? [Ynesfdaq?] n
   
   @@ -5,1 +5,1 @@ 4
   -5
   +55
-  record this change to 'a'? [Ynesfdaq?] y
+  record change 3/3 to 'a'? [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. Write commit message for the first split changeset.
   EDITOR: a2
@@ -160,13 +191,18 @@ Split a head
   EDITOR: HG: changed a
   created new head
   diff --git a/a b/a
-  1 hunks, 1 lines changed
+  2 hunks, 2 lines changed
   examine changes to 'a'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -1
+  +11
+  record change 1/2 to 'a'? [Ynesfdaq?] n
   
   @@ -3,1 +3,1 @@ 2
   -3
   +33
-  record this change to 'a'? [Ynesfdaq?] y
+  record change 2/2 to 'a'? [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. So far it has been split into:
   EDITOR: HG: - e704349bd21b: split 1
@@ -565,3 +601,169 @@ Do not move things to secret even if phases.new-commit=secret
   a09ad58faae3 draft
   e704349bd21b draft
   a61bcde8c529 draft
+
+`hg split` with ignoreblanklines=1 does not infinite loop
+
+  $ mkdir $TESTTMP/f
+  $ hg init $TESTTMP/f/a
+  $ cd $TESTTMP/f/a
+  $ printf '1\n2\n3\n4\n5\n' > foo
+  $ cp foo bar
+  $ hg ci -qAm initial
+  $ printf '1\n\n2\n3\ntest\n4\n5\n' > bar
+  $ printf '1\n2\n3\ntest\n4\n5\n' > foo
+  $ hg ci -qm splitme
+  $ cat > $TESTTMP/messages <<EOF
+  > split 1
+  > --
+  > split 2
+  > EOF
+  $ printf 'f\nn\nf\n' | hg --config extensions.split= --config diff.ignoreblanklines=1 split
+  diff --git a/bar b/bar
+  2 hunks, 2 lines changed
+  examine changes to 'bar'? [Ynesfdaq?] f
+  
+  diff --git a/foo b/foo
+  1 hunks, 1 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] n
+  
+  EDITOR: HG: Splitting dd3c45017cbf. Write commit message for the first split changeset.
+  EDITOR: splitme
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed bar
+  created new head
+  diff --git a/foo b/foo
+  1 hunks, 1 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] f
+  
+  EDITOR: HG: Splitting dd3c45017cbf. So far it has been split into:
+  EDITOR: HG: - f205aea1c624: split 1
+  EDITOR: HG: Write commit message for the next split changeset.
+  EDITOR: splitme
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed foo
+  saved backup bundle to $TESTTMP/f/a/.hg/strip-backup/dd3c45017cbf-463441b5-split.hg (obsstore-off !)
+
+Let's try that again, with a slightly different set of patches, to ensure that
+the ignoreblanklines thing isn't somehow position dependent.
+
+  $ hg init $TESTTMP/f/b
+  $ cd $TESTTMP/f/b
+  $ printf '1\n2\n3\n4\n5\n' > foo
+  $ cp foo bar
+  $ hg ci -qAm initial
+  $ printf '1\n2\n3\ntest\n4\n5\n' > bar
+  $ printf '1\n2\n3\ntest\n4\n\n5\n' > foo
+  $ hg ci -qm splitme
+  $ cat > $TESTTMP/messages <<EOF
+  > split 1
+  > --
+  > split 2
+  > EOF
+  $ printf 'f\nn\nf\n' | hg --config extensions.split= --config diff.ignoreblanklines=1 split
+  diff --git a/bar b/bar
+  1 hunks, 1 lines changed
+  examine changes to 'bar'? [Ynesfdaq?] f
+  
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] n
+  
+  EDITOR: HG: Splitting 904c80b40a4a. Write commit message for the first split changeset.
+  EDITOR: splitme
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed bar
+  created new head
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] f
+  
+  EDITOR: HG: Splitting 904c80b40a4a. So far it has been split into:
+  EDITOR: HG: - ffecf40fa954: split 1
+  EDITOR: HG: Write commit message for the next split changeset.
+  EDITOR: splitme
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed foo
+  saved backup bundle to $TESTTMP/f/b/.hg/strip-backup/904c80b40a4a-47fb907f-split.hg (obsstore-off !)
+
+
+Testing the case in split when commiting flag-only file changes (issue5864)
+---------------------------------------------------------------------------
+  $ hg init $TESTTMP/issue5864
+  $ cd $TESTTMP/issue5864
+  $ echo foo > foo
+  $ hg add foo
+  $ hg ci -m "initial"
+  $ hg import -q --bypass -m "make executable" - <<EOF
+  > diff --git a/foo b/foo
+  > old mode 100644
+  > new mode 100755
+  > EOF
+  $ hg up -q
+
+  $ hg glog
+  @  1:3a2125f0f4cb make executable
+  |
+  o  0:51f273a58d82 initial
+  
+
+#if no-windows
+  $ cat > $TESTTMP/messages <<EOF
+  > split 1
+  > EOF
+  $ printf 'y\n' | hg split
+  diff --git a/foo b/foo
+  old mode 100644
+  new mode 100755
+  examine changes to 'foo'? [Ynesfdaq?] y
+  
+  EDITOR: HG: Splitting 3a2125f0f4cb. Write commit message for the first split changeset.
+  EDITOR: make executable
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed foo
+  created new head
+  saved backup bundle to $TESTTMP/issue5864/.hg/strip-backup/3a2125f0f4cb-629e4432-split.hg (obsstore-off !)
+
+  $ hg log -G -T "{node|short} {desc}\n"
+  @  b154670c87da split 1
+  |
+  o  51f273a58d82 initial
+  
+#else
+
+TODO: Fix this on Windows. See issue 2020 and 5883
+
+  $ printf 'y\ny\ny\n' | hg split
+  abort: cannot split an empty revision
+  [255]
+#endif

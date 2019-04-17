@@ -161,6 +161,7 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   > import subprocess
   > import sys
   > import xml.etree.ElementTree as ET
+  > from mercurial import pycompat
   > 
   > # MSYS mangles the path if it expands $TESTDIR
   > testdir = os.environ['TESTDIR']
@@ -177,7 +178,7 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   >     files = node.findall('./{%(wix)s}Component/{%(wix)s}File' % ns)
   > 
   >     for f in files:
-  >         yield relpath + f.attrib['Name']
+  >         yield pycompat.sysbytes(relpath + f.attrib['Name'])
   > 
   > def hgdirectory(relpath):
   >     '''generator of tracked files, rooted at relpath'''
@@ -187,16 +188,15 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   >                             stderr=subprocess.PIPE)
   >     output = proc.communicate()[0]
   > 
-  >     slash = '/'
   >     for line in output.splitlines():
   >         if os.name == 'nt':
-  >             yield line.replace(os.sep, slash)
+  >             yield line.replace(pycompat.sysbytes(os.sep), b'/')
   >         else:
   >             yield line
   > 
   > tracked = [f for f in hgdirectory(sys.argv[1])]
   > 
-  > xml = ET.parse("%s/../contrib/wix/%s.wxs" % (testdir, sys.argv[1]))
+  > xml = ET.parse("%s/../contrib/packaging/wix/%s.wxs" % (testdir, sys.argv[1]))
   > root = xml.getroot()
   > dir = root.find('.//{%(wix)s}DirectoryRef' % ns)
   > 
@@ -204,11 +204,11 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   > 
   > print('Not installed:')
   > for f in sorted(set(tracked) - set(installed)):
-  >     print('  %s' % f)
+  >     print('  %s' % pycompat.sysstr(f))
   > 
   > print('Not tracked:')
   > for f in sorted(set(installed) - set(tracked)):
-  >     print('  %s' % f)
+  >     print('  %s' % pycompat.sysstr(f))
   > EOF
 
   $ ( testrepohgenv; "$PYTHON" wixxml.py help )
@@ -238,9 +238,11 @@ ancient virtualenv from their linux distro or similar and it's not yet
 the default for them.
   $ unset PYTHONPATH
   $ "$PYTHON" -m virtualenv --no-site-packages --never-download installenv >> pip.log
+  DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
 Note: we use this weird path to run pip and hg to avoid platform differences,
 since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log
+  DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
   $ ./installenv/*/hg debuginstall || cat pip.log
   checking encoding (ascii)...
   checking Python executable (*) (glob)

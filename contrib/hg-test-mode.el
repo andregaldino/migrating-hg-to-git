@@ -53,4 +53,45 @@
   (setq mode-name "hg-test")
   (run-hooks 'hg-test-mode-hook))
 
+(with-eval-after-load "compile"
+  ;; Link to Python sources in tracebacks in .t failures.
+  (add-to-list 'compilation-error-regexp-alist-alist
+               '(hg-test-output-python-tb
+                 "^\\+ +File ['\"]\\([^'\"]+\\)['\"], line \\([0-9]+\\)," 1 2))
+  (add-to-list 'compilation-error-regexp-alist 'hg-test-output-python-tb)
+  ;; Link to source files in test-check-code.t violations.
+  (add-to-list 'compilation-error-regexp-alist-alist
+               '(hg-test-check-code-output
+                 "\\+  \\([^:\n]+\\):\\([0-9]+\\):$" 1 2))
+  (add-to-list 'compilation-error-regexp-alist 'hg-test-check-code-output))
+
+(defun hg-test-mode--test-one-error-line-regexp (test)
+  (erase-buffer)
+  (setq compilation-locs (make-hash-table))
+  (insert (car test))
+  (compilation-parse-errors (point-min) (point-max))
+  (let ((msg (get-text-property 1 'compilation-message)))
+    (should msg)
+    (let ((loc (compilation--message->loc msg))
+          (line (nth 1 test))
+          (file (nth 2 test)))
+      (should (equal (compilation--loc->line loc) line))
+      (should (equal (caar (compilation--loc->file-struct loc)) file)))
+      msg))
+
+(require 'ert)
+(ert-deftest hg-test-mode--compilation-mode-support ()
+  "Test hg-specific compilation-mode regular expressions"
+  (require 'compile)
+  (with-temp-buffer
+    (font-lock-mode -1)
+    (mapc 'hg-test-mode--test-one-error-line-regexp
+          '(
+            ("+  contrib/debugshell.py:37:" 37 "contrib/debugshell.py")
+            ("+    File \"/tmp/hg/mercurial/commands.py\", line 3115, in help_"
+             3115 "/tmp/hg/mercurial/commands.py")
+            ("+    File \"mercurial/dispatch.py\", line 225, in dispatch"
+             225 "mercurial/dispatch.py")))))
+
+
 (provide 'hg-test-mode)

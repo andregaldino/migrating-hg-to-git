@@ -57,7 +57,7 @@ check for HTTP opener failures when cachefile does not exist
   $ cd ../local
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
-  > changegroup = sh -c "printenv.py changegroup"
+  > changegroup = sh -c "printenv.py --line changegroup"
   > EOF
   $ hg pull
   pulling from static-http://localhost:$HGPORT/remote
@@ -67,7 +67,16 @@ check for HTTP opener failures when cachefile does not exist
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets 4ac2e3648604
-  changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=4ac2e3648604439c580c69b09ec9d93a88d93432 HG_NODE_LAST=4ac2e3648604439c580c69b09ec9d93a88d93432 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=http://localhost:$HGPORT/remote
+  changegroup hook: HG_HOOKNAME=changegroup
+  HG_HOOKTYPE=changegroup
+  HG_NODE=4ac2e3648604439c580c69b09ec9d93a88d93432
+  HG_NODE_LAST=4ac2e3648604439c580c69b09ec9d93a88d93432
+  HG_SOURCE=pull
+  HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  http://localhost:$HGPORT/remote
+  HG_URL=http://localhost:$HGPORT/remote
+  
   (run 'hg update' to get a working copy)
 
 trying to push
@@ -227,9 +236,11 @@ List of files accessed over HTTP:
   /.hg/requires
   /.hg/store/00changelog.i
   /.hg/store/00manifest.i
-  /.hg/store/data/%7E2ehgsub.i
-  /.hg/store/data/%7E2ehgsubstate.i
+  /.hg/store/data/%7E2ehgsub.i (no-py37 !)
+  /.hg/store/data/%7E2ehgsubstate.i (no-py37 !)
   /.hg/store/data/a.i
+  /.hg/store/data/~2ehgsub.i (py37 !)
+  /.hg/store/data/~2ehgsubstate.i (py37 !)
   /notarepo/.hg/00changelog.i
   /notarepo/.hg/requires
   /remote-with-names/.hg/bookmarks
@@ -243,8 +254,9 @@ List of files accessed over HTTP:
   /remote-with-names/.hg/requires
   /remote-with-names/.hg/store/00changelog.i
   /remote-with-names/.hg/store/00manifest.i
-  /remote-with-names/.hg/store/data/%7E2ehgtags.i
+  /remote-with-names/.hg/store/data/%7E2ehgtags.i (no-py37 !)
   /remote-with-names/.hg/store/data/foo.i
+  /remote-with-names/.hg/store/data/~2ehgtags.i (py37 !)
   /remote/.hg/bookmarks
   /remote/.hg/bookmarks.current
   /remote/.hg/cache/branch2-base
@@ -258,10 +270,12 @@ List of files accessed over HTTP:
   /remote/.hg/requires
   /remote/.hg/store/00changelog.i
   /remote/.hg/store/00manifest.i
-  /remote/.hg/store/data/%7E2edotfile%20with%20spaces.i
-  /remote/.hg/store/data/%7E2ehgtags.i
+  /remote/.hg/store/data/%7E2edotfile%20with%20spaces.i (no-py37 !)
+  /remote/.hg/store/data/%7E2ehgtags.i (no-py37 !)
   /remote/.hg/store/data/bar.i
   /remote/.hg/store/data/quux.i
+  /remote/.hg/store/data/~2edotfile%20with%20spaces.i (py37 !)
+  /remote/.hg/store/data/~2ehgtags.i (py37 !)
   /remotempty/.hg/bookmarks
   /remotempty/.hg/bookmarks.current
   /remotempty/.hg/requires
@@ -275,5 +289,6 @@ List of files accessed over HTTP:
   /sub/.hg/requires
   /sub/.hg/store/00changelog.i
   /sub/.hg/store/00manifest.i
-  /sub/.hg/store/data/%7E2ehgtags.i
+  /sub/.hg/store/data/%7E2ehgtags.i (no-py37 !)
   /sub/.hg/store/data/test.i
+  /sub/.hg/store/data/~2ehgtags.i (py37 !)

@@ -75,6 +75,12 @@ not are encoded like a node:
   abort: unknown revision 'xxxxxxxxxxxxxxxxxx y'!
   [255]
 
+Test pull of working copy revision
+  $ hg pull -r 'ffffffffffff'
+  pulling from http://foo@localhost:$HGPORT/
+  abort: unknown revision 'ffffffffffff'!
+  [255]
+
 Issue622: hg init && hg pull -u URL doesn't checkout default branch
 
   $ cd ..

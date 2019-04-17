@@ -71,7 +71,6 @@ new directories are setgid
   00600 ./.hg/00changelog.i
   00770 ./.hg/cache/
   00660 ./.hg/cache/branch2-served
-  00660 ./.hg/cache/manifestfulltextcache (reporevlogstore !)
   00660 ./.hg/cache/rbc-names-v1
   00660 ./.hg/cache/rbc-revs-v1
   00660 ./.hg/dirstate
@@ -105,6 +104,7 @@ new directories are setgid
   00711 ./.hg/wcache/checkisexec
   007.. ./.hg/wcache/checklink (re)
   00600 ./.hg/wcache/checklink-target
+  00660 ./.hg/wcache/manifestfulltextcache (reporevlogstore !)
   00700 ./dir/
   00600 ./dir/bar
   00600 ./foo

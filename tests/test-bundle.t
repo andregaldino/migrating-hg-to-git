@@ -218,10 +218,11 @@ Pull ../full.hg into empty (with hook)
 
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
-  > changegroup = sh -c "printenv.py changegroup"
+  > changegroup = sh -c "printenv.py --line changegroup"
   > EOF
 
 doesn't work (yet ?)
+NOTE: msys is mangling the URL below
 
 hg -R bundle://../full.hg verify
 
@@ -233,7 +234,18 @@ hg -R bundle://../full.hg verify
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
   new changesets f9ee2f85a263:aa35859c02ea (9 drafts)
-  changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735 HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=bundle*../full.hg (glob)
+  changegroup hook: HG_HOOKNAME=changegroup
+  HG_HOOKTYPE=changegroup
+  HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735
+  HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf
+  HG_SOURCE=pull
+  HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  bundle:../full.hg (no-msys !)
+  bundle;../full.hg (msys !)
+  HG_URL=bundle:../full.hg (no-msys !)
+  HG_URL=bundle;../full.hg (msys !)
+  
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 Rollback empty
@@ -257,7 +269,16 @@ Pull full.hg into empty again (using -R; with hook)
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
   new changesets f9ee2f85a263:aa35859c02ea (9 drafts)
-  changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735 HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=bundle:empty+full.hg
+  changegroup hook: HG_HOOKNAME=changegroup
+  HG_HOOKTYPE=changegroup
+  HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735
+  HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf
+  HG_SOURCE=pull
+  HG_TXNID=TXN:$ID$
+  HG_TXNNAME=pull
+  bundle:empty+full.hg
+  HG_URL=bundle:empty+full.hg
+  
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 #endif

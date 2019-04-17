@@ -391,9 +391,9 @@ class mergestate(object):
         """
         # Check local variables before looking at filesystem for performance
         # reasons.
-        return bool(self._local) or bool(self._state) or \
-               self._repo.vfs.exists(self.statepathv1) or \
-               self._repo.vfs.exists(self.statepathv2)
+        return (bool(self._local) or bool(self._state) or
+                self._repo.vfs.exists(self.statepathv1) or
+                self._repo.vfs.exists(self.statepathv2))
 
     def commit(self):
         """Write current state on disk (if necessary)"""
@@ -815,8 +815,8 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                     fileconflicts.add(f)
 
         allconflicts = fileconflicts | pathconflicts
-        ignoredconflicts = set([c for c in allconflicts
-                                if repo.dirstate._ignore(c)])
+        ignoredconflicts = {c for c in allconflicts
+                            if repo.dirstate._ignore(c)}
         unknownconflicts = allconflicts - ignoredconflicts
         collectconflicts(ignoredconflicts, ignoredconfig)
         collectconflicts(unknownconflicts, unknownconfig)
@@ -1104,7 +1104,7 @@ def _filternarrowactions(narrowmatch, branchmerge, actions):
     Raise an exception if the merge cannot be completed because the repo is
     narrowed.
     """
-    nooptypes = set(['k']) # TODO: handle with nonconflicttypes
+    nooptypes = {'k'} # TODO: handle with nonconflicttypes
     nonconflicttypes = set('a am c cm f g r e'.split())
     # We mutate the items in the dict during iteration, so iterate
     # over a copy.
@@ -1185,9 +1185,6 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
         matcher = matchmod.intersectmatchers(matcher, filesmatcher)
 
     diff = m1.diff(m2, match=matcher)
-
-    if matcher is None:
-        matcher = matchmod.always('', '')
 
     actions = {}
     for f, ((n1, fl1), (n2, fl2)) in diff.iteritems():
@@ -1502,15 +1499,15 @@ def batchget(repo, mctx, wctx, actions):
                 # If a file or directory exists with the same name, back that
                 # up.  Otherwise, look to see if there is a file that conflicts
                 # with a directory this file is in, and if so, back that up.
-                absf = repo.wjoin(f)
+                conflicting = f
                 if not repo.wvfs.lexists(f):
                     for p in util.finddirs(f):
                         if repo.wvfs.isfileorlink(p):
-                            absf = repo.wjoin(p)
+                            conflicting = p
                             break
-                orig = scmutil.origpath(ui, repo, absf)
-                if repo.wvfs.lexists(absf):
-                    util.rename(absf, orig)
+                if repo.wvfs.lexists(conflicting):
+                    orig = scmutil.backuppath(ui, repo, conflicting)
+                    util.rename(repo.wjoin(conflicting), orig)
             wctx[f].clearunknown()
             atomictemp = ui.configbool("experimental", "update.atomic-file")
             wctx[f].write(fctx(f).data(), flags, backgroundclose=True,
@@ -2134,14 +2131,14 @@ def update(repo, node, branchmerge, force, ancestor=None,
         for f, fl in sorted(diverge.iteritems()):
             repo.ui.warn(_("note: possible conflict - %s was renamed "
                            "multiple times to:\n") % f)
-            for nf in fl:
+            for nf in sorted(fl):
                 repo.ui.warn(" %s\n" % nf)
 
         # rename and delete
         for f, fl in sorted(renamedelete.iteritems()):
             repo.ui.warn(_("note: possible conflict - %s was deleted "
                            "and renamed to:\n") % f)
-            for nf in fl:
+            for nf in sorted(fl):
                 repo.ui.warn(" %s\n" % nf)
 
         ### apply phase
@@ -2208,7 +2205,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
                   error=stats.unresolvedcount)
     return stats
 
-def graft(repo, ctx, pctx, labels, keepparent=False,
+def graft(repo, ctx, pctx, labels=None, keepparent=False,
           keepconflictparent=False):
     """Do a graft-like merge.
 

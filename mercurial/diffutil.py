@@ -16,13 +16,15 @@ from . import (
     pycompat,
 )
 
-def diffallopts(ui, opts=None, untrusted=False, section='diff'):
+def diffallopts(ui, opts=None, untrusted=False, section='diff',
+                configprefix=''):
     '''return diffopts with all features supported and parsed'''
     return difffeatureopts(ui, opts=opts, untrusted=untrusted, section=section,
-                           git=True, whitespace=True, formatchanging=True)
+                           git=True, whitespace=True, formatchanging=True,
+                           configprefix=configprefix)
 
 def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
-                    whitespace=False, formatchanging=False):
+                    whitespace=False, formatchanging=False, configprefix=''):
     '''return diffopts with only opted-in features parsed
 
     Features:
@@ -45,7 +47,8 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
                 return v
         if forceplain is not None and ui.plain():
             return forceplain
-        return getter(section, name or key, untrusted=untrusted)
+        return getter(section, configprefix + (name or key),
+                      untrusted=untrusted)
 
     # core options, expected to be understood by every diff parser
     buildopts = {

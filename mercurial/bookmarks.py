@@ -44,7 +44,7 @@ def _getbkfile(repo):
     return fp
 
 class bmstore(object):
-    """Storage for bookmarks.
+    r"""Storage for bookmarks.
 
     This object should do all bookmark-related reads and writes, so
     that it's fairly simple to replace the storage underlying
@@ -306,7 +306,6 @@ def _readactive(repo, marks):
     itself as we commit. This function returns the name of that bookmark.
     It is stored in .hg/bookmarks.current
     """
-    mark = None
     try:
         file = repo.vfs('bookmarks.current')
     except IOError as inst:

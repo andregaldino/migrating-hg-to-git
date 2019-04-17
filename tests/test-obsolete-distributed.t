@@ -488,6 +488,37 @@ decision is made in that case, so receiving the changesets are not an option).
   d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
   ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'bob'}
 
+
+Same tests, but with --rev, this prevent regressing case where `hg pull --rev
+X` has to process a X that is filtered locally.
+
+  $ hg rollback
+  repository tip rolled back to revision 4 (undo unbundle)
+  $ hg pull ../repo-Bob --rev 956063ac4557
+  pulling from ../repo-Bob
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 2 files (+1 heads)
+  (2 other changesets obsolete on arrival)
+  (run 'hg heads' to see heads)
+
+With --update
+
+  $ hg rollback
+  repository tip rolled back to revision 4 (undo pull)
+  $ hg pull ../repo-Bob --rev 956063ac4557 --update
+  pulling from ../repo-Bob
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 2 files (+1 heads)
+  (2 other changesets obsolete on arrival)
+  abort: cannot update to target: filtered revision '6'!
+  [255]
+
   $ cd ..
 
 Test pull report consistency

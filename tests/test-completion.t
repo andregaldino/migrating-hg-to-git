@@ -103,7 +103,10 @@ Show debug commands if there are no other candidates
   debugmergestate
   debugnamecomplete
   debugobsolete
+  debugp1copies
+  debugp2copies
   debugpathcomplete
+  debugpathcopies
   debugpeer
   debugpickmergetool
   debugpushkey
@@ -260,7 +263,7 @@ Show all commands + options
   debugdate: extended
   debugdeltachain: changelog, manifest, dir, template
   debugdirstate: nodates, dates, datesort
-  debugdiscovery: old, nonheads, rev, ssh, remotecmd, insecure
+  debugdiscovery: old, nonheads, rev, seed, ssh, remotecmd, insecure
   debugdownload: output
   debugextensions: template
   debugfileset: rev, all-files, show-matcher, show-stage
@@ -279,7 +282,10 @@ Show all commands + options
   debugmergestate: 
   debugnamecomplete: 
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template
+  debugp1copies: rev
+  debugp2copies: rev
   debugpathcomplete: full, normal, added, removed
+  debugpathcopies: include, exclude
   debugpeer: 
   debugpickmergetool: rev, changedelete, include, exclude, tool
   debugpushkey: 

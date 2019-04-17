@@ -354,6 +354,35 @@ Test missing log directory, which shouldn't be created automatically
   warning: cannot write to blackbox.log: $TESTTMP/gone/.hg/blackbox.log: $ENOTDIR$ (windows !)
   $ cd ..
 
+blackbox should disable itself if track is empty
+
+  $ hg --config blackbox.track= init nothing_tracked
+  $ cd nothing_tracked
+  $ cat >> .hg/hgrc << EOF
+  > [blackbox]
+  > track =
+  > EOF
+  $ hg blackbox
+  $ cd $TESTTMP
+
+a '*' entry in blackbox.track is interpreted as log everything
+
+  $ hg --config blackbox.track='*' \
+  >    --config blackbox.logsource=True \
+  >    init track_star
+  $ cd track_star
+  $ cat >> .hg/hgrc << EOF
+  > [blackbox]
+  > logsource = True
+  > track = *
+  > EOF
+(only look for entries with specific logged sources, otherwise this test is
+pretty brittle)
+  $ hg blackbox | egrep '\[command(finish)?\]'
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000) [commandfinish]> --config *blackbox.track=* --config *blackbox.logsource=True* init track_star exited 0 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000) [command]> blackbox
+  $ cd $TESTTMP
+
 #if chg
 
 when using chg, blackbox.log should get rotated correctly

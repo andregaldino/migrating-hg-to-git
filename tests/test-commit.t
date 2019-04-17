@@ -512,6 +512,7 @@ specific template keywords work well
   HG: dels=
   HG: files=changed
   HG:
+  HG: diff -r d2313f97106f changed
   HG: --- a/changed	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/changed	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -1,1 +1,2 @@
@@ -573,6 +574,7 @@ specific template keywords work well
   HG: dels=removed
   HG: files=added removed
   HG:
+  HG: diff -r d2313f97106f added
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/added	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
@@ -583,6 +585,7 @@ specific template keywords work well
   HG: dels=removed
   HG: files=added removed
   HG:
+  HG: diff -r d2313f97106f removed
   HG: --- a/removed	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -1,1 +0,0 @@

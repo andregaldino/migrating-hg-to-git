@@ -187,7 +187,7 @@ check http return codes
   server: testing stub value
   transfer-encoding: chunked
   
-  body: size=(1377|1461), sha1=(677b14d3d048778d5eb5552c14a67e6192068650|be6d3983aa13dfe930361b2569291cdedd02b537) (re)
+  body: size=(1377|1461|1489), sha1=(677b14d3d048778d5eb5552c14a67e6192068650|be6d3983aa13dfe930361b2569291cdedd02b537|1897e496871aa89ad685a92b936f5fa0d008b9e8) (re)
   % tar.gz and tar.bz2 disallowed should both give 403
   403 Archive type not allowed: gz
   content-type: text/html; charset=ascii
@@ -274,7 +274,7 @@ check http return codes (with deprecated option)
   server: testing stub value
   transfer-encoding: chunked
   
-  body: size=(1377|1461), sha1=(677b14d3d048778d5eb5552c14a67e6192068650|be6d3983aa13dfe930361b2569291cdedd02b537) (re)
+  body: size=(1377|1461|1489), sha1=(677b14d3d048778d5eb5552c14a67e6192068650|be6d3983aa13dfe930361b2569291cdedd02b537|1897e496871aa89ad685a92b936f5fa0d008b9e8) (re)
   % tar.gz and tar.bz2 disallowed should both give 403
   403 Archive type not allowed: gz
   content-type: text/html; charset=ascii

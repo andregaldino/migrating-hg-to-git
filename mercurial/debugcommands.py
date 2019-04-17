@@ -38,6 +38,7 @@ from . import (
     cmdutil,
     color,
     context,
+    copies,
     dagparser,
     encoding,
     error,
@@ -81,6 +82,7 @@ from . import (
 )
 from .utils import (
     cborutil,
+    compression,
     dateutil,
     procutil,
     stringutil,
@@ -745,7 +747,6 @@ def debugstate(ui, repo, **opts):
         nodates = True
     datesort = opts.get(r'datesort')
 
-    timestr = ""
     if datesort:
         keyfunc = lambda x: (x[1][3], x[0]) # sort by mtime, then by filename
     else:
@@ -772,6 +773,7 @@ def debugstate(ui, repo, **opts):
     ('', 'nonheads', None,
      _('use old-style discovery with non-heads included')),
     ('', 'rev', [], 'restrict discovery to this set of revs'),
+    ('', 'seed', '12323', 'specify the random seed use for discovery'),
     ] + cmdutil.remoteopts,
     _('[--rev REV] [OTHER]'))
 def debugdiscovery(ui, repo, remoteurl="default", **opts):
@@ -782,10 +784,12 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     ui.status(_('comparing with %s\n') % util.hidepassword(remoteurl))
 
     # make sure tests are repeatable
-    random.seed(12323)
+    random.seed(int(opts['seed']))
 
-    def doit(pushedrevs, remoteheads, remote=remote):
-        if opts.get('old'):
+
+
+    if opts.get('old'):
+        def doit(pushedrevs, remoteheads, remote=remote):
             if not util.safehasattr(remote, 'branches'):
                 # enable in-client legacy support
                 remote = localrepo.locallegacypeer(remote.local())
@@ -799,26 +803,59 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
                 clnode = repo.changelog.node
                 common = repo.revs('heads(::%ln)', common)
                 common = {clnode(r) for r in common}
-        else:
+            return common, hds
+    else:
+        def doit(pushedrevs, remoteheads, remote=remote):
             nodes = None
             if pushedrevs:
                 revs = scmutil.revrange(repo, pushedrevs)
                 nodes = [repo[r].node() for r in revs]
             common, any, hds = setdiscovery.findcommonheads(ui, repo, remote,
                                                             ancestorsof=nodes)
-        common = set(common)
-        rheads = set(hds)
-        lheads = set(repo.heads())
-        ui.write(("common heads: %s\n") %
-                 " ".join(sorted(short(n) for n in common)))
-        if lheads <= common:
-            ui.write(("local is subset\n"))
-        elif rheads <= common:
-            ui.write(("remote is subset\n"))
+            return common, hds
 
     remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
     localrevs = opts['rev']
-    doit(localrevs, remoterevs)
+    with util.timedcm('debug-discovery') as t:
+        common, hds = doit(localrevs, remoterevs)
+
+    # compute all statistics
+    common = set(common)
+    rheads = set(hds)
+    lheads = set(repo.heads())
+
+    data = {}
+    data['elapsed'] = t.elapsed
+    data['nb-common'] = len(common)
+    data['nb-common-local'] = len(common & lheads)
+    data['nb-common-remote'] = len(common & rheads)
+    data['nb-local'] = len(lheads)
+    data['nb-local-missing'] = data['nb-local'] - data['nb-common-local']
+    data['nb-remote'] = len(rheads)
+    data['nb-remote-unknown'] = data['nb-remote'] - data['nb-common-remote']
+    data['nb-revs'] = len(repo.revs('all()'))
+    data['nb-revs-common'] = len(repo.revs('::%ln', common))
+    data['nb-revs-missing'] = data['nb-revs'] - data['nb-revs-common']
+
+    # display discovery summary
+    ui.write(("elapsed time:  %(elapsed)f seconds\n") % data)
+    ui.write(("heads summary:\n"))
+    ui.write(("  total common heads:  %(nb-common)9d\n") % data)
+    ui.write(("    also local heads:  %(nb-common-local)9d\n") % data)
+    ui.write(("    also remote heads: %(nb-common-remote)9d\n") % data)
+    ui.write(("  local heads:         %(nb-local)9d\n") % data)
+    ui.write(("    common:            %(nb-common-local)9d\n") % data)
+    ui.write(("    missing:           %(nb-local-missing)9d\n") % data)
+    ui.write(("  remote heads:        %(nb-remote)9d\n") % data)
+    ui.write(("    common:            %(nb-common-remote)9d\n") % data)
+    ui.write(("    unknown:           %(nb-remote-unknown)9d\n") % data)
+    ui.write(("local changesets:      %(nb-revs)9d\n") % data)
+    ui.write(("  common:              %(nb-revs-common)9d\n") % data)
+    ui.write(("  missing:             %(nb-revs-missing)9d\n") % data)
+
+    if ui.verbose:
+        ui.write(("common heads: %s\n") %
+                 " ".join(sorted(short(n) for n in common)))
 
 _chunksize = 4 << 10
 
@@ -1086,6 +1123,7 @@ def debugignore(ui, repo, *files, **opts):
         ui.write("%s\n" % pycompat.byterepr(ignore))
     else:
         m = scmutil.match(repo[None], pats=files)
+        uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
         for f in m.files():
             nf = util.normpath(f)
             ignored = None
@@ -1102,16 +1140,16 @@ def debugignore(ui, repo, *files, **opts):
                             break
             if ignored:
                 if ignored == nf:
-                    ui.write(_("%s is ignored\n") % m.uipath(f))
+                    ui.write(_("%s is ignored\n") % uipathfn(f))
                 else:
                     ui.write(_("%s is ignored because of "
-                               "containing folder %s\n")
-                             % (m.uipath(f), ignored))
+                               "containing directory %s\n")
+                             % (uipathfn(f), ignored))
                 ignorefile, lineno, line = ignoredata
                 ui.write(_("(ignore rule in %s, line %d: '%s')\n")
                          % (ignorefile, lineno, line))
             else:
-                ui.write(_("%s is not ignored\n") % m.uipath(f))
+                ui.write(_("%s is not ignored\n") % uipathfn(f))
 
 @command('debugindex', cmdutil.debugrevlogopts + cmdutil.formatteropts,
          _('-c|-m|FILE'))
@@ -1181,13 +1219,6 @@ def debuginstall(ui, **opts):
     Returns 0 on success.
     '''
     opts = pycompat.byteskwargs(opts)
-
-    def writetemp(contents):
-        (fd, name) = pycompat.mkstemp(prefix="hg-debuginstall-")
-        f = os.fdopen(fd, r"wb")
-        f.write(contents)
-        f.close()
-        return name
 
     problems = 0
 
@@ -1269,7 +1300,8 @@ def debuginstall(ui, **opts):
              fm.formatlist(sorted(e.name() for e in compengines
                                   if e.available()),
                            name='compengine', fmt='%s', sep=', '))
-    wirecompengines = util.compengines.supportedwireengines(util.SERVERROLE)
+    wirecompengines = compression.compengines.supportedwireengines(
+        compression.SERVERROLE)
     fm.write('compenginesserver', _('checking available compression engines '
                                     'for wire protocol (%s)\n'),
              fm.formatlist([e.name() for e in wirecompengines
@@ -1448,8 +1480,8 @@ def debuglocks(ui, repo, **opts):
                     if host == socket.gethostname():
                         locker = 'user %s, process %s' % (user or b'None', pid)
                     else:
-                        locker = 'user %s, process %s, host %s' \
-                                 % (user or b'None', pid, host)
+                        locker = ('user %s, process %s, host %s'
+                                  % (user or b'None', pid, host))
                 ui.write(("%-6s %s (%ds)\n") % (name + ":", locker, age))
                 return 1
             except OSError as e:
@@ -1466,50 +1498,59 @@ def debuglocks(ui, repo, **opts):
 
 @command('debugmanifestfulltextcache', [
         ('', 'clear', False, _('clear the cache')),
-        ('a', 'add', '', _('add the given manifest node to the cache'),
+        ('a', 'add', [], _('add the given manifest nodes to the cache'),
          _('NODE'))
     ], '')
-def debugmanifestfulltextcache(ui, repo, add=None, **opts):
+def debugmanifestfulltextcache(ui, repo, add=(), **opts):
     """show, clear or amend the contents of the manifest fulltext cache"""
-    with repo.lock():
+
+    def getcache():
         r = repo.manifestlog.getstorage(b'')
         try:
-            cache = r._fulltextcache
+            return r._fulltextcache
         except AttributeError:
-            ui.warn(_(
-                "Current revlog implementation doesn't appear to have a "
-                'manifest fulltext cache\n'))
+            msg = _("Current revlog implementation doesn't appear to have a "
+                    "manifest fulltext cache\n")
+            raise error.Abort(msg)
+
+    if opts.get(r'clear'):
+        with repo.wlock():
+            cache = getcache()
+            cache.clear(clear_persisted_data=True)
             return
 
-        if opts.get(r'clear'):
-            cache.clear()
+    if add:
+        with repo.wlock():
+            m = repo.manifestlog
+            store = m.getstorage(b'')
+            for n in add:
+                try:
+                    manifest = m[store.lookup(n)]
+                except error.LookupError as e:
+                    raise error.Abort(e, hint="Check your manifest node id")
+                manifest.read()  # stores revisision in cache too
+            return
 
-        if add:
-            try:
-                manifest = repo.manifestlog[r.lookup(add)]
-            except error.LookupError as e:
-                raise error.Abort(e, hint="Check your manifest node id")
-            manifest.read()  # stores revisision in cache too
-
-        if not len(cache):
-            ui.write(_('Cache empty'))
-        else:
-            ui.write(
-                _('Cache contains %d manifest entries, in order of most to '
-                  'least recent:\n') % (len(cache),))
-            totalsize = 0
-            for nodeid in cache:
-                # Use cache.get to not update the LRU order
-                data = cache.get(nodeid)
-                size = len(data)
-                totalsize += size + 24   # 20 bytes nodeid, 4 bytes size
-                ui.write(_('id: %s, size %s\n') % (
-                    hex(nodeid), util.bytecount(size)))
-            ondisk = cache._opener.stat('manifestfulltextcache').st_size
-            ui.write(
-                _('Total cache data size %s, on-disk %s\n') % (
-                    util.bytecount(totalsize), util.bytecount(ondisk))
-            )
+    cache = getcache()
+    if not len(cache):
+        ui.write(_('cache empty\n'))
+    else:
+        ui.write(
+            _('cache contains %d manifest entries, in order of most to '
+              'least recent:\n') % (len(cache),))
+        totalsize = 0
+        for nodeid in cache:
+            # Use cache.get to not update the LRU order
+            data = cache.peek(nodeid)
+            size = len(data)
+            totalsize += size + 24   # 20 bytes nodeid, 4 bytes size
+            ui.write(_('id: %s, size %s\n') % (
+                hex(nodeid), util.bytecount(size)))
+        ondisk = cache._opener.stat('manifestfulltextcache').st_size
+        ui.write(
+            _('total cache data size %s, on-disk %s\n') % (
+                util.bytecount(totalsize), util.bytecount(ondisk))
+        )
 
 @command('debugmergestate', [], '')
 def debugmergestate(ui, repo, *args):
@@ -1747,6 +1788,28 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             cmdutil.showmarker(fm, m, index=ind)
         fm.end()
 
+@command('debugp1copies',
+         [('r', 'rev', '', _('revision to debug'), _('REV'))],
+         _('[-r REV]'))
+def debugp1copies(ui, repo, **opts):
+    """dump copy information compared to p1"""
+
+    opts = pycompat.byteskwargs(opts)
+    ctx = scmutil.revsingle(repo, opts.get('rev'), default=None)
+    for dst, src in ctx.p1copies().items():
+        ui.write('%s -> %s\n' % (src, dst))
+
+@command('debugp2copies',
+         [('r', 'rev', '', _('revision to debug'), _('REV'))],
+         _('[-r REV]'))
+def debugp1copies(ui, repo, **opts):
+    """dump copy information compared to p2"""
+
+    opts = pycompat.byteskwargs(opts)
+    ctx = scmutil.revsingle(repo, opts.get('rev'), default=None)
+    for dst, src in ctx.p2copies().items():
+        ui.write('%s -> %s\n' % (src, dst))
+
 @command('debugpathcomplete',
          [('f', 'full', None, _('complete an entire path')),
           ('n', 'normal', None, _('show only normal files')),
@@ -1811,6 +1874,18 @@ def debugpathcomplete(ui, repo, *specs, **opts):
     files.update(dirs)
     ui.write('\n'.join(repo.pathto(p, cwd) for p in sorted(files)))
     ui.write('\n')
+
+@command('debugpathcopies',
+         cmdutil.walkopts,
+         'hg debugpathcopies REV1 REV2 [FILE]',
+         inferrepo=True)
+def debugpathcopies(ui, repo, rev1, rev2, *pats, **opts):
+    """show copies between two revisions"""
+    ctx1 = scmutil.revsingle(repo, rev1)
+    ctx2 = scmutil.revsingle(repo, rev2)
+    m = scmutil.match(ctx1, pats, opts)
+    for dst, src in sorted(copies.pathcopies(ctx1, ctx2, m).items()):
+        ui.write('%s -> %s\n' % (src, dst))
 
 @command('debugpeer', [], _('PATH'), norepo=True)
 def debugpeer(ui, path):
@@ -2004,17 +2079,17 @@ def debugrebuildfncache(ui, repo):
 
 @command('debugrename',
     [('r', 'rev', '', _('revision to debug'), _('REV'))],
-    _('[-r REV] FILE'))
-def debugrename(ui, repo, file1, *pats, **opts):
+    _('[-r REV] [FILE]...'))
+def debugrename(ui, repo, *pats, **opts):
     """dump rename information"""
 
     opts = pycompat.byteskwargs(opts)
     ctx = scmutil.revsingle(repo, opts.get('rev'))
-    m = scmutil.match(ctx, (file1,) + pats, opts)
+    m = scmutil.match(ctx, pats, opts)
     for abs in ctx.walk(m):
         fctx = ctx[abs]
         o = fctx.filelog().renamed(fctx.filenode())
-        rel = m.rel(abs)
+        rel = repo.pathto(abs)
         if o:
             ui.write(_("%s renamed from %s:%s\n") % (rel, o[0], hex(o[1])))
         else:
@@ -2468,15 +2543,15 @@ def debugrevspec(ui, repo, expr, **opts):
         ui.write(('+++ optimized\n'), label='diff.file_b')
         sm = difflib.SequenceMatcher(None, arevs, brevs)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
-            if tag in ('delete', 'replace'):
+            if tag in (r'delete', r'replace'):
                 for c in arevs[alo:ahi]:
-                    ui.write('-%s\n' % c, label='diff.deleted')
-            if tag in ('insert', 'replace'):
+                    ui.write('-%d\n' % c, label='diff.deleted')
+            if tag in (r'insert', r'replace'):
                 for c in brevs[blo:bhi]:
-                    ui.write('+%s\n' % c, label='diff.inserted')
-            if tag == 'equal':
+                    ui.write('+%d\n' % c, label='diff.inserted')
+            if tag == r'equal':
                 for c in arevs[alo:ahi]:
-                    ui.write(' %s\n' % c)
+                    ui.write(' %d\n' % c)
         return 1
 
     func = revset.makematcher(tree)
@@ -2569,7 +2644,6 @@ def debugssl(ui, repo, source=None, **opts):
 
     source, branches = hg.parseurl(ui.expandpath(source))
     url = util.url(source)
-    addr = None
 
     defaultport = {'https': 443, 'ssh': 22}
     if url.scheme in defaultport:
@@ -2791,9 +2865,9 @@ def debugwalk(ui, repo, *pats, **opts):
         f = lambda fn: util.normpath(fn)
     fmt = 'f  %%-%ds  %%-%ds  %%s' % (
         max([len(abs) for abs in items]),
-        max([len(m.rel(abs)) for abs in items]))
+        max([len(repo.pathto(abs)) for abs in items]))
     for abs in items:
-        line = fmt % (abs, f(m.rel(abs)), m.exact(abs) and 'exact' or '')
+        line = fmt % (abs, f(repo.pathto(abs)), m.exact(abs) and 'exact' or '')
         ui.write("%s\n" % line.rstrip())
 
 @command('debugwhyunstable', [], _('REV'))

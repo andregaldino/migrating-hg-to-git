@@ -61,7 +61,6 @@ from . import (
     state as statemod,
     streamclone,
     tags as tagsmod,
-    templatekw,
     ui as uimod,
     util,
     wireprotoserver,
@@ -180,7 +179,8 @@ def add(ui, repo, *pats, **opts):
     """
 
     m = scmutil.match(repo[None], pats, pycompat.byteskwargs(opts))
-    rejected = cmdutil.add(ui, repo, m, "", False, **opts)
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
+    rejected = cmdutil.add(ui, repo, m, "", uipathfn, False, **opts)
     return rejected and 1 or 0
 
 @command('addremove',
@@ -254,7 +254,9 @@ def addremove(ui, repo, *pats, **opts):
     if not opts.get('similarity'):
         opts['similarity'] = '100'
     matcher = scmutil.match(repo[None], pats, opts)
-    return scmutil.addremove(repo, matcher, "", opts)
+    relative = scmutil.anypats(pats, opts)
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=relative)
+    return scmutil.addremove(repo, matcher, "", uipathfn, opts)
 
 @command('annotate|blame',
     [('r', 'rev', '', _('annotate the specified revision'), _('REV')),
@@ -407,12 +409,13 @@ def annotate(ui, repo, *pats, **opts):
     if skiprevs:
         skiprevs = scmutil.revrange(repo, skiprevs)
 
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     for abs in ctx.walk(m):
         fctx = ctx[abs]
         rootfm.startitem()
         rootfm.data(path=abs)
         if not opts.get('text') and fctx.isbinary():
-            rootfm.plain(_("%s: binary file\n") % m.rel(abs))
+            rootfm.plain(_("%s: binary file\n") % uipathfn(abs))
             continue
 
         fm = rootfm.nested('lines', tmpl='{rev}: {line}')
@@ -1102,7 +1105,7 @@ def branch(ui, repo, label=None, **opts):
 
     with repo.wlock():
         if opts.get('clean'):
-            label = repo[None].p1().branch()
+            label = repo['.'].branch()
             repo.dirstate.setbranch(label)
             ui.status(_('reset working directory to branch %s\n') % label)
         elif label:
@@ -1122,11 +1125,11 @@ def branch(ui, repo, label=None, **opts):
             ui.status(_('marked working directory as branch %s\n') % label)
 
             # find any open named branches aside from default
-            others = [n for n, h, t, c in repo.branchmap().iterbranches()
-                      if n != "default" and not c]
-            if not others:
-                ui.status(_('(branches are permanent and global, '
-                            'did you want a bookmark?)\n'))
+            for n, h, t, c in repo.branchmap().iterbranches():
+                if n != "default" and not c:
+                    return 0
+            ui.status(_('(branches are permanent and global, '
+                        'did you want a bookmark?)\n'))
 
 @command('branches',
     [('a', 'active', False,
@@ -1672,8 +1675,8 @@ def _docommit(ui, repo, *pats, **opts):
         if not bheads:
             raise error.Abort(_('can only close branch heads'))
         elif opts.get('amend'):
-            if repo[None].parents()[0].p1().branch() != branch and \
-                    repo[None].parents()[0].p2().branch() != branch:
+            if (repo['.'].p1().branch() != branch and
+                repo['.'].p2().branch() != branch):
                 raise error.Abort(_('can only close branch heads'))
 
     if opts.get('amend'):
@@ -2209,8 +2212,10 @@ def files(ui, repo, *pats, **opts):
 
     m = scmutil.match(ctx, pats, opts)
     ui.pager('files')
+    uipathfn = scmutil.getuipathfn(ctx.repo(), legacyrelativevalue=True)
     with ui.formatter('files', opts) as fm:
-        return cmdutil.files(ui, ctx, m, fm, fmt, opts.get('subrepos'))
+        return cmdutil.files(ui, ctx, m, uipathfn, fm, fmt,
+                             opts.get('subrepos'))
 
 @command(
     'forget',
@@ -2254,7 +2259,8 @@ def forget(ui, repo, *pats, **opts):
 
     m = scmutil.match(repo[None], pats, opts)
     dryrun, interactive = opts.get('dry_run'), opts.get('interactive')
-    rejected = cmdutil.forget(ui, repo, m, prefix="",
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
+    rejected = cmdutil.forget(ui, repo, m, prefix="", uipathfn=uipathfn,
                               explicitonly=False, dryrun=dryrun,
                               interactive=interactive)[0]
     return rejected and 1 or 0
@@ -2633,7 +2639,6 @@ def _abortgraft(ui, repo, graftstate):
         raise error.Abort(_("cannot abort using an old graftstate"))
 
     # changeset from which graft operation was started
-    startctx = None
     if len(newnodes) > 0:
         startctx = repo[newnodes[0]].p1()
     else:
@@ -2849,6 +2854,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                 for i in pycompat.xrange(blo, bhi):
                     yield ('+', b[i])
 
+    uipathfn = scmutil.getuipathfn(repo)
     def display(fm, fn, ctx, pstates, states):
         rev = scmutil.intrev(ctx)
         if fm.isplain():
@@ -2868,7 +2874,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             except error.WdirUnsupported:
                 return ctx[fn].isbinary()
 
-        fieldnamemap = {'filename': 'path', 'linenumber': 'lineno'}
+        fieldnamemap = {'linenumber': 'lineno'}
         if diff:
             iter = difflinestates(pstates, states)
         else:
@@ -2876,27 +2882,29 @@ def grep(ui, repo, pattern, *pats, **opts):
         for change, l in iter:
             fm.startitem()
             fm.context(ctx=ctx)
-            fm.data(node=fm.hexfunc(scmutil.binnode(ctx)))
+            fm.data(node=fm.hexfunc(scmutil.binnode(ctx)), path=fn)
+            fm.plain(uipathfn(fn), label='grep.filename')
 
             cols = [
-                ('filename', '%s', fn, True),
-                ('rev', '%d', rev, not plaingrep),
-                ('linenumber', '%d', l.linenum, opts.get('line_number')),
+                ('rev', '%d', rev, not plaingrep, ''),
+                ('linenumber', '%d', l.linenum, opts.get('line_number'), ''),
             ]
             if diff:
-                cols.append(('change', '%s', change, True))
+                cols.append(
+                    ('change', '%s', change, True,
+                     'grep.inserted ' if change == '+' else 'grep.deleted ')
+                )
             cols.extend([
-                ('user', '%s', formatuser(ctx.user()), opts.get('user')),
+                ('user', '%s', formatuser(ctx.user()), opts.get('user'), ''),
                 ('date', '%s', fm.formatdate(ctx.date(), datefmt),
-                 opts.get('date')),
+                 opts.get('date'), ''),
             ])
-            lastcol = next(
-                name for name, fmt, data, cond in reversed(cols) if cond)
-            for name, fmt, data, cond in cols:
-                field = fieldnamemap.get(name, name)
-                fm.condwrite(cond, field, fmt, data, label='grep.%s' % name)
-                if cond and name != lastcol:
+            for name, fmt, data, cond, extra_label in cols:
+                if cond:
                     fm.plain(sep, label='grep.sep')
+                field = fieldnamemap.get(name, name)
+                label = extra_label + ('grep.%s' % name)
+                fm.condwrite(cond, field, fmt, data, label=label)
             if not opts.get('files_with_matches'):
                 fm.plain(sep, label='grep.sep')
                 if not opts.get('text') and binary():
@@ -2926,12 +2934,13 @@ def grep(ui, repo, pattern, *pats, **opts):
             fm.data(matched=False)
         fm.end()
 
-    skip = {}
+    skip = set()
     revfiles = {}
     match = scmutil.match(repo[None], pats, opts)
     found = False
     follow = opts.get('follow')
 
+    getrenamed = scmutil.getrenamedfn(repo)
     def prep(ctx, fns):
         rev = ctx.rev()
         pctx = ctx.p1()
@@ -2945,16 +2954,15 @@ def grep(ui, repo, pattern, *pats, **opts):
                 fnode = ctx.filenode(fn)
             except error.LookupError:
                 continue
-            try:
-                copied = flog.renamed(fnode)
-            except error.WdirUnsupported:
-                copied = ctx[fn].renamed()
-            copy = follow and copied and copied[0]
-            if copy:
-                copies.setdefault(rev, {})[fn] = copy
-            if fn in skip:
+
+            copy = None
+            if follow:
+                copy = getrenamed(fn, rev)
                 if copy:
-                    skip[copy] = True
+                    copies.setdefault(rev, {})[fn] = copy
+                    if fn in skip:
+                        skip.add(copy)
+            if fn in skip:
                 continue
             files.append(fn)
 
@@ -2983,16 +2991,16 @@ def grep(ui, repo, pattern, *pats, **opts):
             copy = copies.get(rev, {}).get(fn)
             if fn in skip:
                 if copy:
-                    skip[copy] = True
+                    skip.add(copy)
                 continue
             pstates = matches.get(parent, {}).get(copy or fn, [])
             if pstates or states:
                 r = display(fm, fn, ctx, pstates, states)
                 found = found or r
                 if r and not diff and not all_files:
-                    skip[fn] = True
+                    skip.add(fn)
                     if copy:
-                        skip[copy] = True
+                        skip.add(copy)
         del revfiles[rev]
         # We will keep the matches dict for the duration of the window
         # clear the matches dict once the window is over
@@ -3488,7 +3496,7 @@ def import_(ui, repo, patch1=None, *patches, **opts):
                 else:
                     patchurl = os.path.join(base, patchurl)
                     ui.status(_('applying %s\n') % patchurl)
-                    patchfile = hg.openpath(ui, patchurl)
+                    patchfile = hg.openpath(ui, patchurl, sendaccept=False)
 
                 haspatch = False
                 for hunk in patch.split(patchfile):
@@ -3683,11 +3691,12 @@ def locate(ui, repo, *pats, **opts):
         filesgen = sorted(repo.dirstate.matches(m))
     else:
         filesgen = ctx.matches(m)
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=bool(pats))
     for abs in filesgen:
         if opts.get('fullpath'):
             ui.write(repo.wjoin(abs), end)
         else:
-            ui.write(((pats and m.rel(abs)) or abs), end)
+            ui.write(uipathfn(abs), end)
         ret = 0
 
     return ret
@@ -3872,7 +3881,7 @@ def log(ui, repo, *pats, **opts):
         endrev = None
         if revs:
             endrev = revs.max() + 1
-        getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
+        getrenamed = scmutil.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts, differ,
@@ -4361,7 +4370,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
             msg = _("not updating: %s") % stringutil.forcebytestr(inst)
             hint = inst.hint
             raise error.UpdateAbort(msg, hint=hint)
-    if modheads > 1:
+    if modheads is not None and modheads > 1:
         currentbranchheads = len(repo.branchheads())
         if currentbranchheads == modheads:
             ui.status(_("(run 'hg heads' to see heads, 'hg merge' to merge)\n"))
@@ -4479,7 +4488,7 @@ def pull(ui, repo, source="default", **opts):
             brev = None
 
             if checkout:
-                checkout = repo.changelog.rev(checkout)
+                checkout = repo.unfiltered().changelog.rev(checkout)
 
                 # order below depends on implementation of
                 # hg.addbranchrevs(). opts['bookmark'] is ignored,
@@ -4494,7 +4503,10 @@ def pull(ui, repo, source="default", **opts):
             try:
                 ret = postincoming(ui, repo, modheads, opts.get('update'),
                                    checkout, brev)
-
+            except error.FilteredRepoLookupError as exc:
+                msg = _('cannot update to target: %s') % exc.args[0]
+                exc.args = (msg,) + exc.args[1:]
+                raise
             finally:
                 del repo._subtoppath
 
@@ -4714,7 +4726,8 @@ def remove(ui, repo, *pats, **opts):
 
     m = scmutil.match(repo[None], pats, opts)
     subrepos = opts.get('subrepos')
-    return cmdutil.remove(ui, repo, m, "", after, force, subrepos,
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
+    return cmdutil.remove(ui, repo, m, "", uipathfn, after, force, subrepos,
                           dryrun=dryrun)
 
 @command('rename|move|mv',
@@ -4809,8 +4822,8 @@ def resolve(ui, repo, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     confirm = ui.configbool('commands', 'resolve.confirm')
     flaglist = 'all mark unmark list no_status re_merge'.split()
-    all, mark, unmark, show, nostatus, remerge = \
-        [opts.get(o) for o in flaglist]
+    all, mark, unmark, show, nostatus, remerge = [
+        opts.get(o) for o in flaglist]
 
     actioncount = len(list(filter(None, [show, mark, unmark, remerge])))
     if actioncount > 1:
@@ -4839,6 +4852,8 @@ def resolve(ui, repo, *pats, **opts):
                                  b'$$ &Yes $$ &No')):
                 raise error.Abort(_('user quit'))
 
+    uipathfn = scmutil.getuipathfn(repo)
+
     if show:
         ui.pager('resolve')
         fm = ui.formatter('resolve', opts)
@@ -4866,7 +4881,8 @@ def resolve(ui, repo, *pats, **opts):
             fm.startitem()
             fm.context(ctx=wctx)
             fm.condwrite(not nostatus, 'mergestatus', '%s ', key, label=label)
-            fm.write('path', '%s\n', f, label=label)
+            fm.data(path=f)
+            fm.plain('%s\n' % uipathfn(f), label=label)
         fm.end()
         return 0
 
@@ -4912,11 +4928,11 @@ def resolve(ui, repo, *pats, **opts):
                 if mark:
                     if exact:
                         ui.warn(_('not marking %s as it is driver-resolved\n')
-                                % f)
+                                % uipathfn(f))
                 elif unmark:
                     if exact:
                         ui.warn(_('not unmarking %s as it is driver-resolved\n')
-                                % f)
+                                % uipathfn(f))
                 else:
                     runconclude = True
                 continue
@@ -4930,14 +4946,14 @@ def resolve(ui, repo, *pats, **opts):
                     ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED_PATH)
                 elif ms[f] == mergemod.MERGE_RECORD_UNRESOLVED_PATH:
                     ui.warn(_('%s: path conflict must be resolved manually\n')
-                            % f)
+                            % uipathfn(f))
                 continue
 
             if mark:
                 if markcheck:
                     fdata = repo.wvfs.tryread(f)
-                    if filemerge.hasconflictmarkers(fdata) and \
-                        ms[f] != mergemod.MERGE_RECORD_RESOLVED:
+                    if (filemerge.hasconflictmarkers(fdata) and
+                        ms[f] != mergemod.MERGE_RECORD_RESOLVED):
                         hasconflictmarkers.append(f)
                 ms.mark(f, mergemod.MERGE_RECORD_RESOLVED)
             elif unmark:
@@ -4968,14 +4984,15 @@ def resolve(ui, repo, *pats, **opts):
                 if complete:
                     try:
                         util.rename(a + ".resolve",
-                                    scmutil.origpath(ui, repo, a))
+                                    scmutil.backuppath(ui, repo, f))
                     except OSError as inst:
                         if inst.errno != errno.ENOENT:
                             raise
 
         if hasconflictmarkers:
             ui.warn(_('warning: the following files still have conflict '
-                      'markers:\n  ') + '\n  '.join(hasconflictmarkers) + '\n')
+                      'markers:\n') + ''.join('  ' + uipathfn(f) + '\n'
+                                              for f in hasconflictmarkers))
             if markcheck == 'abort' and not all and not pats:
                 raise error.Abort(_('conflict markers detected'),
                                   hint=_('use --all to mark anyway'))
@@ -4994,7 +5011,7 @@ def resolve(ui, repo, *pats, **opts):
             # replace filemerge's .orig file with our resolve file
             a = repo.wjoin(f)
             try:
-                util.rename(a + ".resolve", scmutil.origpath(ui, repo, a))
+                util.rename(a + ".resolve", scmutil.backuppath(ui, repo, f))
             except OSError as inst:
                 if inst.errno != errno.ENOENT:
                     raise
@@ -5413,10 +5430,11 @@ def status(ui, repo, *pats, **opts):
         repo = scmutil.unhidehashlikerevs(repo, revs, 'nowarn')
         ctx1, ctx2 = scmutil.revpair(repo, revs)
 
-    if pats or ui.configbool('commands', 'status.relative'):
-        cwd = repo.getcwd()
-    else:
-        cwd = ''
+    forcerelativevalue = None
+    if ui.hasconfig('commands', 'status.relative'):
+        forcerelativevalue = ui.configbool('commands', 'status.relative')
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=bool(pats),
+                                   forcerelativevalue=forcerelativevalue)
 
     if opts.get('print0'):
         end = '\0'
@@ -5467,10 +5485,10 @@ def status(ui, repo, *pats, **opts):
                 fm.context(ctx=ctx2)
                 fm.data(path=f)
                 fm.condwrite(showchar, 'status', '%s ', char, label=label)
-                fm.plain(fmt % repo.pathto(f, cwd), label=label)
+                fm.plain(fmt % uipathfn(f), label=label)
                 if f in copy:
                     fm.data(source=copy[f])
-                    fm.plain(('  %s' + end) % repo.pathto(copy[f], cwd),
+                    fm.plain(('  %s' + end) % uipathfn(copy[f]),
                              label='status.copied')
 
     if ((ui.verbose or ui.configbool('commands', 'status.verbose'))
@@ -5503,7 +5521,6 @@ def summary(ui, repo, **opts):
     pnode = parents[0].node()
     marks = []
 
-    ms = None
     try:
         ms = mergemod.mergestate.read(repo)
     except error.UnsupportedMergeRecords as e:
@@ -5830,6 +5847,10 @@ def tag(ui, repo, name1, *names, **opts):
                 expectedtype = 'global'
 
             for n in names:
+                if repo.tagtype(n) == 'global':
+                    alltags = tagsmod.findglobaltags(ui, repo)
+                    if alltags[n][0] == nullid:
+                        raise error.Abort(_("tag '%s' is already removed") % n)
                 if not repo.tagtype(n):
                     raise error.Abort(_("tag '%s' does not exist") % n)
                 if repo.tagtype(n) != expectedtype:
@@ -5908,7 +5929,6 @@ def tags(ui, repo, **opts):
     ui.pager('tags')
     fm = ui.formatter('tags', opts)
     hexfunc = fm.hexfunc
-    tagtype = ""
 
     for t, n in reversed(repo.tagslist()):
         hn = hexfunc(n)

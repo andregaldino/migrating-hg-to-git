@@ -130,13 +130,28 @@ unshelve should keep a copy of unknown files
   e
   $ cat e.orig
   z
+  $ rm e.orig
 
+restores backup of unknown file to right directory
+
+  $ hg shelve
+  shelved as default
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo z > e
+  $ mkdir dir
+  $ hg unshelve --cwd dir
+  unshelving change 'default'
+  $ rmdir dir
+  $ cat e
+  e
+  $ cat e.orig
+  z
 
 unshelve and conflicts with tracked and untracked files
 
  preparing:
 
-  $ rm *.orig
+  $ rm -f *.orig
   $ hg ci -qm 'commit stuff'
   $ hg phase -p null:
 

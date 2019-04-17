@@ -194,8 +194,8 @@ def unsharejournal(orig, ui, repo, repopath):
     return orig(ui, repo, repopath)
 
 class journalentry(collections.namedtuple(
-        u'journalentry',
-        u'timestamp user command namespace name oldhashes newhashes')):
+        r'journalentry',
+        r'timestamp user command namespace name oldhashes newhashes')):
     """Individual journal entry
 
     * timestamp: a mercurial (time, timezone) tuple
@@ -348,7 +348,6 @@ class journalstorage(object):
 
     def _write(self, vfs, entry):
         with self.jlock(vfs):
-            version = None
             # open file in amend mode to ensure it is created if missing
             with vfs('namejournal', mode='a+b') as f:
                 f.seek(0, os.SEEK_SET)

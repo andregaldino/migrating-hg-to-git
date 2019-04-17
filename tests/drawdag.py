@@ -275,7 +275,7 @@ class simplefilectx(object):
     def path(self):
         return self._path
 
-    def renamed(self):
+    def copysource(self):
         return None
 
     def flags(self):
@@ -322,7 +322,7 @@ def _walkgraph(edges):
                     v.remove(leaf)
 
 def _getcomments(text):
-    """
+    r"""
     >>> [pycompat.sysstr(s) for s in _getcomments(br'''
     ...        G
     ...        |
@@ -341,7 +341,7 @@ def _getcomments(text):
 
 @command(b'debugdrawdag', [])
 def debugdrawdag(ui, repo, **opts):
-    """read an ASCII graph from stdin and create changesets
+    r"""read an ASCII graph from stdin and create changesets
 
     The ASCII graph is like what :hg:`log -G` outputs, with each `o` replaced
     to the name of the node. The command will create dummy changesets and local

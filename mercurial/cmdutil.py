@@ -180,8 +180,8 @@ def ishunk(x):
 def newandmodified(chunks, originalchunks):
     newlyaddedandmodifiedfiles = set()
     for chunk in chunks:
-        if ishunk(chunk) and chunk.header.isnewfile() and chunk not in \
-            originalchunks:
+        if (ishunk(chunk) and chunk.header.isnewfile() and chunk not in
+            originalchunks):
             newlyaddedandmodifiedfiles.add(chunk.header.filename())
     return newlyaddedandmodifiedfiles
 
@@ -201,7 +201,8 @@ def setupwrapcolorwrite(ui):
     setattr(ui, 'write', wrap)
     return oldwrite
 
-def filterchunks(ui, originalhunks, usecurses, testfile, operation=None):
+def filterchunks(ui, originalhunks, usecurses, testfile, match,
+                 operation=None):
     try:
         if usecurses:
             if testfile:
@@ -216,9 +217,9 @@ def filterchunks(ui, originalhunks, usecurses, testfile, operation=None):
         ui.warn('%s\n' % e.message)
         ui.warn(_('falling back to text mode\n'))
 
-    return patch.filterpatch(ui, originalhunks, operation)
+    return patch.filterpatch(ui, originalhunks, match, operation)
 
-def recordfilter(ui, originalhunks, operation=None):
+def recordfilter(ui, originalhunks, match, operation=None):
     """ Prompts the user to filter the originalhunks and return a list of
     selected hunks.
     *operation* is used for to build ui messages to indicate the user what
@@ -230,7 +231,7 @@ def recordfilter(ui, originalhunks, operation=None):
     oldwrite = setupwrapcolorwrite(ui)
     try:
         newchunks, newopts = filterchunks(ui, originalhunks, usecurses,
-                                          testfile, operation)
+                                          testfile, match, operation)
     finally:
         ui.write = oldwrite
     return newchunks, newopts
@@ -304,16 +305,19 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
 
         if not force:
             repo.checkcommitpatterns(wctx, vdirs, match, status, fail)
-        diffopts = patch.difffeatureopts(ui, opts=opts, whitespace=True)
+        diffopts = patch.difffeatureopts(ui, opts=opts, whitespace=True,
+                                         section='commands',
+                                         configprefix='commit.interactive.')
         diffopts.nodates = True
         diffopts.git = True
         diffopts.showfunc = True
         originaldiff = patch.diff(repo, changes=status, opts=diffopts)
         originalchunks = patch.parsepatch(originaldiff)
+        match = scmutil.match(repo[None], pats)
 
         # 1. filter patch, since we are intending to apply subset of it
         try:
-            chunks, newopts = filterfn(ui, originalchunks)
+            chunks, newopts = filterfn(ui, originalchunks, match)
         except error.PatchError as err:
             raise error.Abort(_('error parsing patch: %s') % err)
         opts.update(newopts)
@@ -342,8 +346,8 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         if backupall:
             tobackup = changed
         else:
-            tobackup = [f for f in newfiles if f in modified or f in \
-                    newlyaddedandmodifiedfiles]
+            tobackup = [f for f in newfiles if f in modified or f in
+                        newlyaddedandmodifiedfiles]
         backups = {}
         if tobackup:
             backupdir = repo.vfs.join('record-backups')
@@ -456,7 +460,7 @@ class dirnode(object):
 
     def __init__(self, dirpath):
         self.path = dirpath
-        self.statuses = set([])
+        self.statuses = set()
         self.files = []
         self.subdirs = {}
 
@@ -629,11 +633,9 @@ def _unshelvemsg():
     return _helpmessage('hg unshelve --continue', 'hg unshelve --abort')
 
 def _graftmsg():
-    # tweakdefaults requires `update` to have a rev hence the `.`
     return _helpmessage('hg graft --continue', 'hg graft --abort')
 
 def _mergemsg():
-    # tweakdefaults requires `update` to have a rev hence the `.`
     return _helpmessage('hg commit', 'hg merge --abort')
 
 def _bisectmsg():
@@ -1157,6 +1159,7 @@ def copy(ui, repo, pats, opts, rename=False):
     dryrun = opts.get("dry_run")
     wctx = repo[None]
 
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     def walkpat(pat):
         srcs = []
         if after:
@@ -1166,7 +1169,7 @@ def copy(ui, repo, pats, opts, rename=False):
         m = scmutil.match(wctx, [pat], opts, globbed=True)
         for abs in wctx.walk(m):
             state = repo.dirstate[abs]
-            rel = m.rel(abs)
+            rel = uipathfn(abs)
             exact = m.exact(abs)
             if state in badstates:
                 if exact and state == '?':
@@ -1273,10 +1276,6 @@ def copy(ui, repo, pats, opts, rename=False):
                 else:
                     ui.warn(_('%s: cannot copy - %s\n') %
                             (relsrc, encoding.strtolocal(inst.strerror)))
-                    if rename:
-                        hint = _("('hg rename --after' to record the rename)\n")
-                    else:
-                        hint = _("('hg copy --after' to record the copy)\n")
                     return True # report a failure
 
         if ui.verbose or not exact:
@@ -1787,7 +1786,7 @@ def walkfilerevs(repo, match, follow, revs, fncache):
     wanted = set()
     copies = []
     minrev, maxrev = min(revs), max(revs)
-    def filerevgen(filelog, last):
+    def filerevs(filelog, last):
         """
         Only files, no patterns.  Check the history of each file.
 
@@ -1850,7 +1849,7 @@ def walkfilerevs(repo, match, follow, revs, fncache):
         ancestors = {filelog.linkrev(last)}
 
         # iterate from latest to oldest revision
-        for rev, flparentlinkrevs, copied in filerevgen(filelog, last):
+        for rev, flparentlinkrevs, copied in filerevs(filelog, last):
             if not follow:
                 if rev > maxrev:
                     continue
@@ -1986,7 +1985,10 @@ def walkchangerevs(repo, match, opts, prepare):
                 else:
                     self.revs.discard(value)
                     ctx = change(value)
-                    matches = [f for f in ctx.files() if match(f)]
+                    if allfiles:
+                        matches = list(ctx.manifest().walk(match))
+                    else:
+                        matches = [f for f in ctx.files() if match(f)]
                     if matches:
                         fncache[value] = matches
                         self.set.add(value)
@@ -2053,8 +2055,7 @@ def walkchangerevs(repo, match, opts, prepare):
 
     return iterate()
 
-def add(ui, repo, match, prefix, explicitonly, **opts):
-    join = lambda f: os.path.join(prefix, f)
+def add(ui, repo, match, prefix, uipathfn, explicitonly, **opts):
     bad = []
 
     badfn = lambda x, y: bad.append(x) or match.bad(x, y)
@@ -2078,20 +2079,24 @@ def add(ui, repo, match, prefix, explicitonly, **opts):
                 cca(f)
             names.append(f)
             if ui.verbose or not exact:
-                ui.status(_('adding %s\n') % match.rel(f),
+                ui.status(_('adding %s\n') % uipathfn(f),
                           label='ui.addremove.added')
 
     for subpath in sorted(wctx.substate):
         sub = wctx.sub(subpath)
         try:
             submatch = matchmod.subdirmatcher(subpath, match)
+            subprefix = repo.wvfs.reljoin(prefix, subpath)
+            subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
             if opts.get(r'subrepos'):
-                bad.extend(sub.add(ui, submatch, prefix, False, **opts))
+                bad.extend(sub.add(ui, submatch, subprefix, subuipathfn, False,
+                                   **opts))
             else:
-                bad.extend(sub.add(ui, submatch, prefix, True, **opts))
+                bad.extend(sub.add(ui, submatch, subprefix, subuipathfn, True,
+                                   **opts))
         except error.LookupError:
             ui.status(_("skipping missing subrepository: %s\n")
-                           % join(subpath))
+                           % uipathfn(subpath))
 
     if not opts.get(r'dry_run'):
         rejected = wctx.add(names, prefix)
@@ -2107,10 +2112,10 @@ def addwebdirpath(repo, serverpath, webconf):
         for subpath in ctx.substate:
             ctx.sub(subpath).addwebdirpath(serverpath, webconf)
 
-def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
+def forget(ui, repo, match, prefix, uipathfn, explicitonly, dryrun,
+           interactive):
     if dryrun and interactive:
         raise error.Abort(_("cannot specify both --dry-run and --interactive"))
-    join = lambda f: os.path.join(prefix, f)
     bad = []
     badfn = lambda x, y: bad.append(x) or match.bad(x, y)
     wctx = repo[None]
@@ -2123,15 +2128,18 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
 
     for subpath in sorted(wctx.substate):
         sub = wctx.sub(subpath)
+        submatch = matchmod.subdirmatcher(subpath, match)
+        subprefix = repo.wvfs.reljoin(prefix, subpath)
+        subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
         try:
-            submatch = matchmod.subdirmatcher(subpath, match)
-            subbad, subforgot = sub.forget(submatch, prefix, dryrun=dryrun,
+            subbad, subforgot = sub.forget(submatch, subprefix, subuipathfn,
+                                           dryrun=dryrun,
                                            interactive=interactive)
             bad.extend([subpath + '/' + f for f in subbad])
             forgot.extend([subpath + '/' + f for f in subforgot])
         except error.LookupError:
             ui.status(_("skipping missing subrepository: %s\n")
-                           % join(subpath))
+                           % uipathfn(subpath))
 
     if not explicitonly:
         for f in match.files():
@@ -2146,7 +2154,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
                             continue
                         ui.warn(_('not removing %s: '
                                   'file is already untracked\n')
-                                % match.rel(f))
+                                % uipathfn(f))
                     bad.append(f)
 
     if interactive:
@@ -2157,13 +2165,14 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
                       '$$ Include &all remaining files'
                       '$$ &? (display help)')
         for filename in forget[:]:
-            r = ui.promptchoice(_('forget %s %s') % (filename, responses))
+            r = ui.promptchoice(_('forget %s %s') %
+                                (uipathfn(filename), responses))
             if r == 4: # ?
                 while r == 4:
                     for c, t in ui.extractchoices(responses)[1]:
                         ui.write('%s - %s\n' % (c, encoding.lower(t)))
-                    r = ui.promptchoice(_('forget %s %s') % (filename,
-                                                                 responses))
+                    r = ui.promptchoice(_('forget %s %s') %
+                                        (uipathfn(filename), responses))
             if r == 0: # yes
                 continue
             elif r == 1: # no
@@ -2177,7 +2186,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
 
     for f in forget:
         if ui.verbose or not match.exact(f) or interactive:
-            ui.status(_('removing %s\n') % match.rel(f),
+            ui.status(_('removing %s\n') % uipathfn(f),
                       label='ui.addremove.removed')
 
     if not dryrun:
@@ -2186,7 +2195,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
         forgot.extend(f for f in forget if f not in rejected)
     return bad, forgot
 
-def files(ui, ctx, m, fm, fmt, subrepos):
+def files(ui, ctx, m, uipathfn, fm, fmt, subrepos):
     ret = 1
 
     needsfctx = ui.verbose or {'size', 'flags'} & fm.datahint()
@@ -2197,25 +2206,27 @@ def files(ui, ctx, m, fm, fmt, subrepos):
             fc = ctx[f]
             fm.write('size flags', '% 10d % 1s ', fc.size(), fc.flags())
         fm.data(path=f)
-        fm.plain(fmt % m.rel(f))
+        fm.plain(fmt % uipathfn(f))
         ret = 0
 
     for subpath in sorted(ctx.substate):
         submatch = matchmod.subdirmatcher(subpath, m)
+        subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
         if (subrepos or m.exact(subpath) or any(submatch.files())):
             sub = ctx.sub(subpath)
             try:
                 recurse = m.exact(subpath) or subrepos
-                if sub.printfiles(ui, submatch, fm, fmt, recurse) == 0:
+                if sub.printfiles(ui, submatch, subuipathfn, fm, fmt,
+                                  recurse) == 0:
                     ret = 0
             except error.LookupError:
                 ui.status(_("skipping missing subrepository: %s\n")
-                               % m.abs(subpath))
+                               % uipathfn(subpath))
 
     return ret
 
-def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
-    join = lambda f: os.path.join(prefix, f)
+def remove(ui, repo, m, prefix, uipathfn, after, force, subrepos, dryrun,
+           warnings=None):
     ret = 0
     s = repo.status(match=m, clean=True)
     modified, added, deleted, clean = s[0], s[1], s[3], s[6]
@@ -2233,16 +2244,18 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                                unit=_('subrepos'))
     for subpath in subs:
         submatch = matchmod.subdirmatcher(subpath, m)
+        subprefix = repo.wvfs.reljoin(prefix, subpath)
+        subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
         if subrepos or m.exact(subpath) or any(submatch.files()):
             progress.increment()
             sub = wctx.sub(subpath)
             try:
-                if sub.removefiles(submatch, prefix, after, force, subrepos,
-                                   dryrun, warnings):
+                if sub.removefiles(submatch, subprefix, subuipathfn, after,
+                                   force, subrepos, dryrun, warnings):
                     ret = 1
             except error.LookupError:
                 warnings.append(_("skipping missing subrepository: %s\n")
-                               % join(subpath))
+                               % uipathfn(subpath))
     progress.complete()
 
     # warn about failure to delete explicit files/dirs
@@ -2266,10 +2279,10 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
         if repo.wvfs.exists(f):
             if repo.wvfs.isdir(f):
                 warnings.append(_('not removing %s: no tracked files\n')
-                        % m.rel(f))
+                        % uipathfn(f))
             else:
                 warnings.append(_('not removing %s: file is untracked\n')
-                        % m.rel(f))
+                        % uipathfn(f))
         # missing files will generate a warning elsewhere
         ret = 1
     progress.complete()
@@ -2285,7 +2298,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
             progress.increment()
             if ui.verbose or (f in files):
                 warnings.append(_('not removing %s: file still exists\n')
-                                % m.rel(f))
+                                % uipathfn(f))
             ret = 1
         progress.complete()
     else:
@@ -2296,12 +2309,12 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
         for f in modified:
             progress.increment()
             warnings.append(_('not removing %s: file is modified (use -f'
-                      ' to force removal)\n') % m.rel(f))
+                      ' to force removal)\n') % uipathfn(f))
             ret = 1
         for f in added:
             progress.increment()
             warnings.append(_("not removing %s: file has been marked for add"
-                      " (use 'hg forget' to undo add)\n") % m.rel(f))
+                      " (use 'hg forget' to undo add)\n") % uipathfn(f))
             ret = 1
         progress.complete()
 
@@ -2311,7 +2324,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
     for f in list:
         if ui.verbose or not m.exact(f):
             progress.increment()
-            ui.status(_('removing %s\n') % m.rel(f),
+            ui.status(_('removing %s\n') % uipathfn(f),
                       label='ui.addremove.removed')
     progress.complete()
 
@@ -2382,18 +2395,18 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         write(abs)
         err = 0
 
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     for subpath in sorted(ctx.substate):
         sub = ctx.sub(subpath)
         try:
             submatch = matchmod.subdirmatcher(subpath, matcher)
-
-            if not sub.cat(submatch, basefm, fntemplate,
-                           os.path.join(prefix, sub._path),
+            subprefix = os.path.join(prefix, subpath)
+            if not sub.cat(submatch, basefm, fntemplate, subprefix,
                            **pycompat.strkwargs(opts)):
                 err = 0
         except error.RepoLookupError:
-            ui.status(_("skipping missing subrepository: %s\n")
-                           % os.path.join(prefix, subpath))
+            ui.status(_("skipping missing subrepository: %s\n") %
+                      uipathfn(subpath))
 
     return err
 
@@ -2412,7 +2425,9 @@ def commit(ui, repo, commitfunc, pats, opts):
         dsguard = dirstateguard.dirstateguard(repo, 'commit')
     with dsguard or util.nullcontextmanager():
         if dsguard:
-            if scmutil.addremove(repo, matcher, "", opts) != 0:
+            relative = scmutil.anypats(pats, opts)
+            uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=relative)
+            if scmutil.addremove(repo, matcher, "", uipathfn, opts) != 0:
                 raise error.Abort(
                     _("failed to mark all new/missing files as added/removed"))
 
@@ -2482,16 +2497,17 @@ def amend(ui, repo, old, extra, pats, opts):
         if len(old.parents()) > 1:
             # ctx.files() isn't reliable for merges, so fall back to the
             # slower repo.status() method
-            files = set([fn for st in base.status(old)[:3]
-                         for fn in st])
+            files = {fn for st in base.status(old)[:3] for fn in st}
         else:
             files = set(old.files())
 
         # add/remove the files to the working copy if the "addremove" option
         # was specified.
         matcher = scmutil.match(wctx, pats, opts)
+        relative = scmutil.anypats(pats, opts)
+        uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=relative)
         if (opts.get('addremove')
-            and scmutil.addremove(repo, matcher, "", opts)):
+            and scmutil.addremove(repo, matcher, "", uipathfn, opts)):
             raise error.Abort(
                 _("failed to mark all new/missing files as added/removed"))
 
@@ -2548,7 +2564,7 @@ def amend(ui, repo, old, extra, pats, opts):
                                               fctx.path(), fctx.data(),
                                               islink='l' in flags,
                                               isexec='x' in flags,
-                                              copied=copied.get(path))
+                                              copysource=copied.get(path))
                     return mctx
                 except KeyError:
                     return None
@@ -2807,6 +2823,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
     # The mapping is in the form:
     #   <abs path in repo> -> (<path from CWD>, <exactly specified by matcher?>)
     names = {}
+    uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
 
     with repo.wlock():
         ## filling of the `names` mapping
@@ -2822,7 +2839,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
         if not m.always():
             matcher = matchmod.badmatch(m, lambda x, y: False)
             for abs in wctx.walk(matcher):
-                names[abs] = m.rel(abs), m.exact(abs)
+                names[abs] = m.exact(abs)
 
             # walk target manifest to fill `names`
 
@@ -2835,11 +2852,11 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                 for f in names:
                     if f.startswith(path_):
                         return
-                ui.warn("%s: %s\n" % (m.rel(path), msg))
+                ui.warn("%s: %s\n" % (uipathfn(path), msg))
 
             for abs in ctx.walk(matchmod.badmatch(m, badfn)):
                 if abs not in names:
-                    names[abs] = m.rel(abs), m.exact(abs)
+                    names[abs] = m.exact(abs)
 
             # Find status of all file in `names`.
             m = scmutil.matchfiles(repo, names)
@@ -2850,7 +2867,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             changes = repo.status(node1=node, match=m)
             for kind in changes:
                 for abs in kind:
-                    names[abs] = m.rel(abs), m.exact(abs)
+                    names[abs] = m.exact(abs)
 
             m = scmutil.matchfiles(repo, names)
 
@@ -2912,13 +2929,12 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             dsmodified -= mergeadd
 
         # if f is a rename, update `names` to also revert the source
-        cwd = repo.getcwd()
         for f in localchanges:
             src = repo.dirstate.copied(f)
             # XXX should we check for rename down to target node?
             if src and src not in names and repo.dirstate[src] == 'r':
                 dsremoved.add(src)
-                names[src] = (repo.pathto(src, cwd), True)
+                names[src] = True
 
         # determine the exact nature of the deleted changesets
         deladded = set(_deleted)
@@ -3025,7 +3041,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             (unknown,       actions['unknown'],  discard),
             )
 
-        for abs, (rel, exact) in sorted(names.items()):
+        for abs, exact in sorted(names.items()):
             # target file to be touch on disk (relative to cwd)
             target = repo.wjoin(abs)
             # search the entry in the dispatch table.
@@ -3042,19 +3058,21 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                         if dobackup == backupinteractive:
                             tobackup.add(abs)
                         elif (backup <= dobackup or wctx[abs].cmp(ctx[abs])):
-                            bakname = scmutil.origpath(ui, repo, rel)
+                            absbakname = scmutil.backuppath(ui, repo, abs)
+                            bakname = os.path.relpath(absbakname,
+                                                      start=repo.root)
                             ui.note(_('saving current version of %s as %s\n') %
-                                    (rel, bakname))
+                                    (uipathfn(abs), uipathfn(bakname)))
                             if not opts.get('dry_run'):
                                 if interactive:
-                                    util.copyfile(target, bakname)
+                                    util.copyfile(target, absbakname)
                                 else:
-                                    util.rename(target, bakname)
+                                    util.rename(target, absbakname)
                     if opts.get('dry_run'):
                         if ui.verbose or not exact:
-                            ui.status(msg % rel)
+                            ui.status(msg % uipathfn(abs))
                 elif exact:
-                    ui.warn(msg % rel)
+                    ui.warn(msg % uipathfn(abs))
                 break
 
         if not opts.get('dry_run'):
@@ -3065,8 +3083,9 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             prefetch(repo, [ctx.rev()],
                      matchfiles(repo,
                                 [f for sublist in oplist for f in sublist]))
-            _performrevert(repo, parents, ctx, names, actions, interactive,
-                           tobackup)
+            match = scmutil.match(repo[None], pats)
+            _performrevert(repo, parents, ctx, names, uipathfn, actions,
+                           match, interactive, tobackup)
 
         if targetsubs:
             # Revert the subrepos on the revert list
@@ -3078,8 +3097,8 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                     raise error.Abort("subrepository '%s' does not exist in %s!"
                                       % (sub, short(ctx.node())))
 
-def _performrevert(repo, parents, ctx, names, actions, interactive=False,
-                   tobackup=None):
+def _performrevert(repo, parents, ctx, names, uipathfn, actions,
+                   match, interactive=False, tobackup=None):
     """function that actually perform all the actions computed for revert
 
     This is an independent function to let extension to plug in and react to
@@ -3104,15 +3123,15 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
         repo.dirstate.remove(f)
 
     def prntstatusmsg(action, f):
-        rel, exact = names[f]
+        exact = names[f]
         if repo.ui.verbose or not exact:
-            repo.ui.status(actions[action][1] % rel)
+            repo.ui.status(actions[action][1] % uipathfn(f))
 
     audit_path = pathutil.pathauditor(repo.root, cached=True)
     for f in actions['forget'][0]:
         if interactive:
             choice = repo.ui.promptchoice(
-                _("forget added file %s (Yn)?$$ &Yes $$ &No") % f)
+                _("forget added file %s (Yn)?$$ &Yes $$ &No") % uipathfn(f))
             if choice == 0:
                 prntstatusmsg('forget', f)
                 repo.dirstate.drop(f)
@@ -3125,7 +3144,7 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
         audit_path(f)
         if interactive:
             choice = repo.ui.promptchoice(
-                _("remove added file %s (Yn)?$$ &Yes $$ &No") % f)
+                _("remove added file %s (Yn)?$$ &Yes $$ &No") % uipathfn(f))
             if choice == 0:
                 prntstatusmsg('remove', f)
                 doremove(f)
@@ -3154,25 +3173,30 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
         # Prompt the user for changes to revert
         torevert = [f for f in actions['revert'][0] if f not in excluded_files]
         m = scmutil.matchfiles(repo, torevert)
-        diffopts = patch.difffeatureopts(repo.ui, whitespace=True)
+        diffopts = patch.difffeatureopts(repo.ui, whitespace=True,
+                                         section='commands',
+                                         configprefix='revert.interactive.')
         diffopts.nodates = True
         diffopts.git = True
-        operation = 'discard'
-        reversehunks = True
-        if node != parent:
-            operation = 'apply'
-            reversehunks = False
-        if reversehunks:
-            diff = patch.diff(repo, ctx.node(), None, m, opts=diffopts)
-        else:
+        operation = 'apply'
+        if node == parent:
+            if repo.ui.configbool('experimental',
+                                  'revert.interactive.select-to-keep'):
+                operation = 'keep'
+            else:
+                operation = 'discard'
+
+        if operation == 'apply':
             diff = patch.diff(repo, None, ctx.node(), m, opts=diffopts)
+        else:
+            diff = patch.diff(repo, ctx.node(), None, m, opts=diffopts)
         originalchunks = patch.parsepatch(diff)
 
         try:
 
-            chunks, opts = recordfilter(repo.ui, originalchunks,
+            chunks, opts = recordfilter(repo.ui, originalchunks, match,
                                         operation=operation)
-            if reversehunks:
+            if operation == 'discard':
                 chunks = patch.reversehunks(chunks)
 
         except error.PatchError as err:
@@ -3186,15 +3210,20 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
         # chunks are serialized per file, but files aren't sorted
         for f in sorted(set(c.header.filename() for c in chunks if ishunk(c))):
             prntstatusmsg('revert', f)
+        files = set()
         for c in chunks:
             if ishunk(c):
                 abs = c.header.filename()
                 # Create a backup file only if this hunk should be backed up
                 if c.header.filename() in tobackup:
                     target = repo.wjoin(abs)
-                    bakname = scmutil.origpath(repo.ui, repo, m.rel(abs))
+                    bakname = scmutil.backuppath(repo.ui, repo, abs)
                     util.copyfile(target, bakname)
                     tobackup.remove(abs)
+                if abs not in files:
+                    files.add(abs)
+                    if operation == 'keep':
+                        checkout(abs)
             c.write(fp)
         dopatch = fp.tell()
         fp.seek(0)
@@ -3222,9 +3251,19 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
     if node == parent and p2 == nullid:
         normal = repo.dirstate.normal
     for f in actions['undelete'][0]:
-        prntstatusmsg('undelete', f)
-        checkout(f)
-        normal(f)
+        if interactive:
+            choice = repo.ui.promptchoice(
+                _("add back removed file %s (Yn)?$$ &Yes $$ &No") % f)
+            if choice == 0:
+                prntstatusmsg('undelete', f)
+                checkout(f)
+                normal(f)
+            else:
+                excluded_files.append(f)
+        else:
+            prntstatusmsg('undelete', f)
+            checkout(f)
+            normal(f)
 
     copied = copies.pathcopies(repo[parent], ctx)
 

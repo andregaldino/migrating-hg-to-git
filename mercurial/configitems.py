@@ -113,46 +113,49 @@ def getitemregister(configtable):
 
 coreconfigitem = getitemregister(coreitems)
 
+def _registerdiffopts(section, configprefix=''):
+    coreconfigitem(section, configprefix + 'nodates',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'showfunc',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'unified',
+        default=None,
+    )
+    coreconfigitem(section, configprefix + 'git',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'ignorews',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'ignorewsamount',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'ignoreblanklines',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'ignorewseol',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'nobinary',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'noprefix',
+        default=False,
+    )
+    coreconfigitem(section, configprefix + 'word-diff',
+        default=False,
+    )
+
 coreconfigitem('alias', '.*',
     default=dynamicdefault,
     generic=True,
 )
-coreconfigitem('annotate', 'nodates',
-    default=False,
-)
-coreconfigitem('annotate', 'showfunc',
-    default=False,
-)
-coreconfigitem('annotate', 'unified',
-    default=None,
-)
-coreconfigitem('annotate', 'git',
-    default=False,
-)
-coreconfigitem('annotate', 'ignorews',
-    default=False,
-)
-coreconfigitem('annotate', 'ignorewsamount',
-    default=False,
-)
-coreconfigitem('annotate', 'ignoreblanklines',
-    default=False,
-)
-coreconfigitem('annotate', 'ignorewseol',
-    default=False,
-)
-coreconfigitem('annotate', 'nobinary',
-    default=False,
-)
-coreconfigitem('annotate', 'noprefix',
-    default=False,
-)
-coreconfigitem('annotate', 'word-diff',
-    default=False,
-)
 coreconfigitem('auth', 'cookiefile',
     default=None,
 )
+_registerdiffopts(section='annotate')
 # bookmarks.pushing: internal hack for discovery
 coreconfigitem('bookmarks', 'pushing',
     default=list,
@@ -198,6 +201,7 @@ coreconfigitem('color', 'mode',
 coreconfigitem('color', 'pagermode',
     default=dynamicdefault,
 )
+_registerdiffopts(section='commands', configprefix='commit.interactive.')
 coreconfigitem('commands', 'grep.all-files',
     default=False,
 )
@@ -210,6 +214,7 @@ coreconfigitem('commands', 'resolve.explicit-re-merge',
 coreconfigitem('commands', 'resolve.mark-check',
     default='none',
 )
+_registerdiffopts(section='commands', configprefix='revert.interactive.')
 coreconfigitem('commands', 'show.aliasprefix',
     default=list,
 )
@@ -404,39 +409,7 @@ coreconfigitem('devel', 'debug.extensions',
 coreconfigitem('devel', 'debug.peer-request',
     default=False,
 )
-coreconfigitem('diff', 'nodates',
-    default=False,
-)
-coreconfigitem('diff', 'showfunc',
-    default=False,
-)
-coreconfigitem('diff', 'unified',
-    default=None,
-)
-coreconfigitem('diff', 'git',
-    default=False,
-)
-coreconfigitem('diff', 'ignorews',
-    default=False,
-)
-coreconfigitem('diff', 'ignorewsamount',
-    default=False,
-)
-coreconfigitem('diff', 'ignoreblanklines',
-    default=False,
-)
-coreconfigitem('diff', 'ignorewseol',
-    default=False,
-)
-coreconfigitem('diff', 'nobinary',
-    default=False,
-)
-coreconfigitem('diff', 'noprefix',
-    default=False,
-)
-coreconfigitem('diff', 'word-diff',
-    default=False,
-)
+_registerdiffopts(section='diff')
 coreconfigitem('email', 'bcc',
     default=None,
 )
@@ -497,6 +470,9 @@ coreconfigitem('experimental', 'bundlecomplevel.zstd',
 coreconfigitem('experimental', 'changegroup3',
     default=False,
 )
+coreconfigitem('experimental', 'cleanup-as-archived',
+    default=False,
+)
 coreconfigitem('experimental', 'clientcompressionengines',
     default=list,
 )
@@ -508,6 +484,12 @@ coreconfigitem('experimental', 'copytrace.movecandidateslimit',
 )
 coreconfigitem('experimental', 'copytrace.sourcecommitlimit',
     default=100,
+)
+coreconfigitem('experimental', 'copies.read-from',
+    default="filelog-only",
+)
+coreconfigitem('experimental', 'copies.write-to',
+    default='filelog-only',
 )
 coreconfigitem('experimental', 'crecordtest',
     default=None,
@@ -574,9 +556,6 @@ coreconfigitem('experimental', 'extendedheader.index',
 coreconfigitem('experimental', 'extendedheader.similarity',
     default=False,
 )
-coreconfigitem('experimental', 'format.compression',
-    default='zlib',
-)
 coreconfigitem('experimental', 'graphshorten',
     default=False,
 )
@@ -615,6 +594,9 @@ coreconfigitem('experimental', 'remotenames',
 )
 coreconfigitem('experimental', 'removeemptydirs',
     default=True,
+)
+coreconfigitem('experimental', 'revert.interactive.select-to-keep',
+    default=False,
 )
 coreconfigitem('experimental', 'revisions.prefixhexnode',
     default=False,
@@ -702,6 +684,10 @@ coreconfigitem('format', 'obsstore-version',
 coreconfigitem('format', 'sparse-revlog',
     default=True,
 )
+coreconfigitem('format', 'revlog-compression',
+    default='zlib',
+    alias=[('experimental', 'format.compression')]
+)
 coreconfigitem('format', 'usefncache',
     default=True,
 )
@@ -720,11 +706,11 @@ coreconfigitem('fsmonitor', 'warn_when_unused',
 coreconfigitem('fsmonitor', 'warn_update_file_count',
     default=50000,
 )
-coreconfigitem('help', 'hidden-command\..*',
+coreconfigitem('help', br'hidden-command\..*',
     default=False,
     generic=True,
 )
-coreconfigitem('help', 'hidden-topic\..*',
+coreconfigitem('help', br'hidden-topic\..*',
     default=False,
     generic=True,
 )
@@ -1004,6 +990,18 @@ coreconfigitem('storage', 'revlog.optimize-delta-parent-choice',
     default=True,
     alias=[('format', 'aggressivemergedeltas')],
 )
+coreconfigitem('storage', 'revlog.reuse-external-delta',
+    default=True,
+)
+coreconfigitem('storage', 'revlog.reuse-external-delta-parent',
+    default=None,
+)
+coreconfigitem('storage', 'revlog.zlib.level',
+    default=None,
+)
+coreconfigitem('storage', 'revlog.zstd.level',
+    default=None,
+)
 coreconfigitem('server', 'bookmarks-pushkey-compat',
     default=True,
 )
@@ -1056,6 +1054,9 @@ coreconfigitem('server', 'uncompressed',
 coreconfigitem('server', 'uncompressedallowsecret',
     default=False,
 )
+coreconfigitem('server', 'view',
+    default='served',
+)
 coreconfigitem('server', 'validate',
     default=False,
 )
@@ -1106,6 +1107,10 @@ coreconfigitem('subrepos', 'svn:allowed',
 )
 coreconfigitem('templates', '.*',
     default=None,
+    generic=True,
+)
+coreconfigitem('templateconfig', '.*',
+    default=dynamicdefault,
     generic=True,
 )
 coreconfigitem('trusted', 'groups',
@@ -1232,6 +1237,9 @@ coreconfigitem('ui', 'quiet',
 )
 coreconfigitem('ui', 'quietbookmarkmove',
     default=False,
+)
+coreconfigitem('ui', 'relative-paths',
+    default='legacy',
 )
 coreconfigitem('ui', 'remotecmd',
     default='hg',

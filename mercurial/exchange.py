@@ -297,7 +297,6 @@ def getbundlespec(ui, fh):
                                               'client'))
             elif part.type == 'stream2' and version is None:
                 # A stream2 part requires to be part of a v2 bundle
-                version = "v2"
                 requirements = urlreq.unquote(part.params['requirements'])
                 splitted = requirements.split()
                 params = bundle2._formatrequirementsparams(splitted)
@@ -557,18 +556,18 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
                % stringutil.forcebytestr(err))
         pushop.ui.debug(msg)
 
-    with wlock or util.nullcontextmanager(), \
-            lock or util.nullcontextmanager(), \
-            pushop.trmanager or util.nullcontextmanager():
-        pushop.repo.checkpush(pushop)
-        _checkpublish(pushop)
-        _pushdiscovery(pushop)
-        if not _forcebundle1(pushop):
-            _pushbundle2(pushop)
-        _pushchangeset(pushop)
-        _pushsyncphase(pushop)
-        _pushobsolete(pushop)
-        _pushbookmark(pushop)
+    with wlock or util.nullcontextmanager():
+        with lock or util.nullcontextmanager():
+            with pushop.trmanager or util.nullcontextmanager():
+                pushop.repo.checkpush(pushop)
+                _checkpublish(pushop)
+                _pushdiscovery(pushop)
+                if not _forcebundle1(pushop):
+                    _pushbundle2(pushop)
+                _pushchangeset(pushop)
+                _pushsyncphase(pushop)
+                _pushobsolete(pushop)
+                _pushbookmark(pushop)
 
     if repo.ui.configbool('experimental', 'remotenames'):
         logexchange.pullremotenames(repo, remote)
@@ -708,8 +707,8 @@ def _pushdiscoverybookmarks(pushop):
 
     remotebookmark = listkeys(remote, 'bookmarks')
 
-    explicit = set([repo._bookmarks.expandname(bookmark)
-                    for bookmark in pushop.bookmarks])
+    explicit = {repo._bookmarks.expandname(bookmark)
+                for bookmark in pushop.bookmarks}
 
     remotebookmark = bookmod.unhexlifybookmarks(remotebookmark)
     comp = bookmod.comparebookmarks(repo, repo._bookmarks, remotebookmark)
@@ -921,7 +920,7 @@ def _pushb2ctx(pushop, bundler):
                       if v in changegroup.supportedoutgoingversions(
                           pushop.repo)]
         if not cgversions:
-            raise ValueError(_('no common changegroup version'))
+            raise error.Abort(_('no common changegroup version'))
         version = max(cgversions)
     cgstream = changegroup.makestream(pushop.repo, pushop.outgoing, version,
                                       'push')
@@ -2185,7 +2184,7 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
         cgversions = [v for v in cgversions
                       if v in changegroup.supportedoutgoingversions(repo)]
         if not cgversions:
-            raise ValueError(_('no common changegroup version'))
+            raise error.Abort(_('no common changegroup version'))
         version = max(cgversions)
 
     outgoing = _computeoutgoing(repo, heads, common)
@@ -2229,7 +2228,7 @@ def _getbundlebookmarkpart(bundler, repo, source, bundlecaps=None,
     if not kwargs.get(r'bookmarks', False):
         return
     if 'bookmarks' not in b2caps:
-        raise ValueError(_('no common bookmarks exchange method'))
+        raise error.Abort(_('no common bookmarks exchange method'))
     books  = bookmod.listbinbookmarks(repo)
     data = bookmod.binaryencode(books)
     if data:
@@ -2264,7 +2263,7 @@ def _getbundlephasespart(bundler, repo, source, bundlecaps=None,
     """add phase heads part to the requested bundle"""
     if kwargs.get(r'phases', False):
         if not 'heads' in b2caps.get('phases'):
-            raise ValueError(_('no common phases exchange method'))
+            raise error.Abort(_('no common phases exchange method'))
         if heads is None:
             heads = repo.heads()
 
@@ -2548,8 +2547,8 @@ def isstreamclonespec(bundlespec):
         return True
 
     # Stream clone v2
-    if (bundlespec.wirecompression == 'UN' and \
-        bundlespec.wireversion == '02' and \
+    if (bundlespec.wirecompression == 'UN' and
+        bundlespec.wireversion == '02' and
         bundlespec.contentopts.get('streamv2')):
         return True
 

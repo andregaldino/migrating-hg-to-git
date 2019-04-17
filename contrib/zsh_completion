@@ -248,7 +248,7 @@ _hg_resolve() {
 
   [[ -d $PREFIX ]] || PREFIX=$PREFIX:h
 
-  _hg_cmd resolve -l ./$PREFIX | while read rstate rpath
+  _hg_cmd resolve -l ./$PREFIX -T '{mergestatus}\ {relpath\(path\)}\\n' | while read rstate rpath
   do
     [[ $rstate == 'R' ]] && resolved_files+=($rpath)
     [[ $rstate == 'U' ]] && unresolved_files+=($rpath)

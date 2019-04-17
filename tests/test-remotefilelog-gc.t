@@ -107,6 +107,6 @@
 # Test that warning is displayed when the repo path is malformed
 
   $ printf "asdas\0das" >> $CACHEDIR/repos
-  $ hg gc 2>&1 | head -n2
-  warning: malformed path: * (glob)
-  Traceback (most recent call last):
+  $ hg gc
+  abort: invalid path asdas\x00da: .*(null|NULL).* (re)
+  [255]

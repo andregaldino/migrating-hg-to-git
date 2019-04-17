@@ -370,9 +370,9 @@ check saving last-message.txt, at first
   HG: branch 'default'
   HG: added f
   ====
-  note: commit message saved in .hg/last-message.txt
   transaction abort!
   rollback completed
+  note: commit message saved in .hg/last-message.txt
   abort: pretxncommit.unexpectedabort hook exited with status 1
   [255]
   $ cat .hg/last-message.txt
@@ -394,9 +394,9 @@ action)
   HG: user: test
   HG: branch 'default'
   HG: added f
-  note: commit message saved in .hg/last-message.txt
   transaction abort!
   rollback completed
+  note: commit message saved in .hg/last-message.txt
   abort: pretxncommit.unexpectedabort hook exited with status 1
   [255]
 
@@ -433,7 +433,6 @@ rollback should not work after a histedit
   > edit cb9a9f314b8b a > $EDITED
   > EOF
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  adding a
   Editing (cb9a9f314b8b), you may commit or record as needed now.
   (hg histedit --continue to resume)
   [1]

@@ -17,21 +17,19 @@ from . import (
     match as matchmod,
     node,
     pathutil,
-    scmutil,
     util,
 )
 from .utils import (
     stringutil,
 )
 
-def _findlimit(repo, a, b):
+def _findlimit(repo, ctxa, ctxb):
     """
     Find the last revision that needs to be checked to ensure that a full
     transitive closure for file copies can be properly calculated.
     Generally, this means finding the earliest revision number that's an
     ancestor of a or b but not both, except when a or b is a direct descendent
     of the other, in which case we can return the minimum revnum of a and b.
-    None if no such revision exists.
     """
 
     # basic idea:
@@ -46,27 +44,32 @@ def _findlimit(repo, a, b):
     #   - quit when interesting revs is zero
 
     cl = repo.changelog
+    wdirparents = None
+    a = ctxa.rev()
+    b = ctxb.rev()
     if a is None:
+        wdirparents = (ctxa.p1(), ctxa.p2())
         a = node.wdirrev
     if b is None:
+        assert not wdirparents
+        wdirparents = (ctxb.p1(), ctxb.p2())
         b = node.wdirrev
 
     side = {a: -1, b: 1}
     visit = [-a, -b]
     heapq.heapify(visit)
     interesting = len(visit)
-    hascommonancestor = False
     limit = node.wdirrev
 
     while interesting:
         r = -heapq.heappop(visit)
         if r == node.wdirrev:
-            parents = [cl.rev(p) for p in repo.dirstate.parents()]
+            parents = [pctx.rev() for pctx in wdirparents]
         else:
             parents = cl.parentrevs(r)
+        if parents[1] == node.nullrev:
+            parents = parents[:1]
         for p in parents:
-            if p < 0:
-                continue
             if p not in side:
                 # first time we see p; add it to visit
                 side[p] = side[r]
@@ -77,13 +80,9 @@ def _findlimit(repo, a, b):
                 # p was interesting but now we know better
                 side[p] = 0
                 interesting -= 1
-                hascommonancestor = True
         if side[r]:
             limit = r # lowest rev visited
             interesting -= 1
-
-    if not hascommonancestor:
-        return None
 
     # Consider the following flow (see test-commit-amend.t under issue4405):
     # 1/ File 'a0' committed
@@ -124,9 +123,12 @@ def _chain(src, dst, a, b):
             # file is a copy of an existing file
             t[k] = v
 
-    # remove criss-crossed copies
     for k, v in list(t.items()):
+        # remove criss-crossed copies
         if k in src and v in dst:
+            del t[k]
+        # remove copies to files that were then removed
+        elif k not in dst:
             del t[k]
 
     return t
@@ -141,8 +143,8 @@ def _tracefile(fctx, am, limit=node.nullrev):
         if limit >= 0 and not f.isintroducedafter(limit):
             return None
 
-def _dirstatecopies(d, match=None):
-    ds = d._repo.dirstate
+def _dirstatecopies(repo, match=None):
+    ds = repo.dirstate
     c = ds.copies().copy()
     for k in list(c):
         if ds[k] not in 'anm' or (match and not match(k)):
@@ -158,19 +160,26 @@ def _computeforwardmissing(a, b, match=None):
     mb = b.manifest()
     return mb.filesnotin(ma, match=match)
 
+def usechangesetcentricalgo(repo):
+    """Checks if we should use changeset-centric copy algorithms"""
+    return (repo.ui.config('experimental', 'copies.read-from') in
+            ('changeset-only', 'compatibility'))
+
 def _committedforwardcopies(a, b, match):
     """Like _forwardcopies(), but b.rev() cannot be None (working copy)"""
     # files might have to be traced back to the fctx parent of the last
     # one-side-only changeset, but not further back than that
     repo = a._repo
+
+    if usechangesetcentricalgo(repo):
+        return _changesetforwardcopies(a, b, match)
+
     debug = repo.ui.debugflag and repo.ui.configbool('devel', 'debug.copies')
     dbg = repo.ui.debug
     if debug:
         dbg('debug.copies:    looking into rename from %s to %s\n'
             % (a, b))
-    limit = _findlimit(repo, a.rev(), b.rev())
-    if limit is None:
-        limit = node.nullrev
+    limit = _findlimit(repo, a, b)
     if debug:
         dbg('debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()
@@ -188,7 +197,7 @@ def _committedforwardcopies(a, b, match):
     # this comparison.
     forwardmissingmatch = match
     if b.p1() == a and b.p2().node() == node.nullid:
-        filesmatcher = scmutil.matchfiles(a._repo, b.files())
+        filesmatcher = matchmod.exact(b.files())
         forwardmissingmatch = matchmod.intersectmatchers(match, filesmatcher)
     missing = _computeforwardmissing(a, b, match=forwardmissingmatch)
 
@@ -215,6 +224,76 @@ def _committedforwardcopies(a, b, match):
                 % (util.timer() - start))
     return cm
 
+def _changesetforwardcopies(a, b, match):
+    if a.rev() == node.nullrev:
+        return {}
+
+    repo = a.repo()
+    children = {}
+    cl = repo.changelog
+    missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
+    for r in missingrevs:
+        for p in cl.parentrevs(r):
+            if p == node.nullrev:
+                continue
+            if p not in children:
+                children[p] = [r]
+            else:
+                children[p].append(r)
+
+    roots = set(children) - set(missingrevs)
+    # 'work' contains 3-tuples of a (revision number, parent number, copies).
+    # The parent number is only used for knowing which parent the copies dict
+    # came from.
+    work = [(r, 1, {}) for r in roots]
+    heapq.heapify(work)
+    while work:
+        r, i1, copies1 = heapq.heappop(work)
+        if work and work[0][0] == r:
+            # We are tracing copies from both parents
+            r, i2, copies2 = heapq.heappop(work)
+            copies = {}
+            ctx = repo[r]
+            p1man, p2man = ctx.p1().manifest(), ctx.p2().manifest()
+            allcopies = set(copies1) | set(copies2)
+            # TODO: perhaps this filtering should be done as long as ctx
+            # is merge, whether or not we're tracing from both parent.
+            for dst in allcopies:
+                if not match(dst):
+                    continue
+                if dst not in copies2:
+                    # Copied on p1 side: mark as copy from p1 side if it didn't
+                    # already exist on p2 side
+                    if dst not in p2man:
+                        copies[dst] = copies1[dst]
+                elif dst not in copies1:
+                    # Copied on p2 side: mark as copy from p2 side if it didn't
+                    # already exist on p1 side
+                    if dst not in p1man:
+                        copies[dst] = copies2[dst]
+                else:
+                    # Copied on both sides: mark as copy from p1 side
+                    copies[dst] = copies1[dst]
+        else:
+            copies = copies1
+        if r == b.rev():
+            return copies
+        for c in children[r]:
+            childctx = repo[c]
+            if r == childctx.p1().rev():
+                parent = 1
+                childcopies = childctx.p1copies()
+            else:
+                assert r == childctx.p2().rev()
+                parent = 2
+                childcopies = childctx.p2copies()
+            if not match.always():
+                childcopies = {dst: src for dst, src in childcopies.items()
+                               if match(dst)}
+            childcopies = _chain(a, childctx, copies, childcopies)
+            heapq.heappush(work, (c, parent, childcopies))
+    assert False
+
 def _forwardcopies(a, b, match=None):
     """find {dst@b: src@a} copy mapping where a is an ancestor of b"""
 
@@ -223,23 +302,28 @@ def _forwardcopies(a, b, match=None):
     if b.rev() is None:
         if a == b.p1():
             # short-circuit to avoid issues with merge states
-            return _dirstatecopies(b, match)
+            return _dirstatecopies(b._repo, match)
 
         cm = _committedforwardcopies(a, b.p1(), match)
         # combine copies from dirstate if necessary
-        return _chain(a, b, cm, _dirstatecopies(b, match))
+        return _chain(a, b, cm, _dirstatecopies(b._repo, match))
     return _committedforwardcopies(a, b, match)
 
-def _backwardrenames(a, b):
+def _backwardrenames(a, b, match):
     if a._repo.ui.config('experimental', 'copytrace') == 'off':
         return {}
 
     # Even though we're not taking copies into account, 1:n rename situations
     # can still exist (e.g. hg cp a b; hg mv a c). In those cases we
     # arbitrarily pick one of the renames.
+    # We don't want to pass in "match" here, since that would filter
+    # the destination by it. Since we're reversing the copies, we want
+    # to filter the source instead.
     f = _forwardcopies(b, a)
     r = {}
     for k, v in sorted(f.iteritems()):
+        if match and not match(v):
+            continue
         # remove copies
         if v in a:
             continue
@@ -263,10 +347,10 @@ def pathcopies(x, y, match=None):
     if a == y:
         if debug:
             repo.ui.debug('debug.copies: search mode: backward\n')
-        return _backwardrenames(x, y)
+        return _backwardrenames(x, y, match=match)
     if debug:
         repo.ui.debug('debug.copies: search mode: combined\n')
-    return _chain(x, y, _backwardrenames(x, a),
+    return _chain(x, y, _backwardrenames(x, a, match=match),
                   _forwardcopies(a, y, match=match))
 
 def _computenonoverlap(repo, c1, c2, addedinm1, addedinm2, baselabel=''):
@@ -346,8 +430,7 @@ def _combinecopies(copyfrom, copyto, finalcopy, diverge, incompletediverge):
 
 def mergecopies(repo, c1, c2, base):
     """
-    The function calling different copytracing algorithms on the basis of config
-    which find moves and copies between context c1 and c2 that are relevant for
+    Finds moves and copies between context c1 and c2 that are relevant for
     merging. 'base' will be used as the merge base.
 
     Copytracing is used in commands like rebase, merge, unshelve, etc to merge
@@ -388,14 +471,18 @@ def mergecopies(repo, c1, c2, base):
     "dirmove" is a mapping of detected source dir -> destination dir renames.
     This is needed for handling changes to new files previously grafted into
     renamed directories.
+
+    This function calls different copytracing algorithms based on config.
     """
     # avoid silly behavior for update from empty dir
     if not c1 or not c2 or c1 == c2:
         return {}, {}, {}, {}, {}
 
+    narrowmatch = c1.repo().narrowmatch()
+
     # avoid silly behavior for parent -> working dir
     if c2.node() is None and c1.node() == repo.dirstate.p1():
-        return repo.dirstate.copies(), {}, {}, {}, {}
+        return _dirstatecopies(repo, narrowmatch), {}, {}, {}, {}
 
     copytracing = repo.ui.config('experimental', 'copytrace')
     boolctrace = stringutil.parsebool(copytracing)
@@ -464,10 +551,7 @@ def _fullcopytracing(repo, c1, c2, base):
     if graft:
         tca = _c1.ancestor(_c2)
 
-    limit = _findlimit(repo, c1.rev(), c2.rev())
-    if limit is None:
-        # no common ancestor, no copies
-        return {}, {}, {}, {}, {}
+    limit = _findlimit(repo, c1, c2)
     repo.ui.debug("  searching for copies back to rev %d\n" % limit)
 
     m1 = c1.manifest()
@@ -529,7 +613,7 @@ def _fullcopytracing(repo, c1, c2, base):
     if dirtyc1:
         _combinecopies(data2['incomplete'], data1['incomplete'], copy, diverge,
                        incompletediverge)
-    else:
+    if dirtyc2:
         _combinecopies(data1['incomplete'], data2['incomplete'], copy, diverge,
                        incompletediverge)
 
@@ -568,7 +652,13 @@ def _fullcopytracing(repo, c1, c2, base):
     for f in bothnew:
         _checkcopies(c1, c2, f, base, tca, dirtyc1, limit, both1)
         _checkcopies(c2, c1, f, base, tca, dirtyc2, limit, both2)
-    if dirtyc1:
+    if dirtyc1 and dirtyc2:
+        remainder = _combinecopies(both2['incomplete'], both1['incomplete'],
+                                   copy, bothdiverge, bothincompletediverge)
+        remainder1 = _combinecopies(both1['incomplete'], both2['incomplete'],
+                                   copy, bothdiverge, bothincompletediverge)
+        remainder.update(remainder1)
+    elif dirtyc1:
         # incomplete copies may only be found on the "dirty" side for bothnew
         assert not both2['incomplete']
         remainder = _combinecopies({}, both1['incomplete'], copy, bothdiverge,
@@ -781,7 +871,7 @@ def _related(f1, f2):
     """
 
     if f1 == f2:
-        return f1 # a match
+        return True # a match
 
     g1, g2 = f1.ancestors(), f2.ancestors()
     try:

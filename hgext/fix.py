@@ -280,10 +280,8 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     for rev in sorted(revstofix):
         fixctx = repo[rev]
         match = scmutil.match(fixctx, pats, opts)
-        for path in pathstofix(ui, repo, pats, opts, match, basectxs[rev],
-                               fixctx):
-            if path not in fixctx:
-                continue
+        for path in sorted(pathstofix(
+                        ui, repo, pats, opts, match, basectxs[rev], fixctx)):
             fctx = fixctx[path]
             if fctx.islink():
                 continue
@@ -601,9 +599,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
         if path not in ctx:
             return None
         fctx = ctx[path]
-        copied = fctx.renamed()
-        if copied:
-            copied = copied[0]
+        copysource = fctx.copysource()
         return context.memfilectx(
             repo,
             memctx,
@@ -611,7 +607,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
             data=filedata.get(path, fctx.data()),
             islink=fctx.islink(),
             isexec=fctx.isexec(),
-            copied=copied)
+            copysource=copysource)
 
     extra = ctx.extra().copy()
     extra['fix_source'] = ctx.hex()

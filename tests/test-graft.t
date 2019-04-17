@@ -927,7 +927,20 @@ Graft from behind a move or rename
 
 NOTE: This is affected by issue5343, and will need updating when it's fixed
 
-Possible cases during a regular graft (when ca is between cta and c2):
+Consider this topology for a regular graft:
+
+o c1
+|
+| o c2
+| |
+| o ca # stands for "common ancestor"
+|/
+o cta # stands for "common topological ancestor"
+
+Note that in issue5343, ca==cta.
+
+The following table shows the possible cases. Here, "x->y" and, equivalently,
+"y<-x", where x is an ancestor of y, means that some copy happened from x to y.
 
 name | c1<-cta | cta<->ca | ca->c2
 A.0  |         |          |
@@ -955,6 +968,8 @@ Finally, A.6 records a divergence entirely in the c2 pass.
 
 A.4 has a degenerate case a<-b<-a->a, where checkcopies isn't needed at all.
 A.5 has a special case a<-b<-b->a, which is treated like a<-b->a in a merge.
+A.5 has issue5343 as a special case.
+TODO: add test coverage for A.5
 A.6 has a special case a<-a<-b->a. Here, checkcopies will find a spurious
 incomplete divergence, which is in fact complete. This is handled later in
 mergecopies.
@@ -1044,8 +1059,8 @@ Test the cases A.0 (f4x) and A.6 (f3x)
   $ HGEDITOR="echo D1 >" hg graft -r 'desc("D0")' --edit
   grafting 3:b69f5839d2d9 "D0"
   note: possible conflict - f3b was renamed multiple times to:
-   f3d
    f3a
+   f3d
   warning: can't find ancestor for 'f3d' copied from 'f3b'!
 
 Set up the repository for some further tests
@@ -1111,8 +1126,8 @@ Test the cases A.1 (f4x) and A.7 (f3x).
   $ HGEDITOR="echo D2 >" hg graft -r 'desc("D0")' --edit
   grafting 3:b69f5839d2d9 "D0"
   note: possible conflict - f3b was renamed multiple times to:
-   f3e
    f3d
+   f3e
   merging f4e and f4a to f4e
   warning: can't find ancestor for 'f3d' copied from 'f3b'!
 

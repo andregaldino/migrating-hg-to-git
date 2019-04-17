@@ -26,10 +26,8 @@ Select no files
   > EOF
   diff --git a/empty-rw b/empty-rw
   new file mode 100644
-  examine changes to 'empty-rw'? [Ynesfdaq?] n
-  
-  no changes to record
-  [1]
+  abort: empty commit message
+  [255]
 
   $ hg tip -p
   changeset:   -1:000000000000
@@ -47,8 +45,6 @@ Select files but no hunks
   > EOF
   diff --git a/empty-rw b/empty-rw
   new file mode 100644
-  examine changes to 'empty-rw'? [Ynesfdaq?] y
-  
   abort: empty commit message
   [255]
 
@@ -72,12 +68,9 @@ Record empty file
 
   $ hg commit -i -d '0 0' -m empty empty-rw<<EOF
   > y
-  > y
   > EOF
   diff --git a/empty-rw b/empty-rw
   new file mode 100644
-  examine changes to 'empty-rw'? [Ynesfdaq?] y
-  
 
   $ hg tip -p
   changeset:   0:c0708cf4e46e
@@ -249,8 +242,6 @@ Add plain file
   > EOF
   diff --git a/plain b/plain
   new file mode 100644
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -0,0 +1,10 @@
   +1
   +2
@@ -306,8 +297,6 @@ Modify end of plain file, also test that diffopts are accounted for
   > EOF
   diff --git a/plain b/plain
   1 hunks, 1 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -8,3 +8,4 @@ 7
    8
    9
@@ -325,8 +314,6 @@ Modify end of plain file, no EOL
   > EOF
   diff --git a/plain b/plain
   1 hunks, 1 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -9,3 +9,4 @@ 8
    9
    10
@@ -467,8 +454,6 @@ Modify end of plain file, add EOL
   > EOF
   diff --git a/plain b/plain
   1 hunks, 1 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -9,4 +9,4 @@ 8
    9
    10
@@ -480,8 +465,6 @@ Modify end of plain file, add EOL
   
   diff --git a/plain2 b/plain2
   new file mode 100644
-  examine changes to 'plain2'? [Ynesfdaq?] y
-  
   @@ -0,0 +1,1 @@
   +1
   record change 2/2 to 'plain2'? [Ynesfdaq?] y
@@ -504,8 +487,6 @@ changes numbering
   > EOF
   diff --git a/plain b/plain
   2 hunks, 3 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -1,4 +1,4 @@
   -1
   +2
@@ -524,8 +505,6 @@ changes numbering
   
   diff --git a/plain2 b/plain2
   1 hunks, 1 lines changed
-  examine changes to 'plain2'? [Ynesfdaq?] y
-  
   @@ -1,1 +1,2 @@
    1
   +2
@@ -572,14 +551,11 @@ Trim beginning, modify end
 Record end
 
   $ hg commit -i -d '11 0' -m end-only plain <<EOF
-  > y
   > n
   > y
   > EOF
   diff --git a/plain b/plain
   2 hunks, 4 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -1,9 +1,6 @@
   -2
   -2
@@ -630,8 +606,6 @@ Record beginning
   > EOF
   diff --git a/plain b/plain
   1 hunks, 3 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -1,6 +1,3 @@
   -2
   -2
@@ -671,14 +645,11 @@ Add to beginning, trim from end
 Record end
 
   $ hg commit -i --traceback -d '13 0' -m end-again plain<<EOF
-  > y
   > n
   > y
   > EOF
   diff --git a/plain b/plain
   2 hunks, 4 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -1,6 +1,9 @@
   +1
   +2
@@ -714,13 +685,10 @@ Record beginning, middle, and test that format-breaking diffopts are ignored
   $ hg commit -i --config diff.noprefix=True -d '14 0' -m middle-only plain <<EOF
   > y
   > y
-  > y
   > n
   > EOF
   diff --git a/plain b/plain
   3 hunks, 7 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -1,2 +1,5 @@
   +1
   +2
@@ -781,8 +749,6 @@ Record end
   > EOF
   diff --git a/plain b/plain
   1 hunks, 2 lines changed
-  examine changes to 'plain'? [Ynesfdaq?] y
-  
   @@ -9,3 +9,5 @@ 6
    7
    8
@@ -823,8 +789,6 @@ Record end
   > EOF
   diff --git a/subdir/a b/subdir/a
   1 hunks, 1 lines changed
-  examine changes to 'subdir/a'? [Ynesfdaq?] y
-  
   @@ -1,1 +1,2 @@
    a
   +a
@@ -878,6 +842,35 @@ Help, quit
   
   abort: user quit
   [255]
+
+Patterns
+
+  $ hg commit -i 'glob:f*' << EOF
+  > y
+  > n
+  > y
+  > n
+  > EOF
+  diff --git a/subdir/f1 b/subdir/f1
+  1 hunks, 1 lines changed
+  examine changes to 'subdir/f1'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,2 @@
+   a
+  +a
+  record change 1/2 to 'subdir/f1'? [Ynesfdaq?] n
+  
+  diff --git a/subdir/f2 b/subdir/f2
+  1 hunks, 1 lines changed
+  examine changes to 'subdir/f2'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,2 @@
+   b
+  +b
+  record change 2/2 to 'subdir/f2'? [Ynesfdaq?] n
+  
+  no changes to record
+  [1]
 
 #if gettext
 
@@ -1807,3 +1800,82 @@ even if none of mode, size and timestamp is changed on the filesystem
   n   0         -1 unset               subdir/f1
   $ hg status -A subdir/f1
   M subdir/f1
+
+Test commands.commit.interactive.unified=0
+
+  $ hg init $TESTTMP/b
+  $ cd $TESTTMP/b
+  $ cat > foo <<EOF
+  > 1
+  > 2
+  > 3
+  > 4
+  > 5
+  > EOF
+  $ hg ci -qAm initial
+  $ cat > foo <<EOF
+  > 1
+  > change1
+  > 2
+  > 3
+  > change2
+  > 4
+  > 5
+  > EOF
+  $ printf 'y\ny\ny\n' | hg ci -im initial --config commands.commit.interactive.unified=0
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] y
+  
+  @@ -1,0 +2,1 @@ 1
+  +change1
+  record change 1/2 to 'foo'? [Ynesfdaq?] y
+  
+  @@ -3,0 +5,1 @@ 3
+  +change2
+  record change 2/2 to 'foo'? [Ynesfdaq?] y
+  
+  $ cd $TESTTMP
+
+Test diff.ignoreblanklines=1
+
+  $ hg init c
+  $ cd c
+  $ cat > foo <<EOF
+  > 1
+  > 2
+  > 3
+  > 4
+  > 5
+  > EOF
+  $ hg ci -qAm initial
+  $ cat > foo <<EOF
+  > 1
+  > 
+  > 2
+  > 3
+  > change2
+  > 4
+  > 5
+  > EOF
+  $ printf 'y\ny\ny\n' | hg ci -im initial --config diff.ignoreblanklines=1
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'? [Ynesfdaq?] y
+  
+  @@ -1,3 +1,4 @@
+   1
+  +
+   2
+   3
+  record change 1/2 to 'foo'? [Ynesfdaq?] y
+  
+  @@ -2,4 +3,5 @@
+   2
+   3
+  +change2
+   4
+   5
+  record change 2/2 to 'foo'? [Ynesfdaq?] y
+  
+

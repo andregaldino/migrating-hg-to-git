@@ -109,10 +109,10 @@ def readauthforuri(ui, uri, user):
             schemes, prefix = [p[0]], p[1]
         else:
             schemes = (auth.get('schemes') or 'https').split()
-        if (prefix == '*' or hostpath.startswith(prefix)) and \
-            (len(prefix) > bestlen or (len(prefix) == bestlen and \
-                not bestuser and 'username' in auth)) \
-             and scheme in schemes:
+        if ((prefix == '*' or hostpath.startswith(prefix)) and
+            (len(prefix) > bestlen or (len(prefix) == bestlen and
+                                       not bestuser and 'username' in auth))
+            and scheme in schemes):
             bestlen = len(prefix)
             bestauth = group, auth
             bestuser = auth.get('username')

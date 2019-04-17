@@ -154,9 +154,9 @@ def _deletebigpacks(repo, folder, files):
 
     # Either an oversize index or datapack will trigger cleanup of the whole
     # pack:
-    oversized = set([os.path.splitext(path)[0] for path, ftype, stat in files
+    oversized = {os.path.splitext(path)[0] for path, ftype, stat in files
         if (stat.st_size > maxsize and (os.path.splitext(path)[1]
-                                        in VALIDEXTS))])
+                                        in VALIDEXTS))}
 
     for rootfname in oversized:
         rootpath = os.path.join(folder, rootfname)
@@ -338,7 +338,7 @@ def _runrepack(repo, data, history, packpath, category, fullhistory=None,
     packer = repacker(repo, data, history, fullhistory, category,
                       gc=garbagecollect, isold=isold, options=options)
 
-    with datapack.mutabledatapack(repo.ui, packpath, version=2) as dpack:
+    with datapack.mutabledatapack(repo.ui, packpath) as dpack:
         with historypack.mutablehistorypack(repo.ui, packpath) as hpack:
             try:
                 packer.run(dpack, hpack)
@@ -601,7 +601,6 @@ class repacker(object):
                 # TODO: Optimize the deltachain fetching. Since we're
                 # iterating over the different version of the file, we may
                 # be fetching the same deltachain over and over again.
-                meta = None
                 if deltabase != nullid:
                     deltaentry = self.data.getdelta(filename, node)
                     delta, deltabasename, origdeltabase, meta = deltaentry

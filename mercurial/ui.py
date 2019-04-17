@@ -58,12 +58,12 @@ rollback = False
 statuscopies = yes
 # Prefer curses UIs when available. Revert to plain-text with `text`.
 interface = curses
+# Make compatible commands emit cwd-relative paths by default.
+relative-paths = yes
 
 [commands]
 # Grep working directory by default.
 grep.all-files = True
-# Make `hg status` emit cwd-relative paths by default.
-status.relative = yes
 # Refuse to perform an `hg update` that would cause a file content merge
 update.check = noconflict
 # Show conflicts information in `hg status`
@@ -97,10 +97,13 @@ username =
 # paginate = never
 
 [extensions]
-# uncomment these lines to enable some popular extensions
+# uncomment the lines below to enable some popular extensions
 # (see 'hg help extensions' for more info)
 #
-# churn =
+# histedit =
+# rebase =
+# shelve =
+# uncommit =
 """,
 
     'cloned':
@@ -149,7 +152,7 @@ b"""# example system-wide hg config (see 'hg help config' for more info)
 # paginate = never
 
 [extensions]
-# uncomment these lines to enable some popular extensions
+# uncomment the lines below to enable some popular extensions
 # (see 'hg help extensions' for more info)
 #
 # blackbox =
@@ -344,8 +347,8 @@ class ui(object):
         try:
             yield
         finally:
-            self._blockedtimes[key + '_blocked'] += \
-                (util.timer() - starttime) * 1000
+            self._blockedtimes[key + '_blocked'] += (
+                (util.timer() - starttime) * 1000)
 
     @contextlib.contextmanager
     def uninterruptible(self):
@@ -566,8 +569,6 @@ class ui(object):
             candidate = self._data(untrusted).get(s, n, None)
             if candidate is not None:
                 value = candidate
-                section = s
-                name = n
                 break
 
         if self.debugflag and not untrusted and self._reportuntrusted:
@@ -1029,8 +1030,8 @@ class ui(object):
         except IOError as err:
             raise error.StdioError(err)
         finally:
-            self._blockedtimes['stdio_blocked'] += \
-                (util.timer() - starttime) * 1000
+            self._blockedtimes['stdio_blocked'] += (
+                (util.timer() - starttime) * 1000)
 
     def write_err(self, *args, **opts):
         self._write(self._ferr, *args, **opts)
@@ -1080,8 +1081,8 @@ class ui(object):
                 return
             raise error.StdioError(err)
         finally:
-            self._blockedtimes['stdio_blocked'] += \
-                (util.timer() - starttime) * 1000
+            self._blockedtimes['stdio_blocked'] += (
+                (util.timer() - starttime) * 1000)
 
     def _writemsg(self, dest, *args, **opts):
         _writemsgwith(self._write, dest, *args, **opts)
@@ -1105,8 +1106,8 @@ class ui(object):
                     if err.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
                         raise error.StdioError(err)
         finally:
-            self._blockedtimes['stdio_blocked'] += \
-                (util.timer() - starttime) * 1000
+            self._blockedtimes['stdio_blocked'] += (
+                (util.timer() - starttime) * 1000)
 
     def _isatty(self, fh):
         if self.configbool('ui', 'nontty'):
@@ -1429,7 +1430,7 @@ class ui(object):
 
         return i
 
-    def _readline(self):
+    def _readline(self, prompt=' ', promptopts=None):
         # Replacing stdin/stdout temporarily is a hard problem on Python 3
         # because they have to be text streams with *no buffering*. Instead,
         # we use rawinput() only if call_readline() will be invoked by
@@ -1448,17 +1449,27 @@ class ui(object):
             except Exception:
                 usereadline = False
 
+        if self._colormode == 'win32' or not usereadline:
+            if not promptopts:
+                promptopts = {}
+            self._writemsgnobuf(self._fmsgout, prompt, type='prompt',
+                                **promptopts)
+            self.flush()
+            prompt = ' '
+        else:
+            prompt = self.label(prompt, 'ui.prompt') + ' '
+
         # prompt ' ' must exist; otherwise readline may delete entire line
         # - http://bugs.python.org/issue12833
         with self.timeblockedsection('stdio'):
             if usereadline:
-                line = encoding.strtolocal(pycompat.rawinput(r' '))
+                line = encoding.strtolocal(pycompat.rawinput(prompt))
                 # When stdin is in binary mode on Windows, it can cause
                 # raw_input() to emit an extra trailing carriage return
                 if pycompat.oslinesep == b'\r\n' and line.endswith(b'\r'):
                     line = line[:-1]
             else:
-                self._fout.write(b' ')
+                self._fout.write(pycompat.bytestr(prompt))
                 self._fout.flush()
                 line = self._fin.readline()
                 if not line:
@@ -1480,10 +1491,8 @@ class ui(object):
             self._writemsg(self._fmsgout, default or '', "\n",
                            type='promptecho')
             return default
-        self._writemsgnobuf(self._fmsgout, msg, type='prompt', **opts)
-        self.flush()
         try:
-            r = self._readline()
+            r = self._readline(prompt=msg, promptopts=opts)
             if not r:
                 r = default
             if self.configbool('ui', 'promptecho'):
@@ -1555,7 +1564,7 @@ class ui(object):
                         raise EOFError
                     return l.rstrip('\n')
                 else:
-                    return getpass.getpass('')
+                    return getpass.getpass(r'')
         except EOFError:
             raise error.ResponseExpected()
 
@@ -2053,7 +2062,11 @@ class path(object):
         This is its own function so that extensions can change the definition of
         'valid' in this case (like when pulling from a git repo into a hg
         one)."""
-        return os.path.isdir(os.path.join(path, '.hg'))
+        try:
+            return os.path.isdir(os.path.join(path, '.hg'))
+        # Python 2 may return TypeError. Python 3, ValueError.
+        except (TypeError, ValueError):
+            return False
 
     @property
     def suboptions(self):

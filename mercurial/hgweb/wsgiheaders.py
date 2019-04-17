@@ -127,7 +127,7 @@ class Headers(object):
         return self._headers[:]
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self._headers)
+        return r"%s(%r)" % (self.__class__.__name__, self._headers)
 
     def __str__(self):
         """str() returns the formatted headers, complete with end line,

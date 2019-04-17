@@ -14,6 +14,7 @@ import importlib
 import os
 import sys
 import traceback
+import warnings
 
 def check_compat_py2(f):
     """Check Python 3 compatibility for a file with Python 2"""
@@ -45,7 +46,7 @@ def check_compat_py3(f):
         content = fh.read()
 
     try:
-        ast.parse(content)
+        ast.parse(content, filename=f)
     except SyntaxError as e:
         print('%s: invalid syntax: %s' % (f, e))
         return
@@ -91,6 +92,11 @@ if __name__ == '__main__':
         fn = check_compat_py3
 
     for f in sys.argv[1:]:
-        fn(f)
+        with warnings.catch_warnings(record=True) as warns:
+            fn(f)
+
+        for w in warns:
+            print(warnings.formatwarning(w.message, w.category,
+                                         w.filename, w.lineno).rstrip())
 
     sys.exit(0)

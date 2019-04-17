@@ -371,6 +371,7 @@ class revlog(object):
         self._nodecache = {nullid: nullrev}
         self._nodepos = None
         self._compengine = 'zlib'
+        self._compengineopts = {}
         self._maxdeltachainspan = -1
         self._withsparseread = False
         self._sparserevlog = False
@@ -410,9 +411,16 @@ class revlog(object):
             self._maxchainlen = opts['maxchainlen']
         if 'deltabothparents' in opts:
             self._deltabothparents = opts['deltabothparents']
-        self._lazydeltabase = bool(opts.get('lazydeltabase', False))
+        self._lazydelta = bool(opts.get('lazydelta', True))
+        self._lazydeltabase = False
+        if self._lazydelta:
+            self._lazydeltabase = bool(opts.get('lazydeltabase', False))
         if 'compengine' in opts:
             self._compengine = opts['compengine']
+        if 'zlib.level' in opts:
+            self._compengineopts['zlib.level'] = opts['zlib.level']
+        if 'zstd.level' in opts:
+            self._compengineopts['zstd.level'] = opts['zstd.level']
         if 'maxdeltachainspan' in opts:
             self._maxdeltachainspan = opts['maxdeltachainspan']
         if self._mmaplargeindex and 'mmapindexthreshold' in opts:
@@ -523,7 +531,8 @@ class revlog(object):
 
     @util.propertycache
     def _compressor(self):
-        return util.compengines[self._compengine].revlogcompressor()
+        engine = util.compengines[self._compengine]
+        return engine.revlogcompressor(self._compengineopts)
 
     def _indexfp(self, mode='r'):
         """file object for the revlog's index file"""
@@ -610,6 +619,9 @@ class revlog(object):
         self._pcache = {}
 
         try:
+            # If we are using the native C version, you are in a fun case
+            # where self.index, self.nodemap and self._nodecaches is the same
+            # object.
             self._nodecache.clearcaches()
         except AttributeError:
             self._nodecache = {nullid: nullrev}
@@ -1118,7 +1130,9 @@ class revlog(object):
                 return self.index.headrevs()
             except AttributeError:
                 return self._headrevs()
-        return dagop.headrevs(revs, self.parentrevs)
+        if rustext is not None:
+            return rustext.dagop.headrevs(self.index, revs)
+        return dagop.headrevs(revs, self._uncheckedparentrevs)
 
     def computephases(self, roots):
         return self.index.computephasesmapsets(roots)
@@ -1337,7 +1351,7 @@ class revlog(object):
             return True
 
         def maybewdir(prefix):
-            return all(c == 'f' for c in prefix)
+            return all(c == 'f' for c in pycompat.iterbytestr(prefix))
 
         hexnode = hex(node)
 
@@ -1973,7 +1987,7 @@ class revlog(object):
         except KeyError:
             try:
                 engine = util.compengines.forrevlogheader(t)
-                compressor = engine.revlogcompressor()
+                compressor = engine.revlogcompressor(self._compengineopts)
                 self._decompressors[t] = compressor
             except KeyError:
                 raise error.RevlogError(_('unknown compression type %r') % t)
@@ -2264,6 +2278,14 @@ class revlog(object):
         self._nodepos = None
 
     def checksize(self):
+        """Check size of index and data files
+
+        return a (dd, di) tuple.
+        - dd: extra bytes for the "data" file
+        - di: extra bytes for the "index" file
+
+        A healthy revlog will return (0, 0).
+        """
         expected = 0
         if len(self):
             expected = max(0, self.end(len(self) - 1))
@@ -2388,20 +2410,24 @@ class revlog(object):
         if getattr(destrevlog, 'filteredrevs', None):
             raise ValueError(_('destination revlog has filtered revisions'))
 
-        # lazydeltabase controls whether to reuse a cached delta, if possible.
+        # lazydelta and lazydeltabase controls whether to reuse a cached delta,
+        # if possible.
+        oldlazydelta = destrevlog._lazydelta
         oldlazydeltabase = destrevlog._lazydeltabase
         oldamd = destrevlog._deltabothparents
 
         try:
             if deltareuse == self.DELTAREUSEALWAYS:
                 destrevlog._lazydeltabase = True
+                destrevlog._lazydelta = True
             elif deltareuse == self.DELTAREUSESAMEREVS:
                 destrevlog._lazydeltabase = False
+                destrevlog._lazydelta = True
+            elif deltareuse == self.DELTAREUSENEVER:
+                destrevlog._lazydeltabase = False
+                destrevlog._lazydelta = False
 
             destrevlog._deltabothparents = forcedeltabothparents or oldamd
-
-            populatecachedelta = deltareuse in (self.DELTAREUSEALWAYS,
-                                                self.DELTAREUSESAMEREVS)
 
             deltacomputer = deltautil.deltacomputer(destrevlog)
             index = self.index
@@ -2420,7 +2446,7 @@ class revlog(object):
                 # the revlog chunk is a delta.
                 cachedelta = None
                 rawtext = None
-                if populatecachedelta:
+                if destrevlog._lazydelta:
                     dp = self.deltaparent(rev)
                     if dp != nullrev:
                         cachedelta = (dp, bytes(self._chunk(rev)))
@@ -2452,6 +2478,7 @@ class revlog(object):
                 if addrevisioncb:
                     addrevisioncb(self, rev, node)
         finally:
+            destrevlog._lazydelta = oldlazydelta
             destrevlog._lazydeltabase = oldlazydeltabase
             destrevlog._deltabothparents = oldamd
 

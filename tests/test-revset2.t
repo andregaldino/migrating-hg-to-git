@@ -1525,8 +1525,8 @@ test author/desc/keyword in problematic encoding
   $ hg init problematicencoding
   $ cd problematicencoding
 
-  $ "$PYTHON" > setup.sh <<EOF
-  > print(u'''
+  $ "$PYTHON" <<EOF
+  > open('setup.sh', 'wb').write(u'''
   > echo a > text
   > hg add text
   > hg --encoding utf-8 commit -u '\u30A2' -m none
@@ -1541,8 +1541,8 @@ test author/desc/keyword in problematic encoding
   $ sh < setup.sh
 
 test in problematic encoding
-  $ "$PYTHON" > test.sh <<EOF
-  > print(u'''
+  $ "$PYTHON" <<EOF
+  > open('test.sh', 'wb').write(u'''
   > hg --encoding cp932 log --template '{rev}\\n' -r 'author(\u30A2)'
   > echo ====
   > hg --encoding cp932 log --template '{rev}\\n' -r 'author(\u30C2)'
@@ -1627,6 +1627,7 @@ Test repo.anyrevs with customized revset overrides
   > printprevset = $TESTTMP/printprevset.py
   > EOF
 
+  $ unset P
   $ hg --config revsetalias.P=1 printprevset
   P=[1]
   $ P=3 hg --config revsetalias.P=2 printprevset

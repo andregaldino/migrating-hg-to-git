@@ -50,7 +50,6 @@ from mercurial import (
     phases,
     pycompat,
     registrar,
-    repair,
     scmutil,
     util,
 )
@@ -191,9 +190,9 @@ def getfilestack(stack, path, seenfctxs=None):
             pctx = None # do not add another immutable fctx
             break
         fctxmap[ctx] = fctx # only for mutable fctxs
-        renamed = fctx.renamed()
-        if renamed:
-            path = renamed[0] # follow rename
+        copy = fctx.copysource()
+        if copy:
+            path = copy # follow rename
             if path in ctx: # but do not follow copy
                 pctx = ctx.p1()
                 break
@@ -232,8 +231,8 @@ class overlaystore(patch.filestore):
         else:
             content = fctx.data()
         mode = (fctx.islink(), fctx.isexec())
-        renamed = fctx.renamed() # False or (path, node)
-        return content, mode, (renamed and renamed[0])
+        copy = fctx.copysource()
+        return content, mode, copy
 
 def overlaycontext(memworkingcopy, ctx, parents=None, extra=None):
     """({path: content}, ctx, (p1node, p2node)?, {}?) -> memctx
@@ -683,16 +682,12 @@ class fixupstate(object):
 
     def commit(self):
         """commit changes. update self.finalnode, self.replacemap"""
-        with self.repo.wlock(), self.repo.lock():
-            with self.repo.transaction('absorb') as tr:
-                self._commitstack()
-                self._movebookmarks(tr)
-                if self.repo['.'].node() in self.replacemap:
-                    self._moveworkingdirectoryparent()
-                if self._useobsolete:
-                    self._obsoleteoldcommits()
-            if not self._useobsolete: # strip must be outside transactions
-                self._stripoldcommits()
+        with self.repo.transaction('absorb') as tr:
+            self._commitstack()
+            self._movebookmarks(tr)
+            if self.repo['.'].node() in self.replacemap:
+                self._moveworkingdirectoryparent()
+            self._cleanupoldcommits()
         return self.finalnode
 
     def printchunkstats(self):
@@ -726,7 +721,6 @@ class fixupstate(object):
                 # nothing changed, nothing commited
                 nextp1 = ctx
                 continue
-            msg = ''
             if self._willbecomenoop(memworkingcopy, ctx, nextp1):
                 # changeset is no longer necessary
                 self.replacemap[ctx.node()] = None
@@ -850,31 +844,19 @@ class fixupstate(object):
         if self._useobsolete and self.ui.configbool('absorb', 'add-noise'):
             extra['absorb_source'] = ctx.hex()
         mctx = overlaycontext(memworkingcopy, ctx, parents, extra=extra)
-        # preserve phase
-        with mctx.repo().ui.configoverride({
-            ('phases', 'new-commit'): ctx.phase()}):
-            return mctx.commit()
+        return mctx.commit()
 
     @util.propertycache
     def _useobsolete(self):
         """() -> bool"""
         return obsolete.isenabled(self.repo, obsolete.createmarkersopt)
 
-    def _obsoleteoldcommits(self):
-        relations = [(self.repo[k], v and (self.repo[v],) or ())
-                     for k, v in self.replacemap.iteritems()]
-        if relations:
-            obsolete.createmarkers(self.repo, relations)
-
-    def _stripoldcommits(self):
-        nodelist = self.replacemap.keys()
-        # make sure we don't strip innocent children
-        revs = self.repo.revs('%ln - (::(heads(%ln::)-%ln))', nodelist,
-                              nodelist, nodelist)
-        tonode = self.repo.changelog.node
-        nodelist = [tonode(r) for r in revs]
-        if nodelist:
-            repair.strip(self.repo.ui, self.repo, nodelist)
+    def _cleanupoldcommits(self):
+        replacements = {k: ([v] if v is not None else [])
+                        for k, v in self.replacemap.iteritems()}
+        if replacements:
+            scmutil.cleanupnodes(self.repo, replacements, operation='absorb',
+                                 fixphase=True)
 
 def _parsechunk(hunk):
     """(crecord.uihunk or patch.recordhunk) -> (path, (a1, a2, [bline]))"""
@@ -1023,6 +1005,11 @@ def absorbcmd(ui, repo, *pats, **opts):
     Returns 0 on success, 1 if all chunks were ignored and nothing amended.
     """
     opts = pycompat.byteskwargs(opts)
-    state = absorb(ui, repo, pats=pats, opts=opts)
-    if sum(s[0] for s in state.chunkstats.values()) == 0:
-        return 1
+
+    with repo.wlock(), repo.lock():
+        if not opts['dry_run']:
+            cmdutil.checkunfinished(repo)
+
+        state = absorb(ui, repo, pats=pats, opts=opts)
+        if sum(s[0] for s in state.chunkstats.values()) == 0:
+            return 1

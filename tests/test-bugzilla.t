@@ -3,7 +3,9 @@ mock bugzilla driver for testing template output:
   $ cat <<EOF > bzmock.py
   > from __future__ import absolute_import
   > from mercurial import extensions
+  > from mercurial import pycompat
   > from mercurial import registrar
+  > from mercurial.utils import stringutil
   > 
   > configtable = {}
   > configitem = registrar.configitem(configtable)
@@ -18,14 +20,17 @@ mock bugzilla driver for testing template output:
   >             super(bzmock, self).__init__(ui)
   >             self._logfile = ui.config(b'bugzilla', b'mocklog')
   >         def updatebug(self, bugid, newstate, text, committer):
-  >             with open(self._logfile, 'a') as f:
-  >                 f.write('update bugid=%r, newstate=%r, committer=%r\n'
-  >                         % (bugid, newstate, committer))
-  >                 f.write('----\n' + text + '\n----\n')
+  >             with open(pycompat.fsdecode(self._logfile), 'ab') as f:
+  >                 f.write(b'update bugid=%s, newstate=%s, committer=%s\n'
+  >                         % (stringutil.pprint(bugid),
+  >                            stringutil.pprint(newstate),
+  >                            stringutil.pprint(committer)))
+  >                 f.write(b'----\n' + text + b'\n----\n')
   >         def notify(self, bugs, committer):
-  >             with open(self._logfile, 'a') as f:
-  >                 f.write('notify bugs=%r, committer=%r\n'
-  >                         % (bugs, committer))
+  >             with open(pycompat.fsdecode(self._logfile), 'ab') as f:
+  >                 f.write(b'notify bugs=%s, committer=%s\n'
+  >                         % (stringutil.pprint(bugs),
+  >                            stringutil.pprint(committer)))
   >     bugzilla.bugzilla._versions[b'mock'] = bzmock
   > EOF
 

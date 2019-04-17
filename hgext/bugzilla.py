@@ -303,6 +303,7 @@ from mercurial import (
     error,
     logcmdutil,
     mail,
+    pycompat,
     registrar,
     url,
     util,
@@ -342,10 +343,10 @@ configitem('bugzilla', 'db',
     default='bugs',
 )
 configitem('bugzilla', 'fixregexp',
-    default=(r'fix(?:es)?\s*(?:bugs?\s*)?,?\s*'
-             r'(?:nos?\.?|num(?:ber)?s?)?\s*'
-             r'(?P<ids>(?:#?\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
-             r'\.?\s*(?:h(?:ours?)?\s*(?P<hours>\d*(?:\.\d+)?))?')
+    default=(br'fix(?:es)?\s*(?:bugs?\s*)?,?\s*'
+             br'(?:nos?\.?|num(?:ber)?s?)?\s*'
+             br'(?P<ids>(?:#?\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
+             br'\.?\s*(?:h(?:ours?)?\s*(?P<hours>\d*(?:\.\d+)?))?')
 )
 configitem('bugzilla', 'fixresolution',
     default='FIXED',
@@ -363,9 +364,9 @@ configitem('bugzilla', 'password',
     default=None,
 )
 configitem('bugzilla', 'regexp',
-    default=(r'bugs?\s*,?\s*(?:#|nos?\.?|num(?:ber)?s?)?\s*'
-             r'(?P<ids>(?:\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
-             r'\.?\s*(?:h(?:ours?)?\s*(?P<hours>\d*(?:\.\d+)?))?')
+    default=(br'bugs?\s*,?\s*(?:#|nos?\.?|num(?:ber)?s?)?\s*'
+             br'(?P<ids>(?:\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
+             br'\.?\s*(?:h(?:ours?)?\s*(?P<hours>\d*(?:\.\d+)?))?')
 )
 configitem('bugzilla', 'strip',
     default=0,
@@ -599,8 +600,8 @@ class bzmysql_2_18(bzmysql):
 
     def __init__(self, ui):
         bzmysql.__init__(self, ui)
-        self.default_notify = \
-            "cd %(bzdir)s && perl -T contrib/sendbugmail.pl %(id)s %(user)s"
+        self.default_notify = (
+            "cd %(bzdir)s && perl -T contrib/sendbugmail.pl %(id)s %(user)s")
 
 class bzmysql_3_0(bzmysql_2_18):
     '''support for bugzilla 3.0 series.'''
@@ -733,7 +734,7 @@ class bzxmlrpc(bzaccess):
         c = self.bzproxy.Bug.comments({'ids': [id],
                                        'include_fields': ['text'],
                                        'token': self.bztoken})
-        return ''.join([t['text'] for t in c['bugs'][str(id)]['comments']])
+        return ''.join([t['text'] for t in c['bugs']['%d' % id]['comments']])
 
     def filter_real_bug_ids(self, bugs):
         probe = self.bzproxy.Bug.get({'ids': sorted(bugs.keys()),
@@ -804,11 +805,11 @@ class bzxmlrpcemail(bzxmlrpc):
 
     def makecommandline(self, fieldname, value):
         if self.bzvermajor >= 4:
-            return "@%s %s" % (fieldname, str(value))
+            return "@%s %s" % (fieldname, pycompat.bytestr(value))
         else:
             if fieldname == "id":
                 fieldname = "bug_id"
-            return "@%s = %s" % (fieldname, str(value))
+            return "@%s = %s" % (fieldname, pycompat.bytestr(value))
 
     def send_bug_modify_email(self, bugid, commands, comment, committer):
         '''send modification message to Bugzilla bug via email.
@@ -873,7 +874,7 @@ class bzrestapi(bzaccess):
         self.fixresolution = self.ui.config('bugzilla', 'fixresolution')
 
     def apiurl(self, targets, include_fields=None):
-        url = '/'.join([self.bzroot] + [str(t) for t in targets])
+        url = '/'.join([self.bzroot] + [pycompat.bytestr(t) for t in targets])
         qv = {}
         if self.apikey:
             qv['api_key'] = self.apikey
@@ -938,7 +939,7 @@ class bzrestapi(bzaccess):
         for bugid in bugs.keys():
             burl = self.apiurl(('bug', bugid, 'comment'), include_fields='text')
             result = self._fetch(burl)
-            comments = result['bugs'][str(bugid)]['comments']
+            comments = result['bugs'][pycompat.bytestr(bugid)]['comments']
             if any(sn in c['text'] for c in comments):
                 self.ui.status(_('bug %d already knows about changeset %s\n') %
                                (bugid, sn))
@@ -1011,7 +1012,7 @@ class bugzilla(object):
             self.ui.config('bugzilla', 'regexp'), re.IGNORECASE)
         self.fix_re = re.compile(
             self.ui.config('bugzilla', 'fixregexp'), re.IGNORECASE)
-        self.split_re = re.compile(r'\D+')
+        self.split_re = re.compile(br'\D+')
 
     def find_bugs(self, ctx):
         '''return bugs dictionary created from commit comment.
@@ -1098,7 +1099,7 @@ class bugzilla(object):
         t = logcmdutil.changesettemplater(self.ui, self.repo, spec)
         self.ui.pushbuffer()
         t.show(ctx, changes=ctx.changeset(),
-               bug=str(bugid),
+               bug=pycompat.bytestr(bugid),
                hgweb=self.ui.config('web', 'baseurl'),
                root=self.repo.root,
                webroot=webroot(self.repo.root))

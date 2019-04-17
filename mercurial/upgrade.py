@@ -24,6 +24,10 @@ from . import (
     vfs as vfsmod,
 )
 
+from .utils import (
+    compression,
+)
+
 def requiredsourcerequirements(repo):
     """Obtain requirements required to be present to upgrade a repo.
 
@@ -61,9 +65,16 @@ def supportremovedrequirements(repo):
     the dropped requirement must appear in the returned set for the upgrade
     to be allowed.
     """
-    return {
+    supported = {
         localrepo.SPARSEREVLOG_REQUIREMENT,
     }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == 'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
 
 def supporteddestrequirements(repo):
     """Obtain requirements that upgrade supports in the destination.
@@ -73,7 +84,7 @@ def supporteddestrequirements(repo):
 
     Extensions should monkeypatch this to add their custom requirements.
     """
-    return {
+    supported = {
         'dotencode',
         'fncache',
         'generaldelta',
@@ -81,6 +92,13 @@ def supporteddestrequirements(repo):
         'store',
         localrepo.SPARSEREVLOG_REQUIREMENT,
     }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == 'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
 
 def allowednewrequirements(repo):
     """Obtain requirements that can be added to a repository during upgrade.
@@ -92,12 +110,19 @@ def allowednewrequirements(repo):
     bad additions because the whitelist approach is safer and will prevent
     future, unknown requirements from accidentally being added.
     """
-    return {
+    supported = {
         'dotencode',
         'fncache',
         'generaldelta',
         localrepo.SPARSEREVLOG_REQUIREMENT,
     }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == 'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
 
 def preservedrequirements(repo):
     return set()
@@ -325,14 +350,53 @@ class compressionengine(formatvariant):
 
     @classmethod
     def fromrepo(cls, repo):
+        # we allow multiple compression engine requirement to co-exist because
+        # strickly speaking, revlog seems to support mixed compression style.
+        #
+        # The compression used for new entries will be "the last one"
+        compression = 'zlib'
         for req in repo.requirements:
-            if req.startswith('exp-compression-'):
-                return req.split('-', 2)[2]
-        return 'zlib'
+            prefix = req.startswith
+            if prefix('revlog-compression-') or prefix('exp-compression-'):
+                compression = req.split('-', 2)[2]
+        return compression
 
     @classmethod
     def fromconfig(cls, repo):
-        return repo.ui.config('experimental', 'format.compression')
+        return repo.ui.config('format', 'revlog-compression')
+
+@registerformatvariant
+class compressionlevel(formatvariant):
+    name = 'compression-level'
+    default = 'default'
+
+    description = _('compression level')
+
+    upgrademessage = _('revlog content will be recompressed')
+
+    @classmethod
+    def fromrepo(cls, repo):
+        comp = compressionengine.fromrepo(repo)
+        level = None
+        if comp == 'zlib':
+            level = repo.ui.configint('storage', 'revlog.zlib.level')
+        elif comp == 'zstd':
+            level = repo.ui.configint('storage', 'revlog.zstd.level')
+        if level is None:
+            return 'default'
+        return bytes(level)
+
+    @classmethod
+    def fromconfig(cls, repo):
+        comp = compressionengine.fromconfig(repo)
+        level = None
+        if comp == 'zlib':
+            level = repo.ui.configint('storage', 'revlog.zlib.level')
+        elif comp == 'zstd':
+            level = repo.ui.configint('storage', 'revlog.zstd.level')
+        if level is None:
+            return 'default'
+        return bytes(level)
 
 def finddeficiencies(repo):
     """returns a list of deficiencies that the repo suffer from"""

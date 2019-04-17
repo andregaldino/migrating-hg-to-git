@@ -43,7 +43,6 @@ Trigger branchcache creation:
   default                       10:a7949464abda
   $ ls .hg/cache
   branch2-served
-  manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1
 
@@ -569,7 +568,7 @@ iterable in addbranchrevs()
   > extensions.loadall(myui)
   > extensions.populateui(myui)
   > repo = hg.repository(myui, b'a')
-  > hg.clone(myui, {}, repo, dest=b"ua", branch=[b"stable",])
+  > hg.clone(myui, {}, repo, dest=b"ua", branch=[b"stable"])
   > EOF
 
   $ "$PYTHON" branchclone.py

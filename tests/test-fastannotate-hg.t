@@ -443,7 +443,7 @@ and its ancestor by overriding "repo._filecommit".
   > def reposetup(ui, repo):
   >     class legacyrepo(repo.__class__):
   >         def _filecommit(self, fctx, manifest1, manifest2,
-  >                         linkrev, tr, changelist):
+  >                         linkrev, tr, changelist, includecopymeta):
   >             fname = fctx.path()
   >             text = fctx.data()
   >             flog = self.file(fname)
@@ -593,7 +593,7 @@ annotate missing file
   $ rm baz
   $ hg annotate -ncr "wdir()" baz
   abort: $TESTTMP/repo/baz: $ENOENT$ (windows !)
-  abort: $ENOENT$: $TESTTMP/repo/baz (no-windows !)
+  abort: $ENOENT$: '$TESTTMP/repo/baz' (no-windows !)
   [255]
 
 annotate removed file
@@ -601,7 +601,7 @@ annotate removed file
   $ hg rm baz
   $ hg annotate -ncr "wdir()" baz
   abort: $TESTTMP/repo/baz: $ENOENT$ (windows !)
-  abort: $ENOENT$: $TESTTMP/repo/baz (no-windows !)
+  abort: $ENOENT$: '$TESTTMP/repo/baz' (no-windows !)
   [255]
 
 Test annotate with whitespace options

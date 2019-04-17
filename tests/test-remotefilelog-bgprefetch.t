@@ -105,6 +105,7 @@
   $ hg debugwaitonprefetch >/dev/null 2>%1
   $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
+  $ sleep 0.5
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/6e8633deba6e544e5f8edbd7b996d6e31a2c42ae.histidx
   $TESTTMP/hgcache/master/packs/6e8633deba6e544e5f8edbd7b996d6e31a2c42ae.histpack
@@ -141,6 +142,7 @@
   $ hg debugwaitonprefetch >/dev/null 2>%1
   $ sleep 1
   $ hg debugwaitonrepack >/dev/null 2>%1
+  $ sleep 1
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
@@ -193,6 +195,7 @@
   $ hg debugwaitonprefetch >/dev/null 2>%1
   $ sleep 1
   $ hg debugwaitonrepack >/dev/null 2>%1
+  $ sleep 1
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
@@ -243,6 +246,7 @@
   $ hg debugwaitonprefetch >/dev/null 2>%1
   $ sleep 1
   $ hg debugwaitonrepack >/dev/null 2>%1
+  $ sleep 1
 
 # Ensure that file 'y' was prefetched - it was not part of the rebase operation and therefore
 # could only be downloaded by the background prefetch
@@ -284,6 +288,7 @@
 
   $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
+  $ sleep 0.5
 
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
@@ -328,6 +333,7 @@
   * files fetched over 1 fetches - (* misses, 0.00% hit ratio) over *s (glob) (?)
   $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
+  $ sleep 0.5
 
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx

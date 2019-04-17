@@ -16,6 +16,7 @@ from mercurial import (
     error,
     filelog,
     node as nodemod,
+    pycompat,
     revlog,
 )
 from . import (
@@ -175,7 +176,6 @@ def _decompressblob(raw):
     return zlib.decompress(raw)
 
 def parsefileblob(path, decompress):
-    raw = None
     f = open(path, "rb")
     try:
         raw = f.read()
@@ -277,11 +277,11 @@ def debugdatapack(ui, *paths, **opts):
                 totalblobsize += blobsize
             else:
                 blobsize = "(missing)"
-            ui.write("%s  %s  %s%d\n" % (
+            ui.write("%s  %s  %s%s\n" % (
                 hashformatter(node),
                 hashformatter(deltabase),
                 ('%d' % deltalen).ljust(14),
-                blobsize))
+                pycompat.bytestr(blobsize)))
 
         if filename is not None:
             printtotals()

@@ -32,14 +32,42 @@ perfstatus
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
-  > perfstatusext=$CONTRIBDIR/perf.py
+  > perf=$CONTRIBDIR/perf.py
   > [perf]
   > presleep=0
   > stub=on
   > parentscount=1
   > EOF
-  $ hg help perfstatusext
-  perfstatusext extension - helper extension to measure performance
+  $ hg help -e perf
+  perf extension - helper extension to measure performance
+  
+  Configurations
+  ==============
+  
+  "perf"
+  ------
+  
+  "all-timing"
+      When set, additional statistics will be reported for each benchmark: best,
+      worst, median average. If not set only the best timing is reported
+      (default: off).
+  
+  "presleep"
+    number of second to wait before any group of runs (default: 1)
+  
+  "run-limits"
+    Control the number of runs each benchmark will perform. The option value
+    should be a list of '<time>-<numberofrun>' pairs. After each run the
+    conditions are considered in order with the following logic:
+  
+        If benchmark has been running for <time> seconds, and we have performed
+        <numberofrun> iterations, stop the benchmark,
+  
+    The default value is: '3.0-100, 10.0-3'
+  
+  "stub"
+      When set, benchmarks will only be run once, useful for testing (default:
+      off)
   
   list of commands:
   
@@ -88,12 +116,12 @@ perfstatus
                  (no help text available)
    perffncachewrite
                  (no help text available)
-   perfheads     (no help text available)
+   perfheads     benchmark the computation of a changelog heads
    perfhelper-pathcopies
                  find statistic about potential parameters for the
                  'perftracecopies'
    perfignore    benchmark operation related to computing ignore
-   perfindex     (no help text available)
+   perfindex     benchmark index creation time followed by a lookup
    perflinelogedits
                  (no help text available)
    perfloadmarkers
@@ -109,7 +137,9 @@ perfstatus
    perfmoonwalk  benchmark walking the changelog backwards
    perfnodelookup
                  (no help text available)
-   perfparents   (no help text available)
+   perfnodemap   benchmark the time necessary to look up revision from a cold
+                 nodemap
+   perfparents   benchmark the time necessary to fetch one changeset's parents.
    perfpathcopies
                  benchmark the copy tracing logic
    perfphases    benchmark phasesets computation
@@ -140,7 +170,7 @@ perfstatus
    perfwalk      (no help text available)
    perfwrite     microbenchmark ui.write
   
-  (use 'hg help -v perfstatusext' to show built-in aliases and global options)
+  (use 'hg help -v perf' to show built-in aliases and global options)
   $ hg perfaddremove
   $ hg perfancestors
   $ hg perfancestorset 2
@@ -210,6 +240,32 @@ perfstatus
   $ hg perfwalk
   $ hg perfparents
   $ hg perfdiscovery -q .
+
+Test run control
+----------------
+
+Simple single entry
+
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='0.000000001-15'
+  ! wall * comb * user * sys * (best of 15) (glob)
+
+Multiple entries
+
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='500000-1, 0.000000001-5'
+  ! wall * comb * user * sys * (best of 5) (glob)
+
+error case are ignored
+
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='500, 0.000000001-5'
+  malformatted run limit entry, missing "-": 500
+  ! wall * comb * user * sys * (best of 5) (glob)
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='aaa-12, 0.000000001-5'
+  malformatted run limit entry, could not convert string to float: aaa: aaa-12 (no-py3 !)
+  malformatted run limit entry, could not convert string to float: 'aaa': aaa-12 (py3 !)
+  ! wall * comb * user * sys * (best of 5) (glob)
+  $ hg perfparents --config perf.stub=no --config perf.run-limits='12-aaaaaa, 0.000000001-5'
+  malformatted run limit entry, invalid literal for int() with base 10: 'aaaaaa': 12-aaaaaa
+  ! wall * comb * user * sys * (best of 5) (glob)
 
 test actual output
 ------------------

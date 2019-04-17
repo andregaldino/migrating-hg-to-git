@@ -123,7 +123,7 @@ def convertsource(ui, path, type, revs):
             exceptions.append(inst)
     if not ui.quiet:
         for inst in exceptions:
-            ui.write("%s\n" % pycompat.bytestr(inst))
+            ui.write("%s\n" % pycompat.bytestr(inst.args[0]))
     raise error.Abort(_('%s: missing or unsupported repository') % path)
 
 def convertsink(ui, path, type):

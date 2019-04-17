@@ -14,8 +14,8 @@ https://bz.mercurial-scm.org/1175
   $ hg mv a a2
   $ hg up
   note: possible conflict - a was renamed multiple times to:
-   a2
    a1
+   a2
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg ci -m2

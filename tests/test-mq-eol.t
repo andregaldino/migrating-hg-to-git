@@ -23,17 +23,21 @@ Test interactions between mq and patch.eol
   > w(b' c\r\n')
   > w(b' d\n')
   > w(b'-e\n')
-  > w(b'\ No newline at end of file\n')
+  > w(b'\\\\ No newline at end of file\n')
   > w(b'+z\r\n')
-  > w(b'\ No newline at end of file\r\n')
+  > w(b'\\\\ No newline at end of file\r\n')
   > EOF
 
   $ cat > cateol.py <<EOF
   > import sys
+  > try:
+  >     stdout = sys.stdout.buffer
+  > except AttributeError:
+  >     stdout = sys.stdout
   > for line in open(sys.argv[1], 'rb'):
   >     line = line.replace(b'\r', b'<CR>')
   >     line = line.replace(b'\n', b'<LF>')
-  >     print(line)
+  >     stdout.write(line + b'\n')
   > EOF
 
   $ hg init repo

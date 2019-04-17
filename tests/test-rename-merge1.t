@@ -37,8 +37,8 @@
    branchmerge: True, force: False, partial: False
    ancestor: af1939970a1c, local: 044f8520aeeb+, remote: 85c198ef2f6c
   note: possible conflict - a2 was renamed multiple times to:
-   c2
    b2
+   c2
    preserving a for resolve of b
   removing a
    b2: remote created -> g

@@ -790,7 +790,7 @@ class svn_source(converter_source):
                         if childpath:
                             removed.add(self.recode(childpath))
                 else:
-                    self.ui.debug('unknown path in revision %d: %s\n' % \
+                    self.ui.debug('unknown path in revision %d: %s\n' %
                                   (revnum, path))
             elif kind == svn.core.svn_node_dir:
                 if ent.action == 'M':
@@ -984,7 +984,6 @@ class svn_source(converter_source):
         # TODO: ra.get_file transmits the whole file instead of diffs.
         if file in self.removed:
             return None, None
-        mode = ''
         try:
             new_module, revnum = revsplit(rev)[1:]
             if self.module != new_module:
@@ -1183,12 +1182,12 @@ class svn_sink(converter_sink, commandline):
         m = set()
         output = self.run0('ls', recursive=True, xml=True)
         doc = xml.dom.minidom.parseString(output)
-        for e in doc.getElementsByTagName('entry'):
+        for e in doc.getElementsByTagName(r'entry'):
             for n in e.childNodes:
-                if n.nodeType != n.ELEMENT_NODE or n.tagName != 'name':
+                if n.nodeType != n.ELEMENT_NODE or n.tagName != r'name':
                     continue
-                name = ''.join(c.data for c in n.childNodes
-                               if c.nodeType == c.TEXT_NODE)
+                name = r''.join(c.data for c in n.childNodes
+                                if c.nodeType == c.TEXT_NODE)
                 # Entries are compared with names coming from
                 # mercurial, so bytes with undefined encoding. Our
                 # best bet is to assume they are in local
@@ -1207,10 +1206,18 @@ class svn_sink(converter_sink, commandline):
                     os.unlink(filename)
             except OSError:
                 pass
+
+            if self.is_exec:
+                # We need to check executability of the file before the change,
+                # because `vfs.write` is able to reset exec bit.
+                wasexec = False
+                if os.path.exists(self.wjoin(filename)):
+                    wasexec = self.is_exec(self.wjoin(filename))
+
             self.wopener.write(filename, data)
 
             if self.is_exec:
-                if self.is_exec(self.wjoin(filename)):
+                if wasexec:
                     if 'x' not in flags:
                         self.delexec.append(filename)
                 else:
@@ -1325,8 +1332,8 @@ class svn_sink(converter_sink, commandline):
             try:
                 rev = self.commit_re.search(output).group(1)
             except AttributeError:
-                if parents and not files:
-                    return parents[0]
+                if not files:
+                    return parents[0] if parents else None
                 self.ui.warn(_('unexpected svn output:\n'))
                 self.ui.warn(output)
                 raise error.Abort(_('unable to cope with svn output'))

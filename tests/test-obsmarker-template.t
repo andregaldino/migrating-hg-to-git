@@ -2429,6 +2429,23 @@ Check other fatelog implementations
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     ROOT
   
+Check that {negrev} shows usable negative revisions despite hidden commits
+
+  $ hg log -G -T "{negrev}\n"
+  @  -3
+  |
+  o  -4
+  
+
+  $ hg log -G -T "{negrev}\n" --hidden
+  x  -1
+  |
+  | x  -2
+  |/
+  | @  -3
+  |/
+  o  -4
+  
 
 Test templates with splitted and pruned commit
 ==============================================
@@ -2638,4 +2655,11 @@ metadata should be converted back to local encoding when displaying:
   | x  5f66a482f0bb
   |/     Obsfate: rewritten using amend as 2:718c0d00cee1 by test (at 1970-01-01 00:00 +0000);
   o  ea207398892e
+  
+  $ hg log -G -T "{negrev}\n"
+  @  -1
+  |
+  o  -2
+  |
+  o  -5
   

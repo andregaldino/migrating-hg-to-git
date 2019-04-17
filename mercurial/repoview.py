@@ -25,9 +25,9 @@ def hideablerevs(repo):
     This is a standalone function to allow extensions to wrap it.
 
     Because we use the set of immutable changesets as a fallback subset in
-    branchmap (see mercurial.branchmap.subsettable), you cannot set "public"
-    changesets as "hideable". Doing so would break multiple code assertions and
-    lead to crashes."""
+    branchmap (see mercurial.utils.repoviewutils.subsettable), you cannot set
+    "public" changesets as "hideable". Doing so would break multiple code
+    assertions and lead to crashes."""
     obsoletes = obsolete.getrevs(repo, 'obsolete')
     internals = repo._phasecache.getrevset(repo, phases.localhiddenphases)
     internals = frozenset(internals)
@@ -86,6 +86,14 @@ def computehidden(repo, visibilityexceptions=None):
         _revealancestors(pfunc, hidden, visible)
     return frozenset(hidden)
 
+def computesecret(repo, visibilityexceptions=None):
+    """compute the set of revision that can never be exposed through hgweb
+
+    Changeset in the secret phase (or above) should stay unaccessible."""
+    assert not repo.changelog.filteredrevs
+    secrets = repo._phasecache.getrevset(repo, phases.remotehiddenphases)
+    return frozenset(secrets)
+
 def computeunserved(repo, visibilityexceptions=None):
     """compute the set of revision that should be filtered when used a server
 
@@ -93,9 +101,9 @@ def computeunserved(repo, visibilityexceptions=None):
     assert not repo.changelog.filteredrevs
     # fast path in simple case to avoid impact of non optimised code
     hiddens = filterrevs(repo, 'visible')
-    if phases.hassecret(repo):
-        secrets = repo._phasecache.getrevset(repo, phases.remotehiddenphases)
-        return frozenset(hiddens | frozenset(secrets))
+    secrets = filterrevs(repo, 'served.hidden')
+    if secrets:
+        return frozenset(hiddens | secrets)
     else:
         return hiddens
 
@@ -136,11 +144,12 @@ def computeimpactable(repo, visibilityexceptions=None):
 # function to compute filtered set
 #
 # When adding a new filter you MUST update the table at:
-#     mercurial.branchmap.subsettable
+#     mercurial.utils.repoviewutil.subsettable
 # Otherwise your filter will have to recompute all its branches cache
 # from scratch (very slow).
 filtertable = {'visible': computehidden,
                'visible-hidden': computehidden,
+               'served.hidden': computesecret,
                'served': computeunserved,
                'immutable':  computemutable,
                'base':  computeimpactable}

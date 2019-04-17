@@ -161,6 +161,12 @@ configitem('fsmonitor', 'timeout',
 configitem('fsmonitor', 'blacklistusers',
     default=list,
 )
+configitem('fsmonitor', 'watchman_exe',
+    default='watchman',
+)
+configitem('fsmonitor', 'verbose',
+    default=True,
+)
 configitem('experimental', 'fsmonitor.transaction_notify',
     default=False,
 )
@@ -172,11 +178,15 @@ _blacklist = ['largefiles', 'eol']
 def _handleunavailable(ui, state, ex):
     """Exception handler for Watchman interaction exceptions"""
     if isinstance(ex, watchmanclient.Unavailable):
-        if ex.warn:
-            ui.warn(str(ex) + '\n')
+        # experimental config: fsmonitor.verbose
+        if ex.warn and ui.configbool('fsmonitor', 'verbose'):
+            if 'illegal_fstypes' not in str(ex):
+                ui.warn(str(ex) + '\n')
         if ex.invalidate:
             state.invalidate()
-        ui.log('fsmonitor', 'Watchman unavailable: %s\n', ex.msg)
+        # experimental config: fsmonitor.verbose
+        if ui.configbool('fsmonitor', 'verbose'):
+            ui.log('fsmonitor', 'Watchman unavailable: %s\n', ex.msg)
     else:
         ui.log('fsmonitor', 'Watchman exception: %s\n', ex)
 
@@ -239,24 +249,6 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
         # https://facebook.github.io/watchman/docs/clockspec.html
         clock = 'c:0:0'
         notefiles = []
-
-    def fwarn(f, msg):
-        self._ui.warn('%s: %s\n' % (self.pathto(f), msg))
-        return False
-
-    def badtype(mode):
-        kind = _('unknown')
-        if stat.S_ISCHR(mode):
-            kind = _('character device')
-        elif stat.S_ISBLK(mode):
-            kind = _('block device')
-        elif stat.S_ISFIFO(mode):
-            kind = _('fifo')
-        elif stat.S_ISSOCK(mode):
-            kind = _('socket')
-        elif stat.S_ISDIR(mode):
-            kind = _('directory')
-        return _('unsupported file type (type is %s)') % kind
 
     ignore = self._ignore
     dirignore = self._dirignore
@@ -379,6 +371,9 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
         fexists = entry['exists']
         kind = getkind(fmode)
 
+        if '/.hg/' in fname or fname.endswith('/.hg'):
+            return bail('nested-repo-detected')
+
         if not fexists:
             # if marked as deleted and we don't already have a change
             # record, mark it as deleted.  If we already have an entry
@@ -485,7 +480,7 @@ def overridestatus(
 
     working = ctx2.rev() is None
     parentworking = working and ctx1 == self['.']
-    match = match or matchmod.always(self.root, self.getcwd())
+    match = match or matchmod.always()
 
     # Maybe we can use this opportunity to update Watchman's state.
     # Mercurial uses workingcommitctx and/or memctx to represent the part of
@@ -752,6 +747,14 @@ def wrapupdate(orig, repo, node, branchmerge, force, ancestor=None,
             repo, node, branchmerge, force, ancestor, mergeancestor,
             labels, matcher, **kwargs)
 
+def repo_has_depth_one_nested_repo(repo):
+    for f in repo.wvfs.listdir():
+        if os.path.isdir(os.path.join(repo.root, f, '.hg')):
+            msg = 'fsmonitor: sub-repository %r detected, fsmonitor disabled\n'
+            repo.ui.debug(msg % f)
+            return True
+    return False
+
 def reposetup(ui, repo):
     # We don't work with largefiles or inotify
     exts = extensions.enabled()
@@ -767,6 +770,9 @@ def reposetup(ui, repo):
         # if repo[None].substate can cause a dirstate parse, which is too
         # slow. Instead, look for a file called hgsubstate,
         if repo.wvfs.exists('.hgsubstate') or repo.wvfs.exists('.hgsub'):
+            return
+
+        if repo_has_depth_one_nested_repo(repo):
             return
 
         fsmonitorstate = state.state(repo)

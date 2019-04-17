@@ -143,7 +143,7 @@ def rawindexentries(ui, repos, req, subdir=''):
                 path = path[:-len(discarded) - 1]
 
                 try:
-                    r = hg.repository(ui, path)
+                    hg.repository(ui, path)
                     directory = False
                 except (IOError, error.RepoError):
                     pass
@@ -510,7 +510,7 @@ class hgwebdir(object):
         if style == styles[0]:
             vars['style'] = style
 
-        sessionvars = webutil.sessionvars(vars, r'?')
+        sessionvars = webutil.sessionvars(vars, '?')
         logourl = config('web', 'logourl')
         logoimg = config('web', 'logoimg')
         staticurl = (config('web', 'staticurl')

@@ -29,7 +29,8 @@ def _expandrcpath(path):
     p = util.expandpath(path)
     if os.path.isdir(p):
         join = os.path.join
-        return [join(p, f) for f, k in util.listdir(p) if f.endswith('.rc')]
+        return sorted(join(p, f) for f, k in util.listdir(p)
+                      if f.endswith('.rc'))
     return [p]
 
 def envrcitems(env=None):

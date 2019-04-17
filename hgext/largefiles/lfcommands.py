@@ -207,12 +207,12 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
             # the largefile-ness of its predecessor
             if f in ctx.manifest():
                 fctx = ctx.filectx(f)
-                renamed = fctx.renamed()
+                renamed = fctx.copysource()
                 if renamed is None:
                     # the code below assumes renamed to be a boolean or a list
                     # and won't quite work with the value None
                     renamed = False
-                renamedlfile = renamed and renamed[0] in lfiles
+                renamedlfile = renamed and renamed in lfiles
                 islfile |= renamedlfile
                 if 'l' in fctx.flags():
                     if renamedlfile:
@@ -232,8 +232,8 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
             if f in ctx.manifest():
                 fctx = ctx.filectx(f)
                 if 'l' in fctx.flags():
-                    renamed = fctx.renamed()
-                    if renamed and renamed[0] in lfiles:
+                    renamed = fctx.copysource()
+                    if renamed and renamed in lfiles:
                         raise error.Abort(_('largefile %s becomes symlink') % f)
 
                 # largefile was modified, update standins
@@ -259,11 +259,11 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
                 fctx = ctx.filectx(srcfname)
             except error.LookupError:
                 return None
-            renamed = fctx.renamed()
+            renamed = fctx.copysource()
             if renamed:
                 # standin is always a largefile because largefile-ness
                 # doesn't change after rename or copy
-                renamed = lfutil.standin(renamed[0])
+                renamed = lfutil.standin(renamed)
 
             return context.memfilectx(repo, memctx, f,
                                       lfiletohash[srcfname] + '\n',
@@ -288,12 +288,9 @@ def _getchangedfiles(ctx, parents):
     files = set(ctx.files())
     if node.nullid not in parents:
         mc = ctx.manifest()
-        mp1 = ctx.parents()[0].manifest()
-        mp2 = ctx.parents()[1].manifest()
-        files |= (set(mp1) | set(mp2)) - set(mc)
-        for f in mc:
-            if mc[f] != mp1.get(f, None) or mc[f] != mp2.get(f, None):
-                files.add(f)
+        for pctx in ctx.parents():
+            for fn in pctx.manifest().diff(mc):
+                files.add(fn)
     return files
 
 # Convert src parents to dst parents
@@ -311,9 +308,7 @@ def _getnormalcontext(repo, ctx, f, revmap):
         fctx = ctx.filectx(f)
     except error.LookupError:
         return None
-    renamed = fctx.renamed()
-    if renamed:
-        renamed = renamed[0]
+    renamed = fctx.copysource()
 
     data = fctx.data()
     if f == '.hgtags':
@@ -467,27 +462,26 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
         wvfs = repo.wvfs
         wctx = repo[None]
         for lfile in lfiles:
-            rellfile = lfile
-            rellfileorig = os.path.relpath(
-                scmutil.origpath(ui, repo, wvfs.join(rellfile)),
+            lfileorig = os.path.relpath(
+                scmutil.backuppath(ui, repo, lfile),
                 start=repo.root)
-            relstandin = lfutil.standin(lfile)
-            relstandinorig = os.path.relpath(
-                scmutil.origpath(ui, repo, wvfs.join(relstandin)),
+            standin = lfutil.standin(lfile)
+            standinorig = os.path.relpath(
+                scmutil.backuppath(ui, repo, standin),
                 start=repo.root)
-            if wvfs.exists(relstandin):
-                if (wvfs.exists(relstandinorig) and
-                    wvfs.exists(rellfile)):
-                    shutil.copyfile(wvfs.join(rellfile),
-                                    wvfs.join(rellfileorig))
-                    wvfs.unlinkpath(relstandinorig)
-                expecthash = lfutil.readasstandin(wctx[relstandin])
+            if wvfs.exists(standin):
+                if (wvfs.exists(standinorig) and
+                    wvfs.exists(lfile)):
+                    shutil.copyfile(wvfs.join(lfile),
+                                    wvfs.join(lfileorig))
+                    wvfs.unlinkpath(standinorig)
+                expecthash = lfutil.readasstandin(wctx[standin])
                 if expecthash != '':
                     if lfile not in wctx: # not switched to normal file
-                        if repo.dirstate[relstandin] != '?':
-                            wvfs.unlinkpath(rellfile, ignoremissing=True)
+                        if repo.dirstate[standin] != '?':
+                            wvfs.unlinkpath(lfile, ignoremissing=True)
                         else:
-                            dropped.add(rellfile)
+                            dropped.add(lfile)
 
                     # use normallookup() to allocate an entry in largefiles
                     # dirstate to prevent lfilesrepo.status() from reporting
@@ -499,9 +493,9 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
                 # lfile is added to the repository again. This happens when a
                 # largefile is converted back to a normal file: the standin
                 # disappears, but a new (normal) file appears as the lfile.
-                if (wvfs.exists(rellfile) and
+                if (wvfs.exists(lfile) and
                     repo.dirstate.normalize(lfile) not in wctx):
-                    wvfs.unlinkpath(rellfile)
+                    wvfs.unlinkpath(lfile)
                     removed += 1
 
         # largefile processing might be slow and be interrupted - be prepared
@@ -535,19 +529,18 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
 
             # copy the exec mode of largefile standin from the repository's
             # dirstate to its state in the lfdirstate.
-            rellfile = lfile
-            relstandin = lfutil.standin(lfile)
-            if wvfs.exists(relstandin):
+            standin = lfutil.standin(lfile)
+            if wvfs.exists(standin):
                 # exec is decided by the users permissions using mask 0o100
-                standinexec = wvfs.stat(relstandin).st_mode & 0o100
-                st = wvfs.stat(rellfile)
+                standinexec = wvfs.stat(standin).st_mode & 0o100
+                st = wvfs.stat(lfile)
                 mode = st.st_mode
                 if standinexec != mode & 0o100:
                     # first remove all X bits, then shift all R bits to X
                     mode &= ~0o111
                     if standinexec:
                         mode |= (mode >> 2) & 0o111 & ~util.umask
-                    wvfs.chmod(rellfile, mode)
+                    wvfs.chmod(lfile, mode)
                     update1 = 1
 
             updated += update1

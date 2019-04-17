@@ -949,6 +949,9 @@ def _dryrunrebase(ui, repo, action, opts):
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
             return 1
+        except error.Abort:
+            needsabort = False
+            raise
         else:
             if confirm:
                 ui.status(_('rebase completed successfully\n'))
@@ -1278,7 +1281,7 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
     return stats
 
 def adjustdest(repo, rev, destmap, state, skipped):
-    """adjust rebase destination given the current rebase state
+    r"""adjust rebase destination given the current rebase state
 
     rev is what is being rebased. Return a list of two revs, which are the
     adjusted destinations for rev's p1 and p2, respectively. If a parent is
@@ -1804,7 +1807,6 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
 
 def pullrebase(orig, ui, repo, *args, **opts):
     'Call rebase after pull if the latter has been invoked with --rebase'
-    ret = None
     if opts.get(r'rebase'):
         if ui.configbool('commands', 'rebase.requiredest'):
             msg = _('rebase destination required by configuration')
@@ -1879,8 +1881,8 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
     obsolete successors.
     """
     obsoletenotrebased = {}
-    obsoletewithoutsuccessorindestination = set([])
-    obsoleteextinctsuccessors = set([])
+    obsoletewithoutsuccessorindestination = set()
+    obsoleteextinctsuccessors = set()
 
     assert repo.filtername is None
     cl = repo.changelog

@@ -12,6 +12,18 @@ New errors are not allowed. Warnings are strongly discouraged.
   > -X hgext/fsmonitor/pywatchman \
   > -X mercurial/thirdparty \
   > | sed 's-\\-/-g' | "$check_code" --warnings --per-file=0 - || false
+  Skipping contrib/automation/hgautomation/__init__.py it has no-che?k-code (glob)
+  Skipping contrib/automation/hgautomation/aws.py it has no-che?k-code (glob)
+  Skipping contrib/automation/hgautomation/cli.py it has no-che?k-code (glob)
+  Skipping contrib/automation/hgautomation/windows.py it has no-che?k-code (glob)
+  Skipping contrib/automation/hgautomation/winrm.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/hgpackaging/downloads.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/hgpackaging/inno.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/hgpackaging/py2exe.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/hgpackaging/util.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/hgpackaging/wix.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/inno/build.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/wix/build.py it has no-che?k-code (glob)
   Skipping i18n/polib.py it has no-che?k-code (glob)
   Skipping mercurial/statprof.py it has no-che?k-code (glob)
   Skipping tests/badserverext.py it has no-che?k-code (glob)
@@ -22,7 +34,7 @@ New errors are not allowed. Warnings are strongly discouraged.
   >>> commands = []
   >>> with open('mercurial/debugcommands.py', 'rb') as fh:
   ...     for line in fh:
-  ...         m = re.match(b"^@command\('([a-z]+)", line)
+  ...         m = re.match(br"^@command\('([a-z]+)", line)
   ...         if m:
   ...             commands.append(m.group(1))
   >>> scommands = list(sorted(commands))

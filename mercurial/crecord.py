@@ -20,6 +20,7 @@ from . import (
     encoding,
     error,
     patch as patchmod,
+    pycompat,
     scmutil,
     util,
 )
@@ -30,7 +31,7 @@ stringio = util.stringio
 
 # This is required for ncurses to display non-ASCII characters in default user
 # locale encoding correctly.  --immerrr
-locale.setlocale(locale.LC_ALL, u'')
+locale.setlocale(locale.LC_ALL, r'')
 
 # patch comments based on the git one
 diffhelptext = _("""# To remove '-' lines, make them ' ' lines (context).
@@ -377,9 +378,9 @@ class uihunk(patchnode):
     def countchanges(self):
         """changedlines -> (n+,n-)"""
         add = len([l for l in self.changedlines if l.applied
-                   and l.prettystr()[0] == '+'])
+                    and l.prettystr().startswith('+')])
         rem = len([l for l in self.changedlines if l.applied
-                   and l.prettystr()[0] == '-'])
+                    and l.prettystr().startswith('-')])
         return add, rem
 
     def getfromtoline(self):
@@ -423,7 +424,7 @@ class uihunk(patchnode):
             changedlinestr = changedline.prettystr()
             if changedline.applied:
                 hunklinelist.append(changedlinestr)
-            elif changedlinestr[0] == "-":
+            elif changedlinestr.startswith("-"):
                 hunklinelist.append(" " + changedlinestr[1:])
 
         fp.write(''.join(self.before + hunklinelist + self.after))
@@ -471,11 +472,11 @@ class uihunk(patchnode):
         for line in self.changedlines:
             text = line.linetext
             if line.applied:
-                if text[0] == '+':
+                if text.startswith('+'):
                     dels.append(text[1:])
-                elif text[0] == '-':
+                elif text.startswith('-'):
                     adds.append(text[1:])
-            elif text[0] == '+':
+            elif text.startswith('+'):
                 dels.append(text[1:])
                 adds.append(text[1:])
         hunk = ['-%s' % l for l in dels] + ['+%s' % l for l in adds]
@@ -487,7 +488,7 @@ class uihunk(patchnode):
         return getattr(self._hunk, name)
 
     def __repr__(self):
-        return '<hunk %r@%d>' % (self.filename(), self.fromline)
+        return r'<hunk %r@%d>' % (self.filename(), self.fromline)
 
 def filterpatch(ui, chunks, chunkselector, operation=None):
     """interactively filter patch chunks into applied-only chunks"""
@@ -553,6 +554,14 @@ def testchunkselector(testfn, ui, headerlist, operation=None):
     of the chosen chunks.
     """
     chunkselector = curseschunkselector(headerlist, ui, operation)
+
+    class dummystdscr(object):
+        def clear(self):
+            pass
+        def refresh(self):
+            pass
+
+    chunkselector.stdscr = dummystdscr()
     if testfn and os.path.exists(testfn):
         testf = open(testfn, 'rb')
         testcommands = [x.rstrip('\n') for x in testf.readlines()]
@@ -565,6 +574,7 @@ def testchunkselector(testfn, ui, headerlist, operation=None):
 _headermessages = { # {operation: text}
     'apply': _('Select hunks to apply'),
     'discard': _('Select hunks to discard'),
+    'keep': _('Select hunks to keep'),
     None: _('Select hunks to record'),
 }
 
@@ -952,8 +962,8 @@ class curseschunkselector(object):
         # turn tabs into spaces
         instr = instr.expandtabs(4)
         strwidth = encoding.colwidth(instr)
-        numspaces = (width - ((strwidth + xstart) % width) - 1)
-        return instr + " " * numspaces + "\n"
+        numspaces = (width - ((strwidth + xstart) % width))
+        return instr + " " * numspaces
 
     def printstring(self, window, text, fgcolor=None, bgcolor=None, pair=None,
         pairname=None, attrlist=None, towin=True, align=True, showwhtspc=False):
@@ -1457,6 +1467,8 @@ the following are valid keystrokes:
         pgup/pgdn [K/J] : go to previous/next item of same type
  right/left-arrow [l/h] : go to child item / parent item
  shift-left-arrow   [H] : go to parent header / fold selected header
+                      g : go to the top
+                      G : go to the bottom
                       f : fold / unfold item, hiding/revealing its children
                       F : fold / unfold parent item and all of its ancestors
                  ctrl-l : scroll the selected line to the top of the screen
@@ -1495,6 +1507,45 @@ the following are valid keystrokes:
         self.stdscr.refresh()
         self.stdscr.keypad(1) # allow arrow-keys to continue to function
 
+    def handlefirstlineevent(self):
+        """
+        Handle 'g' to navigate to the top most file in the ncurses window.
+        """
+        self.currentselecteditem = self.headerlist[0]
+        currentitem = self.currentselecteditem
+        # select the parent item recursively until we're at a header
+        while True:
+            nextitem = currentitem.parentitem()
+            if nextitem is None:
+                break
+            else:
+                currentitem = nextitem
+
+        self.currentselecteditem = currentitem
+
+    def handlelastlineevent(self):
+        """
+        Handle 'G' to navigate to the bottom most file/hunk/line depending
+        on the whether the fold is active or not.
+
+        If the bottom most file is folded, it navigates to that file and
+        stops there. If the bottom most file is unfolded, it navigates to
+        the bottom most hunk in that file and stops there. If the bottom most
+        hunk is unfolded, it navigates to the bottom most line in that hunk.
+        """
+        currentitem = self.currentselecteditem
+        nextitem = currentitem.nextitem()
+        # select the child item recursively until we're at a footer
+        while nextitem is not None:
+            nextitem = currentitem.nextitem()
+            if nextitem is None:
+                break
+            else:
+                currentitem = nextitem
+
+        self.currentselecteditem = currentitem
+        self.recenterdisplayedarea()
+
     def confirmationwindow(self, windowtext):
         "display an informational window, then wait for and return a keypress."
 
@@ -1519,10 +1570,10 @@ the following are valid keystrokes:
         """ask for 'y' to be pressed to confirm selected. return True if
         confirmed."""
         confirmtext = _(
-"""if you answer yes to the following, the your currently chosen patch chunks
-will be loaded into an editor.  you may modify the patch from the editor, and
-save the changes if you wish to change the patch.  otherwise, you can just
-close the editor without saving to accept the current patch as-is.
+"""If you answer yes to the following, your currently chosen patch chunks
+will be loaded into an editor. To modify the patch, make the changes in your
+editor and save. To accept the current patch as-is, close the editor without
+saving.
 
 note: don't add/remove lines unless you also modify the range information.
       failing to follow this rule will result in the commit aborting.
@@ -1546,14 +1597,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         new changeset will be created (the normal commit behavior).
         """
 
-        try:
-            ver = float(util.version()[:3])
-        except ValueError:
-            ver = 1
-        if ver < 2.19:
-            msg = _("The amend option is unavailable with hg versions < 2.2\n\n"
-                    "Press any key to continue.")
-        elif opts.get('amend') is None:
+        if opts.get('amend') is None:
             opts['amend'] = True
             msg = _("Amend option is turned on -- committing the currently "
                     "selected changes will not create a new changeset, but "
@@ -1611,6 +1655,9 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             except error.Abort as exc:
                 self.errorstr = str(exc)
                 return None
+            finally:
+                self.stdscr.clear()
+                self.stdscr.refresh()
 
             # remove comment lines
             patch = [line + '\n' for line in patch.splitlines()
@@ -1674,6 +1721,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
 
         Return true to exit the main loop.
         """
+        keypressed = pycompat.bytestr(keypressed)
         if keypressed in ["k", "KEY_UP"]:
             self.uparrowevent()
         if keypressed in ["K", "KEY_PPAGE"]:
@@ -1718,13 +1766,20 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             self.togglefolded(foldparent=True)
         elif keypressed in ["m"]:
             self.commitMessageWindow()
+        elif keypressed in ["g", "KEY_HOME"]:
+            self.handlefirstlineevent()
+        elif keypressed in ["G", "KEY_END"]:
+            self.handlelastlineevent()
         elif keypressed in ["?"]:
             self.helpwindow()
             self.stdscr.clear()
             self.stdscr.refresh()
         elif curses.unctrl(keypressed) in ["^L"]:
-            # scroll the current line to the top of the screen
+            # scroll the current line to the top of the screen, and redraw
+            # everything
             self.scrolllines(self.selecteditemstartline)
+            self.stdscr.clear()
+            self.stdscr.refresh()
 
     def main(self, stdscr):
         """
@@ -1753,6 +1808,18 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             curses.use_default_colors()
         except curses.error:
             self.usecolor = False
+
+        # In some situations we may have some cruft left on the "alternate
+        # screen" from another program (or previous iterations of ourself), and
+        # we won't clear it if the scroll region is small enough to comfortably
+        # fit on the terminal.
+        self.stdscr.clear()
+
+        # don't display the cursor
+        try:
+            curses.curs_set(0)
+        except curses.error:
+            pass
 
         # available colors: black, blue, cyan, green, magenta, white, yellow
         # init_pair(color_id, foreground_color, background_color)
@@ -1799,6 +1866,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
                 break
 
         if self.commenttext != "":
-            whitespaceremoved = re.sub("(?m)^\s.*(\n|$)", "", self.commenttext)
+            whitespaceremoved = re.sub(br"(?m)^\s.*(\n|$)", b"",
+                                       self.commenttext)
             if whitespaceremoved != "":
                 self.opts['message'] = self.commenttext

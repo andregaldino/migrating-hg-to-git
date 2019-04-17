@@ -43,7 +43,7 @@ getstring = revsetlang.getstring
 getinteger = revsetlang.getinteger
 getboolean = revsetlang.getboolean
 getlist = revsetlang.getlist
-getrange = revsetlang.getrange
+getintrange = revsetlang.getintrange
 getargs = revsetlang.getargs
 getargsdict = revsetlang.getargsdict
 
@@ -225,24 +225,70 @@ def notset(repo, subset, x, order):
 def relationset(repo, subset, x, y, order):
     raise error.ParseError(_("can't use a relation in this context"))
 
-def generationsrel(repo, subset, x, rel, n, order):
-    # TODO: support range, rewrite tests, and drop startdepth argument
-    # from ancestors() and descendants() predicates
-    if n <= 0:
-        n = -n
-        return _ancestors(repo, subset, x, startdepth=n, stopdepth=n + 1)
-    else:
-        return _descendants(repo, subset, x, startdepth=n, stopdepth=n + 1)
+def _splitrange(a, b):
+    """Split range with bounds a and b into two ranges at 0 and return two
+    tuples of numbers for use as startdepth and stopdepth arguments of
+    revancestors and revdescendants.
+
+    >>> _splitrange(-10, -5)     # [-10:-5]
+    ((5, 11), (None, None))
+    >>> _splitrange(5, 10)       # [5:10]
+    ((None, None), (5, 11))
+    >>> _splitrange(-10, 10)     # [-10:10]
+    ((0, 11), (0, 11))
+    >>> _splitrange(-10, 0)      # [-10:0]
+    ((0, 11), (None, None))
+    >>> _splitrange(0, 10)       # [0:10]
+    ((None, None), (0, 11))
+    >>> _splitrange(0, 0)        # [0:0]
+    ((0, 1), (None, None))
+    >>> _splitrange(1, -1)       # [1:-1]
+    ((None, None), (None, None))
+    """
+    ancdepths = (None, None)
+    descdepths = (None, None)
+    if a == b == 0:
+        ancdepths = (0, 1)
+    if a < 0:
+        ancdepths = (-min(b, 0), -a + 1)
+    if b > 0:
+        descdepths = (max(a, 0), b + 1)
+    return ancdepths, descdepths
+
+def generationsrel(repo, subset, x, rel, z, order):
+    # TODO: rewrite tests, and drop startdepth argument from ancestors() and
+    # descendants() predicates
+    a, b = getintrange(z,
+                       _('relation subscript must be an integer or a range'),
+                       _('relation subscript bounds must be integers'),
+                       deffirst=-(dagop.maxlogdepth - 1),
+                       deflast=+(dagop.maxlogdepth - 1))
+    (ancstart, ancstop), (descstart, descstop) = _splitrange(a, b)
+
+    if ancstart is None and descstart is None:
+        return baseset()
+
+    revs = getset(repo, fullreposet(repo), x)
+    if not revs:
+        return baseset()
+
+    if ancstart is not None and descstart is not None:
+        s = dagop.revancestors(repo, revs, False, ancstart, ancstop)
+        s += dagop.revdescendants(repo, revs, False, descstart, descstop)
+    elif ancstart is not None:
+        s = dagop.revancestors(repo, revs, False, ancstart, ancstop)
+    elif descstart is not None:
+        s = dagop.revdescendants(repo, revs, False, descstart, descstop)
+
+    return subset & s
 
 def relsubscriptset(repo, subset, x, y, z, order):
     # this is pretty basic implementation of 'x#y[z]' operator, still
     # experimental so undocumented. see the wiki for further ideas.
     # https://www.mercurial-scm.org/wiki/RevsetOperatorPlan
     rel = getsymbol(y)
-    n = getinteger(z, _("relation subscript must be an integer"))
-
     if rel in subscriptrelations:
-        return subscriptrelations[rel](repo, subset, x, rel, n, order)
+        return subscriptrelations[rel](repo, subset, x, rel, z, order)
 
     relnames = [r for r in subscriptrelations.keys() if len(r) > 1]
     raise error.UnknownIdentifier(rel, relnames)
@@ -412,7 +458,7 @@ def ancestorspec(repo, subset, x, n, order):
             try:
                 r = cl.parentrevs(r)[0]
             except error.WdirUnsupported:
-                r = repo[r].parents()[0].rev()
+                r = repo[r].p1().rev()
         ps.add(r)
     return subset & ps
 
@@ -509,7 +555,7 @@ def branch(repo, subset, x):
         if kind == 'literal':
             # note: falls through to the revspec case if no branch with
             # this name exists and pattern kind is not specified explicitly
-            if pattern in repo.branchmap():
+            if repo.branchmap().hasbranch(pattern):
                 return subset.filter(lambda r: matcher(getbranch(r)),
                                      condrepr=('<branch %r>', b))
             if b.startswith('literal:'):
@@ -552,6 +598,12 @@ def bundle(repo, subset, x):
     return subset & bundlerevs
 
 def checkstatus(repo, subset, pat, field):
+    """Helper for status-related revsets (adds, removes, modifies).
+    The field parameter says which kind is desired:
+    0: modified
+    1: added
+    2: removed
+    """
     hasset = matchmod.patkind(pat) == 'set'
 
     mcache = [None]
@@ -815,6 +867,43 @@ def contentdivergent(repo, subset, x):
     contentdivergent = obsmod.getrevs(repo, 'contentdivergent')
     return subset & contentdivergent
 
+@predicate('expectsize(set[, size])', safe=True, takeorder=True)
+def expectsize(repo, subset, x, order):
+    """Return the given revset if size matches the revset size.
+    Abort if the revset doesn't expect given size.
+    size can either be an integer range or an integer.
+
+    For example, ``expectsize(0:1, 3:5)`` will abort as revset size is 2 and
+    2 is not between 3 and 5 inclusive."""
+
+    args = getargsdict(x, 'expectsize', 'set size')
+    minsize = 0
+    maxsize = len(repo) + 1
+    err = ''
+    if 'size' not in args or 'set' not in args:
+        raise error.ParseError(_('invalid set of arguments'))
+    minsize, maxsize = getintrange(args['size'],
+                                   _('expectsize requires a size range'
+                                     ' or a positive integer'),
+                                   _('size range bounds must be integers'),
+                                   minsize, maxsize)
+    if minsize < 0 or maxsize < 0:
+        raise error.ParseError(_('negative size'))
+    rev = getset(repo, fullreposet(repo), args['set'], order=order)
+    if minsize != maxsize and (len(rev) < minsize or len(rev) > maxsize):
+        err = _('revset size mismatch.'
+                ' expected between %d and %d, got %d') % (minsize, maxsize,
+                                                          len(rev))
+    elif minsize == maxsize and len(rev) != minsize:
+        err = _('revset size mismatch.'
+                ' expected %d, got %d') % (minsize, len(rev))
+    if err:
+        raise error.RepoLookupError(err)
+    if order == followorder:
+        return subset & rev
+    else:
+        return rev & subset
+
 @predicate('extdata(source)', safe=False, weight=100)
 def extdata(repo, subset, x):
     """Changesets in the specified extdata source. (EXPERIMENTAL)"""
@@ -877,9 +966,6 @@ def filelog(repo, subset, x):
     The pattern without explicit kind like ``glob:`` is expected to be
     relative to the current directory and match against a file exactly
     for efficiency.
-
-    If some linkrev points to revisions filtered by the current repoview, we'll
-    work around it to return a non-filtered value.
     """
 
     # i18n: "filelog" is a keyword
@@ -1008,11 +1094,11 @@ def followlines(repo, subset, x):
     # i18n: "followlines" is a keyword
     msg = _("followlines expects exactly one file")
     fname = scmutil.parsefollowlinespattern(repo, rev, pat, msg)
-    # i18n: "followlines" is a keyword
-    lr = getrange(args['lines'][0], _("followlines expects a line range"))
-    fromline, toline = [getinteger(a, _("line range bounds must be integers"))
-                        for a in lr]
-    fromline, toline = util.processlinerange(fromline, toline)
+    fromline, toline = util.processlinerange(
+        *getintrange(args['lines'][0],
+                     # i18n: "followlines" is a keyword
+                     _("followlines expects a line number or a range"),
+                     _("line range bounds must be integers")))
 
     fctx = repo[rev].filectx(fname)
     descend = False
@@ -1157,7 +1243,7 @@ def head(repo, subset, x):
     getargs(x, 0, 0, _("head takes no arguments"))
     hs = set()
     cl = repo.changelog
-    for ls in repo.branchmap().itervalues():
+    for ls in repo.branchmap().iterheads():
         hs.update(cl.rev(h) for h in ls)
     return subset & baseset(hs)
 
@@ -1513,7 +1599,7 @@ def p1(repo, subset, x):
         try:
             ps.add(cl.parentrevs(r)[0])
         except error.WdirUnsupported:
-            ps.add(repo[r].parents()[0].rev())
+            ps.add(repo[r].p1().rev())
     ps -= {node.nullrev}
     # XXX we should turn this into a baseset instead of a set, smartset may do
     # some optimizations from the fact this is a baseset.
@@ -1632,7 +1718,7 @@ def parentspec(repo, subset, x, n, order):
             try:
                 ps.add(cl.parentrevs(r)[0])
             except error.WdirUnsupported:
-                ps.add(repo[r].parents()[0].rev())
+                ps.add(repo[r].p1().rev())
         else:
             try:
                 parents = cl.parentrevs(r)
@@ -2027,7 +2113,7 @@ def subrepo(repo, subset, x):
     if len(args) != 0:
         pat = getstring(args[0], _("subrepo requires a pattern"))
 
-    m = matchmod.exact(repo.root, repo.root, ['.hgsubstate'])
+    m = matchmod.exact(['.hgsubstate'])
 
     def submatches(names):
         k, p, m = stringutil.stringmatcher(pat)

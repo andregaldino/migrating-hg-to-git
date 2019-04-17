@@ -317,8 +317,8 @@ revision 4
   $ cd ../test
   $ hg merge 7
   note: possible conflict - afile was renamed multiple times to:
-   anotherfile
    adifferentfile
+   anotherfile
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m merge

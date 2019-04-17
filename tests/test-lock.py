@@ -141,7 +141,7 @@ class testlock(unittest.TestCase):
         state.assertacquirecalled(True)
 
         # fake a fork
-        forklock = copy.deepcopy(lock)
+        forklock = copy.copy(lock)
         forklock._pidoffset = 1
         forklock.release()
         state.assertreleasecalled(False)
@@ -238,7 +238,7 @@ class testlock(unittest.TestCase):
             childstate.assertacquirecalled(True)
 
             # fork the child lock
-            forkchildlock = copy.deepcopy(childlock)
+            forkchildlock = copy.copy(childlock)
             forkchildlock._pidoffset += 1
             forkchildlock.release()
             childstate.assertreleasecalled(False)
@@ -290,7 +290,7 @@ class testlock(unittest.TestCase):
             self.fail("unexpected lock acquisition")
         except error.LockHeld as why:
             self.assertTrue(why.errno == errno.ETIMEDOUT)
-            self.assertTrue(why.locker == "")
+            self.assertTrue(why.locker == b"")
             state.assertlockexists(False)
 
 if __name__ == '__main__':

@@ -72,30 +72,30 @@ Arbitraryfilectx.cmp does not follow symlinks:
 These files are different and should return True (different):
 (Note that filecmp.cmp's return semantics are inverted from ours, so we invert
 for simplicity):
-  $ hg eval "context.arbitraryfilectx('A', repo).cmp(repo[None]['real_A'])"
+  $ hg eval "context.arbitraryfilectx(b'A', repo).cmp(repo[None][b'real_A'])"
   True (no-eol)
-  $ hg eval "not filecmp.cmp('A', 'real_A')"
+  $ hg eval "not filecmp.cmp(b'A', b'real_A')"
   True (no-eol)
 
 These files are identical and should return False (same):
-  $ hg eval "context.arbitraryfilectx('A', repo).cmp(repo[None]['A'])"
+  $ hg eval "context.arbitraryfilectx(b'A', repo).cmp(repo[None][b'A'])"
   False (no-eol)
-  $ hg eval "context.arbitraryfilectx('A', repo).cmp(repo[None]['B'])"
+  $ hg eval "context.arbitraryfilectx(b'A', repo).cmp(repo[None][b'B'])"
   False (no-eol)
-  $ hg eval "not filecmp.cmp('A', 'B')"
+  $ hg eval "not filecmp.cmp(b'A', b'B')"
   False (no-eol)
 
 This comparison should also return False, since A and sym_A are substantially
 the same in the eyes of ``filectx.cmp``, which looks at data only.
-  $ hg eval "context.arbitraryfilectx('real_A', repo).cmp(repo[None]['sym_A'])"
+  $ hg eval "context.arbitraryfilectx(b'real_A', repo).cmp(repo[None][b'sym_A'])"
   False (no-eol)
 
 A naive use of filecmp on those two would wrongly return True, since it follows
 the symlink to "A", which has different contents.
 #if symlink
-  $ hg eval "not filecmp.cmp('real_A', 'sym_A')"
+  $ hg eval "not filecmp.cmp(b'real_A', b'sym_A')"
   True (no-eol)
 #else
-  $ hg eval "not filecmp.cmp('real_A', 'sym_A')"
+  $ hg eval "not filecmp.cmp(b'real_A', b'sym_A')"
   False (no-eol)
 #endif

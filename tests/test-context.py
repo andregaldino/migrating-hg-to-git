@@ -27,9 +27,9 @@ def printb(data, end=b'\n'):
     out.write(data + end)
     out.flush()
 
-u = uimod.ui.load()
+ui = uimod.ui.load()
 
-repo = hg.repository(u, b'test1', create=1)
+repo = hg.repository(ui, b'test1', create=1)
 os.chdir('test1')
 
 # create 'foo' with fixed time stamp
@@ -63,7 +63,7 @@ for enc in "ASCII", "Latin-1", "UTF-8":
 # test performing a status
 
 def getfilectx(repo, memctx, f):
-    fctx = memctx.parents()[0][f]
+    fctx = memctx.p1()[f]
     data, flags = fctx.data(), fctx.flags()
     if f == b'foo':
         data += b'bar\n'
@@ -172,7 +172,7 @@ os.chdir('..')
 # test manifestlog being changed
 print('== commit with manifestlog invalidated')
 
-repo = hg.repository(u, b'test2', create=1)
+repo = hg.repository(ui, b'test2', create=1)
 os.chdir('test2')
 
 # make some commits

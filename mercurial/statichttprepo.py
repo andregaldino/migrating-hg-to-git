@@ -13,12 +13,14 @@ import errno
 
 from .i18n import _
 from . import (
+    branchmap,
     changelog,
     error,
     localrepo,
     manifest,
     namespaces,
     pathutil,
+    pycompat,
     url,
     util,
     vfs as vfsmod,
@@ -44,12 +46,12 @@ class httprangereader(object):
     def seek(self, pos):
         self.pos = pos
     def read(self, bytes=None):
-        req = urlreq.request(self.url)
+        req = urlreq.request(pycompat.strurl(self.url))
         end = ''
         if bytes:
             end = self.pos + bytes - 1
         if self.pos or end:
-            req.add_header('Range', 'bytes=%d-%s' % (self.pos, end))
+            req.add_header(r'Range', r'bytes=%d-%s' % (self.pos, end))
 
         try:
             f = self.opener.open(req)
@@ -59,7 +61,7 @@ class httprangereader(object):
             num = inst.code == 404 and errno.ENOENT or None
             raise IOError(num, inst)
         except urlerr.urlerror as inst:
-            raise IOError(None, inst.reason[1])
+            raise IOError(None, inst.reason)
 
         if code == 200:
             # HTTPRangeHandler does nothing if remote does not support
@@ -192,7 +194,7 @@ class statichttprepository(localrepo.localrepository,
         self.changelog = changelog.changelog(self.svfs)
         self._tags = None
         self.nodetagscache = None
-        self._branchcaches = {}
+        self._branchcaches = branchmap.BranchMapCache()
         self._revbranchcache = None
         self.encodepats = None
         self.decodepats = None
