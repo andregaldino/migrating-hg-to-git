@@ -15,6 +15,7 @@ from . import (
     match as matchmod,
     merge,
     repository,
+    scmutil,
     sparse,
     util,
 )
@@ -302,8 +303,9 @@ def updateworkingcopy(repo, assumeclean=False):
     else:
         trackeddirty.extend(lookup)
     _deletecleanfiles(repo, clean)
+    uipathfn = scmutil.getuipathfn(repo)
     for f in sorted(trackeddirty):
-        repo.ui.status(_('not deleting possibly dirty file %s\n') % f)
+        repo.ui.status(_('not deleting possibly dirty file %s\n') % uipathfn(f))
     for f in clean + trackeddirty:
         ds.drop(f)
 
