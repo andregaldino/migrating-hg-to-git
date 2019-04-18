@@ -130,10 +130,8 @@ def _chain(src, dst, a, b):
     t = a.copy()
     for k, v in b.iteritems():
         if v in t:
-            # found a chain, i.e. cases 3 & 4.
-            if t[v] != k:
-                # file wasn't renamed back to itself (i.e. case 4, not 3)
-                t[k] = t[v]
+            # Found a chain, i.e. cases 3 & 4. We'll remove case 3 later.
+            t[k] = t[v]
         else:
             # Renamed only in 'b', i.e. cases 5 & 6. We'll remove case 5 later.
             t[k] = v
