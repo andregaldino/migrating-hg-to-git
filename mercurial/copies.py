@@ -134,7 +134,7 @@ def _chain(src, dst, a, b):
             if t[v] != k:
                 # file wasn't renamed back to itself (i.e. case 4, not 3)
                 t[k] = t[v]
-        if v in src:
+        elif v in src:
             # file is a copy of an existing file, i.e. case 6.
             t[k] = v
 
