@@ -300,6 +300,7 @@ def _changesetforwardcopies(a, b, match):
         else:
             copies = copies1
         if r == b.rev():
+            _filter(a, b, copies)
             return copies
         for c in children[r]:
             childctx = repo[c]
@@ -313,7 +314,10 @@ def _changesetforwardcopies(a, b, match):
             if not match.always():
                 childcopies = {dst: src for dst, src in childcopies.items()
                                if match(dst)}
-            childcopies = _chainandfilter(a, childctx, copies, childcopies)
+            childcopies = _chain(copies, childcopies)
+            for f in childctx.filesremoved():
+                if f in childcopies:
+                    del childcopies[f]
             heapq.heappush(work, (c, parent, childcopies))
     assert False
 
