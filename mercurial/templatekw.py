@@ -290,11 +290,6 @@ def _getfilestatusmap(context, mapping, listall=False):
             statmap.update((f, char) for f in files)
     return revcache['filestatusmap']  # {path: statchar}
 
-def _showfilesbystat(context, mapping, name, index):
-    stat = _getfilestatus(context, mapping)
-    files = stat[index]
-    return templateutil.compatfileslist(context, mapping, name, files)
-
 @templatekeyword('file_copies',
                  requires={'repo', 'ctx', 'cache', 'revcache'})
 def showfilecopies(context, mapping):
@@ -332,17 +327,23 @@ def showfilecopiesswitch(context, mapping):
 @templatekeyword('file_adds', requires={'ctx', 'revcache'})
 def showfileadds(context, mapping):
     """List of strings. Files added by this changeset."""
-    return _showfilesbystat(context, mapping, 'file_add', 1)
+    ctx = context.resource(mapping, 'ctx')
+    return templateutil.compatfileslist(context, mapping, 'file_add',
+                                        ctx.filesadded())
 
 @templatekeyword('file_dels', requires={'ctx', 'revcache'})
 def showfiledels(context, mapping):
     """List of strings. Files removed by this changeset."""
-    return _showfilesbystat(context, mapping, 'file_del', 2)
+    ctx = context.resource(mapping, 'ctx')
+    return templateutil.compatfileslist(context, mapping, 'file_del',
+                                        ctx.filesremoved())
 
 @templatekeyword('file_mods', requires={'ctx', 'revcache'})
 def showfilemods(context, mapping):
     """List of strings. Files modified by this changeset."""
-    return _showfilesbystat(context, mapping, 'file_mod', 0)
+    ctx = context.resource(mapping, 'ctx')
+    return templateutil.compatfileslist(context, mapping, 'file_mod',
+                                        ctx.filesmodified())
 
 @templatekeyword('files', requires={'ctx'})
 def showfiles(context, mapping):

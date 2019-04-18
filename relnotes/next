@@ -15,6 +15,10 @@
 
 == Bug Fixes  ==
 
+ * issue4292: "hg log and {files} {file_adds} {file_mods} {file_dels}
+   in template show wrong files on merged revision". See details in
+   "Backwards Compatibility Changes".
+
 
 == Backwards Compatibility Changes ==
 
@@ -30,6 +34,16 @@
    backups in that directory. This is similar to how we would
    previously replace files *in* the configured directory by
    subdirectories.
+
+* Template keyword `{file_mods}`, `{file_adds}`, and `{file_dels}`
+   have changed behavior on merge commits. They used to be relative to
+   the first parent, but they now consider both parents. `{file_adds}`
+   shows files that exists in the commit but did not exist in either
+   parent. `{file_dels}` shows files that do not exist in the commit
+   but existed in either parent. `{file_mods}` show the remaining
+   files from `{files}` that were not in the other two
+   sets.
+
 
 == Internal API Changes ==
 

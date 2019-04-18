@@ -59,7 +59,7 @@ move should be recorded in the fixup merge.
   $ glog -R source-hg
   o    5@source "(octopus merge fixup)" files+: [], files-: [], files: [renamed]
   |\
-  | o    4@source "Merged branches" files+: [file-branch1 file-branch2 renamed], files-: [rename_me], files: [file]
+  | o    4@source "Merged branches" files+: [file-branch2 renamed], files-: [rename_me], files: []
   | |\
   o---+  3@source-branch2 "Added brach2 file" files+: [file-branch2 renamed], files-: [rename_me], files: []
    / /
@@ -154,7 +154,7 @@ there.  It's not recorded as a move in rev 5, even in source-hg.
   $ glog -R hg2hg
   @    5@source "(octopus merge fixup)" files+: [], files-: [], files: []
   |\
-  | o    4@source "Merged branches" files+: [file-branch1 file-branch2 renamed], files-: [rename_me], files: [file]
+  | o    4@source "Merged branches" files+: [file-branch2 renamed], files-: [rename_me], files: []
   | |\
   o---+  3@source-branch2 "Added brach2 file" files+: [file-branch2 renamed], files-: [rename_me], files: []
    / /

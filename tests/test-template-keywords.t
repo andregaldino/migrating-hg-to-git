@@ -809,9 +809,9 @@ Test files lists on merge commit:
   $ hg log -l1 -T '{files}\n'
   a fourth
   $ hg log -l1 -T '{file_mods}\n'
-  third
+  
   $ hg log -l1 -T '{file_adds}\n'
-  b fifth
+  
   $ hg log -l1 -T '{file_dels}\n'
   a fourth
 
