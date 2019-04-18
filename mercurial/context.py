@@ -463,6 +463,24 @@ class changectx(basectx):
         return self._changeset.date
     def files(self):
         return self._changeset.files
+    def filesmodified(self):
+        modified = set(self.files())
+        modified.difference_update(self.filesadded())
+        modified.difference_update(self.filesremoved())
+        return sorted(modified)
+    def filesadded(self):
+        added = []
+        for f in self.files():
+            if not any(f in p for p in self.parents()):
+                added.append(f)
+        return added
+    def filesremoved(self):
+        removed = []
+        for f in self.files():
+            if f not in self:
+                removed.append(f)
+        return removed
+
     @propertycache
     def _copies(self):
         source = self._repo.ui.config('experimental', 'copies.read-from')
@@ -1170,6 +1188,10 @@ class committablectx(basectx):
         return self._status.removed
     def deleted(self):
         return self._status.deleted
+    filesmodified = modified
+    filesadded = added
+    filesremoved = removed
+
     def branch(self):
         return encoding.tolocal(self._extra['branch'])
     def closesbranch(self):
