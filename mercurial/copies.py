@@ -134,13 +134,16 @@ def _chain(src, dst, a, b):
             if t[v] != k:
                 # file wasn't renamed back to itself (i.e. case 4, not 3)
                 t[k] = t[v]
-        elif v in src:
-            # file is a copy of an existing file, i.e. case 6.
+        else:
+            # Renamed only in 'b', i.e. cases 5 & 6. We'll remove case 5 later.
             t[k] = v
 
     for k, v in list(t.items()):
+        # remove copies from files that didn't exist, i.e. case 5
+        if v not in src:
+            del t[k]
         # remove criss-crossed copies, i.e. case 3
-        if k in src and v in dst:
+        elif k in src and v in dst:
             del t[k]
         # remove copies to files that were then removed, i.e. case 1
         # and file 'y' in cases 3 & 4 (in case of rename)
