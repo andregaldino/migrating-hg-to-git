@@ -108,26 +108,46 @@ def _findlimit(repo, ctxa, ctxb):
     return min(limit, a, b)
 
 def _chain(src, dst, a, b):
-    """chain two sets of copies a->b"""
+    """chain two sets of copies 'a' and 'b'"""
+
+    # When chaining copies in 'a' (from 'src' via some other commit 'mid') with
+    # copies in 'b' (from 'mid' to 'dst'), we can get the different cases in the
+    # following table (not including trivial cases). For example, case 2 is
+    # where a file existed in 'src' and remained under that name in 'mid' and
+    # then was renamed between 'mid' and 'dst'.
+    #
+    # case src mid dst result
+    #   1   x   y   -    -
+    #   2   x   y   y   x->y
+    #   3   x   y   x    -
+    #   4   x   y   z   x->z
+    #   5   -   x   y    -
+    #   6   x   x   y   x->y
+
+    # Initialize result ('t') from 'a'. This catches cases 1 & 2. We'll remove
+    # case 1 later. We'll also catch cases 3 & 4 here. Case 4 will be
+    # overwritten later, and case 3 will be removed later.
     t = a.copy()
     for k, v in b.iteritems():
         if v in t:
-            # found a chain
+            # found a chain, i.e. cases 3 & 4.
             if t[v] != k:
-                # file wasn't renamed back to itself
+                # file wasn't renamed back to itself (i.e. case 4, not 3)
                 t[k] = t[v]
             if v not in dst:
                 # chain was a rename, not a copy
+                # this deletes the copy for 'y' in case 4
                 del t[v]
         if v in src:
-            # file is a copy of an existing file
+            # file is a copy of an existing file, i.e. case 6.
             t[k] = v
 
     for k, v in list(t.items()):
-        # remove criss-crossed copies
+        # remove criss-crossed copies, i.e. case 3
         if k in src and v in dst:
             del t[k]
-        # remove copies to files that were then removed
+        # remove copies to files that were then removed, i.e. case 1
+        # and file 'y' in cases 3 & 4 (in case of rename)
         elif k not in dst:
             del t[k]
 
