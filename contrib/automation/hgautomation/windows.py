@@ -156,6 +156,10 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
             fh.write('  UserKnownHostsFile %s\n' % (ssh_dir / 'known_hosts'))
             fh.write('  IdentityFile %s\n' % (ssh_dir / 'id_rsa'))
 
+        if not (hg_repo / '.hg').is_dir():
+            raise Exception('%s is not a Mercurial repository; '
+                            'synchronization not yet supported' % hg_repo)
+
         env = dict(os.environ)
         env['HGPLAIN'] = '1'
         env['HGENCODING'] = 'utf-8'
