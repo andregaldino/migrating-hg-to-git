@@ -95,12 +95,12 @@ def build_all_windows_packages(hga: HGAutomation, aws_region, revision):
 
 
 def terminate_ec2_instances(hga: HGAutomation, aws_region):
-    c = hga.aws_connection(aws_region)
+    c = hga.aws_connection(aws_region, ensure_ec2_state=False)
     aws.terminate_ec2_instances(c.ec2resource)
 
 
 def purge_ec2_resources(hga: HGAutomation, aws_region):
-    c = hga.aws_connection(aws_region)
+    c = hga.aws_connection(aws_region, ensure_ec2_state=False)
     aws.remove_resources(c)
 
 

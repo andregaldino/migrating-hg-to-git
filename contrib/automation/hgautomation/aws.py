@@ -180,7 +180,7 @@ Install-WindowsFeature -Name Net-Framework-Core
 class AWSConnection:
     """Manages the state of a connection with AWS."""
 
-    def __init__(self, automation, region: str):
+    def __init__(self, automation, region: str, ensure_ec2_state: bool=True):
         self.automation = automation
         self.local_state_path = automation.state_path
 
@@ -191,11 +191,12 @@ class AWSConnection:
         self.ec2resource = self.session.resource('ec2')
         self.iamclient = self.session.client('iam')
         self.iamresource = self.session.resource('iam')
+        self.security_groups = {}
 
-        ensure_key_pairs(automation.state_path, self.ec2resource)
-
-        self.security_groups = ensure_security_groups(self.ec2resource)
-        ensure_iam_state(self.iamresource)
+        if ensure_ec2_state:
+            ensure_key_pairs(automation.state_path, self.ec2resource)
+            self.security_groups = ensure_security_groups(self.ec2resource)
+            ensure_iam_state(self.iamresource)
 
     def key_pair_path_private(self, name):
         """Path to a key pair private key file."""
