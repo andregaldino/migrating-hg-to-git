@@ -54,7 +54,16 @@ if sys.version_info[0] >= 3:
                 if finder == self:
                     continue
 
-                spec = finder.find_spec(fullname, path, target=target)
+                # Originally the API was a `find_module` method, but it was
+                # renamed to `find_spec` in python 3.4, with a new `target`
+                # argument.
+                find_spec_method = getattr(finder, 'find_spec', None)
+                if find_spec_method:
+                    spec = find_spec_method(fullname, path, target=target)
+                else:
+                    spec = finder.find_module(fullname)
+                    if spec is not None:
+                        spec = importlib.util.spec_from_loader(fullname, spec)
                 if spec:
                     break
 
