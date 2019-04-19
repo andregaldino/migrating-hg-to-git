@@ -73,7 +73,8 @@ def build_windows_wheel(hga: HGAutomation, aws_region, arch, revision):
             windows.build_wheel(instance.winrm_client, a, DIST_PATH)
 
 
-def build_all_windows_packages(hga: HGAutomation, aws_region, revision):
+def build_all_windows_packages(hga: HGAutomation, aws_region, revision,
+                               version):
     c = hga.aws_connection(aws_region)
     image = aws.ensure_windows_dev_ami(c)
     DIST_PATH.mkdir(exist_ok=True)
@@ -89,9 +90,11 @@ def build_all_windows_packages(hga: HGAutomation, aws_region, revision):
             windows.purge_hg(winrm_client)
             windows.build_wheel(winrm_client, arch, DIST_PATH)
             windows.purge_hg(winrm_client)
-            windows.build_inno_installer(winrm_client, arch, DIST_PATH)
+            windows.build_inno_installer(winrm_client, arch, DIST_PATH,
+                                         version=version)
             windows.purge_hg(winrm_client)
-            windows.build_wix_installer(winrm_client, arch, DIST_PATH)
+            windows.build_wix_installer(winrm_client, arch, DIST_PATH,
+                                        version=version)
 
 
 def terminate_ec2_instances(hga: HGAutomation, aws_region):
@@ -148,6 +151,10 @@ def get_parser():
         '--revision',
         help='Mercurial revision to build',
         default='.',
+    )
+    sp.add_argument(
+        '--version',
+        help='Mercurial version string to use',
     )
     sp.set_defaults(func=build_all_windows_packages)
 
