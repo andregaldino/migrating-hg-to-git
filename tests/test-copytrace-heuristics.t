@@ -16,6 +16,9 @@ Test for the heuristic copytracing algorithm
   > [extensions]
   > rebase=
   > shelve=
+  > [alias]
+  > l = log -G -T 'changeset: {node}\n desc: {desc}\n'
+  > pl = log -G -T 'changeset: {node}\n desc: {desc}, phase: {phase}\n'
   > EOF
 
 NOTE: calling initclient() set copytrace.sourcecommitlimit=-1 as we want to
@@ -43,7 +46,7 @@ Check filename heuristics (same dirname and same basename)
   $ echo b > dir/file.txt
   $ hg ci -qm 'mod a, mod dir/file.txt'
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: 557f403c0afd2a3cf15d7e2fb1f1001a8b85e081
   |   desc: mod a, mod dir/file.txt
   | o  changeset: 928d74bc9110681920854d845c06959f6dfc9547
@@ -76,7 +79,7 @@ Make sure filename heuristics do not when they are not related
   $ printf 'somecontent\nmoarcontent' > a
   $ hg ci -qm 'mode a'
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: d526312210b9e8f795d576a77dc643796384d86e
   |   desc: mode a
   | o  changeset: 46985f76c7e5e5123433527f5c8526806145650b
@@ -113,7 +116,7 @@ Test when lca didn't modified the file that was moved
   $ echo b > a
   $ hg ci -qm 'mod a'
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}, phase: {phase}\n'
+  $ hg pl
   @  changeset: 9d5cf99c3d9f8e8b05ba55421f7f56530cfcf3bc
   |   desc: mod a, phase: draft
   | o  changeset: d760186dd240fc47b91eb9f0b58b0002aaeef95d
@@ -148,7 +151,7 @@ Rebase "backwards"
   $ echo b > b
   $ hg ci -qm 'mod b'
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: fbe97126b3969056795c462a67d93faf13e4d298
   |   desc: mod b
   o  changeset: d760186dd240fc47b91eb9f0b58b0002aaeef95d
@@ -185,7 +188,7 @@ Check a few potential move candidates
   $ echo b > dir/a
   $ hg ci -qm 'mod dir/a'
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: 6b2f4cece40fd320f41229f23821256ffc08efea
   |   desc: mod dir/a
   | o  changeset: 4494bf7efd2e0dfdd388e767fb913a8a3731e3fa
@@ -230,7 +233,7 @@ Test the copytrace.movecandidateslimit with many move candidates
   $ hg ci -m 'mod a'
   created new head
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: ef716627c70bf4ca0bdb623cfb0d6fe5b9acc51e
   |   desc: mod a
   | o  changeset: 8329d5c6bf479ec5ca59b9864f3f45d07213f5a4
@@ -278,7 +281,7 @@ Move file in one branch and delete it in another
   $ hg ci -m 'del a'
   created new head
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}, phase: {phase}\n'
+  $ hg pl
   @  changeset: 7d61ee3b1e48577891a072024968428ba465c47b
   |   desc: del a, phase: draft
   | o  changeset: 472e38d57782172f6c6abed82a94ca0d998c3a22
@@ -311,7 +314,7 @@ Move a directory in draft branch
   $ hg mv -q dir/ dir2
   $ hg ci -qm 'mv dir/ dir2/'
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: a33d80b6e352591dfd82784e1ad6cdd86b25a239
   |   desc: mv dir/ dir2/
   | o  changeset: 6b2f4cece40fd320f41229f23821256ffc08efea
@@ -345,7 +348,7 @@ Move file twice and rebase mod on top of moves
   $ hg ci -m 'mod a'
   created new head
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: d413169422167a3fa5275fc5d71f7dea9f5775f3
   |   desc: mod a
   | o  changeset: d3efd280421d24f9f229997c19e654761c942a71
@@ -379,7 +382,7 @@ Move file twice and rebase moves on top of mods
   $ echo c > a
   $ hg ci -m 'mod a'
   created new head
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: d413169422167a3fa5275fc5d71f7dea9f5775f3
   |   desc: mod a
   | o  changeset: d3efd280421d24f9f229997c19e654761c942a71
@@ -417,7 +420,7 @@ Move one file and add another file in the same folder in one branch, modify file
   $ hg ci -m 'mod a'
   created new head
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: ef716627c70bf4ca0bdb623cfb0d6fe5b9acc51e
   |   desc: mod a
   | o  changeset: b1a6187e79fbce851bb584eadcb0cc4a80290fd9
@@ -455,7 +458,7 @@ Merge test
   created new head
   $ hg up -q 2
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: 472e38d57782172f6c6abed82a94ca0d998c3a22
   |   desc: mv a b
   | o  changeset: b0357b07f79129a3d08a68621271ca1352ae8a09
@@ -490,7 +493,7 @@ Copy and move file
   $ hg ci -m 'mod a'
   created new head
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: ef716627c70bf4ca0bdb623cfb0d6fe5b9acc51e
   |   desc: mod a
   | o  changeset: 4fc3fd13fbdb89ada6b75bfcef3911a689a0dde8
@@ -530,7 +533,7 @@ Do a merge commit with many consequent moves in one branch
   $ hg mv b c
   $ hg ci -qm 'mv b c'
   $ hg up -q 1
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   o  changeset: d3efd280421d24f9f229997c19e654761c942a71
   |   desc: mv b c
   o  changeset: 472e38d57782172f6c6abed82a94ca0d998c3a22
@@ -545,7 +548,7 @@ Do a merge commit with many consequent moves in one branch
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -qm 'merge'
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}, phase: {phase}\n'
+  $ hg pl
   @    changeset: cd29b0d08c0f39bfed4cde1b40e30f419db0c825
   |\    desc: merge, phase: draft
   | o  changeset: d3efd280421d24f9f229997c19e654761c942a71
@@ -577,7 +580,7 @@ Test shelve/unshelve
   $ hg mv a b
   $ hg ci -m 'mv a b'
 
-  $ hg log -G -T 'changeset: {node}\n desc: {desc}\n'
+  $ hg l
   @  changeset: 472e38d57782172f6c6abed82a94ca0d998c3a22
   |   desc: mv a b
   o  changeset: 1451231c87572a7d3f92fc210b4b35711c949a98
@@ -614,13 +617,13 @@ File directory and base name changed in same move
   $ cd ..
   $ hg ci -qm 'mod a'
 
-  $ hg log -G -T 'changeset {node}\n desc {desc}, phase: {phase}\n'
-  @  changeset 6207d2d318e710b882e3d5ada2a89770efc42c96
-  |   desc mod a, phase: draft
-  | o  changeset abffdd4e3dfc04bc375034b970299b2a309a1cce
-  |/    desc mv a b; mv dir1 dir2, phase: draft
-  o  changeset 81973cd24b58db2fdf18ce3d64fb2cc3284e9ab3
-      desc initial, phase: draft
+  $ hg pl
+  @  changeset: 6207d2d318e710b882e3d5ada2a89770efc42c96
+  |   desc: mod a, phase: draft
+  | o  changeset: abffdd4e3dfc04bc375034b970299b2a309a1cce
+  |/    desc: mv a b; mv dir1 dir2, phase: draft
+  o  changeset: 81973cd24b58db2fdf18ce3d64fb2cc3284e9ab3
+      desc: initial, phase: draft
 
   $ hg rebase -s . -d 1 --config experimental.copytrace.sourcecommitlimit=100
   rebasing 2:6207d2d318e7 "mod a" (tip)
@@ -652,13 +655,13 @@ in other merge parent. File moved on rebase.
   $ hg mv -q dir1 dir2
   $ hg ci -qm 'mv dir1 dir2'
 
-  $ hg log -G -T 'changeset {node}\n desc {desc}, phase: {phase}\n'
-  @  changeset e8919e7df8d036e07b906045eddcd4a42ff1915f
-  |   desc mv dir1 dir2, phase: draft
-  | o  changeset 7c7c6f339be00f849c3cb2df738ca91db78b32c8
-  |/    desc hg add dir1/a, phase: draft
-  o  changeset a235dcce55dcf42034c4e374cb200662d0bb4a13
-      desc initial, phase: draft
+  $ hg pl
+  @  changeset: e8919e7df8d036e07b906045eddcd4a42ff1915f
+  |   desc: mv dir1 dir2, phase: draft
+  | o  changeset: 7c7c6f339be00f849c3cb2df738ca91db78b32c8
+  |/    desc: hg add dir1/a, phase: draft
+  o  changeset: a235dcce55dcf42034c4e374cb200662d0bb4a13
+      desc: initial, phase: draft
 
   $ hg rebase -s . -d 1 --config experimental.copytrace.sourcecommitlimit=100
   rebasing 2:e8919e7df8d0 "mv dir1 dir2" (tip)
@@ -685,15 +688,15 @@ Testing the sourcecommitlimit config
   $ mkdir foo
   $ hg mv a foo/bar
   $ hg ci -m "Moved a to foo/bar"
-  $ hg log -G -T 'changeset {node}\n desc {desc}, phase: {phase}\n'
-  @  changeset b4b0f7880e500b5c364a5f07b4a2b167de7a6fb0
-  |   desc Moved a to foo/bar, phase: draft
-  o  changeset 5f6d8a4bf34ab274ccc9f631c2536964b8a3666d
-  |   desc added b, phase: draft
-  | o  changeset 8b6e13696c38e8445a759516474640c2f8dddef6
-  |/    desc added more things to a, phase: draft
-  o  changeset 9092f1db7931481f93b37d5c9fbcfc341bcd7318
-      desc added a, phase: draft
+  $ hg pl
+  @  changeset: b4b0f7880e500b5c364a5f07b4a2b167de7a6fb0
+  |   desc: Moved a to foo/bar, phase: draft
+  o  changeset: 5f6d8a4bf34ab274ccc9f631c2536964b8a3666d
+  |   desc: added b, phase: draft
+  | o  changeset: 8b6e13696c38e8445a759516474640c2f8dddef6
+  |/    desc: added more things to a, phase: draft
+  o  changeset: 9092f1db7931481f93b37d5c9fbcfc341bcd7318
+      desc: added a, phase: draft
 
 When the sourcecommitlimit is small and we have more drafts, we use heuristics only
 
