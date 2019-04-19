@@ -452,8 +452,9 @@ first side should not include the y->z rename since y didn't exist in the merge 
   y -> z
   $ hg debugpathcopies 1 3
 
-Create x and y, then rename x to z on one side of merge, and rename y to z and modify z on the
-other side.
+Create x and y, then rename x to z on one side of merge, and rename y to z and
+modify z on the other side. When storing copies in the changeset, we don't
+filter out copies whose target was created on the other side of the merge.
   $ newrepo
   $ echo x > x
   $ echo y > y
@@ -494,12 +495,16 @@ Try merging the other direction too
   o  0 add x and y
      x y
   $ hg debugpathcopies 1 4
+  y -> z (no-filelog !)
   $ hg debugpathcopies 2 4
+  x -> z (no-filelog !)
   $ hg debugpathcopies 0 4
   x -> z (filelog !)
   y -> z (compatibility !)
   $ hg debugpathcopies 1 5
+  y -> z (no-filelog !)
   $ hg debugpathcopies 2 5
+  x -> z (no-filelog !)
   $ hg debugpathcopies 0 5
   x -> z
 

@@ -276,27 +276,22 @@ def _changesetforwardcopies(a, b, match):
             # We are tracing copies from both parents
             r, i2, copies2 = heapq.heappop(work)
             copies = {}
-            ctx = repo[r]
-            p1man, p2man = ctx.p1().manifest(), ctx.p2().manifest()
             allcopies = set(copies1) | set(copies2)
             # TODO: perhaps this filtering should be done as long as ctx
             # is merge, whether or not we're tracing from both parent.
             for dst in allcopies:
                 if not match(dst):
                     continue
-                if dst not in copies2:
-                    # Copied on p1 side: mark as copy from p1 side if it didn't
-                    # already exist on p2 side
-                    if dst not in p2man:
-                        copies[dst] = copies1[dst]
-                elif dst not in copies1:
-                    # Copied on p2 side: mark as copy from p2 side if it didn't
-                    # already exist on p1 side
-                    if dst not in p1man:
-                        copies[dst] = copies2[dst]
-                else:
-                    # Copied on both sides: mark as copy from p1 side
+                # Unlike when copies are stored in the filelog, we consider
+                # it a copy even if the destination already existed on the
+                # other branch. It's simply too expensive to check if the
+                # file existed in the manifest.
+                if dst in copies1:
+                    # If it was copied on the p1 side, mark it as copied from
+                    # that side, even if it was also copied on the p2 side.
                     copies[dst] = copies1[dst]
+                else:
+                    copies[dst] = copies2[dst]
         else:
             copies = copies1
         if r == b.rev():
