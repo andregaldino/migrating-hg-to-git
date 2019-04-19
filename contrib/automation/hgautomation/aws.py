@@ -505,6 +505,10 @@ def remove_resources(c, prefix='hg-'):
 
     for role in iamresource.roles.all():
         if role.name.startswith(prefix):
+            for p in role.attached_policies.all():
+                print('detaching policy %s from %s' % (p.arn, role.name))
+                role.detach_policy(PolicyArn=p.arn)
+
             print('removing role %s' % role.name)
             role.delete()
 
