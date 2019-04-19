@@ -808,10 +808,26 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
         )
 
         # Reboot so all updates are fully applied.
+        #
+        # We don't use instance.reboot() here because it is asynchronous and
+        # we don't know when exactly the instance has rebooted. It could take
+        # a while to stop and we may start trying to interact with the instance
+        # before it has rebooted.
         print('rebooting instance %s' % instance.id)
-        ec2client.reboot_instances(InstanceIds=[instance.id])
+        instance.stop()
+        ec2client.get_waiter('instance_stopped').wait(
+            InstanceIds=[instance.id],
+            WaiterConfig={
+                'Delay': 5,
+            })
 
-        time.sleep(15)
+        instance.start()
+        wait_for_ip_addresses([instance])
+
+        # There is a race condition here between the User Data PS script running
+        # and us connecting to WinRM. This can manifest as
+        # "AuthorizationManager check failed" failures during run_powershell().
+        # TODO figure out a workaround.
 
         print('waiting for Windows Remote Management to come back...')
         client = wait_for_winrm(instance.public_ip_address, 'Administrator',
