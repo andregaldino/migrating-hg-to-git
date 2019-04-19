@@ -490,7 +490,7 @@ def remove_resources(c, prefix='hg-'):
 
     terminate_ec2_instances(ec2resource, prefix=prefix)
 
-    for image in ec2resource.images.all():
+    for image in ec2resource.images.filter(Owners=['self']):
         if image.name.startswith(prefix):
             remove_ami(ec2resource, image)
 
