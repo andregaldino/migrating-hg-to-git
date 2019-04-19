@@ -652,18 +652,15 @@ class revbranchcache(object):
 
     def _writerevs(self, repo, start):
         """ write the new revs to revbranchcache """
-        revs = min(len(repo.changelog),
-                   len(self._rbcrevs) // _rbcrecsize)
-        f = repo.cachevfs.open(_rbcrevs, 'ab')
-        if f.tell() != start:
-            repo.ui.debug("truncating cache/%s to %d\n"
-                          % (_rbcrevs, start))
-            f.seek(start)
+        revs = min(len(repo.changelog), len(self._rbcrevs) // _rbcrecsize)
+        with repo.cachevfs.open(_rbcrevs, 'ab') as f:
             if f.tell() != start:
-                start = 0
+                repo.ui.debug("truncating cache/%s to %d\n" % (_rbcrevs, start))
                 f.seek(start)
-            f.truncate()
-        end = revs * _rbcrecsize
-        f.write(self._rbcrevs[start:end])
-        f.close()
+                if f.tell() != start:
+                    start = 0
+                    f.seek(start)
+                f.truncate()
+            end = revs * _rbcrecsize
+            f.write(self._rbcrevs[start:end])
         self._rbcrevslen = revs
