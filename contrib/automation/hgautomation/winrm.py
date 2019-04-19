@@ -25,7 +25,7 @@ import requests.exceptions
 logger = logging.getLogger(__name__)
 
 
-def wait_for_winrm(host, username, password, timeout=120, ssl=False):
+def wait_for_winrm(host, username, password, timeout=180, ssl=False):
     """Wait for the Windows Remoting (WinRM) service to become available.
 
     Returns a ``psrpclient.Client`` instance.
