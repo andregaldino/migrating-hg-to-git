@@ -297,7 +297,7 @@ def _changesetforwardcopies(a, b, match):
         if r == b.rev():
             _filter(a, b, copies)
             return copies
-        for c in children[r]:
+        for i, c in enumerate(children[r]):
             childctx = repo[c]
             if r == childctx.p1().rev():
                 parent = 1
@@ -309,7 +309,13 @@ def _changesetforwardcopies(a, b, match):
             if not match.always():
                 childcopies = {dst: src for dst, src in childcopies.items()
                                if match(dst)}
-            childcopies = _chain(copies, childcopies)
+            # Copy the dict only if later iterations will also need it
+            if i != len(children[r]) - 1:
+                copies = copies.copy()
+            if childcopies:
+                childcopies = _chain(copies, childcopies)
+            else:
+                childcopies = copies
             for f in childctx.filesremoved():
                 if f in childcopies:
                     del childcopies[f]
