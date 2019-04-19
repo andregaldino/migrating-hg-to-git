@@ -608,51 +608,62 @@ class revbranchcache(object):
         wlock = None
         step = ''
         try:
+            # write the new names
             if self._rbcnamescount < len(self._names):
-                step = ' names'
                 wlock = repo.wlock(wait=False)
-                if self._rbcnamescount != 0:
-                    f = repo.cachevfs.open(_rbcnames, 'ab')
-                    if f.tell() == self._rbcsnameslen:
-                        f.write('\0')
-                    else:
-                        f.close()
-                        repo.ui.debug("%s changed - rewriting it\n" % _rbcnames)
-                        self._rbcnamescount = 0
-                        self._rbcrevslen = 0
-                if self._rbcnamescount == 0:
-                    # before rewriting names, make sure references are removed
-                    repo.cachevfs.unlinkpath(_rbcrevs, ignoremissing=True)
-                    f = repo.cachevfs.open(_rbcnames, 'wb')
-                f.write('\0'.join(encoding.fromlocal(b)
-                                  for b in self._names[self._rbcnamescount:]))
-                self._rbcsnameslen = f.tell()
-                f.close()
-                self._rbcnamescount = len(self._names)
+                step = ' names'
+                self._writenames(repo)
 
+            # write the new revs
             start = self._rbcrevslen * _rbcrecsize
             if start != len(self._rbcrevs):
                 step = ''
                 if wlock is None:
                     wlock = repo.wlock(wait=False)
-                revs = min(len(repo.changelog),
-                           len(self._rbcrevs) // _rbcrecsize)
-                f = repo.cachevfs.open(_rbcrevs, 'ab')
-                if f.tell() != start:
-                    repo.ui.debug("truncating cache/%s to %d\n"
-                                  % (_rbcrevs, start))
-                    f.seek(start)
-                    if f.tell() != start:
-                        start = 0
-                        f.seek(start)
-                    f.truncate()
-                end = revs * _rbcrecsize
-                f.write(self._rbcrevs[start:end])
-                f.close()
-                self._rbcrevslen = revs
+                self._writerevs(repo, start)
+
         except (IOError, OSError, error.Abort, error.LockError) as inst:
             repo.ui.debug("couldn't write revision branch cache%s: %s\n"
                           % (step, stringutil.forcebytestr(inst)))
         finally:
             if wlock is not None:
                 wlock.release()
+
+    def _writenames(self, repo):
+        """ write the new branch names to revbranchcache """
+        if self._rbcnamescount != 0:
+            f = repo.cachevfs.open(_rbcnames, 'ab')
+            if f.tell() == self._rbcsnameslen:
+                f.write('\0')
+            else:
+                f.close()
+                repo.ui.debug("%s changed - rewriting it\n" % _rbcnames)
+                self._rbcnamescount = 0
+                self._rbcrevslen = 0
+        if self._rbcnamescount == 0:
+            # before rewriting names, make sure references are removed
+            repo.cachevfs.unlinkpath(_rbcrevs, ignoremissing=True)
+            f = repo.cachevfs.open(_rbcnames, 'wb')
+        f.write('\0'.join(encoding.fromlocal(b)
+                          for b in self._names[self._rbcnamescount:]))
+        self._rbcsnameslen = f.tell()
+        f.close()
+        self._rbcnamescount = len(self._names)
+
+    def _writerevs(self, repo, start):
+        """ write the new revs to revbranchcache """
+        revs = min(len(repo.changelog),
+                   len(self._rbcrevs) // _rbcrecsize)
+        f = repo.cachevfs.open(_rbcrevs, 'ab')
+        if f.tell() != start:
+            repo.ui.debug("truncating cache/%s to %d\n"
+                          % (_rbcrevs, start))
+            f.seek(start)
+            if f.tell() != start:
+                start = 0
+                f.seek(start)
+            f.truncate()
+        end = revs * _rbcrecsize
+        f.write(self._rbcrevs[start:end])
+        f.close()
+        self._rbcrevslen = revs
