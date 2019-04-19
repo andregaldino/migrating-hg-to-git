@@ -176,7 +176,8 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
             'python2.7', hg_bin,
             '--config', 'ui.ssh=ssh -F %s' % ssh_config,
             '--config', 'ui.remotecmd=c:/hgdev/venv-bootstrap/Scripts/hg.exe',
-            'push', '-r', full_revision, 'ssh://%s/c:/hgdev/src' % public_ip,
+            'push', '-f', '-r', full_revision,
+            'ssh://%s/c:/hgdev/src' % public_ip,
         ]
 
         subprocess.run(args, cwd=str(hg_repo), env=env, check=True)
