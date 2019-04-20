@@ -905,11 +905,14 @@ def getdiffmeta(diff):
     meta = props.get(b'hg:meta')
     if not meta and props.get(b'local:commits'):
         commit = sorted(props[b'local:commits'].values())[0]
-        meta = {
-            b'date': b'%d 0' % commit[b'time'],
-            b'node': commit[b'rev'],
-            b'user': b'%s <%s>' % (commit[b'author'], commit[b'authorEmail']),
-        }
+        meta = {}
+        if b'author' in commit and b'authorEmail' in commit:
+            meta[b'user'] = b'%s <%s>' % (commit[b'author'],
+                                          commit[b'authorEmail'])
+        if b'time' in commit:
+            meta[b'date'] = b'%d 0' % commit[b'time']
+        if b'rev' in commit:
+            meta[b'node'] = commit[b'rev']
         if len(commit.get(b'parents', ())) >= 1:
             meta[b'parent'] = commit[b'parents'][0]
     return meta or {}
