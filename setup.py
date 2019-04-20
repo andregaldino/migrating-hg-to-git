@@ -937,6 +937,80 @@ class hginstallscripts(install_scripts):
             with open(outfile, 'wb') as fp:
                 fp.write(data)
 
+# virtualenv installs custom distutils/__init__.py and
+# distutils/distutils.cfg files which essentially proxy back to the
+# "real" distutils in the main Python install. The presence of this
+# directory causes py2exe to pick up the "hacked" distutils package
+# from the virtualenv and "import distutils" will fail from the py2exe
+# build because the "real" distutils files can't be located.
+#
+# We work around this by monkeypatching the py2exe code finding Python
+# modules to replace the found virtualenv distutils modules with the
+# original versions via filesystem scanning. This is a bit hacky. But
+# it allows us to use virtualenvs for py2exe packaging, which is more
+# deterministic and reproducible.
+#
+# It's worth noting that the common StackOverflow suggestions for this
+# problem involve copying the original distutils files into the
+# virtualenv or into the staging directory after setup() is invoked.
+# The former is very brittle and can easily break setup(). Our hacking
+# of the found modules routine has a similar result as copying the files
+# manually. But it makes fewer assumptions about how py2exe works and
+# is less brittle.
+
+# This only catches virtualenvs made with virtualenv (as opposed to
+# venv, which is likely what Python 3 uses).
+py2exehacked = py2exeloaded and getattr(sys, 'real_prefix', None) is not None
+
+if py2exehacked:
+    from distutils.command.py2exe import py2exe as buildpy2exe
+    from py2exe.mf import Module as py2exemodule
+
+    class hgbuildpy2exe(buildpy2exe):
+        def find_needed_modules(self, mf, files, modules):
+            res = buildpy2exe.find_needed_modules(self, mf, files, modules)
+
+            # Replace virtualenv's distutils modules with the real ones.
+            res.modules = {
+                k: v for k, v in res.modules.items()
+                if k != 'distutils' and not k.startswith('distutils.')}
+
+            import opcode
+            distutilsreal = os.path.join(os.path.dirname(opcode.__file__),
+                                         'distutils')
+
+            for root, dirs, files in os.walk(distutilsreal):
+                for f in sorted(files):
+                    if not f.endswith('.py'):
+                        continue
+
+                    full = os.path.join(root, f)
+
+                    parents = ['distutils']
+
+                    if root != distutilsreal:
+                        rel = os.path.relpath(root, distutilsreal)
+                        parents.extend(p for p in rel.split(os.sep))
+
+                    modname = '%s.%s' % ('.'.join(parents), f[:-3])
+
+                    if modname.startswith('distutils.tests.'):
+                        continue
+
+                    if modname.endswith('.__init__'):
+                        modname = modname[:-len('.__init__')]
+                        path = os.path.dirname(full)
+                    else:
+                        path = None
+
+                    res.modules[modname] = py2exemodule(modname, full,
+                                                        path=path)
+
+            if 'distutils' not in res.modules:
+                raise SystemExit('could not find distutils modules')
+
+            return res
+
 cmdclass = {'build': hgbuild,
             'build_doc': hgbuilddoc,
             'build_mo': hgbuildmo,
@@ -949,6 +1023,9 @@ cmdclass = {'build': hgbuild,
             'install_scripts': hginstallscripts,
             'build_hgexe': buildhgexe,
             }
+
+if py2exehacked:
+    cmdclass['py2exe'] = hgbuildpy2exe
 
 packages = ['mercurial',
             'mercurial.cext',
