@@ -384,6 +384,7 @@ def writediffproperties(ctx, diff):
         b'data': templatefilters.json({
             b'user': ctx.user(),
             b'date': b'%d %d' % ctx.date(),
+            b'branch': ctx.branch(),
             b'node': ctx.hex(),
             b'parent': ctx.p1().hex(),
         }),
@@ -398,6 +399,7 @@ def writediffproperties(ctx, diff):
                 b'author': stringutil.person(ctx.user()),
                 b'authorEmail': stringutil.email(ctx.user()),
                 b'time': int(ctx.date()[0]),
+                b'branch': ctx.branch(),
             },
         }),
     }
