@@ -911,8 +911,11 @@ def getdiffmeta(diff):
                                           commit[b'authorEmail'])
         if b'time' in commit:
             meta[b'date'] = b'%d 0' % commit[b'time']
-        if b'rev' in commit:
-            meta[b'node'] = commit[b'rev']
+        if b'branch' in commit:
+            meta[b'branch'] = commit[b'branch']
+        node = commit.get(b'commit', commit.get(b'rev'))
+        if node:
+            meta[b'node'] = node
         if len(commit.get(b'parents', ())) >= 1:
             meta[b'parent'] = commit[b'parents'][0]
     return meta or {}
