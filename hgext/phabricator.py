@@ -399,6 +399,8 @@ def writediffproperties(ctx, diff):
                 b'author': stringutil.person(ctx.user()),
                 b'authorEmail': stringutil.email(ctx.user()),
                 b'time': int(ctx.date()[0]),
+                b'commit': ctx.hex(),
+                b'parents': [ctx.p1().hex()],
                 b'branch': ctx.branch(),
             },
         }),
