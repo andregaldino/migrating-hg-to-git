@@ -484,7 +484,7 @@ class patternmatcher(basematcher):
     """Matches a set of (kind, pat, source) against a 'root' directory.
 
     >>> kindpats = [
-    ...     (b're', b'.*\.c$', b''),
+    ...     (b're', br'.*\.c$', b''),
     ...     (b'path', b'foo/a', b''),
     ...     (b'relpath', b'b', b''),
     ...     (b'glob', b'*.h', b''),
@@ -651,7 +651,7 @@ class exactmatcher(basematcher):
     r'''Matches the input files exactly. They are interpreted as paths, not
     patterns (so no kind-prefixes).
 
-    >>> m = exactmatcher([b'a.txt', b're:.*\.c$'])
+    >>> m = exactmatcher([b'a.txt', br're:.*\.c$'])
     >>> m(b'a.txt')
     True
     >>> m(b'b.txt')
@@ -664,7 +664,7 @@ class exactmatcher(basematcher):
     So pattern 're:.*\.c$' is not considered as a regex, but as a file name
     >>> m(b'main.c')
     False
-    >>> m(b're:.*\.c$')
+    >>> m(br're:.*\.c$')
     True
     '''
 
@@ -1075,7 +1075,7 @@ class unionmatcher(basematcher):
 def patkind(pattern, default=None):
     '''If pattern is 'kind:pat' with a known kind, return kind.
 
-    >>> patkind(b're:.*\.c$')
+    >>> patkind(br're:.*\.c$')
     're'
     >>> patkind(b'glob:*.c')
     'glob'
