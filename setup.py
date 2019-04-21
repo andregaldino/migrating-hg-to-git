@@ -795,8 +795,8 @@ class hgbuilddoc(Command):
             normalizecrlf('doc/%s.html' % root)
 
         # This logic is duplicated in doc/Makefile.
-        sources = {f for f in os.listdir('mercurial/help')
-                   if re.search(r'[0-9]\.txt$', f)}
+        sources = set(f for f in os.listdir('mercurial/help')
+                      if re.search(r'[0-9]\.txt$', f))
 
         # common.txt is a one-off.
         gentxt('common')
@@ -971,9 +971,12 @@ if py2exehacked:
             res = buildpy2exe.find_needed_modules(self, mf, files, modules)
 
             # Replace virtualenv's distutils modules with the real ones.
-            res.modules = {
-                k: v for k, v in res.modules.items()
-                if k != 'distutils' and not k.startswith('distutils.')}
+            modules = {}
+            for k, v in res.modules.items():
+                if k != 'distutils' and not k.startswith('distutils.'):
+                    modules[k] = v
+
+            res.modules = modules
 
             import opcode
             distutilsreal = os.path.join(os.path.dirname(opcode.__file__),
