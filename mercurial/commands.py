@@ -6167,6 +6167,8 @@ def verify(ui, repo, **opts):
 
     Returns 0 on success, 1 if errors are encountered.
     """
+    opts = pycompat.byteskwargs(opts)
+
     level = None
     if opts['full']:
         level = verifymod.VERIFY_FULL
