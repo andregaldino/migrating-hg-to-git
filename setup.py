@@ -85,10 +85,21 @@ if sys.version_info[0] != 2:
 
     if badpython:
         error = """
-Mercurial only supports Python 2.7.
 Python {py} detected.
-Please re-run with Python 2.7.
-""".format(py=sys.version_info)
+
+Mercurial currently has beta support for Python 3 and use of Python 2.7 is
+recommended for the best experience.
+
+Please re-run with Python 2.7 for a faster, less buggy experience.
+
+If you would like to beta test Mercurial with Python 3, this error can
+be suppressed by defining the HGPYTHON3 environment variable when invoking
+this command. No special environment variables or configuration changes are
+necessary to run `hg` with Python 3.
+
+See https://www.mercurial-scm.org/wiki/Python3 for more on Mercurial's
+Python 3 support.
+""".format(py='.'.join('%d' % x for x in sys.version_info[0:2]))
 
         printf(error, file=sys.stderr)
         sys.exit(1)
