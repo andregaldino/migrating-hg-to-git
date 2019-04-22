@@ -905,22 +905,31 @@ def getdiffmeta(diff):
     """
     props = diff.get(b'properties') or {}
     meta = props.get(b'hg:meta')
-    if not meta and props.get(b'local:commits'):
-        commit = sorted(props[b'local:commits'].values())[0]
-        meta = {}
-        if b'author' in commit and b'authorEmail' in commit:
-            meta[b'user'] = b'%s <%s>' % (commit[b'author'],
-                                          commit[b'authorEmail'])
-        if b'time' in commit:
-            meta[b'date'] = b'%d 0' % commit[b'time']
-        if b'branch' in commit:
-            meta[b'branch'] = commit[b'branch']
-        node = commit.get(b'commit', commit.get(b'rev'))
-        if node:
-            meta[b'node'] = node
-        if len(commit.get(b'parents', ())) >= 1:
-            meta[b'parent'] = commit[b'parents'][0]
-    return meta or {}
+    if not meta:
+        if props.get(b'local:commits'):
+            commit = sorted(props[b'local:commits'].values())[0]
+            meta = {}
+            if b'author' in commit and b'authorEmail' in commit:
+                meta[b'user'] = b'%s <%s>' % (commit[b'author'],
+                                              commit[b'authorEmail'])
+            if b'time' in commit:
+                meta[b'date'] = b'%d 0' % commit[b'time']
+            if b'branch' in commit:
+                meta[b'branch'] = commit[b'branch']
+            node = commit.get(b'commit', commit.get(b'rev'))
+            if node:
+                meta[b'node'] = node
+            if len(commit.get(b'parents', ())) >= 1:
+                meta[b'parent'] = commit[b'parents'][0]
+        else:
+            meta = {}
+    if b'date' not in meta and b'dateCreated' in diff:
+        meta[b'date'] = b'%s 0' % diff[b'dateCreated']
+    if b'branch' not in meta and diff.get(b'branch'):
+        meta[b'branch'] = diff[b'branch']
+    if b'parent' not in meta and diff.get(b'sourceControlBaseRevision'):
+        meta[b'parent'] = diff[b'sourceControlBaseRevision']
+    return meta
 
 def readpatch(repo, drevs, write):
     """generate plain-text patch readable by 'hg import'

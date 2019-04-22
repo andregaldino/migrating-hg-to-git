@@ -32,6 +32,8 @@ this test.
 Basic phabread:
   $ hg phabread --test-vcr "$VCR/phabread-4480.json" D4480 | head
   # HG changeset patch
+  # Date 1536771503 0
+  # Parent  a5de21c9e3703f8e8eb064bd7d893ff2f703c66a
   exchangev2: start to implement pull with wire protocol v2
   
   Wire protocol version 2 will take a substantially different
@@ -39,8 +41,6 @@ Basic phabread:
   is concerned).
   
   This commit establishes a new exchangev2 module for holding
-  code related to exchange using wire protocol v2. I could have
-  added things to the existing exchange module. But it is already
 
 phabupdate with an accept:
   $ hg phabupdate --accept D4564 \
