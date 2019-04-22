@@ -65,6 +65,7 @@ from mercurial import (
     scmutil,
     smartset,
     tags,
+    templatefilters,
     templateutil,
     url as urlmod,
     util,
@@ -380,11 +381,11 @@ def writediffproperties(ctx, diff):
     params = {
         b'diff_id': diff[b'id'],
         b'name': b'hg:meta',
-        b'data': json.dumps({
-            u'user': encoding.unifromlocal(ctx.user()),
-            u'date': u'{:.0f} {}'.format(*ctx.date()),
-            u'node': encoding.unifromlocal(ctx.hex()),
-            u'parent': encoding.unifromlocal(ctx.p1().hex()),
+        b'data': templatefilters.json({
+            b'user': ctx.user(),
+            b'date': b'%d %d' % ctx.date(),
+            b'node': ctx.hex(),
+            b'parent': ctx.p1().hex(),
         }),
     }
     callconduit(ctx.repo(), b'differential.setdiffproperty', params)
@@ -392,12 +393,11 @@ def writediffproperties(ctx, diff):
     params = {
         b'diff_id': diff[b'id'],
         b'name': b'local:commits',
-        b'data': json.dumps({
-            encoding.unifromlocal(ctx.hex()): {
-                u'author': encoding.unifromlocal(stringutil.person(ctx.user())),
-                u'authorEmail': encoding.unifromlocal(
-                    stringutil.email(ctx.user())),
-                u'time': u'{:.0f}'.format(ctx.date()[0]),
+        b'data': templatefilters.json({
+            ctx.hex(): {
+                b'author': stringutil.person(ctx.user()),
+                b'authorEmail': stringutil.email(ctx.user()),
+                b'time': b'%d' % ctx.date()[0],
             },
         }),
     }
