@@ -397,7 +397,7 @@ def writediffproperties(ctx, diff):
             ctx.hex(): {
                 b'author': stringutil.person(ctx.user()),
                 b'authorEmail': stringutil.email(ctx.user()),
-                b'time': b'%d' % ctx.date()[0],
+                b'time': int(ctx.date()[0]),
             },
         }),
     }
