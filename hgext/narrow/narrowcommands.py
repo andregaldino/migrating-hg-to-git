@@ -216,7 +216,7 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                     todelete.append(f)
             elif f.startswith('meta/'):
                 dir = f[5:-13]
-                dirs = [''] + sorted(util.dirs({dir})) + [dir]
+                dirs = sorted(util.dirs({dir})) + [dir]
                 include = True
                 for d in dirs:
                     visit = newmatch.visitdir(d)
