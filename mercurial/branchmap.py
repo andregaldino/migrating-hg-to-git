@@ -341,7 +341,7 @@ class branchcache(object):
                 cachekey.append(hex(self.filteredhash))
             f.write(" ".join(cachekey) + '\n')
             nodecount = 0
-            for label, nodes in sorted(self.iteritems()):
+            for label, nodes in sorted(self._entries.iteritems()):
                 label = encoding.fromlocal(label)
                 for node in nodes:
                     nodecount += 1
