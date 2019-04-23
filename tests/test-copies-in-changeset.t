@@ -103,6 +103,7 @@ Test writing to both changeset and filelog
   $ hg changesetcopies
   files: j
   p1copies: j\x00a (esc)
+  p2copies: 
   $ hg debugdata j 0
   \x01 (esc)
   copy: a
@@ -115,6 +116,14 @@ Test writing to both changeset and filelog
   a -> j
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> j
+The entries should be written to extras even if they're empty (so the client
+won't have to fall back to reading from filelogs)
+  $ echo x >> j
+  $ hg ci -m 'modify j' --config experimental.copies.write-to=compatibility
+  $ hg changesetcopies
+  files: j
+  p1copies: 
+  p2copies: 
 
 Test writing only to filelog
 

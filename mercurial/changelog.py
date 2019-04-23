@@ -591,11 +591,11 @@ class changelog(revlog.revlog):
             elif branch in (".", "null", "tip"):
                 raise error.StorageError(_('the name \'%s\' is reserved')
                                          % branch)
-        if (p1copies or p2copies) and extra is None:
+        if (p1copies is not None or p2copies is not None) and extra is None:
             extra = {}
-        if p1copies:
+        if p1copies is not None:
             extra['p1copies'] = encodecopies(p1copies)
-        if p2copies:
+        if p2copies is not None:
             extra['p2copies'] = encodecopies(p2copies)
 
         if extra:

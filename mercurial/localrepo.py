@@ -2650,6 +2650,14 @@ class localrepository(object):
                 mn = p1.manifestnode()
                 files = []
 
+            if writecopiesto == 'changeset-only':
+                # If writing only to changeset extras, use None to indicate that
+                # no entry should be written. If writing to both, write an empty
+                # entry to prevent the reader from falling back to reading
+                # filelogs.
+                p1copies = p1copies or None
+                p2copies = p2copies or None
+
             # update changelog
             self.ui.note(_("committing changelog\n"))
             self.changelog.delayupdate(tr)
