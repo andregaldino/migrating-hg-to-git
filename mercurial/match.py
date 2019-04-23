@@ -305,9 +305,6 @@ class basematcher(object):
 
     def __call__(self, fn):
         return self.matchfn(fn)
-    def __iter__(self):
-        for f in self._files:
-            yield f
     # Callbacks related to how the matcher is used by dirstate.walk.
     # Subscribers to these events must monkeypatch the matcher object.
     def bad(self, f, msg):
