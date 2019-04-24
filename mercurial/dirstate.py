@@ -759,13 +759,14 @@ class dirstate(object):
 
         if not files or '.' in files:
             files = ['.']
+            # constructing the foldmap is expensive, so don't do it for the
+            # common case where files is ['.']
+            normalize = None
         results = dict.fromkeys(subrepos)
         results['.hg'] = None
 
         for ff in files:
-            # constructing the foldmap is expensive, so don't do it for the
-            # common case where files is ['.']
-            if normalize and ff != '.':
+            if normalize:
                 nf = normalize(ff, False, True)
             else:
                 nf = ff
