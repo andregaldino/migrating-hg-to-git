@@ -533,7 +533,7 @@ class patternmatcher(basematcher):
 
     @propertycache
     def _dirs(self):
-        return set(util.dirs(self._fileset)) | {''}
+        return set(util.dirs(self._fileset))
 
     def visitdir(self, dir):
         dir = normalizerootdir(dir, 'visitdir')
@@ -691,7 +691,7 @@ class exactmatcher(basematcher):
 
     @propertycache
     def _dirs(self):
-        return set(util.dirs(self._fileset)) | {''}
+        return set(util.dirs(self._fileset))
 
     def visitdir(self, dir):
         dir = normalizerootdir(dir, 'visitdir')
@@ -1007,7 +1007,7 @@ class prefixdirmatcher(basematcher):
 
     @propertycache
     def _pathdirs(self):
-        return set(util.finddirs(self._path)) | {''}
+        return set(util.finddirs(self._path))
 
     def visitdir(self, dir):
         if dir == self._path:
