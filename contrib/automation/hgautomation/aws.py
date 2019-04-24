@@ -402,14 +402,14 @@ def ensure_iam_state(iamclient, iamresource, prefix='hg-'):
             profile.add_role(RoleName=role)
 
 
-def find_windows_server_2019_image(ec2resource):
-    """Find the Amazon published Windows Server 2019 base image."""
+def find_image(ec2resource, owner_id, name):
+    """Find an AMI by its owner ID and name."""
 
     images = ec2resource.images.filter(
         Filters=[
             {
-                'Name': 'owner-alias',
-                'Values': ['amazon'],
+                'Name': 'owner-id',
+                'Values': [owner_id],
             },
             {
                 'Name': 'state',
@@ -421,14 +421,14 @@ def find_windows_server_2019_image(ec2resource):
             },
             {
                 'Name': 'name',
-                'Values': ['Windows_Server-2019-English-Full-Base-2019.02.13'],
+                'Values': [name],
             },
         ])
 
     for image in images:
         return image
 
-    raise Exception('unable to find Windows Server 2019 image')
+    raise Exception('unable to find image for %s' % name)
 
 
 def ensure_security_groups(ec2resource, prefix='hg-'):
@@ -684,6 +684,84 @@ def create_temp_windows_ec2_instances(c: AWSConnection, config):
         yield instances
 
 
+def resolve_fingerprint(fingerprint):
+    fingerprint = json.dumps(fingerprint, sort_keys=True)
+    return hashlib.sha256(fingerprint.encode('utf-8')).hexdigest()
+
+
+def find_and_reconcile_image(ec2resource, name, fingerprint):
+    """Attempt to find an existing EC2 AMI with a name and fingerprint.
+
+    If an image with the specified fingerprint is found, it is returned.
+    Otherwise None is returned.
+
+    Existing images for the specified name that don't have the specified
+    fingerprint or are missing required metadata or deleted.
+    """
+    # Find existing AMIs with this name and delete the ones that are invalid.
+    # Store a reference to a good image so it can be returned one the
+    # image state is reconciled.
+    images = ec2resource.images.filter(
+        Filters=[{'Name': 'name', 'Values': [name]}])
+
+    existing_image = None
+
+    for image in images:
+        if image.tags is None:
+            print('image %s for %s lacks required tags; removing' % (
+                image.id, image.name))
+            remove_ami(ec2resource, image)
+        else:
+            tags = {t['Key']: t['Value'] for t in image.tags}
+
+            if tags.get('HGIMAGEFINGERPRINT') == fingerprint:
+                existing_image = image
+            else:
+                print('image %s for %s has wrong fingerprint; removing' % (
+                      image.id, image.name))
+                remove_ami(ec2resource, image)
+
+    return existing_image
+
+
+def create_ami_from_instance(ec2client, instance, name, description,
+                             fingerprint):
+    """Create an AMI from a running instance.
+
+    Returns the ``ec2resource.Image`` representing the created AMI.
+    """
+    instance.stop()
+
+    ec2client.get_waiter('instance_stopped').wait(
+        InstanceIds=[instance.id],
+        WaiterConfig={
+            'Delay': 5,
+        })
+    print('%s is stopped' % instance.id)
+
+    image = instance.create_image(
+        Name=name,
+        Description=description,
+    )
+
+    image.create_tags(Tags=[
+        {
+            'Key': 'HGIMAGEFINGERPRINT',
+            'Value': fingerprint,
+        },
+    ])
+
+    print('waiting for image %s' % image.id)
+
+    ec2client.get_waiter('image_available').wait(
+        ImageIds=[image.id],
+    )
+
+    print('image %s available as %s' % (image.id, image.name))
+
+    return image
+
+
 def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
     """Ensure Windows Development AMI is available and up-to-date.
 
@@ -702,6 +780,10 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
 
     name = '%s%s' % (prefix, 'windows-dev')
 
+    image = find_image(ec2resource,
+                       '801119661308',
+                       'Windows_Server-2019-English-Full-Base-2019.02.13')
+
     config = {
         'BlockDeviceMappings': [
             {
@@ -713,7 +795,7 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
                 },
             }
         ],
-        'ImageId': find_windows_server_2019_image(ec2resource).id,
+        'ImageId': image.id,
         'InstanceInitiatedShutdownBehavior': 'stop',
         'InstanceType': 't3.medium',
         'KeyName': '%sautomation' % prefix,
@@ -748,38 +830,14 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
 
     # Compute a deterministic fingerprint to determine whether image needs
     # to be regenerated.
-    fingerprint = {
+    fingerprint = resolve_fingerprint({
         'instance_config': config,
         'user_data': WINDOWS_USER_DATA,
         'initial_bootstrap': WINDOWS_BOOTSTRAP_POWERSHELL,
         'bootstrap_commands': commands,
-    }
+    })
 
-    fingerprint = json.dumps(fingerprint, sort_keys=True)
-    fingerprint = hashlib.sha256(fingerprint.encode('utf-8')).hexdigest()
-
-    # Find existing AMIs with this name and delete the ones that are invalid.
-    # Store a reference to a good image so it can be returned one the
-    # image state is reconciled.
-    images = ec2resource.images.filter(
-        Filters=[{'Name': 'name', 'Values': [name]}])
-
-    existing_image = None
-
-    for image in images:
-        if image.tags is None:
-            print('image %s for %s lacks required tags; removing' % (
-                image.id, image.name))
-            remove_ami(ec2resource, image)
-        else:
-            tags = {t['Key']: t['Value'] for t in image.tags}
-
-            if tags.get('HGIMAGEFINGERPRINT') == fingerprint:
-                existing_image = image
-            else:
-                print('image %s for %s has wrong fingerprint; removing' % (
-                      image.id, image.name))
-                remove_ami(ec2resource, image)
+    existing_image = find_and_reconcile_image(ec2resource, name, fingerprint)
 
     if existing_image:
         return existing_image
@@ -839,36 +897,9 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
         run_powershell(instance.winrm_client, '\n'.join(commands))
 
         print('bootstrap completed; stopping %s to create image' % instance.id)
-        instance.stop()
-
-        ec2client.get_waiter('instance_stopped').wait(
-            InstanceIds=[instance.id],
-            WaiterConfig={
-                'Delay': 5,
-            })
-        print('%s is stopped' % instance.id)
-
-        image = instance.create_image(
-            Name=name,
-            Description='Mercurial Windows development environment',
-        )
-
-        image.create_tags(Tags=[
-            {
-                'Key': 'HGIMAGEFINGERPRINT',
-                'Value': fingerprint,
-            },
-        ])
-
-        print('waiting for image %s' % image.id)
-
-        ec2client.get_waiter('image_available').wait(
-            ImageIds=[image.id],
-        )
-
-        print('image %s available as %s' % (image.id, image.name))
-
-        return image
+        return create_ami_from_instance(ec2client, instance, name,
+                                        'Mercurial Windows development environment',
+                                        fingerprint)
 
 
 @contextlib.contextmanager
