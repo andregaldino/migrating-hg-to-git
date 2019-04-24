@@ -1081,7 +1081,7 @@ log -r tip --stat
   $ cd ..
 
 log --follow --patch FILE in repository where linkrev isn't trustworthy
-(issue5376)
+(issue5376, issue6124)
 
   $ hg init follow-dup
   $ cd follow-dup
@@ -1129,6 +1129,16 @@ log --follow --patch FILE in repository where linkrev isn't trustworthy
   @@ -0,0 +1,1 @@
   +0
   
+  $ hg log -pr . a
+  === 3: a3
+  diff -r 4ea02ba94d66 -r e7a6331a34f0 a
+  --- a/a
+  +++ b/a
+  @@ -1,2 +1,3 @@
+   0
+   1
+  +3
+  
 
  fctx.introrev() == 2, but fctx.linkrev() == 1
 
@@ -1149,6 +1159,9 @@ log --follow --patch FILE in repository where linkrev isn't trustworthy
   @@ -0,0 +1,1 @@
   +0
   
+
+BROKEN: should show the same diff as for rev 2 above
+  $ hg log -pr . a
 
   $ cd ..
 
