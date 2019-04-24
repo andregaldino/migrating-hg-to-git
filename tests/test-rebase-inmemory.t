@@ -760,3 +760,42 @@ Test rebasing a commit with copy information, but no content changes
   rebasing 3:ca58782ad1e4 "b"
   rebasing 5:71cb43376053 "merge"
   note: not rebasing 5:71cb43376053 "merge", its destination already has all its changes
+
+  $ cd ..
+
+Test rebasing when the file we are merging in destination is empty
+
+  $ hg init test
+  $ cd test
+  $ echo a > foo
+  $ hg ci -Aqm 'added a to foo'
+
+  $ rm foo
+  $ touch foo
+  $ hg di
+  diff --git a/foo b/foo
+  --- a/foo
+  +++ b/foo
+  @@ -1,1 +0,0 @@
+  -a
+
+  $ hg ci -m "make foo an empty file"
+
+  $ hg up '.^'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo b > foo
+  $ hg di
+  diff --git a/foo b/foo
+  --- a/foo
+  +++ b/foo
+  @@ -1,1 +1,1 @@
+  -a
+  +b
+  $ hg ci -m "add b to foo"
+  created new head
+
+  $ hg rebase -r . -d 1 --config ui.merge=internal:merge3
+  rebasing 2:fb62b706688e "add b to foo" (tip)
+  merging foo
+  abort: foo.orig@e780cf6f9041: not found in manifest!
+  [255]
