@@ -797,5 +797,9 @@ Test rebasing when the file we are merging in destination is empty
   $ hg rebase -r . -d 1 --config ui.merge=internal:merge3
   rebasing 2:fb62b706688e "add b to foo" (tip)
   merging foo
-  abort: foo.orig@e780cf6f9041: not found in manifest!
-  [255]
+  hit merge conflicts; re-running rebase without in-memory merge
+  rebasing 2:fb62b706688e "add b to foo" (tip)
+  merging foo
+  warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
