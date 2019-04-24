@@ -4,6 +4,9 @@
 // GNU General Public License version 2 or any later version.
 extern crate byteorder;
 extern crate memchr;
+#[macro_use]
+extern crate lazy_static;
+extern crate regex;
 
 mod ancestors;
 pub mod dagops;
@@ -14,6 +17,11 @@ pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{
     pack_dirstate, parse_dirstate, CopyVec, CopyVecEntry, DirstateEntry,
     DirstateParents, DirstateVec,
+};
+mod filepatterns;
+
+pub use filepatterns::{
+    build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
 };
 
 /// Mercurial revision numbers
@@ -41,6 +49,8 @@ pub trait Graph {
     /// Each of the parents can be independently `NULL_REVISION`
     fn parents(&self, Revision) -> Result<[Revision; 2], GraphError>;
 }
+
+pub type LineNumber = usize;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum GraphError {
@@ -71,5 +81,22 @@ impl From<std::io::Error> for DirstatePackError {
 impl From<std::io::Error> for DirstateParseError {
     fn from(e: std::io::Error) -> Self {
         DirstateParseError::CorruptedEntry(e.to_string())
+    }
+}
+
+#[derive(Debug)]
+pub enum PatternError {
+    UnsupportedSyntax(String),
+}
+
+#[derive(Debug)]
+pub enum PatternFileError {
+    IO(std::io::Error),
+    Pattern(PatternError, LineNumber),
+}
+
+impl From<std::io::Error> for PatternFileError {
+    fn from(e: std::io::Error) -> Self {
+        PatternFileError::IO(e)
     }
 }
