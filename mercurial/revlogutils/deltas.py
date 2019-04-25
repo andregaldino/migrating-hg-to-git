@@ -698,6 +698,12 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
                         # delta lower bound is larger than accepted upper bound
                         continue
 
+                    # check the relative constraint on the delta size
+                    revlength = revlog.length(rev)
+                    if revlength < lowestrealisticdeltalen:
+                        # delta probable lower bound is larger than target base
+                        continue
+
             group.append(rev)
         if group:
             # XXX: in the sparse revlog case, group can become large,
