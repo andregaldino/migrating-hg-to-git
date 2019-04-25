@@ -1419,7 +1419,7 @@ class manifestfulltextcache(util.lrucachedict):
 
 # and upper bound of what we expect from compression
 # (real live value seems to be "3")
-MAXCOMPRESSION = 10
+MAXCOMPRESSION = 3
 
 @interfaceutil.implementer(repository.imanifeststorage)
 class manifestrevlog(object):
