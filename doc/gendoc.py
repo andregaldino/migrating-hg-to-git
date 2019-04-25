@@ -185,44 +185,45 @@ def commandprinter(ui, cmdtable, sectionfunc):
         h[f] = c
     cmds = h.keys()
 
-    for f in sorted(cmds):
-        if f.startswith(b"debug"):
-            continue
-        d = get_cmd(h[f], cmdtable)
-        ui.write(sectionfunc(d[b'cmd']))
-        # short description
-        ui.write(d[b'desc'][0])
-        # synopsis
-        ui.write(b"::\n\n")
-        synopsislines = d[b'synopsis'].splitlines()
-        for line in synopsislines:
-            # some commands (such as rebase) have a multi-line
+    if True:
+        for f in sorted(cmds):
+            if f.startswith(b"debug"):
+                continue
+            d = get_cmd(h[f], cmdtable)
+            ui.write(sectionfunc(d[b'cmd']))
+            # short description
+            ui.write(d[b'desc'][0])
             # synopsis
-            ui.write(b"   %s\n" % line)
-        ui.write(b'\n')
-        # description
-        ui.write(b"%s\n\n" % d[b'desc'][1])
-        # options
-        opt_output = list(d[b'opts'])
-        if opt_output:
-            opts_len = max([len(line[0]) for line in opt_output])
-            ui.write(_(b"Options:\n\n"))
-            multioccur = False
-            for optstr, desc in opt_output:
-                if desc:
-                    s = b"%-*s  %s" % (opts_len, optstr, desc)
-                else:
-                    s = optstr
-                ui.write(b"%s\n" % s)
-                if optstr.endswith(b"[+]>"):
-                    multioccur = True
-            if multioccur:
-                ui.write(_(b"\n[+] marked option can be specified"
-                           b" multiple times\n"))
-            ui.write(b"\n")
-        # aliases
-        if d[b'aliases']:
-            ui.write(_(b"    aliases: %s\n\n") % b" ".join(d[b'aliases']))
+            ui.write(b"::\n\n")
+            synopsislines = d[b'synopsis'].splitlines()
+            for line in synopsislines:
+                # some commands (such as rebase) have a multi-line
+                # synopsis
+                ui.write(b"   %s\n" % line)
+            ui.write(b'\n')
+            # description
+            ui.write(b"%s\n\n" % d[b'desc'][1])
+            # options
+            opt_output = list(d[b'opts'])
+            if opt_output:
+                opts_len = max([len(line[0]) for line in opt_output])
+                ui.write(_(b"Options:\n\n"))
+                multioccur = False
+                for optstr, desc in opt_output:
+                    if desc:
+                        s = b"%-*s  %s" % (opts_len, optstr, desc)
+                    else:
+                        s = optstr
+                    ui.write(b"%s\n" % s)
+                    if optstr.endswith(b"[+]>"):
+                        multioccur = True
+                if multioccur:
+                    ui.write(_(b"\n[+] marked option can be specified"
+                               b" multiple times\n"))
+                ui.write(b"\n")
+            # aliases
+            if d[b'aliases']:
+                ui.write(_(b"    aliases: %s\n\n") % b" ".join(d[b'aliases']))
 
 
 def allextensionnames():
