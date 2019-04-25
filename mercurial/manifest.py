@@ -1417,6 +1417,10 @@ class manifestfulltextcache(util.lrucachedict):
             self.write()
         self._read = False
 
+# and upper bound of what we expect from compression
+# (real live value seems to be "3")
+MAXCOMPRESSION = 10
+
 @interfaceutil.implementer(repository.imanifeststorage)
 class manifestrevlog(object):
     '''A revlog that stores manifest texts. This is responsible for caching the
@@ -1467,7 +1471,8 @@ class manifestrevlog(object):
         self._revlog = revlog.revlog(opener, indexfile,
                                      # only root indexfile is cached
                                      checkambig=not bool(tree),
-                                     mmaplargeindex=True)
+                                     mmaplargeindex=True,
+                                     upperboundcomp=MAXCOMPRESSION)
 
         self.index = self._revlog.index
         self.version = self._revlog.version

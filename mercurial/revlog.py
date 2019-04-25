@@ -334,15 +334,21 @@ class revlog(object):
     configured threshold.
 
     If censorable is True, the revlog can have censored revisions.
+
+    If `upperboundcomp` is not None, this is the expected maximal gain from
+    compression for the data content.
     """
     def __init__(self, opener, indexfile, datafile=None, checkambig=False,
-                 mmaplargeindex=False, censorable=False):
+                 mmaplargeindex=False, censorable=False,
+                 upperboundcomp=None):
         """
         create a revlog object
 
         opener is a function that abstracts the file opening operation
         and can be used to implement COW semantics or the like.
+
         """
+        self.upperboundcomp = upperboundcomp
         self.indexfile = indexfile
         self.datafile = datafile or (indexfile[:-2] + ".d")
         self.opener = opener

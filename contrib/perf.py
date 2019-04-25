@@ -2277,6 +2277,10 @@ def _temprevlog(ui, orig, truncaterev):
 
     if orig._inline:
         raise error.Abort('not supporting inline revlog (yet)')
+    revlogkwargs = {}
+    k = 'upperboundcomp'
+    if util.safehasattr(orig, k):
+        revlogkwargs[k] = getattr(orig, k)
 
     origindexpath = orig.opener.join(orig.indexfile)
     origdatapath = orig.opener.join(orig.datafile)
@@ -2308,7 +2312,7 @@ def _temprevlog(ui, orig, truncaterev):
 
         dest = revlog.revlog(vfs,
                              indexfile=indexname,
-                             datafile=dataname)
+                             datafile=dataname, **revlogkwargs)
         if dest._inline:
             raise error.Abort('not supporting inline revlog (yet)')
         # make sure internals are initialized
