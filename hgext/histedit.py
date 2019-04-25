@@ -1079,6 +1079,8 @@ def movecursor(state, oldpos, newpos):
 def changemode(state, mode):
     curmode, _ = state['mode']
     state['mode'] = (mode, curmode)
+    if mode == MODE_PATCH:
+        state['modes'][MODE_PATCH]['patchcontents'] = patchcontents(state)
 
 def makeselection(state, pos):
     state['selected'] = pos
@@ -1134,7 +1136,7 @@ def changeview(state, delta, unit):
     if mode != MODE_PATCH:
         return
     mode_state = state['modes'][mode]
-    num_lines = len(patchcontents(state))
+    num_lines = len(mode_state['patchcontents'])
     page_height = state['page_height']
     unit = page_height if unit == 'page' else 1
     num_pages = 1 + (num_lines - 1) / page_height
@@ -1394,7 +1396,8 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
     def renderpatch(win, state):
         start = state['modes'][MODE_PATCH]['line_offset']
-        renderstring(win, state, patchcontents(state)[start:], diffcolors=True)
+        content = state['modes'][MODE_PATCH]['patchcontents']
+        renderstring(win, state, content[start:], diffcolors=True)
 
     def layout(mode):
         maxy, maxx = stdscr.getmaxyx()
