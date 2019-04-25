@@ -142,7 +142,7 @@ def has_bzr():
 
 @checkvers("bzr", "Canonical's Bazaar client >= %s", (1.14,))
 def has_bzr_range(v):
-    major, minor = v.split('.')[0:2]
+    major, minor = v.split('rc')[0].split('.')[0:2]
     try:
         import bzrlib
         return (bzrlib.__doc__ is not None
