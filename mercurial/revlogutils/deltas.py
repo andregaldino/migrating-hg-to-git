@@ -679,6 +679,25 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
             # if chain already have too much data, skip base
             if deltas_limit < chainsize:
                 continue
+            if sparse and revlog.upperboundcomp is not None:
+                maxcomp = revlog.upperboundcomp
+                basenotsnap = (p1, p2, nullrev)
+                if rev not in basenotsnap and revlog.issnapshot(rev):
+                    snapshotdepth = revlog.snapshotdepth(rev)
+                    # If text is significantly larger than the base, we can
+                    # expect the resulting delta to be proportional to the size
+                    # difference
+                    revsize = revlog.rawsize(rev)
+                    rawsizedistance = max(textlen - revsize, 0)
+                    # use an estimate of the compression upper bound.
+                    lowestrealisticdeltalen = rawsizedistance // maxcomp
+
+                    # check the absolute constraint on the delta size
+                    snapshotlimit = textlen >> snapshotdepth
+                    if snapshotlimit < lowestrealisticdeltalen:
+                        # delta lower bound is larger than accepted upper bound
+                        continue
+
             group.append(rev)
         if group:
             # XXX: in the sparse revlog case, group can become large,
