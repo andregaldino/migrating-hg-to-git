@@ -185,8 +185,33 @@ def commandprinter(ui, cmdtable, sectionfunc):
         h[f] = c
     cmds = h.keys()
 
-    if True:
-        for f in sorted(cmds):
+    def helpcategory(cmd):
+        """Given a canonical command name from `cmds` (above), retrieve its
+        help category. If helpcategory is None, default to CATEGORY_NONE.
+        """
+        fullname = h[cmd]
+        details = cmdtable[fullname]
+        helpcategory = details[0].helpcategory
+        return helpcategory or help.registrar.command.CATEGORY_NONE
+
+    # Print the help for each command. We present the commands grouped by
+    # category, and we use help.CATEGORY_ORDER as a guide for a helpful order
+    # in which to present the categories.
+    cmdsbycategory = {category: [] for category in help.CATEGORY_ORDER}
+    for cmd in cmds:
+        cmdsbycategory[helpcategory(cmd)].append(cmd)
+
+    for category in help.CATEGORY_ORDER:
+        categorycmds = cmdsbycategory[category]
+        if not categorycmds:
+            # Skip empty categories
+            continue
+        # Print a section header for the category.
+        # For now, the category header is at the same level as the headers for
+        # the commands in the category; this is fixed in the next commit.
+        ui.write(sectionfunc(help.CATEGORY_NAMES[category]))
+        # Print each command in the category
+        for f in sorted(categorycmds):
             if f.startswith(b"debug"):
                 continue
             d = get_cmd(h[f], cmdtable)
