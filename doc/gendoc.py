@@ -120,7 +120,7 @@ def showdoc(ui):
 
     # print cmds
     ui.write(minirst.section(_(b"Commands")))
-    commandprinter(ui, table, minirst.subsection)
+    commandprinter(ui, table, minirst.subsection, minirst.subsubsection)
 
     # print help topics
     # The config help topic is included in the hgrc.5 man page.
@@ -143,7 +143,8 @@ def showdoc(ui):
         cmdtable = getattr(mod, 'cmdtable', None)
         if cmdtable:
             ui.write(minirst.subsubsection(_(b'Commands')))
-            commandprinter(ui, cmdtable, minirst.subsubsubsection)
+            commandprinter(ui, cmdtable, minirst.subsubsubsection,
+                    minirst.subsubsubsubsection)
 
 def showtopic(ui, topic):
     extrahelptable = [
@@ -177,7 +178,27 @@ def helpprinter(ui, helptable, sectionfunc, include=[], exclude=[]):
         ui.write(doc)
         ui.write(b"\n")
 
-def commandprinter(ui, cmdtable, sectionfunc):
+def commandprinter(ui, cmdtable, sectionfunc, subsectionfunc):
+    """Render restructuredtext describing a list of commands and their
+    documentations, grouped by command category.
+
+    Args:
+      ui: UI object to write the output to
+      cmdtable: a dict that maps a string of the command name plus its aliases
+        (separated with pipes) to a 3-tuple of (the command's function, a list
+        of its option descriptions, and a string summarizing available
+        options). Example, with aliases added for demonstration purposes:
+
+          'phase|alias1|alias2': (
+             <function phase at 0x7f0816b05e60>,
+             [ ('p', 'public', False, 'set changeset phase to public'),
+               ...,
+               ('r', 'rev', [], 'target revision', 'REV')],
+             '[-p|-d|-s] [-f] [-r] [REV...]'
+          )
+      sectionfunc: minirst function to format command category headers
+      subsectionfunc: minirst function to format command headers
+    """
     h = {}
     for c, attr in cmdtable.items():
         f = c.split(b"|")[0]
@@ -221,7 +242,7 @@ def commandprinter(ui, cmdtable, sectionfunc):
             if f.startswith(b"debug"):
                 continue
             d = get_cmd(h[f], cmdtable)
-            ui.write(sectionfunc(d[b'cmd']))
+            ui.write(subsectionfunc(d[b'cmd']))
             # short description
             ui.write(d[b'desc'][0])
             # synopsis
