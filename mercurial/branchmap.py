@@ -378,6 +378,10 @@ class branchcache(object):
         # fetch current topological heads to speed up filtering
         topoheads = set(cl.headrevs())
 
+        # new tip revision which we found after iterating items from new
+        # branches
+        ntiprev = self.tiprev
+
         # if older branchheads are reachable from new ones, they aren't
         # really branchheads. Note checking parents is insufficient:
         # 1 (branch a) -> 2 (branch b) -> 3 (branch a)
@@ -401,9 +405,12 @@ class branchcache(object):
             bheadrevs = sorted(bheadset)
             self[branch] = [cl.node(rev) for rev in bheadrevs]
             tiprev = bheadrevs[-1]
-            if tiprev > self.tiprev:
-                self.tipnode = cl.node(tiprev)
-                self.tiprev = tiprev
+            if tiprev > ntiprev:
+                ntiprev = tiprev
+
+        if ntiprev > self.tiprev:
+            self.tiprev = ntiprev
+            self.tipnode = cl.node(ntiprev)
 
         if not self.validfor(repo):
             # cache key are not valid anymore
