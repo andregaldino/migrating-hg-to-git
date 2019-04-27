@@ -19,6 +19,13 @@ import time
 import boto3
 import botocore.exceptions
 
+from .linux import (
+    BOOTSTRAP_DEBIAN,
+)
+from .ssh import (
+    exec_command as ssh_exec_command,
+    wait_for_ssh,
+)
 from .winrm import (
     run_powershell,
     wait_for_winrm,
@@ -31,12 +38,46 @@ INSTALL_WINDOWS_DEPENDENCIES = (SOURCE_ROOT / 'contrib' /
                                 'install-windows-dependencies.ps1')
 
 
+INSTANCE_TYPES_WITH_STORAGE = {
+    'c5d',
+    'd2',
+    'h1',
+    'i3',
+    'm5ad',
+    'm5d',
+    'r5d',
+    'r5ad',
+    'x1',
+    'z1d',
+}
+
+
+DEBIAN_ACCOUNT_ID = '379101102735'
+UBUNTU_ACCOUNT_ID = '099720109477'
+
+
 KEY_PAIRS = {
     'automation',
 }
 
 
 SECURITY_GROUPS = {
+    'linux-dev-1': {
+        'description': 'Mercurial Linux instances that perform build/test automation',
+        'ingress': [
+            {
+                'FromPort': 22,
+                'ToPort': 22,
+                'IpProtocol': 'tcp',
+                'IpRanges': [
+                    {
+                        'CidrIp': '0.0.0.0/0',
+                        'Description': 'SSH from entire Internet',
+                    },
+                ],
+            },
+        ],
+    },
     'windows-dev-1': {
         'description': 'Mercurial Windows instances that perform build automation',
         'ingress': [
@@ -760,6 +801,231 @@ def create_ami_from_instance(ec2client, instance, name, description,
     print('image %s available as %s' % (image.id, image.name))
 
     return image
+
+
+def ensure_linux_dev_ami(c: AWSConnection, distro='debian9', prefix='hg-'):
+    """Ensures a Linux development AMI is available and up-to-date.
+
+    Returns an ``ec2.Image`` of either an existing AMI or a newly-built one.
+    """
+    ec2client = c.ec2client
+    ec2resource = c.ec2resource
+
+    name = '%s%s-%s' % (prefix, 'linux-dev', distro)
+
+    if distro == 'debian9':
+        image = find_image(
+            ec2resource,
+            DEBIAN_ACCOUNT_ID,
+            'debian-stretch-hvm-x86_64-gp2-2019-02-19-26620',
+        )
+        ssh_username = 'admin'
+    elif distro == 'ubuntu18.04':
+        image = find_image(
+            ec2resource,
+            UBUNTU_ACCOUNT_ID,
+            'ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20190403',
+        )
+        ssh_username = 'ubuntu'
+    elif distro == 'ubuntu18.10':
+        image = find_image(
+            ec2resource,
+            UBUNTU_ACCOUNT_ID,
+            'ubuntu/images/hvm-ssd/ubuntu-cosmic-18.10-amd64-server-20190402',
+        )
+        ssh_username = 'ubuntu'
+    elif distro == 'ubuntu19.04':
+        image = find_image(
+            ec2resource,
+            UBUNTU_ACCOUNT_ID,
+            'ubuntu/images/hvm-ssd/ubuntu-disco-19.04-amd64-server-20190417',
+        )
+        ssh_username = 'ubuntu'
+    else:
+        raise ValueError('unsupported Linux distro: %s' % distro)
+
+    config = {
+        'BlockDeviceMappings': [
+            {
+                'DeviceName': image.block_device_mappings[0]['DeviceName'],
+                'Ebs': {
+                    'DeleteOnTermination': True,
+                    'VolumeSize': 8,
+                    'VolumeType': 'gp2',
+                },
+            },
+        ],
+        'EbsOptimized': True,
+        'ImageId': image.id,
+        'InstanceInitiatedShutdownBehavior': 'stop',
+        # 8 VCPUs for compiling Python.
+        'InstanceType': 't3.2xlarge',
+        'KeyName': '%sautomation' % prefix,
+        'MaxCount': 1,
+        'MinCount': 1,
+        'SecurityGroupIds': [c.security_groups['linux-dev-1'].id],
+    }
+
+    requirements2_path = (pathlib.Path(__file__).parent.parent /
+                          'linux-requirements-py2.txt')
+    requirements3_path = (pathlib.Path(__file__).parent.parent /
+                          'linux-requirements-py3.txt')
+    with requirements2_path.open('r', encoding='utf-8') as fh:
+        requirements2 = fh.read()
+    with requirements3_path.open('r', encoding='utf-8') as fh:
+        requirements3 = fh.read()
+
+    # Compute a deterministic fingerprint to determine whether image needs to
+    # be regenerated.
+    fingerprint = resolve_fingerprint({
+        'instance_config': config,
+        'bootstrap_script': BOOTSTRAP_DEBIAN,
+        'requirements_py2': requirements2,
+        'requirements_py3': requirements3,
+    })
+
+    existing_image = find_and_reconcile_image(ec2resource, name, fingerprint)
+
+    if existing_image:
+        return existing_image
+
+    print('no suitable %s image found; creating one...' % name)
+
+    with temporary_ec2_instances(ec2resource, config) as instances:
+        wait_for_ip_addresses(instances)
+
+        instance = instances[0]
+
+        client = wait_for_ssh(
+            instance.public_ip_address, 22,
+            username=ssh_username,
+            key_filename=str(c.key_pair_path_private('automation')))
+
+        home = '/home/%s' % ssh_username
+
+        with client:
+            print('connecting to SSH server')
+            sftp = client.open_sftp()
+
+            print('uploading bootstrap files')
+            with sftp.open('%s/bootstrap' % home, 'wb') as fh:
+                fh.write(BOOTSTRAP_DEBIAN)
+                fh.chmod(0o0700)
+
+            with sftp.open('%s/requirements-py2.txt' % home, 'wb') as fh:
+                fh.write(requirements2)
+                fh.chmod(0o0700)
+
+            with sftp.open('%s/requirements-py3.txt' % home, 'wb') as fh:
+                fh.write(requirements3)
+                fh.chmod(0o0700)
+
+            print('executing bootstrap')
+            chan, stdin, stdout = ssh_exec_command(client,
+                                                   '%s/bootstrap' % home)
+            stdin.close()
+
+            for line in stdout:
+                print(line, end='')
+
+            res = chan.recv_exit_status()
+            if res:
+                raise Exception('non-0 exit from bootstrap: %d' % res)
+
+            print('bootstrap completed; stopping %s to create %s' % (
+                  instance.id, name))
+
+        return create_ami_from_instance(ec2client, instance, name,
+                                        'Mercurial Linux development environment',
+                                        fingerprint)
+
+
+@contextlib.contextmanager
+def temporary_linux_dev_instances(c: AWSConnection, image, instance_type,
+                                  prefix='hg-', ensure_extra_volume=False):
+    """Create temporary Linux development EC2 instances.
+
+    Context manager resolves to a list of ``ec2.Instance`` that were created
+    and are running.
+
+    ``ensure_extra_volume`` can be set to ``True`` to require that instances
+    have a 2nd storage volume available other than the primary AMI volume.
+    For instance types with instance storage, this does nothing special.
+    But for instance types without instance storage, an additional EBS volume
+    will be added to the instance.
+
+    Instances have an ``ssh_client`` attribute containing a paramiko SSHClient
+    instance bound to the instance.
+
+    Instances have an ``ssh_private_key_path`` attributing containing the
+    str path to the SSH private key to connect to the instance.
+    """
+
+    block_device_mappings = [
+        {
+            'DeviceName': image.block_device_mappings[0]['DeviceName'],
+            'Ebs': {
+                'DeleteOnTermination': True,
+                'VolumeSize': 8,
+                'VolumeType': 'gp2',
+            },
+        }
+    ]
+
+    # This is not an exhaustive list of instance types having instance storage.
+    # But
+    if (ensure_extra_volume
+        and not instance_type.startswith(tuple(INSTANCE_TYPES_WITH_STORAGE))):
+        main_device = block_device_mappings[0]['DeviceName']
+
+        if main_device == 'xvda':
+            second_device = 'xvdb'
+        elif main_device == '/dev/sda1':
+            second_device = '/dev/sdb'
+        else:
+            raise ValueError('unhandled primary EBS device name: %s' %
+                             main_device)
+
+        block_device_mappings.append({
+            'DeviceName': second_device,
+            'Ebs': {
+                'DeleteOnTermination': True,
+                'VolumeSize': 8,
+                'VolumeType': 'gp2',
+            }
+        })
+
+    config = {
+        'BlockDeviceMappings': block_device_mappings,
+        'EbsOptimized': True,
+        'ImageId': image.id,
+        'InstanceInitiatedShutdownBehavior': 'terminate',
+        'InstanceType': instance_type,
+        'KeyName': '%sautomation' % prefix,
+        'MaxCount': 1,
+        'MinCount': 1,
+        'SecurityGroupIds': [c.security_groups['linux-dev-1'].id],
+    }
+
+    with temporary_ec2_instances(c.ec2resource, config) as instances:
+        wait_for_ip_addresses(instances)
+
+        ssh_private_key_path = str(c.key_pair_path_private('automation'))
+
+        for instance in instances:
+            client = wait_for_ssh(
+                instance.public_ip_address, 22,
+                username='hg',
+                key_filename=ssh_private_key_path)
+
+            instance.ssh_client = client
+            instance.ssh_private_key_path = ssh_private_key_path
+
+        try:
+            yield instances
+        finally:
+            for instance in instances:
+                instance.ssh_client.close()
 
 
 def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
