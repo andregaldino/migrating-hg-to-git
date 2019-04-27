@@ -653,7 +653,7 @@ def onetimeclientsetup(ui):
 
     # Prevent verify from processing files
     # a stub for mercurial.hg.verify()
-    def _verify(orig, repo):
+    def _verify(orig, repo, level=None):
         lock = repo.lock()
         try:
             return shallowverifier.shallowverifier(repo).verify()
