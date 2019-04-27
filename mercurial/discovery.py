@@ -340,15 +340,15 @@ def checkheads(pushop):
     pushop.pushbranchmap = headssum
     newbranches = [branch for branch, heads in headssum.iteritems()
                    if heads[0] is None]
-    # Makes a set of closed branches
-    closedbranches = set()
-    for tag, heads, tip, isclosed in repo.branchmap().iterbranches():
-        if isclosed:
-            closedbranches.add(tag)
-    closedbranches = (closedbranches & set(newbranches))
     # 1. Check for new branches on the remote.
     if newbranches and not newbranch:  # new branch requires --new-branch
         branchnames = ', '.join(sorted(newbranches))
+        # Calculate how many of the new branches are closed branches
+        closedbranches = set()
+        for tag, heads, tip, isclosed in repo.branchmap().iterbranches():
+            if isclosed:
+                closedbranches.add(tag)
+        closedbranches = (closedbranches & set(newbranches))
         if closedbranches:
             errmsg = (_("push creates new remote branches: %s (%d closed)!")
                         % (branchnames, len(closedbranches)))
