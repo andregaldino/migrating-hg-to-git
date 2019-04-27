@@ -196,7 +196,7 @@ class AWSConnection:
         if ensure_ec2_state:
             ensure_key_pairs(automation.state_path, self.ec2resource)
             self.security_groups = ensure_security_groups(self.ec2resource)
-            ensure_iam_state(self.iamresource)
+            ensure_iam_state(self.iamclient, self.iamresource)
 
     def key_pair_path_private(self, name):
         """Path to a key pair private key file."""
@@ -325,7 +325,7 @@ def delete_instance_profile(profile):
     profile.delete()
 
 
-def ensure_iam_state(iamresource, prefix='hg-'):
+def ensure_iam_state(iamclient, iamresource, prefix='hg-'):
     """Ensure IAM state is in sync with our canonical definition."""
 
     remote_profiles = {}
@@ -361,6 +361,10 @@ def ensure_iam_state(iamresource, prefix='hg-'):
             InstanceProfileName=actual)
         remote_profiles[name] = profile
 
+        waiter = iamclient.get_waiter('instance_profile_exists')
+        waiter.wait(InstanceProfileName=actual)
+        print('IAM instance profile %s is available' % actual)
+
     for name in sorted(set(IAM_ROLES) - set(remote_roles)):
         entry = IAM_ROLES[name]
 
@@ -372,6 +376,10 @@ def ensure_iam_state(iamresource, prefix='hg-'):
             Description=entry['description'],
             AssumeRolePolicyDocument=ASSUME_ROLE_POLICY_DOCUMENT,
         )
+
+        waiter = iamclient.get_waiter('role_exists')
+        waiter.wait(RoleName=actual)
+        print('IAM role %s is available' % actual)
 
         remote_roles[name] = role
 
