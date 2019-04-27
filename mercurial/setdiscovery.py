@@ -389,7 +389,7 @@ def findcommonheads(ui, local, remote,
         return srvheadhashes, False, srvheadhashes
 
     if len(sample) == len(ownheads) and all(yesno):
-        ui.note(_("all local heads known remotely\n"))
+        ui.note(_("all local changesets known remotely\n"))
         ownheadhashes = [clnode(r) for r in ownheads]
         return ownheadhashes, True, srvheadhashes
 

@@ -140,7 +140,7 @@ we must not cause a failure if we cannot write to the log
   comparing with $TESTTMP/blackboxtest
   query 1; heads
   searching for changes
-  all local heads known remotely
+  all local changesets known remotely
   changeset:   2:d02f48003e62c24e2659d97d30f2a83abe5d5d51
   tag:         tip
   phase:       draft

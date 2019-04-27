@@ -1115,7 +1115,7 @@ redo pull with --lfrev and check it pulls largefiles for the right revs
   $ hg pull -v --lfrev 'heads(pulled())+min(pulled())'
   pulling from $TESTTMP/a
   searching for changes
-  all local heads known remotely
+  all local changesets known remotely
   6 changesets found
   uncompressed size of bundle content:
       1389 (changelog)

@@ -299,7 +299,7 @@ Output is flaky, save it in a file and check part independently
     ]
   }
   searching for changes
-  all local heads known remotely
+  all local changesets known remotely
   sending 1 commands
   sending command changesetdata: {
     'fields': set([

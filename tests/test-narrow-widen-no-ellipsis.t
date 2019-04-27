@@ -116,7 +116,7 @@ added upstream revisions.
   query 1; heads
   sending batch command
   searching for changes
-  all local heads known remotely
+  all local changesets known remotely
   sending narrow_widen command
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "changegroup" (params: * mandatory) supported (glob)

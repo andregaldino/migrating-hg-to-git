@@ -64,7 +64,7 @@ Small superset:
   comparing with b
   query 1; heads
   searching for changes
-  all local heads known remotely
+  all local changesets known remotely
   elapsed time:  * seconds (glob)
   heads summary:
     total common heads:          2
@@ -86,7 +86,7 @@ Small superset:
   comparing with b
   query 1; heads
   searching for changes
-  all local heads known remotely
+  all local changesets known remotely
   elapsed time:  * seconds (glob)
   heads summary:
     total common heads:          1
