@@ -1685,4 +1685,16 @@ Check debug output for copy tracing
     f
   R f
 
+Check that merging across the rename works
+
+  $ echo modified >> renamed
+BROKEN: This should propagate the change to 'f'
+  $ hg co -m 4
+  file 'renamed' was deleted in other [destination] but was modified in local [working copy].
+  What do you want to do?
+  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  1 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges
+  [1]
+
   $ cd ..
