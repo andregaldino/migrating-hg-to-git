@@ -152,14 +152,14 @@ def _chain(src, dst, a, b):
 
     return t
 
-def _tracefile(fctx, am, limit=node.nullrev):
+def _tracefile(fctx, am, limit):
     """return file context that is the ancestor of fctx present in ancestor
     manifest am, stopping after the first ancestor lower than limit"""
 
     for f in fctx.ancestors():
         if am.get(f.path(), None) == f.filenode():
             return f
-        if limit >= 0 and not f.isintroducedafter(limit):
+        if not f.isintroducedafter(limit):
             return None
 
 def _dirstatecopies(repo, match=None):
