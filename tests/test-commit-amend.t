@@ -783,6 +783,21 @@ Amend a merge changeset (with renames during the merge):
   
   $ hg debugrename aaa
   aaa renamed from aa:37d9b5d994eab34eda9c16b195ace52c7b129980
+
+Update to p1 with 'aaa' modified. 'aaa' was renamed from 'aa' in p2. 'aa' exists
+in p1 too, but it was recorded as copied from p2.
+  $ echo modified >> aaa
+BROKEN: should not be follow the rename back to 'aa' here, since the rename
+happened compared to p2
+  $ hg co -m '.^' -t :merge3
+  merging aaa and aa to aa
+  warning: conflicts while merging aa! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 1 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges
+  [1]
+  $ hg co -C tip
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
   $ hg mv aaa aa
   $ hg ci --amend -m 'merge bar again (undo rename)'
   $ hg log --config diff.git=1 -pr .
