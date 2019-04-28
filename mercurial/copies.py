@@ -204,9 +204,9 @@ def _committedforwardcopies(a, b, match):
     ancestrycontext = a._repo.changelog.ancestors([b.rev()], inclusive=True)
 
     if debug:
-        dbg('debug.copies:      missing file to search: %d\n' % len(missing))
+        dbg('debug.copies:      missing files to search: %d\n' % len(missing))
 
-    for f in missing:
+    for f in sorted(missing):
         if debug:
             dbg('debug.copies:        tracing file: %s\n' % f)
         fctx = b[f]
