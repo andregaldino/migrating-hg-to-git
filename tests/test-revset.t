@@ -1956,25 +1956,26 @@ For tests consistency
   2147483647
 
 Test working-directory integer revision and node id
-(BUG: '0:wdir()' is still needed to populate wdir revision)
 
-  $ hg debugrevspec '0:wdir() & 2147483647'
+  $ hg debugrevspec '2147483647'
   2147483647
-  $ hg debugrevspec '0:wdir() & rev(2147483647)'
+  $ hg debugrevspec 'rev(2147483647)'
   2147483647
-  $ hg debugrevspec '0:wdir() & ffffffffffffffffffffffffffffffffffffffff'
+  $ hg debugrevspec 'ffffffffffffffffffffffffffffffffffffffff'
   2147483647
-  $ hg debugrevspec '0:wdir() & ffffffffffff'
+  $ hg debugrevspec 'ffffffffffff'
   2147483647
-  $ hg debugrevspec '0:wdir() & id(ffffffffffffffffffffffffffffffffffffffff)'
+  $ hg debugrevspec 'id(ffffffffffffffffffffffffffffffffffffffff)'
   2147483647
-  $ hg debugrevspec '0:wdir() & id(ffffffffffff)'
+  $ hg debugrevspec 'id(ffffffffffff)'
   2147483647
+  $ hg debugrevspec 'ffffffffffff+000000000000'
+  2147483647
+  -1
 
   $ cd ..
 
 Test short 'ff...' hash collision
-(BUG: '0:wdir()' is still needed to populate wdir revision)
 
   $ hg init wdir-hashcollision
   $ cd wdir-hashcollision
@@ -2000,21 +2001,21 @@ Test short 'ff...' hash collision
   $ hg debugobsolete fffbae3886c8fbb2114296380d276fd37715d571
   obsoleted 1 changesets
 
-  $ hg debugrevspec '0:wdir() & fff'
+  $ hg debugrevspec 'fff'
   abort: 00changelog.i@fff: ambiguous identifier!
   [255]
-  $ hg debugrevspec '0:wdir() & ffff'
+  $ hg debugrevspec 'ffff'
   abort: 00changelog.i@ffff: ambiguous identifier!
   [255]
-  $ hg debugrevspec '0:wdir() & fffb'
+  $ hg debugrevspec 'fffb'
   abort: 00changelog.i@fffb: ambiguous identifier!
   [255]
 BROKEN should be '2' (node lookup uses unfiltered repo)
-  $ hg debugrevspec '0:wdir() & id(fffb)'
+  $ hg debugrevspec 'id(fffb)'
 BROKEN should be '2' (node lookup uses unfiltered repo)
-  $ hg debugrevspec '0:wdir() & ffff8'
+  $ hg debugrevspec 'ffff8'
   4
-  $ hg debugrevspec '0:wdir() & fffff'
+  $ hg debugrevspec 'fffff'
   2147483647
 
   $ cd ..

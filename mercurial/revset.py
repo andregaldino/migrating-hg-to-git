@@ -123,8 +123,7 @@ def stringset(repo, subset, x, order):
     if not x:
         raise error.ParseError(_("empty string is not a valid revision"))
     x = scmutil.intrev(scmutil.revsymbol(repo, x))
-    if (x in subset
-        or x == node.nullrev and isinstance(subset, fullreposet)):
+    if x in subset or x in _virtualrevs and isinstance(subset, fullreposet):
         return baseset([x])
     return baseset()
 
@@ -2265,7 +2264,7 @@ def _orderedlist(repo, subset, x):
             if r in seen:
                 continue
             if (r in subset
-                or r == node.nullrev and isinstance(subset, fullreposet)):
+                or r in _virtualrevs and isinstance(subset, fullreposet)):
                 ls.append(r)
             seen.add(r)
     return baseset(ls)
