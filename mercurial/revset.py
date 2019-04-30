@@ -52,6 +52,9 @@ generatorset = smartset.generatorset
 spanset = smartset.spanset
 fullreposet = smartset.fullreposet
 
+# revisions not included in all(), but populated if specified
+_virtualrevs = (node.nullrev, node.wdirrev)
+
 # Constants for ordering requirement, used in getset():
 #
 # If 'define', any nested functions and operations MAY change the ordering of
@@ -1847,7 +1850,7 @@ def rev(repo, subset, x):
     except (TypeError, ValueError):
         # i18n: "rev" is a keyword
         raise error.ParseError(_("rev expects a number"))
-    if l not in repo.changelog and l not in (node.nullrev, node.wdirrev):
+    if l not in repo.changelog and l not in _virtualrevs:
         return baseset()
     return subset & baseset([l])
 
