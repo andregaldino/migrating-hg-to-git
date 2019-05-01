@@ -529,6 +529,9 @@ coreconfigitem('experimental', 'evolution.exchange',
 coreconfigitem('experimental', 'evolution.bundle-obsmarker',
     default=False,
 )
+coreconfigitem('experimental', 'log.topo',
+    default=False,
+)
 coreconfigitem('experimental', 'evolution.report-instabilities',
     default=True,
 )

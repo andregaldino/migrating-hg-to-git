@@ -3,6 +3,16 @@
  * New config `commands.commit.post-status` shows status after successful
  commit.
 
+
+== New Experimental Features ==
+
+ * New config `experimental.log.topo` makes `hg log -G` use
+   topological sorting. This is especially useful for aliases since it
+   lets the alias accept an `-r` option while still using topological
+   sorting with or without the `-r` (unlike if you use the `sort(...,
+   topo)` revset).
+
+
 == Bug Fixes  ==
 
 

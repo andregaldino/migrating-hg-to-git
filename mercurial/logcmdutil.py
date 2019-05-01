@@ -746,7 +746,12 @@ def getrevs(repo, pats, opts):
     if opts.get('graph'):
         # User-specified revs might be unsorted, but don't sort before
         # _makerevset because it might depend on the order of revs
-        if not (revs.isdescending() or revs.istopo()):
+        if repo.ui.configbool('experimental', 'log.topo'):
+            if not revs.istopo():
+                revs = dagop.toposort(revs, repo.changelog.parentrevs)
+                # TODO: try to iterate the set lazily
+                revs = revset.baseset(list(revs))
+        elif not (revs.isdescending() or revs.istopo()):
             revs.sort(reverse=True)
     if expr:
         matcher = revset.match(None, expr)
