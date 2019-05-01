@@ -293,6 +293,35 @@ def uisetup(ui):
     # debugdata needs remotefilelog.len to work
     extensions.wrapcommand(commands.table, 'debugdata', debugdatashallow)
 
+    changegroup.cgpacker = shallowbundle.shallowcg1packer
+
+    extensions.wrapfunction(changegroup, '_addchangegroupfiles',
+                            shallowbundle.addchangegroupfiles)
+    extensions.wrapfunction(
+        changegroup, 'makechangegroup', shallowbundle.makechangegroup)
+    extensions.wrapfunction(localrepo, 'makestore', storewrapper)
+    extensions.wrapfunction(exchange, 'pull', exchangepull)
+    extensions.wrapfunction(merge, 'applyupdates', applyupdates)
+    extensions.wrapfunction(merge, '_checkunknownfiles', checkunknownfiles)
+    extensions.wrapfunction(context.workingctx, '_checklookup', checklookup)
+    extensions.wrapfunction(scmutil, '_findrenames', findrenames)
+    extensions.wrapfunction(copies, '_computeforwardmissing',
+                            computeforwardmissing)
+    extensions.wrapfunction(dispatch, 'runcommand', runcommand)
+    extensions.wrapfunction(repair, '_collectbrokencsets', _collectbrokencsets)
+    extensions.wrapfunction(context.changectx, 'filectx', filectx)
+    extensions.wrapfunction(context.workingctx, 'filectx', workingfilectx)
+    extensions.wrapfunction(patch, 'trydiff', trydiff)
+    extensions.wrapfunction(hg, 'verify', _verify)
+    scmutil.fileprefetchhooks.add('remotefilelog', _fileprefetchhook)
+
+    # disappointing hacks below
+    scmutil.getrenamedfn = getrenamedfn
+    extensions.wrapfunction(revset, 'filelog', filelogrevset)
+    revset.symbols['filelog'] = revset.filelog
+    extensions.wrapfunction(cmdutil, 'walkfilerevs', walkfilerevs)
+
+
 def cloneshallow(orig, ui, repo, *args, **opts):
     if opts.get(r'shallow'):
         repos = []
@@ -562,38 +591,6 @@ def onetimeclientsetup(ui):
         return
     clientonetime = True
 
-    changegroup.cgpacker = shallowbundle.shallowcg1packer
-
-    extensions.wrapfunction(changegroup, '_addchangegroupfiles',
-                            shallowbundle.addchangegroupfiles)
-    extensions.wrapfunction(
-        changegroup, 'makechangegroup', shallowbundle.makechangegroup)
-
-    extensions.wrapfunction(localrepo, 'makestore', storewrapper)
-
-    extensions.wrapfunction(exchange, 'pull', exchangepull)
-
-    extensions.wrapfunction(merge, 'applyupdates', applyupdates)
-
-    extensions.wrapfunction(merge, '_checkunknownfiles', checkunknownfiles)
-
-    extensions.wrapfunction(context.workingctx, '_checklookup', checklookup)
-
-    extensions.wrapfunction(scmutil, '_findrenames', findrenames)
-
-    extensions.wrapfunction(copies, '_computeforwardmissing',
-                            computeforwardmissing)
-
-    extensions.wrapfunction(dispatch, 'runcommand', runcommand)
-
-    # disappointing hacks below
-    scmutil.getrenamedfn = getrenamedfn
-    extensions.wrapfunction(revset, 'filelog', filelogrevset)
-    revset.symbols['filelog'] = revset.filelog
-    extensions.wrapfunction(cmdutil, 'walkfilerevs', walkfilerevs)
-
-    extensions.wrapfunction(repair, '_collectbrokencsets', _collectbrokencsets)
-
     # Don't commit filelogs until we know the commit hash, since the hash
     # is present in the filelog blob.
     # This violates Mercurial's filelog->manifest->changelog write order,
@@ -635,16 +632,6 @@ def onetimeclientsetup(ui):
         del pendingfilecommits[:]
         return node
     extensions.wrapfunction(changelog.changelog, 'add', changelogadd)
-
-    extensions.wrapfunction(context.changectx, 'filectx', filectx)
-
-    extensions.wrapfunction(context.workingctx, 'filectx', workingfilectx)
-
-    extensions.wrapfunction(patch, 'trydiff', trydiff)
-
-    extensions.wrapfunction(hg, 'verify', _verify)
-
-    scmutil.fileprefetchhooks.add('remotefilelog', _fileprefetchhook)
 
 def getrenamedfn(repo, endrev=None):
     rcache = {}
