@@ -1227,6 +1227,15 @@ def addln(win, y, x, line, color=None):
     else:
         win.addstr(y, x, line)
 
+def _trunc_head(line, n):
+    if len(line) <= n:
+        return line
+    return '> ' + line[-(n - 2):]
+def _trunc_tail(line, n):
+    if len(line) <= n:
+        return line
+    return line[:n - 2] + ' >'
+
 def patchcontents(state):
     repo = state['repo']
     rule = state['rules'][state['pos']]
@@ -1284,11 +1293,23 @@ def _chisteditmain(repo, rules, stdscr):
         line = "bookmark:  {0}".format(' '.join(bms))
         win.addstr(3, 1, line[:length])
 
-        line = "files:     {0}".format(','.join(ctx.files()))
+        line = "summary:   {0}".format(ctx.description().splitlines()[0])
         win.addstr(4, 1, line[:length])
 
-        line = "summary:   {0}".format(ctx.description().splitlines()[0])
-        win.addstr(5, 1, line[:length])
+        line = "files:     "
+        win.addstr(5, 1, line)
+        fnx = 1 + len(line)
+        fnmaxx = length - fnx + 1
+        y = 5
+        fnmaxn = maxy - (1 + y) - 1
+        files = ctx.files()
+        for i, line1 in enumerate(files):
+            if len(files) > fnmaxn and i == fnmaxn - 1:
+                win.addstr(y, fnx, _trunc_tail(','.join(files[i:]), fnmaxx))
+                y = y + 1
+                break
+            win.addstr(y, fnx, _trunc_head(line1, fnmaxx))
+            y = y + 1
 
         conflicts = rule.conflicts
         if len(conflicts) > 0:
@@ -1297,7 +1318,7 @@ def _chisteditmain(repo, rules, stdscr):
         else:
             conflictstr = 'no overlap'
 
-        win.addstr(6, 1, conflictstr[:length])
+        win.addstr(y, 1, conflictstr[:length])
         win.noutrefresh()
 
     def helplines(mode):
@@ -1379,9 +1400,9 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         maxy, maxx = stdscr.getmaxyx()
         helplen = len(helplines(mode))
         return {
-            'commit': (8, maxx),
+            'commit': (12, maxx),
             'help': (helplen, maxx),
-            'main': (maxy - helplen - 8, maxx),
+            'main': (maxy - helplen - 12, maxx),
         }
 
     def drawvertwin(size, y, x):
