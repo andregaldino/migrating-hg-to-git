@@ -1,0 +1,14 @@
+== New Features ==
+
+ * New config `commands.commit.post-status` shows status after successful
+ commit.
+
+== Bug Fixes  ==
+
+
+== Backwards Compatibility Changes ==
+
+
+== Internal API Changes ==
+
+ * Matchers are no longer iterable. Use `match.files()` instead.
