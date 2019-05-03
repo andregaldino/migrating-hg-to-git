@@ -472,6 +472,12 @@ keyword arguments
   $ log 'extra(unknown=branch)'
   hg: parse error: extra got an unexpected keyword argument 'unknown'
   [255]
+  $ log 'extra((), x)'
+  hg: parse error: first argument to extra must be a string
+  [255]
+  $ log 'extra(label=x, ())'
+  hg: parse error: extra got an invalid argument
+  [255]
 
   $ try 'foo=bar|baz'
   (keyvalue

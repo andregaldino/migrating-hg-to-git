@@ -147,7 +147,8 @@ def buildargsdict(trees, funcname, argspec, keyvaluenode, keynode):
     arguments are rejected, but missing keyword arguments are just omitted.
     """
     poskeys, varkey, keys, optkey = argspec
-    kwstart = next((i for i, x in enumerate(trees) if x[0] == keyvaluenode),
+    kwstart = next((i for i, x in enumerate(trees)
+                    if x and x[0] == keyvaluenode),
                    len(trees))
     if kwstart < len(poskeys):
         raise error.ParseError(_("%(func)s takes at least %(nargs)d positional "
@@ -171,7 +172,7 @@ def buildargsdict(trees, funcname, argspec, keyvaluenode, keynode):
     if optkey:
         args[optkey] = util.sortdict()
     for x in trees[kwstart:]:
-        if x[0] != keyvaluenode or x[1][0] != keynode:
+        if not x or x[0] != keyvaluenode or x[1][0] != keynode:
             raise error.ParseError(_("%(func)s got an invalid argument")
                                    % {'func': funcname})
         k = x[1][1]
