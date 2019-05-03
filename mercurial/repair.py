@@ -366,8 +366,9 @@ def stripmanifest(repo, striprev, tr, files):
     striptrees(repo, tr, striprev, files)
 
 def striptrees(repo, tr, striprev, files):
-    if 'treemanifest' in repo.requirements: # safe but unnecessary
-                                            # otherwise
+    if 'treemanifest' in repo.requirements:
+        # This logic is safe if treemanifest isn't enabled, but also
+        # pointless, so we skip it if treemanifest isn't enabled.
         for unencoded, encoded, size in repo.store.datafiles():
             if (unencoded.startswith('meta/') and
                 unencoded.endswith('00manifest.i')):
@@ -418,7 +419,9 @@ def rebuildfncache(ui, repo):
 
         progress.complete()
 
-        if 'treemanifest' in repo.requirements: # safe but unnecessary otherwise
+        if 'treemanifest' in repo.requirements:
+            # This logic is safe if treemanifest isn't enabled, but also
+            # pointless, so we skip it if treemanifest isn't enabled.
             for dir in util.dirs(seenfiles):
                 i = 'meta/%s/00manifest.i' % dir
                 d = 'meta/%s/00manifest.d' % dir
