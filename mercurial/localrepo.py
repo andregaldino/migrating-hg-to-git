@@ -2538,12 +2538,12 @@ class localrepository(object):
                         _('note: commit message saved in %s\n') % msgfn)
                 raise
 
-        def commithook(node=hex(ret), parent1=hookp1, parent2=hookp2):
+        def commithook():
             # hack for command that use a temporary commit (eg: histedit)
             # temporary commit got stripped before hook release
             if self.changelog.hasnode(ret):
-                self.hook("commit", node=node, parent1=parent1,
-                          parent2=parent2)
+                self.hook("commit", node=hex(ret), parent1=hookp1,
+                          parent2=hookp2)
         self._afterlock(commithook)
         return ret
 
