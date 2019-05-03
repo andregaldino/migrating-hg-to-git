@@ -708,6 +708,8 @@ verify pathauditor blocks evil filepaths
   abort: path contains illegal component: HG8B6C~2/hgrc
   [255]
 
+  $ cd ..
+
 # test that an unmodified commit template message aborts
 
   $ hg init unmodified_commit_template
@@ -733,6 +735,8 @@ verify pathauditor blocks evil filepaths
   $ HGEDITOR="sh $TESTTMP/notouching.sh" hg commit
   abort: commit message unchanged
   [255]
+
+  $ cd ..
 
 test that text below the --- >8 --- special string is ignored
 
