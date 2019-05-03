@@ -279,7 +279,9 @@ def _bookmarkmovements(repo, tostrip):
         if rev in tostrip:
             updatebm.append(m)
     newbmtarget = None
-    if updatebm: # don't compute anything is there is no bookmark to move anyway
+    # If we need to move bookmarks, compute bookmark
+    # targets. Otherwise we can skip doing this logic.
+    if updatebm:
         # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)),
         # but is much faster
         newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
