@@ -912,7 +912,7 @@ def unshelve(ui, repo, *shelved, **opts):
     that causes a conflict. This reverts the unshelved changes, and
     leaves the bundle in place.)
 
-    If bare shelved change(when no files are specified, without interactive,
+    If bare shelved change (when no files are specified, without interactive,
     include and exclude option) was done on newly created branch it would
     restore branch information to the working directory.
 
