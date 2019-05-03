@@ -194,13 +194,19 @@ def commandprinter(ui, cmdtable, sectionfunc):
         helpcategory = details[0].helpcategory
         return helpcategory or help.registrar.command.CATEGORY_NONE
 
+    cmdsbycategory = {category: [] for category in help.CATEGORY_ORDER}
+    for cmd in cmds:
+        # If a command category wasn't registered, the command won't get
+        # rendered below, so we raise an AssertionError.
+        if helpcategory(cmd) not in cmdsbycategory:
+            raise AssertionError(
+                "The following command did not register its (category) in "
+                "help.CATEGORY_ORDER: %s (%s)" % (cmd, helpcategory(cmd)))
+        cmdsbycategory[helpcategory(cmd)].append(cmd)
+
     # Print the help for each command. We present the commands grouped by
     # category, and we use help.CATEGORY_ORDER as a guide for a helpful order
     # in which to present the categories.
-    cmdsbycategory = {category: [] for category in help.CATEGORY_ORDER}
-    for cmd in cmds:
-        cmdsbycategory[helpcategory(cmd)].append(cmd)
-
     for category in help.CATEGORY_ORDER:
         categorycmds = cmdsbycategory[category]
         if not categorycmds:
@@ -249,7 +255,6 @@ def commandprinter(ui, cmdtable, sectionfunc):
             # aliases
             if d[b'aliases']:
                 ui.write(_(b"    aliases: %s\n\n") % b" ".join(d[b'aliases']))
-
 
 def allextensionnames():
     return set(extensions.enabled().keys()) | set(extensions.disabled().keys())
