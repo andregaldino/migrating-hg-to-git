@@ -270,6 +270,7 @@ def _changesetforwardcopies(a, b, match):
     # came from.
     work = [(r, 1, {}) for r in roots]
     heapq.heapify(work)
+    alwaysmatch = match.always()
     while work:
         r, i1, copies1 = heapq.heappop(work)
         if work and work[0][0] == r:
@@ -280,7 +281,7 @@ def _changesetforwardcopies(a, b, match):
             # TODO: perhaps this filtering should be done as long as ctx
             # is merge, whether or not we're tracing from both parent.
             for dst in allcopies:
-                if not match(dst):
+                if not alwaysmatch and not match(dst):
                     continue
                 # Unlike when copies are stored in the filelog, we consider
                 # it a copy even if the destination already existed on the
@@ -306,7 +307,7 @@ def _changesetforwardcopies(a, b, match):
                 assert r == childctx.p2().rev()
                 parent = 2
                 childcopies = childctx.p2copies()
-            if not match.always():
+            if not alwaysmatch:
                 childcopies = {dst: src for dst, src in childcopies.items()
                                if match(dst)}
             # Copy the dict only if later iterations will also need it
