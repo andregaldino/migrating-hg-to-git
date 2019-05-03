@@ -90,7 +90,7 @@ def fnoderevs(ui, repo, revs):
     unfi = repo.unfiltered()
     tonode = unfi.changelog.node
     nodes = [tonode(r) for r in revs]
-    fnodes = _getfnodes(ui, repo, nodes[::-1]) # reversed help the cache
+    fnodes = _getfnodes(ui, repo, nodes)
     fnodes = _filterfnodes(fnodes, nodes)
     return fnodes
 
@@ -458,7 +458,8 @@ def _readtagcache(ui, repo):
     # This is the most expensive part of finding tags, so performance
     # depends primarily on the size of newheads.  Worst case: no cache
     # file, so newheads == repoheads.
-    cachefnode = _getfnodes(ui, repo, repoheads)
+    # Reversed order helps the cache ('repoheads' is in descending order)
+    cachefnode = _getfnodes(ui, repo, reversed(repoheads))
 
     # Caller has to iterate over all heads, but can use the filenodes in
     # cachefnode to get to each .hgtags revision quickly.
@@ -473,7 +474,7 @@ def _getfnodes(ui, repo, nodes):
     starttime = util.timer()
     fnodescache = hgtagsfnodescache(repo.unfiltered())
     cachefnode = {}
-    for node in reversed(nodes):
+    for node in nodes:
         fnode = fnodescache.getfnode(node)
         if fnode != nullid:
             cachefnode[node] = fnode
