@@ -1735,6 +1735,10 @@ def _docommit(ui, repo, *pats, **opts):
 
     cmdutil.commitstatus(repo, node, branch, bheads, opts)
 
+    if not ui.quiet and ui.configbool('commands', 'commit.post-status'):
+        status(ui, repo, modified=True, added=True, removed=True, deleted=True,
+               unknown=True, subrepos=opts.get('subrepos'))
+
 @command('config|showconfig|debugconfig',
     [('u', 'untrusted', None, _('show untrusted configuration options')),
      ('e', 'edit', None, _('edit user config')),

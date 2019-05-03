@@ -438,6 +438,10 @@ effect and style see :hg:`help color`.
 ``commands``
 ------------
 
+``commit.post-status``
+    Show status of files in the working directory after successful commit.
+    (default: False)
+
 ``resolve.confirm``
     Confirm before performing action if no filename is passed.
     (default: False)

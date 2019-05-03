@@ -202,6 +202,9 @@ coreconfigitem('color', 'pagermode',
     default=dynamicdefault,
 )
 _registerdiffopts(section='commands', configprefix='commit.interactive.')
+coreconfigitem('commands', 'commit.post-status',
+    default=False,
+)
 coreconfigitem('commands', 'grep.all-files',
     default=False,
 )

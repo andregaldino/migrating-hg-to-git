@@ -838,3 +838,42 @@ at the end
   second line
 
   $ cd ..
+
+testing commands.commit.post-status config option
+
+  $ hg init ci-post-st
+  $ cd ci-post-st
+  $ echo '[commands]' > .hg/hgrc
+  $ echo 'commit.post-status = 1' >> .hg/hgrc
+
+  $ echo 'ignored-file' > .hgignore
+  $ hg ci -qAm 0
+
+  $ echo 'c' > clean-file
+  $ echo 'a' > added-file
+  $ echo '?' > unknown-file
+  $ echo 'i' > ignored-file
+  $ hg add clean-file added-file
+  $ hg ci -m 1 clean-file
+  A added-file
+  ? unknown-file
+  $ hg st -mardu
+  A added-file
+  ? unknown-file
+
+  $ touch modified-file
+  $ hg add modified-file
+  $ hg ci -m 2 modified-file -q
+
+  $ echo 'm' > modified-file
+  $ hg ci --amend -m 'reworded' -X 're:'
+  saved backup bundle to $TESTTMP/ci-post-st/.hg/strip-backup/*-amend.hg (glob)
+  M modified-file
+  A added-file
+  ? unknown-file
+  $ hg st -mardu
+  M modified-file
+  A added-file
+  ? unknown-file
+
+  $ cd ..
