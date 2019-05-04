@@ -153,37 +153,6 @@ if sys.version_info[0] >= 3:
                 tokens[j] = st._replace(string='u%s' % st.string)
 
         for i, t in enumerate(tokens):
-            # Convert most string literals to byte literals. String literals
-            # in Python 2 are bytes. String literals in Python 3 are unicode.
-            # Most strings in Mercurial are bytes and unicode strings are rare.
-            # Rather than rewrite all string literals to use ``b''`` to indicate
-            # byte strings, we apply this token transformer to insert the ``b``
-            # prefix nearly everywhere.
-            if t.type == token.STRING:
-                s = t.string
-
-                # Preserve docstrings as string literals. This is inconsistent
-                # with regular unprefixed strings. However, the
-                # "from __future__" parsing (which allows a module docstring to
-                # exist before it) doesn't properly handle the docstring if it
-                # is b''' prefixed, leading to a SyntaxError. We leave all
-                # docstrings as unprefixed to avoid this. This means Mercurial
-                # components touching docstrings need to handle unicode,
-                # unfortunately.
-                if s[0:3] in ("'''", '"""'):
-                    yield t
-                    continue
-
-                # If the first character isn't a quote, it is likely a string
-                # prefixing character (such as 'b', 'u', or 'r'. Ignore.
-                if s[0] not in ("'", '"'):
-                    yield t
-                    continue
-
-                # String literal. Prefix to make a b'' string.
-                yield t._replace(string='b%s' % t.string)
-                continue
-
             # Insert compatibility imports at "from __future__ import" line.
             # No '\n' should be added to preserve line numbers.
             if (
