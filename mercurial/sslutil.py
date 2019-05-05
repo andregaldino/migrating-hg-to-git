@@ -16,6 +16,7 @@ import ssl
 
 from .i18n import _
 from . import (
+    encoding,
     error,
     node,
     pycompat,
@@ -347,6 +348,17 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
     """
     if not serverhostname:
         raise error.Abort(_('serverhostname argument is required'))
+
+    if b'SSLKEYLOGFILE' in encoding.environ:
+        try:
+            import sslkeylog
+            sslkeylog.set_keylog(pycompat.fsdecode(
+                encoding.environ[b'SSLKEYLOGFILE']))
+            ui.warn(
+                b'sslkeylog enabled by SSLKEYLOGFILE environment variable\n')
+        except ImportError:
+            ui.warn(b'sslkeylog module missing, '
+                    b'but SSLKEYLOGFILE set in environment\n')
 
     for f in (keyfile, certfile):
         if f and not os.path.exists(f):
