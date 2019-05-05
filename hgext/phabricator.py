@@ -127,6 +127,13 @@ _VCR_FLAGS = [
 
 def vcrcommand(name, flags, spec, helpcategory=None):
     fullflags = flags + _VCR_FLAGS
+    def hgmatcher(r1, r2):
+        if r1.uri != r2.uri or r1.method != r2.method:
+            return False
+        r1params = r1.body.split(b'&')
+        r2params = r2.body.split(b'&')
+        return set(r1params) == set(r2params)
+
     def decorate(fn):
         def inner(*args, **kwargs):
             cassette = pycompat.fsdecode(kwargs.pop(r'test_vcr', None))
@@ -143,7 +150,8 @@ def vcrcommand(name, flags, spec, helpcategory=None):
                             (urlmod, r'httpsconnection',
                              stubs.VCRHTTPSConnection),
                         ])
-                    with vcr.use_cassette(cassette):
+                    vcr.register_matcher(r'hgmatcher', hgmatcher)
+                    with vcr.use_cassette(cassette, match_on=[r'hgmatcher']):
                         return fn(*args, **kwargs)
             return fn(*args, **kwargs)
         inner.__name__ = fn.__name__

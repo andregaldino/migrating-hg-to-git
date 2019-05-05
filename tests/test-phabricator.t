@@ -53,18 +53,18 @@ Create a differential diff:
   $ hg ci --addremove -m 'create alpha for phabricator test €'
   adding alpha
   $ hg phabsend -r . --test-vcr "$VCR/phabsend-create-alpha.json"
-  D6054 - created - d386117f30e6: create alpha for phabricator test \xe2\x82\xac (esc)
+  D1190 - created - d386117f30e6: create alpha for phabricator test \xe2\x82\xac (esc)
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d386117f30e6-24ffe649-phabsend.hg
   $ echo more >> alpha
   $ HGEDITOR=true hg ci --amend
-  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/cb03845d6dd9-870f61a6-amend.hg
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/a86ed7d85e86-b7a54f3b-amend.hg
   $ echo beta > beta
   $ hg ci --addremove -m 'create beta for phabricator test'
   adding beta
   $ hg phabsend -r ".^::" --test-vcr "$VCR/phabsend-update-alpha-create-beta.json"
-  D6054 - updated - 939d862f0318: create alpha for phabricator test \xe2\x82\xac (esc)
-  D6055 - created - f55f947ed0f8: create beta for phabricator test
-  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/f55f947ed0f8-0d1e502e-phabsend.hg
+  D1190 - updated - d940d39fb603: create alpha for phabricator test \xe2\x82\xac (esc)
+  D1191 - created - 4b2486dfc8c7: create beta for phabricator test
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/4b2486dfc8c7-d90584fa-phabsend.hg
   $ unset HGENCODING
 
 The amend won't explode after posting a public commit.  The local tag is left
@@ -76,13 +76,13 @@ behind to identify it.
   $ echo 'draft change' > alpha
   $ hg ci -m 'create draft change for phabricator testing'
   $ hg phabsend --amend -r '.^::' --test-vcr "$VCR/phabsend-create-public.json"
-  D5544 - created - a56e5ebd77e6: create public change for phabricator testing
-  D5545 - created - 6a0ade3e3ec2: create draft change for phabricator testing
-  warning: not updating public commit 2:a56e5ebd77e6
-  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/6a0ade3e3ec2-aca7d23c-phabsend.hg
+  D1192 - created - 24ffd6bca53a: create public change for phabricator testing
+  D1193 - created - ac331633be79: create draft change for phabricator testing
+  warning: not updating public commit 2:24ffd6bca53a
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/ac331633be79-719b961c-phabsend.hg
   $ hg tags -v
-  tip                                3:90532860b5e1
-  D5544                              2:a56e5ebd77e6 local
+  tip                                3:a19f1434f9a5
+  D1192                              2:24ffd6bca53a local
 
   $ hg debugcallconduit user.search --test-vcr "$VCR/phab-conduit.json" <<EOF
   > {
@@ -107,15 +107,15 @@ behind to identify it.
 
 Template keywords
   $ hg log -T'{rev} {phabreview|json}\n'
-  3 {"id": "D5545", "url": "https://phab.mercurial-scm.org/D5545"}
-  2 {"id": "D5544", "url": "https://phab.mercurial-scm.org/D5544"}
-  1 {"id": "D6055", "url": "https://phab.mercurial-scm.org/D6055"}
-  0 {"id": "D6054", "url": "https://phab.mercurial-scm.org/D6054"}
+  3 {"id": "D1193", "url": "https://phab.mercurial-scm.org/D1193"}
+  2 {"id": "D1192", "url": "https://phab.mercurial-scm.org/D1192"}
+  1 {"id": "D1191", "url": "https://phab.mercurial-scm.org/D1191"}
+  0 {"id": "D1190", "url": "https://phab.mercurial-scm.org/D1190"}
 
   $ hg log -T'{rev} {if(phabreview, "{phabreview.url} {phabreview.id}")}\n'
-  3 https://phab.mercurial-scm.org/D5545 D5545
-  2 https://phab.mercurial-scm.org/D5544 D5544
-  1 https://phab.mercurial-scm.org/D6055 D6055
-  0 https://phab.mercurial-scm.org/D6054 D6054
+  3 https://phab.mercurial-scm.org/D1193 D1193
+  2 https://phab.mercurial-scm.org/D1192 D1192
+  1 https://phab.mercurial-scm.org/D1191 D1191
+  0 https://phab.mercurial-scm.org/D1190 D1190
 
   $ cd ..
