@@ -8,15 +8,19 @@ extern crate memchr;
 mod ancestors;
 pub mod dagops;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
-pub mod testing;  // unconditionally built, for use from integration tests
+mod dirstate;
 pub mod discovery;
+pub mod testing; // unconditionally built, for use from integration tests
+pub use dirstate::{
+    pack_dirstate, parse_dirstate, CopyVec, CopyVecEntry, DirstateEntry,
+    DirstateParents, DirstateVec,
+};
 
 /// Mercurial revision numbers
 ///
 /// As noted in revlog.c, revision numbers are actually encoded in
 /// 4 bytes, and are liberally converted to ints, whence the i32
 pub type Revision = i32;
-
 
 /// Marker expressing the absence of a parent
 ///
