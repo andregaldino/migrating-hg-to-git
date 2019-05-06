@@ -2,6 +2,9 @@
 //
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
+extern crate byteorder;
+extern crate memchr;
+
 mod ancestors;
 pub mod dagops;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
@@ -39,4 +42,30 @@ pub trait Graph {
 pub enum GraphError {
     ParentOutOfRange(Revision),
     WorkingDirectoryUnsupported,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum DirstateParseError {
+    TooLittleData,
+    Overflow,
+    CorruptedEntry(String),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum DirstatePackError {
+    CorruptedEntry(String),
+    CorruptedParent,
+    BadSize(usize, usize),
+}
+
+impl From<std::io::Error> for DirstatePackError {
+    fn from(e: std::io::Error) -> Self {
+        DirstatePackError::CorruptedEntry(e.to_string())
+    }
+}
+
+impl From<std::io::Error> for DirstateParseError {
+    fn from(e: std::io::Error) -> Self {
+        DirstateParseError::CorruptedEntry(e.to_string())
+    }
 }

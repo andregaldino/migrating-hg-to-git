@@ -10,3 +10,7 @@ name = "hg"
 [dev-dependencies]
 rand = "*"
 rand_pcg = "*"
+
+[dependencies]
+memchr = "2.2.0"
+byteorder = "1.3.1"
