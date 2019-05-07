@@ -272,6 +272,15 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
             raise error.Abort(_('cannot partially commit a merge '
                                '(use "hg commit" instead)'))
 
+        def fail(f, msg):
+            raise error.Abort('%s: %s' % (f, msg))
+
+        force = opts.get('force')
+        if not force:
+            vdirs = []
+            match.explicitdir = vdirs.append
+            match.bad = fail
+
         status = repo.status(match=match)
 
         overrides = {(b'ui', b'commitsubrepos'): True}
@@ -293,15 +302,6 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
                 if s in commitsubs:
                     dirtyreason = wctx.sub(s).dirtyreason(True)
                     raise error.Abort(dirtyreason)
-
-        def fail(f, msg):
-            raise error.Abort('%s: %s' % (f, msg))
-
-        force = opts.get('force')
-        if not force:
-            vdirs = []
-            match.explicitdir = vdirs.append
-            match.bad = fail
 
         if not force:
             repo.checkcommitpatterns(wctx, vdirs, match, status, fail)
