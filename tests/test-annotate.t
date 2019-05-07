@@ -273,10 +273,31 @@ annotate after merge with -l
   > EOF
   $ hg ci -mc -d '3 0'
   created new head
+Work around the pure version not resolving the conflict like native code
+#if pure
+  $ hg merge
+  merging b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat <<EOF > b
+  > a
+  > z
+  > a
+  > b4
+  > c
+  > b5
+  > EOF
+  $ hg resolve -m b
+  (no more unresolved files)
+  $ rm b.orig
+#else
   $ hg merge
   merging b
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+#endif
   $ echo d >> b
   $ hg ci -mmerge2 -d '4 0'
 
