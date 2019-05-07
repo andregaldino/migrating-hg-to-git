@@ -796,8 +796,6 @@ def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
         # metadata across the rebase anyway).
         exclude = pathcopies(repo[fromrev], repo[skiprev])
     for dst, src in pathcopies(repo[fromrev], repo[rev]).iteritems():
-        # copies.pathcopies returns backward renames, so dst might not
-        # actually be in the dirstate
         if dst in exclude:
             continue
         wctx[dst].markcopied(src)
