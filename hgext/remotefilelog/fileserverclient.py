@@ -396,6 +396,9 @@ class fileserverclient(object):
                                 batchdefault = 10
                             batchsize = self.ui.configint(
                                 'remotefilelog', 'batchsize', batchdefault)
+                            self.ui.debug(
+                                b'requesting %d files from '
+                                b'remotefilelog server...\n' % len(missed))
                             _getfilesbatch(
                                 remote, self.receivemissing, progress.increment,
                                 missed, idmap, batchsize)
