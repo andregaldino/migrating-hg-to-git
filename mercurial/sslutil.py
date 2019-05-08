@@ -722,7 +722,7 @@ def _defaultcacerts(ui):
         certs = certifi.where()
         if os.path.exists(certs):
             ui.debug('using ca certificates from certifi\n')
-            return certs
+            return pycompat.fsencode(certs)
     except (ImportError, AttributeError):
         pass
 
