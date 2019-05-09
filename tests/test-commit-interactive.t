@@ -775,12 +775,24 @@ Record end
   +10
   +11
   
+Interactive commit can name a directory instead of files (issue6131)
 
   $ mkdir subdir
-  $ cd subdir
-  $ echo a > a
-  $ hg ci -d '16 0' -Amsubdir
+  $ echo a > subdir/a
+  $ hg ci -d '16 0' -i subdir -Amsubdir <<EOF
+  > y
+  > y
+  > EOF
   adding subdir/a
+  diff --git a/subdir/a b/subdir/a
+  new file mode 100644
+  examine changes to 'subdir/a'? [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +a
+  record this change to 'subdir/a'? [Ynesfdaq?] y
+  
+  $ cd subdir
 
   $ echo a >> a
   $ hg commit -i -d '16 0' -m subdir-change a <<EOF
