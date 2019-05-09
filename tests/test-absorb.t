@@ -176,7 +176,7 @@ Bookmarks are moved:
      b2                        2:c9b20c925790
    * ba                        2:c9b20c925790
 
-Non-mofified files are ignored:
+Non-modified files are ignored:
 
   $ touch b
   $ hg commit -A b -m b
@@ -225,10 +225,15 @@ Public commits will not be changed:
   2: 4d
   2: insert aftert 4d
 
+  $ hg co -qC 1
+  $ sedi 's/Insert/insert/' a
+  $ hg absorb --apply-changes
+  abort: no mutable changeset to change
+  [255]
+
 Make working copy clean:
 
-  $ hg revert -q -C a b
-  $ hg forget c
+  $ hg co -qC ba
   $ rm c
   $ hg status
 
@@ -261,7 +266,7 @@ Merge commit will not be changed:
   $ echo 2 >> m1
   $ echo 2 >> m2
   $ hg absorb --apply-changes
-  abort: no mutable changeset to change
+  abort: cannot absorb into a merge
   [255]
   $ hg revert -q -C m1 m2
 

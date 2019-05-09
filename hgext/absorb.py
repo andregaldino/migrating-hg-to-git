@@ -914,7 +914,10 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
     """
     if stack is None:
         limit = ui.configint('absorb', 'max-stack-size')
-        stack = getdraftstack(repo['.'], limit)
+        headctx = repo['.']
+        if len(headctx.parents()) > 1:
+            raise error.Abort(_('cannot absorb into a merge'))
+        stack = getdraftstack(headctx, limit)
         if limit and len(stack) >= limit:
             ui.warn(_('absorb: only the recent %d changesets will '
                       'be analysed\n')
