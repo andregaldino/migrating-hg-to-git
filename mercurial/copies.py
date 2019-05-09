@@ -107,8 +107,8 @@ def _findlimit(repo, ctxa, ctxb):
     # This only occurs when a is a descendent of b or visa-versa.
     return min(limit, a, b)
 
-def _chain(src, dst, a, b):
-    """chain two sets of copies 'a' and 'b'"""
+def _chainandfilter(src, dst, a, b):
+    """chain two sets of copies 'a' and 'b' and filter result"""
 
     # When chaining copies in 'a' (from 'src' via some other commit 'mid') with
     # copies in 'b' (from 'mid' to 'dst'), we can get the different cases in the
@@ -123,31 +123,37 @@ def _chain(src, dst, a, b):
     #   4   x   y   z   x->z
     #   5   -   x   y    -
     #   6   x   x   y   x->y
+    #
+    # _chain() takes care of chaining the copies in 'a' and 'b', but it
+    # cannot tell the difference between cases 1 and 2, between 3 and 4, or
+    # between 5 and 6, so it includes all cases in its result.
+    # Cases 1, 3, and 5 are then removed by _filter().
 
-    # Initialize result ('t') from 'a'. This catches cases 1 & 2. We'll remove
-    # case 1 later. We'll also catch cases 3 & 4 here. Case 4 will be
-    # overwritten later, and case 3 will be removed later.
-    t = a.copy()
-    for k, v in b.iteritems():
-        if v in t:
-            # Found a chain, i.e. cases 3 & 4. We'll remove case 3 later.
-            t[k] = t[v]
-        else:
-            # Renamed only in 'b', i.e. cases 5 & 6. We'll remove case 5 later.
-            t[k] = v
+    t = _chain(a, b)
+    _filter(src, dst, t)
+    return t
 
+def _filter(src, dst, t):
+    """filters out invalid copies after chaining"""
     for k, v in list(t.items()):
-        # remove copies from files that didn't exist, i.e. case 5
+        # remove copies from files that didn't exist
         if v not in src:
             del t[k]
-        # remove criss-crossed copies, i.e. case 3
+        # remove criss-crossed copies
         elif k in src and v in dst:
             del t[k]
-        # remove copies to files that were then removed, i.e. case 1
-        # and file 'y' in cases 3 & 4 (in case of rename)
+        # remove copies to files that were then removed
         elif k not in dst:
             del t[k]
 
+def _chain(a, b):
+    """chain two sets of copies 'a' and 'b'"""
+    t = a.copy()
+    for k, v in b.iteritems():
+        if v in t:
+            t[k] = t[v]
+        else:
+            t[k] = v
     return t
 
 def _tracefile(fctx, am, limit):
@@ -307,7 +313,7 @@ def _changesetforwardcopies(a, b, match):
             if not match.always():
                 childcopies = {dst: src for dst, src in childcopies.items()
                                if match(dst)}
-            childcopies = _chain(a, childctx, copies, childcopies)
+            childcopies = _chainandfilter(a, childctx, copies, childcopies)
             heapq.heappush(work, (c, parent, childcopies))
     assert False
 
@@ -323,7 +329,7 @@ def _forwardcopies(a, b, match=None):
 
         cm = _committedforwardcopies(a, b.p1(), match)
         # combine copies from dirstate if necessary
-        return _chain(a, b, cm, _dirstatecopies(b._repo, match))
+        return _chainandfilter(a, b, cm, _dirstatecopies(b._repo, match))
     return _committedforwardcopies(a, b, match)
 
 def _backwardrenames(a, b, match):
@@ -367,8 +373,8 @@ def pathcopies(x, y, match=None):
         return _backwardrenames(x, y, match=match)
     if debug:
         repo.ui.debug('debug.copies: search mode: combined\n')
-    return _chain(x, y, _backwardrenames(x, a, match=match),
-                  _forwardcopies(a, y, match=match))
+    return _chainandfilter(x, y, _backwardrenames(x, a, match=match),
+                           _forwardcopies(a, y, match=match))
 
 def mergecopies(repo, c1, c2, base):
     """
