@@ -763,6 +763,21 @@ Test rebasing a commit with copy information, but no content changes
 
   $ cd ..
 
+Test rebasing a commit with copy information
+
+  $ hg init rebase-rename
+  $ cd rebase-rename
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ echo a2 > a
+  $ hg ci -m 'modify a'
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'rename a to b'
+  $ hg rebase -d 1 2>&1 | grep '** ProgrammingError'
+  ** ProgrammingError: copydata() called on clean context
+  $ cd ..
+
 Test rebasing when the file we are merging in destination is empty
 
   $ hg init test
