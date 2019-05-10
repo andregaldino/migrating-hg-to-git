@@ -7,6 +7,8 @@
   > changesetcopies = log -r . -T 'files: {files}
   >   {extras % "{ifcontains("copies", key, "{key}: {value}\n")}"}'
   > showcopies = log -r . -T '{file_copies % "{source} -> {name}\n"}'
+  > [extensions]
+  > rebase =
   > EOF
 
 Check that copies are recorded correctly
@@ -132,4 +134,25 @@ Test writing only to filelog
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> k
 
+  $ cd ..
+
+Test rebasing a commit with copy information
+
+  $ hg init rebase-rename
+  $ cd rebase-rename
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ echo a2 > a
+  $ hg ci -m 'modify a'
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'rename a to b'
+  $ hg rebase -d 1 --config rebase.experimental.inmemory=yes
+  rebasing 2:55d0b405c1b2 "rename a to b" (tip)
+  merging a and b to b
+  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/55d0b405c1b2-78df867e-rebase.hg
+BROKEN: should show the rename
+  $ hg st --change . --copies
+  A b
+  R a
   $ cd ..
