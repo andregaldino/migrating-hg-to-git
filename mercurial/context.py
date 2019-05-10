@@ -272,6 +272,30 @@ class basectx(object):
         except error.LookupError:
             return ''
 
+    @propertycache
+    def _copies(self):
+        p1copies = {}
+        p2copies = {}
+        p1 = self.p1()
+        p2 = self.p2()
+        narrowmatch = self._repo.narrowmatch()
+        for dst in self.files():
+            if not narrowmatch(dst) or dst not in self:
+                continue
+            copied = self[dst].renamed()
+            if not copied:
+                continue
+            src, srcnode = copied
+            if src in p1 and p1[src].filenode() == srcnode:
+                p1copies[dst] = src
+            elif src in p2 and p2[src].filenode() == srcnode:
+                p2copies[dst] = src
+        return p1copies, p2copies
+    def p1copies(self):
+        return self._copies[0]
+    def p2copies(self):
+        return self._copies[1]
+
     def sub(self, path, allowcreate=True):
         '''return a subrepo for the stored revision of path, never wdir()'''
         return subrepo.subrepo(self, path, allowcreate=allowcreate)
@@ -456,27 +480,7 @@ class changectx(basectx):
         # Otherwise (config said to read only from filelog, or we are in
         # compatiblity mode and there is not data in the changeset), we get
         # the copy metadata from the filelogs.
-        p1copies = {}
-        p2copies = {}
-        p1 = self.p1()
-        p2 = self.p2()
-        narrowmatch = self._repo.narrowmatch()
-        for dst in self.files():
-            if not narrowmatch(dst) or dst not in self:
-                continue
-            copied = self[dst].renamed()
-            if not copied:
-                continue
-            src, srcnode = copied
-            if src in p1 and p1[src].filenode() == srcnode:
-                p1copies[dst] = src
-            elif src in p2 and p2[src].filenode() == srcnode:
-                p2copies[dst] = src
-        return p1copies, p2copies
-    def p1copies(self):
-        return self._copies[0]
-    def p2copies(self):
-        return self._copies[1]
+        return super(changectx, self)._copies
     def description(self):
         return self._changeset.description
     def branch(self):
@@ -1206,26 +1210,6 @@ class committablectx(basectx):
         return self._status.removed
     def deleted(self):
         return self._status.deleted
-    @propertycache
-    def _copies(self):
-        p1copies = {}
-        p2copies = {}
-        parents = self._repo.dirstate.parents()
-        p1manifest = self._repo[parents[0]].manifest()
-        p2manifest = self._repo[parents[1]].manifest()
-        narrowmatch = self._repo.narrowmatch()
-        for dst, src in self._repo.dirstate.copies().items():
-            if not narrowmatch(dst):
-                continue
-            if src in p1manifest:
-                p1copies[dst] = src
-            elif src in p2manifest:
-                p2copies[dst] = src
-        return p1copies, p2copies
-    def p1copies(self):
-        return self._copies[0]
-    def p2copies(self):
-        return self._copies[1]
     def branch(self):
         return encoding.tolocal(self._extra['branch'])
     def closesbranch(self):
@@ -1577,6 +1561,27 @@ class workingctx(committablectx):
                 self._status = s
 
         return s
+
+    @propertycache
+    def _copies(self):
+        p1copies = {}
+        p2copies = {}
+        parents = self._repo.dirstate.parents()
+        p1manifest = self._repo[parents[0]].manifest()
+        p2manifest = self._repo[parents[1]].manifest()
+        narrowmatch = self._repo.narrowmatch()
+        for dst, src in self._repo.dirstate.copies().items():
+            if not narrowmatch(dst):
+                continue
+            if src in p1manifest:
+                p1copies[dst] = src
+            elif src in p2manifest:
+                p2copies[dst] = src
+        return p1copies, p2copies
+    def p1copies(self):
+        return self._copies[0]
+    def p2copies(self):
+        return self._copies[1]
 
     @propertycache
     def _manifest(self):

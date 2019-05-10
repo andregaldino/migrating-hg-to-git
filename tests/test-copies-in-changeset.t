@@ -151,8 +151,8 @@ Test rebasing a commit with copy information
   rebasing 2:55d0b405c1b2 "rename a to b" (tip)
   merging a and b to b
   saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/55d0b405c1b2-78df867e-rebase.hg
-BROKEN: should show the rename
   $ hg st --change . --copies
   A b
+    a
   R a
   $ cd ..
