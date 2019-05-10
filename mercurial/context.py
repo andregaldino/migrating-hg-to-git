@@ -1913,7 +1913,7 @@ class overlayworkingctx(committablectx):
         if self.isdirty(path):
             return self._cache[path]['copied']
         else:
-            raise error.ProgrammingError('copydata() called on clean context')
+            return None
 
     def flags(self, path):
         if self.isdirty(path):

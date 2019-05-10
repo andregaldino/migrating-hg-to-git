@@ -774,8 +774,14 @@ Test rebasing a commit with copy information
   $ hg co -q 0
   $ hg mv a b
   $ hg ci -qm 'rename a to b'
-  $ hg rebase -d 1 2>&1 | grep '** ProgrammingError'
-  ** ProgrammingError: copydata() called on clean context
+  $ hg rebase -d 1
+  rebasing 2:b977edf6f839 "rename a to b" (tip)
+  merging a and b to b
+  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/b977edf6f839-0864f570-rebase.hg
+  $ hg st --copies --change .
+  A b
+    a
+  R a
   $ cd ..
 
 Test rebasing when the file we are merging in destination is empty
