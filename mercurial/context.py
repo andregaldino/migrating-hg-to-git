@@ -2055,7 +2055,7 @@ class overlayworkingctx(committablectx):
         else:
             parents = (self._repo[parents[0]], self._repo[parents[1]])
 
-        files = self._cache.keys()
+        files = self.files()
         def getfile(repo, memctx, path):
             if self._cache[path]['exists']:
                 return memfilectx(repo, memctx, path,
