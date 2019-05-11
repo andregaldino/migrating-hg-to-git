@@ -1119,13 +1119,7 @@ class committablectx(basectx):
             self._extra = extra.copy()
         if branch is not None:
             self._extra['branch'] = encoding.fromlocal(branch)
-        elif 'branch' not in self._extra:
-            try:
-                branch = encoding.fromlocal(self._repo.dirstate.branch())
-            except UnicodeDecodeError:
-                raise error.Abort(_('branch name not in UTF-8!'))
-            self._extra['branch'] = branch
-        if self._extra['branch'] == '':
+        if not self._extra.get('branch'):
             self._extra['branch'] = 'default'
 
     def __bytes__(self):
@@ -1242,7 +1236,14 @@ class workingctx(committablectx):
     """
     def __init__(self, repo, text="", user=None, date=None, extra=None,
                  changes=None):
-        super(workingctx, self).__init__(repo, text, user, date, extra, changes)
+        branch = None
+        if not extra or 'branch' not in extra:
+            try:
+                branch = repo.dirstate.branch()
+            except UnicodeDecodeError:
+                raise error.Abort(_('branch name not in UTF-8!'))
+        super(workingctx, self).__init__(repo, text, user, date, extra, changes,
+                                         branch=branch)
 
     def __iter__(self):
         d = self._repo.dirstate
