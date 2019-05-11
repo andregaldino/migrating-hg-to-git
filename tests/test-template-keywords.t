@@ -798,6 +798,23 @@ Test files list:
   fourth
   third
 
+Test files lists on merge commit:
+
+  $ hg co '.^' -q
+  $ touch c
+  $ hg add c
+  $ hg ci -qm 'add file'
+  $ hg merge 10 -q
+  $ hg ci -m 'merge'
+  $ hg log -l1 -T '{files}\n'
+  a fourth
+  $ hg log -l1 -T '{file_mods}\n'
+  third
+  $ hg log -l1 -T '{file_adds}\n'
+  b fifth
+  $ hg log -l1 -T '{file_dels}\n'
+  a fourth
+
 Test file copies dict:
 
   $ hg log -r8 -T '{join(file_copies, " ")}\n'
@@ -818,7 +835,7 @@ Test file copies dict:
 
 Test file attributes:
 
-  $ hg log -l1 -T '{files % "{status} {pad(size, 3, left=True)} {path}\n"}'
+  $ hg log -r10 -T '{files % "{status} {pad(size, 3, left=True)} {path}\n"}'
   R     a
   A   0 b
   A   7 fifth
@@ -834,7 +851,7 @@ Test file status including clean ones:
 
 Test index keyword:
 
-  $ hg log -l 2 -T '{index + 10}{files % " {index}:{file}"}\n'
+  $ hg log -r 10:9 -T '{index + 10}{files % " {index}:{file}"}\n'
   10 0:a 1:b 2:fifth 3:fourth 4:third
   11 0:a
 
