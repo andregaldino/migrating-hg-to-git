@@ -1102,7 +1102,7 @@ class committablectx(basectx):
     """A committablectx object provides common functionality for a context that
     wants the ability to commit, e.g. workingctx or memctx."""
     def __init__(self, repo, text="", user=None, date=None, extra=None,
-                 changes=None):
+                 changes=None, branch=None):
         super(committablectx, self).__init__(repo)
         self._rev = None
         self._node = None
@@ -1117,7 +1117,9 @@ class committablectx(basectx):
         self._extra = {}
         if extra:
             self._extra = extra.copy()
-        if 'branch' not in self._extra:
+        if branch is not None:
+            self._extra['branch'] = encoding.fromlocal(branch)
+        elif 'branch' not in self._extra:
             try:
                 branch = encoding.fromlocal(self._repo.dirstate.branch())
             except UnicodeDecodeError:
@@ -2308,7 +2310,8 @@ class memctx(committablectx):
 
     def __init__(self, repo, parents, text, files, filectxfn, user=None,
                  date=None, extra=None, branch=None, editor=False):
-        super(memctx, self).__init__(repo, text, user, date, extra)
+        super(memctx, self).__init__(repo, text, user, date, extra,
+                                     branch=branch)
         self._rev = None
         self._node = None
         parents = [(p or nullid) for p in parents]
@@ -2316,8 +2319,6 @@ class memctx(committablectx):
         self._parents = [self._repo[p] for p in (p1, p2)]
         files = sorted(set(files))
         self._files = files
-        if branch is not None:
-            self._extra['branch'] = encoding.fromlocal(branch)
         self.substate = {}
 
         if isinstance(filectxfn, patch.filestore):
