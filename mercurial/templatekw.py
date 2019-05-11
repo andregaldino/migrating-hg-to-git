@@ -295,11 +295,6 @@ def _showfilesbystat(context, mapping, name, index):
     files = stat[index]
     return templateutil.compatfileslist(context, mapping, name, files)
 
-@templatekeyword('file_adds', requires={'ctx', 'revcache'})
-def showfileadds(context, mapping):
-    """List of strings. Files added by this changeset."""
-    return _showfilesbystat(context, mapping, 'file_add', 1)
-
 @templatekeyword('file_copies',
                  requires={'repo', 'ctx', 'cache', 'revcache'})
 def showfilecopies(context, mapping):
@@ -333,6 +328,11 @@ def showfilecopiesswitch(context, mapping):
     copies = context.resource(mapping, 'revcache').get('copies') or []
     return templateutil.compatfilecopiesdict(context, mapping, 'file_copy',
                                              copies)
+
+@templatekeyword('file_adds', requires={'ctx', 'revcache'})
+def showfileadds(context, mapping):
+    """List of strings. Files added by this changeset."""
+    return _showfilesbystat(context, mapping, 'file_add', 1)
 
 @templatekeyword('file_dels', requires={'ctx', 'revcache'})
 def showfiledels(context, mapping):
