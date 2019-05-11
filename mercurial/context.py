@@ -1136,42 +1136,6 @@ class committablectx(basectx):
 
     __bool__ = __nonzero__
 
-    def _buildflagfunc(self):
-        # Create a fallback function for getting file flags when the
-        # filesystem doesn't support them
-
-        copiesget = self._repo.dirstate.copies().get
-        parents = self.parents()
-        if len(parents) < 2:
-            # when we have one parent, it's easy: copy from parent
-            man = parents[0].manifest()
-            def func(f):
-                f = copiesget(f, f)
-                return man.flags(f)
-        else:
-            # merges are tricky: we try to reconstruct the unstored
-            # result from the merge (issue1802)
-            p1, p2 = parents
-            pa = p1.ancestor(p2)
-            m1, m2, ma = p1.manifest(), p2.manifest(), pa.manifest()
-
-            def func(f):
-                f = copiesget(f, f) # may be wrong for merges with copies
-                fl1, fl2, fla = m1.flags(f), m2.flags(f), ma.flags(f)
-                if fl1 == fl2:
-                    return fl1
-                if fl1 == fla:
-                    return fl2
-                if fl2 == fla:
-                    return fl1
-                return '' # punt for conflicts
-
-        return func
-
-    @propertycache
-    def _flagfunc(self):
-        return self._repo.dirstate.flagfunc(self._buildflagfunc)
-
     @propertycache
     def _status(self):
         return self._repo.status()
@@ -1240,18 +1204,6 @@ class committablectx(basectx):
 
     def children(self):
         return []
-
-    def flags(self, path):
-        if r'_manifest' in self.__dict__:
-            try:
-                return self._manifest.flags(path)
-            except KeyError:
-                return ''
-
-        try:
-            return self._flagfunc(path)
-        except OSError:
-            return ''
 
     def ancestor(self, c2):
         """return the "best" ancestor context of self and c2"""
@@ -1338,6 +1290,54 @@ class workingctx(committablectx):
         # populate __dict__['_manifest'] as workingctx has no _manifestdelta
         self._manifest
         return super(workingctx, self)._fileinfo(path)
+
+    def _buildflagfunc(self):
+        # Create a fallback function for getting file flags when the
+        # filesystem doesn't support them
+
+        copiesget = self._repo.dirstate.copies().get
+        parents = self.parents()
+        if len(parents) < 2:
+            # when we have one parent, it's easy: copy from parent
+            man = parents[0].manifest()
+            def func(f):
+                f = copiesget(f, f)
+                return man.flags(f)
+        else:
+            # merges are tricky: we try to reconstruct the unstored
+            # result from the merge (issue1802)
+            p1, p2 = parents
+            pa = p1.ancestor(p2)
+            m1, m2, ma = p1.manifest(), p2.manifest(), pa.manifest()
+
+            def func(f):
+                f = copiesget(f, f) # may be wrong for merges with copies
+                fl1, fl2, fla = m1.flags(f), m2.flags(f), ma.flags(f)
+                if fl1 == fl2:
+                    return fl1
+                if fl1 == fla:
+                    return fl2
+                if fl2 == fla:
+                    return fl1
+                return '' # punt for conflicts
+
+        return func
+
+    @propertycache
+    def _flagfunc(self):
+        return self._repo.dirstate.flagfunc(self._buildflagfunc)
+
+    def flags(self, path):
+        if r'_manifest' in self.__dict__:
+            try:
+                return self._manifest.flags(path)
+            except KeyError:
+                return ''
+
+        try:
+            return self._flagfunc(path)
+        except OSError:
+            return ''
 
     def filectx(self, path, filelog=None):
         """get a file context from the working directory"""
