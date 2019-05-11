@@ -1209,17 +1209,6 @@ class committablectx(basectx):
         """return the "best" ancestor context of self and c2"""
         return self._parents[0].ancestor(c2) # punt on two parents for now
 
-    def walk(self, match):
-        '''Generates matching file names.'''
-        return sorted(self._repo.dirstate.walk(self._repo.narrowmatch(match),
-                                               subrepos=sorted(self.substate),
-                                               unknown=True, ignored=False))
-
-    def matches(self, match):
-        match = self._repo.narrowmatch(match)
-        ds = self._repo.dirstate
-        return sorted(f for f in ds.matches(match) if ds[f] != 'r')
-
     def ancestors(self):
         for p in self._parents:
             yield p
@@ -1655,6 +1644,17 @@ class workingctx(committablectx):
                                        (self._repo.dirstate.pathto(f), msg))
             match.bad = bad
         return match
+
+    def walk(self, match):
+        '''Generates matching file names.'''
+        return sorted(self._repo.dirstate.walk(self._repo.narrowmatch(match),
+                                               subrepos=sorted(self.substate),
+                                               unknown=True, ignored=False))
+
+    def matches(self, match):
+        match = self._repo.narrowmatch(match)
+        ds = self._repo.dirstate
+        return sorted(f for f in ds.matches(match) if ds[f] != 'r')
 
     def markcommitted(self, node):
         super(workingctx, self).markcommitted(node)
