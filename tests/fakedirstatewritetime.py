@@ -74,5 +74,5 @@ def markcommitted(orig, committablectx, node):
 def extsetup(ui):
     extensions.wrapfunction(context.workingctx, '_poststatusfixup',
                             _poststatusfixup)
-    extensions.wrapfunction(context.committablectx, 'markcommitted',
+    extensions.wrapfunction(context.workingctx, 'markcommitted',
                             markcommitted)

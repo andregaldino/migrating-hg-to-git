@@ -1226,18 +1226,6 @@ class committablectx(basectx):
 
         """
 
-        with self._repo.dirstate.parentchange():
-            for f in self.modified() + self.added():
-                self._repo.dirstate.normal(f)
-            for f in self.removed():
-                self._repo.dirstate.drop(f)
-            self._repo.dirstate.setparents(node)
-
-        # write changes out explicitly, because nesting wlock at
-        # runtime may prevent 'wlock.release()' in 'repo.commit()'
-        # from immediately doing so for subsequent changing files
-        self._repo.dirstate.write(self._repo.currenttransaction())
-
     def dirty(self, missing=False, merge=True, branch=True):
         return False
 
@@ -1657,7 +1645,17 @@ class workingctx(committablectx):
         return sorted(f for f in ds.matches(match) if ds[f] != 'r')
 
     def markcommitted(self, node):
-        super(workingctx, self).markcommitted(node)
+        with self._repo.dirstate.parentchange():
+            for f in self.modified() + self.added():
+                self._repo.dirstate.normal(f)
+            for f in self.removed():
+                self._repo.dirstate.drop(f)
+            self._repo.dirstate.setparents(node)
+
+        # write changes out explicitly, because nesting wlock at
+        # runtime may prevent 'wlock.release()' in 'repo.commit()'
+        # from immediately doing so for subsequent changing files
+        self._repo.dirstate.write(self._repo.currenttransaction())
 
         sparse.aftercommit(self._repo, node)
 

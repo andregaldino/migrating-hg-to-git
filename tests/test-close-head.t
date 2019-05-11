@@ -37,7 +37,7 @@
   000000000000
   $ hg --config extensions.closehead= close-head -m 'Close old heads' -r 1 2
   $ hg id
-  340d36cac2f4 tip
+  000000000000
   $ hg bookmark
      @                         1:66f7d451a68b
   $ hg heads
