@@ -278,8 +278,8 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         force = opts.get('force')
         if not force:
             vdirs = []
+            match = matchmod.badmatch(match, fail)
             match.explicitdir = vdirs.append
-            match.bad = fail
 
         status = repo.status(match=match)
 
