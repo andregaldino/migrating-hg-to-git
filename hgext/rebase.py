@@ -108,7 +108,9 @@ def _revsetdestrebase(repo, subset, x):
 
 @revsetpredicate('_destautoorphanrebase')
 def _revsetdestautoorphanrebase(repo, subset, x):
-    """automatic rebase destination for a single orphan revision"""
+    # ``_destautoorphanrebase()``
+
+    # automatic rebase destination for a single orphan revision.
     unfi = repo.unfiltered()
     obsoleted = unfi.revs('obsolete()')
 
