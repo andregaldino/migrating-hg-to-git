@@ -743,7 +743,7 @@ def getrevs(repo, pats, opts):
             return match
 
     expr = _makerevset(repo, match, pats, slowpath, opts)
-    if opts.get('graph') and opts.get('rev'):
+    if opts.get('graph'):
         # User-specified revs might be unsorted, but don't sort before
         # _makerevset because it might depend on the order of revs
         if not (revs.isdescending() or revs.istopo()):
