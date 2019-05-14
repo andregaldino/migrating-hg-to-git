@@ -755,7 +755,7 @@ Transplants of grafts can find a destination...
   committing files:
   b
   warning: can't find ancestor for 'b' copied from 'a'!
-  reusing manifest form p1 (listed files actually unchanged)
+  reusing manifest from p1 (listed files actually unchanged)
   committing changelog
   updating the branch cache
   $ hg log -r 'destination(13)'

@@ -2642,7 +2642,7 @@ class localrepository(object):
                                     p1.manifestnode(), p2.manifestnode(),
                                     added, drop, match=self.narrowmatch())
                 else:
-                    self.ui.debug('reusing manifest form p1 (listed files '
+                    self.ui.debug('reusing manifest from p1 (listed files '
                                   'actually unchanged)\n')
                     mn = p1.manifestnode()
             else:
