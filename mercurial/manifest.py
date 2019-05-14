@@ -1486,8 +1486,8 @@ class manifestrevlog(object):
 
             _checkforbidden(added)
             # combine the changed lists into one sorted iterator
-            work = heapq.merge([(x, False) for x in added],
-                               [(x, True) for x in removed])
+            work = heapq.merge([(x, False) for x in sorted(added)],
+                               [(x, True) for x in sorted(removed)])
 
             arraytext, deltatext = m.fastdelta(self.fulltextcache[p1], work)
             cachedelta = self._revlog.rev(p1), deltatext

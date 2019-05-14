@@ -2641,8 +2641,8 @@ class localrepository(object):
                         raise
 
                 # update manifest
-                removed = [f for f in sorted(removed) if f in m1 or f in m2]
-                drop = [f for f in removed if f in m]
+                removed = [f for f in removed if f in m1 or f in m2]
+                drop = sorted([f for f in removed if f in m])
                 for f in drop:
                     del m[f]
                 files = changed + removed
