@@ -504,9 +504,9 @@ Try merging the other direction too
   x -> z
 
 
-Test for a case in fullcopytracing algorithm where both the merging csets are
-"dirty"; where a dirty cset means that cset is descendant of merge base. This
-test reflect that for this particular case this algorithm correctly find the copies:
+Test for a case in fullcopytracing algorithm where neither of the merging csets
+is a descendant of the merge base. This test reflects that the algorithm
+correctly finds the copies:
 
   $ cat >> $HGRCPATH << EOF
   > [experimental]
@@ -565,8 +565,8 @@ Grafting revision 4 on top of revision 2, showing that it respect the rename:
       b
      +baba
   
-Test to make sure that fullcopytracing algorithm don't fail when both the merging csets are dirty
-(a dirty cset is one who is not the descendant of merge base)
+Test to make sure that fullcopytracing algorithm doesn't fail when neither of the
+merging csets is a descendant of the base.
 -------------------------------------------------------------------------------------------------
 
   $ newrepo
@@ -637,8 +637,8 @@ Test to make sure that fullcopytracing algorithm don't fail when both the mergin
   o  0 added a
      a
 
-Now if we trigger a merge between cset revision 3 and 6 using base revision 4, in this case
-both the merging csets will be dirty as no one is descendent of base revision:
+Now if we trigger a merge between revision 3 and 6 using base revision 4,
+neither of the merging csets will be a descendant of the base revision:
 
   $ hg graft -r 6 --base 4 --hidden -t :other
   grafting 6:99802e4f1e46 "added willconflict and d" (tip)
