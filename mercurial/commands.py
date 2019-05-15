@@ -4680,7 +4680,7 @@ def recover(ui, repo, **opts):
     """
     ret = repo.recover()
     if ret:
-        if opts['verify']:
+        if opts[r'verify']:
             return hg.verify(repo)
         else:
             msg = _("(verify step skipped, run  `hg verify` to check your "
