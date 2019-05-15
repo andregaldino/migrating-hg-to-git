@@ -107,6 +107,20 @@ def encodefileindices(files, subset):
             indices.append('%d' % i)
     return '\0'.join(indices)
 
+def decodefileindices(files, data):
+    try:
+        subset = []
+        for strindex in data.split('\0'):
+            i = int(strindex)
+            if i < 0 or i >= len(files):
+                return None
+            subset.append(files[i])
+        return subset
+    except (ValueError, IndexError):
+        # Perhaps someone had chosen the same key name (e.g. "added") and
+        # used different syntax for the value.
+        return None
+
 def stripdesc(desc):
     """strip trailing whitespace and leading and trailing empty lines"""
     return '\n'.join([l.rstrip() for l in desc.splitlines()]).strip('\n')
@@ -202,6 +216,8 @@ class _changelogrevision(object):
     user = attr.ib(default='')
     date = attr.ib(default=(0, 0))
     files = attr.ib(default=attr.Factory(list))
+    filesadded = attr.ib(default=None)
+    filesremoved = attr.ib(default=None)
     p1copies = attr.ib(default=None)
     p2copies = attr.ib(default=None)
     description = attr.ib(default='')
@@ -306,6 +322,16 @@ class changelogrevision(object):
             return []
 
         return self._text[off[2] + 1:off[3]].split('\n')
+
+    @property
+    def filesadded(self):
+        rawindices = self.extra.get('filesadded')
+        return rawindices and decodefileindices(self.files, rawindices)
+
+    @property
+    def filesremoved(self):
+        rawindices = self.extra.get('filesremoved')
+        return rawindices and decodefileindices(self.files, rawindices)
 
     @property
     def p1copies(self):

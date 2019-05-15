@@ -469,12 +469,24 @@ class changectx(basectx):
         modified.difference_update(self.filesremoved())
         return sorted(modified)
     def filesadded(self):
+        source = self._repo.ui.config('experimental', 'copies.read-from')
+        if (source == 'changeset-only' or
+            (source == 'compatibility' and
+             self._changeset.filesadded is not None)):
+            return self._changeset.filesadded or []
+
         added = []
         for f in self.files():
             if not any(f in p for p in self.parents()):
                 added.append(f)
         return added
     def filesremoved(self):
+        source = self._repo.ui.config('experimental', 'copies.read-from')
+        if (source == 'changeset-only' or
+            (source == 'compatibility' and
+             self._changeset.filesremoved is not None)):
+            return self._changeset.filesremoved or []
+
         removed = []
         for f in self.files():
             if f not in self:
