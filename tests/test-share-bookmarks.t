@@ -21,21 +21,6 @@ share it
   updating working directory
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-unshare it
-
-  $ cd repo2
-  $ hg unshare
-
-check that a change does not propagate
-
-  $ echo b >> b
-  $ hg commit -m'change in unshared'
-  $ cd ../repo1
-  $ hg id -r tip
-  c2e0ac586386 tip
-
-  $ cd ..
-
 test sharing bookmarks
 
   $ hg share -B repo1 repo3
@@ -48,7 +33,7 @@ test sharing bookmarks
   $ cd ../repo2
   $ hg book bm2
   $ hg bookmarks
-   * bm2                       3:0e6e70d1d5f1
+   * bm2                       2:c2e0ac586386
   $ cd ../repo3
   $ hg bookmarks
      bm1                       2:c2e0ac586386
@@ -69,7 +54,7 @@ repositories sharing same source repository, because starting
 transaction requires locking store of source repository.
 
 Therefore, this test scenario ignores checking visibility of
-.hg/bookmakrs.pending in repo2, which shares repo1 without bookmarks.
+.hg/bookmarks.pending in repo2, which shares repo1 without bookmarks.
 
   $ cat > $TESTTMP/checkbookmarks.sh <<EOF
   > echo "@repo1"
@@ -88,7 +73,7 @@ Therefore, this test scenario ignores checking visibility of
      bm3                       2:c2e0ac586386
    * bmX                       2:c2e0ac586386
   @repo2
-   * bm2                       3:0e6e70d1d5f1
+   * bm2                       2:c2e0ac586386
   @repo3
      bm1                       2:c2e0ac586386
    * bm3                       2:c2e0ac586386
@@ -109,7 +94,7 @@ src), because (1) HG_PENDING refers only repo3 and (2)
    * bm1                       2:c2e0ac586386
      bm3                       2:c2e0ac586386
   @repo2
-   * bm2                       3:0e6e70d1d5f1
+   * bm2                       2:c2e0ac586386
   @repo3
      bm1                       2:c2e0ac586386
      bm3                       2:c2e0ac586386
