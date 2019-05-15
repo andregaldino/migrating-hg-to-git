@@ -15,8 +15,11 @@ from . import (
     commands,
     error,
     extensions,
+    pycompat,
     registrar,
 )
+
+from hgdemandimport import tracing
 
 class exthelper(object):
     """Helper for modular extension setup
@@ -135,7 +138,8 @@ class exthelper(object):
         for cont, funcname, wrapper in self._functionwrappers:
             extensions.wrapfunction(cont, funcname, wrapper)
         for c in self._uicallables:
-            c(ui)
+            with tracing.log(b'finaluisetup: %s', pycompat.sysbytes(repr(c))):
+                c(ui)
 
     def finaluipopulate(self, ui):
         """Method to be used as the extension uipopulate
@@ -175,7 +179,8 @@ class exthelper(object):
                     entry[1].append(opt)
 
         for c in self._extcallables:
-            c(ui)
+            with tracing.log(b'finalextsetup: %s', pycompat.sysbytes(repr(c))):
+                c(ui)
 
     def finalreposetup(self, ui, repo):
         """Method to be used as the extension reposetup
@@ -187,7 +192,8 @@ class exthelper(object):
         - Changes to repo.__class__, repo.dirstate.__class__
         """
         for c in self._repocallables:
-            c(ui, repo)
+            with tracing.log(b'finalreposetup: %s', pycompat.sysbytes(repr(c))):
+                c(ui, repo)
 
     def uisetup(self, call):
         """Decorated function will be executed during uisetup
