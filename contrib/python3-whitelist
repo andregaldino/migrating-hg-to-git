@@ -4,6 +4,7 @@ test-absorb-filefixupstate.py
 test-absorb-phase.t
 test-absorb-rename.t
 test-absorb-strip.t
+test-absorb-unfinished.t
 test-absorb.t
 test-acl.t
 test-add.t
@@ -126,6 +127,7 @@ test-convert-splicemap.t
 test-convert-svn-sink.t
 test-convert-tagsbranch-topology.t
 test-convert.t
+test-copies-in-changeset.t
 test-copies.t
 test-copy-move-merge.t
 test-copy.t
@@ -139,6 +141,7 @@ test-debugindexdot.t
 test-debugrename.t
 test-default-push.t
 test-demandimport.py
+test-devel-warnings.t
 test-diff-antipatience.t
 test-diff-binary-file.t
 test-diff-change.t
@@ -597,6 +600,7 @@ test-releasenotes-formatting.t
 test-releasenotes-merging.t
 test-releasenotes-parsing.t
 test-relink.t
+test-remote-hidden.t
 test-remotefilelog-bad-configs.t
 test-remotefilelog-bgprefetch.t
 test-remotefilelog-blame.t
@@ -658,6 +662,7 @@ test-rollback.t
 test-run-tests.py
 test-run-tests.t
 test-rust-ancestor.py
+test-rust-discovery.py
 test-schemes.t
 test-serve.t
 test-server-view.t
