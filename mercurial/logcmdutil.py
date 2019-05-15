@@ -750,7 +750,7 @@ def getrevs(repo, pats, opts):
             if not revs.istopo():
                 revs = dagop.toposort(revs, repo.changelog.parentrevs)
                 # TODO: try to iterate the set lazily
-                revs = revset.baseset(list(revs))
+                revs = revset.baseset(list(revs), istopo=True)
         elif not (revs.isdescending() or revs.istopo()):
             revs.sort(reverse=True)
     if expr:
