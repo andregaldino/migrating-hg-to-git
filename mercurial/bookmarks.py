@@ -297,28 +297,12 @@ def _readactive(repo, marks):
     itself as we commit. This function returns the name of that bookmark.
     It is stored in .hg/bookmarks.current
     """
-    try:
-        file = repo.vfs('bookmarks.current')
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
-        return None
-    try:
-        # No readline() in osutil.posixfile, reading everything is
-        # cheap.
-        # Note that it's possible for readlines() here to raise
-        # IOError, since we might be reading the active mark over
-        # static-http which only tries to load the file when we try
-        # to read from it.
-        mark = encoding.tolocal((file.readlines() or [''])[0])
-        if mark == '' or mark not in marks:
-            mark = None
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
-        return None
-    finally:
-        file.close()
+    # No readline() in osutil.posixfile, reading everything is
+    # cheap.
+    content = repo.vfs.tryread('bookmarks.current')
+    mark = encoding.tolocal((content.splitlines() or [''])[0])
+    if mark == '' or mark not in marks:
+        mark = None
     return mark
 
 def activate(repo, mark):
