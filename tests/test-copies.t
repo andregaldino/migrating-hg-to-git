@@ -551,14 +551,15 @@ Grafting revision 4 on top of revision 2, showing that it respect the rename:
 
   $ hg up 2 -q
   $ hg graft -r 4 --base 3 --hidden
-  grafting 4:af28412ec03c "added d, modified b" (tip)
+  grafting 4:af28412ec03c "added d, modified b" (tip) (no-changeset !)
+  grafting 4:6325ca0b7a1c "added d, modified b" (tip) (changeset !)
   merging b1 and b to b1
 
   $ hg l -l1 -p
   @  5 added d, modified b
   |  b1
   ~  diff -r 5a4825cc2926 -r 94a2f1a0e8e2 b1 (no-changeset !)
-  ~  diff -r f5474f5023a8 -r ef7c02d69f3d b1 (changeset !)
+  ~  diff -r df722b7fe2d5 -r ba3ddbbdfd96 b1 (changeset !)
      --- a/b1	Thu Jan 01 00:00:00 1970 +0000
      +++ b/b1	Thu Jan 01 00:00:00 1970 +0000
      @@ -1,1 +1,2 @@
@@ -618,7 +619,8 @@ merging csets is a descendant of the base.
      a
 
   $ hg rebase -r . -d 2 -t :other
-  rebasing 5:5018b1509e94 "added willconflict and d" (tip)
+  rebasing 5:5018b1509e94 "added willconflict and d" (tip) (no-changeset !)
+  rebasing 5:619047c26bf8 "added willconflict and d" (tip) (changeset !)
 
   $ hg up 3 -q
   $ hg l --hidden
@@ -641,4 +643,5 @@ Now if we trigger a merge between revision 3 and 6 using base revision 4,
 neither of the merging csets will be a descendant of the base revision:
 
   $ hg graft -r 6 --base 4 --hidden -t :other
-  grafting 6:99802e4f1e46 "added willconflict and d" (tip)
+  grafting 6:99802e4f1e46 "added willconflict and d" (tip) (no-changeset !)
+  grafting 6:9ddc6fb3b691 "added willconflict and d" (tip) (changeset !)

@@ -2589,10 +2589,13 @@ class localrepository(object):
 
         writecopiesto = self.ui.config('experimental', 'copies.write-to')
         writefilecopymeta = writecopiesto != 'changeset-only'
+        writechangesetcopy = (writecopiesto in
+                              ('changeset-only', 'compatibility'))
         p1copies, p2copies = None, None
-        if writecopiesto in ('changeset-only', 'compatibility'):
+        if writechangesetcopy:
             p1copies = ctx.p1copies()
             p2copies = ctx.p2copies()
+        filesadded, filesremoved = None, None
         with self.lock(), self.transaction("commit") as tr:
             trp = weakref.proxy(tr)
 
@@ -2601,6 +2604,9 @@ class localrepository(object):
                 self.ui.debug('reusing known manifest\n')
                 mn = ctx.manifestnode()
                 files = ctx.files()
+                if writechangesetcopy:
+                    filesadded = ctx.filesadded()
+                    filesremoved = ctx.filesremoved()
             elif ctx.files():
                 m1ctx = p1.manifestctx()
                 m2ctx = p2.manifestctx()
@@ -2667,6 +2673,11 @@ class localrepository(object):
                     mn = mctx.write(trp, linkrev,
                                     p1.manifestnode(), p2.manifestnode(),
                                     added, drop, match=self.narrowmatch())
+
+                    if writechangesetcopy:
+                        filesadded = [f for f in changed
+                                      if not (f in m1 or f in m2)]
+                        filesremoved = removed
                 else:
                     self.ui.debug('reusing manifest from p1 (listed files '
                                   'actually unchanged)\n')
@@ -2683,6 +2694,8 @@ class localrepository(object):
                 # filelogs.
                 p1copies = p1copies or None
                 p2copies = p2copies or None
+                filesadded = filesadded or None
+                filesremoved = filesremoved or None
 
             # update changelog
             self.ui.note(_("committing changelog\n"))
@@ -2690,7 +2703,7 @@ class localrepository(object):
             n = self.changelog.add(mn, files, ctx.description(),
                                    trp, p1.node(), p2.node(),
                                    user, ctx.date(), ctx.extra().copy(),
-                                   p1copies, p2copies)
+                                   p1copies, p2copies, filesadded, filesremoved)
             xp1, xp2 = p1.hex(), p2 and p2.hex() or ''
             self.hook('pretxncommit', throw=True, node=hex(n), parent1=xp1,
                       parent2=xp2)

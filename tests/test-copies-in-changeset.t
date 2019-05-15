@@ -5,6 +5,7 @@
   > copies.read-from=changeset-only
   > [alias]
   > changesetcopies = log -r . -T 'files: {files}
+  >   {extras % "{ifcontains("files", key, "{key}: {value}\n")}"}
   >   {extras % "{ifcontains("copies", key, "{key}: {value}\n")}"}'
   > showcopies = log -r . -T '{file_copies % "{source} -> {name}\n"}'
   > [extensions]
@@ -24,6 +25,8 @@ Check that copies are recorded correctly
   $ hg ci -m 'copy a to b, c, and d'
   $ hg changesetcopies
   files: b c d
+  filesadded: 0\x001\x002 (esc)
+  
   p1copies: b\x00a (esc)
   c\x00a (esc)
   d\x00a (esc)
@@ -43,6 +46,9 @@ Check that renames are recorded correctly
   $ hg ci -m 'rename b to b2'
   $ hg changesetcopies
   files: b b2
+  filesadded: 1
+  filesremoved: 0
+  
   p1copies: b2\x00b (esc)
   $ hg showcopies
   b -> b2
@@ -60,6 +66,7 @@ even though there is no filelog entry.
   $ hg ci -m 'move b onto d'
   $ hg changesetcopies
   files: c
+  
   p1copies: c\x00b2 (esc)
   $ hg showcopies
   b2 -> c
@@ -88,6 +95,8 @@ File 'f' exists only in p1, so 'i' should be from p1
   $ hg ci -m 'merge'
   $ hg changesetcopies
   files: g h i
+  filesadded: 0\x001\x002 (esc)
+  
   p1copies: g\x00a (esc)
   i\x00f (esc)
   p2copies: h\x00d (esc)
@@ -102,6 +111,9 @@ Test writing to both changeset and filelog
   $ hg ci -m 'copy a to j' --config experimental.copies.write-to=compatibility
   $ hg changesetcopies
   files: j
+  filesadded: 0
+  filesremoved: 
+  
   p1copies: j\x00a (esc)
   p2copies: 
   $ hg debugdata j 0
@@ -122,6 +134,9 @@ won't have to fall back to reading from filelogs)
   $ hg ci -m 'modify j' --config experimental.copies.write-to=compatibility
   $ hg changesetcopies
   files: j
+  filesadded: 
+  filesremoved: 
+  
   p1copies: 
   p2copies: 
 
@@ -131,6 +146,7 @@ Test writing only to filelog
   $ hg ci -m 'copy a to k' --config experimental.copies.write-to=filelog-only
   $ hg changesetcopies
   files: k
+  
   $ hg debugdata k 0
   \x01 (esc)
   copy: a
@@ -157,9 +173,9 @@ Test rebasing a commit with copy information
   $ hg mv a b
   $ hg ci -qm 'rename a to b'
   $ hg rebase -d 1 --config rebase.experimental.inmemory=yes
-  rebasing 2:55d0b405c1b2 "rename a to b" (tip)
+  rebasing 2:acfc33f3aa6d "rename a to b" (tip)
   merging a and b to b
-  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/55d0b405c1b2-78df867e-rebase.hg
+  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/acfc33f3aa6d-81d0180d-rebase.hg
   $ hg st --change . --copies
   A b
     a

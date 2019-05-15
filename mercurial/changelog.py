@@ -99,6 +99,14 @@ def decodecopies(data):
         # used different syntax for the value.
         return None
 
+def encodefileindices(files, subset):
+    subset = set(subset)
+    indices = []
+    for i, f in enumerate(files):
+        if f in subset:
+            indices.append('%d' % i)
+    return '\0'.join(indices)
+
 def stripdesc(desc):
     """strip trailing whitespace and leading and trailing empty lines"""
     return '\n'.join([l.rstrip() for l in desc.splitlines()]).strip('\n')
@@ -564,7 +572,8 @@ class changelog(revlog.revlog):
         return l[3:]
 
     def add(self, manifest, files, desc, transaction, p1, p2,
-                  user, date=None, extra=None, p1copies=None, p2copies=None):
+                  user, date=None, extra=None, p1copies=None, p2copies=None,
+                  filesadded=None, filesremoved=None):
         # Convert to UTF-8 encoded bytestrings as the very first
         # thing: calling any method on a localstr object will turn it
         # into a str object and the cached UTF-8 string is thus lost.
@@ -593,17 +602,23 @@ class changelog(revlog.revlog):
             elif branch in (".", "null", "tip"):
                 raise error.StorageError(_('the name \'%s\' is reserved')
                                          % branch)
-        if (p1copies is not None or p2copies is not None) and extra is None:
+        extrasentries = p1copies, p2copies, filesadded, filesremoved
+        if extra is None and any(x is not None for x in extrasentries):
             extra = {}
         if p1copies is not None:
             extra['p1copies'] = encodecopies(p1copies)
         if p2copies is not None:
             extra['p2copies'] = encodecopies(p2copies)
+        sortedfiles = sorted(files)
+        if filesadded is not None:
+            extra['filesadded'] = encodefileindices(sortedfiles, filesadded)
+        if filesremoved is not None:
+            extra['filesremoved'] = encodefileindices(sortedfiles, filesremoved)
 
         if extra:
             extra = encodeextra(extra)
             parseddate = "%s %s" % (parseddate, extra)
-        l = [hex(manifest), user, parseddate] + sorted(files) + ["", desc]
+        l = [hex(manifest), user, parseddate] + sortedfiles + ["", desc]
         text = "\n".join(l)
         return self.addrevision(text, transaction, len(self), p1, p2)
 
