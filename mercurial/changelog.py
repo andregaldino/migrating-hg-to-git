@@ -194,6 +194,8 @@ class _changelogrevision(object):
     user = attr.ib(default='')
     date = attr.ib(default=(0, 0))
     files = attr.ib(default=attr.Factory(list))
+    p1copies = attr.ib(default=None)
+    p2copies = attr.ib(default=None)
     description = attr.ib(default='')
 
 class changelogrevision(object):
