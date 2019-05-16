@@ -12,7 +12,7 @@
 
 use cpython::{
     exc, PyBytes, PyDict, PyErr, PyInt, PyModule, PyObject, PyResult,
-    PySequence, PyTuple, Python, ToPyObject,
+    PySequence, PythonObject, PyTuple, Python, ToPyObject,
 };
 use hg::{
     pack_dirstate, parse_dirstate, CopyVecEntry, DirstateEntry,
@@ -153,7 +153,7 @@ fn pack_dirstate_wrapper(
         &dirstate_vec?,
         &copies?,
         DirstateParents { p1, p2 },
-        now.value(py) as i32,
+        now.as_object().extract::<i32>(py)?,
     ) {
         Ok((packed, new_dirstate_vec)) => {
             for (
