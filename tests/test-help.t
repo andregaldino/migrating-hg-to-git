@@ -1511,6 +1511,8 @@ Separate sections from subsections
   
       "sparse-revlog"
   
+      "revlog-compression"
+  
       "profiling"
       -----------
   
