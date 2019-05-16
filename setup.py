@@ -1195,13 +1195,14 @@ class RustExtension(Extension):
             import pwd
             env['HOME'] = pwd.getpwuid(os.getuid()).pw_dir
 
-        cargocmd = ['cargo', 'build', '-vv', '--release']
+        cargocmd = ['cargo', 'rustc', '-vv', '--release']
         if sys.version_info[0] == 3 and self.py3_features is not None:
             cargocmd.extend(('--features', self.py3_features,
                              '--no-default-features'))
+        cargocmd.append('--')
         if sys.platform == 'darwin':
-            env['RUSTFLAGS'] = ("-C link-arg=-undefined "
-                                "-C link-arg=dynamic_lookup")
+            cargocmd.extend(("-C", "link-arg=-undefined",
+                             "-C", "link-arg=dynamic_lookup"))
         try:
             subprocess.check_call(cargocmd, env=env, cwd=self.rustsrcdir)
         except OSError as exc:
