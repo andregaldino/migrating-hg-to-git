@@ -125,6 +125,10 @@ def extsetup(ui):
 
 def _hassharedbookmarks(repo):
     """Returns whether this repo has shared bookmarks"""
+    if bookmarks.bookmarksinstore(repo):
+        # Kind of a lie, but it means that we skip our custom reads and writes
+        # from/to the source repo.
+        return False
     try:
         shared = repo.vfs.read('shared').splitlines()
     except IOError as inst:

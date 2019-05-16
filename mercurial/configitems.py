@@ -676,6 +676,9 @@ coreconfigitem('extdata', '.*',
     default=None,
     generic=True,
 )
+coreconfigitem('format', 'bookmarks-in-store',
+    default=False,
+)
 coreconfigitem('format', 'chunkcachesize',
     default=None,
 )

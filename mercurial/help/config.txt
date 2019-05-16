@@ -879,6 +879,15 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     On some system, Mercurial installation may lack `zstd` supports. Default is `zlib`.
 
+``bookmarks-in-store``
+    Store bookmarks in .hg/store/. This means that bookmarks are shared when
+    using `hg share` regardless of the `-B` option.
+
+    Repositories with this on-disk format require Mercurial version 5.1.
+
+    Disabled by default.
+
+
 ``graph``
 ---------
 

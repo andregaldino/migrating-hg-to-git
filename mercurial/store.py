@@ -337,7 +337,7 @@ def _calcmode(vfs):
         mode = None
     return mode
 
-_data = ('narrowspec data meta 00manifest.d 00manifest.i'
+_data = ('bookmarks narrowspec data meta 00manifest.d 00manifest.i'
          ' 00changelog.d 00changelog.i phaseroots obsstore')
 
 def isrevlog(f, kind, st):
@@ -612,7 +612,7 @@ class fncachestore(basicstore):
                     raise
 
     def copylist(self):
-        d = ('narrowspec data meta dh fncache phaseroots obsstore'
+        d = ('bookmarks narrowspec data meta dh fncache phaseroots obsstore'
              ' 00manifest.d 00manifest.i 00changelog.d 00changelog.i')
         return (['requires', '00changelog.i'] +
                 ['store/' + f for f in d.split()])

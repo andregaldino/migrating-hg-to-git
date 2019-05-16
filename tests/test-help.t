@@ -1513,6 +1513,8 @@ Separate sections from subsections
   
       "revlog-compression"
   
+      "bookmarks-in-store"
+  
       "profiling"
       -----------
   

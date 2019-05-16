@@ -122,6 +122,25 @@ class storecache(_basefilecache):
     def join(self, obj, fname):
         return obj.sjoin(fname)
 
+class mixedrepostorecache(_basefilecache):
+    """filecache for a mix files in .hg/store and outside"""
+    def __init__(self, *pathsandlocations):
+        # scmutil.filecache only uses the path for passing back into our
+        # join(), so we can safely pass a list of paths and locations
+        super(mixedrepostorecache, self).__init__(*pathsandlocations)
+        for path, location in pathsandlocations:
+            _cachedfiles.update(pathsandlocations)
+
+    def join(self, obj, fnameandlocation):
+        fname, location = fnameandlocation
+        if location == '':
+            return obj.vfs.join(fname)
+        else:
+            if location != 'store':
+                raise error.ProgrammingError('unexpected location: %s' %
+                                             location)
+            return obj.sjoin(fname)
+
 def isfilecached(repo, name):
     """check if a repo has already cached "name" filecache-ed property
 
@@ -891,6 +910,7 @@ class localrepository(object):
         'treemanifest',
         REVLOGV2_REQUIREMENT,
         SPARSEREVLOG_REQUIREMENT,
+        bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
         'store',
@@ -1205,7 +1225,8 @@ class localrepository(object):
         cls = repoview.newtype(self.unfiltered().__class__)
         return cls(self, name, visibilityexceptions)
 
-    @repofilecache('bookmarks', 'bookmarks.current')
+    @mixedrepostorecache(('bookmarks', ''), ('bookmarks.current', ''),
+                         ('bookmarks', 'store'))
     def _bookmarks(self):
         return bookmarks.bmstore(self)
 
@@ -1962,7 +1983,7 @@ class localrepository(object):
                 (self.vfs, 'journal.dirstate'),
                 (self.vfs, 'journal.branch'),
                 (self.vfs, 'journal.desc'),
-                (self.vfs, 'journal.bookmarks'),
+                (bookmarks.bookmarksvfs(self), 'journal.bookmarks'),
                 (self.svfs, 'journal.phaseroots'))
 
     def undofiles(self):
@@ -1977,8 +1998,9 @@ class localrepository(object):
                           encoding.fromlocal(self.dirstate.branch()))
         self.vfs.write("journal.desc",
                           "%d\n%s\n" % (len(self), desc))
-        self.vfs.write("journal.bookmarks",
-                          self.vfs.tryread("bookmarks"))
+        bookmarksvfs = bookmarks.bookmarksvfs(self)
+        bookmarksvfs.write("journal.bookmarks",
+                           bookmarksvfs.tryread("bookmarks"))
         self.svfs.write("journal.phaseroots",
                            self.svfs.tryread("phaseroots"))
 
@@ -2048,8 +2070,9 @@ class localrepository(object):
         vfsmap = {'plain': self.vfs, '': self.svfs}
         transaction.rollback(self.svfs, vfsmap, 'undo', ui.warn,
                              checkambigfiles=_cachedfiles)
-        if self.vfs.exists('undo.bookmarks'):
-            self.vfs.rename('undo.bookmarks', 'bookmarks', checkambig=True)
+        bookmarksvfs = bookmarks.bookmarksvfs(self)
+        if bookmarksvfs.exists('undo.bookmarks'):
+            bookmarksvfs.rename('undo.bookmarks', 'bookmarks', checkambig=True)
         if self.svfs.exists('undo.phaseroots'):
             self.svfs.rename('undo.phaseroots', 'phaseroots', checkambig=True)
         self.invalidate()
@@ -3002,6 +3025,9 @@ def newreporequirements(ui, createopts):
 
     if createopts.get('lfs'):
         requirements.add('lfs')
+
+    if ui.configbool('format', 'bookmarks-in-store'):
+        requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
 
     return requirements
 

@@ -1,5 +1,12 @@
+#testcases vfs svfs
+
   $ echo "[extensions]"      >> $HGRCPATH
   $ echo "share = "          >> $HGRCPATH
+
+#if svfs
+  $ echo "[format]"                  >> $HGRCPATH
+  $ echo "bookmarks-in-store = yes " >> $HGRCPATH
+#endif
 
 prepare repo1
 
@@ -33,17 +40,21 @@ test sharing bookmarks
   $ cd ../repo2
   $ hg book bm2
   $ hg bookmarks
+     bm1                       2:c2e0ac586386 (svfs !)
    * bm2                       2:c2e0ac586386
   $ cd ../repo3
   $ hg bookmarks
      bm1                       2:c2e0ac586386
+     bm2                       2:c2e0ac586386 (svfs !)
   $ hg book bm3
   $ hg bookmarks
      bm1                       2:c2e0ac586386
+     bm2                       2:c2e0ac586386 (svfs !)
    * bm3                       2:c2e0ac586386
   $ cd ../repo1
   $ hg bookmarks
    * bm1                       2:c2e0ac586386
+     bm2                       2:c2e0ac586386 (svfs !)
      bm3                       2:c2e0ac586386
 
 check whether HG_PENDING makes pending changes only in relatd
@@ -70,14 +81,18 @@ Therefore, this test scenario ignores checking visibility of
   $ hg --config hooks.pretxnclose="sh $TESTTMP/checkbookmarks.sh" -q book bmX
   @repo1
      bm1                       2:c2e0ac586386
+     bm2                       2:c2e0ac586386 (svfs !)
      bm3                       2:c2e0ac586386
    * bmX                       2:c2e0ac586386
   @repo2
+     bm1                       2:c2e0ac586386 (svfs !)
    * bm2                       2:c2e0ac586386
+     bm3                       2:c2e0ac586386 (svfs !)
   @repo3
      bm1                       2:c2e0ac586386
+     bm2                       2:c2e0ac586386 (svfs !)
    * bm3                       2:c2e0ac586386
-     bmX                       2:c2e0ac586386
+     bmX                       2:c2e0ac586386 (vfs !)
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
@@ -92,11 +107,15 @@ src), because (1) HG_PENDING refers only repo3 and (2)
   $ hg --config hooks.pretxnclose="sh $TESTTMP/checkbookmarks.sh" -q book bmX
   @repo1
    * bm1                       2:c2e0ac586386
+     bm2                       2:c2e0ac586386 (svfs !)
      bm3                       2:c2e0ac586386
   @repo2
+     bm1                       2:c2e0ac586386 (svfs !)
    * bm2                       2:c2e0ac586386
+     bm3                       2:c2e0ac586386 (svfs !)
   @repo3
      bm1                       2:c2e0ac586386
+     bm2                       2:c2e0ac586386 (svfs !)
      bm3                       2:c2e0ac586386
    * bmX                       2:c2e0ac586386
   transaction abort!
@@ -104,6 +123,11 @@ src), because (1) HG_PENDING refers only repo3 and (2)
   abort: pretxnclose hook exited with status 1
   [255]
   $ hg book bm3
+
+clean up bm2 since it's uninteresting (not shared in the vfs case and
+same as bm3 in the svfs case)
+  $ cd ../repo2
+  $ hg book -d bm2
 
   $ cd ../repo1
 
