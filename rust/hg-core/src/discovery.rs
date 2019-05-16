@@ -17,6 +17,7 @@ use self::rand::{thread_rng, RngCore, SeedableRng};
 use super::{Graph, GraphError, Revision, NULL_REVISION};
 use crate::ancestors::MissingAncestors;
 use crate::dagops;
+use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 type Rng = self::rand_pcg::Pcg32;
@@ -26,8 +27,10 @@ pub struct PartialDiscovery<G: Graph + Clone> {
     graph: G, // plays the role of self._repo
     common: MissingAncestors<G>,
     undecided: Option<HashSet<Revision>>,
+    children_cache: Option<HashMap<Revision, Vec<Revision>>>,
     missing: HashSet<Revision>,
     rng: Rng,
+    respect_size: bool,
 }
 
 pub struct DiscoveryStats {
@@ -49,13 +52,16 @@ pub struct DiscoveryStats {
 /// - `sample`: a sample to update
 /// - `parentfn`: a callable to resolve parents for a revision
 /// - `quicksamplesize`: optional target size of the sample
-fn update_sample(
+fn update_sample<I>(
     revs: Option<&HashSet<Revision>>,
     heads: impl IntoIterator<Item = Revision>,
     sample: &mut HashSet<Revision>,
-    parentsfn: impl Fn(Revision) -> Result<[Revision; 2], GraphError>,
+    parentsfn: impl Fn(Revision) -> Result<I, GraphError>,
     quicksamplesize: Option<usize>,
-) -> Result<(), GraphError> {
+) -> Result<(), GraphError>
+where
+    I: Iterator<Item = Revision>,
+{
     let mut distances: HashMap<Revision, u32> = HashMap::new();
     let mut visit: VecDeque<Revision> = heads.into_iter().collect();
     let mut factor: u32 = 1;
@@ -83,10 +89,7 @@ fn update_sample(
                 }
             }
         }
-        for &p in &parentsfn(current)? {
-            if p == NULL_REVISION {
-                continue;
-            }
+        for p in parentsfn(current)? {
             if let Some(revs) = revs {
                 if !revs.contains(&p) {
                     continue;
@@ -97,6 +100,39 @@ fn update_sample(
         }
     }
     Ok(())
+}
+
+struct ParentsIterator {
+    parents: [Revision; 2],
+    cur: usize,
+}
+
+impl ParentsIterator {
+    fn graph_parents(
+        graph: &impl Graph,
+        r: Revision,
+    ) -> Result<ParentsIterator, GraphError> {
+        Ok(ParentsIterator {
+            parents: graph.parents(r)?,
+            cur: 0,
+        })
+    }
+}
+
+impl Iterator for ParentsIterator {
+    type Item = Revision;
+
+    fn next(&mut self) -> Option<Revision> {
+        if self.cur > 1 {
+            return None;
+        }
+        let rev = self.parents[self.cur];
+        self.cur += 1;
+        if rev == NULL_REVISION {
+            return self.next();
+        }
+        Some(rev)
+    }
 }
 
 impl<G: Graph + Clone> PartialDiscovery<G> {
@@ -110,24 +146,36 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
     /// If we want to make the signature more flexible,
     /// we'll have to make it a type argument of `PartialDiscovery` or a trait
     /// object since we'll keep it in the meanwhile
-    pub fn new(graph: G, target_heads: Vec<Revision>) -> Self {
+    ///
+    /// The `respect_size` boolean controls how the sampling methods
+    /// will interpret the size argument requested by the caller. If it's
+    /// `false`, they are allowed to produce a sample whose size is more
+    /// appropriate to the situation (typically bigger).
+    pub fn new(
+        graph: G,
+        target_heads: Vec<Revision>,
+        respect_size: bool,
+    ) -> Self {
         let mut seed: [u8; 16] = [0; 16];
         thread_rng().fill_bytes(&mut seed);
-        Self::new_with_seed(graph, target_heads, seed)
+        Self::new_with_seed(graph, target_heads, seed, respect_size)
     }
 
     pub fn new_with_seed(
         graph: G,
         target_heads: Vec<Revision>,
         seed: [u8; 16],
+        respect_size: bool,
     ) -> Self {
         PartialDiscovery {
             undecided: None,
+            children_cache: None,
             target_heads: Some(target_heads),
             graph: graph.clone(),
             common: MissingAncestors::new(graph, vec![]),
             missing: HashSet::new(),
             rng: Rng::from_seed(seed),
+            respect_size: respect_size,
         }
     }
 
@@ -228,6 +276,22 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
         Ok(())
     }
 
+    fn ensure_children_cache(&mut self) -> Result<(), GraphError> {
+        if self.children_cache.is_some() {
+            return Ok(());
+        }
+        self.ensure_undecided()?;
+
+        let mut children: HashMap<Revision, Vec<Revision>> = HashMap::new();
+        for &rev in self.undecided.as_ref().unwrap() {
+            for p in ParentsIterator::graph_parents(&self.graph, rev)? {
+                children.entry(p).or_insert_with(|| Vec::new()).push(rev);
+            }
+        }
+        self.children_cache = Some(children);
+        Ok(())
+    }
+
     /// Provide statistics about the current state of the discovery process
     pub fn stats(&self) -> DiscoveryStats {
         DiscoveryStats {
@@ -255,10 +319,113 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
             None,
             headrevs,
             &mut sample,
-            |r| self.graph.parents(r),
+            |r| ParentsIterator::graph_parents(&self.graph, r),
             Some(size),
         )?;
         Ok(sample.into_iter().collect())
+    }
+
+    /// Extract a sample from `self.undecided`, going from its heads and roots.
+    ///
+    /// The `size` parameter is used to avoid useless computations if
+    /// it turns out to be bigger than the whole set of undecided Revisions.
+    ///
+    /// The sample is taken by using `update_sample` from the heads, then
+    /// from the roots, working on the reverse DAG,
+    /// expressed by `self.children_cache`.
+    ///
+    /// No effort is being made to complete or limit the sample to `size`
+    /// but this method returns another interesting size that it derives
+    /// from its knowledge of the structure of the various sets, leaving
+    /// to the caller the decision to use it or not.
+    fn bidirectional_sample(
+        &mut self,
+        size: usize,
+    ) -> Result<(HashSet<Revision>, usize), GraphError> {
+        self.ensure_undecided()?;
+        {
+            // we don't want to compute children_cache before this
+            // but doing it after extracting self.undecided takes a mutable
+            // ref to self while a shareable one is still active.
+            let undecided = self.undecided.as_ref().unwrap();
+            if undecided.len() <= size {
+                return Ok((undecided.clone(), size));
+            }
+        }
+
+        self.ensure_children_cache()?;
+        let revs = self.undecided.as_ref().unwrap();
+        let mut sample: HashSet<Revision> = revs.clone();
+
+        // it's possible that leveraging the children cache would be more
+        // efficient here
+        dagops::retain_heads(&self.graph, &mut sample)?;
+        let revsheads = sample.clone(); // was again heads(revs) in python
+
+        // update from heads
+        update_sample(
+            Some(revs),
+            revsheads.iter().cloned(),
+            &mut sample,
+            |r| ParentsIterator::graph_parents(&self.graph, r),
+            None,
+        )?;
+
+        // update from roots
+        let revroots: HashSet<Revision> =
+            dagops::roots(&self.graph, revs)?.into_iter().collect();
+        let prescribed_size = max(size, min(revroots.len(), revsheads.len()));
+
+        let children = self.children_cache.as_ref().unwrap();
+        let empty_vec: Vec<Revision> = Vec::new();
+        update_sample(
+            Some(revs),
+            revroots,
+            &mut sample,
+            |r| Ok(children.get(&r).unwrap_or(&empty_vec).iter().cloned()),
+            None,
+        )?;
+        Ok((sample, prescribed_size))
+    }
+
+    /// Fill up sample up to the wished size with random undecided Revisions.
+    ///
+    /// This is intended to be used as a last resort completion if the
+    /// regular sampling algorithm returns too few elements.
+    fn random_complete_sample(
+        &mut self,
+        sample: &mut Vec<Revision>,
+        size: usize,
+    ) {
+        let sample_len = sample.len();
+        if size <= sample_len {
+            return;
+        }
+        let take_from: Vec<Revision> = self
+            .undecided
+            .as_ref()
+            .unwrap()
+            .iter()
+            .filter(|&r| !sample.contains(r))
+            .cloned()
+            .collect();
+        sample.extend(self.limit_sample(take_from, size - sample_len));
+    }
+
+    pub fn take_full_sample(
+        &mut self,
+        size: usize,
+    ) -> Result<Vec<Revision>, GraphError> {
+        let (sample_set, prescribed_size) = self.bidirectional_sample(size)?;
+        let size = if self.respect_size {
+            size
+        } else {
+            prescribed_size
+        };
+        let mut sample =
+            self.limit_sample(sample_set.into_iter().collect(), size);
+        self.random_complete_sample(&mut sample, size);
+        Ok(sample)
     }
 }
 
@@ -275,6 +442,7 @@ mod tests {
             SampleGraph,
             vec![10, 11, 12, 13],
             [0; 16],
+            true,
         )
     }
 
@@ -282,7 +450,7 @@ mod tests {
     ///
     /// To avoid actual randomness in tests, we give it a fixed random seed.
     fn disco12() -> PartialDiscovery<SampleGraph> {
-        PartialDiscovery::new_with_seed(SampleGraph, vec![12], [0; 16])
+        PartialDiscovery::new_with_seed(SampleGraph, vec![12], [0; 16], true)
     }
 
     fn sorted_undecided(
@@ -390,4 +558,58 @@ mod tests {
         assert_eq!(sample_vec, vec![4, 9, 12]);
         Ok(())
     }
+
+    #[test]
+    fn test_children_cache() -> Result<(), GraphError> {
+        let mut disco = full_disco();
+        disco.ensure_children_cache()?;
+
+        let cache = disco.children_cache.unwrap();
+        assert_eq!(cache.get(&2).cloned(), Some(vec![4]));
+        assert_eq!(cache.get(&10).cloned(), None);
+
+        let mut children_4 = cache.get(&4).cloned().unwrap();
+        children_4.sort();
+        assert_eq!(children_4, vec![5, 6, 7]);
+
+        let mut children_7 = cache.get(&7).cloned().unwrap();
+        children_7.sort();
+        assert_eq!(children_7, vec![9, 11]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_complete_sample() {
+        let mut disco = full_disco();
+        let undecided: HashSet<Revision> =
+            [4, 7, 9, 2, 3].iter().cloned().collect();
+        disco.undecided = Some(undecided);
+
+        let mut sample = vec![0];
+        disco.random_complete_sample(&mut sample, 3);
+        assert_eq!(sample.len(), 3);
+
+        let mut sample = vec![2, 4, 7];
+        disco.random_complete_sample(&mut sample, 1);
+        assert_eq!(sample.len(), 3);
+    }
+
+    #[test]
+    fn test_bidirectional_sample() -> Result<(), GraphError> {
+        let mut disco = full_disco();
+        disco.undecided = Some((0..=13).into_iter().collect());
+
+        let (sample_set, size) = disco.bidirectional_sample(7)?;
+        assert_eq!(size, 7);
+        let mut sample: Vec<Revision> = sample_set.into_iter().collect();
+        sample.sort();
+        // our DAG is a bit too small for the results to be really interesting
+        // at least it shows that
+        // - we went both ways
+        // - we didn't take all Revisions (6 is not in the sample)
+        assert_eq!(sample, vec![0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13]);
+        Ok(())
+    }
+
 }

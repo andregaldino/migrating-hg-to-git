@@ -36,7 +36,7 @@ py_class!(pub class PartialDiscovery |py| {
         _cls,
         repo: PyObject,
         targetheads: PyObject,
-        _respectsize: bool
+        respectsize: bool
     ) -> PyResult<PartialDiscovery> {
         let index = repo.getattr(py, "changelog")?.getattr(py, "index")?;
         Self::create_instance(
@@ -44,6 +44,7 @@ py_class!(pub class PartialDiscovery |py| {
             RefCell::new(Box::new(CorePartialDiscovery::new(
                 Index::new(py, index)?,
                 rev_pyiter_collect(py, &targetheads)?,
+                respectsize
             )))
         )
     }
