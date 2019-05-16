@@ -1,3 +1,4 @@
+pub mod dirs_multiset;
 pub mod parsers;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -26,3 +27,10 @@ pub struct CopyVecEntry<'a> {
 }
 
 pub type CopyVec<'a> = Vec<CopyVecEntry<'a>>;
+
+/// The Python implementation passes either a mapping (dirstate) or a flat
+/// iterable (manifest)
+pub enum DirsIterable {
+    Dirstate(DirstateVec),
+    Manifest(Vec<Vec<u8>>),
+}

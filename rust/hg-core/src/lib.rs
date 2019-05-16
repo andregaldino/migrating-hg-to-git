@@ -15,8 +15,10 @@ mod dirstate;
 pub mod discovery;
 pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{
+    dirs_multiset::DirsMultiset,
     parsers::{pack_dirstate, parse_dirstate},
-    CopyVec, CopyVecEntry, DirstateEntry, DirstateParents, DirstateVec,
+    CopyVec, CopyVecEntry, DirsIterable, DirstateEntry, DirstateParents,
+    DirstateVec,
 };
 mod filepatterns;
 mod utils;
@@ -71,6 +73,12 @@ pub enum DirstatePackError {
     CorruptedEntry(String),
     CorruptedParent,
     BadSize(usize, usize),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum DirstateMapError {
+    PathNotFound(Vec<u8>),
+    EmptyPath,
 }
 
 impl From<std::io::Error> for DirstatePackError {
