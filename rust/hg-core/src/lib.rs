@@ -15,8 +15,8 @@ mod dirstate;
 pub mod discovery;
 pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{
-    pack_dirstate, parse_dirstate, CopyVec, CopyVecEntry, DirstateEntry,
-    DirstateParents, DirstateVec,
+    parsers::{pack_dirstate, parse_dirstate},
+    CopyVec, CopyVecEntry, DirstateEntry, DirstateParents, DirstateVec,
 };
 mod filepatterns;
 
