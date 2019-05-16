@@ -10,10 +10,16 @@
 //! This is a Rust counterpart to the `partialdiscovery` class of
 //! `mercurial.setdiscovery`
 
-use super::{Graph, GraphError, Revision};
+extern crate rand;
+extern crate rand_pcg;
+use self::rand::seq::SliceRandom;
+use self::rand::{thread_rng, RngCore, SeedableRng};
+use super::{Graph, GraphError, Revision, NULL_REVISION};
 use crate::ancestors::MissingAncestors;
 use crate::dagops;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet, VecDeque};
+
+type Rng = self::rand_pcg::Pcg32;
 
 pub struct PartialDiscovery<G: Graph + Clone> {
     target_heads: Option<Vec<Revision>>,
@@ -21,10 +27,76 @@ pub struct PartialDiscovery<G: Graph + Clone> {
     common: MissingAncestors<G>,
     undecided: Option<HashSet<Revision>>,
     missing: HashSet<Revision>,
+    rng: Rng,
 }
 
 pub struct DiscoveryStats {
     pub undecided: Option<usize>,
+}
+
+/// Update an existing sample to match the expected size
+///
+/// The sample is updated with revisions exponentially distant from each
+/// element of `heads`.
+///
+/// If a target size is specified, the sampling will stop once this size is
+/// reached. Otherwise sampling will happen until roots of the <revs> set are
+/// reached.
+///
+/// - `revs`: set of revs we want to discover (if None, `assume` the whole dag
+///   represented by `parentfn`
+/// - `heads`: set of DAG head revs
+/// - `sample`: a sample to update
+/// - `parentfn`: a callable to resolve parents for a revision
+/// - `quicksamplesize`: optional target size of the sample
+fn update_sample(
+    revs: Option<&HashSet<Revision>>,
+    heads: impl IntoIterator<Item = Revision>,
+    sample: &mut HashSet<Revision>,
+    parentsfn: impl Fn(Revision) -> Result<[Revision; 2], GraphError>,
+    quicksamplesize: Option<usize>,
+) -> Result<(), GraphError> {
+    let mut distances: HashMap<Revision, u32> = HashMap::new();
+    let mut visit: VecDeque<Revision> = heads.into_iter().collect();
+    let mut factor: u32 = 1;
+    let mut seen: HashSet<Revision> = HashSet::new();
+    loop {
+        let current = match visit.pop_front() {
+            None => {
+                break;
+            }
+            Some(r) => r,
+        };
+        if !seen.insert(current) {
+            continue;
+        }
+
+        let d = *distances.entry(current).or_insert(1);
+        if d > factor {
+            factor *= 2;
+        }
+        if d == factor {
+            sample.insert(current);
+            if let Some(sz) = quicksamplesize {
+                if sample.len() >= sz {
+                    return Ok(());
+                }
+            }
+        }
+        for &p in &parentsfn(current)? {
+            if p == NULL_REVISION {
+                continue;
+            }
+            if let Some(revs) = revs {
+                if !revs.contains(&p) {
+                    continue;
+                }
+            }
+            distances.entry(p).or_insert(d + 1);
+            visit.push_back(p);
+        }
+    }
+    Ok(())
 }
 
 impl<G: Graph + Clone> PartialDiscovery<G> {
@@ -39,13 +111,45 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
     /// we'll have to make it a type argument of `PartialDiscovery` or a trait
     /// object since we'll keep it in the meanwhile
     pub fn new(graph: G, target_heads: Vec<Revision>) -> Self {
+        let mut seed: [u8; 16] = [0; 16];
+        thread_rng().fill_bytes(&mut seed);
+        Self::new_with_seed(graph, target_heads, seed)
+    }
+
+    pub fn new_with_seed(
+        graph: G,
+        target_heads: Vec<Revision>,
+        seed: [u8; 16],
+    ) -> Self {
         PartialDiscovery {
             undecided: None,
             target_heads: Some(target_heads),
             graph: graph.clone(),
             common: MissingAncestors::new(graph, vec![]),
             missing: HashSet::new(),
+            rng: Rng::from_seed(seed),
         }
+    }
+
+    /// Extract at most `size` random elements from sample and return them
+    /// as a vector
+    fn limit_sample(
+        &mut self,
+        mut sample: Vec<Revision>,
+        size: usize,
+    ) -> Vec<Revision> {
+        let sample_len = sample.len();
+        if sample_len <= size {
+            return sample;
+        }
+        let rng = &mut self.rng;
+        let dropped_size = sample_len - size;
+        let limited_slice = if size < dropped_size {
+            sample.partial_shuffle(rng, size).0
+        } else {
+            sample.partial_shuffle(rng, dropped_size).1
+        };
+        limited_slice.to_owned()
     }
 
     /// Register revisions known as being common
@@ -130,6 +234,32 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
             undecided: self.undecided.as_ref().map(|s| s.len()),
         }
     }
+
+    pub fn take_quick_sample(
+        &mut self,
+        headrevs: impl IntoIterator<Item = Revision>,
+        size: usize,
+    ) -> Result<Vec<Revision>, GraphError> {
+        self.ensure_undecided()?;
+        let mut sample = {
+            let undecided = self.undecided.as_ref().unwrap();
+            if undecided.len() <= size {
+                return Ok(undecided.iter().cloned().collect());
+            }
+            dagops::heads(&self.graph, undecided.iter())?
+        };
+        if sample.len() >= size {
+            return Ok(self.limit_sample(sample.into_iter().collect(), size));
+        }
+        update_sample(
+            None,
+            headrevs,
+            &mut sample,
+            |r| self.graph.parents(r),
+            Some(size),
+        )?;
+        Ok(sample.into_iter().collect())
+    }
 }
 
 #[cfg(test)]
@@ -138,8 +268,21 @@ mod tests {
     use crate::testing::SampleGraph;
 
     /// A PartialDiscovery as for pushing all the heads of `SampleGraph`
+    ///
+    /// To avoid actual randomness in tests, we give it a fixed random seed.
     fn full_disco() -> PartialDiscovery<SampleGraph> {
-        PartialDiscovery::new(SampleGraph, vec![10, 11, 12, 13])
+        PartialDiscovery::new_with_seed(
+            SampleGraph,
+            vec![10, 11, 12, 13],
+            [0; 16],
+        )
+    }
+
+    /// A PartialDiscovery as for pushing the 12 head of `SampleGraph`
+    ///
+    /// To avoid actual randomness in tests, we give it a fixed random seed.
+    fn disco12() -> PartialDiscovery<SampleGraph> {
+        PartialDiscovery::new_with_seed(SampleGraph, vec![12], [0; 16])
     }
 
     fn sorted_undecided(
@@ -204,6 +347,47 @@ mod tests {
         assert_eq!(sorted_missing(&disco), vec![8, 10, 13]);
         assert!(disco.is_complete());
         assert_eq!(sorted_common_heads(&disco)?, vec![5, 11, 12]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_limit_sample_no_need_to() {
+        let sample = vec![1, 2, 3, 4];
+        assert_eq!(full_disco().limit_sample(sample, 10), vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn test_limit_sample_less_than_half() {
+        assert_eq!(full_disco().limit_sample((1..6).collect(), 2), vec![4, 2]);
+    }
+
+    #[test]
+    fn test_limit_sample_more_than_half() {
+        assert_eq!(full_disco().limit_sample((1..4).collect(), 2), vec![3, 2]);
+    }
+
+    #[test]
+    fn test_quick_sample_enough_undecided_heads() -> Result<(), GraphError> {
+        let mut disco = full_disco();
+        disco.undecided = Some((1..=13).collect());
+
+        let mut sample_vec = disco.take_quick_sample(vec![], 4)?;
+        sample_vec.sort();
+        assert_eq!(sample_vec, vec![10, 11, 12, 13]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_quick_sample_climbing_from_12() -> Result<(), GraphError> {
+        let mut disco = disco12();
+        disco.ensure_undecided()?;
+
+        let mut sample_vec = disco.take_quick_sample(vec![12], 4)?;
+        sample_vec.sort();
+        // r12's only parent is r9, whose unique grand-parent through the
+        // diamond shape is r4. This ends there because the distance from r4
+        // to the root is only 3.
+        assert_eq!(sample_vec, vec![4, 9, 12]);
         Ok(())
     }
 }
