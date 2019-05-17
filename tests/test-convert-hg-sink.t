@@ -616,8 +616,9 @@ Recorded {files} list does not get confused about flags on merge commits
   |/
   o  0 add 0
   
-BROKEN: now 'a' appears changed
+
+# Still no files
   $ hg log -r 3 -T '{files}\n'
-  a
+  
 
 #endif
