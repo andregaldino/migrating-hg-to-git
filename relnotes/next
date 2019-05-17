@@ -18,6 +18,13 @@
 
 == Backwards Compatibility Changes ==
 
+ * Removed (experimental) support for log graph lines mixing
+   parent/grandparent styles. Setting
+   e.g. `experimental.graphstyle.parent = !` and
+   `experimental.graphstyle.grandparent = 3.` would use `!` for the
+   first three lines of the graph and then `.`. This is no longer
+   supported.
+
 
 == Internal API Changes ==
 
