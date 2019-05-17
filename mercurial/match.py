@@ -24,6 +24,12 @@ from .utils import (
     stringutil,
 )
 
+try:
+    from . import rustext
+    rustext.__name__  # force actual import (see hgdemandimport)
+except ImportError:
+    rustext = None
+
 allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
                    'rootglob',
                    'listfile', 'listfile0', 'set', 'include', 'subinclude',
@@ -1175,8 +1181,22 @@ def _globre(pat):
     return res
 
 def _regex(kind, pat, globsuffix):
-    '''Convert a (normalized) pattern of any kind into a regular expression.
+    '''Convert a (normalized) pattern of any kind into a
+    regular expression.
     globsuffix is appended to the regexp of globs.'''
+
+    if rustext is not None:
+        try:
+            return rustext.filepatterns.build_single_regex(
+                kind,
+                pat,
+                globsuffix
+            )
+        except rustext.filepatterns.PatternError:
+            raise error.ProgrammingError(
+                'not a regex pattern: %s:%s' % (kind, pat)
+            )
+
     if not pat:
         return ''
     if kind == 're':
@@ -1418,8 +1438,23 @@ def readpatternfile(filepath, warn, sourceinfo=False):
     pattern        # pattern of the current default type
 
     if sourceinfo is set, returns a list of tuples:
-    (pattern, lineno, originalline). This is useful to debug ignore patterns.
+    (pattern, lineno, originalline).
+    This is useful to debug ignore patterns.
     '''
+
+    if rustext is not None:
+        result, warnings = rustext.filepatterns.read_pattern_file(
+            filepath,
+            bool(warn),
+            sourceinfo,
+        )
+
+        for warning_params in warnings:
+            # Can't be easily emitted from Rust, because it would require
+            # a mechanism for both gettext and calling the `warn` function.
+            warn(_("%s: ignoring invalid syntax '%s'\n") % warning_params)
+
+        return result
 
     syntaxes = {
         're': 'relre:',
