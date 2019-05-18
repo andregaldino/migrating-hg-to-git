@@ -338,13 +338,6 @@ class templatekeyword(_templateregistrarbase):
             '''
             pass
 
-        # old API (DEPRECATED)
-        @templatekeyword('mykeyword')
-        def mykeywordfunc(repo, ctx, templ, cache, revcache, **args):
-            '''Explanation of this template keyword ....
-            '''
-            pass
-
     The first string argument is used also in online help.
 
     Optional argument 'requires' should be a collection of resource names
