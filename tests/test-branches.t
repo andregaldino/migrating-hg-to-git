@@ -958,6 +958,7 @@ trying to close branch from a cset which is not a branch head
 it should abort:
   $ hg ci -m "closing branch" --close-branch
   abort: can only close branch heads
+  (use --force-close-branch to close branch from a non-head changeset)
   [255]
 
   $ hg up 0
@@ -972,3 +973,18 @@ it should abort:
   @  0: 9092f1db7931 added a
      	default
   
+Test --force-close-branch to close a branch from a non-head changeset:
+---------------------------------------------------------------------
+
+  $ hg show stack --config extensions.show=
+    o  1553 added c
+    o  5f6d added b
+    @  9092 added a
+
+  $ hg ci -m "branch closed" --close-branch
+  abort: can only close branch heads
+  (use --force-close-branch to close branch from a non-head changeset)
+  [255]
+
+  $ hg ci -m "branch closed" --force-close-branch
+  created new head

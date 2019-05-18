@@ -1584,6 +1584,8 @@ def clone(ui, source, dest=None, **opts):
     ('', 'amend', None, _('amend the parent of the working directory')),
     ('s', 'secret', None, _('use the secret phase for committing')),
     ('e', 'edit', None, _('invoke editor on commit messages')),
+    ('', 'force-close-branch', None,
+     _('forcibly close branch from a non-head changeset (ADVANCED)')),
     ('i', 'interactive', None, _('use interactive mode')),
     ] + walkopts + commitopts + commitopts2 + subrepoopts,
     _('[OPTION]... [FILE]...'),
@@ -1671,7 +1673,7 @@ def _docommit(ui, repo, *pats, **opts):
     bheads = repo.branchheads(branch)
 
     extra = {}
-    if opts.get('close_branch'):
+    if opts.get('close_branch') or opts.get('force_close_branch'):
         extra['close'] = '1'
 
         if repo['.'].closesbranch():
@@ -1679,8 +1681,11 @@ def _docommit(ui, repo, *pats, **opts):
                                 ' head'))
         elif not bheads:
             raise error.Abort(_('branch "%s" has no heads to close') % branch)
-        elif branch == repo['.'].branch() and repo['.'].node() not in bheads:
-            raise error.Abort(_('can only close branch heads'))
+        elif (branch == repo['.'].branch() and repo['.'].node() not in bheads
+              and not opts.get('force_close_branch')):
+            hint = _('use --force-close-branch to close branch from a non-head'
+                     ' changeset')
+            raise error.Abort(_('can only close branch heads'), hint=hint)
         elif opts.get('amend'):
             if (repo['.'].p1().branch() != branch and
                 repo['.'].p2().branch() != branch):
