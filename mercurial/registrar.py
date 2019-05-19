@@ -341,9 +341,7 @@ class templatekeyword(_templateregistrarbase):
     The first string argument is used also in online help.
 
     Optional argument 'requires' should be a collection of resource names
-    which the template keyword depends on. This also serves as a flag to
-    switch to the new API. If 'requires' is unspecified, all template
-    keywords and resources are expanded to the function arguments.
+    which the template keyword depends on.
 
     'templatekeyword' instance in example above can be used to
     decorate multiple functions.
@@ -355,7 +353,7 @@ class templatekeyword(_templateregistrarbase):
     Otherwise, explicit 'templatekw.loadkeyword()' is needed.
     """
 
-    def _extrasetup(self, name, func, requires=None):
+    def _extrasetup(self, name, func, requires=()):
         func._requires = requires
 
 class templatefilter(_templateregistrarbase):
