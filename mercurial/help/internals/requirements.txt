@@ -129,3 +129,16 @@ August 2017). This requirement and feature are experimental and may
 disappear in a future Mercurial release. The requirement will only
 be present on repositories that have opted in to a sparse working
 directory.
+
+bookmarksinstore
+==================
+
+Bookmarks are stored in ``.hg/store/`` instead of directly in ``.hg/``
+where they used to be stored. The active bookmark is still stored
+directly in ``.hg/``. This makes them always shared by ``hg share``,
+whether or not ``-B`` was passed.
+
+Support for this requirement was added in Mercurial 5.1 (released
+August 2019). The requirement will only be present on repositories
+that have opted in to this format (by having
+``format.bookmarks-in-store=true`` set when they were created).
