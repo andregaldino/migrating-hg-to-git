@@ -51,15 +51,11 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
     assert repo.ui.configbool('experimental', 'narrowservebrokenellipses')
 
     cgversions = b2caps.get('changegroup')
-    if cgversions:  # 3.1 and 3.2 ship with an empty value
-        cgversions = [v for v in cgversions
-                      if v in changegroup.supportedoutgoingversions(repo)]
-        if not cgversions:
-            raise ValueError(_('no common changegroup version'))
-        version = max(cgversions)
-    else:
-        raise ValueError(_("server does not advertise changegroup version,"
-                           " can't negotiate support for ellipsis nodes"))
+    cgversions = [v for v in cgversions
+                  if v in changegroup.supportedoutgoingversions(repo)]
+    if not cgversions:
+        raise ValueError(_('no common changegroup version'))
+    version = max(cgversions)
 
     include = sorted(filter(bool, kwargs.get(r'includepats', [])))
     exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
