@@ -1,0 +1,3 @@
+[fix]
+clang-format:command = clang-format --style file -i
+clang-format:pattern = (**.c or **.cc or **.h) and not "listfile:contrib/clang-format-ignorelist"
