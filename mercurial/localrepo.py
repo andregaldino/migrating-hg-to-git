@@ -1219,7 +1219,8 @@ class localrepository(object):
         cls = repoview.newtype(self.unfiltered().__class__)
         return cls(self, name, visibilityexceptions)
 
-    @repofilecache('bookmarks', 'bookmarks.current')
+    @mixedrepostorecache(('bookmarks', ''), ('bookmarks.current', ''),
+                         ('00changelog.i', 'store'))
     def _bookmarks(self):
         return bookmarks.bmstore(self)
 

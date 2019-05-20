@@ -212,7 +212,7 @@ Check result of the push.
   |  summary:     A1
   |
   | o  changeset:   3:f26c3b5167d1
-  | |  bookmark:    book-B (false !)
+  | |  bookmark:    book-B
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  summary:     B1
@@ -235,4 +235,4 @@ Check result of the push.
   
   $ hg -R bookrace-server book
      book-A                    4:9ce3b28c16de
-     book-B                    3:f26c3b5167d1 (false !)
+     book-B                    3:f26c3b5167d1
