@@ -399,6 +399,23 @@ Executable files:
   
   1 changesets affected
   99b4ae7 foo
+  $ hg absorb --dry-run --interactive --print-changes
+  diff -r 99b4ae712f84 foo.py
+  1 hunks, 1 lines changed
+  examine changes to 'foo.py'? [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -
+  +bla
+  record this change to 'foo.py'? [Ynesfdaq?] y
+  
+  showing changes for foo.py
+          @@ -0,1 +0,1 @@
+  99b4ae7 -
+  99b4ae7 +bla
+  
+  1 changesets affected
+  99b4ae7 foo
   $ hg absorb --apply-changes
   1 of 1 chunk(s) applied
   $ hg diff -c .

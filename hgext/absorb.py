@@ -935,7 +935,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
     if opts.get('interactive'):
         diff = patch.diff(repo, stack[-1].node(), targetctx.node(), matcher)
         origchunks = patch.parsepatch(diff)
-        chunks = cmdutil.recordfilter(ui, origchunks)[0]
+        chunks = cmdutil.recordfilter(ui, origchunks, matcher)[0]
         targetctx = overlaydiffcontext(stack[-1], chunks)
     fm = None
     if opts.get('print_changes') or not opts.get('apply_changes'):
