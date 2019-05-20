@@ -139,6 +139,8 @@ Test error cases
   abort: invalid value for `storage.revlog.zlib.level` config: 42
   [255]
 
+#if zstd
+
 checking zstd options
 =====================
 
@@ -194,3 +196,4 @@ Test error cases
   abort: invalid value for `storage.revlog.zstd.level` config: 42
   [255]
 
+#endif
