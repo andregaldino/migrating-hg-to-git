@@ -111,6 +111,7 @@ checking zlib options
   > done
 
   $ $RUNTESTDIR/f -s */.hg/store/data/*
+  default/.hg/store/data/foo.i: size=64 (pure !)
   zlib-level-1/.hg/store/data/a.i: size=4146
   zlib-level-9/.hg/store/data/a.i: size=4138
   zlib-level-default/.hg/store/data/a.i: size=4138
@@ -137,6 +138,8 @@ Test error cases
   abort: invalid value for `storage.revlog.zlib.level` config: 42
   abort: invalid value for `storage.revlog.zlib.level` config: 42
   [255]
+
+#if zstd
 
 checking zstd options
 =====================
@@ -193,3 +196,4 @@ Test error cases
   abort: invalid value for `storage.revlog.zstd.level` config: 42
   [255]
 
+#endif

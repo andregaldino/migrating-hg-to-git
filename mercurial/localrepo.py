@@ -1226,7 +1226,7 @@ class localrepository(object):
         return cls(self, name, visibilityexceptions)
 
     @mixedrepostorecache(('bookmarks', ''), ('bookmarks.current', ''),
-                         ('bookmarks', 'store'))
+                         ('bookmarks', 'store'), ('00changelog.i', 'store'))
     def _bookmarks(self):
         return bookmarks.bmstore(self)
 
