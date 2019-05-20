@@ -122,6 +122,25 @@ class storecache(_basefilecache):
     def join(self, obj, fname):
         return obj.sjoin(fname)
 
+class mixedrepostorecache(_basefilecache):
+    """filecache for a mix files in .hg/store and outside"""
+    def __init__(self, *pathsandlocations):
+        # scmutil.filecache only uses the path for passing back into our
+        # join(), so we can safely pass a list of paths and locations
+        super(mixedrepostorecache, self).__init__(*pathsandlocations)
+        for path, location in pathsandlocations:
+            _cachedfiles.update(pathsandlocations)
+
+    def join(self, obj, fnameandlocation):
+        fname, location = fnameandlocation
+        if location == '':
+            return obj.vfs.join(fname)
+        else:
+            if location != 'store':
+                raise error.ProgrammingError('unexpected location: %s' %
+                                             location)
+            return obj.sjoin(fname)
+
 def isfilecached(repo, name):
     """check if a repo has already cached "name" filecache-ed property
 
