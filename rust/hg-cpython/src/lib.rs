@@ -23,7 +23,6 @@
 extern crate cpython;
 extern crate hg;
 extern crate libc;
-extern crate python27_sys;
 
 pub mod ancestors;
 mod cindex;
