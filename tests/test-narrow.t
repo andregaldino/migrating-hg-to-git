@@ -290,13 +290,11 @@ Can widen the empty clone
   $ hg tracked --addinclude d0
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow-empty/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 3 changesets with 1 changes to 1 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:d0
   $ hg files

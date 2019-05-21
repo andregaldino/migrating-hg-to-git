@@ -30,7 +30,9 @@ SSHV2 = 'exp-ssh-v2-0003'
 HTTP_WIREPROTO_V2 = 'exp-http-v2-0003'
 
 NARROWCAP = 'exp-narrow-1'
-ELLIPSESCAP = 'exp-ellipses-1'
+ELLIPSESCAP1 = 'exp-ellipses-1'
+ELLIPSESCAP = 'exp-ellipses-2'
+SUPPORTED_ELLIPSESCAP = (ELLIPSESCAP1, ELLIPSESCAP)
 
 # All available wire protocol transports.
 TRANSPORTS = {

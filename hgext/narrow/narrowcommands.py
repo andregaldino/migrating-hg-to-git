@@ -146,7 +146,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
         kwargs['excludepats'] = exclude
     # calculate known nodes only in ellipses cases because in non-ellipses cases
     # we have all the nodes
-    if wireprototypes.ELLIPSESCAP in pullop.remote.capabilities():
+    if wireprototypes.ELLIPSESCAP1 in pullop.remote.capabilities():
         kwargs['known'] = [node.hex(ctx.node()) for ctx in
                            repo.set('::%ln', pullop.common)
                            if ctx.node() != node.nullid]
@@ -253,7 +253,14 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
     # then send that information to server whether we want ellipses or not.
     # Theoretically a non-ellipses repo should be able to use narrow
     # functionality from an ellipses enabled server
-    ellipsesremote = wireprototypes.ELLIPSESCAP in remote.capabilities()
+    remotecap = remote.capabilities()
+    ellipsesremote = any(cap in remotecap
+                         for cap in wireprototypes.SUPPORTED_ELLIPSESCAP)
+
+    # check whether we are talking to a server which supports old version of
+    # ellipses capabilities
+    isoldellipses = (ellipsesremote and wireprototypes.ELLIPSESCAP1 in
+                     remotecap and wireprototypes.ELLIPSESCAP not in remotecap)
 
     def pullbundle2extraprepare_widen(orig, pullop, kwargs):
         orig(pullop, kwargs)
@@ -279,8 +286,31 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
             with ds.parentchange():
                 ds.setparents(node.nullid, node.nullid)
             with wrappedextraprepare:
-                with repo.ui.configoverride(overrides, 'widen'):
+                if isoldellipses:
                     exchange.pull(repo, remote, heads=common)
+                else:
+                    known = [node.hex(ctx.node()) for ctx in
+                                       repo.set('::%ln', common)
+                                       if ctx.node() != node.nullid]
+
+                    with remote.commandexecutor() as e:
+                        bundle = e.callcommand('narrow_widen', {
+                            'oldincludes': oldincludes,
+                            'oldexcludes': oldexcludes,
+                            'newincludes': newincludes,
+                            'newexcludes': newexcludes,
+                            'cgversion': '03',
+                            'commonheads': common,
+                            'known': known,
+                            'ellipses': True,
+                        }).result()
+                    trmanager = exchange.transactionmanager(repo, 'widen',
+                                                            remote.url())
+                    with trmanager:
+                        op = bundle2.bundleoperation(repo,
+                                trmanager.transaction, source='widen')
+                        bundle2.processbundle(repo, bundle, op=op)
+
             with ds.parentchange():
                 ds.setparents(p1, p2)
         else:

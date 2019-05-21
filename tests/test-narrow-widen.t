@@ -95,13 +95,11 @@ added upstream revisions.
   $ hg tracked --addinclude widest/f
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 3 changesets with 2 changes to 2 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:inside
   I path:widest/f
@@ -154,13 +152,11 @@ widen the narrow spec to include the wider file
   $ hg tracked --addinclude wider
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 3 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:inside
   I path:wider
@@ -261,13 +257,11 @@ make narrow clone with every third node.
   $ hg tracked --addinclude d1
   comparing with ssh://user@dummy/upstream
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow2/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 9 changesets with 5 changes to 5 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:d0
   I path:d1
@@ -342,7 +336,6 @@ Widening that fails can be recovered from
   $ hg --config hooks.pretxnchangegroup.bad=false tracked --addinclude d1
   comparing with ssh://user@dummy/upstream
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/interrupted/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests

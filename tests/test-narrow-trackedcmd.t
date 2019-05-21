@@ -145,13 +145,11 @@ Testing the --import-rules flag of `hg tracked` command
   looking for local changes to affected paths
   deleting data/inside/f.i
   deleting meta/inside/00manifest.i (tree !)
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 2 changesets with 0 changes to 0 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:outisde
   X path:inside
@@ -166,13 +164,11 @@ Testing the --import-rules flag with --addinclude and --addexclude
   $ hg tracked --import-rules specs --addinclude 'wider/'
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 3 changesets with 1 changes to 1 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:outisde
   I path:wider
@@ -211,13 +207,11 @@ Testing with passing a out of wdir file
   $ hg tracked --import-rules ../nspecs
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 3 changesets with 0 changes to 0 files
-  new changesets *:* (glob)
 
   $ cd ..
 
