@@ -57,11 +57,18 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
         raise ValueError(_('no common changegroup version'))
     version = max(cgversions)
 
-    include = sorted(filter(bool, kwargs.get(r'includepats', [])))
-    exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
-    newmatch = narrowspec.match(repo.root, include=include, exclude=exclude)
+    oldinclude = sorted(filter(bool, kwargs.get(r'oldincludepats', [])))
+    oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
+    newinclude = sorted(filter(bool, kwargs.get(r'includepats', [])))
+    newexclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
+    generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
+            newexclude, version, common, kwargs.get('known', []),
+            kwargs.get(r'depth', None), heads)
 
-    depth = kwargs.get(r'depth', None)
+def generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
+                            newexclude, version, common, known, depth, heads):
+    newmatch = narrowspec.match(repo.root, include=newinclude,
+                                exclude=newexclude)
     if depth is not None:
         depth = int(depth)
         if depth < 1:
@@ -69,10 +76,8 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
 
     heads = set(heads or repo.heads())
     common = set(common or [nullid])
-    oldinclude = sorted(filter(bool, kwargs.get(r'oldincludepats', [])))
-    oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
-    known = {bin(n) for n in kwargs.get(r'known', [])}
-    if known and (oldinclude != include or oldexclude != exclude):
+    known = {bin(n) for n in known}
+    if known and (oldinclude != newinclude or oldexclude != newexclude):
         # Steps:
         # 1. Send kill for "$known & ::common"
         #
