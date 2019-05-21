@@ -37,7 +37,7 @@ def outsidenarrow(context, mapping):
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
     m = repo.narrowmatch()
-    if not m.always():
+    if ctx.files() and not m.always():
         if not any(m(f) for f in ctx.files()):
             return 'outsidenarrow'
     return ''

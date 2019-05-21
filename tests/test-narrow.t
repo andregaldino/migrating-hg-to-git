@@ -281,6 +281,10 @@ Do some work in the empty clone
   marked working directory as branch foo
   (branches are permanent and global, did you want a bookmark?)
   $ hg ci -m empty
+  $ hg log -T "{rev}: {desc} {outsidenarrow}\n"
+  2: empty 
+  1: add d5/f outsidenarrow
+  0: add d0/f outsidenarrow
   $ hg pull -q
 Can widen the empty clone
   $ hg tracked --addinclude d0
