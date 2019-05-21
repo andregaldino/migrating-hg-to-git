@@ -225,7 +225,11 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
         &mut self,
         common: impl IntoIterator<Item = Revision>,
     ) -> Result<(), GraphError> {
+        let before_len = self.common.get_bases().len();
         self.common.add_bases(common);
+        if self.common.get_bases().len() == before_len {
+            return Ok(());
+        }
         if let Some(ref mut undecided) = self.undecided {
             self.common.remove_ancestors_from(undecided)?;
         }
@@ -246,11 +250,14 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
         &mut self,
         missing: impl IntoIterator<Item = Revision>,
     ) -> Result<(), GraphError> {
+        let mut tovisit: VecDeque<Revision> = missing.into_iter().collect();
+        if tovisit.is_empty() {
+            return Ok(());
+        }
         self.ensure_children_cache()?;
         self.ensure_undecided()?; // for safety of possible future refactors
         let children = self.children_cache.as_ref().unwrap();
         let mut seen: HashSet<Revision> = HashSet::new();
-        let mut tovisit: VecDeque<Revision> = missing.into_iter().collect();
         let undecided_mut = self.undecided.as_mut().unwrap();
         while let Some(rev) = tovisit.pop_front() {
             if !self.missing.insert(rev) {
