@@ -55,6 +55,9 @@ perfstatus
   "presleep"
     number of second to wait before any group of runs (default: 1)
   
+  "pre-run"
+    number of run to perform before starting measurement.
+  
   "run-limits"
     Control the number of runs each benchmark will perform. The option value
     should be a list of '<time>-<numberofrun>' pairs. After each run the
@@ -326,6 +329,25 @@ detailed output:
     "wall": * (glob)
    }
   ]
+
+Test pre-run feature
+--------------------
+
+(perf discovery has some spurious output)
+
+  $ hg perfdiscovery . --config perf.stub=no --config perf.run-limits='0.000000001-1' --config perf.pre-run=0
+  ! wall * comb * user * sys * (best of 1) (glob)
+  searching for changes
+  $ hg perfdiscovery . --config perf.stub=no --config perf.run-limits='0.000000001-1' --config perf.pre-run=1
+  ! wall * comb * user * sys * (best of 1) (glob)
+  searching for changes
+  searching for changes
+  $ hg perfdiscovery . --config perf.stub=no --config perf.run-limits='0.000000001-1' --config perf.pre-run=3
+  ! wall * comb * user * sys * (best of 1) (glob)
+  searching for changes
+  searching for changes
+  searching for changes
+  searching for changes
 
 Check perf.py for historical portability
 ----------------------------------------

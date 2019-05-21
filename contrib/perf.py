@@ -15,6 +15,9 @@ Configurations
 ``presleep``
   number of second to wait before any group of runs (default: 1)
 
+``pre-run``
+  number of run to perform before starting measurement.
+
 ``run-limits``
   Control the number of runs each benchmark will perform. The option value
   should be a list of `<time>-<numberofrun>` pairs. After each run the
@@ -240,6 +243,9 @@ try:
     configitem(b'perf', b'all-timing',
         default=mercurial.configitems.dynamicdefault,
     )
+    configitem(b'perf', b'pre-run',
+        default=mercurial.configitems.dynamicdefault,
+    )
     configitem(b'perf', b'run-limits',
         default=mercurial.configitems.dynamicdefault,
     )
@@ -341,7 +347,9 @@ def gettimer(ui, opts=None):
     if not limits:
         limits = DEFAULTLIMITS
 
-    t = functools.partial(_timer, fm, displayall=displayall, limits=limits)
+    prerun = getint(ui, b"perf", b"pre-run", 0)
+    t = functools.partial(_timer, fm, displayall=displayall, limits=limits,
+                          prerun=prerun)
     return t, fm
 
 def stub_timer(fm, func, setup=None, title=None):
@@ -368,11 +376,15 @@ DEFAULTLIMITS = (
 )
 
 def _timer(fm, func, setup=None, title=None, displayall=False,
-           limits=DEFAULTLIMITS):
+           limits=DEFAULTLIMITS, prerun=0):
     gc.collect()
     results = []
     begin = util.timer()
     count = 0
+    for i in xrange(prerun):
+        if setup is not None:
+            setup()
+        func()
     keepgoing = True
     while keepgoing:
         if setup is not None:
