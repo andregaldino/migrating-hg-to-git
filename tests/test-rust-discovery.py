@@ -103,6 +103,9 @@ class rustdiscoverytest(unittest.TestCase):
         self.assertTrue(disco.iscomplete())
         self.assertEqual(disco.commonheads(), {1})
 
+    def testinitnorandom(self):
+        PartialDiscovery(self.repo(), [3], True, randomize=False)
+
 if __name__ == '__main__':
     import silenttestrunner
     silenttestrunner.main(__name__)

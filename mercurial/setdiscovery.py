@@ -92,11 +92,19 @@ def _updatesample(revs, heads, sample, parentfn, quicksamplesize=0):
                 dist.setdefault(p, d + 1)
                 visit.append(p)
 
-def _limitsample(sample, desiredlen):
-    """return a random subset of sample of at most desiredlen item"""
-    if len(sample) > desiredlen:
-        sample = set(random.sample(sample, desiredlen))
-    return sample
+def _limitsample(sample, desiredlen, randomize=True):
+    """return a random subset of sample of at most desiredlen item.
+
+    If randomize is False, though, a deterministic subset is returned.
+    This is meant for integration tests.
+    """
+    if len(sample) <= desiredlen:
+        return sample
+    if randomize:
+        return set(random.sample(sample, desiredlen))
+    sample = list(sample)
+    sample.sort()
+    return set(sample[:desiredlen])
 
 class partialdiscovery(object):
     """an object representing ongoing discovery
@@ -110,7 +118,7 @@ class partialdiscovery(object):
     (all tracked revisions are known locally)
     """
 
-    def __init__(self, repo, targetheads, respectsize):
+    def __init__(self, repo, targetheads, respectsize, randomize=True):
         self._repo = repo
         self._targetheads = targetheads
         self._common = repo.changelog.incrementalmissingrevs()
@@ -118,6 +126,7 @@ class partialdiscovery(object):
         self.missing = set()
         self._childrenmap = None
         self._respectsize = respectsize
+        self.randomize = randomize
 
     def addcommons(self, commons):
         """register nodes known as common"""
@@ -222,7 +231,7 @@ class partialdiscovery(object):
         sample = set(self._repo.revs('heads(%ld)', revs))
 
         if len(sample) >= size:
-            return _limitsample(sample, size)
+            return _limitsample(sample, size, randomize=self.randomize)
 
         _updatesample(None, headrevs, sample, self._parentsgetter(),
                       quicksamplesize=size)
@@ -249,10 +258,15 @@ class partialdiscovery(object):
         if not self._respectsize:
             size = max(size, min(len(revsroots), len(revsheads)))
 
-        sample = _limitsample(sample, size)
+        sample = _limitsample(sample, size, randomize=self.randomize)
         if len(sample) < size:
             more = size - len(sample)
-            sample.update(random.sample(list(revs - sample), more))
+            takefrom = list(revs - sample)
+            if self.randomize:
+                sample.update(random.sample(takefrom, more))
+            else:
+                takefrom.sort()
+                sample.update(takefrom[:more])
         return sample
 
 def findcommonheads(ui, local, remote,

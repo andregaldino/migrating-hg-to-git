@@ -31,6 +31,7 @@ pub struct PartialDiscovery<G: Graph + Clone> {
     missing: HashSet<Revision>,
     rng: Rng,
     respect_size: bool,
+    randomize: bool,
 }
 
 pub struct DiscoveryStats {
@@ -151,14 +152,26 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
     /// will interpret the size argument requested by the caller. If it's
     /// `false`, they are allowed to produce a sample whose size is more
     /// appropriate to the situation (typically bigger).
+    ///
+    /// The `randomize` boolean affects sampling, and specifically how
+    /// limiting or last-minute expanding is been done:
+    ///
+    /// If `true`, both will perform random picking from `self.undecided`.
+    /// This is currently the best for actual discoveries.
+    ///
+    /// If `false`, a reproductible picking strategy is performed. This is
+    /// useful for integration tests.
     pub fn new(
         graph: G,
         target_heads: Vec<Revision>,
         respect_size: bool,
+        randomize: bool,
     ) -> Self {
         let mut seed: [u8; 16] = [0; 16];
-        thread_rng().fill_bytes(&mut seed);
-        Self::new_with_seed(graph, target_heads, seed, respect_size)
+        if randomize {
+            thread_rng().fill_bytes(&mut seed);
+        }
+        Self::new_with_seed(graph, target_heads, seed, respect_size, randomize)
     }
 
     pub fn new_with_seed(
@@ -166,6 +179,7 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
         target_heads: Vec<Revision>,
         seed: [u8; 16],
         respect_size: bool,
+        randomize: bool,
     ) -> Self {
         PartialDiscovery {
             undecided: None,
@@ -176,6 +190,7 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
             missing: HashSet::new(),
             rng: Rng::from_seed(seed),
             respect_size: respect_size,
+            randomize: randomize,
         }
     }
 
@@ -186,6 +201,11 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
         mut sample: Vec<Revision>,
         size: usize,
     ) -> Vec<Revision> {
+        if !self.randomize {
+            sample.sort();
+            sample.truncate(size);
+            return sample;
+        }
         let sample_len = sample.len();
         if sample_len <= size {
             return sample;
@@ -436,12 +456,14 @@ mod tests {
 
     /// A PartialDiscovery as for pushing all the heads of `SampleGraph`
     ///
-    /// To avoid actual randomness in tests, we give it a fixed random seed.
+    /// To avoid actual randomness in these tests, we give it a fixed
+    /// random seed, but by default we'll test the random version.
     fn full_disco() -> PartialDiscovery<SampleGraph> {
         PartialDiscovery::new_with_seed(
             SampleGraph,
             vec![10, 11, 12, 13],
             [0; 16],
+            true,
             true,
         )
     }
@@ -450,7 +472,13 @@ mod tests {
     ///
     /// To avoid actual randomness in tests, we give it a fixed random seed.
     fn disco12() -> PartialDiscovery<SampleGraph> {
-        PartialDiscovery::new_with_seed(SampleGraph, vec![12], [0; 16], true)
+        PartialDiscovery::new_with_seed(
+            SampleGraph,
+            vec![12],
+            [0; 16],
+            true,
+            true,
+        )
     }
 
     fn sorted_undecided(
@@ -532,6 +560,16 @@ mod tests {
     #[test]
     fn test_limit_sample_more_than_half() {
         assert_eq!(full_disco().limit_sample((1..4).collect(), 2), vec![3, 2]);
+    }
+
+    #[test]
+    fn test_limit_sample_no_random() {
+        let mut disco = full_disco();
+        disco.randomize = false;
+        assert_eq!(
+            disco.limit_sample(vec![1, 8, 13, 5, 7, 3], 4),
+            vec![1, 3, 5, 7]
+        );
     }
 
     #[test]
