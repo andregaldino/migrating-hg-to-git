@@ -968,7 +968,7 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   updating to branch b
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ hg -R a debugdiscovery b --debug --verbose --config progress.debug=true
+  $ hg -R a debugdiscovery b --debug --verbose --config progress.debug=true --config devel.discovery.randomize=false
   comparing with b
   query 1; heads
   searching for changes
@@ -980,13 +980,14 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   query 3; still undecided: 980, sample size is: 200
   sampling from both directions
   searching: 4 queries
-  query 4; still undecided: 435, sample size is: 210 (no-py3 !)
-  query 4; still undecided: 430, sample size is: 210 (py3 !)
+  query 4; still undecided: 497, sample size is: 210
   sampling from both directions
   searching: 5 queries
-  query 5; still undecided: 185, sample size is: 185 (no-py3 !)
-  query 5; still undecided: 187, sample size is: 187 (py3 !)
-  5 total queries in *.????s (glob)
+  query 5; still undecided: 285, sample size is: 220
+  sampling from both directions
+  searching: 6 queries
+  query 6; still undecided: 63, sample size is: 63
+  6 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   heads summary:
     total common heads:          1
@@ -1095,16 +1096,9 @@ The case where all the 'initialsamplesize' samples already were common would
 give 'all remote heads known locally' without checking the remaining heads -
 fixed in 86c35b7ae300:
 
-  $ cat >> $TESTTMP/unrandomsample.py << EOF
-  > import random
-  > def sample(population, k):
-  >     return sorted(population)[:k]
-  > random.sample = sample
-  > EOF
-
   $ cat >> r1/.hg/hgrc << EOF
-  > [extensions]
-  > unrandomsample = $TESTTMP/unrandomsample.py
+  > [devel]
+  > discovery.randomize = False
   > EOF
 
   $ hg -R r1 outgoing r2 -T'{rev} ' --config extensions.blackbox= \

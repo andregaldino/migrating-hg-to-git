@@ -390,7 +390,9 @@ def findcommonheads(ui, local, remote,
 
     # full blown discovery
 
-    disco = partialdiscovery(local, ownheads, remote.limitedarguments)
+    randomize = ui.configbool('devel', 'discovery.randomize')
+    disco = partialdiscovery(local, ownheads, remote.limitedarguments,
+                             randomize=randomize)
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
     disco.addcommons(knownsrvheads)

@@ -415,6 +415,9 @@ coreconfigitem('devel', 'debug.extensions',
 coreconfigitem('devel', 'debug.peer-request',
     default=False,
 )
+coreconfigitem('devel', 'discovery.randomize',
+    default=True,
+)
 _registerdiffopts(section='diff')
 coreconfigitem('email', 'bcc',
     default=None,
