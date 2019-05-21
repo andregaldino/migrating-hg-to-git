@@ -58,6 +58,10 @@ perfstatus
   "pre-run"
     number of run to perform before starting measurement.
   
+  "profile-benchmark"
+    Enable profiling for the benchmarked section. (The first iteration is
+    benchmarked)
+  
   "run-limits"
     Control the number of runs each benchmark will perform. The option value
     should be a list of '<time>-<numberofrun>' pairs. After each run the
@@ -348,6 +352,15 @@ Test pre-run feature
   searching for changes
   searching for changes
   searching for changes
+
+test  profile-benchmark option
+------------------------------
+
+Function to check that statprof ran
+  $ statprofran () {
+  >   egrep 'Sample count:|No samples recorded' > /dev/null
+  > }
+  $ hg perfdiscovery . --config perf.stub=no --config perf.run-limits='0.000000001-1' --config perf.profile-benchmark=yes 2>&1 | statprofran
 
 Check perf.py for historical portability
 ----------------------------------------

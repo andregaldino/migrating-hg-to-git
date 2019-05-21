@@ -18,6 +18,10 @@ Configurations
 ``pre-run``
   number of run to perform before starting measurement.
 
+``profile-benchmark``
+  Enable profiling for the benchmarked section.
+  (The first iteration is benchmarked)
+
 ``run-limits``
   Control the number of runs each benchmark will perform. The option value
   should be a list of `<time>-<numberofrun>` pairs. After each run the
@@ -109,6 +113,10 @@ try:
 except ImportError:
     pass
 
+try:
+    from mercurial import profiling
+except ImportError:
+    profiling = None
 
 def identity(a):
     return a
@@ -246,6 +254,9 @@ try:
     configitem(b'perf', b'pre-run',
         default=mercurial.configitems.dynamicdefault,
     )
+    configitem(b'perf', b'profile-benchmark',
+        default=mercurial.configitems.dynamicdefault,
+    )
     configitem(b'perf', b'run-limits',
         default=mercurial.configitems.dynamicdefault,
     )
@@ -256,6 +267,13 @@ def getlen(ui):
     if ui.configbool(b"perf", b"stub", False):
         return lambda x: 1
     return len
+
+class noop(object):
+    """dummy context manager"""
+    def __enter__(self):
+        pass
+    def __exit__(self, *args):
+        pass
 
 def gettimer(ui, opts=None):
     """return a timer function and formatter: (timer, formatter)
@@ -347,9 +365,14 @@ def gettimer(ui, opts=None):
     if not limits:
         limits = DEFAULTLIMITS
 
+    profiler = None
+    if profiling is not None:
+        if ui.configbool(b"perf", b"profile-benchmark", False):
+            profiler = profiling.profile(ui)
+
     prerun = getint(ui, b"perf", b"pre-run", 0)
     t = functools.partial(_timer, fm, displayall=displayall, limits=limits,
-                          prerun=prerun)
+                          prerun=prerun, profiler=profiler)
     return t, fm
 
 def stub_timer(fm, func, setup=None, title=None):
@@ -376,11 +399,13 @@ DEFAULTLIMITS = (
 )
 
 def _timer(fm, func, setup=None, title=None, displayall=False,
-           limits=DEFAULTLIMITS, prerun=0):
+           limits=DEFAULTLIMITS, prerun=0, profiler=None):
     gc.collect()
     results = []
     begin = util.timer()
     count = 0
+    if profiler is None:
+        profiler = noop()
     for i in xrange(prerun):
         if setup is not None:
             setup()
@@ -389,8 +414,9 @@ def _timer(fm, func, setup=None, title=None, displayall=False,
     while keepgoing:
         if setup is not None:
             setup()
-        with timeone() as item:
-            r = func()
+        with profiler:
+            with timeone() as item:
+                r = func()
         count += 1
         results.append(item[0])
         cstop = util.timer()
