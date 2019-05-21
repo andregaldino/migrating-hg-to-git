@@ -256,7 +256,8 @@ def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
                     fullsamplesize=200,
                     abortwhenunrelated=True,
-                    ancestorsof=None):
+                    ancestorsof=None,
+                    samplegrowth=1.05):
     '''Return a tuple (common, anyincoming, remoteheads) used to identify
     missing nodes from or in remote.
     '''
@@ -389,6 +390,8 @@ def findcommonheads(ui, local, remote,
                 ui.debug("taking initial sample\n")
             samplefunc = disco.takefullsample
             targetsize = fullsamplesize
+            if not remote.limitedarguments:
+                fullsamplesize = int(fullsamplesize * samplegrowth)
         else:
             # use even cheaper initial sample
             ui.debug("taking quick initial sample\n")

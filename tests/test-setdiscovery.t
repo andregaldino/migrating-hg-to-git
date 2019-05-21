@@ -980,10 +980,10 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   query 3; still undecided: 980, sample size is: 200
   sampling from both directions
   searching: 4 queries
-  query 4; still undecided: \d+, sample size is: 200 (re)
+  query 4; still undecided: 435, sample size is: 210
   sampling from both directions
   searching: 5 queries
-  query 5; still undecided: 195, sample size is: 195
+  query 5; still undecided: 185, sample size is: 185
   5 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   heads summary:
