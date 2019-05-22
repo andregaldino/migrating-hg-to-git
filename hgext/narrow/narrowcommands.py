@@ -278,42 +278,22 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
     # silence the devel-warning of applying an empty changegroup
     overrides = {('devel', 'all-warnings'): False}
 
+    common = commoninc[0]
     with ui.uninterruptible():
-        common = commoninc[0]
         if ellipsesremote:
             ds = repo.dirstate
             p1, p2 = ds.p1(), ds.p2()
             with ds.parentchange():
                 ds.setparents(node.nullid, node.nullid)
+        if isoldellipses:
             with wrappedextraprepare:
-                if isoldellipses:
-                    exchange.pull(repo, remote, heads=common)
-                else:
-                    known = [node.hex(ctx.node()) for ctx in
-                                       repo.set('::%ln', common)
-                                       if ctx.node() != node.nullid]
-
-                    with remote.commandexecutor() as e:
-                        bundle = e.callcommand('narrow_widen', {
-                            'oldincludes': oldincludes,
-                            'oldexcludes': oldexcludes,
-                            'newincludes': newincludes,
-                            'newexcludes': newexcludes,
-                            'cgversion': '03',
-                            'commonheads': common,
-                            'known': known,
-                            'ellipses': True,
-                        }).result()
-                    trmanager = exchange.transactionmanager(repo, 'widen',
-                                                            remote.url())
-                    with trmanager:
-                        op = bundle2.bundleoperation(repo,
-                                trmanager.transaction, source='widen')
-                        bundle2.processbundle(repo, bundle, op=op)
-
-            with ds.parentchange():
-                ds.setparents(p1, p2)
+                exchange.pull(repo, remote, heads=common)
         else:
+            known = []
+            if ellipsesremote:
+                known = [node.hex(ctx.node()) for ctx in
+                         repo.set('::%ln', common)
+                         if ctx.node() != node.nullid]
             with remote.commandexecutor() as e:
                 bundle = e.callcommand('narrow_widen', {
                     'oldincludes': oldincludes,
@@ -322,15 +302,20 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                     'newexcludes': newexcludes,
                     'cgversion': '03',
                     'commonheads': common,
-                    'known': [],
-                    'ellipses': False,
+                    'known': known,
+                    'ellipses': ellipsesremote,
                 }).result()
 
-            with repo.transaction('widening') as tr:
-                with repo.ui.configoverride(overrides, 'widen'):
-                    tgetter = lambda: tr
-                    bundle2.processbundle(repo, bundle,
-                            transactiongetter=tgetter)
+            trmanager = exchange.transactionmanager(repo, 'widen', remote.url())
+            with trmanager, repo.ui.configoverride(overrides, 'widen'):
+                op = bundle2.bundleoperation(repo, trmanager.transaction,
+                                             source='widen')
+                # TODO: we should catch error.Abort here
+                bundle2.processbundle(repo, bundle, op=op)
+
+        if ellipsesremote:
+            with ds.parentchange():
+                ds.setparents(p1, p2)
 
         with repo.transaction('widening'):
             repo.setnewnarrowpats()
