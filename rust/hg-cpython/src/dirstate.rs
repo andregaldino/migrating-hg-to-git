@@ -70,7 +70,7 @@ fn parse_dirstate_wrapper(
                     py,
                     PyBytes::new(py, &filename[..]),
                     decapsule_make_dirstate_tuple(py)?(
-                        entry.state,
+                        entry.state as c_char,
                         entry.mode,
                         entry.size,
                         entry.mtime,
@@ -170,7 +170,7 @@ fn pack_dirstate_wrapper(
                     py,
                     PyBytes::new(py, &filename[..]),
                     decapsule_make_dirstate_tuple(py)?(
-                        state, mode, size, mtime,
+                        state as c_char, mode, size, mtime,
                     ),
                 )?;
             }
