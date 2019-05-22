@@ -614,7 +614,7 @@ class includematcher(basematcher):
         self._dirs = set(dirs)
         # parents are directories which are non-recursively included because
         # they are needed to get to items in _dirs or _roots.
-        self._parents = set(parents)
+        self._parents = parents
 
     def visitdir(self, dir):
         dir = normalizerootdir(dir, 'visitdir')
@@ -1384,26 +1384,26 @@ def _rootsdirsandparents(kindpats):
     >>> _rootsdirsandparents(
     ...     [(b'glob', b'g/h/*', b''), (b'glob', b'g/h', b''),
     ...      (b'glob', b'g*', b'')])
-    (['g/h', 'g/h', ''], [], ['', 'g'])
+    (['g/h', 'g/h', ''], [], set(['', 'g']))
     >>> _rootsdirsandparents(
     ...     [(b'rootfilesin', b'g/h', b''), (b'rootfilesin', b'', b'')])
-    ([], ['g/h', ''], ['', 'g'])
+    ([], ['g/h', ''], set(['', 'g']))
     >>> _rootsdirsandparents(
     ...     [(b'relpath', b'r', b''), (b'path', b'p/p', b''),
     ...      (b'path', b'', b'')])
-    (['r', 'p/p', ''], [], ['', 'p'])
+    (['r', 'p/p', ''], [], set(['', 'p']))
     >>> _rootsdirsandparents(
     ...     [(b'relglob', b'rg*', b''), (b're', b're/', b''),
     ...      (b'relre', b'rr', b'')])
-    (['', '', ''], [], [''])
+    (['', '', ''], [], set(['']))
     '''
     r, d = _patternrootsanddirs(kindpats)
 
-    p = []
-    # Append the parents as non-recursive/exact directories, since they must be
+    p = set()
+    # Add the parents as non-recursive/exact directories, since they must be
     # scanned to get to either the roots or the other exact directories.
-    p.extend(util.dirs(d))
-    p.extend(util.dirs(r))
+    p.update(util.dirs(d))
+    p.update(util.dirs(r))
 
     # FIXME: all uses of this function convert these to sets, do so before
     # returning.
