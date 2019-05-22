@@ -102,6 +102,13 @@ perform other post-fixing work. The supported hooks are::
     mapping fixer tool names to lists of metadata values returned from
     executions that modified a file. This aggregates the same metadata
     previously passed to the "postfixfile" hook.
+
+Fixer tools are run the in repository's root directory. This allows them to read
+configuration files from the working copy, or even write to the working copy.
+The working copy is not updated to match the revision being fixed. In fact,
+several revisions may be fixed in parallel. Writes to the working copy are not
+amended into the revision being fixed; fixer tools should always write fixed
+file content back to stdout as documented above.
 """
 
 from __future__ import absolute_import
@@ -232,7 +239,7 @@ def fix(ui, repo, *pats, **opts):
             for rev, path in items:
                 ctx = repo[rev]
                 olddata = ctx[path].data()
-                metadata, newdata = fixfile(ui, opts, fixers, ctx, path,
+                metadata, newdata = fixfile(ui, repo, opts, fixers, ctx, path,
                                             basectxs[rev])
                 # Don't waste memory/time passing unchanged content back, but
                 # produce one result per item either way.
@@ -529,7 +536,7 @@ def getbasectxs(repo, opts, revstofix):
                 basectxs[rev].add(pctx)
     return basectxs
 
-def fixfile(ui, opts, fixers, fixctx, path, basectxs):
+def fixfile(ui, repo, opts, fixers, fixctx, path, basectxs):
     """Run any configured fixers that should affect the file in this context
 
     Returns the file content that results from applying the fixers in some order
@@ -538,7 +545,8 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
     (i.e. they will only avoid lines that are common to all basectxs).
 
     A fixer tool's stdout will become the file's new content if and only if it
-    exits with code zero.
+    exits with code zero. The fixer tool's working directory is the repository's
+    root.
     """
     metadata = {}
     newdata = fixctx[path].data()
@@ -552,7 +560,7 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
             proc = subprocess.Popen(
                 procutil.tonativestr(command),
                 shell=True,
-                cwd=procutil.tonativestr(b'/'),
+                cwd=repo.root,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)

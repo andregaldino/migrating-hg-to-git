@@ -215,6 +215,13 @@ Help text for fix.
       executions that modified a file. This aggregates the same metadata
       previously passed to the "postfixfile" hook.
   
+  Fixer tools are run the in repository's root directory. This allows them to
+  read configuration files from the working copy, or even write to the working
+  copy. The working copy is not updated to match the revision being fixed. In
+  fact, several revisions may be fixed in parallel. Writes to the working copy
+  are not amended into the revision being fixed; fixer tools should always write
+  fixed file content back to stdout as documented above.
+  
   list of commands:
   
    fix           rewrite file content in changesets or working directory
@@ -1268,6 +1275,41 @@ three revisions instead of two.
   ab
 
   $ cd ..
+
+We run fixer tools in the repo root so they can look for config files or other
+important things in the working directory. This does NOT mean we are
+reconstructing a working copy of every revision being fixed; we're just giving
+the tool knowledge of the repo's location in case it can do something
+reasonable with that.
+
+  $ hg init subprocesscwd
+  $ cd subprocesscwd
+
+  $ cat >> .hg/hgrc <<EOF
+  > [fix]
+  > printcwd:command = pwd
+  > printcwd:pattern = path:foo/bar
+  > EOF
+
+  $ mkdir foo
+  $ printf "bar\n" > foo/bar
+  $ hg commit -Aqm blah
+
+  $ hg fix -w -r . foo/bar
+  $ hg cat -r tip foo/bar
+  $TESTTMP/subprocesscwd
+  $ cat foo/bar
+  $TESTTMP/subprocesscwd
+
+  $ cd foo
+
+  $ hg fix -w -r . bar
+  $ hg cat -r tip bar
+  $TESTTMP/subprocesscwd
+  $ cat bar
+  $TESTTMP/subprocesscwd
+
+  $ cd ../..
 
 Tools configured without a pattern are ignored. It would be too dangerous to
 run them on all files, because this might happen while testing a configuration
