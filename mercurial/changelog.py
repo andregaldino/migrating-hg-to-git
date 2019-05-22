@@ -80,21 +80,25 @@ def encodeextra(d):
     ]
     return "\0".join(items)
 
-def encodecopies(copies):
-    items = [
-        '%s\0%s' % (k, copies[k])
-        for k in sorted(copies)
-    ]
+def encodecopies(files, copies):
+    items = []
+    for i, dst in enumerate(files):
+        if dst in copies:
+            items.append('%d\0%s' % (i, copies[dst]))
+    if len(items) != len(copies):
+        raise error.ProgrammingError('some copy targets missing from file list')
     return "\n".join(items)
 
-def decodecopies(data):
+def decodecopies(files, data):
     try:
         copies = {}
         for l in data.split('\n'):
-            k, v = l.split('\0')
-            copies[k] = v
+            strindex, src = l.split('\0')
+            i = int(strindex)
+            dst = files[i]
+            copies[dst] = src
         return copies
-    except ValueError:
+    except (ValueError, IndexError):
         # Perhaps someone had chosen the same key name (e.g. "p1copies") and
         # used different syntax for the value.
         return None
@@ -336,12 +340,12 @@ class changelogrevision(object):
     @property
     def p1copies(self):
         rawcopies = self.extra.get('p1copies')
-        return rawcopies and decodecopies(rawcopies)
+        return rawcopies and decodecopies(self.files, rawcopies)
 
     @property
     def p2copies(self):
         rawcopies = self.extra.get('p2copies')
-        return rawcopies and decodecopies(rawcopies)
+        return rawcopies and decodecopies(self.files, rawcopies)
 
     @property
     def description(self):
@@ -631,11 +635,11 @@ class changelog(revlog.revlog):
         extrasentries = p1copies, p2copies, filesadded, filesremoved
         if extra is None and any(x is not None for x in extrasentries):
             extra = {}
-        if p1copies is not None:
-            extra['p1copies'] = encodecopies(p1copies)
-        if p2copies is not None:
-            extra['p2copies'] = encodecopies(p2copies)
         sortedfiles = sorted(files)
+        if p1copies is not None:
+            extra['p1copies'] = encodecopies(sortedfiles, p1copies)
+        if p2copies is not None:
+            extra['p2copies'] = encodecopies(sortedfiles, p2copies)
         if filesadded is not None:
             extra['filesadded'] = encodefileindices(sortedfiles, filesadded)
         if filesremoved is not None:

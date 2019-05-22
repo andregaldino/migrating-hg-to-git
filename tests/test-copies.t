@@ -559,7 +559,7 @@ Grafting revision 4 on top of revision 2, showing that it respect the rename:
   @  5 added d, modified b
   |  b1
   ~  diff -r 5a4825cc2926 -r 94a2f1a0e8e2 b1 (no-changeset !)
-  ~  diff -r df722b7fe2d5 -r ba3ddbbdfd96 b1 (changeset !)
+  ~  diff -r 0a0ed3b3251c -r d544fb655520 b1 (changeset !)
      --- a/b1	Thu Jan 01 00:00:00 1970 +0000
      +++ b/b1	Thu Jan 01 00:00:00 1970 +0000
      @@ -1,1 +1,2 @@

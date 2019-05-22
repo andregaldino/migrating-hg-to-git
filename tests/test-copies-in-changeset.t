@@ -27,9 +27,9 @@ Check that copies are recorded correctly
   files: b c d
   filesadded: 0\x001\x002 (esc)
   
-  p1copies: b\x00a (esc)
-  c\x00a (esc)
-  d\x00a (esc)
+  p1copies: 0\x00a (esc)
+  1\x00a (esc)
+  2\x00a (esc)
   $ hg showcopies
   a -> b
   a -> c
@@ -49,7 +49,7 @@ Check that renames are recorded correctly
   filesadded: 1
   filesremoved: 0
   
-  p1copies: b2\x00b (esc)
+  p1copies: 1\x00b (esc)
   $ hg showcopies
   b -> b2
 
@@ -67,7 +67,7 @@ even though there is no filelog entry.
   $ hg changesetcopies
   files: c
   
-  p1copies: c\x00b2 (esc)
+  p1copies: 0\x00b2 (esc)
   $ hg showcopies
   b2 -> c
   $ hg debugindex c
@@ -97,9 +97,9 @@ File 'f' exists only in p1, so 'i' should be from p1
   files: g h i
   filesadded: 0\x001\x002 (esc)
   
-  p1copies: g\x00a (esc)
-  i\x00f (esc)
-  p2copies: h\x00d (esc)
+  p1copies: 0\x00a (esc)
+  2\x00f (esc)
+  p2copies: 1\x00d (esc)
   $ hg showcopies
   a -> g
   d -> h
@@ -114,7 +114,7 @@ Test writing to both changeset and filelog
   filesadded: 0
   filesremoved: 
   
-  p1copies: j\x00a (esc)
+  p1copies: 0\x00a (esc)
   p2copies: 
   $ hg debugdata j 0
   \x01 (esc)
@@ -173,9 +173,9 @@ Test rebasing a commit with copy information
   $ hg mv a b
   $ hg ci -qm 'rename a to b'
   $ hg rebase -d 1 --config rebase.experimental.inmemory=yes
-  rebasing 2:acfc33f3aa6d "rename a to b" (tip)
+  rebasing 2:fc7287ac5b9b "rename a to b" (tip)
   merging a and b to b
-  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/acfc33f3aa6d-81d0180d-rebase.hg
+  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/fc7287ac5b9b-8f2a95ec-rebase.hg
   $ hg st --change . --copies
   A b
     a
