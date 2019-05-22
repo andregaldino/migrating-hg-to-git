@@ -834,6 +834,8 @@ fixing the working directory if there are unresolved merge conflicts.
   (use 'hg rebase --continue' or 'hg rebase --abort')
   [255]
 
+  $ cd ..
+
 When fixing a file that was renamed, we should diff against the source of the
 rename for incremental fixing and we should correctly reproduce the rename in
 the replacement revision.
