@@ -586,7 +586,6 @@ class _dirchildren(object):
         # yields (dirname, basename) tuples, walking back to the root.  This is
         # very similar to util.finddirs, except:
         #  - produces a (dirname, basename) tuple, not just 'dirname'
-        #  - includes root dir
         # Unlike manifest._splittopdir, this does not suffix `dirname` with a
         # slash.
         oldpos = len(path)
