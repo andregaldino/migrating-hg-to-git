@@ -80,15 +80,15 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
             ellipses = bool(ellipses)
         cgversion = cgversion
 
+        bundler = bundle2.bundle20(repo.ui)
         if not ellipses:
             newmatch = narrowspec.match(repo.root, include=newincludes,
                                         exclude=newexcludes)
             oldmatch = narrowspec.match(repo.root, include=oldincludes,
                                         exclude=oldexcludes)
-            bundler = bundle2.widen_bundle(repo, oldmatch, newmatch, common,
-                                           known, cgversion, ellipses)
+            bundle2.widen_bundle(bundler, repo, oldmatch, newmatch, common,
+                                 known, cgversion, ellipses)
         else:
-            bundler = bundle2.bundle20(repo.ui)
             narrowbundle2.generateellipsesbundle2(bundler, repo, oldincludes,
                     oldexcludes, newincludes, newexcludes, cgversion, common,
                     list(common), known, None)
