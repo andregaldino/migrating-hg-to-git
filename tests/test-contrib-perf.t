@@ -141,6 +141,8 @@ perfstatus
                  usable
    perfmergecalculate
                  (no help text available)
+   perfmergecopies
+                 measure runtime of 'copies.mergecopies'
    perfmoonwalk  benchmark walking the changelog backwards
    perfnodelookup
                  (no help text available)

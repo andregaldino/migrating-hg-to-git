@@ -1004,6 +1004,24 @@ def perfmergecalculate(ui, repo, **opts):
     timer(d)
     fm.end()
 
+@command(b'perfmergecopies',
+         [
+             (b'r', b'rev', b'.', b'rev to merge against'),
+             (b'', b'from', b'', b'rev to merge from'),
+             (b'', b'base', b'', b'the revision to use as base'),
+         ] + formatteropts)
+def perfmergecopies(ui, repo, **opts):
+    """measure runtime of `copies.mergecopies`"""
+    opts = _byteskwargs(opts)
+    timer, fm = gettimer(ui, opts)
+    wctx, rctx, ancestor = _getmergerevs(repo, opts)
+    def d():
+        # acceptremote is True because we don't want prompts in the middle of
+        # our benchmark
+        copies.mergecopies(repo, wctx, rctx, ancestor)
+    timer(d)
+    fm.end()
+
 @command(b'perfpathcopies', [], b"REV REV")
 def perfpathcopies(ui, repo, rev1, rev2, **opts):
     """benchmark the copy tracing logic"""
