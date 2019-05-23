@@ -963,16 +963,12 @@ def perfdirstatewrite(ui, repo, **opts):
     timer(d)
     fm.end()
 
-@command(b'perfmergecalculate',
-         [
-             (b'r', b'rev', b'.', b'rev to merge against'),
-             (b'', b'from', b'', b'rev to merge from'),
-             (b'', b'base', b'', b'the revision to use as base'),
-         ] + formatteropts)
-def perfmergecalculate(ui, repo, rev, **opts):
-    opts = _byteskwargs(opts)
-    timer, fm = gettimer(ui, opts)
+def _getmergerevs(repo, opts):
+    """parse command argument to return rev involved in merge
 
+    input: options dictionnary with `rev`, `from` and `bse`
+    output: (localctx, otherctx, basectx)
+    """
     if opts['from']:
         fromrev = scmutil.revsingle(repo, opts['from'])
         wctx = repo[fromrev]
@@ -981,19 +977,25 @@ def perfmergecalculate(ui, repo, rev, **opts):
         # we don't want working dir files to be stat'd in the benchmark, so
         # prime that cache
         wctx.dirty()
-    rctx = scmutil.revsingle(repo, rev, rev)
+    rctx = scmutil.revsingle(repo, opts['rev'], opts['rev'])
     if opts['base']:
         fromrev = scmutil.revsingle(repo, opts['base'])
         ancestor = repo[fromrev]
     else:
         ancestor = wctx.ancestor(rctx)
-    def d():
-        # acceptremote is True because we don't want prompts in the middle of
-        # our benchmark
-        merge.calculateupdates(repo, wctx, rctx, [ancestor], False, False,
-                               acceptremote=True, followcopies=True)
-    timer(d)
-    fm.end()
+    return (wctx, rctx, ancestor)
+
+@command(b'perfmergecalculate',
+         [
+             (b'r', b'rev', b'.', b'rev to merge against'),
+             (b'', b'from', b'', b'rev to merge from'),
+             (b'', b'base', b'', b'the revision to use as base'),
+         ] + formatteropts)
+def perfmergecalculate(ui, repo, **opts):
+    opts = _byteskwargs(opts)
+    timer, fm = gettimer(ui, opts)
+
+    wctx, rctx, ancestor = _getmergerevs(repo, opts)
     def d():
         # acceptremote is True because we don't want prompts in the middle of
         # our benchmark
