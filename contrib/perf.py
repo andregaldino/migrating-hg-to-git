@@ -964,16 +964,24 @@ def perfdirstatewrite(ui, repo, **opts):
     fm.end()
 
 @command(b'perfmergecalculate',
-         [(b'r', b'rev', b'.', b'rev to merge against')] + formatteropts)
+         [
+             (b'r', b'rev', b'.', b'rev to merge against'),
+             (b'', b'from', b'', b'rev to merge from'),
+         ] + formatteropts)
 def perfmergecalculate(ui, repo, rev, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    wctx = repo[None]
+
+    if opts['from']:
+        fromrev = scmutil.revsingle(repo, opts['from'])
+        wctx = repo[fromrev]
+    else:
+        wctx = repo[None]
+        # we don't want working dir files to be stat'd in the benchmark, so
+        # prime that cache
+        wctx.dirty()
     rctx = scmutil.revsingle(repo, rev, rev)
     ancestor = wctx.ancestor(rctx)
-    # we don't want working dir files to be stat'd in the benchmark, so prime
-    # that cache
-    wctx.dirty()
     def d():
         # acceptremote is True because we don't want prompts in the middle of
         # our benchmark
