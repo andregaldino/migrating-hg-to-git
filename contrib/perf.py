@@ -275,6 +275,8 @@ class noop(object):
     def __exit__(self, *args):
         pass
 
+NOOPCTX = noop()
+
 def gettimer(ui, opts=None):
     """return a timer function and formatter: (timer, formatter)
 
@@ -405,7 +407,7 @@ def _timer(fm, func, setup=None, title=None, displayall=False,
     begin = util.timer()
     count = 0
     if profiler is None:
-        profiler = noop()
+        profiler = NOOPCTX
     for i in xrange(prerun):
         if setup is not None:
             setup()
@@ -417,6 +419,7 @@ def _timer(fm, func, setup=None, title=None, displayall=False,
         with profiler:
             with timeone() as item:
                 r = func()
+        profiler = NOOPCTX
         count += 1
         results.append(item[0])
         cstop = util.timer()
