@@ -967,6 +967,7 @@ def perfdirstatewrite(ui, repo, **opts):
          [
              (b'r', b'rev', b'.', b'rev to merge against'),
              (b'', b'from', b'', b'rev to merge from'),
+             (b'', b'base', b'', b'the revision to use as base'),
          ] + formatteropts)
 def perfmergecalculate(ui, repo, rev, **opts):
     opts = _byteskwargs(opts)
@@ -981,7 +982,18 @@ def perfmergecalculate(ui, repo, rev, **opts):
         # prime that cache
         wctx.dirty()
     rctx = scmutil.revsingle(repo, rev, rev)
-    ancestor = wctx.ancestor(rctx)
+    if opts['base']:
+        fromrev = scmutil.revsingle(repo, opts['base'])
+        ancestor = repo[fromrev]
+    else:
+        ancestor = wctx.ancestor(rctx)
+    def d():
+        # acceptremote is True because we don't want prompts in the middle of
+        # our benchmark
+        merge.calculateupdates(repo, wctx, rctx, [ancestor], False, False,
+                               acceptremote=True, followcopies=True)
+    timer(d)
+    fm.end()
     def d():
         # acceptremote is True because we don't want prompts in the middle of
         # our benchmark
