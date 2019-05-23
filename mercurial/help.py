@@ -689,6 +689,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             for names, header, doc in subtopics[name]:
                 if subtopic in names:
                     break
+            if not any(subtopic in s[0] for s in subtopics[name]):
+                raise error.UnknownCommand(name)
 
         if not header:
             for topic in helptable:
