@@ -1471,6 +1471,111 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
     timer(format)
     fm.end()
 
+@command(b'perfhelper-mergecopies', formatteropts +
+         [
+          (b'r', b'revs', [], b'restrict search to these revisions'),
+          (b'', b'timing', False, b'provides extra data (costly)'),
+         ])
+def perfhelpermergecopies(ui, repo, revs=[], **opts):
+    """find statistics about potential parameters for `perfmergecopies`
+
+    This command find (base, p1, p2) triplet relevant for copytracing
+    benchmarking in the context of a merge.  It reports values for some of the
+    parameters that impact merge copy tracing time during merge.
+
+    If `--timing` is set, rename detection is run and the associated timing
+    will be reported. The extra details come at the cost of slower command
+    execution.
+
+    Since rename detection is only run once, other factors might easily
+    affect the precision of the timing. However it should give a good
+    approximation of which revision triplets are very costly.
+    """
+    opts = _byteskwargs(opts)
+    fm = ui.formatter(b'perf', opts)
+    dotiming = opts[b'timing']
+
+    output_template = [
+        ("base", "%(base)12s"),
+        ("p1", "%(p1.node)12s"),
+        ("p2", "%(p2.node)12s"),
+        ("p1.nb-revs", "%(p1.nbrevs)12d"),
+        ("p1.nb-files", "%(p1.nbmissingfiles)12d"),
+        ("p1.renames", "%(p1.renamedfiles)12d"),
+        ("p1.time", "%(p1.time)12.3f"),
+        ("p2.nb-revs", "%(p2.nbrevs)12d"),
+        ("p2.nb-files", "%(p2.nbmissingfiles)12d"),
+        ("p2.renames", "%(p2.renamedfiles)12d"),
+        ("p2.time", "%(p2.time)12.3f"),
+        ("renames", "%(nbrenamedfiles)12d"),
+        ("total.time", "%(time)12.3f"),
+        ]
+    if not dotiming:
+        output_template = [i for i in output_template
+                           if not ('time' in i[0] or 'renames' in i[0])]
+    header_names = [h for (h, v) in output_template]
+    output = ' '.join([v for (h, v) in output_template]) + '\n'
+    header = ' '.join(['%12s'] * len(header_names)) + '\n'
+    fm.plain(header % tuple(header_names))
+
+    if not revs:
+        revs = ['all()']
+    revs = scmutil.revrange(repo, revs)
+
+    roi = repo.revs('merge() and %ld', revs)
+    for r in roi:
+        ctx = repo[r]
+        p1 = ctx.p1()
+        p2 = ctx.p2()
+        bases = repo.changelog._commonancestorsheads(p1.rev(), p2.rev())
+        for b in bases:
+            b = repo[b]
+            p1missing = copies._computeforwardmissing(b, p1)
+            p2missing = copies._computeforwardmissing(b, p2)
+            data = {
+                b'base': b.hex(),
+                b'p1.node': p1.hex(),
+                b'p1.nbrevs': len(repo.revs('%d::%d', b.rev(), p1.rev())),
+                b'p1.nbmissingfiles': len(p1missing),
+                b'p2.node': p2.hex(),
+                b'p2.nbrevs': len(repo.revs('%d::%d', b.rev(), p2.rev())),
+                b'p2.nbmissingfiles': len(p2missing),
+            }
+            if dotiming:
+                begin = util.timer()
+                mergedata = copies.mergecopies(repo, p1, p2, b)
+                end = util.timer()
+                # not very stable timing since we did only one run
+                data['time'] = end - begin
+                # mergedata contains five dicts: "copy", "movewithdir",
+                # "diverge", "renamedelete" and "dirmove".
+                # The first 4 are about renamed file so lets count that.
+                renames = len(mergedata[0])
+                renames += len(mergedata[1])
+                renames += len(mergedata[2])
+                renames += len(mergedata[3])
+                data['nbrenamedfiles'] = renames
+                begin = util.timer()
+                p1renames = copies.pathcopies(b, p1)
+                end = util.timer()
+                data['p1.time'] = end - begin
+                begin = util.timer()
+                p2renames = copies.pathcopies(b, p2)
+                data['p2.time'] = end - begin
+                end = util.timer()
+                data['p1.renamedfiles'] = len(p1renames)
+                data['p2.renamedfiles'] = len(p2renames)
+            fm.startitem()
+            fm.data(**data)
+            # make node pretty for the human output
+            out = data.copy()
+            out['base'] = fm.hexfunc(b.node())
+            out['p1.node'] = fm.hexfunc(p1.node())
+            out['p2.node'] = fm.hexfunc(p2.node())
+            fm.plain(output % out)
+
+    fm.end()
+
 @command(b'perfhelper-pathcopies', formatteropts +
          [
           (b'r', b'revs', [], b'restrict search to these revisions'),

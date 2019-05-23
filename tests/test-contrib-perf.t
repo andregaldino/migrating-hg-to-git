@@ -124,6 +124,9 @@ perfstatus
    perffncachewrite
                  (no help text available)
    perfheads     benchmark the computation of a changelog heads
+   perfhelper-mergecopies
+                 find statistics about potential parameters for
+                 'perfmergecopies'
    perfhelper-pathcopies
                  find statistic about potential parameters for the
                  'perftracecopies'
