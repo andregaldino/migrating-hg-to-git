@@ -1303,6 +1303,13 @@ sub-topics can be accessed
       *empty chunk* at the end of each *delta group* denotes the boundary to the
       next filelog sub-segment.
 
+non-existent subtopics print an error
+
+  $ hg help internals.foo
+  abort: no such help topic: internals.foo
+  (try 'hg help --keyword foo')
+  [255]
+
 test advanced, deprecated and experimental options are hidden in command help
   $ hg help debugoptADV
   hg debugoptADV
