@@ -61,8 +61,9 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
     oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
     newinclude = sorted(filter(bool, kwargs.get(r'includepats', [])))
     newexclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
+    known = {bin(n) for n in kwargs.get('known', [])}
     generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
-            newexclude, version, common, kwargs.get('known', []),
+            newexclude, version, common, known,
             kwargs.get(r'depth', None), heads)
 
 def generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
@@ -76,7 +77,6 @@ def generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
 
     heads = set(heads or repo.heads())
     common = set(common or [nullid])
-    known = {bin(n) for n in known}
     if known and (oldinclude != newinclude or oldexclude != newexclude):
         # Steps:
         # 1. Send kill for "$known & ::common"
