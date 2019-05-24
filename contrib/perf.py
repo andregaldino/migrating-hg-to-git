@@ -408,7 +408,7 @@ def _timer(fm, func, setup=None, title=None, displayall=False,
     count = 0
     if profiler is None:
         profiler = NOOPCTX
-    for i in xrange(prerun):
+    for i in range(prerun):
         if setup is not None:
             setup()
         func()
