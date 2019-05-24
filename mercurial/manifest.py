@@ -35,6 +35,9 @@ from .utils import (
 parsers = policy.importmod(r'parsers')
 propertycache = util.propertycache
 
+# Allow tests to more easily test the alternate path in manifestdict.fastdelta()
+FASTDELTA_TEXTDIFF_THRESHOLD = 1000
+
 def _parse(data):
     # This method does a little bit of excessive-looking
     # precondition checking. This is so that the behavior of this
@@ -558,7 +561,7 @@ class manifestdict(object):
         addbuf = util.buffer(base)
 
         changes = list(changes)
-        if len(changes) < 1000:
+        if len(changes) < FASTDELTA_TEXTDIFF_THRESHOLD:
             # start with a readonly loop that finds the offset of
             # each line and creates the deltas
             for f, todelete in changes:
