@@ -1380,21 +1380,25 @@ def _rootsdirsandparents(kindpats):
 
     Returns a tuple of (roots, dirs, parents).
 
-    >>> _rootsdirsandparents(
+    >>> r = _rootsdirsandparents(
     ...     [(b'glob', b'g/h/*', b''), (b'glob', b'g/h', b''),
     ...      (b'glob', b'g*', b'')])
-    (['g/h', 'g/h', ''], [], set(['', 'g']))
-    >>> _rootsdirsandparents(
+    >>> print(r[0:2], sorted(r[2])) # the set has an unstable output
+    (['g/h', 'g/h', ''], []) ['', 'g']
+    >>> r = _rootsdirsandparents(
     ...     [(b'rootfilesin', b'g/h', b''), (b'rootfilesin', b'', b'')])
-    ([], ['g/h', ''], set(['', 'g']))
-    >>> _rootsdirsandparents(
+    >>> print(r[0:2], sorted(r[2])) # the set has an unstable output
+    ([], ['g/h', '']) ['', 'g']
+    >>> r = _rootsdirsandparents(
     ...     [(b'relpath', b'r', b''), (b'path', b'p/p', b''),
     ...      (b'path', b'', b'')])
-    (['r', 'p/p', ''], [], set(['', 'p']))
-    >>> _rootsdirsandparents(
+    >>> print(r[0:2], sorted(r[2])) # the set has an unstable output
+    (['r', 'p/p', ''], []) ['', 'p']
+    >>> r = _rootsdirsandparents(
     ...     [(b'relglob', b'rg*', b''), (b're', b're/', b''),
     ...      (b'relre', b'rr', b'')])
-    (['', '', ''], [], set(['']))
+    >>> print(r[0:2], sorted(r[2])) # the set has an unstable output
+    (['', '', ''], []) ['']
     '''
     r, d = _patternrootsanddirs(kindpats)
 
