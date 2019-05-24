@@ -25,6 +25,11 @@
    first three lines of the graph and then `.`. This is no longer
    supported.
 
+ * If `ui.origbackuppath` had been (incorrectly) configured to point
+   to a file, we will now replace that file by a directory and put
+   backups in that directory. This is similar to how we would
+   previously replace files *in* the configured directory by
+   subdirectories.
 
 == Internal API Changes ==
 
