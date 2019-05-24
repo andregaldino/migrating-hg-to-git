@@ -219,7 +219,7 @@ will be contiguous spans of existing entries to ensure that is handled properly.
   > manifest = $TESTTMP/manifest.py
   > EOF
 
-BROKEN: Pure removes should actually remove all dropped entries
+Pure removes should actually remove all dropped entries
 
   $ hg init repo
   $ cd repo
@@ -239,32 +239,25 @@ BROKEN: Pure removes should actually remove all dropped entries
   $ hg debugdata -m 1
   a.txt\x00b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 (esc)
   aa.txt\x00a4bdc161c8fbb523c9a60409603f8710ff49a571 (esc)
-  \x00.txt\x001e88685f5ddec574a34c70af492f95b6debc8741 (esc) (pure !)
   c.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
   cc.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
   ccc.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
-  \x00.txt\x001e88685f5ddec574a34c70af492f95b6debc8741 (esc) (pure !)
   e.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
 
-  $ hg up -C . 2>&1 | grep ValueError || true
-      raise ValueError("Manifest lines not in sorted order.") (pure !)
-  ValueError: Manifest lines not in sorted order. (pure !)
+  $ hg up -qC .
 
-  $ hg verify || true
+  $ hg verify
   checking changesets
   checking manifests
-   manifest@1: reading delta c1f6b2f803ac: Non-hexadecimal digit found (pure !)
   crosschecking files in changesets and manifests
   checking files
   checked 2 changesets with 8 changes to 8 files
-  1 integrity errors encountered! (pure !)
-  (first damaged changeset appears to be 1) (pure !)
 
   $ hg rollback -q --config ui.rollback=True
   $ hg rm b.txt d.txt
   $ echo bb > bb.txt
 
-BROKEN: A mix of adds and removes should remove all dropped entries.
+A mix of adds and removes should remove all dropped entries.
 
   $ hg ci -Aqm 'remove b and d; add bb'
 
@@ -275,20 +268,11 @@ BROKEN: A mix of adds and removes should remove all dropped entries.
   c.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
   cc.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
   ccc.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
-  \x00.txt\x001e88685f5ddec574a34c70af492f95b6debc8741 (esc) (pure !)
   e.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
 
-  $ hg up -C . 2>&1 | grep ValueError || true
-      raise ValueError("Manifest lines not in sorted order.") (pure !)
-  ValueError: Manifest lines not in sorted order. (pure !)
-
-  $ hg verify || true
+  $ hg verify
   checking changesets
   checking manifests
-   manifest@1: reading delta 0a0385480090: Manifest lines not in sorted order. (pure !)
   crosschecking files in changesets and manifests
-   bb.txt@1: in changeset but not in manifest (pure !)
   checking files
   checked 2 changesets with 9 changes to 9 files
-  2 integrity errors encountered! (pure !)
-  (first damaged changeset appears to be 1) (pure !)

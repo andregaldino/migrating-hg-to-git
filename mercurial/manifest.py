@@ -126,17 +126,20 @@ def _cmp(a, b):
     return (a > b) - (a < b)
 
 class _lazymanifest(object):
-    def __init__(self, data, positions=None, extrainfo=None, extradata=None):
+    def __init__(self, data, positions=None, extrainfo=None, extradata=None,
+                 hasremovals=False):
         if positions is None:
             self.positions = self.findlines(data)
             self.extrainfo = [0] * len(self.positions)
             self.data = data
             self.extradata = []
+            self.hasremovals = False
         else:
             self.positions = positions[:]
             self.extrainfo = extrainfo[:]
             self.extradata = extradata[:]
             self.data = data
+            self.hasremovals = hasremovals
 
     def findlines(self, data):
         if not data:
@@ -244,6 +247,7 @@ class _lazymanifest(object):
         self.extrainfo = self.extrainfo[:needle] + self.extrainfo[needle + 1:]
         if cur >= 0:
             self.data = self.data[:cur] + '\x00' + self.data[cur + 1:]
+            self.hasremovals = True
 
     def __setitem__(self, key, value):
         if not isinstance(key, bytes):
@@ -279,11 +283,11 @@ class _lazymanifest(object):
     def copy(self):
         # XXX call _compact like in C?
         return _lazymanifest(self.data, self.positions, self.extrainfo,
-            self.extradata)
+            self.extradata, self.hasremovals)
 
     def _compact(self):
         # hopefully not called TOO often
-        if len(self.extradata) == 0:
+        if len(self.extradata) == 0 and not self.hasremovals:
             return
         l = []
         i = 0
@@ -298,6 +302,16 @@ class _lazymanifest(object):
                     i += 1
                     if i == len(self.positions) or self.positions[i] < 0:
                         break
+
+                    # A removed file has no positions[] entry, but does have an
+                    # overwritten first byte.  Break out and find the end of the
+                    # current good entry/entries if there is a removed file
+                    # before the next position.
+                    if (self.hasremovals
+                        and self.data.find('\n\x00', cur,
+                                           self.positions[i]) != -1):
+                        break
+
                     offset += self.positions[i] - cur
                     cur = self.positions[i]
                 end_cut = self.data.find('\n', cur)
@@ -316,6 +330,7 @@ class _lazymanifest(object):
                     offset += len(l[-1])
                     i += 1
         self.data = ''.join(l)
+        self.hasremovals = False
         self.extradata = []
 
     def _pack(self, d):
