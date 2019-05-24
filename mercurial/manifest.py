@@ -126,6 +126,22 @@ def _cmp(a, b):
     return (a > b) - (a < b)
 
 class _lazymanifest(object):
+    """A pure python manifest backed by a byte string.  It is supplimented with
+    internal lists as it is modified, until it is compacted back to a pure byte
+    string.
+
+    ``data`` is the initial manifest data.
+
+    ``positions`` is a list of offsets, one per manifest entry.  Positive
+    values are offsets into ``data``, negative values are offsets into the
+    ``extradata`` list.  When an entry is removed, its entry is dropped from
+    ``positions``.  The values are encoded such that when walking the list and
+    indexing into ``data`` or ``extradata`` as appropriate, the entries are
+    sorted by filename.
+
+    ``extradata`` is a list of (key, hash, flags) for entries that were added or
+    modified since the manifest was created or compacted.
+    """
     def __init__(self, data, positions=None, extrainfo=None, extradata=None,
                  hasremovals=False):
         if positions is None:
@@ -246,6 +262,8 @@ class _lazymanifest(object):
         self.positions = self.positions[:needle] + self.positions[needle + 1:]
         self.extrainfo = self.extrainfo[:needle] + self.extrainfo[needle + 1:]
         if cur >= 0:
+            # This does NOT unsort the list as far as the search functions are
+            # concerned, as they only examine lines mapped by self.positions.
             self.data = self.data[:cur] + '\x00' + self.data[cur + 1:]
             self.hasremovals = True
 
@@ -297,6 +315,10 @@ class _lazymanifest(object):
             if self.positions[i] >= 0:
                 cur = self.positions[i]
                 last_cut = cur
+
+                # Collect all contiguous entries in the buffer at the current
+                # offset, breaking out only for added/modified items held in
+                # extradata, or a deleted line prior to the next position.
                 while True:
                     self.positions[i] = offset
                     i += 1
