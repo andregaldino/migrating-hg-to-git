@@ -61,7 +61,7 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
     oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
     newinclude = sorted(filter(bool, kwargs.get(r'includepats', [])))
     newexclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
-    known = {bin(n) for n in kwargs.get('known', [])}
+    known = {bin(n) for n in kwargs.get(r'known', [])}
     generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
                             newexclude, version, common, heads, known,
                             kwargs.get(r'depth', None))
