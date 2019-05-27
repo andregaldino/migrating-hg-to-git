@@ -259,7 +259,7 @@ def _writeaddedfiles(repo, pctx, files):
         if not repo.wvfs.exists(f):
             addgaction((f, (mf.flags(f), False), "narrowspec updated"))
     merge.applyupdates(repo, actions, wctx=repo[None],
-                       mctx=repo['.'], overwrite=False)
+                       mctx=repo['.'], overwrite=False, wantfiledata=False)
 
 def checkworkingcopynarrowspec(repo):
     # Avoid infinite recursion when updating the working copy

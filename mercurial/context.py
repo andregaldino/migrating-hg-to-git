@@ -1766,6 +1766,8 @@ class workingfilectx(committablefilectx):
 
     def size(self):
         return self._repo.wvfs.lstat(self._path).st_size
+    def lstat(self):
+        return self._repo.wvfs.lstat(self._path)
     def date(self):
         t, tz = self._changectx.date()
         try:
@@ -1801,9 +1803,9 @@ class workingfilectx(committablefilectx):
 
     def write(self, data, flags, backgroundclose=False, **kwargs):
         """wraps repo.wwrite"""
-        self._repo.wwrite(self._path, data, flags,
-                          backgroundclose=backgroundclose,
-                          **kwargs)
+        return self._repo.wwrite(self._path, data, flags,
+                                 backgroundclose=backgroundclose,
+                                 **kwargs)
 
     def markcopied(self, src):
         """marks this file a copy of `src`"""

@@ -27,13 +27,11 @@ outside of hg's control.
   > EOF
 
 Do an update where file 'a' is changed between hg writing it to disk
-and hg writing the dirstate. It results in a corrupted dirstate, which
-stores the wrong size, and thus hg status shows spuriously modified
-files.
+and hg writing the dirstate. The dirstate is correct nonetheless, and
+so hg status correctly shows a as clean.
 
   $ hg up -r 0 --config extensions.race=$TESTTMP/dirstaterace.py
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg debugdirstate --no-dates
-  n 644          0 (set  |unset)               a (re)
+  n 644          2 (set  |unset)               a (re)
   $ echo a > a; hg status; hg diff
-  M a

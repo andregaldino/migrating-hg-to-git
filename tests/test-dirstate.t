@@ -73,7 +73,7 @@ coherent (issue4353)
   >   merge,
   > )
   > 
-  > def wraprecordupdates(orig, repo, actions, branchmerge):
+  > def wraprecordupdates(*args):
   >     raise error.Abort("simulated error while recording dirstateupdates")
   > 
   > def reposetup(ui, repo):

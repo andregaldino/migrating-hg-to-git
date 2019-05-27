@@ -515,7 +515,7 @@ def overridecalculateupdates(origfn, repo, p1, p2, pas, branchmerge, force,
     return actions, diverge, renamedelete
 
 @eh.wrapfunction(merge, 'recordupdates')
-def mergerecordupdates(orig, repo, actions, branchmerge):
+def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
     if 'lfmr' in actions:
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
         for lfile, args, msg in actions['lfmr']:
@@ -526,7 +526,7 @@ def mergerecordupdates(orig, repo, actions, branchmerge):
             lfdirstate.add(lfile)
         lfdirstate.write()
 
-    return orig(repo, actions, branchmerge)
+    return orig(repo, actions, branchmerge, getfiledata)
 
 # Override filemerge to prompt the user about how they wish to merge
 # largefiles. This will handle identical edits without prompting the user.

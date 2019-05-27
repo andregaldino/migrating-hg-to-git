@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import errno
 import hashlib
 import shutil
+import stat
 import struct
 
 from .i18n import _
@@ -683,7 +684,7 @@ class mergestate(object):
     def recordactions(self):
         """record remove/add/get actions in the dirstate"""
         branchmerge = self._repo.dirstate.p2() != nullid
-        recordupdates(self._repo, self.actions(), branchmerge)
+        recordupdates(self._repo, self.actions(), branchmerge, None)
 
     def queueremove(self, f):
         """queues a file to be removed from the dirstate
@@ -1464,13 +1465,17 @@ def batchremove(repo, wctx, actions):
         repo.ui.warn(_("current directory was removed\n"
                        "(consider changing to repo root: %s)\n") % repo.root)
 
-def batchget(repo, mctx, wctx, actions):
+def batchget(repo, mctx, wctx, wantfiledata, actions):
     """apply gets to the working directory
 
     mctx is the context to get from
 
-    yields tuples for progress updates
+    Yields arbitrarily many (False, tuple) for progress updates, followed by
+    exactly one (True, filedata). When wantfiledata is false, filedata is an
+    empty list. When wantfiledata is true, filedata[i] is a triple (mode, size,
+    mtime) of the file written for action[i].
     """
+    filedata = []
     verbose = repo.ui.verbose
     fctx = mctx.filectx
     ui = repo.ui
@@ -1494,16 +1499,24 @@ def batchget(repo, mctx, wctx, actions):
                 if repo.wvfs.lexists(conflicting):
                     orig = scmutil.backuppath(ui, repo, conflicting)
                     util.rename(repo.wjoin(conflicting), orig)
-            wctx[f].clearunknown()
+            wfctx = wctx[f]
+            wfctx.clearunknown()
             atomictemp = ui.configbool("experimental", "update.atomic-file")
-            wctx[f].write(fctx(f).data(), flags, backgroundclose=True,
-                          atomictemp=atomictemp)
+            size = wfctx.write(fctx(f).data(), flags,
+                               backgroundclose=True,
+                               atomictemp=atomictemp)
+            if wantfiledata:
+                s = wfctx.lstat()
+                mode = s.st_mode
+                mtime = s[stat.ST_MTIME]
+                filedata.append((mode, size, mtime)) # for dirstate.normal
             if i == 100:
-                yield i, f
+                yield False, (i, f)
                 i = 0
             i += 1
     if i > 0:
-        yield i, f
+        yield False, (i, f)
+    yield True, filedata
 
 def _prefetchfiles(repo, ctx, actions):
     """Invoke ``scmutil.prefetchfiles()`` for the files relevant to the dict
@@ -1550,14 +1563,17 @@ def emptyactions():
                     ACTION_PATH_CONFLICT,
                     ACTION_PATH_CONFLICT_RESOLVE))
 
-def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
+def applyupdates(repo, actions, wctx, mctx, overwrite, wantfiledata,
+                 labels=None):
     """apply the merge action list to the working directory
 
     wctx is the working copy context
     mctx is the context to be merged into the working copy
 
-    Return a tuple of counts (updated, merged, removed, unresolved) that
-    describes how many files were affected by the update.
+    Return a tuple of (counts, filedata), where counts is a tuple
+    (updated, merged, removed, unresolved) that describes how many
+    files were affected by the update, and filedata is as described in
+    batchget.
     """
 
     _prefetchfiles(repo, mctx, actions)
@@ -1649,11 +1665,18 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     # get in parallel.
     threadsafe = repo.ui.configbool('experimental',
                                     'worker.wdir-get-thread-safe')
-    prog = worker.worker(repo.ui, cost, batchget, (repo, mctx, wctx),
+    prog = worker.worker(repo.ui, cost, batchget,
+                         (repo, mctx, wctx, wantfiledata),
                          actions[ACTION_GET],
-                         threadsafe=threadsafe)
-    for i, item in prog:
-        progress.increment(step=i, item=item)
+                         threadsafe=threadsafe,
+                         hasretval=True)
+    getfiledata = []
+    for final, res in prog:
+        if final:
+            getfiledata = res
+        else:
+            i, item = res
+            progress.increment(step=i, item=item)
     updated = len(actions[ACTION_GET])
 
     if [a for a in actions[ACTION_GET] if a[0] == '.hgsubstate']:
@@ -1778,6 +1801,9 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         mfiles = set(a[0] for a in actions[ACTION_MERGE])
         for k, acts in extraactions.iteritems():
             actions[k].extend(acts)
+            if k == ACTION_GET and wantfiledata:
+                # no filedata until mergestate is updated to provide it
+                getfiledata.extend([None] * len(acts))
             # Remove these files from actions[ACTION_MERGE] as well. This is
             # important because in recordupdates, files in actions[ACTION_MERGE]
             # are processed after files in other actions, and the merge driver
@@ -1800,9 +1826,10 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
                                  if a[0] in mfiles]
 
     progress.complete()
-    return updateresult(updated, merged, removed, unresolved)
+    assert len(getfiledata) == (len(actions[ACTION_GET]) if wantfiledata else 0)
+    return updateresult(updated, merged, removed, unresolved), getfiledata
 
-def recordupdates(repo, actions, branchmerge):
+def recordupdates(repo, actions, branchmerge, getfiledata):
     "record merge actions to the dirstate"
     # remove (must come first)
     for f, args, msg in actions.get(ACTION_REMOVE, []):
@@ -1846,11 +1873,12 @@ def recordupdates(repo, actions, branchmerge):
         pass
 
     # get
-    for f, args, msg in actions.get(ACTION_GET, []):
+    for i, (f, args, msg) in enumerate(actions.get(ACTION_GET, [])):
         if branchmerge:
             repo.dirstate.otherparent(f)
         else:
-            repo.dirstate.normal(f)
+            parentfiledata = getfiledata[i] if getfiledata else None
+            repo.dirstate.normal(f, parentfiledata=parentfiledata)
 
     # merge
     for f, args, msg in actions.get(ACTION_MERGE, []):
@@ -2166,12 +2194,15 @@ def update(repo, node, branchmerge, force, ancestor=None,
                   'fsmonitor enabled; enable fsmonitor to improve performance; '
                   'see "hg help -e fsmonitor")\n'))
 
-        stats = applyupdates(repo, actions, wc, p2, overwrite, labels=labels)
+        updatedirstate = not partial and not wc.isinmemory()
+        wantfiledata = updatedirstate and not branchmerge
+        stats, getfiledata = applyupdates(repo, actions, wc, p2, overwrite,
+                                          wantfiledata, labels=labels)
 
-        if not partial and not wc.isinmemory():
+        if updatedirstate:
             with repo.dirstate.parentchange():
                 repo.setparents(fp1, fp2)
-                recordupdates(repo, actions, branchmerge)
+                recordupdates(repo, actions, branchmerge, getfiledata)
                 # update completed, clear state
                 util.unlink(repo.vfs.join('updatestate'))
 
