@@ -28,8 +28,8 @@ File Format
 ===========
 
 A revlog begins with a 32-bit big endian integer holding version info
-and feature flags. This integer is shared with the first revision
-entry.
+and feature flags. This integer overlaps with the first four bytes of
+the first revision entry.
 
 This integer is logically divided into 2 16-bit shorts. The least
 significant half of the integer is the format/version short. The other
@@ -78,10 +78,10 @@ The following header values are common:
 00 03 00 01
    v1 + inline + generaldelta
 
-Following the 32-bit header is the remainder of the first index entry.
-Following that are remaining *index* data. Inlined revision data is
-possibly located between index entries. More on this layout is described
-below.
+Following the 32-bit header is the remaining 60 bytes of the first index
+entry. Following that are additional *index* entries. Inlined revision
+data is possibly located between index entries. More on the this inlined
+layout is described below.
 
 Version 1 Format
 ================
@@ -149,8 +149,12 @@ If revision data is not inline, then raw revision data is stored in a
 separate byte container. The offsets from bytes 0-5 and the compressed
 length from bytes 8-11 define how to access this data.
 
-The first 4 bytes of the revlog are shared between the revlog header
-and the 6 byte absolute offset field from the first revlog entry.
+The 6 byte absolute offset field from the first revlog entry overlaps
+with the revlog header. That is, the first 6 bytes of the first revlog
+entry can be split into four bytes containing the header for the revlog
+file and an additional two bytes containing the offset for the first
+entry. Since this is the offset from the beginning of the file for the
+first revision entry, the two bytes will always be set to zero.
 
 Version 2 Format
 ================
