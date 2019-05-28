@@ -97,9 +97,9 @@ class verifier(object):
 
         d = obj.checksize()
         if d[0]:
-            self.err(None, _("data length off by %d bytes") % d[0], name)
+            self._err(None, _("data length off by %d bytes") % d[0], name)
         if d[1]:
-            self.err(None, _("index contains %d extra bytes") % d[1], name)
+            self._err(None, _("index contains %d extra bytes") % d[1], name)
 
         if obj.version != revlog.REVLOGV0:
             if not self.revlogv1:
