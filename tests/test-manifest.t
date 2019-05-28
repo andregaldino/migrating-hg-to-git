@@ -201,3 +201,78 @@ hg update should warm the cache too
   total cache data size 425 bytes, on-disk 425 bytes
   $ hg log -r '0' --debug | grep 'manifest:'
   manifest:    0:fce2a30dedad1eef4da95ca1dc0004157aa527cf
+
+Test file removal (especially with pure).  The tests are crafted such that there
+will be contiguous spans of existing entries to ensure that is handled properly.
+(In this case, a.txt, aa.txt and c.txt, cc.txt, and ccc.txt)
+
+  $ cat > $TESTTMP/manifest.py <<EOF
+  > from mercurial import (
+  >     extensions,
+  >     manifest,
+  > )
+  > def extsetup(ui):
+  >     manifest.FASTDELTA_TEXTDIFF_THRESHOLD = 0
+  > EOF
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > manifest = $TESTTMP/manifest.py
+  > EOF
+
+Pure removes should actually remove all dropped entries
+
+  $ hg init repo
+  $ cd repo
+  $ echo a > a.txt
+  $ echo aa > aa.txt
+  $ echo b > b.txt
+  $ echo c > c.txt
+  $ echo c > cc.txt
+  $ echo c > ccc.txt
+  $ echo b > d.txt
+  $ echo c > e.txt
+  $ hg ci -Aqm 'a-e'
+
+  $ hg rm b.txt d.txt
+  $ hg ci -m 'remove b and d'
+
+  $ hg debugdata -m 1
+  a.txt\x00b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 (esc)
+  aa.txt\x00a4bdc161c8fbb523c9a60409603f8710ff49a571 (esc)
+  c.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
+  cc.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
+  ccc.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
+  e.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
+
+  $ hg up -qC .
+
+  $ hg verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 2 changesets with 8 changes to 8 files
+
+  $ hg rollback -q --config ui.rollback=True
+  $ hg rm b.txt d.txt
+  $ echo bb > bb.txt
+
+A mix of adds and removes should remove all dropped entries.
+
+  $ hg ci -Aqm 'remove b and d; add bb'
+
+  $ hg debugdata -m 1
+  a.txt\x00b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 (esc)
+  aa.txt\x00a4bdc161c8fbb523c9a60409603f8710ff49a571 (esc)
+  bb.txt\x0004c6faf8a9fdd848a5304dfc1704749a374dff44 (esc)
+  c.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
+  cc.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
+  ccc.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
+  e.txt\x00149da44f2a4e14f488b7bd4157945a9837408c00 (esc)
+
+  $ hg verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 2 changesets with 9 changes to 9 files

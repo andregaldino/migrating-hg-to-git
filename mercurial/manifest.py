@@ -35,6 +35,9 @@ from .utils import (
 parsers = policy.importmod(r'parsers')
 propertycache = util.propertycache
 
+# Allow tests to more easily test the alternate path in manifestdict.fastdelta()
+FASTDELTA_TEXTDIFF_THRESHOLD = 1000
+
 def _parse(data):
     # This method does a little bit of excessive-looking
     # precondition checking. This is so that the behavior of this
@@ -123,17 +126,36 @@ def _cmp(a, b):
     return (a > b) - (a < b)
 
 class _lazymanifest(object):
-    def __init__(self, data, positions=None, extrainfo=None, extradata=None):
+    """A pure python manifest backed by a byte string.  It is supplimented with
+    internal lists as it is modified, until it is compacted back to a pure byte
+    string.
+
+    ``data`` is the initial manifest data.
+
+    ``positions`` is a list of offsets, one per manifest entry.  Positive
+    values are offsets into ``data``, negative values are offsets into the
+    ``extradata`` list.  When an entry is removed, its entry is dropped from
+    ``positions``.  The values are encoded such that when walking the list and
+    indexing into ``data`` or ``extradata`` as appropriate, the entries are
+    sorted by filename.
+
+    ``extradata`` is a list of (key, hash, flags) for entries that were added or
+    modified since the manifest was created or compacted.
+    """
+    def __init__(self, data, positions=None, extrainfo=None, extradata=None,
+                 hasremovals=False):
         if positions is None:
             self.positions = self.findlines(data)
             self.extrainfo = [0] * len(self.positions)
             self.data = data
             self.extradata = []
+            self.hasremovals = False
         else:
             self.positions = positions[:]
             self.extrainfo = extrainfo[:]
             self.extradata = extradata[:]
             self.data = data
+            self.hasremovals = hasremovals
 
     def findlines(self, data):
         if not data:
@@ -240,7 +262,10 @@ class _lazymanifest(object):
         self.positions = self.positions[:needle] + self.positions[needle + 1:]
         self.extrainfo = self.extrainfo[:needle] + self.extrainfo[needle + 1:]
         if cur >= 0:
+            # This does NOT unsort the list as far as the search functions are
+            # concerned, as they only examine lines mapped by self.positions.
             self.data = self.data[:cur] + '\x00' + self.data[cur + 1:]
+            self.hasremovals = True
 
     def __setitem__(self, key, value):
         if not isinstance(key, bytes):
@@ -276,11 +301,11 @@ class _lazymanifest(object):
     def copy(self):
         # XXX call _compact like in C?
         return _lazymanifest(self.data, self.positions, self.extrainfo,
-            self.extradata)
+            self.extradata, self.hasremovals)
 
     def _compact(self):
         # hopefully not called TOO often
-        if len(self.extradata) == 0:
+        if len(self.extradata) == 0 and not self.hasremovals:
             return
         l = []
         i = 0
@@ -290,11 +315,25 @@ class _lazymanifest(object):
             if self.positions[i] >= 0:
                 cur = self.positions[i]
                 last_cut = cur
+
+                # Collect all contiguous entries in the buffer at the current
+                # offset, breaking out only for added/modified items held in
+                # extradata, or a deleted line prior to the next position.
                 while True:
                     self.positions[i] = offset
                     i += 1
                     if i == len(self.positions) or self.positions[i] < 0:
                         break
+
+                    # A removed file has no positions[] entry, but does have an
+                    # overwritten first byte.  Break out and find the end of the
+                    # current good entry/entries if there is a removed file
+                    # before the next position.
+                    if (self.hasremovals
+                        and self.data.find('\n\x00', cur,
+                                           self.positions[i]) != -1):
+                        break
+
                     offset += self.positions[i] - cur
                     cur = self.positions[i]
                 end_cut = self.data.find('\n', cur)
@@ -313,6 +352,7 @@ class _lazymanifest(object):
                     offset += len(l[-1])
                     i += 1
         self.data = ''.join(l)
+        self.hasremovals = False
         self.extradata = []
 
     def _pack(self, d):
@@ -558,7 +598,7 @@ class manifestdict(object):
         addbuf = util.buffer(base)
 
         changes = list(changes)
-        if len(changes) < 1000:
+        if len(changes) < FASTDELTA_TEXTDIFF_THRESHOLD:
             # start with a readonly loop that finds the offset of
             # each line and creates the deltas
             for f, todelete in changes:
