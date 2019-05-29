@@ -13,6 +13,9 @@ import sys
 # Rules for how modules can be loaded. Values are:
 #
 #    c - require C extensions
+#    rust+c - require Rust and C extensions
+#    rust+c-allow - allow Rust and C extensions with fallback to pure Python
+#                   for each
 #    allow - allow pure Python implementation when C loading fails
 #    cffi - required cffi versions (implemented within pure module)
 #    cffi-allow - allow pure Python implementation if cffi version is missing
@@ -29,6 +32,9 @@ _packageprefs = {
     b'cffi': (r'cffi', None),
     b'cffi-allow': (r'cffi', r'pure'),
     b'py': (None, r'pure'),
+    # For now, rust policies impact importrust only
+    b'rust+c': (r'cext', None),
+    b'rust+c-allow': (r'cext', r'pure'),
 }
 
 try:
@@ -107,3 +113,34 @@ def importmod(modname):
                 raise
     pn, mn = _modredirects.get((purepkg, modname), (purepkg, modname))
     return _importfrom(pn, mn)
+
+def _isrustpermissive():
+    """Assuming the policy is a Rust one, tell if it's permissive."""
+    return policy.endswith(b'-allow')
+
+def importrust(modname, member=None, default=None):
+    """Import Rust module according to policy and availability.
+
+    If policy isn't a Rust one, this returns `default`.
+
+    If either the module or its member is not available, this returns `default`
+    if policy is permissive and raises `ImportError` if not.
+    """
+    if not policy.startswith(b'rust'):
+        return default
+
+    try:
+        mod = _importfrom(r'rustext', modname)
+    except ImportError:
+        if _isrustpermissive():
+            return default
+        raise
+    if member is None:
+        return mod
+
+    try:
+        return getattr(mod, member)
+    except AttributeError:
+        if _isrustpermissive():
+            return default
+        raise ImportError(r"Cannot import name %s" % member)

@@ -1278,16 +1278,28 @@ def debuginstall(ui, **opts):
     fm.write('hgmodules', _("checking installed modules (%s)...\n"),
              os.path.dirname(pycompat.fsencode(__file__)))
 
-    if policy.policy in ('c', 'allow'):
+    rustandc = policy.policy in ('rust+c', 'rust+c-allow')
+    rustext = rustandc  # for now, that's the only case
+    cext = policy.policy in ('c', 'allow') or rustandc
+    nopure = cext or rustext
+    if nopure:
         err = None
         try:
-            from .cext import (
-                base85,
-                bdiff,
-                mpatch,
-                osutil,
-            )
-            dir(bdiff), dir(mpatch), dir(base85), dir(osutil) # quiet pyflakes
+            if cext:
+                from .cext import (
+                    base85,
+                    bdiff,
+                    mpatch,
+                    osutil,
+                )
+                # quiet pyflakes
+                dir(bdiff), dir(mpatch), dir(base85), dir(osutil)
+            if rustext:
+                from .rustext import (
+                    ancestor,
+                    dirstate,
+                )
+                dir(ancestor), dir(dirstate) # quiet pyflakes
         except Exception as inst:
             err = stringutil.forcebytestr(inst)
             problems += 1
