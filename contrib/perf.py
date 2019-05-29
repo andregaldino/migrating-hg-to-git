@@ -969,17 +969,17 @@ def _getmergerevs(repo, opts):
     input: options dictionnary with `rev`, `from` and `bse`
     output: (localctx, otherctx, basectx)
     """
-    if opts['from']:
-        fromrev = scmutil.revsingle(repo, opts['from'])
+    if opts[b'from']:
+        fromrev = scmutil.revsingle(repo, opts[b'from'])
         wctx = repo[fromrev]
     else:
         wctx = repo[None]
         # we don't want working dir files to be stat'd in the benchmark, so
         # prime that cache
         wctx.dirty()
-    rctx = scmutil.revsingle(repo, opts['rev'], opts['rev'])
-    if opts['base']:
-        fromrev = scmutil.revsingle(repo, opts['base'])
+    rctx = scmutil.revsingle(repo, opts[b'rev'], opts[b'rev'])
+    if opts[b'base']:
+        fromrev = scmutil.revsingle(repo, opts[b'base'])
         ancestor = repo[fromrev]
     else:
         ancestor = wctx.ancestor(rctx)
