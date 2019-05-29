@@ -649,15 +649,15 @@ def embedded(f, modname, src):
     ...         print("%s %s %d" % (_forcestr(m), _forcestr(f), l))
     ...         print(repr(_forcestr(s)))
     >>> lines = [
-    ...   b'comment',
-    ...   b'  >>> from __future__ import print_function',
-    ...   b"  >>> ' multiline",
-    ...   b"  ... string'",
-    ...   b'  ',
-    ...   b'comment',
-    ...   b'  $ cat > foo.py <<EOF',
-    ...   b'  > from __future__ import print_function',
-    ...   b'  > EOF',
+    ...   'comment',
+    ...   '  >>> from __future__ import print_function',
+    ...   "  >>> ' multiline",
+    ...   "  ... string'",
+    ...   '  ',
+    ...   'comment',
+    ...   '  $ cat > foo.py <<EOF',
+    ...   '  > from __future__ import print_function',
+    ...   '  > EOF',
     ... ]
     >>> test(b"example.t", lines)
     example[2] doctest.py 1
@@ -694,7 +694,7 @@ def sources(f, modname):
             yield src.read(), modname, f, 0
             py = True
     if py or f.endswith('.t'):
-        with open(f, 'rb') as src:
+        with open(f, 'r') as src:
             for script, modname, t, line in embedded(f, modname, src):
                 yield script, modname.encode('utf8'), t, line
 
