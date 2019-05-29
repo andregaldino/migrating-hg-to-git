@@ -2912,7 +2912,7 @@ class TestRunner(object):
 
                 result = runner.run(suite)
 
-            if result.failures:
+            if result.failures or result.errors:
                 failed = True
 
             result.onEnd()
