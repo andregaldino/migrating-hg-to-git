@@ -38,12 +38,6 @@ def rapply(f, xs):
 if ispy3:
     import builtins
 
-    # TODO: .buffer might not exist if std streams were replaced; we'll need
-    # a silly wrapper to make a bytes stream backed by a unicode one.
-    stdin = sys.stdin.buffer
-    stdout = sys.stdout.buffer
-    stderr = sys.stderr.buffer
-
     def bytestr(s):
         # tiny version of pycompat.bytestr
         return s.encode('latin1')
@@ -56,10 +50,6 @@ if ispy3:
     def opentext(f):
         return open(f, 'r')
 else:
-    stdin = sys.stdin
-    stdout = sys.stdout
-    stderr = sys.stderr
-
     bytestr = str
     sysstr = identity
 
@@ -71,11 +61,11 @@ def b2s(x):
 
 def writeout(data):
     # write "data" in BYTES into stdout
-    stdout.write(data)
+    sys.stdout.write(data)
 
 def writeerr(data):
     # write "data" in BYTES into stderr
-    stderr.write(data)
+    sys.stderr.write(data)
 
 ####################
 
@@ -583,7 +573,7 @@ if __name__ == "__main__":
                     if showembedded(f, fp, embeddedfunc, opts):
                         ret = 1
         else:
-            lines = [l for l in stdin.readlines()]
+            lines = [l for l in sys.stdin.readlines()]
             if showembedded('<stdin>', lines, embeddedfunc, opts):
                 ret = 1
         return ret
