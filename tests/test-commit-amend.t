@@ -943,17 +943,7 @@ Test that amend with --no-edit avoids the editor
 (We need a file change here since we won't have a message change)
   $ cp foo foo.orig
   $ echo hi >> foo
-FIXME: This shouldn't start the editor.
   $ HGEDITOR=cat hg commit --amend --no-edit
-  editor should be suppressed
-  
-  
-  HG: Enter commit message.  Lines beginning with 'HG:' are removed.
-  HG: Leave message empty to abort commit.
-  HG: --
-  HG: user: test
-  HG: branch 'silliness'
-  HG: added foo
   $ hg parents --template "{desc}\n"
   editor should be suppressed
   $ hg status -mar

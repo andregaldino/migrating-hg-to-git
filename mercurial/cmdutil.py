@@ -2583,12 +2583,18 @@ def amend(ui, repo, old, extra, pats, opts):
         message = logmessage(ui, opts)
 
         editform = mergeeditform(old, 'commit.amend')
-        editor = getcommiteditor(editform=editform,
-                                 **pycompat.strkwargs(opts))
 
         if not message:
-            editor = getcommiteditor(edit=True, editform=editform)
             message = old.description()
+            # Default if message isn't provided and --edit is not passed is to
+            # invoke editor, but allow --no-edit. If somehow we don't have any
+            # description, let's always start the editor.
+            doedit = not message or opts.get('edit') in [True, None]
+        else:
+            # Default if message is provided is to not invoke editor, but allow
+            # --edit.
+            doedit = opts.get('edit') is True
+        editor = getcommiteditor(edit=doedit, editform=editform)
 
         pureextra = extra.copy()
         extra['amend_source'] = old.hex()
