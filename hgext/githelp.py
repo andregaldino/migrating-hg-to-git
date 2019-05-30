@@ -923,6 +923,7 @@ def show(ui, repo, *args, **kwargs):
 
 def stash(ui, repo, *args, **kwargs):
     cmdoptions = [
+        ('p', 'patch', None, ''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
@@ -931,6 +932,17 @@ def stash(ui, repo, *args, **kwargs):
 
     if action == 'list':
         cmd['-l'] = None
+        if opts.get('patch'):
+            cmd['-p'] = None
+    elif action == 'show':
+        if opts.get('patch'):
+            cmd['-p'] = None
+        else:
+            cmd['--stat'] = None
+        if len(args) > 1:
+            cmd.append(args[1])
+    elif action == 'clear':
+        cmd['--cleanup'] = None
     elif action == 'drop':
         cmd['-d'] = None
         if len(args) > 1:
@@ -943,10 +955,9 @@ def stash(ui, repo, *args, **kwargs):
             cmd.append(args[1])
         if action == 'apply':
             cmd['--keep'] = None
-    elif (action == 'branch' or action == 'show' or action == 'clear'
-        or action == 'create'):
+    elif action == 'branch' or action == 'create':
         ui.status(_("note: Mercurial doesn't have equivalents to the "
-                    "git stash branch, show, clear, or create actions\n\n"))
+                    "git stash branch or create actions\n\n"))
         return
     else:
         if len(args) > 0:

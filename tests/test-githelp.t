@@ -219,6 +219,22 @@ githelp for stash drop with name
   $ hg githelp -- git stash drop xyz
   hg shelve -d xyz
 
+githelp for stash list with patch
+  $ hg githelp -- git stash list -p
+  hg shelve -l -p
+
+githelp for stash show
+  $ hg githelp -- git stash show
+  hg shelve --stat
+
+githelp for stash show with patch and name
+  $ hg githelp -- git stash show -p mystash
+  hg shelve -p mystash
+
+githelp for stash clear
+  $ hg githelp -- git stash clear
+  hg shelve --cleanup
+
 githelp for whatchanged should show deprecated message
   $ hg githelp -- whatchanged -p
   this command has been deprecated in the git project, thus isn't supported by this tool
