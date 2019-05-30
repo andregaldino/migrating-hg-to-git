@@ -930,6 +930,37 @@ Test that amend with --edit invokes editor forcibly
   $ hg parents --template "{desc}\n"
   editor should be invoked
 
+Test that amend with --no-edit avoids the editor
+------------------------------------------------
+
+  $ hg commit --amend -m "before anything happens"
+  $ hg parents --template "{desc}\n"
+  before anything happens
+  $ HGEDITOR=cat hg commit --amend --no-edit -m "editor should be suppressed"
+  $ hg parents --template "{desc}\n"
+  editor should be suppressed
+
+(We need a file change here since we won't have a message change)
+  $ cp foo foo.orig
+  $ echo hi >> foo
+FIXME: This shouldn't start the editor.
+  $ HGEDITOR=cat hg commit --amend --no-edit
+  editor should be suppressed
+  
+  
+  HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  HG: Leave message empty to abort commit.
+  HG: --
+  HG: user: test
+  HG: branch 'silliness'
+  HG: added foo
+  $ hg parents --template "{desc}\n"
+  editor should be suppressed
+  $ hg status -mar
+(Let's undo adding that "hi" so later tests don't need to be adjusted)
+  $ mv foo.orig foo
+  $ hg commit --amend --no-edit
+
 Test that "diff()" in committemplate works correctly for amending
 -----------------------------------------------------------------
 
