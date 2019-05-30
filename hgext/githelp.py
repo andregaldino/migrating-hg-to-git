@@ -192,12 +192,15 @@ def am(ui, repo, *args, **kwargs):
 def apply(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('p', 'p', int, ''),
+        ('', 'directory', '', ''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
     cmd = Command('import --no-commit')
     if (opts.get('p')):
         cmd['-p'] = opts.get('p')
+    if opts.get('directory'):
+        cmd['--prefix'] = opts.get('directory')
     cmd.extend(args)
 
     ui.status((bytes(cmd)), "\n")

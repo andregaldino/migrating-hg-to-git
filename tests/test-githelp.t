@@ -256,6 +256,10 @@ githelp for apply with directory strip custom
   $ hg githelp -- apply -p 5
   hg import --no-commit -p 5
 
+githelp for apply with prefix directory
+  $ hg githelp -- apply --directory=modules
+  hg import --no-commit --prefix modules
+
 git merge-base
   $ hg githelp -- git merge-base --is-ancestor
   ignoring unknown option --is-ancestor
