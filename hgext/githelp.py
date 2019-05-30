@@ -684,6 +684,7 @@ def mergetool(ui, repo, *args, **kwargs):
 def mv(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('f', 'force', None, ''),
+        ('n', 'dry-run', None, ''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
@@ -692,6 +693,8 @@ def mv(ui, repo, *args, **kwargs):
 
     if opts.get('force'):
         cmd['-f'] = None
+    if opts.get('dry_run'):
+        cmd['-n'] = None
 
     ui.status((bytes(cmd)), "\n")
 
