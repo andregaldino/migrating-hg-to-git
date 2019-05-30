@@ -27,13 +27,8 @@ from . import (
     util,
 )
 
-try:
-    from . import rustext
-    rustext.__name__  # force actual import (see hgdemandimport)
-except ImportError:
-    rustext = None
-
 parsers = policy.importmod(r'parsers')
+dirstatemod = policy.importrust(r'dirstate', default=parsers)
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
@@ -1468,12 +1463,7 @@ class dirstatemap(object):
         # parsing the dirstate.
         #
         # (we cannot decorate the function directly since it is in a C module)
-        if rustext is not None:
-            parse_dirstate = rustext.dirstate.parse_dirstate
-        else:
-            parse_dirstate = parsers.parse_dirstate
-
-        parse_dirstate = util.nogc(parse_dirstate)
+        parse_dirstate = util.nogc(dirstatemod.parse_dirstate)
         p = parse_dirstate(self._map, self.copymap, st)
         if not self._dirtyparents:
             self.setparents(*p)
@@ -1484,13 +1474,8 @@ class dirstatemap(object):
         self.get = self._map.get
 
     def write(self, st, now):
-        if rustext is not None:
-            pack_dirstate = rustext.dirstate.pack_dirstate
-        else:
-            pack_dirstate = parsers.pack_dirstate
-
-        st.write(pack_dirstate(self._map, self.copymap,
-                                       self.parents(), now))
+        st.write(dirstatemod.pack_dirstate(self._map, self.copymap,
+                                           self.parents(), now))
         st.close()
         self._dirtyparents = False
         self.nonnormalset, self.otherparentset = self.nonnormalentries()

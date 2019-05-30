@@ -17,6 +17,7 @@ from . import (
     encoding,
     error,
     pathutil,
+    policy,
     pycompat,
     util,
 )
@@ -24,11 +25,7 @@ from .utils import (
     stringutil,
 )
 
-try:
-    from . import rustext
-    rustext.__name__  # force actual import (see hgdemandimport)
-except ImportError:
-    rustext = None
+rustmod = policy.importrust('filepatterns')
 
 allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
                    'rootglob',
@@ -1197,14 +1194,14 @@ def _regex(kind, pat, globsuffix):
     regular expression.
     globsuffix is appended to the regexp of globs.'''
 
-    if rustext is not None:
+    if rustmod is not None:
         try:
-            return rustext.filepatterns.build_single_regex(
+            return rustmod.build_single_regex(
                 kind,
                 pat,
                 globsuffix
             )
-        except rustext.filepatterns.PatternError:
+        except rustmod.PatternError:
             raise error.ProgrammingError(
                 'not a regex pattern: %s:%s' % (kind, pat)
             )
@@ -1460,8 +1457,8 @@ def readpatternfile(filepath, warn, sourceinfo=False):
     This is useful to debug ignore patterns.
     '''
 
-    if rustext is not None:
-        result, warnings = rustext.filepatterns.read_pattern_file(
+    if rustmod is not None:
+        result, warnings = rustmod.read_pattern_file(
             filepath,
             bool(warn),
             sourceinfo,

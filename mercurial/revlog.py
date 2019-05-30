@@ -97,11 +97,8 @@ REVIDX_KNOWN_FLAGS
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
 parsers = policy.importmod(r'parsers')
-try:
-    from . import rustext
-    rustext.__name__  # force actual import (see hgdemandimport)
-except ImportError:
-    rustext = None
+rustancestor = policy.importrust(r'ancestor')
+rustdagop = policy.importrust(r'dagop')
 
 # Aliased for performance.
 _zlibdecompress = zlib.decompress
@@ -825,8 +822,8 @@ class revlog(object):
             checkrev(r)
         # and we're sure ancestors aren't filtered as well
 
-        if rustext is not None:
-            lazyancestors = rustext.ancestor.LazyAncestors
+        if rustancestor is not None:
+            lazyancestors = rustancestor.LazyAncestors
             arg = self.index
         elif util.safehasattr(parsers, 'rustlazyancestors'):
             lazyancestors = ancestor.rustlazyancestors
@@ -915,8 +912,8 @@ class revlog(object):
         if common is None:
             common = [nullrev]
 
-        if rustext is not None:
-            return rustext.ancestor.MissingAncestors(self.index, common)
+        if rustancestor is not None:
+            return rustancestor.MissingAncestors(self.index, common)
         return ancestor.incrementalmissingancestors(self.parentrevs, common)
 
     def findmissingrevs(self, common=None, heads=None):
@@ -1130,8 +1127,8 @@ class revlog(object):
                 return self.index.headrevs()
             except AttributeError:
                 return self._headrevs()
-        if rustext is not None:
-            return rustext.dagop.headrevs(self.index, revs)
+        if rustdagop is not None:
+            return rustdagop.headrevs(self.index, revs)
         return dagop.headrevs(revs, self._uncheckedparentrevs)
 
     def computephases(self, roots):
