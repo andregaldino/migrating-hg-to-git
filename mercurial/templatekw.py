@@ -573,7 +573,7 @@ def showpeerurls(context, mapping):
 
 @templatekeyword("predecessors", requires={'repo', 'ctx'})
 def showpredecessors(context, mapping):
-    """Returns the list of the closest visible successors. (EXPERIMENTAL)"""
+    """Returns the list of the closest visible predecessors. (EXPERIMENTAL)"""
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
     predecessors = sorted(obsutil.closestpredecessors(repo, ctx.node()))
