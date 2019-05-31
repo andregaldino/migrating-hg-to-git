@@ -80,7 +80,7 @@ The following header values are common:
 
 Following the 32-bit header is the remaining 60 bytes of the first index
 entry. Following that are additional *index* entries. Inlined revision
-data is possibly located between index entries. More on the this inlined
+data is possibly located between index entries. More on this inlined
 layout is described below.
 
 Version 1 Format
