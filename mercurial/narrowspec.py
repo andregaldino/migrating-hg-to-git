@@ -7,8 +7,6 @@
 
 from __future__ import absolute_import
 
-import errno
-
 from .i18n import _
 from . import (
     error,
@@ -145,15 +143,9 @@ def parseconfig(ui, spec):
     return includepats, excludepats
 
 def load(repo):
-    try:
-        spec = repo.svfs.read(FILENAME)
-    except IOError as e:
-        # Treat "narrowspec does not exist" the same as "narrowspec file exists
-        # and is empty".
-        if e.errno == errno.ENOENT:
-            return set(), set()
-        raise
-
+    # Treat "narrowspec does not exist" the same as "narrowspec file exists
+    # and is empty".
+    spec = repo.svfs.tryread(FILENAME)
     return parseconfig(repo.ui, spec)
 
 def save(repo, includepats, excludepats):
