@@ -262,6 +262,9 @@ def _writeaddedfiles(repo, pctx, files):
                        mctx=repo['.'], overwrite=False)
 
 def checkworkingcopynarrowspec(repo):
+    # Avoid infinite recursion when updating the working copy
+    if getattr(repo, '_updatingnarrowspec', False):
+        return
     storespec = repo.svfs.tryread(FILENAME)
     wcspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     if wcspec != storespec:
@@ -276,6 +279,7 @@ def updateworkingcopy(repo, assumeclean=False):
     """
     oldspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     newspec = repo.svfs.tryread(FILENAME)
+    repo._updatingnarrowspec = True
 
     oldincludes, oldexcludes = parseconfig(repo.ui, oldspec)
     newincludes, newexcludes = parseconfig(repo.ui, newspec)
@@ -305,10 +309,9 @@ def updateworkingcopy(repo, assumeclean=False):
     for f in clean + trackeddirty:
         ds.drop(f)
 
-    repo.narrowpats = newincludes, newexcludes
-    repo._narrowmatch = newmatch
     pctx = repo['.']
     newfiles = [f for f in pctx.manifest().walk(addedmatch) if f not in ds]
     for f in newfiles:
         ds.normallookup(f)
     _writeaddedfiles(repo, pctx, newfiles)
+    repo._updatingnarrowspec = False
