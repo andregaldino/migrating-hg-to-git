@@ -3991,7 +3991,7 @@ def merge(ui, repo, node=None, **opts):
     If no revision is specified, the working directory's parent is a
     head revision, and the current branch contains exactly one other
     head, the other head is merged with by default. Otherwise, an
-    explicit revision with which to merge with must be provided.
+    explicit revision with which to merge must be provided.
 
     See :hg:`help resolve` for information on handling file conflicts.
 
