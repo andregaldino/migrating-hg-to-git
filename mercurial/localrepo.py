@@ -133,10 +133,10 @@ class mixedrepostorecache(_basefilecache):
 
     def join(self, obj, fnameandlocation):
         fname, location = fnameandlocation
-        if location == '':
+        if location == 'plain':
             return obj.vfs.join(fname)
         else:
-            if location != 'store':
+            if location != '':
                 raise error.ProgrammingError('unexpected location: %s' %
                                              location)
             return obj.sjoin(fname)
@@ -1219,8 +1219,8 @@ class localrepository(object):
         cls = repoview.newtype(self.unfiltered().__class__)
         return cls(self, name, visibilityexceptions)
 
-    @mixedrepostorecache(('bookmarks', ''), ('bookmarks.current', ''),
-                         ('00changelog.i', 'store'))
+    @mixedrepostorecache(('bookmarks', 'plain'), ('bookmarks.current', 'plain'),
+                         ('00changelog.i', ''))
     def _bookmarks(self):
         return bookmarks.bmstore(self)
 
