@@ -128,8 +128,7 @@ class mixedrepostorecache(_basefilecache):
         # scmutil.filecache only uses the path for passing back into our
         # join(), so we can safely pass a list of paths and locations
         super(mixedrepostorecache, self).__init__(*pathsandlocations)
-        for path, location in pathsandlocations:
-            _cachedfiles.update(pathsandlocations)
+        _cachedfiles.update(pathsandlocations)
 
     def join(self, obj, fnameandlocation):
         fname, location = fnameandlocation
