@@ -2202,7 +2202,7 @@ def graft(repo, ctx, pctx, labels=None, keepparent=False,
     pctx - merge base, usually ctx.p1()
     labels - merge labels eg ['local', 'graft']
     keepparent - keep second parent if any
-    keepparent - if unresolved, keep parent used for the merge
+    keepconflictparent - if unresolved, keep parent used for the merge
 
     """
     # If we're grafting a descendant onto an ancestor, be sure to pass
