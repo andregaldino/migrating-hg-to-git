@@ -338,7 +338,7 @@ Show all commands + options
   resolve: all, list, mark, unmark, no-status, re-merge, tool, include, exclude, template
   revert: all, date, rev, no-backup, interactive, include, exclude, dry-run
   rollback: dry-run, force
-  root: 
+  root: template
   serve: accesslog, daemon, daemon-postexec, errorlog, port, address, prefix, name, web-conf, webdir-conf, pid-file, stdio, cmdserver, templates, style, ipv6, certificate, print-url, subrepos
   status: all, modified, added, removed, deleted, clean, unknown, ignored, no-status, terse, copies, print0, rev, change, include, exclude, subrepos, template
   summary: remote

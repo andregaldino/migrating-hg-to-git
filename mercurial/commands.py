@@ -5225,16 +5225,19 @@ def rollback(ui, repo, **opts):
                          force=opts.get(r'force'))
 
 @command(
-    'root', [], intents={INTENT_READONLY},
+    'root', [] + formatteropts, intents={INTENT_READONLY},
     helpcategory=command.CATEGORY_WORKING_DIRECTORY)
-def root(ui, repo):
+def root(ui, repo, **opts):
     """print the root (top) of the current working directory
 
     Print the root directory of the current repository.
 
     Returns 0 on success.
     """
-    ui.write(repo.root + "\n")
+    opts = pycompat.byteskwargs(opts)
+    with ui.formatter('root', opts) as fm:
+        fm.startitem()
+        fm.write('reporoot', '%s\n', repo.root)
 
 @command('serve',
     [('A', 'accesslog', '', _('name of access log file to write to'),
