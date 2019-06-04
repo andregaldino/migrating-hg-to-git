@@ -5232,12 +5232,23 @@ def root(ui, repo, **opts):
 
     Print the root directory of the current repository.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :hgpath:    String. Path to the .hg directory.
+      :storepath: String. Path to the directory holding versioned data.
+
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
     with ui.formatter('root', opts) as fm:
         fm.startitem()
         fm.write('reporoot', '%s\n', repo.root)
+        fm.data(hgpath=repo.path, storepath=repo.spath)
 
 @command('serve',
     [('A', 'accesslog', '', _('name of access log file to write to'),

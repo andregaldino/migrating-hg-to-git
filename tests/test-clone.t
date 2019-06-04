@@ -719,6 +719,14 @@ Test clone from the repository in (emulated) revlog format 0 (issue4203):
   $ hg -R src debugrevlog -c | egrep 'format|flags'
   format : 0
   flags  : (none)
+  $ hg root -R src -T json | sed 's|\\\\|\\|g'
+  [
+   {
+    "hgpath": "$TESTTMP/src/.hg",
+    "reporoot": "$TESTTMP/src",
+    "storepath": "$TESTTMP/src/.hg"
+   }
+  ]
   $ hg clone -U -q src dst
   $ hg -R dst log -q
   0:e1bab28bca43

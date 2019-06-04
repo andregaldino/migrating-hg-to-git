@@ -101,7 +101,9 @@ Repository root:
   $ hg root -Tjson | sed 's|\\\\|\\|g'
   [
    {
-    "reporoot": "$TESTTMP/t"
+    "hgpath": "$TESTTMP/t/.hg",
+    "reporoot": "$TESTTMP/t",
+    "storepath": "$TESTTMP/t/.hg/store"
    }
   ]
 

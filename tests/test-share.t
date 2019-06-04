@@ -21,6 +21,14 @@ share shouldn't have a store dir
   $ cd repo2
   $ test -d .hg/store
   [1]
+  $ hg root -Tjson | sed 's|\\\\|\\|g'
+  [
+   {
+    "hgpath": "$TESTTMP/repo2/.hg",
+    "reporoot": "$TESTTMP/repo2",
+    "storepath": "$TESTTMP/repo1/.hg/store"
+   }
+  ]
 
 share shouldn't have a full cache dir, original repo should
 
