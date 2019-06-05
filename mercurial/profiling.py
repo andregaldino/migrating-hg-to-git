@@ -147,6 +147,8 @@ def statprofile(ui, fp):
             # inconsistent config: profiling.showmin
             limit = ui.configwith(fraction, 'profiling', 'showmin', 0.05)
             kwargs[r'limit'] = limit
+            showtime = ui.configbool('profiling', 'showtime')
+            kwargs[r'showtime'] = showtime
 
         statprof.display(fp, data=data, format=displayformat, **kwargs)
 

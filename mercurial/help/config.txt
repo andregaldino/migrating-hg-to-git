@@ -1780,6 +1780,11 @@ statistical text report generated from the profiling data.
 
     The option is unused on other formats.
 
+``showtime``
+    Show time taken as absolute durations, in addition to percentages.
+    Only used by the ``hotpath`` format.
+    (default: true)
+
 ``progress``
 ------------
 

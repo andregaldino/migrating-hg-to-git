@@ -947,6 +947,9 @@ coreconfigitem('profiling', 'showmax',
 coreconfigitem('profiling', 'showmin',
     default=dynamicdefault,
 )
+coreconfigitem('profiling', 'showtime',
+    default=True,
+)
 coreconfigitem('profiling', 'sort',
     default='inlinetime',
 )
