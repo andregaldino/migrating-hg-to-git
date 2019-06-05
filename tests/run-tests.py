@@ -3182,7 +3182,7 @@ class TestRunner(object):
         assert os.path.dirname(self._bindir) == self._installdir
         assert self._hgroot, 'must be called after _installhg()'
         cmd = (b'"%(make)s" clean install PREFIX="%(prefix)s"'
-               % {b'make': 'make',  # TODO: switch by option or environment?
+               % {b'make': b'make',  # TODO: switch by option or environment?
                   b'prefix': self._installdir})
         cwd = os.path.join(self._hgroot, b'contrib', b'chg')
         vlog("# Running", cmd)
