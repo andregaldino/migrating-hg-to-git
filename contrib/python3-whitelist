@@ -233,6 +233,7 @@ test-filecache.py
 test-filelog.py
 test-fileset-generated.t
 test-fileset.t
+test-fix-metadata.t
 test-fix-topology.t
 test-fix.t
 test-flagprocessor.t

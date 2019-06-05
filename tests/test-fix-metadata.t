@@ -5,9 +5,9 @@ below.
 
   $ cat >> $TESTTMP/postfixhook.py <<EOF
   > import collections
-  > def file(ui, repo, rev=None, path='', metadata=None, **kwargs):
-  >   ui.status('fixed %s in revision %d using %s\n' %
-  >             (path, rev, ', '.join(metadata.keys())))
+  > def file(ui, repo, rev=None, path=b'', metadata=None, **kwargs):
+  >   ui.status(b'fixed %s in revision %d using %s\n' %
+  >             (path, rev, b', '.join(metadata.keys())))
   > def summarize(ui, repo, replacements=None, wdirwritten=False,
   >               metadata=None, **kwargs):
   >     counts = collections.defaultdict(int)
@@ -19,13 +19,13 @@ below.
   >             counts[fixername] += 1
   >             if 'key' in metadata:
   >                 keys += 1
-  >     ui.status('saw "key" %d times\n' % (keys,))
+  >     ui.status(b'saw "key" %d times\n' % (keys,))
   >     for name, count in sorted(counts.items()):
-  >         ui.status('fixed %d files with %s\n' % (count, name))
+  >         ui.status(b'fixed %d files with %s\n' % (count, name))
   >     if replacements:
-  >         ui.status('fixed %d revisions\n' % (len(replacements),))
+  >         ui.status(b'fixed %d revisions\n' % (len(replacements),))
   >     if wdirwritten:
-  >         ui.status('fixed the working copy\n')
+  >         ui.status(b'fixed the working copy\n')
   > EOF
 
 Some mock output for fixer tools that demonstrate what could go wrong with
