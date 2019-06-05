@@ -36,6 +36,7 @@ test-bisect2.t
 test-bisect3.t
 test-blackbox.t
 test-bookflow.t
+test-bookmarks-corner-case.t
 test-bookmarks-current.t
 test-bookmarks-merge.t
 test-bookmarks-pushpull.t

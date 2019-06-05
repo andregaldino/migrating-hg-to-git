@@ -122,7 +122,7 @@ We build a server side extension for this purpose
   > from mercurial import bookmarks, error, extensions
   > def wrapinit(orig, self, repo):
   >     if not os.path.exists('push-A-started'):
-  >         print('setting raced push up')
+  >         repo.ui.status(b'setting raced push up\n')
   >         with open('push-A-started', 'w'):
   >             pass
   >     clock = 300
