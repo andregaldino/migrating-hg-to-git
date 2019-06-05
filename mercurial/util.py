@@ -53,6 +53,8 @@ from .utils import (
     stringutil,
 )
 
+rustdirs = policy.importrust('dirstate', 'Dirs')
+
 base85 = policy.importmod(r'base85')
 osutil = policy.importmod(r'osutil')
 parsers = policy.importmod(r'parsers')
@@ -3203,6 +3205,9 @@ class dirs(object):
 
 if safehasattr(parsers, 'dirs'):
     dirs = parsers.dirs
+
+if rustdirs is not None:
+    dirs = rustdirs
 
 def finddirs(path):
     pos = path.rfind('/')
