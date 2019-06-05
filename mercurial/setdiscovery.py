@@ -242,13 +242,13 @@ class partialdiscovery(object):
 
         # update from roots
         revsroots = set(repo.revs('roots(%ld)', revs))
-        if not self._respectsize:
-            size = max(size, len(revsroots))
-
         childrenrevs = self._childrengetter()
-
         _updatesample(revs, revsroots, sample, childrenrevs)
         assert sample
+
+        if not self._respectsize:
+            size = max(size, min(len(revsroots), len(revsheads)))
+
         sample = _limitsample(sample, size)
         if len(sample) < size:
             more = size - len(sample)
