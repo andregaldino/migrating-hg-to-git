@@ -200,9 +200,11 @@ pub fn build_single_regex(
 ) -> Result<Vec<u8>, PatternError> {
     let enum_kind = parse_pattern_syntax(kind)?;
     if enum_kind == PatternSyntax::RootGlob
-        && pat.iter().all(|b| GLOB_SPECIAL_CHARACTERS.contains(b))
+        && !pat.iter().any(|b| GLOB_SPECIAL_CHARACTERS.contains(b))
     {
-        Ok(pat.to_vec())
+        let mut escaped = escape_pattern(pat);
+        escaped.extend(b"(?:/|$)");
+        Ok(escaped)
     } else {
         Ok(_build_single_regex(enum_kind, pat, globsuffix))
     }
@@ -349,6 +351,22 @@ mod tests {
         assert_eq!(
             parse_pattern_file_contents(lines, b"file_path", false).0,
             vec![(b"relglob:**.o".to_vec(), 1, b"**.o".to_vec())]
+        );
+    }
+
+    #[test]
+    fn test_build_single_regex_shortcut() {
+        assert_eq!(
+            br"(?:/|$)".to_vec(),
+            build_single_regex(b"rootglob", b"", b"").unwrap()
+        );
+        assert_eq!(
+            br"whatever(?:/|$)".to_vec(),
+            build_single_regex(b"rootglob", b"whatever", b"").unwrap()
+        );
+        assert_eq!(
+            br"[^/]*\.o".to_vec(),
+            build_single_regex(b"rootglob", b"*.o", b"").unwrap()
         );
     }
 }
