@@ -25,7 +25,9 @@ Check that copies are recorded correctly
   $ hg ci -m 'copy a to b, c, and d'
   $ hg changesetcopies
   files: b c d
-  filesadded: 0\x001\x002 (esc)
+  filesadded: 0
+  1
+  2
   
   p1copies: 0\x00a (esc)
   1\x00a (esc)
@@ -95,7 +97,9 @@ File 'f' exists only in p1, so 'i' should be from p1
   $ hg ci -m 'merge'
   $ hg changesetcopies
   files: g h i
-  filesadded: 0\x001\x002 (esc)
+  filesadded: 0
+  1
+  2
   
   p1copies: 0\x00a (esc)
   2\x00f (esc)

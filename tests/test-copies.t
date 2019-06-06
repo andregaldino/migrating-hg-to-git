@@ -620,7 +620,7 @@ merging csets is a descendant of the base.
 
   $ hg rebase -r . -d 2 -t :other
   rebasing 5:5018b1509e94 "added willconflict and d" (tip) (no-changeset !)
-  rebasing 5:619047c26bf8 "added willconflict and d" (tip) (changeset !)
+  rebasing 5:af8d273bf580 "added willconflict and d" (tip) (changeset !)
 
   $ hg up 3 -q
   $ hg l --hidden
@@ -644,4 +644,4 @@ neither of the merging csets will be a descendant of the base revision:
 
   $ hg graft -r 6 --base 4 --hidden -t :other
   grafting 6:99802e4f1e46 "added willconflict and d" (tip) (no-changeset !)
-  grafting 6:9ddc6fb3b691 "added willconflict and d" (tip) (changeset !)
+  grafting 6:b19f0df72728 "added willconflict and d" (tip) (changeset !)

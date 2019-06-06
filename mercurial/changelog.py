@@ -109,12 +109,12 @@ def encodefileindices(files, subset):
     for i, f in enumerate(files):
         if f in subset:
             indices.append('%d' % i)
-    return '\0'.join(indices)
+    return '\n'.join(indices)
 
 def decodefileindices(files, data):
     try:
         subset = []
-        for strindex in data.split('\0'):
+        for strindex in data.split('\n'):
             i = int(strindex)
             if i < 0 or i >= len(files):
                 return None
