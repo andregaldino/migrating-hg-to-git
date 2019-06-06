@@ -11,14 +11,10 @@
 //! and can be used as replacement for the the pure `filepatterns` Python module.
 //!
 use cpython::{
-    exc, PyDict, PyErr, PyModule, PyResult, PyString, PyTuple, Python,
-    ToPyObject,
+    PyBytes, PyDict, PyModule, PyObject, PyResult, PyTuple, Python, ToPyObject,
 };
-use hg::{build_single_regex, read_pattern_file, PatternTuple};
-use exceptions::{
-    PatternError,
-    PatternFileError,
-};
+use exceptions::{PatternError, PatternFileError};
+use hg::{build_single_regex, read_pattern_file, LineNumber, PatternTuple};
 
 /// Rust does not like functions with different return signatures.
 /// The 3-tuple version is always returned by the hg-core function,
@@ -32,17 +28,22 @@ use exceptions::{
 /// for more details.
 fn read_pattern_file_wrapper(
     py: Python,
-    file_path: String,
+    file_path: PyObject,
     warn: bool,
     source_info: bool,
 ) -> PyResult<PyTuple> {
-    match read_pattern_file(file_path, warn) {
+    match read_pattern_file(file_path.extract::<PyBytes>(py)?.data(py), warn) {
         Ok((patterns, warnings)) => {
             if source_info {
-                return Ok((patterns, warnings).to_py_object(py));
+                let itemgetter = |x: &PatternTuple| {
+                    (PyBytes::new(py, &x.0), x.1, PyBytes::new(py, &x.2))
+                };
+                let results: Vec<(PyBytes, LineNumber, PyBytes)> =
+                    patterns.iter().map(itemgetter).collect();
+                return Ok((results, warnings).to_py_object(py));
             }
-            let itemgetter = |x: &PatternTuple| x.0.to_py_object(py);
-            let results: Vec<PyString> =
+            let itemgetter = |x: &PatternTuple| PyBytes::new(py, &x.0);
+            let results: Vec<PyBytes> =
                 patterns.iter().map(itemgetter).collect();
             Ok((results, warnings).to_py_object(py))
         }
@@ -52,22 +53,16 @@ fn read_pattern_file_wrapper(
 
 fn build_single_regex_wrapper(
     py: Python,
-    kind: String,
-    pat: String,
-    globsuffix: String,
-) -> PyResult<PyString> {
+    kind: PyObject,
+    pat: PyObject,
+    globsuffix: PyObject,
+) -> PyResult<PyBytes> {
     match build_single_regex(
-        kind.as_ref(),
-        pat.as_bytes(),
-        globsuffix.as_bytes(),
+        kind.extract::<PyBytes>(py)?.data(py),
+        pat.extract::<PyBytes>(py)?.data(py),
+        globsuffix.extract::<PyBytes>(py)?.data(py),
     ) {
-        Ok(regex) => match String::from_utf8(regex) {
-            Ok(regex) => Ok(regex.to_py_object(py)),
-            Err(e) => Err(PyErr::new::<exc::UnicodeDecodeError, _>(
-                py,
-                e.to_string(),
-            )),
-        },
+        Ok(regex) => Ok(PyBytes::new(py, &regex)),
         Err(e) => Err(PatternError::pynew(py, e)),
     }
 }
@@ -88,9 +83,9 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
         py_fn!(
             py,
             build_single_regex_wrapper(
-                kind: String,
-                pat: String,
-                globsuffix: String
+                kind: PyObject,
+                pat: PyObject,
+                globsuffix: PyObject
             )
         ),
     )?;
@@ -100,13 +95,13 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
         py_fn!(
             py,
             read_pattern_file_wrapper(
-                file_path: String,
+                file_path: PyObject,
                 warn: bool,
                 source_info: bool
             )
         ),
     )?;
-
+    m.add(py, "PatternError", py.get_type::<PatternError>())?;
     let sys = PyModule::import(py, "sys")?;
     let sys_modules: PyDict = sys.get(py, "modules")?.extract(py)?;
     sys_modules.set_item(py, dotted_name, &m)?;

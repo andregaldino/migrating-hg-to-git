@@ -1,9 +1,11 @@
 use crate::{LineNumber, PatternError, PatternFileError};
-use regex::Regex;
+use regex::bytes::Regex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::vec::Vec;
+use utils::files::get_path_from_bytes;
+use utils::{replace_slice, SliceExt};
 
 lazy_static! {
     static ref reescape: Vec<Vec<u8>> = {
@@ -192,11 +194,11 @@ const GLOB_SPECIAL_CHARACTERS: [u8; 7] =
 /// Wrapper function to `_build_single_regex` that short-circuits 'exact' globs
 /// that don't need to be transformed into a regex.
 pub fn build_single_regex(
-    kind: &str,
+    kind: &[u8],
     pat: &[u8],
     globsuffix: &[u8],
 ) -> Result<Vec<u8>, PatternError> {
-    let enum_kind = parse_pattern_syntax(kind.as_bytes())?;
+    let enum_kind = parse_pattern_syntax(kind)?;
     if enum_kind == PatternSyntax::RootGlob
         && pat.iter().all(|b| GLOB_SPECIAL_CHARACTERS.contains(b))
     {
@@ -207,43 +209,42 @@ pub fn build_single_regex(
 }
 
 lazy_static! {
-    static ref SYNTAXES: HashMap<&'static str, &'static str> = {
+    static ref SYNTAXES: HashMap<&'static [u8], &'static [u8]> = {
         let mut m = HashMap::new();
 
-        m.insert("re", "relre:");
-        m.insert("regexp", "relre:");
-        m.insert("glob", "relglob:");
-        m.insert("rootglob", "rootglob:");
-        m.insert("include", "include");
-        m.insert("subinclude", "subinclude");
+        m.insert(b"re".as_ref(), b"relre:".as_ref());
+        m.insert(b"regexp".as_ref(), b"relre:".as_ref());
+        m.insert(b"glob".as_ref(), b"relglob:".as_ref());
+        m.insert(b"rootglob".as_ref(), b"rootglob:".as_ref());
+        m.insert(b"include".as_ref(), b"include".as_ref());
+        m.insert(b"subinclude".as_ref(), b"subinclude".as_ref());
         m
     };
 }
 
-pub type PatternTuple = (String, LineNumber, String);
+pub type PatternTuple = (Vec<u8>, LineNumber, Vec<u8>);
 type WarningTuple = (String, String);
 
 pub fn parse_pattern_file_contents(
-    lines: &str,
-    file_path: &str,
+    lines: &[u8],
+    file_path: &[u8],
     warn: bool,
 ) -> (Vec<PatternTuple>, Vec<WarningTuple>) {
     let comment_regex = Regex::new(r"((?:^|[^\\])(?:\\\\)*)#.*").unwrap();
     let mut inputs: Vec<PatternTuple> = vec![];
     let mut warnings: Vec<WarningTuple> = vec![];
 
-    let mut current_syntax = "relre:";
+    let mut current_syntax = b"relre:".as_ref();
 
-    let mut line = String::new();
-    for (line_number, line_str) in lines.split('\n').enumerate() {
+    for (line_number, mut line) in lines.split(|c| *c == b'\n').enumerate() {
         let line_number = line_number + 1;
-        line.replace_range(.., line_str);
 
-        if line.contains('#') {
-            if let Some(cap) = comment_regex.captures(line.clone().as_ref()) {
-                line = line[..cap.get(1).unwrap().end()].to_string()
+        if line.contains(&('#' as u8)) {
+            if let Some(cap) = comment_regex.captures(line) {
+                line = &line[..cap.get(1).unwrap().end()]
             }
-            line = line.replace(r"\#", "#");
+            let mut line = line.to_owned();
+            replace_slice(&mut line, br"\#", b"#");
         }
 
         let mut line = line.trim_end();
@@ -252,25 +253,28 @@ pub fn parse_pattern_file_contents(
             continue;
         }
 
-        if line.starts_with("syntax:") {
-            let syntax = line["syntax:".len()..].trim();
+        if line.starts_with(b"syntax:") {
+            let syntax = line[b"syntax:".len()..].trim();
 
             if let Some(rel_syntax) = SYNTAXES.get(syntax) {
                 current_syntax = rel_syntax;
             } else if warn {
-                warnings.push((file_path.to_string(), syntax.to_string()));
+                warnings.push((
+                    String::from_utf8_lossy(file_path).to_string(),
+                    String::from_utf8_lossy(syntax).to_string(),
+                ));
             }
             continue;
         }
 
-        let mut line_syntax: &str = &current_syntax;
+        let mut line_syntax: &[u8] = &current_syntax;
 
         for (s, rels) in SYNTAXES.iter() {
             if line.starts_with(rels) {
                 line_syntax = rels;
                 line = &line[rels.len()..];
                 break;
-            } else if line.starts_with(&format!("{}:", s)) {
+            } else if line.starts_with(&[s, b":".as_ref()].concat()) {
                 line_syntax = rels;
                 line = &line[s.len() + 1..];
                 break;
@@ -278,24 +282,24 @@ pub fn parse_pattern_file_contents(
         }
 
         inputs.push((
-            format!("{}{}", line_syntax, line),
+            [line_syntax, line].concat(),
             line_number,
-            line.to_string(),
+            line.to_owned(),
         ));
     }
     (inputs, warnings)
 }
 
 pub fn read_pattern_file(
-    file_path: String,
+    file_path: &[u8],
     warn: bool,
 ) -> Result<(Vec<PatternTuple>, Vec<WarningTuple>), PatternFileError> {
-    let mut f = File::open(&file_path)?;
-    let mut contents = String::new();
+    let mut f = File::open(get_path_from_bytes(file_path))?;
+    let mut contents = Vec::new();
 
-    f.read_to_string(&mut contents)?;
+    f.read_to_end(&mut contents)?;
 
-    Ok(parse_pattern_file_contents(&contents, &file_path, warn))
+    Ok(parse_pattern_file_contents(&contents, file_path, warn))
 }
 
 #[cfg(test)]
@@ -328,18 +332,23 @@ mod tests {
 
     #[test]
     fn test_parse_pattern_file_contents() {
-        let lines = "syntax: glob\n*.elc";
+        let lines = b"syntax: glob\n*.elc";
 
         assert_eq!(
-            vec![("relglob:*.elc".to_string(), 2, "*.elc".to_string())],
-            parse_pattern_file_contents(lines, "file_path", false).0,
+            vec![(b"relglob:*.elc".to_vec(), 2, b"*.elc".to_vec())],
+            parse_pattern_file_contents(lines, b"file_path", false).0,
         );
 
-        let lines = "syntax: include\nsyntax: glob";
+        let lines = b"syntax: include\nsyntax: glob";
 
         assert_eq!(
-            parse_pattern_file_contents(lines, "file_path", false).0,
+            parse_pattern_file_contents(lines, b"file_path", false).0,
             vec![]
+        );
+        let lines = b"glob:**.o";
+        assert_eq!(
+            parse_pattern_file_contents(lines, b"file_path", false).0,
+            vec![(b"relglob:**.o".to_vec(), 1, b"**.o".to_vec())]
         );
     }
 }

@@ -19,6 +19,7 @@ pub use dirstate::{
     CopyVec, CopyVecEntry, DirstateEntry, DirstateParents, DirstateVec,
 };
 mod filepatterns;
+mod utils;
 
 pub use filepatterns::{
     build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
