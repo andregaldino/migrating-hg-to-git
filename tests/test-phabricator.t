@@ -118,4 +118,17 @@ Template keywords
   1 https://phab.mercurial-scm.org/D1191 D1191
   0 https://phab.mercurial-scm.org/D1190 D1190
 
+Commenting when phabsending:
+  $ echo comment > comment
+  $ hg ci --addremove -m "create comment for phabricator test"
+  adding comment
+  $ hg phabsend -r . -m "For default branch" --test-vcr "$VCR/phabsend-comment-created.json"
+  D1253 - created - a7ee4bac036a: create comment for phabricator test
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/a7ee4bac036a-8009b5a0-phabsend.hg
+  $ echo comment2 >> comment
+  $ hg ci --amend
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/81fce7de1b7d-05339e5b-amend.hg
+  $ hg phabsend -r . -m "Address review comments" --test-vcr "$VCR/phabsend-comment-updated.json"
+  D1253 - updated - 1acd4b60af38: create comment for phabricator test
+
   $ cd ..

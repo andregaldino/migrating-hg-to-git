@@ -416,7 +416,7 @@ def writediffproperties(ctx, diff):
     callconduit(ctx.repo(), b'differential.setdiffproperty', params)
 
 def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
-                               olddiff=None, actions=None):
+                               olddiff=None, actions=None, comment=None):
     """create or update a Differential Revision
 
     If revid is None, create a new Differential Revision, otherwise update
@@ -439,6 +439,8 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
     if neednewdiff:
         diff = creatediff(ctx)
         transactions.append({b'type': b'update', b'value': diff[b'phid']})
+        if comment:
+            transactions.append({b'type': b'comment', b'value': comment})
     else:
         # Even if we don't need to upload a new diff because the patch content
         # does not change. We might still need to update its metadata so
@@ -497,6 +499,8 @@ def userphids(repo, names):
          [(b'r', b'rev', [], _(b'revisions to send'), _(b'REV')),
           (b'', b'amend', True, _(b'update commit messages')),
           (b'', b'reviewer', [], _(b'specify reviewers')),
+          (b'm', b'comment', b'',
+           _(b'add a comment to Revisions with new/updated Diffs')),
           (b'', b'confirm', None, _(b'ask for confirmation before sending'))],
          _(b'REV [OPTIONS]'),
          helpcategory=command.CATEGORY_IMPORT_EXPORT)
@@ -567,7 +571,8 @@ def phabsend(ui, repo, *revs, **opts):
         if oldnode != ctx.node() or opts.get(b'amend'):
             # Create or update Differential Revision
             revision, diff = createdifferentialrevision(
-                ctx, revid, lastrevid, oldnode, olddiff, actions)
+                ctx, revid, lastrevid, oldnode, olddiff, actions,
+                opts.get(b'comment'))
             diffmap[ctx.node()] = diff
             newrevid = int(revision[b'object'][b'id'])
             if revid:
