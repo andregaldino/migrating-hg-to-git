@@ -48,6 +48,7 @@ from mercurial import (
     registrar,
     repair,
     scmutil,
+    state as statemod,
     templatefilters,
     util,
     vfs as vfsmod,
@@ -1139,9 +1140,10 @@ def shelvecmd(ui, repo, *pats, **opts):
         return createcmd(ui, repo, pats, opts)
 
 def extsetup(ui):
-    cmdutil.unfinishedstates.append(
+    statemod.unfinishedstates.append(
         [shelvedstate._filename, False, False,
          _('unshelve already in progress'),
          _("use 'hg unshelve --continue' or 'hg unshelve --abort'")])
     cmdutil.afterresolvedstates.append(
         [shelvedstate._filename, _('hg unshelve --continue')])
+

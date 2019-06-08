@@ -35,6 +35,7 @@ from mercurial import (
     revset,
     scmutil,
     smartset,
+    state as statemod,
     util,
     vfs as vfsmod,
 )
@@ -757,7 +758,7 @@ def kwtransplanted(context, mapping):
     return n and nodemod.hex(n) or ''
 
 def extsetup(ui):
-    cmdutil.unfinishedstates.append(
+    statemod.unfinishedstates.append(
         ['transplant/journal', True, False, _('transplant in progress'),
          _("use 'hg transplant --continue' or 'hg update' to abort")])
 

@@ -6148,7 +6148,6 @@ def update(ui, repo, node=None, **opts):
 
     with repo.wlock():
         cmdutil.clearunfinished(repo)
-
         if date:
             rev = cmdutil.finddate(ui, repo, date)
 

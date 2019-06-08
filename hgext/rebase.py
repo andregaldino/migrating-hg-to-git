@@ -1950,7 +1950,7 @@ def uisetup(ui):
     entry[1].append(('t', 'tool', '',
                      _("specify merge tool for rebase")))
     cmdutil.summaryhooks.add('rebase', summaryhook)
-    cmdutil.unfinishedstates.append(
+    statemod.unfinishedstates.append(
         ['rebasestate', False, False, _('rebase in progress'),
          _("use 'hg rebase --continue' or 'hg rebase --abort'")])
     cmdutil.afterresolvedstates.append(

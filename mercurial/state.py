@@ -19,6 +19,8 @@ the data.
 
 from __future__ import absolute_import
 
+from .i18n import _
+
 from . import (
     error,
     util,
@@ -85,3 +87,14 @@ class cmdstate(object):
     def exists(self):
         """check whether the state file exists or not"""
         return self._repo.vfs.exists(self.fname)
+
+# A list of state files kept by multistep operations like graft.
+# Since graft cannot be aborted, it is considered 'clearable' by update.
+# note: bisect is intentionally excluded
+# (state file, clearable, allowcommit, error, hint)
+unfinishedstates = [
+    ('graftstate', True, False, _('graft in progress'),
+     _("use 'hg graft --continue' or 'hg graft --stop' to stop")),
+    ('updatestate', True, False, _('last update was interrupted'),
+     _("use 'hg update' to get a consistent checkout"))
+    ]

@@ -42,6 +42,7 @@ from . import (
     rewriteutil,
     scmutil,
     smartset,
+    state as statemod,
     subrepoutil,
     templatekw,
     templater,
@@ -3313,17 +3314,6 @@ summaryhooks = util.hooks()
 #  - (desturl,   destbranch,   destpeer,   outgoing)
 summaryremotehooks = util.hooks()
 
-# A list of state files kept by multistep operations like graft.
-# Since graft cannot be aborted, it is considered 'clearable' by update.
-# note: bisect is intentionally excluded
-# (state file, clearable, allowcommit, error, hint)
-unfinishedstates = [
-    ('graftstate', True, False, _('graft in progress'),
-     _("use 'hg graft --continue' or 'hg graft --stop' to stop")),
-    ('updatestate', True, False, _('last update was interrupted'),
-     _("use 'hg update' to get a consistent checkout"))
-    ]
-
 def checkunfinished(repo, commit=False):
     '''Look for an unfinished multistep operation, like graft, and abort
     if found. It's probably good to check this right before
@@ -3331,13 +3321,13 @@ def checkunfinished(repo, commit=False):
     '''
     # Check for non-clearable states first, so things like rebase will take
     # precedence over update.
-    for f, clearable, allowcommit, msg, hint in unfinishedstates:
+    for f, clearable, allowcommit, msg, hint in statemod.unfinishedstates:
         if clearable or (commit and allowcommit):
             continue
         if repo.vfs.exists(f):
             raise error.Abort(msg, hint=hint)
 
-    for f, clearable, allowcommit, msg, hint in unfinishedstates:
+    for f, clearable, allowcommit, msg, hint in statemod.unfinishedstates:
         if not clearable or (commit and allowcommit):
             continue
         if repo.vfs.exists(f):
@@ -3347,10 +3337,10 @@ def clearunfinished(repo):
     '''Check for unfinished operations (as above), and clear the ones
     that are clearable.
     '''
-    for f, clearable, allowcommit, msg, hint in unfinishedstates:
+    for f, clearable, allowcommit, msg, hint in statemod.unfinishedstates:
         if not clearable and repo.vfs.exists(f):
             raise error.Abort(msg, hint=hint)
-    for f, clearable, allowcommit, msg, hint in unfinishedstates:
+    for f, clearable, allowcommit, msg, hint in statemod.unfinishedstates:
         if clearable and repo.vfs.exists(f):
             util.unlink(repo.vfs.join(f))
 
