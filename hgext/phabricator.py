@@ -210,15 +210,15 @@ def readurltoken(ui):
 
     return url, token
 
-def callconduit(repo, name, params):
+def callconduit(ui, name, params):
     """call Conduit API, params is a dict. return json.loads result, or None"""
-    host, token = readurltoken(repo.ui)
+    host, token = readurltoken(ui)
     url, authinfo = util.url(b'/'.join([host, b'api', name])).authinfo()
-    repo.ui.debug(b'Conduit Call: %s %s\n' % (url, pycompat.byterepr(params)))
+    ui.debug(b'Conduit Call: %s %s\n' % (url, pycompat.byterepr(params)))
     params = params.copy()
     params[b'api.token'] = token
     data = urlencodenested(params)
-    curlcmd = repo.ui.config(b'phabricator', b'curlcmd')
+    curlcmd = ui.config(b'phabricator', b'curlcmd')
     if curlcmd:
         sin, sout = procutil.popen2(b'%s -d @- %s'
                                     % (curlcmd, procutil.shellquote(url)))
@@ -226,11 +226,11 @@ def callconduit(repo, name, params):
         sin.close()
         body = sout.read()
     else:
-        urlopener = urlmod.opener(repo.ui, authinfo)
+        urlopener = urlmod.opener(ui, authinfo)
         request = util.urlreq.request(pycompat.strurl(url), data=data)
         with contextlib.closing(urlopener.open(request)) as rsp:
             body = rsp.read()
-    repo.ui.debug(b'Conduit Response: %s\n' % body)
+    ui.debug(b'Conduit Response: %s\n' % body)
     parsed = pycompat.rapply(
         lambda x: encoding.unitolocal(x) if isinstance(x, pycompat.unicode)
         else x,
@@ -259,7 +259,7 @@ def debugcallconduit(ui, repo, name):
     # json.dumps only accepts unicode strings
     result = pycompat.rapply(lambda x:
         encoding.unifromlocal(x) if isinstance(x, bytes) else x,
-        callconduit(repo, name, params)
+        callconduit(ui, name, params)
     )
     s = json.dumps(result, sort_keys=True, indent=2, separators=(u',', u': '))
     ui.write(b'%s\n' % encoding.unitolocal(s))
@@ -273,7 +273,7 @@ def getrepophid(repo):
     callsign = repo.ui.config(b'phabricator', b'callsign')
     if not callsign:
         return None
-    query = callconduit(repo, b'diffusion.repository.search',
+    query = callconduit(repo.ui, b'diffusion.repository.search',
                         {b'constraints': {b'callsigns': [callsign]}})
     if len(query[b'data']) == 0:
         return None
@@ -329,7 +329,7 @@ def getoldnodedrevmap(repo, nodelist):
     # Phabricator, and expect precursors overlap with it.
     if toconfirm:
         drevs = [drev for force, precs, drev in toconfirm.values()]
-        alldiffs = callconduit(unfi, b'differential.querydiffs',
+        alldiffs = callconduit(unfi.ui, b'differential.querydiffs',
                                {b'revisionIDs': drevs})
         getnode = lambda d: bin(
             getdiffmeta(d).get(b'node', b'')) or None
@@ -379,7 +379,7 @@ def creatediff(ctx):
     params = {b'diff': getdiff(ctx, mdiff.diffopts(git=True, context=32767))}
     if repophid:
         params[b'repositoryPHID'] = repophid
-    diff = callconduit(repo, b'differential.createrawdiff', params)
+    diff = callconduit(repo.ui, b'differential.createrawdiff', params)
     if not diff:
         raise error.Abort(_(b'cannot create diff for %s') % ctx)
     return diff
@@ -397,7 +397,7 @@ def writediffproperties(ctx, diff):
             b'parent': ctx.p1().hex(),
         }),
     }
-    callconduit(ctx.repo(), b'differential.setdiffproperty', params)
+    callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
 
     params = {
         b'diff_id': diff[b'id'],
@@ -413,7 +413,7 @@ def writediffproperties(ctx, diff):
             },
         }),
     }
-    callconduit(ctx.repo(), b'differential.setdiffproperty', params)
+    callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
 
 def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
                                olddiff=None, actions=None, comment=None):
@@ -463,7 +463,7 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
 
     # Parse commit message and update related fields.
     desc = ctx.description()
-    info = callconduit(repo, b'differential.parsecommitmessage',
+    info = callconduit(repo.ui, b'differential.parsecommitmessage',
                        {b'corpus': desc})
     for k, v in info[b'fields'].items():
         if k in [b'title', b'summary', b'testPlan']:
@@ -474,7 +474,7 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
         # Update an existing Differential Revision
         params[b'objectIdentifier'] = revid
 
-    revision = callconduit(repo, b'differential.revision.edit', params)
+    revision = callconduit(repo.ui, b'differential.revision.edit', params)
     if not revision:
         raise error.Abort(_(b'cannot create revision for %s') % ctx)
 
@@ -484,7 +484,7 @@ def userphids(repo, names):
     """convert user names to PHIDs"""
     names = [name.lower() for name in names]
     query = {b'constraints': {b'usernames': names}}
-    result = callconduit(repo, b'user.search', query)
+    result = callconduit(repo.ui, b'user.search', query)
     # username not found is not an error of the API. So check if we have missed
     # some names here.
     data = result[b'data']
@@ -609,7 +609,7 @@ def phabsend(ui, repo, *revs, **opts):
     # Update commit messages and remove tags
     if opts.get(b'amend'):
         unfi = repo.unfiltered()
-        drevs = callconduit(repo, b'differential.query', {b'ids': drevids})
+        drevs = callconduit(ui, b'differential.query', {b'ids': drevids})
         with repo.wlock(), repo.lock(), repo.transaction(b'phabsend'):
             wnode = unfi[b'.'].node()
             mapping = {} # {oldnode: [newnode]}
@@ -795,7 +795,7 @@ def querydrev(repo, spec):
         key = (params.get(b'ids') or params.get(b'phids') or [None])[0]
         if key in prefetched:
             return prefetched[key]
-        drevs = callconduit(repo, b'differential.query', params)
+        drevs = callconduit(repo.ui, b'differential.query', params)
         # Fill prefetched with the result
         for drev in drevs:
             prefetched[drev[b'phid']] = drev
@@ -953,14 +953,14 @@ def readpatch(repo, drevs, write):
     """
     # Prefetch hg:meta property for all diffs
     diffids = sorted(set(max(int(v) for v in drev[b'diffs']) for drev in drevs))
-    diffs = callconduit(repo, b'differential.querydiffs', {b'ids': diffids})
+    diffs = callconduit(repo.ui, b'differential.querydiffs', {b'ids': diffids})
 
     # Generate patch for each drev
     for drev in drevs:
         repo.ui.note(_(b'reading D%s\n') % drev[b'id'])
 
         diffid = max(int(v) for v in drev[b'diffs'])
-        body = callconduit(repo, b'differential.getrawdiff',
+        body = callconduit(repo.ui, b'differential.getrawdiff',
                            {b'diffID': diffid})
         desc = getdescfromdrev(drev)
         header = b'# HG changeset patch\n'
@@ -1034,7 +1034,7 @@ def phabupdate(ui, repo, spec, **opts):
         if actions:
             params = {b'objectIdentifier': drev[b'phid'],
                       b'transactions': actions}
-            callconduit(repo, b'differential.revision.edit', params)
+            callconduit(ui, b'differential.revision.edit', params)
 
 templatekeyword = registrar.templatekeyword()
 
