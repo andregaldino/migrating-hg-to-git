@@ -155,3 +155,64 @@ addunfinished(
     cmdmsg=_('last update was interrupted'),
     cmdhint=_("use 'hg update' to get a consistent checkout")
 )
+
+def _commentlines(raw):
+    '''Surround lineswith a comment char and a new line'''
+    lines = raw.splitlines()
+    commentedlines = ['# %s' % line for line in lines]
+    return '\n'.join(commentedlines) + '\n'
+
+def _helpmessage(continuecmd, abortcmd):
+    msg = _('To continue:    %s\n'
+            'To abort:       %s') % (continuecmd, abortcmd)
+    return _commentlines(msg)
+
+def _rebasemsg():
+    return _helpmessage('hg rebase --continue', 'hg rebase --abort')
+
+def _histeditmsg():
+    return _helpmessage('hg histedit --continue', 'hg histedit --abort')
+
+def _unshelvemsg():
+    return _helpmessage('hg unshelve --continue', 'hg unshelve --abort')
+
+def _graftmsg():
+    return _helpmessage('hg graft --continue', 'hg graft --abort')
+
+def _mergemsg():
+    return _helpmessage('hg commit', 'hg merge --abort')
+
+def _bisectmsg():
+    msg = _('To mark the changeset good:    hg bisect --good\n'
+            'To mark the changeset bad:     hg bisect --bad\n'
+            'To abort:                      hg bisect --reset\n')
+    return _commentlines(msg)
+
+def fileexistspredicate(filename):
+    return lambda repo: repo.vfs.exists(filename)
+
+def _mergepredicate(repo):
+    return len(repo[None].parents()) > 1
+
+STATES = (
+    # (state, predicate to detect states, helpful message function)
+    ('histedit', fileexistspredicate('histedit-state'), _histeditmsg),
+    ('bisect', fileexistspredicate('bisect.state'), _bisectmsg),
+    ('graft', fileexistspredicate('graftstate'), _graftmsg),
+    ('unshelve', fileexistspredicate('shelvedstate'), _unshelvemsg),
+    ('rebase', fileexistspredicate('rebasestate'), _rebasemsg),
+    # The merge state is part of a list that will be iterated over.
+    # They need to be last because some of the other unfinished states may also
+    # be in a merge or update state (eg. rebase, histedit, graft, etc).
+    # We want those to have priority.
+    ('merge', _mergepredicate, _mergemsg),
+)
+
+def getrepostate(repo):
+    # experimental config: commands.status.skipstates
+    skip = set(repo.ui.configlist('commands', 'status.skipstates'))
+    for state, statedetectionpredicate, msgfn in STATES:
+        if state in skip:
+            continue
+        if statedetectionpredicate(repo):
+            return (state, statedetectionpredicate, msgfn)
