@@ -275,6 +275,7 @@ before strip of merge parent
 ##strip not allowed with merge in progress
   $ hg strip 4
   abort: outstanding uncommitted merge
+  (use 'hg commit' or 'hg merge --abort')
   [255]
 ##strip allowed --force with merge in progress
   $ hg strip 4 --force

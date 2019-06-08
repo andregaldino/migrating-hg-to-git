@@ -760,6 +760,8 @@ def kwtransplanted(context, mapping):
 def extsetup(ui):
     statemod.addunfinished (
         'transplant', fname='transplant/journal', clearable=True,
+        statushint=_('To continue:    hg transplant --continue\n'
+                     'To abort:       hg update'),
         cmdhint=_("use 'hg transplant --continue' or 'hg update' to abort")
     )
 

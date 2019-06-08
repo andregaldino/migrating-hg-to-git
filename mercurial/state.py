@@ -98,7 +98,8 @@ class _statecheck(object):
     """
 
     def __init__(self, opname, fname, clearable=False, allowcommit=False,
-                 cmdmsg="", cmdhint=""):
+                 reportonly=False, stopflag=False, cmdmsg="", cmdhint="",
+                 statushint=""):
         """opname is the name the command or operation
         fname is the file name in which data should be stored in .hg directory.
         It is None for merge command.
@@ -107,21 +108,47 @@ class _statecheck(object):
         state file.
         allowcommit boolean decides whether commit is allowed during interrupted
         state or not.
+        reportonly flag is used for operations like bisect where we just
+        need to detect the operation using 'hg status --verbose'
+        stopflag is a boolean that determines whether or not a command supports
+        --stop flag
         cmdmsg is used to pass a different status message in case standard
         message of the format "abort: cmdname in progress" is not desired.
         cmdhint is used to pass a different hint message in case standard
-        message of the format use 'hg cmdname --continue' or
-        'hg cmdname --abort'" is not desired.
+        message of the format "To continue: hg cmdname --continue
+        To abort: hg cmdname --abort" is not desired.
+        statushint is used to pass a different status message in case standard
+        message of the format ('To continue:    hg cmdname --continue'
+        'To abort:       hg cmdname --abort') is not desired
         """
         self._opname = opname
         self._fname = fname
         self._clearable = clearable
         self._allowcommit = allowcommit
         self._cmdhint = cmdhint
+        self._statushint = statushint
         self._cmdmsg = cmdmsg
+        self._stopflag = stopflag
+        self._reportonly = reportonly
+
+    def statusmsg(self):
+        """returns the hint message corresponding to the command for
+        hg status --verbose
+        """
+        if not self._statushint:
+            hint = (_('To continue:    hg %s --continue\n'
+                      'To abort:       hg %s --abort') % (self._opname,
+                       self._opname))
+            if self._stopflag:
+                hint = hint + (_('\nTo stop:        hg %s --stop') %
+                            (self._opname))
+            return hint
+        return self._statushint
 
     def hint(self):
-        """returns the hint message corresponding to the command"""
+        """returns the hint message corresponding to an interrupted
+        operation
+        """
         if not self._cmdhint:
                 return (_("use 'hg %s --continue' or 'hg %s --abort'") %
                         (self._opname, self._opname))
@@ -134,8 +161,13 @@ class _statecheck(object):
         return self._cmdmsg
 
     def isunfinished(self, repo):
-        """determines whether a multi-step operation is in progress or not"""
-        return repo.vfs.exists(self._fname)
+        """determines whether a multi-step operation is in progress
+        or not
+        """
+        if self._opname == 'merge':
+            return len(repo[None].parents()) > 1
+        else:
+            return repo.vfs.exists(self._fname)
 
 # A list of statecheck objects for multistep operations like graft.
 _unfinishedstates = []
@@ -144,75 +176,40 @@ def addunfinished(opname, **kwargs):
     """this registers a new command or operation to unfinishedstates
     """
     statecheckobj = _statecheck(opname, **kwargs)
-    _unfinishedstates.append(statecheckobj)
+    if opname == 'merge':
+        _unfinishedstates.append(statecheckobj)
+    else:
+        _unfinishedstates.insert(0, statecheckobj)
 
 addunfinished(
-    'graft', fname='graftstate', clearable=True,
-    cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop")
+    'graft', fname='graftstate', clearable=True, stopflag=True,
+    cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop"),
 )
 addunfinished(
     'update', fname='updatestate', clearable=True,
     cmdmsg=_('last update was interrupted'),
-    cmdhint=_("use 'hg update' to get a consistent checkout")
+    cmdhint=_("use 'hg update' to get a consistent checkout"),
+    statushint=_("To continue:    hg update")
 )
-
-def _commentlines(raw):
-    '''Surround lineswith a comment char and a new line'''
-    lines = raw.splitlines()
-    commentedlines = ['# %s' % line for line in lines]
-    return '\n'.join(commentedlines) + '\n'
-
-def _helpmessage(continuecmd, abortcmd):
-    msg = _('To continue:    %s\n'
-            'To abort:       %s') % (continuecmd, abortcmd)
-    return _commentlines(msg)
-
-def _rebasemsg():
-    return _helpmessage('hg rebase --continue', 'hg rebase --abort')
-
-def _histeditmsg():
-    return _helpmessage('hg histedit --continue', 'hg histedit --abort')
-
-def _unshelvemsg():
-    return _helpmessage('hg unshelve --continue', 'hg unshelve --abort')
-
-def _graftmsg():
-    return _helpmessage('hg graft --continue', 'hg graft --abort')
-
-def _mergemsg():
-    return _helpmessage('hg commit', 'hg merge --abort')
-
-def _bisectmsg():
-    msg = _('To mark the changeset good:    hg bisect --good\n'
-            'To mark the changeset bad:     hg bisect --bad\n'
-            'To abort:                      hg bisect --reset\n')
-    return _commentlines(msg)
-
-def fileexistspredicate(filename):
-    return lambda repo: repo.vfs.exists(filename)
-
-def _mergepredicate(repo):
-    return len(repo[None].parents()) > 1
-
-STATES = (
-    # (state, predicate to detect states, helpful message function)
-    ('histedit', fileexistspredicate('histedit-state'), _histeditmsg),
-    ('bisect', fileexistspredicate('bisect.state'), _bisectmsg),
-    ('graft', fileexistspredicate('graftstate'), _graftmsg),
-    ('unshelve', fileexistspredicate('shelvedstate'), _unshelvemsg),
-    ('rebase', fileexistspredicate('rebasestate'), _rebasemsg),
-    # The merge state is part of a list that will be iterated over.
-    # They need to be last because some of the other unfinished states may also
-    # be in a merge or update state (eg. rebase, histedit, graft, etc).
-    # We want those to have priority.
-    ('merge', _mergepredicate, _mergemsg),
+addunfinished(
+    'bisect', fname='bisect.state', allowcommit=True, reportonly=True,
+    statushint=_('To mark the changeset good:    hg bisect --good\n'
+                 'To mark the changeset bad:     hg bisect --bad\n'
+                 'To abort:                      hg bisect --reset\n')
+)
+addunfinished(
+    'merge', fname=None, clearable=True, allowcommit=True,
+    cmdmsg=_('outstanding uncommitted merge'),
+    statushint=_('To continue:    hg commit\n'
+                 'To abort:       hg merge --abort'),
+    cmdhint=_("use 'hg commit' or 'hg merge --abort'")
 )
 
 def getrepostate(repo):
     # experimental config: commands.status.skipstates
     skip = set(repo.ui.configlist('commands', 'status.skipstates'))
-    for state, statedetectionpredicate, msgfn in STATES:
-        if state in skip:
+    for state in _unfinishedstates:
+        if state._opname in skip:
             continue
-        if statedetectionpredicate(repo):
-            return (state, statedetectionpredicate, msgfn)
+        if state.isunfinished(repo):
+            return (state._opname, state.statusmsg())

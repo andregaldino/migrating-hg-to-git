@@ -82,6 +82,7 @@ Conflicting rebase:
   
   # To continue:    hg rebase --continue
   # To abort:       hg rebase --abort
+  # To stop:        hg rebase --stop
   
 
 Try to continue without solving the conflict:

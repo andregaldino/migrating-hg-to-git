@@ -281,6 +281,7 @@ Using status to get more context
   
   # To continue:    hg graft --continue
   # To abort:       hg graft --abort
+  # To stop:        hg graft --stop
   
 
 Commit while interrupted should fail:

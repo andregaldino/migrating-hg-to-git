@@ -623,15 +623,14 @@ def morestatus(repo, fm):
     statetuple = statemod.getrepostate(repo)
     label = 'status.morestatus'
     if statetuple:
-        state, statedetectionpredicate, helpfulmsg = statetuple
+        state, helpfulmsg = statetuple
         statemsg = _('The repository is in an unfinished *%s* state.') % state
         fm.plain('%s\n' % _commentlines(statemsg), label=label)
         conmsg = _conflictsmsg(repo)
         if conmsg:
             fm.plain('%s\n' % conmsg, label=label)
         if helpfulmsg:
-            helpmsg = helpfulmsg()
-            fm.plain('%s\n' % helpmsg, label=label)
+            fm.plain('%s\n' % _commentlines(helpfulmsg), label=label)
 
 def findpossible(cmd, table, strict=False):
     """
@@ -3260,7 +3259,7 @@ summaryhooks = util.hooks()
 summaryremotehooks = util.hooks()
 
 
-def checkunfinished(repo, commit=False):
+def checkunfinished(repo, commit=False, skipmerge=False):
     '''Look for an unfinished multistep operation, like graft, and abort
     if found. It's probably good to check this right before
     bailifchanged().
@@ -3268,13 +3267,15 @@ def checkunfinished(repo, commit=False):
     # Check for non-clearable states first, so things like rebase will take
     # precedence over update.
     for state in statemod._unfinishedstates:
-        if state._clearable or (commit and state._allowcommit):
+        if (state._clearable or (commit and state._allowcommit) or
+            state._reportonly):
             continue
         if state.isunfinished(repo):
             raise error.Abort(state.msg(), hint=state.hint())
 
     for s in statemod._unfinishedstates:
-        if not s._clearable or (commit and s._allowcommit):
+        if (not s._clearable or (commit and s._allowcommit) or
+            (s._opname == 'merge' and skipmerge) or s._reportonly):
             continue
         if s.isunfinished(repo):
             raise error.Abort(s.msg(), hint=s.hint())
@@ -3284,10 +3285,14 @@ def clearunfinished(repo):
     that are clearable.
     '''
     for state in statemod._unfinishedstates:
+        if state._reportonly:
+            continue
         if not state._clearable and state.isunfinished(repo):
             raise error.Abort(state.msg(), hint=state.hint())
 
     for s in statemod._unfinishedstates:
+        if s._opname == 'merge' or state._reportonly:
+            continue
         if s._clearable and s.isunfinished(repo):
             util.unlink(repo.vfs.join(s._fname))
 

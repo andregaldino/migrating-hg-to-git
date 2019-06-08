@@ -32,10 +32,12 @@ command = registrar.command(cmdtable)
 testedwith = 'ships-with-hg-core'
 
 def checklocalchanges(repo, force=False):
-    cmdutil.checkunfinished(repo)
     s = repo.status()
     if not force:
+        cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)
+    else:
+        cmdutil.checkunfinished(repo, skipmerge=True)
     return s
 
 def _findupdatetarget(repo, nodes):

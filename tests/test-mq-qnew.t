@@ -164,7 +164,8 @@ plain headers
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   (no more unresolved files)
-  abort: cannot manage merge changesets
+  abort: outstanding uncommitted merge
+  (use 'hg commit' or 'hg merge --abort')
   $ rm -r sandbox
 
 hg headers
@@ -243,7 +244,8 @@ hg headers
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   (no more unresolved files)
-  abort: cannot manage merge changesets
+  abort: outstanding uncommitted merge
+  (use 'hg commit' or 'hg merge --abort')
   $ rm -r sandbox
 
 Test saving last-message.txt

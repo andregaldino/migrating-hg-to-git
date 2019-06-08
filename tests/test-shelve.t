@@ -1153,7 +1153,8 @@ Abort unshelve while merging (issue5123)
 -- trying to pull in the shelve bits
 -- unshelve should abort otherwise, it'll eat my second parent.
   $ hg unshelve
-  abort: cannot unshelve while merging
+  abort: outstanding uncommitted merge
+  (use 'hg commit' or 'hg merge --abort')
   [255]
 
   $ cd ..

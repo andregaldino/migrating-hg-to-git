@@ -1822,7 +1822,7 @@ def pullrebase(orig, ui, repo, *args, **opts):
                 ui.debug('--update and --rebase are not compatible, ignoring '
                          'the update flag\n')
 
-            cmdutil.checkunfinished(repo)
+            cmdutil.checkunfinished(repo, skipmerge=True)
             cmdutil.bailifchanged(repo, hint=_('cannot pull with rebase: '
                 'please commit or shelve your changes first'))
 
@@ -1950,6 +1950,6 @@ def uisetup(ui):
     entry[1].append(('t', 'tool', '',
                      _("specify merge tool for rebase")))
     cmdutil.summaryhooks.add('rebase', summaryhook)
-    statemod.addunfinished('rebase', fname='rebasestate')
+    statemod.addunfinished('rebase', fname='rebasestate', stopflag=True)
     cmdutil.afterresolvedstates.append(
         ['rebasestate', _('hg rebase --continue')])
