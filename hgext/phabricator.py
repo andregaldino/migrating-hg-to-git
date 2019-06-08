@@ -183,24 +183,24 @@ def urlencodenested(params):
     process(b'', params)
     return util.urlreq.urlencode(flatparams)
 
-def readurltoken(repo):
+def readurltoken(ui):
     """return conduit url, token and make sure they exist
 
     Currently read from [auth] config section. In the future, it might
     make sense to read from .arcconfig and .arcrc as well.
     """
-    url = repo.ui.config(b'phabricator', b'url')
+    url = ui.config(b'phabricator', b'url')
     if not url:
         raise error.Abort(_(b'config %s.%s is required')
                           % (b'phabricator', b'url'))
 
-    res = httpconnectionmod.readauthforuri(repo.ui, url, util.url(url).user)
+    res = httpconnectionmod.readauthforuri(ui, url, util.url(url).user)
     token = None
 
     if res:
         group, auth = res
 
-        repo.ui.debug(b"using auth.%s.* for authentication\n" % group)
+        ui.debug(b"using auth.%s.* for authentication\n" % group)
 
         token = auth.get(b'phabtoken')
 
@@ -212,7 +212,7 @@ def readurltoken(repo):
 
 def callconduit(repo, name, params):
     """call Conduit API, params is a dict. return json.loads result, or None"""
-    host, token = readurltoken(repo)
+    host, token = readurltoken(repo.ui)
     url, authinfo = util.url(b'/'.join([host, b'api', name])).authinfo()
     repo.ui.debug(b'Conduit Call: %s %s\n' % (url, pycompat.byterepr(params)))
     params = params.copy()
@@ -653,7 +653,7 @@ _metanamemap = util.sortdict([(b'user', b'User'), (b'date', b'Date'),
                               (b'parent', b'Parent ')])
 
 def _confirmbeforesend(repo, revs, oldmap):
-    url, token = readurltoken(repo)
+    url, token = readurltoken(repo.ui)
     ui = repo.ui
     for rev in revs:
         ctx = repo[rev]
