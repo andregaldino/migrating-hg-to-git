@@ -3314,6 +3314,7 @@ summaryhooks = util.hooks()
 #  - (desturl,   destbranch,   destpeer,   outgoing)
 summaryremotehooks = util.hooks()
 
+
 def checkunfinished(repo, commit=False):
     '''Look for an unfinished multistep operation, like graft, and abort
     if found. It's probably good to check this right before
@@ -3321,28 +3322,29 @@ def checkunfinished(repo, commit=False):
     '''
     # Check for non-clearable states first, so things like rebase will take
     # precedence over update.
-    for f, clearable, allowcommit, msg, hint in statemod.unfinishedstates:
-        if clearable or (commit and allowcommit):
+    for state in statemod._unfinishedstates:
+        if state._clearable or (commit and state._allowcommit):
             continue
-        if repo.vfs.exists(f):
-            raise error.Abort(msg, hint=hint)
+        if state.isunfinished(repo):
+            raise error.Abort(state.msg(), hint=state.hint())
 
-    for f, clearable, allowcommit, msg, hint in statemod.unfinishedstates:
-        if not clearable or (commit and allowcommit):
+    for s in statemod._unfinishedstates:
+        if not s._clearable or (commit and s._allowcommit):
             continue
-        if repo.vfs.exists(f):
-            raise error.Abort(msg, hint=hint)
+        if s.isunfinished(repo):
+            raise error.Abort(s.msg(), hint=s.hint())
 
 def clearunfinished(repo):
     '''Check for unfinished operations (as above), and clear the ones
     that are clearable.
     '''
-    for f, clearable, allowcommit, msg, hint in statemod.unfinishedstates:
-        if not clearable and repo.vfs.exists(f):
-            raise error.Abort(msg, hint=hint)
-    for f, clearable, allowcommit, msg, hint in statemod.unfinishedstates:
-        if clearable and repo.vfs.exists(f):
-            util.unlink(repo.vfs.join(f))
+    for state in statemod._unfinishedstates:
+        if not state._clearable and state.isunfinished(repo):
+            raise error.Abort(state.msg(), hint=state.hint())
+
+    for s in statemod._unfinishedstates:
+        if s._clearable and s.isunfinished(repo):
+            util.unlink(repo.vfs.join(s._fname))
 
 afterresolvedstates = [
     ('graftstate',

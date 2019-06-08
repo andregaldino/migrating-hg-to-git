@@ -758,9 +758,10 @@ def kwtransplanted(context, mapping):
     return n and nodemod.hex(n) or ''
 
 def extsetup(ui):
-    statemod.unfinishedstates.append(
-        ['transplant/journal', True, False, _('transplant in progress'),
-         _("use 'hg transplant --continue' or 'hg update' to abort")])
+    statemod.addunfinished (
+        'transplant', fname='transplant/journal', clearable=True,
+        cmdhint=_("use 'hg transplant --continue' or 'hg update' to abort")
+    )
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = [revsettransplanted, kwtransplanted]

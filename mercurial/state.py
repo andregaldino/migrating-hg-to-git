@@ -88,13 +88,70 @@ class cmdstate(object):
         """check whether the state file exists or not"""
         return self._repo.vfs.exists(self.fname)
 
-# A list of state files kept by multistep operations like graft.
-# Since graft cannot be aborted, it is considered 'clearable' by update.
-# note: bisect is intentionally excluded
-# (state file, clearable, allowcommit, error, hint)
-unfinishedstates = [
-    ('graftstate', True, False, _('graft in progress'),
-     _("use 'hg graft --continue' or 'hg graft --stop' to stop")),
-    ('updatestate', True, False, _('last update was interrupted'),
-     _("use 'hg update' to get a consistent checkout"))
-    ]
+class _statecheck(object):
+    """a utility class that deals with multistep operations like graft,
+       histedit, bisect, update etc and check whether such commands
+       are in an unfinished conditition or not and return appropriate message
+       and hint.
+       It also has the ability to register and determine the states of any new
+       multistep operation or multistep command extension.
+    """
+
+    def __init__(self, opname, fname, clearable=False, allowcommit=False,
+                 cmdmsg="", cmdhint=""):
+        """opname is the name the command or operation
+        fname is the file name in which data should be stored in .hg directory.
+        It is None for merge command.
+        clearable boolean determines whether or not interrupted states can be
+        cleared by running `hg update -C .` which in turn deletes the
+        state file.
+        allowcommit boolean decides whether commit is allowed during interrupted
+        state or not.
+        cmdmsg is used to pass a different status message in case standard
+        message of the format "abort: cmdname in progress" is not desired.
+        cmdhint is used to pass a different hint message in case standard
+        message of the format use 'hg cmdname --continue' or
+        'hg cmdname --abort'" is not desired.
+        """
+        self._opname = opname
+        self._fname = fname
+        self._clearable = clearable
+        self._allowcommit = allowcommit
+        self._cmdhint = cmdhint
+        self._cmdmsg = cmdmsg
+
+    def hint(self):
+        """returns the hint message corresponding to the command"""
+        if not self._cmdhint:
+                return (_("use 'hg %s --continue' or 'hg %s --abort'") %
+                        (self._opname, self._opname))
+        return self._cmdhint
+
+    def msg(self):
+        """returns the status message corresponding to the command"""
+        if not self._cmdmsg:
+            return _('%s in progress') % (self._opname)
+        return self._cmdmsg
+
+    def isunfinished(self, repo):
+        """determines whether a multi-step operation is in progress or not"""
+        return repo.vfs.exists(self._fname)
+
+# A list of statecheck objects for multistep operations like graft.
+_unfinishedstates = []
+
+def addunfinished(opname, **kwargs):
+    """this registers a new command or operation to unfinishedstates
+    """
+    statecheckobj = _statecheck(opname, **kwargs)
+    _unfinishedstates.append(statecheckobj)
+
+addunfinished(
+    'graft', fname='graftstate', clearable=True,
+    cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop")
+)
+addunfinished(
+    'update', fname='updatestate', clearable=True,
+    cmdmsg=_('last update was interrupted'),
+    cmdhint=_("use 'hg update' to get a consistent checkout")
+)
