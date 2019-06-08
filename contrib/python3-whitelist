@@ -106,6 +106,7 @@ test-context.py
 test-contrib-check-code.t
 test-contrib-check-commit.t
 test-contrib-dumprevlog.t
+test-contrib-emacs.t
 test-contrib-perf.t
 test-contrib-relnotes.t
 test-contrib-testparseutil.t
