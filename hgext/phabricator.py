@@ -125,7 +125,7 @@ _VCR_FLAGS = [
      )),
 ]
 
-def vcrcommand(name, flags, spec, helpcategory=None):
+def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
     fullflags = flags + _VCR_FLAGS
     def hgmatcher(r1, r2):
         if r1.uri != r2.uri or r1.method != r2.method:
@@ -156,7 +156,8 @@ def vcrcommand(name, flags, spec, helpcategory=None):
             return fn(*args, **kwargs)
         inner.__name__ = fn.__name__
         inner.__doc__ = fn.__doc__
-        return command(name, fullflags, spec, helpcategory=helpcategory)(inner)
+        return command(name, fullflags, spec, helpcategory=helpcategory,
+                       optionalrepo=optionalrepo)(inner)
     return decorate
 
 def urlencodenested(params):
@@ -242,7 +243,7 @@ def callconduit(ui, name, params):
         raise error.Abort(msg)
     return parsed[b'result']
 
-@vcrcommand(b'debugcallconduit', [], _(b'METHOD'))
+@vcrcommand(b'debugcallconduit', [], _(b'METHOD'), optionalrepo=True)
 def debugcallconduit(ui, repo, name):
     """call Conduit API
 
