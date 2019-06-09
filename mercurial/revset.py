@@ -1361,7 +1361,8 @@ def merge(repo, subset, x):
     # i18n: "merge" is a keyword
     getargs(x, 0, 0, _("merge takes no arguments"))
     cl = repo.changelog
-    return subset.filter(lambda r: cl.parentrevs(r)[1] != -1,
+    nullrev = node.nullrev
+    return subset.filter(lambda r: cl.parentrevs(r)[1] != nullrev,
                          condrepr='<merge>')
 
 @predicate('branchpoint()', safe=True)
