@@ -2076,6 +2076,17 @@ itself isn't returned unless it is explicitly populated.
   $ log 'parents(merge())'
   4
   5
+
+  $ hg merge 7
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ log '0:wdir() & merge()'
+  6
+  2147483647
+  $ hg update -qC .
+  $ log '0:wdir() & merge()'
+  6
+
   $ log 'p1(branchpoint())'
   0
   2

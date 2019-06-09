@@ -1362,8 +1362,12 @@ def merge(repo, subset, x):
     getargs(x, 0, 0, _("merge takes no arguments"))
     cl = repo.changelog
     nullrev = node.nullrev
-    return subset.filter(lambda r: cl.parentrevs(r)[1] != nullrev,
-                         condrepr='<merge>')
+    def ismerge(r):
+        try:
+            return cl.parentrevs(r)[1] != nullrev
+        except error.WdirUnsupported:
+            return bool(repo[r].p2())
+    return subset.filter(ismerge, condrepr='<merge>')
 
 @predicate('branchpoint()', safe=True)
 def branchpoint(repo, subset, x):
