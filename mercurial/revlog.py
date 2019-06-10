@@ -1216,14 +1216,25 @@ class revlog(object):
         A revision is considered an ancestor of itself.
 
         The implementation of this is trivial but the use of
-        commonancestorsheads is not."""
+        reachableroots is not."""
         if a == nullrev:
             return True
         elif a == b:
             return True
         elif a > b:
             return False
-        return a in self._commonancestorsheads(a, b)
+        return bool(self.reachableroots(a, [b], [a], includepath=False))
+
+    def reachableroots(self, minroot, heads, roots, includepath=False):
+        """return (heads(::<roots> and <roots>::<heads>))
+
+        If includepath is True, return (<roots>::<heads>)."""
+        try:
+            return self.index.reachableroots2(minroot, heads, roots,
+                                              includepath)
+        except AttributeError:
+            return dagop._reachablerootspure(self.parentrevs,
+                                             minroot, roots, heads, includepath)
 
     def ancestor(self, a, b):
         """calculate the "best" common ancestor of nodes a and b"""

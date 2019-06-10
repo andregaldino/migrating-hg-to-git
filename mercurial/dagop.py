@@ -259,11 +259,10 @@ def descendantrevs(revs, revsfn, parentrevsfn):
                 yield rev
                 break
 
-def _reachablerootspure(repo, minroot, roots, heads, includepath):
-    """See reachableroots"""
+def _reachablerootspure(pfunc, minroot, roots, heads, includepath):
+    """See revlog.reachableroots"""
     if not roots:
         return []
-    parentrevs = repo.changelog.parentrevs
     roots = set(roots)
     visit = list(heads)
     reachable = set()
@@ -280,7 +279,7 @@ def _reachablerootspure(repo, minroot, roots, heads, includepath):
             reached(rev)
             if not includepath:
                 continue
-        parents = parentrevs(rev)
+        parents = pfunc(rev)
         seen[rev] = parents
         for parent in parents:
             if parent >= minroot and parent not in seen:
@@ -296,18 +295,13 @@ def _reachablerootspure(repo, minroot, roots, heads, includepath):
     return reachable
 
 def reachableroots(repo, roots, heads, includepath=False):
-    """return (heads(::<roots> and <roots>::<heads>))
-
-    If includepath is True, return (<roots>::<heads>)."""
+    """See revlog.reachableroots"""
     if not roots:
         return baseset()
     minroot = roots.min()
     roots = list(roots)
     heads = list(heads)
-    try:
-        revs = repo.changelog.reachableroots(minroot, heads, roots, includepath)
-    except AttributeError:
-        revs = _reachablerootspure(repo, minroot, roots, heads, includepath)
+    revs = repo.changelog.reachableroots(minroot, heads, roots, includepath)
     revs = baseset(revs)
     revs.sort()
     return revs

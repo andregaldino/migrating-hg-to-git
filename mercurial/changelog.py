@@ -420,9 +420,6 @@ class changelog(revlog.revlog):
             if i not in self.filteredrevs:
                 yield i
 
-    def reachableroots(self, minroot, heads, roots, includepath=False):
-        return self.index.reachableroots2(minroot, heads, roots, includepath)
-
     def _checknofilteredinrevs(self, revs):
         """raise the appropriate error if 'revs' contains a filtered revision
 
