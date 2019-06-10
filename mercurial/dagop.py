@@ -260,9 +260,7 @@ def descendantrevs(revs, revsfn, parentrevsfn):
                 break
 
 def _reachablerootspure(repo, minroot, roots, heads, includepath):
-    """return (heads(::<roots> and ::<heads>))
-
-    If includepath is True, return (<roots>::<heads>)."""
+    """See reachableroots"""
     if not roots:
         return []
     parentrevs = repo.changelog.parentrevs
@@ -298,7 +296,7 @@ def _reachablerootspure(repo, minroot, roots, heads, includepath):
     return reachable
 
 def reachableroots(repo, roots, heads, includepath=False):
-    """return (heads(::<roots> and ::<heads>))
+    """return (heads(::<roots> and <roots>::<heads>))
 
     If includepath is True, return (<roots>::<heads>)."""
     if not roots:
