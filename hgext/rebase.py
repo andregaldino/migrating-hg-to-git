@@ -850,8 +850,9 @@ def rebase(ui, repo, **opts):
       singletransaction = True
 
     By default, rebase writes to the working copy, but you can configure it to
-    run in-memory for for better performance, and to allow it to run if the
-    working copy is dirty::
+    run in-memory for better performance. When the rebase is not moving the
+    parent(s) of the working copy (AKA the "currently checked out changesets"),
+    this may also allow it to run even if the working copy is dirty::
 
       [rebase]
       experimental.inmemory = True
