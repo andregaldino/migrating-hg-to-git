@@ -89,6 +89,8 @@ import threading
 import time
 import traceback
 
+from mercurial import pycompat
+
 __all__ = ["Zeroconf", "ServiceInfo", "ServiceBrowser"]
 
 # hook for threads
@@ -270,6 +272,8 @@ class DNSQuestion(DNSEntry):
     """A DNS question entry"""
 
     def __init__(self, name, type, clazz):
+        if pycompat.ispy3 and isinstance(name, str):
+            name = name.encode('ascii')
         if not name.endswith(".local."):
             raise NonLocalNameException(name)
         DNSEntry.__init__(self, name, type, clazz)

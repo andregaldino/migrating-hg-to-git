@@ -518,6 +518,7 @@ test-pathconflicts-basic.t
 test-pathconflicts-merge.t
 test-pathconflicts-update.t
 test-pathencode.py
+test-paths.t
 test-pending.t
 test-permissions.t
 test-phabricator.t
