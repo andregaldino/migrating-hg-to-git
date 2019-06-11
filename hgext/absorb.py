@@ -871,7 +871,7 @@ def _parsechunk(hunk):
     patchlines = mdiff.splitnewlines(buf.getvalue())
     # hunk.prettystr() will update hunk.removed
     a2 = a1 + hunk.removed
-    blines = [l[1:] for l in patchlines[1:] if l[0] != '-']
+    blines = [l[1:] for l in patchlines[1:] if not l.startswith('-')]
     return path, (a1, a2, blines)
 
 def overlaydiffcontext(ctx, chunks):
