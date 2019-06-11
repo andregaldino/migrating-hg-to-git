@@ -15,8 +15,8 @@
   > hgphab.prefix = phab.mercurial-scm.org
   > # When working on the extension and making phabricator interaction
   > # changes, edit this to be a real phabricator token. When done, edit
-  > # it back, and make sure to also edit your VCR transcripts to match
-  > # whatever value you put here.
+  > # it back. The VCR transcripts will be auto-sanitised to replace your real
+  > # token with this value.
   > hgphab.phabtoken = cli-hahayouwish
   > EOF
   $ VCR="$TESTDIR/phabricator"

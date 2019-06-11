@@ -134,6 +134,19 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
         r2params = r2.body.split(b'&')
         return set(r1params) == set(r2params)
 
+    def sanitiserequest(request):
+        request.body = re.sub(
+            r'cli-[a-z0-9]+',
+            r'cli-hahayouwish',
+            request.body
+        )
+        return request
+
+    def sanitiseresponse(response):
+        if r'set-cookie' in response[r'headers']:
+            del response[r'headers'][r'set-cookie']
+        return response
+
     def decorate(fn):
         def inner(*args, **kwargs):
             cassette = pycompat.fsdecode(kwargs.pop(r'test_vcr', None))
@@ -144,6 +157,8 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
                     import vcr.stubs as stubs
                     vcr = vcrmod.VCR(
                         serializer=r'json',
+                        before_record_request=sanitiserequest,
+                        before_record_response=sanitiseresponse,
                         custom_patches=[
                             (urlmod, r'httpconnection',
                              stubs.VCRHTTPConnection),
