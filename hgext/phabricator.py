@@ -515,6 +515,7 @@ def userphids(repo, names):
          [(b'r', b'rev', [], _(b'revisions to send'), _(b'REV')),
           (b'', b'amend', True, _(b'update commit messages')),
           (b'', b'reviewer', [], _(b'specify reviewers')),
+          (b'', b'blocker', [], _(b'specify blocking reviewers')),
           (b'm', b'comment', b'',
            _(b'add a comment to Revisions with new/updated Diffs')),
           (b'', b'confirm', None, _(b'ask for confirmation before sending'))],
@@ -568,8 +569,15 @@ def phabsend(ui, repo, *revs, **opts):
 
     actions = []
     reviewers = opts.get(b'reviewer', [])
+    blockers = opts.get(b'blocker', [])
+    phids = []
     if reviewers:
-        phids = userphids(repo, reviewers)
+        phids.extend(userphids(repo, reviewers))
+    if blockers:
+        phids.extend(map(
+            lambda phid: b'blocking(%s)' % phid, userphids(repo, blockers)
+        ))
+    if phids:
         actions.append({b'type': b'reviewers.add', b'value': phids})
 
     drevids = [] # [int]
