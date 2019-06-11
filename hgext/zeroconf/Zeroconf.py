@@ -535,7 +535,7 @@ class DNSIncoming(object):
 
     def readString(self, len):
         """Reads a string of a given length from the packet"""
-        format = '!' + str(len) + 's'
+        format = '!%ds' % len
         length = struct.calcsize(format)
         info = struct.unpack(format,
                              self.data[self.offset:self.offset + length])
@@ -613,7 +613,7 @@ class DNSIncoming(object):
 
     def readName(self):
         """Reads a domain name from the packet"""
-        result = ''
+        result = r''
         off = self.offset
         next = -1
         first = off
@@ -625,7 +625,7 @@ class DNSIncoming(object):
                 break
             t = len & 0xC0
             if t == 0x00:
-                result = ''.join((result, self.readUTF(off, len) + '.'))
+                result = r''.join((result, self.readUTF(off, len) + r'.'))
                 off += len
             elif t == 0xC0:
                 if next < 0:
