@@ -2461,7 +2461,8 @@ class revlog(object):
                 # the revlog chunk is a delta.
                 cachedelta = None
                 rawtext = None
-                if destrevlog._lazydelta:
+                if (deltareuse != self.DELTAREUSEFULLADD
+                        and destrevlog._lazydelta):
                     dp = self.deltaparent(rev)
                     if dp != nullrev:
                         cachedelta = (dp, bytes(self._chunk(rev)))
