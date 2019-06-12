@@ -46,3 +46,13 @@ def log(whencefmt, *whenceargs):
             _pipe.write('END %s %s\n' % (_session, whence))
         except IOError:
             pass
+
+def counter(label, amount, *labelargs):
+    if not _isactive():
+        return
+    l = label % labelargs
+    # See above in log() for why this is in a try/except.
+    try:
+        _pipe.write('COUNTER %s %d %s\n' % (_session, amount, l))
+    except IOError:
+        pass
