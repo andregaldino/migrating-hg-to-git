@@ -1984,3 +1984,12 @@ def bookmarkrevs(repo, mark):
                      "ancestors(head() and not bookmark(%s)) - "
                      "ancestors(bookmark() and not bookmark(%s))",
                      mark, mark, mark)
+
+def computechangesetfilesadded(ctx):
+    """return the list of files added in a changeset
+    """
+    added = []
+    for f in ctx.files():
+        if not any(f in p for p in ctx.parents()):
+            added.append(f)
+    return added

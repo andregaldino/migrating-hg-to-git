@@ -459,12 +459,7 @@ class changectx(basectx):
             (source == 'compatibility' and
              self._changeset.filesadded is not None)):
             return self._changeset.filesadded or []
-
-        added = []
-        for f in self.files():
-            if not any(f in p for p in self.parents()):
-                added.append(f)
-        return added
+        return scmutil.computechangesetfilesadded(self)
     def filesremoved(self):
         source = self._repo.ui.config('experimental', 'copies.read-from')
         if (source == 'changeset-only' or
