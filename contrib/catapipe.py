@@ -44,6 +44,7 @@ import timeit
 _TYPEMAP = {
     'START': 'B',
     'END': 'E',
+    'COUNTER': 'C',
 }
 
 _threadmap = {}
@@ -78,6 +79,11 @@ def main():
                 verb, session, label = ev.split(' ', 2)
                 if session not in _threadmap:
                     _threadmap[session] = len(_threadmap)
+                if verb == 'COUNTER':
+                    amount, label = label.split(' ', 1)
+                    payload_args = {'value': int(amount)}
+                else:
+                    payload_args = {}
                 pid = _threadmap[session]
                 ts_micros = (now - start) * 1000000
                 out.write(json.dumps(
@@ -88,7 +94,7 @@ def main():
                         "ts": ts_micros,
                         "pid": pid,
                         "tid": 1,
-                        "args": {}
+                        "args": payload_args,
                     }))
                 out.write(',\n')
     finally:
