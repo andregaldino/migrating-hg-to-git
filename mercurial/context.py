@@ -466,12 +466,7 @@ class changectx(basectx):
             (source == 'compatibility' and
              self._changeset.filesremoved is not None)):
             return self._changeset.filesremoved or []
-
-        removed = []
-        for f in self.files():
-            if f not in self:
-                removed.append(f)
-        return removed
+        return scmutil.computechangesetfilesremoved(self)
 
     @propertycache
     def _copies(self):

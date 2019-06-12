@@ -1993,3 +1993,12 @@ def computechangesetfilesadded(ctx):
         if not any(f in p for p in ctx.parents()):
             added.append(f)
     return added
+
+def computechangesetfilesremoved(ctx):
+    """return the list of files removed in a changeset
+    """
+    removed = []
+    for f in ctx.files():
+        if f not in ctx:
+            removed.append(f)
+    return removed
