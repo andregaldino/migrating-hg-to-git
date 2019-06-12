@@ -431,12 +431,13 @@ def writediffproperties(ctx, diff):
     }
     callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
 
-def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
-                               olddiff=None, actions=None, comment=None):
+def createdifferentialrevision(ctx, revid=None, parentrevphid=None,
+                               oldnode=None, olddiff=None, actions=None,
+                               comment=None):
     """create or update a Differential Revision
 
     If revid is None, create a new Differential Revision, otherwise update
-    revid. If parentrevid is not None, set it as a dependency.
+    revid. If parentrevphid is not None, set it as a dependency.
 
     If oldnode is not None, check if the patch content (without commit message
     and metadata) has changed before creating another diff.
@@ -465,14 +466,10 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
         diff = olddiff
     writediffproperties(ctx, diff)
 
-    # Use a temporary summary to set dependency. There might be better ways but
-    # I cannot find them for now. But do not do that if we are updating an
-    # existing revision (revid is not None) since that introduces visible
-    # churns (someone edited "Summary" twice) on the web page.
-    if parentrevid and revid is None:
-        summary = b'Depends on D%d' % parentrevid
-        transactions += [{b'type': b'summary', b'value': summary},
-                         {b'type': b'summary', b'value': b' '}]
+    # Set the parent Revision every time, so commit re-ordering is picked-up
+    if parentrevphid:
+        transactions.append({b'type': b'parents.set',
+                             b'value': [parentrevphid]})
 
     if actions:
         transactions += actions
@@ -583,9 +580,9 @@ def phabsend(ui, repo, *revs, **opts):
     drevids = [] # [int]
     diffmap = {} # {newnode: diff}
 
-    # Send patches one by one so we know their Differential Revision IDs and
+    # Send patches one by one so we know their Differential Revision PHIDs and
     # can provide dependency relationship
-    lastrevid = None
+    lastrevphid = None
     for rev in revs:
         ui.debug(b'sending rev %d\n' % rev)
         ctx = repo[rev]
@@ -595,10 +592,11 @@ def phabsend(ui, repo, *revs, **opts):
         if oldnode != ctx.node() or opts.get(b'amend'):
             # Create or update Differential Revision
             revision, diff = createdifferentialrevision(
-                ctx, revid, lastrevid, oldnode, olddiff, actions,
+                ctx, revid, lastrevphid, oldnode, olddiff, actions,
                 opts.get(b'comment'))
             diffmap[ctx.node()] = diff
             newrevid = int(revision[b'object'][b'id'])
+            newrevphid = revision[b'object'][b'phid']
             if revid:
                 action = b'updated'
             else:
@@ -612,8 +610,9 @@ def phabsend(ui, repo, *revs, **opts):
                 tags.tag(repo, tagname, ctx.node(), message=None, user=None,
                          date=None, local=True)
         else:
-            # Nothing changed. But still set "newrevid" so the next revision
-            # could depend on this one.
+            # Nothing changed. But still set "newrevphid" so the next revision
+            # could depend on this one and "newrevid" for the summary line.
+            newrevphid = querydrev(repo, str(revid))[0][b'phid']
             newrevid = revid
             action = b'skipped'
 
@@ -628,7 +627,7 @@ def phabsend(ui, repo, *revs, **opts):
         ui.write(_(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc,
                                              desc))
         drevids.append(newrevid)
-        lastrevid = newrevid
+        lastrevphid = newrevphid
 
     # Update commit messages and remove tags
     if opts.get(b'amend'):

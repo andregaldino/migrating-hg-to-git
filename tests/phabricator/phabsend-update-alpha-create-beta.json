@@ -768,7 +768,7 @@
                         "phab.mercurial-scm.org"
                     ]
                 },
-                "body": "api.token=cli-hahayouwish&transactions%5B0%5D%5Btype%5D=update&transactions%5B0%5D%5Bvalue%5D=PHID-DIFF-uhbyhoejzbniwwzj2q5c&transactions%5B1%5D%5Btype%5D=summary&transactions%5B1%5D%5Bvalue%5D=Depends+on+D1190&transactions%5B2%5D%5Btype%5D=summary&transactions%5B2%5D%5Bvalue%5D=+&transactions%5B3%5D%5Btype%5D=title&transactions%5B3%5D%5Bvalue%5D=create+beta+for+phabricator+test",
+                "body": "api.token=cli-hahayouwish&transactions%5B0%5D%5Btype%5D=update&transactions%5B0%5D%5Bvalue%5D=PHID-DIFF-uhbyhoejzbniwwzj2q5c&transactions%5B1%5D%5Btype%5D=parents.set&transactions%5B1%5D%5Bvalue%5D%5B0%5D=PHID-DREV-kikesmfxhzpfaxbzgj3l&transactions%5B2%5D%5Btype%5D=title&transactions%5B2%5D%5Bvalue%5D=create+beta+for+phabricator+test",
                 "uri": "https://phab.mercurial-scm.org//api/differential.revision.edit",
                 "method": "POST"
             },
