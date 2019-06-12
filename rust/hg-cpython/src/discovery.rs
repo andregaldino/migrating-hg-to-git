@@ -29,10 +29,14 @@ use std::cell::RefCell;
 py_class!(pub class PartialDiscovery |py| {
     data inner: RefCell<Box<CorePartialDiscovery<Index>>>;
 
+    // `_respectsize` is currently only here to replicate the Python API and
+    // will be used in future patches inside methods that are yet to be
+    // implemented.
     def __new__(
         _cls,
         index: PyObject,
-        targetheads: PyObject
+        targetheads: PyObject,
+        _respectsize: bool
     ) -> PyResult<PartialDiscovery> {
         Self::create_instance(
             py,

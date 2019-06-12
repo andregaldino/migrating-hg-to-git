@@ -61,7 +61,7 @@ class rustdiscoverytest(unittest.TestCase):
 
     def testaddcommonsmissings(self):
         idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3])
+        disco = PartialDiscovery(idx, [3], True)
         self.assertFalse(disco.hasinfo())
         self.assertFalse(disco.iscomplete())
 
@@ -77,7 +77,7 @@ class rustdiscoverytest(unittest.TestCase):
 
     def testaddmissingsstats(self):
         idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3])
+        disco = PartialDiscovery(idx, [3], True)
         self.assertIsNone(disco.stats()['undecided'], None)
 
         disco.addmissings([2])
@@ -85,7 +85,7 @@ class rustdiscoverytest(unittest.TestCase):
 
     def testaddinfocommonfirst(self):
         idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3])
+        disco = PartialDiscovery(idx, [3], True)
         disco.addinfo([(1, True), (2, False)])
         self.assertTrue(disco.hasinfo())
         self.assertTrue(disco.iscomplete())
@@ -93,7 +93,7 @@ class rustdiscoverytest(unittest.TestCase):
 
     def testaddinfomissingfirst(self):
         idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3])
+        disco = PartialDiscovery(idx, [3], True)
         disco.addinfo([(2, False), (1, True)])
         self.assertTrue(disco.hasinfo())
         self.assertTrue(disco.iscomplete())
