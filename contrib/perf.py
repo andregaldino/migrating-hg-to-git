@@ -2093,6 +2093,16 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
                   (use a delta from the first parent otherwise)
     * `parent-smallest`: add from the smallest delta (either p1 or p2)
     * `storage`: add from the existing precomputed deltas
+
+    Note: This performance command measures performance in a custom way. As a
+    result some of the global configuration of the 'perf' command does not
+    apply to it:
+
+    * ``pre-run``: disabled
+
+    * ``profile-benchmark``: disabled
+
+    * ``run-limits``: disabled use --count instead
     """
     opts = _byteskwargs(opts)
 
