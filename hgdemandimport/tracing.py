@@ -13,19 +13,23 @@ import os
 _pipe = None
 _checked = False
 
-@contextlib.contextmanager
-def log(whencefmt, *whenceargs):
+def _isactive():
     global _pipe, _session, _checked
     if _pipe is None:
         if _checked:
-            yield
-            return
+            return False
         _checked = True
         if 'HGCATAPULTSERVERPIPE' not in os.environ:
-            yield
-            return
+            return False
         _pipe = open(os.environ['HGCATAPULTSERVERPIPE'], 'w', 1)
         _session = os.environ.get('HGCATAPULTSESSION', 'none')
+    return True
+
+@contextlib.contextmanager
+def log(whencefmt, *whenceargs):
+    if not _isactive():
+        yield
+        return
     whence = whencefmt % whenceargs
     try:
         # Both writes to the pipe are wrapped in try/except to ignore
