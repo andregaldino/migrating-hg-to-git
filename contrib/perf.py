@@ -2076,7 +2076,7 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
 @command(b'perfrevlogwrite', revlogopts + formatteropts +
          [(b's', b'startrev', 1000, b'revision to start writing at'),
           (b'', b'stoprev', -1, b'last revision to write'),
-          (b'', b'count', 3, b'last revision to write'),
+          (b'', b'count', 3, b'number of passes to perform'),
           (b'', b'details', False, b'print timing for every revisions tested'),
           (b'', b'source', b'full', b'the kind of data feed in the revlog'),
           (b'', b'lazydeltabase', True, b'try the provided delta first'),
