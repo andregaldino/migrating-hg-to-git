@@ -34,10 +34,11 @@ py_class!(pub class PartialDiscovery |py| {
     // implemented.
     def __new__(
         _cls,
-        index: PyObject,
+        repo: PyObject,
         targetheads: PyObject,
         _respectsize: bool
     ) -> PyResult<PartialDiscovery> {
+        let index = repo.getattr(py, "changelog")?.getattr(py, "index")?;
         Self::create_instance(
             py,
             RefCell::new(Box::new(CorePartialDiscovery::new(

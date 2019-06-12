@@ -31,6 +31,11 @@ data_non_inlined = (
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
     )
 
+class fakerepo(object):
+    def __init__(self, idx):
+        """Just make so that self.changelog.index is the given idx."""
+        self.index = idx
+        self.changelog = self
 
 @unittest.skipIf(PartialDiscovery is None or cparsers is None,
                  "rustext or the C Extension parsers module "
@@ -50,6 +55,9 @@ class rustdiscoverytest(unittest.TestCase):
     def parseindex(self):
         return cparsers.parse_index2(data_non_inlined, False)[0]
 
+    def repo(self):
+        return fakerepo(self.parseindex())
+
     def testindex(self):
         idx = self.parseindex()
         # checking our assumptions about the index binary data:
@@ -60,8 +68,7 @@ class rustdiscoverytest(unittest.TestCase):
                           3: (2, -1)})
 
     def testaddcommonsmissings(self):
-        idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3], True)
+        disco = PartialDiscovery(self.repo(), [3], True)
         self.assertFalse(disco.hasinfo())
         self.assertFalse(disco.iscomplete())
 
@@ -76,24 +83,21 @@ class rustdiscoverytest(unittest.TestCase):
         self.assertEqual(disco.commonheads(), {1})
 
     def testaddmissingsstats(self):
-        idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3], True)
+        disco = PartialDiscovery(self.repo(), [3], True)
         self.assertIsNone(disco.stats()['undecided'], None)
 
         disco.addmissings([2])
         self.assertEqual(disco.stats()['undecided'], 2)
 
     def testaddinfocommonfirst(self):
-        idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3], True)
+        disco = PartialDiscovery(self.repo(), [3], True)
         disco.addinfo([(1, True), (2, False)])
         self.assertTrue(disco.hasinfo())
         self.assertTrue(disco.iscomplete())
         self.assertEqual(disco.commonheads(), {1})
 
     def testaddinfomissingfirst(self):
-        idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3], True)
+        disco = PartialDiscovery(self.repo(), [3], True)
         disco.addinfo([(2, False), (1, True)])
         self.assertTrue(disco.hasinfo())
         self.assertTrue(disco.iscomplete())
