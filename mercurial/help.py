@@ -320,6 +320,8 @@ internalstable = sorted([
      loaddoc('config', subdir='internals')),
     (['extensions', 'extension'], _('Extension API'),
      loaddoc('extensions', subdir='internals')),
+    (['mergestate'], _('Mergestate'),
+     loaddoc('mergestate', subdir='internals')),
     (['requirements'], _('Repository Requirements'),
      loaddoc('requirements', subdir='internals')),
     (['revlogs'], _('Revision Logs'),

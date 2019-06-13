@@ -1082,6 +1082,7 @@ internals topic renders index of available sub-topics
        changegroups  Changegroups
        config        Config Registrar
        extensions    Extension API
+       mergestate    Mergestate
        requirements  Repository Requirements
        revlogs       Revision Logs
        wireprotocol  Wire Protocol
@@ -3438,6 +3439,13 @@ Sub-topic indexes rendered properly
   </a>
   </td><td>
   Extension API
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.mergestate">
+  mergestate
+  </a>
+  </td><td>
+  Mergestate
   </td></tr>
   <tr><td>
   <a href="/help/internals.requirements">
