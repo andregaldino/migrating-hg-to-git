@@ -80,7 +80,7 @@ ruled out) prior to taking off the experimental shrinkwrap.
 
 #. Finish prefetching files
 
-   * `-T {rawdata}`
+   * `-T {data}`  (other than cat?)
    * `verify`
    * `grep`
 
