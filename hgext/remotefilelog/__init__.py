@@ -990,9 +990,6 @@ def _fileprefetchhook(repo, revs, match):
             mf = ctx.manifest()
             sparsematch = repo.maybesparsematch(ctx.rev())
             for path in ctx.walk(match):
-                if path.endswith('/'):
-                    # Tree manifest that's being excluded as part of narrow
-                    continue
                 if (not sparsematch or sparsematch(path)) and path in mf:
                     allfiles.append((path, hex(mf[path])))
         repo.fileservice.prefetch(allfiles)
