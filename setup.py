@@ -1199,6 +1199,9 @@ class RustExtension(Extension):
         if sys.version_info[0] == 3 and self.py3_features is not None:
             cargocmd.extend(('--features', self.py3_features,
                              '--no-default-features'))
+        if sys.platform == 'darwin':
+            env['RUSTFLAGS'] = ("-C link-arg=-undefined "
+                                "-C link-arg=dynamic_lookup")
         try:
             subprocess.check_call(cargocmd, env=env, cwd=self.rustsrcdir)
         except OSError as exc:
