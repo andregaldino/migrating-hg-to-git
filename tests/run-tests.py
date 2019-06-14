@@ -1616,6 +1616,24 @@ class TTest(Test):
             if salt in out_rawline:
                 out_line, cmd_line = out_rawline.split(salt, 1)
 
+            pos, postout, warnonly = self._process_out_line(out_line,
+                                                            pos,
+                                                            postout,
+                                                            expected,
+                                                            warnonly)
+            pos, postout = self._process_cmd_line(cmd_line, pos, postout,
+                                                  after)
+
+        if pos in after:
+            postout += after.pop(pos)
+
+        if warnonly == WARN_YES:
+            exitcode = False # Set exitcode to warned.
+
+        return exitcode, postout
+
+    def _process_out_line(self, out_line, pos, postout, expected, warnonly):
+        if True:
             while out_line:
                 if not out_line.endswith(b'\n'):
                     out_line += b' (no-eol)\n'
@@ -1694,16 +1712,7 @@ class TTest(Test):
                             else:
                                 continue
                     postout.append(b'  ' + el)
-
-            pos, postout = self._process_cmd_line(cmd_line, pos, postout, after)
-
-        if pos in after:
-            postout += after.pop(pos)
-
-        if warnonly == WARN_YES:
-            exitcode = False # Set exitcode to warned.
-
-        return exitcode, postout
+        return pos, postout, warnonly
 
     def _process_cmd_line(self, cmd_line, pos, postout, after):
         """process a "command" part of a line from unified test output"""
