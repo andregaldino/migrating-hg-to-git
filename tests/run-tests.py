@@ -1612,13 +1612,13 @@ class TTest(Test):
         pos = -1
         postout = []
         for out_rawline in output:
-            lout, lcmd = out_rawline, None
+            out_line, lcmd = out_rawline, None
             if salt in out_rawline:
-                lout, lcmd = out_rawline.split(salt, 1)
+                out_line, lcmd = out_rawline.split(salt, 1)
 
-            while lout:
-                if not lout.endswith(b'\n'):
-                    lout += b' (no-eol)\n'
+            while out_line:
+                if not out_line.endswith(b'\n'):
+                    out_line += b' (no-eol)\n'
 
                 # Find the expected output at the current position.
                 els = [None]
@@ -1629,10 +1629,10 @@ class TTest(Test):
                 for i, el in enumerate(els):
                     r = False
                     if el:
-                        r, exact = self.linematch(el, lout)
+                        r, exact = self.linematch(el, out_line)
                     if isinstance(r, str):
                         if r == '-glob':
-                            lout = ''.join(el.rsplit(' (glob)', 1))
+                            out_line = ''.join(el.rsplit(' (glob)', 1))
                             r = '' # Warn only this line.
                         elif r == "retry":
                             postout.append(b'  ' + el)
@@ -1669,10 +1669,10 @@ class TTest(Test):
                         del els[i]
                     postout.append(b'  ' + el)
                 else:
-                    if self.NEEDESCAPE(lout):
-                        lout = TTest._stringescape(b'%s (esc)\n' %
-                                                   lout.rstrip(b'\n'))
-                    postout.append(b'  ' + lout) # Let diff deal with it.
+                    if self.NEEDESCAPE(out_line):
+                        out_line = TTest._stringescape(b'%s (esc)\n' %
+                                                   out_line.rstrip(b'\n'))
+                    postout.append(b'  ' + out_line) # Let diff deal with it.
                     if r != '': # If line failed.
                         warnonly = WARN_NO
                     elif warnonly == WARN_UNDEFINED:
