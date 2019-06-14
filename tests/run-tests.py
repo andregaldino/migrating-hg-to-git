@@ -1611,10 +1611,10 @@ class TTest(Test):
 
         pos = -1
         postout = []
-        for l in output:
-            lout, lcmd = l, None
-            if salt in l:
-                lout, lcmd = l.split(salt, 1)
+        for out_rawline in output:
+            lout, lcmd = out_rawline, None
+            if salt in out_rawline:
+                lout, lcmd = out_rawline.split(salt, 1)
 
             while lout:
                 if not lout.endswith(b'\n'):
