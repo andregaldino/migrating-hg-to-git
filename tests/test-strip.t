@@ -272,7 +272,12 @@ before strip of merge parent
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     c
   
+##strip not allowed with merge in progress
   $ hg strip 4
+  abort: outstanding uncommitted merge
+  [255]
+##strip allowed --force with merge in progress
+  $ hg strip 4 --force
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
 

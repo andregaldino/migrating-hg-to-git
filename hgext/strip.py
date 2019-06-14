@@ -50,6 +50,9 @@ def checklocalchanges(repo, force=False, excsuffix=''):
     cmdutil.checkunfinished(repo)
     s = repo.status()
     if not force:
+        if len(repo[None].parents()) > 1:
+            _("outstanding uncommitted merge") #i18 tool detection
+            raise error.Abort(_("outstanding uncommitted merge"+ excsuffix))
         if s.modified or s.added or s.removed or s.deleted:
             _("local changes found") # i18n tool detection
             raise error.Abort(_("local changes found" + excsuffix))
