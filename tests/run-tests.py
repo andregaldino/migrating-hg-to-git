@@ -1306,6 +1306,11 @@ WARN_UNDEFINED = 1
 WARN_YES = 2
 WARN_NO = 3
 
+MARK_OPTIONAL = b" (?)\n"
+
+def isoptional(line):
+    return line.endswith(MARK_OPTIONAL)
+
 class TTest(Test):
     """A "t test" is a test backed by a .t file."""
 
@@ -1660,7 +1665,7 @@ class TTest(Test):
                     els.pop(i)
                     break
                 if el:
-                    if el.endswith(b" (?)\n"):
+                    if isoptional(el):
                         optional.append(i)
                     else:
                         m = optline.match(el)
@@ -1700,7 +1705,7 @@ class TTest(Test):
             while expected.get(pos, None):
                 el = expected[pos].pop(0)
                 if el:
-                    if not el.endswith(b" (?)\n"):
+                    if not isoptional(el):
                         m = optline.match(el)
                         if m:
                             conditions = [c for c in m.group(2).split(b' ')]
@@ -1773,9 +1778,9 @@ class TTest(Test):
         if el == l: # perfect match (fast)
             return True, True
         retry = False
-        if el.endswith(b" (?)\n"):
+        if isoptional(el):
             retry = "retry"
-            el = el[:-5] + b"\n"
+            el = el[:-len(MARK_OPTIONAL)] + b"\n"
         else:
             m = optline.match(el)
             if m:
