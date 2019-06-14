@@ -1633,85 +1633,84 @@ class TTest(Test):
         return exitcode, postout
 
     def _process_out_line(self, out_line, pos, postout, expected, warnonly):
-        if True:
-            while out_line:
-                if not out_line.endswith(b'\n'):
-                    out_line += b' (no-eol)\n'
+        while out_line:
+            if not out_line.endswith(b'\n'):
+                out_line += b' (no-eol)\n'
 
-                # Find the expected output at the current position.
-                els = [None]
-                if expected.get(pos, None):
-                    els = expected[pos]
+            # Find the expected output at the current position.
+            els = [None]
+            if expected.get(pos, None):
+                els = expected[pos]
 
-                optional = []
-                for i, el in enumerate(els):
-                    r = False
-                    if el:
-                        r, exact = self.linematch(el, out_line)
-                    if isinstance(r, str):
-                        if r == '-glob':
-                            out_line = ''.join(el.rsplit(' (glob)', 1))
-                            r = '' # Warn only this line.
-                        elif r == "retry":
-                            postout.append(b'  ' + el)
-                        else:
-                            log('\ninfo, unknown linematch result: %r\n' % r)
-                            r = False
-                    if r:
+            optional = []
+            for i, el in enumerate(els):
+                r = False
+                if el:
+                    r, exact = self.linematch(el, out_line)
+                if isinstance(r, str):
+                    if r == '-glob':
+                        out_line = ''.join(el.rsplit(' (glob)', 1))
+                        r = '' # Warn only this line.
+                    elif r == "retry":
+                        postout.append(b'  ' + el)
+                    else:
+                        log('\ninfo, unknown linematch result: %r\n' % r)
+                        r = False
+                if r:
+                    els.pop(i)
+                    break
+                if el:
+                    if el.endswith(b" (?)\n"):
+                        optional.append(i)
+                    else:
+                        m = optline.match(el)
+                        if m:
+                            conditions = [
+                                c for c in m.group(2).split(b' ')]
+
+                            if not self._iftest(conditions):
+                                optional.append(i)
+                    if exact:
+                        # Don't allow line to be matches against a later
+                        # line in the output
                         els.pop(i)
                         break
-                    if el:
-                        if el.endswith(b" (?)\n"):
-                            optional.append(i)
-                        else:
-                            m = optline.match(el)
-                            if m:
-                                conditions = [
-                                    c for c in m.group(2).split(b' ')]
 
-                                if not self._iftest(conditions):
-                                    optional.append(i)
-                        if exact:
-                            # Don't allow line to be matches against a later
-                            # line in the output
-                            els.pop(i)
-                            break
-
-                if r:
-                    if r == "retry":
-                        continue
-                    # clean up any optional leftovers
-                    for i in optional:
-                        postout.append(b'  ' + els[i])
-                    for i in reversed(optional):
-                        del els[i]
-                    postout.append(b'  ' + el)
-                else:
-                    if self.NEEDESCAPE(out_line):
-                        out_line = TTest._stringescape(b'%s (esc)\n' %
-                                                   out_line.rstrip(b'\n'))
-                    postout.append(b'  ' + out_line) # Let diff deal with it.
-                    if r != '': # If line failed.
-                        warnonly = WARN_NO
-                    elif warnonly == WARN_UNDEFINED:
-                        warnonly = WARN_YES
-                break
-            else:
+            if r:
+                if r == "retry":
+                    continue
                 # clean up any optional leftovers
-                while expected.get(pos, None):
-                    el = expected[pos].pop(0)
-                    if el:
-                        if not el.endswith(b" (?)\n"):
-                            m = optline.match(el)
-                            if m:
-                                conditions = [c for c in m.group(2).split(b' ')]
+                for i in optional:
+                    postout.append(b'  ' + els[i])
+                for i in reversed(optional):
+                    del els[i]
+                postout.append(b'  ' + el)
+            else:
+                if self.NEEDESCAPE(out_line):
+                    out_line = TTest._stringescape(b'%s (esc)\n' %
+                                               out_line.rstrip(b'\n'))
+                postout.append(b'  ' + out_line) # Let diff deal with it.
+                if r != '': # If line failed.
+                    warnonly = WARN_NO
+                elif warnonly == WARN_UNDEFINED:
+                    warnonly = WARN_YES
+            break
+        else:
+            # clean up any optional leftovers
+            while expected.get(pos, None):
+                el = expected[pos].pop(0)
+                if el:
+                    if not el.endswith(b" (?)\n"):
+                        m = optline.match(el)
+                        if m:
+                            conditions = [c for c in m.group(2).split(b' ')]
 
-                                if self._iftest(conditions):
-                                    # Don't append as optional line
-                                    continue
-                            else:
+                            if self._iftest(conditions):
+                                # Don't append as optional line
                                 continue
-                    postout.append(b'  ' + el)
+                        else:
+                            continue
+                postout.append(b'  ' + el)
         return pos, postout, warnonly
 
     def _process_cmd_line(self, cmd_line, pos, postout, after):
