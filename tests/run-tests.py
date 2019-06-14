@@ -1302,6 +1302,10 @@ bchr = chr
 if PYTHON3:
     bchr = lambda x: bytes([x])
 
+WARN_UNDEFINED = 1
+WARN_YES = 2
+WARN_NO = 3
+
 class TTest(Test):
     """A "t test" is a test backed by a .t file."""
 
@@ -1601,9 +1605,9 @@ class TTest(Test):
 
     def _processoutput(self, exitcode, output, salt, after, expected):
         # Merge the script output back into a unified test.
-        warnonly = 1 # 1: not yet; 2: yes; 3: for sure not
+        warnonly = WARN_UNDEFINED # 1: not yet; 2: yes; 3: for sure not
         if exitcode != 0:
-            warnonly = 3
+            warnonly = WARN_NO
 
         pos = -1
         postout = []
@@ -1670,9 +1674,9 @@ class TTest(Test):
                                                    lout.rstrip(b'\n'))
                     postout.append(b'  ' + lout) # Let diff deal with it.
                     if r != '': # If line failed.
-                        warnonly = 3 # for sure not
-                    elif warnonly == 1: # Is "not yet" and line is warn only.
-                        warnonly = 2 # Yes do warn.
+                        warnonly = WARN_NO
+                    elif warnonly == WARN_UNDEFINED:
+                        warnonly = WARN_YES
                 break
             else:
                 # clean up any optional leftovers
@@ -1704,7 +1708,7 @@ class TTest(Test):
         if pos in after:
             postout += after.pop(pos)
 
-        if warnonly == 2:
+        if warnonly == WARN_YES:
             exitcode = False # Set exitcode to warned.
 
         return exitcode, postout
