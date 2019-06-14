@@ -164,6 +164,7 @@ test-directaccess.t
 test-dirstate-backup.t
 test-dirstate-nonnormalset.t
 test-dirstate-race.t
+test-dirstate-race2.t
 test-dirstate.t
 test-dispatch.py
 test-dispatch.t
