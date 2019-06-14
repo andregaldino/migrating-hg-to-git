@@ -1612,9 +1612,9 @@ class TTest(Test):
         pos = -1
         postout = []
         for out_rawline in output:
-            out_line, lcmd = out_rawline, None
+            out_line, cmd_line = out_rawline, None
             if salt in out_rawline:
-                out_line, lcmd = out_rawline.split(salt, 1)
+                out_line, cmd_line = out_rawline.split(salt, 1)
 
             while out_line:
                 if not out_line.endswith(b'\n'):
@@ -1695,15 +1695,15 @@ class TTest(Test):
                                 continue
                     postout.append(b'  ' + el)
 
-            if lcmd:
+            if cmd_line:
                 # Add on last return code.
-                ret = int(lcmd.split()[1])
+                ret = int(cmd_line.split()[1])
                 if ret != 0:
                     postout.append(b'  [%d]\n' % ret)
                 if pos in after:
                     # Merge in non-active test bits.
                     postout += after.pop(pos)
-                pos = int(lcmd.split()[0])
+                pos = int(cmd_line.split()[0])
 
         if pos in after:
             postout += after.pop(pos)
