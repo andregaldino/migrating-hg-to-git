@@ -32,6 +32,7 @@ if os.environ.get('HGALLOWPYTHON3', ''):
     ])
 
 import sys, platform
+import sysconfig
 if sys.version_info[0] >= 3:
     printf = eval('print')
     libdir_escape = 'unicode_escape'
@@ -103,6 +104,12 @@ Python 3 support.
 
         printf(error, file=sys.stderr)
         sys.exit(1)
+
+if sys.version_info[0] >= 3:
+    DYLIB_SUFFIX = sysconfig.get_config_vars()['EXT_SUFFIX']
+else:
+    # deprecated in Python 3
+    DYLIB_SUFFIX = sysconfig.get_config_vars()['SO']
 
 # Solaris Python packaging brain damage
 try:
@@ -1160,6 +1167,19 @@ class RustExtension(Extension):
                                 for fname in fnames
                                 if os.path.splitext(fname)[1] == '.rs')
 
+    @staticmethod
+    def rustdylibsuffix():
+        """Return the suffix for shared libraries produced by rustc.
+
+        See also: https://doc.rust-lang.org/reference/linkage.html
+        """
+        if sys.platform == 'darwin':
+            return '.dylib'
+        elif os.name == 'nt':
+            return '.dll'
+        else:
+            return '.so'
+
     def rustbuild(self):
         env = os.environ.copy()
         if 'HGTEST_RESTOREENV' in env:
@@ -1227,9 +1247,9 @@ class RustStandaloneExtension(RustExtension):
         self.rustbuild()
         target = [target_dir]
         target.extend(self.name.split('.'))
-        ext = '.so'  # TODO Unix only
-        target[-1] += ext
-        shutil.copy2(os.path.join(self.rusttargetdir, self.dylibname + ext),
+        target[-1] += DYLIB_SUFFIX
+        shutil.copy2(os.path.join(self.rusttargetdir,
+                                  self.dylibname + self.rustdylibsuffix()),
                      os.path.join(*target))
 
 
