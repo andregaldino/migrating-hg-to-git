@@ -8,7 +8,7 @@ use utils::files::get_path_from_bytes;
 use utils::{replace_slice, SliceExt};
 
 lazy_static! {
-    static ref reescape: Vec<Vec<u8>> = {
+    static ref RE_ESCAPE: Vec<Vec<u8>> = {
         let mut v: Vec<Vec<u8>> = (0..=255).map(|byte| vec![byte]).collect();
         let to_escape = b"()[]{}?*+-|^$\\.&~# \t\n\r\x0b\x0c";
         for byte in to_escape {
@@ -99,9 +99,9 @@ fn glob_to_re(pat: &[u8]) -> Vec<u8> {
                         c
                     }
                 };
-                res.extend(&reescape[*c as usize])
+                res.extend(&RE_ESCAPE[*c as usize])
             }
-            _ => res.extend(&reescape[*c as usize]),
+            _ => res.extend(&RE_ESCAPE[*c as usize]),
         }
     }
     res
@@ -110,7 +110,7 @@ fn glob_to_re(pat: &[u8]) -> Vec<u8> {
 fn escape_pattern(pattern: &[u8]) -> Vec<u8> {
     pattern
         .iter()
-        .flat_map(|c| reescape[*c as usize].clone())
+        .flat_map(|c| RE_ESCAPE[*c as usize].clone())
         .collect()
 }
 
