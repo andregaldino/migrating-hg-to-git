@@ -46,19 +46,19 @@ def checksubstate(repo, baserev=None):
             inclsubs.append(s)
     return inclsubs
 
-def checklocalchanges(repo, force=False, excsuffix=''):
+def checklocalchanges(repo, force=False):
     cmdutil.checkunfinished(repo)
     s = repo.status()
     if not force:
         if len(repo[None].parents()) > 1:
             _("outstanding uncommitted merge") #i18 tool detection
-            raise error.Abort(_("outstanding uncommitted merge"+ excsuffix))
+            raise error.Abort(_("outstanding uncommitted merge"))
         if s.modified or s.added or s.removed or s.deleted:
             _("local changes found") # i18n tool detection
-            raise error.Abort(_("local changes found" + excsuffix))
+            raise error.Abort(_("local changes found"))
         if checksubstate(repo):
             _("local changed subrepos found") # i18n tool detection
-            raise error.Abort(_("local changed subrepos found" + excsuffix))
+            raise error.Abort(_("local changed subrepos found"))
     return s
 
 def _findupdatetarget(repo, nodes):
