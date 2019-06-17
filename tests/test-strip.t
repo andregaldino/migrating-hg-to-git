@@ -551,7 +551,7 @@ Verify strip protects against stripping wc parent when there are uncommitted mod
 
   $ echo c > b
   $ hg strip tip
-  abort: local changes found
+  abort: uncommitted changes
   [255]
   $ hg strip tip --keep
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
@@ -703,7 +703,7 @@ test hg strip -B bookmark
   $ echo a > a
   $ hg add a
   $ hg strip -B B
-  abort: local changes found
+  abort: uncommitted changes
   [255]
   $ hg bookmarks
    * B                         6:ff43616e5d0f

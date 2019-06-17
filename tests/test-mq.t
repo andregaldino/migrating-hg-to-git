@@ -811,7 +811,7 @@ strip with local changes, should complain
   $ echo y>y
   $ hg add y
   $ hg strip tip
-  abort: local changes found
+  abort: uncommitted changes
   [255]
 
 --force strip with local changes
