@@ -144,7 +144,21 @@ except KeyError:
     stripext = extensions.load(dummyui(), 'strip', '')
 
 strip = stripext.strip
-checksubstate = stripext.checksubstate
+
+def checksubstate(repo, baserev=None):
+    '''return list of subrepos at a different revision than substate.
+    Abort if any subrepos have uncommitted changes.'''
+    inclsubs = []
+    wctx = repo[None]
+    if baserev:
+        bctx = repo[baserev]
+    else:
+        bctx = wctx.p1()
+    for s in sorted(wctx.substate):
+        wctx.sub(s).bailifchanged(True)
+        if s not in bctx.substate or bctx.sub(s).dirty():
+            inclsubs.append(s)
+    return inclsubs
 
 # Patch names looks like unix-file names.
 # They must be joinable with queue directory and result in the patch path.
