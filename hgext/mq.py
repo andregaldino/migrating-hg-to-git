@@ -145,8 +145,6 @@ except KeyError:
 
 strip = stripext.strip
 checksubstate = stripext.checksubstate
-checklocalchanges = stripext.checklocalchanges
-
 
 # Patch names looks like unix-file names.
 # They must be joinable with queue directory and result in the patch path.
@@ -1149,7 +1147,20 @@ class queue(object):
             # plain versions for i18n tool to detect them
             _("local changes found, qrefresh first")
             _("local changed subrepos found, qrefresh first")
-        return checklocalchanges(repo, force, excsuffix)
+
+        cmdutil.checkunfinished(repo)
+        s = repo.status()
+        if not force:
+            if len(repo[None].parents()) > 1:
+                _("outstanding uncommitted merge") #i18 tool detection
+                raise error.Abort(_("outstanding uncommitted merge"+ excsuffix))
+            if s.modified or s.added or s.removed or s.deleted:
+                _("local changes found") # i18n tool detection
+                raise error.Abort(_("local changes found" + excsuffix))
+            if checksubstate(repo):
+                _("local changed subrepos found") # i18n tool detection
+                raise error.Abort(_("local changed subrepos found" + excsuffix))
+        return s
 
     _reserved = ('series', 'status', 'guards', '.', '..')
     def checkreservedname(self, name):
