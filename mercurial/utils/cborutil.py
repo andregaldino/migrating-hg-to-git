@@ -214,6 +214,14 @@ def streamencode(v):
     fn = STREAM_ENCODERS.get(v.__class__)
 
     if not fn:
+        # handle subtypes such as encoding.localstr and util.sortdict
+        for ty in STREAM_ENCODERS:
+            if not isinstance(v, ty):
+                continue
+            fn = STREAM_ENCODERS[ty]
+            break
+
+    if not fn:
         raise ValueError('do not know how to encode %s' % type(v))
 
     return fn(v)

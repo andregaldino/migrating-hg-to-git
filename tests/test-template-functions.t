@@ -1562,6 +1562,20 @@ json filter takes input as utf-8b:
   $ HGENCODING=ascii hg log -T "{'`cat latin1`'|json}\n" -l1
   "\udce9"
 
+cbor filter is bytes transparent, which should handle bytes subtypes
+as bytes:
+
+  $ HGENCODING=ascii hg log -T "{branch|cbor}" -r0 \
+  > | "$PYTHON" "$TESTTMP/decodecbor.py"
+  [
+   '?'
+  ]
+  $ HGENCODING=latin-1 hg log -T "{branch|cbor}" -r0 \
+  > | "$PYTHON" "$TESTTMP/decodecbor.py"
+  [
+   '\xe9'
+  ]
+
 utf8 filter:
 
   $ HGENCODING=ascii hg log -T "round-trip: {branch|utf8|hex}\n" -r0
