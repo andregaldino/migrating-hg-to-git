@@ -43,7 +43,8 @@ def backgroundrepack(repo, incremental=True, packsonly=False):
     if packsonly:
         cmd.append('--packsonly')
     repo.ui.warn(msg)
-    procutil.runbgcommand(cmd, encoding.environ)
+    # We know this command will find a binary, so don't block on it starting.
+    procutil.runbgcommand(cmd, encoding.environ, ensurestart=False)
 
 def fullrepack(repo, options=None):
     """If ``packsonly`` is True, stores creating only loose objects are skipped.

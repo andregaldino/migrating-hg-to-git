@@ -190,7 +190,9 @@ def wraprepo(repo):
                 cmd.append('--repack')
             if revs:
                 cmd += ['-r', revs]
-            procutil.runbgcommand(cmd, encoding.environ)
+            # We know this command will find a binary, so don't block
+            # on it starting.
+            procutil.runbgcommand(cmd, encoding.environ, ensurestart=False)
 
         def prefetch(self, revs, base=None, pats=None, opts=None):
             """Prefetches all the necessary file revisions for the given revs
