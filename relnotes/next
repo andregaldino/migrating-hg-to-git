@@ -3,6 +3,9 @@
  * New config `commands.commit.post-status` shows status after successful
  commit.
 
+ * `hg root` now has templating support, including support for showing
+   where a repo share's source is. See `hg help -v root` for details.
+
 
 == New Experimental Features ==
 
