@@ -630,6 +630,16 @@ using log status template (issue5155)
     b
   R b
   
+BROKEN: as above, 'a' should be marked a copy
+  $ hg log -GTstatus -r 'wdir()' -C
+  o  changeset:   2147483647:ffffffffffff
+  |  parent:      0:8c55c58b4c0e
+  ~  user:        test
+     date:        * (glob)
+     files:
+     M a
+     R b
+  
 
 Other "bug" highlight, the revision status does not report the copy information.
 This is buggy behavior.
