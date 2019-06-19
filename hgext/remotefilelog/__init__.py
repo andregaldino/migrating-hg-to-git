@@ -316,7 +316,7 @@ def uisetup(ui):
     scmutil.fileprefetchhooks.add('remotefilelog', _fileprefetchhook)
 
     # disappointing hacks below
-    scmutil.getrenamedfn = getrenamedfn
+    extensions.wrapfunction(scmutil, 'getrenamedfn', getrenamedfn)
     extensions.wrapfunction(revset, 'filelog', filelogrevset)
     revset.symbols['filelog'] = revset.filelog
     extensions.wrapfunction(cmdutil, 'walkfilerevs', walkfilerevs)
@@ -635,7 +635,10 @@ def onetimeclientsetup(ui):
         return node
     extensions.wrapfunction(changelog.changelog, 'add', changelogadd)
 
-def getrenamedfn(repo, endrev=None):
+def getrenamedfn(orig, repo, endrev=None):
+    if not isenabled(repo):
+        return orig(repo, endrev)
+
     rcache = {}
 
     def getrenamed(fn, rev):
