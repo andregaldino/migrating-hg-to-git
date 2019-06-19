@@ -1162,18 +1162,17 @@ class queue(object):
             _("local changes found, qrefresh first")
             _("local changed subrepos found, qrefresh first")
 
-        cmdutil.checkunfinished(repo)
         s = repo.status()
         if not force:
-            if len(repo[None].parents()) > 1:
-                _("outstanding uncommitted merge") #i18 tool detection
-                raise error.Abort(_("outstanding uncommitted merge"+ excsuffix))
+            cmdutil.checkunfinished(repo)
             if s.modified or s.added or s.removed or s.deleted:
                 _("local changes found") # i18n tool detection
                 raise error.Abort(_("local changes found" + excsuffix))
             if checksubstate(repo):
                 _("local changed subrepos found") # i18n tool detection
                 raise error.Abort(_("local changed subrepos found" + excsuffix))
+        else:
+            cmdutil.checkunfinished(repo, skipmerge=True)
         return s
 
     _reserved = ('series', 'status', 'guards', '.', '..')
