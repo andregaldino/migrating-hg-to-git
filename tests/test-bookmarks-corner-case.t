@@ -132,8 +132,6 @@ We build a server side extension for this purpose
   >             raise error.Abort("race scenario timed out")
   >         time.sleep(0.1)
   >     return orig(self, repo)
-  > 
-  >     repo.__class__ = racedrepo
   > def uisetup(ui):
   >     extensions.wrapfunction(bookmarks.bmstore, '__init__', wrapinit)
   > def e():
