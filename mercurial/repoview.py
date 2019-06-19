@@ -274,8 +274,8 @@ class repoview(object):
         unfiindex = unfichangelog.index
         unfilen = len(unfiindex)
         unfinode = unfiindex[unfilen - 1][7]
-
-        revs = filterrevs(unfi, self.filtername, self._visibilityexceptions)
+        with util.timedcm('repo filter for %s', self.filtername):
+            revs = filterrevs(unfi, self.filtername, self._visibilityexceptions)
         cl = self._clcache
         newkey = (unfilen, unfinode, hash(revs), unfichangelog._delayed)
         # if cl.index is not unfiindex, unfi.changelog would be

@@ -899,11 +899,12 @@ def getrevs(repo, name):
 
     Such access may compute the set and cache it for future use"""
     repo = repo.unfiltered()
-    if not repo.obsstore:
-        return frozenset()
-    if name not in repo.obsstore.caches:
-        repo.obsstore.caches[name] = cachefuncs[name](repo)
-    return repo.obsstore.caches[name]
+    with util.timedcm('getrevs %s', name):
+        if not repo.obsstore:
+            return frozenset()
+        if name not in repo.obsstore.caches:
+            repo.obsstore.caches[name] = cachefuncs[name](repo)
+        return repo.obsstore.caches[name]
 
 
 # To be simple we need to invalidate obsolescence cache when:
