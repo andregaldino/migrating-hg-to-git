@@ -452,8 +452,6 @@ def createcmd(ui, repo, pats, opts):
 def _docreatecmd(ui, repo, pats, opts):
     wctx = repo[None]
     parents = wctx.parents()
-    if len(parents) > 1:
-        raise error.Abort(_('cannot shelve while merging'))
     parent = parents[0]
     origbranch = wctx.branch()
 
@@ -979,12 +977,6 @@ def _dounshelve(ui, repo, *shelved, **opts):
             return unshelvecontinue(ui, repo, state, opts)
     elif len(shelved) > 1:
         raise error.Abort(_('can only unshelve one change at a time'))
-
-    # abort unshelve while merging (issue5123)
-    parents = repo[None].parents()
-    if len(parents) > 1:
-        raise error.Abort(_('cannot unshelve while merging'))
-
     elif not shelved:
         shelved = listshelves(repo)
         if not shelved:
