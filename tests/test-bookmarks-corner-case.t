@@ -135,11 +135,14 @@ We build a server side extension for this purpose
   >             raise error.Abort("race scenario timed out")
   >         time.sleep(0.1)
   > 
-  > def wrapinit(orig, self, repo):
-  >     wait(repo)
-  >     return orig(self, repo)
-  > def uisetup(ui):
-  >     extensions.wrapfunction(bookmarks.bmstore, '__init__', wrapinit)
+  > def reposetup(ui, repo):
+  >     class racedrepo(repo.__class__):
+  >         @property
+  >         def _bookmarks(self):
+  >             wait(self)
+  >             return super(racedrepo, self)._bookmarks
+  >     repo.__class__ = racedrepo
+  > 
   > def e():
   >     with open('push-A-done', 'w'):
   >         pass
@@ -216,7 +219,7 @@ Check result of the push.
   |  summary:     A1
   |
   | o  changeset:   3:f26c3b5167d1
-  | |  bookmark:    book-B
+  | |  bookmark:    book-B (false !)
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  summary:     B1
@@ -239,4 +242,4 @@ Check result of the push.
   
   $ hg -R bookrace-server book
      book-A                    4:9ce3b28c16de
-     book-B                    3:f26c3b5167d1
+     book-B                    3:f26c3b5167d1 (false !)
