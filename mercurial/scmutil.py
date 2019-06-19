@@ -1247,6 +1247,28 @@ def getrenamedfn(repo, endrev=None):
 
     return getrenamed
 
+def getcopiesfn(repo, endrev=None):
+    if copiesmod.usechangesetcentricalgo(repo):
+        def copiesfn(ctx):
+            if ctx.p2copies():
+                allcopies = ctx.p1copies().copy()
+                # There should be no overlap
+                allcopies.update(ctx.p2copies())
+                return sorted(allcopies.items())
+            else:
+                return sorted(ctx.p1copies().items())
+    else:
+        getrenamed = getrenamedfn(repo, endrev)
+        def copiesfn(ctx):
+            copies = []
+            for fn in ctx.files():
+                rename = getrenamed(fn, ctx.rev())
+                if rename:
+                    copies.append((fn, rename))
+            return copies
+
+    return copiesfn
+
 def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
     """Update the dirstate to reflect the intent of copying src to dst. For
     different reasons it might not end with dst being marked as copied from src.

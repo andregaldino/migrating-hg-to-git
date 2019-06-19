@@ -301,14 +301,10 @@ def showfilecopies(context, mapping):
     cache = context.resource(mapping, 'cache')
     copies = context.resource(mapping, 'revcache').get('copies')
     if copies is None:
-        if 'getrenamed' not in cache:
-            cache['getrenamed'] = scmutil.getrenamedfn(repo)
-        copies = []
-        getrenamed = cache['getrenamed']
-        for fn in ctx.files():
-            rename = getrenamed(fn, ctx.rev())
-            if rename:
-                copies.append((fn, rename))
+        if 'getcopies' not in cache:
+            cache['getcopies'] = scmutil.getcopiesfn(repo)
+        getcopies = cache['getcopies']
+        copies = getcopies(ctx)
     return templateutil.compatfilecopiesdict(context, mapping, 'file_copy',
                                              copies)
 
