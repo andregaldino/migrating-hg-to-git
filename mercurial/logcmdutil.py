@@ -891,7 +891,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
     for rev, type, ctx, parents in dag:
         char = formatnode(repo, ctx)
         copies = None
-        if getrenamed and ctx.rev():
+        if getrenamed:
             copies = []
             for fn in ctx.files():
                 rename = getrenamed(fn, ctx.rev())
@@ -919,7 +919,7 @@ def displayrevs(ui, repo, revs, displayer, getrenamed):
     for rev in revs:
         ctx = repo[rev]
         copies = None
-        if getrenamed is not None and rev:
+        if getrenamed is not None:
             copies = []
             for fn in ctx.files():
                 rename = getrenamed(fn, rev)

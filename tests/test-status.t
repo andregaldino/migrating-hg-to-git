@@ -630,7 +630,6 @@ using log status template (issue5155)
     b
   R b
   
-BROKEN: as above, 'a' should be marked a copy
   $ hg log -GTstatus -r 'wdir()' -C
   o  changeset:   2147483647:ffffffffffff
   |  parent:      0:8c55c58b4c0e
@@ -638,6 +637,7 @@ BROKEN: as above, 'a' should be marked a copy
      date:        * (glob)
      files:
      M a
+       b
      R b
   
 
