@@ -121,8 +121,10 @@ We build a server side extension for this purpose
   > import atexit
   > from mercurial import error, extensions, bookmarks
   > 
-  > def wait():
+  > def wait(repo):
   >     if not os.path.exists('push-A-started'):
+  >         assert repo._currentlock(repo._lockref) is None
+  >         assert repo._currentlock(repo._wlockref) is None
   >         print('setting raced push up')
   >         with open('push-A-started', 'w'):
   >             pass
@@ -134,7 +136,7 @@ We build a server side extension for this purpose
   >         time.sleep(0.1)
   > 
   > def wrapinit(orig, self, repo):
-  >     wait()
+  >     wait(repo)
   >     return orig(self, repo)
   > def uisetup(ui):
   >     extensions.wrapfunction(bookmarks.bmstore, '__init__', wrapinit)
