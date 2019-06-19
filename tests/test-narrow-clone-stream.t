@@ -61,8 +61,10 @@ Cloning a specific file when stream clone is supported
 Making sure we have the correct set of requirements
 
   $ cat .hg/requires
-  dotencode (tree flat-fncache !)
-  fncache (tree flat-fncache !)
+  dotencode (tree !)
+  dotencode (flat-fncache !)
+  fncache (tree !)
+  fncache (flat-fncache !)
   generaldelta
   narrowhg-experimental
   revlogv1
@@ -75,8 +77,9 @@ Making sure store has the required files
   $ ls .hg/store/
   00changelog.i
   00manifest.i
-  data (tree flat-fncache !)
-  fncache (tree flat-fncache !)
+  data
+  fncache (tree !)
+  fncache (flat-fncache !)
   meta (tree !)
   narrowspec
   undo

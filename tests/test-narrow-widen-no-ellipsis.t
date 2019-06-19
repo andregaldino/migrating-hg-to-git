@@ -124,7 +124,7 @@ added upstream revisions.
   adding manifests
   adding widest/ revisions (tree !)
   adding file changes
-  adding widest/f revisions (tree !)
+  adding widest/f revisions
   added 0 changesets with 1 changes to 1 files
   bundle2-input-part: total payload size * (glob)
   bundle2-input-bundle: 0 parts total

@@ -1936,3 +1936,70 @@ Test automatic pattern replacement
   running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
+
+Test conditional output matching
+================================
+
+  $ cat << EOF >> test-conditional-matching.t
+  > #testcases foo bar
+  >   $ echo richtig
+  >   richtig (true !)
+  >   $ echo falsch
+  >   falsch (false !)
+  > #if foo
+  >   $ echo arthur
+  >   arthur (bar !)
+  > #endif
+  >   $ echo celeste
+  >   celeste (foo !)
+  >   $ echo zephir
+  >   zephir (bar !)
+  > EOF
+
+  $ rt test-conditional-matching.t
+  running 2 tests using 1 parallel processes 
+  
+  --- $TESTTMP/anothertests/cases/test-conditional-matching.t
+  +++ $TESTTMP/anothertests/cases/test-conditional-matching.t#bar.err
+  @@ -3,11 +3,13 @@
+     richtig (true !)
+     $ echo falsch
+     falsch (false !)
+  +  falsch
+   #if foo
+     $ echo arthur
+     arthur \(bar !\) (re)
+   #endif
+     $ echo celeste
+     celeste \(foo !\) (re)
+  +  celeste
+     $ echo zephir
+     zephir \(bar !\) (re)
+  
+  ERROR: test-conditional-matching.t#bar output changed
+  !
+  --- $TESTTMP/anothertests/cases/test-conditional-matching.t
+  +++ $TESTTMP/anothertests/cases/test-conditional-matching.t#foo.err
+  @@ -3,11 +3,14 @@
+     richtig (true !)
+     $ echo falsch
+     falsch (false !)
+  +  falsch
+   #if foo
+     $ echo arthur
+     arthur \(bar !\) (re)
+  +  arthur
+   #endif
+     $ echo celeste
+     celeste \(foo !\) (re)
+     $ echo zephir
+     zephir \(bar !\) (re)
+  +  zephir
+  
+  ERROR: test-conditional-matching.t#foo output changed
+  !
+  Failed test-conditional-matching.t#bar: output changed
+  Failed test-conditional-matching.t#foo: output changed
+  # Ran 2 tests, 0 skipped, 2 failed.
+  python hash seed: * (glob)
+  [1]

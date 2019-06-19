@@ -1748,7 +1748,8 @@ class TTest(Test):
 
                 el = m.group(1) + b"\n"
                 if not self._iftest(conditions):
-                    retry = "retry"    # Not required by listed features
+                    # listed feature missing, should not match
+                    return "retry", False
 
         if el.endswith(b" (esc)\n"):
             if PYTHON3:
