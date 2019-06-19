@@ -3887,12 +3887,12 @@ def log(ui, repo, *pats, **opts):
         # then filter the result by logcmdutil._makerevset() and --limit
         revs, differ = logcmdutil.getlinerangerevs(repo, revs, opts)
 
-    getrenamed = None
+    getcopies = None
     if opts.get('copies'):
         endrev = None
         if revs:
             endrev = revs.max() + 1
-        getrenamed = scmutil.getrenamedfn(repo, endrev=endrev)
+        getcopies = scmutil.getcopiesfn(repo, endrev=endrev)
 
     ui.pager('log')
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts, differ,
@@ -3901,7 +3901,7 @@ def log(ui, repo, *pats, **opts):
         displayfn = logcmdutil.displaygraphrevs
     else:
         displayfn = logcmdutil.displayrevs
-    displayfn(ui, repo, revs, displayer, getrenamed)
+    displayfn(ui, repo, revs, displayer, getcopies)
 
 @command('manifest',
     [('r', 'rev', '', _('revision to display'), _('REV')),
