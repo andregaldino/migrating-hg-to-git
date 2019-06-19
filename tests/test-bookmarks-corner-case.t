@@ -120,7 +120,8 @@ We build a server side extension for this purpose
   > import time
   > import atexit
   > from mercurial import error, extensions, bookmarks
-  > def wrapinit(orig, self, repo):
+  > 
+  > def wait():
   >     if not os.path.exists('push-A-started'):
   >         print('setting raced push up')
   >         with open('push-A-started', 'w'):
@@ -131,6 +132,9 @@ We build a server side extension for this purpose
   >         if clock <= 0:
   >             raise error.Abort("race scenario timed out")
   >         time.sleep(0.1)
+  > 
+  > def wrapinit(orig, self, repo):
+  >     wait()
   >     return orig(self, repo)
   > def uisetup(ui):
   >     extensions.wrapfunction(bookmarks.bmstore, '__init__', wrapinit)
