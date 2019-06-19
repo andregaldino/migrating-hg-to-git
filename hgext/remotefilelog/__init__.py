@@ -636,7 +636,7 @@ def onetimeclientsetup(ui):
     extensions.wrapfunction(changelog.changelog, 'add', changelogadd)
 
 def getrenamedfn(orig, repo, endrev=None):
-    if not isenabled(repo):
+    if not isenabled(repo) or copies.usechangesetcentricalgo(repo):
         return orig(repo, endrev)
 
     rcache = {}
