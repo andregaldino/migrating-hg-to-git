@@ -312,15 +312,15 @@ def _changesetforwardcopies(a, b, match):
                                if match(dst)}
             # Copy the dict only if later iterations will also need it
             if i != len(children[r]) - 1:
-                copies = copies.copy()
-            if childcopies:
-                childcopies = _chain(copies, childcopies)
+                newcopies = copies.copy()
             else:
-                childcopies = copies
+                newcopies = copies
+            if childcopies:
+                newcopies = _chain(newcopies, childcopies)
             for f in childctx.filesremoved():
-                if f in childcopies:
-                    del childcopies[f]
-            heapq.heappush(work, (c, parent, childcopies))
+                if f in newcopies:
+                    del newcopies[f]
+            heapq.heappush(work, (c, parent, newcopies))
     assert False
 
 def _forwardcopies(a, b, match=None):
