@@ -272,25 +272,19 @@ def _changesetforwardcopies(a, b, match):
     heapq.heapify(work)
     alwaysmatch = match.always()
     while work:
-        r, i1, copies1 = heapq.heappop(work)
+        r, i1, copies = heapq.heappop(work)
         if work and work[0][0] == r:
             # We are tracing copies from both parents
             r, i2, copies2 = heapq.heappop(work)
-            copies = {}
-            allcopies = set(copies1) | set(copies2)
-            for dst in allcopies:
+            for dst, src in copies2.items():
                 # Unlike when copies are stored in the filelog, we consider
                 # it a copy even if the destination already existed on the
                 # other branch. It's simply too expensive to check if the
                 # file existed in the manifest.
-                if dst in copies1:
-                    # If it was copied on the p1 side, mark it as copied from
+                if dst not in copies:
+                    # If it was copied on the p1 side, leave it as copied from
                     # that side, even if it was also copied on the p2 side.
-                    copies[dst] = copies1[dst]
-                else:
                     copies[dst] = copies2[dst]
-        else:
-            copies = copies1
         if r == b.rev():
             _filter(a, b, copies)
             return copies
