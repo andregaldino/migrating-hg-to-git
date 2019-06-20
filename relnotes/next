@@ -57,3 +57,14 @@
 
  * `util.dirs()` and `util.finddirs()` now include an entry for the
    root directory (empty string).
+
+ * New API to manage unfinished operations: Earlier there were distinct APIs
+   which dealt with unfinished states and separate lists maintaining them
+   that are `cmdutil.afterresolvestates`, `cmdutil.unfinishedstates` and
+   `cmdutil.STATES`. Now these have been unified to a single
+   API which handles the various states and their utilities. This API
+   has been added to `state.py`. Now instead of adding to these 3 lists
+   independently a state for a new operation can be registered using
+   `addunfinished()` in `state` module.
+
+ * `cmdutil.checkunfinished()` now includes detection for merge too.
