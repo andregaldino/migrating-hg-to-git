@@ -114,8 +114,8 @@ file is excluded from sparse checkout
   $ hg merge
   temporarily included 1 file(s) in the sparse checkout for merging
   file 'd' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]

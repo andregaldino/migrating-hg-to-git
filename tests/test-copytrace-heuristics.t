@@ -89,8 +89,8 @@ Make sure filename heuristics do not when they are not related
   $ hg rebase -s . -d 1
   rebasing 2:d526312210b9 "mode a" (tip)
   file 'a' was deleted in local [dest] but was modified in other [source].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
 
@@ -246,8 +246,8 @@ With small limit
   rebasing 2:ef716627c70b "mod a" (tip)
   skipping copytracing for 'a', more candidates than the limit: 7
   file 'a' was deleted in local [dest] but was modified in other [source].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
 
@@ -702,8 +702,8 @@ When the sourcecommitlimit is small and we have more drafts, we use heuristics o
   $ hg rebase -s 1 -d .
   rebasing 1:8b6e13696c38 "added more things to a"
   file 'a' was deleted in local [dest] but was modified in other [source].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
 

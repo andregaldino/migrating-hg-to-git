@@ -112,8 +112,8 @@ missing file in the top level repo.
   > d
   > EOF
   file 'b' was deleted in local [working copy] but was modified in other [destination].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? d
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? d
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 XXX: There's a difference between wdir() and '.', so there should be a status.

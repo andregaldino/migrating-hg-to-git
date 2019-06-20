@@ -612,8 +612,8 @@ the 1st commit of resuming.
   rebasing 1:72518492caa6 "#1"
   rebasing 4:07d6153b5c04 "#4"
   file '.hglf/large1' was deleted in other [source] but was modified in local [dest].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? c
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? c
 
   $ hg diff -c "tip~1" --nodates .hglf/large1 | grep '^[+-][0-9a-z]'
   -e5bb990443d6a92aaf7223813720f7566c9dd05b

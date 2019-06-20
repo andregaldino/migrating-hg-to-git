@@ -683,8 +683,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    a: prompt deleted/changed -> m (premerge)
   picked tool ':prompt' for a (binary False symlink False changedelete True)
   file 'a' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -729,8 +729,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    a: prompt changed/deleted -> m (premerge)
   picked tool ':prompt' for a (binary False symlink False changedelete True)
   file 'a' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b

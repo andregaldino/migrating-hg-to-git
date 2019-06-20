@@ -789,8 +789,8 @@ in p1 too, but it was recorded as copied from p2.
   $ echo modified >> aaa
   $ hg co -m '.^' -t :merge3
   file 'aaa' was deleted in other [destination] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   1 files updated, 0 files merged, 1 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges
   [1]
@@ -839,8 +839,8 @@ Amend a merge changeset (with manifest-level conflicts):
   > c
   > EOF
   file 'aa' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? c
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? c
   $ hg ci -m 'merge bar (with conflicts)'
   $ hg log --config diff.git=1 -pr .
   changeset:   28:b4c3035e2544

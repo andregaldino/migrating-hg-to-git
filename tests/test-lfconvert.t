@@ -128,7 +128,9 @@ add some changesets to rename/remove/merge
   $ hg merge
   tool internal:merge (for pattern stuff/maybelarge.dat) can't handle binary
   no tool found to merge stuff/maybelarge.dat
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for stuff/maybelarge.dat? u
+  file 'stuff/maybelarge.dat' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   merging sub/normal2 and stuff/normal2 to stuff/normal2
   0 files updated, 1 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon

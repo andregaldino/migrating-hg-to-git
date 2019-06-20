@@ -713,7 +713,9 @@ ui.merge specifies internal:prompt:
   true.executable=cat
   # hg update -C 1
   $ hg merge -r 2 --config ui.merge=internal:prompt
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -737,7 +739,9 @@ ui.merge specifies :prompt, with 'leave unresolved' chosen
   $ hg merge -r 2 --config ui.merge=:prompt --config ui.interactive=True << EOF
   > u
   > EOF
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -759,7 +763,9 @@ prompt with EOF
   true.executable=cat
   # hg update -C 1
   $ hg merge -r 2 --config ui.merge=internal:prompt --config ui.interactive=true
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? 
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? 
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -772,7 +778,9 @@ prompt with EOF
   # hg resolve --list
   U f
   $ hg resolve --all --config ui.merge=internal:prompt --config ui.interactive=true
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? 
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? 
   [1]
   $ aftermerge
   # cat f
@@ -785,7 +793,9 @@ prompt with EOF
   U f
   $ rm f
   $ hg resolve --all --config ui.merge=internal:prompt --config ui.interactive=true
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? 
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? 
   [1]
   $ aftermerge
   # cat f
@@ -796,7 +806,9 @@ prompt with EOF
   # hg resolve --list
   U f
   $ hg resolve --all --config ui.merge=internal:prompt
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   [1]
   $ aftermerge
   # cat f
@@ -1908,7 +1920,9 @@ checked strictly.
   tool :other can't handle binary
   tool false can't handle binary
   no tool found to merge b
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for b? u
+  file 'b' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]

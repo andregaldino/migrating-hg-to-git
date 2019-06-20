@@ -39,7 +39,9 @@ Symlink is local parent, executable is other:
   couldn't find merge tool hgmerge
   no tool found to merge a
   picked tool ':prompt' for a (binary False symlink True changedelete False)
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for a? u
+  file 'a' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -168,7 +170,9 @@ Update to link with local change should cause a merge prompt (issue3200):
   (couldn't find merge tool hgmerge|tool hgmerge can't handle symlinks) (re)
   no tool found to merge a
   picked tool ':prompt' for a (binary False symlink True changedelete False)
-  keep (l)ocal [working copy], take (o)ther [destination], or leave (u)nresolved for a? u
+  file 'a' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [destination], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges
   updated to "521a1e40188f: symlink"
@@ -203,7 +207,9 @@ where that was what happened.
   $ hg merge
   tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -215,7 +221,9 @@ where that was what happened.
   $ hg merge
   tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -242,7 +250,9 @@ Test removed 'x' flag merged with change to symlink
   $ hg merge
   tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -254,7 +264,9 @@ Test removed 'x' flag merged with change to symlink
   $ hg merge
   tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -337,13 +349,19 @@ h: l vs l, different
   warning: cannot merge flags for c without common ancestor - keeping local flags
   tool internal:merge (for pattern d) can't handle symlinks
   no tool found to merge d
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for d? u
+  file 'd' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   tool internal:merge (for pattern h) can't handle symlinks
   no tool found to merge h
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for h? u
+  file 'h' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging bx! (edit, then use 'hg resolve --mark')
@@ -399,13 +417,19 @@ h: l vs l, different
   warning: cannot merge flags for c without common ancestor - keeping local flags
   tool internal:merge (for pattern d) can't handle symlinks
   no tool found to merge d
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for d? u
+  file 'd' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
+  file 'f' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   tool internal:merge (for pattern h) can't handle symlinks
   no tool found to merge h
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for h? u
+  file 'h' needs to be resolved.
+  You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
+  What do you want to do? u
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging bx! (edit, then use 'hg resolve --mark')
