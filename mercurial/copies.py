@@ -279,8 +279,6 @@ def _changesetforwardcopies(a, b, match):
             copies = {}
             allcopies = set(copies1) | set(copies2)
             for dst in allcopies:
-                if not alwaysmatch and not match(dst):
-                    continue
                 # Unlike when copies are stored in the filelog, we consider
                 # it a copy even if the destination already existed on the
                 # other branch. It's simply too expensive to check if the
