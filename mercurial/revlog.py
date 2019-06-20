@@ -16,6 +16,7 @@ from __future__ import absolute_import
 import collections
 import contextlib
 import errno
+import io
 import os
 import struct
 import zlib
@@ -2306,7 +2307,7 @@ class revlog(object):
 
         try:
             with self._datafp() as f:
-                f.seek(0, 2)
+                f.seek(0, io.SEEK_END)
                 actual = f.tell()
             dd = actual - expected
         except IOError as inst:
@@ -2316,7 +2317,7 @@ class revlog(object):
 
         try:
             f = self.opener(self.indexfile)
-            f.seek(0, 2)
+            f.seek(0, io.SEEK_END)
             actual = f.tell()
             f.close()
             s = self._io.size

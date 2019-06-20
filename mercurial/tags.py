@@ -13,6 +13,7 @@
 from __future__ import absolute_import
 
 import errno
+import io
 
 from .node import (
     bin,
@@ -562,7 +563,7 @@ def _tag(repo, names, node, message, local, user, date, extra=None,
             " branch name\n") % name)
 
     def writetags(fp, names, munge, prevtags):
-        fp.seek(0, 2)
+        fp.seek(0, io.SEEK_END)
         if prevtags and not prevtags.endswith('\n'):
             fp.write('\n')
         for name in names:
