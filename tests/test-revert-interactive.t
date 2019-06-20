@@ -55,7 +55,8 @@ Revert interactive tests
   removing folder1/i
   diff --git a/f b/f
   2 hunks, 2 lines changed
-  examine changes to 'f'? [Ynesfdaq?] y
+  examine changes to 'f'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,6 +1,5 @@
   -a
@@ -64,7 +65,8 @@ Revert interactive tests
    3
    4
    5
-  apply change 1/6 to 'f'? [Ynesfdaq?] y
+  apply change 1/6 to 'f'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -2,6 +1,5 @@
    1
@@ -73,11 +75,13 @@ Revert interactive tests
    4
    5
   -b
-  apply change 2/6 to 'f'? [Ynesfdaq?] y
+  apply change 2/6 to 'f'?
+  (enter ? for help) [Ynesfdaq?] y
   
   diff --git a/folder1/g b/folder1/g
   2 hunks, 2 lines changed
-  examine changes to 'folder1/g'? [Ynesfdaq?] y
+  examine changes to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,6 +1,5 @@
   -c
@@ -86,7 +90,8 @@ Revert interactive tests
    3
    4
    5
-  apply change 3/6 to 'folder1/g'? [Ynesfdaq?] ?
+  apply change 3/6 to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] ?
   
   y - yes, apply this change
   n - no, skip this change
@@ -97,7 +102,8 @@ Revert interactive tests
   a - apply all changes to all remaining files
   q - quit, applying no changes
   ? - ? (display help)
-  apply change 3/6 to 'folder1/g'? [Ynesfdaq?] y
+  apply change 3/6 to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -2,6 +1,5 @@
    1
@@ -106,11 +112,13 @@ Revert interactive tests
    4
    5
   -d
-  apply change 4/6 to 'folder1/g'? [Ynesfdaq?] n
+  apply change 4/6 to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] n
   
   diff --git a/folder2/h b/folder2/h
   2 hunks, 2 lines changed
-  examine changes to 'folder2/h'? [Ynesfdaq?] n
+  examine changes to 'folder2/h'?
+  (enter ? for help) [Ynesfdaq?] n
   
   reverting f
   reverting folder1/g
@@ -141,7 +149,8 @@ Test that --interactive lift the need for --all
   $ echo q | hg revert -i -r 2
   diff --git a/folder1/g b/folder1/g
   1 hunks, 1 lines changed
-  examine changes to 'folder1/g'? [Ynesfdaq?] q
+  examine changes to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] q
   
   abort: user quit
   [255]
@@ -157,7 +166,8 @@ Test that a noop revert doesn't do an unnecessary backup
    4
    5
   -d
-  apply this change to 'folder1/g'? [Ynesfdaq?] n
+  apply this change to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] n
   
   $ ls folder1/
   g
@@ -171,7 +181,8 @@ Test --no-backup
    4
    5
   -d
-  apply this change to 'folder1/g'? [Ynesfdaq?] y
+  apply this change to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] y
   
   $ ls folder1/
   g
@@ -193,7 +204,8 @@ Test --no-backup
   remove added file folder1/i (Yn)? n
   diff --git a/f b/f
   2 hunks, 2 lines changed
-  examine changes to 'f'? [Ynesfdaq?] y
+  examine changes to 'f'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,6 +1,5 @@
   -a
@@ -202,7 +214,8 @@ Test --no-backup
    3
    4
    5
-  apply change 1/6 to 'f'? [Ynesfdaq?] y
+  apply change 1/6 to 'f'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -2,6 +1,5 @@
    1
@@ -211,11 +224,13 @@ Test --no-backup
    4
    5
   -b
-  apply change 2/6 to 'f'? [Ynesfdaq?] y
+  apply change 2/6 to 'f'?
+  (enter ? for help) [Ynesfdaq?] y
   
   diff --git a/folder1/g b/folder1/g
   2 hunks, 2 lines changed
-  examine changes to 'folder1/g'? [Ynesfdaq?] y
+  examine changes to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,6 +1,5 @@
   -c
@@ -224,7 +239,8 @@ Test --no-backup
    3
    4
    5
-  apply change 3/6 to 'folder1/g'? [Ynesfdaq?] y
+  apply change 3/6 to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -2,6 +1,5 @@
    1
@@ -233,11 +249,13 @@ Test --no-backup
    4
    5
   -d
-  apply change 4/6 to 'folder1/g'? [Ynesfdaq?] n
+  apply change 4/6 to 'folder1/g'?
+  (enter ? for help) [Ynesfdaq?] n
   
   diff --git a/folder2/h b/folder2/h
   2 hunks, 2 lines changed
-  examine changes to 'folder2/h'? [Ynesfdaq?] n
+  examine changes to 'folder2/h'?
+  (enter ? for help) [Ynesfdaq?] n
   
   reverting f
   reverting folder1/g
@@ -280,7 +298,8 @@ Test --no-backup
    3
    4
    5
-  discard change 1/2 to 'f'? [Ynesfdaq?] ?
+  discard change 1/2 to 'f'?
+  (enter ? for help) [Ynesfdaq?] ?
   
   y - yes, discard this change
   n - no, skip this change
@@ -291,7 +310,8 @@ Test --no-backup
   a - discard all changes to all remaining files
   q - quit, discarding no changes
   ? - ? (display help)
-  discard change 1/2 to 'f'? [Ynesfdaq?] y
+  discard change 1/2 to 'f'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -2,6 +1,5 @@
    1
@@ -300,7 +320,8 @@ Test --no-backup
    4
    5
   -b
-  discard change 2/2 to 'f'? [Ynesfdaq?] n
+  discard change 2/2 to 'f'?
+  (enter ? for help) [Ynesfdaq?] n
   
   $ hg st
   M f
@@ -329,14 +350,16 @@ Patterns
   > EOF
   diff --git a/f b/f
   1 hunks, 1 lines changed
-  examine changes to 'f'? [Ynesfdaq?] y
+  examine changes to 'f'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -4,4 +4,3 @@
    3
    4
    5
   -b
-  discard this change to 'f'? [Ynesfdaq?] n
+  discard this change to 'f'?
+  (enter ? for help) [Ynesfdaq?] n
   
 
   $ hg update -C .
@@ -363,13 +386,15 @@ Check editing files newly added by a revert
   > EOF
   diff --git a/k b/k
   1 hunks, 2 lines changed
-  examine changes to 'k'? [Ynesfdaq?] y
+  examine changes to 'k'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,1 +1,2 @@
   -1
   +0
   +2
-  discard this change to 'k'? [Ynesfdaq?] e
+  discard this change to 'k'?
+  (enter ? for help) [Ynesfdaq?] e
   
   reverting k
   $ cat k
@@ -414,13 +439,15 @@ When a line without EOL is selected during "revert -i" (issue5651)
   > EOF
   diff --git a/a b/a
   1 hunks, 1 lines changed
-  examine changes to 'a'? [Ynesfdaq?] y
+  examine changes to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,2 +1,1 @@
    0
   -1
   \ No newline at end of file
-  apply this change to 'a'? [Ynesfdaq?] y
+  apply this change to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   reverting a
   $ cat a
@@ -488,17 +515,20 @@ Test "keep" mode
   > EOF
   diff --git a/a b/a
   2 hunks, 2 lines changed
-  examine changes to 'a'? [Ynesfdaq?] y
+  examine changes to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,1 +1,2 @@
   +x
    a
-  keep change 1/2 to 'a'? [Ynesfdaq?] n
+  keep change 1/2 to 'a'?
+  (enter ? for help) [Ynesfdaq?] n
   
   @@ -1,1 +2,2 @@
    a
   +y
-  keep change 2/2 to 'a'? [Ynesfdaq?] e
+  keep change 2/2 to 'a'?
+  (enter ? for help) [Ynesfdaq?] e
   
   reverting a
   $ cat a

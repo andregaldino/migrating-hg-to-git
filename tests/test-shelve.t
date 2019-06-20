@@ -756,21 +756,24 @@ Test interactive shelve
   > EOF
   diff --git a/a/a b/a/a
   2 hunks, 2 lines changed
-  examine changes to 'a/a'? [Ynesfdaq?] y
+  examine changes to 'a/a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,3 +1,4 @@
   +a
    a
    c
    x
-  record change 1/2 to 'a/a'? [Ynesfdaq?] y
+  record change 1/2 to 'a/a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,3 +2,4 @@
    a
    c
    x
   +x
-  record change 2/2 to 'a/a'? [Ynesfdaq?] n
+  record change 2/2 to 'a/a'?
+  (enter ? for help) [Ynesfdaq?] n
   
   shelved as test
   merging a/a

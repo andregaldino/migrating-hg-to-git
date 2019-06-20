@@ -190,25 +190,29 @@ partial qrefresh
   > EOF
   diff --git a/1.txt b/1.txt
   2 hunks, 2 lines changed
-  examine changes to '1.txt'? [Ynesfdaq?] y
+  examine changes to '1.txt'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,3 +1,3 @@
    1
   -2
   +2 2
    3
-  record change 1/4 to '1.txt'? [Ynesfdaq?] y
+  record change 1/4 to '1.txt'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -3,3 +3,3 @@
    3
   -4
   +4 4
    5
-  record change 2/4 to '1.txt'? [Ynesfdaq?] n
+  record change 2/4 to '1.txt'?
+  (enter ? for help) [Ynesfdaq?] n
   
   diff --git a/2.txt b/2.txt
   1 hunks, 1 lines changed
-  examine changes to '2.txt'? [Ynesfdaq?] y
+  examine changes to '2.txt'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,5 +1,5 @@
    a
@@ -217,11 +221,13 @@ partial qrefresh
    c
    d
    e
-  record change 3/4 to '2.txt'? [Ynesfdaq?] y
+  record change 3/4 to '2.txt'?
+  (enter ? for help) [Ynesfdaq?] y
   
   diff --git a/dir/a.txt b/dir/a.txt
   1 hunks, 1 lines changed
-  examine changes to 'dir/a.txt'? [Ynesfdaq?] n
+  examine changes to 'dir/a.txt'?
+  (enter ? for help) [Ynesfdaq?] n
   
 
 After partial qrefresh 'tip'
@@ -290,7 +296,8 @@ qrefresh interactively everything else
   > EOF
   diff --git a/1.txt b/1.txt
   1 hunks, 1 lines changed
-  examine changes to '1.txt'? [Ynesfdaq?] y
+  examine changes to '1.txt'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,5 +1,5 @@
    1
@@ -299,11 +306,13 @@ qrefresh interactively everything else
   -4
   +4 4
    5
-  record change 1/2 to '1.txt'? [Ynesfdaq?] y
+  record change 1/2 to '1.txt'?
+  (enter ? for help) [Ynesfdaq?] y
   
   diff --git a/dir/a.txt b/dir/a.txt
   1 hunks, 1 lines changed
-  examine changes to 'dir/a.txt'? [Ynesfdaq?] y
+  examine changes to 'dir/a.txt'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,4 +1,4 @@
   -hello world
@@ -311,7 +320,8 @@ qrefresh interactively everything else
    
    someone
    up
-  record change 2/2 to 'dir/a.txt'? [Ynesfdaq?] y
+  record change 2/2 to 'dir/a.txt'?
+  (enter ? for help) [Ynesfdaq?] y
   
 
 After final qrefresh 'tip'

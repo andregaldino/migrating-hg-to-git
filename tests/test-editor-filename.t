@@ -47,15 +47,18 @@ editor for a diff, the file ends in .diff.
   > EOF
   diff --git a/one b/one
   new file mode 100644
-  examine changes to 'one'? [Ynesfdaq?] y
+  examine changes to 'one'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -0,0 +1,1 @@
   +1
-  record change 1/2 to 'one'? [Ynesfdaq?] e
+  record change 1/2 to 'one'?
+  (enter ? for help) [Ynesfdaq?] e
   
   *.diff (glob)
   editor exited with exit code 1
-  record change 1/2 to 'one'? [Ynesfdaq?] q
+  record change 1/2 to 'one'?
+  (enter ? for help) [Ynesfdaq?] q
   
   abort: user quit
   [255]
