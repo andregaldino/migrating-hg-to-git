@@ -3296,11 +3296,6 @@ def clearunfinished(repo):
         if s._clearable and s.isunfinished(repo):
             util.unlink(repo.vfs.join(s._fname))
 
-afterresolvedstates = [
-    ('graftstate',
-     _('hg graft --continue')),
-    ]
-
 def howtocontinue(repo):
     '''Check for an unfinished operation and return the command to finish
     it.
@@ -3312,9 +3307,11 @@ def howtocontinue(repo):
     a boolean.
     '''
     contmsg = _("continue: %s")
-    for f, msg in afterresolvedstates:
-        if repo.vfs.exists(f):
-            return contmsg % msg, True
+    for state in statemod._unfinishedstates:
+        if not state._continueflag:
+            continue
+        if state.isunfinished(repo):
+            return contmsg % state.continuemsg(), True
     if repo[None].dirty(missing=True, merge=False, branch=False):
         return contmsg % _("hg commit"), False
     return None, None

@@ -98,8 +98,8 @@ class _statecheck(object):
     """
 
     def __init__(self, opname, fname, clearable=False, allowcommit=False,
-                 reportonly=False, stopflag=False, cmdmsg="", cmdhint="",
-                 statushint=""):
+                 reportonly=False, continueflag=False, stopflag=False ,
+                 cmdmsg="", cmdhint="", statushint=""):
         """opname is the name the command or operation
         fname is the file name in which data should be stored in .hg directory.
         It is None for merge command.
@@ -110,6 +110,8 @@ class _statecheck(object):
         state or not.
         reportonly flag is used for operations like bisect where we just
         need to detect the operation using 'hg status --verbose'
+        continueflag is a boolean determines whether or not a command supports
+        `--continue` option or not.
         stopflag is a boolean that determines whether or not a command supports
         --stop flag
         cmdmsg is used to pass a different status message in case standard
@@ -130,6 +132,7 @@ class _statecheck(object):
         self._cmdmsg = cmdmsg
         self._stopflag = stopflag
         self._reportonly = reportonly
+        self._continueflag = continueflag
 
     def statusmsg(self):
         """returns the hint message corresponding to the command for
@@ -160,6 +163,10 @@ class _statecheck(object):
             return _('%s in progress') % (self._opname)
         return self._cmdmsg
 
+    def continuemsg(self):
+        """ returns appropriate continue message corresponding to command"""
+        return _('hg %s --continue') % (self._opname)
+
     def isunfinished(self, repo):
         """determines whether a multi-step operation is in progress
         or not
@@ -183,7 +190,8 @@ def addunfinished(opname, **kwargs):
 
 addunfinished(
     'graft', fname='graftstate', clearable=True, stopflag=True,
-    cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop"),
+    continueflag=True,
+    cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop")
 )
 addunfinished(
     'update', fname='updatestate', clearable=True,

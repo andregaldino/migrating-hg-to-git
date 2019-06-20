@@ -1141,8 +1141,7 @@ def shelvecmd(ui, repo, *pats, **opts):
 
 def extsetup(ui):
     statemod.addunfinished(
-        'unshelve', fname=shelvedstate._filename,
+        'unshelve', fname=shelvedstate._filename, continueflag=True,
         cmdmsg=_('unshelve already in progress')
     )
-    cmdutil.afterresolvedstates.append(
-        [shelvedstate._filename, _('hg unshelve --continue')])
+
