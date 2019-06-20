@@ -278,8 +278,6 @@ def _changesetforwardcopies(a, b, match):
             r, i2, copies2 = heapq.heappop(work)
             copies = {}
             allcopies = set(copies1) | set(copies2)
-            # TODO: perhaps this filtering should be done as long as ctx
-            # is merge, whether or not we're tracing from both parent.
             for dst in allcopies:
                 if not alwaysmatch and not match(dst):
                     continue
