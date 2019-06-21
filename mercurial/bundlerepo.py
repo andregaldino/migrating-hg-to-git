@@ -365,6 +365,11 @@ class bundlerepository(object):
         self.manstart = self._cgunpacker.tell()
         return c
 
+    def _refreshchangelog(self):
+        # changelog for bundle repo are not filecache, this method is not
+        # applicable.
+        pass
+
     @localrepo.unfilteredpropertycache
     def manifestlog(self):
         self._cgunpacker.seek(self.manstart)

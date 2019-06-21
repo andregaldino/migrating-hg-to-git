@@ -1224,6 +1224,11 @@ class localrepository(object):
     def _bookmarks(self):
         return bookmarks.bmstore(self)
 
+    def _refreshchangelog(self):
+        """make sure the in memory changelog match the on-disk one"""
+        if ('changelog' in vars(self) and self.currenttransaction() is None):
+            del self.changelog
+
     @property
     def _activebookmark(self):
         return self._bookmarks.active
