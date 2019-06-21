@@ -1227,6 +1227,55 @@ class localrepository(object):
     @mixedrepostorecache(('bookmarks', 'plain'), ('bookmarks.current', 'plain'),
                          ('bookmarks', ''), ('00changelog.i', ''))
     def _bookmarks(self):
+        # Since the multiple files involved in the transaction cannot be
+        # written atomically (with current repository format), there is a race
+        # condition here.
+        #
+        # 1) changelog content A is read
+        # 2) outside transaction update changelog to content B
+        # 3) outside transaction update bookmark file referring to content B
+        # 4) bookmarks file content is read and filtered against changelog-A
+        #
+        # When this happens, bookmarks against nodes missing from A are dropped.
+        #
+        # Having this happening during read is not great, but it become worse
+        # when this happen during write because the bookmarks to the "unknown"
+        # nodes will be dropped for good. However, writes happen within locks.
+        # This locking makes it possible to have a race free consistent read.
+        # For this purpose data read from disc before locking  are
+        # "invalidated" right after the locks are taken. This invalidations are
+        # "light", the `filecache` mechanism keep the data in memory and will
+        # reuse them if the underlying files did not changed. Not parsing the
+        # same data multiple times helps performances.
+        #
+        # Unfortunately in the case describe above, the files tracked by the
+        # bookmarks file cache might not have changed, but the in-memory
+        # content is still "wrong" because we used an older changelog content
+        # to process the on-disk data. So after locking, the changelog would be
+        # refreshed but `_bookmarks` would be preserved.
+        # Adding `00changelog.i` to the list of tracked file is not
+        # enough, because at the time we build the content for `_bookmarks` in
+        # (4), the changelog file has already diverged from the content used
+        # for loading `changelog` in (1)
+        #
+        # To prevent the issue, we force the changelog to be explicitly
+        # reloaded while computing `_bookmarks`. The data race can still happen
+        # without the lock (with a narrower window), but it would no longer go
+        # undetected during the lock time refresh.
+        #
+        # The new schedule is as follow
+        #
+        # 1) filecache logic detect that `_bookmarks` needs to be computed
+        # 2) cachestat for `bookmarks` and `changelog` are captured (for book)
+        # 3) We force `changelog` filecache to be tested
+        # 4) cachestat for `changelog` are captured (for changelog)
+        # 5) `_bookmarks` is computed and cached
+        #
+        # The step in (3) ensure we have a changelog at least as recent as the
+        # cache stat computed in (1). As a result at locking time:
+        #  * if the changelog did not changed since (1) -> we can reuse the data
+        #  * otherwise -> the bookmarks get refreshed.
+        self._refreshchangelog()
         return bookmarks.bmstore(self)
 
     def _refreshchangelog(self):
