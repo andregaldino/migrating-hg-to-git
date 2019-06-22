@@ -119,9 +119,13 @@ We build a server side extension for this purpose
   > import atexit
   > import os
   > import time
-  > from mercurial import bookmarks, error, extensions
-  > def wrapinit(orig, self, repo):
+  > import atexit
+  > from mercurial import error, extensions, bookmarks
+  > 
+  > def wait(repo):
   >     if not os.path.exists('push-A-started'):
+  >         assert repo._currentlock(repo._lockref) is None
+  >         assert repo._currentlock(repo._wlockref) is None
   >         repo.ui.status(b'setting raced push up\n')
   >         with open('push-A-started', 'w'):
   >             pass
@@ -131,11 +135,15 @@ We build a server side extension for this purpose
   >         if clock <= 0:
   >             raise error.Abort("race scenario timed out")
   >         time.sleep(0.1)
-  >     return orig(self, repo)
   > 
+  > def reposetup(ui, repo):
+  >     class racedrepo(repo.__class__):
+  >         @property
+  >         def _bookmarks(self):
+  >             wait(self)
+  >             return super(racedrepo, self)._bookmarks
   >     repo.__class__ = racedrepo
-  > def uisetup(ui):
-  >     extensions.wrapfunction(bookmarks.bmstore, '__init__', wrapinit)
+  > 
   > def e():
   >     with open('push-A-done', 'w'):
   >         pass
@@ -193,6 +201,7 @@ Check raced push output.
   $ cat push-output.txt
   pushing to ssh://user@dummy/bookrace-server
   searching for changes
+  remote has heads on branch 'default' that are not known locally: f26c3b5167d1
   remote: setting raced push up
   remote: adding changesets
   remote: adding manifests

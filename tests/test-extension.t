@@ -84,8 +84,8 @@ Test basic extension support
   uipopulate called (1 times)
   uipopulate called (1 times) (chg !)
   uipopulate called (1 times) (chg !)
-  uipopulate called (1 times) (chg !)
-  reposetup called for a (chg !)
+  uipopulate called (1 times)
+  reposetup called for a
   ui == repo.ui
   Foo
   $ hg foo --debug
@@ -96,8 +96,8 @@ Test basic extension support
   uipopulate called (1 times)
   uipopulate called (1 times) (chg !)
   uipopulate called (1 times) (chg !)
-  uipopulate called (1 times) (chg !)
-  reposetup called for a (chg !)
+  uipopulate called (1 times)
+  reposetup called for a
   ui == repo.ui
   Foo
 
@@ -107,7 +107,7 @@ Test basic extension support
   uisetup called [status] (no-chg !)
   uipopulate called (1 times)
   uipopulate called (1 times) (chg !)
-  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times)
   reposetup called for a
   ui == repo.ui
   uipopulate called (1 times)

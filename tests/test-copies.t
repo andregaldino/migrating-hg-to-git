@@ -501,6 +501,7 @@ Try merging the other direction too
   $ hg debugpathcopies 0 4
   x -> z (filelog !)
   y -> z (compatibility !)
+  y -> z (changeset !)
   $ hg debugpathcopies 1 5
   y -> z (no-filelog !)
   $ hg debugpathcopies 2 5
