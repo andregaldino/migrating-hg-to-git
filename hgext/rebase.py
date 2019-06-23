@@ -1923,6 +1923,11 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
         obsoleteextinctsuccessors,
     )
 
+def abortrebase(ui, repo):
+    with repo.wlock(), repo.lock():
+        rbsrt = rebaseruntime(repo, ui)
+        rbsrt._prepareabortorcontinue(isabort=True)
+
 def summaryhook(ui, repo):
     if not repo.vfs.exists('rebasestate'):
         return
@@ -1951,4 +1956,4 @@ def uisetup(ui):
                      _("specify merge tool for rebase")))
     cmdutil.summaryhooks.add('rebase', summaryhook)
     statemod.addunfinished('rebase', fname='rebasestate', stopflag=True,
-                            continueflag=True)
+                            continueflag=True, abortfunc=abortrebase)
