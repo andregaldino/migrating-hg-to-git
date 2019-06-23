@@ -98,7 +98,8 @@ class _statecheck(object):
     """
 
     def __init__(self, opname, fname, clearable, allowcommit, reportonly,
-                 continueflag, stopflag, cmdmsg, cmdhint, statushint):
+                 continueflag, stopflag, cmdmsg, cmdhint, statushint,
+                 abortfunc):
         self._opname = opname
         self._fname = fname
         self._clearable = clearable
@@ -109,6 +110,7 @@ class _statecheck(object):
         self._cmdmsg = cmdmsg
         self._cmdhint = cmdhint
         self._statushint = statushint
+        self.abortfunc = abortfunc
 
     def statusmsg(self):
         """returns the hint message corresponding to the command for
@@ -157,7 +159,7 @@ _unfinishedstates = []
 
 def addunfinished(opname, fname, clearable=False, allowcommit=False,
                   reportonly=False, continueflag=False, stopflag=False,
-                  cmdmsg="", cmdhint="", statushint=""):
+                  cmdmsg="", cmdhint="", statushint="", abortfunc=None):
     """this registers a new command or operation to unfinishedstates
     opname is the name the command or operation
     fname is the file name in which data should be stored in .hg directory.
@@ -181,10 +183,11 @@ def addunfinished(opname, fname, clearable=False, allowcommit=False,
     statushint is used to pass a different status message in case standard
     message of the format ('To continue:    hg cmdname --continue'
     'To abort:       hg cmdname --abort') is not desired
+    abortfunc stores the function required to abort an unfinished state.
     """
     statecheckobj = _statecheck(opname, fname, clearable, allowcommit,
                                 reportonly, continueflag, stopflag, cmdmsg,
-                                cmdhint, statushint)
+                                cmdhint, statushint, abortfunc)
     if opname == 'merge':
         _unfinishedstates.append(statecheckobj)
     else:

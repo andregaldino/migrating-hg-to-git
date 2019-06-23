@@ -131,6 +131,31 @@ debugrevlogopts = cmdutil.debugrevlogopts
 
 # Commands start here, listed alphabetically
 
+@command('abort',
+    dryrunopts, helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+    helpbasic=True)
+def abort(ui, repo, **opts):
+    """abort an unfinished operation (EXPERIMENTAL)
+
+    Aborts a multistep operation like graft, histedit, rebase, merge,
+    and unshelve if they are in an unfinished state.
+
+    use --dry-run/-n to dry run the command.
+    A new operation can be added to this by registering the operation and
+    abort logic in the unfinishedstates list under statemod.
+    """
+    dryrun = opts.get(r'dry_run')
+    abortstate = cmdutil.getunfinishedstate(repo)
+    if not abortstate:
+        raise error.Abort(_('no operation in progress'))
+    if not abortstate.abortfunc:
+        raise error.Abort((_("%s in progress but does not support 'hg abort'") %
+                            (abortstate._opname)), hint=abortstate.hint())
+    if dryrun:
+        ui.status(_('%s in progress, will be aborted\n') % (abortstate._opname))
+        return
+    return abortstate.abortfunc(ui, repo)
+
 @command('add',
     walkopts + subrepoopts + dryrunopts,
     _('[OPTION]... [FILE]...'),

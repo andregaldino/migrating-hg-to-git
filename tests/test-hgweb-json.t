@@ -1875,6 +1875,10 @@ help/ shows help topics
   {
     "earlycommands": [
       {
+        "summary": "abort an unfinished operation (EXPERIMENTAL)",
+        "topic": "abort"
+      },
+      {
         "summary": "add the specified files on the next commit",
         "topic": "add"
       },

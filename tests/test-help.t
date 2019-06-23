@@ -402,6 +402,7 @@ Test short command list with verbose option
   
   basic commands:
   
+   abort         abort an unfinished operation (EXPERIMENTAL)
    add           add the specified files on the next commit
    annotate, blame
                  show changeset information by line for each file
@@ -2352,6 +2353,13 @@ Dish up an empty repo; serve it cold.
   
   <tr><td colspan="2"><h2><a name="main" href="#main">Main Commands</a></h2></td></tr>
   
+  <tr><td>
+  <a href="/help/abort">
+  abort
+  </a>
+  </td><td>
+  abort an unfinished operation (EXPERIMENTAL)
+  </td></tr>
   <tr><td>
   <a href="/help/add">
   add

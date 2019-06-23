@@ -1,5 +1,6 @@
 Show all commands except debug commands
   $ hg debugcomplete
+  abort
   add
   addremove
   annotate
@@ -59,6 +60,7 @@ Show all commands except debug commands
 
 Show all commands that start with "a"
   $ hg debugcomplete a
+  abort
   add
   addremove
   annotate
@@ -235,6 +237,7 @@ Show an error if we use --options with an ambiguous abbreviation
 
 Show all commands + options
   $ hg debugcommands
+  abort: dry-run
   add: include, exclude, subrepos, dry-run
   addremove: similarity, subrepos, include, exclude, dry-run
   annotate: rev, follow, no-follow, text, user, file, date, number, changeset, line-number, skip, ignore-all-space, ignore-space-change, ignore-blank-lines, ignore-space-at-eol, include, exclude, template
