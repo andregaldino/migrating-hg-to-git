@@ -3419,3 +3419,9 @@ def readgraftstate(repo, graftstate):
     except error.CorruptedState:
         nodes = repo.vfs.read('graftstate').splitlines()
         return {'nodes': nodes}
+
+def hgabortgraft(ui, repo):
+    """ abort logic for aborting graft using 'hg abort'"""
+    with repo.wlock():
+        graftstate = statemod.cmdstate(repo, 'graftstate')
+        return abortgraft(ui, repo, graftstate)

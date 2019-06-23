@@ -1,8 +1,17 @@
+#testcases abortcommand abortflag
+
   $ cat >> $HGRCPATH <<EOF
   > [extdiff]
   > # for portability:
   > pdiff = sh "$RUNTESTDIR/pdiff"
   > EOF
+
+#if abortflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > abort = graft --abort
+  > EOF
+#endif
 
 Create a repo with some stuff in it:
 
@@ -1986,8 +1995,9 @@ before the graft
   $ hg up 9150fe93bec6
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ hg graft --abort
-  abort: no interrupted graft to abort
+  $ hg abort
+  abort: no interrupted graft to abort (abortflag !)
+  abort: no operation in progress (abortcommand !)
   [255]
 
 when stripping is required
@@ -2016,7 +2026,13 @@ when stripping is required
   abort: cannot specify any other flag with '--abort'
   [255]
 
-  $ hg graft --abort
+#if abortcommand
+when in dry-run mode
+  $ hg abort --dry-run
+  graft in progress, will be aborted
+#endif
+
+  $ hg abort
   graft aborted
   working directory is now at 9150fe93bec6
   $ hg log -GT "{rev}:{node|short} {desc}"
@@ -2041,7 +2057,7 @@ when stripping is not required
   (use 'hg resolve' and 'hg graft --continue')
   [255]
 
-  $ hg graft --abort
+  $ hg abort
   graft aborted
   working directory is now at 9150fe93bec6
   $ hg log -GT "{rev}:{node|short} {desc}"
@@ -2085,7 +2101,7 @@ when some of the changesets became public
   
   $ hg phase -r 6 --public
 
-  $ hg graft --abort
+  $ hg abort
   cannot clean up public changesets 6ec71c037d94
   graft aborted
   working directory is now at 6ec71c037d94
@@ -2162,7 +2178,7 @@ when we created new changesets on top of existing one
   new changesets 311dfc6cf3bf (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
-  $ hg graft --abort
+  $ hg abort
   new changesets detected on destination branch, can't strip
   graft aborted
   working directory is now at 6b98ff0062dd

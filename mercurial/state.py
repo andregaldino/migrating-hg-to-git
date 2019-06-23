@@ -194,11 +194,6 @@ def addunfinished(opname, fname, clearable=False, allowcommit=False,
         _unfinishedstates.insert(0, statecheckobj)
 
 addunfinished(
-    'graft', fname='graftstate', clearable=True, stopflag=True,
-    continueflag=True,
-    cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop")
-)
-addunfinished(
     'unshelve', fname='shelvedstate', continueflag=True,
     cmdmsg=_('unshelve already in progress')
 )

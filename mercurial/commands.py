@@ -2677,6 +2677,12 @@ def _stopgraft(ui, repo, graftstate):
     ui.status(_("working directory is now at %s\n") % pctx.hex()[:12])
     return 0
 
+statemod.addunfinished(
+    'graft', fname='graftstate', clearable=True, stopflag=True,
+    continueflag=True, abortfunc=cmdutil.hgabortgraft,
+    cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop")
+)
+
 @command('grep',
     [('0', 'print0', None, _('end fields with NUL')),
     ('', 'all', None, _('print all revisions that match (DEPRECATED) ')),
