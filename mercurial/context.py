@@ -2159,7 +2159,9 @@ class overlayworkingctx(committablectx):
         # the file is marked as existing.
         if exists and data is None:
             oldentry = self._cache.get(path) or {}
-            data = oldentry.get('data') or self._wrappedctx[path].data()
+            data = oldentry.get('data')
+            if data is None:
+                data = self._wrappedctx[path].data()
 
         self._cache[path] = {
             'exists': exists,

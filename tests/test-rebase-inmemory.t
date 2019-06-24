@@ -795,12 +795,10 @@ Test rebasing a commit with copy information, where the target is empty
   $ hg co -q 0
   $ hg mv a b
   $ hg ci -qm 'rename a to b'
-BROKEN: shouldn't crash
   $ hg rebase -d 1
   rebasing 2:b977edf6f839 "rename a to b" (tip)
   merging a and b to b
-  abort: b@c71e275f666f: not found in manifest!
-  [255]
+  saved backup bundle to $TESTTMP/rebase-rename-empty/.hg/strip-backup/b977edf6f839-0864f570-rebase.hg
   $ hg st --copies --change .
   A b
     a
