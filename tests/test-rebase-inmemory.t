@@ -784,6 +784,28 @@ Test rebasing a commit with copy information
   R a
   $ cd ..
 
+Test rebasing a commit with copy information, where the target is empty
+
+  $ hg init rebase-rename-empty
+  $ cd rebase-rename-empty
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ cat > a
+  $ hg ci -m 'make a empty'
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'rename a to b'
+BROKEN: shouldn't crash
+  $ hg rebase -d 1
+  rebasing 2:b977edf6f839 "rename a to b" (tip)
+  merging a and b to b
+  abort: b@c71e275f666f: not found in manifest!
+  [255]
+  $ hg st --copies --change .
+  A b
+    a
+  R a
+  $ cd ..
 Rebase across a copy with --collapse
 
   $ hg init rebase-rename-collapse
