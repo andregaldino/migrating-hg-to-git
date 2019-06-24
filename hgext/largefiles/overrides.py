@@ -545,7 +545,8 @@ def overridefilemerge(origfn, premerge, repo, wctx, mynode, orig, fcd, fco, fca,
         (dhash == ahash or
          repo.ui.promptchoice(
              _('largefile %s has a merge conflict\nancestor was %s\n'
-               'keep (l)ocal %s or\ntake (o)ther %s?'
+               'you can keep (l)ocal %s or take (o)ther %s.\n'
+               'what do you want to do?'
                '$$ &Local $$ &Other') %
                (lfutil.splitstandin(orig), ahash, dhash, ohash),
              0) == 1)):
