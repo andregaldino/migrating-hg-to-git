@@ -168,8 +168,9 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
                 prompts['ro'] = r[0]
                 if repo.ui.promptchoice(
                     _(' subrepository sources for %(s)s differ\n'
-                      'use (l)ocal%(l)s source (%(lo)s)'
-                      ' or (r)emote%(o)s source (%(ro)s)?'
+                      'you can use (l)ocal%(l)s source (%(lo)s)'
+                      ' or (r)emote%(o)s source (%(ro)s).\n'
+                      'what do you want to do?'
                       '$$ &Local $$ &Remote') % prompts, 0):
                     debug(s, "prompt changed, get", r)
                     wctx.sub(s).get(r, overwrite)
@@ -186,7 +187,9 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
                 option = repo.ui.promptchoice(
                     _(' subrepository %(s)s diverged (local revision: %(sl)s, '
                       'remote revision: %(sr)s)\n'
-                      '(M)erge, keep (l)ocal%(l)s or keep (r)emote%(o)s?'
+                      'you can (m)erge, keep (l)ocal%(l)s or keep '
+                      '(r)emote%(o)s.\n'
+                      'what do you want to do?'
                       '$$ &Merge $$ &Local $$ &Remote')
                     % prompts, 0)
                 if option == 0:

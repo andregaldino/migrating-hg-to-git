@@ -270,7 +270,8 @@ qpush
   $ hg qpush
   applying 1
    subrepository sub diverged (local revision: b2fdb12cd82b, remote revision: aa037b301eba)
-  (M)erge, keep (l)ocal or keep (r)emote? m
+  you can (m)erge, keep (l)ocal or keep (r)emote.
+  what do you want to do? m
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   now at: 1
   $ hg status -AS

@@ -213,7 +213,8 @@ user a pulls, merges, commits
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg merge 2>/dev/null
    subrepository s diverged (local revision: 7969594, remote revision: aa84837)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [merge rev]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [merge rev].
+  what do you want to do? m
   pulling subrepo s from $TESTTMP/gitroot
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -551,9 +552,11 @@ Sticky subrepositories, file changes
   $ cd ..
   $ hg update 4
    subrepository s diverged (local revision: da5f5b1, remote revision: aa84837)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for s differ
-  use (l)ocal source (da5f5b1) or (r)emote source (aa84837)? l
+  you can use (l)ocal source (da5f5b1) or (r)emote source (aa84837).
+  what do you want to do? l
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id -n
   4+
@@ -577,9 +580,11 @@ Sticky subrepository, revision updates
   $ cd ..
   $ hg update 1
    subrepository s diverged (local revision: 32a3438, remote revision: da5f5b1)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for s differ (in checked out version)
-  use (l)ocal source (32a3438) or (r)emote source (da5f5b1)? l
+  you can use (l)ocal source (32a3438) or (r)emote source (da5f5b1).
+  what do you want to do? l
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id -n
   1+
@@ -599,9 +604,11 @@ Sticky subrepository, file changes and revision updates
   1+
   $ hg update 7
    subrepository s diverged (local revision: 32a3438, remote revision: 32a3438)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for s differ
-  use (l)ocal source (32a3438) or (r)emote source (32a3438)? l
+  you can use (l)ocal source (32a3438) or (r)emote source (32a3438).
+  what do you want to do? l
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id -n
   7+
