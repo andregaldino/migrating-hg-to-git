@@ -326,8 +326,10 @@ def _forwardcopies(a, b, match=None):
     if b.rev() is None:
         cm = _committedforwardcopies(a, b.p1(), match)
         # combine copies from dirstate if necessary
-        return _chainandfilter(a, b, cm, _dirstatecopies(b._repo, match))
-    return _committedforwardcopies(a, b, match)
+        copies = _chainandfilter(a, b, cm, _dirstatecopies(b._repo, match))
+    else:
+        copies  = _committedforwardcopies(a, b, match)
+    return copies
 
 def _backwardrenames(a, b, match):
     if a._repo.ui.config('experimental', 'copytrace') == 'off':
@@ -366,15 +368,17 @@ def pathcopies(x, y, match=None):
         if y.rev() is None and x == y.p1():
             # short-circuit to avoid issues with merge states
             return _dirstatecopies(repo, match)
-        return _forwardcopies(x, y, match=match)
-    if a == y:
+        copies = _forwardcopies(x, y, match=match)
+    elif a == y:
         if debug:
             repo.ui.debug('debug.copies: search mode: backward\n')
-        return _backwardrenames(x, y, match=match)
-    if debug:
-        repo.ui.debug('debug.copies: search mode: combined\n')
-    return _chainandfilter(x, y, _backwardrenames(x, a, match=match),
-                           _forwardcopies(a, y, match=match))
+        copies = _backwardrenames(x, y, match=match)
+    else:
+        if debug:
+            repo.ui.debug('debug.copies: search mode: combined\n')
+        copies = _chainandfilter(x, y, _backwardrenames(x, a, match=match),
+                                 _forwardcopies(a, y, match=match))
+    return copies
 
 def mergecopies(repo, c1, c2, base):
     """
