@@ -285,7 +285,6 @@ def _changesetforwardcopies(a, b, match):
                     # that side, even if it was also copied on the p2 side.
                     copies[dst] = copies2[dst]
         if r == b.rev():
-            _filter(a, b, copies)
             return copies
         for i, c in enumerate(children[r]):
             childctx = repo[c]
@@ -321,7 +320,6 @@ def _forwardcopies(a, b, match=None):
         cm = _committedforwardcopies(a, b.p1(), match)
         # combine copies from dirstate if necessary
         copies = _chain(cm, _dirstatecopies(b._repo, match))
-        _filter(a, b, copies)
     else:
         copies  = _committedforwardcopies(a, b, match)
     return copies
@@ -373,7 +371,7 @@ def pathcopies(x, y, match=None):
             repo.ui.debug('debug.copies: search mode: combined\n')
         copies = _chain(_backwardrenames(x, a, match=match),
                         _forwardcopies(a, y, match=match))
-        _filter(x, y, copies)
+    _filter(x, y, copies)
     return copies
 
 def mergecopies(repo, c1, c2, base):

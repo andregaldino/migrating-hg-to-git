@@ -354,8 +354,7 @@ of the merge to the merge should include the copy from the other side.
   $ hg debugpathcopies 1 3
   x -> z
 
-Copy x to y on one side of merge, create y and rename to z on the other side. Pathcopies from the
-first side should not include the y->z rename since y didn't exist in the merge base.
+Copy x to y on one side of merge, create y and rename to z on the other side.
   $ newrepo
   $ echo x > x
   $ hg ci -Aqm 'add x'
@@ -385,6 +384,7 @@ first side should not include the y->z rename since y didn't exist in the merge 
   $ hg debugpathcopies 2 3
   y -> z
   $ hg debugpathcopies 1 3
+  y -> z (no-filelog !)
 
 Create x and y, then rename x to z on one side of merge, and rename y to z and
 modify z on the other side. When storing copies in the changeset, we don't
