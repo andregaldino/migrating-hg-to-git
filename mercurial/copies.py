@@ -107,13 +107,13 @@ def _findlimit(repo, ctxa, ctxb):
     # This only occurs when a is a descendent of b or visa-versa.
     return min(limit, a, b)
 
-def _chainandfilter(src, dst, a, b):
-    """chain two sets of copies 'a' and 'b' and filter result"""
+def _filter(src, dst, t):
+    """filters out invalid copies after chaining"""
 
-    # When chaining copies in 'a' (from 'src' via some other commit 'mid') with
-    # copies in 'b' (from 'mid' to 'dst'), we can get the different cases in the
-    # following table (not including trivial cases). For example, case 2 is
-    # where a file existed in 'src' and remained under that name in 'mid' and
+    # When _chain()'ing copies in 'a' (from 'src' via some other commit 'mid')
+    # with copies in 'b' (from 'mid' to 'dst'), we can get the different cases
+    # in the following table (not including trivial cases). For example, case 2
+    # is where a file existed in 'src' and remained under that name in 'mid' and
     # then was renamed between 'mid' and 'dst'.
     #
     # case src mid dst result
@@ -129,12 +129,6 @@ def _chainandfilter(src, dst, a, b):
     # between 5 and 6, so it includes all cases in its result.
     # Cases 1, 3, and 5 are then removed by _filter().
 
-    t = _chain(a, b)
-    _filter(src, dst, t)
-    return t
-
-def _filter(src, dst, t):
-    """filters out invalid copies after chaining"""
     for k, v in list(t.items()):
         # remove copies from files that didn't exist
         if v not in src:
@@ -326,7 +320,8 @@ def _forwardcopies(a, b, match=None):
     if b.rev() is None:
         cm = _committedforwardcopies(a, b.p1(), match)
         # combine copies from dirstate if necessary
-        copies = _chainandfilter(a, b, cm, _dirstatecopies(b._repo, match))
+        copies = _chain(cm, _dirstatecopies(b._repo, match))
+        _filter(a, b, copies)
     else:
         copies  = _committedforwardcopies(a, b, match)
     return copies
@@ -376,8 +371,9 @@ def pathcopies(x, y, match=None):
     else:
         if debug:
             repo.ui.debug('debug.copies: search mode: combined\n')
-        copies = _chainandfilter(x, y, _backwardrenames(x, a, match=match),
-                                 _forwardcopies(a, y, match=match))
+        copies = _chain(_backwardrenames(x, a, match=match),
+                        _forwardcopies(a, y, match=match))
+        _filter(x, y, copies)
     return copies
 
 def mergecopies(repo, c1, c2, base):
