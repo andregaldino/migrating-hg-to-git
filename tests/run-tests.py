@@ -1474,6 +1474,12 @@ class TTest(Test):
             script.append(b'alias pwd="pwd -W"\n')
 
         if hgcatapult and hgcatapult != os.devnull:
+            if PYTHON3:
+                hgcatapult = hgcatapult.encode('utf8')
+                cataname = self.name.encode('utf8')
+            else:
+                cataname = self.name
+
             # Kludge: use a while loop to keep the pipe from getting
             # closed by our echo commands. The still-running file gets
             # reaped at the end of the script, which causes the while
@@ -1490,9 +1496,9 @@ class TTest(Test):
                 b'HGCATAPULTSESSION=%(session)s ; export HGCATAPULTSESSION\n'
                 b'echo START %(session)s %(name)s >> %(catapult)s\n'
                 % {
-                    'name': self.name,
-                    'session': session,
-                    'catapult': hgcatapult,
+                    b'name': cataname,
+                    b'session': session,
+                    b'catapult': hgcatapult,
                 }
             )
 
