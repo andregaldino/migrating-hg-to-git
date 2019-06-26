@@ -268,6 +268,10 @@ def _changesetforwardcopies(a, b, match):
     # 'work' contains 3-tuples of a (revision number, parent number, copies).
     # The parent number is only used for knowing which parent the copies dict
     # came from.
+    # NOTE: To reduce costly copying the 'copies' dicts, we reuse the same
+    # instance for *one* of the child nodes (the last one). Once an instance
+    # has been put on the queue, it is thus no longer safe to modify it.
+    # Conversely, it *is* safe to modify an instance popped off the queue.
     work = [(r, 1, {}) for r in roots]
     heapq.heapify(work)
     alwaysmatch = match.always()
