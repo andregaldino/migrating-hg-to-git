@@ -138,7 +138,9 @@ def _getmtimepaths(ui):
         modules.append(__version__)
     except ImportError:
         pass
-    files = [pycompat.sysexecutable]
+    files = []
+    if pycompat.sysexecutable:
+        files.append(pycompat.sysexecutable)
     for m in modules:
         try:
             files.append(pycompat.fsencode(inspect.getabsfile(m)))

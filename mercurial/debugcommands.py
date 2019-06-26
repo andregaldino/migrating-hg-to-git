@@ -1240,7 +1240,7 @@ def debuginstall(ui, **opts):
 
     # Python
     fm.write('pythonexe', _("checking Python executable (%s)\n"),
-             pycompat.sysexecutable)
+             pycompat.sysexecutable or _("unknown"))
     fm.write('pythonver', _("checking Python version (%s)\n"),
              ("%d.%d.%d" % sys.version_info[:3]))
     fm.write('pythonlib', _("checking Python lib (%s)...\n"),
