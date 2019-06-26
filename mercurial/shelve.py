@@ -624,7 +624,30 @@ def checkparents(repo, state):
         raise error.Abort(_('working directory parents do not match unshelve '
                            'state'))
 
-def unshelveabort(ui, repo, state, opts):
+def _loadshelvedstate(ui, repo, opts):
+    try:
+        state = shelvedstate.load(repo)
+        if opts.get('keep') is None:
+            opts['keep'] = state.keep
+    except IOError as err:
+        if err.errno != errno.ENOENT:
+            raise
+        cmdutil.wrongtooltocontinue(repo, _('unshelve'))
+    except error.CorruptedState as err:
+        ui.debug(pycompat.bytestr(err) + '\n')
+        if opts.get('continue'):
+            msg = _('corrupted shelved state file')
+            hint = _('please run hg unshelve --abort to abort unshelve '
+                     'operation')
+            raise error.Abort(msg, hint=hint)
+        elif opts.get('abort'):
+            shelvedstate.clear(repo)
+            raise error.Abort(_('could not read shelved state file, your '
+                                'working copy may be in an unexpected state\n'
+                                'please update to some commit\n'))
+    return state
+
+def unshelveabort(ui, repo, state):
     """subcommand that abort an in-progress unshelve"""
     with repo.lock():
         try:
@@ -641,6 +664,12 @@ def unshelveabort(ui, repo, state, opts):
         finally:
             shelvedstate.clear(repo)
             ui.warn(_("unshelve of '%s' aborted\n") % state.name)
+
+def hgabortunshelve(ui, repo):
+    """logic to  abort unshelve using 'hg abort"""
+    with repo.wlock():
+        state = _loadshelvedstate(ui, repo, {'abort' : True})
+        return unshelveabort(ui, repo, state)
 
 def mergefiles(ui, repo, wctx, shelvectx):
     """updates to wctx and merges the changes from shelvectx into the
@@ -665,7 +694,6 @@ def unshelvecleanup(ui, repo, name, opts):
             if shfile.exists():
                 shfile.movetobackup()
         cleanupoldbackups(repo)
-
 def unshelvecontinue(ui, repo, state, opts):
     """subcommand to continue an in-progress unshelve"""
     # We're finishing off a merge. First parent is our original
@@ -864,29 +892,9 @@ def dounshelve(ui, repo, *shelved, **opts):
         if abortf and opts.get('tool', False):
             ui.warn(_('tool option will be ignored\n'))
 
-        try:
-            state = shelvedstate.load(repo)
-            if opts.get('keep') is None:
-                opts['keep'] = state.keep
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
-            cmdutil.wrongtooltocontinue(repo, _('unshelve'))
-        except error.CorruptedState as err:
-            ui.debug(pycompat.bytestr(err) + '\n')
-            if continuef:
-                msg = _('corrupted shelved state file')
-                hint = _('please run hg unshelve --abort to abort unshelve '
-                         'operation')
-                raise error.Abort(msg, hint=hint)
-            elif abortf:
-                shelvedstate.clear(repo)
-                raise error.Abort(_('could not read shelved state file, your '
-                                 'working copy may be in an unexpected state\n'
-                                 'please update to some commit\n'))
-
+        state = _loadshelvedstate(ui, repo, opts)
         if abortf:
-            return unshelveabort(ui, repo, state, opts)
+            return unshelveabort(ui, repo, state)
         elif continuef:
             return unshelvecontinue(ui, repo, state, opts)
     elif len(shelved) > 1:

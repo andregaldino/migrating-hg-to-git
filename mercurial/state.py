@@ -194,10 +194,6 @@ def addunfinished(opname, fname, clearable=False, allowcommit=False,
         _unfinishedstates.insert(0, statecheckobj)
 
 addunfinished(
-    'unshelve', fname='shelvedstate', continueflag=True,
-    cmdmsg=_('unshelve already in progress')
-)
-addunfinished(
     'update', fname='updatestate', clearable=True,
     cmdmsg=_('last update was interrupted'),
     cmdhint=_("use 'hg update' to get a consistent checkout"),

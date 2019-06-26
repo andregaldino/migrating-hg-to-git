@@ -1,4 +1,5 @@
 #testcases stripbased phasebased
+#testcases abortflag abortcommand
 
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
@@ -17,6 +18,13 @@
   > internal-phase = yes
   > EOF
 
+#endif
+
+#if abortflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > abort = unshelve --abort
+  > EOF
 #endif
 
 shelve should leave dirstate clean (issue4055)
@@ -285,7 +293,14 @@ unshelve and conflicts with tracked and untracked files
   >>>>>>> working-copy: aef214a5229c - shelve: changes to: commit stuff
   $ cat f.orig
   g
-  $ hg unshelve --abort
+
+#if abortcommand
+when in dry-run mode
+  $ hg abort --dry-run
+  unshelve in progress, will be aborted
+#endif
+
+  $ hg abort
   unshelve of 'default' aborted
   $ hg st
   ? f.orig
@@ -695,7 +710,7 @@ Unshelve --continue fails with appropriate message if shelvedstate is corrupted
   [255]
 
 Unshelve --abort works with a corrupted shelvedstate
-  $ hg unshelve --abort
+  $ hg abort
   abort: could not read shelved state file, your working copy may be in an unexpected state
   please update to some commit
   
@@ -703,8 +718,10 @@ Unshelve --abort works with a corrupted shelvedstate
 
 Unshelve --abort fails with appropriate message if there's no unshelve in
 progress
-  $ hg unshelve --abort
-  abort: no unshelve in progress
+  $ hg abort
+  abort: no unshelve in progress (abortflag !)
+  abort: merge in progress but does not support 'hg abort' (no-abortflag !)
+  (use 'hg commit' or 'hg merge --abort') (no-abortflag !)
   [255]
   $ cd ..
 
@@ -824,7 +841,7 @@ Test with the `.shelve` missing, but the changeset still in the repo (non-natura
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
   [1]
-  $ hg unshelve --abort
+  $ hg abort
   unshelve of 'default' aborted
 
 Unshelve without .shelve metadata (can happen when upgrading a repository with old shelve)
@@ -843,7 +860,7 @@ Unshelve without .shelve metadata (can happen when upgrading a repository with o
   [1]
   $ cat .hg/shelved/default.shelve
   node=82e0cb9893247d12667017593ce1e5655860f1ac
-  $ hg unshelve --abort
+  $ hg abort
   unshelve of 'default' aborted
 
 #endif

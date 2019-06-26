@@ -6182,6 +6182,12 @@ def unshelve(ui, repo, *shelved, **opts):
     with repo.wlock():
         return shelvemod.dounshelve(ui, repo, *shelved, **opts)
 
+statemod.addunfinished(
+    'unshelve', fname='shelvedstate', continueflag=True,
+    abortfunc=shelvemod.hgabortunshelve,
+    cmdmsg=_('unshelve already in progress'),
+)
+
 @command('update|up|checkout|co',
     [('C', 'clean', None, _('discard uncommitted changes (no backup)')),
     ('c', 'check', None, _('require clean working directory')),
