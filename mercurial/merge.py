@@ -1472,10 +1472,10 @@ def batchget(repo, mctx, wctx, wantfiledata, actions):
 
     Yields arbitrarily many (False, tuple) for progress updates, followed by
     exactly one (True, filedata). When wantfiledata is false, filedata is an
-    empty list. When wantfiledata is true, filedata[i] is a triple (mode, size,
-    mtime) of the file written for action[i].
+    empty dict. When wantfiledata is true, filedata[f] is a triple (mode, size,
+    mtime) of the file f written for each action.
     """
-    filedata = []
+    filedata = {}
     verbose = repo.ui.verbose
     fctx = mctx.filectx
     ui = repo.ui
@@ -1509,7 +1509,7 @@ def batchget(repo, mctx, wctx, wantfiledata, actions):
                 s = wfctx.lstat()
                 mode = s.st_mode
                 mtime = s[stat.ST_MTIME]
-                filedata.append((mode, size, mtime)) # for dirstate.normal
+                filedata[f] = ((mode, size, mtime)) # for dirstate.normal
             if i == 100:
                 yield False, (i, f)
                 i = 0
@@ -1670,7 +1670,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, wantfiledata,
                          actions[ACTION_GET],
                          threadsafe=threadsafe,
                          hasretval=True)
-    getfiledata = []
+    getfiledata = {}
     for final, res in prog:
         if final:
             getfiledata = res
@@ -1803,7 +1803,8 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, wantfiledata,
             actions[k].extend(acts)
             if k == ACTION_GET and wantfiledata:
                 # no filedata until mergestate is updated to provide it
-                getfiledata.extend([None] * len(acts))
+                for a in acts:
+                    getfiledata[a[0]] = None
             # Remove these files from actions[ACTION_MERGE] as well. This is
             # important because in recordupdates, files in actions[ACTION_MERGE]
             # are processed after files in other actions, and the merge driver
@@ -1873,11 +1874,11 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
         pass
 
     # get
-    for i, (f, args, msg) in enumerate(actions.get(ACTION_GET, [])):
+    for f, args, msg in actions.get(ACTION_GET, []):
         if branchmerge:
             repo.dirstate.otherparent(f)
         else:
-            parentfiledata = getfiledata[i] if getfiledata else None
+            parentfiledata = getfiledata[f] if getfiledata else None
             repo.dirstate.normal(f, parentfiledata=parentfiledata)
 
     # merge
