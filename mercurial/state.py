@@ -97,42 +97,18 @@ class _statecheck(object):
        multistep operation or multistep command extension.
     """
 
-    def __init__(self, opname, fname, clearable=False, allowcommit=False,
-                 reportonly=False, continueflag=False, stopflag=False ,
-                 cmdmsg="", cmdhint="", statushint=""):
-        """opname is the name the command or operation
-        fname is the file name in which data should be stored in .hg directory.
-        It is None for merge command.
-        clearable boolean determines whether or not interrupted states can be
-        cleared by running `hg update -C .` which in turn deletes the
-        state file.
-        allowcommit boolean decides whether commit is allowed during interrupted
-        state or not.
-        reportonly flag is used for operations like bisect where we just
-        need to detect the operation using 'hg status --verbose'
-        continueflag is a boolean determines whether or not a command supports
-        `--continue` option or not.
-        stopflag is a boolean that determines whether or not a command supports
-        --stop flag
-        cmdmsg is used to pass a different status message in case standard
-        message of the format "abort: cmdname in progress" is not desired.
-        cmdhint is used to pass a different hint message in case standard
-        message of the format "To continue: hg cmdname --continue
-        To abort: hg cmdname --abort" is not desired.
-        statushint is used to pass a different status message in case standard
-        message of the format ('To continue:    hg cmdname --continue'
-        'To abort:       hg cmdname --abort') is not desired
-        """
+    def __init__(self, opname, fname, clearable, allowcommit, reportonly,
+                 continueflag, stopflag, cmdmsg, cmdhint, statushint):
         self._opname = opname
         self._fname = fname
         self._clearable = clearable
         self._allowcommit = allowcommit
-        self._cmdhint = cmdhint
-        self._statushint = statushint
-        self._cmdmsg = cmdmsg
-        self._stopflag = stopflag
         self._reportonly = reportonly
         self._continueflag = continueflag
+        self._stopflag = stopflag
+        self._cmdmsg = cmdmsg
+        self._cmdhint = cmdhint
+        self._statushint = statushint
 
     def statusmsg(self):
         """returns the hint message corresponding to the command for
@@ -179,10 +155,36 @@ class _statecheck(object):
 # A list of statecheck objects for multistep operations like graft.
 _unfinishedstates = []
 
-def addunfinished(opname, **kwargs):
+def addunfinished(opname, fname, clearable=False, allowcommit=False,
+                  reportonly=False, continueflag=False, stopflag=False,
+                  cmdmsg="", cmdhint="", statushint=""):
     """this registers a new command or operation to unfinishedstates
+    opname is the name the command or operation
+    fname is the file name in which data should be stored in .hg directory.
+    It is None for merge command.
+    clearable boolean determines whether or not interrupted states can be
+    cleared by running `hg update -C .` which in turn deletes the
+    state file.
+    allowcommit boolean decides whether commit is allowed during interrupted
+    state or not.
+    reportonly flag is used for operations like bisect where we just
+    need to detect the operation using 'hg status --verbose'
+    continueflag is a boolean determines whether or not a command supports
+    `--continue` option or not.
+    stopflag is a boolean that determines whether or not a command supports
+    --stop flag
+    cmdmsg is used to pass a different status message in case standard
+    message of the format "abort: cmdname in progress" is not desired.
+    cmdhint is used to pass a different hint message in case standard
+    message of the format "To continue: hg cmdname --continue
+    To abort: hg cmdname --abort" is not desired.
+    statushint is used to pass a different status message in case standard
+    message of the format ('To continue:    hg cmdname --continue'
+    'To abort:       hg cmdname --abort') is not desired
     """
-    statecheckobj = _statecheck(opname, **kwargs)
+    statecheckobj = _statecheck(opname, fname, clearable, allowcommit,
+                                reportonly, continueflag, stopflag, cmdmsg,
+                                cmdhint, statushint)
     if opname == 'merge':
         _unfinishedstates.append(statecheckobj)
     else:
