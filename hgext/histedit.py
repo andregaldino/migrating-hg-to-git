@@ -1919,6 +1919,14 @@ def _aborthistedit(ui, repo, state, nobackup=False):
     finally:
             state.clear()
 
+def hgaborthistedit(ui, repo):
+    state = histeditstate(repo)
+    nobackup = not ui.configbool('rewrite', 'backup-bundle')
+    with repo.wlock() as wlock, repo.lock() as lock:
+        state.wlock = wlock
+        state.lock = lock
+        _aborthistedit(ui, repo, state, nobackup=nobackup)
+
 def _edithisteditplan(ui, repo, state, rules):
     state.read()
     if not rules:
@@ -2314,5 +2322,5 @@ def summaryhook(ui, repo):
 def extsetup(ui):
     cmdutil.summaryhooks.add('histedit', summaryhook)
     statemod.addunfinished('histedit', fname='histedit-state', allowcommit=True,
-                            continueflag=True)
+                            continueflag=True, abortfunc=hgaborthistedit)
 

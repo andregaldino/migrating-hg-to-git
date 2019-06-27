@@ -1,3 +1,12 @@
+#testcases abortcommand abortflag
+
+#if abortflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > abort = histedit --abort
+  > EOF
+#endif
+
   $ . "$TESTDIR/histedit-helpers.sh"
 
 Enable obsolete
@@ -522,7 +531,13 @@ attempted later.
   (hg histedit --continue to resume)
   [1]
 
-  $ hg histedit --abort
+#if abortcommand
+when in dry-run mode
+  $ hg abort --dry-run
+  histedit in progress, will be aborted
+#endif
+
+  $ hg abort
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/abort/.hg/strip-backup/4dc06258baa6-dff4ef05-backup.hg
 
