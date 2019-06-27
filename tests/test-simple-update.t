@@ -109,6 +109,25 @@ update with worker processes
   $ hg update -v | grep 100
   getting 100
   100 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg status
+  M 100
+  M 11
+  M 2
+  M 21
+  M 3
+  M 4
+  M 41
+  M 5
+  M 51
+  M 54
+  M 6
+  M 61
+  M 7
+  M 71
+  M 8
+  M 81
+  M 9
+  M 91
 
   $ cd ..
 
