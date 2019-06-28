@@ -215,11 +215,11 @@ test shelving
   $ hg diff --stat
    test |  1 +
    1 files changed, 1 insertions(+), 0 deletions(-)
-  $ hg --config extensions.shelve= shelve
+  $ hg shelve
   shelved as Z
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg pull -uq
-  $ hg --trace --config extensions.shelve= unshelve
+  $ hg unshelve
   unshelving change 'Z'
   rebasing shelved changes
   $ hg diff --stat

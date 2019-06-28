@@ -27,8 +27,8 @@ import errno
 import itertools
 import stat
 
-from mercurial.i18n import _
-from mercurial import (
+from .i18n import _
+from . import (
     bookmarks,
     bundle2,
     bundlerepo,
@@ -45,33 +45,15 @@ from mercurial import (
     patch,
     phases,
     pycompat,
-    registrar,
     repair,
     scmutil,
-    state as statemod,
     templatefilters,
     util,
     vfs as vfsmod,
 )
-
-from mercurial.utils import (
+from .utils import (
     dateutil,
     stringutil,
-)
-
-cmdtable = {}
-command = registrar.command(cmdtable)
-# Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
-# extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
-# be specifying the version(s) of Mercurial they are tested with, or
-# leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
-
-configtable = {}
-configitem = registrar.configitem(configtable)
-
-configitem('shelve', 'maxbackups',
-    default=10,
 )
 
 backupdir = 'shelve-backup'
@@ -863,59 +845,6 @@ def _checkunshelveuntrackedproblems(ui, repo, shelvectx):
         hint = _("run hg status to see which files are missing")
         raise error.Abort(m, hint=hint)
 
-@command('unshelve',
-         [('a', 'abort', None,
-           _('abort an incomplete unshelve operation')),
-          ('c', 'continue', None,
-           _('continue an incomplete unshelve operation')),
-          ('k', 'keep', None,
-           _('keep shelve after unshelving')),
-          ('n', 'name', '',
-           _('restore shelved change with given name'), _('NAME')),
-          ('t', 'tool', '', _('specify merge tool')),
-          ('', 'date', '',
-           _('set date for temporary commits (DEPRECATED)'), _('DATE'))],
-         _('hg unshelve [[-n] SHELVED]'),
-         helpcategory=command.CATEGORY_WORKING_DIRECTORY)
-def unshelve(ui, repo, *shelved, **opts):
-    """restore a shelved change to the working directory
-
-    This command accepts an optional name of a shelved change to
-    restore. If none is given, the most recent shelved change is used.
-
-    If a shelved change is applied successfully, the bundle that
-    contains the shelved changes is moved to a backup location
-    (.hg/shelve-backup).
-
-    Since you can restore a shelved change on top of an arbitrary
-    commit, it is possible that unshelving will result in a conflict
-    between your changes and the commits you are unshelving onto. If
-    this occurs, you must resolve the conflict, then use
-    ``--continue`` to complete the unshelve operation. (The bundle
-    will not be moved until you successfully complete the unshelve.)
-
-    (Alternatively, you can use ``--abort`` to abandon an unshelve
-    that causes a conflict. This reverts the unshelved changes, and
-    leaves the bundle in place.)
-
-    If bare shelved change (when no files are specified, without interactive,
-    include and exclude option) was done on newly created branch it would
-    restore branch information to the working directory.
-
-    After a successful unshelve, the shelved changes are stored in a
-    backup directory. Only the N most recent backups are kept. N
-    defaults to 10 but can be overridden using the ``shelve.maxbackups``
-    configuration option.
-
-    .. container:: verbose
-
-       Timestamp in seconds is used to decide order of backups. More
-       than ``maxbackups`` backups are kept, if same timestamp
-       prevents from deciding exact order of them, for safety.
-    """
-    with repo.wlock():
-        return _dounshelve(ui, repo, *shelved, **opts)
-
 def _dounshelve(ui, repo, *shelved, **opts):
     opts = pycompat.byteskwargs(opts)
     abortf = opts.get('abort')
@@ -1017,110 +946,3 @@ def _dounshelve(ui, repo, *shelved, **opts):
         if tr:
             tr.release()
         lockmod.release(lock)
-
-@command('shelve',
-         [('A', 'addremove', None,
-           _('mark new/missing files as added/removed before shelving')),
-          ('u', 'unknown', None,
-           _('store unknown files in the shelve')),
-          ('', 'cleanup', None,
-           _('delete all shelved changes')),
-          ('', 'date', '',
-           _('shelve with the specified commit date'), _('DATE')),
-          ('d', 'delete', None,
-           _('delete the named shelved change(s)')),
-          ('e', 'edit', False,
-           _('invoke editor on commit messages')),
-          ('k', 'keep', False,
-           _('shelve, but keep changes in the working directory')),
-          ('l', 'list', None,
-           _('list current shelves')),
-          ('m', 'message', '',
-           _('use text as shelve message'), _('TEXT')),
-          ('n', 'name', '',
-           _('use the given name for the shelved commit'), _('NAME')),
-          ('p', 'patch', None,
-           _('output patches for changes (provide the names of the shelved '
-             'changes as positional arguments)')),
-          ('i', 'interactive', None,
-           _('interactive mode, only works while creating a shelve')),
-          ('', 'stat', None,
-           _('output diffstat-style summary of changes (provide the names of '
-             'the shelved changes as positional arguments)')
-           )] + cmdutil.walkopts,
-         _('hg shelve [OPTION]... [FILE]...'),
-         helpcategory=command.CATEGORY_WORKING_DIRECTORY)
-def shelvecmd(ui, repo, *pats, **opts):
-    '''save and set aside changes from the working directory
-
-    Shelving takes files that "hg status" reports as not clean, saves
-    the modifications to a bundle (a shelved change), and reverts the
-    files so that their state in the working directory becomes clean.
-
-    To restore these changes to the working directory, using "hg
-    unshelve"; this will work even if you switch to a different
-    commit.
-
-    When no files are specified, "hg shelve" saves all not-clean
-    files. If specific files or directories are named, only changes to
-    those files are shelved.
-
-    In bare shelve (when no files are specified, without interactive,
-    include and exclude option), shelving remembers information if the
-    working directory was on newly created branch, in other words working
-    directory was on different branch than its first parent. In this
-    situation unshelving restores branch information to the working directory.
-
-    Each shelved change has a name that makes it easier to find later.
-    The name of a shelved change defaults to being based on the active
-    bookmark, or if there is no active bookmark, the current named
-    branch.  To specify a different name, use ``--name``.
-
-    To see a list of existing shelved changes, use the ``--list``
-    option. For each shelved change, this will print its name, age,
-    and description; use ``--patch`` or ``--stat`` for more details.
-
-    To delete specific shelved changes, use ``--delete``. To delete
-    all shelved changes, use ``--cleanup``.
-    '''
-    opts = pycompat.byteskwargs(opts)
-    allowables = [
-        ('addremove', {'create'}), # 'create' is pseudo action
-        ('unknown', {'create'}),
-        ('cleanup', {'cleanup'}),
-#       ('date', {'create'}), # ignored for passing '--date "0 0"' in tests
-        ('delete', {'delete'}),
-        ('edit', {'create'}),
-        ('keep', {'create'}),
-        ('list', {'list'}),
-        ('message', {'create'}),
-        ('name', {'create'}),
-        ('patch', {'patch', 'list'}),
-        ('stat', {'stat', 'list'}),
-    ]
-    def checkopt(opt):
-        if opts.get(opt):
-            for i, allowable in allowables:
-                if opts[i] and opt not in allowable:
-                    raise error.Abort(_("options '--%s' and '--%s' may not be "
-                                       "used together") % (opt, i))
-            return True
-    if checkopt('cleanup'):
-        if pats:
-            raise error.Abort(_("cannot specify names when using '--cleanup'"))
-        return cleanupcmd(ui, repo)
-    elif checkopt('delete'):
-        return deletecmd(ui, repo, pats)
-    elif checkopt('list'):
-        return listcmd(ui, repo, pats, opts)
-    elif checkopt('patch') or checkopt('stat'):
-        return patchcmds(ui, repo, pats, opts)
-    else:
-        return createcmd(ui, repo, pats, opts)
-
-def extsetup(ui):
-    statemod.addunfinished(
-        'unshelve', fname=shelvedstate._filename, continueflag=True,
-        cmdmsg=_('unshelve already in progress')
-    )
-

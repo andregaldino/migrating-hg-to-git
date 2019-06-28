@@ -1248,11 +1248,6 @@ enable keyword expansion again
 
 Test restricted mode with unshelve
 
-  $ cat <<EOF >> $HGRCPATH
-  > [extensions]
-  > shelve =
-  > EOF
-
   $ echo xxxx >> a
   $ hg diff
   diff -r 800511b3a22d a

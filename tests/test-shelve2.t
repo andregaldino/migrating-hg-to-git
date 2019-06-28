@@ -3,7 +3,6 @@
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
   > mq =
-  > shelve =
   > [defaults]
   > diff = --nodates --git
   > qnew = --date '0 0'

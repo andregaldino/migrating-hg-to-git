@@ -1091,6 +1091,9 @@ coreconfigitem('share', 'pool',
 coreconfigitem('share', 'poolnaming',
     default='identity',
 )
+coreconfigitem('shelve','maxbackups',
+    default=10,
+)
 coreconfigitem('smtp', 'host',
     default=None,
 )

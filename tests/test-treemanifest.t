@@ -357,10 +357,10 @@ Stripping and recovering changes should work
 Shelving and unshelving should work
 
   $ echo foo >> dir1/a
-  $ hg --config extensions.shelve= shelve
+  $ hg shelve
   shelved as default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg --config extensions.shelve= unshelve
+  $ hg unshelve
   unshelving change 'default'
   $ hg diff --nodates
   diff -r 708a273da119 dir1/a

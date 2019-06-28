@@ -15,7 +15,6 @@ Test for the heuristic copytracing algorithm
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > rebase=
-  > shelve=
   > [alias]
   > l = log -G -T 'rev: {rev}\ndesc: {desc}\n'
   > pl = log -G -T 'rev: {rev}, phase: {phase}\ndesc: {desc}\n'

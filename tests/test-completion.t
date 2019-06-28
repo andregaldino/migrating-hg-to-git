@@ -45,12 +45,14 @@ Show all commands except debug commands
   rollback
   root
   serve
+  shelve
   status
   summary
   tag
   tags
   tip
   unbundle
+  unshelve
   update
   verify
   version
@@ -228,7 +230,7 @@ Show the options for the "serve" command
 Show an error if we use --options with an ambiguous abbreviation
   $ hg debugcomplete --options s
   hg: command 's' is ambiguous:
-      serve showconfig status summary
+      serve shelve showconfig status summary
   [255]
 
 Show all commands + options
@@ -340,12 +342,14 @@ Show all commands + options
   rollback: dry-run, force
   root: template
   serve: accesslog, daemon, daemon-postexec, errorlog, port, address, prefix, name, web-conf, webdir-conf, pid-file, stdio, cmdserver, templates, style, ipv6, certificate, print-url, subrepos
+  shelve: addremove, unknown, cleanup, date, delete, edit, keep, list, message, name, patch, interactive, stat, include, exclude
   status: all, modified, added, removed, deleted, clean, unknown, ignored, no-status, terse, copies, print0, rev, change, include, exclude, subrepos, template
   summary: remote
   tag: force, local, rev, remove, edit, message, date, user
   tags: template
   tip: patch, git, style, template
   unbundle: update
+  unshelve: abort, continue, keep, name, tool, date
   update: clean, check, merge, date, rev, tool
   verify: full
   version: template

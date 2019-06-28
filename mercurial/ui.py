@@ -102,7 +102,6 @@ username =
 #
 # histedit =
 # rebase =
-# shelve =
 # uncommit =
 """,
 

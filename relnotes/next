@@ -58,6 +58,8 @@
  * `util.dirs()` and `util.finddirs()` now include an entry for the
    root directory (empty string).
 
+ * shelve is no longer an extension now. it will be turned on by default.
+
  * New API to manage unfinished operations: Earlier there were distinct APIs
    which dealt with unfinished states and separate lists maintaining them
    that are `cmdutil.afterresolvestates`, `cmdutil.unfinishedstates` and

@@ -196,6 +196,10 @@ addunfinished(
     cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop")
 )
 addunfinished(
+    'unshelve', fname='shelvedstate', continueflag=True,
+    cmdmsg=_('unshelve already in progress')
+)
+addunfinished(
     'update', fname='updatestate', clearable=True,
     cmdmsg=_('last update was interrupted'),
     cmdhint=_("use 'hg update' to get a consistent checkout"),

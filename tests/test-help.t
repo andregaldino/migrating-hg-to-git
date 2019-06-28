@@ -112,8 +112,10 @@ the extension is unknown.
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
+   shelve        save and set aside changes from the working directory
    status        show changed files in the working directory
    summary       summarize working directory state
+   unshelve      restore a shelved change to the working directory
    update        update working directory (or switch revisions)
   
   Change import/export:
@@ -238,8 +240,10 @@ the extension is unknown.
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
+   shelve        save and set aside changes from the working directory
    status        show changed files in the working directory
    summary       summarize working directory state
+   unshelve      restore a shelved change to the working directory
    update        update working directory (or switch revisions)
   
   Change import/export:
@@ -375,7 +379,6 @@ Test extension help:
        relink        recreates hardlinks between repository clones
        schemes       extend schemes with shortcuts to repository swarms
        share         share a common history between several working directories
-       shelve        save and restore changes to the working directory
        strip         strip changesets and their descendants from history
        transplant    command to transplant changesets from another branch
        win32mbcs     allow the use of MBCS paths with problematic encodings
@@ -2705,6 +2708,13 @@ Dish up an empty repo; serve it cold.
   (no help text available)
   </td></tr>
   <tr><td>
+  <a href="/help/shelve">
+  shelve
+  </a>
+  </td><td>
+  save and set aside changes from the working directory
+  </td></tr>
+  <tr><td>
   <a href="/help/tag">
   tag
   </a>
@@ -2724,6 +2734,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   apply one or more bundle files
+  </td></tr>
+  <tr><td>
+  <a href="/help/unshelve">
+  unshelve
+  </a>
+  </td><td>
+  restore a shelved change to the working directory
   </td></tr>
   <tr><td>
   <a href="/help/verify">

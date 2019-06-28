@@ -356,8 +356,10 @@ Testing -h/--help:
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
+   shelve        save and set aside changes from the working directory
    status        show changed files in the working directory
    summary       summarize working directory state
+   unshelve      restore a shelved change to the working directory
    update        update working directory (or switch revisions)
   
   Change import/export:
@@ -486,8 +488,10 @@ Testing -h/--help:
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
+   shelve        save and set aside changes from the working directory
    status        show changed files in the working directory
    summary       summarize working directory state
+   unshelve      restore a shelved change to the working directory
    update        update working directory (or switch revisions)
   
   Change import/export:
