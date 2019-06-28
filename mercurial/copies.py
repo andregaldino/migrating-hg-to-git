@@ -324,10 +324,6 @@ def _forwardcopies(a, b, match=None):
     match = a.repo().narrowmatch(match)
     # check for working copy
     if b.rev() is None:
-        if a == b.p1():
-            # short-circuit to avoid issues with merge states
-            return _dirstatecopies(b._repo, match)
-
         cm = _committedforwardcopies(a, b.p1(), match)
         # combine copies from dirstate if necessary
         return _chainandfilter(a, b, cm, _dirstatecopies(b._repo, match))
@@ -367,6 +363,9 @@ def pathcopies(x, y, match=None):
     if a == x:
         if debug:
             repo.ui.debug('debug.copies: search mode: forward\n')
+        if y.rev() is None and x == y.p1():
+            # short-circuit to avoid issues with merge states
+            return _dirstatecopies(repo, match)
         return _forwardcopies(x, y, match=match)
     if a == y:
         if debug:
