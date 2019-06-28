@@ -54,9 +54,6 @@ from mercurial import (
     vfs as vfsmod,
 )
 
-from . import (
-    rebase,
-)
 from mercurial.utils import (
     dateutil,
     stringutil,
@@ -655,11 +652,6 @@ def unshelveabort(ui, repo, state, opts):
             if (state.activebookmark
                     and state.activebookmark in repo._bookmarks):
                 bookmarks.activate(repo, state.activebookmark)
-
-            if repo.vfs.exists('unshelverebasestate'):
-                repo.vfs.rename('unshelverebasestate', 'rebasestate')
-                rebase.clearstatus(repo)
-
             mergefiles(ui, repo, state.wctx, state.pendingctx)
             if not phases.supportinternal(repo):
                 repair.strip(ui, repo, state.nodestoremove, backup=False,
@@ -738,11 +730,6 @@ def unshelvecontinue(ui, repo, state, opts):
             shelvectx = repo[newnode]
 
         hg.updaterepo(repo, pendingctx.node(), overwrite=False)
-
-        if repo.vfs.exists('unshelverebasestate'):
-            repo.vfs.rename('unshelverebasestate', 'rebasestate')
-            rebase.clearstatus(repo)
-
         mergefiles(ui, repo, state.wctx, shelvectx)
         restorebranch(ui, repo, state.branchtorestore)
 
