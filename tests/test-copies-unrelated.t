@@ -299,22 +299,10 @@ above, but here the break in history is via the base commit.
   o  0 base
      a
   $ hg debugpathcopies 1 4
-  x -> y (no-filelog !)
-#if filelog
-BROKEN: This should succeed and merge the changes from x into y
-  $ hg graft -r 2
-  grafting 2:* "modify x" (glob)
-  file 'x' was deleted in local [local] but was modified in other [graft].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
-  abort: unresolved conflicts, can't continue
-  (use 'hg resolve' and 'hg graft --continue')
-  [255]
-#else
+  x -> y
   $ hg graft -r 2
   grafting 2:* "modify x" (glob)
   merging y and x to y
-#endif
   $ hg co -qC 2
   $ hg graft -r 4
   grafting 4:* "rename x to y"* (glob)

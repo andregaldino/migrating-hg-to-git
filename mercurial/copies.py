@@ -150,13 +150,15 @@ def _chain(a, b):
             t[k] = v
     return t
 
-def _tracefile(fctx, am, limit):
+def _tracefile(fctx, am, basemf, limit):
     """return file context that is the ancestor of fctx present in ancestor
     manifest am, stopping after the first ancestor lower than limit"""
 
     for f in fctx.ancestors():
         path = f.path()
         if am.get(path, None) == f.filenode():
+            return path
+        if basemf and basemf.get(path, None) == f.filenode():
             return path
         if not f.isintroducedafter(limit):
             return None
@@ -183,7 +185,7 @@ def usechangesetcentricalgo(repo):
     return (repo.ui.config('experimental', 'copies.read-from') in
             ('changeset-only', 'compatibility'))
 
-def _committedforwardcopies(a, b, match):
+def _committedforwardcopies(a, b, base, match):
     """Like _forwardcopies(), but b.rev() cannot be None (working copy)"""
     # files might have to be traced back to the fctx parent of the last
     # one-side-only changeset, but not further back than that
@@ -201,6 +203,7 @@ def _committedforwardcopies(a, b, match):
     if debug:
         dbg('debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()
+    basemf = None if base is None else base.manifest()
 
     # find where new files came from
     # we currently don't try to find where old files went, too expensive
@@ -232,7 +235,7 @@ def _committedforwardcopies(a, b, match):
 
         if debug:
             start = util.timer()
-        opath = _tracefile(fctx, am, limit)
+        opath = _tracefile(fctx, am, basemf, limit)
         if opath:
             if debug:
                 dbg('debug.copies:          rename of: %s\n' % opath)
@@ -311,17 +314,19 @@ def _changesetforwardcopies(a, b, match):
             heapq.heappush(work, (c, parent, newcopies))
     assert False
 
-def _forwardcopies(a, b, match=None):
+def _forwardcopies(a, b, base=None, match=None):
     """find {dst@b: src@a} copy mapping where a is an ancestor of b"""
 
+    if base is None:
+        base = a
     match = a.repo().narrowmatch(match)
     # check for working copy
     if b.rev() is None:
-        cm = _committedforwardcopies(a, b.p1(), match)
+        cm = _committedforwardcopies(a, b.p1(), base, match)
         # combine copies from dirstate if necessary
         copies = _chain(cm, _dirstatecopies(b._repo, match))
     else:
-        copies  = _committedforwardcopies(a, b, match)
+        copies  = _committedforwardcopies(a, b, base, match)
     return copies
 
 def _backwardrenames(a, b, match):
@@ -369,8 +374,11 @@ def pathcopies(x, y, match=None):
     else:
         if debug:
             repo.ui.debug('debug.copies: search mode: combined\n')
+        base = None
+        if a.rev() != node.nullrev:
+            base = x
         copies = _chain(_backwardrenames(x, a, match=match),
-                        _forwardcopies(a, y, match=match))
+                        _forwardcopies(a, y, base, match=match))
     _filter(x, y, copies)
     return copies
 
