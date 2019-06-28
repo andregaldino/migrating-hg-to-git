@@ -161,8 +161,9 @@ def _tracefile(fctx, am, limit):
     manifest am, stopping after the first ancestor lower than limit"""
 
     for f in fctx.ancestors():
-        if am.get(f.path(), None) == f.filenode():
-            return f
+        path = f.path()
+        if am.get(path, None) == f.filenode():
+            return path
         if not f.isintroducedafter(limit):
             return None
 
@@ -237,11 +238,11 @@ def _committedforwardcopies(a, b, match):
 
         if debug:
             start = util.timer()
-        ofctx = _tracefile(fctx, am, limit)
-        if ofctx:
+        opath = _tracefile(fctx, am, limit)
+        if opath:
             if debug:
-                dbg('debug.copies:          rename of: %s\n' % ofctx._path)
-            cm[f] = ofctx.path()
+                dbg('debug.copies:          rename of: %s\n' % opath)
+            cm[f] = opath
         if debug:
             dbg('debug.copies:          time: %f seconds\n'
                 % (util.timer() - start))
