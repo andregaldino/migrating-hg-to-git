@@ -1,3 +1,11 @@
+#testcases abortcommand abortflag
+#if abortflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > abort = merge --abort
+  > EOF
+#endif
+
   $ addcommit () {
   >     echo $1 > $1
   >     hg add $1
@@ -36,9 +44,11 @@ State before the merge
 
 Testing the abort functionality first in case of conflicts
 
-  $ hg merge --abort
-  abort: no merge in progress
+  $ hg abort
+  abort: no merge in progress (abortflag !)
+  abort: no operation in progress (abortcommand !)
   [255]
+
   $ hg merge
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
@@ -53,7 +63,13 @@ Testing the abort functionality first in case of conflicts
   abort: cannot specify both --rev and --abort
   [255]
 
-  $ hg merge --abort
+#if abortcommand
+when in dry-run mode
+  $ hg abort --dry-run
+  merge in progress, will be aborted
+#endif
+
+  $ hg abort
   aborting the merge, updating back to e45016d2b3d3
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
@@ -131,7 +147,7 @@ Testing the abort functionality in case of no conflicts
   abort: cannot specify --preview with --abort
   [255]
 
-  $ hg merge --abort
+  $ hg abort
   aborting the merge, updating back to 68352a18a7c4
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
 

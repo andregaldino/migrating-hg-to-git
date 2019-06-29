@@ -718,11 +718,16 @@ Unshelve --abort works with a corrupted shelvedstate
 
 Unshelve --abort fails with appropriate message if there's no unshelve in
 progress
-  $ hg abort
-  abort: no unshelve in progress (abortflag !)
-  abort: merge in progress but does not support 'hg abort' (no-abortflag !)
-  (use 'hg commit' or 'hg merge --abort') (no-abortflag !)
+
+#if abortflag
+  $ hg unshelve --abort
+  abort: no unshelve in progress
   [255]
+#else
+  $ hg abort
+  aborting the merge, updating back to 9451eaa6eee3
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#endif
   $ cd ..
 
 Unshelve respects --keep even if user intervention is needed

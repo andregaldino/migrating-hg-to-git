@@ -956,29 +956,33 @@ def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None,
           abort=False):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
-    if not abort:
-        stats = mergemod.update(repo, node, branchmerge=True, force=force,
-                                mergeforce=mergeforce, labels=labels)
-    else:
-        ms = mergemod.mergestate.read(repo)
-        if ms.active():
-            # there were conflicts
-            node = ms.localctx.hex()
-        else:
-            # there were no conficts, mergestate was not stored
-            node = repo['.'].hex()
+    if abort:
+        return abortmerge(repo.ui, repo, labels=labels)
 
-        repo.ui.status(_("aborting the merge, updating back to"
-                         " %s\n") % node[:12])
-        stats = mergemod.update(repo, node, branchmerge=False, force=True,
-                                labels=labels)
-
+    stats = mergemod.update(repo, node, branchmerge=True, force=force,
+                            mergeforce=mergeforce, labels=labels)
     _showstats(repo, stats)
     if stats.unresolvedcount:
         repo.ui.status(_("use 'hg resolve' to retry unresolved file merges "
                          "or 'hg merge --abort' to abandon\n"))
-    elif remind and not abort:
+    elif remind:
         repo.ui.status(_("(branch merge, don't forget to commit)\n"))
+    return stats.unresolvedcount > 0
+
+def abortmerge(ui, repo, labels=None):
+    ms = mergemod.mergestate.read(repo)
+    if ms.active():
+        # there were conflicts
+        node = ms.localctx.hex()
+    else:
+        # there were no conficts, mergestate was not stored
+        node = repo['.'].hex()
+
+    repo.ui.status(_("aborting the merge, updating back to"
+                     " %s\n") % node[:12])
+    stats = mergemod.update(repo, node, branchmerge=False, force=True,
+                            labels=labels)
+    _showstats(repo, stats)
     return stats.unresolvedcount > 0
 
 def _incoming(displaychlist, subreporecurse, ui, repo, source,

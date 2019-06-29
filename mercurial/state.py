@@ -205,13 +205,6 @@ addunfinished(
                  'To mark the changeset bad:     hg bisect --bad\n'
                  'To abort:                      hg bisect --reset\n')
 )
-addunfinished(
-    'merge', fname=None, clearable=True, allowcommit=True,
-    cmdmsg=_('outstanding uncommitted merge'),
-    statushint=_('To continue:    hg commit\n'
-                 'To abort:       hg merge --abort'),
-    cmdhint=_("use 'hg commit' or 'hg merge --abort'")
-)
 
 def getrepostate(repo):
     # experimental config: commands.status.skipstates

@@ -4024,6 +4024,14 @@ def merge(ui, repo, node=None, **opts):
         return hg.merge(repo, node, force=force, mergeforce=force,
                         labels=labels, abort=abort)
 
+statemod.addunfinished(
+    'merge', fname=None, clearable=True, allowcommit=True,
+    cmdmsg=_('outstanding uncommitted merge'), abortfunc=hg.abortmerge,
+    statushint=_('To continue:    hg commit\n'
+                 'To abort:       hg merge --abort'),
+    cmdhint=_("use 'hg commit' or 'hg merge --abort'")
+)
+
 @command('outgoing|out',
     [('f', 'force', None, _('run even when the destination is unrelated')),
     ('r', 'rev', [],
