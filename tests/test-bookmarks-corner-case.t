@@ -201,7 +201,6 @@ Check raced push output.
   $ cat push-output.txt
   pushing to ssh://user@dummy/bookrace-server
   searching for changes
-  remote has heads on branch 'default' that are not known locally: f26c3b5167d1
   remote: setting raced push up
   remote: adding changesets
   remote: adding manifests
@@ -221,7 +220,7 @@ Check result of the push.
   |  summary:     A1
   |
   | o  changeset:   3:f26c3b5167d1
-  | |  bookmark:    book-B
+  | |  bookmark:    book-B (false !)
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  summary:     B1
@@ -244,4 +243,4 @@ Check result of the push.
   
   $ hg -R bookrace-server book
      book-A                    4:9ce3b28c16de
-     book-B                    3:f26c3b5167d1
+     book-B                    3:f26c3b5167d1 (false !)
