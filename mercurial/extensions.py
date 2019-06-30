@@ -43,7 +43,8 @@ _builtin = {
     'progress',
     'interhg',
     'inotify',
-    'hgcia'
+    'hgcia',
+    'shelve',
 }
 
 def extensions(ui=None):
