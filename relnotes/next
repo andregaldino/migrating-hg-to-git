@@ -6,6 +6,9 @@
  * `hg root` now has templating support, including support for showing
    where a repo share's source is. See `hg help -v root` for details.
 
+ * New `--force-close-branch` flag for `hg commit` to forcibly close
+   branch from a non-head changeset.
+
 
 == New Experimental Features ==
 
