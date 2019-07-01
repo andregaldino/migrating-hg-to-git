@@ -8,22 +8,13 @@
 //! A multiset of directory names.
 //!
 //! Used to counts the references to directories in a manifest or dirstate.
-use std::collections::hash_map::Entry;
+use std::collections::hash_map::{Entry, Iter};
 use std::collections::HashMap;
-use std::ops::Deref;
 use {DirsIterable, DirstateEntry, DirstateMapError};
 
 #[derive(PartialEq, Debug)]
 pub struct DirsMultiset {
     inner: HashMap<Vec<u8>, u32>,
-}
-
-impl Deref for DirsMultiset {
-    type Target = HashMap<Vec<u8>, u32>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
 }
 
 impl DirsMultiset {
@@ -132,6 +123,18 @@ impl DirsMultiset {
 
         Ok(())
     }
+
+    pub fn contains_key(&self, key: &[u8]) -> bool {
+        self.inner.contains_key(key)
+    }
+
+    pub fn iter(&self) -> Iter<Vec<u8>, u32> {
+        self.inner.iter()
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
 }
 
 #[cfg(test)]
@@ -176,8 +179,8 @@ mod tests {
             map.delete_path(b"a/b/")
         );
 
-        assert_eq!(2, *map.get(&b"a".to_vec()).unwrap());
-        assert_eq!(1, *map.get(&b"a/c".to_vec()).unwrap());
+        assert_eq!(2, *map.inner.get(&b"a".to_vec()).unwrap());
+        assert_eq!(1, *map.inner.get(&b"a/c".to_vec()).unwrap());
         eprintln!("{:?}", map);
         assert_eq!(Ok(()), map.delete_path(b"a/"));
         eprintln!("{:?}", map);
@@ -203,36 +206,36 @@ mod tests {
         let mut map = DirsMultiset::new(DirsIterable::Manifest(vec![]), None);
 
         map.add_path(b"a/");
-        assert_eq!(1, *map.get(&b"a".to_vec()).unwrap());
-        assert_eq!(1, *map.get(&Vec::new()).unwrap());
+        assert_eq!(1, *map.inner.get(&b"a".to_vec()).unwrap());
+        assert_eq!(1, *map.inner.get(&Vec::new()).unwrap());
         assert_eq!(2, map.len());
 
         // Non directory should be ignored
         map.add_path(b"a");
-        assert_eq!(1, *map.get(&b"a".to_vec()).unwrap());
+        assert_eq!(1, *map.inner.get(&b"a".to_vec()).unwrap());
         assert_eq!(2, map.len());
 
         // Non directory will still add its base
         map.add_path(b"a/b");
-        assert_eq!(2, *map.get(&b"a".to_vec()).unwrap());
+        assert_eq!(2, *map.inner.get(&b"a".to_vec()).unwrap());
         assert_eq!(2, map.len());
 
         // Duplicate path works
         map.add_path(b"a/");
-        assert_eq!(3, *map.get(&b"a".to_vec()).unwrap());
+        assert_eq!(3, *map.inner.get(&b"a".to_vec()).unwrap());
 
         // Nested dir adds to its base
         map.add_path(b"a/b/");
-        assert_eq!(4, *map.get(&b"a".to_vec()).unwrap());
-        assert_eq!(1, *map.get(&b"a/b".to_vec()).unwrap());
+        assert_eq!(4, *map.inner.get(&b"a".to_vec()).unwrap());
+        assert_eq!(1, *map.inner.get(&b"a/b".to_vec()).unwrap());
 
         // but not its base's base, because it already existed
         map.add_path(b"a/b/c/");
-        assert_eq!(4, *map.get(&b"a".to_vec()).unwrap());
-        assert_eq!(2, *map.get(&b"a/b".to_vec()).unwrap());
+        assert_eq!(4, *map.inner.get(&b"a".to_vec()).unwrap());
+        assert_eq!(2, *map.inner.get(&b"a/b".to_vec()).unwrap());
 
         map.add_path(b"a/c/");
-        assert_eq!(1, *map.get(&b"a/c".to_vec()).unwrap());
+        assert_eq!(1, *map.inner.get(&b"a/c".to_vec()).unwrap());
 
         let expected = DirsMultiset {
             inner: [("", 2), ("a", 5), ("a/b", 2), ("a/b/c", 1), ("a/c", 1)]
