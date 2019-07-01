@@ -12,8 +12,8 @@
 //! existing Python exceptions if appropriate.
 //!
 //! [`GraphError`]: struct.GraphError.html
-use cpython::exc::{ValueError, RuntimeError};
-use cpython::{PyErr, Python, exc};
+use cpython::exc::{RuntimeError, ValueError};
+use cpython::{exc, PyErr, Python};
 use hg;
 
 py_exception!(rustext, GraphError, ValueError);
@@ -28,10 +28,10 @@ impl GraphError {
                 match py
                     .import("mercurial.error")
                     .and_then(|m| m.get(py, "WdirUnsupported"))
-                    {
-                        Err(e) => e,
-                        Ok(cls) => PyErr::from_instance(py, cls),
-                    }
+                {
+                    Err(e) => e,
+                    Ok(cls) => PyErr::from_instance(py, cls),
+                }
             }
         }
     }
@@ -50,23 +50,18 @@ impl PatternError {
     }
 }
 
-
 impl PatternFileError {
     pub fn pynew(py: Python, inner: hg::PatternFileError) -> PyErr {
         match inner {
             hg::PatternFileError::IO(e) => {
-                let value = (
-                    e.raw_os_error().unwrap_or(2),
-                    e.to_string()
-                );
+                let value = (e.raw_os_error().unwrap_or(2), e.to_string());
                 PyErr::new::<exc::IOError, _>(py, value)
             }
-            hg::PatternFileError::Pattern(e, l) => {
-                match e {
-                    hg::PatternError::UnsupportedSyntax(m) =>
-                        PatternFileError::new(py, ("PatternFileError", m, l))
+            hg::PatternFileError::Pattern(e, l) => match e {
+                hg::PatternError::UnsupportedSyntax(m) => {
+                    PatternFileError::new(py, ("PatternFileError", m, l))
                 }
-            }
+            },
         }
     }
 }

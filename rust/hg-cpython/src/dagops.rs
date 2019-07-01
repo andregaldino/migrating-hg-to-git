@@ -9,9 +9,9 @@
 //! `hg-core` package.
 //!
 //! From Python, this will be seen as `mercurial.rustext.dagop`
+use crate::conversion::{py_set, rev_pyiter_collect};
 use cindex::Index;
 use cpython::{PyDict, PyModule, PyObject, PyResult, Python};
-use crate::conversion::{py_set, rev_pyiter_collect};
 use exceptions::GraphError;
 use hg::dagops;
 use hg::Revision;

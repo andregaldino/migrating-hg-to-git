@@ -118,7 +118,9 @@ impl DirsMultiset {
                     entry.remove();
                 }
                 Entry::Vacant(_) => {
-                    return Err(DirstateMapError::PathNotFound(path.to_owned()))
+                    return Err(DirstateMapError::PathNotFound(
+                        path.to_owned(),
+                    ))
                 }
             };
 
