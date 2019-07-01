@@ -291,8 +291,7 @@ py_class!(pub class Dirs |py| {
         Ok(self
             .dirs_map(py)
             .borrow()
-            .get(&item.extract::<PyBytes>(py)?.data(py).to_owned())
-            .is_some())
+            .contains_key(item.extract::<PyBytes>(py)?.data(py).as_ref()))
     }
 });
 
