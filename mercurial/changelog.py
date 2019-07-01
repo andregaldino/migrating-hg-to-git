@@ -92,6 +92,8 @@ def encodecopies(files, copies):
 def decodecopies(files, data):
     try:
         copies = {}
+        if not data:
+            return copies
         for l in data.split('\n'):
             strindex, src = l.split('\0')
             i = int(strindex)
@@ -114,6 +116,8 @@ def encodefileindices(files, subset):
 def decodefileindices(files, data):
     try:
         subset = []
+        if not data:
+            return subset
         for strindex in data.split('\n'):
             i = int(strindex)
             if i < 0 or i >= len(files):
