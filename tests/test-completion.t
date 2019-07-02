@@ -354,7 +354,7 @@ Show all commands + options
   tags: template
   tip: patch, git, style, template
   unbundle: update
-  unshelve: abort, continue, keep, name, tool, date
+  unshelve: abort, continue, interactive, keep, name, tool, date
   update: clean, check, merge, date, rev, tool
   verify: full
   version: template

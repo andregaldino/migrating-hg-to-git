@@ -694,10 +694,11 @@ def unshelvecleanup(ui, repo, name, opts):
             if shfile.exists():
                 shfile.movetobackup()
         cleanupoldbackups(repo)
-def unshelvecontinue(ui, repo, state, opts):
+def unshelvecontinue(ui, repo, state, opts, basename=None):
     """subcommand to continue an in-progress unshelve"""
     # We're finishing off a merge. First parent is our original
     # parent, second is the temporary "fake" commit we're unshelving.
+    interactive = opts.get('interactive')
     with repo.lock():
         checkparents(repo, state)
         ms = merge.mergestate.read(repo)
@@ -720,10 +721,15 @@ def unshelvecontinue(ui, repo, state, opts):
         with repo.ui.configoverride(overrides, 'unshelve'):
             with repo.dirstate.parentchange():
                 repo.setparents(state.parents[0], nodemod.nullid)
-                newnode = repo.commit(text=shelvectx.description(),
-                                      extra=shelvectx.extra(),
-                                      user=shelvectx.user(),
-                                      date=shelvectx.date())
+                if not interactive:
+                    ispartialunshelve = False
+                    newnode = repo.commit(text=shelvectx.description(),
+                                        extra=shelvectx.extra(),
+                                        user=shelvectx.user(),
+                                        date=shelvectx.date())
+                else:
+                    newnode, ispartialunshelve = _dounshelveinteractive(ui,
+                        repo, shelvectx, basename, opts)
 
         if newnode is None:
             # If it ended up being a no-op commit, then the normal
@@ -743,12 +749,13 @@ def unshelvecontinue(ui, repo, state, opts):
         mergefiles(ui, repo, state.wctx, shelvectx)
         restorebranch(ui, repo, state.branchtorestore)
 
-        if not phases.supportinternal(repo):
-            repair.strip(ui, repo, state.nodestoremove, backup=False,
-                         topic='shelve')
+        if not ispartialunshelve:
+            if not phases.supportinternal(repo):
+                repair.strip(ui, repo, state.nodestoremove, backup=False,
+                            topic='shelve')
+            shelvedstate.clear(repo)
+            unshelvecleanup(ui, repo, state.name, opts)
         _restoreactivebookmark(repo, state.activebookmark)
-        shelvedstate.clear(repo)
-        unshelvecleanup(ui, repo, state.name, opts)
         ui.status(_("unshelve of '%s' complete\n") % state.name)
 
 def hgcontinueunshelve(ui, repo):
@@ -797,14 +804,40 @@ def _unshelverestorecommit(ui, repo, tr, basename):
 
     return repo, shelvectx
 
+def _dounshelveinteractive(ui, repo, shelvectx, basename, opts):
+    """The user might want to unshelve certain changes only from the stored
+    shelve. So, we would create two commits. One with requested changes to
+    unshelve at that time and the latter is shelved for future.
+    """
+    opts['message'] = shelvectx.description()
+    opts['interactive-unshelve'] = True
+    pats = []
+    commitfunc = getcommitfunc(shelvectx.extra(), interactive=True,
+                               editor=True)
+    newnode = cmdutil.dorecord(ui, repo, commitfunc, None, False,
+                               cmdutil.recordfilter, *pats,
+                               **pycompat.strkwargs(opts))
+    snode = repo.commit(text=shelvectx.description(),
+                        extra=shelvectx.extra(),
+                        user=shelvectx.user(),
+                        date=shelvectx.date())
+    m = scmutil.matchfiles(repo, repo[snode].files())
+    if snode:
+        _shelvecreatedcommit(repo, snode, basename, m)
+
+    return newnode, bool(snode)
+
 def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
                           tmpwctx, shelvectx, branchtorestore,
                           activebookmark):
     """Rebase restored commit from its original location to a destination"""
     # If the shelve is not immediately on top of the commit
     # we'll be merging with, rebase it to be on top.
-    if tmpwctx.node() == shelvectx.p1().node():
-        return shelvectx
+    interactive = opts.get('interactive')
+    if tmpwctx.node() == shelvectx.p1().node() and not interactive:
+        # We won't skip on interactive mode because, the user might want to
+        # unshelve certain changes only.
+        return shelvectx, False
 
     overrides = {
         ('ui', 'forcemerge'): opts.get('tool', ''),
@@ -828,10 +861,15 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
 
         with repo.dirstate.parentchange():
             repo.setparents(tmpwctx.node(), nodemod.nullid)
-            newnode = repo.commit(text=shelvectx.description(),
-                                  extra=shelvectx.extra(),
-                                  user=shelvectx.user(),
-                                  date=shelvectx.date())
+            if not interactive:
+                ispartialunshelve = False
+                newnode = repo.commit(text=shelvectx.description(),
+                                      extra=shelvectx.extra(),
+                                      user=shelvectx.user(),
+                                      date=shelvectx.date())
+            else:
+                newnode, ispartialunshelve = _dounshelveinteractive(ui, repo,
+                                                shelvectx, basename, opts)
 
         if newnode is None:
             # If it ended up being a no-op commit, then the normal
@@ -846,7 +884,7 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
             shelvectx = repo[newnode]
             hg.updaterepo(repo, tmpwctx.node(), False)
 
-    return shelvectx
+    return shelvectx, ispartialunshelve
 
 def _forgetunknownfiles(repo, shelvectx, addedbefore):
     # Forget any files that were unknown before the shelve, unknown before
@@ -883,13 +921,14 @@ def dounshelve(ui, repo, *shelved, **opts):
     opts = pycompat.byteskwargs(opts)
     abortf = opts.get('abort')
     continuef = opts.get('continue')
+    interactive = opts.get('interactive')
     if not abortf and not continuef:
         cmdutil.checkunfinished(repo)
     shelved = list(shelved)
     if opts.get("name"):
         shelved.append(opts["name"])
 
-    if abortf or continuef:
+    if abortf or continuef and not interactive:
         if abortf and continuef:
             raise error.Abort(_('cannot use both abort and continue'))
         if shelved:
@@ -911,8 +950,11 @@ def dounshelve(ui, repo, *shelved, **opts):
             raise error.Abort(_('no shelved changes to apply!'))
         basename = util.split(shelved[0][1])[1]
         ui.status(_("unshelving change '%s'\n") % basename)
-    else:
+    elif shelved:
         basename = shelved[0]
+    if continuef and interactive:
+        state = _loadshelvedstate(ui, repo, opts)
+        return unshelvecontinue(ui, repo, state, opts, basename)
 
     if not shelvedfile(repo, basename, patchextension).exists():
         raise error.Abort(_("shelved change '%s' not found") % basename)
@@ -941,19 +983,19 @@ def dounshelve(ui, repo, *shelved, **opts):
         if shelvectx.branch() != shelvectx.p1().branch():
             branchtorestore = shelvectx.branch()
 
-        shelvectx = _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev,
-                                          basename, pctx, tmpwctx,
-                                          shelvectx, branchtorestore,
-                                          activebookmark)
+        shelvectx, ispartialunshelve = _rebaserestoredcommit(ui, repo, opts,
+            tr, oldtiprev, basename, pctx, tmpwctx, shelvectx,
+            branchtorestore, activebookmark)
         overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
         with ui.configoverride(overrides, 'unshelve'):
             mergefiles(ui, repo, pctx, shelvectx)
         restorebranch(ui, repo, branchtorestore)
-        _forgetunknownfiles(repo, shelvectx, addedbefore)
+        if not ispartialunshelve:
+            _forgetunknownfiles(repo, shelvectx, addedbefore)
 
-        shelvedstate.clear(repo)
-        _finishunshelve(repo, oldtiprev, tr, activebookmark)
-        unshelvecleanup(ui, repo, basename, opts)
+            shelvedstate.clear(repo)
+            _finishunshelve(repo, oldtiprev, tr, activebookmark)
+            unshelvecleanup(ui, repo, basename, opts)
     finally:
         if tr:
             tr.release()

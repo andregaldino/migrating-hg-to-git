@@ -266,8 +266,8 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         In the end we'll record interesting changes, and everything else
         will be left in place, so the user can continue working.
         """
-
-        checkunfinished(repo, commit=True)
+        if not opts.get('interactive-unshelve'):
+            checkunfinished(repo, commit=True)
         wctx = repo[None]
         merge = len(wctx.parents()) > 1
         if merge:

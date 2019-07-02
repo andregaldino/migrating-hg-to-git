@@ -1158,3 +1158,228 @@ Abort unshelve while merging (issue5123)
   [255]
 
   $ cd ..
+
+-- test for interactive mode on unshelve
+
+  $ hg init a
+  $ cd a
+  $ echo > b
+  $ hg ci -Am b
+  adding b
+  $ echo > c
+  $ echo > d
+  $ hg add .
+  adding c
+  adding d
+  $ hg shelve
+  shelved as default
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo > e
+  $ hg add e
+  $ hg ci -m e
+  $ hg shelve --patch
+  default         (1s ago)    changes to: b
+  
+  diff --git a/c b/c
+  new file mode 100644
+  --- /dev/null
+  +++ b/c
+  @@ -0,0 +1,1 @@
+  +
+  diff --git a/d b/d
+  new file mode 100644
+  --- /dev/null
+  +++ b/d
+  @@ -0,0 +1,1 @@
+  +
+  $ hg unshelve -i <<EOF
+  > y
+  > y
+  > y
+  > n
+  > EOF
+  unshelving change 'default'
+  rebasing shelved changes
+  diff --git a/c b/c
+  new file mode 100644
+  examine changes to 'c'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +
+  record change 1/2 to 'c'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  diff --git a/d b/d
+  new file mode 100644
+  examine changes to 'd'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +
+  record change 2/2 to 'd'?
+  (enter ? for help) [Ynesfdaq?] n
+  
+  $ ls
+  b
+  c
+  e
+-- shelve should not contain `c` now
+  $ hg shelve --patch
+  default         (1s ago)    changes to: b
+  
+  diff --git a/d b/d
+  new file mode 100644
+  --- /dev/null
+  +++ b/d
+  @@ -0,0 +1,1 @@
+  +
+  $ hg unshelve -i <<EOF
+  > y
+  > y
+  > EOF
+  unshelving change 'default'
+  rebasing shelved changes
+  diff --git a/d b/d
+  new file mode 100644
+  examine changes to 'd'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +
+  record this change to 'd'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  $ ls
+  b
+  c
+  d
+  e
+  $ hg shelve --list
+
+-- now, unshelve selected changes from a file
+
+  $ echo B > foo
+  $ hg add foo
+  $ hg ci -m 'add B to foo'
+  $ cat > foo <<EOF
+  > A
+  > B
+  > C
+  > EOF
+  $ hg shelve
+  shelved as default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cat foo
+  B
+  $ hg unshelve -i <<EOF
+  > y
+  > y
+  > n
+  > EOF
+  unshelving change 'default'
+  rebasing shelved changes
+  diff --git a/foo b/foo
+  2 hunks, 2 lines changed
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,1 +1,2 @@
+  +A
+   B
+  record change 1/2 to 'foo'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,1 +2,2 @@
+   B
+  +C
+  record change 2/2 to 'foo'?
+  (enter ? for help) [Ynesfdaq?] n
+  
+  $ cat foo
+  A
+  B
+  $ hg shelve --patch
+  default         (1s ago)    changes to: add B to foo
+  
+  diff --git a/foo b/foo
+  --- a/foo
+  +++ b/foo
+  @@ -1,2 +1,3 @@
+   A
+   B
+  +C
+
+-- unshelve interactive on conflicts
+
+  $ echo A >> bar1
+  $ echo A >> bar2
+  $ hg add bar1 bar2
+  $ hg ci -m 'add A to bars'
+  $ echo B >> bar1
+  $ echo B >> bar2
+  $ hg shelve
+  shelved as default-01
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo C >> bar1
+  $ echo C >> bar2
+  $ hg ci -m 'add C to bars'
+  $ hg unshelve -i
+  unshelving change 'default-01'
+  rebasing shelved changes
+  merging bar1
+  merging bar2
+  warning: conflicts while merging bar1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging bar2! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
+  [1]
+
+  $ cat > bar1 <<EOF
+  > A
+  > B
+  > C
+  > EOF
+  $ cat > bar2 <<EOF
+  > A
+  > B
+  > C
+  > EOF
+  $ hg resolve -m bar1 bar2
+  (no more unresolved files)
+  continue: hg unshelve --continue
+  $ cat bar1
+  A
+  B
+  C
+  $ hg unshelve --continue -i <<EOF
+  > y
+  > y
+  > y
+  > y
+  > EOF
+  unshelving change 'default-01'
+  diff --git a/bar1 b/bar1
+  1 hunks, 1 lines changed
+  examine changes to 'bar1'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,2 +1,3 @@
+   A
+  +B
+   C
+  record change 1/2 to 'bar1'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  diff --git a/bar2 b/bar2
+  1 hunks, 1 lines changed
+  examine changes to 'bar2'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,2 +1,3 @@
+   A
+  +B
+   C
+  record change 2/2 to 'bar2'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  unshelve of 'default-01' complete

@@ -6168,6 +6168,8 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
            _('abort an incomplete unshelve operation')),
           ('c', 'continue', None,
            _('continue an incomplete unshelve operation')),
+          ('i', 'interactive', None,
+           _('use interactive mode')),
           ('k', 'keep', None,
            _('keep shelve after unshelving')),
           ('n', 'name', '',
@@ -6175,7 +6177,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
           ('t', 'tool', '', _('specify merge tool')),
           ('', 'date', '',
            _('set date for temporary commits (DEPRECATED)'), _('DATE'))],
-         _('hg unshelve [[-n] SHELVED]'),
+         _('hg unshelve [OPTION]... [FILE]... [-n SHELVED]'),
          helpcategory=command.CATEGORY_WORKING_DIRECTORY)
 def unshelve(ui, repo, *shelved, **opts):
     """restore a shelved change to the working directory
