@@ -19,17 +19,14 @@ use hg::{
     DirstateEntry, DirstateMapError, DirstatePackError, DirstateParents,
     DirstateParseError, DirstateVec,
 };
+use libc::{c_char, c_int};
+#[cfg(feature = "python27")]
+use python27_sys::PyCapsule_Import;
+#[cfg(feature = "python3")]
+use python3_sys::PyCapsule_Import;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::CStr;
-
-#[cfg(feature = "python27")]
-extern crate python27_sys as python_sys;
-#[cfg(feature = "python3")]
-extern crate python3_sys as python_sys;
-
-use self::python_sys::PyCapsule_Import;
-use libc::{c_char, c_int};
-use std::cell::RefCell;
 use std::mem::transmute;
 
 /// C code uses a custom `dirstate_tuple` type, checks in multiple instances

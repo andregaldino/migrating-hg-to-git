@@ -3,13 +3,13 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use std::collections::HashMap;
-use std::io::Cursor;
-use {
+use crate::{
     CopyVec, CopyVecEntry, DirstateEntry, DirstatePackError, DirstateParents,
     DirstateParseError, DirstateVec,
 };
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use std::collections::HashMap;
+use std::io::Cursor;
 
 /// Parents are stored in the dirstate as byte hashes.
 const PARENT_SIZE: usize = 20;

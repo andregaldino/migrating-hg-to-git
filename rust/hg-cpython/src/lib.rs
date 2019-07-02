@@ -19,10 +19,10 @@
 //! 'Generic DAG ancestor algorithms - Rust implementation'
 //! ```
 
+/// This crate uses nested private macros, `extern crate` is still needed in
+/// 2018 edition.
 #[macro_use]
 extern crate cpython;
-extern crate hg;
-extern crate libc;
 
 pub mod ancestors;
 mod cindex;

@@ -34,13 +34,15 @@
 //! [`LazyAncestors`]: struct.LazyAncestors.html
 //! [`MissingAncestors`]: struct.MissingAncestors.html
 //! [`AncestorsIterator`]: struct.AncestorsIterator.html
-use crate::conversion::{py_set, rev_pyiter_collect};
-use cindex::Index;
+use crate::{
+    cindex::Index,
+    conversion::{py_set, rev_pyiter_collect},
+    exceptions::GraphError,
+};
 use cpython::{
     ObjectProtocol, PyClone, PyDict, PyList, PyModule, PyObject, PyResult,
     Python, PythonObject, ToPyObject,
 };
-use exceptions::GraphError;
 use hg::Revision;
 use hg::{
     AncestorsIterator as CoreIterator, LazyAncestors as CoreLazy,

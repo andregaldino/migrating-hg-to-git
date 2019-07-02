@@ -1,11 +1,13 @@
-use crate::{LineNumber, PatternError, PatternFileError};
+use crate::{
+    utils::{files::get_path_from_bytes, replace_slice, SliceExt},
+    LineNumber, PatternError, PatternFileError,
+};
+use lazy_static::lazy_static;
 use regex::bytes::Regex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::vec::Vec;
-use utils::files::get_path_from_bytes;
-use utils::{replace_slice, SliceExt};
 
 lazy_static! {
     static ref RE_ESCAPE: Vec<Vec<u8>> = {

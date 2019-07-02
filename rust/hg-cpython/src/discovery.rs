@@ -12,13 +12,15 @@
 //! - [`PartialDiscover`] is the Rust implementation of
 //!   `mercurial.setdiscovery.partialdiscovery`.
 
-use crate::conversion::{py_set, rev_pyiter_collect};
-use cindex::Index;
+use crate::{
+    cindex::Index,
+    conversion::{py_set, rev_pyiter_collect},
+    exceptions::GraphError,
+};
 use cpython::{
     ObjectProtocol, PyDict, PyModule, PyObject, PyResult, Python,
     PythonObject, ToPyObject,
 };
-use exceptions::GraphError;
 use hg::discovery::PartialDiscovery as CorePartialDiscovery;
 use hg::Revision;
 

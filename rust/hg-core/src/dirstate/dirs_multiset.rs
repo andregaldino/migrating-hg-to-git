@@ -8,10 +8,9 @@
 //! A multiset of directory names.
 //!
 //! Used to counts the references to directories in a manifest or dirstate.
+use crate::{utils::files, DirsIterable, DirstateEntry, DirstateMapError};
 use std::collections::hash_map::{Entry, Iter};
 use std::collections::HashMap;
-use {DirsIterable, DirstateEntry, DirstateMapError};
-use utils::files;
 
 #[derive(PartialEq, Debug)]
 pub struct DirsMultiset {

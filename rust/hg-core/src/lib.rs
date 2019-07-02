@@ -2,12 +2,6 @@
 //
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
-extern crate byteorder;
-extern crate memchr;
-#[macro_use]
-extern crate lazy_static;
-extern crate regex;
-
 mod ancestors;
 pub mod dagops;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
@@ -50,7 +44,7 @@ pub trait Graph {
     /// Return the two parents of the given `Revision`.
     ///
     /// Each of the parents can be independently `NULL_REVISION`
-    fn parents(&self, Revision) -> Result<[Revision; 2], GraphError>;
+    fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError>;
 }
 
 pub type LineNumber = usize;

@@ -10,14 +10,14 @@
 //! Ideally, we should use an Index entirely implemented in Rust,
 //! but this will take some time to get there.
 #[cfg(feature = "python27")]
-extern crate python27_sys as python_sys;
+use python27_sys as python_sys;
 #[cfg(feature = "python3")]
-extern crate python3_sys as python_sys;
+use python3_sys as python_sys;
 
-use self::python_sys::PyCapsule_Import;
 use cpython::{PyClone, PyErr, PyObject, PyResult, Python};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
 use libc::c_int;
+use python_sys::PyCapsule_Import;
 use std::ffi::CStr;
 use std::mem::transmute;
 
