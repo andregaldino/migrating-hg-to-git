@@ -583,12 +583,12 @@ on branch2 with branch1 merged, so file1 should be gone:
   (branch merge, don't forget to commit)
   $ hg ci -d '4 0' -m 'merge backout of branch1'
   $ hg id
-  22149cdde76d (branch2) tip
+  d97a8500a969 (branch2) tip
   $ hg st -A
   C default
   C file2
   $ hg summary
-  parent: 4:22149cdde76d tip
+  parent: 4:d97a8500a969 tip
    merge backout of branch1
   branch: branch2
   commit: (clean)

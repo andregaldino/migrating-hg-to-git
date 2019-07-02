@@ -744,7 +744,7 @@ Test rebasing a commit with copy information, but no content changes
   $ hg tglog
   @  6: 676538af172d 'untracked rename of d to e'
   |
-  | *    5: 71cb43376053 'merge'
+  | *    5: 574d92ad16fc 'merge'
   | |\
   | | x  4: 2c8b5dad7956 'rename d to e'
   | | |
@@ -758,8 +758,8 @@ Test rebasing a commit with copy information, but no content changes
   
   $ hg rebase -b 5 -d tip
   rebasing 3:ca58782ad1e4 "b"
-  rebasing 5:71cb43376053 "merge"
-  note: not rebasing 5:71cb43376053 "merge", its destination already has all its changes
+  rebasing 5:574d92ad16fc "merge"
+  note: not rebasing 5:574d92ad16fc "merge", its destination already has all its changes
 
   $ cd ..
 

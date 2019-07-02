@@ -202,7 +202,7 @@ Merge rename from other branch
   $ hg ci -m 'merge rename from p2'
   $ hg l
   @    3 merge rename from p2
-  |\   x
+  |\
   | o  2 add z
   | |  z
   o |  1 rename x to y
@@ -417,9 +417,9 @@ Try merging the other direction too
   created new head
   $ hg l
   @    5 merge 3 into 1
-  |\   y z
+  |\   z
   +---o  4 merge 1 into 3
-  | |/   x z
+  | |/   z
   | o  3 modify z
   | |  z
   | o  2 rename y to z

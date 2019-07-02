@@ -108,7 +108,7 @@ wrong.
   $ hg tglog
   @  7: e08089805d82 'default: f-other stuff'
   |
-  | o  6: 9455ee510502 'dev: merge default' dev
+  | o  6: 010ced67e558 'dev: merge default' dev
   |/|
   o |  5: 462860db70a1 'default: remove f-default'
   | |
@@ -136,10 +136,10 @@ Full rebase all the way back from branching point:
   file 'f-default' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? c
-  rebasing 6:9455ee510502 "dev: merge default"
-  saved backup bundle to $TESTTMP/ancestor-merge/.hg/strip-backup/1d1a643d390e-43e9e04b-rebase.hg
+  rebasing 6:010ced67e558 "dev: merge default"
+  saved backup bundle to $TESTTMP/ancestor-merge/.hg/strip-backup/1d1a643d390e-4a6f6d17-rebase.hg
   $ hg tglog
-  o  6: fbc098e72227 'dev: merge default'
+  o  6: de147e4f69cf 'dev: merge default'
   |
   o  5: eda7b7f46f5d 'dev: merge default'
   |
@@ -166,10 +166,10 @@ Grafty cherry picking rebasing:
   file 'f-default' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? c
-  rebasing 6:9455ee510502 "dev: merge default"
-  saved backup bundle to $TESTTMP/ancestor-merge-2/.hg/strip-backup/ec2c14fb2984-62d0b222-rebase.hg
+  rebasing 6:010ced67e558 "dev: merge default"
+  saved backup bundle to $TESTTMP/ancestor-merge-2/.hg/strip-backup/ec2c14fb2984-827d7a44-rebase.hg
   $ hg tglog
-  o  7: fbc098e72227 'dev: merge default'
+  o  7: de147e4f69cf 'dev: merge default'
   |
   o  6: eda7b7f46f5d 'dev: merge default'
   |

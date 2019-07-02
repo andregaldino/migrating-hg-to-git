@@ -160,7 +160,7 @@ lfconvert with rename, merge, and remove
   initializing destination largefiles-repo
   $ cd largefiles-repo
   $ hg log -G --template "{rev}:{node|short}  {desc|firstline}\n"
-  o    5:8e05f5f2b77e  merge
+  o    5:9cc5aa7204f0  merge
   |\
   | o  4:a5a02de7a8e4  remove large, normal3
   | |
@@ -251,7 +251,7 @@ convert extension is disabled to show config items can be loaded without it.
   3 remove large, normal3
   2 merge
   1 add anotherlarge (should be a largefile)
-  0 Added tag mytag for changeset abacddda7028
+  0 Added tag mytag for changeset 17126745edfd
   $ cd ../normal-repo
   $ cat >> .hg/hgrc <<EOF
   > [extensions]
@@ -304,7 +304,7 @@ from the working dir on a convert.
   3 remove large, normal3
   2 merge
   1 add anotherlarge (should be a largefile)
-  0 Added tag mytag for changeset abacddda7028
+  0 Added tag mytag for changeset 17126745edfd
 
   $ hg -R largefiles-repo-hg log -G --template "{rev}:{node|short}  {desc|firstline}\n"
   o  7:2f08f66459b7  Added tag mytag for changeset 17126745edfd
@@ -374,7 +374,7 @@ Ensure the largefile can be cached in the source if necessary
   4 remove large, normal3
   3 merge
   2 add anotherlarge (should be a largefile)
-  1 Added tag mytag for changeset abacddda7028
+  1 Added tag mytag for changeset 17126745edfd
   0 change branch name only
 
 Ensure empty commits aren't lost in the conversion

@@ -807,13 +807,13 @@ Test files lists on merge commit:
   $ hg merge 10 -q
   $ hg ci -m 'merge'
   $ hg log -l1 -T '{files}\n'
-  a fourth
+  
   $ hg log -l1 -T '{file_mods}\n'
   
   $ hg log -l1 -T '{file_adds}\n'
   
   $ hg log -l1 -T '{file_dels}\n'
-  a fourth
+  
 
 Test file copies dict:
 

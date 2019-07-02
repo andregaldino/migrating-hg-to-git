@@ -1951,7 +1951,7 @@ Test --patch and --stat with --follow and --follow-first
 
   $ hg up -q 6
   $ hg log -G --git --patch --follow-first e
-  @    changeset:   6:fc281d8ff18d
+  @    changeset:   6:9feeac35a70a
   |\   tag:         tip
   | ~  parent:      5:99b31f1c2782
   |    parent:      4:17d952250a9d
@@ -1998,7 +1998,7 @@ Test --follow and forward --rev
   $ hg log -G --template "{rev} {desc|firstline}\n"
   o  8 add g
   |
-  | o  7 Added tag foo-bar for changeset fc281d8ff18d
+  | o  7 Added tag foo-bar for changeset 9feeac35a70a
   |/
   o    6 merge 5 and 4
   |\
@@ -2161,17 +2161,17 @@ changessincelatesttag with no prior tag
   # User test
   # Date 0 0
   #      Thu Jan 01 00:00:00 1970 +0000
-  # Node ID fc281d8ff18d999ad6497b3d27390bcd695dcc73
+  # Node ID 9feeac35a70aa325519bbf3178683271113f2b8f
   # Parent  99b31f1c2782e2deb1723cef08930f70fc84b37b
   # Parent  17d952250a9d03cc3dc77b199ab60e959b9b0260
   merge 5 and 4
   
-  diff -r 99b31f1c2782 -r fc281d8ff18d dir/b
+  diff -r 99b31f1c2782 -r 9feeac35a70a dir/b
   --- a/dir/b	Thu Jan 01 00:00:00 1970 +0000
   +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
   @@ -1,1 +0,0 @@
   -a
-  diff -r 99b31f1c2782 -r fc281d8ff18d e
+  diff -r 99b31f1c2782 -r 9feeac35a70a e
   --- a/e	Thu Jan 01 00:00:00 1970 +0000
   +++ b/e	Thu Jan 01 00:00:00 1970 +0000
   @@ -1,1 +1,1 @@
@@ -2181,24 +2181,24 @@ changessincelatesttag with no prior tag
   # User test
   # Date 0 0
   #      Thu Jan 01 00:00:00 1970 +0000
-  # Node ID 02dbb8e276b8ab7abfd07cab50c901647e75c2dd
-  # Parent  fc281d8ff18d999ad6497b3d27390bcd695dcc73
-  Added tag foo-bar for changeset fc281d8ff18d
+  # Node ID 9febbb9c8b2e09670a2fb550cb1e4e01a2c7e9fd
+  # Parent  9feeac35a70aa325519bbf3178683271113f2b8f
+  Added tag foo-bar for changeset 9feeac35a70a
   
-  diff -r fc281d8ff18d -r 02dbb8e276b8 .hgtags
+  diff -r 9feeac35a70a -r 9febbb9c8b2e .hgtags
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/.hgtags	Thu Jan 01 00:00:00 1970 +0000
   @@ -0,0 +1,1 @@
-  +fc281d8ff18d999ad6497b3d27390bcd695dcc73 foo-bar
+  +9feeac35a70aa325519bbf3178683271113f2b8f foo-bar
   # HG changeset patch
   # User test
   # Date 0 0
   #      Thu Jan 01 00:00:00 1970 +0000
-  # Node ID 24c2e826ddebf80f9dcd60b856bdb8e6715c5449
-  # Parent  fc281d8ff18d999ad6497b3d27390bcd695dcc73
+  # Node ID 3bd4551ec3fe1c0696241f236abe857a53c6d6e7
+  # Parent  9feeac35a70aa325519bbf3178683271113f2b8f
   add g
   
-  diff -r fc281d8ff18d -r 24c2e826ddeb g
+  diff -r 9feeac35a70a -r 3bd4551ec3fe g
   --- a/g	Thu Jan 01 00:00:00 1970 +0000
   +++ b/g	Thu Jan 01 00:00:00 1970 +0000
   @@ -1,2 +1,1 @@
@@ -2286,7 +2286,7 @@ Test --hidden
   []
   <spanset- 0:9>
   $ hg log -G --template '{rev} {desc}\n'
-  o  7 Added tag foo-bar for changeset fc281d8ff18d
+  o  7 Added tag foo-bar for changeset 9feeac35a70a
   |
   o    6 merge 5 and 4
   |\
@@ -2384,9 +2384,9 @@ working-directory revision
 node template with changesetprinter:
 
   $ hg log -Gqr 5:7 --config ui.graphnodetemplate='"{rev}"'
-  7  7:02dbb8e276b8
+  7  7:9febbb9c8b2e
   |
-  6    6:fc281d8ff18d
+  6    6:9feeac35a70a
   |\
   | ~
   5  5:99b31f1c2782
@@ -2410,7 +2410,7 @@ label() should just work in node template:
 
   $ hg log -Gqr 7 --config extensions.color= --color=debug \
   > --config ui.graphnodetemplate='{label("branch.{branch}", rev)}'
-  [branch.default|7]  [log.node|7:02dbb8e276b8]
+  [branch.default|7]  [log.node|7:9febbb9c8b2e]
   |
   ~
 

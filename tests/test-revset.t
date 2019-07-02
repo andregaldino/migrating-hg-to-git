@@ -1721,11 +1721,9 @@ min: empty on unordered set
   4
   $ log 'modifies("*")'
   4
-  6
   $ log 'modifies("set:modified()")'
   4
   $ log 'id(5)'
-  2
   $ log 'only(9)'
   8
   9
@@ -1834,12 +1832,12 @@ Test explicit numeric revision
 
 Test hexadecimal revision
   $ log 'id(2)'
-  $ log 'id(5)'
-  2
-  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'id(x5)'
-  2
-  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'x5'
-  2
+  $ log 'id(8)'
+  3
+  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'id(x8)'
+  3
+  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'x8'
+  3
   $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'id(x)'
   $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'x'
   abort: 00changelog.i@: ambiguous identifier!
@@ -2096,7 +2094,6 @@ itself isn't returned unless it is explicitly populated.
   2
   $ log 'removes(a)'
   2
-  6
   $ log 'roots(all())'
   0
   $ log 'reverse(2 or 3 or 4 or 5)'
@@ -2710,7 +2707,6 @@ test sorting two sorted collections in different orders
 
   $ log 'sort(outgoing() or reverse(removes(a)), rev)'
   2
-  6
   8
   9
 
@@ -2719,7 +2715,6 @@ test sorting two sorted collections in different orders backwards
   $ log 'sort(outgoing() or reverse(removes(a)), -rev)'
   9
   8
-  6
   2
 
 test empty sort key which is noop

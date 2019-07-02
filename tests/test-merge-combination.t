@@ -118,7 +118,7 @@ All the merges of various file contents.
   12-- C: agree on "a"
   1-11  : hg said "", expected "a"
   1-12  : agree on "a"
-  1-1-  : hg said "a", expected ""
+  1-1-  : agree on ""
   1-21 C: agree on "a"
   1-22 C: hg said "", expected "a"
   1-23 C: agree on "a"
@@ -215,6 +215,6 @@ containing $files.
   $ hg merge -qr 3; echo f > u1; echo f > u2; rm -f c1 c2
   $ hg commit -qAm '5 merge with two gcas'
   $ hg log -r . -T '{files}\n' # expecting u1 u2
-  c1
+  
   $ cd ../
   $ rm -rf repo

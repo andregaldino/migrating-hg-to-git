@@ -2661,6 +2661,47 @@ class localrepository(object):
                 drop = sorted([f for f in removed if f in m])
                 for f in drop:
                     del m[f]
+                if p2.rev() != nullrev:
+                    @util.cachefunc
+                    def mas():
+                        p1n = p1.node()
+                        p2n = p2.node()
+                        cahs = self.changelog.commonancestorsheads(p1n, p2n)
+                        if not cahs:
+                            cahs = [nullrev]
+                        return [self[r].manifest() for r in cahs]
+                    def deletionfromparent(f):
+                        # When a file is removed relative to p1 in a merge, this
+                        # function determines whether the absence is due to a
+                        # deletion from a parent, or whether the merge commit
+                        # itself deletes the file. We decide this by doing a
+                        # simplified three way merge of the manifest entry for
+                        # the file. There are two ways we decide the merge
+                        # itself didn't delete a file:
+                        # - neither parent (nor the merge) contain the file
+                        # - exactly one parent contains the file, and that
+                        #   parent has the same filelog entry as the merge
+                        #   ancestor (or all of them if there two). In other
+                        #   words, that parent left the file unchanged while the
+                        #   other one deleted it.
+                        # One way to think about this is that deleting a file is
+                        # similar to emptying it, so the list of changed files
+                        # should be similar either way. The computation
+                        # described above is not done directly in _filecommit
+                        # when creating the list of changed files, however
+                        # it does something very similar by comparing filelog
+                        # nodes.
+                        if f in m1:
+                            return (f not in m2
+                                    and all(f in ma and ma.find(f) == m1.find(f)
+                                            for ma in mas()))
+                        elif f in m2:
+                            return all(f in ma and ma.find(f) == m2.find(f)
+                                       for ma in mas())
+                        else:
+                            return True
+                    removed = [f for f in removed if not deletionfromparent(f)]
+
                 files = changed + removed
                 md = None
                 if not files:
