@@ -2274,7 +2274,10 @@ def debugrevlog(ui, repo, file_=None, **opts):
     totalrawsize = datasize[2]
     datasize[2] /= numrevs
     fulltotal = fullsize[2]
-    fullsize[2] /= numfull
+    if numfull == 0:
+        fullsize[2] = 0
+    else:
+        fullsize[2] /= numfull
     semitotal = semisize[2]
     snaptotal = {}
     if numsemi > 0:
