@@ -4742,7 +4742,7 @@ def remove(ui, repo, *pats, **opts):
 
 @command('rename|move|mv',
     [('A', 'after', None, _('record a rename that has already occurred')),
-    ('f', 'force', None, _('forcibly copy over an existing managed file')),
+    ('f', 'force', None, _('forcibly move over an existing managed file')),
     ] + walkopts + dryrunopts,
     _('[OPTION]... SOURCE... DEST'),
     helpcategory=command.CATEGORY_WORKING_DIRECTORY)
