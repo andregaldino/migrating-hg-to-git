@@ -6209,7 +6209,7 @@ def unshelve(ui, repo, *shelved, **opts):
        prevents from deciding exact order of them, for safety.
     """
     with repo.wlock():
-        return shelvemod._dounshelve(ui, repo, *shelved, **opts)
+        return shelvemod.dounshelve(ui, repo, *shelved, **opts)
 
 @command('update|up|checkout|co',
     [('C', 'clean', None, _('discard uncommitted changes (no backup)')),

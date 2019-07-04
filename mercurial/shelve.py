@@ -845,7 +845,7 @@ def _checkunshelveuntrackedproblems(ui, repo, shelvectx):
         hint = _("run hg status to see which files are missing")
         raise error.Abort(m, hint=hint)
 
-def _dounshelve(ui, repo, *shelved, **opts):
+def dounshelve(ui, repo, *shelved, **opts):
     opts = pycompat.byteskwargs(opts)
     abortf = opts.get('abort')
     continuef = opts.get('continue')
