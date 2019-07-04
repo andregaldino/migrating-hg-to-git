@@ -3301,8 +3301,9 @@ def howtocontinue(repo):
     '''Check for an unfinished operation and return the command to finish
     it.
 
-    afterresolvedstates tuples define a .hg/{file} and the corresponding
-    command needed to finish it.
+    statemod._unfinishedstates list is checked for an unfinished operation
+    and the corresponding message to finish it is generated if a method to
+    continue is supported by the operation.
 
     Returns a (msg, warning) tuple. 'msg' is a string and 'warning' is
     a boolean.
@@ -3320,8 +3321,8 @@ def howtocontinue(repo):
 def checkafterresolved(repo):
     '''Inform the user about the next action after completing hg resolve
 
-    If there's a matching afterresolvedstates, howtocontinue will yield
-    repo.ui.warn as the reporter.
+    If there's a an unfinished operation that supports continue flag,
+    howtocontinue will yield repo.ui.warn as the reporter.
 
     Otherwise, it will yield repo.ui.note.
     '''
