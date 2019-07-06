@@ -68,6 +68,8 @@ grep.all-files = True
 update.check = noconflict
 # Show conflicts information in `hg status`
 status.verbose = True
+# Make `hg resolve` with no action (like `-m`) fail instead of re-merging.
+resolve.explicit-re-merge = True
 
 [diff]
 git = 1
