@@ -38,6 +38,7 @@ from . import (
     pathutil,
     phases,
     pycompat,
+    repair,
     revlog,
     rewriteutil,
     scmutil,
@@ -3345,3 +3346,67 @@ def wrongtooltocontinue(repo, task):
     if after[1]:
         hint = after[0]
     raise error.Abort(_('no %s in progress') % task, hint=hint)
+
+def abortgraft(ui, repo, graftstate):
+    """abort the interrupted graft and rollbacks to the state before interrupted
+    graft"""
+    if not graftstate.exists():
+        raise error.Abort(_("no interrupted graft to abort"))
+    statedata = readgraftstate(repo, graftstate)
+    newnodes = statedata.get('newnodes')
+    if newnodes is None:
+        # and old graft state which does not have all the data required to abort
+        # the graft
+        raise error.Abort(_("cannot abort using an old graftstate"))
+
+    # changeset from which graft operation was started
+    if len(newnodes) > 0:
+        startctx = repo[newnodes[0]].p1()
+    else:
+        startctx = repo['.']
+    # whether to strip or not
+    cleanup = False
+    from . import hg
+    if newnodes:
+        newnodes = [repo[r].rev() for r in newnodes]
+        cleanup = True
+        # checking that none of the newnodes turned public or is public
+        immutable = [c for c in newnodes if not repo[c].mutable()]
+        if immutable:
+            repo.ui.warn(_("cannot clean up public changesets %s\n")
+                         % ', '.join(bytes(repo[r]) for r in immutable),
+                         hint=_("see 'hg help phases' for details"))
+            cleanup = False
+
+        # checking that no new nodes are created on top of grafted revs
+        desc = set(repo.changelog.descendants(newnodes))
+        if desc - set(newnodes):
+            repo.ui.warn(_("new changesets detected on destination "
+                           "branch, can't strip\n"))
+            cleanup = False
+
+        if cleanup:
+            with repo.wlock(), repo.lock():
+                hg.updaterepo(repo, startctx.node(), overwrite=True)
+                # stripping the new nodes created
+                strippoints = [c.node() for c in repo.set("roots(%ld)",
+                                                          newnodes)]
+                repair.strip(repo.ui, repo, strippoints, backup=False)
+
+    if not cleanup:
+        # we don't update to the startnode if we can't strip
+        startctx = repo['.']
+        hg.updaterepo(repo, startctx.node(), overwrite=True)
+
+    ui.status(_("graft aborted\n"))
+    ui.status(_("working directory is now at %s\n") % startctx.hex()[:12])
+    graftstate.delete()
+    return 0
+
+def readgraftstate(repo, graftstate):
+    """read the graft state file and return a dict of the data stored in it"""
+    try:
+        return graftstate.read()
+    except error.CorruptedState:
+        nodes = repo.vfs.read('graftstate').splitlines()
+        return {'nodes': nodes}
