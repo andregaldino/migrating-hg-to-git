@@ -22,9 +22,6 @@ setup
   > [alias]
   > confuse = log --limit 3
   > so-confusing = confuse --style compact
-  > [blackbox]
-  > track = backupbundle, branchcache, command, commandalias, commandexception,
-  >         commandfinish, debug, exthook, incoming, pythonhook, tagscache
   > EOF
 
   $ hg init blackboxtest

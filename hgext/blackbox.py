@@ -9,12 +9,14 @@
 """log repository events to a blackbox for debugging
 
 Logs event information to .hg/blackbox.log to help debug and diagnose problems.
-The events that get logged can be configured via the blackbox.track config key.
+The events that get logged can be configured via the blackbox.track and
+blackbox.ignore config keys.
 
 Examples::
 
   [blackbox]
   track = *
+  ignore = pythonhook
   # dirty is *EXPENSIVE* (slow);
   # each log entry indicates `+` if the repository is dirty, like :hg:`id`.
   dirty = True
@@ -84,6 +86,9 @@ configitem('blackbox', 'maxfiles',
 configitem('blackbox', 'track',
     default=lambda: ['*'],
 )
+configitem('blackbox', 'ignore',
+    default=lambda: ['chgserver', 'cmdserver', 'extension'],
+)
 configitem('blackbox', 'date-format',
     default='%Y/%m/%d %H:%M:%S',
 )
@@ -94,12 +99,15 @@ class blackboxlogger(object):
     def __init__(self, ui, repo):
         self._repo = repo
         self._trackedevents = set(ui.configlist('blackbox', 'track'))
+        self._ignoredevents = set(ui.configlist('blackbox', 'ignore'))
         self._maxfiles = ui.configint('blackbox', 'maxfiles')
         self._maxsize = ui.configbytes('blackbox', 'maxsize')
         self._inlog = False
 
     def tracked(self, event):
-        return b'*' in self._trackedevents or event in self._trackedevents
+        return ((b'*' in self._trackedevents
+                 and event not in self._ignoredevents)
+                or event in self._trackedevents)
 
     def log(self, ui, event, msg, opts):
         # self._log() -> ctx.dirty() may create new subrepo instance, which
