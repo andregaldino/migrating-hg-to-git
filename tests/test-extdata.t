@@ -13,6 +13,7 @@ test revset support
   > notes = notes.txt
   > shelldata = shell:cat extdata.txt | grep 2
   > emptygrep = shell:cat extdata.txt | grep empty
+  > badparse = shell:cat badparse.txt
   > EOF
   $ cat <<'EOF' > extdata.txt
   > 2 another comment on 2
@@ -57,6 +58,17 @@ test bad extdata() revset source
   $ hg log -qr "extdata(unknown)"
   abort: unknown extdata source 'unknown'
   [255]
+
+test a zero-exiting source that emits garbage to confuse the revset parser
+
+  $ cat > badparse.txt <<'EOF'
+  > +---------------------------------------+
+  > 9de260b1e88e
+  > EOF
+
+BUG: this should print the revset parse error
+  $ hg log -qr "extdata(badparse)" 2>&1 | grep ValueError
+  ValueError: Mixing iteration and read methods would lose data
 
 test template support:
 
