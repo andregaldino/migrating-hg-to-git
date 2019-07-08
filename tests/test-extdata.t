@@ -66,9 +66,14 @@ test a zero-exiting source that emits garbage to confuse the revset parser
   > 9de260b1e88e
   > EOF
 
-BUG: this should print the revset parse error
-  $ hg log -qr "extdata(badparse)" 2>&1 | grep ValueError
-  ValueError: Mixing iteration and read methods would lose data
+It might be nice if this error message mentioned where the bad string
+came from (eg line X of extdata source S), but the important thing is
+that we don't crash before we can print the parse error.
+  $ hg log -qr "extdata(badparse)"
+  hg: parse error at 0: not a prefix: +
+  (+---------------------------------------+
+   ^ here)
+  [255]
 
 test template support:
 

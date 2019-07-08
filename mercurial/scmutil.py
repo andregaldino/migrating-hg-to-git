@@ -1541,7 +1541,12 @@ def extdatasource(repo, source):
                 pass # we ignore data for nodes that don't exist locally
     finally:
         if proc:
-            proc.communicate()
+            try:
+                proc.communicate()
+            except ValueError:
+                # This happens if we started iterating src and then
+                # get a parse error on a line. It should be safe to ignore.
+                pass
         if src:
             src.close()
     if proc and proc.returncode != 0:
