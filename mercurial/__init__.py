@@ -29,7 +29,7 @@ if sys.version_info[0] >= 3:
         """A sys.meta_path finder that uses a custom module loader."""
         def find_spec(self, fullname, path, target=None):
             # Only handle Mercurial-related modules.
-            if not fullname.startswith(('mercurial.', 'hgext.', 'hgext3rd.')):
+            if not fullname.startswith(('mercurial.', 'hgext.')):
                 return None
             # don't try to parse binary
             if fullname.startswith('mercurial.cext.'):
