@@ -327,6 +327,50 @@ reflect this edition.
   hello world
   lower
 
+Test range select: unselect 3, 5, and 6, reselect 5, then go back up to 2 and
+press 'X', unselecting (because 2 is currently selected) 5 (because it's the
+start of the range) and 4, leaving 3 unselected.
+
+  $ hg init $TESTTMP/range_select
+  $ cd $TESTTMP/range_select
+  >>> open('range_select', 'wb').write(b"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n") and None
+  $ hg add range_select
+  $ cat <<EOF >testModeCommands
+  > KEY_RIGHT
+  > KEY_RIGHT
+  > KEY_DOWN
+  > KEY_DOWN
+  > KEY_ENTER
+  > KEY_DOWN
+  > KEY_ENTER
+  > x
+  > KEY_UP
+  > x
+  > KEY_UP
+  > KEY_UP
+  > KEY_UP
+  > X
+  > c
+  > EOF
+  $ hg commit -i -m "range_select" -d "0 0"
+  $ hg cat -r tip range_select
+  1
+  7
+  8
+  9
+  10
+  $ cat range_select
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+  10
+
 Check ui.interface logic for the chunkselector
 
 The default interface is text
