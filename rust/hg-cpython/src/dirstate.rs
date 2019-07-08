@@ -9,22 +9,21 @@
 //! `hg-core` package.
 //!
 //! From Python, this will be seen as `mercurial.rustext.dirstate`
-
+mod dirs_multiset;
+use crate::dirstate::dirs_multiset::Dirs;
 use cpython::{
-    exc, ObjectProtocol, PyBytes, PyDict, PyErr, PyInt, PyModule, PyObject,
-    PyResult, PySequence, PyTuple, Python, PythonObject, ToPyObject,
+    exc, PyBytes, PyDict, PyErr, PyInt, PyModule, PyObject, PyResult,
+    PySequence, PyTuple, Python, PythonObject, ToPyObject,
 };
 use hg::{
-    pack_dirstate, parse_dirstate, CopyVecEntry, DirsIterable, DirsMultiset,
-    DirstateEntry, DirstateMapError, DirstatePackError, DirstateParents,
-    DirstateParseError, DirstateVec,
+    pack_dirstate, parse_dirstate, CopyVecEntry, DirstateEntry,
+    DirstatePackError, DirstateParents, DirstateParseError, DirstateVec,
 };
 use libc::{c_char, c_int};
 #[cfg(feature = "python27")]
 use python27_sys::PyCapsule_Import;
 #[cfg(feature = "python3")]
 use python3_sys::PyCapsule_Import;
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::CStr;
 use std::mem::transmute;
@@ -200,97 +199,6 @@ fn pack_dirstate_wrapper(
         )),
     }
 }
-
-py_class!(pub class Dirs |py| {
-    data dirs_map: RefCell<DirsMultiset>;
-
-    // `map` is either a `dict` or a flat iterator (usually a `set`, sometimes
-    // a `list`)
-    def __new__(
-        _cls,
-        map: PyObject,
-        skip: Option<PyObject> = None
-    ) -> PyResult<Self> {
-        let mut skip_state: Option<i8> = None;
-        if let Some(skip) = skip {
-            skip_state = Some(skip.extract::<PyBytes>(py)?.data(py)[0] as i8);
-        }
-        let dirs_map;
-
-        if let Ok(map) = map.cast_as::<PyDict>(py) {
-            let dirstate_vec = extract_dirstate_vec(py, &map)?;
-            dirs_map = DirsMultiset::new(
-                DirsIterable::Dirstate(dirstate_vec),
-                skip_state,
-            )
-        } else {
-            let map: Result<Vec<Vec<u8>>, PyErr> = map
-                .iter(py)?
-                .map(|o| Ok(o?.extract::<PyBytes>(py)?.data(py).to_owned()))
-                .collect();
-            dirs_map = DirsMultiset::new(
-                DirsIterable::Manifest(map?),
-                skip_state,
-            )
-        }
-
-        Self::create_instance(py, RefCell::new(dirs_map))
-    }
-
-    def addpath(&self, path: PyObject) -> PyResult<PyObject> {
-        self.dirs_map(py).borrow_mut().add_path(
-            path.extract::<PyBytes>(py)?.data(py),
-        );
-        Ok(py.None())
-    }
-
-    def delpath(&self, path: PyObject) -> PyResult<PyObject> {
-        self.dirs_map(py).borrow_mut().delete_path(
-            path.extract::<PyBytes>(py)?.data(py),
-        )
-            .and(Ok(py.None()))
-            .or_else(|e| {
-                match e {
-                    DirstateMapError::PathNotFound(_p) => {
-                        Err(PyErr::new::<exc::ValueError, _>(
-                            py,
-                            "expected a value, found none".to_string(),
-                        ))
-                    }
-                    DirstateMapError::EmptyPath => {
-                        Ok(py.None())
-                    }
-                }
-            })
-    }
-
-    // This is really inefficient on top of being ugly, but it's an easy way
-    // of having it work to continue working on the rest of the module
-    // hopefully bypassing Python entirely pretty soon.
-    def __iter__(&self) -> PyResult<PyObject> {
-        let dict = PyDict::new(py);
-
-        for (key, value) in self.dirs_map(py).borrow().iter() {
-            dict.set_item(
-                py,
-                PyBytes::new(py, &key[..]),
-                value.to_py_object(py),
-            )?;
-        }
-
-        let locals = PyDict::new(py);
-        locals.set_item(py, "obj", dict)?;
-
-        py.eval("iter(obj)", None, Some(&locals))
-    }
-
-    def __contains__(&self, item: PyObject) -> PyResult<bool> {
-        Ok(self
-            .dirs_map(py)
-            .borrow()
-            .contains_key(item.extract::<PyBytes>(py)?.data(py).as_ref()))
-    }
-});
 
 /// Create the module, with `__package__` given from parent
 pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
