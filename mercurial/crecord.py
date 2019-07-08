@@ -1724,7 +1724,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         keypressed = pycompat.bytestr(keypressed)
         if keypressed in ["k", "KEY_UP"]:
             self.uparrowevent()
-        if keypressed in ["K", "KEY_PPAGE"]:
+        elif keypressed in ["K", "KEY_PPAGE"]:
             self.uparrowshiftevent()
         elif keypressed in ["j", "KEY_DOWN"]:
             self.downarrowevent()
