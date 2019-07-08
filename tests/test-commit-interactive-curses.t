@@ -34,7 +34,7 @@ Committing some changes but stopping on the way
   $ echo "a" > a
   $ hg add a
   $ cat <<EOF >testModeCommands
-  > TOGGLE
+  > x
   > c
   > EOF
   $ hg commit -i  -m "a" -d "0 0"
@@ -71,7 +71,7 @@ Committing only one file
   >>> open('b', 'wb').write(b"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n") and None
   $ hg add b
   $ cat <<EOF >testModeCommands
-  > TOGGLE
+  > x
   > KEY_DOWN
   > c
   > EOF
@@ -112,7 +112,7 @@ Committing only one hunk while aborting edition of hunk
   > KEY_DOWN
   > KEY_DOWN
   > KEY_DOWN
-  > TOGGLE
+  > x
   > a
   > a
   > e
@@ -182,8 +182,8 @@ Newly added files can be selected with the curses interface
   $ echo "hello" > x
   $ hg add x
   $ cat <<EOF >testModeCommands
-  > TOGGLE
-  > TOGGLE
+  > x
+  > x
   > c
   > EOF
   $ hg st
@@ -240,7 +240,7 @@ of the edit.
   > KEY_DOWN
   > KEY_DOWN
   > e
-  > TOGGLE
+  > x
   > c
   > EOF
   $ printf "printf 'editor ran\n'; exit 0" > editor.sh
@@ -272,11 +272,11 @@ reflect this edition.
   > EOF
   $ cat > testModeCommands <<EOF
   > KEY_DOWN
-  > TOGGLE
+  > x
   > KEY_DOWN
   > f
   > KEY_DOWN
-  > TOGGLE
+  > x
   > R
   > EOF
 

@@ -1460,7 +1460,7 @@ changes, the unselected changes are still present in your working copy, so you
 can use crecord multiple times to split large changes into smaller changesets.
 the following are valid keystrokes:
 
-                [space] : (un-)select item ([~]/[x] = partly/fully applied)
+              x [space] : (un-)select item ([~]/[x] = partly/fully applied)
                 [enter] : (un-)select item and go to next item of same type
                       A : (un-)select all items
     up/down-arrow [k/j] : go to previous/next unfolded item
@@ -1749,7 +1749,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         elif test and keypressed in ['R']:
             self.opts['review'] = True
             return True
-        elif keypressed in [' '] or (test and keypressed in ["TOGGLE"]):
+        elif keypressed in [' ', 'x']:
             self.toggleapply()
         elif keypressed in ['\n', 'KEY_ENTER']:
             self.toggleapply()
