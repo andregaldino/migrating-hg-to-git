@@ -723,7 +723,7 @@ class curseschunkselector(object):
         self.currentselecteditem = nextitem
         self.recenterdisplayedarea()
 
-    def nextsametype(self):
+    def nextsametype(self, test=False):
         currentitem = self.currentselecteditem
         sametype = lambda item: isinstance(item, type(currentitem))
         nextitem = currentitem.nextitem()
@@ -739,7 +739,8 @@ class curseschunkselector(object):
                 self.togglefolded(parent)
 
         self.currentselecteditem = nextitem
-        self.recenterdisplayedarea()
+        if not test:
+            self.recenterdisplayedarea()
 
     def rightarrowevent(self):
         """
@@ -1753,7 +1754,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             self.toggleapply()
         elif keypressed in ['\n', 'KEY_ENTER']:
             self.toggleapply()
-            self.nextsametype()
+            self.nextsametype(test=test)
         elif keypressed in ['A']:
             self.toggleall()
         elif keypressed in ['e']:
