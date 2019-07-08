@@ -9,6 +9,13 @@
  * New `--force-close-branch` flag for `hg commit` to forcibly close
    branch from a non-head changeset.
 
+ * The curses-based interface for commands like `hg commit -i` now supports
+   a range-select mechanism. Select the first line using space like before,
+   navigate to the last line, and press X (capital x) to set all items in
+   the range at once. Lowercase x has been added as a synonym for space to
+   help reinforce the mechanism, and pressing enter/return continues to be a
+   synonym for "toggle the current line and move down to the next item in
+   this section."
 
 == New Experimental Features ==
 
