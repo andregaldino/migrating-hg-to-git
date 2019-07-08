@@ -1742,8 +1742,6 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             self.toggleamend(self.opts, test)
         elif keypressed in ["c"]:
             return True
-        elif test and keypressed in ['X']:
-            return True
         elif keypressed in ["r"]:
             if self.reviewcommit():
                 self.opts['review'] = True

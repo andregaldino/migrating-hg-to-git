@@ -35,7 +35,7 @@ Committing some changes but stopping on the way
   $ hg add a
   $ cat <<EOF >testModeCommands
   > TOGGLE
-  > X
+  > c
   > EOF
   $ hg commit -i  -m "a" -d "0 0"
   no changes to record
@@ -50,7 +50,7 @@ Committing some changes but stopping on the way
 Committing some changes
 
   $ cat <<EOF >testModeCommands
-  > X
+  > c
   > EOF
   $ hg commit -i  -m "a" -d "0 0"
   $ hg tip
@@ -73,7 +73,7 @@ Committing only one file
   $ cat <<EOF >testModeCommands
   > TOGGLE
   > KEY_DOWN
-  > X
+  > c
   > EOF
   $ hg commit -i  -m "one file" -d "0 0"
   $ hg tip
@@ -116,7 +116,7 @@ Committing only one hunk while aborting edition of hunk
   > a
   > a
   > e
-  > X
+  > c
   > EOF
   $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg commit -i  -m "one hunk" -d "0 0"
   editor ran
@@ -184,7 +184,7 @@ Newly added files can be selected with the curses interface
   $ cat <<EOF >testModeCommands
   > TOGGLE
   > TOGGLE
-  > X
+  > c
   > EOF
   $ hg st
   A x
@@ -203,7 +203,7 @@ Amend option works
   +hello
   $ cat <<EOF >testModeCommands
   > a
-  > X
+  > c
   > EOF
   $ hg commit -i  -m "newly added file" -d "0 0"
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/2b0e9be4d336-3cf0bc8c-amend.hg
@@ -217,7 +217,7 @@ Amend option works
 Make file empty
   $ printf "" > x
   $ cat <<EOF >testModeCommands
-  > X
+  > c
   > EOF
   $ hg ci -i -m emptify -d "0 0"
   $ hg update -C '.^' -q
@@ -241,7 +241,7 @@ of the edit.
   > KEY_DOWN
   > e
   > TOGGLE
-  > X
+  > c
   > EOF
   $ printf "printf 'editor ran\n'; exit 0" > editor.sh
   $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg commit  -i -m "edit hunk" -d "0 0" -q
