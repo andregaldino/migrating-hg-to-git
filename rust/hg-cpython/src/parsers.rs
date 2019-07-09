@@ -37,11 +37,17 @@ fn parse_dirstate_wrapper(
     match parse_dirstate(&mut dirstate_map, &mut copies, st.data(py)) {
         Ok(parents) => {
             for (filename, entry) in dirstate_map {
+                // Explicitly go through u8 first, then cast to
+                // platform-specific `c_char` because Into<u8> has a specific
+                // implementation while `as c_char` would just do a naive enum
+                // cast.
+                let state: u8 = entry.state.into();
+
                 dmap.set_item(
                     py,
                     PyBytes::new(py, &filename),
                     decapsule_make_dirstate_tuple(py)?(
-                        entry.state as c_char,
+                        state as c_char,
                         entry.mode,
                         entry.size,
                         entry.mtime,
@@ -130,6 +136,11 @@ fn pack_dirstate_wrapper(
                 },
             ) in dirstate_map
             {
+                // Explicitly go through u8 first, then cast to
+                // platform-specific `c_char` because Into<u8> has a specific
+                // implementation while `as c_char` would just do a naive enum
+                // cast.
+                let state: u8 = state.into();
                 dmap.set_item(
                     py,
                     PyBytes::new(py, &filename[..]),

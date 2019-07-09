@@ -8,7 +8,10 @@
 //! A multiset of directory names.
 //!
 //! Used to counts the references to directories in a manifest or dirstate.
-use crate::{utils::files, DirsIterable, DirstateEntry, DirstateMapError};
+use crate::{
+    dirstate::EntryState, utils::files, DirsIterable, DirstateEntry,
+    DirstateMapError,
+};
 use std::collections::hash_map::{Entry, Iter};
 use std::collections::HashMap;
 
@@ -21,7 +24,10 @@ impl DirsMultiset {
     /// Initializes the multiset from a dirstate or a manifest.
     ///
     /// If `skip_state` is provided, skips dirstate entries with equal state.
-    pub fn new(iterable: DirsIterable, skip_state: Option<i8>) -> Self {
+    pub fn new(
+        iterable: DirsIterable,
+        skip_state: Option<EntryState>,
+    ) -> Self {
         let mut multiset = DirsMultiset {
             inner: HashMap::new(),
         };
@@ -257,7 +263,7 @@ mod tests {
                 (
                     f.as_bytes().to_vec(),
                     DirstateEntry {
-                        state: 0,
+                        state: EntryState::Normal,
                         mode: 0,
                         mtime: 0,
                         size: 0,
@@ -290,28 +296,33 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new = DirsMultiset::new(Manifest(&input_vec), Some('n' as i8));
+        let new =
+            DirsMultiset::new(Manifest(&input_vec), Some(EntryState::Normal));
         let expected = DirsMultiset {
             inner: expected_inner,
         };
         // Skip does not affect a manifest
         assert_eq!(expected, new);
 
-        let input_map =
-            [("a/", 'n'), ("a/b/", 'n'), ("a/c", 'r'), ("a/d/", 'm')]
-                .iter()
-                .map(|(f, state)| {
-                    (
-                        f.as_bytes().to_vec(),
-                        DirstateEntry {
-                            state: *state as i8,
-                            mode: 0,
-                            mtime: 0,
-                            size: 0,
-                        },
-                    )
-                })
-                .collect();
+        let input_map = [
+            ("a/", EntryState::Normal),
+            ("a/b/", EntryState::Normal),
+            ("a/c", EntryState::Removed),
+            ("a/d/", EntryState::Merged),
+        ]
+        .iter()
+        .map(|(f, state)| {
+            (
+                f.as_bytes().to_vec(),
+                DirstateEntry {
+                    state: *state,
+                    mode: 0,
+                    mtime: 0,
+                    size: 0,
+                },
+            )
+        })
+        .collect();
 
         // "a" incremented with "a/c" and "a/d/"
         let expected_inner = [("", 1), ("a", 2), ("a/d", 1)]
@@ -319,10 +330,12 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new = DirsMultiset::new(Dirstate(&input_map), Some('n' as i8));
+        let new =
+            DirsMultiset::new(Dirstate(&input_map), Some(EntryState::Normal));
         let expected = DirsMultiset {
             inner: expected_inner,
         };
         assert_eq!(expected, new);
     }
+
 }

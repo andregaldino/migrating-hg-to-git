@@ -4,12 +4,12 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::{
-    dirstate::{CopyMap, StateMap},
+    dirstate::{CopyMap, EntryState, StateMap},
     utils::copy_into_array,
     DirstateEntry, DirstatePackError, DirstateParents, DirstateParseError,
 };
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::io::Cursor;
 use std::time::Duration;
 
@@ -42,7 +42,7 @@ pub fn parse_dirstate(
         let entry_bytes = &contents[curr_pos..];
 
         let mut cursor = Cursor::new(entry_bytes);
-        let state = cursor.read_i8()?;
+        let state = EntryState::try_from(cursor.read_u8()?)?;
         let mode = cursor.read_i32::<BigEndian>()?;
         let size = cursor.read_i32::<BigEndian>()?;
         let mtime = cursor.read_i32::<BigEndian>()?;
@@ -109,7 +109,7 @@ pub fn pack_dirstate(
     for (ref filename, entry) in state_map.iter() {
         let mut new_filename: Vec<u8> = filename.to_vec();
         let mut new_mtime: i32 = entry.mtime;
-        if entry.state == 'n' as i8 && entry.mtime == now {
+        if entry.state == EntryState::Normal && entry.mtime == now {
             // The file was last modified "simultaneously" with the current
             // write to dirstate (i.e. within the same second for file-
             // systems with a granularity of 1 sec). This commonly happens
@@ -134,7 +134,7 @@ pub fn pack_dirstate(
             new_filename.extend(copy);
         }
 
-        packed.write_i8(entry.state)?;
+        packed.write_u8(entry.state.into())?;
         packed.write_i32::<BigEndian>(entry.mode)?;
         packed.write_i32::<BigEndian>(entry.size)?;
         packed.write_i32::<BigEndian>(new_mtime)?;
@@ -179,7 +179,7 @@ mod tests {
         let expected_state_map: StateMap = [(
             b"f1".to_vec(),
             DirstateEntry {
-                state: 'n' as i8,
+                state: EntryState::Normal,
                 mode: 0o644,
                 size: 0,
                 mtime: 791231220,
@@ -216,7 +216,7 @@ mod tests {
         let expected_state_map: StateMap = [(
             b"f1".to_vec(),
             DirstateEntry {
-                state: 'n' as i8,
+                state: EntryState::Normal,
                 mode: 0o644,
                 size: 0,
                 mtime: 791231220,
@@ -254,7 +254,7 @@ mod tests {
         let mut state_map: StateMap = [(
             b"f1".to_vec(),
             DirstateEntry {
-                state: 'n' as i8,
+                state: EntryState::Normal,
                 mode: 0o644,
                 size: 0,
                 mtime: 791231220,
@@ -294,7 +294,7 @@ mod tests {
             (
                 b"f1".to_vec(),
                 DirstateEntry {
-                    state: 'n' as i8,
+                    state: EntryState::Normal,
                     mode: 0o644,
                     size: 0,
                     mtime: 791231220,
@@ -303,7 +303,7 @@ mod tests {
             (
                 b"f2".to_vec(),
                 DirstateEntry {
-                    state: 'm' as i8,
+                    state: EntryState::Merged,
                     mode: 0o777,
                     size: 1000,
                     mtime: 791231220,
@@ -312,7 +312,7 @@ mod tests {
             (
                 b"f3".to_vec(),
                 DirstateEntry {
-                    state: 'r' as i8,
+                    state: EntryState::Removed,
                     mode: 0o644,
                     size: 234553,
                     mtime: 791231220,
@@ -321,7 +321,7 @@ mod tests {
             (
                 b"f4\xF6".to_vec(),
                 DirstateEntry {
-                    state: 'a' as i8,
+                    state: EntryState::Added,
                     mode: 0o644,
                     size: -1,
                     mtime: -1,
@@ -363,7 +363,7 @@ mod tests {
         let mut state_map: StateMap = [(
             b"f1".to_vec(),
             DirstateEntry {
-                state: 'n' as i8,
+                state: EntryState::Normal,
                 mode: 0o644,
                 size: 0,
                 mtime: 15000000,
@@ -398,7 +398,7 @@ mod tests {
                 [(
                     b"f1".to_vec(),
                     DirstateEntry {
-                        state: 'n' as i8,
+                        state: EntryState::Normal,
                         mode: 0o644,
                         size: 0,
                         mtime: -1

@@ -5,7 +5,9 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::DirstateParseError;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
 pub mod dirs_multiset;
 pub mod parsers;
@@ -21,7 +23,7 @@ pub struct DirstateParents {
 /// comes first.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct DirstateEntry {
-    pub state: i8,
+    pub state: EntryState,
     pub mode: i32,
     pub mtime: i32,
     pub size: i32,
@@ -35,4 +37,43 @@ pub type CopyMap = HashMap<Vec<u8>, Vec<u8>>;
 pub enum DirsIterable<'a> {
     Dirstate(&'a HashMap<Vec<u8>, DirstateEntry>),
     Manifest(&'a Vec<Vec<u8>>),
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum EntryState {
+    Normal,
+    Added,
+    Removed,
+    Merged,
+    Unknown,
+}
+
+impl TryFrom<u8> for EntryState {
+    type Error = DirstateParseError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            b'n' => Ok(EntryState::Normal),
+            b'a' => Ok(EntryState::Added),
+            b'r' => Ok(EntryState::Removed),
+            b'm' => Ok(EntryState::Merged),
+            b'?' => Ok(EntryState::Unknown),
+            _ => Err(DirstateParseError::CorruptedEntry(format!(
+                "Incorrect entry state {}",
+                value
+            ))),
+        }
+    }
+}
+
+impl Into<u8> for EntryState {
+    fn into(self) -> u8 {
+        match self {
+            EntryState::Normal => b'n',
+            EntryState::Added => b'a',
+            EntryState::Removed => b'r',
+            EntryState::Merged => b'm',
+            EntryState::Unknown => b'?',
+        }
+    }
 }

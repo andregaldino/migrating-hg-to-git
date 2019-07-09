@@ -12,14 +12,16 @@
 mod dirs_multiset;
 use crate::dirstate::dirs_multiset::Dirs;
 use cpython::{
-    PyBytes, PyDict, PyErr, PyModule, PyObject, PyResult, PySequence, Python,
+    exc, PyBytes, PyDict, PyErr, PyModule, PyObject, PyResult, PySequence,
+    Python,
 };
-use hg::{DirstateEntry, StateMap};
+use hg::{DirstateEntry, DirstateParseError, EntryState, StateMap};
 use libc::{c_char, c_int};
 #[cfg(feature = "python27")]
 use python27_sys::PyCapsule_Import;
 #[cfg(feature = "python3")]
 use python3_sys::PyCapsule_Import;
+use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::mem::transmute;
 
@@ -60,7 +62,11 @@ pub fn extract_dirstate(py: Python, dmap: &PyDict) -> Result<StateMap, PyErr> {
         .map(|(filename, stats)| {
             let stats = stats.extract::<PySequence>(py)?;
             let state = stats.get_item(py, 0)?.extract::<PyBytes>(py)?;
-            let state = state.data(py)[0] as i8;
+            let state = EntryState::try_from(state.data(py)[0]).map_err(
+                |e: DirstateParseError| {
+                    PyErr::new::<exc::ValueError, _>(py, e.to_string())
+                },
+            )?;
             let mode = stats.get_item(py, 1)?.extract(py)?;
             let size = stats.get_item(py, 2)?.extract(py)?;
             let mtime = stats.get_item(py, 3)?.extract(py)?;

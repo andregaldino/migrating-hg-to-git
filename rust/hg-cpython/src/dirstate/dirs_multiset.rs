@@ -16,7 +16,11 @@ use cpython::{
 };
 
 use crate::dirstate::extract_dirstate;
-use hg::{DirsIterable, DirsMultiset, DirstateMapError};
+use hg::{
+    DirsIterable, DirsMultiset, DirstateMapError, DirstateParseError,
+    EntryState,
+};
+use std::convert::TryInto;
 
 py_class!(pub class Dirs |py| {
     data dirs_map: RefCell<DirsMultiset>;
@@ -28,9 +32,15 @@ py_class!(pub class Dirs |py| {
         map: PyObject,
         skip: Option<PyObject> = None
     ) -> PyResult<Self> {
-        let mut skip_state: Option<i8> = None;
+        let mut skip_state: Option<EntryState> = None;
         if let Some(skip) = skip {
-            skip_state = Some(skip.extract::<PyBytes>(py)?.data(py)[0] as i8);
+            skip_state = Some(
+                skip.extract::<PyBytes>(py)?.data(py)[0]
+                    .try_into()
+                    .map_err(|e: DirstateParseError| {
+                        PyErr::new::<exc::ValueError, _>(py, e.to_string())
+                    })?,
+            );
         }
         let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
             let dirstate = extract_dirstate(py, &map)?;
