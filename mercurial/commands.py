@@ -1872,7 +1872,7 @@ def config(ui, repo, *values, **opts):
     [('A', 'after', None, _('record a copy that has already occurred')),
     ('f', 'force', None, _('forcibly copy over an existing managed file')),
     ] + walkopts + dryrunopts,
-    _('[OPTION]... [SOURCE]... DEST'),
+    _('[OPTION]... SOURCE... DEST'),
     helpcategory=command.CATEGORY_FILE_CONTENTS)
 def copy(ui, repo, *pats, **opts):
     """mark files as copied for the next commit
@@ -4699,7 +4699,7 @@ def remove(ui, repo, *pats, **opts):
 
 @command('rename|move|mv',
     [('A', 'after', None, _('record a rename that has already occurred')),
-    ('f', 'force', None, _('forcibly copy over an existing managed file')),
+    ('f', 'force', None, _('forcibly move over an existing managed file')),
     ] + walkopts + dryrunopts,
     _('[OPTION]... SOURCE... DEST'),
     helpcategory=command.CATEGORY_WORKING_DIRECTORY)
