@@ -1,3 +1,12 @@
+// filepatterns.rs
+//
+// Copyright 2019 Raphaël Gomès <rgomes@octobus.net>
+//
+// This software may be used and distributed according to the terms of the
+// GNU General Public License version 2 or any later version.
+
+//! Handling of Mercurial-specific patterns.
+
 use crate::{
     utils::{files::get_path_from_bytes, SliceExt},
     LineNumber, PatternError, PatternFileError,

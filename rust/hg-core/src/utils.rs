@@ -1,3 +1,12 @@
+// utils module
+//
+// Copyright 2019 Raphaël Gomès <rgomes@octobus.net>
+//
+// This software may be used and distributed according to the terms of the
+// GNU General Public License version 2 or any later version.
+
+//! Contains useful functions, traits, structs, etc. for use in core.
+
 pub mod files;
 
 use std::convert::AsMut;

@@ -1,3 +1,14 @@
+// files.rs
+//
+// Copyright 2019
+// Raphaël Gomès <rgomes@octobus.net>,
+// Yuya Nishihara <yuya@tcha.org>
+//
+// This software may be used and distributed according to the terms of the
+// GNU General Public License version 2 or any later version.
+
+//! Functions for fiddling with files.
+
 use std::iter::FusedIterator;
 use std::path::Path;
 
