@@ -27,6 +27,8 @@ extern crate cpython;
 pub mod ancestors;
 mod cindex;
 mod conversion;
+#[macro_use]
+pub mod ref_sharing;
 pub mod dagops;
 pub mod dirstate;
 pub mod parsers;

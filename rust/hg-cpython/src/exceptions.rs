@@ -67,3 +67,5 @@ impl PatternFileError {
         }
     }
 }
+
+py_exception!(shared_ref, AlreadyBorrowed, RuntimeError);

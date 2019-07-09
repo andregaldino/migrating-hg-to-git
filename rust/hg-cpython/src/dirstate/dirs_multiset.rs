@@ -9,21 +9,22 @@
 //! `hg-core` package.
 
 use std::cell::RefCell;
+use std::convert::TryInto;
 
 use cpython::{
-    exc, ObjectProtocol, PyBytes, PyDict, PyErr, PyObject, PyResult,
-    PythonObject, ToPyObject,
+    exc, ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyObject, PyResult,
+    Python,
 };
 
-use crate::dirstate::extract_dirstate;
+use crate::{dirstate::extract_dirstate, ref_sharing::PySharedState};
 use hg::{
     DirsIterable, DirsMultiset, DirstateMapError, DirstateParseError,
     EntryState,
 };
-use std::convert::TryInto;
 
 py_class!(pub class Dirs |py| {
-    data dirs_map: RefCell<DirsMultiset>;
+    data inner: RefCell<DirsMultiset>;
+    data py_shared_state: PySharedState;
 
     // `map` is either a `dict` or a flat iterator (usually a `set`, sometimes
     // a `list`)
@@ -59,18 +60,22 @@ py_class!(pub class Dirs |py| {
             )
         };
 
-        Self::create_instance(py, RefCell::new(inner))
+        Self::create_instance(
+            py,
+            RefCell::new(inner),
+            PySharedState::default()
+        )
     }
 
     def addpath(&self, path: PyObject) -> PyResult<PyObject> {
-        self.dirs_map(py).borrow_mut().add_path(
+        self.borrow_mut(py)?.add_path(
             path.extract::<PyBytes>(py)?.data(py),
         );
         Ok(py.None())
     }
 
     def delpath(&self, path: PyObject) -> PyResult<PyObject> {
-        self.dirs_map(py).borrow_mut().delete_path(
+        self.borrow_mut(py)?.delete_path(
             path.extract::<PyBytes>(py)?.data(py),
         )
             .and(Ok(py.None()))
@@ -88,26 +93,38 @@ py_class!(pub class Dirs |py| {
                 }
             })
     }
-
-    // This is really inefficient on top of being ugly, but it's an easy way
-    // of having it work to continue working on the rest of the module
-    // hopefully bypassing Python entirely pretty soon.
-    def __iter__(&self) -> PyResult<PyObject> {
-        let dirs = self.dirs_map(py).borrow();
-        let dirs: Vec<_> = dirs
-            .iter()
-            .map(|d| PyBytes::new(py, d))
-            .collect();
-        dirs.to_py_object(py)
-            .into_object()
-            .iter(py)
-            .map(|o| o.into_object())
+    def __iter__(&self) -> PyResult<DirsMultisetKeysIterator> {
+        DirsMultisetKeysIterator::create_instance(
+            py,
+            RefCell::new(Some(DirsMultisetLeakedRef::new(py, &self))),
+            RefCell::new(Box::new(self.leak_immutable(py)?.iter())),
+        )
     }
 
     def __contains__(&self, item: PyObject) -> PyResult<bool> {
         Ok(self
-            .dirs_map(py)
+            .inner(py)
             .borrow()
             .contains(item.extract::<PyBytes>(py)?.data(py).as_ref()))
     }
 });
+
+py_shared_ref!(Dirs, DirsMultiset, inner, DirsMultisetLeakedRef,);
+
+impl Dirs {
+    pub fn from_inner(py: Python, d: DirsMultiset) -> PyResult<Self> {
+        Self::create_instance(py, RefCell::new(d), PySharedState::default())
+    }
+
+    fn translate_key(py: Python, res: &Vec<u8>) -> PyResult<Option<PyBytes>> {
+        Ok(Some(PyBytes::new(py, res)))
+    }
+}
+
+py_shared_sequence_iterator!(
+    DirsMultisetKeysIterator,
+    DirsMultisetLeakedRef,
+    Vec<u8>,
+    Dirs::translate_key,
+    Option<PyBytes>
+);
