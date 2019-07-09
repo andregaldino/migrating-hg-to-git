@@ -14,7 +14,7 @@ use crate::dirstate::dirs_multiset::Dirs;
 use cpython::{
     PyBytes, PyDict, PyErr, PyModule, PyObject, PyResult, PySequence, Python,
 };
-use hg::{DirstateEntry, DirstateVec};
+use hg::{DirstateEntry, StateMap};
 use libc::{c_char, c_int};
 #[cfg(feature = "python27")]
 use python27_sys::PyCapsule_Import;
@@ -54,10 +54,7 @@ pub fn decapsule_make_dirstate_tuple(
     }
 }
 
-pub fn extract_dirstate_vec(
-    py: Python,
-    dmap: &PyDict,
-) -> Result<DirstateVec, PyErr> {
+pub fn extract_dirstate(py: Python, dmap: &PyDict) -> Result<StateMap, PyErr> {
     dmap.items(py)
         .iter()
         .map(|(filename, stats)| {

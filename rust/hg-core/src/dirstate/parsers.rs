@@ -4,31 +4,35 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::{
-    CopyVec, CopyVecEntry, DirstateEntry, DirstatePackError, DirstateParents,
-    DirstateParseError, DirstateVec,
+    dirstate::{CopyMap, StateMap},
+    utils::copy_into_array,
+    DirstateEntry, DirstatePackError, DirstateParents, DirstateParseError,
 };
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use std::collections::HashMap;
+use std::convert::TryInto;
 use std::io::Cursor;
+use std::time::Duration;
 
 /// Parents are stored in the dirstate as byte hashes.
-const PARENT_SIZE: usize = 20;
+pub const PARENT_SIZE: usize = 20;
 /// Dirstate entries have a static part of 8 + 32 + 32 + 32 + 32 bits.
 const MIN_ENTRY_SIZE: usize = 17;
 
+// TODO parse/pack: is mutate-on-loop better for performance?
+
 pub fn parse_dirstate(
+    state_map: &mut StateMap,
+    copy_map: &mut CopyMap,
     contents: &[u8],
-) -> Result<(DirstateParents, DirstateVec, CopyVec), DirstateParseError> {
+) -> Result<DirstateParents, DirstateParseError> {
     if contents.len() < PARENT_SIZE * 2 {
         return Err(DirstateParseError::TooLittleData);
     }
 
-    let mut dirstate_vec = vec![];
-    let mut copies = vec![];
     let mut curr_pos = PARENT_SIZE * 2;
     let parents = DirstateParents {
-        p1: &contents[..PARENT_SIZE],
-        p2: &contents[PARENT_SIZE..curr_pos],
+        p1: copy_into_array(&contents[..PARENT_SIZE]),
+        p2: copy_into_array(&contents[PARENT_SIZE..curr_pos]),
     };
 
     while curr_pos < contents.len() {
@@ -57,9 +61,9 @@ pub fn parse_dirstate(
         };
 
         if let Some(copy_path) = copy {
-            copies.push(CopyVecEntry { path, copy_path });
+            copy_map.insert(path.to_owned(), copy_path.to_owned());
         };
-        dirstate_vec.push((
+        state_map.insert(
             path.to_owned(),
             DirstateEntry {
                 state,
@@ -67,28 +71,28 @@ pub fn parse_dirstate(
                 size,
                 mtime,
             },
-        ));
+        );
         curr_pos = curr_pos + MIN_ENTRY_SIZE + (path_len);
     }
 
-    Ok((parents, dirstate_vec, copies))
+    Ok(parents)
 }
 
+/// `now` is the duration in seconds since the Unix epoch
 pub fn pack_dirstate(
-    dirstate_vec: &DirstateVec,
-    copymap: &HashMap<Vec<u8>, Vec<u8>>,
+    state_map: &mut StateMap,
+    copy_map: &CopyMap,
     parents: DirstateParents,
-    now: i32,
-) -> Result<(Vec<u8>, DirstateVec), DirstatePackError> {
-    if parents.p1.len() != PARENT_SIZE || parents.p2.len() != PARENT_SIZE {
-        return Err(DirstatePackError::CorruptedParent);
-    }
+    now: Duration,
+) -> Result<Vec<u8>, DirstatePackError> {
+    // TODO move away from i32 before 2038.
+    let now: i32 = now.as_secs().try_into().expect("time overflow");
 
-    let expected_size: usize = dirstate_vec
+    let expected_size: usize = state_map
         .iter()
-        .map(|(ref filename, _)| {
+        .map(|(filename, _)| {
             let mut length = MIN_ENTRY_SIZE + filename.len();
-            if let Some(ref copy) = copymap.get(filename) {
+            if let Some(ref copy) = copy_map.get(filename) {
                 length += copy.len() + 1;
             }
             length
@@ -97,15 +101,15 @@ pub fn pack_dirstate(
     let expected_size = expected_size + PARENT_SIZE * 2;
 
     let mut packed = Vec::with_capacity(expected_size);
-    let mut new_dirstate_vec = vec![];
+    let mut new_state_map = vec![];
 
-    packed.extend(parents.p1);
-    packed.extend(parents.p2);
+    packed.extend(&parents.p1);
+    packed.extend(&parents.p2);
 
-    for (ref filename, entry) in dirstate_vec {
-        let mut new_filename: Vec<u8> = filename.to_owned();
+    for (ref filename, entry) in state_map.iter() {
+        let mut new_filename: Vec<u8> = filename.to_vec();
         let mut new_mtime: i32 = entry.mtime;
-        if entry.state == 'n' as i8 && entry.mtime == now.into() {
+        if entry.state == 'n' as i8 && entry.mtime == now {
             // The file was last modified "simultaneously" with the current
             // write to dirstate (i.e. within the same second for file-
             // systems with a granularity of 1 sec). This commonly happens
@@ -116,8 +120,8 @@ pub fn pack_dirstate(
             // contents of the file if the size is the same. This prevents
             // mistakenly treating such files as clean.
             new_mtime = -1;
-            new_dirstate_vec.push((
-                filename.to_owned(),
+            new_state_map.push((
+                filename.to_owned().to_vec(),
                 DirstateEntry {
                     mtime: new_mtime,
                     ..*entry
@@ -125,7 +129,7 @@ pub fn pack_dirstate(
             ));
         }
 
-        if let Some(copy) = copymap.get(filename) {
+        if let Some(copy) = copy_map.get(*filename) {
             new_filename.push('\0' as u8);
             new_filename.extend(copy);
         }
@@ -142,66 +146,37 @@ pub fn pack_dirstate(
         return Err(DirstatePackError::BadSize(expected_size, packed.len()));
     }
 
-    Ok((packed, new_dirstate_vec))
+    state_map.extend(new_state_map);
+
+    Ok(packed)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
     fn test_pack_dirstate_empty() {
-        let dirstate_vec: DirstateVec = vec![];
+        let mut state_map: StateMap = HashMap::new();
         let copymap = HashMap::new();
         let parents = DirstateParents {
-            p1: b"12345678910111213141",
-            p2: b"00000000000000000000",
+            p1: *b"12345678910111213141",
+            p2: *b"00000000000000000000",
         };
-        let now: i32 = 15000000;
-        let expected =
-            (b"1234567891011121314100000000000000000000".to_vec(), vec![]);
+        let now = Duration::new(15000000, 0);
+        let expected = b"1234567891011121314100000000000000000000".to_vec();
 
         assert_eq!(
             expected,
-            pack_dirstate(&dirstate_vec, &copymap, parents, now).unwrap()
+            pack_dirstate(&mut state_map, &copymap, parents, now).unwrap()
         );
+
+        assert!(state_map.is_empty())
     }
     #[test]
     fn test_pack_dirstate_one_entry() {
-        let dirstate_vec: DirstateVec = vec![(
-            vec!['f' as u8, '1' as u8],
-            DirstateEntry {
-                state: 'n' as i8,
-                mode: 0o644,
-                size: 0,
-                mtime: 791231220,
-            },
-        )];
-        let copymap = HashMap::new();
-        let parents = DirstateParents {
-            p1: b"12345678910111213141",
-            p2: b"00000000000000000000",
-        };
-        let now: i32 = 15000000;
-        let expected = (
-            [
-                49, 50, 51, 52, 53, 54, 55, 56, 57, 49, 48, 49, 49, 49, 50,
-                49, 51, 49, 52, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-                48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 110, 0, 0, 1, 164, 0,
-                0, 0, 0, 47, 41, 58, 244, 0, 0, 0, 2, 102, 49,
-            ]
-            .to_vec(),
-            vec![],
-        );
-
-        assert_eq!(
-            expected,
-            pack_dirstate(&dirstate_vec, &copymap, parents, now).unwrap()
-        );
-    }
-    #[test]
-    fn test_pack_dirstate_one_entry_with_copy() {
-        let dirstate_vec: DirstateVec = vec![(
+        let expected_state_map: StateMap = [(
             b"f1".to_vec(),
             DirstateEntry {
                 state: 'n' as i8,
@@ -209,35 +184,74 @@ mod tests {
                 size: 0,
                 mtime: 791231220,
             },
-        )];
-        let mut copymap = HashMap::new();
-        copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
+        )]
+        .iter()
+        .cloned()
+        .collect();
+        let mut state_map = expected_state_map.clone();
+
+        let copymap = HashMap::new();
         let parents = DirstateParents {
-            p1: b"12345678910111213141",
-            p2: b"00000000000000000000",
+            p1: *b"12345678910111213141",
+            p2: *b"00000000000000000000",
         };
-        let now: i32 = 15000000;
-        let expected = (
-            [
-                49, 50, 51, 52, 53, 54, 55, 56, 57, 49, 48, 49, 49, 49, 50,
-                49, 51, 49, 52, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
-                48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 110, 0, 0, 1, 164, 0,
-                0, 0, 0, 47, 41, 58, 244, 0, 0, 0, 11, 102, 49, 0, 99, 111,
-                112, 121, 110, 97, 109, 101,
-            ]
-            .to_vec(),
-            vec![],
-        );
+        let now = Duration::new(15000000, 0);
+        let expected = [
+            49, 50, 51, 52, 53, 54, 55, 56, 57, 49, 48, 49, 49, 49, 50, 49,
+            51, 49, 52, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+            48, 48, 48, 48, 48, 48, 48, 48, 110, 0, 0, 1, 164, 0, 0, 0, 0, 47,
+            41, 58, 244, 0, 0, 0, 2, 102, 49,
+        ]
+        .to_vec();
 
         assert_eq!(
             expected,
-            pack_dirstate(&dirstate_vec, &copymap, parents, now).unwrap()
+            pack_dirstate(&mut state_map, &copymap, parents, now).unwrap()
         );
+
+        assert_eq!(expected_state_map, state_map);
+    }
+    #[test]
+    fn test_pack_dirstate_one_entry_with_copy() {
+        let expected_state_map: StateMap = [(
+            b"f1".to_vec(),
+            DirstateEntry {
+                state: 'n' as i8,
+                mode: 0o644,
+                size: 0,
+                mtime: 791231220,
+            },
+        )]
+        .iter()
+        .cloned()
+        .collect();
+        let mut state_map = expected_state_map.clone();
+        let mut copymap = HashMap::new();
+        copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
+        let parents = DirstateParents {
+            p1: *b"12345678910111213141",
+            p2: *b"00000000000000000000",
+        };
+        let now = Duration::new(15000000, 0);
+        let expected = [
+            49, 50, 51, 52, 53, 54, 55, 56, 57, 49, 48, 49, 49, 49, 50, 49,
+            51, 49, 52, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+            48, 48, 48, 48, 48, 48, 48, 48, 110, 0, 0, 1, 164, 0, 0, 0, 0, 47,
+            41, 58, 244, 0, 0, 0, 11, 102, 49, 0, 99, 111, 112, 121, 110, 97,
+            109, 101,
+        ]
+        .to_vec();
+
+        assert_eq!(
+            expected,
+            pack_dirstate(&mut state_map, &copymap, parents, now).unwrap()
+        );
+        assert_eq!(expected_state_map, state_map);
     }
 
     #[test]
     fn test_parse_pack_one_entry_with_copy() {
-        let dirstate_vec: DirstateVec = vec![(
+        let mut state_map: StateMap = [(
             b"f1".to_vec(),
             DirstateEntry {
                 state: 'n' as i8,
@@ -245,36 +259,38 @@ mod tests {
                 size: 0,
                 mtime: 791231220,
             },
-        )];
+        )]
+        .iter()
+        .cloned()
+        .collect();
         let mut copymap = HashMap::new();
         copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
         let parents = DirstateParents {
-            p1: b"12345678910111213141",
-            p2: b"00000000000000000000",
+            p1: *b"12345678910111213141",
+            p2: *b"00000000000000000000",
         };
-        let now: i32 = 15000000;
+        let now = Duration::new(15000000, 0);
         let result =
-            pack_dirstate(&dirstate_vec, &copymap, parents, now).unwrap();
+            pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
+                .unwrap();
 
+        let mut new_state_map: StateMap = HashMap::new();
+        let mut new_copy_map: CopyMap = HashMap::new();
+        let new_parents = parse_dirstate(
+            &mut new_state_map,
+            &mut new_copy_map,
+            result.as_slice(),
+        )
+        .unwrap();
         assert_eq!(
-            (
-                parents,
-                dirstate_vec,
-                copymap
-                    .iter()
-                    .map(|(k, v)| CopyVecEntry {
-                        path: k.as_slice(),
-                        copy_path: v.as_slice()
-                    })
-                    .collect()
-            ),
-            parse_dirstate(result.0.as_slice()).unwrap()
+            (parents, state_map, copymap),
+            (new_parents, new_state_map, new_copy_map)
         )
     }
 
     #[test]
     fn test_parse_pack_multiple_entries_with_copy() {
-        let dirstate_vec: DirstateVec = vec![
+        let mut state_map: StateMap = [
             (
                 b"f1".to_vec(),
                 DirstateEntry {
@@ -311,39 +327,40 @@ mod tests {
                     mtime: -1,
                 },
             ),
-        ];
+        ]
+        .iter()
+        .cloned()
+        .collect();
         let mut copymap = HashMap::new();
         copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
         copymap.insert(b"f4\xF6".to_vec(), b"copyname2".to_vec());
         let parents = DirstateParents {
-            p1: b"12345678910111213141",
-            p2: b"00000000000000000000",
+            p1: *b"12345678910111213141",
+            p2: *b"00000000000000000000",
         };
-        let now: i32 = 15000000;
+        let now = Duration::new(15000000, 0);
         let result =
-            pack_dirstate(&dirstate_vec, &copymap, parents, now).unwrap();
+            pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
+                .unwrap();
 
+        let mut new_state_map: StateMap = HashMap::new();
+        let mut new_copy_map: CopyMap = HashMap::new();
+        let new_parents = parse_dirstate(
+            &mut new_state_map,
+            &mut new_copy_map,
+            result.as_slice(),
+        )
+        .unwrap();
         assert_eq!(
-            (parents, dirstate_vec, copymap),
-            parse_dirstate(result.0.as_slice())
-                .and_then(|(p, dvec, cvec)| Ok((
-                    p,
-                    dvec,
-                    cvec.iter()
-                        .map(|entry| (
-                            entry.path.to_vec(),
-                            entry.copy_path.to_vec()
-                        ))
-                        .collect()
-                )))
-                .unwrap()
+            (parents, state_map, copymap),
+            (new_parents, new_state_map, new_copy_map)
         )
     }
 
     #[test]
     /// https://www.mercurial-scm.org/repo/hg/rev/af3f26b6bba4
     fn test_parse_pack_one_entry_with_copy_and_time_conflict() {
-        let dirstate_vec: DirstateVec = vec![(
+        let mut state_map: StateMap = [(
             b"f1".to_vec(),
             DirstateEntry {
                 state: 'n' as i8,
@@ -351,21 +368,34 @@ mod tests {
                 size: 0,
                 mtime: 15000000,
             },
-        )];
+        )]
+        .iter()
+        .cloned()
+        .collect();
         let mut copymap = HashMap::new();
         copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
         let parents = DirstateParents {
-            p1: b"12345678910111213141",
-            p2: b"00000000000000000000",
+            p1: *b"12345678910111213141",
+            p2: *b"00000000000000000000",
         };
-        let now: i32 = 15000000;
+        let now = Duration::new(15000000, 0);
         let result =
-            pack_dirstate(&dirstate_vec, &copymap, parents, now).unwrap();
+            pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
+                .unwrap();
+
+        let mut new_state_map: StateMap = HashMap::new();
+        let mut new_copy_map: CopyMap = HashMap::new();
+        let new_parents = parse_dirstate(
+            &mut new_state_map,
+            &mut new_copy_map,
+            result.as_slice(),
+        )
+        .unwrap();
 
         assert_eq!(
             (
                 parents,
-                vec![(
+                [(
                     b"f1".to_vec(),
                     DirstateEntry {
                         state: 'n' as i8,
@@ -373,16 +403,13 @@ mod tests {
                         size: 0,
                         mtime: -1
                     }
-                )],
-                copymap
-                    .iter()
-                    .map(|(k, v)| CopyVecEntry {
-                        path: k.as_slice(),
-                        copy_path: v.as_slice()
-                    })
-                    .collect()
+                )]
+                .iter()
+                .cloned()
+                .collect::<StateMap>(),
+                copymap,
             ),
-            parse_dirstate(result.0.as_slice()).unwrap()
+            (new_parents, new_state_map, new_copy_map)
         )
     }
 }

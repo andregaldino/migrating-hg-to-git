@@ -15,7 +15,7 @@ use cpython::{
     ToPyObject,
 };
 
-use crate::dirstate::extract_dirstate_vec;
+use crate::dirstate::extract_dirstate;
 use hg::{DirsIterable, DirsMultiset, DirstateMapError};
 
 py_class!(pub class Dirs |py| {
@@ -32,12 +32,10 @@ py_class!(pub class Dirs |py| {
         if let Some(skip) = skip {
             skip_state = Some(skip.extract::<PyBytes>(py)?.data(py)[0] as i8);
         }
-        let dirs_map;
-
-        if let Ok(map) = map.cast_as::<PyDict>(py) {
-            let dirstate_vec = extract_dirstate_vec(py, &map)?;
-            dirs_map = DirsMultiset::new(
-                DirsIterable::Dirstate(dirstate_vec),
+        let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
+            let dirstate = extract_dirstate(py, &map)?;
+            DirsMultiset::new(
+                DirsIterable::Dirstate(&dirstate),
                 skip_state,
             )
         } else {
@@ -45,13 +43,13 @@ py_class!(pub class Dirs |py| {
                 .iter(py)?
                 .map(|o| Ok(o?.extract::<PyBytes>(py)?.data(py).to_owned()))
                 .collect();
-            dirs_map = DirsMultiset::new(
-                DirsIterable::Manifest(map?),
+            DirsMultiset::new(
+                DirsIterable::Manifest(&map?),
                 skip_state,
             )
-        }
+        };
 
-        Self::create_instance(py, RefCell::new(dirs_map))
+        Self::create_instance(py, RefCell::new(inner))
     }
 
     def addpath(&self, path: PyObject) -> PyResult<PyObject> {

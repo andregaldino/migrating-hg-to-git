@@ -10,9 +10,8 @@ pub mod discovery;
 pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{
     dirs_multiset::DirsMultiset,
-    parsers::{pack_dirstate, parse_dirstate},
-    CopyVec, CopyVecEntry, DirsIterable, DirstateEntry, DirstateParents,
-    DirstateVec,
+    parsers::{pack_dirstate, parse_dirstate, PARENT_SIZE},
+    CopyMap, DirsIterable, DirstateEntry, DirstateParents, StateMap,
 };
 mod filepatterns;
 pub mod utils;
@@ -60,6 +59,7 @@ pub enum DirstateParseError {
     TooLittleData,
     Overflow,
     CorruptedEntry(String),
+    Damaged,
 }
 
 #[derive(Debug, PartialEq)]

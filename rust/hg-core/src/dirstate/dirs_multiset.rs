@@ -28,10 +28,10 @@ impl DirsMultiset {
 
         match iterable {
             DirsIterable::Dirstate(vec) => {
-                for (ref filename, DirstateEntry { state, .. }) in vec {
+                for (filename, DirstateEntry { state, .. }) in vec {
                     // This `if` is optimized out of the loop
                     if let Some(skip) = skip_state {
-                        if skip != state {
+                        if skip != *state {
                             multiset.add_path(filename);
                         }
                     } else {
@@ -40,7 +40,7 @@ impl DirsMultiset {
                 }
             }
             DirsIterable::Manifest(vec) => {
-                for ref filename in vec {
+                for filename in vec {
                     multiset.add_path(filename);
                 }
             }
@@ -108,10 +108,11 @@ impl DirsMultiset {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
     fn test_delete_path_path_not_found() {
-        let mut map = DirsMultiset::new(DirsIterable::Manifest(vec![]), None);
+        let mut map = DirsMultiset::new(DirsIterable::Manifest(&vec![]), None);
         let path = b"doesnotexist/";
         assert_eq!(
             Err(DirstateMapError::PathNotFound(path.to_vec())),
@@ -122,7 +123,7 @@ mod tests {
     #[test]
     fn test_delete_path_empty_path() {
         let mut map =
-            DirsMultiset::new(DirsIterable::Manifest(vec![vec![]]), None);
+            DirsMultiset::new(DirsIterable::Manifest(&vec![vec![]]), None);
         let path = b"";
         assert_eq!(Ok(()), map.delete_path(path));
         assert_eq!(
@@ -162,7 +163,7 @@ mod tests {
 
     #[test]
     fn test_add_path_empty_path() {
-        let mut map = DirsMultiset::new(DirsIterable::Manifest(vec![]), None);
+        let mut map = DirsMultiset::new(DirsIterable::Manifest(&vec![]), None);
         let path = b"";
         map.add_path(path);
 
@@ -171,7 +172,7 @@ mod tests {
 
     #[test]
     fn test_add_path_successful() {
-        let mut map = DirsMultiset::new(DirsIterable::Manifest(vec![]), None);
+        let mut map = DirsMultiset::new(DirsIterable::Manifest(&vec![]), None);
 
         map.add_path(b"a/");
         assert_eq!(1, *map.inner.get(&b"a".to_vec()).unwrap());
@@ -218,13 +219,13 @@ mod tests {
     fn test_dirsmultiset_new_empty() {
         use DirsIterable::{Dirstate, Manifest};
 
-        let new = DirsMultiset::new(Manifest(vec![]), None);
+        let new = DirsMultiset::new(Manifest(&vec![]), None);
         let expected = DirsMultiset {
             inner: HashMap::new(),
         };
         assert_eq!(expected, new);
 
-        let new = DirsMultiset::new(Dirstate(vec![]), None);
+        let new = DirsMultiset::new(Dirstate(&HashMap::new()), None);
         let expected = DirsMultiset {
             inner: HashMap::new(),
         };
@@ -244,7 +245,7 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new = DirsMultiset::new(Manifest(input_vec), None);
+        let new = DirsMultiset::new(Manifest(&input_vec), None);
         let expected = DirsMultiset {
             inner: expected_inner,
         };
@@ -269,7 +270,7 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new = DirsMultiset::new(Dirstate(input_map), None);
+        let new = DirsMultiset::new(Dirstate(&input_map), None);
         let expected = DirsMultiset {
             inner: expected_inner,
         };
@@ -289,7 +290,7 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new = DirsMultiset::new(Manifest(input_vec), Some('n' as i8));
+        let new = DirsMultiset::new(Manifest(&input_vec), Some('n' as i8));
         let expected = DirsMultiset {
             inner: expected_inner,
         };
@@ -318,11 +319,10 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new = DirsMultiset::new(Dirstate(input_map), Some('n' as i8));
+        let new = DirsMultiset::new(Dirstate(&input_map), Some('n' as i8));
         let expected = DirsMultiset {
             inner: expected_inner,
         };
         assert_eq!(expected, new);
     }
-
 }

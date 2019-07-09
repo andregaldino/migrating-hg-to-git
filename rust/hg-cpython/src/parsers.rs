@@ -12,17 +12,18 @@
 //!
 use cpython::{
     exc, PyBytes, PyDict, PyErr, PyInt, PyModule, PyResult, PyTuple, Python,
-    PythonObject, ToPyObject,
+    ToPyObject,
 };
 use hg::{
-    pack_dirstate, parse_dirstate, CopyVecEntry, DirstateEntry,
-    DirstatePackError, DirstateParents, DirstateParseError,
+    pack_dirstate, parse_dirstate, utils::copy_into_array, DirstateEntry,
+    DirstatePackError, DirstateParents, DirstateParseError, PARENT_SIZE,
 };
 use std::collections::HashMap;
 
 use libc::c_char;
 
-use crate::dirstate::{decapsule_make_dirstate_tuple, extract_dirstate_vec};
+use crate::dirstate::{decapsule_make_dirstate_tuple, extract_dirstate};
+use std::time::Duration;
 
 fn parse_dirstate_wrapper(
     py: Python,
@@ -30,12 +31,15 @@ fn parse_dirstate_wrapper(
     copymap: PyDict,
     st: PyBytes,
 ) -> PyResult<PyTuple> {
-    match parse_dirstate(st.data(py)) {
-        Ok((parents, dirstate_vec, copies)) => {
-            for (filename, entry) in dirstate_vec {
+    let mut dirstate_map = HashMap::new();
+    let mut copies = HashMap::new();
+
+    match parse_dirstate(&mut dirstate_map, &mut copies, st.data(py)) {
+        Ok(parents) => {
+            for (filename, entry) in dirstate_map {
                 dmap.set_item(
                     py,
-                    PyBytes::new(py, &filename[..]),
+                    PyBytes::new(py, &filename),
                     decapsule_make_dirstate_tuple(py)?(
                         entry.state as c_char,
                         entry.mode,
@@ -44,15 +48,17 @@ fn parse_dirstate_wrapper(
                     ),
                 )?;
             }
-            for CopyVecEntry { path, copy_path } in copies {
+            for (path, copy_path) in copies {
                 copymap.set_item(
                     py,
-                    PyBytes::new(py, path),
-                    PyBytes::new(py, copy_path),
+                    PyBytes::new(py, &path),
+                    PyBytes::new(py, &copy_path),
                 )?;
             }
-            Ok((PyBytes::new(py, parents.p1), PyBytes::new(py, parents.p2))
-                .to_py_object(py))
+            Ok(
+                (PyBytes::new(py, &parents.p1), PyBytes::new(py, &parents.p2))
+                    .to_py_object(py),
+            )
         }
         Err(e) => Err(PyErr::new::<exc::ValueError, _>(
             py,
@@ -64,6 +70,9 @@ fn parse_dirstate_wrapper(
                     "overflow in dirstate".to_string()
                 }
                 DirstateParseError::CorruptedEntry(e) => e,
+                DirstateParseError::Damaged => {
+                    "dirstate appears to be damaged".to_string()
+                }
             },
         )),
     }
@@ -81,7 +90,7 @@ fn pack_dirstate_wrapper(
     let p2 = pl.get_item(py, 1).extract::<PyBytes>(py)?;
     let p2: &[u8] = p2.data(py);
 
-    let dirstate_vec = extract_dirstate_vec(py, &dmap)?;
+    let mut dirstate_map = extract_dirstate(py, &dmap)?;
 
     let copies: Result<HashMap<Vec<u8>, Vec<u8>>, PyErr> = copymap
         .items(py)
@@ -94,13 +103,23 @@ fn pack_dirstate_wrapper(
         })
         .collect();
 
+    if p1.len() != PARENT_SIZE || p2.len() != PARENT_SIZE {
+        return Err(PyErr::new::<exc::ValueError, _>(
+            py,
+            "expected a 20-byte hash".to_string(),
+        ));
+    }
+
     match pack_dirstate(
-        &dirstate_vec,
+        &mut dirstate_map,
         &copies?,
-        DirstateParents { p1, p2 },
-        now.as_object().extract::<i32>(py)?,
+        DirstateParents {
+            p1: copy_into_array(&p1),
+            p2: copy_into_array(&p2),
+        },
+        Duration::from_secs(now.value(py) as u64),
     ) {
-        Ok((packed, new_dirstate_vec)) => {
+        Ok(packed) => {
             for (
                 filename,
                 DirstateEntry {
@@ -109,7 +128,7 @@ fn pack_dirstate_wrapper(
                     size,
                     mtime,
                 },
-            ) in new_dirstate_vec
+            ) in dirstate_map
             {
                 dmap.set_item(
                     py,
