@@ -460,8 +460,8 @@ def _updatedocstring():
     longest = max(map(len, showview._table.keys()))
     entries = []
     for key in sorted(showview._table.keys()):
-        entries.append(pycompat.sysstr('    %s   %s' % (
-            key.ljust(longest), showview._table[key]._origdoc)))
+        entries.append(r'    %s   %s' % (
+            pycompat.sysstr(key.ljust(longest)), showview._table[key]._origdoc))
 
     cmdtable['show'][0].__doc__ = pycompat.sysstr('%s\n\n%s\n    ') % (
         cmdtable['show'][0].__doc__.rstrip(),

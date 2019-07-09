@@ -64,8 +64,8 @@ class _funcregistrarbase(object):
             raise error.ProgrammingError(msg)
 
         if func.__doc__ and not util.safehasattr(func, '_origdoc'):
-            doc = pycompat.sysbytes(func.__doc__).strip()
-            func._origdoc = doc
+            func._origdoc = func.__doc__.strip()
+            doc = pycompat.sysbytes(func._origdoc)
             func.__doc__ = pycompat.sysstr(self._formatdoc(decl, doc))
 
         self._table[name] = func
