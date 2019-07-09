@@ -3297,6 +3297,14 @@ def clearunfinished(repo):
         if s._clearable and s.isunfinished(repo):
             util.unlink(repo.vfs.join(s._fname))
 
+def getunfinishedstate(repo):
+    ''' Checks for unfinished operations and returns statecheck object
+        for it'''
+    for state in statemod._unfinishedstates:
+        if state.isunfinished(repo):
+            return state
+    return None
+
 def howtocontinue(repo):
     '''Check for an unfinished operation and return the command to finish
     it.

@@ -81,6 +81,10 @@
 
  * `cmdutil.checkunfinished()` now includes detection for merge too.
 
+ * merge abort has been disallowed in case an operation of higher
+   precedence is in progress to avoid cases of partial abort of
+   operations.
+
  * We used to automatically attempt to make extensions compatible with
    Python 3 (by translating their source code while loading it). We no
    longer do that.

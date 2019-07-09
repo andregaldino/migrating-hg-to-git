@@ -847,3 +847,38 @@ Unshelve without .shelve metadata (can happen when upgrading a repository with o
 #endif
 
   $ cd ..
+
+Block merge abort when unshelve in progress(issue6160)
+------------------------------------------------------
+
+  $ hg init a
+  $ cd a
+  $ echo foo > a ; hg commit -qAm "initial commit"
+  $ echo bar > a
+  $ hg shelve
+  shelved as default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo foobar > a
+  $ hg unshelve
+  unshelving change 'default'
+  temporarily committing pending changes (restore with 'hg unshelve --abort')
+  rebasing shelved changes
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
+  [1]
+
+  $ hg log --template '{desc|firstline}  {author}  {date|isodate} \n' -r .
+  pending changes temporary commit  shelve@localhost  1970-01-01 00:00 +0000 
+  $ hg merge --abort
+  abort: cannot abort merge with unshelve in progress
+  (use 'hg unshelve --continue' or 'hg unshelve --abort')
+  [255]
+
+  $ hg unshelve --abort
+  unshelve of 'default' aborted
+
+  $ hg log -G --template '{desc|firstline}  {author}  {date|isodate} \n' -r .
+  @  initial commit  test  1970-01-01 00:00 +0000
+  
+  $ cd ..

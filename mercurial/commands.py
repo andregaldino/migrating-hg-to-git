@@ -3952,6 +3952,10 @@ def merge(ui, repo, node=None, **opts):
     if abort and repo.dirstate.p2() == nullid:
         cmdutil.wrongtooltocontinue(repo, _('merge'))
     if abort:
+        state = cmdutil.getunfinishedstate(repo)
+        if state and state._opname != 'merge':
+            raise error.Abort(_('cannot abort merge with %s in progress') %
+                                (state._opname), hint=state.hint())
         if node:
             raise error.Abort(_("cannot specify a node with --abort"))
         if opts.get('rev'):
