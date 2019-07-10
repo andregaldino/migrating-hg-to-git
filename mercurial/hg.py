@@ -957,7 +957,7 @@ def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None,
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
     if abort:
-        return abortmerge(repo.ui, repo, labels=labels)
+        return abortmerge(repo.ui, repo)
 
     stats = mergemod.update(repo, node, branchmerge=True, force=force,
                             mergeforce=mergeforce, labels=labels)
@@ -969,7 +969,7 @@ def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None,
         repo.ui.status(_("(branch merge, don't forget to commit)\n"))
     return stats.unresolvedcount > 0
 
-def abortmerge(ui, repo, labels=None):
+def abortmerge(ui, repo):
     ms = mergemod.mergestate.read(repo)
     if ms.active():
         # there were conflicts
@@ -980,8 +980,7 @@ def abortmerge(ui, repo, labels=None):
 
     repo.ui.status(_("aborting the merge, updating back to"
                      " %s\n") % node[:12])
-    stats = mergemod.update(repo, node, branchmerge=False, force=True,
-                            labels=labels)
+    stats = mergemod.update(repo, node, branchmerge=False, force=True)
     _showstats(repo, stats)
     return stats.unresolvedcount > 0
 
