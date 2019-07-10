@@ -459,7 +459,7 @@ def overridecalculateupdates(origfn, repo, p1, p2, pas, branchmerge, force,
     lfiles = set()
     for f in actions:
         splitstandin = lfutil.splitstandin(f)
-        if splitstandin in p1:
+        if splitstandin is not None and splitstandin in p1:
             lfiles.add(splitstandin)
         elif lfutil.standin(f) in p1:
             lfiles.add(f)

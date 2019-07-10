@@ -27,14 +27,14 @@ from . import (
     util,
 )
 
-orig_parsers = policy.importmod(r'parsers')
-parsers = policy.importrust(r'parsers', default=orig_parsers)
+parsers = policy.importmod(r'parsers')
+rustmod = policy.importrust(r'dirstate')
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
 _rangemask = 0x7fffffff
 
-dirstatetuple = orig_parsers.dirstatetuple
+dirstatetuple = parsers.dirstatetuple
 
 class repocache(filecache):
     """filecache for files in .hg/"""
@@ -652,7 +652,8 @@ class dirstate(object):
         delaywrite = self._ui.configint('debug', 'dirstate.delaywrite')
         if delaywrite > 0:
             # do we have any files to delay for?
-            for f, e in self._map.iteritems():
+            items = self._map.iteritems()
+            for f, e in items:
                 if e[0] == 'n' and e[3] == now:
                     import time # to avoid useless import
                     # rather than sleep n seconds, sleep until the next
@@ -663,6 +664,12 @@ class dirstate(object):
                     time.sleep(end - clock)
                     now = end # trust our estimate that the end is near now
                     break
+            # since the iterator is potentially not deleted,
+            # delete the iterator to release the reference for the Rust
+            # implementation.
+            # TODO make the Rust implementation behave like Python
+            # since this would not work with a non ref-counting GC.
+            del items
 
         self._map.write(st, now)
         self._lastnormaltime = 0
@@ -1516,3 +1523,186 @@ class dirstatemap(object):
         for name in self._dirs:
             f[normcase(name)] = name
         return f
+
+
+if rustmod is not None:
+    class dirstatemap(object):
+        def __init__(self, ui, opener, root):
+            self._ui = ui
+            self._opener = opener
+            self._root = root
+            self._filename = 'dirstate'
+            self._parents = None
+            self._dirtyparents = False
+
+            # for consistent view between _pl() and _read() invocations
+            self._pendingmode = None
+
+        def addfile(self, *args, **kwargs):
+            return self._rustmap.addfile(*args, **kwargs)
+
+        def removefile(self, *args, **kwargs):
+            return self._rustmap.removefile(*args, **kwargs)
+
+        def dropfile(self, *args, **kwargs):
+            return self._rustmap.dropfile(*args, **kwargs)
+
+        def clearambiguoustimes(self, *args, **kwargs):
+            return self._rustmap.clearambiguoustimes(*args, **kwargs)
+
+        def nonnormalentries(self):
+            return self._rustmap.nonnormalentries()
+
+        def get(self, *args, **kwargs):
+            return self._rustmap.get(*args, **kwargs)
+
+        @propertycache
+        def _rustmap(self):
+            self._rustmap = rustmod.DirstateMap(self._root)
+            self.read()
+            return self._rustmap
+
+        @property
+        def copymap(self):
+            return self._rustmap.copymap()
+
+        def preload(self):
+            self._rustmap
+
+        def clear(self):
+            self._rustmap.clear()
+            self.setparents(nullid, nullid)
+            util.clearcachedproperty(self, "_dirs")
+            util.clearcachedproperty(self, "_alldirs")
+            util.clearcachedproperty(self, "dirfoldmap")
+
+        def items(self):
+            return self._rustmap.items()
+
+        def keys(self):
+            return iter(self._rustmap)
+
+        def __contains__(self, key):
+            return key in self._rustmap
+
+        def __getitem__(self, item):
+            return self._rustmap[item]
+
+        def __len__(self):
+            return len(self._rustmap)
+
+        def __iter__(self):
+            return iter(self._rustmap)
+
+        # forward for python2,3 compat
+        iteritems = items
+
+        def _opendirstatefile(self):
+            fp, mode = txnutil.trypending(self._root, self._opener,
+                                          self._filename)
+            if self._pendingmode is not None and self._pendingmode != mode:
+                fp.close()
+                raise error.Abort(_('working directory state may be '
+                                    'changed parallelly'))
+            self._pendingmode = mode
+            return fp
+
+        def setparents(self, p1, p2):
+            self._rustmap.setparents(p1, p2)
+            self._parents = (p1, p2)
+            self._dirtyparents = True
+
+        def parents(self):
+            if not self._parents:
+                try:
+                    fp = self._opendirstatefile()
+                    st = fp.read(40)
+                    fp.close()
+                except IOError as err:
+                    if err.errno != errno.ENOENT:
+                        raise
+                    # File doesn't exist, so the current state is empty
+                    st = ''
+
+                try:
+                    self._parents = self._rustmap.parents(st)
+                except ValueError:
+                    raise error.Abort(_('working directory state appears '
+                                        'damaged!'))
+
+            return self._parents
+
+        def read(self):
+            # ignore HG_PENDING because identity is used only for writing
+            self.identity = util.filestat.frompath(
+                self._opener.join(self._filename))
+
+            try:
+                fp = self._opendirstatefile()
+                try:
+                    st = fp.read()
+                finally:
+                    fp.close()
+            except IOError as err:
+                if err.errno != errno.ENOENT:
+                    raise
+                return
+            if not st:
+                return
+
+            parse_dirstate = util.nogc(self._rustmap.read)
+            parents = parse_dirstate(st)
+            if parents and not self._dirtyparents:
+                self.setparents(*parents)
+
+        def write(self, st, now):
+            parents = self.parents()
+            st.write(self._rustmap.write(parents[0], parents[1], now))
+            st.close()
+            self._dirtyparents = False
+
+        @propertycache
+        def filefoldmap(self):
+            """Returns a dictionary mapping normalized case paths to their
+            non-normalized versions.
+            """
+            return self._rustmap.filefoldmapasdict()
+
+        def hastrackeddir(self, d):
+            self._dirs # Trigger Python's propertycache
+            return self._rustmap.hastrackeddir(d)
+
+        def hasdir(self, d):
+            self._dirs # Trigger Python's propertycache
+            return self._rustmap.hasdir(d)
+
+        @propertycache
+        def _dirs(self):
+            return self._rustmap.getdirs()
+
+        @propertycache
+        def _alldirs(self):
+            return self._rustmap.getalldirs()
+
+        @propertycache
+        def identity(self):
+            self._rustmap
+            return self.identity
+
+        @property
+        def nonnormalset(self):
+            nonnorm, otherparents = self._rustmap.nonnormalentries()
+            return nonnorm
+
+        @property
+        def otherparentset(self):
+            nonnorm, otherparents = self._rustmap.nonnormalentries()
+            return otherparents
+
+        @propertycache
+        def dirfoldmap(self):
+            f = {}
+            normcase = util.normcase
+            for name in self._dirs:
+                f[normcase(name)] = name
+            return f
