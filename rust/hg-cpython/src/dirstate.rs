@@ -9,8 +9,10 @@
 //! `hg-core` package.
 //!
 //! From Python, this will be seen as `mercurial.rustext.dirstate`
+mod copymap;
 mod dirs_multiset;
-use crate::dirstate::dirs_multiset::Dirs;
+mod dirstate_map;
+use crate::dirstate::{dirs_multiset::Dirs, dirstate_map::DirstateMap};
 use cpython::{
     exc, PyBytes, PyDict, PyErr, PyModule, PyObject, PyResult, PySequence,
     Python,
@@ -94,6 +96,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     m.add(py, "__doc__", "Dirstate - Rust implementation")?;
 
     m.add_class::<Dirs>(py)?;
+    m.add_class::<DirstateMap>(py)?;
 
     let sys = PyModule::import(py, "sys")?;
     let sys_modules: PyDict = sys.get(py, "modules")?.extract(py)?;
