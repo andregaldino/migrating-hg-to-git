@@ -15,7 +15,7 @@ pub use dirstate::{
     DirstateVec,
 };
 mod filepatterns;
-mod utils;
+pub mod utils;
 
 pub use filepatterns::{
     build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
