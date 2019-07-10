@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 pub mod dirs_multiset;
+pub mod dirstate_map;
 pub mod parsers;
 
 #[derive(Debug, PartialEq, Clone)]
