@@ -880,12 +880,10 @@ def dounshelve(ui, repo, *shelved, **opts):
                          'operation')
                 raise error.Abort(msg, hint=hint)
             elif abortf:
-                msg = _('could not read shelved state file, your working copy '
-                        'may be in an unexpected state\nplease update to some '
-                        'commit\n')
-                ui.warn(msg)
                 shelvedstate.clear(repo)
-            return
+                raise error.Abort(_('could not read shelved state file, your '
+                                 'working copy may be in an unexpected state\n'
+                                 'please update to some commit\n'))
 
         if abortf:
             return unshelveabort(ui, repo, state, opts)

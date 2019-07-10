@@ -696,8 +696,10 @@ Unshelve --continue fails with appropriate message if shelvedstate is corrupted
 
 Unshelve --abort works with a corrupted shelvedstate
   $ hg unshelve --abort
-  could not read shelved state file, your working copy may be in an unexpected state
+  abort: could not read shelved state file, your working copy may be in an unexpected state
   please update to some commit
+  
+  [255]
 
 Unshelve --abort fails with appropriate message if there's no unshelve in
 progress
