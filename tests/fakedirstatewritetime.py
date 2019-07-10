@@ -30,6 +30,7 @@ configitem(b'fakedirstatewritetime', b'fakenow',
 )
 
 parsers = policy.importmod(r'parsers')
+rustmod = policy.importrust(r'parsers')
 
 def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
     # execute what original parsers.pack_dirstate should do actually
@@ -57,15 +58,20 @@ def fakewrite(ui, func):
     # 'fakenow' value and 'touch -t YYYYmmddHHMM' argument easy
     fakenow = dateutil.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
 
-    if rustext is not None:
-        orig_module = rustext.dirstate
-        orig_pack_dirstate = rustext.dirstate.pack_dirstate
-    else:
-        orig_module = parsers
-        orig_pack_dirstate = parsers.pack_dirstate
+    if rustmod is not None:
+        # The Rust implementation does not use public parse/pack dirstate
+        # to prevent conversion round-trips
+        orig_dirstatemap_write = dirstate.dirstatemap.write
+        wrapper = lambda self, st, now: orig_dirstatemap_write(self,
+                                                               st,
+                                                               fakenow)
+        dirstate.dirstatemap.write = wrapper
 
     orig_dirstate_getfsnow = dirstate._getfsnow
     wrapper = lambda *args: pack_dirstate(fakenow, orig_pack_dirstate, *args)
+
+    orig_module = parsers
+    orig_pack_dirstate = parsers.pack_dirstate
 
     orig_module.pack_dirstate = wrapper
     dirstate._getfsnow = lambda *args: fakenow
@@ -74,6 +80,8 @@ def fakewrite(ui, func):
     finally:
         orig_module.pack_dirstate = orig_pack_dirstate
         dirstate._getfsnow = orig_dirstate_getfsnow
+        if rustmod is not None:
+            dirstate.dirstatemap.write = orig_dirstatemap_write
 
 def _poststatusfixup(orig, workingctx, status, fixup):
     ui = workingctx.repo().ui

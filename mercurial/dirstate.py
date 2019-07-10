@@ -27,14 +27,14 @@ from . import (
     util,
 )
 
-parsers = policy.importmod(r'parsers')
-dirstatemod = policy.importrust(r'dirstate', default=parsers)
+orig_parsers = policy.importmod(r'parsers')
+parsers = policy.importrust(r'parsers', default=orig_parsers)
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
 _rangemask = 0x7fffffff
 
-dirstatetuple = parsers.dirstatetuple
+dirstatetuple = orig_parsers.dirstatetuple
 
 class repocache(filecache):
     """filecache for files in .hg/"""
@@ -1475,7 +1475,7 @@ class dirstatemap(object):
         # parsing the dirstate.
         #
         # (we cannot decorate the function directly since it is in a C module)
-        parse_dirstate = util.nogc(dirstatemod.parse_dirstate)
+        parse_dirstate = util.nogc(parsers.parse_dirstate)
         p = parse_dirstate(self._map, self.copymap, st)
         if not self._dirtyparents:
             self.setparents(*p)
@@ -1486,8 +1486,8 @@ class dirstatemap(object):
         self.get = self._map.get
 
     def write(self, st, now):
-        st.write(dirstatemod.pack_dirstate(self._map, self.copymap,
-                                           self.parents(), now))
+        st.write(parsers.pack_dirstate(self._map, self.copymap,
+                                       self.parents(), now))
         st.close()
         self._dirtyparents = False
         self.nonnormalset, self.otherparentset = self.nonnormalentries()

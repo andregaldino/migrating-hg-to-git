@@ -29,6 +29,7 @@ mod cindex;
 mod conversion;
 pub mod dagops;
 pub mod dirstate;
+pub mod parsers;
 pub mod discovery;
 pub mod exceptions;
 pub mod filepatterns;
@@ -49,6 +50,11 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
         py,
         "filepatterns",
         filepatterns::init_module(py, &dotted_name)?,
+    )?;
+    m.add(
+        py,
+        "parsers",
+        parsers::init_parsers_module(py, &dotted_name)?,
     )?;
     m.add(py, "GraphError", py.get_type::<exceptions::GraphError>())?;
     m.add(
