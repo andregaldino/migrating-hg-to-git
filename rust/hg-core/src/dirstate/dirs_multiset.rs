@@ -11,6 +11,7 @@
 use std::collections::hash_map::{Entry, Iter};
 use std::collections::HashMap;
 use {DirsIterable, DirstateEntry, DirstateMapError};
+use utils::files;
 
 #[derive(PartialEq, Debug)]
 pub struct DirsMultiset {
@@ -49,40 +50,16 @@ impl DirsMultiset {
         multiset
     }
 
-    /// Returns the slice up to the next directory name from right to left,
-    /// without trailing slash
-    fn find_dir(path: &[u8]) -> &[u8] {
-        let mut path = path;
-        loop {
-            if let Some(new_pos) = path.len().checked_sub(1) {
-                if path[new_pos] == b'/' {
-                    break &path[..new_pos];
-                }
-                path = &path[..new_pos];
-            } else {
-                break &[];
-            }
-        }
-    }
-
     /// Increases the count of deepest directory contained in the path.
     ///
     /// If the directory is not yet in the map, adds its parents.
     pub fn add_path(&mut self, path: &[u8]) {
-        let mut pos = path.len();
-
-        loop {
-            let subpath = Self::find_dir(&path[..pos]);
+        for subpath in files::find_dirs(path) {
             if let Some(val) = self.inner.get_mut(subpath) {
                 *val += 1;
                 break;
             }
             self.inner.insert(subpath.to_owned(), 1);
-
-            pos = subpath.len();
-            if pos == 0 {
-                break;
-            }
         }
     }
 
@@ -95,10 +72,7 @@ impl DirsMultiset {
         &mut self,
         path: &[u8],
     ) -> Result<(), DirstateMapError> {
-        let mut pos = path.len();
-
-        loop {
-            let subpath = Self::find_dir(&path[..pos]);
+        for subpath in files::find_dirs(path) {
             match self.inner.entry(subpath.to_owned()) {
                 Entry::Occupied(mut entry) => {
                     let val = entry.get().clone();
@@ -114,11 +88,6 @@ impl DirsMultiset {
                     ))
                 }
             };
-
-            pos = subpath.len();
-            if pos == 0 {
-                break;
-            }
         }
 
         Ok(())
