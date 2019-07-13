@@ -225,7 +225,9 @@ if sys.version_info[0] >= 3:
 
                 # It changes iteritems/values to items/values as they are not
                 # present in Python 3 world.
-                elif fn in ('iteritems', 'itervalues'):
+                elif (fn in ('iteritems', 'itervalues') and
+                      not (tokens[i - 1].type == token.NAME and
+                           tokens[i - 1].string == 'def')):
                     yield t._replace(string=fn[4:])
                     continue
 
@@ -236,7 +238,7 @@ if sys.version_info[0] >= 3:
     # ``replacetoken`` or any mechanism that changes semantics of module
     # loading is changed. Otherwise cached bytecode may get loaded without
     # the new transformation mechanisms applied.
-    BYTECODEHEADER = b'HG\x00\x0b'
+    BYTECODEHEADER = b'HG\x00\x0c'
 
     class hgloader(importlib.machinery.SourceFileLoader):
         """Custom module loader that transforms source code.

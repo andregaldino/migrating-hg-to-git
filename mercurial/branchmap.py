@@ -218,6 +218,8 @@ class branchcache(object):
             self._verifybranch(k)
             yield k, v
 
+    items = iteritems
+
     def hasbranch(self, label):
         """ checks whether a branch of this name exists or not """
         self._verifybranch(label)
