@@ -2578,7 +2578,7 @@ class localrepository(object):
         return ret
 
     @unfilteredmethod
-    def commitctx(self, ctx, error=False):
+    def commitctx(self, ctx, error=False, origctx=None):
         """Add a new revision to current repository.
         Revision information is passed via the context argument.
 
@@ -2586,6 +2586,12 @@ class localrepository(object):
         modified/added/removed files. On merge, it may be wider than the
         ctx.files() to be committed, since any file nodes derived directly
         from p1 or p2 are excluded from the committed ctx.files().
+
+        origctx is for convert to work around the problem that bug
+        fixes to the files list in changesets change hashes. For
+        convert to be the identity, it can pass an origctx and this
+        function will use the same files list when it makes sense to
+        do so.
         """
 
         p1, p2 = ctx.p1(), ctx.p2()
@@ -2700,6 +2706,9 @@ class localrepository(object):
                 p2copies = p2copies or None
                 filesadded = filesadded or None
                 filesremoved = filesremoved or None
+
+            if origctx and origctx.manifestnode() == mn:
+                files = origctx.files()
 
             # update changelog
             self.ui.note(_("committing changelog\n"))

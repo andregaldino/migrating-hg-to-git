@@ -1656,7 +1656,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
                editor=False, extra=None):
         """Add a new revision to the repository."""
 
-    def commitctx(ctx, error=False):
+    def commitctx(ctx, error=False, origctx=None):
         """Commit a commitctx instance to the repository."""
 
     def destroying():

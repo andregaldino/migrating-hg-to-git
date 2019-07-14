@@ -917,13 +917,13 @@ cases.
   >     raise error.Abort(b'fail after finalization')
   > def reposetup(ui, repo):
   >     class failrepo(repo.__class__):
-  >         def commitctx(self, ctx, error=False):
+  >         def commitctx(self, ctx, error=False, origctx=None):
   >             if self.ui.configbool(b'failafterfinalize', b'fail'):
   >                 # 'sorted()' by ASCII code on category names causes
   >                 # invoking 'fail' after finalization of changelog
   >                 # using "'cl-%i' % id(self)" as category name
   >                 self.currenttransaction().addfinalize(b'zzzzzzzz', fail)
-  >             return super(failrepo, self).commitctx(ctx, error)
+  >             return super(failrepo, self).commitctx(ctx, error, origctx)
   >     repo.__class__ = failrepo
   > EOF
 

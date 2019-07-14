@@ -291,6 +291,9 @@ coreconfigitem('convert', 'hg.clonebranches',
 coreconfigitem('convert', 'hg.ignoreerrors',
     default=False,
 )
+coreconfigitem('convert', 'hg.preserve-hash',
+    default=False,
+)
 coreconfigitem('convert', 'hg.revs',
     default=None,
 )

@@ -161,7 +161,7 @@ def wraprepo(repo):
                                                               **kwargs)
 
         @localrepo.unfilteredmethod
-        def commitctx(self, ctx, error=False):
+        def commitctx(self, ctx, error=False, origctx=None):
             """Add a new revision to current repository.
             Revision information is passed via the context argument.
             """
@@ -179,7 +179,8 @@ def wraprepo(repo):
                         files.append((f, hex(fparent1)))
                 self.fileservice.prefetch(files)
             return super(shallowrepository, self).commitctx(ctx,
-                                                            error=error)
+                                                            error=error,
+                                                            origctx=origctx)
 
         def backgroundprefetch(self, revs, base=None, repack=False, pats=None,
                                opts=None):
