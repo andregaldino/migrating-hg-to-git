@@ -39,7 +39,7 @@ $Env:WindowsSdkDir = "${root}\WinSDK\"
 $Env:PATH = "${root}\VC\Bin;${root}\WinSDK\Bin;$Env:PATH"
 $Env:INCLUDE = "${root}\VC\Include;${root}\WinSDK\Include;$Env:INCLUDE"
 $Env:LIB = "${root}\VC\Lib;${root}\WinSDK\Lib;$Env:LIB"
-$Env:LIBPATH = "${root}\VC\lib;${root}\WinSDK\Lib:$Env:LIBPATH"
+$Env:LIBPATH = "${root}\VC\lib;${root}\WinSDK\Lib;$Env:LIBPATH"
 '''.lstrip()
 
 HG_PURGE = r'''
