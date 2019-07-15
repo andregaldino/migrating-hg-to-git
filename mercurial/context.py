@@ -1592,10 +1592,6 @@ class workingctx(committablectx):
             elif src in p2manifest:
                 p2copies[dst] = src
         return p1copies, p2copies
-    def p1copies(self):
-        return self._copies[0]
-    def p2copies(self):
-        return self._copies[1]
 
     @propertycache
     def _manifest(self):
