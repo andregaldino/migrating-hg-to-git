@@ -181,7 +181,7 @@ Make sure bookmark movement is correct
   starting 4 threads for background file closing (?)
   changed branch on 2 changesets
   updating the branch cache
-  invalid branchheads cache (served): tip differs
+  invalid branch cache (served): tip differs
 
   $ hg glog -r '(.^)::'
   @  9:de1404b45a69 Added e

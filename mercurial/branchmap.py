@@ -121,6 +121,12 @@ def _unknownnode(node):
     """
     raise ValueError(r'node %s does not exist' % pycompat.sysstr(hex(node)))
 
+def _branchcachedesc(repo):
+    if repo.filtername is not None:
+        return 'branch cache (%s)' % repo.filtername
+    else:
+        return 'branch cache'
+
 class branchcache(object):
     """A dict like object that hold branches heads cache.
 
@@ -241,11 +247,9 @@ class branchcache(object):
 
         except Exception as inst:
             if repo.ui.debugflag:
-                msg = 'invalid branchheads cache'
-                if repo.filtername is not None:
-                    msg += ' (%s)' % repo.filtername
-                msg += ': %s\n'
-                repo.ui.debug(msg % pycompat.bytestr(inst))
+                msg = 'invalid %s: %s\n'
+                repo.ui.debug(msg % (_branchcachedesc(repo),
+                                     pycompat.bytestr(inst)))
             bcache = None
 
         finally:
@@ -351,9 +355,8 @@ class branchcache(object):
                         state = 'o'
                     f.write("%s %s %s\n" % (hex(node), state, label))
             f.close()
-            repo.ui.log('branchcache',
-                        'wrote %s branch cache with %d labels and %d nodes\n',
-                        repo.filtername, len(self._entries), nodecount)
+            repo.ui.log('branchcache', 'wrote %s with %d labels and %d nodes\n',
+                        _branchcachedesc(repo), len(self._entries), nodecount)
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
             repo.ui.debug("couldn't write branch cache: %s\n" %
@@ -424,8 +427,8 @@ class branchcache(object):
         self.filteredhash = scmutil.filteredhash(repo, self.tiprev)
 
         duration = util.timer() - starttime
-        repo.ui.log('branchcache', 'updated %s branch cache in %.4f seconds\n',
-                    repo.filtername or b'None', duration)
+        repo.ui.log('branchcache', 'updated %s in %.4f seconds\n',
+                    _branchcachedesc(repo), duration)
 
         self.write(repo)
 

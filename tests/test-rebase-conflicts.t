@@ -324,8 +324,8 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 2 parts total
   updating the branch cache
-  invalid branchheads cache (served): tip differs
-  invalid branchheads cache (served.hidden): tip differs
+  invalid branch cache (served): tip differs
+  invalid branch cache (served.hidden): tip differs
   rebase completed
 
 Test minimization of merge conflicts
