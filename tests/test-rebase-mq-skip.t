@@ -1,3 +1,4 @@
+#testcases continuecommand continueflag
 This emulates the effects of an hg pull --rebase in which the remote repo
 already has one local mq patch
 
@@ -13,6 +14,12 @@ already has one local mq patch
   > tglog = log -G --template "{rev}: {node|short} '{desc}' tags: {tags}\n"
   > EOF
 
+#if continueflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > continue = rebase --continue
+  > EOF
+#endif
 
   $ hg init a
   $ cd a
@@ -155,7 +162,7 @@ already has one local mq patch
   (no more unresolved files)
   continue: hg rebase --continue
 
-  $ hg rebase --continue
+  $ hg continue
   already rebased 1:b4bffa6e4776 "r1" (qbase r1) as 057f55ff8f44
   already rebased 2:c0fd129beb01 "r2" (r2) as 1660ab13ce9a
   already rebased 3:6ff5b8feed8e "r3" (r3) as 1660ab13ce9a

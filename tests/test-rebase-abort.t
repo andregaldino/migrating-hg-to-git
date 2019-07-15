@@ -1,4 +1,5 @@
 #testcases abortcommand abortflag
+#testcases continuecommand continueflag
 
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
@@ -15,6 +16,13 @@
   $ cat >> $HGRCPATH <<EOF
   > [alias]
   > abort = rebase --abort
+  > EOF
+#endif
+
+#if continueflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > continue = rebase --continue
   > EOF
 #endif
 
@@ -162,7 +170,7 @@ earlier than 2.7 by renaming ".hg/rebasestate" temporarily.
   $ hg --config extensions.mq= strip --quiet "destination()"
   $ mv .hg/rebasestate.back .hg/rebasestate
 
-  $ hg rebase --continue
+  $ hg continue
   abort: cannot continue inconsistent rebase
   (use "hg rebase --abort" to clear broken state)
   [255]

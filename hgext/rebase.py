@@ -1928,6 +1928,17 @@ def abortrebase(ui, repo):
         rbsrt = rebaseruntime(repo, ui)
         rbsrt._prepareabortorcontinue(isabort=True)
 
+def continuerebase(ui, repo):
+    with repo.wlock(), repo.lock():
+        rbsrt = rebaseruntime(repo, ui)
+        ms = mergemod.mergestate.read(repo)
+        mergeutil.checkunresolved(ms)
+        retcode = rbsrt._prepareabortorcontinue(isabort=False)
+        if retcode is not None:
+            return retcode
+        rbsrt._performrebase(None)
+        rbsrt._finishrebase()
+
 def summaryhook(ui, repo):
     if not repo.vfs.exists('rebasestate'):
         return
@@ -1956,4 +1967,5 @@ def uisetup(ui):
                      _("specify merge tool for rebase")))
     cmdutil.summaryhooks.add('rebase', summaryhook)
     statemod.addunfinished('rebase', fname='rebasestate', stopflag=True,
-                            continueflag=True, abortfunc=abortrebase)
+                            continueflag=True, abortfunc=abortrebase,
+                            continuefunc=continuerebase)
