@@ -1895,6 +1895,10 @@ help/ shows help topics
         "topic": "commit"
       },
       {
+        "summary": "resumes an interrupted operation (EXPERIMENTAL)",
+        "topic": "continue"
+      },
+      {
         "summary": "diff repository (or selected files)",
         "topic": "diff"
       },

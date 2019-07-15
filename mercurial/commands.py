@@ -1893,6 +1893,32 @@ def config(ui, repo, *values, **opts):
         return 0
     return 1
 
+@command('continue',
+    dryrunopts, helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+    helpbasic=True)
+def continuecmd(ui, repo, **opts):
+    """resumes an interrupted operation (EXPERIMENTAL)
+
+    Finishes a multistep operation like graft, histedit, rebase, merge,
+    and unshelve if they are in an interrupted state.
+
+    use --dry-run/-n to dry run the command.
+    A new operation can be added to this by registering the operation and
+    continue logic in the unfinishedstates list under statemod.
+    """
+    dryrun = opts.get(r'dry_run')
+    contstate = cmdutil.getunfinishedstate(repo)
+    if not contstate:
+        raise error.Abort(_('no operation in progress'))
+    if not contstate.continuefunc:
+        raise error.Abort((_("%s in progress but does not support "
+                             "'hg continue'") % (contstate._opname)),
+                             hint=contstate.continuemsg())
+    if dryrun:
+        ui.status(_('%s in progress, will be resumed\n') % (contstate._opname))
+        return
+    return contstate.continuefunc(ui, repo)
+
 @command('copy|cp',
     [('A', 'after', None, _('record a copy that has already occurred')),
     ('f', 'force', None, _('forcibly copy over an existing managed file')),

@@ -408,6 +408,7 @@ Test short command list with verbose option
                  show changeset information by line for each file
    clone         make a copy of an existing repository
    commit, ci    commit the specified files or all outstanding changes
+   continue      resumes an interrupted operation (EXPERIMENTAL)
    diff          diff repository (or selected files)
    export        dump the header and diffs for one or more changesets
    forget        forget the specified files on the next commit
@@ -2387,6 +2388,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   commit the specified files or all outstanding changes
+  </td></tr>
+  <tr><td>
+  <a href="/help/continue">
+  continue
+  </a>
+  </td><td>
+  resumes an interrupted operation (EXPERIMENTAL)
   </td></tr>
   <tr><td>
   <a href="/help/diff">
