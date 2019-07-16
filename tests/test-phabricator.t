@@ -132,47 +132,22 @@ Commenting when phabsending:
   D1253 - updated - 1acd4b60af38: create comment for phabricator test
 
 Phabreading a DREV with a local:commits time as a string:
-BROKEN: shouldn't error
   $ hg phabread --test-vcr "$VCR/phabread-str-time.json" D1285
-  ** unknown exception encountered, please report by visiting
-  ** https://mercurial-scm.org/wiki/BugTracker
-  ** Python * (glob)
-  ** Mercurial Distributed SCM (version *) (glob)
-  ** Extensions loaded: phabricator
-  Traceback (most recent call last):
-    File "*/install/bin/hg", line *, in <module> (glob)
-      dispatch.run()
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in run (glob)
-      status = dispatch(req)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in dispatch (glob)
-      ret = _runcatch(req) or 0
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _runcatch (glob)
-      return _callcatch(ui, _runcatchfunc)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _callcatch (glob)
-      return scmutil.callcatch(ui, func)
-    File "*/install/lib/python/mercurial/scmutil.py", line *, in callcatch (glob)
-      return func()
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _runcatchfunc (glob)
-      return _dispatch(req)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _dispatch (glob)
-      cmdpats, cmdoptions)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in runcommand (glob)
-      ret = _runcommand(ui, options, cmd, d)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _runcommand (glob)
-      return cmdfunc()
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in <lambda> (glob)
-      d = lambda: util.checksignature(func)(ui, *args, **strcmdopt)
-    File "*/install/lib/python/mercurial/util.py", line *, in check (glob)
-      return func(*args, **kwargs)
-    File "*/install/lib/python/hgext/phabricator.py", line *, in inner (glob)
-      return fn(*args, **kwargs)
-    File "*/install/lib/python/hgext/phabricator.py", line *, in phabread (glob)
-      readpatch(repo, drevs, ui.write)
-    File "*/install/lib/python/hgext/phabricator.py", line *, in readpatch (glob)
-      meta = getdiffmeta(diffs[b'%d' % diffid])
-    File "*/install/lib/python/hgext/phabricator.py", line *, in getdiffmeta (glob)
-      meta[b'date'] = b'%d 0' % commit[b'time']
-  TypeError: %d format: a number is required, not str
-  [1]
+  # HG changeset patch
+  # User test <test>
+  # Date 1562019844 0
+  # Branch default
+  # Node ID da5c8c6bf23a36b6e3af011bc3734460692c23ce
+  # Parent  1f634396406d03e565ed645370e5fecd062cf215
+  test string time
+  
+  Differential Revision: https://phab.mercurial-scm.org/D1285
+  diff --git a/test b/test
+  new file mode 100644
+  --- /dev/null
+  +++ b/test
+  @@ * @@ (glob)
+  +test
+  
 
   $ cd ..

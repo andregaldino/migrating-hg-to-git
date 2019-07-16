@@ -950,7 +950,7 @@ def getdiffmeta(diff):
                 meta[b'user'] = b'%s <%s>' % (commit[b'author'],
                                               commit[b'authorEmail'])
             if b'time' in commit:
-                meta[b'date'] = b'%d 0' % commit[b'time']
+                meta[b'date'] = b'%d 0' % int(commit[b'time'])
             if b'branch' in commit:
                 meta[b'branch'] = commit[b'branch']
             node = commit.get(b'commit', commit.get(b'rev'))
