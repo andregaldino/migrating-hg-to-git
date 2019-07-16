@@ -32,7 +32,7 @@ From the prompt, change to the Mercurial source directory. e.g.
 ``cd c:\src\hg``.
 
 Next, invoke ``build.py`` to produce an Inno installer. You will
-need to supply the path to the Python interpreter to use.:
+need to supply the path to the Python interpreter to use.::
 
    $ python3.exe contrib\packaging\inno\build.py \
        --python c:\python27\python.exe
