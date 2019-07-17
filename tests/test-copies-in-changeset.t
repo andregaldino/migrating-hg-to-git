@@ -140,11 +140,7 @@ copy information on to the filelog
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/dd7bb9581359-a6e6b6d2-amend.hg
   $ hg changesetcopies
   files: j
-  filesadded: 0
-  filesremoved: 
   
-  p1copies: 0\x00a (esc)
-  p2copies: 
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> j
 The entries should be written to extras even if they're empty (so the client

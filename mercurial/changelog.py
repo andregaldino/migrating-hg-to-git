@@ -637,6 +637,9 @@ class changelog(revlog.revlog):
         if extra is None and any(x is not None for x in extrasentries):
             extra = {}
         sortedfiles = sorted(files)
+        if extra is not None:
+            for name in ('p1copies', 'p2copies', 'filesadded', 'filesremoved'):
+                extra.pop(name, None)
         if p1copies is not None:
             extra['p1copies'] = encodecopies(sortedfiles, p1copies)
         if p2copies is not None:
