@@ -6219,6 +6219,7 @@ def unshelve(ui, repo, *shelved, **opts):
 statemod.addunfinished(
     'unshelve', fname='shelvedstate', continueflag=True,
     abortfunc=shelvemod.hgabortunshelve,
+    continuefunc=shelvemod.hgcontinueunshelve,
     cmdmsg=_('unshelve already in progress'),
 )
 

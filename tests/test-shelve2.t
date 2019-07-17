@@ -1,5 +1,6 @@
 #testcases stripbased phasebased
 #testcases abortflag abortcommand
+#testcases continueflag continuecommand
 
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
@@ -24,6 +25,13 @@
   $ cat >> $HGRCPATH <<EOF
   > [alias]
   > abort = unshelve --abort
+  > EOF
+#endif
+
+#if continueflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > continue = unshelve --continue
   > EOF
 #endif
 
@@ -560,7 +568,7 @@ will be preserved.
   $ hg resolve --mark a
   (no more unresolved files)
   continue: hg unshelve --continue
-  $ hg unshelve --continue
+  $ hg continue
   marked working directory as branch test
   unshelve of 'default' complete
   $ cat a
@@ -641,7 +649,13 @@ in previous versions) and running unshelve --continue
   $ hg resolve --mark a
   (no more unresolved files)
   continue: hg unshelve --continue
-  $ hg unshelve --continue
+
+#if continuecommand
+  $ hg continue --dry-run
+  unshelve in progress, will be resumed
+#endif
+
+  $ hg continue
   unshelve of 'default' complete
   $ cat a
   aaabbbccc
@@ -704,7 +718,7 @@ Prepare unshelve with a corrupted shelvedstate
   $ echo somethingsomething > .hg/shelvedstate
 
 Unshelve --continue fails with appropriate message if shelvedstate is corrupted
-  $ hg unshelve --continue
+  $ hg continue
   abort: corrupted shelved state file
   (please run hg unshelve --abort to abort unshelve operation)
   [255]
@@ -751,7 +765,7 @@ Unshelve respects --keep even if user intervention is needed
   $ hg resolve --mark file
   (no more unresolved files)
   continue: hg unshelve --continue
-  $ hg unshelve --continue
+  $ hg continue
   unshelve of 'default' complete
   $ hg shelve --list
   default         (*s ago) * changes to: 1 (glob)
@@ -822,7 +836,7 @@ putting v1 shelvedstate file in place of a created v2
   (no more unresolved files)
   continue: hg unshelve --continue
 mercurial does not crash
-  $ hg unshelve --continue
+  $ hg continue
   unshelve of 'ashelve' complete
 
 #if phasebased

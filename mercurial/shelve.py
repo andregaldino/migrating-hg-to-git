@@ -751,6 +751,12 @@ def unshelvecontinue(ui, repo, state, opts):
         unshelvecleanup(ui, repo, state.name, opts)
         ui.status(_("unshelve of '%s' complete\n") % state.name)
 
+def hgcontinueunshelve(ui, repo):
+    """logic to resume unshelve using 'hg continue'"""
+    with repo.wlock():
+        state = _loadshelvedstate(ui, repo, {'continue' : True})
+        return unshelvecontinue(ui, repo, state, {'keep' : state.keep})
+
 def _commitworkingcopychanges(ui, repo, opts, tmpwctx):
     """Temporarily commit working copy changes before moving unshelve commit"""
     # Store pending changes in a commit and remember added in case a shelve
