@@ -12,7 +12,7 @@ use crate::{
     dirstate::EntryState, utils::files, DirsIterable, DirstateEntry,
     DirstateMapError,
 };
-use std::collections::hash_map::{Entry, Iter};
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 #[derive(PartialEq, Debug)]
@@ -98,12 +98,12 @@ impl DirsMultiset {
         Ok(())
     }
 
-    pub fn contains_key(&self, key: &[u8]) -> bool {
+    pub fn contains(&self, key: &[u8]) -> bool {
         self.inner.contains_key(key)
     }
 
-    pub fn iter(&self) -> Iter<Vec<u8>, u32> {
-        self.inner.iter()
+    pub fn iter(&self) -> impl Iterator<Item = &Vec<u8>> {
+        self.inner.keys()
     }
 
     pub fn len(&self) -> usize {

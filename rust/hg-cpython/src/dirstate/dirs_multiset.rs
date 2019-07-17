@@ -12,7 +12,7 @@ use std::cell::RefCell;
 
 use cpython::{
     exc, ObjectProtocol, PyBytes, PyDict, PyErr, PyObject, PyResult,
-    ToPyObject,
+    PythonObject, ToPyObject,
 };
 
 use crate::dirstate::extract_dirstate;
@@ -93,26 +93,21 @@ py_class!(pub class Dirs |py| {
     // of having it work to continue working on the rest of the module
     // hopefully bypassing Python entirely pretty soon.
     def __iter__(&self) -> PyResult<PyObject> {
-        let dict = PyDict::new(py);
-
-        for (key, value) in self.dirs_map(py).borrow().iter() {
-            dict.set_item(
-                py,
-                PyBytes::new(py, &key[..]),
-                value.to_py_object(py),
-            )?;
-        }
-
-        let locals = PyDict::new(py);
-        locals.set_item(py, "obj", dict)?;
-
-        py.eval("iter(obj)", None, Some(&locals))
+        let dirs = self.dirs_map(py).borrow();
+        let dirs: Vec<_> = dirs
+            .iter()
+            .map(|d| PyBytes::new(py, d))
+            .collect();
+        dirs.to_py_object(py)
+            .into_object()
+            .iter(py)
+            .map(|o| o.into_object())
     }
 
     def __contains__(&self, item: PyObject) -> PyResult<bool> {
         Ok(self
             .dirs_map(py)
             .borrow()
-            .contains_key(item.extract::<PyBytes>(py)?.data(py).as_ref()))
+            .contains(item.extract::<PyBytes>(py)?.data(py).as_ref()))
     }
 });
