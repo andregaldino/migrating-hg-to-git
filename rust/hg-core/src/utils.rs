@@ -18,8 +18,7 @@ pub fn replace_slice<T>(buf: &mut [T], from: &[T], to: &[T])
 where
     T: Clone + PartialEq,
 {
-    assert_eq!(from.len(), to.len());
-    if buf.len() < from.len() {
+    if buf.len() < from.len() || from.len() != to.len() {
         return;
     }
     for i in 0..=buf.len() - from.len() {
