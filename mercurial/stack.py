@@ -22,7 +22,7 @@ def getstack(repo, rev=None):
     if rev is None:
         rev = '.'
 
-    revspec = 'reverse(only(%s) and not public() and not ::merge())'
+    revspec = 'only(%s) and not public() and not ::merge()'
     revset = revsetlang.formatspec(revspec, rev)
     revisions = scmutil.revrange(repo, [revset])
     revisions.sort()
