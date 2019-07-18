@@ -130,6 +130,7 @@ test-convert-svn-sink.t
 test-convert-tagsbranch-topology.t
 test-convert.t
 test-copies-in-changeset.t
+test-copies-unrelated.t
 test-copies.t
 test-copy-move-merge.t
 test-copy.t
