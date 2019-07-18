@@ -119,7 +119,6 @@ We build a server side extension for this purpose
   > import atexit
   > import os
   > import time
-  > import atexit
   > from mercurial import error, extensions, bookmarks
   > 
   > def wait(repo):
