@@ -1695,7 +1695,7 @@ def stack(repo, subset, x):
     parent. (EXPERIMENTAL)
     """
     if x is None:
-        stacks = stackmod.getstack(repo, x)
+        stacks = stackmod.getstack(repo)
     else:
         stacks = smartset.baseset([])
         for revision in getset(repo, fullreposet(repo), x):
