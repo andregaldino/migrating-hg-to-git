@@ -6169,7 +6169,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
           ('c', 'continue', None,
            _('continue an incomplete unshelve operation')),
           ('i', 'interactive', None,
-           _('use interactive mode')),
+           _('use interactive mode (EXPERIMENTAL)')),
           ('k', 'keep', None,
            _('keep shelve after unshelving')),
           ('n', 'name', '',
