@@ -141,8 +141,6 @@ def abort(ui, repo, **opts):
     and unshelve if they are in an unfinished state.
 
     use --dry-run/-n to dry run the command.
-    A new operation can be added to this by registering the operation and
-    abort logic in the unfinishedstates list under statemod.
     """
     dryrun = opts.get(r'dry_run')
     abortstate = cmdutil.getunfinishedstate(repo)
@@ -1903,8 +1901,6 @@ def continuecmd(ui, repo, **opts):
     and unshelve if they are in an interrupted state.
 
     use --dry-run/-n to dry run the command.
-    A new operation can be added to this by registering the operation and
-    continue logic in the unfinishedstates list under statemod.
     """
     dryrun = opts.get(r'dry_run')
     contstate = cmdutil.getunfinishedstate(repo)
