@@ -79,7 +79,7 @@ shelve has a help message
    -n --name NAME           use the given name for the shelved commit
    -p --patch               output patches for changes (provide the names of the
                             shelved changes as positional arguments)
-   -i --interactive         interactive mode, only works while creating a shelve
+   -i --interactive         interactive mode
       --stat                output diffstat-style summary of changes (provide
                             the names of the shelved changes as positional
                             arguments)

@@ -5360,7 +5360,7 @@ def serve(ui, repo, **opts):
            _('output patches for changes (provide the names of the shelved '
              'changes as positional arguments)')),
           ('i', 'interactive', None,
-           _('interactive mode, only works while creating a shelve')),
+           _('interactive mode')),
           ('', 'stat', None,
            _('output diffstat-style summary of changes (provide the names of '
              'the shelved changes as positional arguments)')
