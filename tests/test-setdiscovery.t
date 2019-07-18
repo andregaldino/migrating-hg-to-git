@@ -980,10 +980,12 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   query 3; still undecided: 980, sample size is: 200
   sampling from both directions
   searching: 4 queries
-  query 4; still undecided: 435, sample size is: 210
+  query 4; still undecided: 435, sample size is: 210 (no-py3 !)
+  query 4; still undecided: 430, sample size is: 210 (py3 !)
   sampling from both directions
   searching: 5 queries
-  query 5; still undecided: 185, sample size is: 185
+  query 5; still undecided: 185, sample size is: 185 (no-py3 !)
+  query 5; still undecided: 187, sample size is: 185 (py3 !)
   5 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   heads summary:
