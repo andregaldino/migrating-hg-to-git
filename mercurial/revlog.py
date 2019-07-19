@@ -1355,13 +1355,13 @@ class revlog(object):
         """Find the shortest unambiguous prefix that matches node."""
         def isvalid(prefix):
             try:
-                node = self._partialmatch(prefix)
+                matchednode = self._partialmatch(prefix)
             except error.AmbiguousPrefixLookupError:
                 return False
             except error.WdirUnsupported:
                 # single 'ff...' match
                 return True
-            if node is None:
+            if matchednode is None:
                 raise error.LookupError(node, self.indexfile, _('no node'))
             return True
 
