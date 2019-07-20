@@ -10,7 +10,7 @@ versions.
   $ cat <<'EOF' > changefileslist.py
   > from mercurial import (changelog, extensions)
   > def wrap(orig, clog, manifest, files, *args, **kwargs):
-  >   return orig(clog, manifest, ["a"], *args, **kwargs)
+  >   return orig(clog, manifest, [b"a"], *args, **kwargs)
   > def extsetup(ui):
   >   extensions.wrapfunction(changelog.changelog, 'add', wrap)
   > EOF
