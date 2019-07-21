@@ -92,14 +92,14 @@ Ensure that comments work:
 
   $ touch 'foo#bar' 'quux#'
 #if no-windows
-  $ touch 'baz\#wat'
+  $ touch 'baz\wat'
 #endif
   $ cat <<'EOF' >> .hgignore
   > # full-line comment
   >   # whitespace-only comment line
   > syntax# pattern, no whitespace, then comment
   > a.c  # pattern, then whitespace, then comment
-  > baz\\# # escaped comment character
+  > baz\\# # (escaped) backslash, then comment
   > foo\#b # escaped comment character
   > quux\## escaped comment character at end of name
   > EOF
@@ -108,7 +108,7 @@ Ensure that comments work:
   ? .hgignore
   $ rm 'foo#bar' 'quux#'
 #if no-windows
-  $ rm 'baz\#wat'
+  $ rm 'baz\wat'
 #endif
 
 Check that '^\.' does not ignore the root directory:
