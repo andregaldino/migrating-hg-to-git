@@ -90,10 +90,11 @@ For icasefs, inexact matches also work, except for missing files
 
 Ensure that comments work:
 
-  $ touch 'foo#bar' 'quux#'
+  $ touch 'foo#bar' 'quux#' 'quu0#'
 #if no-windows
-  $ touch 'baz\wat' 'ba0\#wat' 'ba1\\wat'
+  $ touch 'baz\' 'baz\wat' 'ba0\#wat' 'ba1\\' 'ba1\\wat' 'quu0\'
 #endif
+
   $ cat <<'EOF' >> .hgignore
   > # full-line comment
   >   # whitespace-only comment line
@@ -108,9 +109,31 @@ Ensure that comments work:
   $ hg status
   A dir/b.o
   ? .hgignore
-  $ rm 'foo#bar' 'quux#'
+  ? quu0#
+  ? quu0\ (no-windows !)
+
+  $ cat <<'EOF' > .hgignore
+  > .*\.o
+  > syntax: glob
+  > syntax# pattern, no whitespace, then comment
+  > a.c  # pattern, then whitespace, then comment
+  > baz\\#* # (escaped) backslash, then comment
+  > ba0\\\#w* # (escaped) backslash, escaped comment character, then comment
+  > ba1\\\\#* # (escaped) backslashes, then comment
+  > foo\#b* # escaped comment character
+  > quux\## escaped comment character at end of name
+  > quu0[\#]# escaped comment character inside [...]
+  > EOF
+  $ hg status
+  A dir/b.o
+  ? .hgignore
+  ? ba1\\wat (no-windows !)
+  ? baz\wat (no-windows !)
+  ? quu0\ (no-windows !)
+
+  $ rm 'foo#bar' 'quux#' 'quu0#'
 #if no-windows
-  $ rm 'baz\wat' 'ba0\#wat' 'ba1\\wat'
+  $ rm 'baz\' 'baz\wat' 'ba0\#wat' 'ba1\\' 'ba1\\wat' 'quu0\'
 #endif
 
 Check that '^\.' does not ignore the root directory:
