@@ -1,9 +1,9 @@
 use crate::{
-    utils::{files::get_path_from_bytes, replace_slice, SliceExt},
+    utils::{files::get_path_from_bytes, SliceExt},
     LineNumber, PatternError, PatternFileError,
 };
 use lazy_static::lazy_static;
-use regex::bytes::Regex;
+use regex::bytes::{NoExpand, Regex};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -235,6 +235,7 @@ pub fn parse_pattern_file_contents(
     warn: bool,
 ) -> (Vec<PatternTuple>, Vec<WarningTuple>) {
     let comment_regex = Regex::new(r"((?:^|[^\\])(?:\\\\)*)#.*").unwrap();
+    let comment_escape_regex = Regex::new(r"\\#").unwrap();
     let mut inputs: Vec<PatternTuple> = vec![];
     let mut warnings: Vec<WarningTuple> = vec![];
 
@@ -243,12 +244,13 @@ pub fn parse_pattern_file_contents(
     for (line_number, mut line) in lines.split(|c| *c == b'\n').enumerate() {
         let line_number = line_number + 1;
 
+        let line_buf;
         if line.contains(&b'#') {
             if let Some(cap) = comment_regex.captures(line) {
                 line = &line[..cap.get(1).unwrap().end()]
             }
-            let mut line = line.to_owned();
-            replace_slice(&mut line, br"\#", b"#");
+            line_buf = comment_escape_regex.replace_all(line, NoExpand(b"#"));
+            line = &line_buf;
         }
 
         let mut line = line.trim_end();
