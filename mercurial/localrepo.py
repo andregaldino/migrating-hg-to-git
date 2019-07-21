@@ -1893,6 +1893,12 @@ class localrepository(object):
                       **pycompat.strkwargs(tr.hookargs))
         def releasefn(tr, success):
             repo = reporef()
+            if repo is None:
+                # If the repo has been GC'd (and this release function is being
+                # called from transaction.__del__), there's not much we can do,
+                # so just leave the unfinished transaction there and let the
+                # user run `hg recover`.
+                return
             if success:
                 # this should be explicitly invoked here, because
                 # in-memory changes aren't written out at closing
