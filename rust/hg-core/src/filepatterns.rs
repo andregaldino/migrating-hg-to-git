@@ -227,7 +227,7 @@ lazy_static! {
 }
 
 pub type PatternTuple = (Vec<u8>, LineNumber, Vec<u8>);
-type WarningTuple = (String, String);
+type WarningTuple = (Vec<u8>, Vec<u8>);
 
 pub fn parse_pattern_file_contents(
     lines: &[u8],
@@ -263,10 +263,7 @@ pub fn parse_pattern_file_contents(
             if let Some(rel_syntax) = SYNTAXES.get(syntax) {
                 current_syntax = rel_syntax;
             } else if warn {
-                warnings.push((
-                    String::from_utf8_lossy(file_path).to_string(),
-                    String::from_utf8_lossy(syntax).to_string(),
-                ));
+                warnings.push((file_path.to_owned(), syntax.to_owned()));
             }
             continue;
         }

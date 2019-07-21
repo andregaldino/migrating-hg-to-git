@@ -40,15 +40,29 @@ fn read_pattern_file_wrapper(
                 };
                 let results: Vec<(PyBytes, LineNumber, PyBytes)> =
                     patterns.iter().map(itemgetter).collect();
-                return Ok((results, warnings).to_py_object(py));
+                return Ok((results, warnings_to_py_bytes(py, &warnings))
+                    .to_py_object(py));
             }
             let itemgetter = |x: &PatternTuple| PyBytes::new(py, &x.0);
             let results: Vec<PyBytes> =
                 patterns.iter().map(itemgetter).collect();
-            Ok((results, warnings).to_py_object(py))
+            Ok(
+                (results, warnings_to_py_bytes(py, &warnings))
+                    .to_py_object(py),
+            )
         }
         Err(e) => Err(PatternFileError::pynew(py, e)),
     }
+}
+
+fn warnings_to_py_bytes(
+    py: Python,
+    warnings: &[(Vec<u8>, Vec<u8>)],
+) -> Vec<(PyBytes, PyBytes)> {
+    warnings
+        .iter()
+        .map(|(path, syn)| (PyBytes::new(py, path), PyBytes::new(py, syn)))
+        .collect()
 }
 
 fn build_single_regex_wrapper(
