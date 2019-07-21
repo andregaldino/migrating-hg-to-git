@@ -243,7 +243,7 @@ pub fn parse_pattern_file_contents(
     for (line_number, mut line) in lines.split(|c| *c == b'\n').enumerate() {
         let line_number = line_number + 1;
 
-        if line.contains(&('#' as u8)) {
+        if line.contains(&b'#') {
             if let Some(cap) = comment_regex.captures(line) {
                 line = &line[..cap.get(1).unwrap().end()]
             }
