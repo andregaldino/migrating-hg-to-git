@@ -1178,7 +1178,7 @@ Abort unshelve while merging (issue5123)
   $ hg add e
   $ hg ci -m e
   $ hg shelve --patch
-  default         (1s ago)    changes to: b
+  default         (*s ago)    changes to: b (glob)
   
   diff --git a/c b/c
   new file mode 100644
@@ -1226,7 +1226,7 @@ Abort unshelve while merging (issue5123)
   e
 -- shelve should not contain `c` now
   $ hg shelve --patch
-  default         (1s ago)    changes to: b
+  default         (*s ago)    changes to: b (glob)
   
   diff --git a/d b/d
   new file mode 100644
@@ -1300,7 +1300,7 @@ Abort unshelve while merging (issue5123)
   A
   B
   $ hg shelve --patch
-  default         (1s ago)    changes to: add B to foo
+  default         (*s ago)    changes to: add B to foo (glob)
   
   diff --git a/foo b/foo
   --- a/foo
