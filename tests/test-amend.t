@@ -456,7 +456,7 @@ Corner case of amend from issue6157:
 - working copy parent has a change to file `a`
 - working copy has the inverse change
 - we amend the working copy parent for files other than `a`
-hg includes the changes to `a` anyway.
+hg used to include the changes to `a` anyway.
 
   $ hg init 6157; cd 6157
   $ echo a > a; echo b > b; hg commit -qAm_
@@ -466,5 +466,6 @@ hg includes the changes to `a` anyway.
    1 files changed, 1 insertions(+), 1 deletions(-)
   $ echo a > a; echo b2 > b; hg amend -q b
   $ hg diff --stat -c .
+   a |  2 +-
    b |  2 +-
-   1 files changed, 1 insertions(+), 1 deletions(-)
+   2 files changed, 2 insertions(+), 2 deletions(-)
