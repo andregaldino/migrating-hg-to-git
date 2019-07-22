@@ -3173,10 +3173,13 @@ class dirs(object):
     def __init__(self, map, skip=None):
         self._dirs = {}
         addpath = self.addpath
-        if safehasattr(map, 'iteritems') and skip is not None:
+        if isinstance(map, dict) and skip is not None:
             for f, s in map.iteritems():
                 if s[0] != skip:
                     addpath(f)
+        elif skip is not None:
+            raise error.ProgrammingError("skip character is only supported "
+                                         "with a dict source")
         else:
             for f in map:
                 addpath(f)
