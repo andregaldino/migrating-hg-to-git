@@ -1,3 +1,4 @@
+#testcases continuecommand continueflag
 Rebasing using a single transaction
 
   $ cat >> $HGRCPATH <<EOF
@@ -14,6 +15,13 @@ Rebasing using a single transaction
   > [alias]
   > tglog = log -G --template "{rev}: {desc}"
   > EOF
+
+#if continueflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > continue = rebase --continue
+  > EOF
+#endif
 
 Check that a simple rebase works
 
@@ -123,7 +131,7 @@ continued
   $ hg resolve -m
   (no more unresolved files)
   continue: hg rebase --continue
-  $ hg rebase --continue
+  $ hg continue
   already rebased 1:112478962961 "B" (B) as 79bc8f4973ce
   rebasing 3:c26739dbe603 "C" (C)
   rebasing 5:d24bb333861c "D" (D tip)
@@ -177,7 +185,7 @@ rebase can then be continued
   |/
   o  0: A
   
-  $ hg rebase --continue
+  $ hg continue
   rebasing 1:112478962961 "B" (B)
   rebasing 3:26805aba1e60 "C" (C)
   rebasing 5:f585351a92f8 "D" (D tip)

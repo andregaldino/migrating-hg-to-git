@@ -1,4 +1,7 @@
-  $ HGMERGE=true; export HGMERGE
+  $ cat >> "$HGRCPATH" << EOF
+  > [ui]
+  > merge = :merge3
+  > EOF
 
 init
 
@@ -210,8 +213,34 @@ annotate -nlf b
   created new head
   $ hg merge
   merging b
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat b
+  a
+  a
+  a
+  <<<<<<< working copy: 5fbdc1152d97 - test: b2.1
+  b4
+  c
+  b5
+  ||||||| base
+  =======
+  b4
+  b5
+  b6
+  >>>>>>> merge rev:    37ec9f5c3d1f - test: b2
+  $ cat <<EOF > b
+  > a
+  > a
+  > a
+  > b4
+  > c
+  > b5
+  > EOF
+  $ hg resolve --mark -q
+  $ rm b.orig
   $ hg ci -mmergeb -d '3 0'
 
 annotate after merge
@@ -244,15 +273,31 @@ annotate after merge with -l
   > EOF
   $ hg ci -mc -d '3 0'
   created new head
+Work around the pure version not resolving the conflict like native code
+#if pure
   $ hg merge
   merging b
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-  $ cat <<EOF >> b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat <<EOF > b
+  > a
+  > z
+  > a
   > b4
   > c
   > b5
   > EOF
+  $ hg resolve -m b
+  (no more unresolved files)
+  $ rm b.orig
+#else
+  $ hg merge
+  merging b
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+#endif
   $ echo d >> b
   $ hg ci -mmerge2 -d '4 0'
 
@@ -695,8 +740,41 @@ merge
   27: baz:3+->3-
   $ hg merge 25
   merging baz and qux to qux
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
+  warning: conflicts while merging qux! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat qux
+  0
+  0
+  1 baz:1
+  2 baz:2
+  <<<<<<< working copy: 863de62655ef - test: baz:3+->3-
+  3- baz:3
+  4 baz:4
+  ||||||| base
+  3+ baz:3
+  4 baz:4
+  =======
+  3+ baz:3
+  4+ baz:4
+  >>>>>>> merge rev:    cb8df70ae185 - test: qux:4->4+
+  5
+  6
+  7
+  $ cat > qux <<EOF
+  > 0
+  > 0
+  > 1 baz:1
+  > 2 baz:2
+  > 3- baz:3
+  > 4 baz:4
+  > 5
+  > 6
+  > 7
+  > EOF
+  $ hg resolve --mark -q
+  $ rm qux.orig
   $ hg ci -m merge
   $ hg log -T '{rev}: {desc}\n' -r 'followlines(qux, 5:7)'
   16: baz:0
@@ -709,8 +787,40 @@ merge
   $ hg up 25 --quiet
   $ hg merge 27
   merging qux and baz to qux
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
+  warning: conflicts while merging qux! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat qux
+  0
+  0
+  1 baz:1
+  2 baz:2
+  <<<<<<< working copy: cb8df70ae185 - test: qux:4->4+
+  3+ baz:3
+  4+ baz:4
+  ||||||| base
+  3+ baz:3
+  4 baz:4
+  =======
+  3- baz:3
+  4 baz:4
+  >>>>>>> merge rev:    863de62655ef - test: baz:3+->3-
+  5
+  6
+  7
+  $ cat > qux <<EOF
+  > 0
+  > 0
+  > 1 baz:1
+  > 2 baz:2
+  > 3+ baz:3
+  > 4+ baz:4
+  > 5
+  > 6
+  > EOF
+  $ hg resolve --mark -q
+  $ rm qux.orig
   $ hg ci -m 'merge from other side'
   created new head
   $ hg log -T '{rev}: {desc}\n' -r 'followlines(qux, 5:7)'
@@ -1061,6 +1171,19 @@ Issue5360: Deleted chunk in p1 of a merge changeset
   $ echo 3 >> a
   $ hg commit -m 3 -q
   $ hg merge 2 -q
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  [1]
+  $ cat a
+  <<<<<<< working copy: 0a068f0261cf - test: 3
+  1
+  2
+  3
+  ||||||| base
+  1
+  2
+  =======
+  a
+  >>>>>>> merge rev:    9409851bc20a - test: a
   $ cat > a << EOF
   > b
   > 1
@@ -1069,6 +1192,7 @@ Issue5360: Deleted chunk in p1 of a merge changeset
   > a
   > EOF
   $ hg resolve --mark -q
+  $ rm a.orig
   $ hg commit -m m
   $ hg annotate a
   4: b

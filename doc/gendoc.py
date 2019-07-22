@@ -120,7 +120,7 @@ def showdoc(ui):
 
     # print cmds
     ui.write(minirst.section(_(b"Commands")))
-    commandprinter(ui, table, minirst.subsection)
+    commandprinter(ui, table, minirst.subsection, minirst.subsubsection)
 
     # print help topics
     # The config help topic is included in the hgrc.5 man page.
@@ -143,7 +143,8 @@ def showdoc(ui):
         cmdtable = getattr(mod, 'cmdtable', None)
         if cmdtable:
             ui.write(minirst.subsubsection(_(b'Commands')))
-            commandprinter(ui, cmdtable, minirst.subsubsubsection)
+            commandprinter(ui, cmdtable, minirst.subsubsubsection,
+                    minirst.subsubsubsubsection)
 
 def showtopic(ui, topic):
     extrahelptable = [
@@ -177,7 +178,27 @@ def helpprinter(ui, helptable, sectionfunc, include=[], exclude=[]):
         ui.write(doc)
         ui.write(b"\n")
 
-def commandprinter(ui, cmdtable, sectionfunc):
+def commandprinter(ui, cmdtable, sectionfunc, subsectionfunc):
+    """Render restructuredtext describing a list of commands and their
+    documentations, grouped by command category.
+
+    Args:
+      ui: UI object to write the output to
+      cmdtable: a dict that maps a string of the command name plus its aliases
+        (separated with pipes) to a 3-tuple of (the command's function, a list
+        of its option descriptions, and a string summarizing available
+        options). Example, with aliases added for demonstration purposes:
+
+          'phase|alias1|alias2': (
+             <function phase at 0x7f0816b05e60>,
+             [ ('p', 'public', False, 'set changeset phase to public'),
+               ...,
+               ('r', 'rev', [], 'target revision', 'REV')],
+             '[-p|-d|-s] [-f] [-r] [REV...]'
+          )
+      sectionfunc: minirst function to format command category headers
+      subsectionfunc: minirst function to format command headers
+    """
     h = {}
     for c, attr in cmdtable.items():
         f = c.split(b"|")[0]
@@ -185,45 +206,76 @@ def commandprinter(ui, cmdtable, sectionfunc):
         h[f] = c
     cmds = h.keys()
 
-    for f in sorted(cmds):
-        if f.startswith(b"debug"):
-            continue
-        d = get_cmd(h[f], cmdtable)
-        ui.write(sectionfunc(d[b'cmd']))
-        # short description
-        ui.write(d[b'desc'][0])
-        # synopsis
-        ui.write(b"::\n\n")
-        synopsislines = d[b'synopsis'].splitlines()
-        for line in synopsislines:
-            # some commands (such as rebase) have a multi-line
-            # synopsis
-            ui.write(b"   %s\n" % line)
-        ui.write(b'\n')
-        # description
-        ui.write(b"%s\n\n" % d[b'desc'][1])
-        # options
-        opt_output = list(d[b'opts'])
-        if opt_output:
-            opts_len = max([len(line[0]) for line in opt_output])
-            ui.write(_(b"Options:\n\n"))
-            multioccur = False
-            for optstr, desc in opt_output:
-                if desc:
-                    s = b"%-*s  %s" % (opts_len, optstr, desc)
-                else:
-                    s = optstr
-                ui.write(b"%s\n" % s)
-                if optstr.endswith(b"[+]>"):
-                    multioccur = True
-            if multioccur:
-                ui.write(_(b"\n[+] marked option can be specified"
-                           b" multiple times\n"))
-            ui.write(b"\n")
-        # aliases
-        if d[b'aliases']:
-            ui.write(_(b"    aliases: %s\n\n") % b" ".join(d[b'aliases']))
+    def helpcategory(cmd):
+        """Given a canonical command name from `cmds` (above), retrieve its
+        help category. If helpcategory is None, default to CATEGORY_NONE.
+        """
+        fullname = h[cmd]
+        details = cmdtable[fullname]
+        helpcategory = details[0].helpcategory
+        return helpcategory or help.registrar.command.CATEGORY_NONE
 
+    cmdsbycategory = {category: [] for category in help.CATEGORY_ORDER}
+    for cmd in cmds:
+        # If a command category wasn't registered, the command won't get
+        # rendered below, so we raise an AssertionError.
+        if helpcategory(cmd) not in cmdsbycategory:
+            raise AssertionError(
+                "The following command did not register its (category) in "
+                "help.CATEGORY_ORDER: %s (%s)" % (cmd, helpcategory(cmd)))
+        cmdsbycategory[helpcategory(cmd)].append(cmd)
+
+    # Print the help for each command. We present the commands grouped by
+    # category, and we use help.CATEGORY_ORDER as a guide for a helpful order
+    # in which to present the categories.
+    for category in help.CATEGORY_ORDER:
+        categorycmds = cmdsbycategory[category]
+        if not categorycmds:
+            # Skip empty categories
+            continue
+        # Print a section header for the category.
+        # For now, the category header is at the same level as the headers for
+        # the commands in the category; this is fixed in the next commit.
+        ui.write(sectionfunc(help.CATEGORY_NAMES[category]))
+        # Print each command in the category
+        for f in sorted(categorycmds):
+            if f.startswith(b"debug"):
+                continue
+            d = get_cmd(h[f], cmdtable)
+            ui.write(subsectionfunc(d[b'cmd']))
+            # short description
+            ui.write(d[b'desc'][0])
+            # synopsis
+            ui.write(b"::\n\n")
+            synopsislines = d[b'synopsis'].splitlines()
+            for line in synopsislines:
+                # some commands (such as rebase) have a multi-line
+                # synopsis
+                ui.write(b"   %s\n" % line)
+            ui.write(b'\n')
+            # description
+            ui.write(b"%s\n\n" % d[b'desc'][1])
+            # options
+            opt_output = list(d[b'opts'])
+            if opt_output:
+                opts_len = max([len(line[0]) for line in opt_output])
+                ui.write(_(b"Options:\n\n"))
+                multioccur = False
+                for optstr, desc in opt_output:
+                    if desc:
+                        s = b"%-*s  %s" % (opts_len, optstr, desc)
+                    else:
+                        s = optstr
+                    ui.write(b"%s\n" % s)
+                    if optstr.endswith(b"[+]>"):
+                        multioccur = True
+                if multioccur:
+                    ui.write(_(b"\n[+] marked option can be specified"
+                               b" multiple times\n"))
+                ui.write(b"\n")
+            # aliases
+            if d[b'aliases']:
+                ui.write(_(b"    aliases: %s\n\n") % b" ".join(d[b'aliases']))
 
 def allextensionnames():
     return set(extensions.enabled().keys()) | set(extensions.disabled().keys())

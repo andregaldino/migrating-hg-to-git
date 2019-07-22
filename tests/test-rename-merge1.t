@@ -22,7 +22,6 @@
   created new head
 
   $ hg merge -y --debug
-    searching for copies back to rev 1
     unmatched files in local:
      c2
     unmatched files in other:
@@ -76,7 +75,7 @@ This used to trigger a "divergent renames" warning, despite no renames
   $ hg cp b b3
   $ hg cp b b4
   $ hg ci -A -m 'copy b twice'
-  $ hg up eb92d88a9712
+  $ hg up '.^'
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg up
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -88,7 +87,7 @@ We'd rather not warn on divergent renames done in the same changeset (issue2113)
   $ hg cp b b3
   $ hg mv b b4
   $ hg ci -A -m 'divergent renames in same changeset'
-  $ hg up c761c6948de0
+  $ hg up '.^'
   1 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg up
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -168,7 +167,6 @@ Check for issue3074
   $ hg commit -m "deleted file"
   created new head
   $ hg merge --debug
-    searching for copies back to rev 1
     unmatched files in other:
      newfile
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):

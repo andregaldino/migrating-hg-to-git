@@ -1,7 +1,3 @@
-extern crate hg;
-extern crate rand;
-extern crate rand_pcg;
-
 use hg::testing::VecGraph;
 use hg::Revision;
 use hg::*;

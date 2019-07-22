@@ -114,3 +114,41 @@ later.
   |/
   o  0
   
+
+Topological sort can be turned on via config
+
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > log.topo=true
+  > EOF
+
+  $ hg log -G
+  o  8
+  |
+  o  3
+  |
+  o  2
+  |
+  o  1
+  |
+  | o  7
+  | |
+  | o  6
+  | |
+  | o  5
+  | |
+  | o  4
+  |/
+  o  0
+  
+Does not affect non-graph log
+  $ hg log -T '{rev}\n'
+  8
+  7
+  6
+  5
+  4
+  3
+  2
+  1
+  0

@@ -116,16 +116,16 @@ If two process are pushing we want to make sure the following happens:
 We build a server side extension for this purpose
 
   $ cat > bookrace.py << EOF
+  > import atexit
   > import os
   > import time
-  > import atexit
   > from mercurial import error, extensions, bookmarks
   > 
   > def wait(repo):
   >     if not os.path.exists('push-A-started'):
   >         assert repo._currentlock(repo._lockref) is None
   >         assert repo._currentlock(repo._wlockref) is None
-  >         print('setting raced push up')
+  >         repo.ui.status(b'setting raced push up\n')
   >         with open('push-A-started', 'w'):
   >             pass
   >     clock = 300

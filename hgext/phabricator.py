@@ -65,6 +65,7 @@ from mercurial import (
     scmutil,
     smartset,
     tags,
+    templatefilters,
     templateutil,
     url as urlmod,
     util,
@@ -124,8 +125,28 @@ _VCR_FLAGS = [
      )),
 ]
 
-def vcrcommand(name, flags, spec, helpcategory=None):
+def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
     fullflags = flags + _VCR_FLAGS
+    def hgmatcher(r1, r2):
+        if r1.uri != r2.uri or r1.method != r2.method:
+            return False
+        r1params = r1.body.split(b'&')
+        r2params = r2.body.split(b'&')
+        return set(r1params) == set(r2params)
+
+    def sanitiserequest(request):
+        request.body = re.sub(
+            r'cli-[a-z0-9]+',
+            r'cli-hahayouwish',
+            request.body
+        )
+        return request
+
+    def sanitiseresponse(response):
+        if r'set-cookie' in response[r'headers']:
+            del response[r'headers'][r'set-cookie']
+        return response
+
     def decorate(fn):
         def inner(*args, **kwargs):
             cassette = pycompat.fsdecode(kwargs.pop(r'test_vcr', None))
@@ -136,18 +157,22 @@ def vcrcommand(name, flags, spec, helpcategory=None):
                     import vcr.stubs as stubs
                     vcr = vcrmod.VCR(
                         serializer=r'json',
+                        before_record_request=sanitiserequest,
+                        before_record_response=sanitiseresponse,
                         custom_patches=[
                             (urlmod, r'httpconnection',
                              stubs.VCRHTTPConnection),
                             (urlmod, r'httpsconnection',
                              stubs.VCRHTTPSConnection),
                         ])
-                    with vcr.use_cassette(cassette):
+                    vcr.register_matcher(r'hgmatcher', hgmatcher)
+                    with vcr.use_cassette(cassette, match_on=[r'hgmatcher']):
                         return fn(*args, **kwargs)
             return fn(*args, **kwargs)
         inner.__name__ = fn.__name__
         inner.__doc__ = fn.__doc__
-        return command(name, fullflags, spec, helpcategory=helpcategory)(inner)
+        return command(name, fullflags, spec, helpcategory=helpcategory,
+                       optionalrepo=optionalrepo)(inner)
     return decorate
 
 def urlencodenested(params):
@@ -174,24 +199,24 @@ def urlencodenested(params):
     process(b'', params)
     return util.urlreq.urlencode(flatparams)
 
-def readurltoken(repo):
+def readurltoken(ui):
     """return conduit url, token and make sure they exist
 
     Currently read from [auth] config section. In the future, it might
     make sense to read from .arcconfig and .arcrc as well.
     """
-    url = repo.ui.config(b'phabricator', b'url')
+    url = ui.config(b'phabricator', b'url')
     if not url:
         raise error.Abort(_(b'config %s.%s is required')
                           % (b'phabricator', b'url'))
 
-    res = httpconnectionmod.readauthforuri(repo.ui, url, util.url(url).user)
+    res = httpconnectionmod.readauthforuri(ui, url, util.url(url).user)
     token = None
 
     if res:
         group, auth = res
 
-        repo.ui.debug(b"using auth.%s.* for authentication\n" % group)
+        ui.debug(b"using auth.%s.* for authentication\n" % group)
 
         token = auth.get(b'phabtoken')
 
@@ -201,15 +226,15 @@ def readurltoken(repo):
 
     return url, token
 
-def callconduit(repo, name, params):
+def callconduit(ui, name, params):
     """call Conduit API, params is a dict. return json.loads result, or None"""
-    host, token = readurltoken(repo)
+    host, token = readurltoken(ui)
     url, authinfo = util.url(b'/'.join([host, b'api', name])).authinfo()
-    repo.ui.debug(b'Conduit Call: %s %s\n' % (url, pycompat.byterepr(params)))
+    ui.debug(b'Conduit Call: %s %s\n' % (url, pycompat.byterepr(params)))
     params = params.copy()
     params[b'api.token'] = token
     data = urlencodenested(params)
-    curlcmd = repo.ui.config(b'phabricator', b'curlcmd')
+    curlcmd = ui.config(b'phabricator', b'curlcmd')
     if curlcmd:
         sin, sout = procutil.popen2(b'%s -d @- %s'
                                     % (curlcmd, procutil.shellquote(url)))
@@ -217,11 +242,11 @@ def callconduit(repo, name, params):
         sin.close()
         body = sout.read()
     else:
-        urlopener = urlmod.opener(repo.ui, authinfo)
+        urlopener = urlmod.opener(ui, authinfo)
         request = util.urlreq.request(pycompat.strurl(url), data=data)
         with contextlib.closing(urlopener.open(request)) as rsp:
             body = rsp.read()
-    repo.ui.debug(b'Conduit Response: %s\n' % body)
+    ui.debug(b'Conduit Response: %s\n' % body)
     parsed = pycompat.rapply(
         lambda x: encoding.unitolocal(x) if isinstance(x, pycompat.unicode)
         else x,
@@ -233,7 +258,7 @@ def callconduit(repo, name, params):
         raise error.Abort(msg)
     return parsed[b'result']
 
-@vcrcommand(b'debugcallconduit', [], _(b'METHOD'))
+@vcrcommand(b'debugcallconduit', [], _(b'METHOD'), optionalrepo=True)
 def debugcallconduit(ui, repo, name):
     """call Conduit API
 
@@ -250,7 +275,7 @@ def debugcallconduit(ui, repo, name):
     # json.dumps only accepts unicode strings
     result = pycompat.rapply(lambda x:
         encoding.unifromlocal(x) if isinstance(x, bytes) else x,
-        callconduit(repo, name, params)
+        callconduit(ui, name, params)
     )
     s = json.dumps(result, sort_keys=True, indent=2, separators=(u',', u': '))
     ui.write(b'%s\n' % encoding.unitolocal(s))
@@ -264,7 +289,7 @@ def getrepophid(repo):
     callsign = repo.ui.config(b'phabricator', b'callsign')
     if not callsign:
         return None
-    query = callconduit(repo, b'diffusion.repository.search',
+    query = callconduit(repo.ui, b'diffusion.repository.search',
                         {b'constraints': {b'callsigns': [callsign]}})
     if len(query[b'data']) == 0:
         return None
@@ -320,7 +345,7 @@ def getoldnodedrevmap(repo, nodelist):
     # Phabricator, and expect precursors overlap with it.
     if toconfirm:
         drevs = [drev for force, precs, drev in toconfirm.values()]
-        alldiffs = callconduit(unfi, b'differential.querydiffs',
+        alldiffs = callconduit(unfi.ui, b'differential.querydiffs',
                                {b'revisionIDs': drevs})
         getnode = lambda d: bin(
             getdiffmeta(d).get(b'node', b'')) or None
@@ -370,7 +395,7 @@ def creatediff(ctx):
     params = {b'diff': getdiff(ctx, mdiff.diffopts(git=True, context=32767))}
     if repophid:
         params[b'repositoryPHID'] = repophid
-    diff = callconduit(repo, b'differential.createrawdiff', params)
+    diff = callconduit(repo.ui, b'differential.createrawdiff', params)
     if not diff:
         raise error.Abort(_(b'cannot create diff for %s') % ctx)
     return diff
@@ -380,35 +405,39 @@ def writediffproperties(ctx, diff):
     params = {
         b'diff_id': diff[b'id'],
         b'name': b'hg:meta',
-        b'data': json.dumps({
-            u'user': encoding.unifromlocal(ctx.user()),
-            u'date': u'{:.0f} {}'.format(*ctx.date()),
-            u'node': encoding.unifromlocal(ctx.hex()),
-            u'parent': encoding.unifromlocal(ctx.p1().hex()),
+        b'data': templatefilters.json({
+            b'user': ctx.user(),
+            b'date': b'%d %d' % ctx.date(),
+            b'branch': ctx.branch(),
+            b'node': ctx.hex(),
+            b'parent': ctx.p1().hex(),
         }),
     }
-    callconduit(ctx.repo(), b'differential.setdiffproperty', params)
+    callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
 
     params = {
         b'diff_id': diff[b'id'],
         b'name': b'local:commits',
-        b'data': json.dumps({
-            encoding.unifromlocal(ctx.hex()): {
-                u'author': encoding.unifromlocal(stringutil.person(ctx.user())),
-                u'authorEmail': encoding.unifromlocal(
-                    stringutil.email(ctx.user())),
-                u'time': u'{:.0f}'.format(ctx.date()[0]),
+        b'data': templatefilters.json({
+            ctx.hex(): {
+                b'author': stringutil.person(ctx.user()),
+                b'authorEmail': stringutil.email(ctx.user()),
+                b'time': int(ctx.date()[0]),
+                b'commit': ctx.hex(),
+                b'parents': [ctx.p1().hex()],
+                b'branch': ctx.branch(),
             },
         }),
     }
-    callconduit(ctx.repo(), b'differential.setdiffproperty', params)
+    callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
 
-def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
-                               olddiff=None, actions=None):
+def createdifferentialrevision(ctx, revid=None, parentrevphid=None,
+                               oldnode=None, olddiff=None, actions=None,
+                               comment=None):
     """create or update a Differential Revision
 
     If revid is None, create a new Differential Revision, otherwise update
-    revid. If parentrevid is not None, set it as a dependency.
+    revid. If parentrevphid is not None, set it as a dependency.
 
     If oldnode is not None, check if the patch content (without commit message
     and metadata) has changed before creating another diff.
@@ -427,6 +456,8 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
     if neednewdiff:
         diff = creatediff(ctx)
         transactions.append({b'type': b'update', b'value': diff[b'phid']})
+        if comment:
+            transactions.append({b'type': b'comment', b'value': comment})
     else:
         # Even if we don't need to upload a new diff because the patch content
         # does not change. We might still need to update its metadata so
@@ -435,21 +466,17 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
         diff = olddiff
     writediffproperties(ctx, diff)
 
-    # Use a temporary summary to set dependency. There might be better ways but
-    # I cannot find them for now. But do not do that if we are updating an
-    # existing revision (revid is not None) since that introduces visible
-    # churns (someone edited "Summary" twice) on the web page.
-    if parentrevid and revid is None:
-        summary = b'Depends on D%d' % parentrevid
-        transactions += [{b'type': b'summary', b'value': summary},
-                         {b'type': b'summary', b'value': b' '}]
+    # Set the parent Revision every time, so commit re-ordering is picked-up
+    if parentrevphid:
+        transactions.append({b'type': b'parents.set',
+                             b'value': [parentrevphid]})
 
     if actions:
         transactions += actions
 
     # Parse commit message and update related fields.
     desc = ctx.description()
-    info = callconduit(repo, b'differential.parsecommitmessage',
+    info = callconduit(repo.ui, b'differential.parsecommitmessage',
                        {b'corpus': desc})
     for k, v in info[b'fields'].items():
         if k in [b'title', b'summary', b'testPlan']:
@@ -460,7 +487,7 @@ def createdifferentialrevision(ctx, revid=None, parentrevid=None, oldnode=None,
         # Update an existing Differential Revision
         params[b'objectIdentifier'] = revid
 
-    revision = callconduit(repo, b'differential.revision.edit', params)
+    revision = callconduit(repo.ui, b'differential.revision.edit', params)
     if not revision:
         raise error.Abort(_(b'cannot create revision for %s') % ctx)
 
@@ -470,7 +497,7 @@ def userphids(repo, names):
     """convert user names to PHIDs"""
     names = [name.lower() for name in names]
     query = {b'constraints': {b'usernames': names}}
-    result = callconduit(repo, b'user.search', query)
+    result = callconduit(repo.ui, b'user.search', query)
     # username not found is not an error of the API. So check if we have missed
     # some names here.
     data = result[b'data']
@@ -485,6 +512,9 @@ def userphids(repo, names):
          [(b'r', b'rev', [], _(b'revisions to send'), _(b'REV')),
           (b'', b'amend', True, _(b'update commit messages')),
           (b'', b'reviewer', [], _(b'specify reviewers')),
+          (b'', b'blocker', [], _(b'specify blocking reviewers')),
+          (b'm', b'comment', b'',
+           _(b'add a comment to Revisions with new/updated Diffs')),
           (b'', b'confirm', None, _(b'ask for confirmation before sending'))],
          _(b'REV [OPTIONS]'),
          helpcategory=command.CATEGORY_IMPORT_EXPORT)
@@ -536,16 +566,23 @@ def phabsend(ui, repo, *revs, **opts):
 
     actions = []
     reviewers = opts.get(b'reviewer', [])
+    blockers = opts.get(b'blocker', [])
+    phids = []
     if reviewers:
-        phids = userphids(repo, reviewers)
+        phids.extend(userphids(repo, reviewers))
+    if blockers:
+        phids.extend(map(
+            lambda phid: b'blocking(%s)' % phid, userphids(repo, blockers)
+        ))
+    if phids:
         actions.append({b'type': b'reviewers.add', b'value': phids})
 
     drevids = [] # [int]
     diffmap = {} # {newnode: diff}
 
-    # Send patches one by one so we know their Differential Revision IDs and
+    # Send patches one by one so we know their Differential Revision PHIDs and
     # can provide dependency relationship
-    lastrevid = None
+    lastrevphid = None
     for rev in revs:
         ui.debug(b'sending rev %d\n' % rev)
         ctx = repo[rev]
@@ -555,9 +592,11 @@ def phabsend(ui, repo, *revs, **opts):
         if oldnode != ctx.node() or opts.get(b'amend'):
             # Create or update Differential Revision
             revision, diff = createdifferentialrevision(
-                ctx, revid, lastrevid, oldnode, olddiff, actions)
+                ctx, revid, lastrevphid, oldnode, olddiff, actions,
+                opts.get(b'comment'))
             diffmap[ctx.node()] = diff
             newrevid = int(revision[b'object'][b'id'])
+            newrevphid = revision[b'object'][b'phid']
             if revid:
                 action = b'updated'
             else:
@@ -571,8 +610,9 @@ def phabsend(ui, repo, *revs, **opts):
                 tags.tag(repo, tagname, ctx.node(), message=None, user=None,
                          date=None, local=True)
         else:
-            # Nothing changed. But still set "newrevid" so the next revision
-            # could depend on this one.
+            # Nothing changed. But still set "newrevphid" so the next revision
+            # could depend on this one and "newrevid" for the summary line.
+            newrevphid = querydrev(repo, str(revid))[0][b'phid']
             newrevid = revid
             action = b'skipped'
 
@@ -587,12 +627,12 @@ def phabsend(ui, repo, *revs, **opts):
         ui.write(_(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc,
                                              desc))
         drevids.append(newrevid)
-        lastrevid = newrevid
+        lastrevphid = newrevphid
 
     # Update commit messages and remove tags
     if opts.get(b'amend'):
         unfi = repo.unfiltered()
-        drevs = callconduit(repo, b'differential.query', {b'ids': drevids})
+        drevs = callconduit(ui, b'differential.query', {b'ids': drevids})
         with repo.wlock(), repo.lock(), repo.transaction(b'phabsend'):
             wnode = unfi[b'.'].node()
             mapping = {} # {oldnode: [newnode]}
@@ -632,10 +672,11 @@ def phabsend(ui, repo, *revs, **opts):
 # Map from "hg:meta" keys to header understood by "hg import". The order is
 # consistent with "hg export" output.
 _metanamemap = util.sortdict([(b'user', b'User'), (b'date', b'Date'),
-                              (b'node', b'Node ID'), (b'parent', b'Parent ')])
+                              (b'branch', b'Branch'), (b'node', b'Node ID'),
+                              (b'parent', b'Parent ')])
 
 def _confirmbeforesend(repo, revs, oldmap):
-    url, token = readurltoken(repo)
+    url, token = readurltoken(repo.ui)
     ui = repo.ui
     for rev in revs:
         ctx = repo[rev]
@@ -777,7 +818,7 @@ def querydrev(repo, spec):
         key = (params.get(b'ids') or params.get(b'phids') or [None])[0]
         if key in prefetched:
             return prefetched[key]
-        drevs = callconduit(repo, b'differential.query', params)
+        drevs = callconduit(repo.ui, b'differential.query', params)
         # Fill prefetched with the result
         for drev in drevs:
             prefetched[drev[b'phid']] = drev
@@ -901,16 +942,31 @@ def getdiffmeta(diff):
     """
     props = diff.get(b'properties') or {}
     meta = props.get(b'hg:meta')
-    if not meta and props.get(b'local:commits'):
-        commit = sorted(props[b'local:commits'].values())[0]
-        meta = {
-            b'date': b'%d 0' % commit[b'time'],
-            b'node': commit[b'rev'],
-            b'user': b'%s <%s>' % (commit[b'author'], commit[b'authorEmail']),
-        }
-        if len(commit.get(b'parents', ())) >= 1:
-            meta[b'parent'] = commit[b'parents'][0]
-    return meta or {}
+    if not meta:
+        if props.get(b'local:commits'):
+            commit = sorted(props[b'local:commits'].values())[0]
+            meta = {}
+            if b'author' in commit and b'authorEmail' in commit:
+                meta[b'user'] = b'%s <%s>' % (commit[b'author'],
+                                              commit[b'authorEmail'])
+            if b'time' in commit:
+                meta[b'date'] = b'%d 0' % int(commit[b'time'])
+            if b'branch' in commit:
+                meta[b'branch'] = commit[b'branch']
+            node = commit.get(b'commit', commit.get(b'rev'))
+            if node:
+                meta[b'node'] = node
+            if len(commit.get(b'parents', ())) >= 1:
+                meta[b'parent'] = commit[b'parents'][0]
+        else:
+            meta = {}
+    if b'date' not in meta and b'dateCreated' in diff:
+        meta[b'date'] = b'%s 0' % diff[b'dateCreated']
+    if b'branch' not in meta and diff.get(b'branch'):
+        meta[b'branch'] = diff[b'branch']
+    if b'parent' not in meta and diff.get(b'sourceControlBaseRevision'):
+        meta[b'parent'] = diff[b'sourceControlBaseRevision']
+    return meta
 
 def readpatch(repo, drevs, write):
     """generate plain-text patch readable by 'hg import'
@@ -920,14 +976,14 @@ def readpatch(repo, drevs, write):
     """
     # Prefetch hg:meta property for all diffs
     diffids = sorted(set(max(int(v) for v in drev[b'diffs']) for drev in drevs))
-    diffs = callconduit(repo, b'differential.querydiffs', {b'ids': diffids})
+    diffs = callconduit(repo.ui, b'differential.querydiffs', {b'ids': diffids})
 
     # Generate patch for each drev
     for drev in drevs:
         repo.ui.note(_(b'reading D%s\n') % drev[b'id'])
 
         diffid = max(int(v) for v in drev[b'diffs'])
-        body = callconduit(repo, b'differential.getrawdiff',
+        body = callconduit(repo.ui, b'differential.getrawdiff',
                            {b'diffID': diffid})
         desc = getdescfromdrev(drev)
         header = b'# HG changeset patch\n'
@@ -1001,7 +1057,7 @@ def phabupdate(ui, repo, spec, **opts):
         if actions:
             params = {b'objectIdentifier': drev[b'phid'],
                       b'transactions': actions}
-            callconduit(repo, b'differential.revision.edit', params)
+            callconduit(ui, b'differential.revision.edit', params)
 
 templatekeyword = registrar.templatekeyword()
 

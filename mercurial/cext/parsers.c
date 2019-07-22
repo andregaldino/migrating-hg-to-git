@@ -667,10 +667,11 @@ void dirs_module_init(PyObject *mod);
 void manifest_module_init(PyObject *mod);
 void revlog_module_init(PyObject *mod);
 
-static const int version = 12;
+static const int version = 13;
 
 static void module_init(PyObject *mod)
 {
+	PyObject *capsule = NULL;
 	PyModule_AddIntConstant(mod, "version", version);
 
 	/* This module constant has two purposes.  First, it lets us unit test
@@ -686,6 +687,12 @@ static void module_init(PyObject *mod)
 	dirs_module_init(mod);
 	manifest_module_init(mod);
 	revlog_module_init(mod);
+
+	capsule = PyCapsule_New(
+	    make_dirstate_tuple,
+	    "mercurial.cext.parsers.make_dirstate_tuple_CAPI", NULL);
+	if (capsule != NULL)
+		PyModule_AddObject(mod, "make_dirstate_tuple_CAPI", capsule);
 
 	if (PyType_Ready(&dirstateTupleType) < 0) {
 		return;

@@ -22,9 +22,13 @@ from . import (
     util,
 )
 
-def verify(repo):
+VERIFY_DEFAULT = 0
+VERIFY_FULL = 1
+
+def verify(repo, level=None):
     with repo.lock():
-        return verifier(repo).verify()
+        v = verifier(repo, level)
+        return v.verify()
 
 def _normpath(f):
     # under hg < 2.4, convert didn't sanitize paths properly, so a
@@ -34,10 +38,13 @@ def _normpath(f):
     return f
 
 class verifier(object):
-    def __init__(self, repo):
+    def __init__(self, repo, level=None):
         self.repo = repo.unfiltered()
         self.ui = repo.ui
         self.match = repo.narrowmatch()
+        if level is None:
+            level = VERIFY_DEFAULT
+        self._level = level
         self.badrevs = set()
         self.errors = 0
         self.warnings = 0
@@ -90,9 +97,9 @@ class verifier(object):
 
         d = obj.checksize()
         if d[0]:
-            self.err(None, _("data length off by %d bytes") % d[0], name)
+            self._err(None, _("data length off by %d bytes") % d[0], name)
         if d[1]:
-            self.err(None, _("index contains %d extra bytes") % d[1], name)
+            self._err(None, _("index contains %d extra bytes") % d[1], name)
 
         if obj.version != revlog.REVLOGV0:
             if not self.revlogv1:
@@ -330,6 +337,16 @@ class verifier(object):
                         filenodes.setdefault(fullpath, {}).setdefault(fn, lr)
             except Exception as inst:
                 self._exc(lr, _("reading delta %s") % short(n), inst, label)
+            if self._level >= VERIFY_FULL:
+                try:
+                    # Various issues can affect manifest. So we read each full
+                    # text from storage. This triggers the checks from the core
+                    # code (eg: hash verification, filename are ordered, etc.)
+                    mfdelta = mfl.get(dir, n).read()
+                except Exception as inst:
+                    self._exc(lr, _("reading full manifest %s") % short(n),
+                              inst, label)
+
         if not dir:
             progress.complete()
 

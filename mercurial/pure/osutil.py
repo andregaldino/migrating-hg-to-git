@@ -5,7 +5,7 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import ctypes
 import ctypes.util
@@ -149,7 +149,7 @@ if not pycompat.iswindows:
             cmsg.cmsg_type != _SCM_RIGHTS):
             return []
         rfds = ctypes.cast(cmsg.cmsg_data, ctypes.POINTER(ctypes.c_int))
-        rfdscount = ((cmsg.cmsg_len - _cmsghdr.cmsg_data.offset) /
+        rfdscount = ((cmsg.cmsg_len - _cmsghdr.cmsg_data.offset) //
                      ctypes.sizeof(ctypes.c_int))
         return [rfds[i] for i in pycompat.xrange(rfdscount)]
 

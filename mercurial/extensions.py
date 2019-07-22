@@ -43,7 +43,8 @@ _builtin = {
     'progress',
     'interhg',
     'inotify',
-    'hgcia'
+    'hgcia',
+    'shelve',
 }
 
 def extensions(ui=None):
@@ -221,14 +222,7 @@ def _runextsetup(name, ui):
     extsetup = getattr(_extensions[name], 'extsetup', None)
     if extsetup:
         try:
-            try:
-                extsetup(ui)
-            except TypeError:
-                if pycompat.getargspec(extsetup).args:
-                    raise
-                ui.deprecwarn("extsetup for '%s' must take a ui argument"
-                              % name, "4.9")
-                extsetup() # old extsetup with no ui argument
+            extsetup(ui)
         except Exception as inst:
             ui.traceback(force=True)
             msg = stringutil.forcebytestr(inst)

@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import bisect
+import io
 import os
 import struct
 
@@ -246,7 +247,7 @@ def getlastnode(path):
     hsh = None
     try:
         with open(path, 'rb') as f:
-            f.seek(-_hshlen, 2)
+            f.seek(-_hshlen, io.SEEK_END)
             if f.tell() > len(revmap.HEADER):
                 hsh = f.read(_hshlen)
     except IOError:

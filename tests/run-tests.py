@@ -282,7 +282,16 @@ def Popen4(cmd, wd, timeout, env=None):
 
     return p
 
-PYTHON = _bytespath(sys.executable.replace('\\', '/'))
+if sys.executable:
+    sysexecutable = sys.executable
+elif os.environ.get('PYTHONEXECUTABLE'):
+    sysexecutable = os.environ['PYTHONEXECUTABLE']
+elif os.environ.get('PYTHON'):
+    sysexecutable = os.environ['PYTHON']
+else:
+    raise AssertionError('Could not find Python interpreter')
+
+PYTHON = _bytespath(sysexecutable.replace('\\', '/'))
 IMPL_PATH = b'PYTHONPATH'
 if 'java' in sys.platform:
     IMPL_PATH = b'JYTHONPATH'
@@ -1094,7 +1103,7 @@ class Test(unittest.TestCase):
         env["HGRCPATH"] = _strpath(os.path.join(self._threadtmp, b'.hgrc'))
         env["DAEMON_PIDS"] = _strpath(os.path.join(self._threadtmp,
                                                    b'daemon.pids'))
-        env["HGEDITOR"] = ('"' + sys.executable + '"'
+        env["HGEDITOR"] = ('"' + sysexecutable + '"'
                            + ' -c "import sys; sys.exit(0)"')
         env["HGUSER"]   = "test"
         env["HGENCODING"] = "ascii"
@@ -1465,6 +1474,12 @@ class TTest(Test):
             script.append(b'alias pwd="pwd -W"\n')
 
         if hgcatapult and hgcatapult != os.devnull:
+            if PYTHON3:
+                hgcatapult = hgcatapult.encode('utf8')
+                cataname = self.name.encode('utf8')
+            else:
+                cataname = self.name
+
             # Kludge: use a while loop to keep the pipe from getting
             # closed by our echo commands. The still-running file gets
             # reaped at the end of the script, which causes the while
@@ -1481,9 +1496,9 @@ class TTest(Test):
                 b'HGCATAPULTSESSION=%(session)s ; export HGCATAPULTSESSION\n'
                 b'echo START %(session)s %(name)s >> %(catapult)s\n'
                 % {
-                    'name': self.name,
-                    'session': session,
-                    'catapult': hgcatapult,
+                    b'name': cataname,
+                    b'session': session,
+                    b'catapult': hgcatapult,
                 }
             )
 
@@ -2349,7 +2364,7 @@ class TextTestRunner(unittest.TextTestRunner):
             withhg = self._runner.options.with_hg
             if withhg:
                 opts += ' --with-hg=%s ' % shellquote(_strpath(withhg))
-            rtc = '%s %s %s %s' % (sys.executable, sys.argv[0], opts,
+            rtc = '%s %s %s %s' % (sysexecutable, sys.argv[0], opts,
                                    test)
             data = pread(bisectcmd + ['--command', rtc])
             m = re.search(
@@ -2913,7 +2928,7 @@ class TestRunner(object):
 
                 result = runner.run(suite)
 
-            if result.failures:
+            if result.failures or result.errors:
                 failed = True
 
             result.onEnd()
@@ -3003,25 +3018,25 @@ class TestRunner(object):
         # Administrator rights.
         if getattr(os, 'symlink', None) and os.name != 'nt':
             vlog("# Making python executable in test path a symlink to '%s'" %
-                 sys.executable)
+                 sysexecutable)
             mypython = os.path.join(self._tmpbindir, pyexename)
             try:
-                if os.readlink(mypython) == sys.executable:
+                if os.readlink(mypython) == sysexecutable:
                     return
                 os.unlink(mypython)
             except OSError as err:
                 if err.errno != errno.ENOENT:
                     raise
-            if self._findprogram(pyexename) != sys.executable:
+            if self._findprogram(pyexename) != sysexecutable:
                 try:
-                    os.symlink(sys.executable, mypython)
+                    os.symlink(sysexecutable, mypython)
                     self._createdfiles.append(mypython)
                 except OSError as err:
                     # child processes may race, which is harmless
                     if err.errno != errno.EEXIST:
                         raise
         else:
-            exedir, exename = os.path.split(sys.executable)
+            exedir, exename = os.path.split(sysexecutable)
             vlog("# Modifying search path to find %s as %s in '%s'" %
                  (exename, pyexename, exedir))
             path = os.environ['PATH'].split(os.pathsep)
@@ -3048,7 +3063,7 @@ class TestRunner(object):
 
         # Run installer in hg root
         script = os.path.realpath(sys.argv[0])
-        exe = sys.executable
+        exe = sysexecutable
         if PYTHON3:
             compiler = _bytespath(compiler)
             script = _bytespath(script)
@@ -3183,7 +3198,7 @@ class TestRunner(object):
         assert os.path.dirname(self._bindir) == self._installdir
         assert self._hgroot, 'must be called after _installhg()'
         cmd = (b'"%(make)s" clean install PREFIX="%(prefix)s"'
-               % {b'make': 'make',  # TODO: switch by option or environment?
+               % {b'make': b'make',  # TODO: switch by option or environment?
                   b'prefix': self._installdir})
         cwd = os.path.join(self._hgroot, b'contrib', b'chg')
         vlog("# Running", cmd)

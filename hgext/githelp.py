@@ -192,12 +192,15 @@ def am(ui, repo, *args, **kwargs):
 def apply(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('p', 'p', int, ''),
+        ('', 'directory', '', ''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
     cmd = Command('import --no-commit')
     if (opts.get('p')):
         cmd['-p'] = opts.get('p')
+    if opts.get('directory'):
+        cmd['--prefix'] = opts.get('directory')
     cmd.extend(args)
 
     ui.status((bytes(cmd)), "\n")
@@ -681,6 +684,7 @@ def mergetool(ui, repo, *args, **kwargs):
 def mv(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('f', 'force', None, ''),
+        ('n', 'dry-run', None, ''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
@@ -689,6 +693,8 @@ def mv(ui, repo, *args, **kwargs):
 
     if opts.get('force'):
         cmd['-f'] = None
+    if opts.get('dry_run'):
+        cmd['-n'] = None
 
     ui.status((bytes(cmd)), "\n")
 
@@ -917,6 +923,7 @@ def show(ui, repo, *args, **kwargs):
 
 def stash(ui, repo, *args, **kwargs):
     cmdoptions = [
+        ('p', 'patch', None, ''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
@@ -925,6 +932,17 @@ def stash(ui, repo, *args, **kwargs):
 
     if action == 'list':
         cmd['-l'] = None
+        if opts.get('patch'):
+            cmd['-p'] = None
+    elif action == 'show':
+        if opts.get('patch'):
+            cmd['-p'] = None
+        else:
+            cmd['--stat'] = None
+        if len(args) > 1:
+            cmd.append(args[1])
+    elif action == 'clear':
+        cmd['--cleanup'] = None
     elif action == 'drop':
         cmd['-d'] = None
         if len(args) > 1:
@@ -937,10 +955,9 @@ def stash(ui, repo, *args, **kwargs):
             cmd.append(args[1])
         if action == 'apply':
             cmd['--keep'] = None
-    elif (action == 'branch' or action == 'show' or action == 'clear'
-        or action == 'create'):
+    elif action == 'branch' or action == 'create':
         ui.status(_("note: Mercurial doesn't have equivalents to the "
-                    "git stash branch, show, clear, or create actions\n\n"))
+                    "git stash branch or create actions\n\n"))
         return
     else:
         if len(args) > 0:

@@ -679,6 +679,31 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
             # if chain already have too much data, skip base
             if deltas_limit < chainsize:
                 continue
+            if sparse and revlog.upperboundcomp is not None:
+                maxcomp = revlog.upperboundcomp
+                basenotsnap = (p1, p2, nullrev)
+                if rev not in basenotsnap and revlog.issnapshot(rev):
+                    snapshotdepth = revlog.snapshotdepth(rev)
+                    # If text is significantly larger than the base, we can
+                    # expect the resulting delta to be proportional to the size
+                    # difference
+                    revsize = revlog.rawsize(rev)
+                    rawsizedistance = max(textlen - revsize, 0)
+                    # use an estimate of the compression upper bound.
+                    lowestrealisticdeltalen = rawsizedistance // maxcomp
+
+                    # check the absolute constraint on the delta size
+                    snapshotlimit = textlen >> snapshotdepth
+                    if snapshotlimit < lowestrealisticdeltalen:
+                        # delta lower bound is larger than accepted upper bound
+                        continue
+
+                    # check the relative constraint on the delta size
+                    revlength = revlog.length(rev)
+                    if revlength < lowestrealisticdeltalen:
+                        # delta probable lower bound is larger than target base
+                        continue
+
             group.append(rev)
         if group:
             # XXX: in the sparse revlog case, group can become large,
@@ -907,6 +932,21 @@ class deltacomputer(object):
 
     def _builddeltainfo(self, revinfo, base, fh):
         # can we use the cached delta?
+        revlog = self.revlog
+        chainbase = revlog.chainbase(base)
+        if revlog._generaldelta:
+            deltabase = base
+        else:
+            deltabase = chainbase
+        snapshotdepth = None
+        if revlog._sparserevlog and deltabase == nullrev:
+            snapshotdepth = 0
+        elif revlog._sparserevlog and revlog.issnapshot(deltabase):
+            # A delta chain should always be one full snapshot,
+            # zero or more semi-snapshots, and zero or more deltas
+            p1, p2 = revlog.rev(revinfo.p1), revlog.rev(revinfo.p2)
+            if deltabase not in (p1, p2) and revlog.issnapshot(deltabase):
+                snapshotdepth = len(revlog._deltachain(deltabase)[0])
         delta = None
         if revinfo.cachedelta:
             cachebase, cachediff = revinfo.cachedelta
@@ -920,30 +960,21 @@ class deltacomputer(object):
                 delta = revinfo.cachedelta[1]
         if delta is None:
             delta = self._builddeltadiff(base, revinfo, fh)
-        revlog = self.revlog
+        # snapshotdept need to be neither None nor 0 level snapshot
+        if revlog.upperboundcomp is not None and snapshotdepth:
+            lowestrealisticdeltalen = len(delta) // revlog.upperboundcomp
+            snapshotlimit = revinfo.textlen >> snapshotdepth
+            if snapshotlimit < lowestrealisticdeltalen:
+                return None
+            if revlog.length(base) < lowestrealisticdeltalen:
+                return None
         header, data = revlog.compress(delta)
         deltalen = len(header) + len(data)
-        chainbase = revlog.chainbase(base)
         offset = revlog.end(len(revlog) - 1)
         dist = deltalen + offset - revlog.start(chainbase)
-        if revlog._generaldelta:
-            deltabase = base
-        else:
-            deltabase = chainbase
         chainlen, compresseddeltalen = revlog._chaininfo(base)
         chainlen += 1
         compresseddeltalen += deltalen
-
-        revlog = self.revlog
-        snapshotdepth = None
-        if deltabase == nullrev:
-            snapshotdepth = 0
-        elif revlog._sparserevlog and revlog.issnapshot(deltabase):
-            # A delta chain should always be one full snapshot,
-            # zero or more semi-snapshots, and zero or more deltas
-            p1, p2 = revlog.rev(revinfo.p1), revlog.rev(revinfo.p2)
-            if deltabase not in (p1, p2) and revlog.issnapshot(deltabase):
-                snapshotdepth = len(revlog._deltachain(deltabase)[0])
 
         return _deltainfo(dist, deltalen, (header, data), deltabase,
                           chainbase, chainlen, compresseddeltalen,
@@ -1002,8 +1033,9 @@ class deltacomputer(object):
                 nominateddeltas.append(deltainfo)
             for candidaterev in candidaterevs:
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
-                if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
-                    nominateddeltas.append(candidatedelta)
+                if candidatedelta is not None:
+                    if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
+                        nominateddeltas.append(candidatedelta)
             if nominateddeltas:
                 deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
             if deltainfo is not None:

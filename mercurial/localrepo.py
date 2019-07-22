@@ -128,8 +128,7 @@ class mixedrepostorecache(_basefilecache):
         # scmutil.filecache only uses the path for passing back into our
         # join(), so we can safely pass a list of paths and locations
         super(mixedrepostorecache, self).__init__(*pathsandlocations)
-        for path, location in pathsandlocations:
-            _cachedfiles.update(pathsandlocations)
+        _cachedfiles.update(pathsandlocations)
 
     def join(self, obj, fnameandlocation):
         fname, location = fnameandlocation
@@ -910,6 +909,7 @@ class localrepository(object):
         'treemanifest',
         REVLOGV2_REQUIREMENT,
         SPARSEREVLOG_REQUIREMENT,
+        bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
         'store',
@@ -1069,6 +1069,8 @@ class localrepository(object):
         # Signature to cached matcher instance.
         self._sparsematchercache = {}
 
+        self._extrafilterid = repoview.extrafilter(ui)
+
     def _getvfsward(self, origfunc):
         """build a ward for self.vfs"""
         rref = weakref.ref(self)
@@ -1216,11 +1218,14 @@ class localrepository(object):
 
         In other word, there is always only one level of `repoview` "filtering".
         """
+        if self._extrafilterid is not None and '%' not in name:
+            name = name + '%'  + self._extrafilterid
+
         cls = repoview.newtype(self.unfiltered().__class__)
         return cls(self, name, visibilityexceptions)
 
     @mixedrepostorecache(('bookmarks', 'plain'), ('bookmarks.current', 'plain'),
-                         ('00changelog.i', ''))
+                         ('bookmarks', ''), ('00changelog.i', ''))
     def _bookmarks(self):
         return bookmarks.bmstore(self)
 
@@ -1982,7 +1987,7 @@ class localrepository(object):
                 (self.vfs, 'journal.dirstate'),
                 (self.vfs, 'journal.branch'),
                 (self.vfs, 'journal.desc'),
-                (self.vfs, 'journal.bookmarks'),
+                (bookmarks.bookmarksvfs(self), 'journal.bookmarks'),
                 (self.svfs, 'journal.phaseroots'))
 
     def undofiles(self):
@@ -1997,8 +2002,9 @@ class localrepository(object):
                           encoding.fromlocal(self.dirstate.branch()))
         self.vfs.write("journal.desc",
                           "%d\n%s\n" % (len(self), desc))
-        self.vfs.write("journal.bookmarks",
-                          self.vfs.tryread("bookmarks"))
+        bookmarksvfs = bookmarks.bookmarksvfs(self)
+        bookmarksvfs.write("journal.bookmarks",
+                           bookmarksvfs.tryread("bookmarks"))
         self.svfs.write("journal.phaseroots",
                            self.svfs.tryread("phaseroots"))
 
@@ -2068,8 +2074,9 @@ class localrepository(object):
         vfsmap = {'plain': self.vfs, '': self.svfs}
         transaction.rollback(self.svfs, vfsmap, 'undo', ui.warn,
                              checkambigfiles=_cachedfiles)
-        if self.vfs.exists('undo.bookmarks'):
-            self.vfs.rename('undo.bookmarks', 'bookmarks', checkambig=True)
+        bookmarksvfs = bookmarks.bookmarksvfs(self)
+        if bookmarksvfs.exists('undo.bookmarks'):
+            bookmarksvfs.rename('undo.bookmarks', 'bookmarks', checkambig=True)
         if self.svfs.exists('undo.phaseroots'):
             self.svfs.rename('undo.phaseroots', 'phaseroots', checkambig=True)
         self.invalidate()
@@ -2152,6 +2159,8 @@ class localrepository(object):
             for ctx in self['.'].parents():
                 ctx.manifest()  # accessing the manifest is enough
 
+            # accessing fnode cache warms the cache
+            tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
             # accessing tags warm the cache
             self.tags()
             self.filtered('served').tags()
@@ -2362,7 +2371,10 @@ class localrepository(object):
             node = fctx.filenode()
             if node in [fparent1, fparent2]:
                 self.ui.debug('reusing %s filelog entry\n' % fname)
-                if manifest1.flags(fname) != fctx.flags():
+                if ((fparent1 != nullid and
+                     manifest1.flags(fname) != fctx.flags()) or
+                    (fparent2 != nullid and
+                     manifest2.flags(fname) != fctx.flags())):
                     changelist.append(fname)
                 return node
 
@@ -2556,17 +2568,17 @@ class localrepository(object):
                         _('note: commit message saved in %s\n') % msgfn)
                 raise
 
-        def commithook(node=hex(ret), parent1=hookp1, parent2=hookp2):
+        def commithook():
             # hack for command that use a temporary commit (eg: histedit)
             # temporary commit got stripped before hook release
             if self.changelog.hasnode(ret):
-                self.hook("commit", node=node, parent1=parent1,
-                          parent2=parent2)
+                self.hook("commit", node=hex(ret), parent1=hookp1,
+                          parent2=hookp2)
         self._afterlock(commithook)
         return ret
 
     @unfilteredmethod
-    def commitctx(self, ctx, error=False):
+    def commitctx(self, ctx, error=False, origctx=None):
         """Add a new revision to current repository.
         Revision information is passed via the context argument.
 
@@ -2574,6 +2586,12 @@ class localrepository(object):
         modified/added/removed files. On merge, it may be wider than the
         ctx.files() to be committed, since any file nodes derived directly
         from p1 or p2 are excluded from the committed ctx.files().
+
+        origctx is for convert to work around the problem that bug
+        fixes to the files list in changesets change hashes. For
+        convert to be the identity, it can pass an origctx and this
+        function will use the same files list when it makes sense to
+        do so.
         """
 
         p1, p2 = ctx.p1(), ctx.p2()
@@ -2581,10 +2599,13 @@ class localrepository(object):
 
         writecopiesto = self.ui.config('experimental', 'copies.write-to')
         writefilecopymeta = writecopiesto != 'changeset-only'
+        writechangesetcopy = (writecopiesto in
+                              ('changeset-only', 'compatibility'))
         p1copies, p2copies = None, None
-        if writecopiesto in ('changeset-only', 'compatibility'):
+        if writechangesetcopy:
             p1copies = ctx.p1copies()
             p2copies = ctx.p2copies()
+        filesadded, filesremoved = None, None
         with self.lock(), self.transaction("commit") as tr:
             trp = weakref.proxy(tr)
 
@@ -2593,6 +2614,9 @@ class localrepository(object):
                 self.ui.debug('reusing known manifest\n')
                 mn = ctx.manifestnode()
                 files = ctx.files()
+                if writechangesetcopy:
+                    filesadded = ctx.filesadded()
+                    filesremoved = ctx.filesremoved()
             elif ctx.files():
                 m1ctx = p1.manifestctx()
                 m2ctx = p2.manifestctx()
@@ -2633,10 +2657,51 @@ class localrepository(object):
                         raise
 
                 # update manifest
-                removed = [f for f in sorted(removed) if f in m1 or f in m2]
-                drop = [f for f in removed if f in m]
+                removed = [f for f in removed if f in m1 or f in m2]
+                drop = sorted([f for f in removed if f in m])
                 for f in drop:
                     del m[f]
+                if p2.rev() != nullrev:
+                    @util.cachefunc
+                    def mas():
+                        p1n = p1.node()
+                        p2n = p2.node()
+                        cahs = self.changelog.commonancestorsheads(p1n, p2n)
+                        if not cahs:
+                            cahs = [nullrev]
+                        return [self[r].manifest() for r in cahs]
+                    def deletionfromparent(f):
+                        # When a file is removed relative to p1 in a merge, this
+                        # function determines whether the absence is due to a
+                        # deletion from a parent, or whether the merge commit
+                        # itself deletes the file. We decide this by doing a
+                        # simplified three way merge of the manifest entry for
+                        # the file. There are two ways we decide the merge
+                        # itself didn't delete a file:
+                        # - neither parent (nor the merge) contain the file
+                        # - exactly one parent contains the file, and that
+                        #   parent has the same filelog entry as the merge
+                        #   ancestor (or all of them if there two). In other
+                        #   words, that parent left the file unchanged while the
+                        #   other one deleted it.
+                        # One way to think about this is that deleting a file is
+                        # similar to emptying it, so the list of changed files
+                        # should be similar either way. The computation
+                        # described above is not done directly in _filecommit
+                        # when creating the list of changed files, however
+                        # it does something very similar by comparing filelog
+                        # nodes.
+                        if f in m1:
+                            return (f not in m2
+                                    and all(f in ma and ma.find(f) == m1.find(f)
+                                            for ma in mas()))
+                        elif f in m2:
+                            return all(f in ma and ma.find(f) == m2.find(f)
+                                       for ma in mas())
+                        else:
+                            return True
+                    removed = [f for f in removed if not deletionfromparent(f)]
+
                 files = changed + removed
                 md = None
                 if not files:
@@ -2659,8 +2724,13 @@ class localrepository(object):
                     mn = mctx.write(trp, linkrev,
                                     p1.manifestnode(), p2.manifestnode(),
                                     added, drop, match=self.narrowmatch())
+
+                    if writechangesetcopy:
+                        filesadded = [f for f in changed
+                                      if not (f in m1 or f in m2)]
+                        filesremoved = removed
                 else:
-                    self.ui.debug('reusing manifest form p1 (listed files '
+                    self.ui.debug('reusing manifest from p1 (listed files '
                                   'actually unchanged)\n')
                     mn = p1.manifestnode()
             else:
@@ -2668,13 +2738,26 @@ class localrepository(object):
                 mn = p1.manifestnode()
                 files = []
 
+            if writecopiesto == 'changeset-only':
+                # If writing only to changeset extras, use None to indicate that
+                # no entry should be written. If writing to both, write an empty
+                # entry to prevent the reader from falling back to reading
+                # filelogs.
+                p1copies = p1copies or None
+                p2copies = p2copies or None
+                filesadded = filesadded or None
+                filesremoved = filesremoved or None
+
+            if origctx and origctx.manifestnode() == mn:
+                files = origctx.files()
+
             # update changelog
             self.ui.note(_("committing changelog\n"))
             self.changelog.delayupdate(tr)
             n = self.changelog.add(mn, files, ctx.description(),
                                    trp, p1.node(), p2.node(),
                                    user, ctx.date(), ctx.extra().copy(),
-                                   p1copies, p2copies)
+                                   p1copies, p2copies, filesadded, filesremoved)
             xp1, xp2 = p1.hex(), p2 and p2.hex() or ''
             self.hook('pretxncommit', throw=True, node=hex(n), parent1=xp1,
                       parent2=xp2)
@@ -3012,6 +3095,9 @@ def newreporequirements(ui, createopts):
 
     if createopts.get('lfs'):
         requirements.add('lfs')
+
+    if ui.configbool('format', 'bookmarks-in-store'):
+        requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
 
     return requirements
 

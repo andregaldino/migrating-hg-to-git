@@ -32,6 +32,8 @@ import importlib.machinery
 import importlib.util
 import sys
 
+from . import tracing
+
 _deactivated = False
 
 class _lazyloaderex(importlib.util.LazyLoader):
@@ -40,10 +42,11 @@ class _lazyloaderex(importlib.util.LazyLoader):
     """
     def exec_module(self, module):
         """Make the module load lazily."""
-        if _deactivated or module.__name__ in ignores:
-            self.loader.exec_module(module)
-        else:
-            super().exec_module(module)
+        with tracing.log('demandimport %s', module):
+            if _deactivated or module.__name__ in ignores:
+                self.loader.exec_module(module)
+            else:
+                super().exec_module(module)
 
 # This is 3.6+ because with Python 3.5 it isn't possible to lazily load
 # extensions. See the discussion in https://bugs.python.org/issue26186 for more.

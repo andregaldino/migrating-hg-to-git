@@ -8,9 +8,9 @@
 //! Rust versions of generic DAG ancestors algorithms for Mercurial
 
 use super::{Graph, GraphError, Revision, NULL_REVISION};
+use crate::dagops;
 use std::cmp::max;
 use std::collections::{BinaryHeap, HashSet};
-use crate::dagops;
 
 /// Iterator over the ancestors of a given list of revisions
 /// This is a generic type, defined and implemented for any Graph, so that

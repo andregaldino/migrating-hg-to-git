@@ -52,6 +52,9 @@ generatorset = smartset.generatorset
 spanset = smartset.spanset
 fullreposet = smartset.fullreposet
 
+# revisions not included in all(), but populated if specified
+_virtualrevs = (node.nullrev, node.wdirrev)
+
 # Constants for ordering requirement, used in getset():
 #
 # If 'define', any nested functions and operations MAY change the ordering of
@@ -120,8 +123,7 @@ def stringset(repo, subset, x, order):
     if not x:
         raise error.ParseError(_("empty string is not a valid revision"))
     x = scmutil.intrev(scmutil.revsymbol(repo, x))
-    if (x in subset
-        or x == node.nullrev and isinstance(subset, fullreposet)):
+    if x in subset or x in _virtualrevs and isinstance(subset, fullreposet):
         return baseset([x])
     return baseset()
 
@@ -1359,8 +1361,13 @@ def merge(repo, subset, x):
     # i18n: "merge" is a keyword
     getargs(x, 0, 0, _("merge takes no arguments"))
     cl = repo.changelog
-    return subset.filter(lambda r: cl.parentrevs(r)[1] != -1,
-                         condrepr='<merge>')
+    nullrev = node.nullrev
+    def ismerge(r):
+        try:
+            return cl.parentrevs(r)[1] != nullrev
+        except error.WdirUnsupported:
+            return bool(repo[r].p2())
+    return subset.filter(ismerge, condrepr='<merge>')
 
 @predicate('branchpoint()', safe=True)
 def branchpoint(repo, subset, x):
@@ -1847,7 +1854,7 @@ def rev(repo, subset, x):
     except (TypeError, ValueError):
         # i18n: "rev" is a keyword
         raise error.ParseError(_("rev expects a number"))
-    if l not in repo.changelog and l not in (node.nullrev, node.wdirrev):
+    if l not in repo.changelog and l not in _virtualrevs:
         return baseset()
     return subset & baseset([l])
 
@@ -2262,7 +2269,7 @@ def _orderedlist(repo, subset, x):
             if r in seen:
                 continue
             if (r in subset
-                or r == node.nullrev and isinstance(subset, fullreposet)):
+                or r in _virtualrevs and isinstance(subset, fullreposet)):
                 ls.append(r)
             seen.add(r)
     return baseset(ls)

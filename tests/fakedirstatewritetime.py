@@ -16,6 +16,12 @@ from mercurial import (
 )
 from mercurial.utils import dateutil
 
+try:
+    from mercurial import rustext
+    rustext.__name__  # force actual import (see hgdemandimport)
+except ImportError:
+    rustext = None
+
 configtable = {}
 configitem = registrar.configitem(configtable)
 
@@ -51,16 +57,22 @@ def fakewrite(ui, func):
     # 'fakenow' value and 'touch -t YYYYmmddHHMM' argument easy
     fakenow = dateutil.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
 
-    orig_pack_dirstate = parsers.pack_dirstate
+    if rustext is not None:
+        orig_module = rustext.dirstate
+        orig_pack_dirstate = rustext.dirstate.pack_dirstate
+    else:
+        orig_module = parsers
+        orig_pack_dirstate = parsers.pack_dirstate
+
     orig_dirstate_getfsnow = dirstate._getfsnow
     wrapper = lambda *args: pack_dirstate(fakenow, orig_pack_dirstate, *args)
 
-    parsers.pack_dirstate = wrapper
+    orig_module.pack_dirstate = wrapper
     dirstate._getfsnow = lambda *args: fakenow
     try:
         return func()
     finally:
-        parsers.pack_dirstate = orig_pack_dirstate
+        orig_module.pack_dirstate = orig_pack_dirstate
         dirstate._getfsnow = orig_dirstate_getfsnow
 
 def _poststatusfixup(orig, workingctx, status, fixup):
@@ -74,5 +86,5 @@ def markcommitted(orig, committablectx, node):
 def extsetup(ui):
     extensions.wrapfunction(context.workingctx, '_poststatusfixup',
                             _poststatusfixup)
-    extensions.wrapfunction(context.committablectx, 'markcommitted',
+    extensions.wrapfunction(context.workingctx, 'markcommitted',
                             markcommitted)

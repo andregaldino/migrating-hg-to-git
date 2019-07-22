@@ -103,8 +103,8 @@ Those who use force will lose
 
   $ hg merge -f
   file 'bar' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging foo1 and foo to foo1
   0 files updated, 1 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon

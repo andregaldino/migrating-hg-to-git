@@ -38,6 +38,9 @@ def hgweb(config, name=None, baseui=None):
     - list of virtual:real tuples (multi-repo view)
     '''
 
+    if isinstance(config, pycompat.unicode):
+        raise error.ProgrammingError(
+            'Mercurial only supports encoded strings: %r' % config)
     if ((isinstance(config, bytes) and not os.path.isdir(config)) or
         isinstance(config, dict) or isinstance(config, list)):
         # create a multi-dir interface

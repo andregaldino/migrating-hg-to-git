@@ -53,16 +53,17 @@ from . import (
     pycompat,
     rcutil,
     registrar,
-    repair,
     revsetlang,
     rewriteutil,
     scmutil,
     server,
+    shelve as shelvemod,
     state as statemod,
     streamclone,
     tags as tagsmod,
     ui as uimod,
     util,
+    verify as verifymod,
     wireprotoserver,
 )
 from .utils import (
@@ -129,6 +130,29 @@ subrepoopts = cmdutil.subrepoopts
 debugrevlogopts = cmdutil.debugrevlogopts
 
 # Commands start here, listed alphabetically
+
+@command('abort',
+    dryrunopts, helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+    helpbasic=True)
+def abort(ui, repo, **opts):
+    """abort an unfinished operation (EXPERIMENTAL)
+
+    Aborts a multistep operation like graft, histedit, rebase, merge,
+    and unshelve if they are in an unfinished state.
+
+    use --dry-run/-n to dry run the command.
+    """
+    dryrun = opts.get(r'dry_run')
+    abortstate = cmdutil.getunfinishedstate(repo)
+    if not abortstate:
+        raise error.Abort(_('no operation in progress'))
+    if not abortstate.abortfunc:
+        raise error.Abort((_("%s in progress but does not support 'hg abort'") %
+                            (abortstate._opname)), hint=abortstate.hint())
+    if dryrun:
+        ui.status(_('%s in progress, will be aborted\n') % (abortstate._opname))
+        return
+    return abortstate.abortfunc(ui, repo)
 
 @command('add',
     walkopts + subrepoopts + dryrunopts,
@@ -1582,6 +1606,8 @@ def clone(ui, source, dest=None, **opts):
     ('', 'amend', None, _('amend the parent of the working directory')),
     ('s', 'secret', None, _('use the secret phase for committing')),
     ('e', 'edit', None, _('invoke editor on commit messages')),
+    ('', 'force-close-branch', None,
+     _('forcibly close branch from a non-head changeset (ADVANCED)')),
     ('i', 'interactive', None, _('use interactive mode')),
     ] + walkopts + commitopts + commitopts2 + subrepoopts,
     _('[OPTION]... [FILE]...'),
@@ -1669,11 +1695,19 @@ def _docommit(ui, repo, *pats, **opts):
     bheads = repo.branchheads(branch)
 
     extra = {}
-    if opts.get('close_branch'):
+    if opts.get('close_branch') or opts.get('force_close_branch'):
         extra['close'] = '1'
 
-        if not bheads:
-            raise error.Abort(_('can only close branch heads'))
+        if repo['.'].closesbranch():
+            raise error.Abort(_('current revision is already a branch closing'
+                                ' head'))
+        elif not bheads:
+            raise error.Abort(_('branch "%s" has no heads to close') % branch)
+        elif (branch == repo['.'].branch() and repo['.'].node() not in bheads
+              and not opts.get('force_close_branch')):
+            hint = _('use --force-close-branch to close branch from a non-head'
+                     ' changeset')
+            raise error.Abort(_('can only close branch heads'), hint=hint)
         elif opts.get('amend'):
             if (repo['.'].p1().branch() != branch and
                 repo['.'].p2().branch() != branch):
@@ -1731,6 +1765,10 @@ def _docommit(ui, repo, *pats, **opts):
             return 1
 
     cmdutil.commitstatus(repo, node, branch, bheads, opts)
+
+    if not ui.quiet and ui.configbool('commands', 'commit.post-status'):
+        status(ui, repo, modified=True, added=True, removed=True, deleted=True,
+               unknown=True, subrepos=opts.get('subrepos'))
 
 @command('config|showconfig|debugconfig',
     [('u', 'untrusted', None, _('show untrusted configuration options')),
@@ -1852,6 +1890,30 @@ def config(ui, repo, *values, **opts):
     if matched:
         return 0
     return 1
+
+@command('continue',
+    dryrunopts, helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+    helpbasic=True)
+def continuecmd(ui, repo, **opts):
+    """resumes an interrupted operation (EXPERIMENTAL)
+
+    Finishes a multistep operation like graft, histedit, rebase, merge,
+    and unshelve if they are in an interrupted state.
+
+    use --dry-run/-n to dry run the command.
+    """
+    dryrun = opts.get(r'dry_run')
+    contstate = cmdutil.getunfinishedstate(repo)
+    if not contstate:
+        raise error.Abort(_('no operation in progress'))
+    if not contstate.continuefunc:
+        raise error.Abort((_("%s in progress but does not support "
+                             "'hg continue'") % (contstate._opname)),
+                             hint=contstate.continuemsg())
+    if dryrun:
+        ui.status(_('%s in progress, will be resumed\n') % (contstate._opname))
+        return
+    return contstate.continuefunc(ui, repo)
 
 @command('copy|cp',
     [('A', 'after', None, _('record a copy that has already occurred')),
@@ -2449,14 +2511,14 @@ def _dograft(ui, repo, *revs, **opts):
                 opts.get('currentuser'), opts.get('rev'))):
             raise error.Abort(_("cannot specify any other flag with '--abort'"))
 
-        return _abortgraft(ui, repo, graftstate)
+        return cmdutil.abortgraft(ui, repo, graftstate)
     elif opts.get('continue'):
         cont = True
         if revs:
             raise error.Abort(_("can't specify --continue and revisions"))
         # read in unfinished revisions
         if graftstate.exists():
-            statedata = _readgraftstate(repo, graftstate)
+            statedata = cmdutil.readgraftstate(repo, graftstate)
             if statedata.get('date'):
                 opts['date'] = statedata['date']
             if statedata.get('user'):
@@ -2626,69 +2688,6 @@ def _dograft(ui, repo, *revs, **opts):
 
     return 0
 
-def _abortgraft(ui, repo, graftstate):
-    """abort the interrupted graft and rollbacks to the state before interrupted
-    graft"""
-    if not graftstate.exists():
-        raise error.Abort(_("no interrupted graft to abort"))
-    statedata = _readgraftstate(repo, graftstate)
-    newnodes = statedata.get('newnodes')
-    if newnodes is None:
-        # and old graft state which does not have all the data required to abort
-        # the graft
-        raise error.Abort(_("cannot abort using an old graftstate"))
-
-    # changeset from which graft operation was started
-    if len(newnodes) > 0:
-        startctx = repo[newnodes[0]].p1()
-    else:
-        startctx = repo['.']
-    # whether to strip or not
-    cleanup = False
-    if newnodes:
-        newnodes = [repo[r].rev() for r in newnodes]
-        cleanup = True
-        # checking that none of the newnodes turned public or is public
-        immutable = [c for c in newnodes if not repo[c].mutable()]
-        if immutable:
-            repo.ui.warn(_("cannot clean up public changesets %s\n")
-                         % ', '.join(bytes(repo[r]) for r in immutable),
-                         hint=_("see 'hg help phases' for details"))
-            cleanup = False
-
-        # checking that no new nodes are created on top of grafted revs
-        desc = set(repo.changelog.descendants(newnodes))
-        if desc - set(newnodes):
-            repo.ui.warn(_("new changesets detected on destination "
-                           "branch, can't strip\n"))
-            cleanup = False
-
-        if cleanup:
-            with repo.wlock(), repo.lock():
-                hg.updaterepo(repo, startctx.node(), overwrite=True)
-                # stripping the new nodes created
-                strippoints = [c.node() for c in repo.set("roots(%ld)",
-                                                          newnodes)]
-                repair.strip(repo.ui, repo, strippoints, backup=False)
-
-    if not cleanup:
-        # we don't update to the startnode if we can't strip
-        startctx = repo['.']
-        hg.updaterepo(repo, startctx.node(), overwrite=True)
-
-    ui.status(_("graft aborted\n"))
-    ui.status(_("working directory is now at %s\n") % startctx.hex()[:12])
-    graftstate.delete()
-    return 0
-
-def _readgraftstate(repo, graftstate):
-    """read the graft state file and return a dict of the data stored in it"""
-    try:
-        return graftstate.read()
-    except error.CorruptedState:
-        nodes = repo.vfs.read('graftstate').splitlines()
-        return {'nodes': nodes}
-
 def _stopgraft(ui, repo, graftstate):
     """stop the interrupted graft"""
     if not graftstate.exists():
@@ -2699,6 +2698,12 @@ def _stopgraft(ui, repo, graftstate):
     ui.status(_("stopped the interrupted graft\n"))
     ui.status(_("working directory is now at %s\n") % pctx.hex()[:12])
     return 0
+
+statemod.addunfinished(
+    'graft', fname='graftstate', clearable=True, stopflag=True,
+    continueflag=True, abortfunc=cmdutil.hgabortgraft,
+    cmdhint=_("use 'hg graft --continue' or 'hg graft --stop' to stop")
+)
 
 @command('grep',
     [('0', 'print0', None, _('end fields with NUL')),
@@ -3715,7 +3720,8 @@ def locate(ui, repo, *pats, **opts):
      _('follow line range of specified file (EXPERIMENTAL)'),
      _('FILE,RANGE')),
     ('', 'removed', None, _('include revisions where files were removed')),
-    ('m', 'only-merges', None, _('show only merges (DEPRECATED)')),
+    ('m', 'only-merges', None,
+     _('show only merges (DEPRECATED) (use -r "merge()" instead)')),
     ('u', 'user', [], _('revisions committed by user'), _('USER')),
     ('', 'only-branch', [],
      _('show only changesets within the given named branch (DEPRECATED)'),
@@ -3876,12 +3882,12 @@ def log(ui, repo, *pats, **opts):
         # then filter the result by logcmdutil._makerevset() and --limit
         revs, differ = logcmdutil.getlinerangerevs(repo, revs, opts)
 
-    getrenamed = None
+    getcopies = None
     if opts.get('copies'):
         endrev = None
         if revs:
             endrev = revs.max() + 1
-        getrenamed = scmutil.getrenamedfn(repo, endrev=endrev)
+        getcopies = scmutil.getcopiesfn(repo, endrev=endrev)
 
     ui.pager('log')
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts, differ,
@@ -3890,7 +3896,7 @@ def log(ui, repo, *pats, **opts):
         displayfn = logcmdutil.displaygraphrevs
     else:
         displayfn = logcmdutil.displayrevs
-    displayfn(ui, repo, revs, displayer, getrenamed)
+    displayfn(ui, repo, revs, displayer, getcopies)
 
 @command('manifest',
     [('r', 'rev', '', _('revision to display'), _('REV')),
@@ -3983,7 +3989,7 @@ def merge(ui, repo, node=None, **opts):
     If no revision is specified, the working directory's parent is a
     head revision, and the current branch contains exactly one other
     head, the other head is merged with by default. Otherwise, an
-    explicit revision with which to merge with must be provided.
+    explicit revision with which to merge must be provided.
 
     See :hg:`help resolve` for information on handling file conflicts.
 
@@ -3999,6 +4005,10 @@ def merge(ui, repo, node=None, **opts):
     if abort and repo.dirstate.p2() == nullid:
         cmdutil.wrongtooltocontinue(repo, _('merge'))
     if abort:
+        state = cmdutil.getunfinishedstate(repo)
+        if state and state._opname != 'merge':
+            raise error.Abort(_('cannot abort merge with %s in progress') %
+                                (state._opname), hint=state.hint())
         if node:
             raise error.Abort(_("cannot specify a node with --abort"))
         if opts.get('rev'):
@@ -4035,6 +4045,14 @@ def merge(ui, repo, node=None, **opts):
         labels = ['working copy', 'merge rev']
         return hg.merge(repo, node, force=force, mergeforce=force,
                         labels=labels, abort=abort)
+
+statemod.addunfinished(
+    'merge', fname=None, clearable=True, allowcommit=True,
+    cmdmsg=_('outstanding uncommitted merge'), abortfunc=hg.abortmerge,
+    statushint=_('To continue:    hg commit\n'
+                 'To abort:       hg merge --abort'),
+    cmdhint=_("use 'hg commit' or 'hg merge --abort'")
+)
 
 @command('outgoing|out',
     [('f', 'force', None, _('run even when the destination is unrelated')),
@@ -4672,7 +4690,7 @@ def recover(ui, repo, **opts):
     """
     ret = repo.recover()
     if ret:
-        if opts['verify']:
+        if opts[r'verify']:
             return hg.verify(repo)
         else:
             msg = _("(verify step skipped, run  `hg verify` to check your "
@@ -5217,16 +5235,30 @@ def rollback(ui, repo, **opts):
                          force=opts.get(r'force'))
 
 @command(
-    'root', [], intents={INTENT_READONLY},
+    'root', [] + formatteropts, intents={INTENT_READONLY},
     helpcategory=command.CATEGORY_WORKING_DIRECTORY)
-def root(ui, repo):
+def root(ui, repo, **opts):
     """print the root (top) of the current working directory
 
     Print the root directory of the current repository.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :hgpath:    String. Path to the .hg directory.
+      :storepath: String. Path to the directory holding versioned data.
+
     Returns 0 on success.
     """
-    ui.write(repo.root + "\n")
+    opts = pycompat.byteskwargs(opts)
+    with ui.formatter('root', opts) as fm:
+        fm.startitem()
+        fm.write('reporoot', '%s\n', repo.root)
+        fm.data(hgpath=repo.path, storepath=repo.spath)
 
 @command('serve',
     [('A', 'accesslog', '', _('name of access log file to write to'),
@@ -5298,6 +5330,106 @@ def serve(ui, repo, **opts):
 
     service = server.createservice(ui, repo, opts)
     return server.runservice(opts, initfn=service.init, runfn=service.run)
+
+@command('shelve',
+         [('A', 'addremove', None,
+           _('mark new/missing files as added/removed before shelving')),
+          ('u', 'unknown', None,
+           _('store unknown files in the shelve')),
+          ('', 'cleanup', None,
+           _('delete all shelved changes')),
+          ('', 'date', '',
+           _('shelve with the specified commit date'), _('DATE')),
+          ('d', 'delete', None,
+           _('delete the named shelved change(s)')),
+          ('e', 'edit', False,
+           _('invoke editor on commit messages')),
+          ('k', 'keep', False,
+           _('shelve, but keep changes in the working directory')),
+          ('l', 'list', None,
+           _('list current shelves')),
+          ('m', 'message', '',
+           _('use text as shelve message'), _('TEXT')),
+          ('n', 'name', '',
+           _('use the given name for the shelved commit'), _('NAME')),
+          ('p', 'patch', None,
+           _('output patches for changes (provide the names of the shelved '
+             'changes as positional arguments)')),
+          ('i', 'interactive', None,
+           _('interactive mode')),
+          ('', 'stat', None,
+           _('output diffstat-style summary of changes (provide the names of '
+             'the shelved changes as positional arguments)')
+           )] + cmdutil.walkopts,
+         _('hg shelve [OPTION]... [FILE]...'),
+         helpcategory=command.CATEGORY_WORKING_DIRECTORY)
+def shelve(ui, repo, *pats, **opts):
+    '''save and set aside changes from the working directory
+
+    Shelving takes files that "hg status" reports as not clean, saves
+    the modifications to a bundle (a shelved change), and reverts the
+    files so that their state in the working directory becomes clean.
+
+    To restore these changes to the working directory, using "hg
+    unshelve"; this will work even if you switch to a different
+    commit.
+
+    When no files are specified, "hg shelve" saves all not-clean
+    files. If specific files or directories are named, only changes to
+    those files are shelved.
+
+    In bare shelve (when no files are specified, without interactive,
+    include and exclude option), shelving remembers information if the
+    working directory was on newly created branch, in other words working
+    directory was on different branch than its first parent. In this
+    situation unshelving restores branch information to the working directory.
+
+    Each shelved change has a name that makes it easier to find later.
+    The name of a shelved change defaults to being based on the active
+    bookmark, or if there is no active bookmark, the current named
+    branch.  To specify a different name, use ``--name``.
+
+    To see a list of existing shelved changes, use the ``--list``
+    option. For each shelved change, this will print its name, age,
+    and description; use ``--patch`` or ``--stat`` for more details.
+
+    To delete specific shelved changes, use ``--delete``. To delete
+    all shelved changes, use ``--cleanup``.
+    '''
+    opts = pycompat.byteskwargs(opts)
+    allowables = [
+        ('addremove', {'create'}), # 'create' is pseudo action
+        ('unknown', {'create'}),
+        ('cleanup', {'cleanup'}),
+#       ('date', {'create'}), # ignored for passing '--date "0 0"' in tests
+        ('delete', {'delete'}),
+        ('edit', {'create'}),
+        ('keep', {'create'}),
+        ('list', {'list'}),
+        ('message', {'create'}),
+        ('name', {'create'}),
+        ('patch', {'patch', 'list'}),
+        ('stat', {'stat', 'list'}),
+    ]
+    def checkopt(opt):
+        if opts.get(opt):
+            for i, allowable in allowables:
+                if opts[i] and opt not in allowable:
+                    raise error.Abort(_("options '--%s' and '--%s' may not be "
+                                       "used together") % (opt, i))
+            return True
+    if checkopt('cleanup'):
+        if pats:
+            raise error.Abort(_("cannot specify names when using '--cleanup'"))
+        return shelvemod.cleanupcmd(ui, repo)
+    elif checkopt('delete'):
+        return shelvemod.deletecmd(ui, repo, pats)
+    elif checkopt('list'):
+        return shelvemod.listcmd(ui, repo, pats, opts)
+    elif checkopt('patch') or checkopt('stat'):
+        return shelvemod.patchcmds(ui, repo, pats, opts)
+    else:
+        return shelvemod.createcmd(ui, repo, pats, opts)
 
 _NOTTERSE = 'nothing'
 
@@ -6027,6 +6159,68 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
 
     return postincoming(ui, repo, modheads, opts.get(r'update'), None, None)
 
+@command('unshelve',
+         [('a', 'abort', None,
+           _('abort an incomplete unshelve operation')),
+          ('c', 'continue', None,
+           _('continue an incomplete unshelve operation')),
+          ('i', 'interactive', None,
+           _('use interactive mode (EXPERIMENTAL)')),
+          ('k', 'keep', None,
+           _('keep shelve after unshelving')),
+          ('n', 'name', '',
+           _('restore shelved change with given name'), _('NAME')),
+          ('t', 'tool', '', _('specify merge tool')),
+          ('', 'date', '',
+           _('set date for temporary commits (DEPRECATED)'), _('DATE'))],
+         _('hg unshelve [OPTION]... [FILE]... [-n SHELVED]'),
+         helpcategory=command.CATEGORY_WORKING_DIRECTORY)
+def unshelve(ui, repo, *shelved, **opts):
+    """restore a shelved change to the working directory
+
+    This command accepts an optional name of a shelved change to
+    restore. If none is given, the most recent shelved change is used.
+
+    If a shelved change is applied successfully, the bundle that
+    contains the shelved changes is moved to a backup location
+    (.hg/shelve-backup).
+
+    Since you can restore a shelved change on top of an arbitrary
+    commit, it is possible that unshelving will result in a conflict
+    between your changes and the commits you are unshelving onto. If
+    this occurs, you must resolve the conflict, then use
+    ``--continue`` to complete the unshelve operation. (The bundle
+    will not be moved until you successfully complete the unshelve.)
+
+    (Alternatively, you can use ``--abort`` to abandon an unshelve
+    that causes a conflict. This reverts the unshelved changes, and
+    leaves the bundle in place.)
+
+    If bare shelved change (when no files are specified, without interactive,
+    include and exclude option) was done on newly created branch it would
+    restore branch information to the working directory.
+
+    After a successful unshelve, the shelved changes are stored in a
+    backup directory. Only the N most recent backups are kept. N
+    defaults to 10 but can be overridden using the ``shelve.maxbackups``
+    configuration option.
+
+    .. container:: verbose
+
+       Timestamp in seconds is used to decide order of backups. More
+       than ``maxbackups`` backups are kept, if same timestamp
+       prevents from deciding exact order of them, for safety.
+    """
+    with repo.wlock():
+        return shelvemod.dounshelve(ui, repo, *shelved, **opts)
+
+statemod.addunfinished(
+    'unshelve', fname='shelvedstate', continueflag=True,
+    abortfunc=shelvemod.hgabortunshelve,
+    continuefunc=shelvemod.hgcontinueunshelve,
+    cmdmsg=_('unshelve already in progress'),
+)
+
 @command('update|up|checkout|co',
     [('C', 'clean', None, _('discard uncommitted changes (no backup)')),
     ('c', 'check', None, _('require clean working directory')),
@@ -6123,7 +6317,6 @@ def update(ui, repo, node=None, **opts):
 
     with repo.wlock():
         cmdutil.clearunfinished(repo)
-
         if date:
             rev = cmdutil.finddate(ui, repo, date)
 
@@ -6147,8 +6340,10 @@ def update(ui, repo, node=None, **opts):
                 ui.warn("(%s)\n" % obsfatemsg)
         return ret
 
-@command('verify', [], helpcategory=command.CATEGORY_MAINTENANCE)
-def verify(ui, repo):
+@command('verify',
+         [('', 'full', False, 'perform more checks (EXPERIMENTAL)')],
+         helpcategory=command.CATEGORY_MAINTENANCE)
+def verify(ui, repo, **opts):
     """verify the integrity of the repository
 
     Verify the integrity of the current repository.
@@ -6164,7 +6359,12 @@ def verify(ui, repo):
 
     Returns 0 on success, 1 if errors are encountered.
     """
-    return hg.verify(repo)
+    opts = pycompat.byteskwargs(opts)
+
+    level = None
+    if opts['full']:
+        level = verifymod.VERIFY_FULL
+    return hg.verify(repo, level)
 
 @command(
     'version', [] + formatteropts, helpcategory=command.CATEGORY_HELP,
@@ -6233,16 +6433,6 @@ def version_(ui, **opts):
 def loadcmdtable(ui, name, cmdtable):
     """Load command functions from specified cmdtable
     """
-    cmdtable = cmdtable.copy()
-    for cmd in list(cmdtable):
-        if not cmd.startswith('^'):
-            continue
-        ui.deprecwarn("old-style command registration '%s' in extension '%s'"
-                      % (cmd, name), '4.8')
-        entry = cmdtable.pop(cmd)
-        entry[0].helpbasic = True
-        cmdtable[cmd[1:]] = entry
-
     overrides = [cmd for cmd in cmdtable if cmd in table]
     if overrides:
         ui.warn(_("extension '%s' overrides commands: %s\n")

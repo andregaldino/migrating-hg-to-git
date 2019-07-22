@@ -25,7 +25,6 @@ revision.
   $ hg ci -qAm 'add bar'
 
   $ hg merge --debug
-    searching for copies back to rev 1
     unmatched files in local:
      bar
   resolving manifests

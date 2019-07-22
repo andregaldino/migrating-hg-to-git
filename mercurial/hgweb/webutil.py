@@ -409,12 +409,6 @@ def whyunstable(context, mapping):
 
 whyunstable._requires = {'repo', 'ctx'}
 
-# helper to mark a function as a new-style template keyword; can be removed
-# once old-style function gets unsupported and new-style becomes the default
-def _kwfunc(f):
-    f._requires = ()
-    return f
-
 def commonentry(repo, ctx):
     node = scmutil.binnode(ctx)
     return {
@@ -439,8 +433,8 @@ def commonentry(repo, ctx):
         'branches': nodebranchdict(repo, ctx),
         'tags': nodetagsdict(repo, node),
         'bookmarks': nodebookmarksdict(repo, node),
-        'parent': _kwfunc(lambda context, mapping: parents(ctx)),
-        'child': _kwfunc(lambda context, mapping: children(ctx)),
+        'parent': lambda context, mapping: parents(ctx),
+        'child': lambda context, mapping: children(ctx),
     }
 
 def changelistentry(web, ctx):
@@ -457,9 +451,9 @@ def changelistentry(web, ctx):
 
     entry = commonentry(repo, ctx)
     entry.update({
-        'allparents': _kwfunc(lambda context, mapping: parents(ctx)),
-        'parent': _kwfunc(lambda context, mapping: parents(ctx, rev - 1)),
-        'child': _kwfunc(lambda context, mapping: children(ctx, rev + 1)),
+        'allparents': lambda context, mapping: parents(ctx),
+        'parent': lambda context, mapping: parents(ctx, rev - 1),
+        'child': lambda context, mapping: children(ctx, rev + 1),
         'changelogtag': showtags,
         'files': files,
     })
@@ -529,7 +523,7 @@ def changesetentry(web, ctx):
         changesetbranch=showbranch,
         files=templateutil.mappedgenerator(_listfilesgen,
                                            args=(ctx, web.stripecount)),
-        diffsummary=_kwfunc(lambda context, mapping: diffsummary(diffstatsgen)),
+        diffsummary=lambda context, mapping: diffsummary(diffstatsgen),
         diffstat=diffstats,
         archives=web.archivelist(ctx.hex()),
         **pycompat.strkwargs(commonentry(web.repo, ctx)))

@@ -7,7 +7,7 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import argparse
 import contextlib
@@ -227,4 +227,7 @@ def main():
                 process(fin, fout, opts)
 
 if __name__ == '__main__':
+    if sys.version_info.major < 3:
+        print('This script must be run under Python 3.')
+        sys.exit(3)
     main()

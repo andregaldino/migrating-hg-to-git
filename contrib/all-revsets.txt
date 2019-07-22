@@ -154,3 +154,6 @@ roots(-10000:-1)
 roots(matching(tip, "author"))
 roots(matching(tip, "author")) and -10000:-1
 (-10000:-1) and roots(matching(tip, "author"))
+only(max(head()))
+only(max(head()), min(head()))
+only(max(head()), limit(head(), 1, 1))

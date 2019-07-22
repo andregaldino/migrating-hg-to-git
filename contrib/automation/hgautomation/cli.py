@@ -8,18 +8,48 @@
 # no-check-code because Python 3 native.
 
 import argparse
+import concurrent.futures as futures
 import os
 import pathlib
+import time
 
 from . import (
     aws,
     HGAutomation,
+    linux,
     windows,
 )
 
 
 SOURCE_ROOT = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent.parent
 DIST_PATH = SOURCE_ROOT / 'dist'
+
+
+def bootstrap_linux_dev(hga: HGAutomation, aws_region, distros=None,
+                        parallel=False):
+    c = hga.aws_connection(aws_region)
+
+    if distros:
+        distros = distros.split(',')
+    else:
+        distros = sorted(linux.DISTROS)
+
+    # TODO There is a wonky interaction involving KeyboardInterrupt whereby
+    # the context manager that is supposed to terminate the temporary EC2
+    # instance doesn't run. Until we fix this, make parallel building opt-in
+    # so we don't orphan instances.
+    if parallel:
+        fs = []
+
+        with futures.ThreadPoolExecutor(len(distros)) as e:
+            for distro in distros:
+                fs.append(e.submit(aws.ensure_linux_dev_ami, c, distro=distro))
+
+            for f in fs:
+                f.result()
+    else:
+        for distro in distros:
+            aws.ensure_linux_dev_ami(c, distro=distro)
 
 
 def bootstrap_windows_dev(hga: HGAutomation, aws_region):
@@ -73,7 +103,8 @@ def build_windows_wheel(hga: HGAutomation, aws_region, arch, revision):
             windows.build_wheel(instance.winrm_client, a, DIST_PATH)
 
 
-def build_all_windows_packages(hga: HGAutomation, aws_region, revision):
+def build_all_windows_packages(hga: HGAutomation, aws_region, revision,
+                               version):
     c = hga.aws_connection(aws_region)
     image = aws.ensure_windows_dev_ami(c)
     DIST_PATH.mkdir(exist_ok=True)
@@ -89,19 +120,52 @@ def build_all_windows_packages(hga: HGAutomation, aws_region, revision):
             windows.purge_hg(winrm_client)
             windows.build_wheel(winrm_client, arch, DIST_PATH)
             windows.purge_hg(winrm_client)
-            windows.build_inno_installer(winrm_client, arch, DIST_PATH)
+            windows.build_inno_installer(winrm_client, arch, DIST_PATH,
+                                         version=version)
             windows.purge_hg(winrm_client)
-            windows.build_wix_installer(winrm_client, arch, DIST_PATH)
+            windows.build_wix_installer(winrm_client, arch, DIST_PATH,
+                                        version=version)
 
 
 def terminate_ec2_instances(hga: HGAutomation, aws_region):
-    c = hga.aws_connection(aws_region)
+    c = hga.aws_connection(aws_region, ensure_ec2_state=False)
     aws.terminate_ec2_instances(c.ec2resource)
 
 
 def purge_ec2_resources(hga: HGAutomation, aws_region):
-    c = hga.aws_connection(aws_region)
+    c = hga.aws_connection(aws_region, ensure_ec2_state=False)
     aws.remove_resources(c)
+
+
+def run_tests_linux(hga: HGAutomation, aws_region, instance_type,
+                    python_version, test_flags, distro, filesystem):
+    c = hga.aws_connection(aws_region)
+    image = aws.ensure_linux_dev_ami(c, distro=distro)
+
+    t_start = time.time()
+
+    ensure_extra_volume = filesystem not in ('default', 'tmpfs')
+
+    with aws.temporary_linux_dev_instances(
+        c, image, instance_type,
+        ensure_extra_volume=ensure_extra_volume) as insts:
+
+        instance = insts[0]
+
+        linux.prepare_exec_environment(instance.ssh_client,
+                                       filesystem=filesystem)
+        linux.synchronize_hg(SOURCE_ROOT, instance, '.')
+        t_prepared = time.time()
+        linux.run_tests(instance.ssh_client, python_version,
+                        test_flags)
+        t_done = time.time()
+
+    t_setup = t_prepared - t_start
+    t_all = t_done - t_start
+
+    print(
+        'total time: %.1fs; setup: %.1fs; tests: %.1fs; setup overhead: %.1f%%'
+        % (t_all, t_setup, t_done - t_prepared, t_setup / t_all * 100.0))
 
 
 def run_tests_windows(hga: HGAutomation, aws_region, instance_type,
@@ -135,6 +199,21 @@ def get_parser():
     subparsers = parser.add_subparsers()
 
     sp = subparsers.add_parser(
+        'bootstrap-linux-dev',
+        help='Bootstrap Linux development environments',
+    )
+    sp.add_argument(
+        '--distros',
+        help='Comma delimited list of distros to bootstrap',
+    )
+    sp.add_argument(
+        '--parallel',
+        action='store_true',
+        help='Generate AMIs in parallel (not CTRL-c safe)'
+    )
+    sp.set_defaults(func=bootstrap_linux_dev)
+
+    sp = subparsers.add_parser(
         'bootstrap-windows-dev',
         help='Bootstrap the Windows development environment',
     )
@@ -148,6 +227,10 @@ def get_parser():
         '--revision',
         help='Mercurial revision to build',
         default='.',
+    )
+    sp.add_argument(
+        '--version',
+        help='Mercurial version string to use',
     )
     sp.set_defaults(func=build_all_windows_packages)
 
@@ -224,6 +307,41 @@ def get_parser():
         help='Purge all EC2 resources managed by us',
     )
     sp.set_defaults(func=purge_ec2_resources)
+
+    sp = subparsers.add_parser(
+        'run-tests-linux',
+        help='Run tests on Linux',
+    )
+    sp.add_argument(
+        '--distro',
+        help='Linux distribution to run tests on',
+        choices=linux.DISTROS,
+        default='debian9',
+    )
+    sp.add_argument(
+        '--filesystem',
+        help='Filesystem type to use',
+        choices={'btrfs', 'default', 'ext3', 'ext4', 'jfs', 'tmpfs', 'xfs'},
+        default='default',
+    )
+    sp.add_argument(
+        '--instance-type',
+        help='EC2 instance type to use',
+        default='c5.9xlarge',
+    )
+    sp.add_argument(
+        '--python-version',
+        help='Python version to use',
+        choices={'system2', 'system3', '2.7', '3.5', '3.6', '3.7', '3.8',
+                 'pypy', 'pypy3.5', 'pypy3.6'},
+        default='system2',
+    )
+    sp.add_argument(
+        'test_flags',
+        help='Extra command line flags to pass to run-tests.py',
+        nargs='*',
+    )
+    sp.set_defaults(func=run_tests_linux)
 
     sp = subparsers.add_parser(
         'run-tests-windows',

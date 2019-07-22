@@ -16,6 +16,7 @@ from __future__ import absolute_import
 import collections
 import contextlib
 import errno
+import io
 import os
 import struct
 import zlib
@@ -97,11 +98,8 @@ REVIDX_KNOWN_FLAGS
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
 parsers = policy.importmod(r'parsers')
-try:
-    from . import rustext
-    rustext.__name__  # force actual import (see hgdemandimport)
-except ImportError:
-    rustext = None
+rustancestor = policy.importrust(r'ancestor')
+rustdagop = policy.importrust(r'dagop')
 
 # Aliased for performance.
 _zlibdecompress = zlib.decompress
@@ -337,15 +335,21 @@ class revlog(object):
     configured threshold.
 
     If censorable is True, the revlog can have censored revisions.
+
+    If `upperboundcomp` is not None, this is the expected maximal gain from
+    compression for the data content.
     """
     def __init__(self, opener, indexfile, datafile=None, checkambig=False,
-                 mmaplargeindex=False, censorable=False):
+                 mmaplargeindex=False, censorable=False,
+                 upperboundcomp=None):
         """
         create a revlog object
 
         opener is a function that abstracts the file opening operation
         and can be used to implement COW semantics or the like.
+
         """
+        self.upperboundcomp = upperboundcomp
         self.indexfile = indexfile
         self.datafile = datafile or (indexfile[:-2] + ".d")
         self.opener = opener
@@ -825,8 +829,8 @@ class revlog(object):
             checkrev(r)
         # and we're sure ancestors aren't filtered as well
 
-        if rustext is not None:
-            lazyancestors = rustext.ancestor.LazyAncestors
+        if rustancestor is not None:
+            lazyancestors = rustancestor.LazyAncestors
             arg = self.index
         elif util.safehasattr(parsers, 'rustlazyancestors'):
             lazyancestors = ancestor.rustlazyancestors
@@ -915,8 +919,8 @@ class revlog(object):
         if common is None:
             common = [nullrev]
 
-        if rustext is not None:
-            return rustext.ancestor.MissingAncestors(self.index, common)
+        if rustancestor is not None:
+            return rustancestor.MissingAncestors(self.index, common)
         return ancestor.incrementalmissingancestors(self.parentrevs, common)
 
     def findmissingrevs(self, common=None, heads=None):
@@ -1130,8 +1134,8 @@ class revlog(object):
                 return self.index.headrevs()
             except AttributeError:
                 return self._headrevs()
-        if rustext is not None:
-            return rustext.dagop.headrevs(self.index, revs)
+        if rustdagop is not None:
+            return rustdagop.headrevs(self.index, revs)
         return dagop.headrevs(revs, self._uncheckedparentrevs)
 
     def computephases(self, roots):
@@ -1216,14 +1220,25 @@ class revlog(object):
         A revision is considered an ancestor of itself.
 
         The implementation of this is trivial but the use of
-        commonancestorsheads is not."""
+        reachableroots is not."""
         if a == nullrev:
             return True
         elif a == b:
             return True
         elif a > b:
             return False
-        return a in self._commonancestorsheads(a, b)
+        return bool(self.reachableroots(a, [b], [a], includepath=False))
+
+    def reachableroots(self, minroot, heads, roots, includepath=False):
+        """return (heads(::<roots> and <roots>::<heads>))
+
+        If includepath is True, return (<roots>::<heads>)."""
+        try:
+            return self.index.reachableroots2(minroot, heads, roots,
+                                              includepath)
+        except AttributeError:
+            return dagop._reachablerootspure(self.parentrevs,
+                                             minroot, roots, heads, includepath)
 
     def ancestor(self, a, b):
         """calculate the "best" common ancestor of nodes a and b"""
@@ -1340,13 +1355,13 @@ class revlog(object):
         """Find the shortest unambiguous prefix that matches node."""
         def isvalid(prefix):
             try:
-                node = self._partialmatch(prefix)
+                matchednode = self._partialmatch(prefix)
             except error.AmbiguousPrefixLookupError:
                 return False
             except error.WdirUnsupported:
                 # single 'ff...' match
                 return True
-            if node is None:
+            if matchednode is None:
                 raise error.LookupError(node, self.indexfile, _('no node'))
             return True
 
@@ -2292,7 +2307,7 @@ class revlog(object):
 
         try:
             with self._datafp() as f:
-                f.seek(0, 2)
+                f.seek(0, io.SEEK_END)
                 actual = f.tell()
             dd = actual - expected
         except IOError as inst:
@@ -2302,7 +2317,7 @@ class revlog(object):
 
         try:
             f = self.opener(self.indexfile)
-            f.seek(0, 2)
+            f.seek(0, io.SEEK_END)
             actual = f.tell()
             f.close()
             s = self._io.size

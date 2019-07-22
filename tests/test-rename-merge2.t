@@ -68,7 +68,6 @@ $4 = expected result
   >         hg add $2 2> /dev/null
   >     fi
   > }
-  $ uc() { up $1; hg cp $1 $2; } # update + copy
   $ um() { up $1; hg mv $1 $2; }
   $ nc() { hg cp $1 $2; } # just copy
   $ nm() { hg mv $1 $2; } # just move
@@ -77,7 +76,6 @@ $4 = expected result
   --------------
   test L:up a   R:nc a b W:       - 1  get local a to b
   --------------
-    searching for copies back to rev 1
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -116,7 +114,6 @@ $4 = expected result
   --------------
   test L:nc a b R:up a   W:       - 2  get rem change to a and b
   --------------
-    searching for copies back to rev 1
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -156,7 +153,6 @@ $4 = expected result
   --------------
   test L:up a   R:nm a b W:       - 3  get local a change to b, remove a
   --------------
-    searching for copies back to rev 1
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -195,7 +191,6 @@ $4 = expected result
   --------------
   test L:nm a b R:up a   W:       - 4  get remote change to b
   --------------
-    searching for copies back to rev 1
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -233,7 +228,6 @@ $4 = expected result
   --------------
   test L:       R:nc a b W:       - 5  get b
   --------------
-    searching for copies back to rev 1
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -266,7 +260,6 @@ $4 = expected result
   --------------
   test L:nc a b R:       W:       - 6  nothing
   --------------
-    searching for copies back to rev 1
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -298,7 +291,6 @@ $4 = expected result
   --------------
   test L:       R:nm a b W:       - 7  get b
   --------------
-    searching for copies back to rev 1
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -332,7 +324,6 @@ $4 = expected result
   --------------
   test L:nm a b R:       W:       - 8  nothing
   --------------
-    searching for copies back to rev 1
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -363,9 +354,9 @@ $4 = expected result
   --------------
   test L:um a b R:um a b W:       - 9  do merge with ancestor in a
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' *
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 62e7bf090eba+, remote: 49b6d8032493
@@ -404,7 +395,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nm a b R:nm a c W:       - 11 get c, keep b
   --------------
-    searching for copies back to rev 1
     unmatched files in local:
      b
     unmatched files in other:
@@ -443,9 +433,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nc a b R:up b   W:       - 12 merge b no ancestor
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 86a2aa42fc76+, remote: af30c7647fc7
@@ -482,9 +472,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up b   R:nm a b W:       - 13 merge b no ancestor
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 59318016310c+, remote: bdb19105162a
@@ -522,9 +512,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nc a b R:up a b W:       - 14 merge b no ancestor
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 86a2aa42fc76+, remote: 8dbce441892a
@@ -562,9 +552,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up b   R:nm a b W:       - 15 merge b no ancestor, remove a
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 59318016310c+, remote: bdb19105162a
@@ -602,9 +592,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nc a b R:up a b W:       - 16 get a, merge b no ancestor
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 86a2aa42fc76+, remote: 8dbce441892a
@@ -642,9 +632,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up a b R:nc a b W:       - 17 keep a, merge b no ancestor
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 0b76e65c8289+, remote: 4ce40f5aca24
@@ -681,9 +671,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:nm a b R:up a b W:       - 18 merge b no ancestor
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 02963e448370+, remote: 8dbce441892a
@@ -693,8 +683,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    a: prompt deleted/changed -> m (premerge)
   picked tool ':prompt' for a (binary False symlink False changedelete True)
   file 'a' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -726,9 +716,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up a b R:nm a b W:       - 19 merge b no ancestor, prompt remove a
   --------------
-    searching for copies back to rev 1
-    unmatched files new in both:
-     b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'a' -> dst: 'b' 
+    checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 0b76e65c8289+, remote: bdb19105162a
@@ -739,8 +729,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    a: prompt changed/deleted -> m (premerge)
   picked tool ':prompt' for a (binary False symlink False changedelete True)
   file 'a' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -772,7 +762,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:up a   R:um a b W:       - 20 merge a and b to b, remove a
   --------------
-    searching for copies back to rev 1
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -815,7 +804,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   --------------
   test L:um a b R:up a   W:       - 21 merge a and b to b
   --------------
-    searching for copies back to rev 1
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -860,7 +848,6 @@ m "nm a b" "um x a" "      " "22 get a, keep b"
   --------------
   test L:nm a b R:up a c W:       - 23 get c, keep b
   --------------
-    searching for copies back to rev 1
     unmatched files in local:
      b
     unmatched files in other:
@@ -941,7 +928,6 @@ Expected result:
   $ echo m > 7/f
   $ echo m > 8/f
   $ hg merge -f --tool internal:dump -v --debug -r2 | sed '/^resolving manifests/,$d' 2> /dev/null
-    searching for copies back to rev 1
     unmatched files in local:
      5/g
      6/g
@@ -949,10 +935,8 @@ Expected result:
      3/g
      4/g
      7/f
-    unmatched files new in both:
-     0/f
-     1/g
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: '1/f' -> dst: '1/g' *
      src: '3/f' -> dst: '3/g' *
      src: '4/f' -> dst: '4/g' *
      src: '5/f' -> dst: '5/g' *

@@ -137,7 +137,7 @@ An identical file added at both parents, but the flag differs. Take local:
   $ hg ci --debug -m merge
   committing files:
   b
-  reusing manifest form p1 (listed files actually unchanged)
+  reusing manifest from p1 (listed files actually unchanged)
   committing changelog
   updating the branch cache
   committed changeset 3:c8d50407916ef8a5a97cb6e36ca9bc844a6ee13e

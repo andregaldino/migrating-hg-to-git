@@ -274,7 +274,6 @@ merge tests
   $ hg ci -m9
   created new head
   $ hg merge 6 --debug # test change
-    searching for copies back to rev 2
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 1f14a2e2d3ec, local: f0d2028bf86d+, remote: 1831e14459c4
@@ -301,7 +300,6 @@ merge tests
   $ hg ci -m10
   committing subrepository t
   $ HGMERGE=internal:merge hg merge --debug 7 # test conflict
-    searching for copies back to rev 2
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 1831e14459c4, local: e45c8b14af55+, remote: f94576341bcf
@@ -311,9 +309,9 @@ merge tests
     subrepo t: both sides changed 
    subrepository t diverged (local revision: 20a0db6fbf6c, remote revision: 7af322bc1198)
   starting 4 threads for background file closing (?)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [merge rev]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [merge rev].
+  what do you want to do? m
   merging subrepository "t"
-    searching for copies back to rev 2
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 6747d179aa9a, local: 20a0db6fbf6c+, remote: 7af322bc1198
@@ -911,7 +909,8 @@ shouldn't need merging
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 4    # try to merge default into br again
    subrepository s diverged (local revision: f8f13b33206e, remote revision: a3f9062a4f88)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [merge rev]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [merge rev].
+  what do you want to do? m
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ cd ..
@@ -1202,7 +1201,8 @@ Check that merge of a new subrepo doesn't write the uncommitted state to
   added 1 changesets with 2 changes to 2 files
   new changesets c82b79fdcc5b
    subrepository sub/repo diverged (local revision: f42d5c7504a8, remote revision: 46cd4aac504c)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
   pulling subrepo sub/repo from $TESTTMP/issue1852a/sub/repo
   searching for changes
   adding changesets
@@ -1211,7 +1211,8 @@ Check that merge of a new subrepo doesn't write the uncommitted state to
   added 1 changesets with 1 changes to 1 files
   new changesets 46cd4aac504c
    subrepository sources for sub/repo differ
-  use (l)ocal source (f42d5c7504a8) or (r)emote source (46cd4aac504c)? l
+  you can use (l)ocal source (f42d5c7504a8) or (r)emote source (46cd4aac504c).
+  what do you want to do? l
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat issue1852d/.hgsubstate
   f42d5c7504a811dda50f5cf3e5e16c3330b87172 sub/repo
@@ -1338,13 +1339,17 @@ Sticky subrepositories, file changes
   e95bcfa18a35+
   $ hg update tip
    subrepository s diverged (local revision: fc627a69481f, remote revision: 12a213df6fa9)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for s differ
-  use (l)ocal source (fc627a69481f) or (r)emote source (12a213df6fa9)? l
+  you can use (l)ocal source (fc627a69481f) or (r)emote source (12a213df6fa9).
+  what do you want to do? l
    subrepository t diverged (local revision: e95bcfa18a35, remote revision: 52c0adc0515a)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for t differ
-  use (l)ocal source (e95bcfa18a35) or (r)emote source (52c0adc0515a)? l
+  you can use (l)ocal source (e95bcfa18a35) or (r)emote source (52c0adc0515a).
+  what do you want to do? l
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id
   925c17564ef8+ tip
@@ -1371,11 +1376,14 @@ Sticky subrepository, revision updates
   $ cd ..
   $ hg update 10
    subrepository s diverged (local revision: 12a213df6fa9, remote revision: fc627a69481f)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository t diverged (local revision: 52c0adc0515a, remote revision: 20a0db6fbf6c)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for t differ (in checked out version)
-  use (l)ocal source (7af322bc1198) or (r)emote source (20a0db6fbf6c)? l
+  you can use (l)ocal source (7af322bc1198) or (r)emote source (20a0db6fbf6c).
+  what do you want to do? l
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id
   e45c8b14af55+
@@ -1397,13 +1405,17 @@ Sticky subrepository, file changes and revision updates
   7af322bc1198+
   $ hg update tip
    subrepository s diverged (local revision: 12a213df6fa9, remote revision: 12a213df6fa9)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for s differ
-  use (l)ocal source (02dcf1d70411) or (r)emote source (12a213df6fa9)? l
+  you can use (l)ocal source (02dcf1d70411) or (r)emote source (12a213df6fa9).
+  what do you want to do? l
    subrepository t diverged (local revision: 52c0adc0515a, remote revision: 52c0adc0515a)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for t differ
-  use (l)ocal source (7af322bc1198) or (r)emote source (52c0adc0515a)? l
+  you can use (l)ocal source (7af322bc1198) or (r)emote source (52c0adc0515a).
+  what do you want to do? l
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id
   925c17564ef8+ tip
@@ -1429,7 +1441,8 @@ Test subrepo already at intended revision:
   $ cd ..
   $ hg update 11
    subrepository s diverged (local revision: 12a213df6fa9, remote revision: fc627a69481f)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id -n

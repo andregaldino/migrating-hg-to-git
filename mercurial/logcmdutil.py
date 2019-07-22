@@ -743,10 +743,15 @@ def getrevs(repo, pats, opts):
             return match
 
     expr = _makerevset(repo, match, pats, slowpath, opts)
-    if opts.get('graph') and opts.get('rev'):
+    if opts.get('graph'):
         # User-specified revs might be unsorted, but don't sort before
         # _makerevset because it might depend on the order of revs
-        if not (revs.isdescending() or revs.istopo()):
+        if repo.ui.configbool('experimental', 'log.topo'):
+            if not revs.istopo():
+                revs = dagop.toposort(revs, repo.changelog.parentrevs)
+                # TODO: try to iterate the set lazily
+                revs = revset.baseset(list(revs), istopo=True)
+        elif not (revs.isdescending() or revs.istopo()):
             revs.sort(reverse=True)
     if expr:
         matcher = revset.match(None, expr)
@@ -857,7 +862,7 @@ def _graphnodeformatter(ui, displayer):
         return templ.renderdefault(props)
     return formatnode
 
-def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
+def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
     props = props or {}
     formatnode = _graphnodeformatter(ui, displayer)
     state = graphmod.asciistate()
@@ -885,13 +890,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
 
     for rev, type, ctx, parents in dag:
         char = formatnode(repo, ctx)
-        copies = None
-        if getrenamed and ctx.rev():
-            copies = []
-            for fn in ctx.files():
-                rename = getrenamed(fn, ctx.rev())
-                if rename:
-                    copies.append((fn, rename))
+        copies = getcopies(ctx) if getcopies else None
         edges = edgefn(type, char, state, rev, parents)
         firstedge = next(edges)
         width = firstedge[2]
@@ -910,16 +909,10 @@ def displaygraphrevs(ui, repo, revs, displayer, getrenamed):
     revdag = graphmod.dagwalker(repo, revs)
     displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges, getrenamed)
 
-def displayrevs(ui, repo, revs, displayer, getrenamed):
+def displayrevs(ui, repo, revs, displayer, getcopies):
     for rev in revs:
         ctx = repo[rev]
-        copies = None
-        if getrenamed is not None and rev:
-            copies = []
-            for fn in ctx.files():
-                rename = getrenamed(fn, rev)
-                if rename:
-                    copies.append((fn, rename))
+        copies = getcopies(ctx) if getcopies else None
         displayer.show(ctx, copies=copies)
         displayer.flush(ctx)
     displayer.close()

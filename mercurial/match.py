@@ -17,12 +17,15 @@ from . import (
     encoding,
     error,
     pathutil,
+    policy,
     pycompat,
     util,
 )
 from .utils import (
     stringutil,
 )
+
+rustmod = policy.importrust('filepatterns')
 
 allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
                    'rootglob',
@@ -305,9 +308,6 @@ class basematcher(object):
 
     def __call__(self, fn):
         return self.matchfn(fn)
-    def __iter__(self):
-        for f in self._files:
-            yield f
     # Callbacks related to how the matcher is used by dirstate.walk.
     # Subscribers to these events must monkeypatch the matcher object.
     def bad(self, f, msg):
@@ -377,7 +377,7 @@ class basematcher(object):
           the following values (assuming the implementation of visitchildrenset
           is capable of recognizing this; some implementations are not).
 
-          '.' -> {'foo', 'qux'}
+          '' -> {'foo', 'qux'}
           'baz' -> set()
           'foo' -> {'bar'}
           # Ideally this would be 'all', but since the prefix nature of matchers
@@ -480,11 +480,19 @@ class predicatematcher(basematcher):
              or pycompat.byterepr(self.matchfn))
         return '<predicatenmatcher pred=%s>' % s
 
+def normalizerootdir(dir, funcname):
+    if dir == '.':
+        util.nouideprecwarn("match.%s() no longer accepts "
+                            "'.', use '' instead." % funcname, '5.1')
+        return ''
+    return dir
+
+
 class patternmatcher(basematcher):
     """Matches a set of (kind, pat, source) against a 'root' directory.
 
     >>> kindpats = [
-    ...     (b're', b'.*\.c$', b''),
+    ...     (b're', br'.*\.c$', b''),
     ...     (b'path', b'foo/a', b''),
     ...     (b'relpath', b'b', b''),
     ...     (b'glob', b'*.h', b''),
@@ -504,7 +512,7 @@ class patternmatcher(basematcher):
     True
 
     >>> m.files()
-    ['.', 'foo/a', 'b', '.']
+    ['', 'foo/a', 'b', '']
     >>> m.exact(b'foo/a')
     True
     >>> m.exact(b'b')
@@ -522,13 +530,13 @@ class patternmatcher(basematcher):
 
     @propertycache
     def _dirs(self):
-        return set(util.dirs(self._fileset)) | {'.'}
+        return set(util.dirs(self._fileset))
 
     def visitdir(self, dir):
+        dir = normalizerootdir(dir, 'visitdir')
         if self._prefix and dir in self._fileset:
             return 'all'
-        return ('.' in self._fileset or
-                dir in self._fileset or
+        return (dir in self._fileset or
                 dir in self._dirs or
                 any(parentdir in self._fileset
                     for parentdir in util.finddirs(dir)))
@@ -561,7 +569,7 @@ class _dirchildren(object):
             addpath(f)
 
     def addpath(self, path):
-        if path == '.':
+        if path == '':
             return
         dirs = self._dirs
         findsplitdirs = _dirchildren._findsplitdirs
@@ -575,16 +583,15 @@ class _dirchildren(object):
         # yields (dirname, basename) tuples, walking back to the root.  This is
         # very similar to util.finddirs, except:
         #  - produces a (dirname, basename) tuple, not just 'dirname'
-        #  - includes root dir
         # Unlike manifest._splittopdir, this does not suffix `dirname` with a
-        # slash, and produces '.' for the root instead of ''.
+        # slash.
         oldpos = len(path)
         pos = path.rfind('/')
         while pos != -1:
             yield path[:pos], path[pos + 1:oldpos]
             oldpos = pos
             pos = path.rfind('/', 0, pos)
-        yield '.', path[:oldpos]
+        yield '', path[:oldpos]
 
     def get(self, path):
         return self._dirs.get(path, set())
@@ -603,13 +610,13 @@ class includematcher(basematcher):
         self._dirs = set(dirs)
         # parents are directories which are non-recursively included because
         # they are needed to get to items in _dirs or _roots.
-        self._parents = set(parents)
+        self._parents = parents
 
     def visitdir(self, dir):
+        dir = normalizerootdir(dir, 'visitdir')
         if self._prefix and dir in self._roots:
             return 'all'
-        return ('.' in self._roots or
-                dir in self._roots or
+        return (dir in self._roots or
                 dir in self._dirs or
                 dir in self._parents or
                 any(parentdir in self._roots
@@ -632,7 +639,7 @@ class includematcher(basematcher):
             return 'all'
         # Note: this does *not* include the 'dir in self._parents' case from
         # visitdir, that's handled below.
-        if ('.' in self._roots or
+        if ('' in self._roots or
             dir in self._roots or
             dir in self._dirs or
             any(parentdir in self._roots
@@ -651,7 +658,7 @@ class exactmatcher(basematcher):
     r'''Matches the input files exactly. They are interpreted as paths, not
     patterns (so no kind-prefixes).
 
-    >>> m = exactmatcher([b'a.txt', b're:.*\.c$'])
+    >>> m = exactmatcher([b'a.txt', br're:.*\.c$'])
     >>> m(b'a.txt')
     True
     >>> m(b'b.txt')
@@ -664,7 +671,7 @@ class exactmatcher(basematcher):
     So pattern 're:.*\.c$' is not considered as a regex, but as a file name
     >>> m(b'main.c')
     False
-    >>> m(b're:.*\.c$')
+    >>> m(br're:.*\.c$')
     True
     '''
 
@@ -680,22 +687,25 @@ class exactmatcher(basematcher):
 
     @propertycache
     def _dirs(self):
-        return set(util.dirs(self._fileset)) | {'.'}
+        return set(util.dirs(self._fileset))
 
     def visitdir(self, dir):
+        dir = normalizerootdir(dir, 'visitdir')
         return dir in self._dirs
 
     def visitchildrenset(self, dir):
+        dir = normalizerootdir(dir, 'visitchildrenset')
+
         if not self._fileset or dir not in self._dirs:
             return set()
 
-        candidates = self._fileset | self._dirs - {'.'}
-        if dir != '.':
+        candidates = self._fileset | self._dirs - {''}
+        if dir != '':
             d = dir + '/'
             candidates = set(c[len(d):] for c in candidates if
                              c.startswith(d))
         # self._dirs includes all of the directories, recursively, so if
-        # we're attempting to match foo/bar/baz.txt, it'll have '.', 'foo',
+        # we're attempting to match foo/bar/baz.txt, it'll have '', 'foo',
         # 'foo/bar' in it. Thus we can safely ignore a candidate that has a
         # '/' in it, indicating a it's for a subdir-of-a-subdir; the
         # immediate subdir will be in there without a slash.
@@ -769,7 +779,7 @@ class differencematcher(basematcher):
         # Possible values for m1:         set(...), set()
         # Possible values for m2: 'this', set(...)
         # We ignore m2's set results. They're possibly incorrect:
-        #  m1 = path:dir/subdir, m2=rootfilesin:dir, visitchildrenset('.'):
+        #  m1 = path:dir/subdir, m2=rootfilesin:dir, visitchildrenset(''):
         #    m1 returns {'dir'}, m2 returns {'dir'}, if we subtracted we'd
         #    return set(), which is *not* correct, we still need to visit 'dir'!
         return m1_set
@@ -915,14 +925,16 @@ class subdirmatcher(basematcher):
         return self._matcher.matchfn(self._path + "/" + f)
 
     def visitdir(self, dir):
-        if dir == '.':
+        dir = normalizerootdir(dir, 'visitdir')
+        if dir == '':
             dir = self._path
         else:
             dir = self._path + "/" + dir
         return self._matcher.visitdir(dir)
 
     def visitchildrenset(self, dir):
-        if dir == '.':
+        dir = normalizerootdir(dir, 'visitchildrenset')
+        if dir == '':
             dir = self._path
         else:
             dir = self._path + "/" + dir
@@ -991,18 +1003,18 @@ class prefixdirmatcher(basematcher):
 
     @propertycache
     def _pathdirs(self):
-        return set(util.finddirs(self._path)) | {'.'}
+        return set(util.finddirs(self._path))
 
     def visitdir(self, dir):
         if dir == self._path:
-            return self._matcher.visitdir('.')
+            return self._matcher.visitdir('')
         if dir.startswith(self._pathprefix):
             return self._matcher.visitdir(dir[len(self._pathprefix):])
         return dir in self._pathdirs
 
     def visitchildrenset(self, dir):
         if dir == self._path:
-            return self._matcher.visitchildrenset('.')
+            return self._matcher.visitchildrenset('')
         if dir.startswith(self._pathprefix):
             return self._matcher.visitchildrenset(dir[len(self._pathprefix):])
         if dir in self._pathdirs:
@@ -1075,7 +1087,7 @@ class unionmatcher(basematcher):
 def patkind(pattern, default=None):
     '''If pattern is 'kind:pat' with a known kind, return kind.
 
-    >>> patkind(b're:.*\.c$')
+    >>> patkind(br're:.*\.c$')
     're'
     >>> patkind(b'glob:*.c')
     'glob'
@@ -1178,9 +1190,23 @@ def _globre(pat):
     return res
 
 def _regex(kind, pat, globsuffix):
-    '''Convert a (normalized) pattern of any kind into a regular expression.
+    '''Convert a (normalized) pattern of any kind into a
+    regular expression.
     globsuffix is appended to the regexp of globs.'''
-    if not pat:
+
+    if rustmod is not None:
+        try:
+            return rustmod.build_single_regex(
+                kind,
+                pat,
+                globsuffix
+            )
+        except rustmod.PatternError:
+            raise error.ProgrammingError(
+                'not a regex pattern: %s:%s' % (kind, pat)
+            )
+
+    if not pat and kind in ('glob', 'relpath'):
         return ''
     if kind == 're':
         return pat
@@ -1324,13 +1350,17 @@ def _patternrootsanddirs(kindpats):
                 if '[' in p or '{' in p or '*' in p or '?' in p:
                     break
                 root.append(p)
-            r.append('/'.join(root) or '.')
+            r.append('/'.join(root))
         elif kind in ('relpath', 'path'):
-            r.append(pat or '.')
+            if pat == '.':
+                pat = ''
+            r.append(pat)
         elif kind in ('rootfilesin',):
-            d.append(pat or '.')
+            if pat == '.':
+                pat = ''
+            d.append(pat)
         else: # relglob, re, relre
-            r.append('.')
+            r.append('')
     return r, d
 
 def _roots(kindpats):
@@ -1347,31 +1377,33 @@ def _rootsdirsandparents(kindpats):
 
     Returns a tuple of (roots, dirs, parents).
 
-    >>> _rootsdirsandparents(
+    >>> r = _rootsdirsandparents(
     ...     [(b'glob', b'g/h/*', b''), (b'glob', b'g/h', b''),
     ...      (b'glob', b'g*', b'')])
-    (['g/h', 'g/h', '.'], [], ['g', '.'])
-    >>> _rootsdirsandparents(
+    >>> print(r[0:2], sorted(r[2])) # the set has an unstable output
+    (['g/h', 'g/h', ''], []) ['', 'g']
+    >>> r = _rootsdirsandparents(
     ...     [(b'rootfilesin', b'g/h', b''), (b'rootfilesin', b'', b'')])
-    ([], ['g/h', '.'], ['g', '.'])
-    >>> _rootsdirsandparents(
+    >>> print(r[0:2], sorted(r[2])) # the set has an unstable output
+    ([], ['g/h', '']) ['', 'g']
+    >>> r = _rootsdirsandparents(
     ...     [(b'relpath', b'r', b''), (b'path', b'p/p', b''),
     ...      (b'path', b'', b'')])
-    (['r', 'p/p', '.'], [], ['p', '.'])
-    >>> _rootsdirsandparents(
+    >>> print(r[0:2], sorted(r[2])) # the set has an unstable output
+    (['r', 'p/p', ''], []) ['', 'p']
+    >>> r = _rootsdirsandparents(
     ...     [(b'relglob', b'rg*', b''), (b're', b're/', b''),
     ...      (b'relre', b'rr', b'')])
-    (['.', '.', '.'], [], ['.'])
+    >>> print(r[0:2], sorted(r[2])) # the set has an unstable output
+    (['', '', ''], []) ['']
     '''
     r, d = _patternrootsanddirs(kindpats)
 
-    p = []
-    # Append the parents as non-recursive/exact directories, since they must be
+    p = set()
+    # Add the parents as non-recursive/exact directories, since they must be
     # scanned to get to either the roots or the other exact directories.
-    p.extend(util.dirs(d))
-    p.extend(util.dirs(r))
-    # util.dirs() does not include the root directory, so add it manually
-    p.append('.')
+    p.update(util.dirs(d))
+    p.update(util.dirs(r))
 
     # FIXME: all uses of this function convert these to sets, do so before
     # returning.
@@ -1421,8 +1453,23 @@ def readpatternfile(filepath, warn, sourceinfo=False):
     pattern        # pattern of the current default type
 
     if sourceinfo is set, returns a list of tuples:
-    (pattern, lineno, originalline). This is useful to debug ignore patterns.
+    (pattern, lineno, originalline).
+    This is useful to debug ignore patterns.
     '''
+
+    if rustmod is not None:
+        result, warnings = rustmod.read_pattern_file(
+            filepath,
+            bool(warn),
+            sourceinfo,
+        )
+
+        for warning_params in warnings:
+            # Can't be easily emitted from Rust, because it would require
+            # a mechanism for both gettext and calling the `warn` function.
+            warn(_("%s: ignoring invalid syntax '%s'\n") % warning_params)
+
+        return result
 
     syntaxes = {
         're': 'relre:',

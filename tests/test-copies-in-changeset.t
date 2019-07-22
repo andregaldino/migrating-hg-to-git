@@ -5,8 +5,11 @@
   > copies.read-from=changeset-only
   > [alias]
   > changesetcopies = log -r . -T 'files: {files}
+  >   {extras % "{ifcontains("files", key, "{key}: {value}\n")}"}
   >   {extras % "{ifcontains("copies", key, "{key}: {value}\n")}"}'
   > showcopies = log -r . -T '{file_copies % "{source} -> {name}\n"}'
+  > [extensions]
+  > rebase =
   > EOF
 
 Check that copies are recorded correctly
@@ -22,9 +25,13 @@ Check that copies are recorded correctly
   $ hg ci -m 'copy a to b, c, and d'
   $ hg changesetcopies
   files: b c d
-  p1copies: b\x00a (esc)
-  c\x00a (esc)
-  d\x00a (esc)
+  filesadded: 0
+  1
+  2
+  
+  p1copies: 0\x00a (esc)
+  1\x00a (esc)
+  2\x00a (esc)
   $ hg showcopies
   a -> b
   a -> c
@@ -41,7 +48,10 @@ Check that renames are recorded correctly
   $ hg ci -m 'rename b to b2'
   $ hg changesetcopies
   files: b b2
-  p1copies: b2\x00b (esc)
+  filesadded: 1
+  filesremoved: 0
+  
+  p1copies: 1\x00b (esc)
   $ hg showcopies
   b -> b2
 
@@ -58,7 +68,8 @@ even though there is no filelog entry.
   $ hg ci -m 'move b onto d'
   $ hg changesetcopies
   files: c
-  p1copies: c\x00b2 (esc)
+  
+  p1copies: 0\x00b2 (esc)
   $ hg showcopies
   b2 -> c
   $ hg debugindex c
@@ -86,9 +97,13 @@ File 'f' exists only in p1, so 'i' should be from p1
   $ hg ci -m 'merge'
   $ hg changesetcopies
   files: g h i
-  p1copies: g\x00a (esc)
-  i\x00f (esc)
-  p2copies: h\x00d (esc)
+  filesadded: 0
+  1
+  2
+  
+  p1copies: 0\x00a (esc)
+  2\x00f (esc)
+  p2copies: 1\x00d (esc)
   $ hg showcopies
   a -> g
   d -> h
@@ -100,7 +115,11 @@ Test writing to both changeset and filelog
   $ hg ci -m 'copy a to j' --config experimental.copies.write-to=compatibility
   $ hg changesetcopies
   files: j
-  p1copies: j\x00a (esc)
+  filesadded: 0
+  filesremoved: 
+  
+  p1copies: 0\x00a (esc)
+  p2copies: 
   $ hg debugdata j 0
   \x01 (esc)
   copy: a
@@ -113,6 +132,17 @@ Test writing to both changeset and filelog
   a -> j
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> j
+The entries should be written to extras even if they're empty (so the client
+won't have to fall back to reading from filelogs)
+  $ echo x >> j
+  $ hg ci -m 'modify j' --config experimental.copies.write-to=compatibility
+  $ hg changesetcopies
+  files: j
+  filesadded: 
+  filesremoved: 
+  
+  p1copies: 
+  p2copies: 
 
 Test writing only to filelog
 
@@ -120,6 +150,7 @@ Test writing only to filelog
   $ hg ci -m 'copy a to k' --config experimental.copies.write-to=filelog-only
   $ hg changesetcopies
   files: k
+  
   $ hg debugdata k 0
   \x01 (esc)
   copy: a
@@ -132,4 +163,25 @@ Test writing only to filelog
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> k
 
+  $ cd ..
+
+Test rebasing a commit with copy information
+
+  $ hg init rebase-rename
+  $ cd rebase-rename
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ echo a2 > a
+  $ hg ci -m 'modify a'
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'rename a to b'
+  $ hg rebase -d 1 --config rebase.experimental.inmemory=yes
+  rebasing 2:fc7287ac5b9b "rename a to b" (tip)
+  merging a and b to b
+  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/fc7287ac5b9b-8f2a95ec-rebase.hg
+  $ hg st --change . --copies
+  A b
+    a
+  R a
   $ cd ..

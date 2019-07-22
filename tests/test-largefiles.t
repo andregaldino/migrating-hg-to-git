@@ -1701,8 +1701,8 @@ correctly.
   $ hg merge
   largefile sub/large4 has a merge conflict
   ancestor was 971fb41e78fea4f8e0ba5244784239371cb00591
-  keep (l)ocal d846f26643bfa8ec210be40cc93cc6b7ff1128ea or
-  take (o)ther e166e74c7303192238d60af5a9c4ce9bef0b7928? l
+  you can keep (l)ocal d846f26643bfa8ec210be40cc93cc6b7ff1128ea or take (o)ther e166e74c7303192238d60af5a9c4ce9bef0b7928.
+  what do you want to do? l
   getting changed largefiles
   1 largefiles updated, 0 removed
   3 files updated, 1 files merged, 0 files removed, 0 files unresolved

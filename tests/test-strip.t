@@ -272,7 +272,13 @@ before strip of merge parent
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     c
   
+##strip not allowed with merge in progress
   $ hg strip 4
+  abort: outstanding uncommitted merge
+  (use 'hg commit' or 'hg merge --abort')
+  [255]
+##strip allowed --force with merge in progress
+  $ hg strip 4 --force
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
 
@@ -546,7 +552,7 @@ Verify strip protects against stripping wc parent when there are uncommitted mod
 
   $ echo c > b
   $ hg strip tip
-  abort: local changes found
+  abort: uncommitted changes
   [255]
   $ hg strip tip --keep
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
@@ -698,7 +704,7 @@ test hg strip -B bookmark
   $ echo a > a
   $ hg add a
   $ hg strip -B B
-  abort: local changes found
+  abort: uncommitted changes
   [255]
   $ hg bookmarks
    * B                         6:ff43616e5d0f
@@ -855,7 +861,7 @@ check strip behavior
   bundle2-output-part: "phase-heads" 24 bytes payload
   saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/6625a5168474-345bb43d-backup.hg
   updating the branch cache
-  invalid branchheads cache (served): tip differs
+  invalid branch cache (served): tip differs
   $ hg log -G
   o  changeset:   2:5c51d8d6557d
   |  tag:         tip

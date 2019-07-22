@@ -29,7 +29,7 @@ if sys.version_info[0] >= 3:
         """A sys.meta_path finder that uses a custom module loader."""
         def find_spec(self, fullname, path, target=None):
             # Only handle Mercurial-related modules.
-            if not fullname.startswith(('mercurial.', 'hgext.', 'hgext3rd.')):
+            if not fullname.startswith(('mercurial.', 'hgext.')):
                 return None
             # don't try to parse binary
             if fullname.startswith('mercurial.cext.'):
@@ -54,7 +54,16 @@ if sys.version_info[0] >= 3:
                 if finder == self:
                     continue
 
-                spec = finder.find_spec(fullname, path, target=target)
+                # Originally the API was a `find_module` method, but it was
+                # renamed to `find_spec` in python 3.4, with a new `target`
+                # argument.
+                find_spec_method = getattr(finder, 'find_spec', None)
+                if find_spec_method:
+                    spec = find_spec_method(fullname, path, target=target)
+                else:
+                    spec = finder.find_module(fullname)
+                    if spec is not None:
+                        spec = importlib.util.spec_from_loader(fullname, spec)
                 if spec:
                     break
 
@@ -216,7 +225,9 @@ if sys.version_info[0] >= 3:
 
                 # It changes iteritems/values to items/values as they are not
                 # present in Python 3 world.
-                elif fn in ('iteritems', 'itervalues'):
+                elif (fn in ('iteritems', 'itervalues') and
+                      not (tokens[i - 1].type == token.NAME and
+                           tokens[i - 1].string == 'def')):
                     yield t._replace(string=fn[4:])
                     continue
 
@@ -227,7 +238,7 @@ if sys.version_info[0] >= 3:
     # ``replacetoken`` or any mechanism that changes semantics of module
     # loading is changed. Otherwise cached bytecode may get loaded without
     # the new transformation mechanisms applied.
-    BYTECODEHEADER = b'HG\x00\x0b'
+    BYTECODEHEADER = b'HG\x00\x0c'
 
     class hgloader(importlib.machinery.SourceFileLoader):
         """Custom module loader that transforms source code.

@@ -93,10 +93,6 @@ _unpack = struct.unpack
 _calcsize = struct.calcsize
 propertycache = util.propertycache
 
-# the obsolete feature is not mature enough to be enabled by default.
-# you have to rely on third party extension extension to enable this.
-_enabled = False
-
 # Options for obsolescence
 createmarkersopt = 'createmarkers'
 allowunstableopt = 'allowunstable'
@@ -122,11 +118,6 @@ def _getoptionvalue(repo, option):
         result = set(repo.ui.configlist('experimental', 'evolution'))
 
         if 'all' in result:
-            return True
-
-        # For migration purposes, temporarily return true if the config hasn't
-        # been set but _enabled is true.
-        if len(result) == 0 and _enabled:
             return True
 
         # Temporary hack for next check

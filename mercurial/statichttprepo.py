@@ -155,6 +155,7 @@ class statichttprepository(localrepo.localrepository,
 
         self.names = namespaces.namespaces()
         self.filtername = None
+        self._extrafilterid = None
 
         try:
             requirements = set(self.vfs.read(b'requires').splitlines())

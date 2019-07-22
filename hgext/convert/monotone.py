@@ -284,9 +284,9 @@ class monotone_source(common.converter_source, common.commandline):
                     # d2 => d3
                     ignoremove[tofile] = 1
             for tofile, fromfile in renamed.items():
-                self.ui.debug (_("copying file in renamed directory "
-                                 "from '%s' to '%s'")
-                               % (fromfile, tofile), '\n')
+                self.ui.debug(
+                    "copying file in renamed directory from '%s' to '%s'"
+                    % (fromfile, tofile), '\n')
                 files[tofile] = rev
                 copies[tofile] = fromfile
             for fromfile in renamed.values():
@@ -370,4 +370,3 @@ class monotone_source(common.converter_source, common.commandline):
             self.mtnwritefp = None
             self.mtnreadfp.close()
             self.mtnreadfp = None
-

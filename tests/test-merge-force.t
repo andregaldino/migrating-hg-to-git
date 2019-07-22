@@ -143,80 +143,80 @@ Merge with remote
 
   $ hg merge -f --tool internal:merge3 'desc("remote")' 2>&1 | tee $TESTTMP/merge-output-1
   file 'content1_missing_content1_content4-tracked' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_missing_content3_content3-tracked' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_missing_content3_content4-tracked' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_missing_missing_content4-tracked' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content1_content1-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content1_content2-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content1_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content1_missing-tracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content1_missing-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content2_content1-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content2_content2-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content2_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content2_missing-tracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content2_missing-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_content1-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_content2-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_content3-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_missing-tracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_missing-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_missing_content1-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_missing_content2-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_missing_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_missing_missing-tracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_missing_missing-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_content1_content4-tracked
   merging content1_content2_content2_content1-tracked
   merging content1_content2_content2_content4-tracked
@@ -729,88 +729,88 @@ Re-resolve and check status
   $ hg resolve --unmark --all
   $ hg resolve --all --tool internal:merge3
   file 'content1_content2_content1_content1-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content1_content2-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_content1_content4-tracked
   file 'content1_content2_content1_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content1_missing-tracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content1_missing-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_content2_content1-tracked
   file 'content1_content2_content2_content1-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content2_content2-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_content2_content4-tracked
   file 'content1_content2_content2_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content2_missing-tracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content2_missing-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_content3_content1-tracked
   file 'content1_content2_content3_content1-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_content2-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_content3_content3-tracked
   file 'content1_content2_content3_content3-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_content3_content4-tracked
   file 'content1_content2_content3_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_missing-tracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_content3_missing-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_missing_content1-tracked
   file 'content1_content2_missing_content1-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_missing_content2-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   merging content1_content2_missing_content4-tracked
   file 'content1_content2_missing_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_missing_missing-tracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_content2_missing_missing-untracked' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_missing_content1_content4-tracked' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_missing_content3_content3-tracked' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_missing_content3_content4-tracked' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   file 'content1_missing_missing_content4-tracked' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   merging missing_content2_content2_content4-tracked
   merging missing_content2_content3_content3-tracked
   merging missing_content2_content3_content4-tracked

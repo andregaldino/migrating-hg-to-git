@@ -33,6 +33,14 @@ from . import (
 # custom styles
 activebookmarklabel = 'bookmarks.active bookmarks.current'
 
+BOOKMARKS_IN_STORE_REQUIREMENT = 'bookmarksinstore'
+
+def bookmarksinstore(repo):
+    return BOOKMARKS_IN_STORE_REQUIREMENT in repo.requirements
+
+def bookmarksvfs(repo):
+    return repo.svfs if bookmarksinstore(repo) else repo.vfs
+
 def _getbkfile(repo):
     """Hook so that extensions that mess with the store can hook bm storage.
 
@@ -40,7 +48,7 @@ def _getbkfile(repo):
     bookmarks or the committed ones. Other extensions (like share)
     may need to tweak this behavior further.
     """
-    fp, pending = txnutil.trypending(repo.root, repo.vfs, 'bookmarks')
+    fp, pending = txnutil.trypending(repo.root, bookmarksvfs(repo), 'bookmarks')
     return fp
 
 class bmstore(object):
@@ -91,8 +99,11 @@ class bmstore(object):
                         # ValueError:
                         # - node in nm, for non-20-bytes entry
                         # - split(...), for string without ' '
-                        repo.ui.warn(_('malformed line in .hg/bookmarks: %r\n')
-                                     % pycompat.bytestr(line))
+                        bookmarkspath = '.hg/bookmarks'
+                        if bookmarksinstore(repo):
+                            bookmarkspath = '.hg/store/bookmarks'
+                        repo.ui.warn(_('malformed line in %s: %r\n')
+                                     % (bookmarkspath, pycompat.bytestr(line)))
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise
@@ -192,8 +203,9 @@ class bmstore(object):
         """record that bookmarks have been changed in a transaction
 
         The transaction is then responsible for updating the file content."""
+        location = '' if bookmarksinstore(self._repo) else 'plain'
         tr.addfilegenerator('bookmarks', ('bookmarks',), self._write,
-                            location='plain')
+                            location=location)
         tr.hookargs['bookmark_moved'] = '1'
 
     def _writerepo(self, repo):
@@ -203,28 +215,24 @@ class bmstore(object):
             rbm.active = None
             rbm._writeactive()
 
-        with repo.wlock():
-            file_ = repo.vfs('bookmarks', 'w', atomictemp=True,
-                             checkambig=True)
-            try:
-                self._write(file_)
-            except: # re-raises
-                file_.discard()
-                raise
-            finally:
-                file_.close()
+        if bookmarksinstore(repo):
+            vfs = repo.svfs
+            lock = repo.lock()
+        else:
+            vfs = repo.vfs
+            lock = repo.wlock()
+        with lock:
+            with vfs('bookmarks', 'w', atomictemp=True, checkambig=True) as f:
+                self._write(f)
 
     def _writeactive(self):
         if self._aclean:
             return
         with self._repo.wlock():
             if self._active is not None:
-                f = self._repo.vfs('bookmarks.current', 'w', atomictemp=True,
-                                   checkambig=True)
-                try:
+                with self._repo.vfs('bookmarks.current', 'w', atomictemp=True,
+                                   checkambig=True) as f:
                     f.write(encoding.fromlocal(self._active))
-                finally:
-                    f.close()
             else:
                 self._repo.vfs.tryunlink('bookmarks.current')
         self._aclean = True
@@ -306,28 +314,12 @@ def _readactive(repo, marks):
     itself as we commit. This function returns the name of that bookmark.
     It is stored in .hg/bookmarks.current
     """
-    try:
-        file = repo.vfs('bookmarks.current')
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
-        return None
-    try:
-        # No readline() in osutil.posixfile, reading everything is
-        # cheap.
-        # Note that it's possible for readlines() here to raise
-        # IOError, since we might be reading the active mark over
-        # static-http which only tries to load the file when we try
-        # to read from it.
-        mark = encoding.tolocal((file.readlines() or [''])[0])
-        if mark == '' or mark not in marks:
-            mark = None
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
-        return None
-    finally:
-        file.close()
+    # No readline() in osutil.posixfile, reading everything is
+    # cheap.
+    content = repo.vfs.tryread('bookmarks.current')
+    mark = encoding.tolocal((content.splitlines() or [''])[0])
+    if mark == '' or mark not in marks:
+        mark = None
     return mark
 
 def activate(repo, mark):
@@ -453,7 +445,11 @@ def listbookmarks(repo):
     return d
 
 def pushbookmark(repo, key, old, new):
-    with repo.wlock(), repo.lock(), repo.transaction('bookmarks') as tr:
+    if bookmarksinstore(repo):
+        wlock = util.nullcontextmanager()
+    else:
+        wlock = repo.wlock()
+    with wlock, repo.lock(), repo.transaction('bookmarks') as tr:
         marks = repo._bookmarks
         existing = hex(marks.get(key, ''))
         if existing != old and existing != new:

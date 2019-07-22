@@ -28,6 +28,9 @@
   $ hg clone --narrow ssh://user@dummy/remote main -q \
   > --include d1 --include d3 --include d5 --include d7
 
+Ignore file called "ignored"
+  $ echo ignored > main/.hgignore
+
   $ hg share main share
   updating working directory
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -55,15 +58,19 @@ Narrow the share and check that the main repo's working copy gets updated
 # Make d3/f dirty
   $ echo x >> main/d3/f
   $ echo y >> main/d3/g
+  $ touch main/d3/ignored
+  $ touch main/d3/untracked
   $ hg add main/d3/g
   $ hg -R main st
   M d3/f
   A d3/g
+  ? d3/untracked
 # Make d5/f not match the dirstate timestamp even though it's clean
   $ sleep 2
   $ hg -R main st
   M d3/f
   A d3/g
+  ? d3/untracked
   $ hg -R main debugdirstate --no-dates
   n 644          2 set                 d1/f
   n 644          2 set                 d3/f
@@ -91,6 +98,8 @@ Narrow the share and check that the main repo's working copy gets updated
   not deleting possibly dirty file d3/f
   not deleting possibly dirty file d3/g
   not deleting possibly dirty file d5/f
+  not deleting unknown file d3/untracked
+  not deleting ignored file d3/ignored
 # d1/f, d3/f, d3/g and d5/f should no longer be reported
   $ hg -R main files
   main/d7/f
@@ -99,6 +108,8 @@ Narrow the share and check that the main repo's working copy gets updated
   $ find main/d* -type f | sort
   main/d3/f
   main/d3/g
+  main/d3/ignored
+  main/d3/untracked
   main/d5/f
   main/d7/f
 
@@ -131,6 +142,8 @@ Widen the share and check that the main repo's working copy gets updated
   $ hg -R main st --all
   M d3/f
   ? d3/g
+  ? d3/untracked
+  I d3/ignored
   C d1/f
   C d7/f
 

@@ -1,3 +1,10 @@
+#testcases continuecommand continueflag
+#if continueflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > continue = rebase --continue
+  > EOF
+#endif
 
   $ . "$TESTDIR/narrow-library.sh"
 
@@ -69,7 +76,7 @@ Can rebase onto conflicting changes inside narrow spec
   $ echo modified3 > inside/f1
   $ hg resolve -m 2>&1 | grep -v continue:
   (no more unresolved files)
-  $ hg rebase --continue
+  $ hg continue
   rebasing 6:cdce97fbf653 "conflicting inside/f1" (tip)
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-rebase.hg (glob)
 

@@ -573,3 +573,52 @@ Convert with --full adds and removes files that didn't change
   M f
   A b-only
   R a-only
+
+Recorded {files} list does not get confused about flags on merge commits
+
+#if execbit
+  $ cd ..
+  $ hg init merge-flags-orig
+  $ cd merge-flags-orig
+  $ echo 0 > 0
+  $ hg ci -Aqm 'add 0'
+  $ echo a > a
+  $ chmod +x a
+  $ hg ci -qAm 'add executable file'
+  $ hg co -q 0
+  $ echo b > b
+  $ hg ci -qAm 'add file'
+  $ hg merge -q
+  $ hg ci -m 'merge'
+  $ hg log -G -T '{rev} {desc}\n'
+  @    3 merge
+  |\
+  | o  2 add file
+  | |
+  o |  1 add executable file
+  |/
+  o  0 add 0
+  
+
+# No files changed
+  $ hg log -r 3 -T '{files}\n'
+  
+
+  $ cd ..
+  $ hg convert merge-flags-orig merge-flags-new -q
+  $ cd merge-flags-new
+  $ hg log -G -T '{rev} {desc}\n'
+  o    3 merge
+  |\
+  | o  2 add file
+  | |
+  o |  1 add executable file
+  |/
+  o  0 add 0
+  
+
+# Still no files
+  $ hg log -r 3 -T '{files}\n'
+  
+
+#endif

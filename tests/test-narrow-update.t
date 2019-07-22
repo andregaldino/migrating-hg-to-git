@@ -72,5 +72,5 @@ Can update with a moved file inside
 
   $ hg mv inside/f1 inside/f2
   $ hg update -q 'desc("modify outside")'
-  $ hg update -q 'desc("initial")'
+  $ hg update -q 'desc("add inside and outside")'
   $ hg update -q 'desc("modify inside")'

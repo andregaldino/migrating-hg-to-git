@@ -1079,6 +1079,8 @@ def movecursor(state, oldpos, newpos):
 def changemode(state, mode):
     curmode, _ = state['mode']
     state['mode'] = (mode, curmode)
+    if mode == MODE_PATCH:
+        state['modes'][MODE_PATCH]['patchcontents'] = patchcontents(state)
 
 def makeselection(state, pos):
     state['selected'] = pos
@@ -1134,7 +1136,7 @@ def changeview(state, delta, unit):
     if mode != MODE_PATCH:
         return
     mode_state = state['modes'][mode]
-    num_lines = len(patchcontents(state))
+    num_lines = len(mode_state['patchcontents'])
     page_height = state['page_height']
     unit = page_height if unit == 'page' else 1
     num_pages = 1 + (num_lines - 1) / page_height
@@ -1227,15 +1229,25 @@ def addln(win, y, x, line, color=None):
     else:
         win.addstr(y, x, line)
 
+def _trunc_head(line, n):
+    if len(line) <= n:
+        return line
+    return '> ' + line[-(n - 2):]
+def _trunc_tail(line, n):
+    if len(line) <= n:
+        return line
+    return line[:n - 2] + ' >'
+
 def patchcontents(state):
     repo = state['repo']
     rule = state['rules'][state['pos']]
-    repo.ui.verbose = True
     displayer = logcmdutil.changesetdisplayer(repo.ui, repo, {
         "patch": True,  "template": "status"
     }, buffered=True)
-    displayer.show(rule.ctx)
-    displayer.close()
+    overrides = {('ui',  'verbose'): True}
+    with repo.ui.configoverride(overrides, source='histedit'):
+        displayer.show(rule.ctx)
+        displayer.close()
     return displayer.hunk[rule.ctx.rev()].splitlines()
 
 def _chisteditmain(repo, rules, stdscr):
@@ -1283,11 +1295,23 @@ def _chisteditmain(repo, rules, stdscr):
         line = "bookmark:  {0}".format(' '.join(bms))
         win.addstr(3, 1, line[:length])
 
-        line = "files:     {0}".format(','.join(ctx.files()))
+        line = "summary:   {0}".format(ctx.description().splitlines()[0])
         win.addstr(4, 1, line[:length])
 
-        line = "summary:   {0}".format(ctx.description().splitlines()[0])
-        win.addstr(5, 1, line[:length])
+        line = "files:     "
+        win.addstr(5, 1, line)
+        fnx = 1 + len(line)
+        fnmaxx = length - fnx + 1
+        y = 5
+        fnmaxn = maxy - (1 + y) - 1
+        files = ctx.files()
+        for i, line1 in enumerate(files):
+            if len(files) > fnmaxn and i == fnmaxn - 1:
+                win.addstr(y, fnx, _trunc_tail(','.join(files[i:]), fnmaxx))
+                y = y + 1
+                break
+            win.addstr(y, fnx, _trunc_head(line1, fnmaxx))
+            y = y + 1
 
         conflicts = rule.conflicts
         if len(conflicts) > 0:
@@ -1296,7 +1320,7 @@ def _chisteditmain(repo, rules, stdscr):
         else:
             conflictstr = 'no overlap'
 
-        win.addstr(6, 1, conflictstr[:length])
+        win.addstr(y, 1, conflictstr[:length])
         win.noutrefresh()
 
     def helplines(mode):
@@ -1372,15 +1396,16 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
     def renderpatch(win, state):
         start = state['modes'][MODE_PATCH]['line_offset']
-        renderstring(win, state, patchcontents(state)[start:], diffcolors=True)
+        content = state['modes'][MODE_PATCH]['patchcontents']
+        renderstring(win, state, content[start:], diffcolors=True)
 
     def layout(mode):
         maxy, maxx = stdscr.getmaxyx()
         helplen = len(helplines(mode))
         return {
-            'commit': (8, maxx),
+            'commit': (12, maxx),
             'help': (helplen, maxx),
-            'main': (maxy - helplen - 8, maxx),
+            'main': (maxy - helplen - 12, maxx),
         }
 
     def drawvertwin(size, y, x):
@@ -1894,6 +1919,14 @@ def _aborthistedit(ui, repo, state, nobackup=False):
     finally:
             state.clear()
 
+def hgaborthistedit(ui, repo):
+    state = histeditstate(repo)
+    nobackup = not ui.configbool('rewrite', 'backup-bundle')
+    with repo.wlock() as wlock, repo.lock() as lock:
+        state.wlock = wlock
+        state.lock = lock
+        _aborthistedit(ui, repo, state, nobackup=nobackup)
+
 def _edithisteditplan(ui, repo, state, rules):
     state.read()
     if not rules:
@@ -2288,8 +2321,6 @@ def summaryhook(ui, repo):
 
 def extsetup(ui):
     cmdutil.summaryhooks.add('histedit', summaryhook)
-    cmdutil.unfinishedstates.append(
-        ['histedit-state', False, True, _('histedit in progress'),
-         _("use 'hg histedit --continue' or 'hg histedit --abort'")])
-    cmdutil.afterresolvedstates.append(
-        ['histedit-state', _('hg histedit --continue')])
+    statemod.addunfinished('histedit', fname='histedit-state', allowcommit=True,
+                            continueflag=True, abortfunc=hgaborthistedit)
+

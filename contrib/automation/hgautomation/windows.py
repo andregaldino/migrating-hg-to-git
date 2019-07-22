@@ -39,7 +39,7 @@ $Env:WindowsSdkDir = "${root}\WinSDK\"
 $Env:PATH = "${root}\VC\Bin;${root}\WinSDK\Bin;$Env:PATH"
 $Env:INCLUDE = "${root}\VC\Include;${root}\WinSDK\Include;$Env:INCLUDE"
 $Env:LIB = "${root}\VC\Lib;${root}\WinSDK\Lib;$Env:LIB"
-$Env:LIBPATH = "${root}\VC\lib;${root}\WinSDK\Lib:$Env:LIBPATH"
+$Env:LIBPATH = "${root}\VC\lib;${root}\WinSDK\Lib;$Env:LIBPATH"
 '''.lstrip()
 
 HG_PURGE = r'''
@@ -156,6 +156,10 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
             fh.write('  UserKnownHostsFile %s\n' % (ssh_dir / 'known_hosts'))
             fh.write('  IdentityFile %s\n' % (ssh_dir / 'id_rsa'))
 
+        if not (hg_repo / '.hg').is_dir():
+            raise Exception('%s is not a Mercurial repository; '
+                            'synchronization not yet supported' % hg_repo)
+
         env = dict(os.environ)
         env['HGPLAIN'] = '1'
         env['HGENCODING'] = 'utf-8'
@@ -172,7 +176,8 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
             'python2.7', hg_bin,
             '--config', 'ui.ssh=ssh -F %s' % ssh_config,
             '--config', 'ui.remotecmd=c:/hgdev/venv-bootstrap/Scripts/hg.exe',
-            'push', '-r', full_revision, 'ssh://%s/c:/hgdev/src' % public_ip,
+            'push', '-f', '-r', full_revision,
+            'ssh://%s/c:/hgdev/src' % public_ip,
         ]
 
         subprocess.run(args, cwd=str(hg_repo), env=env, check=True)

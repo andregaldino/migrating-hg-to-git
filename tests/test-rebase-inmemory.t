@@ -744,7 +744,7 @@ Test rebasing a commit with copy information, but no content changes
   $ hg tglog
   @  6: 676538af172d 'untracked rename of d to e'
   |
-  | *    5: 71cb43376053 'merge'
+  | *    5: 574d92ad16fc 'merge'
   | |\
   | | x  4: 2c8b5dad7956 'rename d to e'
   | | |
@@ -758,9 +758,67 @@ Test rebasing a commit with copy information, but no content changes
   
   $ hg rebase -b 5 -d tip
   rebasing 3:ca58782ad1e4 "b"
-  rebasing 5:71cb43376053 "merge"
-  note: not rebasing 5:71cb43376053 "merge", its destination already has all its changes
+  rebasing 5:574d92ad16fc "merge"
+  note: not rebasing 5:574d92ad16fc "merge", its destination already has all its changes
 
+  $ cd ..
+
+Test rebasing a commit with copy information
+
+  $ hg init rebase-rename
+  $ cd rebase-rename
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ echo a2 > a
+  $ hg ci -m 'modify a'
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'rename a to b'
+  $ hg rebase -d 1
+  rebasing 2:b977edf6f839 "rename a to b" (tip)
+  merging a and b to b
+  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/b977edf6f839-0864f570-rebase.hg
+  $ hg st --copies --change .
+  A b
+    a
+  R a
+  $ cd ..
+
+Test rebasing a commit with copy information, where the target is empty
+
+  $ hg init rebase-rename-empty
+  $ cd rebase-rename-empty
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ cat > a
+  $ hg ci -m 'make a empty'
+  $ hg co -q 0
+  $ hg mv a b
+  $ hg ci -qm 'rename a to b'
+  $ hg rebase -d 1
+  rebasing 2:b977edf6f839 "rename a to b" (tip)
+  merging a and b to b
+  saved backup bundle to $TESTTMP/rebase-rename-empty/.hg/strip-backup/b977edf6f839-0864f570-rebase.hg
+  $ hg st --copies --change .
+  A b
+    a
+  R a
+  $ cd ..
+Rebase across a copy with --collapse
+
+  $ hg init rebase-rename-collapse
+  $ cd rebase-rename-collapse
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ hg mv a b
+  $ hg ci -m 'rename a to b'
+  $ hg co -q 0
+  $ echo a2 > a
+  $ hg ci -qm 'modify a'
+  $ hg rebase -r . -d 1 --collapse
+  rebasing 2:41c4ea50d4cf "modify a" (tip)
+  merging b and a to b
+  saved backup bundle to $TESTTMP/rebase-rename-collapse/.hg/strip-backup/41c4ea50d4cf-b90b7994-rebase.hg
   $ cd ..
 
 Test rebasing when the file we are merging in destination is empty

@@ -291,6 +291,10 @@ class ipeercommandexecutor(interfaceutil.Interface):
 class ipeerrequests(interfaceutil.Interface):
     """Interface for executing commands on a peer."""
 
+    limitedarguments = interfaceutil.Attribute(
+        """True if the peer cannot receive large argument value for commands."""
+    )
+
     def commandexecutor():
         """A context manager that resolves to an ipeercommandexecutor.
 
@@ -328,6 +332,8 @@ class ipeerv2(ipeerconnection, ipeercapabilities, ipeerrequests):
 @interfaceutil.implementer(ipeerbase)
 class peer(object):
     """Base class for peer repositories."""
+
+    limitedarguments = False
 
     def capable(self, name):
         caps = self.capabilities()
@@ -1650,7 +1656,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
                editor=False, extra=None):
         """Add a new revision to the repository."""
 
-    def commitctx(ctx, error=False):
+    def commitctx(ctx, error=False, origctx=None):
         """Commit a commitctx instance to the repository."""
 
     def destroying():

@@ -339,7 +339,11 @@ class mercurial_sink(common.converter_sink):
                                    phases.phasenames[commit.phase], 'convert')
 
             with self.repo.transaction("convert") as tr:
-                node = nodemod.hex(self.repo.commitctx(ctx))
+                if self.repo.ui.config('convert', 'hg.preserve-hash'):
+                    origctx = commit.ctx
+                else:
+                    origctx = None
+                node = nodemod.hex(self.repo.commitctx(ctx, origctx=origctx))
 
                 # If the node value has changed, but the phase is lower than
                 # draft, set it back to draft since it hasn't been exposed
@@ -591,7 +595,8 @@ class mercurial_source(common.converter_source):
                              extra=ctx.extra(),
                              sortkey=ctx.rev(),
                              saverev=self.saverev,
-                             phase=ctx.phase())
+                             phase=ctx.phase(),
+                             ctx=ctx)
 
     def numcommits(self):
         return len(self.repo)

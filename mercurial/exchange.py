@@ -539,10 +539,12 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
     # get lock as we might write phase data
     wlock = lock = None
     try:
-        # bundle2 push may receive a reply bundle touching bookmarks or other
-        # things requiring the wlock. Take it now to ensure proper ordering.
+        # bundle2 push may receive a reply bundle touching bookmarks
+        # requiring the wlock. Take it now to ensure proper ordering.
         maypushback = pushop.ui.configbool('experimental', 'bundle2.pushback')
-        if (not _forcebundle1(pushop)) and maypushback:
+        if ((not _forcebundle1(pushop)) and
+            maypushback and
+            not bookmod.bookmarksinstore(repo)):
             wlock = pushop.repo.wlock()
         lock = pushop.repo.lock()
         pushop.trmanager = transactionmanager(pushop.repo,
@@ -1548,7 +1550,10 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
             raise error.Abort(msg)
 
     pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
-    with repo.wlock(), repo.lock(), pullop.trmanager:
+    wlock = util.nullcontextmanager()
+    if not bookmod.bookmarksinstore(repo):
+        wlock = repo.wlock()
+    with wlock, repo.lock(), pullop.trmanager:
         # Use the modern wire protocol, if available.
         if remote.capable('command-changesetdata'):
             exchangev2.pull(pullop)
@@ -2395,7 +2400,8 @@ def unbundle(repo, cg, heads, source, url):
             try:
                 def gettransaction():
                     if not lockandtr[2]:
-                        lockandtr[0] = repo.wlock()
+                        if not bookmod.bookmarksinstore(repo):
+                            lockandtr[0] = repo.wlock()
                         lockandtr[1] = repo.lock()
                         lockandtr[2] = repo.transaction(source)
                         lockandtr[2].hookargs['source'] = source

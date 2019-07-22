@@ -5,8 +5,6 @@
   > perfhack=1
   > EOF
 
-  $ HGMERGE=true; export HGMERGE
-
   $ hg init repo
   $ cd repo
 

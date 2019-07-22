@@ -60,17 +60,20 @@ nomerge = internaltool.nomerge
 mergeonly = internaltool.mergeonly # just the full merge, no premerge
 fullmerge = internaltool.fullmerge # both premerge and merge
 
+# IMPORTANT: keep the last line of this prompt very short ("What do you want to
+# do?") because of issue6158, ideally to <40 English characters (to allow other
+# languages that may take more columns to still have a chance to fit in an
+# 80-column screen).
 _localchangedotherdeletedmsg = _(
     "file '%(fd)s' was deleted in other%(o)s but was modified in local%(l)s.\n"
-    "What do you want to do?\n"
-    "use (c)hanged version, (d)elete, or leave (u)nresolved?"
+    "You can use (c)hanged version, (d)elete, or leave (u)nresolved.\n"
+    "What do you want to do?"
     "$$ &Changed $$ &Delete $$ &Unresolved")
 
 _otherchangedlocaldeletedmsg = _(
     "file '%(fd)s' was deleted in local%(l)s but was modified in other%(o)s.\n"
-    "What do you want to do?\n"
-    "use (c)hanged version, leave (d)eleted, or "
-    "leave (u)nresolved?"
+    "You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.\n"
+    "What do you want to do?"
     "$$ &Changed $$ &Deleted $$ &Unresolved")
 
 class absentfilectx(object):
@@ -299,9 +302,14 @@ def _iprompt(repo, mynode, orig, fcd, fco, fca, toolconf, labels=None):
                 _otherchangedlocaldeletedmsg % prompts, 2)
             choice = ['other', 'local', 'unresolved'][index]
         else:
+            # IMPORTANT: keep the last line of this prompt ("What do you want to
+            # do?") very short, see comment next to _localchangedotherdeletedmsg
+            # at the top of the file for details.
             index = ui.promptchoice(
-                _("keep (l)ocal%(l)s, take (o)ther%(o)s, or leave (u)nresolved"
-                  " for %(fd)s?"
+                _("file '%(fd)s' needs to be resolved.\n"
+                  "You can keep (l)ocal%(l)s, take (o)ther%(o)s, or leave "
+                  "(u)nresolved.\n"
+                  "What do you want to do?"
                   "$$ &Local $$ &Other $$ &Unresolved") % prompts, 2)
             choice = ['local', 'other', 'unresolved'][index]
 

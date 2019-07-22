@@ -98,6 +98,14 @@ Repository root:
   $TESTTMP/t
   $ hg log -l1 -T '{reporoot}\n'
   $TESTTMP/t
+  $ hg root -Tjson | sed 's|\\\\|\\|g'
+  [
+   {
+    "hgpath": "$TESTTMP/t/.hg",
+    "reporoot": "$TESTTMP/t",
+    "storepath": "$TESTTMP/t/.hg/store"
+   }
+  ]
 
 At the end...
 

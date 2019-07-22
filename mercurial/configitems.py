@@ -202,6 +202,9 @@ coreconfigitem('color', 'pagermode',
     default=dynamicdefault,
 )
 _registerdiffopts(section='commands', configprefix='commit.interactive.')
+coreconfigitem('commands', 'commit.post-status',
+    default=False,
+)
 coreconfigitem('commands', 'grep.all-files',
     default=False,
 )
@@ -286,6 +289,9 @@ coreconfigitem('convert', 'hg.clonebranches',
     default=False,
 )
 coreconfigitem('convert', 'hg.ignoreerrors',
+    default=False,
+)
+coreconfigitem('convert', 'hg.preserve-hash',
     default=False,
 )
 coreconfigitem('convert', 'hg.revs',
@@ -526,11 +532,21 @@ coreconfigitem('experimental', 'evolution.exchange',
 coreconfigitem('experimental', 'evolution.bundle-obsmarker',
     default=False,
 )
+coreconfigitem('experimental', 'log.topo',
+    default=False,
+)
 coreconfigitem('experimental', 'evolution.report-instabilities',
     default=True,
 )
 coreconfigitem('experimental', 'evolution.track-operation',
     default=True,
+)
+# repo-level config to exclude a revset visibility
+#
+# The target use case is to use `share` to expose different subset of the same
+# repository, especially server side. See also `server.view`.
+coreconfigitem('experimental', 'extra-filter-revs',
+    default=None,
 )
 coreconfigitem('experimental', 'maxdeltachainspan',
     default=-1,
@@ -662,6 +678,9 @@ coreconfigitem('extensions', '.*',
 coreconfigitem('extdata', '.*',
     default=None,
     generic=True,
+)
+coreconfigitem('format', 'bookmarks-in-store',
+    default=False,
 )
 coreconfigitem('format', 'chunkcachesize',
     default=None,
@@ -931,6 +950,9 @@ coreconfigitem('profiling', 'showmax',
 coreconfigitem('profiling', 'showmin',
     default=dynamicdefault,
 )
+coreconfigitem('profiling', 'showtime',
+    default=True,
+)
 coreconfigitem('profiling', 'sort',
     default='inlinetime',
 )
@@ -1071,6 +1093,9 @@ coreconfigitem('share', 'pool',
 )
 coreconfigitem('share', 'poolnaming',
     default='identity',
+)
+coreconfigitem('shelve','maxbackups',
+    default=10,
 )
 coreconfigitem('smtp', 'host',
     default=None,

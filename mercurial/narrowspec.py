@@ -7,14 +7,13 @@
 
 from __future__ import absolute_import
 
-import errno
-
 from .i18n import _
 from . import (
     error,
     match as matchmod,
     merge,
     repository,
+    scmutil,
     sparse,
     util,
 )
@@ -144,15 +143,9 @@ def parseconfig(ui, spec):
     return includepats, excludepats
 
 def load(repo):
-    try:
-        spec = repo.svfs.read(FILENAME)
-    except IOError as e:
-        # Treat "narrowspec does not exist" the same as "narrowspec file exists
-        # and is empty".
-        if e.errno == errno.ENOENT:
-            return set(), set()
-        raise
-
+    # Treat "narrowspec does not exist" the same as "narrowspec file exists
+    # and is empty".
+    spec = repo.svfs.tryread(FILENAME)
     return parseconfig(repo.ui, spec)
 
 def save(repo, includepats, excludepats):
@@ -266,9 +259,12 @@ def _writeaddedfiles(repo, pctx, files):
         if not repo.wvfs.exists(f):
             addgaction((f, (mf.flags(f), False), "narrowspec updated"))
     merge.applyupdates(repo, actions, wctx=repo[None],
-                       mctx=repo['.'], overwrite=False)
+                       mctx=repo['.'], overwrite=False, wantfiledata=False)
 
 def checkworkingcopynarrowspec(repo):
+    # Avoid infinite recursion when updating the working copy
+    if getattr(repo, '_updatingnarrowspec', False):
+        return
     storespec = repo.svfs.tryread(FILENAME)
     wcspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     if wcspec != storespec:
@@ -283,6 +279,7 @@ def updateworkingcopy(repo, assumeclean=False):
     """
     oldspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     newspec = repo.svfs.tryread(FILENAME)
+    repo._updatingnarrowspec = True
 
     oldincludes, oldexcludes = parseconfig(repo.ui, oldspec)
     newincludes, newexcludes = parseconfig(repo.ui, newspec)
@@ -292,8 +289,8 @@ def updateworkingcopy(repo, assumeclean=False):
     removedmatch = matchmod.differencematcher(oldmatch, newmatch)
 
     ds = repo.dirstate
-    lookup, status = ds.status(removedmatch, subrepos=[], ignored=False,
-                               clean=True, unknown=False)
+    lookup, status = ds.status(removedmatch, subrepos=[], ignored=True,
+                               clean=True, unknown=True)
     trackeddirty = status.modified + status.added
     clean = status.clean
     if assumeclean:
@@ -302,15 +299,19 @@ def updateworkingcopy(repo, assumeclean=False):
     else:
         trackeddirty.extend(lookup)
     _deletecleanfiles(repo, clean)
+    uipathfn = scmutil.getuipathfn(repo)
     for f in sorted(trackeddirty):
-        repo.ui.status(_('not deleting possibly dirty file %s\n') % f)
+        repo.ui.status(_('not deleting possibly dirty file %s\n') % uipathfn(f))
+    for f in sorted(status.unknown):
+        repo.ui.status(_('not deleting unknown file %s\n') % uipathfn(f))
+    for f in sorted(status.ignored):
+        repo.ui.status(_('not deleting ignored file %s\n') % uipathfn(f))
     for f in clean + trackeddirty:
         ds.drop(f)
 
-    repo.narrowpats = newincludes, newexcludes
-    repo._narrowmatch = newmatch
     pctx = repo['.']
     newfiles = [f for f in pctx.manifest().walk(addedmatch) if f not in ds]
     for f in newfiles:
         ds.normallookup(f)
     _writeaddedfiles(repo, pctx, newfiles)
+    repo._updatingnarrowspec = False

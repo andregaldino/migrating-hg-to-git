@@ -15,6 +15,13 @@ Configurations
 ``presleep``
   number of second to wait before any group of runs (default: 1)
 
+``pre-run``
+  number of run to perform before starting measurement.
+
+``profile-benchmark``
+  Enable profiling for the benchmarked section.
+  (The first iteration is benchmarked)
+
 ``run-limits``
   Control the number of runs each benchmark will perform. The option value
   should be a list of `<time>-<numberofrun>` pairs. After each run the
@@ -106,6 +113,10 @@ try:
 except ImportError:
     pass
 
+try:
+    from mercurial import profiling
+except ImportError:
+    profiling = None
 
 def identity(a):
     return a
@@ -240,6 +251,12 @@ try:
     configitem(b'perf', b'all-timing',
         default=mercurial.configitems.dynamicdefault,
     )
+    configitem(b'perf', b'pre-run',
+        default=mercurial.configitems.dynamicdefault,
+    )
+    configitem(b'perf', b'profile-benchmark',
+        default=mercurial.configitems.dynamicdefault,
+    )
     configitem(b'perf', b'run-limits',
         default=mercurial.configitems.dynamicdefault,
     )
@@ -250,6 +267,15 @@ def getlen(ui):
     if ui.configbool(b"perf", b"stub", False):
         return lambda x: 1
     return len
+
+class noop(object):
+    """dummy context manager"""
+    def __enter__(self):
+        pass
+    def __exit__(self, *args):
+        pass
+
+NOOPCTX = noop()
 
 def gettimer(ui, opts=None):
     """return a timer function and formatter: (timer, formatter)
@@ -341,7 +367,14 @@ def gettimer(ui, opts=None):
     if not limits:
         limits = DEFAULTLIMITS
 
-    t = functools.partial(_timer, fm, displayall=displayall, limits=limits)
+    profiler = None
+    if profiling is not None:
+        if ui.configbool(b"perf", b"profile-benchmark", False):
+            profiler = profiling.profile(ui)
+
+    prerun = getint(ui, b"perf", b"pre-run", 0)
+    t = functools.partial(_timer, fm, displayall=displayall, limits=limits,
+                          prerun=prerun, profiler=profiler)
     return t, fm
 
 def stub_timer(fm, func, setup=None, title=None):
@@ -368,17 +401,25 @@ DEFAULTLIMITS = (
 )
 
 def _timer(fm, func, setup=None, title=None, displayall=False,
-           limits=DEFAULTLIMITS):
+           limits=DEFAULTLIMITS, prerun=0, profiler=None):
     gc.collect()
     results = []
     begin = util.timer()
     count = 0
+    if profiler is None:
+        profiler = NOOPCTX
+    for i in range(prerun):
+        if setup is not None:
+            setup()
+        func()
     keepgoing = True
     while keepgoing:
         if setup is not None:
             setup()
-        with timeone() as item:
-            r = func()
+        with profiler:
+            with timeone() as item:
+                r = func()
+        profiler = NOOPCTX
         count += 1
         results.append(item[0])
         cstop = util.timer()
@@ -922,22 +963,62 @@ def perfdirstatewrite(ui, repo, **opts):
     timer(d)
     fm.end()
 
+def _getmergerevs(repo, opts):
+    """parse command argument to return rev involved in merge
+
+    input: options dictionnary with `rev`, `from` and `bse`
+    output: (localctx, otherctx, basectx)
+    """
+    if opts[b'from']:
+        fromrev = scmutil.revsingle(repo, opts[b'from'])
+        wctx = repo[fromrev]
+    else:
+        wctx = repo[None]
+        # we don't want working dir files to be stat'd in the benchmark, so
+        # prime that cache
+        wctx.dirty()
+    rctx = scmutil.revsingle(repo, opts[b'rev'], opts[b'rev'])
+    if opts[b'base']:
+        fromrev = scmutil.revsingle(repo, opts[b'base'])
+        ancestor = repo[fromrev]
+    else:
+        ancestor = wctx.ancestor(rctx)
+    return (wctx, rctx, ancestor)
+
 @command(b'perfmergecalculate',
-         [(b'r', b'rev', b'.', b'rev to merge against')] + formatteropts)
-def perfmergecalculate(ui, repo, rev, **opts):
+         [
+             (b'r', b'rev', b'.', b'rev to merge against'),
+             (b'', b'from', b'', b'rev to merge from'),
+             (b'', b'base', b'', b'the revision to use as base'),
+         ] + formatteropts)
+def perfmergecalculate(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    wctx = repo[None]
-    rctx = scmutil.revsingle(repo, rev, rev)
-    ancestor = wctx.ancestor(rctx)
-    # we don't want working dir files to be stat'd in the benchmark, so prime
-    # that cache
-    wctx.dirty()
+
+    wctx, rctx, ancestor = _getmergerevs(repo, opts)
     def d():
         # acceptremote is True because we don't want prompts in the middle of
         # our benchmark
         merge.calculateupdates(repo, wctx, rctx, [ancestor], False, False,
                                acceptremote=True, followcopies=True)
+    timer(d)
+    fm.end()
+
+@command(b'perfmergecopies',
+         [
+             (b'r', b'rev', b'.', b'rev to merge against'),
+             (b'', b'from', b'', b'rev to merge from'),
+             (b'', b'base', b'', b'the revision to use as base'),
+         ] + formatteropts)
+def perfmergecopies(ui, repo, **opts):
+    """measure runtime of `copies.mergecopies`"""
+    opts = _byteskwargs(opts)
+    timer, fm = gettimer(ui, opts)
+    wctx, rctx, ancestor = _getmergerevs(repo, opts)
+    def d():
+        # acceptremote is True because we don't want prompts in the middle of
+        # our benchmark
+        copies.mergecopies(repo, wctx, rctx, ancestor)
     timer(d)
     fm.end()
 
@@ -1388,6 +1469,111 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
 
     timer, fm = gettimer(ui, opts)
     timer(format)
+    fm.end()
+
+@command(b'perfhelper-mergecopies', formatteropts +
+         [
+          (b'r', b'revs', [], b'restrict search to these revisions'),
+          (b'', b'timing', False, b'provides extra data (costly)'),
+         ])
+def perfhelpermergecopies(ui, repo, revs=[], **opts):
+    """find statistics about potential parameters for `perfmergecopies`
+
+    This command find (base, p1, p2) triplet relevant for copytracing
+    benchmarking in the context of a merge.  It reports values for some of the
+    parameters that impact merge copy tracing time during merge.
+
+    If `--timing` is set, rename detection is run and the associated timing
+    will be reported. The extra details come at the cost of slower command
+    execution.
+
+    Since rename detection is only run once, other factors might easily
+    affect the precision of the timing. However it should give a good
+    approximation of which revision triplets are very costly.
+    """
+    opts = _byteskwargs(opts)
+    fm = ui.formatter(b'perf', opts)
+    dotiming = opts[b'timing']
+
+    output_template = [
+        ("base", "%(base)12s"),
+        ("p1", "%(p1.node)12s"),
+        ("p2", "%(p2.node)12s"),
+        ("p1.nb-revs", "%(p1.nbrevs)12d"),
+        ("p1.nb-files", "%(p1.nbmissingfiles)12d"),
+        ("p1.renames", "%(p1.renamedfiles)12d"),
+        ("p1.time", "%(p1.time)12.3f"),
+        ("p2.nb-revs", "%(p2.nbrevs)12d"),
+        ("p2.nb-files", "%(p2.nbmissingfiles)12d"),
+        ("p2.renames", "%(p2.renamedfiles)12d"),
+        ("p2.time", "%(p2.time)12.3f"),
+        ("renames", "%(nbrenamedfiles)12d"),
+        ("total.time", "%(time)12.3f"),
+        ]
+    if not dotiming:
+        output_template = [i for i in output_template
+                           if not ('time' in i[0] or 'renames' in i[0])]
+    header_names = [h for (h, v) in output_template]
+    output = ' '.join([v for (h, v) in output_template]) + '\n'
+    header = ' '.join(['%12s'] * len(header_names)) + '\n'
+    fm.plain(header % tuple(header_names))
+
+    if not revs:
+        revs = ['all()']
+    revs = scmutil.revrange(repo, revs)
+
+    roi = repo.revs('merge() and %ld', revs)
+    for r in roi:
+        ctx = repo[r]
+        p1 = ctx.p1()
+        p2 = ctx.p2()
+        bases = repo.changelog._commonancestorsheads(p1.rev(), p2.rev())
+        for b in bases:
+            b = repo[b]
+            p1missing = copies._computeforwardmissing(b, p1)
+            p2missing = copies._computeforwardmissing(b, p2)
+            data = {
+                b'base': b.hex(),
+                b'p1.node': p1.hex(),
+                b'p1.nbrevs': len(repo.revs('%d::%d', b.rev(), p1.rev())),
+                b'p1.nbmissingfiles': len(p1missing),
+                b'p2.node': p2.hex(),
+                b'p2.nbrevs': len(repo.revs('%d::%d', b.rev(), p2.rev())),
+                b'p2.nbmissingfiles': len(p2missing),
+            }
+            if dotiming:
+                begin = util.timer()
+                mergedata = copies.mergecopies(repo, p1, p2, b)
+                end = util.timer()
+                # not very stable timing since we did only one run
+                data['time'] = end - begin
+                # mergedata contains five dicts: "copy", "movewithdir",
+                # "diverge", "renamedelete" and "dirmove".
+                # The first 4 are about renamed file so lets count that.
+                renames = len(mergedata[0])
+                renames += len(mergedata[1])
+                renames += len(mergedata[2])
+                renames += len(mergedata[3])
+                data['nbrenamedfiles'] = renames
+                begin = util.timer()
+                p1renames = copies.pathcopies(b, p1)
+                end = util.timer()
+                data['p1.time'] = end - begin
+                begin = util.timer()
+                p2renames = copies.pathcopies(b, p2)
+                data['p2.time'] = end - begin
+                end = util.timer()
+                data['p1.renamedfiles'] = len(p1renames)
+                data['p2.renamedfiles'] = len(p2renames)
+            fm.startitem()
+            fm.data(**data)
+            # make node pretty for the human output
+            out = data.copy()
+            out['base'] = fm.hexfunc(b.node())
+            out['p1.node'] = fm.hexfunc(p1.node())
+            out['p2.node'] = fm.hexfunc(p2.node())
+            fm.plain(output % out)
+
     fm.end()
 
 @command(b'perfhelper-pathcopies', formatteropts +
@@ -1890,7 +2076,7 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
 @command(b'perfrevlogwrite', revlogopts + formatteropts +
          [(b's', b'startrev', 1000, b'revision to start writing at'),
           (b'', b'stoprev', -1, b'last revision to write'),
-          (b'', b'count', 3, b'last revision to write'),
+          (b'', b'count', 3, b'number of passes to perform'),
           (b'', b'details', False, b'print timing for every revisions tested'),
           (b'', b'source', b'full', b'the kind of data feed in the revlog'),
           (b'', b'lazydeltabase', True, b'try the provided delta first'),
@@ -1907,6 +2093,16 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
                   (use a delta from the first parent otherwise)
     * `parent-smallest`: add from the smallest delta (either p1 or p2)
     * `storage`: add from the existing precomputed deltas
+
+    Note: This performance command measures performance in a custom way. As a
+    result some of the global configuration of the 'perf' command does not
+    apply to it:
+
+    * ``pre-run``: disabled
+
+    * ``profile-benchmark``: disabled
+
+    * ``run-limits``: disabled use --count instead
     """
     opts = _byteskwargs(opts)
 
@@ -2081,6 +2277,10 @@ def _temprevlog(ui, orig, truncaterev):
 
     if orig._inline:
         raise error.Abort('not supporting inline revlog (yet)')
+    revlogkwargs = {}
+    k = 'upperboundcomp'
+    if util.safehasattr(orig, k):
+        revlogkwargs[k] = getattr(orig, k)
 
     origindexpath = orig.opener.join(orig.indexfile)
     origdatapath = orig.opener.join(orig.datafile)
@@ -2112,7 +2312,7 @@ def _temprevlog(ui, orig, truncaterev):
 
         dest = revlog.revlog(vfs,
                              indexfile=indexname,
-                             datafile=dataname)
+                             datafile=dataname, **revlogkwargs)
         if dest._inline:
             raise error.Abort('not supporting inline revlog (yet)')
         # make sure internals are initialized

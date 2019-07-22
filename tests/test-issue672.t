@@ -25,7 +25,6 @@ https://bz.mercurial-scm.org/672
   created new head
 
   $ hg merge --debug 1
-    searching for copies back to rev 1
     unmatched files in other:
      1a
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -54,7 +53,6 @@ https://bz.mercurial-scm.org/672
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
   $ hg merge -y --debug 4
-    searching for copies back to rev 1
     unmatched files in local:
      1a
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -62,13 +60,13 @@ https://bz.mercurial-scm.org/672
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: c64f439569a9, local: e327dca35ac8+, remote: 746e9549ea96
+   ancestor: c64f439569a9, local: f4a9cff3cd0b+, remote: 746e9549ea96
    preserving 1a for resolve of 1a
   starting 4 threads for background file closing (?)
    1a: local copied/moved from 1 -> m (premerge)
   picked tool ':merge' for 1a (binary False symlink False changedelete False)
   merging 1a and 1 to 1a
-  my 1a@e327dca35ac8+ other 1@746e9549ea96 ancestor 1@c64f439569a9
+  my 1a@f4a9cff3cd0b+ other 1@746e9549ea96 ancestor 1@c64f439569a9
    premerge successful
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -77,7 +75,6 @@ https://bz.mercurial-scm.org/672
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
   $ hg merge -y --debug 3
-    searching for copies back to rev 1
     unmatched files in other:
      1a
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
@@ -85,14 +82,14 @@ https://bz.mercurial-scm.org/672
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: c64f439569a9, local: 746e9549ea96+, remote: e327dca35ac8
+   ancestor: c64f439569a9, local: 746e9549ea96+, remote: f4a9cff3cd0b
    preserving 1 for resolve of 1a
   removing 1
   starting 4 threads for background file closing (?)
    1a: remote moved from 1 -> m (premerge)
   picked tool ':merge' for 1a (binary False symlink False changedelete False)
   merging 1 and 1a to 1a
-  my 1a@746e9549ea96+ other 1a@e327dca35ac8 ancestor 1@c64f439569a9
+  my 1a@746e9549ea96+ other 1a@f4a9cff3cd0b ancestor 1@c64f439569a9
    premerge successful
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)

@@ -33,13 +33,6 @@ from . import (
     shallowutil,
 )
 
-if util.safehasattr(util, '_hgexecutable'):
-    # Before 5be286db
-    _hgexecutable = util.hgexecutable
-else:
-    from mercurial.utils import procutil
-    _hgexecutable = procutil.hgexecutable
-
 # These make*stores functions are global so that other extensions can replace
 # them.
 def makelocalstores(repo):
@@ -168,7 +161,7 @@ def wraprepo(repo):
                                                               **kwargs)
 
         @localrepo.unfilteredmethod
-        def commitctx(self, ctx, error=False):
+        def commitctx(self, ctx, error=False, origctx=None):
             """Add a new revision to current repository.
             Revision information is passed via the context argument.
             """
@@ -186,18 +179,21 @@ def wraprepo(repo):
                         files.append((f, hex(fparent1)))
                 self.fileservice.prefetch(files)
             return super(shallowrepository, self).commitctx(ctx,
-                                                            error=error)
+                                                            error=error,
+                                                            origctx=origctx)
 
         def backgroundprefetch(self, revs, base=None, repack=False, pats=None,
                                opts=None):
             """Runs prefetch in background with optional repack
             """
-            cmd = [_hgexecutable(), '-R', repo.origroot, 'prefetch']
+            cmd = [procutil.hgexecutable(), '-R', repo.origroot, 'prefetch']
             if repack:
                 cmd.append('--repack')
             if revs:
                 cmd += ['-r', revs]
-            procutil.runbgcommand(cmd, encoding.environ)
+            # We know this command will find a binary, so don't block
+            # on it starting.
+            procutil.runbgcommand(cmd, encoding.environ, ensurestart=False)
 
         def prefetch(self, revs, base=None, pats=None, opts=None):
             """Prefetches all the necessary file revisions for the given revs

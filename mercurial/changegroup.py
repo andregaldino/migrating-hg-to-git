@@ -1061,7 +1061,7 @@ class cgpacker(object):
         while tmfnodes:
             tree, nodes = tmfnodes.popitem()
 
-            should_visit = self._matcher.visitdir(tree[:-1] or '.')
+            should_visit = self._matcher.visitdir(tree[:-1])
             if tree and not should_visit:
                 continue
 
@@ -1093,7 +1093,7 @@ class cgpacker(object):
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis)
 
-            if not self._oldmatcher.visitdir(store.tree[:-1] or '.'):
+            if not self._oldmatcher.visitdir(store.tree[:-1]):
                 yield tree, deltas
             else:
                 # 'deltas' is a generator and we need to consume it even if

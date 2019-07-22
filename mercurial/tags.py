@@ -13,11 +13,13 @@
 from __future__ import absolute_import
 
 import errno
+import io
 
 from .node import (
     bin,
     hex,
     nullid,
+    nullrev,
     short,
 )
 from .i18n import _
@@ -89,7 +91,7 @@ def fnoderevs(ui, repo, revs):
     unfi = repo.unfiltered()
     tonode = unfi.changelog.node
     nodes = [tonode(r) for r in revs]
-    fnodes = _getfnodes(ui, repo, nodes[::-1]) # reversed help the cache
+    fnodes = _getfnodes(ui, repo, nodes)
     fnodes = _filterfnodes(fnodes, nodes)
     return fnodes
 
@@ -457,7 +459,8 @@ def _readtagcache(ui, repo):
     # This is the most expensive part of finding tags, so performance
     # depends primarily on the size of newheads.  Worst case: no cache
     # file, so newheads == repoheads.
-    cachefnode = _getfnodes(ui, repo, repoheads)
+    # Reversed order helps the cache ('repoheads' is in descending order)
+    cachefnode = _getfnodes(ui, repo, reversed(repoheads))
 
     # Caller has to iterate over all heads, but can use the filenodes in
     # cachefnode to get to each .hgtags revision quickly.
@@ -472,7 +475,7 @@ def _getfnodes(ui, repo, nodes):
     starttime = util.timer()
     fnodescache = hgtagsfnodescache(repo.unfiltered())
     cachefnode = {}
-    for node in reversed(nodes):
+    for node in nodes:
         fnode = fnodescache.getfnode(node)
         if fnode != nullid:
             cachefnode[node] = fnode
@@ -560,7 +563,7 @@ def _tag(repo, names, node, message, local, user, date, extra=None,
             " branch name\n") % name)
 
     def writetags(fp, names, munge, prevtags):
-        fp.seek(0, 2)
+        fp.seek(0, io.SEEK_END)
         if prevtags and not prevtags.endswith('\n'):
             fp.write('\n')
         for name in names:
@@ -691,6 +694,9 @@ class hgtagsfnodescache(object):
         If an .hgtags does not exist at the specified revision, nullid is
         returned.
         """
+        if node == nullid:
+            return nullid
+
         ctx = self._repo[node]
         rev = ctx.rev()
 
@@ -715,12 +721,33 @@ class hgtagsfnodescache(object):
         if not computemissing:
             return None
 
-        # Populate missing entry.
-        try:
-            fnode = ctx.filenode('.hgtags')
-        except error.LookupError:
-            # No .hgtags file on this revision.
-            fnode = nullid
+        fnode = None
+        cl = self._repo.changelog
+        p1rev, p2rev = cl._uncheckedparentrevs(rev)
+        p1node = cl.node(p1rev)
+        p1fnode = self.getfnode(p1node, computemissing=False)
+        if p2rev != nullrev:
+            # There is some no-merge changeset where p1 is null and p2 is set
+            # Processing them as merge is just slower, but still gives a good
+            # result.
+            p2node = cl.node(p1rev)
+            p2fnode = self.getfnode(p2node, computemissing=False)
+            if p1fnode != p2fnode:
+                # we cannot rely on readfast because we don't know against what
+                # parent the readfast delta is computed
+                p1fnode = None
+        if p1fnode is not None:
+            mctx = ctx.manifestctx()
+            fnode = mctx.readfast().get('.hgtags')
+            if fnode is None:
+                fnode = p1fnode
+        if fnode is None:
+            # Populate missing entry.
+            try:
+                fnode = ctx.filenode('.hgtags')
+            except error.LookupError:
+                # No .hgtags file on this revision.
+                fnode = nullid
 
         self._writeentry(offset, properprefix, fnode)
         return fnode

@@ -38,10 +38,12 @@ from . import (
     pathutil,
     phases,
     pycompat,
+    repair,
     revlog,
     rewriteutil,
     scmutil,
     smartset,
+    state as statemod,
     subrepoutil,
     templatekw,
     templater,
@@ -264,8 +266,8 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         In the end we'll record interesting changes, and everything else
         will be left in place, so the user can continue working.
         """
-
-        checkunfinished(repo, commit=True)
+        if not opts.get('interactive-unshelve'):
+            checkunfinished(repo, commit=True)
         wctx = repo[None]
         merge = len(wctx.parents()) > 1
         if merge:
@@ -278,8 +280,8 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         force = opts.get('force')
         if not force:
             vdirs = []
+            match = matchmod.badmatch(match, fail)
             match.explicitdir = vdirs.append
-            match.bad = fail
 
         status = repo.status(match=match)
 
@@ -618,74 +620,18 @@ To mark files as resolved:  hg resolve --mark FILE''') % mergeliststr
 
     return _commentlines(msg)
 
-def _helpmessage(continuecmd, abortcmd):
-    msg = _('To continue:    %s\n'
-            'To abort:       %s') % (continuecmd, abortcmd)
-    return _commentlines(msg)
-
-def _rebasemsg():
-    return _helpmessage('hg rebase --continue', 'hg rebase --abort')
-
-def _histeditmsg():
-    return _helpmessage('hg histedit --continue', 'hg histedit --abort')
-
-def _unshelvemsg():
-    return _helpmessage('hg unshelve --continue', 'hg unshelve --abort')
-
-def _graftmsg():
-    return _helpmessage('hg graft --continue', 'hg graft --abort')
-
-def _mergemsg():
-    return _helpmessage('hg commit', 'hg merge --abort')
-
-def _bisectmsg():
-    msg = _('To mark the changeset good:    hg bisect --good\n'
-            'To mark the changeset bad:     hg bisect --bad\n'
-            'To abort:                      hg bisect --reset\n')
-    return _commentlines(msg)
-
-def fileexistspredicate(filename):
-    return lambda repo: repo.vfs.exists(filename)
-
-def _mergepredicate(repo):
-    return len(repo[None].parents()) > 1
-
-STATES = (
-    # (state, predicate to detect states, helpful message function)
-    ('histedit', fileexistspredicate('histedit-state'), _histeditmsg),
-    ('bisect', fileexistspredicate('bisect.state'), _bisectmsg),
-    ('graft', fileexistspredicate('graftstate'), _graftmsg),
-    ('unshelve', fileexistspredicate('shelvedstate'), _unshelvemsg),
-    ('rebase', fileexistspredicate('rebasestate'), _rebasemsg),
-    # The merge state is part of a list that will be iterated over.
-    # They need to be last because some of the other unfinished states may also
-    # be in a merge or update state (eg. rebase, histedit, graft, etc).
-    # We want those to have priority.
-    ('merge', _mergepredicate, _mergemsg),
-)
-
-def _getrepostate(repo):
-    # experimental config: commands.status.skipstates
-    skip = set(repo.ui.configlist('commands', 'status.skipstates'))
-    for state, statedetectionpredicate, msgfn in STATES:
-        if state in skip:
-            continue
-        if statedetectionpredicate(repo):
-            return (state, statedetectionpredicate, msgfn)
-
 def morestatus(repo, fm):
-    statetuple = _getrepostate(repo)
+    statetuple = statemod.getrepostate(repo)
     label = 'status.morestatus'
     if statetuple:
-        state, statedetectionpredicate, helpfulmsg = statetuple
+        state, helpfulmsg = statetuple
         statemsg = _('The repository is in an unfinished *%s* state.') % state
         fm.plain('%s\n' % _commentlines(statemsg), label=label)
         conmsg = _conflictsmsg(repo)
         if conmsg:
             fm.plain('%s\n' % conmsg, label=label)
         if helpfulmsg:
-            helpmsg = helpfulmsg()
-            fm.plain('%s\n' % helpmsg, label=label)
+            fm.plain('%s\n' % _commentlines(helpfulmsg), label=label)
 
 def findpossible(cmd, table, strict=False):
     """
@@ -1668,6 +1614,14 @@ def _exportfntemplate(repo, revs, basefm, fntemplate, switch_parent, diffopts,
                 _exportsingle(repo, ctx, fm, match, switch_parent, seqno,
                               diffopts)
 
+def _prefetchchangedfiles(repo, revs, match):
+    allfiles = set()
+    for rev in revs:
+        for file in repo[rev].files():
+            if not match or match(file):
+                allfiles.add(file)
+    scmutil.prefetchfiles(repo, revs, scmutil.matchfiles(repo, allfiles))
+
 def export(repo, revs, basefm, fntemplate='hg-%h.patch', switch_parent=False,
            opts=None, match=None):
     '''export changesets as hg patches
@@ -1692,7 +1646,7 @@ def export(repo, revs, basefm, fntemplate='hg-%h.patch', switch_parent=False,
                             the given template.
         Otherwise: All revs will be written to basefm.
     '''
-    scmutil.prefetchfiles(repo, revs, match)
+    _prefetchchangedfiles(repo, revs, match)
 
     if not fntemplate:
         _exportfile(repo, revs, basefm, '<unnamed>', switch_parent, opts, match)
@@ -1702,7 +1656,7 @@ def export(repo, revs, basefm, fntemplate='hg-%h.patch', switch_parent=False,
 
 def exportfile(repo, revs, fp, switch_parent=False, opts=None, match=None):
     """Export changesets to the given file stream"""
-    scmutil.prefetchfiles(repo, revs, match)
+    _prefetchchangedfiles(repo, revs, match)
 
     dest = getattr(fp, 'name', '<unnamed>')
     with formatter.formatter(repo.ui, fp, 'export', {}) as fm:
@@ -2345,14 +2299,22 @@ def remove(ui, repo, m, prefix, uipathfn, after, force, subrepos, dryrun,
 
     return ret
 
+def _catfmtneedsdata(fm):
+    return not fm.datahint() or 'data' in fm.datahint()
+
 def _updatecatformatter(fm, ctx, matcher, path, decode):
     """Hook for adding data to the formatter used by ``hg cat``.
 
     Extensions (e.g., lfs) can wrap this to inject keywords/data, but must call
     this method first."""
-    data = ctx[path].data()
-    if decode:
-        data = ctx.repo().wwritedata(path, data)
+
+    # data() can be expensive to fetch (e.g. lfs), so don't fetch it if it
+    # wasn't requested.
+    data = b''
+    if _catfmtneedsdata(fm):
+        data = ctx[path].data()
+        if decode:
+            data = ctx.repo().wwritedata(path, data)
     fm.startitem()
     fm.context(ctx=ctx)
     fm.write('data', '%s', data)
@@ -2383,13 +2345,15 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         mfnode = ctx.manifestnode()
         try:
             if mfnode and mfl[mfnode].find(file)[0]:
-                scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
+                if _catfmtneedsdata(basefm):
+                    scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
                 write(file)
                 return 0
         except KeyError:
             pass
 
-    scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
+    if _catfmtneedsdata(basefm):
+        scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
 
     for abs in ctx.walk(matcher):
         write(abs)
@@ -2583,12 +2547,18 @@ def amend(ui, repo, old, extra, pats, opts):
         message = logmessage(ui, opts)
 
         editform = mergeeditform(old, 'commit.amend')
-        editor = getcommiteditor(editform=editform,
-                                 **pycompat.strkwargs(opts))
 
         if not message:
-            editor = getcommiteditor(edit=True, editform=editform)
             message = old.description()
+            # Default if message isn't provided and --edit is not passed is to
+            # invoke editor, but allow --no-edit. If somehow we don't have any
+            # description, let's always start the editor.
+            doedit = not message or opts.get('edit') in [True, None]
+        else:
+            # Default if message is provided is to not invoke editor, but allow
+            # --edit.
+            doedit = opts.get('edit') is True
+        editor = getcommiteditor(edit=doedit, editform=editform)
 
         pureextra = extra.copy()
         extra['amend_source'] = old.hex()
@@ -3289,66 +3259,69 @@ summaryhooks = util.hooks()
 #  - (desturl,   destbranch,   destpeer,   outgoing)
 summaryremotehooks = util.hooks()
 
-# A list of state files kept by multistep operations like graft.
-# Since graft cannot be aborted, it is considered 'clearable' by update.
-# note: bisect is intentionally excluded
-# (state file, clearable, allowcommit, error, hint)
-unfinishedstates = [
-    ('graftstate', True, False, _('graft in progress'),
-     _("use 'hg graft --continue' or 'hg graft --stop' to stop")),
-    ('updatestate', True, False, _('last update was interrupted'),
-     _("use 'hg update' to get a consistent checkout"))
-    ]
 
-def checkunfinished(repo, commit=False):
+def checkunfinished(repo, commit=False, skipmerge=False):
     '''Look for an unfinished multistep operation, like graft, and abort
     if found. It's probably good to check this right before
     bailifchanged().
     '''
     # Check for non-clearable states first, so things like rebase will take
     # precedence over update.
-    for f, clearable, allowcommit, msg, hint in unfinishedstates:
-        if clearable or (commit and allowcommit):
+    for state in statemod._unfinishedstates:
+        if (state._clearable or (commit and state._allowcommit) or
+            state._reportonly):
             continue
-        if repo.vfs.exists(f):
-            raise error.Abort(msg, hint=hint)
+        if state.isunfinished(repo):
+            raise error.Abort(state.msg(), hint=state.hint())
 
-    for f, clearable, allowcommit, msg, hint in unfinishedstates:
-        if not clearable or (commit and allowcommit):
+    for s in statemod._unfinishedstates:
+        if (not s._clearable or (commit and s._allowcommit) or
+            (s._opname == 'merge' and skipmerge) or s._reportonly):
             continue
-        if repo.vfs.exists(f):
-            raise error.Abort(msg, hint=hint)
+        if s.isunfinished(repo):
+            raise error.Abort(s.msg(), hint=s.hint())
 
 def clearunfinished(repo):
     '''Check for unfinished operations (as above), and clear the ones
     that are clearable.
     '''
-    for f, clearable, allowcommit, msg, hint in unfinishedstates:
-        if not clearable and repo.vfs.exists(f):
-            raise error.Abort(msg, hint=hint)
-    for f, clearable, allowcommit, msg, hint in unfinishedstates:
-        if clearable and repo.vfs.exists(f):
-            util.unlink(repo.vfs.join(f))
+    for state in statemod._unfinishedstates:
+        if state._reportonly:
+            continue
+        if not state._clearable and state.isunfinished(repo):
+            raise error.Abort(state.msg(), hint=state.hint())
 
-afterresolvedstates = [
-    ('graftstate',
-     _('hg graft --continue')),
-    ]
+    for s in statemod._unfinishedstates:
+        if s._opname == 'merge' or state._reportonly:
+            continue
+        if s._clearable and s.isunfinished(repo):
+            util.unlink(repo.vfs.join(s._fname))
+
+def getunfinishedstate(repo):
+    ''' Checks for unfinished operations and returns statecheck object
+        for it'''
+    for state in statemod._unfinishedstates:
+        if state.isunfinished(repo):
+            return state
+    return None
 
 def howtocontinue(repo):
     '''Check for an unfinished operation and return the command to finish
     it.
 
-    afterresolvedstates tuples define a .hg/{file} and the corresponding
-    command needed to finish it.
+    statemod._unfinishedstates list is checked for an unfinished operation
+    and the corresponding message to finish it is generated if a method to
+    continue is supported by the operation.
 
     Returns a (msg, warning) tuple. 'msg' is a string and 'warning' is
     a boolean.
     '''
     contmsg = _("continue: %s")
-    for f, msg in afterresolvedstates:
-        if repo.vfs.exists(f):
-            return contmsg % msg, True
+    for state in statemod._unfinishedstates:
+        if not state._continueflag:
+            continue
+        if state.isunfinished(repo):
+            return contmsg % state.continuemsg(), True
     if repo[None].dirty(missing=True, merge=False, branch=False):
         return contmsg % _("hg commit"), False
     return None, None
@@ -3356,8 +3329,8 @@ def howtocontinue(repo):
 def checkafterresolved(repo):
     '''Inform the user about the next action after completing hg resolve
 
-    If there's a matching afterresolvedstates, howtocontinue will yield
-    repo.ui.warn as the reporter.
+    If there's a an unfinished operation that supports continue flag,
+    howtocontinue will yield repo.ui.warn as the reporter.
 
     Otherwise, it will yield repo.ui.note.
     '''
@@ -3382,3 +3355,73 @@ def wrongtooltocontinue(repo, task):
     if after[1]:
         hint = after[0]
     raise error.Abort(_('no %s in progress') % task, hint=hint)
+
+def abortgraft(ui, repo, graftstate):
+    """abort the interrupted graft and rollbacks to the state before interrupted
+    graft"""
+    if not graftstate.exists():
+        raise error.Abort(_("no interrupted graft to abort"))
+    statedata = readgraftstate(repo, graftstate)
+    newnodes = statedata.get('newnodes')
+    if newnodes is None:
+        # and old graft state which does not have all the data required to abort
+        # the graft
+        raise error.Abort(_("cannot abort using an old graftstate"))
+
+    # changeset from which graft operation was started
+    if len(newnodes) > 0:
+        startctx = repo[newnodes[0]].p1()
+    else:
+        startctx = repo['.']
+    # whether to strip or not
+    cleanup = False
+    from . import hg
+    if newnodes:
+        newnodes = [repo[r].rev() for r in newnodes]
+        cleanup = True
+        # checking that none of the newnodes turned public or is public
+        immutable = [c for c in newnodes if not repo[c].mutable()]
+        if immutable:
+            repo.ui.warn(_("cannot clean up public changesets %s\n")
+                         % ', '.join(bytes(repo[r]) for r in immutable),
+                         hint=_("see 'hg help phases' for details"))
+            cleanup = False
+
+        # checking that no new nodes are created on top of grafted revs
+        desc = set(repo.changelog.descendants(newnodes))
+        if desc - set(newnodes):
+            repo.ui.warn(_("new changesets detected on destination "
+                           "branch, can't strip\n"))
+            cleanup = False
+
+        if cleanup:
+            with repo.wlock(), repo.lock():
+                hg.updaterepo(repo, startctx.node(), overwrite=True)
+                # stripping the new nodes created
+                strippoints = [c.node() for c in repo.set("roots(%ld)",
+                                                          newnodes)]
+                repair.strip(repo.ui, repo, strippoints, backup=False)
+
+    if not cleanup:
+        # we don't update to the startnode if we can't strip
+        startctx = repo['.']
+        hg.updaterepo(repo, startctx.node(), overwrite=True)
+
+    ui.status(_("graft aborted\n"))
+    ui.status(_("working directory is now at %s\n") % startctx.hex()[:12])
+    graftstate.delete()
+    return 0
+
+def readgraftstate(repo, graftstate):
+    """read the graft state file and return a dict of the data stored in it"""
+    try:
+        return graftstate.read()
+    except error.CorruptedState:
+        nodes = repo.vfs.read('graftstate').splitlines()
+        return {'nodes': nodes}
+
+def hgabortgraft(ui, repo):
+    """ abort logic for aborting graft using 'hg abort'"""
+    with repo.wlock():
+        graftstate = statemod.cmdstate(repo, 'graftstate')
+        return abortgraft(ui, repo, graftstate)

@@ -11,15 +11,9 @@ Criss cross merging
 
   $ hg up -qr0
   $ echo '2 first change' > f2
-  $ mkdir d1
-  $ echo '0 base' > d1/f3
-  $ echo '0 base' > d1/f4
-  $ hg add -q d1
   $ hg ci -qm '2 first change f2'
 
   $ hg merge -qr 1
-  $ hg rm d1/f3
-  $ hg mv -q d1 d2
   $ hg ci -m '3 merge'
 
   $ hg up -qr2
@@ -30,38 +24,38 @@ Criss cross merging
   $ hg ci -m '5 second change f1'
 
   $ hg up -r3
-  2 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo '6 second change' > f2
   $ hg ci -m '6 second change f2'
 
   $ hg log -G
-  @  changeset:   6:6373bbfdae1d
+  @  changeset:   6:3b08d01b0ab5
   |  tag:         tip
-  |  parent:      3:c202c8af058d
+  |  parent:      3:cf89f02107e5
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     6 second change f2
   |
-  | o  changeset:   5:e673248094b1
+  | o  changeset:   5:adfe50279922
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  summary:     5 second change f1
   | |
-  | o    changeset:   4:177f58377c06
-  | |\   parent:      2:d1d156401c1b
+  | o    changeset:   4:7d3e55501ae6
+  | |\   parent:      2:40663881a6dd
   | | |  parent:      1:0f6b37dbe527
   | | |  user:        test
   | | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | | |  summary:     4 merge
   | | |
-  o---+  changeset:   3:c202c8af058d
-  | | |  parent:      2:d1d156401c1b
+  o---+  changeset:   3:cf89f02107e5
+  | | |  parent:      2:40663881a6dd
   |/ /   parent:      1:0f6b37dbe527
   | |    user:        test
   | |    date:        Thu Jan 01 00:00:00 1970 +0000
   | |    summary:     3 merge
   | |
-  | o  changeset:   2:d1d156401c1b
+  | o  changeset:   2:40663881a6dd
   | |  parent:      0:40494bf2444c
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
@@ -79,51 +73,26 @@ Criss cross merging
   
 
   $ hg merge -v --debug --tool internal:dump 5 --config merge.preferancestor='!'
-  note: using 0f6b37dbe527 as ancestor of 6373bbfdae1d and e673248094b1
-        alternatively, use --config merge.preferancestor=d1d156401c1b
-    searching for copies back to rev 3
-    unmatched files in local:
-     d2/f4
-    unmatched files in other:
-     d1/f3
-     d1/f4
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/f4' -> dst: 'd2/f4' 
-    checking for directory renames
-     discovered dir src: 'd1/' -> dst: 'd2/'
-     pending file src: 'd1/f3' -> dst: 'd2/f3'
-     pending file src: 'd1/f4' -> dst: 'd2/f4'
+  note: using 0f6b37dbe527 as ancestor of 3b08d01b0ab5 and adfe50279922
+        alternatively, use --config merge.preferancestor=40663881a6dd
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: 0f6b37dbe527, local: 6373bbfdae1d+, remote: e673248094b1
-   preserving d2/f4 for resolve of d2/f4
+   ancestor: 0f6b37dbe527, local: 3b08d01b0ab5+, remote: adfe50279922
    preserving f2 for resolve of f2
    f1: remote is newer -> g
   getting f1
-   d2/f3: local directory rename - get from d1/f3 -> dg
-  getting d1/f3 to d2/f3
-   d2/f4: local directory rename, both created -> m (premerge)
    f2: versions differ -> m (premerge)
   picked tool ':dump' for f2 (binary False symlink False changedelete False)
   merging f2
-  my f2@6373bbfdae1d+ other f2@e673248094b1 ancestor f2@0f6b37dbe527
+  my f2@3b08d01b0ab5+ other f2@adfe50279922 ancestor f2@0f6b37dbe527
    f2: versions differ -> m (merge)
   picked tool ':dump' for f2 (binary False symlink False changedelete False)
-  my f2@6373bbfdae1d+ other f2@e673248094b1 ancestor f2@0f6b37dbe527
-  3 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  my f2@3b08d01b0ab5+ other f2@adfe50279922 ancestor f2@0f6b37dbe527
+  1 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
-  $ f --dump --recurse *
-  d2: directory with 2 files
-  d2/f3:
-  >>>
-  0 base
-  <<<
-  d2/f4:
-  >>>
-  0 base
-  <<<
+  $ f --dump *
   f1:
   >>>
   5 second change
@@ -151,13 +120,11 @@ Criss cross merging
 
   $ hg up -qC .
   $ hg merge -v --tool internal:dump 5 --config merge.preferancestor="null 40663881 3b08d"
-  note: using 0f6b37dbe527 as ancestor of 6373bbfdae1d and e673248094b1
-        alternatively, use --config merge.preferancestor=d1d156401c1b
+  note: using 40663881a6dd as ancestor of 3b08d01b0ab5 and adfe50279922
+        alternatively, use --config merge.preferancestor=0f6b37dbe527
   resolving manifests
-  getting f1
-  getting d1/f3 to d2/f3
-  merging f2
-  3 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  merging f1
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
@@ -166,70 +133,34 @@ Redo merge with merge.preferancestor="*" to enable bid merge
   $ rm f*
   $ hg up -qC .
   $ hg merge -v --debug --tool internal:dump 5 --config merge.preferancestor="*"
-  note: merging 6373bbfdae1d+ and e673248094b1 using bids from ancestors 0f6b37dbe527 and d1d156401c1b
+  note: merging 3b08d01b0ab5+ and adfe50279922 using bids from ancestors 0f6b37dbe527 and 40663881a6dd
   
   calculating bids for ancestor 0f6b37dbe527
-    searching for copies back to rev 3
-    unmatched files in local:
-     d2/f4
-    unmatched files in other:
-     d1/f3
-     d1/f4
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/f4' -> dst: 'd2/f4' 
-    checking for directory renames
-     discovered dir src: 'd1/' -> dst: 'd2/'
-     pending file src: 'd1/f3' -> dst: 'd2/f3'
-     pending file src: 'd1/f4' -> dst: 'd2/f4'
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: 0f6b37dbe527, local: 6373bbfdae1d+, remote: e673248094b1
-   d2/f3: local directory rename - get from d1/f3 -> dg
-   d2/f4: local directory rename, both created -> m
+   ancestor: 0f6b37dbe527, local: 3b08d01b0ab5+, remote: adfe50279922
    f1: remote is newer -> g
    f2: versions differ -> m
   
-  calculating bids for ancestor d1d156401c1b
-    searching for copies back to rev 3
-    unmatched files in local:
-     d2/f4
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/f4' -> dst: 'd2/f4' 
-    checking for directory renames
-     discovered dir src: 'd1/' -> dst: 'd2/'
+  calculating bids for ancestor 40663881a6dd
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: d1d156401c1b, local: 6373bbfdae1d+, remote: e673248094b1
+   ancestor: 40663881a6dd, local: 3b08d01b0ab5+, remote: adfe50279922
    f1: versions differ -> m
    f2: remote unchanged -> k
   
   auction for merging merge bids
-   d2/f3: consensus for dg
-   d2/f4: consensus for m
    f1: picking 'get' action
    f2: picking 'keep' action
   end of auction
   
-   preserving d2/f4 for resolve of d2/f4
    f1: remote is newer -> g
   getting f1
    f2: remote unchanged -> k
-   d2/f3: local directory rename - get from d1/f3 -> dg
-  getting d1/f3 to d2/f3
-   d2/f4: local directory rename, both created -> m (premerge)
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
-  $ f --dump --recurse *
-  d2: directory with 2 files
-  d2/f3:
-  >>>
-  0 base
-  <<<
-  d2/f4:
-  >>>
-  0 base
-  <<<
+  $ f --dump *
   f1:
   >>>
   5 second change
@@ -243,79 +174,36 @@ Redo merge with merge.preferancestor="*" to enable bid merge
 The other way around:
 
   $ hg up -C -r5
-  4 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge -v --debug --config merge.preferancestor="*"
-  note: merging e673248094b1+ and 6373bbfdae1d using bids from ancestors 0f6b37dbe527 and d1d156401c1b
+  note: merging adfe50279922+ and 3b08d01b0ab5 using bids from ancestors 0f6b37dbe527 and 40663881a6dd
   
   calculating bids for ancestor 0f6b37dbe527
-    searching for copies back to rev 3
-    unmatched files in local:
-     d1/f3
-     d1/f4
-    unmatched files in other:
-     d2/f4
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/f4' -> dst: 'd2/f4' 
-    checking for directory renames
-     discovered dir src: 'd1/' -> dst: 'd2/'
-     pending file src: 'd1/f3' -> dst: 'd2/f3'
-     pending file src: 'd1/f4' -> dst: 'd2/f4'
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: 0f6b37dbe527, local: e673248094b1+, remote: 6373bbfdae1d
-   d2/f3: remote directory rename - move from d1/f3 -> dm
-   d2/f4: remote directory rename, both created -> m
+   ancestor: 0f6b37dbe527, local: adfe50279922+, remote: 3b08d01b0ab5
    f1: remote unchanged -> k
    f2: versions differ -> m
   
-  calculating bids for ancestor d1d156401c1b
-    searching for copies back to rev 3
-    unmatched files in other:
-     d2/f4
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/f4' -> dst: 'd2/f4' 
-    checking for directory renames
-     discovered dir src: 'd1/' -> dst: 'd2/'
+  calculating bids for ancestor 40663881a6dd
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: d1d156401c1b, local: e673248094b1+, remote: 6373bbfdae1d
-   d1/f3: other deleted -> r
-   d1/f4: other deleted -> r
-   d2/f4: remote created -> g
+   ancestor: 40663881a6dd, local: adfe50279922+, remote: 3b08d01b0ab5
    f1: versions differ -> m
    f2: remote is newer -> g
   
   auction for merging merge bids
-   d1/f3: consensus for r
-   d1/f4: consensus for r
-   d2/f3: consensus for dm
-   d2/f4: picking 'get' action
    f1: picking 'keep' action
    f2: picking 'get' action
   end of auction
   
-   d1/f3: other deleted -> r
-  removing d1/f3
-   d1/f4: other deleted -> r
-  removing d1/f4
-   d2/f4: remote created -> g
-  getting d2/f4
    f2: remote is newer -> g
   getting f2
    f1: remote unchanged -> k
-  2 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
-  $ f --dump --recurse *
-  d2: directory with 2 files
-  d2/f3:
-  >>>
-  0 base
-  <<<
-  d2/f4:
-  >>>
-  0 base
-  <<<
+  $ f --dump *
   f1:
   >>>
   5 second change
@@ -329,85 +217,55 @@ Verify how the output looks and and how verbose it is:
 
   $ hg up -qC
   $ hg merge
-  2 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
   $ hg up -qC tip
   $ hg merge -v
-  note: merging 6373bbfdae1d+ and e673248094b1 using bids from ancestors 0f6b37dbe527 and d1d156401c1b
+  note: merging 3b08d01b0ab5+ and adfe50279922 using bids from ancestors 0f6b37dbe527 and 40663881a6dd
   
   calculating bids for ancestor 0f6b37dbe527
   resolving manifests
   
-  calculating bids for ancestor d1d156401c1b
+  calculating bids for ancestor 40663881a6dd
   resolving manifests
   
   auction for merging merge bids
-   d2/f3: consensus for dg
-   d2/f4: consensus for m
    f1: picking 'get' action
    f2: picking 'keep' action
   end of auction
   
   getting f1
-  getting d1/f3 to d2/f3
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
   $ hg up -qC
   $ hg merge -v --debug --config merge.preferancestor="*"
-  note: merging 6373bbfdae1d+ and e673248094b1 using bids from ancestors 0f6b37dbe527 and d1d156401c1b
+  note: merging 3b08d01b0ab5+ and adfe50279922 using bids from ancestors 0f6b37dbe527 and 40663881a6dd
   
   calculating bids for ancestor 0f6b37dbe527
-    searching for copies back to rev 3
-    unmatched files in local:
-     d2/f4
-    unmatched files in other:
-     d1/f3
-     d1/f4
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/f4' -> dst: 'd2/f4' 
-    checking for directory renames
-     discovered dir src: 'd1/' -> dst: 'd2/'
-     pending file src: 'd1/f3' -> dst: 'd2/f3'
-     pending file src: 'd1/f4' -> dst: 'd2/f4'
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: 0f6b37dbe527, local: 6373bbfdae1d+, remote: e673248094b1
-   d2/f3: local directory rename - get from d1/f3 -> dg
-   d2/f4: local directory rename, both created -> m
+   ancestor: 0f6b37dbe527, local: 3b08d01b0ab5+, remote: adfe50279922
    f1: remote is newer -> g
    f2: versions differ -> m
   
-  calculating bids for ancestor d1d156401c1b
-    searching for copies back to rev 3
-    unmatched files in local:
-     d2/f4
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/f4' -> dst: 'd2/f4' 
-    checking for directory renames
-     discovered dir src: 'd1/' -> dst: 'd2/'
+  calculating bids for ancestor 40663881a6dd
   resolving manifests
    branchmerge: True, force: False, partial: False
-   ancestor: d1d156401c1b, local: 6373bbfdae1d+, remote: e673248094b1
+   ancestor: 40663881a6dd, local: 3b08d01b0ab5+, remote: adfe50279922
    f1: versions differ -> m
    f2: remote unchanged -> k
   
   auction for merging merge bids
-   d2/f3: consensus for dg
-   d2/f4: consensus for m
    f1: picking 'get' action
    f2: picking 'keep' action
   end of auction
   
-   preserving d2/f4 for resolve of d2/f4
    f1: remote is newer -> g
   getting f1
    f2: remote unchanged -> k
-   d2/f3: local directory rename - get from d1/f3 -> dg
-  getting d1/f3 to d2/f3
-   d2/f4: local directory rename, both created -> m (premerge)
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
 Test the greatest common ancestor returning multiple changesets
@@ -418,7 +276,7 @@ Test the greatest common ancestor returning multiple changesets
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     1 first change f1
   
-  changeset:   2:d1d156401c1b
+  changeset:   2:40663881a6dd
   parent:      0:40494bf2444c
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
@@ -513,3 +371,80 @@ Verify that the old context ancestor works with / despite preferancestor:
   2
 
   $ cd ..
+
+  $ hg init issue5020
+  $ cd issue5020
+
+  $ echo a > noop
+  $ hg ci -qAm initial
+
+  $ echo b > noop
+  $ hg ci -qAm 'uninteresting change'
+
+  $ hg up -q 0
+  $ mkdir d1
+  $ echo a > d1/a
+  $ echo b > d1/b
+  $ hg ci -qAm 'add d1/a and d1/b'
+
+  $ hg merge -q 1
+  $ hg rm d1/a
+  $ hg mv -q d1 d2
+  $ hg ci -qm 'merge while removing d1/a and moving d1/b to d2/b'
+
+  $ hg up -q 1
+  $ hg merge -q 2
+  $ hg ci -qm 'merge (no changes while merging)'
+  $ hg log -G -T '{rev}:{node|short} {desc}'
+  @    4:c0ef19750a22 merge (no changes while merging)
+  |\
+  +---o  3:6ca01f7342b9 merge while removing d1/a and moving d1/b to d2/b
+  | |/
+  | o  2:154e6000f54e add d1/a and d1/b
+  | |
+  o |  1:11b5b303e36c uninteresting change
+  |/
+  o  0:7b54db1ebf33 initial
+  
+  $ hg merge 3 --debug
+  note: merging c0ef19750a22+ and 6ca01f7342b9 using bids from ancestors 11b5b303e36c and 154e6000f54e
+  
+  calculating bids for ancestor 11b5b303e36c
+    unmatched files in local:
+     d1/a
+     d1/b
+    unmatched files in other:
+     d2/b
+  resolving manifests
+   branchmerge: True, force: False, partial: False
+   ancestor: 11b5b303e36c, local: c0ef19750a22+, remote: 6ca01f7342b9
+   d2/b: remote created -> g
+  
+  calculating bids for ancestor 154e6000f54e
+    unmatched files in other:
+     d2/b
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'd1/b' -> dst: 'd2/b' 
+    checking for directory renames
+     discovered dir src: 'd1/' -> dst: 'd2/'
+  resolving manifests
+   branchmerge: True, force: False, partial: False
+   ancestor: 154e6000f54e, local: c0ef19750a22+, remote: 6ca01f7342b9
+   d1/a: other deleted -> r
+   d1/b: other deleted -> r
+   d2/b: remote created -> g
+  
+  auction for merging merge bids
+   d1/a: consensus for r
+   d1/b: consensus for r
+   d2/b: consensus for g
+  end of auction
+  
+   d1/a: other deleted -> r
+  removing d1/a
+   d1/b: other deleted -> r
+  removing d1/b
+   d2/b: remote created -> g
+  getting d2/b
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)

@@ -34,8 +34,8 @@ Committing some changes but stopping on the way
   $ echo "a" > a
   $ hg add a
   $ cat <<EOF >testModeCommands
-  > TOGGLE
-  > X
+  > x
+  > c
   > EOF
   $ hg commit -i  -m "a" -d "0 0"
   no changes to record
@@ -50,7 +50,7 @@ Committing some changes but stopping on the way
 Committing some changes
 
   $ cat <<EOF >testModeCommands
-  > X
+  > c
   > EOF
   $ hg commit -i  -m "a" -d "0 0"
   $ hg tip
@@ -71,9 +71,9 @@ Committing only one file
   >>> open('b', 'wb').write(b"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n") and None
   $ hg add b
   $ cat <<EOF >testModeCommands
-  > TOGGLE
+  > x
   > KEY_DOWN
-  > X
+  > c
   > EOF
   $ hg commit -i  -m "one file" -d "0 0"
   $ hg tip
@@ -112,11 +112,11 @@ Committing only one hunk while aborting edition of hunk
   > KEY_DOWN
   > KEY_DOWN
   > KEY_DOWN
-  > TOGGLE
+  > x
   > a
   > a
   > e
-  > X
+  > c
   > EOF
   $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg commit -i  -m "one hunk" -d "0 0"
   editor ran
@@ -182,9 +182,9 @@ Newly added files can be selected with the curses interface
   $ echo "hello" > x
   $ hg add x
   $ cat <<EOF >testModeCommands
-  > TOGGLE
-  > TOGGLE
-  > X
+  > x
+  > x
+  > c
   > EOF
   $ hg st
   A x
@@ -203,7 +203,7 @@ Amend option works
   +hello
   $ cat <<EOF >testModeCommands
   > a
-  > X
+  > c
   > EOF
   $ hg commit -i  -m "newly added file" -d "0 0"
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/2b0e9be4d336-3cf0bc8c-amend.hg
@@ -217,7 +217,7 @@ Amend option works
 Make file empty
   $ printf "" > x
   $ cat <<EOF >testModeCommands
-  > X
+  > c
   > EOF
   $ hg ci -i -m emptify -d "0 0"
   $ hg update -C '.^' -q
@@ -240,8 +240,8 @@ of the edit.
   > KEY_DOWN
   > KEY_DOWN
   > e
-  > TOGGLE
-  > X
+  > x
+  > c
   > EOF
   $ printf "printf 'editor ran\n'; exit 0" > editor.sh
   $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg commit  -i -m "edit hunk" -d "0 0" -q
@@ -272,11 +272,11 @@ reflect this edition.
   > EOF
   $ cat > testModeCommands <<EOF
   > KEY_DOWN
-  > TOGGLE
+  > x
   > KEY_DOWN
   > f
   > KEY_DOWN
-  > TOGGLE
+  > x
   > R
   > EOF
 
@@ -326,6 +326,50 @@ reflect this edition.
   foo
   hello world
   lower
+
+Test range select: unselect 3, 5, and 6, reselect 5, then go back up to 2 and
+press 'X', unselecting (because 2 is currently selected) 5 (because it's the
+start of the range) and 4, leaving 3 unselected.
+
+  $ hg init $TESTTMP/range_select
+  $ cd $TESTTMP/range_select
+  >>> open('range_select', 'wb').write(b"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n") and None
+  $ hg add range_select
+  $ cat <<EOF >testModeCommands
+  > KEY_RIGHT
+  > KEY_RIGHT
+  > KEY_DOWN
+  > KEY_DOWN
+  > KEY_ENTER
+  > KEY_DOWN
+  > KEY_ENTER
+  > x
+  > KEY_UP
+  > x
+  > KEY_UP
+  > KEY_UP
+  > KEY_UP
+  > X
+  > c
+  > EOF
+  $ hg commit -i -m "range_select" -d "0 0"
+  $ hg cat -r tip range_select
+  1
+  7
+  8
+  9
+  10
+  $ cat range_select
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+  10
 
 Check ui.interface logic for the chunkselector
 

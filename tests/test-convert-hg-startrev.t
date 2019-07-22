@@ -54,7 +54,7 @@ Convert from null revision
   $ glog full
   o  5 "5: change a" files: a
   |
-  o    4 "4: merge 2 and 3" files: e f
+  o    4 "4: merge 2 and 3" files: e
   |\
   | o  3 "3: change a" files: a
   | |
@@ -83,7 +83,7 @@ Convert from zero revision
   $ glog full
   o  5 "5: change a" files: a
   |
-  o    4 "4: merge 2 and 3" files: e f
+  o    4 "4: merge 2 and 3" files: e
   |\
   | o  3 "3: change a" files: a
   | |
@@ -130,7 +130,7 @@ Check copy preservation
 (It seems like a bug in log that the following doesn't show rev 1.)
 
   $ hg log --follow --copies e
-  changeset:   2:82bbac3d2cf4
+  changeset:   2:8d3c3fe67bb7
   user:        test
   date:        Thu Jan 01 00:00:04 1970 +0000
   summary:     4: merge 2 and 3

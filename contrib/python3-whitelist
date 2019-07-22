@@ -4,6 +4,7 @@ test-absorb-filefixupstate.py
 test-absorb-phase.t
 test-absorb-rename.t
 test-absorb-strip.t
+test-absorb-unfinished.t
 test-absorb.t
 test-acl.t
 test-add.t
@@ -35,6 +36,7 @@ test-bisect2.t
 test-bisect3.t
 test-blackbox.t
 test-bookflow.t
+test-bookmarks-corner-case.t
 test-bookmarks-current.t
 test-bookmarks-merge.t
 test-bookmarks-pushpull.t
@@ -104,6 +106,7 @@ test-context.py
 test-contrib-check-code.t
 test-contrib-check-commit.t
 test-contrib-dumprevlog.t
+test-contrib-emacs.t
 test-contrib-perf.t
 test-contrib-relnotes.t
 test-contrib-testparseutil.t
@@ -126,6 +129,8 @@ test-convert-splicemap.t
 test-convert-svn-sink.t
 test-convert-tagsbranch-topology.t
 test-convert.t
+test-copies-in-changeset.t
+test-copies-unrelated.t
 test-copies.t
 test-copy-move-merge.t
 test-copy.t
@@ -139,6 +144,7 @@ test-debugindexdot.t
 test-debugrename.t
 test-default-push.t
 test-demandimport.py
+test-devel-warnings.t
 test-diff-antipatience.t
 test-diff-binary-file.t
 test-diff-change.t
@@ -159,6 +165,7 @@ test-directaccess.t
 test-dirstate-backup.t
 test-dirstate-nonnormalset.t
 test-dirstate-race.t
+test-dirstate-race2.t
 test-dirstate.t
 test-dispatch.py
 test-dispatch.t
@@ -230,6 +237,7 @@ test-filecache.py
 test-filelog.py
 test-fileset-generated.t
 test-fileset.t
+test-fix-metadata.t
 test-fix-topology.t
 test-fix.t
 test-flagprocessor.t
@@ -511,6 +519,7 @@ test-pathconflicts-basic.t
 test-pathconflicts-merge.t
 test-pathconflicts-update.t
 test-pathencode.py
+test-paths.t
 test-pending.t
 test-permissions.t
 test-phabricator.t
@@ -597,6 +606,7 @@ test-releasenotes-formatting.t
 test-releasenotes-merging.t
 test-releasenotes-parsing.t
 test-relink.t
+test-remote-hidden.t
 test-remotefilelog-bad-configs.t
 test-remotefilelog-bgprefetch.t
 test-remotefilelog-blame.t
@@ -658,10 +668,12 @@ test-rollback.t
 test-run-tests.py
 test-run-tests.t
 test-rust-ancestor.py
+test-rust-discovery.py
 test-schemes.t
 test-serve.t
 test-server-view.t
 test-setdiscovery.t
+test-share-bookmarks.t
 test-share.t
 test-shelve.t
 test-shelve2.t

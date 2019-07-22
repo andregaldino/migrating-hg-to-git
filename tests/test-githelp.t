@@ -219,6 +219,22 @@ githelp for stash drop with name
   $ hg githelp -- git stash drop xyz
   hg shelve -d xyz
 
+githelp for stash list with patch
+  $ hg githelp -- git stash list -p
+  hg shelve -l -p
+
+githelp for stash show
+  $ hg githelp -- git stash show
+  hg shelve --stat
+
+githelp for stash show with patch and name
+  $ hg githelp -- git stash show -p mystash
+  hg shelve -p mystash
+
+githelp for stash clear
+  $ hg githelp -- git stash clear
+  hg shelve --cleanup
+
 githelp for whatchanged should show deprecated message
   $ hg githelp -- whatchanged -p
   this command has been deprecated in the git project, thus isn't supported by this tool
@@ -255,6 +271,10 @@ githelp for apply with no options
 githelp for apply with directory strip custom
   $ hg githelp -- apply -p 5
   hg import --no-commit -p 5
+
+githelp for apply with prefix directory
+  $ hg githelp -- apply --directory=modules
+  hg import --no-commit --prefix modules
 
 git merge-base
   $ hg githelp -- git merge-base --is-ancestor

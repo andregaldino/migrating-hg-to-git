@@ -110,22 +110,23 @@ class partialdiscovery(object):
     (all tracked revisions are known locally)
     """
 
-    def __init__(self, repo, targetheads):
+    def __init__(self, repo, targetheads, respectsize):
         self._repo = repo
         self._targetheads = targetheads
         self._common = repo.changelog.incrementalmissingrevs()
         self._undecided = None
         self.missing = set()
         self._childrenmap = None
+        self._respectsize = respectsize
 
     def addcommons(self, commons):
-        """registrer nodes known as common"""
+        """register nodes known as common"""
         self._common.addbases(commons)
         if self._undecided is not None:
             self._common.removeancestorsfrom(self._undecided)
 
     def addmissings(self, missings):
-        """registrer some nodes as missing"""
+        """register some nodes as missing"""
         newmissing = self._repo.revs('%ld::%ld', missings, self.undecided)
         if newmissing:
             self.missing.update(newmissing)
@@ -241,11 +242,13 @@ class partialdiscovery(object):
 
         # update from roots
         revsroots = set(repo.revs('roots(%ld)', revs))
-
         childrenrevs = self._childrengetter()
-
         _updatesample(revs, revsroots, sample, childrenrevs)
         assert sample
+
+        if not self._respectsize:
+            size = max(size, min(len(revsroots), len(revsheads)))
+
         sample = _limitsample(sample, size)
         if len(sample) < size:
             more = size - len(sample)
@@ -256,7 +259,8 @@ def findcommonheads(ui, local, remote,
                     initialsamplesize=100,
                     fullsamplesize=200,
                     abortwhenunrelated=True,
-                    ancestorsof=None):
+                    ancestorsof=None,
+                    samplegrowth=1.05):
     '''Return a tuple (common, anyincoming, remoteheads) used to identify
     missing nodes from or in remote.
     '''
@@ -275,9 +279,63 @@ def findcommonheads(ui, local, remote,
     # early exit if we know all the specified remote heads already
     ui.debug("query 1; heads\n")
     roundtrips += 1
-    sample = _limitsample(ownheads, initialsamplesize)
-    # indices between sample and externalized version must match
-    sample = list(sample)
+    # We also ask remote about all the local heads. That set can be arbitrarily
+    # large, so we used to limit it size to `initialsamplesize`. We no longer
+    # do as it proved counter productive. The skipped heads could lead to a
+    # large "undecided" set, slower to be clarified than if we asked the
+    # question for all heads right away.
+    #
+    # We are already fetching all server heads using the `heads` commands,
+    # sending a equivalent number of heads the other way should not have a
+    # significant impact.  In addition, it is very likely that we are going to
+    # have to issue "known" request for an equivalent amount of revisions in
+    # order to decide if theses heads are common or missing.
+    #
+    # find a detailled analysis below.
+    #
+    # Case A: local and server both has few heads
+    #
+    #     Ownheads is below initialsamplesize, limit would not have any effect.
+    #
+    # Case B: local has few heads and server has many
+    #
+    #     Ownheads is below initialsamplesize, limit would not have any effect.
+    #
+    # Case C: local and server both has many heads
+    #
+    #     We now transfert some more data, but not significantly more than is
+    #     already transfered to carry the server heads.
+    #
+    # Case D: local has many heads, server has few
+    #
+    #   D.1 local heads are mostly known remotely
+    #
+    #     All the known head will have be part of a `known` request at some
+    #     point for the discovery to finish. Sending them all earlier is
+    #     actually helping.
+    #
+    #     (This case is fairly unlikely, it requires the numerous heads to all
+    #     be merged server side in only a few heads)
+    #
+    #   D.2 local heads are mostly missing remotely
+    #
+    #     To determine that the heads are missing, we'll have to issue `known`
+    #     request for them or one of their ancestors. This amount of `known`
+    #     request will likely be in the same order of magnitude than the amount
+    #     of local heads.
+    #
+    #     The only case where we can be more efficient using `known` request on
+    #     ancestors are case were all the "missing" local heads are based on a
+    #     few changeset, also "missing".  This means we would have a "complex"
+    #     graph (with many heads) attached to, but very independant to a the
+    #     "simple" graph on the server. This is a fairly usual case and have
+    #     not been met in the wild so far.
+    if remote.limitedarguments:
+        sample = _limitsample(ownheads, initialsamplesize)
+        # indices between sample and externalized version must match
+        sample = list(sample)
+    else:
+        sample = ownheads
 
     with remote.commandexecutor() as e:
         fheads = e.callcommand('heads', {})
@@ -318,7 +376,7 @@ def findcommonheads(ui, local, remote,
 
     # full blown discovery
 
-    disco = partialdiscovery(local, ownheads)
+    disco = partialdiscovery(local, ownheads, remote.limitedarguments)
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
     disco.addcommons(knownsrvheads)
@@ -335,6 +393,8 @@ def findcommonheads(ui, local, remote,
                 ui.debug("taking initial sample\n")
             samplefunc = disco.takefullsample
             targetsize = fullsamplesize
+            if not remote.limitedarguments:
+                fullsamplesize = int(fullsamplesize * samplegrowth)
         else:
             # use even cheaper initial sample
             ui.debug("taking quick initial sample\n")

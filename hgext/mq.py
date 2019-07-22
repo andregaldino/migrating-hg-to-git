@@ -144,9 +144,21 @@ except KeyError:
     stripext = extensions.load(dummyui(), 'strip', '')
 
 strip = stripext.strip
-checksubstate = stripext.checksubstate
-checklocalchanges = stripext.checklocalchanges
 
+def checksubstate(repo, baserev=None):
+    '''return list of subrepos at a different revision than substate.
+    Abort if any subrepos have uncommitted changes.'''
+    inclsubs = []
+    wctx = repo[None]
+    if baserev:
+        bctx = repo[baserev]
+    else:
+        bctx = wctx.p1()
+    for s in sorted(wctx.substate):
+        wctx.sub(s).bailifchanged(True)
+        if s not in bctx.substate or bctx.sub(s).dirty():
+            inclsubs.append(s)
+    return inclsubs
 
 # Patch names looks like unix-file names.
 # They must be joinable with queue directory and result in the patch path.
@@ -1149,7 +1161,19 @@ class queue(object):
             # plain versions for i18n tool to detect them
             _("local changes found, qrefresh first")
             _("local changed subrepos found, qrefresh first")
-        return checklocalchanges(repo, force, excsuffix)
+
+        s = repo.status()
+        if not force:
+            cmdutil.checkunfinished(repo)
+            if s.modified or s.added or s.removed or s.deleted:
+                _("local changes found") # i18n tool detection
+                raise error.Abort(_("local changes found" + excsuffix))
+            if checksubstate(repo):
+                _("local changed subrepos found") # i18n tool detection
+                raise error.Abort(_("local changed subrepos found" + excsuffix))
+        else:
+            cmdutil.checkunfinished(repo, skipmerge=True)
+        return s
 
     _reserved = ('series', 'status', 'guards', '.', '..')
     def checkreservedname(self, name):

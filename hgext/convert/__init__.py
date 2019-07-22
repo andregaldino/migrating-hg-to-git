@@ -439,6 +439,11 @@ def convert(ui, src, dest=None, revmapfile=None, **opts):
     :convert.hg.sourcename: records the given string as a 'convert_source' extra
         value on each commit made in the target repository. The default is None.
 
+    :convert.hg.preserve-hash: only works with mercurial sources. Make convert
+        prevent performance improvement to the list of modified files in commits
+        when such an improvement would cause the hash of a commit to change.
+        The default is False.
+
     All Destinations
     ################
 

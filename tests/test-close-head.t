@@ -33,7 +33,11 @@
   $ hg --config extensions.closehead= close-head -m 'Not a head' -r 0 1
   abort: revision is not an open head: 0
   [255]
+  $ hg id
+  000000000000
   $ hg --config extensions.closehead= close-head -m 'Close old heads' -r 1 2
+  $ hg id
+  000000000000
   $ hg bookmark
      @                         1:66f7d451a68b
   $ hg heads

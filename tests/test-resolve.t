@@ -649,8 +649,8 @@ Test that commands.resolve.mark-check works even if there are deleted files:
 
   $ hg merge -r 1
   file 'file1' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -678,8 +678,8 @@ Let's resolve the issue by deleting the file via `hg resolve`
   $ hg resolve --unmark file1
   $ echo 'd' | hg resolve file1 --config ui.interactive=1
   file 'file1' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? d
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? d
   (no more unresolved files)
   $ hg resolve --list
   R file1
@@ -694,8 +694,8 @@ Resurrect the file, and delete it outside of hg:
   $ hg resolve --unmark file1
   $ hg resolve file1
   file 'file1' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   [1]
   $ [ -f file1 ] || echo "File does not exist?"
   $ hg resolve --list
@@ -708,8 +708,8 @@ Resurrect the file, and delete it outside of hg:
   $ hg resolve --unmark file1
   $ hg resolve file1
   file 'file1' was deleted in local [working copy] but was modified in other [merge rev].
-  What do you want to do?
-  use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
   [1]
   $ [ -f file1 ] || echo "File does not exist?"
   $ hg resolve --list
@@ -726,8 +726,8 @@ instead of r1 into r2):
   $ hg update -qCr 1
   $ hg merge -r 2
   file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -755,8 +755,8 @@ Let's resolve the issue by deleting the file via `hg resolve`
   $ hg resolve --unmark file1
   $ echo 'd' | hg resolve file1 --config ui.interactive=1
   file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? d
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? d
   (no more unresolved files)
   $ hg resolve --list
   R file1
@@ -771,8 +771,8 @@ Resurrect the file, and delete it outside of hg:
   $ hg resolve --unmark file1
   $ hg resolve file1
   file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   [1]
   $ [ -f file1 ] || echo "File does not exist?"
   $ hg resolve --list
@@ -785,8 +785,8 @@ Resurrect the file, and delete it outside of hg:
   $ hg resolve --unmark file1
   $ hg resolve file1
   file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? u
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
   [1]
   $ [ -f file1 ] || echo "File does not exist?"
   $ hg resolve --list

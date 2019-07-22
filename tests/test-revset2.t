@@ -100,7 +100,6 @@ test intersecting something with an addset
   $ log 'parents(outgoing() or removes(a))'
   1
   4
-  5
   8
 
 test that `or` operation combines elements in the right order:
@@ -805,17 +804,17 @@ test usage in revpair (with "+")
 (real pair)
 
   $ hg diff -r 'tip^^' -r 'tip'
-  diff -r 2326846efdab -r 24286f4ae135 .hgtags
+  diff -r 2326846efdab -r d2e607fcf9e4 .hgtags
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/.hgtags	Thu Jan 01 00:00:00 1970 +0000
   @@ -0,0 +1,1 @@
-  +e0cc66ef77e8b6f711815af4e001a6594fde3ba5 1.0
+  +d5e6808a86077d6f5c1ff626d4352d01da7d2a1f 1.0
   $ hg diff -r 'tip^^::tip'
-  diff -r 2326846efdab -r 24286f4ae135 .hgtags
+  diff -r 2326846efdab -r d2e607fcf9e4 .hgtags
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/.hgtags	Thu Jan 01 00:00:00 1970 +0000
   @@ -0,0 +1,1 @@
-  +e0cc66ef77e8b6f711815af4e001a6594fde3ba5 1.0
+  +d5e6808a86077d6f5c1ff626d4352d01da7d2a1f 1.0
 
 (single rev)
 
@@ -829,13 +828,13 @@ test usage in revpair (with "+")
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/.hgtags	* (glob)
   @@ -0,0 +1,1 @@
-  +e0cc66ef77e8b6f711815af4e001a6594fde3ba5 1.0
+  +d5e6808a86077d6f5c1ff626d4352d01da7d2a1f 1.0
   $ hg diff -r 'tip^ or tip^'
   diff -r d5d0dcbdc4d9 .hgtags
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/.hgtags	* (glob)
   @@ -0,0 +1,1 @@
-  +e0cc66ef77e8b6f711815af4e001a6594fde3ba5 1.0
+  +d5e6808a86077d6f5c1ff626d4352d01da7d2a1f 1.0
 
 (no rev)
 
@@ -1231,59 +1230,59 @@ test unknown reference:
 
 issue4553: check that revset aliases override existing hash prefix
 
-  $ hg log -qr e
-  6:e0cc66ef77e8
+  $ hg log -qr d5e
+  6:d5e6808a8607
 
-  $ hg log -qr e --config revsetalias.e="all()"
+  $ hg log -qr d5e --config revsetalias.d5e="all()"
   0:2785f51eece5
   1:d75937da8da0
   2:5ed5505e9f1c
   3:8528aa5637f2
   4:2326846efdab
   5:904fa392b941
-  6:e0cc66ef77e8
-  7:013af1973af4
+  6:d5e6808a8607
+  7:586353d483b3
   8:d5d0dcbdc4d9
-  9:24286f4ae135
+  9:d2e607fcf9e4
 
-  $ hg log -qr e: --config revsetalias.e="0"
+  $ hg log -qr d5e: --config revsetalias.d5e="0"
   0:2785f51eece5
   1:d75937da8da0
   2:5ed5505e9f1c
   3:8528aa5637f2
   4:2326846efdab
   5:904fa392b941
-  6:e0cc66ef77e8
-  7:013af1973af4
+  6:d5e6808a8607
+  7:586353d483b3
   8:d5d0dcbdc4d9
-  9:24286f4ae135
+  9:d2e607fcf9e4
 
-  $ hg log -qr :e --config revsetalias.e="9"
+  $ hg log -qr :d5e --config revsetalias.d5e="9"
   0:2785f51eece5
   1:d75937da8da0
   2:5ed5505e9f1c
   3:8528aa5637f2
   4:2326846efdab
   5:904fa392b941
-  6:e0cc66ef77e8
-  7:013af1973af4
+  6:d5e6808a8607
+  7:586353d483b3
   8:d5d0dcbdc4d9
-  9:24286f4ae135
+  9:d2e607fcf9e4
 
-  $ hg log -qr e:
-  6:e0cc66ef77e8
-  7:013af1973af4
+  $ hg log -qr d5e:
+  6:d5e6808a8607
+  7:586353d483b3
   8:d5d0dcbdc4d9
-  9:24286f4ae135
+  9:d2e607fcf9e4
 
-  $ hg log -qr :e
+  $ hg log -qr :d5e
   0:2785f51eece5
   1:d75937da8da0
   2:5ed5505e9f1c
   3:8528aa5637f2
   4:2326846efdab
   5:904fa392b941
-  6:e0cc66ef77e8
+  6:d5e6808a8607
 
 issue2549 - correct optimizations
 
@@ -1471,7 +1470,7 @@ tests for concatenation of strings/symbols by "##"
 (check operator priority)
 
   $ echo 'cat2n2($1, $2, $3, $4) = $1 ## $2 or $3 ## $4~2' >> .hg/hgrc
-  $ log "cat2n2(2785f5, 1eece5, 24286f, 4ae135)"
+  $ log "cat2n2(2785f5, 1eece5, d2e607, fcf9e4)"
   0
   4
 

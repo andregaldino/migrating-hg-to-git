@@ -147,7 +147,7 @@ merge
   1 Editing b
   0 Merged improve branch
   $ glog -R source-hg
-  o    3@source "Merged improve branch" files+: [], files-: [], files: [b]
+  o    3@source "Merged improve branch" files+: [], files-: [], files: []
   |\
   | o  2@source-improve "Editing b" files+: [], files-: [], files: [b]
   | |

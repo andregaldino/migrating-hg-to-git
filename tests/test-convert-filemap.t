@@ -760,9 +760,8 @@ test converting merges into a repo that contains other files
   converted/b
   x
   $ hg -R merge-test2 log -G -T '{shortest(node)} {desc}\n{files % "- {file}\n"}\n'
-  o    6eaa merge a & b
+  o    e2ff merge a & b
   |\   - converted/a
-  | |  - toberemoved
   | |
   | o  2995 add b
   | |  - converted/b

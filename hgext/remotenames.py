@@ -167,6 +167,8 @@ class lazyremotenamedict(mutablemapping):
         for k, vtup in self.potentialentries.iteritems():
             yield (k, [bin(vtup[0])])
 
+    items = iteritems
+
 class remotenames(object):
     """
     This class encapsulates all the remotenames state. It also contains

@@ -1624,6 +1624,13 @@ Make a simple change
   $ echo change > f
   $ hg ci -m 'change f'
 
+Make a rename because we want to track renames. It is also important that the
+faulty linkrev is not only the "start" commit to ensure the linkrev will be
+used.
+
+  $ hg mv f renamed
+  $ hg ci -m renamed
+
 Make a second branch, we use a named branch to create a simple commit
 that does not touch f.
 
@@ -1631,31 +1638,28 @@ that does not touch f.
   $ hg branch -q dev
   $ hg ci -Aqm dev
 
-Graft the initial change, as f was untouched, we reuse the same entry and the
-linkrev point to the older branch.
+Graft the initial change and the rename. As f was untouched, we reuse the same
+entry and the linkrev point to the older branch.
 
   $ hg graft -q 'desc(change)'
-
-Make a rename because we want to track renames. It is also important that the
-faulty linkrev is not the "start" commit to ensure the linkrev will be used.
-
-  $ hg mv f renamed
-  $ hg ci -m renamed
+  $ hg graft -q 'desc(renamed)'
 
   $ hg log -G -T '{rev} {desc}'
-  @  4 renamed
+  @  5 renamed
   |
-  o  3 change f
+  o  4 change f
   |
-  o  2 dev
+  o  3 dev
   |
+  | o  2 renamed
+  | |
   | o  1 change f
   |/
   o  0 empty f
   
 
-The copy tracking should still reach rev 2 (branch creation).
-accessing the parent of 4 (renamed) should not jump use to revision 1.
+The copy tracking should still reach rev 3 (branch creation).
+accessing the parent of 5 (renamed) should not jump use to revision 1.
 
   $ hg diff --git -r 'desc(dev)' -r .
   diff --git a/f b/renamed
@@ -1669,16 +1673,23 @@ accessing the parent of 4 (renamed) should not jump use to revision 1.
 Check debug output for copy tracing
 
   $ hg status --copies --rev 'desc(dev)' --rev . --config devel.debug.copies=yes --debug
-  debug.copies: searching copies from a51f36ab1704 to 7935fd48a8f9
+  debug.copies: searching copies from a51f36ab1704 to 1f4aa1fd627b
   debug.copies: search mode: forward
-  debug.copies:    looking into rename from a51f36ab1704 to 7935fd48a8f9
-  debug.copies:      search limit: 2
-  debug.copies:      missing file to search: 1
+  debug.copies:    looking into rename from a51f36ab1704 to 1f4aa1fd627b
+  debug.copies:      search limit: 3
+  debug.copies:      missing files to search: 1
   debug.copies:        tracing file: renamed
   debug.copies:          rename of: f
   debug.copies:          time: * seconds (glob)
   A renamed
     f
   R f
+
+Check that merging across the rename works
+
+  $ echo modified >> renamed
+  $ hg co -m 4
+  merging renamed and f to f
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
 
   $ cd ..

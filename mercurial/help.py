@@ -320,6 +320,8 @@ internalstable = sorted([
      loaddoc('config', subdir='internals')),
     (['extensions', 'extension'], _('Extension API'),
      loaddoc('extensions', subdir='internals')),
+    (['mergestate'], _('Mergestate'),
+     loaddoc('mergestate', subdir='internals')),
     (['requirements'], _('Repository Requirements'),
      loaddoc('requirements', subdir='internals')),
     (['revlogs'], _('Revision Logs'),
@@ -453,7 +455,7 @@ def inserttweakrc(ui, topic, doc):
 addtopichook('config', inserttweakrc)
 
 def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
-          **opts):
+          fullname=None, **opts):
     '''
     Generate the help for 'name' as unformatted restructured text. If
     'name' is None, describe the commands available.
@@ -689,6 +691,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             for names, header, doc in subtopics[name]:
                 if subtopic in names:
                     break
+            if not any(subtopic in s[0] for s in subtopics[name]):
+                raise error.UnknownCommand(name)
 
         if not header:
             for topic in helptable:
@@ -812,8 +816,16 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             if unknowncmd:
                 raise error.UnknownCommand(name)
             else:
-                msg = _('no such help topic: %s') % name
-                hint = _("try 'hg help --keyword %s'") % name
+                if fullname:
+                    formatname = fullname
+                else:
+                    formatname = name
+                if subtopic:
+                    hintname = subtopic
+                else:
+                    hintname = name
+                msg = _('no such help topic: %s') % formatname
+                hint = _("try 'hg help --keyword %s'") % hintname
                 raise error.Abort(msg, hint=hint)
     else:
         # program name
@@ -848,7 +860,7 @@ def formattedhelp(ui, commands, fullname, keep=None, unknowncmd=False,
     termwidth = ui.termwidth() - 2
     if textwidth <= 0 or termwidth < textwidth:
         textwidth = termwidth
-    text = help_(ui, commands, name,
+    text = help_(ui, commands, name, fullname=fullname,
                  subtopic=subtopic, unknowncmd=unknowncmd, full=full, **opts)
 
     blocks, pruned = minirst.parse(text, keep=keep)

@@ -40,6 +40,7 @@
   (branch merge, don't forget to commit)
   $ hg transplant 1
   abort: outstanding uncommitted merge
+  (use 'hg commit' or 'hg merge --abort')
   [255]
   $ hg up -qC tip
   $ echo b0 > b1
@@ -461,7 +462,7 @@ transplant -c shouldn't use an old changeset
   baz
   foo
 
-test multiple revisions and --continue
+test multiple revisions, --continue and hg status --verbose
 
   $ hg up -qC 0
   $ echo bazbaz > baz
@@ -481,6 +482,15 @@ test multiple revisions and --continue
   abort: transplant in progress
   (use 'hg transplant --continue' or 'hg update' to abort)
   [255]
+  $ hg status -v
+  A bar
+  ? baz.rej
+  ? foo.rej
+  # The repository is in an unfinished *transplant* state.
+  
+  # To continue:    hg transplant --continue
+  # To abort:       hg update
+  
   $ echo fixed > baz
   $ hg transplant --continue
   9d6d6b5a8275 transplanted as d80c49962290

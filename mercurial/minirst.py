@@ -44,6 +44,9 @@ def subsubsection(s):
 def subsubsubsection(s):
     return "%s\n%s\n\n" % (s, "." * encoding.colwidth(s))
 
+def subsubsubsubsection(s):
+    return "%s\n%s\n\n" % (s, "'" * encoding.colwidth(s))
+
 def replace(text, substs):
     '''
     Apply a list of (find, replace) pairs to a text.

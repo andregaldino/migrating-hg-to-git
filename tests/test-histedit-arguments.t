@@ -1,3 +1,12 @@
+#testcases abortcommand abortflag
+
+#if abortflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > abort = histedit --abort
+  > EOF
+#endif
+
 Test argument handling and various data parsing
 ==================================================
 
@@ -47,8 +56,9 @@ histedit --continue/--abort with no existing state
   $ hg histedit --continue
   abort: no histedit in progress
   [255]
-  $ hg histedit --abort
-  abort: no histedit in progress
+  $ hg abort
+  abort: no histedit in progress (abortflag !)
+  abort: no operation in progress (abortcommand !)
   [255]
 
 Run a dummy edit to make sure we get tip^^ correctly via revsingle.
@@ -358,7 +368,7 @@ Test that abort fails gracefully on exception
 Corrupt histedit state file
   $ sed 's/8fda0c726bf2/123456789012/' .hg/histedit-state > ../corrupt-histedit
   $ mv ../corrupt-histedit .hg/histedit-state
-  $ hg histedit --abort
+  $ hg abort
   warning: encountered an exception during histedit --abort; the repository may not have been completely cleaned up
   abort: $TESTTMP/foo/.hg/strip-backup/*-histedit.hg: $ENOENT$ (glob) (windows !)
   abort: $ENOENT$: '$TESTTMP/foo/.hg/strip-backup/*-histedit.hg' (glob) (no-windows !)

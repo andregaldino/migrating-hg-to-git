@@ -649,7 +649,7 @@ Amend a merge changeset (with renames and conflicts from the second parent):
   (no more unresolved files)
   $ hg ci -m 'merge bar'
   $ hg log --config diff.git=1 -pr .
-  changeset:   20:163cfd7219f7
+  changeset:   20:5aba7f3726e6
   tag:         tip
   parent:      19:30d96aeaf27b
   parent:      18:1aa437659d19
@@ -682,7 +682,7 @@ Amend a merge changeset (with renames and conflicts from the second parent):
   $ HGEDITOR="sh .hg/checkeditform.sh" hg ci --amend -m 'merge bar (amend message)' --edit
   HGEDITFORM=commit.amend.merge
   $ hg log --config diff.git=1 -pr .
-  changeset:   21:bca52d4ed186
+  changeset:   21:4b0631ef043e
   tag:         tip
   parent:      19:30d96aeaf27b
   parent:      18:1aa437659d19
@@ -715,7 +715,7 @@ Amend a merge changeset (with renames and conflicts from the second parent):
   $ hg mv zz z
   $ hg ci --amend -m 'merge bar (undo rename)'
   $ hg log --config diff.git=1 -pr .
-  changeset:   22:12594a98ca3f
+  changeset:   22:06423be42d60
   tag:         tip
   parent:      19:30d96aeaf27b
   parent:      18:1aa437659d19
@@ -751,9 +751,9 @@ Amend a merge changeset (with renames during the merge):
   $ echo aa >> aaa
   $ hg ci -m 'merge bar again'
   $ hg log --config diff.git=1 -pr .
-  changeset:   24:dffde028b388
+  changeset:   24:a89974a20457
   tag:         tip
-  parent:      22:12594a98ca3f
+  parent:      22:06423be42d60
   parent:      23:4c94d5bc65f5
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
@@ -783,12 +783,26 @@ Amend a merge changeset (with renames during the merge):
   
   $ hg debugrename aaa
   aaa renamed from aa:37d9b5d994eab34eda9c16b195ace52c7b129980
+
+Update to p1 with 'aaa' modified. 'aaa' was renamed from 'aa' in p2. 'aa' exists
+in p1 too, but it was recorded as copied from p2.
+  $ echo modified >> aaa
+  $ hg co -m '.^' -t :merge3
+  file 'aaa' was deleted in other [destination] but was modified in local [working copy].
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
+  1 files updated, 0 files merged, 1 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges
+  [1]
+  $ hg co -C tip
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
   $ hg mv aaa aa
   $ hg ci --amend -m 'merge bar again (undo rename)'
   $ hg log --config diff.git=1 -pr .
-  changeset:   25:18e3ba160489
+  changeset:   25:282080768800
   tag:         tip
-  parent:      22:12594a98ca3f
+  parent:      22:06423be42d60
   parent:      23:4c94d5bc65f5
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
@@ -825,13 +839,13 @@ Amend a merge changeset (with manifest-level conflicts):
   > c
   > EOF
   file 'aa' was deleted in other [merge rev] but was modified in local [working copy].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? c
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? c
   $ hg ci -m 'merge bar (with conflicts)'
   $ hg log --config diff.git=1 -pr .
-  changeset:   28:b4c3035e2544
+  changeset:   28:ed15db12298d
   tag:         tip
-  parent:      27:4b216ca5ba97
+  parent:      27:eb5adec0b43b
   parent:      26:67db8847a540
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
@@ -841,9 +855,9 @@ Amend a merge changeset (with manifest-level conflicts):
   $ hg rm aa
   $ hg ci --amend -m 'merge bar (with conflicts, amended)'
   $ hg log --config diff.git=1 -pr .
-  changeset:   29:1205ed810051
+  changeset:   29:0eeafd043f63
   tag:         tip
-  parent:      27:4b216ca5ba97
+  parent:      27:eb5adec0b43b
   parent:      26:67db8847a540
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
@@ -878,7 +892,7 @@ This silliness fails:
   marked working directory as branch silliness
   $ echo b >> b
   $ hg ci --close-branch -m'open and close'
-  abort: can only close branch heads
+  abort: branch "silliness" has no heads to close
   [255]
 
 Test that amend with --secret creates new secret changeset forcibly
@@ -916,6 +930,27 @@ Test that amend with --edit invokes editor forcibly
   $ hg parents --template "{desc}\n"
   editor should be invoked
 
+Test that amend with --no-edit avoids the editor
+------------------------------------------------
+
+  $ hg commit --amend -m "before anything happens"
+  $ hg parents --template "{desc}\n"
+  before anything happens
+  $ HGEDITOR=cat hg commit --amend --no-edit -m "editor should be suppressed"
+  $ hg parents --template "{desc}\n"
+  editor should be suppressed
+
+(We need a file change here since we won't have a message change)
+  $ cp foo foo.orig
+  $ echo hi >> foo
+  $ HGEDITOR=cat hg commit --amend --no-edit
+  $ hg parents --template "{desc}\n"
+  editor should be suppressed
+  $ hg status -mar
+(Let's undo adding that "hi" so later tests don't need to be adjusted)
+  $ mv foo.orig foo
+  $ hg commit --amend --no-edit
+
 Test that "diff()" in committemplate works correctly for amending
 -----------------------------------------------------------------
 
@@ -939,7 +974,7 @@ Test that "diff()" in committemplate works correctly for amending
   HG: M: 
   HG: A: foo
   HG: R: 
-  HG: diff -r 1205ed810051 foo
+  HG: diff -r 0eeafd043f63 foo
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
@@ -953,12 +988,12 @@ Test that "diff()" in committemplate works correctly for amending
   HG: M: 
   HG: A: foo y
   HG: R: 
-  HG: diff -r 1205ed810051 foo
+  HG: diff -r 0eeafd043f63 foo
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
   HG: +foo
-  HG: diff -r 1205ed810051 y
+  HG: diff -r 0eeafd043f63 y
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/y	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
@@ -971,18 +1006,18 @@ Test that "diff()" in committemplate works correctly for amending
   HG: M: 
   HG: A: foo y
   HG: R: a
-  HG: diff -r 1205ed810051 a
+  HG: diff -r 0eeafd043f63 a
   HG: --- a/a	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -1,2 +0,0 @@
   HG: -a
   HG: -a
-  HG: diff -r 1205ed810051 foo
+  HG: diff -r 0eeafd043f63 foo
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
   HG: +foo
-  HG: diff -r 1205ed810051 y
+  HG: diff -r 0eeafd043f63 y
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/y	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
@@ -995,23 +1030,23 @@ Test that "diff()" in committemplate works correctly for amending
   HG: M: 
   HG: A: foo y
   HG: R: a x
-  HG: diff -r 1205ed810051 a
+  HG: diff -r 0eeafd043f63 a
   HG: --- a/a	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -1,2 +0,0 @@
   HG: -a
   HG: -a
-  HG: diff -r 1205ed810051 foo
+  HG: diff -r 0eeafd043f63 foo
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
   HG: +foo
-  HG: diff -r 1205ed810051 x
+  HG: diff -r 0eeafd043f63 x
   HG: --- a/x	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -1,1 +0,0 @@
   HG: -x
-  HG: diff -r 1205ed810051 y
+  HG: diff -r 0eeafd043f63 y
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/y	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
@@ -1026,23 +1061,23 @@ Test that "diff()" in committemplate works correctly for amending
   HG: M: 
   HG: A: foo y
   HG: R: a x
-  HG: diff -r 1205ed810051 a
+  HG: diff -r 0eeafd043f63 a
   HG: --- a/a	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -1,2 +0,0 @@
   HG: -a
   HG: -a
-  HG: diff -r 1205ed810051 foo
+  HG: diff -r 0eeafd043f63 foo
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@
   HG: +foo
-  HG: diff -r 1205ed810051 x
+  HG: diff -r 0eeafd043f63 x
   HG: --- a/x	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -1,1 +0,0 @@
   HG: -x
-  HG: diff -r 1205ed810051 y
+  HG: diff -r 0eeafd043f63 y
   HG: --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   HG: +++ b/y	Thu Jan 01 00:00:00 1970 +0000
   HG: @@ -0,0 +1,1 @@

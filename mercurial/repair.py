@@ -279,7 +279,9 @@ def _bookmarkmovements(repo, tostrip):
         if rev in tostrip:
             updatebm.append(m)
     newbmtarget = None
-    if updatebm: # don't compute anything is there is no bookmark to move anyway
+    # If we need to move bookmarks, compute bookmark
+    # targets. Otherwise we can skip doing this logic.
+    if updatebm:
         # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)),
         # but is much faster
         newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
@@ -364,8 +366,9 @@ def stripmanifest(repo, striprev, tr, files):
     striptrees(repo, tr, striprev, files)
 
 def striptrees(repo, tr, striprev, files):
-    if 'treemanifest' in repo.requirements: # safe but unnecessary
-                                            # otherwise
+    if 'treemanifest' in repo.requirements:
+        # This logic is safe if treemanifest isn't enabled, but also
+        # pointless, so we skip it if treemanifest isn't enabled.
         for unencoded, encoded, size in repo.store.datafiles():
             if (unencoded.startswith('meta/') and
                 unencoded.endswith('00manifest.i')):
@@ -416,7 +419,9 @@ def rebuildfncache(ui, repo):
 
         progress.complete()
 
-        if 'treemanifest' in repo.requirements: # safe but unnecessary otherwise
+        if 'treemanifest' in repo.requirements:
+            # This logic is safe if treemanifest isn't enabled, but also
+            # pointless, so we skip it if treemanifest isn't enabled.
             for dir in util.dirs(seenfiles):
                 i = 'meta/%s/00manifest.i' % dir
                 d = 'meta/%s/00manifest.d' % dir

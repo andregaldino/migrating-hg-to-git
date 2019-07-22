@@ -300,6 +300,12 @@ class simplecommitctx(context.committablectx):
     def commit(self):
         return self._repo.commitctx(self)
 
+    def p1copies(self):
+        return {}
+
+    def p2copies(self):
+        return {}
+
 def _walkgraph(edges):
     """yield node, parents in topologically order"""
     visible = set(edges.keys())

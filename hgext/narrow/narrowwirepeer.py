@@ -13,11 +13,14 @@ from mercurial import (
     extensions,
     hg,
     narrowspec,
+    node as nodemod,
     pycompat,
     wireprototypes,
     wireprotov1peer,
     wireprotov1server,
 )
+
+from . import narrowbundle2
 
 def uisetup():
     wireprotov1peer.wirepeer.narrow_widen = peernarrowwiden
@@ -69,21 +72,26 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
         narrowspec.validatepatterns(set(newexcludes))
 
         common = wireprototypes.decodelist(commonheads)
-        known = None
-        if known:
-            known = wireprototypes.decodelist(known)
+        known = wireprototypes.decodelist(known)
+        known = {nodemod.bin(n) for n in known}
         if ellipses == '0':
             ellipses = False
         else:
             ellipses = bool(ellipses)
         cgversion = cgversion
-        newmatch = narrowspec.match(repo.root, include=newincludes,
-                                    exclude=newexcludes)
-        oldmatch = narrowspec.match(repo.root, include=oldincludes,
-                                    exclude=oldexcludes)
 
-        bundler = bundle2.widen_bundle(repo, oldmatch, newmatch, common, known,
-                                             cgversion, ellipses)
+        bundler = bundle2.bundle20(repo.ui)
+        if not ellipses:
+            newmatch = narrowspec.match(repo.root, include=newincludes,
+                                        exclude=newexcludes)
+            oldmatch = narrowspec.match(repo.root, include=oldincludes,
+                                        exclude=oldexcludes)
+            bundle2.widen_bundle(bundler, repo, oldmatch, newmatch, common,
+                                 known, cgversion, ellipses)
+        else:
+            narrowbundle2.generateellipsesbundle2(bundler, repo, oldincludes,
+                    oldexcludes, newincludes, newexcludes, cgversion, common,
+                    list(common), known, None)
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)
         manargs = [('message', pycompat.bytestr(exc))]

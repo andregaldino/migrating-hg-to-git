@@ -600,6 +600,129 @@ tip is obsolete
   summary:     msg 30
   
 
+Rewritten commits should not crash
+
+  $ hg co 29
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg revert --all -r 30
+  reverting a
+  $ hg commit -m 'msg 30 -- fixed'
+  created new head
+  $ hg debugobsolete `hg id --debug -i -r 30` `hg id --debug -i -r .`
+  obsoleted 1 changesets
+  $ hg bisect
+  The first bad revision is:
+  changeset:   30:ed2d2f24b11c
+  user:        test
+  date:        Thu Jan 01 00:00:30 1970 +0000
+  obsolete:    rewritten as 32:8a638ebd1122
+  summary:     msg 30
+  
+
+Log template does not crash
+
+  $ hg log -GTbisect -r 15::
+  @  changeset:   32:8a638ebd1122
+  |  bisect:      good (implicit)
+  |  tag:         tip
+  |  parent:      29:b5bd63375ab9
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     msg 30 -- fixed
+  |
+  o  changeset:   29:b5bd63375ab9
+  |  bisect:      good
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:29 1970 +0000
+  |  summary:     msg 29
+  |
+  o  changeset:   28:8e0c2264c8af
+  |  bisect:      good
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:28 1970 +0000
+  |  summary:     msg 28
+  |
+  o  changeset:   27:288867a866e9
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:27 1970 +0000
+  |  summary:     msg 27
+  |
+  o  changeset:   26:3efc6fd51aeb
+  |  bisect:      good
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:26 1970 +0000
+  |  summary:     msg 26
+  |
+  o  changeset:   25:02a84173a97a
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:25 1970 +0000
+  |  summary:     msg 25
+  |
+  o  changeset:   24:10e0acd3809e
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:24 1970 +0000
+  |  summary:     msg 24
+  |
+  o  changeset:   23:5ec79163bff4
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:23 1970 +0000
+  |  summary:     msg 23
+  |
+  o  changeset:   22:06c7993750ce
+  |  bisect:      good
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:22 1970 +0000
+  |  summary:     msg 22
+  |
+  o  changeset:   21:e5db6aa3fe2a
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:21 1970 +0000
+  |  summary:     msg 21
+  |
+  o  changeset:   20:7128fb4fdbc9
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:20 1970 +0000
+  |  summary:     msg 20
+  |
+  o  changeset:   19:52798545b482
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:19 1970 +0000
+  |  summary:     msg 19
+  |
+  o  changeset:   18:86977a90077e
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:18 1970 +0000
+  |  summary:     msg 18
+  |
+  o  changeset:   17:03515f4a9080
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:17 1970 +0000
+  |  summary:     msg 17
+  |
+  o  changeset:   16:a2e6ea4973e9
+  |  bisect:      ignored
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:16 1970 +0000
+  |  summary:     msg 16
+  |
+  o  changeset:   15:e7fa0811edb0
+  |  bisect:      good
+  ~  user:        test
+     date:        Thu Jan 01 00:00:15 1970 +0000
+     summary:     msg 15
+  
+  $ hg debugobsolete --delete `hg debugobsolete --index -T'{index}\n' | tail -1`
+  deleted 1 obsolescence markers
+
 Changeset in the bad:good range is obsolete
 ---------------------------------------------
 

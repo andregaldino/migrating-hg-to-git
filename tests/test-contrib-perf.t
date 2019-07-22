@@ -55,6 +55,13 @@ perfstatus
   "presleep"
     number of second to wait before any group of runs (default: 1)
   
+  "pre-run"
+    number of run to perform before starting measurement.
+  
+  "profile-benchmark"
+    Enable profiling for the benchmarked section. (The first iteration is
+    benchmarked)
+  
   "run-limits"
     Control the number of runs each benchmark will perform. The option value
     should be a list of '<time>-<numberofrun>' pairs. After each run the
@@ -117,6 +124,9 @@ perfstatus
    perffncachewrite
                  (no help text available)
    perfheads     benchmark the computation of a changelog heads
+   perfhelper-mergecopies
+                 find statistics about potential parameters for
+                 'perfmergecopies'
    perfhelper-pathcopies
                  find statistic about potential parameters for the
                  'perftracecopies'
@@ -134,6 +144,8 @@ perfstatus
                  usable
    perfmergecalculate
                  (no help text available)
+   perfmergecopies
+                 measure runtime of 'copies.mergecopies'
    perfmoonwalk  benchmark walking the changelog backwards
    perfnodelookup
                  (no help text available)
@@ -326,6 +338,34 @@ detailed output:
     "wall": * (glob)
    }
   ]
+
+Test pre-run feature
+--------------------
+
+(perf discovery has some spurious output)
+
+  $ hg perfdiscovery . --config perf.stub=no --config perf.run-limits='0.000000001-1' --config perf.pre-run=0
+  ! wall * comb * user * sys * (best of 1) (glob)
+  searching for changes
+  $ hg perfdiscovery . --config perf.stub=no --config perf.run-limits='0.000000001-1' --config perf.pre-run=1
+  ! wall * comb * user * sys * (best of 1) (glob)
+  searching for changes
+  searching for changes
+  $ hg perfdiscovery . --config perf.stub=no --config perf.run-limits='0.000000001-1' --config perf.pre-run=3
+  ! wall * comb * user * sys * (best of 1) (glob)
+  searching for changes
+  searching for changes
+  searching for changes
+  searching for changes
+
+test  profile-benchmark option
+------------------------------
+
+Function to check that statprof ran
+  $ statprofran () {
+  >   egrep 'Sample count:|No samples recorded' > /dev/null
+  > }
+  $ hg perfdiscovery . --config perf.stub=no --config perf.run-limits='0.000000001-1' --config perf.profile-benchmark=yes 2>&1 | statprofran
 
 Check perf.py for historical portability
 ----------------------------------------

@@ -115,6 +115,11 @@ substitutions = [
 # Various platform error strings, keyed on a common replacement string
 _errors = {
     br'$ENOENT$': (
+        # IOError in Python does not have the same error message
+        # than in Rust, and automatic conversion is not possible
+        # because of module member privacy.
+        br'No such file or directory \(os error 2\)',
+
         # strerror()
         br'No such file or directory',
 

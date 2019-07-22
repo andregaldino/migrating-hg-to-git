@@ -28,6 +28,7 @@ from . import (
 )
 
 parsers = policy.importmod(r'parsers')
+dirstatemod = policy.importrust(r'dirstate', default=parsers)
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
@@ -390,12 +391,24 @@ class dirstate(object):
         self._updatedfiles.add(f)
         self._map.addfile(f, oldstate, state, mode, size, mtime)
 
-    def normal(self, f):
-        '''Mark a file normal and clean.'''
-        s = os.lstat(self._join(f))
-        mtime = s[stat.ST_MTIME]
-        self._addpath(f, 'n', s.st_mode,
-                      s.st_size & _rangemask, mtime & _rangemask)
+    def normal(self, f, parentfiledata=None):
+        '''Mark a file normal and clean.
+
+        parentfiledata: (mode, size, mtime) of the clean file
+
+        parentfiledata should be computed from memory (for mode,
+        size), as or close as possible from the point where we
+        determined the file was clean, to limit the risk of the
+        file having been changed by an external process between the
+        moment where the file was determined to be clean and now.'''
+        if parentfiledata:
+            (mode, size, mtime) = parentfiledata
+        else:
+            s = os.lstat(self._join(f))
+            mode = s.st_mode
+            size = s.st_size
+            mtime = s[stat.ST_MTIME]
+        self._addpath(f, 'n', mode, size & _rangemask, mtime & _rangemask)
         self._map.copymap.pop(f, None)
         if f in self._map.nonnormalset:
             self._map.nonnormalset.remove(f)
@@ -656,8 +669,6 @@ class dirstate(object):
         self._dirty = False
 
     def _dirignore(self, f):
-        if f == '.':
-            return False
         if self._ignore(f):
             return True
         for p in util.finddirs(f):
@@ -751,15 +762,16 @@ class dirstate(object):
                 del files[i]
             j += 1
 
-        if not files or '.' in files:
-            files = ['.']
+        if not files or '' in files:
+            files = ['']
+            # constructing the foldmap is expensive, so don't do it for the
+            # common case where files is ['']
+            normalize = None
         results = dict.fromkeys(subrepos)
         results['.hg'] = None
 
         for ff in files:
-            # constructing the foldmap is expensive, so don't do it for the
-            # common case where files is ['.']
-            if normalize and ff != '.':
+            if normalize:
                 nf = normalize(ff, False, True)
             else:
                 nf = ff
@@ -903,9 +915,7 @@ class dirstate(object):
                 if visitentries == 'this' or visitentries == 'all':
                     visitentries = None
                 skip = None
-                if nd == '.':
-                    nd = ''
-                else:
+                if nd != '':
                     skip = '.hg'
                 try:
                     entries = listdir(join(nd), stat=True, skip=skip)
@@ -1465,7 +1475,7 @@ class dirstatemap(object):
         # parsing the dirstate.
         #
         # (we cannot decorate the function directly since it is in a C module)
-        parse_dirstate = util.nogc(parsers.parse_dirstate)
+        parse_dirstate = util.nogc(dirstatemod.parse_dirstate)
         p = parse_dirstate(self._map, self.copymap, st)
         if not self._dirtyparents:
             self.setparents(*p)
@@ -1476,8 +1486,8 @@ class dirstatemap(object):
         self.get = self._map.get
 
     def write(self, st, now):
-        st.write(parsers.pack_dirstate(self._map, self.copymap,
-                                       self.parents(), now))
+        st.write(dirstatemod.pack_dirstate(self._map, self.copymap,
+                                           self.parents(), now))
         st.close()
         self._dirtyparents = False
         self.nonnormalset, self.otherparentset = self.nonnormalentries()

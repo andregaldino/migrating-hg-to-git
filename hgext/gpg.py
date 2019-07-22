@@ -49,6 +49,11 @@ configitem('gpg', '.*',
 
 # Custom help category
 _HELP_CATEGORY = 'gpg'
+help.CATEGORY_ORDER.insert(
+    help.CATEGORY_ORDER.index(registrar.command.CATEGORY_HELP),
+    _HELP_CATEGORY
+)
+help.CATEGORY_NAMES[_HELP_CATEGORY] = 'Signing changes (GPG)'
 
 class gpg(object):
     def __init__(self, path, key=None):

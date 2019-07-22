@@ -1,0 +1,221 @@
+{
+    "version": 1,
+    "interactions": [
+        {
+            "request": {
+                "body": "api.token=cli-hahayouwish&ids%5B0%5D=1285",
+                "headers": {
+                    "content-length": [
+                        "58"
+                    ],
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ],
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ],
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ],
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2)"
+                    ]
+                },
+                "method": "POST",
+                "uri": "https://phab.mercurial-scm.org//api/differential.query"
+            },
+            "response": {
+                "status": {
+                    "message": "OK",
+                    "code": 200
+                },
+                "headers": {
+                    "content-length": [
+                        "822"
+                    ],
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ],
+                    "x-content-type-options": [
+                        "nosniff"
+                    ],
+                    "strict-transport-security": [
+                        "max-age=31536000; includeSubdomains; preload"
+                    ],
+                    "vary": [
+                        "Accept-Encoding"
+                    ],
+                    "connection": [
+                        "keep-alive"
+                    ],
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ],
+                    "cache-control": [
+                        "no-store"
+                    ],
+                    "date": [
+                        "Mon, 01 Jul 2019 22:36:40 GMT"
+                    ],
+                    "x-frame-options": [
+                        "Deny"
+                    ],
+                    "referrer-policy": [
+                        "no-referrer",
+                        "strict-origin-when-cross-origin"
+                    ],
+                    "content-type": [
+                        "application/json"
+                    ]
+                },
+                "body": {
+                    "string": "{\"result\":[{\"id\":\"1285\",\"phid\":\"PHID-DREV-uefuzc6kbhhkoqhr347g\",\"title\":\"test string time\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D1285\",\"dateCreated\":\"1562019861\",\"dateModified\":\"1562019862\",\"authorPHID\":\"PHID-USER-qmzis76vb2yh3ogldu6r\",\"status\":\"0\",\"statusName\":\"Draft\",\"properties\":{\"draft.broadcast\":false,\"lines.added\":1,\"lines.removed\":0,\"buildables\":{\"PHID-HMBB-lhjiovrsqtbft2fz4lua\":{\"status\":\"passed\"}}},\"branch\":null,\"summary\":\"\",\"testPlan\":\"\",\"lineCount\":\"1\",\"activeDiffPHID\":\"PHID-DIFF-dkgwbpgcv37pymqieyyv\",\"diffs\":[\"2069\"],\"commits\":[],\"reviewers\":[],\"ccs\":[],\"hashes\":[],\"auxiliary\":{\"bugzilla.bug-id\":null,\"phabricator:projects\":[\"PHID-PROJ-f2a3wl5wxtqdtfgdjqzk\"],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":null}],\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        },
+        {
+            "request": {
+                "body": "api.token=cli-hahayouwish&ids%5B0%5D=2069",
+                "headers": {
+                    "content-length": [
+                        "58"
+                    ],
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ],
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ],
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ],
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2)"
+                    ]
+                },
+                "method": "POST",
+                "uri": "https://phab.mercurial-scm.org//api/differential.querydiffs"
+            },
+            "response": {
+                "status": {
+                    "message": "OK",
+                    "code": 200
+                },
+                "headers": {
+                    "content-length": [
+                        "1137"
+                    ],
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ],
+                    "x-content-type-options": [
+                        "nosniff"
+                    ],
+                    "strict-transport-security": [
+                        "max-age=31536000; includeSubdomains; preload"
+                    ],
+                    "vary": [
+                        "Accept-Encoding"
+                    ],
+                    "connection": [
+                        "keep-alive"
+                    ],
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ],
+                    "cache-control": [
+                        "no-store"
+                    ],
+                    "date": [
+                        "Mon, 01 Jul 2019 22:36:41 GMT"
+                    ],
+                    "x-frame-options": [
+                        "Deny"
+                    ],
+                    "referrer-policy": [
+                        "no-referrer",
+                        "strict-origin-when-cross-origin"
+                    ],
+                    "content-type": [
+                        "application/json"
+                    ]
+                },
+                "body": {
+                    "string": "{\"result\":{\"2069\":{\"id\":\"2069\",\"revisionID\":\"1285\",\"dateCreated\":\"1562019858\",\"dateModified\":\"1562019861\",\"sourceControlBaseRevision\":null,\"sourceControlPath\":null,\"sourceControlSystem\":null,\"branch\":null,\"bookmark\":null,\"creationMethod\":\"web\",\"description\":null,\"unitStatus\":\"4\",\"lintStatus\":\"4\",\"changes\":[{\"id\":\"5416\",\"metadata\":{\"line:first\":1,\"hash.effect\":\"ei3Zy6KS2Wut\"},\"oldPath\":null,\"currentPath\":\"test\",\"awayPaths\":[],\"oldProperties\":[],\"newProperties\":{\"unix:filemode\":\"100644\"},\"type\":\"1\",\"fileType\":\"1\",\"commitHash\":null,\"addLines\":\"1\",\"delLines\":\"0\",\"hunks\":[{\"oldOffset\":\"0\",\"newOffset\":\"1\",\"oldLength\":\"0\",\"newLength\":\"1\",\"addLines\":null,\"delLines\":null,\"isMissingOldNewline\":null,\"isMissingNewNewline\":null,\"corpus\":\"+test\\n\"}]}],\"properties\":{\"local:commits\":{\"da5c8c6bf23a36b6e3af011bc3734460692c23ce\":{\"author\":\"test\",\"authorEmail\":\"test\",\"branch\":\"default\",\"commit\":\"da5c8c6bf23a36b6e3af011bc3734460692c23ce\",\"rev\":\"da5c8c6bf23a36b6e3af011bc3734460692c23ce\",\"parents\":[\"1f634396406d03e565ed645370e5fecd062cf215\"],\"time\":\"1562019844\"}}},\"authorName\":\"test\",\"authorEmail\":\"test\"}},\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        },
+        {
+            "request": {
+                "body": "diffID=2069&api.token=cli-hahayouwish",
+                "headers": {
+                    "content-length": [
+                        "54"
+                    ],
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ],
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ],
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ],
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.8.2)"
+                    ]
+                },
+                "method": "POST",
+                "uri": "https://phab.mercurial-scm.org//api/differential.getrawdiff"
+            },
+            "response": {
+                "status": {
+                    "message": "OK",
+                    "code": 200
+                },
+                "headers": {
+                    "content-length": [
+                        "153"
+                    ],
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ],
+                    "x-content-type-options": [
+                        "nosniff"
+                    ],
+                    "strict-transport-security": [
+                        "max-age=31536000; includeSubdomains; preload"
+                    ],
+                    "vary": [
+                        "Accept-Encoding"
+                    ],
+                    "connection": [
+                        "keep-alive"
+                    ],
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ],
+                    "cache-control": [
+                        "no-store"
+                    ],
+                    "date": [
+                        "Mon, 01 Jul 2019 22:36:42 GMT"
+                    ],
+                    "x-frame-options": [
+                        "Deny"
+                    ],
+                    "referrer-policy": [
+                        "no-referrer",
+                        "strict-origin-when-cross-origin"
+                    ],
+                    "content-type": [
+                        "application/json"
+                    ]
+                },
+                "body": {
+                    "string": "{\"result\":\"diff --git a\\/test b\\/test\\nnew file mode 100644\\n--- \\/dev\\/null\\n+++ b\\/test\\n@@ -0,0 +1 @@\\n+test\\n\\n\",\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        }
+    ]
+}

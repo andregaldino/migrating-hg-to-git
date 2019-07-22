@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import errno
 import hashlib
 import shutil
+import stat
 import struct
 
 from .i18n import _
@@ -683,7 +684,7 @@ class mergestate(object):
     def recordactions(self):
         """record remove/add/get actions in the dirstate"""
         branchmerge = self._repo.dirstate.p2() != nullid
-        recordupdates(self._repo, self.actions(), branchmerge)
+        recordupdates(self._repo, self.actions(), branchmerge, None)
 
     def queueremove(self, f):
         """queues a file to be removed from the dirstate
@@ -1380,7 +1381,6 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
         # Pick the best bid for each file
         repo.ui.note(_('\nauction for merging merge bids\n'))
         actions = {}
-        dms = [] # filenames that have dm actions
         for f, bids in sorted(fbids.items()):
             # bids is a mapping from action method to list af actions
             # Consensus?
@@ -1389,8 +1389,6 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
                 if all(a == l[0] for a in l[1:]): # len(bids) is > 1
                     repo.ui.note(_(" %s: consensus for %s\n") % (f, m))
                     actions[f] = l[0]
-                    if m == ACTION_DIR_RENAME_MOVE_LOCAL:
-                        dms.append(f)
                     continue
             # If keep is an option, just do it.
             if ACTION_KEEP in bids:
@@ -1415,18 +1413,7 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
             repo.ui.warn(_(' %s: ambiguous merge - picked %s action\n') %
                          (f, m))
             actions[f] = l[0]
-            if m == ACTION_DIR_RENAME_MOVE_LOCAL:
-                dms.append(f)
             continue
-        # Work around 'dm' that can cause multiple actions for the same file
-        for f in dms:
-            dm, (f0, flags), msg = actions[f]
-            assert dm == ACTION_DIR_RENAME_MOVE_LOCAL, dm
-            if f0 in actions and actions[f0][0] == ACTION_REMOVE:
-                # We have one bid for removing a file and another for moving it.
-                # These two could be merged as first move and then delete ...
-                # but instead drop moving and just delete.
-                del actions[f]
         repo.ui.note(_('end of auction\n\n'))
 
     if wctx.rev() is None:
@@ -1478,13 +1465,17 @@ def batchremove(repo, wctx, actions):
         repo.ui.warn(_("current directory was removed\n"
                        "(consider changing to repo root: %s)\n") % repo.root)
 
-def batchget(repo, mctx, wctx, actions):
+def batchget(repo, mctx, wctx, wantfiledata, actions):
     """apply gets to the working directory
 
     mctx is the context to get from
 
-    yields tuples for progress updates
+    Yields arbitrarily many (False, tuple) for progress updates, followed by
+    exactly one (True, filedata). When wantfiledata is false, filedata is an
+    empty dict. When wantfiledata is true, filedata[f] is a triple (mode, size,
+    mtime) of the file f written for each action.
     """
+    filedata = {}
     verbose = repo.ui.verbose
     fctx = mctx.filectx
     ui = repo.ui
@@ -1508,16 +1499,24 @@ def batchget(repo, mctx, wctx, actions):
                 if repo.wvfs.lexists(conflicting):
                     orig = scmutil.backuppath(ui, repo, conflicting)
                     util.rename(repo.wjoin(conflicting), orig)
-            wctx[f].clearunknown()
+            wfctx = wctx[f]
+            wfctx.clearunknown()
             atomictemp = ui.configbool("experimental", "update.atomic-file")
-            wctx[f].write(fctx(f).data(), flags, backgroundclose=True,
-                          atomictemp=atomictemp)
+            size = wfctx.write(fctx(f).data(), flags,
+                               backgroundclose=True,
+                               atomictemp=atomictemp)
+            if wantfiledata:
+                s = wfctx.lstat()
+                mode = s.st_mode
+                mtime = s[stat.ST_MTIME]
+                filedata[f] = ((mode, size, mtime)) # for dirstate.normal
             if i == 100:
-                yield i, f
+                yield False, (i, f)
                 i = 0
             i += 1
     if i > 0:
-        yield i, f
+        yield False, (i, f)
+    yield True, filedata
 
 def _prefetchfiles(repo, ctx, actions):
     """Invoke ``scmutil.prefetchfiles()`` for the files relevant to the dict
@@ -1564,14 +1563,17 @@ def emptyactions():
                     ACTION_PATH_CONFLICT,
                     ACTION_PATH_CONFLICT_RESOLVE))
 
-def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
+def applyupdates(repo, actions, wctx, mctx, overwrite, wantfiledata,
+                 labels=None):
     """apply the merge action list to the working directory
 
     wctx is the working copy context
     mctx is the context to be merged into the working copy
 
-    Return a tuple of counts (updated, merged, removed, unresolved) that
-    describes how many files were affected by the update.
+    Return a tuple of (counts, filedata), where counts is a tuple
+    (updated, merged, removed, unresolved) that describes how many
+    files were affected by the update, and filedata is as described in
+    batchget.
     """
 
     _prefetchfiles(repo, mctx, actions)
@@ -1663,11 +1665,18 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     # get in parallel.
     threadsafe = repo.ui.configbool('experimental',
                                     'worker.wdir-get-thread-safe')
-    prog = worker.worker(repo.ui, cost, batchget, (repo, mctx, wctx),
+    prog = worker.worker(repo.ui, cost, batchget,
+                         (repo, mctx, wctx, wantfiledata),
                          actions[ACTION_GET],
-                         threadsafe=threadsafe)
-    for i, item in prog:
-        progress.increment(step=i, item=item)
+                         threadsafe=threadsafe,
+                         hasretval=True)
+    getfiledata = {}
+    for final, res in prog:
+        if final:
+            getfiledata = res
+        else:
+            i, item = res
+            progress.increment(step=i, item=item)
     updated = len(actions[ACTION_GET])
 
     if [a for a in actions[ACTION_GET] if a[0] == '.hgsubstate']:
@@ -1792,6 +1801,10 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         mfiles = set(a[0] for a in actions[ACTION_MERGE])
         for k, acts in extraactions.iteritems():
             actions[k].extend(acts)
+            if k == ACTION_GET and wantfiledata:
+                # no filedata until mergestate is updated to provide it
+                for a in acts:
+                    getfiledata[a[0]] = None
             # Remove these files from actions[ACTION_MERGE] as well. This is
             # important because in recordupdates, files in actions[ACTION_MERGE]
             # are processed after files in other actions, and the merge driver
@@ -1814,9 +1827,10 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
                                  if a[0] in mfiles]
 
     progress.complete()
-    return updateresult(updated, merged, removed, unresolved)
+    assert len(getfiledata) == (len(actions[ACTION_GET]) if wantfiledata else 0)
+    return updateresult(updated, merged, removed, unresolved), getfiledata
 
-def recordupdates(repo, actions, branchmerge):
+def recordupdates(repo, actions, branchmerge, getfiledata):
     "record merge actions to the dirstate"
     # remove (must come first)
     for f, args, msg in actions.get(ACTION_REMOVE, []):
@@ -1864,7 +1878,8 @@ def recordupdates(repo, actions, branchmerge):
         if branchmerge:
             repo.dirstate.otherparent(f)
         else:
-            repo.dirstate.normal(f)
+            parentfiledata = getfiledata[f] if getfiledata else None
+            repo.dirstate.normal(f, parentfiledata=parentfiledata)
 
     # merge
     for f, args, msg in actions.get(ACTION_MERGE, []):
@@ -1991,14 +2006,10 @@ def update(repo, node, branchmerge, force, ancestor=None,
             wc = repo[None]
         pl = wc.parents()
         p1 = pl[0]
-        pas = [None]
+        p2 = repo[node]
         if ancestor is not None:
             pas = [repo[ancestor]]
-
-        overwrite = force and not branchmerge
-
-        p2 = repo[node]
-        if pas[0] is None:
+        else:
             if repo.ui.configlist('merge', 'preferancestor') == ['*']:
                 cahs = repo.changelog.commonancestorsheads(p1.node(), p2.node())
                 pas = [repo[anc] for anc in (sorted(cahs) or [nullid])]
@@ -2007,6 +2018,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
 
         fp1, fp2, xp1, xp2 = p1.node(), p2.node(), bytes(p1), bytes(p2)
 
+        overwrite = force and not branchmerge
         ### check phase
         if not overwrite:
             if len(pl) > 1:
@@ -2183,12 +2195,15 @@ def update(repo, node, branchmerge, force, ancestor=None,
                   'fsmonitor enabled; enable fsmonitor to improve performance; '
                   'see "hg help -e fsmonitor")\n'))
 
-        stats = applyupdates(repo, actions, wc, p2, overwrite, labels=labels)
+        updatedirstate = not partial and not wc.isinmemory()
+        wantfiledata = updatedirstate and not branchmerge
+        stats, getfiledata = applyupdates(repo, actions, wc, p2, overwrite,
+                                          wantfiledata, labels=labels)
 
-        if not partial and not wc.isinmemory():
+        if updatedirstate:
             with repo.dirstate.parentchange():
                 repo.setparents(fp1, fp2)
-                recordupdates(repo, actions, branchmerge)
+                recordupdates(repo, actions, branchmerge, getfiledata)
                 # update completed, clear state
                 util.unlink(repo.vfs.join('updatestate'))
 
@@ -2219,7 +2234,7 @@ def graft(repo, ctx, pctx, labels=None, keepparent=False,
     pctx - merge base, usually ctx.p1()
     labels - merge labels eg ['local', 'graft']
     keepparent - keep second parent if any
-    keepparent - if unresolved, keep parent used for the merge
+    keepconflictparent - if unresolved, keep parent used for the merge
 
     """
     # If we're grafting a descendant onto an ancestor, be sure to pass

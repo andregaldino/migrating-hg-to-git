@@ -5,14 +5,27 @@
 mod ancestors;
 pub mod dagops;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
-pub mod testing;  // unconditionally built, for use from integration tests
+mod dirstate;
+pub mod discovery;
+pub mod testing; // unconditionally built, for use from integration tests
+pub use dirstate::{
+    dirs_multiset::DirsMultiset,
+    parsers::{pack_dirstate, parse_dirstate},
+    CopyVec, CopyVecEntry, DirsIterable, DirstateEntry, DirstateParents,
+    DirstateVec,
+};
+mod filepatterns;
+pub mod utils;
+
+pub use filepatterns::{
+    build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
+};
 
 /// Mercurial revision numbers
 ///
 /// As noted in revlog.c, revision numbers are actually encoded in
 /// 4 bytes, and are liberally converted to ints, whence the i32
 pub type Revision = i32;
-
 
 /// Marker expressing the absence of a parent
 ///
@@ -31,11 +44,62 @@ pub trait Graph {
     /// Return the two parents of the given `Revision`.
     ///
     /// Each of the parents can be independently `NULL_REVISION`
-    fn parents(&self, Revision) -> Result<[Revision; 2], GraphError>;
+    fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError>;
 }
+
+pub type LineNumber = usize;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum GraphError {
     ParentOutOfRange(Revision),
     WorkingDirectoryUnsupported,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum DirstateParseError {
+    TooLittleData,
+    Overflow,
+    CorruptedEntry(String),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum DirstatePackError {
+    CorruptedEntry(String),
+    CorruptedParent,
+    BadSize(usize, usize),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum DirstateMapError {
+    PathNotFound(Vec<u8>),
+    EmptyPath,
+}
+
+impl From<std::io::Error> for DirstatePackError {
+    fn from(e: std::io::Error) -> Self {
+        DirstatePackError::CorruptedEntry(e.to_string())
+    }
+}
+
+impl From<std::io::Error> for DirstateParseError {
+    fn from(e: std::io::Error) -> Self {
+        DirstateParseError::CorruptedEntry(e.to_string())
+    }
+}
+
+#[derive(Debug)]
+pub enum PatternError {
+    UnsupportedSyntax(String),
+}
+
+#[derive(Debug)]
+pub enum PatternFileError {
+    IO(std::io::Error),
+    Pattern(PatternError, LineNumber),
+}
+
+impl From<std::io::Error> for PatternFileError {
+    fn from(e: std::io::Error) -> Self {
+        PatternFileError::IO(e)
+    }
 }

@@ -2298,10 +2298,11 @@ def handlestreamv2bundle(op, part):
     streamclone.applybundlev2(repo, part, filecount, bytecount,
                               requirements)
 
-def widen_bundle(repo, oldmatcher, newmatcher, common, known, cgversion,
-                 ellipses):
+def widen_bundle(bundler, repo, oldmatcher, newmatcher, common,
+                 known, cgversion, ellipses):
     """generates bundle2 for widening a narrow clone
 
+    bundler is the bundle to which data should be added
     repo is the localrepository instance
     oldmatcher matches what the client already has
     newmatcher matches what the client needs (including what it already has)
@@ -2312,7 +2313,6 @@ def widen_bundle(repo, oldmatcher, newmatcher, common, known, cgversion,
 
     returns bundle2 of the data required for extending
     """
-    bundler = bundle20(repo.ui)
     commonnodes = set()
     cl = repo.changelog
     for r in repo.revs("::%ln", common):

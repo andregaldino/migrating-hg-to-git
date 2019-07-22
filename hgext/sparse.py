@@ -228,7 +228,7 @@ def _setupdirstate(ui):
     hint = _('include file with `hg debugsparse --include <pattern>` or use ' +
              '`hg add -s <file>` to include file directory while adding')
     for func in editfuncs:
-        def _wrapper(orig, self, *args):
+        def _wrapper(orig, self, *args, **kwargs):
             sparsematch = self._sparsematcher
             if not sparsematch.always():
                 for f in args:
@@ -237,7 +237,7 @@ def _setupdirstate(ui):
                         raise error.Abort(_("cannot add '%s' - it is outside "
                                             "the sparse checkout") % f,
                                           hint=hint)
-            return orig(self, *args)
+            return orig(self, *args, **kwargs)
         extensions.wrapfunction(dirstate.dirstate, func, _wrapper)
 
 @command('debugsparse', [

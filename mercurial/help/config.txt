@@ -438,6 +438,10 @@ effect and style see :hg:`help color`.
 ``commands``
 ------------
 
+``commit.post-status``
+    Show status of files in the working directory after successful commit.
+    (default: False)
+
 ``resolve.confirm``
     Confirm before performing action if no filename is passed.
     (default: False)
@@ -874,6 +878,15 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     compression rate. Use `zstd` to reduce CPU usage.
 
     On some system, Mercurial installation may lack `zstd` supports. Default is `zlib`.
+
+``bookmarks-in-store``
+    Store bookmarks in .hg/store/. This means that bookmarks are shared when
+    using `hg share` regardless of the `-B` option.
+
+    Repositories with this on-disk format require Mercurial version 5.1.
+
+    Disabled by default.
+
 
 ``graph``
 ---------
@@ -1766,6 +1779,11 @@ statistical text report generated from the profiling data.
     For the ``chrome`` format, default is ``0.999``.
 
     The option is unused on other formats.
+
+``showtime``
+    Show time taken as absolute durations, in addition to percentages.
+    Only used by the ``hotpath`` format.
+    (default: true)
 
 ``progress``
 ------------

@@ -281,18 +281,20 @@ Do some work in the empty clone
   marked working directory as branch foo
   (branches are permanent and global, did you want a bookmark?)
   $ hg ci -m empty
+  $ hg log -T "{rev}: {desc} {outsidenarrow}\n"
+  2: empty 
+  1: add d5/f outsidenarrow
+  0: add d0/f outsidenarrow
   $ hg pull -q
 Can widen the empty clone
   $ hg tracked --addinclude d0
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow-empty/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 3 changesets with 1 changes to 1 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:d0
   $ hg files

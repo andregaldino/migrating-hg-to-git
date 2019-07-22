@@ -293,6 +293,35 @@ def uisetup(ui):
     # debugdata needs remotefilelog.len to work
     extensions.wrapcommand(commands.table, 'debugdata', debugdatashallow)
 
+    changegroup.cgpacker = shallowbundle.shallowcg1packer
+
+    extensions.wrapfunction(changegroup, '_addchangegroupfiles',
+                            shallowbundle.addchangegroupfiles)
+    extensions.wrapfunction(
+        changegroup, 'makechangegroup', shallowbundle.makechangegroup)
+    extensions.wrapfunction(localrepo, 'makestore', storewrapper)
+    extensions.wrapfunction(exchange, 'pull', exchangepull)
+    extensions.wrapfunction(merge, 'applyupdates', applyupdates)
+    extensions.wrapfunction(merge, '_checkunknownfiles', checkunknownfiles)
+    extensions.wrapfunction(context.workingctx, '_checklookup', checklookup)
+    extensions.wrapfunction(scmutil, '_findrenames', findrenames)
+    extensions.wrapfunction(copies, '_computeforwardmissing',
+                            computeforwardmissing)
+    extensions.wrapfunction(dispatch, 'runcommand', runcommand)
+    extensions.wrapfunction(repair, '_collectbrokencsets', _collectbrokencsets)
+    extensions.wrapfunction(context.changectx, 'filectx', filectx)
+    extensions.wrapfunction(context.workingctx, 'filectx', workingfilectx)
+    extensions.wrapfunction(patch, 'trydiff', trydiff)
+    extensions.wrapfunction(hg, 'verify', _verify)
+    scmutil.fileprefetchhooks.add('remotefilelog', _fileprefetchhook)
+
+    # disappointing hacks below
+    extensions.wrapfunction(scmutil, 'getrenamedfn', getrenamedfn)
+    extensions.wrapfunction(revset, 'filelog', filelogrevset)
+    revset.symbols['filelog'] = revset.filelog
+    extensions.wrapfunction(cmdutil, 'walkfilerevs', walkfilerevs)
+
+
 def cloneshallow(orig, ui, repo, *args, **opts):
     if opts.get(r'shallow'):
         repos = []
@@ -405,169 +434,164 @@ def setupclient(ui, repo):
     shallowrepo.wraprepo(repo)
     repo.store = shallowstore.wrapstore(repo.store)
 
+def storewrapper(orig, requirements, path, vfstype):
+    s = orig(requirements, path, vfstype)
+    if constants.SHALLOWREPO_REQUIREMENT in requirements:
+        s = shallowstore.wrapstore(s)
+
+    return s
+
+# prefetch files before update
+def applyupdates(orig, repo, actions, wctx, mctx, overwrite, wantfiledata,
+                 labels=None):
+    if isenabled(repo):
+        manifest = mctx.manifest()
+        files = []
+        for f, args, msg in actions['g']:
+            files.append((f, hex(manifest[f])))
+        # batch fetch the needed files from the server
+        repo.fileservice.prefetch(files)
+    return orig(repo, actions, wctx, mctx, overwrite, wantfiledata,
+                labels=labels)
+
+# Prefetch merge checkunknownfiles
+def checkunknownfiles(orig, repo, wctx, mctx, force, actions,
+    *args, **kwargs):
+    if isenabled(repo):
+        files = []
+        sparsematch = repo.maybesparsematch(mctx.rev())
+        for f, (m, actionargs, msg) in actions.iteritems():
+            if sparsematch and not sparsematch(f):
+                continue
+            if m in ('c', 'dc', 'cm'):
+                files.append((f, hex(mctx.filenode(f))))
+            elif m == 'dg':
+                f2 = actionargs[0]
+                files.append((f2, hex(mctx.filenode(f2))))
+        # batch fetch the needed files from the server
+        repo.fileservice.prefetch(files)
+    return orig(repo, wctx, mctx, force, actions, *args, **kwargs)
+
+# Prefetch files before status attempts to look at their size and contents
+def checklookup(orig, self, files):
+    repo = self._repo
+    if isenabled(repo):
+        prefetchfiles = []
+        for parent in self._parents:
+            for f in files:
+                if f in parent:
+                    prefetchfiles.append((f, hex(parent.filenode(f))))
+        # batch fetch the needed files from the server
+        repo.fileservice.prefetch(prefetchfiles)
+    return orig(self, files)
+
+# Prefetch the logic that compares added and removed files for renames
+def findrenames(orig, repo, matcher, added, removed, *args, **kwargs):
+    if isenabled(repo):
+        files = []
+        pmf = repo['.'].manifest()
+        for f in removed:
+            if f in pmf:
+                files.append((f, hex(pmf[f])))
+        # batch fetch the needed files from the server
+        repo.fileservice.prefetch(files)
+    return orig(repo, matcher, added, removed, *args, **kwargs)
+
+# prefetch files before pathcopies check
+def computeforwardmissing(orig, a, b, match=None):
+    missing = orig(a, b, match=match)
+    repo = a._repo
+    if isenabled(repo):
+        mb = b.manifest()
+
+        files = []
+        sparsematch = repo.maybesparsematch(b.rev())
+        if sparsematch:
+            sparsemissing = set()
+            for f in missing:
+                if sparsematch(f):
+                    files.append((f, hex(mb[f])))
+                    sparsemissing.add(f)
+            missing = sparsemissing
+
+        # batch fetch the needed files from the server
+        repo.fileservice.prefetch(files)
+    return missing
+
+# close cache miss server connection after the command has finished
+def runcommand(orig, lui, repo, *args, **kwargs):
+    fileservice = None
+    # repo can be None when running in chg:
+    # - at startup, reposetup was called because serve is not norepo
+    # - a norepo command like "help" is called
+    if repo and isenabled(repo):
+        fileservice = repo.fileservice
+    try:
+        return orig(lui, repo, *args, **kwargs)
+    finally:
+        if fileservice:
+            fileservice.close()
+
+# prevent strip from stripping remotefilelogs
+def _collectbrokencsets(orig, repo, files, striprev):
+    if isenabled(repo):
+        files = list([f for f in files if not repo.shallowmatch(f)])
+    return orig(repo, files, striprev)
+
+# changectx wrappers
+def filectx(orig, self, path, fileid=None, filelog=None):
+    if fileid is None:
+        fileid = self.filenode(path)
+    if (isenabled(self._repo) and self._repo.shallowmatch(path)):
+        return remotefilectx.remotefilectx(self._repo, path, fileid=fileid,
+                                           changectx=self, filelog=filelog)
+    return orig(self, path, fileid=fileid, filelog=filelog)
+
+def workingfilectx(orig, self, path, filelog=None):
+    if (isenabled(self._repo) and self._repo.shallowmatch(path)):
+        return remotefilectx.remoteworkingfilectx(self._repo, path,
+                                                  workingctx=self,
+                                                  filelog=filelog)
+    return orig(self, path, filelog=filelog)
+
+# prefetch required revisions before a diff
+def trydiff(orig, repo, revs, ctx1, ctx2, modified, added, removed,
+    copy, getfilectx, *args, **kwargs):
+    if isenabled(repo):
+        prefetch = []
+        mf1 = ctx1.manifest()
+        for fname in modified + added + removed:
+            if fname in mf1:
+                fnode = getfilectx(fname, ctx1).filenode()
+                # fnode can be None if it's a edited working ctx file
+                if fnode:
+                    prefetch.append((fname, hex(fnode)))
+            if fname not in removed:
+                fnode = getfilectx(fname, ctx2).filenode()
+                if fnode:
+                    prefetch.append((fname, hex(fnode)))
+
+        repo.fileservice.prefetch(prefetch)
+
+    return orig(repo, revs, ctx1, ctx2, modified, added, removed, copy,
+                getfilectx, *args, **kwargs)
+
+# Prevent verify from processing files
+# a stub for mercurial.hg.verify()
+def _verify(orig, repo, level=None):
+    lock = repo.lock()
+    try:
+        return shallowverifier.shallowverifier(repo).verify()
+    finally:
+        lock.release()
+
+
 clientonetime = False
 def onetimeclientsetup(ui):
     global clientonetime
     if clientonetime:
         return
     clientonetime = True
-
-    changegroup.cgpacker = shallowbundle.shallowcg1packer
-
-    extensions.wrapfunction(changegroup, '_addchangegroupfiles',
-                            shallowbundle.addchangegroupfiles)
-    extensions.wrapfunction(
-        changegroup, 'makechangegroup', shallowbundle.makechangegroup)
-
-    def storewrapper(orig, requirements, path, vfstype):
-        s = orig(requirements, path, vfstype)
-        if constants.SHALLOWREPO_REQUIREMENT in requirements:
-            s = shallowstore.wrapstore(s)
-
-        return s
-    extensions.wrapfunction(localrepo, 'makestore', storewrapper)
-
-    extensions.wrapfunction(exchange, 'pull', exchangepull)
-
-    # prefetch files before update
-    def applyupdates(orig, repo, actions, wctx, mctx, overwrite, labels=None):
-        if isenabled(repo):
-            manifest = mctx.manifest()
-            files = []
-            for f, args, msg in actions['g']:
-                files.append((f, hex(manifest[f])))
-            # batch fetch the needed files from the server
-            repo.fileservice.prefetch(files)
-        return orig(repo, actions, wctx, mctx, overwrite, labels=labels)
-    extensions.wrapfunction(merge, 'applyupdates', applyupdates)
-
-    # Prefetch merge checkunknownfiles
-    def checkunknownfiles(orig, repo, wctx, mctx, force, actions,
-                          *args, **kwargs):
-        if isenabled(repo):
-            files = []
-            sparsematch = repo.maybesparsematch(mctx.rev())
-            for f, (m, actionargs, msg) in actions.iteritems():
-                if sparsematch and not sparsematch(f):
-                    continue
-                if m in ('c', 'dc', 'cm'):
-                    files.append((f, hex(mctx.filenode(f))))
-                elif m == 'dg':
-                    f2 = actionargs[0]
-                    files.append((f2, hex(mctx.filenode(f2))))
-            # batch fetch the needed files from the server
-            repo.fileservice.prefetch(files)
-        return orig(repo, wctx, mctx, force, actions, *args, **kwargs)
-    extensions.wrapfunction(merge, '_checkunknownfiles', checkunknownfiles)
-
-    # Prefetch files before status attempts to look at their size and contents
-    def checklookup(orig, self, files):
-        repo = self._repo
-        if isenabled(repo):
-            prefetchfiles = []
-            for parent in self._parents:
-                for f in files:
-                    if f in parent:
-                        prefetchfiles.append((f, hex(parent.filenode(f))))
-            # batch fetch the needed files from the server
-            repo.fileservice.prefetch(prefetchfiles)
-        return orig(self, files)
-    extensions.wrapfunction(context.workingctx, '_checklookup', checklookup)
-
-    # Prefetch the logic that compares added and removed files for renames
-    def findrenames(orig, repo, matcher, added, removed, *args, **kwargs):
-        if isenabled(repo):
-            files = []
-            pmf = repo['.'].manifest()
-            for f in removed:
-                if f in pmf:
-                    files.append((f, hex(pmf[f])))
-            # batch fetch the needed files from the server
-            repo.fileservice.prefetch(files)
-        return orig(repo, matcher, added, removed, *args, **kwargs)
-    extensions.wrapfunction(scmutil, '_findrenames', findrenames)
-
-    # prefetch files before mergecopies check
-    def computenonoverlap(orig, repo, c1, c2, *args, **kwargs):
-        u1, u2 = orig(repo, c1, c2, *args, **kwargs)
-        if isenabled(repo):
-            m1 = c1.manifest()
-            m2 = c2.manifest()
-            files = []
-
-            sparsematch1 = repo.maybesparsematch(c1.rev())
-            if sparsematch1:
-                sparseu1 = set()
-                for f in u1:
-                    if sparsematch1(f):
-                        files.append((f, hex(m1[f])))
-                        sparseu1.add(f)
-                u1 = sparseu1
-
-            sparsematch2 = repo.maybesparsematch(c2.rev())
-            if sparsematch2:
-                sparseu2 = set()
-                for f in u2:
-                    if sparsematch2(f):
-                        files.append((f, hex(m2[f])))
-                        sparseu2.add(f)
-                u2 = sparseu2
-
-            # batch fetch the needed files from the server
-            repo.fileservice.prefetch(files)
-        return u1, u2
-    extensions.wrapfunction(copies, '_computenonoverlap', computenonoverlap)
-
-    # prefetch files before pathcopies check
-    def computeforwardmissing(orig, a, b, match=None):
-        missing = orig(a, b, match=match)
-        repo = a._repo
-        if isenabled(repo):
-            mb = b.manifest()
-
-            files = []
-            sparsematch = repo.maybesparsematch(b.rev())
-            if sparsematch:
-                sparsemissing = set()
-                for f in missing:
-                    if sparsematch(f):
-                        files.append((f, hex(mb[f])))
-                        sparsemissing.add(f)
-                missing = sparsemissing
-
-            # batch fetch the needed files from the server
-            repo.fileservice.prefetch(files)
-        return missing
-    extensions.wrapfunction(copies, '_computeforwardmissing',
-                            computeforwardmissing)
-
-    # close cache miss server connection after the command has finished
-    def runcommand(orig, lui, repo, *args, **kwargs):
-        fileservice = None
-        # repo can be None when running in chg:
-        # - at startup, reposetup was called because serve is not norepo
-        # - a norepo command like "help" is called
-        if repo and isenabled(repo):
-            fileservice = repo.fileservice
-        try:
-            return orig(lui, repo, *args, **kwargs)
-        finally:
-            if fileservice:
-                fileservice.close()
-    extensions.wrapfunction(dispatch, 'runcommand', runcommand)
-
-    # disappointing hacks below
-    scmutil.getrenamedfn = getrenamedfn
-    extensions.wrapfunction(revset, 'filelog', filelogrevset)
-    revset.symbols['filelog'] = revset.filelog
-    extensions.wrapfunction(cmdutil, 'walkfilerevs', walkfilerevs)
-
-    # prevent strip from stripping remotefilelogs
-    def _collectbrokencsets(orig, repo, files, striprev):
-        if isenabled(repo):
-            files = list([f for f in files if not repo.shallowmatch(f)])
-        return orig(repo, files, striprev)
-    extensions.wrapfunction(repair, '_collectbrokencsets', _collectbrokencsets)
 
     # Don't commit filelogs until we know the commit hash, since the hash
     # is present in the filelog blob.
@@ -611,60 +635,10 @@ def onetimeclientsetup(ui):
         return node
     extensions.wrapfunction(changelog.changelog, 'add', changelogadd)
 
-    # changectx wrappers
-    def filectx(orig, self, path, fileid=None, filelog=None):
-        if fileid is None:
-            fileid = self.filenode(path)
-        if (isenabled(self._repo) and self._repo.shallowmatch(path)):
-            return remotefilectx.remotefilectx(self._repo, path,
-                fileid=fileid, changectx=self, filelog=filelog)
-        return orig(self, path, fileid=fileid, filelog=filelog)
-    extensions.wrapfunction(context.changectx, 'filectx', filectx)
+def getrenamedfn(orig, repo, endrev=None):
+    if not isenabled(repo) or copies.usechangesetcentricalgo(repo):
+        return orig(repo, endrev)
 
-    def workingfilectx(orig, self, path, filelog=None):
-        if (isenabled(self._repo) and self._repo.shallowmatch(path)):
-            return remotefilectx.remoteworkingfilectx(self._repo,
-                path, workingctx=self, filelog=filelog)
-        return orig(self, path, filelog=filelog)
-    extensions.wrapfunction(context.workingctx, 'filectx', workingfilectx)
-
-    # prefetch required revisions before a diff
-    def trydiff(orig, repo, revs, ctx1, ctx2, modified, added, removed,
-                copy, getfilectx, *args, **kwargs):
-        if isenabled(repo):
-            prefetch = []
-            mf1 = ctx1.manifest()
-            for fname in modified + added + removed:
-                if fname in mf1:
-                    fnode = getfilectx(fname, ctx1).filenode()
-                    # fnode can be None if it's a edited working ctx file
-                    if fnode:
-                        prefetch.append((fname, hex(fnode)))
-                if fname not in removed:
-                    fnode = getfilectx(fname, ctx2).filenode()
-                    if fnode:
-                        prefetch.append((fname, hex(fnode)))
-
-            repo.fileservice.prefetch(prefetch)
-
-        return orig(repo, revs, ctx1, ctx2, modified, added, removed,
-            copy, getfilectx, *args, **kwargs)
-    extensions.wrapfunction(patch, 'trydiff', trydiff)
-
-    # Prevent verify from processing files
-    # a stub for mercurial.hg.verify()
-    def _verify(orig, repo):
-        lock = repo.lock()
-        try:
-            return shallowverifier.shallowverifier(repo).verify()
-        finally:
-            lock.release()
-
-    extensions.wrapfunction(hg, 'verify', _verify)
-
-    scmutil.fileprefetchhooks.add('remotefilelog', _fileprefetchhook)
-
-def getrenamedfn(repo, endrev=None):
     rcache = {}
 
     def getrenamed(fn, rev):
@@ -1019,9 +993,6 @@ def _fileprefetchhook(repo, revs, match):
             mf = ctx.manifest()
             sparsematch = repo.maybesparsematch(ctx.rev())
             for path in ctx.walk(match):
-                if path.endswith('/'):
-                    # Tree manifest that's being excluded as part of narrow
-                    continue
                 if (not sparsematch or sparsematch(path)) and path in mf:
                     allfiles.append((path, hex(mf[path])))
         repo.fileservice.prefetch(allfiles)

@@ -1089,7 +1089,9 @@ def filterpatch(ui, headers, match, operation=None):
             return skipfile, skipfile, skipall, newpatches
         while True:
             resps = messages['help'][operation]
-            r = ui.promptchoice("%s %s" % (query, resps))
+            # IMPORTANT: keep the last line of this prompt short (<40 english
+            # chars is a good target) because of issue6158.
+            r = ui.promptchoice("%s\n(enter ? for help) %s" % (query, resps))
             ui.write("\n")
             if r == 8: # ?
                 for c, t in ui.extractchoices(resps)[1]:

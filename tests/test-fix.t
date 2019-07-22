@@ -185,6 +185,36 @@ Help text for fix.
   tool may see different values for the arguments added by the :linerange
   suboption.
   
+  Each fixer tool is allowed to return some metadata in addition to the fixed
+  file content. The metadata must be placed before the file content on stdout,
+  separated from the file content by a zero byte. The metadata is parsed as a
+  JSON value (so, it should be UTF-8 encoded and contain no zero bytes). A fixer
+  tool is expected to produce this metadata encoding if and only if the
+  :metadata suboption is true:
+  
+    [fix]
+    tool:command = tool --prepend-json-metadata
+    tool:metadata = true
+  
+  The metadata values are passed to hooks, which can be used to print summaries
+  or perform other post-fixing work. The supported hooks are:
+  
+    "postfixfile"
+      Run once for each file in each revision where any fixer tools made changes
+      to the file content. Provides "$HG_REV" and "$HG_PATH" to identify the file,
+      and "$HG_METADATA" with a map of fixer names to metadata values from fixer
+      tools that affected the file. Fixer tools that didn't affect the file have a
+      valueof None. Only fixer tools that executed are present in the metadata.
+  
+    "postfix"
+      Run once after all files and revisions have been handled. Provides
+      "$HG_REPLACEMENTS" with information about what revisions were created and
+      made obsolete. Provides a boolean "$HG_WDIRWRITTEN" to indicate whether any
+      files in the working copy were updated. Provides a list "$HG_METADATA"
+      mapping fixer tool names to lists of metadata values returned from
+      executions that modified a file. This aggregates the same metadata
+      previously passed to the "postfixfile" hook.
+  
   list of commands:
   
    fix           rewrite file content in changesets or working directory
@@ -803,6 +833,8 @@ fixing the working directory if there are unresolved merge conflicts.
   abort: rebase in progress
   (use 'hg rebase --continue' or 'hg rebase --abort')
   [255]
+
+  $ cd ..
 
 When fixing a file that was renamed, we should diff against the source of the
 rename for incremental fixing and we should correctly reproduce the rename in

@@ -146,11 +146,13 @@ Interactive mode
   > EOS
   diff --git a/F b/F
   new file mode 100644
-  examine changes to 'F'? [Ynesfdaq?] y
+  examine changes to 'F'?
+  (enter ? for help) [Ynesfdaq?] y
   
   diff --git a/G b/G
   new file mode 100644
-  examine changes to 'G'? [Ynesfdaq?] n
+  examine changes to 'G'?
+  (enter ? for help) [Ynesfdaq?] n
   
   saved backup bundle to $TESTTMP/repo1/.hg/strip-backup/507be9bdac71-c8077452-amend.hg (obsstore-off !)
   $ hg log -r . -T '{files}\n'

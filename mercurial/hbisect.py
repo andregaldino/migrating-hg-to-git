@@ -32,6 +32,7 @@ def bisect(repo, state):
     if searching for a first bad one.
     """
 
+    repo = repo.unfiltered()
     changelog = repo.changelog
     clparents = changelog.parentrevs
     skip = {changelog.rev(n) for n in state['skip']}
@@ -139,7 +140,7 @@ def load_state(repo):
     state = {'current': [], 'good': [], 'bad': [], 'skip': []}
     for l in repo.vfs.tryreadlines("bisect.state"):
         kind, node = l[:-1].split()
-        node = repo.lookup(node)
+        node = repo.unfiltered().lookup(node)
         if kind not in state:
             raise error.Abort(_("unknown bisect kind %s") % kind)
         state[kind].append(node)
@@ -184,7 +185,7 @@ def get(repo, status):
     """
     state = load_state(repo)
     if status in ('good', 'bad', 'skip', 'current'):
-        return map(repo.changelog.rev, state[status])
+        return map(repo.unfiltered().changelog.rev, state[status])
     else:
         # In the following sets, we do *not* call 'bisect()' with more
         # than one level of recursion, because that can be very, very
@@ -268,6 +269,7 @@ def label(repo, node):
     return None
 
 def printresult(ui, repo, state, displayer, nodes, good):
+    repo = repo.unfiltered()
     if len(nodes) == 1:
         # narrowed it down to a single revision
         if good:

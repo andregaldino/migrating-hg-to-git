@@ -96,30 +96,6 @@ produce a new filelog entry. The changeset's "files" entry should still list the
 Incorrectly doesn't show the rename
   $ hg debugpathcopies 0 1
 
-Copy a file, then delete destination, then copy again. This does not create a new filelog entry.
-  $ newrepo
-  $ echo x > x
-  $ hg ci -Aqm 'add x'
-  $ hg cp x y
-  $ hg ci -m 'copy x to y'
-  $ hg rm y
-  $ hg ci -m 'remove y'
-  $ hg cp -f x y
-  $ hg ci -m 'copy x onto y (again)'
-  $ hg l
-  @  3 copy x onto y (again)
-  |  y
-  o  2 remove y
-  |  y
-  o  1 copy x to y
-  |  y
-  o  0 add x
-     x
-  $ hg debugp1copies -r 3
-  x -> y
-  $ hg debugpathcopies 0 3
-  x -> y
-
 Rename file in a loop: x->y->z->x
   $ newrepo
   $ echo x > x
@@ -142,29 +118,6 @@ Rename file in a loop: x->y->z->x
   |  x y
   o  0 add x
      x
-  $ hg debugpathcopies 0 3
-
-Copy x to y, then remove y, then add back y. With copy metadata in the changeset, this could easily
-end up reporting y as copied from x (if we don't unmark it as a copy when it's removed).
-  $ newrepo
-  $ echo x > x
-  $ hg ci -Aqm 'add x'
-  $ hg mv x y
-  $ hg ci -m 'rename x to y'
-  $ hg rm y
-  $ hg ci -qm 'remove y'
-  $ echo x > y
-  $ hg ci -Aqm 'add back y'
-  $ hg l
-  @  3 add back y
-  |  y
-  o  2 remove y
-  |  y
-  o  1 rename x to y
-  |  x y
-  o  0 add x
-     x
-  $ hg debugp1copies -r 3
   $ hg debugpathcopies 0 3
 
 Copy x to z, then remove z, then copy x2 (same content as x) to z. With copy metadata in the
@@ -234,25 +187,6 @@ Fork renames x to y on one side and removes x on the other
      x
   $ hg debugpathcopies 1 2
 
-Copies via null revision (there shouldn't be any)
-  $ newrepo
-  $ echo x > x
-  $ hg ci -Aqm 'add x'
-  $ hg cp x y
-  $ hg ci -m 'copy x to y'
-  $ hg co -q null
-  $ echo x > x
-  $ hg ci -Aqm 'add x (again)'
-  $ hg l
-  @  2 add x (again)
-     x
-  o  1 copy x to y
-  |  y
-  o  0 add x
-     x
-  $ hg debugpathcopies 1 2
-  $ hg debugpathcopies 2 1
-
 Merge rename from other branch
   $ newrepo
   $ echo x > x
@@ -268,7 +202,7 @@ Merge rename from other branch
   $ hg ci -m 'merge rename from p2'
   $ hg l
   @    3 merge rename from p2
-  |\   x
+  |\
   | o  2 add z
   | |  z
   o |  1 rename x to y
@@ -420,8 +354,7 @@ of the merge to the merge should include the copy from the other side.
   $ hg debugpathcopies 1 3
   x -> z
 
-Copy x to y on one side of merge, create y and rename to z on the other side. Pathcopies from the
-first side should not include the y->z rename since y didn't exist in the merge base.
+Copy x to y on one side of merge, create y and rename to z on the other side.
   $ newrepo
   $ echo x > x
   $ hg ci -Aqm 'add x'
@@ -451,9 +384,11 @@ first side should not include the y->z rename since y didn't exist in the merge 
   $ hg debugpathcopies 2 3
   y -> z
   $ hg debugpathcopies 1 3
+  y -> z (no-filelog !)
 
-Create x and y, then rename x to z on one side of merge, and rename y to z and modify z on the
-other side.
+Create x and y, then rename x to z on one side of merge, and rename y to z and
+modify z on the other side. When storing copies in the changeset, we don't
+filter out copies whose target was created on the other side of the merge.
   $ newrepo
   $ echo x > x
   $ echo y > y
@@ -482,9 +417,9 @@ Try merging the other direction too
   created new head
   $ hg l
   @    5 merge 3 into 1
-  |\   y z
+  |\   z
   +---o  4 merge 1 into 3
-  | |/   x z
+  | |/   z
   | o  3 modify z
   | |  z
   | o  2 rename y to z
@@ -494,20 +429,24 @@ Try merging the other direction too
   o  0 add x and y
      x y
   $ hg debugpathcopies 1 4
+  y -> z (no-filelog !)
   $ hg debugpathcopies 2 4
+  x -> z (no-filelog !)
   $ hg debugpathcopies 0 4
   x -> z (filelog !)
   y -> z (compatibility !)
   y -> z (changeset !)
   $ hg debugpathcopies 1 5
+  y -> z (no-filelog !)
   $ hg debugpathcopies 2 5
+  x -> z (no-filelog !)
   $ hg debugpathcopies 0 5
   x -> z
 
 
-Test for a case in fullcopytracing algorithm where both the merging csets are
-"dirty"; where a dirty cset means that cset is descendant of merge base. This
-test reflect that for this particular case this algorithm correctly find the copies:
+Test for a case in fullcopytracing algorithm where neither of the merging csets
+is a descendant of the merge base. This test reflects that the algorithm
+correctly finds the copies:
 
   $ cat >> $HGRCPATH << EOF
   > [experimental]
@@ -550,28 +489,25 @@ test reflect that for this particular case this algorithm correctly find the cop
 
 Grafting revision 4 on top of revision 2, showing that it respect the rename:
 
-TODO: Make this work with copy info in changesets (probably by writing a
-changeset-centric version of copies.mergecopies())
-#if no-changeset
   $ hg up 2 -q
   $ hg graft -r 4 --base 3 --hidden
-  grafting 4:af28412ec03c "added d, modified b" (tip)
+  grafting 4:af28412ec03c "added d, modified b" (tip) (no-changeset !)
+  grafting 4:6325ca0b7a1c "added d, modified b" (tip) (changeset !)
   merging b1 and b to b1
 
   $ hg l -l1 -p
   @  5 added d, modified b
   |  b1
-  ~  diff -r 5a4825cc2926 -r 94a2f1a0e8e2 b1
+  ~  diff -r 5a4825cc2926 -r 94a2f1a0e8e2 b1 (no-changeset !)
+  ~  diff -r 0a0ed3b3251c -r d544fb655520 b1 (changeset !)
      --- a/b1	Thu Jan 01 00:00:00 1970 +0000
      +++ b/b1	Thu Jan 01 00:00:00 1970 +0000
      @@ -1,1 +1,2 @@
       b
      +baba
   
-#endif
-
-Test to make sure that fullcopytracing algorithm don't fail when both the merging csets are dirty
-(a dirty cset is one who is not the descendant of merge base)
+Test to make sure that fullcopytracing algorithm doesn't fail when neither of the
+merging csets is a descendant of the base.
 -------------------------------------------------------------------------------------------------
 
   $ newrepo
@@ -623,7 +559,8 @@ Test to make sure that fullcopytracing algorithm don't fail when both the mergin
      a
 
   $ hg rebase -r . -d 2 -t :other
-  rebasing 5:5018b1509e94 "added willconflict and d" (tip)
+  rebasing 5:5018b1509e94 "added willconflict and d" (tip) (no-changeset !)
+  rebasing 5:af8d273bf580 "added willconflict and d" (tip) (changeset !)
 
   $ hg up 3 -q
   $ hg l --hidden
@@ -642,8 +579,9 @@ Test to make sure that fullcopytracing algorithm don't fail when both the mergin
   o  0 added a
      a
 
-Now if we trigger a merge between cset revision 3 and 6 using base revision 4, in this case
-both the merging csets will be dirty as no one is descendent of base revision:
+Now if we trigger a merge between revision 3 and 6 using base revision 4,
+neither of the merging csets will be a descendant of the base revision:
 
   $ hg graft -r 6 --base 4 --hidden -t :other
-  grafting 6:99802e4f1e46 "added willconflict and d" (tip)
+  grafting 6:99802e4f1e46 "added willconflict and d" (tip) (no-changeset !)
+  grafting 6:b19f0df72728 "added willconflict and d" (tip) (changeset !)

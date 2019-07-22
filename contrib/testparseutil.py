@@ -38,12 +38,6 @@ def rapply(f, xs):
 if ispy3:
     import builtins
 
-    # TODO: .buffer might not exist if std streams were replaced; we'll need
-    # a silly wrapper to make a bytes stream backed by a unicode one.
-    stdin = sys.stdin.buffer
-    stdout = sys.stdout.buffer
-    stderr = sys.stderr.buffer
-
     def bytestr(s):
         # tiny version of pycompat.bytestr
         return s.encode('latin1')
@@ -54,12 +48,8 @@ if ispy3:
         return s.decode(u'latin-1')
 
     def opentext(f):
-        return open(f, 'rb')
+        return open(f, 'r')
 else:
-    stdin = sys.stdin
-    stdout = sys.stdout
-    stderr = sys.stderr
-
     bytestr = str
     sysstr = identity
 
@@ -71,11 +61,11 @@ def b2s(x):
 
 def writeout(data):
     # write "data" in BYTES into stdout
-    stdout.write(data)
+    sys.stdout.write(data)
 
 def writeerr(data):
     # write "data" in BYTES into stderr
-    stderr.write(data)
+    sys.stderr.write(data)
 
 ####################
 
@@ -164,14 +154,14 @@ def embedded(basefile, lines, errors, matchers):
     ...         self.matchfunc = matchfunc
     ...     def startsat(self, line):
     ...         return self.matchfunc(line)
-    >>> ambig1 = ambigmatcher(b'ambiguous #1',
-    ...                       lambda l: l.startswith(b'  $ cat '))
-    >>> ambig2 = ambigmatcher(b'ambiguous #2',
-    ...                       lambda l: l.endswith(b'<< EOF\\n'))
-    >>> lines = [b'  $ cat > foo.py << EOF\\n']
+    >>> ambig1 = ambigmatcher('ambiguous #1',
+    ...                       lambda l: l.startswith('  $ cat '))
+    >>> ambig2 = ambigmatcher('ambiguous #2',
+    ...                       lambda l: l.endswith('<< EOF\\n'))
+    >>> lines = ['  $ cat > foo.py << EOF\\n']
     >>> errors = []
     >>> matchers = [ambig1, ambig2]
-    >>> list(t for t in embedded(b'<dummy>', lines, errors, matchers))
+    >>> list(t for t in embedded('<dummy>', lines, errors, matchers))
     []
     >>> b2s(errors)
     ['<dummy>:1: ambiguous line for "ambiguous #1", "ambiguous #2"']
@@ -181,21 +171,21 @@ def embedded(basefile, lines, errors, matchers):
     ctx = filename = code = startline = None # for pyflakes
 
     for lineno, line in enumerate(lines, 1):
-        if not line.endswith(b'\n'):
-            line += b'\n' # to normalize EOF line
+        if not line.endswith('\n'):
+            line += '\n' # to normalize EOF line
         if matcher: # now, inside embedded code
             if matcher.endsat(ctx, line):
                 codeatend = matcher.codeatend(ctx, line)
                 if codeatend is not None:
                     code.append(codeatend)
                 if not matcher.ignores(ctx):
-                    yield (filename, startline, lineno, b''.join(code))
+                    yield (filename, startline, lineno, ''.join(code))
                 matcher = None
                 # DO NOT "continue", because line might start next fragment
             elif not matcher.isinside(ctx, line):
                 # this is an error of basefile
                 # (if matchers are implemented correctly)
-                errors.append(b'%s:%d: unexpected line for "%s"'
+                errors.append('%s:%d: unexpected line for "%s"'
                               % (basefile, lineno, matcher.desc))
                 # stop extracting embedded code by current 'matcher',
                 # because appearance of unexpected line might mean
@@ -218,9 +208,9 @@ def embedded(basefile, lines, errors, matchers):
         if matched:
             if len(matched) > 1:
                 # this is an error of matchers, maybe
-                errors.append(b'%s:%d: ambiguous line for %s' %
+                errors.append('%s:%d: ambiguous line for %s' %
                               (basefile, lineno,
-                               b', '.join([b'"%s"' % m.desc
+                               ', '.join(['"%s"' % m.desc
                                            for m, c in matched])))
                 # omit extracting embedded code, because choosing
                 # arbitrary matcher from matched ones might fail to
@@ -239,20 +229,20 @@ def embedded(basefile, lines, errors, matchers):
     if matcher:
         # examine whether EOF ends embedded code, because embedded
         # code isn't yet ended explicitly
-        if matcher.endsat(ctx, b'\n'):
-            codeatend = matcher.codeatend(ctx, b'\n')
+        if matcher.endsat(ctx, '\n'):
+            codeatend = matcher.codeatend(ctx, '\n')
             if codeatend is not None:
                 code.append(codeatend)
             if not matcher.ignores(ctx):
-                yield (filename, startline, lineno + 1, b''.join(code))
+                yield (filename, startline, lineno + 1, ''.join(code))
         else:
             # this is an error of basefile
             # (if matchers are implemented correctly)
-            errors.append(b'%s:%d: unexpected end of file for "%s"'
+            errors.append('%s:%d: unexpected end of file for "%s"'
                           % (basefile, lineno, matcher.desc))
 
 # heredoc limit mark to ignore embedded code at check-code.py or so
-heredocignorelimit = b'NO_CHECK_EOF'
+heredocignorelimit = 'NO_CHECK_EOF'
 
 # the pattern to match against cases below, and to return a limit mark
 # string as 'lname' group
@@ -260,47 +250,47 @@ heredocignorelimit = b'NO_CHECK_EOF'
 # - << LIMITMARK
 # - << "LIMITMARK"
 # - << 'LIMITMARK'
-heredoclimitpat = br'\s*<<\s*(?P<lquote>["\']?)(?P<limit>\w+)(?P=lquote)'
+heredoclimitpat = r'\s*<<\s*(?P<lquote>["\']?)(?P<limit>\w+)(?P=lquote)'
 
 class fileheredocmatcher(embeddedmatcher):
     """Detect "cat > FILE << LIMIT" style embedded code
 
-    >>> matcher = fileheredocmatcher(b'heredoc .py file', br'[^<]+\\.py')
-    >>> b2s(matcher.startsat(b'  $ cat > file.py << EOF\\n'))
+    >>> matcher = fileheredocmatcher('heredoc .py file', r'[^<]+\\.py')
+    >>> b2s(matcher.startsat('  $ cat > file.py << EOF\\n'))
     ('file.py', '  > EOF\\n')
-    >>> b2s(matcher.startsat(b'  $ cat   >>file.py   <<EOF\\n'))
+    >>> b2s(matcher.startsat('  $ cat   >>file.py   <<EOF\\n'))
     ('file.py', '  > EOF\\n')
-    >>> b2s(matcher.startsat(b'  $ cat>  \\x27any file.py\\x27<<  "EOF"\\n'))
+    >>> b2s(matcher.startsat('  $ cat>  \\x27any file.py\\x27<<  "EOF"\\n'))
     ('any file.py', '  > EOF\\n')
-    >>> b2s(matcher.startsat(b"  $ cat > file.py << 'ANYLIMIT'\\n"))
+    >>> b2s(matcher.startsat("  $ cat > file.py << 'ANYLIMIT'\\n"))
     ('file.py', '  > ANYLIMIT\\n')
-    >>> b2s(matcher.startsat(b'  $ cat<<ANYLIMIT>"file.py"\\n'))
+    >>> b2s(matcher.startsat('  $ cat<<ANYLIMIT>"file.py"\\n'))
     ('file.py', '  > ANYLIMIT\\n')
-    >>> start = b'  $ cat > file.py << EOF\\n'
+    >>> start = '  $ cat > file.py << EOF\\n'
     >>> ctx = matcher.startsat(start)
     >>> matcher.codeatstart(ctx, start)
     >>> b2s(matcher.filename(ctx))
     'file.py'
     >>> matcher.ignores(ctx)
     False
-    >>> inside = b'  > foo = 1\\n'
+    >>> inside = '  > foo = 1\\n'
     >>> matcher.endsat(ctx, inside)
     False
     >>> matcher.isinside(ctx, inside)
     True
     >>> b2s(matcher.codeinside(ctx, inside))
     'foo = 1\\n'
-    >>> end = b'  > EOF\\n'
+    >>> end = '  > EOF\\n'
     >>> matcher.endsat(ctx, end)
     True
     >>> matcher.codeatend(ctx, end)
-    >>> matcher.endsat(ctx, b'  > EOFEOF\\n')
+    >>> matcher.endsat(ctx, '  > EOFEOF\\n')
     False
-    >>> ctx = matcher.startsat(b'  $ cat > file.py << NO_CHECK_EOF\\n')
+    >>> ctx = matcher.startsat('  $ cat > file.py << NO_CHECK_EOF\\n')
     >>> matcher.ignores(ctx)
     True
     """
-    _prefix = b'  > '
+    _prefix = '  > '
 
     def __init__(self, desc, namepat):
         super(fileheredocmatcher, self).__init__(desc)
@@ -312,13 +302,13 @@ class fileheredocmatcher(embeddedmatcher):
         # - > NAMEPAT
         # - > "NAMEPAT"
         # - > 'NAMEPAT'
-        namepat = (br'\s*>>?\s*(?P<nquote>["\']?)(?P<name>%s)(?P=nquote)'
+        namepat = (r'\s*>>?\s*(?P<nquote>["\']?)(?P<name>%s)(?P=nquote)'
                    % namepat)
         self._fileres = [
             # "cat > NAME << LIMIT" case
-            re.compile(br'  \$ \s*cat' + namepat + heredoclimitpat),
+            re.compile(r'  \$ \s*cat' + namepat + heredoclimitpat),
             # "cat << LIMIT > NAME" case
-            re.compile(br'  \$ \s*cat' + heredoclimitpat + namepat),
+            re.compile(r'  \$ \s*cat' + heredoclimitpat + namepat),
         ]
 
     def startsat(self, line):
@@ -327,7 +317,7 @@ class fileheredocmatcher(embeddedmatcher):
             matched = filere.match(line)
             if matched:
                 return (matched.group('name'),
-                        b'  > %s\n' % matched.group('limit'))
+                        '  > %s\n' % matched.group('limit'))
 
     def endsat(self, ctx, line):
         return ctx[1] == line
@@ -336,7 +326,7 @@ class fileheredocmatcher(embeddedmatcher):
         return line.startswith(self._prefix)
 
     def ignores(self, ctx):
-        return b'  > %s\n' % heredocignorelimit == ctx[1]
+        return '  > %s\n' % heredocignorelimit == ctx[1]
 
     def filename(self, ctx):
         return ctx[0]
@@ -357,10 +347,10 @@ class pydoctestmatcher(embeddedmatcher):
     """Detect ">>> code" style embedded python code
 
     >>> matcher = pydoctestmatcher()
-    >>> startline = b'  >>> foo = 1\\n'
+    >>> startline = '  >>> foo = 1\\n'
     >>> matcher.startsat(startline)
     True
-    >>> matcher.startsat(b'  ... foo = 1\\n')
+    >>> matcher.startsat('  ... foo = 1\\n')
     False
     >>> ctx = matcher.startsat(startline)
     >>> matcher.filename(ctx)
@@ -368,45 +358,45 @@ class pydoctestmatcher(embeddedmatcher):
     False
     >>> b2s(matcher.codeatstart(ctx, startline))
     'foo = 1\\n'
-    >>> inside = b'  >>> foo = 1\\n'
+    >>> inside = '  >>> foo = 1\\n'
     >>> matcher.endsat(ctx, inside)
     False
     >>> matcher.isinside(ctx, inside)
     True
     >>> b2s(matcher.codeinside(ctx, inside))
     'foo = 1\\n'
-    >>> inside = b'  ... foo = 1\\n'
+    >>> inside = '  ... foo = 1\\n'
     >>> matcher.endsat(ctx, inside)
     False
     >>> matcher.isinside(ctx, inside)
     True
     >>> b2s(matcher.codeinside(ctx, inside))
     'foo = 1\\n'
-    >>> inside = b'  expected output\\n'
+    >>> inside = '  expected output\\n'
     >>> matcher.endsat(ctx, inside)
     False
     >>> matcher.isinside(ctx, inside)
     True
     >>> b2s(matcher.codeinside(ctx, inside))
     '\\n'
-    >>> inside = b'  \\n'
+    >>> inside = '  \\n'
     >>> matcher.endsat(ctx, inside)
     False
     >>> matcher.isinside(ctx, inside)
     True
     >>> b2s(matcher.codeinside(ctx, inside))
     '\\n'
-    >>> end = b'  $ foo bar\\n'
+    >>> end = '  $ foo bar\\n'
     >>> matcher.endsat(ctx, end)
     True
     >>> matcher.codeatend(ctx, end)
-    >>> end = b'\\n'
+    >>> end = '\\n'
     >>> matcher.endsat(ctx, end)
     True
     >>> matcher.codeatend(ctx, end)
     """
-    _prefix = b'  >>> '
-    _prefixre = re.compile(br'  (>>>|\.\.\.) ')
+    _prefix = '  >>> '
+    _prefixre = re.compile(r'  (>>>|\.\.\.) ')
 
     # If a line matches against not _prefixre but _outputre, that line
     # is "an expected output line" (= not a part of code fragment).
@@ -416,10 +406,10 @@ class pydoctestmatcher(embeddedmatcher):
     # run-tests.py. But "directive line inside inline python code"
     # should be rejected by Mercurial reviewers. Therefore, this
     # regexp does not matche against such directive lines.
-    _outputre = re.compile(br'  $|  [^$]')
+    _outputre = re.compile(r'  $|  [^$]')
 
     def __init__(self):
-        super(pydoctestmatcher, self).__init__(b"doctest style python code")
+        super(pydoctestmatcher, self).__init__("doctest style python code")
 
     def startsat(self, line):
         # ctx is "True"
@@ -446,57 +436,57 @@ class pydoctestmatcher(embeddedmatcher):
     def codeinside(self, ctx, line):
         if self._prefixre.match(line):
             return line[len(self._prefix):] # strip prefix '  >>> '/'  ... '
-        return b'\n' # an expected output line is treated as an empty line
+        return '\n' # an expected output line is treated as an empty line
 
 class pyheredocmatcher(embeddedmatcher):
     """Detect "python << LIMIT" style embedded python code
 
     >>> matcher = pyheredocmatcher()
-    >>> b2s(matcher.startsat(b'  $ python << EOF\\n'))
+    >>> b2s(matcher.startsat('  $ python << EOF\\n'))
     '  > EOF\\n'
-    >>> b2s(matcher.startsat(b'  $ $PYTHON   <<EOF\\n'))
+    >>> b2s(matcher.startsat('  $ $PYTHON   <<EOF\\n'))
     '  > EOF\\n'
-    >>> b2s(matcher.startsat(b'  $ "$PYTHON"<<  "EOF"\\n'))
+    >>> b2s(matcher.startsat('  $ "$PYTHON"<<  "EOF"\\n'))
     '  > EOF\\n'
-    >>> b2s(matcher.startsat(b"  $ $PYTHON << 'ANYLIMIT'\\n"))
+    >>> b2s(matcher.startsat("  $ $PYTHON << 'ANYLIMIT'\\n"))
     '  > ANYLIMIT\\n'
-    >>> matcher.startsat(b'  $ "$PYTHON" < EOF\\n')
-    >>> start = b'  $ python << EOF\\n'
+    >>> matcher.startsat('  $ "$PYTHON" < EOF\\n')
+    >>> start = '  $ python << EOF\\n'
     >>> ctx = matcher.startsat(start)
     >>> matcher.codeatstart(ctx, start)
     >>> matcher.filename(ctx)
     >>> matcher.ignores(ctx)
     False
-    >>> inside = b'  > foo = 1\\n'
+    >>> inside = '  > foo = 1\\n'
     >>> matcher.endsat(ctx, inside)
     False
     >>> matcher.isinside(ctx, inside)
     True
     >>> b2s(matcher.codeinside(ctx, inside))
     'foo = 1\\n'
-    >>> end = b'  > EOF\\n'
+    >>> end = '  > EOF\\n'
     >>> matcher.endsat(ctx, end)
     True
     >>> matcher.codeatend(ctx, end)
-    >>> matcher.endsat(ctx, b'  > EOFEOF\\n')
+    >>> matcher.endsat(ctx, '  > EOFEOF\\n')
     False
-    >>> ctx = matcher.startsat(b'  $ python << NO_CHECK_EOF\\n')
+    >>> ctx = matcher.startsat('  $ python << NO_CHECK_EOF\\n')
     >>> matcher.ignores(ctx)
     True
     """
-    _prefix = b'  > '
+    _prefix = '  > '
 
-    _startre = re.compile(br'  \$ (\$PYTHON|"\$PYTHON"|python).*' +
+    _startre = re.compile(r'  \$ (\$PYTHON|"\$PYTHON"|python).*' +
                           heredoclimitpat)
 
     def __init__(self):
-        super(pyheredocmatcher, self).__init__(b"heredoc python invocation")
+        super(pyheredocmatcher, self).__init__("heredoc python invocation")
 
     def startsat(self, line):
         # ctx is END-LINE-OF-EMBEDDED-CODE
         matched = self._startre.match(line)
         if matched:
-            return b'  > %s\n' % matched.group('limit')
+            return '  > %s\n' % matched.group('limit')
 
     def endsat(self, ctx, line):
         return ctx == line
@@ -505,7 +495,7 @@ class pyheredocmatcher(embeddedmatcher):
         return line.startswith(self._prefix)
 
     def ignores(self, ctx):
-        return b'  > %s\n' % heredocignorelimit == ctx
+        return '  > %s\n' % heredocignorelimit == ctx
 
     def filename(self, ctx):
         return None # no filename
@@ -524,7 +514,7 @@ _pymatchers = [
     pyheredocmatcher(),
     # use '[^<]+' instead of '\S+', in order to match against
     # paths including whitespaces
-    fileheredocmatcher(b'heredoc .py file', br'[^<]+\.py'),
+    fileheredocmatcher('heredoc .py file', r'[^<]+\.py'),
 ]
 
 def pyembedded(basefile, lines, errors):
@@ -536,7 +526,7 @@ def pyembedded(basefile, lines, errors):
 _shmatchers = [
     # use '[^<]+' instead of '\S+', in order to match against
     # paths including whitespaces
-    fileheredocmatcher(b'heredoc .sh file', br'[^<]+\.sh'),
+    fileheredocmatcher('heredoc .sh file', r'[^<]+\.sh'),
 ]
 
 def shembedded(basefile, lines, errors):
@@ -548,8 +538,8 @@ def shembedded(basefile, lines, errors):
 _hgrcmatchers = [
     # use '[^<]+' instead of '\S+', in order to match against
     # paths including whitespaces
-    fileheredocmatcher(b'heredoc hgrc file',
-                       br'(([^/<]+/)+hgrc|\$HGRCPATH|\${HGRCPATH})'),
+    fileheredocmatcher('heredoc hgrc file',
+                       r'(([^/<]+/)+hgrc|\$HGRCPATH|\${HGRCPATH})'),
 ]
 
 def hgrcembedded(basefile, lines, errors):
@@ -565,14 +555,14 @@ if __name__ == "__main__":
         errors = []
         for name, starts, ends, code in embeddedfunc(basefile, lines, errors):
             if not name:
-                name = b'<anonymous>'
-            writeout(b"%s:%d: %s starts\n" % (basefile, starts, name))
+                name = '<anonymous>'
+            writeout("%s:%d: %s starts\n" % (basefile, starts, name))
             if opts.verbose and code:
-                writeout(b"  |%s\n" %
-                         b"\n  |".join(l for l in code.splitlines()))
-            writeout(b"%s:%d: %s ends\n" % (basefile, ends, name))
+                writeout("  |%s\n" %
+                         "\n  |".join(l for l in code.splitlines()))
+            writeout("%s:%d: %s ends\n" % (basefile, ends, name))
         for e in errors:
-            writeerr(b"%s\n" % e)
+            writeerr("%s\n" % e)
         return len(errors)
 
     def applyembedded(args, embeddedfunc, opts):
@@ -580,11 +570,11 @@ if __name__ == "__main__":
         if args:
             for f in args:
                 with opentext(f) as fp:
-                    if showembedded(bytestr(f), fp, embeddedfunc, opts):
+                    if showembedded(f, fp, embeddedfunc, opts):
                         ret = 1
         else:
-            lines = [l for l in stdin.readlines()]
-            if showembedded(b'<stdin>', lines, embeddedfunc, opts):
+            lines = [l for l in sys.stdin.readlines()]
+            if showembedded('<stdin>', lines, embeddedfunc, opts):
                 ret = 1
         return ret
 

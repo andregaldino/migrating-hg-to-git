@@ -1,9 +1,10 @@
 #testcases stripbased phasebased
+#testcases abortflag abortcommand
+#testcases continueflag continuecommand
 
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
   > mq =
-  > shelve =
   > [defaults]
   > diff = --nodates --git
   > qnew = --date '0 0'
@@ -18,6 +19,20 @@
   > internal-phase = yes
   > EOF
 
+#endif
+
+#if abortflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > abort = unshelve --abort
+  > EOF
+#endif
+
+#if continueflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > continue = unshelve --continue
+  > EOF
 #endif
 
 shelve should leave dirstate clean (issue4055)
@@ -286,7 +301,14 @@ unshelve and conflicts with tracked and untracked files
   >>>>>>> working-copy: aef214a5229c - shelve: changes to: commit stuff
   $ cat f.orig
   g
-  $ hg unshelve --abort
+
+#if abortcommand
+when in dry-run mode
+  $ hg abort --dry-run
+  unshelve in progress, will be aborted
+#endif
+
+  $ hg abort
   unshelve of 'default' aborted
   $ hg st
   ? f.orig
@@ -546,7 +568,7 @@ will be preserved.
   $ hg resolve --mark a
   (no more unresolved files)
   continue: hg unshelve --continue
-  $ hg unshelve --continue
+  $ hg continue
   marked working directory as branch test
   unshelve of 'default' complete
   $ cat a
@@ -627,7 +649,13 @@ in previous versions) and running unshelve --continue
   $ hg resolve --mark a
   (no more unresolved files)
   continue: hg unshelve --continue
-  $ hg unshelve --continue
+
+#if continuecommand
+  $ hg continue --dry-run
+  unshelve in progress, will be resumed
+#endif
+
+  $ hg continue
   unshelve of 'default' complete
   $ cat a
   aaabbbccc
@@ -690,21 +718,30 @@ Prepare unshelve with a corrupted shelvedstate
   $ echo somethingsomething > .hg/shelvedstate
 
 Unshelve --continue fails with appropriate message if shelvedstate is corrupted
-  $ hg unshelve --continue
+  $ hg continue
   abort: corrupted shelved state file
   (please run hg unshelve --abort to abort unshelve operation)
   [255]
 
 Unshelve --abort works with a corrupted shelvedstate
-  $ hg unshelve --abort
-  could not read shelved state file, your working copy may be in an unexpected state
+  $ hg abort
+  abort: could not read shelved state file, your working copy may be in an unexpected state
   please update to some commit
+  
+  [255]
 
 Unshelve --abort fails with appropriate message if there's no unshelve in
 progress
+
+#if abortflag
   $ hg unshelve --abort
   abort: no unshelve in progress
   [255]
+#else
+  $ hg abort
+  aborting the merge, updating back to 9451eaa6eee3
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#endif
   $ cd ..
 
 Unshelve respects --keep even if user intervention is needed
@@ -728,7 +765,7 @@ Unshelve respects --keep even if user intervention is needed
   $ hg resolve --mark file
   (no more unresolved files)
   continue: hg unshelve --continue
-  $ hg unshelve --continue
+  $ hg continue
   unshelve of 'default' complete
   $ hg shelve --list
   default         (*s ago) * changes to: 1 (glob)
@@ -799,7 +836,7 @@ putting v1 shelvedstate file in place of a created v2
   (no more unresolved files)
   continue: hg unshelve --continue
 mercurial does not crash
-  $ hg unshelve --continue
+  $ hg continue
   unshelve of 'ashelve' complete
 
 #if phasebased
@@ -823,7 +860,7 @@ Test with the `.shelve` missing, but the changeset still in the repo (non-natura
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
   [1]
-  $ hg unshelve --abort
+  $ hg abort
   unshelve of 'default' aborted
 
 Unshelve without .shelve metadata (can happen when upgrading a repository with old shelve)
@@ -842,9 +879,44 @@ Unshelve without .shelve metadata (can happen when upgrading a repository with o
   [1]
   $ cat .hg/shelved/default.shelve
   node=82e0cb9893247d12667017593ce1e5655860f1ac
-  $ hg unshelve --abort
+  $ hg abort
   unshelve of 'default' aborted
 
 #endif
 
+  $ cd ..
+
+Block merge abort when unshelve in progress(issue6160)
+------------------------------------------------------
+
+  $ hg init a
+  $ cd a
+  $ echo foo > a ; hg commit -qAm "initial commit"
+  $ echo bar > a
+  $ hg shelve
+  shelved as default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo foobar > a
+  $ hg unshelve
+  unshelving change 'default'
+  temporarily committing pending changes (restore with 'hg unshelve --abort')
+  rebasing shelved changes
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
+  [1]
+
+  $ hg log --template '{desc|firstline}  {author}  {date|isodate} \n' -r .
+  pending changes temporary commit  shelve@localhost  1970-01-01 00:00 +0000 
+  $ hg merge --abort
+  abort: cannot abort merge with unshelve in progress
+  (use 'hg unshelve --continue' or 'hg unshelve --abort')
+  [255]
+
+  $ hg unshelve --abort
+  unshelve of 'default' aborted
+
+  $ hg log -G --template '{desc|firstline}  {author}  {date|isodate} \n' -r .
+  @  initial commit  test  1970-01-01 00:00 +0000
+  
   $ cd ..

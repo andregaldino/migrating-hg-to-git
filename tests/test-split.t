@@ -135,22 +135,26 @@ was always recording three commits, one for each diff hunk, in reverse order
   $ HGEDITOR=false runsplit
   diff --git a/a b/a
   3 hunks, 3 lines changed
-  examine changes to 'a'? [Ynesfdaq?] y
+  examine changes to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,1 +1,1 @@
   -1
   +11
-  record change 1/3 to 'a'? [Ynesfdaq?] n
+  record change 1/3 to 'a'?
+  (enter ? for help) [Ynesfdaq?] n
   
   @@ -3,1 +3,1 @@ 2
   -3
   +33
-  record change 2/3 to 'a'? [Ynesfdaq?] n
+  record change 2/3 to 'a'?
+  (enter ? for help) [Ynesfdaq?] n
   
   @@ -5,1 +5,1 @@ 4
   -5
   +55
-  record change 3/3 to 'a'? [Ynesfdaq?] y
+  record change 3/3 to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   transaction abort!
   rollback completed
@@ -162,22 +166,26 @@ was always recording three commits, one for each diff hunk, in reverse order
   $ runsplit
   diff --git a/a b/a
   3 hunks, 3 lines changed
-  examine changes to 'a'? [Ynesfdaq?] y
+  examine changes to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,1 +1,1 @@
   -1
   +11
-  record change 1/3 to 'a'? [Ynesfdaq?] n
+  record change 1/3 to 'a'?
+  (enter ? for help) [Ynesfdaq?] n
   
   @@ -3,1 +3,1 @@ 2
   -3
   +33
-  record change 2/3 to 'a'? [Ynesfdaq?] n
+  record change 2/3 to 'a'?
+  (enter ? for help) [Ynesfdaq?] n
   
   @@ -5,1 +5,1 @@ 4
   -5
   +55
-  record change 3/3 to 'a'? [Ynesfdaq?] y
+  record change 3/3 to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. Write commit message for the first split changeset.
   EDITOR: a2
@@ -192,17 +200,20 @@ was always recording three commits, one for each diff hunk, in reverse order
   created new head
   diff --git a/a b/a
   2 hunks, 2 lines changed
-  examine changes to 'a'? [Ynesfdaq?] y
+  examine changes to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,1 +1,1 @@
   -1
   +11
-  record change 1/2 to 'a'? [Ynesfdaq?] n
+  record change 1/2 to 'a'?
+  (enter ? for help) [Ynesfdaq?] n
   
   @@ -3,1 +3,1 @@ 2
   -3
   +33
-  record change 2/2 to 'a'? [Ynesfdaq?] y
+  record change 2/2 to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. So far it has been split into:
   EDITOR: HG: - e704349bd21b: split 1
@@ -218,12 +229,14 @@ was always recording three commits, one for each diff hunk, in reverse order
   EDITOR: HG: changed a
   diff --git a/a b/a
   1 hunks, 1 lines changed
-  examine changes to 'a'? [Ynesfdaq?] y
+  examine changes to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,1 +1,1 @@
   -1
   +11
-  record this change to 'a'? [Ynesfdaq?] y
+  record this change to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. So far it has been split into:
   EDITOR: HG: - e704349bd21b: split 1
@@ -515,12 +528,14 @@ Split a non-head with obsoleted descendants
   > EOF
   diff --git a/B b/B
   new file mode 100644
-  examine changes to 'B'? [Ynesfdaq?] y
+  examine changes to 'B'?
+  (enter ? for help) [Ynesfdaq?] y
   
   @@ -0,0 +1,1 @@
   +B
   \ No newline at end of file
-  record this change to 'B'? [Ynesfdaq?] y
+  record this change to 'B'?
+  (enter ? for help) [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 112478962961. Write commit message for the first split changeset.
   EDITOR: B
@@ -621,11 +636,13 @@ Do not move things to secret even if phases.new-commit=secret
   $ printf 'f\nn\nf\n' | hg --config extensions.split= --config diff.ignoreblanklines=1 split
   diff --git a/bar b/bar
   2 hunks, 2 lines changed
-  examine changes to 'bar'? [Ynesfdaq?] f
+  examine changes to 'bar'?
+  (enter ? for help) [Ynesfdaq?] f
   
   diff --git a/foo b/foo
   1 hunks, 1 lines changed
-  examine changes to 'foo'? [Ynesfdaq?] n
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] n
   
   EDITOR: HG: Splitting dd3c45017cbf. Write commit message for the first split changeset.
   EDITOR: splitme
@@ -640,7 +657,8 @@ Do not move things to secret even if phases.new-commit=secret
   created new head
   diff --git a/foo b/foo
   1 hunks, 1 lines changed
-  examine changes to 'foo'? [Ynesfdaq?] f
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] f
   
   EDITOR: HG: Splitting dd3c45017cbf. So far it has been split into:
   EDITOR: HG: - f205aea1c624: split 1
@@ -675,11 +693,13 @@ the ignoreblanklines thing isn't somehow position dependent.
   $ printf 'f\nn\nf\n' | hg --config extensions.split= --config diff.ignoreblanklines=1 split
   diff --git a/bar b/bar
   1 hunks, 1 lines changed
-  examine changes to 'bar'? [Ynesfdaq?] f
+  examine changes to 'bar'?
+  (enter ? for help) [Ynesfdaq?] f
   
   diff --git a/foo b/foo
   2 hunks, 2 lines changed
-  examine changes to 'foo'? [Ynesfdaq?] n
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] n
   
   EDITOR: HG: Splitting 904c80b40a4a. Write commit message for the first split changeset.
   EDITOR: splitme
@@ -694,7 +714,8 @@ the ignoreblanklines thing isn't somehow position dependent.
   created new head
   diff --git a/foo b/foo
   2 hunks, 2 lines changed
-  examine changes to 'foo'? [Ynesfdaq?] f
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] f
   
   EDITOR: HG: Splitting 904c80b40a4a. So far it has been split into:
   EDITOR: HG: - ffecf40fa954: split 1
@@ -739,7 +760,8 @@ Testing the case in split when commiting flag-only file changes (issue5864)
   diff --git a/foo b/foo
   old mode 100644
   new mode 100755
-  examine changes to 'foo'? [Ynesfdaq?] y
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 3a2125f0f4cb. Write commit message for the first split changeset.
   EDITOR: make executable

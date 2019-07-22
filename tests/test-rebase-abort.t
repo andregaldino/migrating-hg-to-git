@@ -1,3 +1,6 @@
+#testcases abortcommand abortflag
+#testcases continuecommand continueflag
+
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > rebase=
@@ -9,6 +12,19 @@
   > tglog = log -G --template "{rev}:{phase} '{desc}' {branches}\n"
   > EOF
 
+#if abortflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > abort = rebase --abort
+  > EOF
+#endif
+
+#if continueflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > continue = rebase --continue
+  > EOF
+#endif
 
   $ hg init a
   $ cd a
@@ -114,7 +130,13 @@ Insert unsupported mandatory merge record:
 
 Abort (should clear out unsupported merge state):
 
-  $ hg rebase --abort
+#if abortcommand
+when in dry-run mode
+  $ hg abort --dry-run
+  rebase in progress, will be aborted
+#endif
+
+  $ hg abort
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/3e046f2ecedb-6beef7d5-backup.hg
   rebase aborted
   $ hg debugmergestate
@@ -148,13 +170,13 @@ earlier than 2.7 by renaming ".hg/rebasestate" temporarily.
   $ hg --config extensions.mq= strip --quiet "destination()"
   $ mv .hg/rebasestate.back .hg/rebasestate
 
-  $ hg rebase --continue
+  $ hg continue
   abort: cannot continue inconsistent rebase
   (use "hg rebase --abort" to clear broken state)
   [255]
   $ hg summary | grep '^rebase: '
   rebase: (use "hg rebase --abort" to clear broken state)
-  $ hg rebase --abort
+  $ hg abort
   rebase aborted (no revision is removed, only broken state is cleared)
 
   $ cd ..
@@ -271,7 +293,7 @@ rebase abort should not leave working copy in a merge state if tip-1 is public
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
-  $ hg rebase --abort
+  $ hg abort
   rebase aborted
   $ hg log -G --template "{rev} {desc} {bookmarks}"
   @  3 C foo
@@ -324,7 +346,7 @@ user has somehow managed to update to a different revision (issue4009)
 
   $ cat a
   new
-  $ hg rebase --abort
+  $ hg abort
   rebase aborted
   $ cat a
   new
@@ -405,7 +427,7 @@ New operations are blocked with the correct state message
   (use 'hg rebase --continue' or 'hg rebase --abort')
   [255]
 
-  $ hg rebase --abort
+  $ hg abort
   saved backup bundle to $TESTTMP/interrupted/.hg/strip-backup/3d8812cf300d-93041a90-backup.hg
   rebase aborted
   $ hg log -G --template "{rev} {desc} {bookmarks}"
@@ -456,7 +478,7 @@ during a rebase (issue4661)
   rebasing 2:e4ea5cdc9789 "conflicting 1"
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
-  $ hg rebase --abort
+  $ hg abort
   rebase aborted
   $ hg summary
   parent: 3:b16646383533 tip
@@ -497,7 +519,7 @@ commit will cause merge conflict on rebase
   warning: conflicts while merging root! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
-  $ hg rebase --abort
+  $ hg abort
   rebase aborted
   $ cd ..
 

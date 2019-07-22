@@ -871,7 +871,7 @@ def _parsechunk(hunk):
     patchlines = mdiff.splitnewlines(buf.getvalue())
     # hunk.prettystr() will update hunk.removed
     a2 = a1 + hunk.removed
-    blines = [l[1:] for l in patchlines[1:] if l[0] != '-']
+    blines = [l[1:] for l in patchlines[1:] if not l.startswith('-')]
     return path, (a1, a2, blines)
 
 def overlaydiffcontext(ctx, chunks):
@@ -914,7 +914,10 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
     """
     if stack is None:
         limit = ui.configint('absorb', 'max-stack-size')
-        stack = getdraftstack(repo['.'], limit)
+        headctx = repo['.']
+        if len(headctx.parents()) > 1:
+            raise error.Abort(_('cannot absorb into a merge'))
+        stack = getdraftstack(headctx, limit)
         if limit and len(stack) >= limit:
             ui.warn(_('absorb: only the recent %d changesets will '
                       'be analysed\n')
@@ -932,7 +935,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
     if opts.get('interactive'):
         diff = patch.diff(repo, stack[-1].node(), targetctx.node(), matcher)
         origchunks = patch.parsepatch(diff)
-        chunks = cmdutil.recordfilter(ui, origchunks)[0]
+        chunks = cmdutil.recordfilter(ui, origchunks, matcher)[0]
         targetctx = overlaydiffcontext(stack[-1], chunks)
     fm = None
     if opts.get('print_changes') or not opts.get('apply_changes'):

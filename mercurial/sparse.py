@@ -248,7 +248,8 @@ def prunetemporaryincludes(repo):
 
     typeactions = mergemod.emptyactions()
     typeactions['r'] = actions
-    mergemod.applyupdates(repo, typeactions, repo[None], repo['.'], False)
+    mergemod.applyupdates(repo, typeactions, repo[None], repo['.'], False,
+                          wantfiledata=False)
 
     # Fix dirstate
     for file in dropped:
@@ -382,7 +383,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         typeactions = mergemod.emptyactions()
         typeactions['g'] = actions
         mergemod.applyupdates(repo, typeactions, repo[None], repo['.'],
-                              False)
+                              False, wantfiledata=False)
 
         dirstate = repo.dirstate
         for file, flags, msg in actions:
@@ -486,7 +487,8 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
     for f, (m, args, msg) in actions.iteritems():
         typeactions[m].append((f, args, msg))
 
-    mergemod.applyupdates(repo, typeactions, repo[None], repo['.'], False)
+    mergemod.applyupdates(repo, typeactions, repo[None], repo['.'], False,
+                          wantfiledata=False)
 
     # Fix dirstate
     for file in added:

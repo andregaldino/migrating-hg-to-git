@@ -678,6 +678,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
     for sample in data.samples:
         root.add(sample.stack[::-1], sample.time - lasttime)
         lasttime = sample.time
+    showtime = kwargs.get(r'showtime', True)
 
     def _write(node, depth, multiple_siblings):
         site = node.site
@@ -695,7 +696,9 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
             # lots of string formatting
             listpattern = ''.ljust(indent) +\
                           ('\\' if multiple_siblings else '|') +\
-                          ' %4.1f%%  %s %s'
+                          ' %4.1f%%' +\
+                          (' %5.2fs' % node.count if showtime else '') +\
+                          '  %s %s'
             liststring = listpattern % (node.count / root.count * 100,
                                         filename, function)
             codepattern = '%' + ('%d' % (55 - len(liststring))) + 's %d:  %s'

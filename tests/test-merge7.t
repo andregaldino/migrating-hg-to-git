@@ -81,7 +81,6 @@ pull and merge from test-a again
   new changesets 40d11a4173a8
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg merge --debug
-    searching for copies back to rev 1
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 96b70246a118, local: 50c3a7e29886+, remote: 40d11a4173a8

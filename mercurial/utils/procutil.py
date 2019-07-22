@@ -470,7 +470,8 @@ if pycompat.iswindows:
     # See https://phab.mercurial-scm.org/D1701 for discussion
     _creationflags = DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
 
-    def runbgcommand(script, env, shell=False, stdout=None, stderr=None):
+    def runbgcommand(
+      script, env, shell=False, stdout=None, stderr=None, ensurestart=True):
         '''Spawn a command without waiting for it to finish.'''
         # we can't use close_fds *and* redirect stdin. I'm not sure that we
         # need to because the detached process has no console connection.
@@ -480,12 +481,15 @@ if pycompat.iswindows:
             creationflags=_creationflags, stdout=stdout,
             stderr=stderr)
 else:
-    def runbgcommand(cmd, env, shell=False, stdout=None, stderr=None):
+    def runbgcommand(
+      cmd, env, shell=False, stdout=None, stderr=None, ensurestart=True):
         '''Spawn a command without waiting for it to finish.'''
         # double-fork to completely detach from the parent process
         # based on http://code.activestate.com/recipes/278731
         pid = os.fork()
         if pid:
+            if not ensurestart:
+                return
             # Parent process
             (_pid, status) = os.waitpid(pid, 0)
             if os.WIFEXITED(status):

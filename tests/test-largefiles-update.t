@@ -133,8 +133,8 @@ Test that "hg merge" updates largefiles from "other" correctly
   > EOF
   largefile large1 has a merge conflict
   ancestor was 4669e532d5b2c093a78eca010077e708a071bb64
-  keep (l)ocal e5bb990443d6a92aaf7223813720f7566c9dd05b or
-  take (o)ther 58e24f733a964da346e2407a2bee99d9001184f5? o
+  you can keep (l)ocal e5bb990443d6a92aaf7223813720f7566c9dd05b or take (o)ther 58e24f733a964da346e2407a2bee99d9001184f5.
+  what do you want to do? o
   merging normal1
   warning: conflicts while merging normal1! (edit, then use 'hg resolve --mark')
   getting changed largefiles
@@ -161,8 +161,8 @@ mark the non-existing file as normal in lfdirstate)
   > EOF
   largefile large1 has a merge conflict
   ancestor was 4669e532d5b2c093a78eca010077e708a071bb64
-  keep (l)ocal e5bb990443d6a92aaf7223813720f7566c9dd05b or
-  take (o)ther 58e24f733a964da346e2407a2bee99d9001184f5? o
+  you can keep (l)ocal e5bb990443d6a92aaf7223813720f7566c9dd05b or take (o)ther 58e24f733a964da346e2407a2bee99d9001184f5.
+  what do you want to do? o
   getting changed largefiles
   large1: largefile 58e24f733a964da346e2407a2bee99d9001184f5 not available from file:/*/$TESTTMP/repo (glob)
   0 largefiles updated, 0 removed
@@ -361,8 +361,8 @@ Test that linear merge can detect modification (and conflict) correctly
   > EOF
   largefile large1 has a merge conflict
   ancestor was 4669e532d5b2c093a78eca010077e708a071bb64
-  keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or
-  take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b? o
+  you can keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b.
+  what do you want to do? o
   getting changed largefiles
   1 largefiles updated, 0 removed
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
@@ -380,8 +380,8 @@ Test that linear merge can detect modification (and conflict) correctly
   $ hg update 3 --config debug.dirstate.delaywrite=2
   largefile large1 has a merge conflict
   ancestor was 4669e532d5b2c093a78eca010077e708a071bb64
-  keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or
-  take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b? l
+  you can keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b.
+  what do you want to do? l
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
   $ hg status -A large1
   M large1
@@ -461,8 +461,8 @@ Test that the internal linear merging works correctly
   keep (l)argefile or use (n)ormal file? l
   largefile large1 has a merge conflict
   ancestor was 4669e532d5b2c093a78eca010077e708a071bb64
-  keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or
-  take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b? l
+  you can keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b.
+  what do you want to do? l
   2 files updated, 1 files merged, 0 files removed, 0 files unresolved
   updated to "d65e59e952a9: #5"
   1 other heads for branch "default"
@@ -497,8 +497,8 @@ Test that the internal linear merging works correctly
   keep (l)argefile or use (n)ormal file? l
   largefile large1 has a merge conflict
   ancestor was 4669e532d5b2c093a78eca010077e708a071bb64
-  keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or
-  take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b? l
+  you can keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b.
+  what do you want to do? l
   2 files updated, 1 files merged, 0 files removed, 0 files unresolved
   updated to "d65e59e952a9: #5"
   1 other heads for branch "default"
@@ -545,15 +545,17 @@ Test that the internal linear merging works correctly
   > l
   > EOF
    subrepository sub diverged (local revision: f74e50bd9e55, remote revision: d65e59e952a9)
-  (M)erge, keep (l)ocal [working copy] or keep (r)emote [destination]? m
+  you can (m)erge, keep (l)ocal [working copy] or keep (r)emote [destination].
+  what do you want to do? m
    subrepository sources for sub differ (in checked out version)
-  use (l)ocal source (f74e50bd9e55) or (r)emote source (d65e59e952a9)? r
+  you can use (l)ocal source (f74e50bd9e55) or (r)emote source (d65e59e952a9).
+  what do you want to do? r
   remote turned local largefile large2 into a normal file
   keep (l)argefile or use (n)ormal file? l
   largefile large1 has a merge conflict
   ancestor was 4669e532d5b2c093a78eca010077e708a071bb64
-  keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or
-  take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b? l
+  you can keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b.
+  what do you want to do? l
   2 files updated, 1 files merged, 0 files removed, 0 files unresolved
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
@@ -587,8 +589,8 @@ it is aborted by conflict.
   rebasing 1:72518492caa6 "#1"
   largefile large1 has a merge conflict
   ancestor was 4669e532d5b2c093a78eca010077e708a071bb64
-  keep (l)ocal e5bb990443d6a92aaf7223813720f7566c9dd05b or
-  take (o)ther 58e24f733a964da346e2407a2bee99d9001184f5? o
+  you can keep (l)ocal e5bb990443d6a92aaf7223813720f7566c9dd05b or take (o)ther 58e24f733a964da346e2407a2bee99d9001184f5.
+  what do you want to do? o
   merging normal1
   warning: conflicts while merging normal1! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
@@ -612,8 +614,8 @@ the 1st commit of resuming.
   rebasing 1:72518492caa6 "#1"
   rebasing 4:07d6153b5c04 "#4"
   file '.hglf/large1' was deleted in other [source] but was modified in local [dest].
-  What do you want to do?
-  use (c)hanged version, (d)elete, or leave (u)nresolved? c
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? c
 
   $ hg diff -c "tip~1" --nodates .hglf/large1 | grep '^[+-][0-9a-z]'
   -e5bb990443d6a92aaf7223813720f7566c9dd05b

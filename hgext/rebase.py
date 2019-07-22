@@ -108,7 +108,9 @@ def _revsetdestrebase(repo, subset, x):
 
 @revsetpredicate('_destautoorphanrebase')
 def _revsetdestautoorphanrebase(repo, subset, x):
-    """automatic rebase destination for a single orphan revision"""
+    # ``_destautoorphanrebase()``
+
+    # automatic rebase destination for a single orphan revision.
     unfi = repo.unfiltered()
     obsoleted = unfi.revs('obsolete()')
 
@@ -848,8 +850,9 @@ def rebase(ui, repo, **opts):
       singletransaction = True
 
     By default, rebase writes to the working copy, but you can configure it to
-    run in-memory for for better performance, and to allow it to run if the
-    working copy is dirty::
+    run in-memory for better performance. When the rebase is not moving the
+    parent(s) of the working copy (AKA the "currently checked out changesets"),
+    this may also allow it to run even if the working copy is dirty::
 
       [rebase]
       experimental.inmemory = True
@@ -1819,7 +1822,7 @@ def pullrebase(orig, ui, repo, *args, **opts):
                 ui.debug('--update and --rebase are not compatible, ignoring '
                          'the update flag\n')
 
-            cmdutil.checkunfinished(repo)
+            cmdutil.checkunfinished(repo, skipmerge=True)
             cmdutil.bailifchanged(repo, hint=_('cannot pull with rebase: '
                 'please commit or shelve your changes first'))
 
@@ -1920,6 +1923,22 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
         obsoleteextinctsuccessors,
     )
 
+def abortrebase(ui, repo):
+    with repo.wlock(), repo.lock():
+        rbsrt = rebaseruntime(repo, ui)
+        rbsrt._prepareabortorcontinue(isabort=True)
+
+def continuerebase(ui, repo):
+    with repo.wlock(), repo.lock():
+        rbsrt = rebaseruntime(repo, ui)
+        ms = mergemod.mergestate.read(repo)
+        mergeutil.checkunresolved(ms)
+        retcode = rbsrt._prepareabortorcontinue(isabort=False)
+        if retcode is not None:
+            return retcode
+        rbsrt._performrebase(None)
+        rbsrt._finishrebase()
+
 def summaryhook(ui, repo):
     if not repo.vfs.exists('rebasestate'):
         return
@@ -1947,8 +1966,6 @@ def uisetup(ui):
     entry[1].append(('t', 'tool', '',
                      _("specify merge tool for rebase")))
     cmdutil.summaryhooks.add('rebase', summaryhook)
-    cmdutil.unfinishedstates.append(
-        ['rebasestate', False, False, _('rebase in progress'),
-         _("use 'hg rebase --continue' or 'hg rebase --abort'")])
-    cmdutil.afterresolvedstates.append(
-        ['rebasestate', _('hg rebase --continue')])
+    statemod.addunfinished('rebase', fname='rebasestate', stopflag=True,
+                            continueflag=True, abortfunc=abortrebase,
+                            continuefunc=continuerebase)

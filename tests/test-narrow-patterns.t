@@ -135,13 +135,11 @@ widen the narrow checkout
   $ hg tracked --removeexclude dir1/dirA
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 9 changesets with 6 changes to 6 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:dir1
   I path:dir2
@@ -195,13 +193,11 @@ widen narrow spec again, but exclude a file in previously included spec
   deleting data/dir1/dirA/bar.i (reporevlogstore !)
   deleting data/dir1/dirA/bar/0eca1d0cbdaea4651d1d04d71976a6d2d9bfaae5 (reposimplestore !)
   deleting data/dir1/dirA/bar/index (reposimplestore !)
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 11 changesets with 7 changes to 7 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:dir1
   I path:dir2
@@ -253,13 +249,11 @@ widen narrow spec yet again, excluding a directory in previous spec
   deleting data/dir1/dirA/foo.i (reporevlogstore !)
   deleting data/dir1/dirA/foo/162caeb3d55dceb1fee793aa631ac8c73fcb8b5e (reposimplestore !)
   deleting data/dir1/dirA/foo/index (reposimplestore !)
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 13 changesets with 8 changes to 8 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:dir1
   I path:dir2
@@ -312,13 +306,11 @@ include a directory that was previously explicitly excluded
   $ hg tracked --removeexclude dir1/dirA
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 13 changesets with 9 changes to 9 files
-  new changesets *:* (glob)
   $ hg tracked
   I path:dir1
   I path:dir2
@@ -389,13 +381,11 @@ clone a narrow portion of the master, such that we can widen it later
   $ hg tracked --addinclude dir1
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   saved backup bundle to $TESTTMP/narrow2/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
   added 10 changesets with 6 changes to 6 files
-  new changesets *:* (glob)
   $ find * | sort
   dir1
   dir1/bar

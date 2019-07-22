@@ -26,7 +26,6 @@ we get conflicts that shouldn't be there
   summary:     cp foo bar; change both
   
   $ hg merge --debug
-    searching for copies back to rev 1
     unmatched files in other:
      bar
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):

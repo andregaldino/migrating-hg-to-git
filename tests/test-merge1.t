@@ -44,6 +44,13 @@ of the files in a commit we're updating to
   commit: 1 unknown (interrupted update)
   update: 1 new changesets (update)
   phases: 2 draft
+Detect interrupted update by hg status --verbose
+  $ hg status -v
+  ? b/nonempty
+  # The repository is in an unfinished *update* state.
+  
+  # To continue:    hg update
+  
 
   $ rm b/nonempty
 

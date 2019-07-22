@@ -608,6 +608,7 @@ class curseschunkselector(object):
 
         # the currently selected header, hunk, or hunk-line
         self.currentselecteditem = self.headerlist[0]
+        self.lastapplieditem = None
 
         # updated when printing out patch-display -- the 'lines' here are the
         # line positions *in the pad*, not on the screen.
@@ -723,7 +724,7 @@ class curseschunkselector(object):
         self.currentselecteditem = nextitem
         self.recenterdisplayedarea()
 
-    def nextsametype(self):
+    def nextsametype(self, test=False):
         currentitem = self.currentselecteditem
         sametype = lambda item: isinstance(item, type(currentitem))
         nextitem = currentitem.nextitem()
@@ -739,7 +740,8 @@ class curseschunkselector(object):
                 self.togglefolded(parent)
 
         self.currentselecteditem = nextitem
-        self.recenterdisplayedarea()
+        if not test:
+            self.recenterdisplayedarea()
 
     def rightarrowevent(self):
         """
@@ -838,6 +840,8 @@ class curseschunkselector(object):
         """
         if item is None:
             item = self.currentselecteditem
+            # Only set this when NOT using 'toggleall'
+            self.lastapplieditem = item
 
         item.applied = not item.applied
 
@@ -930,6 +934,45 @@ class curseschunkselector(object):
                 if not item.applied:
                     self.toggleapply(item)
         self.waslasttoggleallapplied = not self.waslasttoggleallapplied
+
+    def toggleallbetween(self):
+        "toggle applied on or off for all items in range [lastapplied,current]."
+        if (not self.lastapplieditem or
+            self.currentselecteditem == self.lastapplieditem):
+            # Treat this like a normal 'x'/' '
+            self.toggleapply()
+            return
+
+        startitem = self.lastapplieditem
+        enditem = self.currentselecteditem
+        # Verify that enditem is "after" startitem, otherwise swap them.
+        for direction in ['forward', 'reverse']:
+            nextitem = startitem.nextitem()
+            while nextitem and nextitem != enditem:
+                nextitem = nextitem.nextitem()
+            if nextitem:
+                break
+            # Looks like we went the wrong direction :)
+            startitem, enditem = enditem, startitem
+
+        if not nextitem:
+            # We didn't find a path going either forward or backward? Don't know
+            # how this can happen, let's not crash though.
+            return
+
+        nextitem = startitem
+        # Switch all items to be the opposite state of the currently selected
+        # item. Specifically:
+        #  [ ] startitem
+        #  [x] middleitem
+        #  [ ] enditem  <-- currently selected
+        # This will turn all three on, since the currently selected item is off.
+        # This does *not* invert each item (i.e. middleitem stays marked/on)
+        desiredstate = not self.currentselecteditem.applied
+        while nextitem != enditem.nextitem():
+            if nextitem.applied != desiredstate:
+                self.toggleapply(item=nextitem)
+            nextitem = nextitem.nextitem()
 
     def togglefolded(self, item=None, foldparent=False):
         "toggle folded flag of specified item (defaults to currently selected)"
@@ -1460,9 +1503,10 @@ changes, the unselected changes are still present in your working copy, so you
 can use crecord multiple times to split large changes into smaller changesets.
 the following are valid keystrokes:
 
-                [space] : (un-)select item ([~]/[x] = partly/fully applied)
+              x [space] : (un-)select item ([~]/[x] = partly/fully applied)
                 [enter] : (un-)select item and go to next item of same type
                       A : (un-)select all items
+                      X : (un-)select all items between current and most-recent
     up/down-arrow [k/j] : go to previous/next unfolded item
         pgup/pgdn [K/J] : go to previous/next item of same type
  right/left-arrow [l/h] : go to child item / parent item
@@ -1724,7 +1768,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         keypressed = pycompat.bytestr(keypressed)
         if keypressed in ["k", "KEY_UP"]:
             self.uparrowevent()
-        if keypressed in ["K", "KEY_PPAGE"]:
+        elif keypressed in ["K", "KEY_PPAGE"]:
             self.uparrowshiftevent()
         elif keypressed in ["j", "KEY_DOWN"]:
             self.downarrowevent()
@@ -1742,8 +1786,6 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             self.toggleamend(self.opts, test)
         elif keypressed in ["c"]:
             return True
-        elif test and keypressed in ['X']:
-            return True
         elif keypressed in ["r"]:
             if self.reviewcommit():
                 self.opts['review'] = True
@@ -1751,11 +1793,13 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         elif test and keypressed in ['R']:
             self.opts['review'] = True
             return True
-        elif keypressed in [' '] or (test and keypressed in ["TOGGLE"]):
+        elif keypressed in [' ', 'x']:
             self.toggleapply()
         elif keypressed in ['\n', 'KEY_ENTER']:
             self.toggleapply()
-            self.nextsametype()
+            self.nextsametype(test=test)
+        elif keypressed in ['X']:
+            self.toggleallbetween()
         elif keypressed in ['A']:
             self.toggleall()
         elif keypressed in ['e']:

@@ -645,6 +645,10 @@ invalid arguments
   
   alias for: hg root
   
+  options:
+  
+   -T --template TEMPLATE display with template
+  
   (use 'hg rt -h' to show more help)
   [255]
 

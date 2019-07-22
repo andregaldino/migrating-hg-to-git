@@ -1875,6 +1875,10 @@ help/ shows help topics
   {
     "earlycommands": [
       {
+        "summary": "abort an unfinished operation (EXPERIMENTAL)",
+        "topic": "abort"
+      },
+      {
         "summary": "add the specified files on the next commit",
         "topic": "add"
       },
@@ -1889,6 +1893,10 @@ help/ shows help topics
       {
         "summary": "commit the specified files or all outstanding changes",
         "topic": "commit"
+      },
+      {
+        "summary": "resumes an interrupted operation (EXPERIMENTAL)",
+        "topic": "continue"
       },
       {
         "summary": "diff repository (or selected files)",
@@ -2057,6 +2065,10 @@ help/ shows help topics
         "topic": "root"
       },
       {
+        "summary": "save and set aside changes from the working directory",
+        "topic": "shelve"
+      },
+      {
         "summary": "add one or more tags for the current or given revision",
         "topic": "tag"
       },
@@ -2067,6 +2079,10 @@ help/ shows help topics
       {
         "summary": "apply one or more bundle files",
         "topic": "unbundle"
+      },
+      {
+        "summary": "restore a shelved change to the working directory",
+        "topic": "unshelve"
       },
       {
         "summary": "verify the integrity of the repository",

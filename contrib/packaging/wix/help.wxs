@@ -49,6 +49,7 @@
             <File Id="internals.config.txt"       Name="config.txt" />
             <File Id="internals.extensions.txt"   Name="extensions.txt" />
             <File Id="internals.linelog.txt"      Name="linelog.txt" />
+            <File Id="internals.mergestate.txt"   Name="mergestate.txt" />
             <File Id="internals.requirements.txt" Name="requirements.txt" />
             <File Id="internals.revlogs.txt"      Name="revlogs.txt" />
             <File Id="internals.wireprotocol.txt" Name="wireprotocol.txt" />

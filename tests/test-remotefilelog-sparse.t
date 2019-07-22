@@ -98,12 +98,5 @@ pulled
   $ clearcache
   $ hg prefetch -r '. + .^' -I x -I z
   4 files fetched over 1 fetches - (4 misses, 0.00% hit ratio) over * (glob)
-Originally this was testing that the rebase doesn't fetch pointless
-blobs. Right now it fails because core's sparse can't load a spec from
-the working directory. Presumably there's a fix, but I'm not sure what it is.
   $ hg rebase -d 2 --keep
   rebasing 1:876b1317060d "x2" (foo)
-  transaction abort!
-  rollback completed
-  abort: cannot parse sparse patterns from working directory
-  [255]

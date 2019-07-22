@@ -280,7 +280,7 @@ verify update will accept invalid legacy branch names
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit -d '9 0' --close-branch -m 'close this part branch too'
   $ hg commit -d '9 0' --close-branch -m 're-closing this branch'
-  abort: can only close branch heads
+  abort: current revision is already a branch closing head
   [255]
 
   $ hg log -r tip --debug
@@ -940,3 +940,51 @@ No superfluous rebuilding of cache:
   0010: 56 46 78 69 00 00 00 01                         |VFxi....|
 
   $ cd ..
+
+Test to make sure that `--close-branch` only works on a branch head:
+--------------------------------------------------------------------
+  $ hg init closebranch
+  $ cd closebranch
+  $ for ch in a b c; do
+  > echo $ch > $ch
+  > hg add $ch
+  > hg ci -m "added "$ch
+  > done;
+
+  $ hg up -r "desc('added b')"
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
+trying to close branch from a cset which is not a branch head
+it should abort:
+  $ hg ci -m "closing branch" --close-branch
+  abort: can only close branch heads
+  (use --force-close-branch to close branch from a non-head changeset)
+  [255]
+
+  $ hg up 0
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg log -GT "{rev}: {node|short} {desc|firstline}\n\t{branch}\n\n"
+  o  2: 155349b645be added c
+  |  	default
+  |
+  o  1: 5f6d8a4bf34a added b
+  |  	default
+  |
+  @  0: 9092f1db7931 added a
+     	default
+  
+Test --force-close-branch to close a branch from a non-head changeset:
+---------------------------------------------------------------------
+
+  $ hg show stack --config extensions.show=
+    o  1553 added c
+    o  5f6d added b
+    @  9092 added a
+
+  $ hg ci -m "branch closed" --close-branch
+  abort: can only close branch heads
+  (use --force-close-branch to close branch from a non-head changeset)
+  [255]
+
+  $ hg ci -m "branch closed" --force-close-branch
+  created new head

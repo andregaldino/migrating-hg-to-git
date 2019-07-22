@@ -82,6 +82,7 @@ Conflicting rebase:
   
   # To continue:    hg rebase --continue
   # To abort:       hg rebase --abort
+  # To stop:        hg rebase --stop
   
 
 Try to continue without solving the conflict:
@@ -248,9 +249,6 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   getting f1.txt
    merge against 9:e31216eec445
      detach base 8:8e4e2c1a07ae
-    searching for copies back to rev 3
-    unmatched files in other (from topological common ancestor):
-     f2.txt
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 8e4e2c1a07ae, local: 4bc80088dc6b+, remote: e31216eec445
@@ -268,9 +266,6 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
    already in destination
    merge against 10:2f2496ddf49d
      detach base 9:e31216eec445
-    searching for copies back to rev 3
-    unmatched files in other (from topological common ancestor):
-     f2.txt
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: e31216eec445, local: 19c888675e13+, remote: 2f2496ddf49d
@@ -329,8 +324,8 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 2 parts total
   updating the branch cache
-  invalid branchheads cache (served): tip differs
-  invalid branchheads cache (served.hidden): tip differs
+  invalid branch cache (served): tip differs
+  invalid branch cache (served.hidden): tip differs
   rebase completed
 
 Test minimization of merge conflicts

@@ -16,21 +16,21 @@ def wrapdirstate(repo, dirstate):
     """Add narrow spec dirstate ignore, block changes outside narrow spec."""
 
     def _editfunc(fn):
-        def _wrapper(self, *args):
+        def _wrapper(self, *args, **kwargs):
             narrowmatch = repo.narrowmatch()
             for f in args:
                 if f is not None and not narrowmatch(f) and f not in self:
                     raise error.Abort(_("cannot track '%s' - it is outside " +
                         "the narrow clone") % f)
-            return fn(self, *args)
+            return fn(self, *args, **kwargs)
         return _wrapper
 
     class narrowdirstate(dirstate.__class__):
         # Prevent adding/editing/copying/deleting files that are outside the
         # sparse checkout
         @_editfunc
-        def normal(self, *args):
-            return super(narrowdirstate, self).normal(*args)
+        def normal(self, *args, **kwargs):
+            return super(narrowdirstate, self).normal(*args, **kwargs)
 
         @_editfunc
         def add(self, *args):
