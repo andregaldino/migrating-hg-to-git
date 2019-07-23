@@ -1,16 +1,9 @@
 from __future__ import absolute_import
 import unittest
 
-try:
-    from mercurial import rustext
-    rustext.__name__  # trigger immediate actual import
-except ImportError:
-    rustext = None
-else:
-    # this would fail already without appropriate ancestor.__package__
-    from mercurial.rustext.discovery import (
-        PartialDiscovery,
-    )
+from mercurial import policy
+
+PartialDiscovery = policy.importrust('discovery', member='PartialDiscovery')
 
 try:
     from mercurial.cext import parsers as cparsers
@@ -39,7 +32,7 @@ data_non_inlined = (
     )
 
 
-@unittest.skipIf(rustext is None or cparsers is None,
+@unittest.skipIf(PartialDiscovery is None or cparsers is None,
                  "rustext or the C Extension parsers module "
                  "discovery relies on is not available")
 class rustdiscoverytest(unittest.TestCase):
