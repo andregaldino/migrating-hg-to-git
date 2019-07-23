@@ -1048,7 +1048,7 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
 
     image = find_image(ec2resource,
                        '801119661308',
-                       'Windows_Server-2019-English-Full-Base-2019.02.13')
+                       'Windows_Server-2019-English-Full-Base-2019.07.12')
 
     config = {
         'BlockDeviceMappings': [
