@@ -1383,6 +1383,11 @@ def debuginstall(ui, **opts):
     fm.condwrite(err, 'usernameerror', _("checking username...\n %s\n"
         " (specify a username in your configuration file)\n"), err)
 
+    for name, mod in extensions.extensions():
+        handler = getattr(mod, 'debuginstall', None)
+        if handler is not None:
+            problems += handler(ui, fm)
+
     fm.condwrite(not problems, '',
                  _("no problems detected\n"))
     if not problems:
