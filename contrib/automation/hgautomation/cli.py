@@ -52,15 +52,16 @@ def bootstrap_linux_dev(hga: HGAutomation, aws_region, distros=None,
             aws.ensure_linux_dev_ami(c, distro=distro)
 
 
-def bootstrap_windows_dev(hga: HGAutomation, aws_region):
+def bootstrap_windows_dev(hga: HGAutomation, aws_region, base_image_name):
     c = hga.aws_connection(aws_region)
-    image = aws.ensure_windows_dev_ami(c)
+    image = aws.ensure_windows_dev_ami(c, base_image_name=base_image_name)
     print('Windows development AMI available as %s' % image.id)
 
 
-def build_inno(hga: HGAutomation, aws_region, arch, revision, version):
+def build_inno(hga: HGAutomation, aws_region, arch, revision, version,
+               base_image_name):
     c = hga.aws_connection(aws_region)
-    image = aws.ensure_windows_dev_ami(c)
+    image = aws.ensure_windows_dev_ami(c, base_image_name=base_image_name)
     DIST_PATH.mkdir(exist_ok=True)
 
     with aws.temporary_windows_dev_instances(c, image, 't3.medium') as insts:
@@ -74,9 +75,10 @@ def build_inno(hga: HGAutomation, aws_region, arch, revision, version):
                                          version=version)
 
 
-def build_wix(hga: HGAutomation, aws_region, arch, revision, version):
+def build_wix(hga: HGAutomation, aws_region, arch, revision, version,
+              base_image_name):
     c = hga.aws_connection(aws_region)
-    image = aws.ensure_windows_dev_ami(c)
+    image = aws.ensure_windows_dev_ami(c, base_image_name=base_image_name)
     DIST_PATH.mkdir(exist_ok=True)
 
     with aws.temporary_windows_dev_instances(c, image, 't3.medium') as insts:
@@ -89,9 +91,10 @@ def build_wix(hga: HGAutomation, aws_region, arch, revision, version):
                                         DIST_PATH, version=version)
 
 
-def build_windows_wheel(hga: HGAutomation, aws_region, arch, revision):
+def build_windows_wheel(hga: HGAutomation, aws_region, arch, revision,
+                        base_image_name):
     c = hga.aws_connection(aws_region)
-    image = aws.ensure_windows_dev_ami(c)
+    image = aws.ensure_windows_dev_ami(c, base_image_name=base_image_name)
     DIST_PATH.mkdir(exist_ok=True)
 
     with aws.temporary_windows_dev_instances(c, image, 't3.medium') as insts:
@@ -104,9 +107,9 @@ def build_windows_wheel(hga: HGAutomation, aws_region, arch, revision):
 
 
 def build_all_windows_packages(hga: HGAutomation, aws_region, revision,
-                               version):
+                               version, base_image_name):
     c = hga.aws_connection(aws_region)
-    image = aws.ensure_windows_dev_ami(c)
+    image = aws.ensure_windows_dev_ami(c, base_image_name=base_image_name)
     DIST_PATH.mkdir(exist_ok=True)
 
     with aws.temporary_windows_dev_instances(c, image, 't3.medium') as insts:
@@ -169,9 +172,9 @@ def run_tests_linux(hga: HGAutomation, aws_region, instance_type,
 
 
 def run_tests_windows(hga: HGAutomation, aws_region, instance_type,
-                      python_version, arch, test_flags):
+                      python_version, arch, test_flags, base_image_name):
     c = hga.aws_connection(aws_region)
-    image = aws.ensure_windows_dev_ami(c)
+    image = aws.ensure_windows_dev_ami(c, base_image_name=base_image_name)
 
     with aws.temporary_windows_dev_instances(c, image, instance_type,
                                              disable_antivirus=True) as insts:
@@ -217,6 +220,11 @@ def get_parser():
         'bootstrap-windows-dev',
         help='Bootstrap the Windows development environment',
     )
+    sp.add_argument(
+        '--base-image-name',
+        help='AMI name of base image',
+        default=aws.WINDOWS_BASE_IMAGE_NAME,
+    )
     sp.set_defaults(func=bootstrap_windows_dev)
 
     sp = subparsers.add_parser(
@@ -231,6 +239,11 @@ def get_parser():
     sp.add_argument(
         '--version',
         help='Mercurial version string to use',
+    )
+    sp.add_argument(
+        '--base-image-name',
+        help='AMI name of base image',
+        default=aws.WINDOWS_BASE_IMAGE_NAME,
     )
     sp.set_defaults(func=build_all_windows_packages)
 
@@ -254,6 +267,11 @@ def get_parser():
         '--version',
         help='Mercurial version string to use in installer',
     )
+    sp.add_argument(
+        '--base-image-name',
+        help='AMI name of base image',
+        default=aws.WINDOWS_BASE_IMAGE_NAME,
+    )
     sp.set_defaults(func=build_inno)
 
     sp = subparsers.add_parser(
@@ -271,6 +289,11 @@ def get_parser():
         '--revision',
         help='Mercurial revision to build',
         default='.',
+    )
+    sp.add_argument(
+        '--base-image-name',
+        help='AMI name of base image',
+        default=aws.WINDOWS_BASE_IMAGE_NAME,
     )
     sp.set_defaults(func=build_windows_wheel)
 
@@ -293,6 +316,11 @@ def get_parser():
     sp.add_argument(
         '--version',
         help='Mercurial version string to use in installer',
+    )
+    sp.add_argument(
+        '--base-image-name',
+        help='AMI name of base image',
+        default=aws.WINDOWS_BASE_IMAGE_NAME,
     )
     sp.set_defaults(func=build_wix)
 
@@ -367,6 +395,11 @@ def get_parser():
     sp.add_argument(
         '--test-flags',
         help='Extra command line flags to pass to run-tests.py',
+    )
+    sp.add_argument(
+        '--base-image-name',
+        help='AMI name of base image',
+        default=aws.WINDOWS_BASE_IMAGE_NAME,
     )
     sp.set_defaults(func=run_tests_windows)
 

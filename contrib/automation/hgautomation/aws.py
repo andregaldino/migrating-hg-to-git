@@ -1032,7 +1032,8 @@ def temporary_linux_dev_instances(c: AWSConnection, image, instance_type,
                 instance.ssh_client.close()
 
 
-def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
+def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-',
+                           base_image_name=WINDOWS_BASE_IMAGE_NAME):
     """Ensure Windows Development AMI is available and up-to-date.
 
     If necessary, a modern AMI will be built by starting a temporary EC2
@@ -1050,7 +1051,7 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
 
     name = '%s%s' % (prefix, 'windows-dev')
 
-    image = find_image(ec2resource, AMAZON_ACCOUNT_ID, WINDOWS_BASE_IMAGE_NAME)
+    image = find_image(ec2resource, AMAZON_ACCOUNT_ID, base_image_name)
 
     config = {
         'BlockDeviceMappings': [
@@ -1103,6 +1104,7 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
         'user_data': WINDOWS_USER_DATA,
         'initial_bootstrap': WINDOWS_BOOTSTRAP_POWERSHELL,
         'bootstrap_commands': commands,
+        'base_image_name': base_image_name,
     })
 
     existing_image = find_and_reconcile_image(ec2resource, name, fingerprint)
