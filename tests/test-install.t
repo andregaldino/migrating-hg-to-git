@@ -153,6 +153,16 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   1 problems detected, please check your install!
   [1]
 
+debuginstall extension support
+  $ hg debuginstall --config extensions.fsmonitor= --config fsmonitor.watchman_exe=false | grep atchman
+  fsmonitor checking for watchman binary... (false)
+   watchman binary missing or broken: warning: Watchman unavailable: watchman exited with code 1
+Verify the json works too:
+  $ hg debuginstall --config extensions.fsmonitor= --config fsmonitor.watchman_exe=false -Tjson | grep atchman
+    "fsmonitor-watchman": "false",
+    "fsmonitor-watchman-error": "warning: Watchman unavailable: watchman exited with code 1",
+
+
 #if test-repo
   $ . "$TESTDIR/helpers-testrepo.sh"
 

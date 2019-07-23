@@ -112,6 +112,7 @@ import hashlib
 import os
 import stat
 import sys
+import tempfile
 import weakref
 
 from mercurial.i18n import _
@@ -174,6 +175,23 @@ configitem('experimental', 'fsmonitor.transaction_notify',
 # This extension is incompatible with the following blacklisted extensions
 # and will disable itself when encountering one of these:
 _blacklist = ['largefiles', 'eol']
+
+def debuginstall(ui, fm):
+    fm.write("fsmonitor-watchman",
+             _("fsmonitor checking for watchman binary... (%s)\n"),
+               ui.configpath("fsmonitor", "watchman_exe"))
+    root = tempfile.mkdtemp()
+    c = watchmanclient.client(ui, root)
+    err = None
+    try:
+        v = c.command("version")
+        fm.write("fsmonitor-watchman-version",
+                 _(" watchman binary version %s\n"), v["version"])
+    except watchmanclient.Unavailable as e:
+        err = str(e)
+    fm.condwrite(err, "fsmonitor-watchman-error",
+                 _(" watchman binary missing or broken: %s\n"), err)
+    return 1 if err else 0
 
 def _handleunavailable(ui, state, ex):
     """Exception handler for Watchman interaction exceptions"""
