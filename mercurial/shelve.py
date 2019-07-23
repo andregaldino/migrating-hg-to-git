@@ -177,6 +177,7 @@ class shelvedstate(object):
     _nokeep = 'nokeep'
     # colon is essential to differentiate from a real bookmark name
     _noactivebook = ':no-active-bookmark'
+    _interactive = 'interactive'
 
     @classmethod
     def _verifyandtransform(cls, d):
@@ -247,6 +248,7 @@ class shelvedstate(object):
             obj.activebookmark = ''
             if d.get('activebook', '') != cls._noactivebook:
                 obj.activebookmark = d.get('activebook', '')
+            obj.interactive = d.get('interactive') == cls._interactive
         except (error.RepoLookupError, KeyError) as err:
             raise error.CorruptedState(pycompat.bytestr(err))
 
@@ -254,7 +256,7 @@ class shelvedstate(object):
 
     @classmethod
     def save(cls, repo, name, originalwctx, pendingctx, nodestoremove,
-             branchtorestore, keep=False, activebook=''):
+             branchtorestore, keep=False, activebook='', interactive=False):
         info = {
             "name": name,
             "originalwctx": nodemod.hex(originalwctx.node()),
@@ -267,6 +269,8 @@ class shelvedstate(object):
             "keep": cls._keep if keep else cls._nokeep,
             "activebook": activebook or cls._noactivebook
         }
+        if interactive:
+            info['interactive'] = cls._interactive
         scmutil.simplekeyvaluefile(
             repo.vfs, cls._filename).write(info,
                                            firstline=("%d" % cls._version))
@@ -694,11 +698,12 @@ def unshelvecleanup(ui, repo, name, opts):
             if shfile.exists():
                 shfile.movetobackup()
         cleanupoldbackups(repo)
-def unshelvecontinue(ui, repo, state, opts, basename=None):
+def unshelvecontinue(ui, repo, state, opts):
     """subcommand to continue an in-progress unshelve"""
     # We're finishing off a merge. First parent is our original
     # parent, second is the temporary "fake" commit we're unshelving.
-    interactive = opts.get('interactive')
+    interactive = state.interactive
+    basename = state.name
     with repo.lock():
         checkparents(repo, state)
         ms = merge.mergestate.read(repo)
@@ -869,7 +874,8 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
             nodestoremove = [repo.changelog.node(rev)
                              for rev in pycompat.xrange(oldtiprev, len(repo))]
             shelvedstate.save(repo, basename, pctx, tmpwctx, nodestoremove,
-                              branchtorestore, opts.get('keep'), activebookmark)
+                              branchtorestore, opts.get('keep'), activebookmark,
+                              interactive)
             raise error.InterventionRequired(
                 _("unresolved conflicts (see 'hg resolve', then "
                   "'hg unshelve --continue')"))
@@ -936,7 +942,7 @@ def dounshelve(ui, repo, *shelved, **opts):
     if opts.get("name"):
         shelved.append(opts["name"])
 
-    if abortf or continuef and not interactive:
+    if abortf or continuef:
         if abortf and continuef:
             raise error.Abort(_('cannot use both abort and continue'))
         if shelved:
@@ -958,11 +964,8 @@ def dounshelve(ui, repo, *shelved, **opts):
             raise error.Abort(_('no shelved changes to apply!'))
         basename = util.split(shelved[0][1])[1]
         ui.status(_("unshelving change '%s'\n") % basename)
-    elif shelved:
+    else:
         basename = shelved[0]
-    if continuef and interactive:
-        state = _loadshelvedstate(ui, repo, opts)
-        return unshelvecontinue(ui, repo, state, opts, basename)
 
     if not shelvedfile(repo, basename, patchextension).exists():
         raise error.Abort(_("shelved change '%s' not found") % basename)

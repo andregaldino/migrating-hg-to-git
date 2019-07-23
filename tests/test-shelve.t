@@ -1351,13 +1351,12 @@ Abort unshelve while merging (issue5123)
   A
   B
   C
-  $ hg unshelve --continue -i <<EOF
+  $ hg unshelve --continue <<EOF
   > y
   > y
   > y
   > y
   > EOF
-  unshelving change 'default-01'
   diff --git a/bar1 b/bar1
   1 hunks, 1 lines changed
   examine changes to 'bar1'?
