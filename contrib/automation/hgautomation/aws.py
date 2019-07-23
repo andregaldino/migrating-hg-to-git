@@ -52,8 +52,12 @@ INSTANCE_TYPES_WITH_STORAGE = {
 }
 
 
+AMAZON_ACCOUNT_ID = '801119661308'
 DEBIAN_ACCOUNT_ID = '379101102735'
 UBUNTU_ACCOUNT_ID = '099720109477'
+
+
+WINDOWS_BASE_IMAGE_NAME = 'Windows_Server-2019-English-Full-Base-2019.07.12'
 
 
 KEY_PAIRS = {
@@ -1046,9 +1050,7 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-'):
 
     name = '%s%s' % (prefix, 'windows-dev')
 
-    image = find_image(ec2resource,
-                       '801119661308',
-                       'Windows_Server-2019-English-Full-Base-2019.07.12')
+    image = find_image(ec2resource, AMAZON_ACCOUNT_ID, WINDOWS_BASE_IMAGE_NAME)
 
     config = {
         'BlockDeviceMappings': [
