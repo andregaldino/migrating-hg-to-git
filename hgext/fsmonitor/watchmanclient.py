@@ -33,12 +33,12 @@ class WatchmanNoRoot(Unavailable):
         super(WatchmanNoRoot, self).__init__(msg)
 
 class client(object):
-    def __init__(self, repo, timeout=1.0):
+    def __init__(self, ui, root, timeout=1.0):
         err = None
         if not self._user:
             err = "couldn't get user"
             warn = True
-        if self._user in repo.ui.configlist('fsmonitor', 'blacklistusers'):
+        if self._user in ui.configlist('fsmonitor', 'blacklistusers'):
             err = 'user %s in blacklist' % self._user
             warn = False
 
@@ -47,8 +47,8 @@ class client(object):
 
         self._timeout = timeout
         self._watchmanclient = None
-        self._root = repo.root
-        self._ui = repo.ui
+        self._root = root
+        self._ui = ui
         self._firsttime = True
 
     def settimeout(self, timeout):
