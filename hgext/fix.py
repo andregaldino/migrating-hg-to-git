@@ -152,7 +152,6 @@ configitem = registrar.configitem(configtable)
 FIXER_ATTRS = {
     'command': None,
     'linerange': None,
-    'fileset': None,
     'pattern': None,
     'priority': 0,
     'metadata': False,
@@ -702,10 +701,6 @@ def getfixers(ui):
     for name in fixernames(ui):
         fixers[name] = Fixer()
         attrs = ui.configsuboptions('fix', name)[1]
-        if 'fileset' in attrs and 'pattern' not in attrs:
-            ui.warn(_('the fix.tool:fileset config name is deprecated; '
-                      'please rename it to fix.tool:pattern\n'))
-            attrs['pattern'] = attrs['fileset']
         for key, default in FIXER_ATTRS.items():
             setattr(fixers[name], pycompat.sysstr('_' + key),
                     attrs.get(key, default))

@@ -1161,28 +1161,6 @@ until we specify the base, but then we do fix unchanged lines.
 
   $ cd ..
 
-The :fileset subconfig was a misnomer, so we renamed it to :pattern. We will
-still accept :fileset by itself as if it were :pattern, but this will issue a
-warning.
-
-  $ hg init filesetispattern
-  $ cd filesetispattern
-
-  $ printf "foo\n" > foo.whole
-  $ printf "first\nsecond\n" > bar.txt
-  $ hg add -q
-  $ hg fix -w --config fix.sometool:fileset=bar.txt \
-  >           --config fix.sometool:command="sort -r"
-  the fix.tool:fileset config name is deprecated; please rename it to fix.tool:pattern
-
-  $ cat foo.whole
-  FOO
-  $ cat bar.txt
-  second
-  first
-
-  $ cd ..
-
 The execution order of tools can be controlled. This example doesn't work if
 you sort after truncating, but the config defines the correct order while the
 definitions are out of order (which might imply the incorrect order given the
