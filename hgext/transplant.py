@@ -734,6 +734,13 @@ def _dotransplant(ui, repo, *revs, **opts):
         if cleanupfn:
             cleanupfn()
 
+def continuecmd(ui, repo):
+    """logic to resume an interrupted transplant using
+    'hg continue'"""
+    with repo.wlock():
+        tp = transplanter(ui, repo, {})
+        return tp.resume(repo, repo, {})
+
 revsetpredicate = registrar.revsetpredicate()
 
 @revsetpredicate('transplanted([set])')
@@ -760,6 +767,7 @@ def kwtransplanted(context, mapping):
 def extsetup(ui):
     statemod.addunfinished (
         'transplant', fname='transplant/journal', clearable=True,
+        continuefunc=continuecmd,
         statushint=_('To continue:    hg transplant --continue\n'
                      'To abort:       hg update'),
         cmdhint=_("use 'hg transplant --continue' or 'hg update' to abort")

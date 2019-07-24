@@ -1,7 +1,15 @@
+#testcases commandmode continueflag
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
   > transplant=
   > EOF
+
+#if continueflag
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > continue = transplant --continue
+  > EOF
+#endif
 
   $ hg init t
   $ cd t
@@ -424,8 +432,9 @@ transplant -c shouldn't use an old changeset
   updated to "e8643552fde5: foobar"
   1 other heads for branch "default"
   $ rm added
-  $ hg transplant --continue
-  abort: no transplant to continue
+  $ hg continue
+  abort: no transplant to continue (continueflag !)
+  abort: no operation in progress (no-continueflag !)
   [255]
   $ hg transplant 1
   applying 46ae92138f3c
@@ -492,7 +501,7 @@ test multiple revisions, --continue and hg status --verbose
   # To abort:       hg update
   
   $ echo fixed > baz
-  $ hg transplant --continue
+  $ hg continue
   9d6d6b5a8275 transplanted as d80c49962290
   applying 1dab759070cf
   1dab759070cf transplanted to aa0ffe6bd5ae
@@ -881,7 +890,7 @@ Test empty result in --continue
   [255]
   $ hg status
   ? b.rej
-  $ hg transplant --continue
+  $ hg continue
   645035761929 skipped due to empty diff
 
   $ cd ..
