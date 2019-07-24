@@ -1242,3 +1242,28 @@ three revisions instead of two.
 
   $ cd ..
 
+Test that we can configure a fixer to affect all files regardless of the cwd.
+The way we invoke matching must not prohibit this.
+
+  $ hg init affectallfiles
+  $ cd affectallfiles
+
+  $ mkdir foo bar
+  $ printf "foo" > foo/file
+  $ printf "bar" > bar/file
+  $ printf "baz" > baz_file
+  $ hg add -q
+
+  $ cd bar
+  $ hg fix --working-dir --config "fix.cooltool:command=echo fixed" \
+  >                      --config "fix.cooltool:pattern=rootglob:**"
+  $ cd ..
+
+  $ cat foo/file
+  fixed
+  $ cat bar/file
+  fixed
+  $ cat baz_file
+  fixed
+
+  $ cd ..
