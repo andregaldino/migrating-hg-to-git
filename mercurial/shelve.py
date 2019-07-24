@@ -836,8 +836,8 @@ def _createunshelvectx(ui, repo, shelvectx, basename, interactive, opts):
     snode = repo.commit(text=shelvectx.description(),
                         extra=shelvectx.extra(),
                         user=shelvectx.user())
-    m = scmutil.matchfiles(repo, repo[snode].files())
     if snode:
+        m = scmutil.matchfiles(repo, repo[snode].files())
         _shelvecreatedcommit(repo, snode, basename, m)
 
     return newnode, bool(snode)
