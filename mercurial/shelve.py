@@ -747,10 +747,10 @@ def unshelvecontinue(ui, repo, state, opts):
         mergefiles(ui, repo, state.wctx, shelvectx)
         restorebranch(ui, repo, state.branchtorestore)
 
+        if not phases.supportinternal(repo):
+            repair.strip(ui, repo, state.nodestoremove, backup=False,
+                         topic='shelve')
         if not ispartialunshelve:
-            if not phases.supportinternal(repo):
-                repair.strip(ui, repo, state.nodestoremove, backup=False,
-                            topic='shelve')
             shelvedstate.clear(repo)
             unshelvecleanup(ui, repo, state.name, opts)
         _restoreactivebookmark(repo, state.activebookmark)

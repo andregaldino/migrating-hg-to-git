@@ -1357,11 +1357,33 @@ Abort unshelve while merging (issue5123)
   A
   B
   C
+
+#if stripbased
+  $ hg log -r 3:: -G
+  @  changeset:   5:506510493902
+  |  tag:         tip
+  |  parent:      3:adfeba9a1ac4
+  |  user:        shelve@localhost
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     changes to: add A to bars
+  |
+  | @  changeset:   4:8b023952e29c
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     add C to bars
+  |
+  o  changeset:   3:adfeba9a1ac4
+  |  user:        test
+  ~  date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     add A to bars
+  
+#endif
+
   $ hg unshelve --continue <<EOF
   > y
   > y
   > y
-  > y
+  > n
   > EOF
   diff --git a/bar1 b/bar1
   1 hunks, 1 lines changed
@@ -1385,6 +1407,21 @@ Abort unshelve while merging (issue5123)
   +B
    C
   record change 2/2 to 'bar2'?
-  (enter ? for help) [Ynesfdaq?] y
+  (enter ? for help) [Ynesfdaq?] n
   
   unshelve of 'default-01' complete
+
+#if stripbased
+  $ hg log -r 3:: -G
+  @  changeset:   4:8b023952e29c
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     add C to bars
+  |
+  o  changeset:   3:adfeba9a1ac4
+  |  user:        test
+  ~  date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     add A to bars
+  
+#endif
