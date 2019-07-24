@@ -721,15 +721,8 @@ def unshelvecontinue(ui, repo, state, opts, basename=None):
         with repo.ui.configoverride(overrides, 'unshelve'):
             with repo.dirstate.parentchange():
                 repo.setparents(state.parents[0], nodemod.nullid)
-                if not interactive:
-                    ispartialunshelve = False
-                    newnode = repo.commit(text=shelvectx.description(),
-                                        extra=shelvectx.extra(),
-                                        user=shelvectx.user(),
-                                        date=shelvectx.date())
-                else:
-                    newnode, ispartialunshelve = _dounshelveinteractive(ui,
-                        repo, shelvectx, basename, opts)
+                newnode, ispartialunshelve = _createunshelvectx(ui,
+                        repo, shelvectx, basename, interactive, opts)
 
         if newnode is None:
             # If it ended up being a no-op commit, then the normal
@@ -804,14 +797,37 @@ def _unshelverestorecommit(ui, repo, tr, basename):
 
     return repo, shelvectx
 
-def _dounshelveinteractive(ui, repo, shelvectx, basename, opts):
-    """The user might want to unshelve certain changes only from the stored
-    shelve. So, we would create two commits. One with requested changes to
-    unshelve at that time and the latter is shelved for future.
+def _createunshelvectx(ui, repo, shelvectx, basename, interactive, opts):
+    """Handles the creation of unshelve commit and updates the shelve if it
+    was partially unshelved.
+
+    If interactive is:
+
+      * False: Commits all the changes in the working directory.
+      * True: Prompts the user to select changes to unshelve and commit them.
+              Update the shelve with remaining changes.
+
+    Returns the node of the new commit formed and a bool indicating whether
+    the shelve was partially unshelved.Creates a commit ctx to unshelve
+    interactively or non-interactively.
+
+    The user might want to unshelve certain changes only from the stored
+    shelve in interactive. So, we would create two commits. One with requested
+    changes to unshelve at that time and the latter is shelved for future.
+
+    Here, we return both the newnode which is created interactively and a
+    bool to know whether the shelve is partly done or completely done.
     """
     opts['message'] = shelvectx.description()
     opts['interactive-unshelve'] = True
     pats = []
+    if not interactive:
+        newnode = repo.commit(text=shelvectx.description(),
+                              extra=shelvectx.extra(),
+                              user=shelvectx.user(),
+                              date=shelvectx.date())
+        return newnode, False
+
     commitfunc = getcommitfunc(shelvectx.extra(), interactive=True,
                                editor=True)
     newnode = cmdutil.dorecord(ui, repo, commitfunc, None, False,
@@ -861,15 +877,8 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
 
         with repo.dirstate.parentchange():
             repo.setparents(tmpwctx.node(), nodemod.nullid)
-            if not interactive:
-                ispartialunshelve = False
-                newnode = repo.commit(text=shelvectx.description(),
-                                      extra=shelvectx.extra(),
-                                      user=shelvectx.user(),
-                                      date=shelvectx.date())
-            else:
-                newnode, ispartialunshelve = _dounshelveinteractive(ui, repo,
-                                                shelvectx, basename, opts)
+            newnode, ispartialunshelve = _createunshelvectx(ui, repo,
+                                       shelvectx, basename, interactive, opts)
 
         if newnode is None:
             # If it ended up being a no-op commit, then the normal
