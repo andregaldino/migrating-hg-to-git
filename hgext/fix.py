@@ -705,6 +705,14 @@ def getfixers(ui):
             setattr(fixers[name], pycompat.sysstr('_' + key),
                     attrs.get(key, default))
         fixers[name]._priority = int(fixers[name]._priority)
+        # Don't use a fixer if it has no pattern configured. It would be
+        # dangerous to let it affect all files. It would be pointless to let it
+        # affect no files. There is no reasonable subset of files to use as the
+        # default.
+        if fixers[name]._pattern is None:
+            ui.warn(
+                _('fixer tool has no pattern configuration: %s\n') % (name,))
+            del fixers[name]
     return collections.OrderedDict(
         sorted(fixers.items(), key=lambda item: item[1]._priority,
                reverse=True))
@@ -722,7 +730,8 @@ class Fixer(object):
 
     def affects(self, opts, fixctx, path):
         """Should this fixer run on the file at the given path and context?"""
-        return scmutil.match(fixctx, [self._pattern], opts)(path)
+        return (self._pattern is not None and
+                scmutil.match(fixctx, [self._pattern], opts)(path))
 
     def shouldoutputmetadata(self):
         """Should the stdout of this fixer start with JSON and a null byte?"""

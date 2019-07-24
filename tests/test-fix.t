@@ -1242,6 +1242,26 @@ three revisions instead of two.
 
   $ cd ..
 
+Tools configured without a pattern are ignored. It would be too dangerous to
+run them on all files, because this might happen while testing a configuration
+that also deletes all of the file content. There is no reasonable subset of the
+files to use as a default. Users should be explicit about what files are
+affected by a tool. This test also confirms that we don't crash when the
+pattern config is missing, and that we only warn about it once.
+
+  $ hg init nopatternconfigured
+  $ cd nopatternconfigured
+
+  $ printf "foo" > foo
+  $ printf "bar" > bar
+  $ hg add -q
+  $ hg fix --debug --working-dir --config "fix.nopattern:command=echo fixed"
+  fixer tool has no pattern configuration: nopattern
+  $ cat foo bar
+  foobar (no-eol)
+
+  $ cd ..
+
 Test that we can configure a fixer to affect all files regardless of the cwd.
 The way we invoke matching must not prohibit this.
 
