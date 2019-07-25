@@ -750,8 +750,8 @@ def unshelvecontinue(ui, repo, state, opts):
         if not phases.supportinternal(repo):
             repair.strip(ui, repo, state.nodestoremove, backup=False,
                          topic='shelve')
+        shelvedstate.clear(repo)
         if not ispartialunshelve:
-            shelvedstate.clear(repo)
             unshelvecleanup(ui, repo, state.name, opts)
         _restoreactivebookmark(repo, state.activebookmark)
         ui.status(_("unshelve of '%s' complete\n") % state.name)

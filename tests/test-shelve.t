@@ -1425,3 +1425,29 @@ Abort unshelve while merging (issue5123)
      summary:     add A to bars
   
 #endif
+
+  $ hg unshelve --continue
+  abort: no unshelve in progress
+  [255]
+
+  $ hg shelve --list
+  default-01      (*)* changes to: add A to bars (glob)
+  default         (*)* changes to: add B to foo (glob)
+  $ hg unshelve -n default-01 -i <<EOF
+  > y
+  > y
+  > EOF
+  temporarily committing pending changes (restore with 'hg unshelve --abort')
+  rebasing shelved changes
+  diff --git a/bar2 b/bar2
+  1 hunks, 1 lines changed
+  examine changes to 'bar2'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,2 +1,3 @@
+   A
+  +B
+   C
+  record this change to 'bar2'?
+  (enter ? for help) [Ynesfdaq?] y
+  
