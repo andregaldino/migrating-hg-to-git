@@ -412,6 +412,17 @@ class transplanter(object):
             # this is kept only to reduce changes in a patch.
             pass
 
+    def stop(self, ui, repo):
+        """logic to stop an interrupted transplant"""
+        if self.canresume():
+            startctx = repo['.']
+            hg.updaterepo(repo, startctx.node(), overwrite=True)
+            ui.status(_("stopped the interrupted transplant\n"))
+            ui.status(_("working directory is now at %s\n") %
+                      startctx.hex()[:12])
+            self.unlog()
+            return 0
+
     def readseries(self):
         nodes = []
         merges = []
@@ -559,6 +570,7 @@ def browserevs(ui, repo, nodes, opts):
      _('parent to choose when transplanting merge'), _('REV')),
     ('e', 'edit', False, _('invoke editor on commit messages')),
     ('', 'log', None, _('append transplant info to log message')),
+    ('', 'stop', False, _('stop interrupted transplant')),
     ('c', 'continue', None, _('continue last transplant session '
                               'after fixing conflicts')),
     ('', 'filter', '',
@@ -646,6 +658,11 @@ def _dotransplant(ui, repo, *revs, **opts):
                 raise error.Abort(_('--continue is incompatible with '
                                    '--branch, --all and --merge'))
             return
+        if opts.get('stop'):
+            if opts.get('branch') or opts.get('all') or opts.get('merge'):
+                raise error.Abort(_('--stop is incompatible with '
+                                   '--branch, --all and --merge'))
+            return
         if not (opts.get('source') or revs or
                 opts.get('merge') or opts.get('branch')):
             raise error.Abort(_('no source URL, branch revision, or revision '
@@ -676,6 +693,10 @@ def _dotransplant(ui, repo, *revs, **opts):
         if not tp.canresume():
             raise error.Abort(_('no transplant to continue'))
     else:
+        if opts.get('stop'):
+            if not tp.canresume():
+                raise error.Abort(_('no interrupted transplant found'))
+            return tp.stop(ui, repo)
         cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)
 
@@ -769,8 +790,8 @@ def extsetup(ui):
         'transplant', fname='transplant/journal', clearable=True,
         continuefunc=continuecmd,
         statushint=_('To continue:    hg transplant --continue\n'
-                     'To abort:       hg update'),
-        cmdhint=_("use 'hg transplant --continue' or 'hg update' to abort")
+                     'To stop:        hg transplant --stop'),
+        cmdhint=_("use 'hg transplant --continue' or 'hg transplant --stop'")
     )
 
 # tell hggettext to extract docstrings from these functions:

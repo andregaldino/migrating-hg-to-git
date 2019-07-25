@@ -2,6 +2,7 @@
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
   > transplant=
+  > graphlog=
   > EOF
 
 #if continueflag
@@ -18,6 +19,9 @@
   [255]
   $ hg transplant --continue --all
   abort: --continue is incompatible with --branch, --all and --merge
+  [255]
+  $ hg transplant --stop --all
+  abort: --stop is incompatible with --branch, --all and --merge
   [255]
   $ hg transplant --all tip
   abort: --all requires a branch revision
@@ -376,7 +380,8 @@ revision different from one run to another)
   applying 722f4667af76
   722f4667af76 transplanted to 76e321915884
 
-transplant --continue
+
+transplant --continue and --stop behaviour
 
   $ hg init ../tc
   $ cd ../tc
@@ -416,8 +421,81 @@ transplant --continue
   $ echo foobar > foo
   $ hg ci -mfoobar
   created new head
+
+Repo log before transplant
+  $ hg glog
+  @  changeset:   4:e8643552fde5
+  |  tag:         tip
+  |  parent:      0:493149fa1541
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     foobar
+  |
+  | o  changeset:   3:1dab759070cf
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     bar2
+  | |
+  | o  changeset:   2:9d6d6b5a8275
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     bar
+  | |
+  | o  changeset:   1:46ae92138f3c
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     foo2
+  |
+  o  changeset:   0:493149fa1541
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     foo
+  
   $ hg transplant 1:3
   applying 46ae92138f3c
+  patching file foo
+  Hunk #1 FAILED at 0
+  1 out of 1 hunks FAILED -- saving rejects to file foo.rej
+  patch failed to apply
+  abort: fix up the working directory and run hg transplant --continue
+  [255]
+
+  $ hg transplant --stop
+  stopped the interrupted transplant
+  working directory is now at e8643552fde5
+Repo log after abort
+  $ hg glog
+  @  changeset:   4:e8643552fde5
+  |  tag:         tip
+  |  parent:      0:493149fa1541
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     foobar
+  |
+  | o  changeset:   3:1dab759070cf
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     bar2
+  | |
+  | o  changeset:   2:9d6d6b5a8275
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     bar
+  | |
+  | o  changeset:   1:46ae92138f3c
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     foo2
+  |
+  o  changeset:   0:493149fa1541
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     foo
+  
+  $ hg transplant 1:3
+  applying 46ae92138f3c
+  file added already exists
+  1 out of 1 hunks FAILED -- saving rejects to file added.rej
   patching file foo
   Hunk #1 FAILED at 0
   1 out of 1 hunks FAILED -- saving rejects to file foo.rej
@@ -435,6 +513,9 @@ transplant -c shouldn't use an old changeset
   $ hg continue
   abort: no transplant to continue (continueflag !)
   abort: no operation in progress (no-continueflag !)
+  [255]
+  $ hg transplant --stop
+  abort: no interrupted transplant found
   [255]
   $ hg transplant 1
   applying 46ae92138f3c
@@ -489,23 +570,23 @@ test multiple revisions, --continue and hg status --verbose
   [255]
   $ hg transplant 1:3
   abort: transplant in progress
-  (use 'hg transplant --continue' or 'hg update' to abort)
+  (use 'hg transplant --continue' or 'hg transplant --stop')
   [255]
   $ hg status -v
   A bar
+  ? added.rej
   ? baz.rej
   ? foo.rej
   # The repository is in an unfinished *transplant* state.
   
   # To continue:    hg transplant --continue
-  # To abort:       hg update
+  # To stop:        hg transplant --stop
   
   $ echo fixed > baz
   $ hg continue
   9d6d6b5a8275 transplanted as d80c49962290
   applying 1dab759070cf
   1dab759070cf transplanted to aa0ffe6bd5ae
-
   $ cd ..
 
 Issue1111: Test transplant --merge
