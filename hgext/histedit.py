@@ -201,6 +201,7 @@ except ImportError:
     termios = None
 
 import functools
+import locale
 import os
 import struct
 
@@ -947,12 +948,6 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
 # Curses Support
 try:
     import curses
-
-    # Curses requires setting the locale or it will default to the C
-    # locale. This sets the locale to the user's default system
-    # locale.
-    import locale
-    locale.setlocale(locale.LC_ALL, r'')
 except ImportError:
     curses = None
 
@@ -1538,6 +1533,10 @@ def _chistedit(ui, repo, *freeargs, **opts):
         ctxs = []
         for i, r in enumerate(revs):
             ctxs.append(histeditrule(repo[r], i))
+        # Curses requires setting the locale or it will default to the C
+        # locale. This sets the locale to the user's default system
+        # locale.
+        locale.setlocale(locale.LC_ALL, r'')
         rc = curses.wrapper(functools.partial(_chisteditmain, repo, ctxs))
         curses.echo()
         curses.endwin()
@@ -2323,4 +2322,3 @@ def extsetup(ui):
     cmdutil.summaryhooks.add('histedit', summaryhook)
     statemod.addunfinished('histedit', fname='histedit-state', allowcommit=True,
                             continueflag=True, abortfunc=hgaborthistedit)
-

@@ -29,10 +29,6 @@ from .utils import (
 )
 stringio = util.stringio
 
-# This is required for ncurses to display non-ASCII characters in default user
-# locale encoding correctly.  --immerrr
-locale.setlocale(locale.LC_ALL, r'')
-
 # patch comments based on the git one
 diffhelptext = _("""# To remove '-' lines, make them ' ' lines (context).
 # To remove '+' lines, delete them.
@@ -530,6 +526,9 @@ def chunkselector(ui, headerlist, operation=None):
     """
     ui.write(_('starting interactive selection\n'))
     chunkselector = curseschunkselector(headerlist, ui, operation)
+    # This is required for ncurses to display non-ASCII characters in
+    # default user locale encoding correctly.  --immerrr
+    locale.setlocale(locale.LC_ALL, r'')
     origsigtstp = sentinel = object()
     if util.safehasattr(signal, 'SIGTSTP'):
         origsigtstp = signal.getsignal(signal.SIGTSTP)
