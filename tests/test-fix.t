@@ -1338,6 +1338,8 @@ pattern config is missing, and that we only warn about it once.
   fixer tool has no pattern configuration: nopattern
   $ cat foo bar
   foobar (no-eol)
+  $ hg fix --debug --working-dir --config "fix.nocommand:pattern=foo.bar"
+  fixer tool has no command configuration: nocommand
 
   $ cd ..
 

@@ -800,7 +800,11 @@ def getfixers(ui):
         # dangerous to let it affect all files. It would be pointless to let it
         # affect no files. There is no reasonable subset of files to use as the
         # default.
-        if pattern is None:
+        if command is None:
+            ui.warn(
+                _(b'fixer tool has no command configuration: %s\n') % (name,)
+            )
+        elif pattern is None:
             ui.warn(
                 _(b'fixer tool has no pattern configuration: %s\n') % (name,)
             )
