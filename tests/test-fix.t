@@ -439,6 +439,18 @@ Test that --whole fixes all lines regardless of the diffs present.
   $ printf "a\nb\nc\nd\ne\nf\ng\n" > foo.changed
   $ hg commit -Aqm "foo"
   $ printf "zz\na\nc\ndd\nee\nff\nf\ngg\n" > foo.changed
+
+  $ hg fix --working-dir
+  $ cat foo.changed
+  ZZ
+  a
+  c
+  DD
+  EE
+  FF
+  f
+  GG
+
   $ hg fix --working-dir --whole
   $ cat foo.changed
   ZZ
@@ -523,6 +535,21 @@ have changes.
   $ cat *.whole
   FIX ME!
   not me.
+
+  $ cd ..
+
+If we try to fix a missing file, we still fix other files.
+
+  $ hg init fixmissingfile
+  $ cd fixmissingfile
+
+  $ printf "fix me!\n" > foo.whole
+  $ hg add
+  adding foo.whole
+  $ hg fix --working-dir foo.whole bar.whole
+  bar.whole: $ENOENT$
+  $ cat *.whole
+  FIX ME!
 
   $ cd ..
 
