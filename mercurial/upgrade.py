@@ -554,9 +554,11 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
     crawsize = 0
     cdstsize = 0
 
+    alldatafiles = list(srcrepo.store.walk())
+
     # Perform a pass to collect metadata. This validates we can open all
     # source files and allows a unified progress bar to be displayed.
-    for unencoded, encoded, size in srcrepo.store.walk():
+    for unencoded, encoded, size in alldatafiles:
         if unencoded.endswith('.d'):
             continue
 
@@ -607,7 +609,7 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
     # Do the actual copying.
     # FUTURE this operation can be farmed off to worker processes.
     seen = set()
-    for unencoded, encoded, size in srcrepo.store.walk():
+    for unencoded, encoded, size in alldatafiles:
         if unencoded.endswith('.d'):
             continue
 
