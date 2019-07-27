@@ -533,7 +533,7 @@ def _revlogfrompath(repo, path):
         #reverse of "/".join(("data", path + ".i"))
         return filelog.filelog(repo.svfs, path[5:-2])
 
-def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
+def _clonerevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
     """Copy revlogs between 2 repos."""
     revcount = 0
     srcsize = 0
@@ -745,7 +745,7 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
         deltareuse = revlog.revlog.DELTAREUSEALWAYS
 
     with dstrepo.transaction('upgrade') as tr:
-        _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse,
+        _clonerevlogs(ui, srcrepo, dstrepo, tr, deltareuse,
                      're-delta-multibase' in actions)
 
     # Now copy other files in the store directory.
