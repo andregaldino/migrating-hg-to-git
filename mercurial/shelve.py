@@ -1003,11 +1003,10 @@ def dounshelve(ui, repo, *shelved, **opts):
         with ui.configoverride(overrides, 'unshelve'):
             mergefiles(ui, repo, pctx, shelvectx)
         restorebranch(ui, repo, branchtorestore)
+        shelvedstate.clear(repo)
+        _finishunshelve(repo, oldtiprev, tr, activebookmark)
         if not ispartialunshelve:
             _forgetunknownfiles(repo, shelvectx, addedbefore)
-
-            shelvedstate.clear(repo)
-            _finishunshelve(repo, oldtiprev, tr, activebookmark)
             unshelvecleanup(ui, repo, basename, opts)
     finally:
         if tr:

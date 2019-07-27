@@ -1239,6 +1239,7 @@ Abort unshelve while merging (issue5123)
   > y
   > EOF
   unshelving change 'default'
+  temporarily committing pending changes (restore with 'hg unshelve --abort')
   rebasing shelved changes
   diff --git a/d b/d
   new file mode 100644
@@ -1250,6 +1251,10 @@ Abort unshelve while merging (issue5123)
   record this change to 'd'?
   (enter ? for help) [Ynesfdaq?] y
   
+
+  $ hg status -v
+  A c
+  A d
   $ ls
   b
   c
@@ -1360,19 +1365,19 @@ Abort unshelve while merging (issue5123)
 
 #if stripbased
   $ hg log -r 3:: -G
-  @  changeset:   5:506510493902
+  @  changeset:   5:f1d5f53e397b
   |  tag:         tip
-  |  parent:      3:adfeba9a1ac4
+  |  parent:      3:e28fd7fa7938
   |  user:        shelve@localhost
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     changes to: add A to bars
   |
-  | @  changeset:   4:8b023952e29c
+  | @  changeset:   4:fe451a778c81
   |/   user:        test
   |    date:        Thu Jan 01 00:00:00 1970 +0000
   |    summary:     add C to bars
   |
-  o  changeset:   3:adfeba9a1ac4
+  o  changeset:   3:e28fd7fa7938
   |  user:        test
   ~  date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     add A to bars
@@ -1413,13 +1418,13 @@ Abort unshelve while merging (issue5123)
 
 #if stripbased
   $ hg log -r 3:: -G
-  @  changeset:   4:8b023952e29c
+  @  changeset:   4:fe451a778c81
   |  tag:         tip
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     add C to bars
   |
-  o  changeset:   3:adfeba9a1ac4
+  o  changeset:   3:e28fd7fa7938
   |  user:        test
   ~  date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     add A to bars
