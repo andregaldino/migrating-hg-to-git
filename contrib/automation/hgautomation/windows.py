@@ -180,7 +180,11 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
             'ssh://%s/c:/hgdev/src' % public_ip,
         ]
 
-        subprocess.run(args, cwd=str(hg_repo), env=env, check=True)
+        res = subprocess.run(args, cwd=str(hg_repo), env=env)
+
+        # Allow 1 (no-op) to not trigger error.
+        if res.returncode not in (0, 1):
+            res.check_returncode()
 
         run_powershell(winrm_client,
                        HG_UPDATE_CLEAN.format(revision=full_revision))
