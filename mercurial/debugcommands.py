@@ -2848,8 +2848,9 @@ def debugupdatecaches(ui, repo, *pats, **opts):
     ('o', 'optimize', [], _('extra optimization to perform'), _('NAME')),
     ('', 'run', False, _('performs an upgrade')),
     ('', 'backup', True, _('keep the old repository content around')),
+    ('', 'manifest', None, _('select the manifest for upgrade')),
 ])
-def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True):
+def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True, **opts):
     """upgrade a repository to use different features
 
     If no arguments are specified, the repository is evaluated for upgrade
@@ -2867,9 +2868,15 @@ def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True):
     rename some directories inside the ``.hg`` directory. On most machines, this
     should complete almost instantaneously and the chances of a consumer being
     unable to access the repository should be low.
+
+    By default, all revlog will be upgraded. You can restrict this using flag
+    such as `--manifest`:
+
+      * `--manifest`: only optimize the manifest
+      * `--no-manifest`: optimize all revlog but the manifest
     """
     return upgrade.upgraderepo(ui, repo, run=run, optimize=optimize,
-                               backup=backup)
+                               backup=backup, **opts)
 
 @command('debugwalk', cmdutil.walkopts, _('[OPTION]... [FILE]...'),
          inferrepo=True)

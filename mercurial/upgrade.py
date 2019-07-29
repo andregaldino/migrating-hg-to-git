@@ -864,12 +864,30 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions,
 
     return backuppath
 
-def upgraderepo(ui, repo, run=False, optimize=None, backup=True):
+def upgraderepo(ui, repo, run=False, optimize=None, backup=True,
+                manifest=None):
     """Upgrade a repository in place."""
     if optimize is None:
         optimize = []
     optimize = set(legacy_opts_map.get(o, o) for o in optimize)
     repo = repo.unfiltered()
+
+    revlogs = set(UPGRADE_ALL_REVLOGS)
+    specentries = (('m', manifest),)
+    specified = [(y, x) for (y, x) in specentries if x is not None]
+    if specified:
+        # we have some limitation on revlogs to be recloned
+        if any(x for y, x in specified):
+            revlogs = set()
+            for r, enabled in specified:
+                if enabled:
+                    if r == 'm':
+                        revlogs.add(UPGRADE_MANIFEST)
+        else:
+            # none are enabled
+            for r, __ in specified:
+                if r == 'm':
+                    revlogs.discard(UPGRADE_MANIFEST)
 
     # Ensure the repository can be upgraded.
     missingreqs = requiredsourcerequirements(repo) - repo.requirements
@@ -1020,7 +1038,7 @@ def upgraderepo(ui, repo, run=False, optimize=None, backup=True):
 
             with dstrepo.wlock(), dstrepo.lock():
                 backuppath = _upgraderepo(ui, repo, dstrepo, newreqs,
-                                          upgradeactions)
+                                          upgradeactions, revlogs=revlogs)
             if not (backup or backuppath is None):
                 ui.write(_('removing old repository content%s\n') % backuppath)
                 repo.vfs.rmtree(backuppath, forcibly=True)
