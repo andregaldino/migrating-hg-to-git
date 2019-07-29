@@ -119,7 +119,7 @@ We build a server side extension for this purpose
   > import atexit
   > import os
   > import time
-  > from mercurial import error, extensions, bookmarks
+  > from mercurial import bookmarks, error, extensions
   > 
   > def wait(repo):
   >     if not os.path.exists('push-A-started'):
