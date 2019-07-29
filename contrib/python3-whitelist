@@ -124,6 +124,7 @@ test-convert-git.t
 test-convert-hg-sink.t
 test-convert-hg-source.t
 test-convert-hg-startrev.t
+test-convert-identity.t
 test-convert-mtn.t
 test-convert-splicemap.t
 test-convert-svn-sink.t
