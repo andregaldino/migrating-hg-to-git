@@ -312,7 +312,7 @@ Show all commands + options
   debuguigetpass: prompt
   debuguiprompt: prompt
   debugupdatecaches: 
-  debugupgraderepo: optimize, run, backup, manifest
+  debugupgraderepo: optimize, run, backup, changelog, manifest
   debugwalk: include, exclude
   debugwhyunstable: 
   debugwireargs: three, four, five, ssh, remotecmd, insecure

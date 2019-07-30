@@ -636,6 +636,98 @@ Check we can select negatively
   checking files
   checked 3 changesets with 3 changes to 3 files
 
+Check that we can select changelog only
+
+  $ hg debugupgrade --optimize re-delta-parent --run --changelog --no-backup --debug --traceback
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  re-delta-parent
+     deltas within internal storage will choose a new base revision if needed
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
+  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  blindly copying data/f0.i containing 1 revisions
+  blindly copying data/f1.i containing 1 revisions
+  blindly copying data/f2.i containing 1 revisions
+  finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
+  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  blindly copying 00manifest.i containing 3 revisions
+  finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
+  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  cloning 3 revisions from 00changelog.i
+  finished migrating 3 changelog revisions; change in size: 0 bytes
+  finished migrating 9 total revisions; total change in store size: 0 bytes
+  copying phaseroots
+  data fully migrated to temporary repository
+  marking source repository as being upgraded; clients will be unable to read from repository
+  starting in-place swap of repository data
+  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  replacing store...
+  store replacement complete; repository was inconsistent for *s (glob)
+  finalizing requirements file and making repository readable again
+  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  $ hg verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 3 changes to 3 files
+
+Check that we can select filelog only
+
+  $ hg debugupgrade --optimize re-delta-parent --run --no-changelog --no-manifest --no-backup --debug --traceback
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  re-delta-parent
+     deltas within internal storage will choose a new base revision if needed
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
+  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  cloning 1 revisions from data/f0.i
+  cloning 1 revisions from data/f1.i
+  cloning 1 revisions from data/f2.i
+  finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
+  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  blindly copying 00manifest.i containing 3 revisions
+  finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
+  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  blindly copying 00changelog.i containing 3 revisions
+  finished migrating 3 changelog revisions; change in size: 0 bytes
+  finished migrating 9 total revisions; total change in store size: 0 bytes
+  copying phaseroots
+  data fully migrated to temporary repository
+  marking source repository as being upgraded; clients will be unable to read from repository
+  starting in-place swap of repository data
+  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  replacing store...
+  store replacement complete; repository was inconsistent for *s (glob)
+  finalizing requirements file and making repository readable again
+  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  $ hg verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 3 changes to 3 files
+
   $ cd ..
 
 store files with special filenames aren't encoded during copy

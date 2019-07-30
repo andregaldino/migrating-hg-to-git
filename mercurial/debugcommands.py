@@ -2848,6 +2848,7 @@ def debugupdatecaches(ui, repo, *pats, **opts):
     ('o', 'optimize', [], _('extra optimization to perform'), _('NAME')),
     ('', 'run', False, _('performs an upgrade')),
     ('', 'backup', True, _('keep the old repository content around')),
+    ('', 'changelog', None, _('select the changelog for upgrade')),
     ('', 'manifest', None, _('select the manifest for upgrade')),
 ])
 def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True, **opts):
@@ -2874,6 +2875,8 @@ def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True, **opts):
 
       * `--manifest`: only optimize the manifest
       * `--no-manifest`: optimize all revlog but the manifest
+      * `--changelog`: optimize the changelog only
+      * `--no-changelog --no-manifest`: optimize filelogs only
     """
     return upgrade.upgraderepo(ui, repo, run=run, optimize=optimize,
                                backup=backup, **opts)

@@ -865,7 +865,7 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions,
     return backuppath
 
 def upgraderepo(ui, repo, run=False, optimize=None, backup=True,
-                manifest=None):
+                manifest=None, changelog=None):
     """Upgrade a repository in place."""
     if optimize is None:
         optimize = []
@@ -873,7 +873,7 @@ def upgraderepo(ui, repo, run=False, optimize=None, backup=True,
     repo = repo.unfiltered()
 
     revlogs = set(UPGRADE_ALL_REVLOGS)
-    specentries = (('m', manifest),)
+    specentries = (('c', changelog), ('m', manifest))
     specified = [(y, x) for (y, x) in specentries if x is not None]
     if specified:
         # we have some limitation on revlogs to be recloned
@@ -881,12 +881,16 @@ def upgraderepo(ui, repo, run=False, optimize=None, backup=True,
             revlogs = set()
             for r, enabled in specified:
                 if enabled:
-                    if r == 'm':
+                    if r == 'c':
+                        revlogs.add(UPGRADE_CHANGELOG)
+                    elif r == 'm':
                         revlogs.add(UPGRADE_MANIFEST)
         else:
             # none are enabled
             for r, __ in specified:
-                if r == 'm':
+                if r == 'c':
+                    revlogs.discard(UPGRADE_CHANGELOG)
+                elif r == 'm':
                     revlogs.discard(UPGRADE_MANIFEST)
 
     # Ensure the repository can be upgraded.
