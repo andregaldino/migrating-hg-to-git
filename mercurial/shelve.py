@@ -954,6 +954,8 @@ def dounshelve(ui, repo, *shelved, **opts):
         state = _loadshelvedstate(ui, repo, opts)
         if abortf:
             return unshelveabort(ui, repo, state)
+        elif continuef and interactive:
+            raise error.Abort(_('cannot use both continue and interactive'))
         elif continuef:
             return unshelvecontinue(ui, repo, state, opts)
     elif len(shelved) > 1:

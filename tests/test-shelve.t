@@ -1347,6 +1347,12 @@ Abort unshelve while merging (issue5123)
   $ hg resolve -m bar1 bar2
   (no more unresolved files)
   continue: hg unshelve --continue
+
+-- using --continue with --interactive should throw an error
+  $ hg unshelve --continue -i
+  abort: cannot use both continue and interactive
+  [255]
+
   $ cat bar1
   A
   B
