@@ -533,6 +533,35 @@ def _revlogfrompath(repo, path):
         #reverse of "/".join(("data", path + ".i"))
         return filelog.filelog(repo.svfs, path[5:-2])
 
+def _copyrevlog(tr, destrepo, oldrl, unencodedname):
+    """copy all relevant files for `oldrl` into `destrepo` store
+
+    Files are copied "as is" without any transformation. The copy is performed
+    without extra checks. Callers are responsible for making sure the copied
+    content is compatible with format of the destination repository.
+    """
+    oldrl = getattr(oldrl, '_revlog', oldrl)
+    newrl = _revlogfrompath(destrepo, unencodedname)
+    newrl = getattr(newrl, '_revlog', newrl)
+
+    oldvfs = oldrl.opener
+    newvfs = newrl.opener
+    oldindex = oldvfs.join(oldrl.indexfile)
+    newindex = newvfs.join(newrl.indexfile)
+    olddata = oldvfs.join(oldrl.datafile)
+    newdata = newvfs.join(newrl.datafile)
+
+    newdir = newvfs.dirname(newrl.indexfile)
+    newvfs.makedirs(newdir)
+
+    util.copyfile(oldindex, newindex)
+    if oldrl.opener.exists(olddata):
+        util.copyfile(olddata, newdata)
+
+    if not (unencodedname.endswith('00changelog.i')
+            or unencodedname.endswith('00manifest.i')):
+        destrepo.svfs.fncache.add(unencodedname)
+
 def _clonerevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
     """Copy revlogs between 2 repos."""
     revcount = 0
