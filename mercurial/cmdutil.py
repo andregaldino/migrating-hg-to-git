@@ -2505,8 +2505,8 @@ def amend(ui, repo, old, extra, pats, opts):
             # was removed, it's no longer relevant. If X is missing (aka
             # deleted), old X must be preserved.
             files.update(filestoamend)
-            files = [f for f in files if (not samefile(f, wctx, base)
-                                          or f in wctx.deleted())]
+            files = [f for f in files if (f not in filestoamend
+                                          or not samefile(f, wctx, base))]
 
             def filectxfn(repo, ctx_, path):
                 try:

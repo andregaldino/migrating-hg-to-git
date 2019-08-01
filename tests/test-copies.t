@@ -58,6 +58,17 @@ Test filtering copies by path. We do filtering by destination.
   x -> y
   $ hg debugpathcopies 1 0 y
 
+Copies not including commit changes
+  $ newrepo
+  $ echo x > x
+  $ hg ci -Aqm 'add x'
+  $ hg mv x y
+  $ hg debugpathcopies . .
+  $ hg debugpathcopies . 'wdir()'
+  x -> y
+  $ hg debugpathcopies 'wdir()' .
+  y -> x
+
 Copy a file onto another file
   $ newrepo
   $ echo x > x

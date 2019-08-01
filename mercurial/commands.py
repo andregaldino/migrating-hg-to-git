@@ -6210,6 +6210,14 @@ def unshelve(ui, repo, *shelved, **opts):
        Timestamp in seconds is used to decide order of backups. More
        than ``maxbackups`` backups are kept, if same timestamp
        prevents from deciding exact order of them, for safety.
+
+       Selected changes can be unshelved with ``--interactive`` flag.
+       The working directory is updated with the selected changes, and
+       only the unselected changes remain shelved.
+       Note: The whole shelve is applied to working directory first before
+       running interactively. So, this will bring up all the conflicts between
+       working directory and the shelve, irrespective of which changes will be
+       unshelved.
     """
     with repo.wlock():
         return shelvemod.dounshelve(ui, repo, *shelved, **opts)

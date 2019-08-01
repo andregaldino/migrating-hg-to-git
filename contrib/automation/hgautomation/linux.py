@@ -489,7 +489,11 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
             'ssh://%s//hgwork/src' % public_ip,
         ]
 
-        subprocess.run(args, cwd=str(source_path), env=env, check=True)
+        res = subprocess.run(args, cwd=str(source_path), env=env)
+
+        # Allow 1 (no-op) to not trigger error.
+        if res.returncode not in (0, 1):
+            res.check_returncode()
 
         # TODO support synchronizing dirty working directory.
 

@@ -37,7 +37,7 @@ def wait_for_winrm(host, username, password, timeout=180, ssl=False):
         try:
             client = Client(host, username=username, password=password,
                             ssl=ssl, connection_timeout=5)
-            client.execute_cmd('echo "hello world"')
+            client.execute_ps("Write-Host 'Hello, World!'")
             return client
         except requests.exceptions.ConnectionError:
             if time.time() >= end_time:

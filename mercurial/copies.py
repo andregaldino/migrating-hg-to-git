@@ -246,7 +246,7 @@ def _committedforwardcopies(a, b, base, match):
     return cm
 
 def _changesetforwardcopies(a, b, match):
-    if a.rev() == node.nullrev:
+    if a.rev() in (node.nullrev, b.rev()):
         return {}
 
     repo = a.repo()
