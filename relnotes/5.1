@@ -1,0 +1,90 @@
+== New Features ==
+
+ * New config `commands.commit.post-status` shows status after successful
+ commit.
+
+ * `hg root` now has templating support, including support for showing
+   where a repo share's source is. See `hg help -v root` for details.
+
+ * New `--force-close-branch` flag for `hg commit` to forcibly close
+   branch from a non-head changeset.
+
+ * The curses-based interface for commands like `hg commit -i` now supports
+   a range-select mechanism. Select the first line using space like before,
+   navigate to the last line, and press X (capital x) to set all items in
+   the range at once. Lowercase x has been added as a synonym for space to
+   help reinforce the mechanism, and pressing enter/return continues to be a
+   synonym for "toggle the current line and move down to the next item in
+   this section."
+
+== New Experimental Features ==
+
+ * New config `experimental.log.topo` makes `hg log -G` use
+   topological sorting. This is especially useful for aliases since it
+   lets the alias accept an `-r` option while still using topological
+   sorting with or without the `-r` (unlike if you use the `sort(...,
+   topo)` revset).
+
+
+== Bug Fixes  ==
+
+ * issue4292: "hg log and {files} {file_adds} {file_mods} {file_dels}
+   in template show wrong files on merged revision". See details in
+   "Backwards Compatibility Changes".
+
+
+== Backwards Compatibility Changes ==
+
+ * Removed (experimental) support for log graph lines mixing
+   parent/grandparent styles. Setting
+   e.g. `experimental.graphstyle.parent = !` and
+   `experimental.graphstyle.grandparent = 3.` would use `!` for the
+   first three lines of the graph and then `.`. This is no longer
+   supported.
+
+ * If `ui.origbackuppath` had been (incorrectly) configured to point
+   to a file, we will now replace that file by a directory and put
+   backups in that directory. This is similar to how we would
+   previously replace files *in* the configured directory by
+   subdirectories.
+
+* Template keyword `{file_mods}`, `{file_adds}`, and `{file_dels}`
+   have changed behavior on merge commits. They used to be relative to
+   the first parent, but they now consider both parents. `{file_adds}`
+   shows files that exists in the commit but did not exist in either
+   parent. `{file_dels}` shows files that do not exist in the commit
+   but existed in either parent. `{file_mods}` show the remaining
+   files from `{files}` that were not in the other two
+   sets.
+
+
+== Internal API Changes ==
+
+ * Matchers are no longer iterable. Use `match.files()` instead.
+
+ * `match.visitdir()` and `match.visitchildrenset()` now expect the
+   empty string instead of '.' to indicate the root directory.
+
+ * `util.dirs()` and `util.finddirs()` now include an entry for the
+   root directory (empty string).
+
+ * shelve is no longer an extension now. it will be turned on by default.
+
+ * New API to manage unfinished operations: Earlier there were distinct APIs
+   which dealt with unfinished states and separate lists maintaining them
+   that are `cmdutil.afterresolvestates`, `cmdutil.unfinishedstates` and
+   `cmdutil.STATES`. Now these have been unified to a single
+   API which handles the various states and their utilities. This API
+   has been added to `state.py`. Now instead of adding to these 3 lists
+   independently a state for a new operation can be registered using
+   `addunfinished()` in `state` module.
+
+ * `cmdutil.checkunfinished()` now includes detection for merge too.
+
+ * merge abort has been disallowed in case an operation of higher
+   precedence is in progress to avoid cases of partial abort of
+   operations.
+
+ * We used to automatically attempt to make extensions compatible with
+   Python 3 (by translating their source code while loading it). We no
+   longer do that.
