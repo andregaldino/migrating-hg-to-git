@@ -562,7 +562,26 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
             or unencodedname.endswith('00manifest.i')):
         destrepo.svfs.fncache.add(unencodedname)
 
-def _clonerevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
+UPGRADE_CHANGELOG = object()
+UPGRADE_MANIFEST = object()
+UPGRADE_FILELOG = object()
+
+UPGRADE_ALL_REVLOGS = frozenset([UPGRADE_CHANGELOG,
+                                 UPGRADE_MANIFEST,
+                                 UPGRADE_FILELOG])
+
+def matchrevlog(revlogfilter, entry):
+    """check is a revlog is selected for cloning
+
+    The store entry is checked against the passed filter"""
+    if entry.endswith('00changelog.i'):
+        return UPGRADE_CHANGELOG in revlogfilter
+    elif entry.endswith('00manifest.i'):
+        return UPGRADE_MANIFEST in revlogfilter
+    return UPGRADE_FILELOG in revlogfilter
+
+def _clonerevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents,
+                  revlogs=UPGRADE_ALL_REVLOGS):
     """Copy revlogs between 2 repos."""
     revcount = 0
     srcsize = 0
@@ -643,7 +662,6 @@ def _clonerevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
             continue
 
         oldrl = _revlogfrompath(srcrepo, unencoded)
-        newrl = _revlogfrompath(dstrepo, unencoded)
 
         if isinstance(oldrl, changelog.changelog) and 'c' not in seen:
             ui.write(_('finished migrating %d manifest revisions across %d '
@@ -682,11 +700,19 @@ def _clonerevlogs(ui, srcrepo, dstrepo, tr, deltareuse, forcedeltabothparents):
             progress = srcrepo.ui.makeprogress(_('file revisions'),
                                                total=frevcount)
 
+        if matchrevlog(revlogs, unencoded):
+            ui.note(_('cloning %d revisions from %s\n')
+                    % (len(oldrl), unencoded))
+            newrl = _revlogfrompath(dstrepo, unencoded)
+            oldrl.clone(tr, newrl, addrevisioncb=oncopiedrevision,
+                        deltareuse=deltareuse,
+                        forcedeltabothparents=forcedeltabothparents)
+        else:
+            msg = _('blindly copying %s containing %i revisions\n')
+            ui.note(msg % (unencoded, len(oldrl)))
+            _copyrevlog(tr, dstrepo, oldrl, unencoded)
 
-        ui.note(_('cloning %d revisions from %s\n') % (len(oldrl), unencoded))
-        oldrl.clone(tr, newrl, addrevisioncb=oncopiedrevision,
-                    deltareuse=deltareuse,
-                    forcedeltabothparents=forcedeltabothparents)
+            newrl = _revlogfrompath(dstrepo, unencoded)
 
         info = newrl.storageinfo(storedsize=True)
         datasize = info['storedsize'] or 0
@@ -746,7 +772,8 @@ def _finishdatamigration(ui, srcrepo, dstrepo, requirements):
     before the new store is swapped into the original location.
     """
 
-def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
+def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions,
+                 revlogs=UPGRADE_ALL_REVLOGS):
     """Do the low-level work of upgrading a repository.
 
     The upgrade is effectively performed as a copy between a source
@@ -775,7 +802,7 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
 
     with dstrepo.transaction('upgrade') as tr:
         _clonerevlogs(ui, srcrepo, dstrepo, tr, deltareuse,
-                     're-delta-multibase' in actions)
+                      're-delta-multibase' in actions, revlogs=revlogs)
 
     # Now copy other files in the store directory.
     # The sorted() makes execution deterministic.
