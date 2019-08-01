@@ -1872,6 +1872,7 @@ def config(ui, repo, *values, **opts):
     for section, name, value in ui.walkconfig(untrusted=untrusted):
         source = ui.configsource(section, name, untrusted)
         value = pycompat.bytestr(value)
+        defaultvalue = pycompat.bytestr(ui.configdefault(section, name))
         if fm.isplain():
             source = source or 'none'
             value = value.replace('\n', '\\n')
@@ -1881,7 +1882,7 @@ def config(ui, repo, *values, **opts):
         fm.startitem()
         fm.condwrite(ui.debugflag, 'source', '%s: ', source)
         if uniquesel:
-            fm.data(name=entryname)
+            fm.data(name=entryname, defaultvalue=defaultvalue)
             fm.write('value', '%s\n', value)
         else:
             fm.write('name value', '%s=%s\n', entryname, value)

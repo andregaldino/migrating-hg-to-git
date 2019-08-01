@@ -783,6 +783,17 @@ class ui(object):
             return None
         return default
 
+    def configdefault(self, section, name):
+        """returns the default value of the config item"""
+        item = self._knownconfig.get(section, {}).get(name)
+        itemdefault = None
+        if item is not None:
+            if callable(item.default):
+                itemdefault = item.default()
+            else:
+                itemdefault = item.default
+        return itemdefault
+
     def hasconfig(self, section, name, untrusted=False):
         return self._data(untrusted).hasitem(section, name)
 
