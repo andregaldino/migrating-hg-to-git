@@ -9,10 +9,10 @@
   $ teststrip() {
   >     hg up -C $1
   >     echo % before update $1, strip $2
-  >     hg parents
+  >     hg log -G -T '{rev}:{node}'
   >     hg --traceback strip $2
   >     echo % after update $1, strip $2
-  >     hg parents
+  >     hg log -G -T '{rev}:{node}'
   >     restore
   > }
 
@@ -70,95 +70,136 @@
   $ teststrip 4 4
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   % before update 4, strip 4
-  changeset:   4:443431ffac4f
-  tag:         tip
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     e
+  @  4:443431ffac4f5b5a19b0b6c298a21b7ba736bcce
+  |
+  o  3:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |
+  | o  2:264128213d290d868c54642d13aeaa3675551a78
+  |/
+  o  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
   % after update 4, strip 4
-  changeset:   3:65bd5f99a4a3
-  tag:         tip
-  parent:      1:ef3a871183d7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     d
+  @  3:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |
+  | o  2:264128213d290d868c54642d13aeaa3675551a78
+  |/
+  o  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   $ teststrip 4 3
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   % before update 4, strip 3
-  changeset:   4:443431ffac4f
-  tag:         tip
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     e
+  @  4:443431ffac4f5b5a19b0b6c298a21b7ba736bcce
+  |
+  o  3:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |
+  | o  2:264128213d290d868c54642d13aeaa3675551a78
+  |/
+  o  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
   % after update 4, strip 3
-  changeset:   1:ef3a871183d7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     b
+  o  2:264128213d290d868c54642d13aeaa3675551a78
+  |
+  @  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   $ teststrip 1 4
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   % before update 1, strip 4
-  changeset:   1:ef3a871183d7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     b
+  o  4:443431ffac4f5b5a19b0b6c298a21b7ba736bcce
+  |
+  o  3:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |
+  | o  2:264128213d290d868c54642d13aeaa3675551a78
+  |/
+  @  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
   % after update 1, strip 4
-  changeset:   1:ef3a871183d7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     b
+  o  3:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |
+  | o  2:264128213d290d868c54642d13aeaa3675551a78
+  |/
+  @  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   $ teststrip 4 2
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   % before update 4, strip 2
-  changeset:   4:443431ffac4f
-  tag:         tip
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     e
+  @  4:443431ffac4f5b5a19b0b6c298a21b7ba736bcce
+  |
+  o  3:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |
+  | o  2:264128213d290d868c54642d13aeaa3675551a78
+  |/
+  o  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
   % after update 4, strip 2
-  changeset:   3:443431ffac4f
-  tag:         tip
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     e
+  @  3:443431ffac4f5b5a19b0b6c298a21b7ba736bcce
+  |
+  o  2:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |
+  o  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   $ teststrip 4 1
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   % before update 4, strip 1
-  changeset:   4:264128213d29
-  tag:         tip
-  parent:      1:ef3a871183d7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     c
+  @  4:264128213d290d868c54642d13aeaa3675551a78
+  |
+  | o  3:443431ffac4f5b5a19b0b6c298a21b7ba736bcce
+  | |
+  | o  2:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |/
+  o  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
   % after update 4, strip 1
-  changeset:   0:9ab35a2d17cb
-  tag:         tip
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     a
+  @  0:9ab35a2d17cb64271241ea881efcc19dd953215b
   
   $ teststrip null 4
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   % before update null, strip 4
+  o  4:264128213d290d868c54642d13aeaa3675551a78
+  |
+  | o  3:443431ffac4f5b5a19b0b6c298a21b7ba736bcce
+  | |
+  | o  2:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |/
+  o  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
+  
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
   % after update null, strip 4
+  o  3:443431ffac4f5b5a19b0b6c298a21b7ba736bcce
+  |
+  o  2:65bd5f99a4a376cdea23a1153f07856b0d881d64
+  |
+  o  1:ef3a871183d7199c541cc140218298bbfcc6c28a
+  |
+  o  0:9ab35a2d17cb64271241ea881efcc19dd953215b
+  
 
   $ hg log
   changeset:   4:264128213d29
