@@ -139,8 +139,10 @@ def replacetokens(tokens, opts):
             # components touching docstrings need to handle unicode,
             # unfortunately.
             if s[0:3] in ("'''", '"""'):
-                yield adjusttokenpos(t, coloffset)
-                continue
+                # If it's assigned to something, it's not a docstring
+                if not _isop(i - 1, '='):
+                    yield adjusttokenpos(t, coloffset)
+                    continue
 
             # If the first character isn't a quote, it is likely a string
             # prefixing character (such as 'b', 'u', or 'r'. Ignore.
