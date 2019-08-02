@@ -276,15 +276,13 @@ def main():
                     help='edit files in place')
     ap.add_argument('--dictiter', action='store_true', default=False,
                     help='rewrite iteritems() and itervalues()'),
-    ap.add_argument('--treat-as-kwargs', nargs="+",
+    ap.add_argument('--treat-as-kwargs', nargs="+", default=[],
                     help="ignore kwargs-like objects"),
     ap.add_argument('files', metavar='FILE', nargs='+', help='source file')
     args = ap.parse_args()
     opts = {
         'dictiter': args.dictiter,
-        'treat-as-kwargs': set(
-            args.treat_as_kwargs
-        ) if args.treat_as_kwargs else set()
+        'treat-as-kwargs': set(args.treat_as_kwargs),
     }
     for fname in args.files:
         if args.inplace:
