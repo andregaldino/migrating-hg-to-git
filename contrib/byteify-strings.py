@@ -95,6 +95,8 @@ def replacetokens(tokens, opts):
     coldelta = 0  # column increment for new opening parens
     coloffset = -1  # column offset for the current line (-1: TBD)
     parens = [(0, 0, 0)]  # stack of (line, end-column, column-offset)
+    ignorenextline = False  # don't transform the next line
+    insideignoreblock = False # don't transform until turned off
     for i, t in enumerate(tokens):
         # Compute the column offset for the current line, such that
         # the current line will be aligned to the last opening paren
@@ -113,6 +115,21 @@ def replacetokens(tokens, opts):
             yield adjusttokenpos(t, coloffset)
             coldelta = 0
             coloffset = -1
+            if not insideignoreblock:
+                ignorenextline = (
+                    tokens[i - 1].type == token.COMMENT
+                    and tokens[i - 1].string == "#no-py3-transform"
+                )
+            continue
+
+        if t.type == token.COMMENT:
+            if t.string == "#py3-transform: off":
+                insideignoreblock = True
+            if t.string == "#py3-transform: on":
+                insideignoreblock = False
+
+        if ignorenextline or insideignoreblock:
+            yield adjusttokenpos(t, coloffset)
             continue
 
         # Remember the last paren position.
