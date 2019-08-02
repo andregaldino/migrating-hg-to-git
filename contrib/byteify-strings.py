@@ -228,6 +228,12 @@ def replacetokens(tokens, opts):
                 yield adjusttokenpos(t._replace(string=fn[4:]), coloffset)
                 continue
 
+        if t.type == token.NAME and t.string in opts['treat-as-kwargs']:
+            if _isitemaccess(i):
+                _ensuresysstr(i + 2)
+            if _ismethodcall(i, 'get', 'pop', 'setdefault', 'popitem'):
+                _ensuresysstr(i + 4)
+
         # Looks like "if __name__ == '__main__'".
         if (t.type == token.NAME and t.string == '__name__'
             and _isop(i + 1, '==')):
@@ -270,10 +276,15 @@ def main():
                     help='edit files in place')
     ap.add_argument('--dictiter', action='store_true', default=False,
                     help='rewrite iteritems() and itervalues()'),
+    ap.add_argument('--treat-as-kwargs', nargs="+",
+                    help="ignore kwargs-like objects"),
     ap.add_argument('files', metavar='FILE', nargs='+', help='source file')
     args = ap.parse_args()
     opts = {
         'dictiter': args.dictiter,
+        'treat-as-kwargs': set(
+            args.treat_as_kwargs
+        ) if args.treat_as_kwargs else set()
     }
     for fname in args.files:
         if args.inplace:
