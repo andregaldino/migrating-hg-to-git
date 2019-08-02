@@ -92,6 +92,36 @@ def replacetokens(tokens, opts):
             except IndexError:
                 break
 
+    def _isitemaccess(j):
+        """Assert the next tokens form an item access on `tokens[j]` and that
+        `tokens[j]` is a name.
+        """
+        try:
+            return (
+                tokens[j].type == token.NAME
+                and _isop(j + 1, '[')
+                and tokens[j + 2].type == token.STRING
+                and _isop(j + 3, ']')
+            )
+        except IndexError:
+            return False
+
+    def _ismethodcall(j, *methodnames):
+        """Assert the next tokens form a call to `methodname` with a string
+        as first argument on `tokens[j]` and that `tokens[j]` is a name.
+        """
+        try:
+            return (
+                tokens[j].type == token.NAME
+                and _isop(j + 1, '.')
+                and tokens[j + 2].type == token.NAME
+                and tokens[j + 2].string in methodnames
+                and _isop(j + 3, '(')
+                and tokens[j + 4].type == token.STRING
+            )
+        except IndexError:
+            return False
+
     coldelta = 0  # column increment for new opening parens
     coloffset = -1  # column offset for the current line (-1: TBD)
     parens = [(0, 0, 0)]  # stack of (line, end-column, column-offset)
