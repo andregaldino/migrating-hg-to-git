@@ -78,9 +78,19 @@ def replacetokens(tokens, opts):
         already been done.
 
         """
-        st = tokens[j]
-        if st.type == token.STRING and st.string.startswith(("'", '"')):
-            sysstrtokens.add(st)
+        k = j
+        currtoken = tokens[k]
+        while currtoken.type in (token.STRING, token.NEWLINE, tokenize.NL):
+            k += 1
+            if (
+                currtoken.type == token.STRING
+                and currtoken.string.startswith(("'", '"'))
+            ):
+                sysstrtokens.add(currtoken)
+            try:
+                currtoken = tokens[k]
+            except IndexError:
+                break
 
     coldelta = 0  # column increment for new opening parens
     coloffset = -1  # column offset for the current line (-1: TBD)
