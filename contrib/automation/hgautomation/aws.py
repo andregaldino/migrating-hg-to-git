@@ -970,7 +970,7 @@ def temporary_linux_dev_instances(c: AWSConnection, image, instance_type,
             'DeviceName': image.block_device_mappings[0]['DeviceName'],
             'Ebs': {
                 'DeleteOnTermination': True,
-                'VolumeSize': 8,
+                'VolumeSize': 12,
                 'VolumeType': 'gp2',
             },
         }
