@@ -70,7 +70,7 @@ Test case sensitive configuration
   $ hg showconfig Section.KeY -Tjson
   [
    {
-    "defaultvalue": "None",
+    "defaultvalue": null,
     "name": "Section.KeY",
     "source": "*.hgrc:*", (glob)
     "value": "Case Sensitive"
@@ -103,7 +103,7 @@ Test empty config source:
   $ hg config empty.source -Tjson
   [
    {
-    "defaultvalue": "None",
+    "defaultvalue": null,
     "name": "empty.source",
     "source": "",
     "value": "value"
