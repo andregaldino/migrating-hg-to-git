@@ -65,6 +65,18 @@ pyenv global ${PYENV2_VERSIONS} ${PYENV3_VERSIONS} system
 '''.lstrip().replace('\r\n', '\n')
 
 
+INSTALL_RUST = r'''
+RUSTUP_INIT_SHA256=a46fe67199b7bcbbde2dcbc23ae08db6f29883e260e23899a88b9073effc9076
+wget -O rustup-init --progress dot:mega https://static.rust-lang.org/rustup/archive/1.18.3/x86_64-unknown-linux-gnu/rustup-init
+echo "${RUSTUP_INIT_SHA256} rustup-init" | sha256sum --check -
+
+chmod +x rustup-init
+sudo -H -u hg -g hg ./rustup-init -y
+sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup install 1.31.1 1.34.2
+sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup component add clippy
+'''
+
+
 BOOTSTRAP_VIRTUALENV = r'''
 /usr/bin/virtualenv /hgdev/venv-bootstrap
 
@@ -286,6 +298,8 @@ sudo mkdir /hgdev
 # Will be normalized to hg:hg later.
 sudo chown `whoami` /hgdev
 
+{install_rust}
+
 cp requirements-py2.txt /hgdev/requirements-py2.txt
 cp requirements-py3.txt /hgdev/requirements-py3.txt
 
@@ -309,6 +323,7 @@ EOF
 
 sudo chown -R hg:hg /hgdev
 '''.lstrip().format(
+    install_rust=INSTALL_RUST,
     install_pythons=INSTALL_PYTHONS,
     bootstrap_virtualenv=BOOTSTRAP_VIRTUALENV
 ).replace('\r\n', '\n')
