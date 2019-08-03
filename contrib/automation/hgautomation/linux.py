@@ -485,7 +485,9 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
             'python2.7', str(hg_bin),
             '--config', 'ui.ssh=ssh -F %s' % ssh_config,
             '--config', 'ui.remotecmd=/hgdev/venv-bootstrap/bin/hg',
-            'push', '-f', '-r', full_revision,
+            # Also ensure .hgtags changes are present so auto version
+            # calculation works.
+            'push', '-f', '-r', full_revision, '-r', 'file(.hgtags)',
             'ssh://%s//hgwork/src' % public_ip,
         ]
 
