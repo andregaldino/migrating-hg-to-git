@@ -124,7 +124,7 @@ def replacetokens(tokens, opts):
 
     coldelta = 0  # column increment for new opening parens
     coloffset = -1  # column offset for the current line (-1: TBD)
-    parens = [(0, 0, 0)]  # stack of (line, end-column, column-offset)
+    parens = [(0, 0, 0, -1)]  # stack of (line, end-column, column-offset, type)
     ignorenextline = False  # don't transform the next line
     insideignoreblock = False # don't transform until turned off
     for i, t in enumerate(tokens):
@@ -132,11 +132,15 @@ def replacetokens(tokens, opts):
         # the current line will be aligned to the last opening paren
         # as before.
         if coloffset < 0:
-            if t.start[1] == parens[-1][1]:
-                coloffset = parens[-1][2]
-            elif t.start[1] + 1 == parens[-1][1]:
+            lastparen = parens[-1]
+            if t.start[1] == lastparen[1]:
+                coloffset = lastparen[2]
+            elif (
+                t.start[1] + 1 == lastparen[1]
+                and lastparen[3] not in (token.NEWLINE, tokenize.NL)
+            ):
                 # fix misaligned indent of s/util.Abort/error.Abort/
-                coloffset = parens[-1][2] + (parens[-1][1] - t.start[1])
+                coloffset = lastparen[2] + (lastparen[1] - t.start[1])
             else:
                 coloffset = 0
 
@@ -164,7 +168,7 @@ def replacetokens(tokens, opts):
 
         # Remember the last paren position.
         if _isop(i, '(', '[', '{'):
-            parens.append(t.end + (coloffset + coldelta,))
+            parens.append(t.end + (coloffset + coldelta, tokens[i + 1].type))
         elif _isop(i, ')', ']', '}'):
             parens.pop()
 

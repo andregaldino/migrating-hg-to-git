@@ -215,3 +215,47 @@ Test prefixed strings
   $ byteify_strings testfile.py
   obj[b'test'] = b"1234"
   obj[r'test'] = u"1234"
+
+Test multi-line alignment
+
+  $ cat > testfile.py <<'EOF'
+  > def foo():
+  >     error.Abort(_("foo"
+  >                  "bar"
+  >                  "%s")
+  >                % parameter)
+  > {
+  >     'test': dict,
+  >     'test2': dict,
+  > }
+  > [
+  >    "thing",
+  >    "thing2"
+  > ]
+  > (
+  >    "tuple",
+  >    "tuple2",
+  > )
+  > {"thing",
+  >  }
+  > EOF
+  $ byteify_strings testfile.py
+  def foo():
+      error.Abort(_(b"foo"
+                    b"bar"
+                    b"%s")
+                  % parameter)
+  {
+      b'test': dict,
+      b'test2': dict,
+  }
+  [
+     b"thing",
+     b"thing2"
+  ]
+  (
+     b"tuple",
+     b"tuple2",
+  )
+  {b"thing",
+   }
