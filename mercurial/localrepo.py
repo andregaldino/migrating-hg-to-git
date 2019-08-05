@@ -2220,6 +2220,16 @@ class localrepository(object):
             self.tags()
             self.filtered('served').tags()
 
+            # The `full` arg is documented as updating even the lazily-loaded
+            # caches immediately, so we're forcing a write to cause these caches
+            # to be warmed up even if they haven't explicitly been requested
+            # yet (if they've never been used by hg, they won't ever have been
+            # written, even if they're a subset of another kind of cache that
+            # *has* been used).
+            for filt in repoview.filtertable.keys():
+                filtered = self.filtered(filt)
+                filtered.branchmap().write(filtered)
+
     def invalidatecaches(self):
 
         if r'_tagscache' in vars(self):

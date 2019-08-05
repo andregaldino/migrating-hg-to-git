@@ -546,7 +546,12 @@ Test cache warming command
   .hg/cache/rbc-revs-v1
   .hg/cache/rbc-names-v1
   .hg/cache/hgtagsfnodes1
+  .hg/cache/branch2-visible-hidden
+  .hg/cache/branch2-visible
+  .hg/cache/branch2-served.hidden
   .hg/cache/branch2-served
+  .hg/cache/branch2-immutable
+  .hg/cache/branch2-base
 
 Test debugcolor
 
