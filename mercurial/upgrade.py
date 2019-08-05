@@ -28,6 +28,12 @@ from .utils import (
     compression,
 )
 
+# list of requirements that request a clone of all revlog if added/removed
+RECLONES_REQUIREMENTS = {
+    'generaldelta',
+    localrepo.SPARSEREVLOG_REQUIREMENT,
+}
+
 def requiredsourcerequirements(repo):
     """Obtain requirements required to be present to upgrade a repo.
 
@@ -951,6 +957,17 @@ def upgraderepo(ui, repo, run=False, optimize=None, backup=True,
     actions.extend(o for o in sorted(optimizations)
                    # determineactions could have added optimisation
                    if o not in actions)
+
+    removedreqs = repo.requirements - newreqs
+    addedreqs = newreqs - repo.requirements
+
+    if revlogs != UPGRADE_ALL_REVLOGS:
+        incompatible = RECLONES_REQUIREMENTS & (removedreqs | addedreqs)
+        if incompatible:
+            msg = _('ignoring revlogs selection flags, format requirements '
+                    'change: %s\n')
+            ui.warn(msg % ', '.join(sorted(incompatible)))
+            revlogs = UPGRADE_ALL_REVLOGS
 
     def printrequirements():
         ui.write(_('requirements\n'))
