@@ -278,6 +278,8 @@ def editinplace(fname):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument('--version', action='version',
+                    version='Byteify strings 1.0')
     ap.add_argument('-i', '--inplace', action='store_true', default=False,
                     help='edit files in place')
     ap.add_argument('--dictiter', action='store_true', default=False,

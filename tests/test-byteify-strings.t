@@ -4,6 +4,11 @@
   >   $PYTHON "$TESTDIR/../contrib/byteify-strings.py" "$@"
   > }
 
+Test version
+
+  $ byteify_strings --version
+  Byteify strings * (glob)
+
 Test in-place
 
   $ cat > testfile.py <<EOF
