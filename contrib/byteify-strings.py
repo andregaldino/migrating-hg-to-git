@@ -152,14 +152,14 @@ def replacetokens(tokens, opts):
             if not insideignoreblock:
                 ignorenextline = (
                     tokens[i - 1].type == token.COMMENT
-                    and tokens[i - 1].string == "#no-py3-transform"
+                    and tokens[i - 1].string == "# no-py3-transform"
                 )
             continue
 
         if t.type == token.COMMENT:
-            if t.string == "#py3-transform: off":
+            if t.string == "# py3-transform: off":
                 insideignoreblock = True
-            if t.string == "#py3-transform: on":
+            if t.string == "# py3-transform: on":
                 insideignoreblock = False
 
         if ignorenextline or insideignoreblock:

@@ -152,33 +152,33 @@ Test without attr*() as methods
 Test ignore comments
 
   $ cat > testfile.py <<EOF
-  > #py3-transform: off
+  > # py3-transform: off
   > "none"
   > "of"
   > 'these'
   > s = """should"""
   > d = '''be'''
-  > #py3-transform: on
+  > # py3-transform: on
   > "this should"
   > 'and this also'
   > 
-  > #no-py3-transform
+  > # no-py3-transform
   > l = "this should be ignored"
   > l2 = "this shouldn't"
   > 
   > EOF
   $ byteify_strings testfile.py
-  #py3-transform: off
+  # py3-transform: off
   "none"
   "of"
   'these'
   s = """should"""
   d = '''be'''
-  #py3-transform: on
+  # py3-transform: on
   b"this should"
   b'and this also'
   
-  #no-py3-transform
+  # no-py3-transform
   l = "this should be ignored"
   l2 = b"this shouldn't"
   
