@@ -809,3 +809,28 @@ def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
             continue
         if dst in wctx:
             wctx[dst].markcopied(src)
+
+def computechangesetcopies(ctx):
+    """return the copies data for a changeset
+
+    The copies data are returned as a pair of dictionnary (p1copies, p2copies).
+
+    Each dictionnary are in the form: `{newname: oldname}`
+    """
+    p1copies = {}
+    p2copies = {}
+    p1 = ctx.p1()
+    p2 = ctx.p2()
+    narrowmatch = ctx._repo.narrowmatch()
+    for dst in ctx.files():
+        if not narrowmatch(dst) or dst not in ctx:
+            continue
+        copied = ctx[dst].renamed()
+        if not copied:
+            continue
+        src, srcnode = copied
+        if src in p1 and p1[src].filenode() == srcnode:
+            p1copies[dst] = src
+        elif src in p2 and p2[src].filenode() == srcnode:
+            p2copies[dst] = src
+    return p1copies, p2copies

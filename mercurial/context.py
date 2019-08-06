@@ -24,6 +24,7 @@ from .node import (
     wdirhex,
 )
 from . import (
+    copies,
     dagop,
     encoding,
     error,
@@ -274,23 +275,7 @@ class basectx(object):
 
     @propertycache
     def _copies(self):
-        p1copies = {}
-        p2copies = {}
-        p1 = self.p1()
-        p2 = self.p2()
-        narrowmatch = self._repo.narrowmatch()
-        for dst in self.files():
-            if not narrowmatch(dst) or dst not in self:
-                continue
-            copied = self[dst].renamed()
-            if not copied:
-                continue
-            src, srcnode = copied
-            if src in p1 and p1[src].filenode() == srcnode:
-                p1copies[dst] = src
-            elif src in p2 and p2[src].filenode() == srcnode:
-                p2copies[dst] = src
-        return p1copies, p2copies
+        return copies.computechangesetcopies(self)
     def p1copies(self):
         return self._copies[0]
     def p2copies(self):
