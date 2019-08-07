@@ -146,6 +146,9 @@ class bundlerevlog(revlog.revlog):
         self._revisioncache = (node, rev, rawtext)
         return text
 
+    def rawdata(self, nodeorrev, _df=None):
+        return self.revision(nodeorrev, _df=_df, raw=True)
+
     def baserevision(self, nodeorrev):
         # Revlog subclasses may override 'revision' method to modify format of
         # content retrieved from revlog. To use bundlerevlog with such class one
