@@ -40,16 +40,23 @@ REVIDX_ISCENSORED = repository.REVISION_FLAG_CENSORED
 REVIDX_ELLIPSIS = repository.REVISION_FLAG_ELLIPSIS
 # revision data is stored externally
 REVIDX_EXTSTORED = repository.REVISION_FLAG_EXTSTORED
+# revision data contains extra metadata not part of the official digest
+REVIDX_SIDEDATA = repository.REVISION_FLAG_SIDEDATA
 REVIDX_DEFAULT_FLAGS = 0
 # stable order in which flags need to be processed and their processors applied
 REVIDX_FLAGS_ORDER = [
     REVIDX_ISCENSORED,
     REVIDX_ELLIPSIS,
     REVIDX_EXTSTORED,
+    REVIDX_SIDEDATA,
 ]
 
 # bitmark for flags that could cause rawdata content change
-REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
+REVIDX_RAWTEXT_CHANGING_FLAGS = (
+    REVIDX_ISCENSORED
+    | REVIDX_EXTSTORED
+    | REVIDX_SIDEDATA
+)
 
 SPARSE_REVLOG_MAX_CHAIN_LENGTH = 1000
 
