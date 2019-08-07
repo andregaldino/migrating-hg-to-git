@@ -1618,12 +1618,13 @@ class revlog(object):
             node = nodeorrev
             rev = None
 
+        if node == nullid:
+            return ""
+
         cachedrev = None
         flags = None
         rawtext = None
         basetext = None
-        if node == nullid:
-            return ""
         if self._revisioncache:
             if self._revisioncache[0] == node:
                 # _cache only stores rawtext
