@@ -1882,10 +1882,11 @@ def config(ui, repo, *values, **opts):
         fm.startitem()
         fm.condwrite(ui.debugflag, 'source', '%s: ', source)
         if uniquesel:
-            fm.data(name=entryname, defaultvalue=defaultvalue)
+            fm.data(name=entryname)
             fm.write('value', '%s\n', value)
         else:
             fm.write('name value', '%s=%s\n', entryname, value)
+        fm.data(defaultvalue=defaultvalue)
         matched = True
     fm.end()
     if matched:

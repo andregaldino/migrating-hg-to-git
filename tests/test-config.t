@@ -57,11 +57,13 @@ Test case sensitive configuration
   $ hg showconfig Section -Tjson
   [
    {
+    "defaultvalue": null,
     "name": "Section.KeY",
     "source": "*.hgrc:*", (glob)
     "value": "Case Sensitive"
    },
    {
+    "defaultvalue": null,
     "name": "Section.key",
     "source": "*.hgrc:*", (glob)
     "value": "lower case"
@@ -77,8 +79,8 @@ Test case sensitive configuration
    }
   ]
   $ hg showconfig -Tjson | tail -7
-   },
    {
+    "defaultvalue": null,
     "name": "*", (glob)
     "source": "*", (glob)
     "value": "*" (glob)
