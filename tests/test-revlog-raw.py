@@ -162,7 +162,7 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
         p1 = rlog.node(r - 1)
         p2 = node.nullid
         if r == 0 or (rlog.flags(r) & revlog.REVIDX_EXTSTORED):
-            text = rlog.revision(r, raw=True)
+            text = rlog.rawdata(r)
             cachedelta = None
         else:
             # deltaparent cannot have EXTSTORED flag.
@@ -269,7 +269,7 @@ def writecases(rlog, tr):
             abort('rev %d: wrong rawsize' % rev)
         if rlog.revision(rev, raw=False) != text:
             abort('rev %d: wrong text' % rev)
-        if rlog.revision(rev, raw=True) != rawtext:
+        if rlog.rawdata(rev) != rawtext:
             abort('rev %d: wrong rawtext' % rev)
         result.append((text, rawtext))
 
@@ -294,7 +294,10 @@ def checkrevlog(rlog, expected):
                 nlog = newrevlog()
                 for rev in revorder:
                     for raw in raworder:
-                        t = nlog.revision(rev, raw=raw)
+                        if raw:
+                            t = nlog.rawdata(rev)
+                        else:
+                            t = nlog.revision(rev)
                         if t != expected[rev][int(raw)]:
                             abort('rev %d: corrupted %stext'
                                   % (rev, raw and 'raw' or ''))
