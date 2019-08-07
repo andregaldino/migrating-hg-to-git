@@ -42,6 +42,9 @@ from mercurial.utils import (
     interfaceutil,
     storageutil,
 )
+from mercurial.revlogutils import (
+    flagutil,
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -262,9 +265,9 @@ class filestorage(object):
         if flags == 0:
             return text, True
 
-        if flags & ~revlog.REVIDX_KNOWN_FLAGS:
+        if flags & ~flagutil.REVIDX_KNOWN_FLAGS:
             raise simplestoreerror(_("incompatible revision flag '%#x'") %
-                                   (flags & ~revlog.REVIDX_KNOWN_FLAGS))
+                                   (flags & ~flagutil.REVIDX_KNOWN_FLAGS))
 
         validatehash = True
         # Depending on the operation (read or write), the order might be

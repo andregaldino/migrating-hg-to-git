@@ -14,8 +14,11 @@ from .constants import (
     REVIDX_EXTSTORED,
     REVIDX_FLAGS_ORDER,
     REVIDX_ISCENSORED,
-    REVIDX_KNOWN_FLAGS,
     REVIDX_RAWTEXT_CHANGING_FLAGS,
+)
+
+from .. import (
+    util
 )
 
 # blanked usage of all the name to prevent pyflakes constraints
@@ -25,8 +28,9 @@ REVIDX_ELLIPSIS
 REVIDX_EXTSTORED
 REVIDX_DEFAULT_FLAGS
 REVIDX_FLAGS_ORDER
-REVIDX_KNOWN_FLAGS
 REVIDX_RAWTEXT_CHANGING_FLAGS
+
+REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
 
 # Store flag processors (cf. 'addflagprocessor()' to register)
 flagprocessors = {

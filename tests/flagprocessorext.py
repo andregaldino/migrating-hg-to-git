@@ -12,6 +12,9 @@ from mercurial import (
     revlog,
     util,
 )
+from mercurial.revlogutils import (
+    flagutil,
+)
 
 # Test only: These flags are defined here only in the context of testing the
 # behavior of the flag processor. The canonical way to add flags is to get in
@@ -58,7 +61,7 @@ def makewrappedfile(obj):
     class wrappedfile(obj.__class__):
         def addrevision(self, text, transaction, link, p1, p2,
                         cachedelta=None, node=None,
-                        flags=revlog.REVIDX_DEFAULT_FLAGS):
+                        flags=flagutil.REVIDX_DEFAULT_FLAGS):
             if b'[NOOP]' in text:
                 flags |= REVIDX_NOOP
 
@@ -102,7 +105,7 @@ def extsetup(ui):
 
     # Teach revlog about our test flags
     flags = [REVIDX_NOOP, REVIDX_BASE64, REVIDX_GZIP, REVIDX_FAIL]
-    revlog.REVIDX_KNOWN_FLAGS |= util.bitsfrom(flags)
+    flagutil.REVIDX_KNOWN_FLAGS |= util.bitsfrom(flags)
     revlog.REVIDX_FLAGS_ORDER.extend(flags)
 
     # Teach exchange to use changegroup 3

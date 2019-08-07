@@ -53,7 +53,6 @@ from .revlogutils.flagutil import (
     REVIDX_EXTSTORED,
     REVIDX_FLAGS_ORDER,
     REVIDX_ISCENSORED,
-    REVIDX_KNOWN_FLAGS,
     REVIDX_RAWTEXT_CHANGING_FLAGS,
 )
 from .thirdparty import (
@@ -97,7 +96,6 @@ REVIDX_ELLIPSIS
 REVIDX_EXTSTORED
 REVIDX_DEFAULT_FLAGS
 REVIDX_FLAGS_ORDER
-REVIDX_KNOWN_FLAGS
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
 parsers = policy.importmod(r'parsers')
@@ -155,7 +153,7 @@ def addflagprocessor(flag, processor):
     _insertflagprocessor(flag, processor, flagutil.flagprocessors)
 
 def _insertflagprocessor(flag, processor, flagprocessors):
-    if not flag & REVIDX_KNOWN_FLAGS:
+    if not flag & flagutil.REVIDX_KNOWN_FLAGS:
         msg = _("cannot register processor on unknown flag '%#x'.") % (flag)
         raise error.ProgrammingError(msg)
     if flag not in REVIDX_FLAGS_ORDER:
@@ -173,7 +171,7 @@ def gettype(q):
     return int(q & 0xFFFF)
 
 def offset_type(offset, type):
-    if (type & ~REVIDX_KNOWN_FLAGS) != 0:
+    if (type & ~flagutil.REVIDX_KNOWN_FLAGS) != 0:
         raise ValueError('unknown revlog index flags')
     return int(int(offset) << 16 | type)
 
@@ -685,7 +683,7 @@ class revlog(object):
         # fast path: if no "read" flag processor could change the content,
         # size is rawsize. note: ELLIPSIS is known to not change the content.
         flags = self.flags(rev)
-        if flags & (REVIDX_KNOWN_FLAGS ^ REVIDX_ELLIPSIS) == 0:
+        if flags & (flagutil.REVIDX_KNOWN_FLAGS ^ REVIDX_ELLIPSIS) == 0:
             return self.rawsize(rev)
 
         return len(self.revision(rev, raw=False))
@@ -1762,9 +1760,9 @@ class revlog(object):
             raise error.ProgrammingError(_("invalid '%s' operation") %
                                          operation)
         # Check all flags are known.
-        if flags & ~REVIDX_KNOWN_FLAGS:
+        if flags & ~flagutil.REVIDX_KNOWN_FLAGS:
             raise error.RevlogError(_("incompatible revision flag '%#x'") %
-                                    (flags & ~REVIDX_KNOWN_FLAGS))
+                                    (flags & ~flagutil.REVIDX_KNOWN_FLAGS))
         validatehash = True
         # Depending on the operation (read or write), the order might be
         # reversed due to non-commutative transforms.

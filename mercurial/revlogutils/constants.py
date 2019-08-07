@@ -11,7 +11,6 @@ from __future__ import absolute_import
 
 from .. import (
     repository,
-    util,
 )
 
 # revlog header flags
@@ -48,7 +47,7 @@ REVIDX_FLAGS_ORDER = [
     REVIDX_ELLIPSIS,
     REVIDX_EXTSTORED,
 ]
-REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
+
 # bitmark for flags that could cause rawdata content change
 REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
 
