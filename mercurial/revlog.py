@@ -72,6 +72,7 @@ from . import (
 )
 from .revlogutils import (
     deltas as deltautil,
+    flagutil,
 )
 from .utils import (
     interfaceutil,
@@ -109,11 +110,6 @@ _zlibdecompress = zlib.decompress
 # max size of revlog with inline data
 _maxinline = 131072
 _chunksize = 1048576
-
-# Store flag processors (cf. 'addflagprocessor()' to register)
-_flagprocessors = {
-    REVIDX_ISCENSORED: None,
-}
 
 # Flag processors for REVIDX_ELLIPSIS.
 def ellipsisreadprocessor(rl, text):
@@ -156,7 +152,7 @@ def addflagprocessor(flag, processor):
       debug commands. In this case the transform only indicates whether the
       contents can be used for hash integrity checks.
     """
-    _insertflagprocessor(flag, processor, _flagprocessors)
+    _insertflagprocessor(flag, processor, flagutil.flagprocessors)
 
 def _insertflagprocessor(flag, processor, flagprocessors):
     if not flag & REVIDX_KNOWN_FLAGS:
@@ -386,7 +382,7 @@ class revlog(object):
 
         # Make copy of flag processors so each revlog instance can support
         # custom flags.
-        self._flagprocessors = dict(_flagprocessors)
+        self._flagprocessors = dict(flagutil.flagprocessors)
 
         # 2-tuple of file handles being used for active writing.
         self._writinghandles = None

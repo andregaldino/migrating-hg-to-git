@@ -28,4 +28,8 @@ REVIDX_FLAGS_ORDER
 REVIDX_KNOWN_FLAGS
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
+# Store flag processors (cf. 'addflagprocessor()' to register)
+flagprocessors = {
+    REVIDX_ISCENSORED: None,
+}
 
