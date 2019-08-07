@@ -90,6 +90,9 @@ class filelog(object):
     def revision(self, node, _df=None, raw=False):
         return self._revlog.revision(node, _df=_df, raw=raw)
 
+    def rawdata(self, node, _df=None):
+        return self._revlog.rawdata(node, _df=_df)
+
     def emitrevisions(self, nodes, nodesorder=None,
                       revisiondata=False, assumehaveparentrevisions=False,
                       deltamode=repository.CG_DELTAMODE_STD):
