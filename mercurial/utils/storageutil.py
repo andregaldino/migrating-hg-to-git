@@ -304,9 +304,9 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
 
     ``rawsizefn`` (optional)
        Callable receiving a revision number and returning the length of the
-       ``store.revision(rev, raw=True)``.
+       ``store.rawdata(rev)``.
 
-       If not defined, ``len(store.revision(rev, raw=True))`` will be called.
+       If not defined, ``len(store.rawdata(rev))`` will be called.
 
     ``revdifffn`` (optional)
        Callable receiving a pair of revision numbers that returns a delta
@@ -422,7 +422,7 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
         if revisiondata:
             if store.iscensored(baserev) or store.iscensored(rev):
                 try:
-                    revision = store.revision(node, raw=True)
+                    revision = store.rawdata(node)
                 except error.CensoredNodeError as e:
                     revision = e.tombstone
 
@@ -430,19 +430,18 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
                     if rawsizefn:
                         baserevisionsize = rawsizefn(baserev)
                     else:
-                        baserevisionsize = len(store.revision(baserev,
-                                                              raw=True))
+                        baserevisionsize = len(store.rawdata(baserev))
 
             elif (baserev == nullrev
                     and deltamode != repository.CG_DELTAMODE_PREV):
-                revision = store.revision(node, raw=True)
+                revision = store.rawdata(node)
                 available.add(rev)
             else:
                 if revdifffn:
                     delta = revdifffn(baserev, rev)
                 else:
-                    delta = mdiff.textdiff(store.revision(baserev, raw=True),
-                                           store.revision(rev, raw=True))
+                    delta = mdiff.textdiff(store.rawdata(baserev),
+                                           store.rawdata(rev))
 
                 available.add(rev)
 
