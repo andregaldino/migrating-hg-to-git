@@ -8,6 +8,8 @@
 
 from __future__ import absolute_import
 
+from ..i18n import _
+
 from .constants import (
     REVIDX_DEFAULT_FLAGS,
     REVIDX_ELLIPSIS,
@@ -18,6 +20,7 @@ from .constants import (
 )
 
 from .. import (
+    error,
     util
 )
 
@@ -37,3 +40,14 @@ flagprocessors = {
     REVIDX_ISCENSORED: None,
 }
 
+def insertflagprocessor(flag, processor, flagprocessors):
+    if not flag & REVIDX_KNOWN_FLAGS:
+        msg = _("cannot register processor on unknown flag '%#x'.") % (flag)
+        raise error.ProgrammingError(msg)
+    if flag not in REVIDX_FLAGS_ORDER:
+        msg = _("flag '%#x' undefined in REVIDX_FLAGS_ORDER.") % (flag)
+        raise error.ProgrammingError(msg)
+    if flag in flagprocessors:
+        msg = _("cannot register multiple processors on flag '%#x'.") % (flag)
+        raise error.Abort(msg)
+    flagprocessors[flag] = processor

@@ -206,8 +206,8 @@ Ensure the data got to the server OK
     File "*/tests/flagprocessorext.py", line *, in extsetup (glob)
       validatehash,
     File "*/mercurial/revlog.py", line *, in addflagprocessor (glob)
-      _insertflagprocessor(flag, processor, flagutil.flagprocessors)
-    File "*/mercurial/revlog.py", line *, in _insertflagprocessor (glob)
+      flagutil.insertflagprocessor(flag, processor, flagutil.flagprocessors)
+    File "*/mercurial/revlogutils/flagutil.py", line *, in insertflagprocessor (glob)
       raise error.Abort(msg)
   mercurial.error.Abort: b"cannot register multiple processors on flag '0x8'." (py3 !)
   Abort: cannot register multiple processors on flag '0x8'. (no-py3 !)
