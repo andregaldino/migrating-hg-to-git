@@ -549,6 +549,9 @@ class sqlitefilestore(object):
 
         return fulltext
 
+    def rawdata(self, *args, **kwargs):
+        return self.revision(*args, **kwargs)
+
     def read(self, node):
         return storageutil.filtermetadata(self.revision(node))
 
