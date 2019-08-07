@@ -78,3 +78,74 @@ def insertflagprocessor(flag, processor, flagprocessors):
         msg = _("cannot register multiple processors on flag '%#x'.") % (flag)
         raise error.Abort(msg)
     flagprocessors[flag] = processor
+
+class flagprocessorsmixin(object):
+    """basic mixin to support revlog flag processing
+
+    Make sure the `_flagprocessors` attribute is set at ``__init__`` time.
+
+    See the documentation of the ``_processflags`` method for details.
+    """
+
+    def _processflags(self, text, flags, operation, raw=False):
+        """Inspect revision data flags and applies transforms defined by
+        registered flag processors.
+
+        ``text`` - the revision data to process
+        ``flags`` - the revision flags
+        ``operation`` - the operation being performed (read or write)
+        ``raw`` - an optional argument describing if the raw transform should be
+        applied.
+
+        This method processes the flags in the order (or reverse order if
+        ``operation`` is 'write') defined by REVIDX_FLAGS_ORDER, applying the
+        flag processors registered for present flags. The order of flags defined
+        in REVIDX_FLAGS_ORDER needs to be stable to allow non-commutativity.
+
+        Returns a 2-tuple of ``(text, validatehash)`` where ``text`` is the
+        processed text and ``validatehash`` is a bool indicating whether the
+        returned text should be checked for hash integrity.
+
+        Note: If the ``raw`` argument is set, it has precedence over the
+        operation and will only update the value of ``validatehash``.
+        """
+        # fast path: no flag processors will run
+        if flags == 0:
+            return text, True
+        if not operation in ('read', 'write'):
+            raise error.ProgrammingError(_("invalid '%s' operation") %
+                                         operation)
+        # Check all flags are known.
+        if flags & ~REVIDX_KNOWN_FLAGS:
+            raise error.RevlogError(_("incompatible revision flag '%#x'") %
+                                    (flags & ~REVIDX_KNOWN_FLAGS))
+        validatehash = True
+        # Depending on the operation (read or write), the order might be
+        # reversed due to non-commutative transforms.
+        orderedflags = REVIDX_FLAGS_ORDER
+        if operation == 'write':
+            orderedflags = reversed(orderedflags)
+
+        for flag in orderedflags:
+            # If a flagprocessor has been registered for a known flag, apply the
+            # related operation transform and update result tuple.
+            if flag & flags:
+                vhash = True
+
+                if flag not in self._flagprocessors:
+                    message = _("missing processor for flag '%#x'") % (flag)
+                    raise error.RevlogError(message)
+
+                processor = self._flagprocessors[flag]
+                if processor is not None:
+                    readtransform, writetransform, rawtransform = processor
+
+                    if raw:
+                        vhash = rawtransform(self, text)
+                    elif operation == 'read':
+                        text, vhash = readtransform(self, text)
+                    else: # write operation
+                        text, vhash = writetransform(self, text)
+                validatehash = validatehash and vhash
+
+        return text, validatehash
