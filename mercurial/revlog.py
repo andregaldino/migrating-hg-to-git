@@ -636,7 +636,7 @@ class revlog(object):
         if l >= 0:
             return l
 
-        t = self.revision(rev, raw=True)
+        t = self.rawdata(rev)
         return len(t)
 
     def size(self, rev):
@@ -1596,8 +1596,8 @@ class revlog(object):
         if rev1 != nullrev and self.deltaparent(rev2) == rev1:
             return bytes(self._chunk(rev2))
 
-        return mdiff.textdiff(self.revision(rev1, raw=True),
-                              self.revision(rev2, raw=True))
+        return mdiff.textdiff(self.rawdata(rev1),
+                              self.rawdata(rev2))
 
     def revision(self, nodeorrev, _df=None, raw=False):
         """return an uncompressed revision of a given node or revision
@@ -2435,7 +2435,7 @@ class revlog(object):
                         cachedelta = (dp, bytes(self._chunk(rev)))
 
                 if not cachedelta:
-                    rawtext = self.revision(rev, raw=True)
+                    rawtext = self.rawdata(rev)
 
 
                 if deltareuse == self.DELTAREUSEFULLADD:
@@ -2513,7 +2513,7 @@ class revlog(object):
                                         'revision having delta stored'))
                 rawtext = self._chunk(rev)
             else:
-                rawtext = self.revision(rev, raw=True)
+                rawtext = self.rawdata(rev)
 
             newrl.addrawrevision(rawtext, tr, self.linkrev(rev), p1, p2, node,
                                  self.flags(rev))
@@ -2571,8 +2571,8 @@ class revlog(object):
             #   rawtext[0:2]=='\1\n'| False  | True   | True  | ?
             #
             # "rawtext" means the raw text stored in revlog data, which
-            # could be retrieved by "revision(rev, raw=True)". "text"
-            # mentioned below is "revision(rev, raw=False)".
+            # could be retrieved by "rawdata(rev)". "text"
+            # mentioned below is "revision(rev)".
             #
             # There are 3 different lengths stored physically:
             #  1. L1: rawsize, stored in revlog index
@@ -2614,7 +2614,7 @@ class revlog(object):
                     self.revision(node)
 
                 l1 = self.rawsize(rev)
-                l2 = len(self.revision(node, raw=True))
+                l2 = len(self.rawdata(node))
 
                 if l1 != l2:
                     yield revlogproblem(
