@@ -105,8 +105,8 @@ class bundlerevlog(revlog.revlog):
         elif rev1 <= self.repotiprev and rev2 <= self.repotiprev:
             return revlog.revlog.revdiff(self, rev1, rev2)
 
-        return mdiff.textdiff(self.revision(rev1, raw=True),
-                              self.revision(rev2, raw=True))
+        return mdiff.textdiff(self.rawdata(rev1),
+                              self.rawdata(rev2))
 
     def revision(self, nodeorrev, _df=None, raw=False):
         """return an uncompressed revision of a given node or revision
@@ -153,7 +153,7 @@ class bundlerevlog(revlog.revlog):
         # Revlog subclasses may override 'revision' method to modify format of
         # content retrieved from revlog. To use bundlerevlog with such class one
         # needs to override 'baserevision' and make more specific call here.
-        return revlog.revlog.revision(self, nodeorrev, raw=True)
+        return revlog.revlog.rawdata(self, nodeorrev)
 
     def addrevision(self, *args, **kwargs):
         raise NotImplementedError
@@ -184,7 +184,7 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
         oldfilter = self.filteredrevs
         try:
             self.filteredrevs = ()
-            return changelog.changelog.revision(self, nodeorrev, raw=True)
+            return changelog.changelog.rawdata(self, nodeorrev)
         finally:
             self.filteredrevs = oldfilter
 
@@ -209,7 +209,7 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
         if node in self.fulltextcache:
             result = '%s' % self.fulltextcache[node]
         else:
-            result = manifest.manifestrevlog.revision(self, nodeorrev, raw=True)
+            result = manifest.manifestrevlog.rawdata(self, nodeorrev)
         return result
 
     def dirlog(self, d):
@@ -227,7 +227,7 @@ class bundlefilelog(filelog.filelog):
                                     cgunpacker, linkmapper)
 
     def baserevision(self, nodeorrev):
-        return filelog.filelog.revision(self, nodeorrev, raw=True)
+        return filelog.filelog.rawdata(self, nodeorrev)
 
 class bundlepeer(localrepo.localpeer):
     def canpush(self):
