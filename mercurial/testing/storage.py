@@ -421,7 +421,7 @@ class ifiledatatests(basetestcase):
                 f.size(i)
 
         self.assertEqual(f.revision(nullid), b'')
-        self.assertEqual(f.revision(nullid, raw=True), b'')
+        self.assertEqual(f.rawdata(nullid), b'')
 
         with self.assertRaises(error.LookupError):
             f.revision(b'\x01' * 20)
@@ -473,7 +473,7 @@ class ifiledatatests(basetestcase):
             f.size(1)
 
         self.assertEqual(f.revision(node), fulltext)
-        self.assertEqual(f.revision(node, raw=True), fulltext)
+        self.assertEqual(f.rawdata(node), fulltext)
 
         self.assertEqual(f.read(node), fulltext)
 
@@ -545,11 +545,11 @@ class ifiledatatests(basetestcase):
             f.size(3)
 
         self.assertEqual(f.revision(node0), fulltext0)
-        self.assertEqual(f.revision(node0, raw=True), fulltext0)
+        self.assertEqual(f.rawdata(node0), fulltext0)
         self.assertEqual(f.revision(node1), fulltext1)
-        self.assertEqual(f.revision(node1, raw=True), fulltext1)
+        self.assertEqual(f.rawdata(node1), fulltext1)
         self.assertEqual(f.revision(node2), fulltext2)
-        self.assertEqual(f.revision(node2, raw=True), fulltext2)
+        self.assertEqual(f.rawdata(node2), fulltext2)
 
         with self.assertRaises(error.LookupError):
             f.revision(b'\x01' * 20)
@@ -819,9 +819,9 @@ class ifiledatatests(basetestcase):
         self.assertEqual(f.size(2), len(fulltext2))
 
         self.assertEqual(f.revision(node1), stored1)
-        self.assertEqual(f.revision(node1, raw=True), stored1)
+        self.assertEqual(f.rawdata(node1), stored1)
         self.assertEqual(f.revision(node2), stored2)
-        self.assertEqual(f.revision(node2, raw=True), stored2)
+        self.assertEqual(f.rawdata(node2), stored2)
 
         self.assertEqual(f.read(node1), fulltext1)
         self.assertEqual(f.read(node2), fulltext2)
@@ -862,10 +862,10 @@ class ifiledatatests(basetestcase):
         self.assertEqual(f.size(1), len(fulltext1))
 
         self.assertEqual(f.revision(node0), stored0)
-        self.assertEqual(f.revision(node0, raw=True), stored0)
+        self.assertEqual(f.rawdata(node0), stored0)
 
         self.assertEqual(f.revision(node1), stored1)
-        self.assertEqual(f.revision(node1, raw=True), stored1)
+        self.assertEqual(f.rawdata(node1), stored1)
 
         self.assertEqual(f.read(node0), fulltext0)
         self.assertEqual(f.read(node1), fulltext1)
@@ -896,10 +896,10 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(error.StorageError):
             f.revision(node1)
 
-        # raw=True still verifies because there are no special storage
+        # rawdata() still verifies because there are no special storage
         # settings.
         with self.assertRaises(error.StorageError):
-            f.revision(node1, raw=True)
+            f.rawdata(node1)
 
         # read() behaves like revision().
         with self.assertRaises(error.StorageError):
@@ -909,7 +909,7 @@ class ifiledatatests(basetestcase):
         # reading/validating the fulltext to return rename metadata.
 
     def testbadnoderevisionraw(self):
-        # Like above except we test revision(raw=True) first to isolate
+        # Like above except we test rawdata() first to isolate
         # revision caching behavior.
         f = self._makefilefn()
 
@@ -924,10 +924,10 @@ class ifiledatatests(basetestcase):
                                    rawtext=fulltext1)
 
         with self.assertRaises(error.StorageError):
-            f.revision(node1, raw=True)
+            f.rawdata(node1)
 
         with self.assertRaises(error.StorageError):
-            f.revision(node1, raw=True)
+            f.rawdata(node1)
 
     def testbadnoderevisionraw(self):
         # Like above except we test read() first to isolate revision caching
@@ -1002,13 +1002,13 @@ class ifiledatatests(basetestcase):
             f.revision(1)
 
         with self.assertRaises(error.CensoredNodeError):
-            f.revision(1, raw=True)
+            f.rawdata(1)
 
         with self.assertRaises(error.CensoredNodeError):
             f.read(1)
 
     def testcensoredrawrevision(self):
-        # Like above, except we do the revision(raw=True) request first to
+        # Like above, except we do the rawdata() request first to
         # isolate revision caching behavior.
 
         f = self._makefilefn()
@@ -1027,7 +1027,7 @@ class ifiledatatests(basetestcase):
                                    censored=True)
 
         with self.assertRaises(error.CensoredNodeError):
-            f.revision(1, raw=True)
+            f.rawdata(1)
 
 class ifilemutationtests(basetestcase):
     """Generic tests for the ifilemutation interface.
