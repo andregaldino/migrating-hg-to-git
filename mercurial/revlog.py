@@ -1621,6 +1621,7 @@ class revlog(object):
         cachedrev = None
         flags = None
         rawtext = None
+        basetext = None
         if node == nullid:
             return ""
         if self._revisioncache:
@@ -1648,7 +1649,7 @@ class revlog(object):
 
             chain, stopped = self._deltachain(rev, stoprev=cachedrev)
             if stopped:
-                rawtext = self._revisioncache[2]
+                basetext = self._revisioncache[2]
 
             # drop cache to save memory
             self._revisioncache = None
@@ -1659,11 +1660,12 @@ class revlog(object):
                 targetsize = 4 * rawsize
 
             bins = self._chunks(chain, df=_df, targetsize=targetsize)
-            if rawtext is None:
-                rawtext = bytes(bins[0])
+            if basetext is None:
+                basetext = bytes(bins[0])
                 bins = bins[1:]
 
-            rawtext = mdiff.patches(rawtext, bins)
+            rawtext = mdiff.patches(basetext, bins)
+            del basetext # let us have a chance to free memory early
             self._revisioncache = (node, rev, rawtext)
 
         if flags is None:
