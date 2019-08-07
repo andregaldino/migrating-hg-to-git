@@ -1611,6 +1611,7 @@ class revlog(object):
         return self._revisiondata(nodeorrev, _df, raw=raw)
 
     def _revisiondata(self, nodeorrev, _df=None, raw=False):
+        # deal with <nodeorrev> argument type
         if isinstance(nodeorrev, int):
             rev = nodeorrev
             node = self.node(rev)
@@ -1618,19 +1619,31 @@ class revlog(object):
             node = nodeorrev
             rev = None
 
+        # fast path the special `nullid` rev
         if node == nullid:
             return ""
 
+        # revision in the cache (could be useful to apply delta)
         cachedrev = None
+        # the revlog's flag for this revision
+        # (usually alter its state or content)
         flags = None
+        # The text as stored inside the revlog. Might be the revision or might
+        # need to be processed to retrieve the revision.
         rawtext = None
+        # An intermediate text to apply deltas to
         basetext = None
+
+        # Check if we have the entry in cache
+        # The cache entry looks like (node, rev, rawtext)
         if self._revisioncache:
             if self._revisioncache[0] == node:
                 # _cache only stores rawtext
                 # rawtext is reusable. but we might need to run flag processors
                 rawtext = self._revisioncache[2]
                 if raw:
+                    # if we don't want to process the raw text and that raw
+                    # text is cached, we can exit early.
                     return rawtext
                 # duplicated, but good for perf
                 if rev is None:
