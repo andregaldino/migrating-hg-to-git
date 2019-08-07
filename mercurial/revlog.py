@@ -1651,6 +1651,9 @@ class revlog(object):
         treated as raw data when applying flag transforms. 'raw' should be set
         to True when generating changegroups or in debug commands.
         """
+        return self._revisiondata(nodeorrev, _df, raw=raw)
+
+    def _revisiondata(self, nodeorrev, _df=None, raw=False):
         if isinstance(nodeorrev, int):
             rev = nodeorrev
             node = self.node(rev)
