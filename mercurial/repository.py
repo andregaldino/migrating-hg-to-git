@@ -1202,7 +1202,7 @@ class imanifeststorage(interfaceutil.Interface):
     def rawsize(rev):
         """Obtain the size of tracked data.
 
-        Is equivalent to ``len(m.revision(node, raw=True))``.
+        Is equivalent to ``len(m.rawdata(node))``.
 
         TODO this method is only used by upgrade code and may be removed.
         """
