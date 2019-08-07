@@ -1626,8 +1626,10 @@ class revlog(object):
         if self._revisioncache:
             if self._revisioncache[0] == node:
                 # _cache only stores rawtext
+                # rawtext is reusable. but we might need to run flag processors
+                rawtext = self._revisioncache[2]
                 if raw:
-                    return self._revisioncache[2]
+                    return rawtext
                 # duplicated, but good for perf
                 if rev is None:
                     rev = self.rev(node)
@@ -1635,9 +1637,7 @@ class revlog(object):
                     flags = self.flags(rev)
                 # no extra flags set, no flag processor runs, text = rawtext
                 if flags == REVIDX_DEFAULT_FLAGS:
-                    return self._revisioncache[2]
-                # rawtext is reusable. need to run flag processor
-                rawtext = self._revisioncache[2]
+                    return rawtext
 
             cachedrev = self._revisioncache[1]
 
