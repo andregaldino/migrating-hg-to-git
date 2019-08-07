@@ -597,6 +597,10 @@ class ifiledata(interfaceutil.Interface):
         consumers should use ``read()`` to obtain the actual file data.
         """
 
+    def rawdata(node):
+        """Obtain raw data for a node.
+        """
+
     def read(node):
         """Resolve file fulltext data.
 
