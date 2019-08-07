@@ -87,6 +87,8 @@ class flagprocessorsmixin(object):
     See the documentation of the ``_processflags`` method for details.
     """
 
+    _flagserrorclass = error.RevlogError
+
     def _processflags(self, text, flags, operation, raw=False):
         """Inspect revision data flags and applies transforms defined by
         registered flag processors.
@@ -117,8 +119,8 @@ class flagprocessorsmixin(object):
                                          operation)
         # Check all flags are known.
         if flags & ~REVIDX_KNOWN_FLAGS:
-            raise error.RevlogError(_("incompatible revision flag '%#x'") %
-                                    (flags & ~REVIDX_KNOWN_FLAGS))
+            raise self._flagserrorclass(_("incompatible revision flag '%#x'") %
+                                        (flags & ~REVIDX_KNOWN_FLAGS))
         validatehash = True
         # Depending on the operation (read or write), the order might be
         # reversed due to non-commutative transforms.
@@ -134,7 +136,7 @@ class flagprocessorsmixin(object):
 
                 if flag not in self._flagprocessors:
                     message = _("missing processor for flag '%#x'") % (flag)
-                    raise error.RevlogError(message)
+                    raise self._flagserrorclass(message)
 
                 processor = self._flagprocessors[flag]
                 if processor is not None:
