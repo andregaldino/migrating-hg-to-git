@@ -1164,6 +1164,9 @@ class imanifeststorage(interfaceutil.Interface):
     def revision(node, _df=None, raw=False):
         """Obtain fulltext data for a node."""
 
+    def rawdata(node, _df=None):
+        """Obtain raw data for a node."""
+
     def revdiff(rev1, rev2):
         """Obtain a delta between two revision numbers.
 

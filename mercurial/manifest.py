@@ -1620,6 +1620,9 @@ class manifestrevlog(object):
     def revision(self, node, _df=None, raw=False):
         return self._revlog.revision(node, _df=_df, raw=raw)
 
+    def rawdata(self, node, _df=None):
+        return self._revlog.rawdata(node, _df=_df)
+
     def revdiff(self, rev1, rev2):
         return self._revlog.revdiff(rev1, rev2)
 
