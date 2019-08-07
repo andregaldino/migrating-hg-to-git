@@ -657,8 +657,7 @@ class sqlitefilestore(object):
             # patch operation.
             if baserev != nullrev and self.iscensored(baserev):
                 hlen = struct.calcsize('>lll')
-                oldlen = len(self.revision(deltabase, raw=True,
-                                           _verifyhash=False))
+                oldlen = len(self.rawdata(deltabase, _verifyhash=False))
                 newlen = len(delta) - hlen
 
                 if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
@@ -667,7 +666,7 @@ class sqlitefilestore(object):
 
             if (not (storeflags & FLAG_CENSORED)
                 and storageutil.deltaiscensored(
-                    delta, baserev, lambda x: len(self.revision(x, raw=True)))):
+                    delta, baserev, lambda x: len(self.rawdata(x)))):
                 storeflags |= FLAG_CENSORED
 
             linkrev = linkmapper(linknode)
@@ -720,7 +719,7 @@ class sqlitefilestore(object):
 
         # This restriction is cargo culted from revlogs and makes no sense for
         # SQLite, since columns can be resized at will.
-        if len(tombstone) > len(self.revision(censornode, raw=True)):
+        if len(tombstone) > len(self.rawdata(censornode)):
             raise error.Abort(_('censor tombstone must be no longer than '
                                 'censored data'))
 
