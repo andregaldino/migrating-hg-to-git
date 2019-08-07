@@ -169,7 +169,7 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
 # Wrapping may also be applied by remotefilelog
 def filelogrenamed(orig, self, node):
     if _islfs(self, node):
-        rawtext = self._revlog.revision(node, raw=True)
+        rawtext = self._revlog.rawdata(node)
         if not rawtext:
             return False
         metadata = pointer.deserialize(rawtext)
@@ -183,7 +183,7 @@ def filelogrenamed(orig, self, node):
 def filelogsize(orig, self, rev):
     if _islfs(self, rev=rev):
         # fast path: use lfs metadata to answer size
-        rawtext = self._revlog.revision(rev, raw=True)
+        rawtext = self._revlog.rawdata(rev)
         metadata = pointer.deserialize(rawtext)
         return int(metadata['size'])
     return orig(self, rev)
