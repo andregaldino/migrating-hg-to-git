@@ -326,6 +326,9 @@ class filestorage(object):
 
         return text
 
+    def rawdata(self, nodeorrev):
+        return self.revision(raw=True)
+
     def read(self, node):
         validatenode(node)
 
