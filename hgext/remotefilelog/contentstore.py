@@ -264,7 +264,7 @@ class manifestrevlogstore(object):
         self._repackstartlinkrev = 0
 
     def get(self, name, node):
-        return self._revlog(name).revision(node, raw=True)
+        return self._revlog(name).rawdata(node)
 
     def getdelta(self, name, node):
         revision = self.get(name, node)

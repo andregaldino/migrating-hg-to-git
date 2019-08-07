@@ -569,7 +569,7 @@ class fileserverclient(object):
             node = bin(id)
             rlog = self.repo.file(file)
             if rlog.flags(node) & revlog.REVIDX_EXTSTORED:
-                text = rlog.revision(node, raw=True)
+                text = rlog.rawdata(node)
                 p = _lfsmod.pointer.deserialize(text)
                 oid = p.oid()
                 if not store.has(oid):

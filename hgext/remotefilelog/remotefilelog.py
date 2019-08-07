@@ -262,7 +262,7 @@ class remotefilelog(object):
                 revision = None
                 delta = self.revdiff(basenode, node)
             else:
-                revision = self.revision(node, raw=True)
+                revision = self.rawdata(node)
                 delta = None
             yield revlog.revlogrevisiondelta(
                 node=node,
@@ -277,8 +277,8 @@ class remotefilelog(object):
                 )
 
     def revdiff(self, node1, node2):
-        return mdiff.textdiff(self.revision(node1, raw=True),
-                              self.revision(node2, raw=True))
+        return mdiff.textdiff(self.rawdata(node1),
+                              self.rawdata(node2))
 
     def lookup(self, node):
         if len(node) == 40:

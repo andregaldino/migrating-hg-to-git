@@ -335,7 +335,7 @@ def createfileblob(filectx):
         text = filectx.data()
     else:
         # lfs, read raw revision data
-        text = flog.revision(frev, raw=True)
+        text = flog.rawdata(frev)
 
     repo = filectx._repo
 
