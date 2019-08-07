@@ -113,7 +113,7 @@ def extsetup(ui):
         exchange._bundlespeccontentopts[k][b"cg.version"] = b"03"
 
     # Register flag processors for each extension
-    revlog.addflagprocessor(
+    flagutil.addflagprocessor(
         REVIDX_NOOP,
         (
             noopdonothing,
@@ -121,7 +121,7 @@ def extsetup(ui):
             validatehash,
         )
     )
-    revlog.addflagprocessor(
+    flagutil.addflagprocessor(
         REVIDX_BASE64,
         (
             b64decode,
@@ -129,7 +129,7 @@ def extsetup(ui):
             bypass,
         ),
     )
-    revlog.addflagprocessor(
+    flagutil.addflagprocessor(
         REVIDX_GZIP,
         (
             gzipdecompress,

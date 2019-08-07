@@ -16,6 +16,7 @@ from mercurial import (
 
 from mercurial.revlogutils import (
     deltas,
+    flagutil,
 )
 
 # TESTTMP is optional. This makes it convenient to run without run-tests.py
@@ -56,7 +57,7 @@ def rawprocessor(self, rawtext):
     # can be used to verify hash.
     return False
 
-revlog.addflagprocessor(revlog.REVIDX_EXTSTORED,
+flagutil.addflagprocessor(revlog.REVIDX_EXTSTORED,
                         (readprocessor, writeprocessor, rawprocessor))
 
 # Utilities about reading and appending revlog

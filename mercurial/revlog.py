@@ -125,33 +125,6 @@ ellipsisprocessor = (
     ellipsisrawprocessor,
 )
 
-def addflagprocessor(flag, processor):
-    """Register a flag processor on a revision data flag.
-
-    Invariant:
-    - Flags need to be defined in REVIDX_KNOWN_FLAGS and REVIDX_FLAGS_ORDER,
-      and REVIDX_RAWTEXT_CHANGING_FLAGS if they can alter rawtext.
-    - Only one flag processor can be registered on a specific flag.
-    - flagprocessors must be 3-tuples of functions (read, write, raw) with the
-      following signatures:
-          - (read)  f(self, rawtext) -> text, bool
-          - (write) f(self, text) -> rawtext, bool
-          - (raw)   f(self, rawtext) -> bool
-      "text" is presented to the user. "rawtext" is stored in revlog data, not
-      directly visible to the user.
-      The boolean returned by these transforms is used to determine whether
-      the returned text can be used for hash integrity checking. For example,
-      if "write" returns False, then "text" is used to generate hash. If
-      "write" returns True, that basically means "rawtext" returned by "write"
-      should be used to generate hash. Usually, "write" and "read" return
-      different booleans. And "raw" returns a same boolean as "write".
-
-      Note: The 'raw' transform is used for changegroup generation and in some
-      debug commands. In this case the transform only indicates whether the
-      contents can be used for hash integrity checks.
-    """
-    flagutil.insertflagprocessor(flag, processor, flagutil.flagprocessors)
-
 def getoffset(q):
     return int(q >> 16)
 
@@ -2609,7 +2582,7 @@ class revlog(object):
             #
             # L1 should be equal to L2. L3 could be different from them.
             # "text" may or may not affect commit hash depending on flag
-            # processors (see revlog.addflagprocessor).
+            # processors (see flagutil.addflagprocessor).
             #
             #              | common  | rename | meta  | ext
             # -------------------------------------------------
