@@ -38,13 +38,6 @@ from .i18n import _
 from .revlogutils.constants import (
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
-    REVIDX_DEFAULT_FLAGS,
-    REVIDX_ELLIPSIS,
-    REVIDX_EXTSTORED,
-    REVIDX_FLAGS_ORDER,
-    REVIDX_ISCENSORED,
-    REVIDX_KNOWN_FLAGS,
-    REVIDX_RAWTEXT_CHANGING_FLAGS,
     REVLOGV0,
     REVLOGV1,
     REVLOGV1_FLAGS,
@@ -53,6 +46,15 @@ from .revlogutils.constants import (
     REVLOG_DEFAULT_FLAGS,
     REVLOG_DEFAULT_FORMAT,
     REVLOG_DEFAULT_VERSION,
+)
+from .revlogutils.flagutil import (
+    REVIDX_DEFAULT_FLAGS,
+    REVIDX_ELLIPSIS,
+    REVIDX_EXTSTORED,
+    REVIDX_FLAGS_ORDER,
+    REVIDX_ISCENSORED,
+    REVIDX_KNOWN_FLAGS,
+    REVIDX_RAWTEXT_CHANGING_FLAGS,
 )
 from .thirdparty import (
     attr,

@@ -31,6 +31,7 @@ allowsymbolimports = (
     'mercurial.node',
     # for revlog to re-export constant to extensions
     'mercurial.revlogutils.constants',
+    'mercurial.revlogutils.flagutil',
     # for cffi modules to re-export pure functions
     'mercurial.pure.base85',
     'mercurial.pure.bdiff',
