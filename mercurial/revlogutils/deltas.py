@@ -925,7 +925,7 @@ class deltacomputer(object):
             header = mdiff.replacediffheader(revlog.rawsize(base), len(t))
             delta = header + t
         else:
-            ptext = revlog.revision(base, _df=fh, raw=True)
+            ptext = revlog.rawdata(base, _df=fh)
             delta = mdiff.textdiff(ptext, t)
 
         return delta
