@@ -1053,7 +1053,7 @@ class filectx(basefilectx):
                        filelog=self._filelog, changeid=changeid)
 
     def rawdata(self):
-        return self._filelog.revision(self._filenode, raw=True)
+        return self._filelog.rawdata(self._filenode)
 
     def rawflags(self):
         """low-level revlog flags"""
