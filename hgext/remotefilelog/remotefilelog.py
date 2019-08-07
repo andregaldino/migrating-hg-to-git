@@ -324,6 +324,9 @@ class remotefilelog(object):
         text, verifyhash = self._processflags(rawtext, flags, 'read')
         return text
 
+    def rawdata(self, node):
+        return self.revision(node, raw=False)
+
     def _processflags(self, text, flags, operation, raw=False):
         # mostly copied from hg/mercurial/revlog.py
         validatehash = True
