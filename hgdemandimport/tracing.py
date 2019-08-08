@@ -12,6 +12,7 @@ import os
 
 _pipe = None
 _checked = False
+_session = 'none'
 
 def _isactive():
     global _pipe, _session, _checked
