@@ -91,7 +91,7 @@ class simplefilestoreproblem(object):
     node = attr.ib(default=None)
 
 @interfaceutil.implementer(repository.ifilestorage)
-class filestorage(object):
+class filestorage(flagutil.flagprocessorsmixin):
     """Implements storage for a tracked path.
 
     Data is stored in the VFS in a directory corresponding to the tracked
@@ -101,6 +101,8 @@ class filestorage(object):
 
     Fulltext data is stored in files having names of the node.
     """
+
+    _flagserrorclass = simplestoreerror
 
     def __init__(self, svfs, path):
         self._svfs = svfs
@@ -118,6 +120,8 @@ class filestorage(object):
         self._indexbyrev = {}
         self._index = []
         self._refreshindex()
+
+        self._flagprocessors = dict(flagutil.flagprocessors)
 
     def _refreshindex(self):
         self._indexbynode.clear()
@@ -262,45 +266,6 @@ class filestorage(object):
             return False
 
         return True
-
-    def _processflags(self, text, flags, operation, raw=False):
-        if flags == 0:
-            return text, True
-
-        if flags & ~flagutil.REVIDX_KNOWN_FLAGS:
-            raise simplestoreerror(_("incompatible revision flag '%#x'") %
-                                   (flags & ~flagutil.REVIDX_KNOWN_FLAGS))
-
-        validatehash = True
-        # Depending on the operation (read or write), the order might be
-        # reversed due to non-commutative transforms.
-        orderedflags = revlog.REVIDX_FLAGS_ORDER
-        if operation == 'write':
-            orderedflags = reversed(orderedflags)
-
-        for flag in orderedflags:
-            # If a flagprocessor has been registered for a known flag, apply the
-            # related operation transform and update result tuple.
-            if flag & flags:
-                vhash = True
-
-                if flag not in revlog._flagprocessors:
-                    message = _("missing processor for flag '%#x'") % (flag)
-                    raise simplestoreerror(message)
-
-                processor = revlog._flagprocessors[flag]
-                if processor is not None:
-                    readtransform, writetransform, rawtransform = processor
-
-                    if raw:
-                        vhash = rawtransform(self, text)
-                    elif operation == 'read':
-                        text, vhash = readtransform(self, text)
-                    else:  # write operation
-                        text, vhash = writetransform(self, text)
-                validatehash = validatehash and vhash
-
-        return text, validatehash
 
     def checkhash(self, text, node, p1=None, p2=None, rev=None):
         if p1 is None and p2 is None:
