@@ -1030,7 +1030,7 @@ test for --time
   # Ran 1 tests, 0 skipped, 0 failed.
   # Producing time report
   start   end     cuser   csys    real      Test
-  \s*[\d\.]{5,8}   \s*[\d\.]{5,8}   \s*[\d\.]{5,8}   \s*[\d\.]{5,8}   \s*[\d\.]{5,8}   test-success.t (re)
+  \s*[\d\.]{5,8} \s*[\d\.]{5,8} \s*[\d\.]{5,8} \s*[\d\.]{5,8} \s*[\d\.]{5,8}   test-success.t (re)
 
 test for --time with --job enabled
 ====================================
@@ -1041,7 +1041,7 @@ test for --time with --job enabled
   # Ran 1 tests, 0 skipped, 0 failed.
   # Producing time report
   start   end     cuser   csys    real      Test
-  \s*[\d\.]{5,8}   \s*[\d\.]{5,8}   \s*[\d\.]{5,8}   \s*[\d\.]{5,8}   \s*[\d\.]{5,8}   test-success.t (re)
+  \s*[\d\.]{5,8} \s*[\d\.]{5,8} \s*[\d\.]{5,8} \s*[\d\.]{5,8} \s*[\d\.]{5,8}   test-success.t (re)
 
 Skips
 ================
