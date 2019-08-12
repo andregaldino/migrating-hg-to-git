@@ -36,6 +36,15 @@ substituted into the command::
   {first}   The 1-based line number of the first line in the modified range
   {last}    The 1-based line number of the last line in the modified range
 
+Deleted sections of a file will be ignored by :linerange, because there is no
+corresponding line range in the version being fixed.
+
+By default, tools that set :linerange will only be executed if there is at least
+one changed line range. This is meant to prevent accidents like running a code
+formatter in such a way that it unexpectedly reformats the whole file. If such a
+tool needs to operate on unchanged files, it should set the :skipclean suboption
+to false.
+
 The :pattern suboption determines which files will be passed through each
 configured tool. See :hg:`help patterns` for possible values. If there are file
 arguments to :hg:`fix`, the intersection of these patterns is used.
@@ -126,6 +135,7 @@ from mercurial.node import wdirrev
 
 from mercurial.utils import (
     procutil,
+    stringutil,
 )
 
 from mercurial import (
@@ -162,6 +172,7 @@ FIXER_ATTRS = {
     'pattern': None,
     'priority': 0,
     'metadata': False,
+    'skipclean': 'true',
 }
 
 for key, default in FIXER_ATTRS.items():
@@ -713,6 +724,7 @@ def getfixers(ui):
             setattr(fixers[name], pycompat.sysstr('_' + key),
                     attrs.get(key, default))
         fixers[name]._priority = int(fixers[name]._priority)
+        fixers[name]._skipclean = stringutil.parsebool(fixers[name]._skipclean)
         # Don't use a fixer if it has no pattern configured. It would be
         # dangerous to let it affect all files. It would be pointless to let it
         # affect no files. There is no reasonable subset of files to use as the
@@ -756,7 +768,7 @@ class Fixer(object):
                         {'rootpath': path, 'basename': os.path.basename(path)})]
         if self._linerange:
             ranges = rangesfn()
-            if not ranges:
+            if self._skipclean and not ranges:
                 # No line ranges to fix, so don't run the fixer.
                 return None
             for first, last in ranges:

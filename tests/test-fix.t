@@ -147,6 +147,15 @@ Help text for fix.
     {first}   The 1-based line number of the first line in the modified range
     {last}    The 1-based line number of the last line in the modified range
   
+  Deleted sections of a file will be ignored by :linerange, because there is no
+  corresponding line range in the version being fixed.
+  
+  By default, tools that set :linerange will only be executed if there is at
+  least one changed line range. This is meant to prevent accidents like running
+  a code formatter in such a way that it unexpectedly reformats the whole file.
+  If such a tool needs to operate on unchanged files, it should set the
+  :skipclean suboption to false.
+  
   The :pattern suboption determines which files will be passed through each
   configured tool. See 'hg help patterns' for possible values. If there are file
   arguments to 'hg fix', the intersection of these patterns is used.
@@ -1354,5 +1363,36 @@ The way we invoke matching must not prohibit this.
   fixed
   $ cat baz_file
   fixed
+
+  $ cd ..
+
+Tools should be able to run on unchanged files, even if they set :linerange.
+This includes a corner case where deleted chunks of a file are not considered
+changes.
+
+  $ hg init skipclean
+  $ cd skipclean
+
+  $ printf "a\nb\nc\n" > foo
+  $ printf "a\nb\nc\n" > bar
+  $ printf "a\nb\nc\n" > baz
+  $ hg commit -Aqm "base"
+
+  $ printf "a\nc\n" > foo
+  $ printf "a\nx\nc\n" > baz
+
+  $ hg fix --working-dir foo bar baz \
+  >        --config 'fix.changedlines:command=printf "Line ranges:\n"; ' \
+  >        --config 'fix.changedlines:linerange=printf "{first} through {last}\n"; ' \
+  >        --config 'fix.changedlines:pattern=rootglob:**' \
+  >        --config 'fix.changedlines:skipclean=false'
+
+  $ cat foo
+  Line ranges:
+  $ cat bar
+  Line ranges:
+  $ cat baz
+  Line ranges:
+  2 through 2
 
   $ cd ..
