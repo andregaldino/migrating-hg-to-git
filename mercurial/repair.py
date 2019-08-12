@@ -392,9 +392,7 @@ def rebuildfncache(ui, repo):
 
     with repo.lock():
         fnc = repo.store.fncache
-        # Trigger load of fncache.
-        if 'irrelevant' in fnc:
-            pass
+        fnc.ensureloaded(warn=ui.warn)
 
         oldentries = set(fnc.entries)
         newentries = set()

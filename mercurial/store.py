@@ -458,7 +458,15 @@ class fncache(object):
         # set of new additions to fncache
         self.addls = set()
 
-    def _load(self):
+    def ensureloaded(self, warn=None):
+        '''read the fncache file if not already read.
+
+        If the file on disk is corrupted, raise. If warn is provided,
+        warn and keep going instead.'''
+        if self.entries is None:
+            self._load(warn)
+
+    def _load(self, warn=None):
         '''fill the entries from the fncache file'''
         self._dirty = False
         try:
@@ -482,20 +490,27 @@ class fncache(object):
                 pass
 
         if chunk:
-            raise error.Abort(_("fncache does not ends with a newline"),
-                              hint=_("use 'hg debugrebuildfncache' to rebuild"
-                                     " the fncache"))
-        self._checkentries(fp)
+            msg = _("fncache does not ends with a newline")
+            if warn:
+                warn(msg + '\n')
+            else:
+                raise error.Abort(msg,
+                                  hint=_("use 'hg debugrebuildfncache' to "
+                                         "rebuild the fncache"))
+        self._checkentries(fp, warn)
         fp.close()
 
-    def _checkentries(self, fp):
+    def _checkentries(self, fp, warn):
         """ make sure there is no empty string in entries """
         if '' in self.entries:
             fp.seek(0)
             for n, line in enumerate(util.iterfile(fp)):
                 if not line.rstrip('\n'):
                     t = _('invalid entry in fncache, line %d') % (n + 1)
-                    raise error.Abort(t)
+                    if warn:
+                        warn(t + '\n')
+                    else:
+                        raise error.Abort(t)
 
     def write(self, tr):
         if self._dirty:

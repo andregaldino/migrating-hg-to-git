@@ -435,16 +435,18 @@ A single missing file should get restored, an extra file should be removed
   data/.bar.i
   data/foo.i
 
-debugrebuildfncache fails to recover from truncated line in fncache
+debugrebuildfncache recovers from truncated line in fncache
 
   $ printf a > .hg/store/fncache
   $ hg debugrebuildfncache
-  abort: fncache does not ends with a newline
-  (use 'hg debugrebuildfncache' to rebuild the fncache)
-  [255]
+  fncache does not ends with a newline
+  adding data/.bar.i
+  adding data/foo.i
+  2 items added, 0 removed from fncache
 
   $ cat .hg/store/fncache | sort
-  a
+  data/.bar.i
+  data/foo.i
 
   $ cd ..
 
