@@ -43,6 +43,9 @@ processing phase stable.
   > [extensions]
   > fix =
   > [fix]
+  > metadatafalse:command=cat $TESTTMP/missing
+  > metadatafalse:pattern=metadatafalse
+  > metadatafalse:metadata=false
   > missing:command=cat $TESTTMP/missing
   > missing:pattern=missing
   > missing:metadata=true
@@ -65,6 +68,7 @@ some write back to the file.
   $ hg init repo
   $ cd repo
 
+  $ printf "old content\n" > metadatafalse
   $ printf "old content\n" > invalid
   $ printf "old content\n" > missing
   $ printf "old content\n" > valid
@@ -72,15 +76,20 @@ some write back to the file.
 
   $ hg fix -w
   ignored invalid output from fixer tool: invalid
+  fixed metadatafalse in revision 2147483647 using metadatafalse
   ignored invalid output from fixer tool: missing
   fixed valid in revision 2147483647 using valid
   saw "key" 1 times
   fixed 1 files with valid
   fixed the working copy
 
-  $ cat missing invalid valid
+  $ cat metadatafalse
+  new content
+  $ cat missing
   old content
+  $ cat invalid
   old content
+  $ cat valid
   new content
 
   $ cd ..

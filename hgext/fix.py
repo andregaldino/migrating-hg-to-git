@@ -171,7 +171,7 @@ FIXER_ATTRS = {
     'linerange': None,
     'pattern': None,
     'priority': 0,
-    'metadata': False,
+    'metadata': 'false',
     'skipclean': 'true',
 }
 
@@ -724,6 +724,7 @@ def getfixers(ui):
             setattr(fixers[name], pycompat.sysstr('_' + key),
                     attrs.get(key, default))
         fixers[name]._priority = int(fixers[name]._priority)
+        fixers[name]._metadata = stringutil.parsebool(fixers[name]._metadata)
         fixers[name]._skipclean = stringutil.parsebool(fixers[name]._skipclean)
         # Don't use a fixer if it has no pattern configured. It would be
         # dangerous to let it affect all files. It would be pointless to let it
