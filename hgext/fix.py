@@ -563,8 +563,8 @@ def fixfile(ui, repo, opts, fixers, fixctx, path, basectxs):
     newdata = fixctx[path].data()
     for fixername, fixer in fixers.iteritems():
         if fixer.affects(opts, fixctx, path):
-            rangesfn = lambda: lineranges(opts, path, basectxs, fixctx, newdata)
-            command = fixer.command(ui, path, rangesfn)
+            ranges = lineranges(opts, path, basectxs, fixctx, newdata)
+            command = fixer.command(ui, path, ranges)
             if command is None:
                 continue
             ui.debug('subprocess: %s\n' % (command,))
@@ -758,7 +758,7 @@ class Fixer(object):
         """Should the stdout of this fixer start with JSON and a null byte?"""
         return self._metadata
 
-    def command(self, ui, path, rangesfn):
+    def command(self, ui, path, ranges):
         """A shell command to use to invoke this fixer on the given file/lines
 
         May return None if there is no appropriate command to run for the given
@@ -768,7 +768,6 @@ class Fixer(object):
         parts = [expand(ui, self._command,
                         {'rootpath': path, 'basename': os.path.basename(path)})]
         if self._linerange:
-            ranges = rangesfn()
             if self._skipclean and not ranges:
                 # No line ranges to fix, so don't run the fixer.
                 return None
