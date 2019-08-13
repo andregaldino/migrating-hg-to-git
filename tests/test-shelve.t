@@ -1272,15 +1272,21 @@ Abort unshelve while merging (issue5123)
   > B
   > C
   > EOF
-  $ hg shelve
+  $ echo > garbage
+  $ hg st
+  M foo
+  ? garbage
+  $ hg shelve --unknown
   shelved as default
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ cat foo
   B
   $ hg unshelve -i <<EOF
   > y
   > y
   > n
+  > y
+  > y
   > EOF
   unshelving change 'default'
   rebasing shelved changes
@@ -1292,15 +1298,28 @@ Abort unshelve while merging (issue5123)
   @@ -1,1 +1,2 @@
   +A
    B
-  record change 1/2 to 'foo'?
+  record change 1/3 to 'foo'?
   (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,1 +2,2 @@
    B
   +C
-  record change 2/2 to 'foo'?
+  record change 2/3 to 'foo'?
   (enter ? for help) [Ynesfdaq?] n
   
+  diff --git a/garbage b/garbage
+  new file mode 100644
+  examine changes to 'garbage'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +
+  record change 3/3 to 'garbage'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  $ hg st
+  M foo
+  ? garbage
   $ cat foo
   A
   B
