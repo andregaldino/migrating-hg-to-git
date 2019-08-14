@@ -31,11 +31,14 @@ data_non_inlined = (
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
     )
 
+class fakechangelog(object):
+    def __init__(self, idx):
+        self.index = idx
+
 class fakerepo(object):
     def __init__(self, idx):
         """Just make so that self.changelog.index is the given idx."""
-        self.index = idx
-        self.changelog = self
+        self.changelog = fakechangelog(idx)
 
 @unittest.skipIf(PartialDiscovery is None or cparsers is None,
                  "rustext or the C Extension parsers module "
