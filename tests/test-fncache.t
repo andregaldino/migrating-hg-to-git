@@ -435,6 +435,19 @@ A single missing file should get restored, an extra file should be removed
   data/.bar.i
   data/foo.i
 
+debugrebuildfncache recovers from truncated line in fncache
+
+  $ printf a > .hg/store/fncache
+  $ hg debugrebuildfncache
+  fncache does not ends with a newline
+  adding data/.bar.i
+  adding data/foo.i
+  2 items added, 0 removed from fncache
+
+  $ cat .hg/store/fncache | sort
+  data/.bar.i
+  data/foo.i
+
   $ cd ..
 
 Try a simple variation without dotencode to ensure fncache is ignorant of encoding
