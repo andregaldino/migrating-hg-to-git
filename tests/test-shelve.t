@@ -1475,3 +1475,7 @@ Abort unshelve while merging (issue5123)
   record this change to 'bar2'?
   (enter ? for help) [Ynesfdaq?] y
   
+-- test for --interactive --keep
+  $ hg unshelve -i --keep
+  abort: --keep on --interactive is not yet supported
+  [255]

@@ -942,6 +942,8 @@ def dounshelve(ui, repo, *shelved, **opts):
     if opts.get("name"):
         shelved.append(opts["name"])
 
+    if interactive and opts.get('keep'):
+        raise error.Abort(_('--keep on --interactive is not yet supported'))
     if abortf or continuef:
         if abortf and continuef:
             raise error.Abort(_('cannot use both abort and continue'))
