@@ -28,7 +28,6 @@ from . import (
     branchmap,
     bundle2,
     changegroup,
-    changelog,
     color,
     context,
     dirstate,
@@ -41,7 +40,6 @@ from . import (
     filelog,
     hook,
     lock as lockmod,
-    manifest,
     match as matchmod,
     merge as mergemod,
     mergeutil,
@@ -1304,14 +1302,11 @@ class localrepository(object):
 
     @storecache('00changelog.i')
     def changelog(self):
-        return changelog.changelog(self.svfs,
-                                   trypending=txnutil.mayhavepending(self.root))
+        return self.store.changelog(txnutil.mayhavepending(self.root))
 
     @storecache('00manifest.i')
     def manifestlog(self):
-        rootstore = manifest.manifestrevlog(self.svfs)
-        return manifest.manifestlog(self.svfs, self, rootstore,
-                                    self._storenarrowmatch)
+        return self.store.manifestlog(self, self._storenarrowmatch)
 
     @repofilecache('dirstate')
     def dirstate(self):

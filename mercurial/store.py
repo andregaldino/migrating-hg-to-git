@@ -15,7 +15,9 @@ import stat
 
 from .i18n import _
 from . import (
+    changelog,
     error,
+    manifest,
     node,
     policy,
     pycompat,
@@ -378,6 +380,14 @@ class basicstore(object):
                         visit.append(fp)
         l.sort()
         return l
+
+    def changelog(self, trypending):
+        return changelog.changelog(self.vfs, trypending=trypending)
+
+    def manifestlog(self, repo, storenarrowmatch):
+        rootstore = manifest.manifestrevlog(self.vfs)
+        return manifest.manifestlog(
+            self.vfs, repo, rootstore, storenarrowmatch)
 
     def datafiles(self, matcher=None):
         return self._walk('data', True) + self._walk('meta', True)
