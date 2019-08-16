@@ -10,17 +10,15 @@
 //! This is a Rust counterpart to the `partialdiscovery` class of
 //! `mercurial.setdiscovery`
 
-extern crate rand;
-extern crate rand_pcg;
-use self::rand::seq::SliceRandom;
-use self::rand::{thread_rng, RngCore, SeedableRng};
 use super::{Graph, GraphError, Revision, NULL_REVISION};
 use crate::ancestors::MissingAncestors;
 use crate::dagops;
+use rand::seq::SliceRandom;
+use rand::{thread_rng, RngCore, SeedableRng};
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet, VecDeque};
 
-type Rng = self::rand_pcg::Pcg32;
+type Rng = rand_pcg::Pcg32;
 
 pub struct PartialDiscovery<G: Graph + Clone> {
     target_heads: Option<Vec<Revision>>,
