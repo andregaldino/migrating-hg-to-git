@@ -65,13 +65,7 @@ where
     let mut visit: VecDeque<Revision> = heads.into_iter().collect();
     let mut factor: u32 = 1;
     let mut seen: HashSet<Revision> = HashSet::new();
-    loop {
-        let current = match visit.pop_front() {
-            None => {
-                break;
-            }
-            Some(r) => r,
-        };
+    while let Some(current) = visit.pop_front() {
         if !seen.insert(current) {
             continue;
         }
