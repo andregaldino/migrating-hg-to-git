@@ -17,6 +17,9 @@ testedwith = 'ships-with-hg-core'
 from mercurial import (
     localrepo,
     registrar,
+)
+
+from mercurial.interfaces import (
     repository,
 )
 

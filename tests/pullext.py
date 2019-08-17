@@ -13,6 +13,8 @@ from mercurial import (
     error,
     extensions,
     localrepo,
+)
+from mercurial.interfaces import (
     repository,
 )
 

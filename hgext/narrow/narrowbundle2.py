@@ -23,9 +23,11 @@ from mercurial import (
     localrepo,
     narrowspec,
     repair,
-    repository,
     util,
     wireprototypes,
+)
+from mercurial.interfaces import (
+    repository,
 )
 from mercurial.utils import (
     stringutil,

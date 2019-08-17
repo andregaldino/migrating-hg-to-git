@@ -32,10 +32,12 @@ from mercurial import (
     localrepo,
     mdiff,
     pycompat,
-    repository,
     revlog,
     store,
     verify,
+)
+from mercurial.interfaces import (
+    repository,
 )
 from mercurial.utils import (
     cborutil,

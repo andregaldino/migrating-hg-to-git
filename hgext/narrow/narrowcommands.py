@@ -25,11 +25,13 @@ from mercurial import (
     pycompat,
     registrar,
     repair,
-    repository,
     repoview,
     sparse,
     util,
     wireprototypes,
+)
+from mercurial.interfaces import (
+    repository,
 )
 
 table = {}

@@ -17,6 +17,8 @@ from ..node import (
 from .. import (
     error,
     mdiff,
+)
+from ..interfaces import (
     repository,
 )
 from ..utils import (

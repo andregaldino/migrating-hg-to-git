@@ -65,9 +65,11 @@ from . import (
     mdiff,
     policy,
     pycompat,
-    repository,
     templatefilters,
     util,
+)
+from .interfaces import (
+    repository,
 )
 from .revlogutils import (
     deltas as deltautil,

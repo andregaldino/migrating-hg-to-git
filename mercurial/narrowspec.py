@@ -8,11 +8,13 @@
 from __future__ import absolute_import
 
 from .i18n import _
+from .interfaces import (
+    repository,
+)
 from . import (
     error,
     match as matchmod,
     merge,
-    repository,
     scmutil,
     sparse,
     util,

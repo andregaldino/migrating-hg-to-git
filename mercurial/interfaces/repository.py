@@ -7,11 +7,11 @@
 
 from __future__ import absolute_import
 
-from .i18n import _
-from . import (
+from ..i18n import _
+from .. import (
     error,
 )
-from .utils import (
+from ..utils import (
     interfaceutil,
 )
 

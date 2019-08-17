@@ -70,9 +70,11 @@ from mercurial import (
     mdiff,
     pycompat,
     registrar,
-    repository,
     util,
     verify,
+)
+from mercurial.interfaces import (
+    repository,
 )
 from mercurial.utils import (
     interfaceutil,

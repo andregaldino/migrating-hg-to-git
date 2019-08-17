@@ -141,11 +141,14 @@ from mercurial import (
     minifileset,
     node,
     pycompat,
-    repository,
     revlog,
     scmutil,
     templateutil,
     util,
+)
+
+from mercurial.interfaces import (
+    repository,
 )
 
 from . import (

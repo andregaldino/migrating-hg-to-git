@@ -52,7 +52,6 @@ from . import (
     phases,
     pushkey,
     pycompat,
-    repository,
     repoview,
     revset,
     revsetlang,
@@ -66,6 +65,11 @@ from . import (
     util,
     vfs as vfsmod,
 )
+
+from .interfaces import (
+    repository,
+)
+
 from .utils import (
     interfaceutil,
     procutil,

@@ -25,8 +25,11 @@ from . import (
     mdiff,
     phases,
     pycompat,
-    repository,
     util,
+)
+
+from .interfaces import (
+    repository,
 )
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct("20s20s20s20s")

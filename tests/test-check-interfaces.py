@@ -14,6 +14,9 @@ if subprocess.call(['python', '%s/hghave' % os.environ['TESTDIR'],
                     'test-repo']):
     sys.exit(80)
 
+from mercurial.interfaces import (
+    repository,
+)
 from mercurial.thirdparty.zope import (
     interface as zi,
 )
@@ -27,7 +30,6 @@ from mercurial import (
     localrepo,
     manifest,
     pycompat,
-    repository,
     revlog,
     sshpeer,
     statichttprepo,

@@ -10,11 +10,13 @@ from __future__ import absolute_import
 from mercurial import (
     extensions,
     registrar,
-    repository,
     util,
     wireprotoserver,
     wireprototypes,
     wireprotov2server,
+)
+from mercurial.interfaces import (
+    repository,
 )
 from mercurial.utils import (
     interfaceutil,

@@ -34,13 +34,15 @@ from . import (
     phases,
     pushkey,
     pycompat,
-    repository,
     scmutil,
     sslutil,
     streamclone,
     url as urlmod,
     util,
     wireprototypes,
+)
+from .interfaces import (
+    repository,
 )
 from .utils import (
     stringutil,

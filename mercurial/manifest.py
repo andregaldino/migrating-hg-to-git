@@ -24,9 +24,11 @@ from . import (
     mdiff,
     policy,
     pycompat,
-    repository,
     revlog,
     util,
+)
+from .interfaces import (
+    repository,
 )
 from .utils import (
     interfaceutil,

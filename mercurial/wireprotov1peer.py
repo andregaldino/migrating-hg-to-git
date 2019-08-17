@@ -22,9 +22,11 @@ from . import (
     error,
     pushkey as pushkeymod,
     pycompat,
-    repository,
     util,
     wireprototypes,
+)
+from .interfaces import (
+    repository,
 )
 from .utils import (
     interfaceutil,

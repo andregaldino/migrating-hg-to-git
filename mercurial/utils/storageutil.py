@@ -22,8 +22,8 @@ from .. import (
     error,
     mdiff,
     pycompat,
-    repository,
 )
+from ..interfaces import repository
 
 _nullhash = hashlib.sha1(nullid)
 

@@ -39,7 +39,6 @@ from . import (
     node,
     phases,
     pycompat,
-    repository as repositorymod,
     scmutil,
     sshpeer,
     statichttprepo,
@@ -49,6 +48,10 @@ from . import (
     util,
     verify as verifymod,
     vfs as vfsmod,
+)
+
+from .interfaces import (
+    repository as repositorymod,
 )
 
 release = lock.release

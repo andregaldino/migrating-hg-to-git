@@ -14,8 +14,10 @@ from .node import (
 )
 from . import (
     error,
-    repository,
     revlog,
+)
+from .interfaces import (
+    repository,
 )
 from .utils import (
     interfaceutil,

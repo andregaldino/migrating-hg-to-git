@@ -22,8 +22,10 @@ from . import (
     narrowspec,
     phases,
     pycompat,
-    repository,
     setdiscovery,
+)
+from .interfaces import (
+    repository,
 )
 
 def pull(pullop):

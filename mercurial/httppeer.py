@@ -16,12 +16,14 @@ import struct
 import weakref
 
 from .i18n import _
+from .interfaces import (
+    repository,
+)
 from . import (
     bundle2,
     error,
     httpconnection,
     pycompat,
-    repository,
     statichttprepo,
     url as urlmod,
     util,

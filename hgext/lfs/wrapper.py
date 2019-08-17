@@ -21,13 +21,16 @@ from mercurial import (
     exchange,
     exthelper,
     localrepo,
-    repository,
     revlog,
     scmutil,
     upgrade,
     util,
     vfs as vfsmod,
     wireprotov1server,
+)
+
+from mercurial.interfaces import (
+    repository,
 )
 
 from mercurial.utils import (
