@@ -68,7 +68,7 @@ impl DirstateMap {
         self.file_fold_map = None;
         self.non_normal_set.clear();
         self.other_parent_set.clear();
-        self.set_parents(DirstateParents {
+        self.set_parents(&DirstateParents {
             p1: NULL_ID,
             p2: NULL_ID,
         })
@@ -253,9 +253,9 @@ impl DirstateMap {
     pub fn parents(
         &mut self,
         file_contents: &[u8],
-    ) -> Result<DirstateParents, DirstateError> {
+    ) -> Result<&DirstateParents, DirstateError> {
         if let Some(ref parents) = self.parents {
-            return Ok(parents.clone());
+            return Ok(parents);
         }
         let parents;
         if file_contents.len() == PARENT_SIZE * 2 {
@@ -274,11 +274,11 @@ impl DirstateMap {
             return Err(DirstateError::Parse(DirstateParseError::Damaged));
         }
 
-        self.parents = Some(parents.to_owned());
-        Ok(parents.clone())
+        self.parents = Some(parents);
+        Ok(self.parents.as_ref().unwrap())
     }
 
-    pub fn set_parents(&mut self, parents: DirstateParents) {
+    pub fn set_parents(&mut self, parents: &DirstateParents) {
         self.parents = Some(parents.clone());
         self.dirty_parents = true;
     }
@@ -298,7 +298,7 @@ impl DirstateMap {
         )?;
 
         if !self.dirty_parents {
-            self.set_parents(parents.to_owned());
+            self.set_parents(&parents);
         }
 
         Ok(Some(parents))
@@ -320,9 +320,9 @@ impl DirstateMap {
         Ok(packed)
     }
 
-    pub fn build_file_fold_map(&mut self) -> FileFoldMap {
+    pub fn build_file_fold_map(&mut self) -> &FileFoldMap {
         if let Some(ref file_fold_map) = self.file_fold_map {
-            return file_fold_map.to_owned();
+            return file_fold_map;
         }
         let mut new_file_fold_map = FileFoldMap::new();
         for (filename, DirstateEntry { state, .. }) in self.state_map.borrow()
@@ -335,7 +335,7 @@ impl DirstateMap {
             }
         }
         self.file_fold_map = Some(new_file_fold_map);
-        self.file_fold_map.to_owned().unwrap()
+        self.file_fold_map.as_ref().unwrap()
     }
 }
 

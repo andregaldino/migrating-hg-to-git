@@ -243,7 +243,7 @@ py_class!(pub class DirstateMap |py| {
 
         self.inner(py)
             .borrow_mut()
-            .set_parents(DirstateParents { p1, p2 });
+            .set_parents(&DirstateParents { p1, p2 });
         Ok(py.None())
     }
 
