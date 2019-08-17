@@ -92,7 +92,7 @@ pub fn pack_dirstate(
         .iter()
         .map(|(filename, _)| {
             let mut length = MIN_ENTRY_SIZE + filename.len();
-            if let Some(ref copy) = copy_map.get(filename) {
+            if let Some(copy) = copy_map.get(filename) {
                 length += copy.len() + 1;
             }
             length
@@ -106,8 +106,8 @@ pub fn pack_dirstate(
     packed.extend(&parents.p1);
     packed.extend(&parents.p2);
 
-    for (ref filename, entry) in state_map.iter() {
-        let mut new_filename: Vec<u8> = filename.to_vec();
+    for (filename, entry) in state_map.iter() {
+        let mut new_filename: Vec<u8> = filename.to_owned();
         let mut new_mtime: i32 = entry.mtime;
         if entry.state == EntryState::Normal && entry.mtime == now {
             // The file was last modified "simultaneously" with the current
@@ -121,7 +121,7 @@ pub fn pack_dirstate(
             // mistakenly treating such files as clean.
             new_mtime = -1;
             new_state_map.push((
-                filename.to_owned().to_vec(),
+                filename.to_owned(),
                 DirstateEntry {
                     mtime: new_mtime,
                     ..*entry
@@ -129,7 +129,7 @@ pub fn pack_dirstate(
             ));
         }
 
-        if let Some(copy) = copy_map.get(*filename) {
+        if let Some(copy) = copy_map.get(filename) {
             new_filename.push('\0' as u8);
             new_filename.extend(copy);
         }
