@@ -692,11 +692,11 @@ def _dotransplant(ui, repo, *revs, **opts):
     if opts.get('continue'):
         if not tp.canresume():
             raise error.Abort(_('no transplant to continue'))
+    elif opts.get('stop'):
+        if not tp.canresume():
+            raise error.Abort(_('no interrupted transplant found'))
+        return tp.stop(ui, repo)
     else:
-        if opts.get('stop'):
-            if not tp.canresume():
-                raise error.Abort(_('no interrupted transplant found'))
-            return tp.stop(ui, repo)
         cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)
 
