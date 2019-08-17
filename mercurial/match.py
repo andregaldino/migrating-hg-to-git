@@ -25,7 +25,7 @@ from .utils import (
     stringutil,
 )
 
-rustmod = policy.importrust('filepatterns')
+rustmod = policy.importrust(r'filepatterns')
 
 allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
                    'rootglob',

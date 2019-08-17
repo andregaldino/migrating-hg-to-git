@@ -53,7 +53,7 @@ from .utils import (
     stringutil,
 )
 
-rustdirs = policy.importrust('dirstate', 'Dirs')
+rustdirs = policy.importrust(r'dirstate', r'Dirs')
 
 base85 = policy.importmod(r'base85')
 osutil = policy.importmod(r'osutil')

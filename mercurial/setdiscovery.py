@@ -270,8 +270,8 @@ class partialdiscovery(object):
                 sample.update(takefrom[:more])
         return sample
 
-partialdiscovery = policy.importrust('discovery',
-                                     member='PartialDiscovery',
+partialdiscovery = policy.importrust(r'discovery',
+                                     member=r'PartialDiscovery',
                                      default=partialdiscovery)
 
 def findcommonheads(ui, local, remote,
