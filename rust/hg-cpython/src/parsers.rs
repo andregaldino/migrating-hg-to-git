@@ -15,8 +15,8 @@ use cpython::{
     PythonObject, ToPyObject,
 };
 use hg::{
-    pack_dirstate, parse_dirstate, DirstateEntry,
-    DirstatePackError, DirstateParents, DirstateParseError, PARENT_SIZE,
+    pack_dirstate, parse_dirstate, DirstateEntry, DirstatePackError,
+    DirstateParents, DirstateParseError, PARENT_SIZE,
 };
 use std::collections::HashMap;
 use std::convert::TryInto;

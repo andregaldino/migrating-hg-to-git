@@ -7,9 +7,9 @@
 
 use crate::{
     dirstate::{parsers::PARENT_SIZE, EntryState},
-    pack_dirstate, parse_dirstate, CopyMap, DirsIterable, DirsMultiset,
-    DirstateEntry, DirstateError, DirstateMapError, DirstateParents,
-    DirstateParseError, StateMap,
+    pack_dirstate, parse_dirstate, CopyMap, DirsMultiset, DirstateEntry,
+    DirstateError, DirstateMapError, DirstateParents, DirstateParseError,
+    StateMap,
 };
 use core::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
@@ -224,17 +224,15 @@ impl DirstateMap {
     /// good idea.
     pub fn set_all_dirs(&mut self) {
         if self.all_dirs.is_none() {
-            self.all_dirs = Some(DirsMultiset::new(
-                DirsIterable::Dirstate(&self.state_map),
-                None,
-            ));
+            self.all_dirs =
+                Some(DirsMultiset::from_dirstate(&self.state_map, None));
         }
     }
 
     pub fn set_dirs(&mut self) {
         if self.dirs.is_none() {
-            self.dirs = Some(DirsMultiset::new(
-                DirsIterable::Dirstate(&self.state_map),
+            self.dirs = Some(DirsMultiset::from_dirstate(
+                &self.state_map,
                 Some(EntryState::Removed),
             ));
         }

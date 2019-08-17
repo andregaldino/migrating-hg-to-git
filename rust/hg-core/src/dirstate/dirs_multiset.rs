@@ -9,8 +9,7 @@
 //!
 //! Used to counts the references to directories in a manifest or dirstate.
 use crate::{
-    dirstate::EntryState, utils::files, DirsIterable, DirstateEntry,
-    DirstateMapError,
+    dirstate::EntryState, utils::files, DirstateEntry, DirstateMapError,
 };
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -21,35 +20,39 @@ pub struct DirsMultiset {
 }
 
 impl DirsMultiset {
-    /// Initializes the multiset from a dirstate or a manifest.
+    /// Initializes the multiset from a dirstate.
     ///
     /// If `skip_state` is provided, skips dirstate entries with equal state.
-    pub fn new(
-        iterable: DirsIterable,
+    pub fn from_dirstate(
+        vec: &HashMap<Vec<u8>, DirstateEntry>,
         skip_state: Option<EntryState>,
     ) -> Self {
         let mut multiset = DirsMultiset {
             inner: HashMap::new(),
         };
 
-        match iterable {
-            DirsIterable::Dirstate(vec) => {
-                for (filename, DirstateEntry { state, .. }) in vec {
-                    // This `if` is optimized out of the loop
-                    if let Some(skip) = skip_state {
-                        if skip != *state {
-                            multiset.add_path(filename);
-                        }
-                    } else {
-                        multiset.add_path(filename);
-                    }
-                }
-            }
-            DirsIterable::Manifest(vec) => {
-                for filename in vec {
+        for (filename, DirstateEntry { state, .. }) in vec {
+            // This `if` is optimized out of the loop
+            if let Some(skip) = skip_state {
+                if skip != *state {
                     multiset.add_path(filename);
                 }
+            } else {
+                multiset.add_path(filename);
             }
+        }
+
+        multiset
+    }
+
+    /// Initializes the multiset from a manifest.
+    pub fn from_manifest(vec: &Vec<Vec<u8>>) -> Self {
+        let mut multiset = DirsMultiset {
+            inner: HashMap::new(),
+        };
+
+        for filename in vec {
+            multiset.add_path(filename);
         }
 
         multiset
@@ -118,7 +121,7 @@ mod tests {
 
     #[test]
     fn test_delete_path_path_not_found() {
-        let mut map = DirsMultiset::new(DirsIterable::Manifest(&vec![]), None);
+        let mut map = DirsMultiset::from_manifest(&vec![]);
         let path = b"doesnotexist/";
         assert_eq!(
             Err(DirstateMapError::PathNotFound(path.to_vec())),
@@ -128,8 +131,7 @@ mod tests {
 
     #[test]
     fn test_delete_path_empty_path() {
-        let mut map =
-            DirsMultiset::new(DirsIterable::Manifest(&vec![vec![]]), None);
+        let mut map = DirsMultiset::from_manifest(&vec![vec![]]);
         let path = b"";
         assert_eq!(Ok(()), map.delete_path(path));
         assert_eq!(
@@ -169,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_add_path_empty_path() {
-        let mut map = DirsMultiset::new(DirsIterable::Manifest(&vec![]), None);
+        let mut map = DirsMultiset::from_manifest(&vec![]);
         let path = b"";
         map.add_path(path);
 
@@ -178,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_add_path_successful() {
-        let mut map = DirsMultiset::new(DirsIterable::Manifest(&vec![]), None);
+        let mut map = DirsMultiset::from_manifest(&vec![]);
 
         map.add_path(b"a/");
         assert_eq!(1, *map.inner.get(&b"a".to_vec()).unwrap());
@@ -223,15 +225,13 @@ mod tests {
 
     #[test]
     fn test_dirsmultiset_new_empty() {
-        use DirsIterable::{Dirstate, Manifest};
-
-        let new = DirsMultiset::new(Manifest(&vec![]), None);
+        let new = DirsMultiset::from_manifest(&vec![]);
         let expected = DirsMultiset {
             inner: HashMap::new(),
         };
         assert_eq!(expected, new);
 
-        let new = DirsMultiset::new(Dirstate(&HashMap::new()), None);
+        let new = DirsMultiset::from_dirstate(&HashMap::new(), None);
         let expected = DirsMultiset {
             inner: HashMap::new(),
         };
@@ -240,8 +240,6 @@ mod tests {
 
     #[test]
     fn test_dirsmultiset_new_no_skip() {
-        use DirsIterable::{Dirstate, Manifest};
-
         let input_vec = ["a/", "b/", "a/c", "a/d/"]
             .iter()
             .map(|e| e.as_bytes().to_vec())
@@ -251,7 +249,7 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new = DirsMultiset::new(Manifest(&input_vec), None);
+        let new = DirsMultiset::from_manifest(&input_vec);
         let expected = DirsMultiset {
             inner: expected_inner,
         };
@@ -276,7 +274,7 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new = DirsMultiset::new(Dirstate(&input_map), None);
+        let new = DirsMultiset::from_dirstate(&input_map, None);
         let expected = DirsMultiset {
             inner: expected_inner,
         };
@@ -285,8 +283,6 @@ mod tests {
 
     #[test]
     fn test_dirsmultiset_new_skip() {
-        use DirsIterable::{Dirstate, Manifest};
-
         let input_vec = ["a/", "b/", "a/c", "a/d/"]
             .iter()
             .map(|e| e.as_bytes().to_vec())
@@ -296,8 +292,9 @@ mod tests {
             .map(|(k, v)| (k.as_bytes().to_vec(), *v))
             .collect();
 
-        let new =
-            DirsMultiset::new(Manifest(&input_vec), Some(EntryState::Normal));
+        // this was
+        // DirsMultiset::new(Manifest(&input_vec), Some(EntryState::Normal))
+        let new = DirsMultiset::from_manifest(&input_vec);
         let expected = DirsMultiset {
             inner: expected_inner,
         };
@@ -331,7 +328,7 @@ mod tests {
             .collect();
 
         let new =
-            DirsMultiset::new(Dirstate(&input_map), Some(EntryState::Normal));
+            DirsMultiset::from_dirstate(&input_map, Some(EntryState::Normal));
         let expected = DirsMultiset {
             inner: expected_inner,
         };

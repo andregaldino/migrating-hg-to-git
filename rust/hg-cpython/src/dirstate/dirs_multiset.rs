@@ -17,10 +17,7 @@ use cpython::{
 };
 
 use crate::{dirstate::extract_dirstate, ref_sharing::PySharedState};
-use hg::{
-    DirsIterable, DirsMultiset, DirstateMapError, DirstateParseError,
-    EntryState,
-};
+use hg::{DirsMultiset, DirstateMapError, DirstateParseError, EntryState};
 
 py_class!(pub class Dirs |py| {
     data inner: RefCell<DirsMultiset>;
@@ -45,19 +42,13 @@ py_class!(pub class Dirs |py| {
         }
         let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
             let dirstate = extract_dirstate(py, &map)?;
-            DirsMultiset::new(
-                DirsIterable::Dirstate(&dirstate),
-                skip_state,
-            )
+            DirsMultiset::from_dirstate(&dirstate, skip_state)
         } else {
             let map: Result<Vec<Vec<u8>>, PyErr> = map
                 .iter(py)?
                 .map(|o| Ok(o?.extract::<PyBytes>(py)?.data(py).to_owned()))
                 .collect();
-            DirsMultiset::new(
-                DirsIterable::Manifest(&map?),
-                skip_state,
-            )
+            DirsMultiset::from_manifest(&map?)
         };
 
         Self::create_instance(

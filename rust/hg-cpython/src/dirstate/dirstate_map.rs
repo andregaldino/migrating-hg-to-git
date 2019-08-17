@@ -24,7 +24,7 @@ use crate::{
     ref_sharing::PySharedState,
 };
 use hg::{
-    DirsIterable, DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
+    DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
     DirstateParents, DirstateParseError, EntryState, PARENT_SIZE,
 };
 
@@ -356,8 +356,8 @@ py_class!(pub class DirstateMap |py| {
         self.inner(py).borrow_mut().set_dirs();
         Dirs::from_inner(
             py,
-            DirsMultiset::new(
-                DirsIterable::Dirstate(&self.inner(py).borrow()),
+            DirsMultiset::from_dirstate(
+                &self.inner(py).borrow(),
                 Some(EntryState::Removed),
             ),
         )
@@ -367,8 +367,8 @@ py_class!(pub class DirstateMap |py| {
         self.inner(py).borrow_mut().set_all_dirs();
         Dirs::from_inner(
             py,
-            DirsMultiset::new(
-                DirsIterable::Dirstate(&self.inner(py).borrow()),
+            DirsMultiset::from_dirstate(
+                &self.inner(py).borrow(),
                 None,
             ),
         )

@@ -33,13 +33,6 @@ pub struct DirstateEntry {
 pub type StateMap = HashMap<Vec<u8>, DirstateEntry>;
 pub type CopyMap = HashMap<Vec<u8>, Vec<u8>>;
 
-/// The Python implementation passes either a mapping (dirstate) or a flat
-/// iterable (manifest)
-pub enum DirsIterable<'a> {
-    Dirstate(&'a HashMap<Vec<u8>, DirstateEntry>),
-    Manifest(&'a Vec<Vec<u8>>),
-}
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryState {
     Normal,
