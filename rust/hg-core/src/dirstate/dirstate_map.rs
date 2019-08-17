@@ -130,8 +130,7 @@ impl DirstateMap {
         }
 
         if let Some(ref mut file_fold_map) = self.file_fold_map {
-            file_fold_map
-                .remove::<Vec<u8>>(filename.to_ascii_uppercase().as_ref());
+            file_fold_map.remove(&filename.to_ascii_uppercase());
         }
         self.state_map.insert(
             filename.to_owned(),
@@ -153,10 +152,7 @@ impl DirstateMap {
         filename: &[u8],
         old_state: EntryState,
     ) -> Result<bool, DirstateMapError> {
-        let exists = self
-            .state_map
-            .remove::<Vec<u8>>(filename.to_owned().as_ref())
-            .is_some();
+        let exists = self.state_map.remove(filename).is_some();
 
         if exists {
             if old_state != EntryState::Removed {
@@ -169,11 +165,9 @@ impl DirstateMap {
             }
         }
         if let Some(ref mut file_fold_map) = self.file_fold_map {
-            file_fold_map
-                .remove::<Vec<u8>>(filename.to_ascii_uppercase().as_ref());
+            file_fold_map.remove(&filename.to_ascii_uppercase());
         }
-        self.non_normal_set
-            .remove::<Vec<u8>>(filename.to_owned().as_ref());
+        self.non_normal_set.remove(filename);
 
         Ok(exists)
     }
@@ -251,12 +245,12 @@ impl DirstateMap {
 
     pub fn has_tracked_dir(&mut self, directory: &[u8]) -> bool {
         self.set_dirs();
-        self.dirs.as_ref().unwrap().contains(directory.as_ref())
+        self.dirs.as_ref().unwrap().contains(directory)
     }
 
     pub fn has_dir(&mut self, directory: &[u8]) -> bool {
         self.set_all_dirs();
-        self.all_dirs.as_ref().unwrap().contains(directory.as_ref())
+        self.all_dirs.as_ref().unwrap().contains(directory)
     }
 
     pub fn parents(
