@@ -283,24 +283,6 @@ mod tests {
 
     #[test]
     fn test_dirsmultiset_new_skip() {
-        let input_vec = ["a/", "b/", "a/c", "a/d/"]
-            .iter()
-            .map(|e| e.as_bytes().to_vec())
-            .collect();
-        let expected_inner = [("", 2), ("a", 3), ("b", 1), ("a/d", 1)]
-            .iter()
-            .map(|(k, v)| (k.as_bytes().to_vec(), *v))
-            .collect();
-
-        // this was
-        // DirsMultiset::new(Manifest(&input_vec), Some(EntryState::Normal))
-        let new = DirsMultiset::from_manifest(&input_vec);
-        let expected = DirsMultiset {
-            inner: expected_inner,
-        };
-        // Skip does not affect a manifest
-        assert_eq!(expected, new);
-
         let input_map = [
             ("a/", EntryState::Normal),
             ("a/b/", EntryState::Normal),
