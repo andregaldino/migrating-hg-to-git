@@ -12,7 +12,7 @@
 //!
 use cpython::{
     exc, PyBytes, PyDict, PyErr, PyInt, PyModule, PyResult, PyTuple, Python,
-    ToPyObject,
+    PythonObject, ToPyObject,
 };
 use hg::{
     pack_dirstate, parse_dirstate, utils::copy_into_array, DirstateEntry,
@@ -123,7 +123,7 @@ fn pack_dirstate_wrapper(
             p1: copy_into_array(&p1),
             p2: copy_into_array(&p2),
         },
-        Duration::from_secs(now.value(py) as u64),
+        Duration::from_secs(now.as_object().extract::<u64>(py)?),
     ) {
         Ok(packed) => {
             for (
