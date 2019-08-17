@@ -5,7 +5,6 @@
 
 use crate::{
     dirstate::{CopyMap, EntryState, StateMap},
-    utils::copy_into_array,
     DirstateEntry, DirstatePackError, DirstateParents, DirstateParseError,
 };
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
@@ -31,8 +30,8 @@ pub fn parse_dirstate(
 
     let mut curr_pos = PARENT_SIZE * 2;
     let parents = DirstateParents {
-        p1: copy_into_array(&contents[..PARENT_SIZE]),
-        p2: copy_into_array(&contents[PARENT_SIZE..curr_pos]),
+        p1: contents[..PARENT_SIZE].try_into().unwrap(),
+        p2: contents[PARENT_SIZE..curr_pos].try_into().unwrap(),
     };
 
     while curr_pos < contents.len() {

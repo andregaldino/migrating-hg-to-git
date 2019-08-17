@@ -7,13 +7,13 @@
 
 use crate::{
     dirstate::{parsers::PARENT_SIZE, EntryState},
-    pack_dirstate, parse_dirstate,
-    utils::copy_into_array,
-    CopyMap, DirsIterable, DirsMultiset, DirstateEntry, DirstateError,
-    DirstateMapError, DirstateParents, DirstateParseError, StateMap,
+    pack_dirstate, parse_dirstate, CopyMap, DirsIterable, DirsMultiset,
+    DirstateEntry, DirstateError, DirstateMapError, DirstateParents,
+    DirstateParseError, StateMap,
 };
 use core::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
+use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::ops::Deref;
 use std::time::Duration;
@@ -260,10 +260,10 @@ impl DirstateMap {
         let parents;
         if file_contents.len() == PARENT_SIZE * 2 {
             parents = DirstateParents {
-                p1: copy_into_array(&file_contents[..PARENT_SIZE]),
-                p2: copy_into_array(
-                    &file_contents[PARENT_SIZE..PARENT_SIZE * 2],
-                ),
+                p1: file_contents[..PARENT_SIZE].try_into().unwrap(),
+                p2: file_contents[PARENT_SIZE..PARENT_SIZE * 2]
+                    .try_into()
+                    .unwrap(),
             };
         } else if file_contents.is_empty() {
             parents = DirstateParents {

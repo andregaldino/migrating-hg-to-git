@@ -9,23 +9,6 @@
 
 pub mod files;
 
-use std::convert::AsMut;
-
-/// Takes a slice and copies it into an array.
-///
-/// # Panics
-///
-/// Will panic if the slice and target array don't have the same length.
-pub fn copy_into_array<A, T>(slice: &[T]) -> A
-where
-    A: Sized + Default + AsMut<[T]>,
-    T: Copy,
-{
-    let mut a = Default::default();
-    <A as AsMut<[T]>>::as_mut(&mut a).copy_from_slice(slice);
-    a
-}
-
 /// Replaces the `from` slice with the `to` slice inside the `buf` slice.
 ///
 /// # Examples

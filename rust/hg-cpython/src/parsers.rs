@@ -15,10 +15,11 @@ use cpython::{
     PythonObject, ToPyObject,
 };
 use hg::{
-    pack_dirstate, parse_dirstate, utils::copy_into_array, DirstateEntry,
+    pack_dirstate, parse_dirstate, DirstateEntry,
     DirstatePackError, DirstateParents, DirstateParseError, PARENT_SIZE,
 };
 use std::collections::HashMap;
+use std::convert::TryInto;
 
 use libc::c_char;
 
@@ -120,8 +121,8 @@ fn pack_dirstate_wrapper(
         &mut dirstate_map,
         &copies?,
         DirstateParents {
-            p1: copy_into_array(&p1),
-            p2: copy_into_array(&p2),
+            p1: p1.try_into().unwrap(),
+            p2: p2.try_into().unwrap(),
         },
         Duration::from_secs(now.as_object().extract::<u64>(py)?),
     ) {

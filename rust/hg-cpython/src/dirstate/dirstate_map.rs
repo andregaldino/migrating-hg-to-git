@@ -24,7 +24,7 @@ use crate::{
     ref_sharing::PySharedState,
 };
 use hg::{
-    utils::copy_into_array, DirsIterable, DirsMultiset, DirstateEntry,
+    DirsIterable, DirsMultiset, DirstateEntry,
     DirstateMap as RustDirstateMap, DirstateParents, DirstateParseError,
     EntryState,
 };
@@ -239,8 +239,9 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def setparents(&self, p1: PyObject, p2: PyObject) -> PyResult<PyObject> {
-        let p1 = copy_into_array(p1.extract::<PyBytes>(py)?.data(py));
-        let p2 = copy_into_array(p2.extract::<PyBytes>(py)?.data(py));
+        // TODO: don't panic; raise Python exception instead.
+        let p1 = p1.extract::<PyBytes>(py)?.data(py).try_into().unwrap();
+        let p2 = p2.extract::<PyBytes>(py)?.data(py).try_into().unwrap();
 
         self.inner(py)
             .borrow_mut()
@@ -274,8 +275,9 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyBytes> {
         let now = Duration::new(now.extract(py)?, 0);
         let parents = DirstateParents {
-            p1: copy_into_array(p1.extract::<PyBytes>(py)?.data(py)),
-            p2: copy_into_array(p2.extract::<PyBytes>(py)?.data(py)),
+            // TODO: don't panic; raise Python exception instead.
+            p1: p1.extract::<PyBytes>(py)?.data(py).try_into().unwrap(),
+            p2: p2.extract::<PyBytes>(py)?.data(py).try_into().unwrap(),
         };
 
         match self.borrow_mut(py)?.pack(parents, now) {
