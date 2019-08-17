@@ -1322,3 +1322,61 @@ attempt to move the bookmark is rejected
   abort: push failed on remote
   [255]
 #endif
+
+-- test for pushing bookmarks pointing to secret changesets
+
+Set up a "remote" repo
+  $ hg init issue6159remote
+  $ cd issue6159remote
+  $ echo a > a
+  $ hg add a
+  $ hg commit -m_
+  $ hg bookmark foo
+  $ cd ..
+
+Clone a local repo
+  $ hg clone -q issue6159remote issue6159local
+  $ cd issue6159local
+  $ hg up -qr foo
+  $ echo b > b
+
+Move the bookmark "foo" to point at a secret changeset
+  $ hg commit -qAm_ --config phases.new-commit=secret
+
+Pushing the bookmark "foo" now fails as it contains a secret changeset
+#if b2-pushkey
+  $ hg push -r foo
+  pushing to $TESTTMP/issue6159remote
+  searching for changes
+  no changes found (ignored 1 secret changesets)
+  abort: updating bookmark foo failed!
+  [255]
+#endif
+
+#if b2-binary
+  $ hg push -r foo
+  pushing to $TESTTMP/issue6159remote
+  searching for changes
+  no changes found (ignored 1 secret changesets)
+  updating bookmark foo
+  [1]
+#endif
+
+Now the "remote" repo contains a bookmark pointing to a nonexistent revision
+  $ cd ../issue6159remote
+#if b2-pushkey
+  $ hg bookmark
+   * foo                       0:1599bc8b897a
+  $ hg log -r 1599bc8b897a
+  0:1599bc8b897a _ (no-eol)
+#endif
+
+#if b2-binary
+  $ hg bookmark
+  no bookmarks set
+  $ cat .hg/bookmarks
+  cf489fd8a374cab73c2dc19e899bde6fe3a43f8f foo
+  $ hg log -r cf489fd8a374
+  abort: unknown revision 'cf489fd8a374'!
+  [255]
+#endif
