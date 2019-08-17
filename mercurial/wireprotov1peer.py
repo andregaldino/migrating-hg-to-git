@@ -27,9 +27,7 @@ from . import (
 )
 from .interfaces import (
     repository,
-)
-from .utils import (
-    interfaceutil,
+    util as interfaceutil,
 )
 
 urlreq = util.urlreq

@@ -38,10 +38,10 @@ from mercurial import (
 )
 from mercurial.interfaces import (
     repository,
+    util as interfaceutil,
 )
 from mercurial.utils import (
     cborutil,
-    interfaceutil,
     storageutil,
 )
 from mercurial.revlogutils import (

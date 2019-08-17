@@ -28,9 +28,11 @@ from . import (
     wireprotoframing,
     wireprototypes,
 )
+from .interfaces import (
+    util as interfaceutil,
+)
 from .utils import (
     cborutil,
-    interfaceutil,
     stringutil,
 )
 

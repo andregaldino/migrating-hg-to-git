@@ -11,8 +11,8 @@ from ..i18n import _
 from .. import (
     error,
 )
-from ..utils import (
-    interfaceutil,
+from . import (
+    util as interfaceutil,
 )
 
 # When narrowing is finalized and no longer subject to format changes,

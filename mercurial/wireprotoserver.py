@@ -21,10 +21,12 @@ from . import (
     wireprotov1server,
     wireprotov2server,
 )
+from .interfaces import (
+    util as interfaceutil,
+)
 from .utils import (
     cborutil,
     compression,
-    interfaceutil,
 )
 
 stringio = util.stringio

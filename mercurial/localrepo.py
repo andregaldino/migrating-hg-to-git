@@ -68,10 +68,10 @@ from . import (
 
 from .interfaces import (
     repository,
+    util as interfaceutil,
 )
 
 from .utils import (
-    interfaceutil,
     procutil,
     stringutil,
 )

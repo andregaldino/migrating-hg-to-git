@@ -16,9 +16,6 @@ import struct
 import weakref
 
 from .i18n import _
-from .interfaces import (
-    repository,
-)
 from . import (
     bundle2,
     error,
@@ -33,9 +30,12 @@ from . import (
     wireprotov2peer,
     wireprotov2server,
 )
+from .interfaces import (
+    repository,
+    util as interfaceutil,
+)
 from .utils import (
     cborutil,
-    interfaceutil,
     stringutil,
 )
 

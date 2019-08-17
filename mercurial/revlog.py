@@ -70,13 +70,13 @@ from . import (
 )
 from .interfaces import (
     repository,
+    util as interfaceutil,
 )
 from .revlogutils import (
     deltas as deltautil,
     flagutil,
 )
 from .utils import (
-    interfaceutil,
     storageutil,
     stringutil,
 )

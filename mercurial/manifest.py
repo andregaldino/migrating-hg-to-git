@@ -29,9 +29,7 @@ from . import (
 )
 from .interfaces import (
     repository,
-)
-from .utils import (
-    interfaceutil,
+    util as interfaceutil,
 )
 
 parsers = policy.importmod(r'parsers')

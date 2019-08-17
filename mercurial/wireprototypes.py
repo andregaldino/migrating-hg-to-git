@@ -17,9 +17,11 @@ from . import (
     error,
     util,
 )
+from .interfaces import (
+    util as interfaceutil,
+)
 from .utils import (
     compression,
-    interfaceutil,
 )
 
 # Names of the SSH protocol implementations.

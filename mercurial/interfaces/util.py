@@ -1,4 +1,4 @@
-# interfaceutil.py - Utilities for declaring interfaces.
+# util.py - Utilities for declaring interfaces.
 #
 # Copyright 2018 Gregory Szorc <gregory.szorc@gmail.com>
 #
