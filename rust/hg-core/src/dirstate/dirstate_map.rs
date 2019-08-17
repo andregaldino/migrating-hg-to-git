@@ -20,10 +20,7 @@ use std::time::Duration;
 
 pub type FileFoldMap = HashMap<Vec<u8>, Vec<u8>>;
 
-const NULL_REVISION: [u8; 20] = [
-    b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0',
-    b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0',
-];
+const NULL_REVISION: [u8; 20] = [0; 20];
 const MTIME_UNSET: i32 = -1;
 const SIZE_DIRTY: i32 = -2;
 
