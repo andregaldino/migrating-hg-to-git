@@ -258,7 +258,7 @@ impl DirstateMap {
             return Ok(parents.clone());
         }
         let parents;
-        if file_contents.len() == 40 {
+        if file_contents.len() == PARENT_SIZE * 2 {
             parents = DirstateParents {
                 p1: copy_into_array(&file_contents[..PARENT_SIZE]),
                 p2: copy_into_array(
