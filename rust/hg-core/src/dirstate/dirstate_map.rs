@@ -20,7 +20,7 @@ use std::time::Duration;
 
 pub type FileFoldMap = HashMap<Vec<u8>, Vec<u8>>;
 
-const NULL_REVISION: [u8; 20] = [0; 20];
+const NULL_ID: [u8; 20] = [0; 20];
 const MTIME_UNSET: i32 = -1;
 const SIZE_DIRTY: i32 = -2;
 
@@ -69,8 +69,8 @@ impl DirstateMap {
         self.non_normal_set.clear();
         self.other_parent_set.clear();
         self.set_parents(DirstateParents {
-            p1: NULL_REVISION,
-            p2: NULL_REVISION,
+            p1: NULL_ID,
+            p2: NULL_ID,
         })
     }
 
@@ -267,8 +267,8 @@ impl DirstateMap {
             };
         } else if file_contents.is_empty() {
             parents = DirstateParents {
-                p1: NULL_REVISION,
-                p2: NULL_REVISION,
+                p1: NULL_ID,
+                p2: NULL_ID,
             };
         } else {
             return Err(DirstateError::Parse(DirstateParseError::Damaged));
