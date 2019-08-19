@@ -1633,11 +1633,14 @@ class revlog(object):
         rawtext = None
         # An intermediate text to apply deltas to
         basetext = None
+        # Do we need to update the rawtext cache once it is validated ?
+        needcaching = True
 
         # Check if we have the entry in cache
         # The cache entry looks like (node, rev, rawtext)
         if self._revisioncache:
             if self._revisioncache[0] == node:
+                needcaching = False
                 # _cache only stores rawtext
                 # rawtext is reusable. but we might need to run flag processors
                 rawtext = self._revisioncache[2]
@@ -1680,7 +1683,6 @@ class revlog(object):
 
             rawtext = mdiff.patches(basetext, bins)
             del basetext # let us have a chance to free memory early
-            self._revisioncache = (node, rev, rawtext)
 
         if flags is None:
             if rev is None:
@@ -1690,6 +1692,9 @@ class revlog(object):
         text, validatehash = self._processflags(rawtext, flags, 'read', raw=raw)
         if validatehash:
             self.checkhash(text, node, rev=rev)
+
+        if needcaching:
+            self._revisioncache = (node, rev, rawtext)
 
         return text
 
