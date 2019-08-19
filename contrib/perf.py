@@ -126,6 +126,7 @@ try:
     getargspec = pycompat.getargspec  # added to module after 4.5
     _byteskwargs = pycompat.byteskwargs  # since 4.1 (or fbc3f73dc802)
     _sysstr = pycompat.sysstr         # since 4.0 (or 2219f4f82ede)
+    _bytestr = pycompat.bytestr       # since 4.2 (or b70407bd84d5)
     _xrange = pycompat.xrange         # since 4.8 (or 7eba8f83129b)
     fsencode = pycompat.fsencode      # since 3.9 (or f4a5e0e86a7e)
     if pycompat.ispy3:
@@ -136,6 +137,7 @@ except (NameError, ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
     _byteskwargs = identity
+    _bytestr = str
     fsencode = identity               # no py3 support
     _maxint = sys.maxint              # no py3 support
     _sysstr = lambda x: x             # no py3 support
@@ -381,16 +383,16 @@ def gettimer(ui, opts=None):
                      % item))
             continue
         try:
-            time_limit = float(pycompat.sysstr(parts[0]))
+            time_limit = float(_sysstr(parts[0]))
         except ValueError as e:
             ui.warn((b'malformatted run limit entry, %s: %s\n'
-                     % (pycompat.bytestr(e), item)))
+                     % (_bytestr(e), item)))
             continue
         try:
-            run_limit = int(pycompat.sysstr(parts[1]))
+            run_limit = int(_sysstr(parts[1]))
         except ValueError as e:
             ui.warn((b'malformatted run limit entry, %s: %s\n'
-                     % (pycompat.bytestr(e), item)))
+                     % (_bytestr(e), item)))
             continue
         limits.append((time_limit, run_limit))
     if not limits:
@@ -3085,7 +3087,7 @@ def perfprogress(ui, topic=None, total=None, **opts):
 
     def doprogress():
         with ui.makeprogress(topic, total=total) as progress:
-            for i in pycompat.xrange(total):
+            for i in _xrange(total):
                 progress.increment()
 
     timer(doprogress)
