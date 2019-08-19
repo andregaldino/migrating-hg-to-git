@@ -132,7 +132,7 @@ try:
         _maxint = sys.maxsize  # per py3 docs for replacing maxint
     else:
         _maxint = sys.maxint
-except (ImportError, AttributeError):
+except (NameError, ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
     _byteskwargs = identity
@@ -144,11 +144,11 @@ except (ImportError, AttributeError):
 try:
     # 4.7+
     queue = pycompat.queue.Queue
-except (AttributeError, ImportError):
+except (NameError, AttributeError, ImportError):
     # <4.7.
     try:
         queue = pycompat.queue
-    except (AttributeError, ImportError):
+    except (NameError, AttributeError, ImportError):
         queue = util.queue
 
 try:
