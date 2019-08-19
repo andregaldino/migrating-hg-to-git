@@ -149,7 +149,7 @@ except (NameError, AttributeError, ImportError):
     try:
         queue = pycompat.queue
     except (NameError, AttributeError, ImportError):
-        queue = util.queue
+        import Queue as queue
 
 try:
     from mercurial import logcmdutil
