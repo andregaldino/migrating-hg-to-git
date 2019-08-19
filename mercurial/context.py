@@ -1558,9 +1558,10 @@ class workingctx(committablectx):
         parents = self._repo.dirstate.parents()
         p1manifest = self._repo[parents[0]].manifest()
         p2manifest = self._repo[parents[1]].manifest()
+        changedset = set(self.added()) | set(self.modified())
         narrowmatch = self._repo.narrowmatch()
         for dst, src in self._repo.dirstate.copies().items():
-            if not narrowmatch(dst):
+            if dst not in changedset or not narrowmatch(dst):
                 continue
             if src in p1manifest:
                 p1copies[dst] = src

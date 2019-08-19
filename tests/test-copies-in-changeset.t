@@ -197,13 +197,37 @@ Test splitting a commit
   $ echo a2 > a
   $ hg mv b c
   $ hg ci -m 'modify a, move b to c'
-  $ (hg --config ui.interactive=yes split 2>&1 | grep mercurial.error) <<EOF
+  $ hg --config ui.interactive=yes split <<EOF
   > y
   > y
   > n
   > y
   > EOF
-  mercurial.error.ProgrammingError: some copy targets missing from file list
+  diff --git a/a b/a
+  1 hunks, 1 lines changed
+  examine changes to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -a
+  +a2
+  record this change to 'a'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  diff --git a/b b/c
+  rename from b
+  rename to c
+  examine changes to 'b' and 'c'?
+  (enter ? for help) [Ynesfdaq?] n
+  
+  created new head
+  diff --git a/b b/c
+  rename from b
+  rename to c
+  examine changes to 'b' and 'c'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  saved backup bundle to $TESTTMP/split/.hg/strip-backup/9a396d463e04-2d9e6864-split.hg
   $ cd ..
 
 Test committing half a rename
@@ -213,6 +237,5 @@ Test committing half a rename
   $ echo a > a
   $ hg ci -Aqm 'add a'
   $ hg mv a b
-  $ hg ci -m 'remove a' a 2>&1 | grep mercurial.error
-  mercurial.error.ProgrammingError: some copy targets missing from file list
+  $ hg ci -m 'remove a' a
   $ cd ..
