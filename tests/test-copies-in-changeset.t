@@ -10,6 +10,7 @@
   > showcopies = log -r . -T '{file_copies % "{source} -> {name}\n"}'
   > [extensions]
   > rebase =
+  > split =
   > EOF
 
 Check that copies are recorded correctly
@@ -184,4 +185,34 @@ Test rebasing a commit with copy information
   A b
     a
   R a
+  $ cd ..
+
+Test splitting a commit
+
+  $ hg init split
+  $ cd split
+  $ echo a > a
+  $ echo b > b
+  $ hg ci -Aqm 'add a and b'
+  $ echo a2 > a
+  $ hg mv b c
+  $ hg ci -m 'modify a, move b to c'
+  $ (hg --config ui.interactive=yes split 2>&1 | grep mercurial.error) <<EOF
+  > y
+  > y
+  > n
+  > y
+  > EOF
+  mercurial.error.ProgrammingError: some copy targets missing from file list
+  $ cd ..
+
+Test committing half a rename
+
+  $ hg init partial
+  $ cd partial
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ hg mv a b
+  $ hg ci -m 'remove a' a 2>&1 | grep mercurial.error
+  mercurial.error.ProgrammingError: some copy targets missing from file list
   $ cd ..
