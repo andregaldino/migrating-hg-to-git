@@ -1677,7 +1677,7 @@ class revlog(object):
 
         return text
 
-    def rawdata(self, nodeorrev, _df=None, raw=False):
+    def rawdata(self, nodeorrev, _df=None):
         """return an uncompressed raw data of a given node or revision number.
 
         _df - an existing file handle to read from. (internal-only)
