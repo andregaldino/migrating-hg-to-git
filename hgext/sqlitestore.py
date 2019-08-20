@@ -90,7 +90,8 @@ configitem = registrar.configitem(configtable)
 
 # experimental config: storage.sqlite.compression
 configitem('storage', 'sqlite.compression',
-           default='zstd' if zstd else 'zlib')
+           default='zstd' if zstd else 'zlib',
+           experimental=True)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should

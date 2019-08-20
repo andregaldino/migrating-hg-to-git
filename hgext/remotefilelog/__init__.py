@@ -219,7 +219,7 @@ configitem('remotefilelog', 'excludepattern', default=None)
 
 configitem('remotefilelog', 'gcrepack', default=False)
 configitem('remotefilelog', 'repackonhggc', default=False)
-configitem('repack', 'chainorphansbysize', default=True)
+configitem('repack', 'chainorphansbysize', default=True, experimental=True)
 
 configitem('packs', 'maxpacksize', default=0)
 configitem('packs', 'maxchainlen', default=1000)

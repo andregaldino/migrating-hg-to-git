@@ -39,13 +39,14 @@ class configitem(object):
     """
 
     def __init__(self, section, name, default=None, alias=(),
-                 generic=False, priority=0):
+                 generic=False, priority=0, experimental=False):
         self.section = section
         self.name = name
         self.default = default
         self.alias = list(alias)
         self.generic = generic
         self.priority = priority
+        self.experimental = experimental
         self._re = None
         if generic:
             self._re = re.compile(self.name)
@@ -166,6 +167,7 @@ coreconfigitem('bundle', 'mainreporoot',
 )
 coreconfigitem('censor', 'policy',
     default='abort',
+    experimental=True,
 )
 coreconfigitem('chgserver', 'idletimeout',
     default=3600,
@@ -184,9 +186,11 @@ coreconfigitem('cmdserver', 'max-log-size',
 )
 coreconfigitem('cmdserver', 'max-repo-cache',
     default=0,
+    experimental=True,
 )
 coreconfigitem('cmdserver', 'message-encodings',
     default=list,
+    experimental=True,
 )
 coreconfigitem('cmdserver', 'track-log',
     default=lambda: ['chgserver', 'cmdserver', 'repocache'],
@@ -207,6 +211,7 @@ coreconfigitem('commands', 'commit.post-status',
 )
 coreconfigitem('commands', 'grep.all-files',
     default=False,
+    experimental=True,
 )
 coreconfigitem('commands', 'resolve.confirm',
     default=False,
@@ -226,6 +231,7 @@ coreconfigitem('commands', 'status.relative',
 )
 coreconfigitem('commands', 'status.skipstates',
     default=[],
+    experimental=True,
 )
 coreconfigitem('commands', 'status.terse',
     default='',
@@ -314,6 +320,7 @@ coreconfigitem('convert', 'hg.usebranchnames',
 )
 coreconfigitem('convert', 'ignoreancestorcheck',
     default=False,
+    experimental=True,
 )
 coreconfigitem('convert', 'localtimezone',
     default=False,
@@ -687,18 +694,22 @@ coreconfigitem('format', 'bookmarks-in-store',
 )
 coreconfigitem('format', 'chunkcachesize',
     default=None,
+    experimental=True,
 )
 coreconfigitem('format', 'dotencode',
     default=True,
 )
 coreconfigitem('format', 'generaldelta',
     default=False,
+    experimental=True,
 )
 coreconfigitem('format', 'manifestcachesize',
     default=None,
+    experimental=True,
 )
 coreconfigitem('format', 'maxchainlen',
     default=dynamicdefault,
+    experimental=True,
 )
 coreconfigitem('format', 'obsstore-version',
     default=None,
@@ -721,6 +732,7 @@ coreconfigitem('format', 'usestore',
 )
 coreconfigitem('format', 'internal-phase',
     default=False,
+    experimental=True,
 )
 coreconfigitem('fsmonitor', 'warn_when_unused',
     default=True,
@@ -826,6 +838,7 @@ coreconfigitem('merge', 'on-failure',
 )
 coreconfigitem('merge', 'preferancestor',
         default=lambda: ['*'],
+        experimental=True,
 )
 coreconfigitem('merge', 'strict-capability-check',
     default=False,
@@ -1010,6 +1023,7 @@ coreconfigitem('rewrite', 'update-timestamp',
 )
 coreconfigitem('storage', 'new-repo-backend',
     default='revlogv1',
+    experimental=True,
 )
 coreconfigitem('storage', 'revlog.optimize-delta-parent-choice',
     default=True,
@@ -1120,6 +1134,7 @@ coreconfigitem('smtp', 'username',
 )
 coreconfigitem('sparse', 'missingwarning',
     default=True,
+    experimental=True,
 )
 coreconfigitem('subrepos', 'allowed',
     default=dynamicdefault,  # to make backporting simpler
@@ -1466,6 +1481,7 @@ coreconfigitem('web', 'templates',
 )
 coreconfigitem('web', 'view',
     default='served',
+    experimental=True,
 )
 coreconfigitem('worker', 'backgroundclose',
     default=dynamicdefault,

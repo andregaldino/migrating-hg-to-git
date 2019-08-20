@@ -241,6 +241,37 @@ try:
     configitem = mercurial.registrar.configitem(configtable)
     configitem(b'perf', b'presleep',
         default=mercurial.configitems.dynamicdefault,
+        experimental=True,
+    )
+    configitem(b'perf', b'stub',
+        default=mercurial.configitems.dynamicdefault,
+        experimental=True,
+    )
+    configitem(b'perf', b'parentscount',
+        default=mercurial.configitems.dynamicdefault,
+        experimental=True,
+    )
+    configitem(b'perf', b'all-timing',
+        default=mercurial.configitems.dynamicdefault,
+        experimental=True,
+    )
+    configitem(b'perf', b'pre-run',
+        default=mercurial.configitems.dynamicdefault,
+    )
+    configitem(b'perf', b'profile-benchmark',
+        default=mercurial.configitems.dynamicdefault,
+    )
+    configitem(b'perf', b'run-limits',
+        default=mercurial.configitems.dynamicdefault,
+        experimental=True,
+    )
+except (ImportError, AttributeError):
+    pass
+except TypeError:
+    # compatibility fix for a11fd395e83f
+    # hg version: 5.2
+    configitem(b'perf', b'presleep',
+        default=mercurial.configitems.dynamicdefault,
     )
     configitem(b'perf', b'stub',
         default=mercurial.configitems.dynamicdefault,
@@ -260,8 +291,6 @@ try:
     configitem(b'perf', b'run-limits',
         default=mercurial.configitems.dynamicdefault,
     )
-except (ImportError, AttributeError):
-    pass
 
 def getlen(ui):
     if ui.configbool(b"perf", b"stub", False):

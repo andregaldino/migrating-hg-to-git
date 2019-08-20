@@ -167,6 +167,7 @@ configitem('fsmonitor', 'watchman_exe',
 )
 configitem('fsmonitor', 'verbose',
     default=True,
+    experimental=True,
 )
 configitem('experimental', 'fsmonitor.transaction_notify',
     default=False,
