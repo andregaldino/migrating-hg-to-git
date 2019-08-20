@@ -1623,80 +1623,76 @@ class revlog(object):
         if node == nullid:
             return ""
 
-        # revision in the cache (could be useful to apply delta)
-        cachedrev = None
-        # the revlog's flag for this revision
-        # (usually alter its state or content)
-        flags = None
         # The text as stored inside the revlog. Might be the revision or might
         # need to be processed to retrieve the revision.
         rawtext = None
+
+        rev, rawtext, validated = self._rawtext(node, rev, _df=_df)
+
+        if raw and validated:
+            # if we don't want to process the raw text and that raw
+            # text is cached, we can exit early.
+            return rawtext
+        if rev is None:
+            rev = self.rev(node)
+        # the revlog's flag for this revision
+        # (usually alter its state or content)
+        flags = self.flags(rev)
+
+        if validated and flags == REVIDX_DEFAULT_FLAGS:
+            # no extra flags set, no flag processor runs, text = rawtext
+            return rawtext
+
+        text, validatehash = self._processflags(rawtext, flags, 'read', raw=raw)
+        if validatehash:
+            self.checkhash(text, node, rev=rev)
+        if not validated:
+            self._revisioncache = (node, rev, rawtext)
+
+        return text
+
+    def _rawtext(self, node, rev, _df=None):
+        """return the possibly unvalidated rawtext for a revision
+
+        returns (rev, rawtext, validated)
+        """
+
+        # revision in the cache (could be useful to apply delta)
+        cachedrev = None
         # An intermediate text to apply deltas to
         basetext = None
-        # Do we need to update the rawtext cache once it is validated ?
-        needcaching = True
 
         # Check if we have the entry in cache
         # The cache entry looks like (node, rev, rawtext)
         if self._revisioncache:
             if self._revisioncache[0] == node:
-                needcaching = False
-                # _cache only stores rawtext
-                # rawtext is reusable. but we might need to run flag processors
-                rawtext = self._revisioncache[2]
-                if raw:
-                    # if we don't want to process the raw text and that raw
-                    # text is cached, we can exit early.
-                    return rawtext
-                # duplicated, but good for perf
-                if rev is None:
-                    rev = self.rev(node)
-                if flags is None:
-                    flags = self.flags(rev)
-                # no extra flags set, no flag processor runs, text = rawtext
-                if flags == REVIDX_DEFAULT_FLAGS:
-                    return rawtext
-
+                return (rev, self._revisioncache[2], True)
             cachedrev = self._revisioncache[1]
 
-        # look up what we need to read
-        if rawtext is None:
-            if rev is None:
-                rev = self.rev(node)
+        if rev is None:
+            rev = self.rev(node)
 
-            chain, stopped = self._deltachain(rev, stoprev=cachedrev)
-            if stopped:
-                basetext = self._revisioncache[2]
+        chain, stopped = self._deltachain(rev, stoprev=cachedrev)
+        if stopped:
+            basetext = self._revisioncache[2]
 
-            # drop cache to save memory
-            self._revisioncache = None
+        # drop cache to save memory, the caller is expected to
+        # update self._revisioncache after validating the text
+        self._revisioncache = None
 
-            targetsize = None
-            rawsize = self.index[rev][2]
-            if 0 <= rawsize:
-                targetsize = 4 * rawsize
+        targetsize = None
+        rawsize = self.index[rev][2]
+        if 0 <= rawsize:
+            targetsize = 4 * rawsize
 
-            bins = self._chunks(chain, df=_df, targetsize=targetsize)
-            if basetext is None:
-                basetext = bytes(bins[0])
-                bins = bins[1:]
+        bins = self._chunks(chain, df=_df, targetsize=targetsize)
+        if basetext is None:
+            basetext = bytes(bins[0])
+            bins = bins[1:]
 
-            rawtext = mdiff.patches(basetext, bins)
-            del basetext # let us have a chance to free memory early
-
-        if flags is None:
-            if rev is None:
-                rev = self.rev(node)
-            flags = self.flags(rev)
-
-        text, validatehash = self._processflags(rawtext, flags, 'read', raw=raw)
-        if validatehash:
-            self.checkhash(text, node, rev=rev)
-
-        if needcaching:
-            self._revisioncache = (node, rev, rawtext)
-
-        return text
+        rawtext = mdiff.patches(basetext, bins)
+        del basetext # let us have a chance to free memory early
+        return (rev, rawtext, False)
 
     def rawdata(self, nodeorrev, _df=None):
         """return an uncompressed raw data of a given node or revision number.
