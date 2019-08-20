@@ -2,14 +2,13 @@
 from __future__ import absolute_import, print_function
 
 import argparse
-import json
 import os
 import subprocess
 import sys
 
 # Always load hg libraries from the hg we can find on $PATH.
-hglib = json.loads(subprocess.check_output(
-    ['hg', 'debuginstall', '-Tjson']))[0]['hgmodules']
+hglib = subprocess.check_output(
+    ['hg', 'debuginstall', '-T', '{hgmodules}'])
 sys.path.insert(0, os.path.dirname(hglib))
 
 from mercurial import util
