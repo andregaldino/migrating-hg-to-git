@@ -2025,7 +2025,8 @@ def update(repo, node, branchmerge, force, ancestor=None,
                 raise error.Abort(_("outstanding uncommitted merge"))
             ms = mergestate.read(repo)
             if list(ms.unresolved()):
-                raise error.Abort(_("outstanding merge conflicts"))
+                raise error.Abort(_("outstanding merge conflicts"),
+                                  hint=_("use 'hg resolve' to resolve"))
         if branchmerge:
             if pas == [p2]:
                 raise error.Abort(_("merging with a working directory ancestor"

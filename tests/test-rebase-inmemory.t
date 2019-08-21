@@ -506,6 +506,7 @@ Retrying without in-memory merge won't lose merge state
   $ hg rebase -s 2 -d 7
   rebasing 2:177f92b77385 "c"
   abort: outstanding merge conflicts
+  (use 'hg resolve' to resolve)
   [255]
   $ hg resolve -l
   U e

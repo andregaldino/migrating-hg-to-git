@@ -210,12 +210,15 @@ can not update or merge when there are unresolved conflicts
   [1]
   $ hg up 0
   abort: outstanding merge conflicts
+  (use 'hg resolve' to resolve)
   [255]
   $ hg merge 2
   abort: outstanding merge conflicts
+  (use 'hg resolve' to resolve)
   [255]
   $ hg merge --force 2
   abort: outstanding merge conflicts
+  (use 'hg resolve' to resolve)
   [255]
 
 set up conflict-free merge
