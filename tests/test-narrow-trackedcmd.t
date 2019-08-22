@@ -220,5 +220,5 @@ Testing tracked command on a non-narrow repo
   $ hg init non-narrow
   $ cd non-narrow
   $ hg tracked --addinclude foobar
-  abort: the tracked command is only supported on respositories cloned with --narrow
+  abort: the tracked command is only supported on repositories cloned with --narrow
   [255]

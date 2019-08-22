@@ -368,7 +368,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         raise error.Abort(_('the tracked command is only supported on '
-                            'respositories cloned with --narrow'))
+                            'repositories cloned with --narrow'))
 
     # Before supporting, decide whether it "hg tracked --clear" should mean
     # tracking no paths or all paths.
