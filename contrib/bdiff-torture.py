@@ -53,8 +53,7 @@ def testwrap(a, b):
         test1(a, b)
         return
     except Exception as inst:
-        pass
-    print("exception:", inst)
+        print("exception:", inst)
     reducetest(a, b)
 
 def test(a, b):
