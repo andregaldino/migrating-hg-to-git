@@ -71,6 +71,15 @@ pub fn find_dirs<'a>(path: &'a [u8]) -> Ancestors<'a> {
     dirs
 }
 
+/// TODO improve handling of utf8 file names. Our overall strategy for
+/// filenames has to be revisited anyway, since Windows is UTF-16.
+pub fn normalize_case(bytes: &[u8]) -> Vec<u8> {
+    #[cfg(windows)] // NTFS compares via upper()
+    return bytes.to_ascii_uppercase();
+    #[cfg(unix)]
+    bytes.to_ascii_lowercase()
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

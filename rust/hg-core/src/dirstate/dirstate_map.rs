@@ -7,9 +7,10 @@
 
 use crate::{
     dirstate::{parsers::PARENT_SIZE, EntryState},
-    pack_dirstate, parse_dirstate, CopyMap, DirsMultiset, DirstateEntry,
-    DirstateError, DirstateMapError, DirstateParents, DirstateParseError,
-    StateMap,
+    pack_dirstate, parse_dirstate,
+    utils::files::normalize_case,
+    CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
+    DirstateParents, DirstateParseError, StateMap,
 };
 use core::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
@@ -127,7 +128,7 @@ impl DirstateMap {
         }
 
         if let Some(ref mut file_fold_map) = self.file_fold_map {
-            file_fold_map.remove(&filename.to_ascii_uppercase());
+            file_fold_map.remove(&normalize_case(filename));
         }
         self.state_map.insert(
             filename.to_owned(),
@@ -162,7 +163,7 @@ impl DirstateMap {
             }
         }
         if let Some(ref mut file_fold_map) = self.file_fold_map {
-            file_fold_map.remove(&filename.to_ascii_uppercase());
+            file_fold_map.remove(&normalize_case(filename));
         }
         self.non_normal_set.remove(filename);
 
@@ -326,10 +327,8 @@ impl DirstateMap {
         for (filename, DirstateEntry { state, .. }) in self.state_map.borrow()
         {
             if *state == EntryState::Removed {
-                new_file_fold_map.insert(
-                    filename.to_ascii_uppercase().to_owned(),
-                    filename.to_owned(),
-                );
+                new_file_fold_map
+                    .insert(normalize_case(filename), filename.to_owned());
             }
         }
         self.file_fold_map = Some(new_file_fold_map);
