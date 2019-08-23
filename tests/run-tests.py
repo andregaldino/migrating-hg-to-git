@@ -484,14 +484,6 @@ def parseargs(args, parser):
     if 'java' in sys.platform or '__pypy__' in sys.modules:
         options.pure = True
 
-    if options.with_hg:
-        options.with_hg = canonpath(_bytespath(options.with_hg))
-        if not (os.path.isfile(options.with_hg) and
-                os.access(options.with_hg, os.X_OK)):
-            parser.error('--with-hg must specify an executable hg script')
-        if os.path.basename(options.with_hg) not in [b'hg', b'hg.exe']:
-            sys.stderr.write('warning: --with-hg should specify an hg script\n')
-            sys.stderr.flush()
     if options.local:
         if options.with_hg or options.with_chg:
             parser.error('--local cannot be used with --with-hg or --with-chg')
@@ -505,7 +497,16 @@ def parseargs(args, parser):
             if os.name != 'nt' and not os.access(binpath, os.X_OK):
                 parser.error('--local specified, but %r not found or '
                              'not executable' % binpath)
-            setattr(options, attr, binpath)
+            setattr(options, attr, _strpath(binpath))
+
+    if options.with_hg:
+        options.with_hg = canonpath(_bytespath(options.with_hg))
+        if not (os.path.isfile(options.with_hg) and
+                os.access(options.with_hg, os.X_OK)):
+            parser.error('--with-hg must specify an executable hg script')
+        if os.path.basename(options.with_hg) not in [b'hg', b'hg.exe']:
+            sys.stderr.write('warning: --with-hg should specify an hg script\n')
+            sys.stderr.flush()
 
     if (options.chg or options.with_chg) and os.name == 'nt':
         parser.error('chg does not work on %s' % os.name)
