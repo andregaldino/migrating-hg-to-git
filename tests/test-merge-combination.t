@@ -57,7 +57,7 @@ revision. "C" indicates that hg merge had conflicts.
   >                fi
   >           else expected=a
   >           fi
-  >           got=`hg log -r 3 --template '{files}\n' | tr --delete 'e '`
+  >           got=`hg log -r 3 --template '{files}\n' | tr -d 'e '`
   >           if [ "$got" = "$expected" ]
   >           then echo "$line$conflicts: agree on \"$got\""
   >           else echo "$line$conflicts: hg said \"$got\", expected \"$expected\""

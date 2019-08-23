@@ -16,6 +16,7 @@ export LANGUAGE=C
 export LC_ALL=C
 TESTFLAGS ?= $(shell echo $$HGTESTFLAGS)
 OSXVERSIONFLAGS ?= $(shell echo $$OSXVERSIONFLAGS)
+CARGO = cargo
 
 # Set this to e.g. "mingw32" to use a non-default compiler.
 COMPILER=
@@ -110,6 +111,10 @@ dist-notests:	doc MANIFEST.in
 check: tests
 
 tests:
+        # Run Rust tests if cargo is installed
+	if command -v $(CARGO) >/dev/null 2>&1; then \
+		cd $(HGROOT)/rust/hg-cpython && $(CARGO) test --quiet --all; \
+	fi
 	cd tests && $(PYTHON) run-tests.py $(TESTFLAGS)
 
 test-%:
