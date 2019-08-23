@@ -493,6 +493,8 @@ def parseargs(args, parser):
             sys.stderr.write('warning: --with-hg should specify an hg script\n')
             sys.stderr.flush()
     if options.local:
+        if options.with_hg or options.with_chg:
+            parser.error('--local cannot be used with --with-hg or --with-chg')
         testdir = os.path.dirname(_bytespath(canonpath(sys.argv[0])))
         reporootdir = os.path.dirname(testdir)
         pathandattrs = [(b'hg', 'with_hg')]
