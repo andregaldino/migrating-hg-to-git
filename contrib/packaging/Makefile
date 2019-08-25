@@ -6,10 +6,10 @@ DEBIAN_CODENAMES := \
   buster
 
 UBUNTU_CODENAMES := \
-  trusty \
   xenial \
-  artful \
   bionic \
+  cosmic \
+  disco
 
 FEDORA_RELEASES := \
   20 \
