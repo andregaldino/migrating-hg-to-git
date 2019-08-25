@@ -1,9 +1,9 @@
 $(eval HGROOT := $(shell cd ../..; pwd))
 
 DEBIAN_CODENAMES := \
-  jessie \
   stretch \
-  buster
+  buster \
+  bullseye
 
 UBUNTU_CODENAMES := \
   xenial \
