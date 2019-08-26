@@ -185,14 +185,21 @@ fn _build_single_regex(
             res.extend(b"[^/]+$");
             res
         }
-        PatternSyntax::Glob
-        | PatternSyntax::RelGlob
-        | PatternSyntax::RootGlob => {
+        PatternSyntax::RelGlob => {
             let mut res: Vec<u8> = vec![];
-            if syntax == PatternSyntax::RelGlob {
+            let glob_re = glob_to_re(pattern);
+            if let Some(rest) = glob_re.drop_prefix(b"[^/]*") {
+                res.extend(b".*");
+                res.extend(rest);
+            } else {
                 res.extend(b"(?:|.*/)");
+                res.extend(glob_re);
             }
-
+            res.extend(globsuffix.iter());
+            res
+        }
+        PatternSyntax::Glob | PatternSyntax::RootGlob => {
+            let mut res: Vec<u8> = vec![];
             res.extend(glob_to_re(pattern));
             res.extend(globsuffix.iter());
             res

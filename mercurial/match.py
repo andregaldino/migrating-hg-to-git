@@ -1223,7 +1223,12 @@ def _regex(kind, pat, globsuffix):
         # Anything after the pattern must be a non-directory.
         return escaped + '[^/]+$'
     if kind == 'relglob':
-        return '(?:|.*/)' + _globre(pat) + globsuffix
+        globre = _globre(pat)
+        if globre.startswith('[^/]*'):
+            # When pat has the form *XYZ (common), make the returned regex more
+            # legible by returning the regex for **XYZ instead of **/*XYZ.
+            return '.*' + globre[len('[^/]*'):] + globsuffix
+        return '(?:|.*/)' + globre + globsuffix
     if kind == 'relre':
         if pat.startswith('^'):
             return pat
