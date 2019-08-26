@@ -159,26 +159,20 @@ fn _build_single_regex(
             if pattern[0] == b'^' {
                 return pattern.to_owned();
             }
-            let mut res = b".*".to_vec();
-            res.extend(pattern);
-            res
+            [b".*", pattern].concat()
         }
         PatternSyntax::Path | PatternSyntax::RelPath => {
             if pattern == b"." {
                 return vec![];
             }
-            let mut pattern = escape_pattern(pattern);
-            pattern.extend(b"(?:/|$)");
-            pattern
+            [escape_pattern(pattern).as_slice(), b"(?:/|$)"].concat()
         }
         PatternSyntax::RootFiles => {
             let mut res = if pattern == b"." {
                 vec![]
             } else {
                 // Pattern is a directory name.
-                let mut as_vec: Vec<u8> = escape_pattern(pattern);
-                as_vec.push(b'/');
-                as_vec
+                [escape_pattern(pattern).as_slice(), b"/"].concat()
             };
 
             // Anything after the pattern must be a non-directory.
@@ -186,23 +180,15 @@ fn _build_single_regex(
             res
         }
         PatternSyntax::RelGlob => {
-            let mut res: Vec<u8> = vec![];
             let glob_re = glob_to_re(pattern);
             if let Some(rest) = glob_re.drop_prefix(b"[^/]*") {
-                res.extend(b".*");
-                res.extend(rest);
+                [b".*", rest, globsuffix].concat()
             } else {
-                res.extend(b"(?:|.*/)");
-                res.extend(glob_re);
+                [b"(?:|.*/)", glob_re.as_slice(), globsuffix].concat()
             }
-            res.extend(globsuffix.iter());
-            res
         }
         PatternSyntax::Glob | PatternSyntax::RootGlob => {
-            let mut res: Vec<u8> = vec![];
-            res.extend(glob_to_re(pattern));
-            res.extend(globsuffix.iter());
-            res
+            [glob_to_re(pattern).as_slice(), globsuffix].concat()
         }
     }
 }
