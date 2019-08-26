@@ -60,8 +60,8 @@ fn glob_to_re(pat: &[u8]) -> Vec<u8> {
         match c {
             b'*' => {
                 for (source, repl) in GLOB_REPLACEMENTS {
-                    if input.starts_with(source) {
-                        input = &input[source.len()..];
+                    if let Some(rest) = input.drop_prefix(source) {
+                        input = rest;
                         res.extend(*repl);
                         break;
                     }
@@ -269,8 +269,8 @@ pub fn parse_pattern_file_contents(
             continue;
         }
 
-        if line.starts_with(b"syntax:") {
-            let syntax = line[b"syntax:".len()..].trim();
+        if let Some(syntax) = line.drop_prefix(b"syntax:") {
+            let syntax = syntax.trim();
 
             if let Some(rel_syntax) = SYNTAXES.get(syntax) {
                 current_syntax = rel_syntax;
@@ -283,13 +283,14 @@ pub fn parse_pattern_file_contents(
         let mut line_syntax: &[u8] = &current_syntax;
 
         for (s, rels) in SYNTAXES.iter() {
-            if line.starts_with(rels) {
+            if let Some(rest) = line.drop_prefix(rels) {
                 line_syntax = rels;
-                line = &line[rels.len()..];
+                line = rest;
                 break;
-            } else if line.starts_with(&[s, b":".as_ref()].concat()) {
+            }
+            if let Some(rest) = line.drop_prefix(&[s, &b":"[..]].concat()) {
                 line_syntax = rels;
-                line = &line[s.len() + 1..];
+                line = rest;
                 break;
             }
         }

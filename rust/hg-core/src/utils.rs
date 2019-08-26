@@ -40,6 +40,7 @@ pub trait SliceExt {
     fn trim_end(&self) -> &Self;
     fn trim_start(&self) -> &Self;
     fn trim(&self) -> &Self;
+    fn drop_prefix(&self, needle: &Self) -> Option<&Self>;
 }
 
 fn is_not_whitespace(c: &u8) -> bool {
@@ -79,5 +80,13 @@ impl SliceExt for [u8] {
     /// ```
     fn trim(&self) -> &[u8] {
         self.trim_start().trim_end()
+    }
+
+    fn drop_prefix(&self, needle: &Self) -> Option<&Self> {
+        if self.starts_with(needle) {
+            Some(&self[needle.len()..])
+        } else {
+            None
+        }
     }
 }
