@@ -181,11 +181,14 @@ def ishunk(x):
 
 def newandmodified(chunks, originalchunks):
     newlyaddedandmodifiedfiles = set()
+    alsorestore = set()
     for chunk in chunks:
         if (ishunk(chunk) and chunk.header.isnewfile() and chunk not in
             originalchunks):
             newlyaddedandmodifiedfiles.add(chunk.header.filename())
-    return newlyaddedandmodifiedfiles
+            alsorestore.update(set(chunk.header.files()) -
+                               set([chunk.header.filename()]))
+    return newlyaddedandmodifiedfiles, alsorestore
 
 def parsealiases(cmd):
     return cmd.split("|")
@@ -326,8 +329,11 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
 
         # We need to keep a backup of files that have been newly added and
         # modified during the recording process because there is a previous
-        # version without the edit in the workdir
-        newlyaddedandmodifiedfiles = newandmodified(chunks, originalchunks)
+        # version without the edit in the workdir. We also will need to restore
+        # files that were the sources of renames so that the patch application
+        # works.
+        newlyaddedandmodifiedfiles, alsorestore = newandmodified(chunks,
+                                                                 originalchunks)
         contenders = set()
         for h in chunks:
             try:
@@ -392,7 +398,7 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
             # 3a. apply filtered patch to clean repo  (clean)
             if backups:
                 # Equivalent to hg.revert
-                m = scmutil.matchfiles(repo, backups.keys())
+                m = scmutil.matchfiles(repo, set(backups.keys()) | alsorestore)
                 mergemod.update(repo, repo.dirstate.p1(), branchmerge=False,
                                 force=True, matcher=m)
 
@@ -3172,7 +3178,13 @@ def _performrevert(repo, parents, ctx, names, uipathfn, actions,
         except error.PatchError as err:
             raise error.Abort(_('error parsing patch: %s') % err)
 
-        newlyaddedandmodifiedfiles = newandmodified(chunks, originalchunks)
+        # FIXME: when doing an interactive revert of a copy, there's no way of
+        # performing a partial revert of the added file, the only option is
+        # "remove added file <name> (Yn)?", so we don't need to worry about the
+        # alsorestore value. Ideally we'd be able to partially revert
+        # copied/renamed files.
+        newlyaddedandmodifiedfiles, unusedalsorestore = newandmodified(
+                chunks, originalchunks)
         if tobackup is None:
             tobackup = set()
         # Apply changes

@@ -790,6 +790,96 @@ TODO: Fix this on Windows. See issue 2020 and 5883
   [255]
 #endif
 
+Test that splitting moves works properly (issue5723)
+----------------------------------------------------
+
+  $ hg init $TESTTMP/issue5723-mv
+  $ cd $TESTTMP/issue5723-mv
+  $ printf '1\n2\n' > file
+  $ hg ci -qAm initial
+  $ hg mv file file2
+  $ printf 'a\nb\n1\n2\n3\n4\n' > file2
+  $ cat > $TESTTMP/messages <<EOF
+  > split1, keeping only the numbered lines
+  > --
+  > split2, keeping the lettered lines
+  > EOF
+  $ hg ci -m 'move and modify'
+  $ printf 'y\nn\na\na\n' | hg split
+  diff --git a/file b/file2
+  rename from file
+  rename to file2
+  2 hunks, 4 lines changed
+  examine changes to 'file' and 'file2'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -0,0 +1,2 @@
+  +a
+  +b
+  record change 1/2 to 'file2'?
+  (enter ? for help) [Ynesfdaq?] n
+  
+  @@ -2,0 +5,2 @@ 2
+  +3
+  +4
+  record change 2/2 to 'file2'?
+  (enter ? for help) [Ynesfdaq?] a
+  
+  EDITOR: HG: Splitting 8c42fa635116. Write commit message for the first split changeset.
+  EDITOR: move and modify
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: added file2
+  EDITOR: HG: removed file
+  created new head
+  diff --git a/file2 b/file2
+  1 hunks, 2 lines changed
+  examine changes to 'file2'?
+  (enter ? for help) [Ynesfdaq?] a
+  
+  EDITOR: HG: Splitting 8c42fa635116. So far it has been split into:
+  EDITOR: HG: - 478be2a70c27: split1, keeping only the numbered lines
+  EDITOR: HG: Write commit message for the next split changeset.
+  EDITOR: move and modify
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed file2
+  saved backup bundle to $TESTTMP/issue5723-mv/.hg/strip-backup/8c42fa635116-a38044d4-split.hg (obsstore-off !)
+  $ hg log -T '{desc}: {files%"{file} "}\n'
+  split2, keeping the lettered lines: file2 
+  split1, keeping only the numbered lines: file file2 
+  initial: file 
+  $ cat file2
+  a
+  b
+  1
+  2
+  3
+  4
+  $ hg cat -r ".^" file2
+  1
+  2
+  3
+  4
+  $ hg cat -r . file2
+  a
+  b
+  1
+  2
+  3
+  4
+
+
 Test that splitting copies works properly (issue5723)
 ----------------------------------------------------
 
