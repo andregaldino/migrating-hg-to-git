@@ -789,3 +789,100 @@ TODO: Fix this on Windows. See issue 2020 and 5883
   abort: cannot split an empty revision
   [255]
 #endif
+
+Test that splitting copies works properly (issue5723)
+----------------------------------------------------
+
+  $ hg init $TESTTMP/issue5723-cp
+  $ cd $TESTTMP/issue5723-cp
+  $ printf '1\n2\n' > file
+  $ hg ci -qAm initial
+  $ hg cp file file2
+  $ printf 'a\nb\n1\n2\n3\n4\n' > file2
+Also modify 'file' to prove that the changes aren't being pulled in
+accidentally.
+  $ printf 'this is the new contents of "file"' > file
+  $ cat > $TESTTMP/messages <<EOF
+  > split1, keeping "file" and only the numbered lines in file2
+  > --
+  > split2, keeping the lettered lines in file2
+  > EOF
+  $ hg ci -m 'copy file->file2, modify both'
+  $ printf 'f\ny\nn\na\na\n' | hg split
+  diff --git a/file b/file
+  1 hunks, 2 lines changed
+  examine changes to 'file'?
+  (enter ? for help) [Ynesfdaq?] f
+  
+  diff --git a/file b/file2
+  copy from file
+  copy to file2
+  2 hunks, 4 lines changed
+  examine changes to 'file' and 'file2'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -0,0 +1,2 @@
+  +a
+  +b
+  record change 2/3 to 'file2'?
+  (enter ? for help) [Ynesfdaq?] n
+  
+  @@ -2,0 +5,2 @@ 2
+  +3
+  +4
+  record change 3/3 to 'file2'?
+  (enter ? for help) [Ynesfdaq?] a
+  
+  EDITOR: HG: Splitting 41c861dfa61e. Write commit message for the first split changeset.
+  EDITOR: copy file->file2, modify both
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: added file2
+  EDITOR: HG: changed file
+  created new head
+  diff --git a/file2 b/file2
+  1 hunks, 2 lines changed
+  examine changes to 'file2'?
+  (enter ? for help) [Ynesfdaq?] a
+  
+  EDITOR: HG: Splitting 41c861dfa61e. So far it has been split into:
+  EDITOR: HG: - 4b19e06610eb: split1, keeping "file" and only the numbered lines in file2
+  EDITOR: HG: Write commit message for the next split changeset.
+  EDITOR: copy file->file2, modify both
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed file2
+  saved backup bundle to $TESTTMP/issue5723-cp/.hg/strip-backup/41c861dfa61e-467e8d3c-split.hg (obsstore-off !)
+  $ hg log -T '{desc}: {files%"{file} "}\n'
+  split2, keeping the lettered lines in file2: file2 
+  split1, keeping "file" and only the numbered lines in file2: file file2 
+  initial: file 
+  $ cat file2
+  a
+  b
+  1
+  2
+  3
+  4
+  $ hg cat -r ".^" file2
+  1
+  2
+  3
+  4
+  $ hg cat -r . file2
+  a
+  b
+  1
+  2
+  3
+  4

@@ -864,7 +864,7 @@ class header(object):
     allhunks_re = re.compile('(?:index|deleted file) ')
     pretty_re = re.compile('(?:new file|deleted file) ')
     special_re = re.compile('(?:index|deleted|copy|rename|new mode) ')
-    newfile_re = re.compile('(?:new file)')
+    newfile_re = re.compile('(?:new file|copy to)')
 
     def __init__(self, header):
         self.header = header
