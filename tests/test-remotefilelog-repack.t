@@ -1,6 +1,12 @@
 #require no-windows
 
   $ . "$TESTDIR/remotefilelog-library.sh"
+# devel.remotefilelog.ensurestart: reduce race condition with
+# waiton{repack/prefetch}
+  $ cat >> $HGRCPATH <<EOF
+  > [devel]
+  > remotefilelog.ensurestart=True
+  > EOF
 
   $ hg init master
   $ cd master

@@ -34,7 +34,8 @@ osutil = policy.importmod(r'osutil')
 class RepackAlreadyRunning(error.Abort):
     pass
 
-def backgroundrepack(repo, incremental=True, packsonly=False):
+def backgroundrepack(repo, incremental=True, packsonly=False,
+                     ensurestart=False):
     cmd = [procutil.hgexecutable(), '-R', repo.origroot, 'repack']
     msg = _("(running background repack)\n")
     if incremental:
@@ -44,7 +45,7 @@ def backgroundrepack(repo, incremental=True, packsonly=False):
         cmd.append('--packsonly')
     repo.ui.warn(msg)
     # We know this command will find a binary, so don't block on it starting.
-    procutil.runbgcommand(cmd, encoding.environ, ensurestart=False)
+    procutil.runbgcommand(cmd, encoding.environ, ensurestart=ensurestart)
 
 def fullrepack(repo, options=None):
     """If ``packsonly`` is True, stores creating only loose objects are skipped.

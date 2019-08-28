@@ -183,7 +183,7 @@ def wraprepo(repo):
                                                             origctx=origctx)
 
         def backgroundprefetch(self, revs, base=None, repack=False, pats=None,
-                               opts=None):
+                               opts=None, ensurestart=False):
             """Runs prefetch in background with optional repack
             """
             cmd = [procutil.hgexecutable(), '-R', repo.origroot, 'prefetch']
@@ -193,7 +193,8 @@ def wraprepo(repo):
                 cmd += ['-r', revs]
             # We know this command will find a binary, so don't block
             # on it starting.
-            procutil.runbgcommand(cmd, encoding.environ, ensurestart=False)
+            procutil.runbgcommand(cmd, encoding.environ,
+                                  ensurestart=ensurestart)
 
         def prefetch(self, revs, base=None, pats=None, opts=None):
             """Prefetches all the necessary file revisions for the given revs
