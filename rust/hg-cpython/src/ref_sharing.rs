@@ -345,7 +345,7 @@ macro_rules! py_shared_mapping_iterator {
             $name,
             $leaked,
             Box<
-                Iterator<Item = (&'static $key_type, &'static $value_type)>
+                dyn Iterator<Item = (&'static $key_type, &'static $value_type)>
                     + Send,
             >,
             $success_func,
@@ -367,7 +367,7 @@ macro_rules! py_shared_sequence_iterator {
         py_shared_iterator_impl!(
             $name,
             $leaked,
-            Box<Iterator<Item = &'static $key_type> + Send>,
+            Box<dyn Iterator<Item = &'static $key_type> + Send>,
             $success_func,
             $success_type
         );
