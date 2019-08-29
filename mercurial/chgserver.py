@@ -172,7 +172,7 @@ def _mtimehash(paths):
         except OSError:
             # could be ENOENT, EPERM etc. not fatal in any case
             pass
-    return _hashlist(map(trystat, paths))[:12]
+    return _hashlist(pycompat.maplist(trystat, paths))[:12]
 
 class hashstate(object):
     """a structure storing confighash, mtimehash, paths used for mtimehash"""
