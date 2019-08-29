@@ -31,10 +31,10 @@ mod conversion;
 pub mod ref_sharing;
 pub mod dagops;
 pub mod dirstate;
-pub mod parsers;
 pub mod discovery;
 pub mod exceptions;
 pub mod filepatterns;
+pub mod parsers;
 
 py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     m.add(
