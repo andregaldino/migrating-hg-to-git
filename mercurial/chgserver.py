@@ -505,7 +505,7 @@ class chgcmdserver(commandserver.server):
         path = self._readstr()
         if not path:
             return
-        self.ui.log(b'chgserver', b'chdir to %r\n', path)
+        self.ui.log(b'chgserver', b"chdir to '%s'\n", path)
         os.chdir(path)
 
     def setumask(self):
