@@ -875,7 +875,10 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
               if idx not in blacklist]
     frames = collections.OrderedDict((str(k), v)
                                      for (k,v) in enumerate(id2stack))
-    json.dump(dict(traceEvents=events, stackFrames=frames), fp, indent=1)
+    data = json.dumps(dict(traceEvents=events, stackFrames=frames), indent=1)
+    if not isinstance(data, bytes):
+        data = data.encode('utf-8')
+    fp.write(data)
     fp.write('\n')
 
 def printusage():
