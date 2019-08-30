@@ -109,9 +109,6 @@ class unionrevlog(revlog.revlog):
             func = super(unionrevlog, self)._revisiondata
         return func(node, _df=_df, raw=raw)
 
-    def rawdata(self, nodeorrev, _df=None):
-        return self.revision(nodeorrev, _df=_df, raw=True)
-
     def addrevision(self, text, transaction, link, p1=None, p2=None, d=None):
         raise NotImplementedError
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
