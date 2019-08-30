@@ -324,7 +324,7 @@ class remotefilelog(flagutil.flagprocessorsmixin):
         flags = store.getmeta(self.filename, node).get(constants.METAKEYFLAG, 0)
         if flags == 0:
             return rawtext
-        text, verifyhash = self._processflags(rawtext, flags, 'read')
+        text, verifyhash = self._processflagsread(rawtext, flags)
         return text
 
     def rawdata(self, node):
