@@ -91,7 +91,7 @@ class unionrevlog(revlog.revlog):
         elif rev1 <= self.repotiprev and rev2 <= self.repotiprev:
             return self.baserevdiff(rev1, rev2)
 
-        return mdiff.textdiff(self.revision(rev1), self.revision(rev2))
+        return mdiff.textdiff(self.rawdata(rev1), self.rawdata(rev2))
 
     def _revisiondata(self, nodeorrev, _df=None, raw=False):
         if isinstance(nodeorrev, int):
