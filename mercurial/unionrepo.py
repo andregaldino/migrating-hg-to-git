@@ -14,7 +14,6 @@ allowing operations like diff and log with revsets.
 from __future__ import absolute_import
 
 from .i18n import _
-from .node import nullid
 
 from . import (
     changelog,
@@ -94,10 +93,7 @@ class unionrevlog(revlog.revlog):
 
         return mdiff.textdiff(self.revision(rev1), self.revision(rev2))
 
-    def revision(self, nodeorrev, _df=None, raw=False):
-        """return an uncompressed revision of a given node or revision
-        number.
-        """
+    def _revisiondata(self, nodeorrev, _df=None, raw=False):
         if isinstance(nodeorrev, int):
             rev = nodeorrev
             node = self.node(rev)
@@ -105,16 +101,13 @@ class unionrevlog(revlog.revlog):
             node = nodeorrev
             rev = self.rev(node)
 
-        if node == nullid:
-            return ""
-
         if rev > self.repotiprev:
-            text = self.revlog2.revision(node)
-            self._revisioncache = (node, rev, text)
+            # work around manifestrevlog NOT being a revlog
+            revlog2 = getattr(self.revlog2, '_revlog', self.revlog2)
+            func = revlog2._revisiondata
         else:
-            text = self.baserevision(rev)
-            # already cached
-        return text
+            func = super(unionrevlog, self)._revisiondata
+        return func(node, _df=_df, raw=raw)
 
     def rawdata(self, nodeorrev, _df=None):
         return self.revision(nodeorrev, _df=_df, raw=True)
