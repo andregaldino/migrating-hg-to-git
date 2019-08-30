@@ -729,10 +729,6 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
         fp.write(b'get it here: https://github.com/brendangregg/FlameGraph\n')
         return
 
-    fd, path = pycompat.mkstemp()
-
-    file = open(path, "w+")
-
     lines = {}
     for sample in data.samples:
         sites = [s.function for s in sample.stack]
@@ -743,10 +739,11 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
         else:
             lines[line] = 1
 
-    for line, count in lines.iteritems():
-        file.write("%s %d\n" % (line, count))
+    fd, path = pycompat.mkstemp()
 
-    file.close()
+    with open(path, "w+") as file:
+        for line, count in lines.iteritems():
+            file.write("%s %d\n" % (line, count))
 
     if outputfile is None:
         outputfile = '~/flamegraph.svg'
