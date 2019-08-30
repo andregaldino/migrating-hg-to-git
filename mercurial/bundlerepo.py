@@ -142,12 +142,6 @@ class bundlerevlog(revlog.revlog):
     def rawdata(self, nodeorrev, _df=None):
         return self.revision(nodeorrev, _df=_df, raw=True)
 
-    def baserevision(self, nodeorrev):
-        # Revlog subclasses may override 'revision' method to modify format of
-        # content retrieved from revlog. To use bundlerevlog with such class one
-        # needs to override 'baserevision' and make more specific call here.
-        return revlog.revlog.rawdata(self, nodeorrev)
-
     def addrevision(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -167,20 +161,6 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
         bundlerevlog.__init__(self, opener, self.indexfile, cgunpacker,
                               linkmapper)
 
-    def baserevision(self, nodeorrev):
-        # Although changelog doesn't override 'revision' method, some extensions
-        # may replace this class with another that does. Same story with
-        # manifest and filelog classes.
-
-        # This bypasses filtering on changelog.node() and rev() because we need
-        # revision text of the bundle base even if it is hidden.
-        oldfilter = self.filteredrevs
-        try:
-            self.filteredrevs = ()
-            return changelog.changelog.rawdata(self, nodeorrev)
-        finally:
-            self.filteredrevs = oldfilter
-
 class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     def __init__(self, opener, cgunpacker, linkmapper, dirlogstarts=None,
                  dir=''):
@@ -193,17 +173,6 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
                 dirlogstarts = _getfilestarts(self.bundle)
         self._dirlogstarts = dirlogstarts
         self._linkmapper = linkmapper
-
-    def baserevision(self, nodeorrev):
-        node = nodeorrev
-        if isinstance(node, int):
-            node = self.node(node)
-
-        if node in self.fulltextcache:
-            result = '%s' % self.fulltextcache[node]
-        else:
-            result = manifest.manifestrevlog.rawdata(self, nodeorrev)
-        return result
 
     def dirlog(self, d):
         if d in self._dirlogstarts:
@@ -218,9 +187,6 @@ class bundlefilelog(filelog.filelog):
         filelog.filelog.__init__(self, opener, path)
         self._revlog = bundlerevlog(opener, self.indexfile,
                                     cgunpacker, linkmapper)
-
-    def baserevision(self, nodeorrev):
-        return filelog.filelog.rawdata(self, nodeorrev)
 
 class bundlepeer(localrepo.localpeer):
     def canpush(self):
