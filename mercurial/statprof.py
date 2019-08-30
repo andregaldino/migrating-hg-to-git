@@ -878,7 +878,8 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
         laststack = collections.deque(stack)
     while laststack:
         poplast()
-    events = [s[1] for s in enumerate(samples) if s[0] not in blacklist]
+    events = [sample for idx, sample in enumerate(samples)
+              if idx not in blacklist]
     frames = collections.OrderedDict((str(k), v)
                                      for (k,v) in enumerate(id2stack))
     json.dump(dict(traceEvents=events, stackFrames=frames), fp, indent=1)
