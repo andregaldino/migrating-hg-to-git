@@ -1823,7 +1823,7 @@ class revlog(flagutil.flagprocessorsmixin):
         if flags:
             node = node or self.hash(text, p1, p2)
 
-        rawtext, validatehash = self._processflags(text, flags, 'write')
+        rawtext, validatehash = self._processflagswrite(text, flags)
 
         # If the flag processor modifies the revision data, ignore any provided
         # cachedelta.

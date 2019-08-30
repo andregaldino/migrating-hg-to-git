@@ -135,7 +135,7 @@ class remotefilelog(flagutil.flagprocessorsmixin):
             node = storageutil.hashrevisionsha1(text, p1, p2)
 
         meta, metaoffset = storageutil.parsemeta(text)
-        rawtext, validatehash = self._processflags(text, flags, 'write')
+        rawtext, validatehash = self._processflagswrite(text, flags)
         return self.addrawrevision(rawtext, transaction, linknode, p1, p2,
                                    node, flags, cachedelta,
                                    _metatuple=(meta, metaoffset))
