@@ -17,7 +17,10 @@ import os
 import shutil
 
 from .i18n import _
-from .node import nullid
+from .node import (
+    nullid,
+    nullrev
+)
 
 from . import (
     bundle2,
@@ -108,20 +111,10 @@ class bundlerevlog(revlog.revlog):
         return mdiff.textdiff(self.rawdata(rev1),
                               self.rawdata(rev2))
 
-    def revision(self, nodeorrev, _df=None, raw=False):
-        """return an uncompressed revision of a given node or revision
-        number.
-        """
-        if isinstance(nodeorrev, int):
-            rev = nodeorrev
-            node = self.node(rev)
-        else:
-            node = nodeorrev
+    def _rawtext(self, node, rev, _df=None):
+        if rev is None:
             rev = self.rev(node)
-
-        if node == nullid:
-            return ""
-
+        validated = False
         rawtext = None
         chain = []
         iterrev = rev
@@ -132,19 +125,19 @@ class bundlerevlog(revlog.revlog):
                 break
             chain.append(iterrev)
             iterrev = self.index[iterrev][3]
-        if rawtext is None:
-            rawtext = self.baserevision(iterrev)
-
+        if iterrev == nullrev:
+            rawtext = ''
+        elif rawtext is None:
+            r = super(bundlerevlog, self)._rawtext(self.node(iterrev),
+                                                   iterrev,
+                                                   _df=_df)
+            __, rawtext, validated = r
+        if chain:
+            validated = False
         while chain:
             delta = self._chunk(chain.pop())
             rawtext = mdiff.patches(rawtext, [delta])
-
-        text, validatehash = self._processflags(rawtext, self.flags(rev),
-                                                'read', raw=raw)
-        if validatehash:
-            self.checkhash(text, node, rev=rev)
-        self._revisioncache = (node, rev, rawtext)
-        return text
+        return rev, rawtext, validated
 
     def rawdata(self, nodeorrev, _df=None):
         return self.revision(nodeorrev, _df=_df, raw=True)
