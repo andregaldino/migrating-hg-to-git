@@ -112,12 +112,6 @@ class unionrevlog(revlog.revlog):
     def rawdata(self, nodeorrev, _df=None):
         return self.revision(nodeorrev, _df=_df, raw=True)
 
-    def baserevdiff(self, rev1, rev2):
-        # Revlog subclasses may override 'revdiff' method to modify format of
-        # content retrieved from revlog. To use unionrevlog with such class one
-        # needs to override 'baserevdiff' and make more specific call here.
-        return revlog.revlog.revdiff(self, rev1, rev2)
-
     def addrevision(self, text, transaction, link, p1=None, p2=None, d=None):
         raise NotImplementedError
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
@@ -136,21 +130,12 @@ class unionchangelog(unionrevlog, changelog.changelog):
         unionrevlog.__init__(self, opener, self.indexfile, changelog2,
                              linkmapper)
 
-    def baserevdiff(self, rev1, rev2):
-        # Although changelog doesn't override 'revdiff' method, some extensions
-        # may replace this class with another that does. Same story with
-        # manifest and filelog classes.
-        return changelog.changelog.revdiff(self, rev1, rev2)
-
 class unionmanifest(unionrevlog, manifest.manifestrevlog):
     def __init__(self, opener, opener2, linkmapper):
         manifest.manifestrevlog.__init__(self, opener)
         manifest2 = manifest.manifestrevlog(opener2)
         unionrevlog.__init__(self, opener, self.indexfile, manifest2,
                              linkmapper)
-
-    def baserevdiff(self, rev1, rev2):
-        return manifest.manifestrevlog.revdiff(self, rev1, rev2)
 
 class unionfilelog(filelog.filelog):
     def __init__(self, opener, path, opener2, linkmapper, repo):
@@ -161,9 +146,6 @@ class unionfilelog(filelog.filelog):
         self._repo = repo
         self.repotiprev = self._revlog.repotiprev
         self.revlog2 = self._revlog.revlog2
-
-    def baserevdiff(self, rev1, rev2):
-        return filelog.filelog.revdiff(self, rev1, rev2)
 
     def iscensored(self, rev):
         """Check if a revision is censored."""
