@@ -236,18 +236,14 @@ class CodeSite(object):
     def getsource(self, length):
         if self.source is None:
             lineno = self.lineno - 1
-            fp = None
             try:
-                fp = open(self.path, 'rb')
-                for i, line in enumerate(fp):
-                    if i == lineno:
-                        self.source = line.strip()
-                        break
+                with open(self.path, 'rb') as fp:
+                    for i, line in enumerate(fp):
+                        if i == lineno:
+                            self.source = line.strip()
+                            break
             except:
                 pass
-            finally:
-                if fp:
-                    fp.close()
             if self.source is None:
                 self.source = ''
 
