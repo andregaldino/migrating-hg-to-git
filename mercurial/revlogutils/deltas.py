@@ -521,8 +521,7 @@ def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
         fulltext = mdiff.patch(basetext, delta)
 
     try:
-        res = revlog._processflags(fulltext, flags, 'read', raw=True)
-        fulltext, validatehash = res
+        validatehash = revlog._processflagsraw(fulltext, flags)
         if validatehash:
             revlog.checkhash(fulltext, expectednode, p1=p1, p2=p2)
         if flags & REVIDX_ISCENSORED:
