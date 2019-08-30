@@ -139,9 +139,6 @@ class bundlerevlog(revlog.revlog):
             rawtext = mdiff.patches(rawtext, [delta])
         return rev, rawtext, validated
 
-    def rawdata(self, nodeorrev, _df=None):
-        return self.revision(nodeorrev, _df=_df, raw=True)
-
     def addrevision(self, *args, **kwargs):
         raise NotImplementedError
 
