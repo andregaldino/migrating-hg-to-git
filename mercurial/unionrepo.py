@@ -89,7 +89,7 @@ class unionrevlog(revlog.revlog):
                 self.revlog2.rev(self.node(rev1)),
                 self.revlog2.rev(self.node(rev2)))
         elif rev1 <= self.repotiprev and rev2 <= self.repotiprev:
-            return self.baserevdiff(rev1, rev2)
+            return super(unionrevlog, self).revdiff(rev1, rev2)
 
         return mdiff.textdiff(self.rawdata(rev1), self.rawdata(rev2))
 
