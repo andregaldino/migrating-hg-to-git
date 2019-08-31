@@ -20,8 +20,7 @@ pub mod files;
 /// assert_eq!(
 ///     line,
 ///     b"I love writing tests!".to_vec()
-///);
-///
+/// );
 /// ```
 pub fn replace_slice<T>(buf: &mut [T], from: &[T], to: &[T])
 where

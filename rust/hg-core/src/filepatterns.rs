@@ -38,7 +38,8 @@ pub enum PatternSyntax {
     Regexp,
     /// Glob that matches at the front of the path
     RootGlob,
-    /// Glob that matches at any suffix of the path (still anchored at slashes)
+    /// Glob that matches at any suffix of the path (still anchored at
+    /// slashes)
     Glob,
     Path,
     RelPath,

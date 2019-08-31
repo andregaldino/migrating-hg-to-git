@@ -8,10 +8,10 @@
 //! Miscellaneous DAG operations
 //!
 //! # Terminology
-//! - By *relative heads* of a collection of revision numbers (`Revision`),
-//!   we mean those revisions that have no children among the collection.
-//! - Similarly *relative roots* of a collection of `Revision`, we mean
-//!   those whose parents, if any, don't belong to the collection.
+//! - By *relative heads* of a collection of revision numbers (`Revision`), we
+//!   mean those revisions that have no children among the collection.
+//! - Similarly *relative roots* of a collection of `Revision`, we mean those
+//!   whose parents, if any, don't belong to the collection.
 use super::{Graph, GraphError, Revision, NULL_REVISION};
 use crate::ancestors::AncestorsIterator;
 use std::collections::{BTreeSet, HashSet};
@@ -272,5 +272,4 @@ mod tests {
         );
         Ok(())
     }
-
 }

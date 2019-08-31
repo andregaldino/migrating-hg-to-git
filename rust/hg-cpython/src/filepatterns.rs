@@ -8,7 +8,8 @@
 
 //! Bindings for the `hg::filepatterns` module provided by the
 //! `hg-core` crate. From Python, this will be seen as `rustext.filepatterns`
-//! and can be used as replacement for the the pure `filepatterns` Python module.
+//! and can be used as replacement for the the pure `filepatterns` Python
+//! module.
 //!
 use crate::exceptions::{PatternError, PatternFileError};
 use cpython::{
