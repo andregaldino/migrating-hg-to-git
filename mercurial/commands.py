@@ -2184,7 +2184,8 @@ def config(ui, repo, *values, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'edit') or opts.get(b'local') or opts.get(b'global'):
+    editopts = (b'edit', b'local', b'global')
+    if any(opts.get(o) for o in editopts):
         if opts.get(b'local') and opts.get(b'global'):
             raise error.Abort(_(b"can't use --local and --global together"))
 
