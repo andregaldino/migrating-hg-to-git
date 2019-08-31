@@ -759,7 +759,7 @@ def simplifypath(path):
 
     if path in _pathcache:
         return _pathcache[path]
-    hgpath = pycompat.fsencode(encoding.__file__).rsplit(os.sep, 2)[0]
+    hgpath = encoding.__file__.rsplit(os.sep, 2)[0]
     for p in [hgpath] + sys.path:
         prefix = p + os.sep
         if path.startswith(prefix):
@@ -807,7 +807,7 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
         parent = stackid(stack[1:])
         myid = len(stack2id)
         stack2id[stack] = myid
-        id2stack.append(dict(category=stack[0][0], name='%s %s' % stack[0]))
+        id2stack.append(dict(category=stack[0][0], name=r'%s %s' % stack[0]))
         if parent is not None:
             id2stack[-1].update(parent=parent)
         return myid
@@ -842,7 +842,7 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
         if minthreshold <= duration <= maxthreshold:
             # ensure no zero-duration events
             sampletime = max(oldtime + clamp, sample.time)
-            samples.append(dict(ph='E', name=oldfunc, cat=oldcat, sf=oldsid,
+            samples.append(dict(ph=r'E', name=oldfunc, cat=oldcat, sf=oldsid,
                                 ts=sampletime*1e6, pid=0))
         else:
             blacklist.add(oldidx)
@@ -851,8 +851,10 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
     # events given only stack snapshots.
 
     for sample in data.samples:
-        stack = tuple((('%s:%d' % (simplifypath(frame.path), frame.lineno),
-                        frame.function) for frame in sample.stack))
+        stack = tuple(((r'%s:%d' % (simplifypath(pycompat.sysstr(frame.path)),
+                                    frame.lineno),
+                        pycompat.sysstr(frame.function))
+                       for frame in sample.stack))
         qstack = collections.deque(stack)
         if laststack == qstack:
             continue
@@ -866,8 +868,8 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
             laststack.appendleft(f)
             path, name = f
             sid = stackid(tuple(laststack))
-            samples.append(dict(ph='B', name=name, cat=path, ts=sample.time*1e6,
-                                sf=sid, pid=0))
+            samples.append(dict(ph=r'B', name=name, cat=path,
+                                ts=sample.time*1e6, sf=sid, pid=0))
         laststack = collections.deque(stack)
     while laststack:
         poplast()
