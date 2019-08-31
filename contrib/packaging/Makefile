@@ -1,15 +1,15 @@
 $(eval HGROOT := $(shell cd ../..; pwd))
 
 DEBIAN_CODENAMES := \
-  jessie \
   stretch \
-  buster
+  buster \
+  bullseye
 
 UBUNTU_CODENAMES := \
-  trusty \
   xenial \
-  artful \
   bionic \
+  cosmic \
+  disco
 
 FEDORA_RELEASES := \
   20 \

@@ -1036,6 +1036,12 @@ def _bmaction(old, new):
         return 'delete'
     return 'update'
 
+def _abortonsecretctx(pushop, node, b):
+    """abort if a given bookmark points to a secret changeset"""
+    if node and pushop.repo[node].phase() == phases.secret:
+        raise error.Abort(_('cannot push bookmark %s as it points to a secret'
+                            ' changeset') % b)
+
 def _pushb2bookmarkspart(pushop, bundler):
     pushop.stepsdone.add('bookmarks')
     if not pushop.outbookmarks:
@@ -1044,6 +1050,7 @@ def _pushb2bookmarkspart(pushop, bundler):
     allactions = []
     data = []
     for book, old, new in pushop.outbookmarks:
+        _abortonsecretctx(pushop, new, book)
         new = bin(new)
         data.append((book, new))
         allactions.append((book, _bmaction(old, new)))
@@ -1072,6 +1079,7 @@ def _pushb2bookmarkspushkey(pushop, bundler):
         assert False
 
     for book, old, new in pushop.outbookmarks:
+        _abortonsecretctx(pushop, new, book)
         part = bundler.newpart('pushkey')
         part.addparam('namespace', enc('bookmarks'))
         part.addparam('key', enc(book))

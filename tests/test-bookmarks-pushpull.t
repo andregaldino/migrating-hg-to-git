@@ -1322,3 +1322,31 @@ attempt to move the bookmark is rejected
   abort: push failed on remote
   [255]
 #endif
+
+-- test for pushing bookmarks pointing to secret changesets
+
+Set up a "remote" repo
+  $ hg init issue6159remote
+  $ cd issue6159remote
+  $ echo a > a
+  $ hg add a
+  $ hg commit -m_
+  $ hg bookmark foo
+  $ cd ..
+
+Clone a local repo
+  $ hg clone -q issue6159remote issue6159local
+  $ cd issue6159local
+  $ hg up -qr foo
+  $ echo b > b
+
+Move the bookmark "foo" to point at a secret changeset
+  $ hg commit -qAm_ --config phases.new-commit=secret
+
+Pushing the bookmark "foo" now fails as it contains a secret changeset
+  $ hg push -r foo
+  pushing to $TESTTMP/issue6159remote
+  searching for changes
+  no changes found (ignored 1 secret changesets)
+  abort: cannot push bookmark foo as it points to a secret changeset
+  [255]
