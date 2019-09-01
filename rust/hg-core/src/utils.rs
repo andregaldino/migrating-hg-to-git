@@ -8,6 +8,7 @@
 //! Contains useful functions, traits, structs, etc. for use in core.
 
 pub mod files;
+pub mod hg_path;
 
 /// Replaces the `from` slice with the `to` slice inside the `buf` slice.
 ///
