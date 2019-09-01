@@ -169,8 +169,7 @@ py_class!(pub class DirstateMap |py| {
                 Ok(filename?.extract::<PyBytes>(py)?.data(py).to_owned())
             })
             .collect();
-        self.inner(py)
-            .borrow_mut()
+        self.borrow_mut(py)?
             .clear_ambiguous_times(files?, now.extract(py)?);
         Ok(py.None())
     }
@@ -205,25 +204,20 @@ py_class!(pub class DirstateMap |py| {
 
     def hastrackeddir(&self, d: PyObject) -> PyResult<PyBool> {
         let d = d.extract::<PyBytes>(py)?;
-        Ok(self
-            .inner(py)
-            .borrow_mut()
+        Ok(self.borrow_mut(py)?
             .has_tracked_dir(d.data(py))
             .to_py_object(py))
     }
 
     def hasdir(&self, d: PyObject) -> PyResult<PyBool> {
         let d = d.extract::<PyBytes>(py)?;
-        Ok(self
-            .inner(py)
-            .borrow_mut()
+        Ok(self.borrow_mut(py)?
             .has_dir(d.data(py))
             .to_py_object(py))
     }
 
     def parents(&self, st: PyObject) -> PyResult<PyTuple> {
-        self.inner(py)
-            .borrow_mut()
+        self.borrow_mut(py)?
             .parents(st.extract::<PyBytes>(py)?.data(py))
             .and_then(|d| {
                 Ok((PyBytes::new(py, &d.p1), PyBytes::new(py, &d.p2))
@@ -241,16 +235,13 @@ py_class!(pub class DirstateMap |py| {
         let p1 = extract_node_id(py, &p1)?;
         let p2 = extract_node_id(py, &p2)?;
 
-        self.inner(py)
-            .borrow_mut()
+        self.borrow_mut(py)?
             .set_parents(&DirstateParents { p1, p2 });
         Ok(py.None())
     }
 
     def read(&self, st: PyObject) -> PyResult<Option<PyObject>> {
-        match self
-            .inner(py)
-            .borrow_mut()
+        match self.borrow_mut(py)?
             .read(st.extract::<PyBytes>(py)?.data(py))
         {
             Ok(Some(parents)) => Ok(Some(
@@ -353,7 +344,7 @@ py_class!(pub class DirstateMap |py| {
 
     def getdirs(&self) -> PyResult<Dirs> {
         // TODO don't copy, share the reference
-        self.inner(py).borrow_mut().set_dirs();
+        self.borrow_mut(py)?.set_dirs();
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
@@ -364,7 +355,7 @@ py_class!(pub class DirstateMap |py| {
     }
     def getalldirs(&self) -> PyResult<Dirs> {
         // TODO don't copy, share the reference
-        self.inner(py).borrow_mut().set_all_dirs();
+        self.borrow_mut(py)?.set_all_dirs();
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
@@ -422,8 +413,7 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyObject> {
         let key = key.extract::<PyBytes>(py)?;
         let value = value.extract::<PyBytes>(py)?;
-        self.inner(py)
-            .borrow_mut()
+        self.borrow_mut(py)?
             .copy_map
             .insert(key.data(py).to_vec(), value.data(py).to_vec());
         Ok(py.None())
@@ -434,7 +424,7 @@ py_class!(pub class DirstateMap |py| {
         default: Option<PyObject>
     ) -> PyResult<Option<PyObject>> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.inner(py).borrow_mut().copy_map.remove(key.data(py)) {
+        match self.borrow_mut(py)?.copy_map.remove(key.data(py)) {
             Some(_) => Ok(None),
             None => Ok(default),
         }
