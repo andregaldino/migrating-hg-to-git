@@ -3,6 +3,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::utils::hg_path::HgPath;
 use crate::{
     dirstate::{CopyMap, EntryState, StateMap},
     DirstateEntry, DirstatePackError, DirstateParents, DirstateParseError,
@@ -60,10 +61,13 @@ pub fn parse_dirstate(
         };
 
         if let Some(copy_path) = copy {
-            copy_map.insert(path.to_owned(), copy_path.to_owned());
+            copy_map.insert(
+                HgPath::new(path).to_owned(),
+                HgPath::new(copy_path).to_owned(),
+            );
         };
         state_map.insert(
-            path.to_owned(),
+            HgPath::new(path).to_owned(),
             DirstateEntry {
                 state,
                 mode,
@@ -106,7 +110,7 @@ pub fn pack_dirstate(
     packed.extend(&parents.p2);
 
     for (filename, entry) in state_map.iter() {
-        let mut new_filename: Vec<u8> = filename.to_owned();
+        let new_filename = filename.to_owned();
         let mut new_mtime: i32 = entry.mtime;
         if entry.state == EntryState::Normal && entry.mtime == now {
             // The file was last modified "simultaneously" with the current
@@ -127,10 +131,10 @@ pub fn pack_dirstate(
                 },
             ));
         }
-
+        let mut new_filename = new_filename.into_vec();
         if let Some(copy) = copy_map.get(filename) {
             new_filename.push('\0' as u8);
-            new_filename.extend(copy);
+            new_filename.extend(copy.bytes());
         }
 
         packed.write_u8(entry.state.into())?;
@@ -153,6 +157,7 @@ pub fn pack_dirstate(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::hg_path::HgPathBuf;
     use std::collections::HashMap;
 
     #[test]
@@ -176,7 +181,7 @@ mod tests {
     #[test]
     fn test_pack_dirstate_one_entry() {
         let expected_state_map: StateMap = [(
-            b"f1".to_vec(),
+            HgPathBuf::from_bytes(b"f1"),
             DirstateEntry {
                 state: EntryState::Normal,
                 mode: 0o644,
@@ -213,7 +218,7 @@ mod tests {
     #[test]
     fn test_pack_dirstate_one_entry_with_copy() {
         let expected_state_map: StateMap = [(
-            b"f1".to_vec(),
+            HgPathBuf::from_bytes(b"f1"),
             DirstateEntry {
                 state: EntryState::Normal,
                 mode: 0o644,
@@ -226,7 +231,10 @@ mod tests {
         .collect();
         let mut state_map = expected_state_map.clone();
         let mut copymap = HashMap::new();
-        copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
+        copymap.insert(
+            HgPathBuf::from_bytes(b"f1"),
+            HgPathBuf::from_bytes(b"copyname"),
+        );
         let parents = DirstateParents {
             p1: *b"12345678910111213141",
             p2: *b"00000000000000000000",
@@ -251,7 +259,7 @@ mod tests {
     #[test]
     fn test_parse_pack_one_entry_with_copy() {
         let mut state_map: StateMap = [(
-            b"f1".to_vec(),
+            HgPathBuf::from_bytes(b"f1"),
             DirstateEntry {
                 state: EntryState::Normal,
                 mode: 0o644,
@@ -263,7 +271,10 @@ mod tests {
         .cloned()
         .collect();
         let mut copymap = HashMap::new();
-        copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
+        copymap.insert(
+            HgPathBuf::from_bytes(b"f1"),
+            HgPathBuf::from_bytes(b"copyname"),
+        );
         let parents = DirstateParents {
             p1: *b"12345678910111213141",
             p2: *b"00000000000000000000",
@@ -291,7 +302,7 @@ mod tests {
     fn test_parse_pack_multiple_entries_with_copy() {
         let mut state_map: StateMap = [
             (
-                b"f1".to_vec(),
+                HgPathBuf::from_bytes(b"f1"),
                 DirstateEntry {
                     state: EntryState::Normal,
                     mode: 0o644,
@@ -300,7 +311,7 @@ mod tests {
                 },
             ),
             (
-                b"f2".to_vec(),
+                HgPathBuf::from_bytes(b"f2"),
                 DirstateEntry {
                     state: EntryState::Merged,
                     mode: 0o777,
@@ -309,7 +320,7 @@ mod tests {
                 },
             ),
             (
-                b"f3".to_vec(),
+                HgPathBuf::from_bytes(b"f3"),
                 DirstateEntry {
                     state: EntryState::Removed,
                     mode: 0o644,
@@ -318,7 +329,7 @@ mod tests {
                 },
             ),
             (
-                b"f4\xF6".to_vec(),
+                HgPathBuf::from_bytes(b"f4\xF6"),
                 DirstateEntry {
                     state: EntryState::Added,
                     mode: 0o644,
@@ -331,8 +342,14 @@ mod tests {
         .cloned()
         .collect();
         let mut copymap = HashMap::new();
-        copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
-        copymap.insert(b"f4\xF6".to_vec(), b"copyname2".to_vec());
+        copymap.insert(
+            HgPathBuf::from_bytes(b"f1"),
+            HgPathBuf::from_bytes(b"copyname"),
+        );
+        copymap.insert(
+            HgPathBuf::from_bytes(b"f4\xF6"),
+            HgPathBuf::from_bytes(b"copyname2"),
+        );
         let parents = DirstateParents {
             p1: *b"12345678910111213141",
             p2: *b"00000000000000000000",
@@ -360,7 +377,7 @@ mod tests {
     /// https://www.mercurial-scm.org/repo/hg/rev/af3f26b6bba4
     fn test_parse_pack_one_entry_with_copy_and_time_conflict() {
         let mut state_map: StateMap = [(
-            b"f1".to_vec(),
+            HgPathBuf::from_bytes(b"f1"),
             DirstateEntry {
                 state: EntryState::Normal,
                 mode: 0o644,
@@ -372,7 +389,10 @@ mod tests {
         .cloned()
         .collect();
         let mut copymap = HashMap::new();
-        copymap.insert(b"f1".to_vec(), b"copyname".to_vec());
+        copymap.insert(
+            HgPathBuf::from_bytes(b"f1"),
+            HgPathBuf::from_bytes(b"copyname"),
+        );
         let parents = DirstateParents {
             p1: *b"12345678910111213141",
             p2: *b"00000000000000000000",
@@ -395,7 +415,7 @@ mod tests {
             (
                 parents,
                 [(
-                    b"f1".to_vec(),
+                    HgPathBuf::from_bytes(b"f1"),
                     DirstateEntry {
                         state: EntryState::Normal,
                         mode: 0o644,

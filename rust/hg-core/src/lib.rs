@@ -18,6 +18,7 @@ pub use dirstate::{
 mod filepatterns;
 pub mod utils;
 
+use crate::utils::hg_path::HgPathBuf;
 pub use filepatterns::{
     build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
 };
@@ -96,7 +97,7 @@ impl From<std::io::Error> for DirstatePackError {
 }
 #[derive(Debug, PartialEq)]
 pub enum DirstateMapError {
-    PathNotFound(Vec<u8>),
+    PathNotFound(HgPathBuf),
     EmptyPath,
 }
 

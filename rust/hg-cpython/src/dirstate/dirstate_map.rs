@@ -24,6 +24,7 @@ use crate::{
     ref_sharing::{PySharedRefCell, PySharedState},
 };
 use hg::{
+    utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
     DirstateParents, DirstateParseError, EntryState, StateMapIter,
     PARENT_SIZE,
@@ -65,7 +66,7 @@ py_class!(pub class DirstateMap |py| {
         default: Option<PyObject> = None
     ) -> PyResult<Option<PyObject>> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.inner(py).borrow().get(key.data(py)) {
+        match self.inner(py).borrow().get(HgPath::new(key.data(py))) {
             Some(entry) => {
                 // Explicitly go through u8 first, then cast to
                 // platform-specific `c_char`.
@@ -91,7 +92,7 @@ py_class!(pub class DirstateMap |py| {
         mtime: PyObject
     ) -> PyResult<PyObject> {
         self.borrow_mut(py)?.add_file(
-            f.extract::<PyBytes>(py)?.data(py),
+            HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
             oldstate.extract::<PyBytes>(py)?.data(py)[0]
                 .try_into()
                 .map_err(|e: DirstateParseError| {
@@ -119,7 +120,7 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyObject> {
         self.borrow_mut(py)?
             .remove_file(
-                f.extract::<PyBytes>(py)?.data(py),
+                HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
                 oldstate.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
                     .map_err(|e: DirstateParseError| {
@@ -143,7 +144,7 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyBool> {
         self.borrow_mut(py)?
             .drop_file(
-                f.extract::<PyBytes>(py)?.data(py),
+                HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
                 oldstate.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
                     .map_err(|e: DirstateParseError| {
@@ -164,10 +165,12 @@ py_class!(pub class DirstateMap |py| {
         files: PyObject,
         now: PyObject
     ) -> PyResult<PyObject> {
-        let files: PyResult<Vec<Vec<u8>>> = files
+        let files: PyResult<Vec<HgPathBuf>> = files
             .iter(py)?
             .map(|filename| {
-                Ok(filename?.extract::<PyBytes>(py)?.data(py).to_owned())
+                Ok(HgPathBuf::from_bytes(
+                    filename?.extract::<PyBytes>(py)?.data(py),
+                ))
             })
             .collect();
         self.borrow_mut(py)?
@@ -186,7 +189,7 @@ py_class!(pub class DirstateMap |py| {
             "non_normal",
             non_normal
                 .iter()
-                .map(|v| PyBytes::new(py, &v))
+                .map(|v| PyBytes::new(py, v.as_ref()))
                 .collect::<Vec<PyBytes>>()
                 .to_py_object(py),
         )?;
@@ -195,7 +198,7 @@ py_class!(pub class DirstateMap |py| {
             "other_parent",
             other_parent
                 .iter()
-                .map(|v| PyBytes::new(py, &v))
+                .map(|v| PyBytes::new(py, v.as_ref()))
                 .collect::<Vec<PyBytes>>()
                 .to_py_object(py),
         )?;
@@ -206,14 +209,14 @@ py_class!(pub class DirstateMap |py| {
     def hastrackeddir(&self, d: PyObject) -> PyResult<PyBool> {
         let d = d.extract::<PyBytes>(py)?;
         Ok(self.borrow_mut(py)?
-            .has_tracked_dir(d.data(py))
+            .has_tracked_dir(HgPath::new(d.data(py)))
             .to_py_object(py))
     }
 
     def hasdir(&self, d: PyObject) -> PyResult<PyBool> {
         let d = d.extract::<PyBytes>(py)?;
         Ok(self.borrow_mut(py)?
-            .has_dir(d.data(py))
+            .has_dir(HgPath::new(d.data(py)))
             .to_py_object(py))
     }
 
@@ -280,10 +283,8 @@ py_class!(pub class DirstateMap |py| {
 
     def filefoldmapasdict(&self) -> PyResult<PyDict> {
         let dict = PyDict::new(py);
-        for (key, value) in
-            self.borrow_mut(py)?.build_file_fold_map().iter()
-        {
-            dict.set_item(py, key, value)?;
+        for (key, value) in self.borrow_mut(py)?.build_file_fold_map().iter() {
+            dict.set_item(py, key.as_ref().to_vec(), value.as_ref().to_vec())?;
         }
         Ok(dict)
     }
@@ -294,12 +295,12 @@ py_class!(pub class DirstateMap |py| {
 
     def __contains__(&self, key: PyObject) -> PyResult<bool> {
         let key = key.extract::<PyBytes>(py)?;
-        Ok(self.inner(py).borrow().contains_key(key.data(py)))
+        Ok(self.inner(py).borrow().contains_key(HgPath::new(key.data(py))))
     }
 
     def __getitem__(&self, key: PyObject) -> PyResult<PyObject> {
         let key = key.extract::<PyBytes>(py)?;
-        let key = key.data(py);
+        let key = HgPath::new(key.data(py));
         match self.inner(py).borrow().get(key) {
             Some(entry) => {
                 // Explicitly go through u8 first, then cast to
@@ -314,7 +315,7 @@ py_class!(pub class DirstateMap |py| {
             },
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
-                String::from_utf8_lossy(key),
+                String::from_utf8_lossy(key.as_bytes()),
             )),
         }
     }
@@ -373,15 +374,19 @@ py_class!(pub class DirstateMap |py| {
     def copymapcopy(&self) -> PyResult<PyDict> {
         let dict = PyDict::new(py);
         for (key, value) in self.inner(py).borrow().copy_map.iter() {
-            dict.set_item(py, PyBytes::new(py, key), PyBytes::new(py, value))?;
+            dict.set_item(
+                py,
+                PyBytes::new(py, key.as_ref()),
+                PyBytes::new(py, value.as_ref()),
+            )?;
         }
         Ok(dict)
     }
 
     def copymapgetitem(&self, key: PyObject) -> PyResult<PyBytes> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.inner(py).borrow().copy_map.get(key.data(py)) {
-            Some(copy) => Ok(PyBytes::new(py, copy)),
+        match self.inner(py).borrow().copy_map.get(HgPath::new(key.data(py))) {
+            Some(copy) => Ok(PyBytes::new(py, copy.as_ref())),
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
                 String::from_utf8_lossy(key.data(py)),
@@ -397,7 +402,11 @@ py_class!(pub class DirstateMap |py| {
     }
     def copymapcontains(&self, key: PyObject) -> PyResult<bool> {
         let key = key.extract::<PyBytes>(py)?;
-        Ok(self.inner(py).borrow().copy_map.contains_key(key.data(py)))
+        Ok(self
+            .inner(py)
+            .borrow()
+            .copy_map
+            .contains_key(HgPath::new(key.data(py))))
     }
     def copymapget(
         &self,
@@ -405,8 +414,15 @@ py_class!(pub class DirstateMap |py| {
         default: Option<PyObject>
     ) -> PyResult<Option<PyObject>> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.inner(py).borrow().copy_map.get(key.data(py)) {
-            Some(copy) => Ok(Some(PyBytes::new(py, copy).into_object())),
+        match self
+            .inner(py)
+            .borrow()
+            .copy_map
+            .get(HgPath::new(key.data(py)))
+        {
+            Some(copy) => Ok(Some(
+                PyBytes::new(py, copy.as_ref()).into_object(),
+            )),
             None => Ok(default),
         }
     }
@@ -417,9 +433,10 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyObject> {
         let key = key.extract::<PyBytes>(py)?;
         let value = value.extract::<PyBytes>(py)?;
-        self.borrow_mut(py)?
-            .copy_map
-            .insert(key.data(py).to_vec(), value.data(py).to_vec());
+        self.borrow_mut(py)?.copy_map.insert(
+            HgPathBuf::from_bytes(key.data(py)),
+            HgPathBuf::from_bytes(value.data(py)),
+        );
         Ok(py.None())
     }
     def copymappop(
@@ -428,7 +445,11 @@ py_class!(pub class DirstateMap |py| {
         default: Option<PyObject>
     ) -> PyResult<Option<PyObject>> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.borrow_mut(py)?.copy_map.remove(key.data(py)) {
+        match self
+            .borrow_mut(py)?
+            .copy_map
+            .remove(HgPath::new(key.data(py)))
+        {
             Some(_) => Ok(None),
             None => Ok(default),
         }
@@ -457,13 +478,13 @@ py_class!(pub class DirstateMap |py| {
 impl DirstateMap {
     fn translate_key(
         py: Python,
-        res: (&Vec<u8>, &DirstateEntry),
+        res: (&HgPathBuf, &DirstateEntry),
     ) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, res.0)))
+        Ok(Some(PyBytes::new(py, res.0.as_ref())))
     }
     fn translate_key_value(
         py: Python,
-        res: (&Vec<u8>, &DirstateEntry),
+        res: (&HgPathBuf, &DirstateEntry),
     ) -> PyResult<Option<(PyBytes, PyObject)>> {
         let (f, entry) = res;
 
@@ -471,7 +492,7 @@ impl DirstateMap {
         // platform-specific `c_char`.
         let state: u8 = entry.state.into();
         Ok(Some((
-            PyBytes::new(py, f),
+            PyBytes::new(py, f.as_ref()),
             decapsule_make_dirstate_tuple(py)?(
                 state as c_char,
                 entry.mode,

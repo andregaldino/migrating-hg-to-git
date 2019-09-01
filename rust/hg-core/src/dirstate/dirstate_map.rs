@@ -5,6 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::{
     dirstate::{parsers::PARENT_SIZE, EntryState},
     pack_dirstate, parse_dirstate,
@@ -19,7 +20,7 @@ use std::iter::FromIterator;
 use std::ops::Deref;
 use std::time::Duration;
 
-pub type FileFoldMap = HashMap<Vec<u8>, Vec<u8>>;
+pub type FileFoldMap = HashMap<HgPathBuf, HgPathBuf>;
 
 const NULL_ID: [u8; 20] = [0; 20];
 const MTIME_UNSET: i32 = -1;
@@ -32,8 +33,8 @@ pub struct DirstateMap {
     file_fold_map: Option<FileFoldMap>,
     pub dirs: Option<DirsMultiset>,
     pub all_dirs: Option<DirsMultiset>,
-    non_normal_set: HashSet<Vec<u8>>,
-    other_parent_set: HashSet<Vec<u8>>,
+    non_normal_set: HashSet<HgPathBuf>,
+    other_parent_set: HashSet<HgPathBuf>,
     parents: Option<DirstateParents>,
     dirty_parents: bool,
 }
@@ -47,8 +48,8 @@ impl Deref for DirstateMap {
     }
 }
 
-impl FromIterator<(Vec<u8>, DirstateEntry)> for DirstateMap {
-    fn from_iter<I: IntoIterator<Item = (Vec<u8>, DirstateEntry)>>(
+impl FromIterator<(HgPathBuf, DirstateEntry)> for DirstateMap {
+    fn from_iter<I: IntoIterator<Item = (HgPathBuf, DirstateEntry)>>(
         iter: I,
     ) -> Self {
         Self {
@@ -78,7 +79,7 @@ impl DirstateMap {
     /// Add a tracked file to the dirstate
     pub fn add_file(
         &mut self,
-        filename: &[u8],
+        filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
     ) {
@@ -111,7 +112,7 @@ impl DirstateMap {
     /// to be more explicit about what that state is.
     pub fn remove_file(
         &mut self,
-        filename: &[u8],
+        filename: &HgPath,
         old_state: EntryState,
         size: i32,
     ) -> Result<(), DirstateMapError> {
@@ -147,7 +148,7 @@ impl DirstateMap {
     /// Returns `true` if the file was previously recorded.
     pub fn drop_file(
         &mut self,
-        filename: &[u8],
+        filename: &HgPath,
         old_state: EntryState,
     ) -> Result<bool, DirstateMapError> {
         let exists = self.state_map.remove(filename).is_some();
@@ -172,7 +173,7 @@ impl DirstateMap {
 
     pub fn clear_ambiguous_times(
         &mut self,
-        filenames: Vec<Vec<u8>>,
+        filenames: Vec<HgPathBuf>,
         now: i32,
     ) {
         for filename in filenames {
@@ -197,7 +198,7 @@ impl DirstateMap {
 
     pub fn non_normal_other_parent_entries(
         &self,
-    ) -> (HashSet<Vec<u8>>, HashSet<Vec<u8>>) {
+    ) -> (HashSet<HgPathBuf>, HashSet<HgPathBuf>) {
         let mut non_normal = HashSet::new();
         let mut other_parent = HashSet::new();
 
@@ -239,12 +240,12 @@ impl DirstateMap {
         }
     }
 
-    pub fn has_tracked_dir(&mut self, directory: &[u8]) -> bool {
+    pub fn has_tracked_dir(&mut self, directory: &HgPath) -> bool {
         self.set_dirs();
         self.dirs.as_ref().unwrap().contains(directory)
     }
 
-    pub fn has_dir(&mut self, directory: &[u8]) -> bool {
+    pub fn has_dir(&mut self, directory: &HgPath) -> bool {
         self.set_all_dirs();
         self.all_dirs.as_ref().unwrap().contains(directory)
     }
@@ -346,11 +347,11 @@ mod tests {
         assert!(map.dirs.is_none());
         assert!(map.all_dirs.is_none());
 
-        assert_eq!(false, map.has_dir(b"nope"));
+        assert_eq!(false, map.has_dir(HgPath::new(b"nope")));
         assert!(map.all_dirs.is_some());
         assert!(map.dirs.is_none());
 
-        assert_eq!(false, map.has_tracked_dir(b"nope"));
+        assert_eq!(false, map.has_tracked_dir(HgPath::new(b"nope")));
         assert!(map.dirs.is_some());
     }
 
@@ -361,7 +362,7 @@ mod tests {
         assert_eq!(0, map.len());
 
         map.add_file(
-            b"meh",
+            HgPath::new(b"meh"),
             EntryState::Normal,
             DirstateEntry {
                 state: EntryState::Normal,
@@ -394,7 +395,7 @@ mod tests {
         .iter()
         .map(|(fname, (state, mode, size, mtime))| {
             (
-                fname.to_vec(),
+                HgPathBuf::from_bytes(fname.as_ref()),
                 DirstateEntry {
                     state: *state,
                     mode: *mode,
@@ -409,11 +410,11 @@ mod tests {
             b"f1", b"f2", b"f5", b"f6", b"f7", b"f8", b"f9", b"fa", b"fb",
         ]
         .iter()
-        .map(|x| x.to_vec())
+        .map(|x| HgPathBuf::from_bytes(x.as_ref()))
         .collect();
 
         let mut other_parent = HashSet::new();
-        other_parent.insert(b"f4".to_vec());
+        other_parent.insert(HgPathBuf::from_bytes(b"f4"));
 
         assert_eq!(
             (non_normal, other_parent),

@@ -7,15 +7,13 @@
 
 //! Handling of Mercurial-specific patterns.
 
-use crate::{
-    utils::{files::get_path_from_bytes, SliceExt},
-    LineNumber, PatternError, PatternFileError,
-};
+use crate::{utils::SliceExt, LineNumber, PatternError, PatternFileError};
 use lazy_static::lazy_static;
 use regex::bytes::{NoExpand, Regex};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use std::path::{Path, PathBuf};
 use std::vec::Vec;
 
 lazy_static! {
@@ -230,11 +228,11 @@ lazy_static! {
 }
 
 pub type PatternTuple = (Vec<u8>, LineNumber, Vec<u8>);
-type WarningTuple = (Vec<u8>, Vec<u8>);
+type WarningTuple = (PathBuf, Vec<u8>);
 
-pub fn parse_pattern_file_contents(
+pub fn parse_pattern_file_contents<P: AsRef<Path>>(
     lines: &[u8],
-    file_path: &[u8],
+    file_path: P,
     warn: bool,
 ) -> (Vec<PatternTuple>, Vec<WarningTuple>) {
     let comment_regex = Regex::new(r"((?:^|[^\\])(?:\\\\)*)#.*").unwrap();
@@ -268,7 +266,8 @@ pub fn parse_pattern_file_contents(
             if let Some(rel_syntax) = SYNTAXES.get(syntax) {
                 current_syntax = rel_syntax;
             } else if warn {
-                warnings.push((file_path.to_owned(), syntax.to_owned()));
+                warnings
+                    .push((file_path.as_ref().to_owned(), syntax.to_owned()));
             }
             continue;
         }
@@ -297,11 +296,11 @@ pub fn parse_pattern_file_contents(
     (inputs, warnings)
 }
 
-pub fn read_pattern_file(
-    file_path: &[u8],
+pub fn read_pattern_file<P: AsRef<Path>>(
+    file_path: P,
     warn: bool,
 ) -> Result<(Vec<PatternTuple>, Vec<WarningTuple>), PatternFileError> {
-    let mut f = File::open(get_path_from_bytes(file_path))?;
+    let mut f = File::open(file_path.as_ref())?;
     let mut contents = Vec::new();
 
     f.read_to_end(&mut contents)?;
@@ -343,18 +342,21 @@ mod tests {
 
         assert_eq!(
             vec![(b"relglob:*.elc".to_vec(), 2, b"*.elc".to_vec())],
-            parse_pattern_file_contents(lines, b"file_path", false).0,
+            parse_pattern_file_contents(lines, Path::new("file_path"), false)
+                .0,
         );
 
         let lines = b"syntax: include\nsyntax: glob";
 
         assert_eq!(
-            parse_pattern_file_contents(lines, b"file_path", false).0,
+            parse_pattern_file_contents(lines, Path::new("file_path"), false)
+                .0,
             vec![]
         );
         let lines = b"glob:**.o";
         assert_eq!(
-            parse_pattern_file_contents(lines, b"file_path", false).0,
+            parse_pattern_file_contents(lines, Path::new("file_path"), false)
+                .0,
             vec![(b"relglob:**.o".to_vec(), 1, b"**.o".to_vec())]
         );
     }

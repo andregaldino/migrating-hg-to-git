@@ -15,8 +15,8 @@ use cpython::{
     PythonObject, ToPyObject,
 };
 use hg::{
-    pack_dirstate, parse_dirstate, DirstateEntry, DirstatePackError,
-    DirstateParents, DirstateParseError, PARENT_SIZE,
+    pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf, DirstateEntry,
+    DirstatePackError, DirstateParents, DirstateParseError, PARENT_SIZE,
 };
 use std::collections::HashMap;
 use std::convert::TryInto;
@@ -46,7 +46,7 @@ fn parse_dirstate_wrapper(
 
                 dmap.set_item(
                     py,
-                    PyBytes::new(py, &filename),
+                    PyBytes::new(py, filename.as_ref()),
                     decapsule_make_dirstate_tuple(py)?(
                         state as c_char,
                         entry.mode,
@@ -58,8 +58,8 @@ fn parse_dirstate_wrapper(
             for (path, copy_path) in copies {
                 copymap.set_item(
                     py,
-                    PyBytes::new(py, &path),
-                    PyBytes::new(py, &copy_path),
+                    PyBytes::new(py, path.as_ref()),
+                    PyBytes::new(py, copy_path.as_ref()),
                 )?;
             }
             Ok(
@@ -99,13 +99,13 @@ fn pack_dirstate_wrapper(
 
     let mut dirstate_map = extract_dirstate(py, &dmap)?;
 
-    let copies: Result<HashMap<Vec<u8>, Vec<u8>>, PyErr> = copymap
+    let copies: Result<HashMap<HgPathBuf, HgPathBuf>, PyErr> = copymap
         .items(py)
         .iter()
         .map(|(key, value)| {
             Ok((
-                key.extract::<PyBytes>(py)?.data(py).to_owned(),
-                value.extract::<PyBytes>(py)?.data(py).to_owned(),
+                HgPathBuf::from_bytes(key.extract::<PyBytes>(py)?.data(py)),
+                HgPathBuf::from_bytes(value.extract::<PyBytes>(py)?.data(py)),
             ))
         })
         .collect();
@@ -144,7 +144,7 @@ fn pack_dirstate_wrapper(
                 let state: u8 = state.into();
                 dmap.set_item(
                     py,
-                    PyBytes::new(py, &filename[..]),
+                    PyBytes::new(py, filename.as_ref()),
                     decapsule_make_dirstate_tuple(py)?(
                         state as c_char,
                         mode,

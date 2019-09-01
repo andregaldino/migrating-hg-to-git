@@ -16,9 +16,12 @@ use cpython::{
     Python,
 };
 
-use crate::dirstate::extract_dirstate;
-use crate::ref_sharing::{PySharedRefCell, PySharedState};
+use crate::{
+    dirstate::extract_dirstate,
+    ref_sharing::{PySharedRefCell, PySharedState},
+};
 use hg::{
+    utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirsMultisetIter, DirstateMapError, DirstateParseError,
     EntryState,
 };
@@ -48,9 +51,13 @@ py_class!(pub class Dirs |py| {
             let dirstate = extract_dirstate(py, &map)?;
             DirsMultiset::from_dirstate(&dirstate, skip_state)
         } else {
-            let map: Result<Vec<Vec<u8>>, PyErr> = map
+            let map: Result<Vec<HgPathBuf>, PyErr> = map
                 .iter(py)?
-                .map(|o| Ok(o?.extract::<PyBytes>(py)?.data(py).to_owned()))
+                .map(|o| {
+                    Ok(HgPathBuf::from_bytes(
+                        o?.extract::<PyBytes>(py)?.data(py),
+                    ))
+                })
                 .collect();
             DirsMultiset::from_manifest(&map?)
         };
@@ -64,14 +71,14 @@ py_class!(pub class Dirs |py| {
 
     def addpath(&self, path: PyObject) -> PyResult<PyObject> {
         self.borrow_mut(py)?.add_path(
-            path.extract::<PyBytes>(py)?.data(py),
+            HgPath::new(path.extract::<PyBytes>(py)?.data(py)),
         );
         Ok(py.None())
     }
 
     def delpath(&self, path: PyObject) -> PyResult<PyObject> {
         self.borrow_mut(py)?.delete_path(
-            path.extract::<PyBytes>(py)?.data(py),
+            HgPath::new(path.extract::<PyBytes>(py)?.data(py)),
         )
             .and(Ok(py.None()))
             .or_else(|e| {
@@ -98,10 +105,9 @@ py_class!(pub class Dirs |py| {
     }
 
     def __contains__(&self, item: PyObject) -> PyResult<bool> {
-        Ok(self
-            .inner(py)
-            .borrow()
-            .contains(item.extract::<PyBytes>(py)?.data(py).as_ref()))
+        Ok(self.inner(py).borrow().contains(HgPath::new(
+            item.extract::<PyBytes>(py)?.data(py).as_ref(),
+        )))
     }
 });
 
@@ -116,8 +122,11 @@ impl Dirs {
         )
     }
 
-    fn translate_key(py: Python, res: &Vec<u8>) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, res)))
+    fn translate_key(
+        py: Python,
+        res: &HgPathBuf,
+    ) -> PyResult<Option<PyBytes>> {
+        Ok(Some(PyBytes::new(py, res.as_ref())))
     }
 }
 
