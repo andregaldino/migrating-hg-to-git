@@ -86,7 +86,7 @@ py_class!(pub class Dirs |py| {
             })
     }
     def __iter__(&self) -> PyResult<DirsMultisetKeysIterator> {
-        let (leak_handle, leaked_ref) = self.leak_immutable(py)?;
+        let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
         DirsMultisetKeysIterator::create_instance(
             py,
             RefCell::new(Some(leak_handle)),

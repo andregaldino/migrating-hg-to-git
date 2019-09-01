@@ -58,7 +58,12 @@ impl PySharedState {
     /// Return a reference to the wrapped data with an artificial static
     /// lifetime.
     /// We need to be protected by the GIL for thread-safety.
-    pub fn leak_immutable<T>(
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe since the lifetime of the given data can be
+    /// extended. Do not call this function directly.
+    pub unsafe fn leak_immutable<T>(
         &self,
         py: Python,
         data: &PySharedRefCell<T>,
@@ -72,10 +77,14 @@ impl PySharedState {
         }
         let ptr = data.as_ptr();
         self.leak_count.replace(self.leak_count.get() + 1);
-        unsafe { Ok(&*ptr) }
+        Ok(&*ptr)
     }
 
-    pub fn decrease_leak_count(&self, _py: Python, mutable: bool) {
+    /// # Safety
+    ///
+    /// It's unsafe to update the reference count without knowing the
+    /// reference is deleted. Do not call this function directly.
+    pub unsafe fn decrease_leak_count(&self, _py: Python, mutable: bool) {
         self.leak_count
             .replace(self.leak_count.get().saturating_sub(1));
         if mutable {
@@ -123,6 +132,8 @@ pub struct PyRefMut<'a, T> {
 }
 
 impl<'a, T> PyRefMut<'a, T> {
+    // Must be constructed by PySharedState after checking its leak_count.
+    // Otherwise, drop() would incorrectly update the state.
     fn new(
         _py: Python<'a>,
         inner: RefMut<'a, T>,
@@ -152,7 +163,9 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
     fn drop(&mut self) {
         let gil = Python::acquire_gil();
         let py = gil.python();
-        self.py_shared_state.decrease_leak_count(py, true);
+        unsafe {
+            self.py_shared_state.decrease_leak_count(py, true);
+        }
     }
 }
 
@@ -223,7 +236,7 @@ macro_rules! py_shared_ref {
             /// It's up to you to make sure that the management object lives
             /// longer than the leaked reference. Otherwise, you'll get a
             /// dangling reference.
-            fn leak_immutable<'a>(
+            unsafe fn leak_immutable<'a>(
                 &'a self,
                 py: Python<'a>,
             ) -> PyResult<($leaked, &'static $inner_struct)> {
@@ -247,7 +260,9 @@ macro_rules! py_shared_ref {
         }
 
         impl $leaked {
-            fn new(py: Python, inner: &$name) -> Self {
+            // Marked as unsafe so client code wouldn't construct $leaked
+            // struct by mistake. Its drop() is unsafe.
+            unsafe fn new(py: Python, inner: &$name) -> Self {
                 Self {
                     inner: inner.clone_ref(py),
                 }
@@ -258,9 +273,10 @@ macro_rules! py_shared_ref {
             fn drop(&mut self) {
                 let gil = Python::acquire_gil();
                 let py = gil.python();
-                self.inner
-                    .py_shared_state(py)
-                    .decrease_leak_count(py, false);
+                let state = self.inner.py_shared_state(py);
+                unsafe {
+                    state.decrease_leak_count(py, false);
+                }
             }
         }
     };
@@ -346,7 +362,7 @@ macro_rules! py_shared_iterator_impl {
 ///     data py_shared_state: PySharedState;
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
-///         let (leak_handle, leaked_ref) = self.leak_immutable(py)?;
+///         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
 ///         MyTypeItemsIterator::create_instance(
 ///             py,
 ///             RefCell::new(Some(leak_handle)),
