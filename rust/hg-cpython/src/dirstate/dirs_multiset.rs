@@ -16,11 +16,12 @@ use cpython::{
     Python,
 };
 
-use crate::{dirstate::extract_dirstate, ref_sharing::PySharedState};
+use crate::dirstate::extract_dirstate;
+use crate::ref_sharing::{PySharedRefCell, PySharedState};
 use hg::{DirsMultiset, DirstateMapError, DirstateParseError, EntryState};
 
 py_class!(pub class Dirs |py| {
-    data inner: RefCell<DirsMultiset>;
+    data inner: PySharedRefCell<DirsMultiset>;
     data py_shared_state: PySharedState;
 
     // `map` is either a `dict` or a flat iterator (usually a `set`, sometimes
@@ -53,7 +54,7 @@ py_class!(pub class Dirs |py| {
 
         Self::create_instance(
             py,
-            RefCell::new(inner),
+            PySharedRefCell::new(inner),
             PySharedState::default()
         )
     }
@@ -104,7 +105,11 @@ py_shared_ref!(Dirs, DirsMultiset, inner, DirsMultisetLeakedRef,);
 
 impl Dirs {
     pub fn from_inner(py: Python, d: DirsMultiset) -> PyResult<Self> {
-        Self::create_instance(py, RefCell::new(d), PySharedState::default())
+        Self::create_instance(
+            py,
+            PySharedRefCell::new(d),
+            PySharedState::default(),
+        )
     }
 
     fn translate_key(py: Python, res: &Vec<u8>) -> PyResult<Option<PyBytes>> {

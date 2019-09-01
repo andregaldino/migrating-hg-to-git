@@ -9,7 +9,7 @@
 
 use crate::exceptions::AlreadyBorrowed;
 use cpython::{PyResult, Python};
-use std::cell::{Cell, RefCell, RefMut};
+use std::cell::{Cell, Ref, RefCell, RefMut};
 
 /// Manages the shared state between Python and Rust
 #[derive(Default)]
@@ -61,7 +61,7 @@ impl PySharedState {
     pub fn leak_immutable<T>(
         &self,
         py: Python,
-        data: &RefCell<T>,
+        data: &PySharedRefCell<T>,
     ) -> PyResult<&'static T> {
         if self.mutably_borrowed.get() {
             return Err(AlreadyBorrowed::new(
@@ -81,6 +81,38 @@ impl PySharedState {
         if mutable {
             self.mutably_borrowed.replace(false);
         }
+    }
+}
+
+/// `RefCell` wrapper to be safely used in conjunction with `PySharedState`.
+///
+/// Only immutable operation is allowed through this interface.
+#[derive(Debug)]
+pub struct PySharedRefCell<T> {
+    inner: RefCell<T>,
+}
+
+impl<T> PySharedRefCell<T> {
+    pub const fn new(value: T) -> PySharedRefCell<T> {
+        Self {
+            inner: RefCell::new(value),
+        }
+    }
+
+    pub fn borrow(&self) -> Ref<T> {
+        // py_shared_state isn't involved since
+        // - inner.borrow() would fail if self is mutably borrowed,
+        // - and inner.borrow_mut() would fail while self is borrowed.
+        self.inner.borrow()
+    }
+
+    pub fn as_ptr(&self) -> *mut T {
+        self.inner.as_ptr()
+    }
+
+    pub unsafe fn borrow_mut(&self) -> RefMut<T> {
+        // must be borrowed by self.py_shared_state(py).borrow_mut().
+        self.inner.borrow_mut()
     }
 }
 
@@ -158,7 +190,7 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 /// }
 ///
 /// py_class!(pub class MyType |py| {
-///     data inner: RefCell<MyStruct>;
+///     data inner: PySharedRefCell<MyStruct>;
 ///     data py_shared_state: PySharedState;
 /// });
 ///
@@ -177,16 +209,21 @@ macro_rules! py_shared_ref {
                 py: Python<'a>,
             ) -> PyResult<crate::ref_sharing::PyRefMut<'a, $inner_struct>>
             {
+                // assert $data_member type
+                use crate::ref_sharing::PySharedRefCell;
+                let data: &PySharedRefCell<_> = self.$data_member(py);
                 self.py_shared_state(py)
-                    .borrow_mut(py, self.$data_member(py).borrow_mut())
+                    .borrow_mut(py, unsafe { data.borrow_mut() })
             }
 
             fn leak_immutable<'a>(
                 &'a self,
                 py: Python<'a>,
             ) -> PyResult<&'static $inner_struct> {
-                self.py_shared_state(py)
-                    .leak_immutable(py, self.$data_member(py))
+                // assert $data_member type
+                use crate::ref_sharing::PySharedRefCell;
+                let data: &PySharedRefCell<_> = self.$data_member(py);
+                self.py_shared_state(py).leak_immutable(py, data)
             }
         }
 
@@ -295,7 +332,7 @@ macro_rules! py_shared_iterator_impl {
 /// }
 ///
 /// py_class!(pub class MyType |py| {
-///     data inner: RefCell<MyStruct>;
+///     data inner: PySharedRefCell<MyStruct>;
 ///     data py_shared_state: PySharedState;
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
