@@ -216,14 +216,24 @@ macro_rules! py_shared_ref {
                     .borrow_mut(py, unsafe { data.borrow_mut() })
             }
 
+            /// Returns a leaked reference and its management object.
+            ///
+            /// # Safety
+            ///
+            /// It's up to you to make sure that the management object lives
+            /// longer than the leaked reference. Otherwise, you'll get a
+            /// dangling reference.
             fn leak_immutable<'a>(
                 &'a self,
                 py: Python<'a>,
-            ) -> PyResult<&'static $inner_struct> {
+            ) -> PyResult<($leaked, &'static $inner_struct)> {
                 // assert $data_member type
                 use crate::ref_sharing::PySharedRefCell;
                 let data: &PySharedRefCell<_> = self.$data_member(py);
-                self.py_shared_state(py).leak_immutable(py, data)
+                let static_ref =
+                    self.py_shared_state(py).leak_immutable(py, data)?;
+                let leak_handle = $leaked::new(py, self);
+                Ok((leak_handle, static_ref))
             }
         }
 
@@ -336,10 +346,11 @@ macro_rules! py_shared_iterator_impl {
 ///     data py_shared_state: PySharedState;
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
+///         let (leak_handle, leaked_ref) = self.leak_immutable(py)?;
 ///         MyTypeItemsIterator::create_instance(
 ///             py,
-///             RefCell::new(Some(MyTypeLeakedRef::new(py, &self))),
-///             RefCell::new(self.leak_immutable(py).iter()),
+///             RefCell::new(Some(leak_handle)),
+///             RefCell::new(leaked_ref.iter()),
 ///         )
 ///     }
 /// });

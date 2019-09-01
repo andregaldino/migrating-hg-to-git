@@ -319,26 +319,29 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def keys(&self) -> PyResult<DirstateMapKeysIterator> {
+        let (leak_handle, leaked_ref) = self.leak_immutable(py)?;
         DirstateMapKeysIterator::from_inner(
             py,
-            Some(DirstateMapLeakedRef::new(py, &self)),
-            Box::new(self.leak_immutable(py)?.iter()),
+            Some(leak_handle),
+            Box::new(leaked_ref.iter()),
         )
     }
 
     def items(&self) -> PyResult<DirstateMapItemsIterator> {
+        let (leak_handle, leaked_ref) = self.leak_immutable(py)?;
         DirstateMapItemsIterator::from_inner(
             py,
-            Some(DirstateMapLeakedRef::new(py, &self)),
-            Box::new(self.leak_immutable(py)?.iter()),
+            Some(leak_handle),
+            Box::new(leaked_ref.iter()),
         )
     }
 
     def __iter__(&self) -> PyResult<DirstateMapKeysIterator> {
+        let (leak_handle, leaked_ref) = self.leak_immutable(py)?;
         DirstateMapKeysIterator::from_inner(
             py,
-            Some(DirstateMapLeakedRef::new(py, &self)),
-            Box::new(self.leak_immutable(py)?.iter()),
+            Some(leak_handle),
+            Box::new(leaked_ref.iter()),
         )
     }
 
@@ -431,18 +434,20 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymapiter(&self) -> PyResult<CopyMapKeysIterator> {
+        let (leak_handle, leaked_ref) = self.leak_immutable(py)?;
         CopyMapKeysIterator::from_inner(
             py,
-            Some(DirstateMapLeakedRef::new(py, &self)),
-            Box::new(self.leak_immutable(py)?.copy_map.iter()),
+            Some(leak_handle),
+            Box::new(leaked_ref.copy_map.iter()),
         )
     }
 
     def copymapitemsiter(&self) -> PyResult<CopyMapItemsIterator> {
+        let (leak_handle, leaked_ref) = self.leak_immutable(py)?;
         CopyMapItemsIterator::from_inner(
             py,
-            Some(DirstateMapLeakedRef::new(py, &self)),
-            Box::new(self.leak_immutable(py)?.copy_map.iter()),
+            Some(leak_handle),
+            Box::new(leaked_ref.copy_map.iter()),
         )
     }
 
