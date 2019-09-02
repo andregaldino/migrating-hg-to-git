@@ -1610,6 +1610,10 @@ class revlog(object):
         treated as raw data when applying flag transforms. 'raw' should be set
         to True when generating changegroups or in debug commands.
         """
+        if raw:
+            msg = ('revlog.revision(..., raw=True) is deprecated, '
+                   'use revlog.rawdata(...)')
+            util.nouideprecwarn(msg, '5.2', stacklevel=2)
         return self._revisiondata(nodeorrev, _df, raw=raw)
 
     def _revisiondata(self, nodeorrev, _df=None, raw=False):
