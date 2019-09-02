@@ -290,7 +290,11 @@ class filestorage(flagutil.flagprocessorsmixin):
         path = b'/'.join([self._storepath, hex(node)])
         rawtext = self._svfs.read(path)
 
-        text, validatehash = self._processflags(rawtext, flags, 'read', raw=raw)
+        if raw:
+            validatehash = self._processflagsraw(rawtext, flags)
+            text = rawtext
+        else:
+            text, validatehash = self._processflagsread(rawtext, flags)
         if validatehash:
             self.checkhash(text, node, rev=rev)
 
