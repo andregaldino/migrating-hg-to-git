@@ -118,8 +118,7 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
-        text, vhash = self._processflagsfunc(text, flags, 'read')
-        return text, vhash, {}
+        return self._processflagsfunc(text, flags, 'read')
 
     def _processflagswrite(self, text, flags):
         """Inspect revision data flags and applies write transformations defined
@@ -137,7 +136,7 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
-        return self._processflagsfunc(text, flags, 'write')
+        return self._processflagsfunc(text, flags, 'write')[:2]
 
     def _processflagsraw(self, text, flags):
         """Inspect revision data flags to check is the content hash should be
@@ -160,7 +159,7 @@ class flagprocessorsmixin(object):
     def _processflagsfunc(self, text, flags, operation):
         # fast path: no flag processors will run
         if flags == 0:
-            return text, True
+            return text, True, {}
         if operation not in ('read', 'write', 'raw'):
             raise error.ProgrammingError(_("invalid '%s' operation") %
                                          operation)
@@ -175,6 +174,7 @@ class flagprocessorsmixin(object):
         if operation == 'write':
             orderedflags = reversed(orderedflags)
 
+        outsidedata = {}
         for flag in orderedflags:
             # If a flagprocessor has been registered for a known flag, apply the
             # related operation transform and update result tuple.
@@ -197,4 +197,4 @@ class flagprocessorsmixin(object):
                         text, vhash = writetransform(self, text)
                 validatehash = validatehash and vhash
 
-        return text, validatehash
+        return text, validatehash, outsidedata
