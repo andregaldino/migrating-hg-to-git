@@ -32,3 +32,32 @@ the concept.
 """
 
 from __future__ import absolute_import
+
+import hashlib
+import struct
+
+from .. import error
+
+SIDEDATA_HEADER = struct.Struct('>H')
+SIDEDATA_ENTRY = struct.Struct('>HL20s')
+
+def sidedatareadprocessor(rl, text):
+    sidedata = {}
+    offset = 0
+    nbentry, = SIDEDATA_HEADER.unpack(text[:SIDEDATA_HEADER.size])
+    offset += SIDEDATA_HEADER.size
+    dataoffset = SIDEDATA_HEADER.size + (SIDEDATA_ENTRY.size * nbentry)
+    for i in range(nbentry):
+        nextoffset = offset + SIDEDATA_ENTRY.size
+        key, size, storeddigest = SIDEDATA_ENTRY.unpack(text[offset:nextoffset])
+        offset = nextoffset
+        # read the data associated with that entry
+        nextdataoffset = dataoffset + size
+        entrytext = text[dataoffset:nextdataoffset]
+        readdigest = hashlib.sha1(entrytext).digest()
+        if storeddigest != readdigest:
+            raise error.SidedataHashError(key, storeddigest, readdigest)
+        sidedata[key] = entrytext
+        dataoffset = nextdataoffset
+    text = text[dataoffset:]
+    return text, True, sidedata

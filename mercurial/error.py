@@ -44,6 +44,13 @@ class StorageError(Hint, Exception):
 class RevlogError(StorageError):
     __bytes__ = _tobytes
 
+class SidedataHashError(RevlogError):
+
+    def __init__(self, key, expected, got):
+        self.sidedatakey = key
+        self.expecteddigest = expected
+        self.actualdigest = got
+
 class FilteredIndexError(IndexError):
     __bytes__ = _tobytes
 

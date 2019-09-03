@@ -1675,7 +1675,13 @@ class revlog(object):
             validatehash = flagutil.processflagsraw(self, rawtext, flags)
             text = rawtext
         else:
-            r = flagutil.processflagsread(self, rawtext, flags)
+            try:
+                r = flagutil.processflagsread(self, rawtext, flags)
+            except error.SidedataHashError as exc:
+                msg = _("integrity check failed on %s:%s sidedata key %d")
+                msg %= (self.indexfile, pycompat.bytestr(rev),
+                        exc.sidedatakey)
+                raise error.RevlogError(msg)
             text, validatehash, sidedata = r
         if validatehash:
             self.checkhash(text, node, rev=rev)
