@@ -104,7 +104,7 @@ def readfromstore(self, text):
     if hgmeta or text.startswith('\1\n'):
         text = storageutil.packmeta(hgmeta, text)
 
-    return (text, True)
+    return (text, True, {})
 
 def writetostore(self, text):
     # hg filelog metadata (includes rename, etc)

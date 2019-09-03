@@ -45,7 +45,7 @@ _extheader = b'E\n'
 def readprocessor(self, rawtext):
     # True: the returned text could be used to verify hash
     text = rawtext[len(_extheader):].replace(b'i', b'1')
-    return text, True
+    return text, True, {}
 
 def writeprocessor(self, text):
     # False: the returned rawtext shouldn't be used to verify hash

@@ -113,7 +113,7 @@ _chunksize = 1048576
 
 # Flag processors for REVIDX_ELLIPSIS.
 def ellipsisreadprocessor(rl, text):
-    return text, False
+    return text, False, {}
 
 def ellipsiswriteprocessor(rl, text):
     return text, False

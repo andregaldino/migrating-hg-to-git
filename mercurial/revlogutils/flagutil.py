@@ -192,7 +192,8 @@ class flagprocessorsmixin(object):
                     if operation == 'raw':
                         vhash = rawtransform(self, text)
                     elif operation == 'read':
-                        text, vhash = readtransform(self, text)
+                        text, vhash, s = readtransform(self, text)
+                        outsidedata.update(s)
                     else: # write operation
                         text, vhash = writetransform(self, text)
                 validatehash = validatehash and vhash
