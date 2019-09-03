@@ -1623,8 +1623,7 @@ class revlog(flagutil.flagprocessorsmixin):
         mapping object will likely be used in the future for a more
         efficient/lazy code.
         """
-        # XXX will actualy return data once storage is implemented.
-        return {}
+        return self._revisiondata(nodeorrev, _df)[1]
 
     def _revisiondata(self, nodeorrev, _df=None, raw=False):
         # deal with <nodeorrev> argument type
