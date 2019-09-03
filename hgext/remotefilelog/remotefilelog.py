@@ -129,10 +129,13 @@ class remotefilelog(flagutil.flagprocessorsmixin):
         return data
 
     def addrevision(self, text, transaction, linknode, p1, p2, cachedelta=None,
-                    node=None, flags=revlog.REVIDX_DEFAULT_FLAGS):
+                    node=None, flags=revlog.REVIDX_DEFAULT_FLAGS,
+                    sidedata=None):
         # text passed to "addrevision" includes hg filelog metadata header
         if node is None:
             node = storageutil.hashrevisionsha1(text, p1, p2)
+        if sidedata is None:
+            sidedata = {}
 
         meta, metaoffset = storageutil.parsemeta(text)
         rawtext, validatehash = self._processflagswrite(text, flags)

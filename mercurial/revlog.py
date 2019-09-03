@@ -1816,7 +1816,8 @@ class revlog(flagutil.flagprocessorsmixin):
         """
 
     def addrevision(self, text, transaction, link, p1, p2, cachedelta=None,
-                    node=None, flags=REVIDX_DEFAULT_FLAGS, deltacomputer=None):
+                    node=None, flags=REVIDX_DEFAULT_FLAGS, deltacomputer=None,
+                    sidedata=None):
         """add a revision to the log
 
         text - the revision data to add
@@ -1834,6 +1835,9 @@ class revlog(flagutil.flagprocessorsmixin):
         if link == nullrev:
             raise error.RevlogError(_("attempted to add linkrev -1 to %s")
                                     % self.indexfile)
+
+        if sidedata is None:
+            sidedata = {}
 
         if flags:
             node = node or self.hash(text, p1, p2)
