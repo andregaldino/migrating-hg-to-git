@@ -1614,7 +1614,7 @@ class revlog(flagutil.flagprocessorsmixin):
             msg = ('revlog.revision(..., raw=True) is deprecated, '
                    'use revlog.rawdata(...)')
             util.nouideprecwarn(msg, '5.2', stacklevel=2)
-        return self._revisiondata(nodeorrev, _df, raw=raw)
+        return self._revisiondata(nodeorrev, _df, raw=raw)[0]
 
     def sidedata(self, nodeorrev, _df=None):
         """a map of extra data related to the changeset but not part of the hash
@@ -1637,7 +1637,7 @@ class revlog(flagutil.flagprocessorsmixin):
 
         # fast path the special `nullid` rev
         if node == nullid:
-            return ""
+            return "", {}
 
         # The text as stored inside the revlog. Might be the revision or might
         # need to be processed to retrieve the revision.
@@ -1648,7 +1648,7 @@ class revlog(flagutil.flagprocessorsmixin):
         if raw and validated:
             # if we don't want to process the raw text and that raw
             # text is cached, we can exit early.
-            return rawtext
+            return rawtext, {}
         if rev is None:
             rev = self.rev(node)
         # the revlog's flag for this revision
@@ -1657,8 +1657,9 @@ class revlog(flagutil.flagprocessorsmixin):
 
         if validated and flags == REVIDX_DEFAULT_FLAGS:
             # no extra flags set, no flag processor runs, text = rawtext
-            return rawtext
+            return rawtext, {}
 
+        sidedata = {}
         if raw:
             validatehash = self._processflagsraw(rawtext, flags)
             text = rawtext
@@ -1669,7 +1670,7 @@ class revlog(flagutil.flagprocessorsmixin):
         if not validated:
             self._revisioncache = (node, rev, rawtext)
 
-        return text
+        return text, sidedata
 
     def _rawtext(self, node, rev, _df=None):
         """return the possibly unvalidated rawtext for a revision
@@ -1719,7 +1720,7 @@ class revlog(flagutil.flagprocessorsmixin):
 
         _df - an existing file handle to read from. (internal-only)
         """
-        return self._revisiondata(nodeorrev, _df, raw=True)
+        return self._revisiondata(nodeorrev, _df, raw=True)[0]
 
     def hash(self, text, p1, p2):
         """Compute a node hash.
