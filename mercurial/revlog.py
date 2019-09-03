@@ -1616,6 +1616,16 @@ class revlog(flagutil.flagprocessorsmixin):
             util.nouideprecwarn(msg, '5.2', stacklevel=2)
         return self._revisiondata(nodeorrev, _df, raw=raw)
 
+    def sidedata(self, nodeorrev, _df=None):
+        """a map of extra data related to the changeset but not part of the hash
+
+        This function currently return a dictionary. However, more advanced
+        mapping object will likely be used in the future for a more
+        efficient/lazy code.
+        """
+        # XXX will actualy return data once storage is implemented.
+        return {}
+
     def _revisiondata(self, nodeorrev, _df=None, raw=False):
         # deal with <nodeorrev> argument type
         if isinstance(nodeorrev, int):
