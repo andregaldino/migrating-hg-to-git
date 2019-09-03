@@ -41,6 +41,18 @@ from .. import error
 SIDEDATA_HEADER = struct.Struct('>H')
 SIDEDATA_ENTRY = struct.Struct('>HL20s')
 
+def sidedatawriteprocessor(rl, text, sidedata):
+    sidedata = list(sidedata.items())
+    sidedata.sort()
+    rawtext = [SIDEDATA_HEADER.pack(len(sidedata))]
+    for key, value in sidedata:
+        digest = hashlib.sha1(value).digest()
+        rawtext.append(SIDEDATA_ENTRY.pack(key, len(value), digest))
+    for key, value in sidedata:
+        rawtext.append(value)
+    rawtext.append(bytes(text))
+    return ''.join(rawtext), False
+
 def sidedatareadprocessor(rl, text):
     sidedata = {}
     offset = 0
