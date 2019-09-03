@@ -120,7 +120,7 @@ class flagprocessorsmixin(object):
         """
         return self._processflagsfunc(text, flags, 'read')
 
-    def _processflagswrite(self, text, flags):
+    def _processflagswrite(self, text, flags, sidedata):
         """Inspect revision data flags and applies write transformations defined
         by registered flag processors.
 
@@ -136,6 +136,7 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
+        assert not sidedata # XXX until it is actually processed
         return self._processflagsfunc(text, flags, 'write')[:2]
 
     def _processflagsraw(self, text, flags):
