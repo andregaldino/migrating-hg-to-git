@@ -1663,7 +1663,8 @@ class revlog(flagutil.flagprocessorsmixin):
             validatehash = self._processflagsraw(rawtext, flags)
             text = rawtext
         else:
-            text, validatehash = self._processflagsread(rawtext, flags)
+            r = self._processflagsread(rawtext, flags)
+            text, validatehash, sidedata = r
         if validatehash:
             self.checkhash(text, node, rev=rev)
         if not validated:

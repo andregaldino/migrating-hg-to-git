@@ -118,7 +118,8 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
-        return self._processflagsfunc(text, flags, 'read')
+        text, vhash = self._processflagsfunc(text, flags, 'read')
+        return text, vhash, {}
 
     def _processflagswrite(self, text, flags):
         """Inspect revision data flags and applies write transformations defined
