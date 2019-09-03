@@ -30,19 +30,19 @@ def validatehash(self, text):
 def bypass(self, text):
     return False
 
-def noopdonothing(self, text):
+def noopdonothing(self, text, sidedata):
     return (text, True)
 
 def noopdonothingread(self, text):
     return (text, True, {})
 
-def b64encode(self, text):
+def b64encode(self, text, sidedata):
     return (base64.b64encode(text), False)
 
 def b64decode(self, text):
     return (base64.b64decode(text), True, {})
 
-def gzipcompress(self, text):
+def gzipcompress(self, text, sidedata):
     return (zlib.compress(text), False)
 
 def gzipdecompress(self, text):

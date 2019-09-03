@@ -136,8 +136,8 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
-        assert not sidedata # XXX until it is actually processed
-        return self._processflagsfunc(text, flags, 'write')[:2]
+        return self._processflagsfunc(text, flags, 'write',
+                                      sidedata=sidedata)[:2]
 
     def _processflagsraw(self, text, flags):
         """Inspect revision data flags to check is the content hash should be
@@ -157,7 +157,7 @@ class flagprocessorsmixin(object):
         """
         return self._processflagsfunc(text, flags, 'raw')[1]
 
-    def _processflagsfunc(self, text, flags, operation):
+    def _processflagsfunc(self, text, flags, operation, sidedata=None):
         # fast path: no flag processors will run
         if flags == 0:
             return text, True, {}
@@ -196,7 +196,7 @@ class flagprocessorsmixin(object):
                         text, vhash, s = readtransform(self, text)
                         outsidedata.update(s)
                     else: # write operation
-                        text, vhash = writetransform(self, text)
+                        text, vhash = writetransform(self, text, sidedata)
                 validatehash = validatehash and vhash
 
         return text, validatehash, outsidedata

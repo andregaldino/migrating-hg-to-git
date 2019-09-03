@@ -47,7 +47,7 @@ def readprocessor(self, rawtext):
     text = rawtext[len(_extheader):].replace(b'i', b'1')
     return text, True, {}
 
-def writeprocessor(self, text):
+def writeprocessor(self, text, sidedata):
     # False: the returned rawtext shouldn't be used to verify hash
     rawtext = _extheader + text.replace(b'1', b'i')
     return rawtext, False
@@ -262,7 +262,7 @@ def writecases(rlog, tr):
 
         # Verify text, rawtext, and rawsize
         if isext:
-            rawtext = writeprocessor(None, text)[0]
+            rawtext = writeprocessor(None, text, {})[0]
         else:
             rawtext = text
         if rlog.rawsize(rev) != len(rawtext):

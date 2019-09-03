@@ -115,7 +115,7 @@ _chunksize = 1048576
 def ellipsisreadprocessor(rl, text):
     return text, False, {}
 
-def ellipsiswriteprocessor(rl, text):
+def ellipsiswriteprocessor(rl, text, sidedata):
     return text, False
 
 def ellipsisrawprocessor(rl, text):

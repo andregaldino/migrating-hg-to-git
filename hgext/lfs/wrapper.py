@@ -106,7 +106,7 @@ def readfromstore(self, text):
 
     return (text, True, {})
 
-def writetostore(self, text):
+def writetostore(self, text, sidedata):
     # hg filelog metadata (includes rename, etc)
     hgmeta, offset = storageutil.parsemeta(text)
     if offset and offset > 0:
