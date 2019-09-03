@@ -1865,6 +1865,8 @@ class revlog(object):
             raise error.ProgrammingError(
                 _("trying to add sidedata to a revlog who don't support them")
                 )
+        else:
+            flags |= REVIDX_SIDEDATA
 
         if flags:
             node = node or self.hash(text, p1, p2)
