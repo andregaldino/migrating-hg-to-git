@@ -317,6 +317,19 @@ class sparserevlog(requirementformatvariant):
                        'better compression and faster exchange with server.')
 
 @registerformatvariant
+class sidedata(requirementformatvariant):
+    name = 'sidedata'
+
+    _requirement = localrepo.SIDEDATA_REQUIREMENT
+
+    default = False
+
+    description = _('Allows storage of extra data alongside a revision, '
+                    'unlocking various caching options.')
+
+    upgrademessage = _('Allows storage of extra data alongside a revision.')
+
+@registerformatvariant
 class removecldeltachain(formatvariant):
     name = 'plain-cl-delta'
 

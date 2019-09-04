@@ -57,6 +57,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   dotencode:         yes
   generaldelta:      yes
   sparserevlog:      yes
+  sidedata:           no
   plain-cl-delta:    yes
   compression:       zlib
   compression-level: default
@@ -66,6 +67,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   dotencode:         yes    yes     yes
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
+  sidedata:           no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -75,6 +77,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   dotencode:         yes     no     yes
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
+  sidedata:           no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -84,6 +87,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.mismatchconfig|dotencode:        ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|generaldelta:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|sparserevlog:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sidedata:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:   ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:      ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   [formatvariant.name.uptodate|compression-level:][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
@@ -114,6 +118,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "repo": true
    },
    {
+    "config": false,
+    "default": false,
+    "name": "sidedata",
+    "repo": false
+   },
+   {
     "config": true,
     "default": true,
     "name": "plain-cl-delta",
@@ -139,6 +149,9 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -163,6 +176,9 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -186,6 +202,9 @@ modern form of the option
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -222,6 +241,7 @@ Various sub-optimal detections work
   dotencode:          no
   generaldelta:       no
   sparserevlog:       no
+  sidedata:           no
   plain-cl-delta:    yes
   compression:       zlib
   compression-level: default
@@ -231,6 +251,7 @@ Various sub-optimal detections work
   dotencode:          no    yes     yes
   generaldelta:       no    yes     yes
   sparserevlog:       no    yes     yes
+  sidedata:           no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -240,6 +261,7 @@ Various sub-optimal detections work
   dotencode:          no    yes     yes
   generaldelta:       no     no     yes
   sparserevlog:       no     no     yes
+  sidedata:           no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -249,6 +271,7 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchconfig|dotencode:        ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|generaldelta:     ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|sparserevlog:     ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sidedata:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:   ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:      ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   [formatvariant.name.uptodate|compression-level:][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
@@ -285,6 +308,9 @@ Various sub-optimal detections work
   
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   additional optimizations are available by specifying "--optimize <name>":
   
@@ -334,6 +360,9 @@ Various sub-optimal detections work
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -359,6 +388,9 @@ Upgrading a repository that is already modern essentially no-ops
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   beginning upgrade...
   repository locked and read-only
@@ -410,6 +442,9 @@ make sure we have a .d file
   
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   beginning upgrade...
   repository locked and read-only
@@ -507,6 +542,9 @@ unless --no-backup is passed
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
@@ -540,6 +578,9 @@ We can restrict optimization to some revlog:
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -614,6 +655,9 @@ Check we can select negatively
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -660,6 +704,9 @@ Check that we can select changelog only
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -705,6 +752,9 @@ Check that we can select filelog only
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -757,6 +807,9 @@ Check you can't skip revlog clone during important format downgrade
      preserved: dotencode, fncache, generaldelta, revlogv1, store
      removed: sparserevlog
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -808,6 +861,9 @@ Check you can't skip revlog clone during important format upgrade
   
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -863,6 +919,9 @@ store files with special filenames aren't encoded during copy
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
@@ -893,6 +952,9 @@ store files with special filenames aren't encoded during copy
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   re-delta-fulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
@@ -958,6 +1020,9 @@ Check upgrading a large file repository
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, revlogv1, sparserevlog, store
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
@@ -1010,6 +1075,9 @@ Check upgrading a large file repository
   
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, lfs, revlogv1, sparserevlog, store
+  
+  sidedata
+     Allows storage of extra data alongside a revision.
   
   beginning upgrade...
   repository locked and read-only
@@ -1106,6 +1174,9 @@ repository config is taken in account
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
   re-delta-all
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time
   
@@ -1197,6 +1268,7 @@ upgrade
   dotencode:         yes    yes     yes
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
+  sidedata:           no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zstd   zlib    zlib
   compression-level: default default default
@@ -1218,6 +1290,7 @@ downgrade
   dotencode:         yes    yes     yes
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
+  sidedata:           no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -1242,6 +1315,7 @@ upgrade from hgrc
   dotencode:         yes    yes     yes
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
+  sidedata:           no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zstd   zstd    zlib
   compression-level: default default default
