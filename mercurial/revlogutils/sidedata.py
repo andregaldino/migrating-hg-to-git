@@ -77,3 +77,9 @@ def sidedatareadprocessor(rl, text):
 def sidedatarawprocessor(rl, text):
     # side data modifies rawtext and prevent rawtext hash validation
     return False
+
+processors = (
+    sidedatareadprocessor,
+    sidedatawriteprocessor,
+    sidedatarawprocessor,
+)

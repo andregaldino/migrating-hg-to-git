@@ -54,6 +54,7 @@ from .revlogutils.flagutil import (
     REVIDX_FLAGS_ORDER,
     REVIDX_ISCENSORED,
     REVIDX_RAWTEXT_CHANGING_FLAGS,
+    REVIDX_SIDEDATA,
 )
 from .thirdparty import (
     attr,
@@ -75,6 +76,7 @@ from .interfaces import (
 from .revlogutils import (
     deltas as deltautil,
     flagutil,
+    sidedata as sidedatautil,
 )
 from .utils import (
     storageutil,
@@ -95,6 +97,7 @@ REVLOGV1_FLAGS
 REVLOGV2_FLAGS
 REVIDX_ISCENSORED
 REVIDX_ELLIPSIS
+REVIDX_SIDEDATA
 REVIDX_EXTSTORED
 REVIDX_DEFAULT_FLAGS
 REVIDX_FLAGS_ORDER
@@ -389,6 +392,8 @@ class revlog(object):
         if self._mmaplargeindex and 'mmapindexthreshold' in opts:
             mmapindexthreshold = opts['mmapindexthreshold']
         self.hassidedata = bool(opts.get('side-data', False))
+        if self.hassidedata:
+            self._flagprocessors[REVIDX_SIDEDATA] = sidedatautil.processors
         self._sparserevlog = bool(opts.get('sparse-revlog', False))
         withsparseread = bool(opts.get('with-sparse-read', False))
         # sparse-revlog forces sparse-read
