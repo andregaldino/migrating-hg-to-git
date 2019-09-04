@@ -73,3 +73,7 @@ def sidedatareadprocessor(rl, text):
         dataoffset = nextdataoffset
     text = text[dataoffset:]
     return text, True, sidedata
+
+def sidedatarawprocessor(rl, text):
+    # side data modifies rawtext and prevent rawtext hash validation
+    return False
