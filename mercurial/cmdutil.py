@@ -187,7 +187,7 @@ def newandmodified(chunks, originalchunks):
             originalchunks):
             newlyaddedandmodifiedfiles.add(chunk.header.filename())
             alsorestore.update(set(chunk.header.files()) -
-                               set([chunk.header.filename()]))
+                               {chunk.header.filename()})
     return newlyaddedandmodifiedfiles, alsorestore
 
 def parsealiases(cmd):
