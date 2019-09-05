@@ -245,11 +245,8 @@ def hgexecutable():
             pycompat.fsencode(getattr(mainmod, '__file__', ''))) == 'hg'):
             _sethgexecutable(pycompat.fsencode(mainmod.__file__))
         else:
-            exe = findexe('hg')
-            if exe:
-                _sethgexecutable(pycompat.fsencode(exe))
-            else:
-                _sethgexecutable(os.path.basename(pycompat.sysargv[0]))
+            _sethgexecutable(findexe('hg') or
+                             os.path.basename(pycompat.sysargv[0]))
     return _hgexecutable
 
 def _sethgexecutable(path):
