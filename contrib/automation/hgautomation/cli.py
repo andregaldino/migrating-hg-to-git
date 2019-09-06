@@ -185,6 +185,14 @@ def run_tests_windows(hga: HGAutomation, aws_region, instance_type,
                           test_flags)
 
 
+def publish_windows_artifacts(hg: HGAutomation, aws_region, version: str,
+                              pypi: bool, mercurial_scm_org: bool,
+                              ssh_username: str):
+    windows.publish_artifacts(DIST_PATH, version,
+                              pypi=pypi, mercurial_scm_org=mercurial_scm_org,
+                              ssh_username=ssh_username)
+
+
 def get_parser():
     parser = argparse.ArgumentParser()
 
@@ -402,6 +410,34 @@ def get_parser():
         default=aws.WINDOWS_BASE_IMAGE_NAME,
     )
     sp.set_defaults(func=run_tests_windows)
+
+    sp = subparsers.add_parser(
+        'publish-windows-artifacts',
+        help='Publish built Windows artifacts (wheels, installers, etc)'
+    )
+    sp.add_argument(
+        '--no-pypi',
+        dest='pypi',
+        action='store_false',
+        default=True,
+        help='Skip uploading to PyPI',
+    )
+    sp.add_argument(
+        '--no-mercurial-scm-org',
+        dest='mercurial_scm_org',
+        action='store_false',
+        default=True,
+        help='Skip uploading to www.mercurial-scm.org',
+    )
+    sp.add_argument(
+        '--ssh-username',
+        help='SSH username for mercurial-scm.org',
+    )
+    sp.add_argument(
+        'version',
+        help='Mercurial version string to locate local packages',
+    )
+    sp.set_defaults(func=publish_windows_artifacts)
 
     return parser
 

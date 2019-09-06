@@ -7,12 +7,17 @@
 
 # no-check-code because Python 3 native.
 
+import datetime
 import os
+import paramiko
 import pathlib
 import re
 import subprocess
 import tempfile
 
+from .pypi import (
+    upload as pypi_upload,
+)
 from .winrm import (
     run_powershell,
 )
@@ -100,6 +105,26 @@ if ($LASTEXITCODE -ne 0) {{
 }}
 '''
 
+X86_WHEEL_FILENAME = 'mercurial-{version}-cp27-cp27m-win32.whl'
+X64_WHEEL_FILENAME = 'mercurial-{version}-cp27-cp27m-win_amd64.whl'
+X86_EXE_FILENAME = 'Mercurial-{version}.exe'
+X64_EXE_FILENAME = 'Mercurial-{version}-x64.exe'
+X86_MSI_FILENAME = 'mercurial-{version}-x86.msi'
+X64_MSI_FILENAME = 'mercurial-{version}-x64.msi'
+
+MERCURIAL_SCM_BASE_URL = 'https://mercurial-scm.org/release/windows'
+
+X86_USER_AGENT_PATTERN = '.*Windows.*'
+X64_USER_AGENT_PATTERN = '.*Windows.*(WOW|x)64.*'
+
+X86_EXE_DESCRIPTION = ('Mercurial {version} Inno Setup installer - x86 Windows '
+                       '- does not require admin rights')
+X64_EXE_DESCRIPTION = ('Mercurial {version} Inno Setup installer - x64 Windows '
+                       '- does not require admin rights')
+X86_MSI_DESCRIPTION = ('Mercurial {version} MSI installer - x86 Windows '
+                       '- requires admin rights')
+X64_MSI_DESCRIPTION = ('Mercurial {version} MSI installer - x64 Windows '
+                       '- requires admin rights')
 
 def get_vc_prefix(arch):
     if arch == 'x86':
@@ -296,3 +321,152 @@ def run_tests(winrm_client, python_version, arch, test_flags=''):
     )
 
     run_powershell(winrm_client, ps)
+
+
+def resolve_wheel_artifacts(dist_path: pathlib.Path, version: str):
+    return (
+        dist_path / X86_WHEEL_FILENAME.format(version=version),
+        dist_path / X64_WHEEL_FILENAME.format(version=version),
+    )
+
+
+def resolve_all_artifacts(dist_path: pathlib.Path, version: str):
+    return (
+        dist_path / X86_WHEEL_FILENAME.format(version=version),
+        dist_path / X64_WHEEL_FILENAME.format(version=version),
+        dist_path / X86_EXE_FILENAME.format(version=version),
+        dist_path / X64_EXE_FILENAME.format(version=version),
+        dist_path / X86_MSI_FILENAME.format(version=version),
+        dist_path / X64_MSI_FILENAME.format(version=version),
+    )
+
+
+def generate_latest_dat(version: str):
+    x86_exe_filename = X86_EXE_FILENAME.format(version=version)
+    x64_exe_filename = X64_EXE_FILENAME.format(version=version)
+    x86_msi_filename = X86_MSI_FILENAME.format(version=version)
+    x64_msi_filename = X64_MSI_FILENAME.format(version=version)
+
+    entries = (
+        (
+            '10',
+            version,
+            X86_USER_AGENT_PATTERN,
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, x86_exe_filename),
+            X86_EXE_DESCRIPTION.format(version=version),
+        ),
+        (
+            '10',
+            version,
+            X64_USER_AGENT_PATTERN,
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, x64_exe_filename),
+            X64_EXE_DESCRIPTION.format(version=version),
+        ),
+        (
+            '10',
+            version,
+            X86_USER_AGENT_PATTERN,
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, x86_msi_filename),
+            X86_MSI_DESCRIPTION.format(version=version),
+        ),
+        (
+            '10',
+            version,
+            X64_USER_AGENT_PATTERN,
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, x64_msi_filename),
+            X64_MSI_DESCRIPTION.format(version=version)
+        )
+    )
+
+    lines = ['\t'.join(e) for e in entries]
+
+    return '\n'.join(lines) + '\n'
+
+
+def publish_artifacts_pypi(dist_path: pathlib.Path, version: str):
+    """Publish Windows release artifacts to PyPI."""
+
+    wheel_paths = resolve_wheel_artifacts(dist_path, version)
+
+    for p in wheel_paths:
+        if not p.exists():
+            raise Exception('%s not found' % p)
+
+    print('uploading wheels to PyPI (you may be prompted for credentials)')
+    pypi_upload(wheel_paths)
+
+
+def publish_artifacts_mercurial_scm_org(dist_path: pathlib.Path, version: str,
+                                        ssh_username=None):
+    """Publish Windows release artifacts to mercurial-scm.org."""
+    all_paths = resolve_all_artifacts(dist_path, version)
+
+    for p in all_paths:
+        if not p.exists():
+            raise Exception('%s not found' % p)
+
+    client = paramiko.SSHClient()
+    client.load_system_host_keys()
+    # We assume the system SSH configuration knows how to connect.
+    print('connecting to mercurial-scm.org via ssh...')
+    try:
+        client.connect('mercurial-scm.org', username=ssh_username)
+    except paramiko.AuthenticationException:
+        print('error authenticating; is an SSH key available in an SSH agent?')
+        raise
+
+    print('SSH connection established')
+
+    print('opening SFTP client...')
+    sftp = client.open_sftp()
+    print('SFTP client obtained')
+
+    for p in all_paths:
+        dest_path = '/var/www/release/windows/%s' % p.name
+        print('uploading %s to %s' % (p, dest_path))
+
+        with p.open('rb') as fh:
+            data = fh.read()
+
+        with sftp.open(dest_path, 'wb') as fh:
+            fh.write(data)
+            fh.chmod(0o0664)
+
+    latest_dat_path = '/var/www/release/windows/latest.dat'
+
+    now = datetime.datetime.utcnow()
+    backup_path = dist_path / (
+        'latest-windows-%s.dat' % now.strftime('%Y%m%dT%H%M%S'))
+    print('backing up %s to %s' % (latest_dat_path, backup_path))
+
+    with sftp.open(latest_dat_path, 'rb') as fh:
+        latest_dat_old = fh.read()
+
+    with backup_path.open('wb') as fh:
+        fh.write(latest_dat_old)
+
+    print('writing %s with content:' % latest_dat_path)
+    latest_dat_content = generate_latest_dat(version)
+    print(latest_dat_content)
+
+    with sftp.open(latest_dat_path, 'wb') as fh:
+        fh.write(latest_dat_content.encode('ascii'))
+
+
+def publish_artifacts(dist_path: pathlib.Path, version: str,
+                      pypi=True, mercurial_scm_org=True,
+                      ssh_username=None):
+    """Publish Windows release artifacts.
+
+    Files are found in `dist_path`. We will look for files with version string
+    `version`.
+
+    `pypi` controls whether we upload to PyPI.
+    `mercurial_scm_org` controls whether we upload to mercurial-scm.org.
+    """
+    if pypi:
+        publish_artifacts_pypi(dist_path, version)
+
+    if mercurial_scm_org:
+        publish_artifacts_mercurial_scm_org(dist_path, version,
+                                            ssh_username=ssh_username)

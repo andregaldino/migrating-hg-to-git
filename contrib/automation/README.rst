@@ -181,3 +181,25 @@ Various dependencies to run the Mercurial test harness are also required.
 Documenting them is beyond the scope of this document. Various tests
 also require other optional dependencies and missing dependencies will
 be printed by the test runner when a test is skipped.
+
+Releasing Windows Artifacts
+===========================
+
+The `automation.py` script can be used to automate the release of Windows
+artifacts::
+
+   $ ./automation.py build-all-windows-packages --revision 5.1.1
+   $ ./automation.py publish-windows-artifacts 5.1.1
+
+The first command will launch an EC2 instance to build all Windows packages
+and copy them into the `dist` directory relative to the repository root. The
+second command will then attempt to upload these files to PyPI (via `twine`)
+and to `mercurial-scm.org` (via SSH).
+
+Uploading to PyPI requires a PyPI account with write access to the `Mercurial`
+package. You can skip PyPI uploading by passing `--no-pypi`.
+
+Uploading to `mercurial-scm.org` requires an SSH account on that server
+with `windows` group membership and for the SSH key for that account to be the
+default SSH key (e.g. `~/.ssh/id_rsa`) or in a running SSH agent. You can
+skip `mercurial-scm.org` uploading by passing `--no-mercurial-scm-org`.
