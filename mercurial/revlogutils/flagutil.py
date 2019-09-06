@@ -87,8 +87,6 @@ class flagprocessorsmixin(object):
     See the documentation of the ``_processflags`` method for details.
     """
 
-    _flagserrorclass = error.RevlogError
-
 def processflagswrite(revlog, text, flags, sidedata):
     """Inspect revision data flags and applies write transformations defined
     by registered flag processors.

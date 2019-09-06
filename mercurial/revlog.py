@@ -298,6 +298,9 @@ class revlog(flagutil.flagprocessorsmixin):
     If `upperboundcomp` is not None, this is the expected maximal gain from
     compression for the data content.
     """
+
+    _flagserrorclass = error.RevlogError
+
     def __init__(self, opener, indexfile, datafile=None, checkambig=False,
                  mmaplargeindex=False, censorable=False,
                  upperboundcomp=None):

@@ -50,6 +50,7 @@ class remotefilelognodemap(object):
 class remotefilelog(flagutil.flagprocessorsmixin):
 
     _generaldelta = True
+    _flagserrorclass = error.RevlogError
 
     def __init__(self, opener, path, repo):
         self.opener = opener
