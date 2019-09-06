@@ -33,6 +33,10 @@ from .. import (
     util,
 )
 
+from . import (
+    flagutil,
+)
+
 # maximum <delta-chain-data>/<revision-text-length> ratio
 LIMIT_DELTA2TEXT = 2
 
@@ -521,7 +525,7 @@ def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
         fulltext = mdiff.patch(basetext, delta)
 
     try:
-        validatehash = revlog._processflagsraw(fulltext, flags)
+        validatehash = flagutil.processflagsraw(revlog, fulltext, flags)
         if validatehash:
             revlog.checkhash(fulltext, expectednode, p1=p1, p2=p2)
         if flags & REVIDX_ISCENSORED:

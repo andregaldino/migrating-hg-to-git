@@ -94,29 +94,11 @@ class flagprocessorsmixin(object):
         msg = ('_processflag(...) use the specialized variant')
         util.nouideprecwarn(msg, '5.2', stacklevel=2)
         if raw:
-            return text, self._processflagsraw(text, flags)
+            return text, processflagsraw(self, text, flags)
         elif operation == 'read':
             return processflagsread(self, text, flags)
         else: # write operation
             return processflagswrite(self, text, flags)
-
-    def _processflagsraw(self, text, flags):
-        """Inspect revision data flags to check is the content hash should be
-        validated.
-
-        ``text`` - the revision data to process
-        ``flags`` - the revision flags
-
-        This method processes the flags in the order (or reverse order if
-        ``operation`` is 'write') defined by REVIDX_FLAGS_ORDER, applying the
-        flag processors registered for present flags. The order of flags defined
-        in REVIDX_FLAGS_ORDER needs to be stable to allow non-commutativity.
-
-        Returns a 2-tuple of ``(text, validatehash)`` where ``text`` is the
-        processed text and ``validatehash`` is a bool indicating whether the
-        returned text should be checked for hash integrity.
-        """
-        return _processflagsfunc(self, text, flags, 'raw')[1]
 
 def processflagswrite(revlog, text, flags, sidedata):
     """Inspect revision data flags and applies write transformations defined
@@ -156,6 +138,24 @@ def processflagsread(revlog, text, flags):
     returned text should be checked for hash integrity.
     """
     return _processflagsfunc(revlog, text, flags, 'read')
+
+def processflagsraw(revlog, text, flags):
+    """Inspect revision data flags to check is the content hash should be
+    validated.
+
+    ``text`` - the revision data to process
+    ``flags`` - the revision flags
+
+    This method processes the flags in the order (or reverse order if
+    ``operation`` is 'write') defined by REVIDX_FLAGS_ORDER, applying the
+    flag processors registered for present flags. The order of flags defined
+    in REVIDX_FLAGS_ORDER needs to be stable to allow non-commutativity.
+
+    Returns a 2-tuple of ``(text, validatehash)`` where ``text`` is the
+    processed text and ``validatehash`` is a bool indicating whether the
+    returned text should be checked for hash integrity.
+    """
+    return _processflagsfunc(revlog, text, flags, 'raw')[1]
 
 def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
     """internal function to process flag on a revlog

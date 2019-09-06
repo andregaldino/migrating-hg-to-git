@@ -291,7 +291,7 @@ class filestorage(flagutil.flagprocessorsmixin):
         rawtext = self._svfs.read(path)
 
         if raw:
-            validatehash = self._processflagsraw(rawtext, flags)
+            validatehash = flagutil.processflagsraw(self, rawtext, flags)
             text = rawtext
         else:
             r = flagutil.processflagsread(self, rawtext, flags)
