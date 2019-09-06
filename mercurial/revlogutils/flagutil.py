@@ -118,7 +118,7 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
-        return self._processflagsfunc(text, flags, 'read')
+        return _processflagsfunc(self, text, flags, 'read')
 
     def _processflagswrite(self, text, flags, sidedata):
         """Inspect revision data flags and applies write transformations defined
@@ -136,8 +136,8 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
-        return self._processflagsfunc(text, flags, 'write',
-                                      sidedata=sidedata)[:2]
+        return _processflagsfunc(self, text, flags, 'write',
+                                 sidedata=sidedata)[:2]
 
     def _processflagsraw(self, text, flags):
         """Inspect revision data flags to check is the content hash should be
@@ -155,48 +155,52 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
-        return self._processflagsfunc(text, flags, 'raw')[1]
+        return _processflagsfunc(self, text, flags, 'raw')[1]
 
-    def _processflagsfunc(self, text, flags, operation, sidedata=None):
-        # fast path: no flag processors will run
-        if flags == 0:
-            return text, True, {}
-        if operation not in ('read', 'write', 'raw'):
-            raise error.ProgrammingError(_("invalid '%s' operation") %
-                                         operation)
-        # Check all flags are known.
-        if flags & ~REVIDX_KNOWN_FLAGS:
-            raise self._flagserrorclass(_("incompatible revision flag '%#x'") %
-                                        (flags & ~REVIDX_KNOWN_FLAGS))
-        validatehash = True
-        # Depending on the operation (read or write), the order might be
-        # reversed due to non-commutative transforms.
-        orderedflags = REVIDX_FLAGS_ORDER
-        if operation == 'write':
-            orderedflags = reversed(orderedflags)
+def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
+    """internal function to process flag on a revlog
 
-        outsidedata = {}
-        for flag in orderedflags:
-            # If a flagprocessor has been registered for a known flag, apply the
-            # related operation transform and update result tuple.
-            if flag & flags:
-                vhash = True
+    This function is private to this module, code should never needs to call it
+    directly."""
+    # fast path: no flag processors will run
+    if flags == 0:
+        return text, True, {}
+    if operation not in ('read', 'write', 'raw'):
+        raise error.ProgrammingError(_("invalid '%s' operation") %
+                                     operation)
+    # Check all flags are known.
+    if flags & ~REVIDX_KNOWN_FLAGS:
+        raise revlog._flagserrorclass(_("incompatible revision flag '%#x'") %
+                                      (flags & ~REVIDX_KNOWN_FLAGS))
+    validatehash = True
+    # Depending on the operation (read or write), the order might be
+    # reversed due to non-commutative transforms.
+    orderedflags = REVIDX_FLAGS_ORDER
+    if operation == 'write':
+        orderedflags = reversed(orderedflags)
 
-                if flag not in self._flagprocessors:
-                    message = _("missing processor for flag '%#x'") % (flag)
-                    raise self._flagserrorclass(message)
+    outsidedata = {}
+    for flag in orderedflags:
+        # If a flagprocessor has been registered for a known flag, apply the
+        # related operation transform and update result tuple.
+        if flag & flags:
+            vhash = True
 
-                processor = self._flagprocessors[flag]
-                if processor is not None:
-                    readtransform, writetransform, rawtransform = processor
+            if flag not in revlog._flagprocessors:
+                message = _("missing processor for flag '%#x'") % (flag)
+                raise revlog._flagserrorclass(message)
 
-                    if operation == 'raw':
-                        vhash = rawtransform(self, text)
-                    elif operation == 'read':
-                        text, vhash, s = readtransform(self, text)
-                        outsidedata.update(s)
-                    else: # write operation
-                        text, vhash = writetransform(self, text, sidedata)
-                validatehash = validatehash and vhash
+            processor = revlog._flagprocessors[flag]
+            if processor is not None:
+                readtransform, writetransform, rawtransform = processor
 
-        return text, validatehash, outsidedata
+                if operation == 'raw':
+                    vhash = rawtransform(revlog, text)
+                elif operation == 'read':
+                    text, vhash, s = readtransform(revlog, text)
+                    outsidedata.update(s)
+                else: # write operation
+                    text, vhash = writetransform(revlog, text, sidedata)
+            validatehash = validatehash and vhash
+
+    return text, validatehash, outsidedata
