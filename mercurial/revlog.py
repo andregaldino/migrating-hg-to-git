@@ -261,7 +261,7 @@ class revlogio(object):
             p = versionformat_pack(version) + p[4:]
         return p
 
-class revlog(flagutil.flagprocessorsmixin):
+class revlog(object):
     """
     the underlying revision storage object
 

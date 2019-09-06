@@ -47,7 +47,7 @@ class remotefilelognodemap(object):
             raise KeyError(node)
         return node
 
-class remotefilelog(flagutil.flagprocessorsmixin):
+class remotefilelog(object):
 
     _generaldelta = True
     _flagserrorclass = error.RevlogError

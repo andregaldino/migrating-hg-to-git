@@ -79,14 +79,6 @@ def insertflagprocessor(flag, processor, flagprocessors):
         raise error.Abort(msg)
     flagprocessors[flag] = processor
 
-class flagprocessorsmixin(object):
-    """basic mixin to support revlog flag processing
-
-    Make sure the `_flagprocessors` attribute is set at ``__init__`` time.
-
-    See the documentation of the ``_processflags`` method for details.
-    """
-
 def processflagswrite(revlog, text, flags, sidedata):
     """Inspect revision data flags and applies write transformations defined
     by registered flag processors.

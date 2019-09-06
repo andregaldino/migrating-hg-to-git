@@ -91,7 +91,7 @@ class simplefilestoreproblem(object):
     node = attr.ib(default=None)
 
 @interfaceutil.implementer(repository.ifilestorage)
-class filestorage(flagutil.flagprocessorsmixin):
+class filestorage(object):
     """Implements storage for a tracked path.
 
     Data is stored in the VFS in a directory corresponding to the tracked
