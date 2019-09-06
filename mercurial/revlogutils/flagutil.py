@@ -89,17 +89,6 @@ class flagprocessorsmixin(object):
 
     _flagserrorclass = error.RevlogError
 
-    def _processflags(self, text, flags, operation, raw=False):
-        """deprecated entry point to access flag processors"""
-        msg = ('_processflag(...) use the specialized variant')
-        util.nouideprecwarn(msg, '5.2', stacklevel=2)
-        if raw:
-            return text, processflagsraw(self, text, flags)
-        elif operation == 'read':
-            return processflagsread(self, text, flags)
-        else: # write operation
-            return processflagswrite(self, text, flags)
-
 def processflagswrite(revlog, text, flags, sidedata):
     """Inspect revision data flags and applies write transformations defined
     by registered flag processors.
