@@ -457,7 +457,7 @@ class filestorage(flagutil.flagprocessorsmixin):
         if flags:
             node = node or storageutil.hashrevisionsha1(text, p1, p2)
 
-        rawtext, validatehash = self._processflagswrite(text, flags)
+        rawtext, validatehash = flagutil.processflagswrite(self, text, flags)
 
         node = node or storageutil.hashrevisionsha1(text, p1, p2)
 
