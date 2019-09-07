@@ -104,6 +104,7 @@ I/O logging works
   $ hg debugserve --sshstdio --logiofd 1 << EOF
   > hello
   > EOF
+  e> flush() -> None
   o> write(4) -> 4:
   o>     440\n
   o> write(440) -> 440:
@@ -119,6 +120,7 @@ I/O logging works
   capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
   $ cat $TESTTMP/io
+  e> flush() -> None
   o> write(4) -> 4:
   o>     440\n
   o> write(440) -> 440:

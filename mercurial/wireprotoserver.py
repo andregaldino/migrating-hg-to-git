@@ -657,6 +657,8 @@ def _runsshserver(ui, repo, fin, fout, ev):
                 continue
 
             rsp = wireprotov1server.dispatch(repo, proto, request)
+            repo.ui.fout.flush()
+            repo.ui.ferr.flush()
 
             if isinstance(rsp, bytes):
                 _sshv1respondbytes(fout, rsp)

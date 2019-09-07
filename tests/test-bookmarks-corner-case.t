@@ -200,8 +200,8 @@ Check raced push output.
   $ cat push-output.txt
   pushing to ssh://user@dummy/bookrace-server
   searching for changes
-  remote has heads on branch 'default' that are not known locally: f26c3b5167d1
   remote: setting raced push up
+  remote has heads on branch 'default' that are not known locally: f26c3b5167d1
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
