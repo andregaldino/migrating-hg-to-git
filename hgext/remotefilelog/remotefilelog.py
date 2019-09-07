@@ -24,6 +24,7 @@ from mercurial import (
     revlog,
 )
 from mercurial.utils import storageutil
+from mercurial.revlogutils import flagutil
 
 from . import (
     constants,
@@ -45,7 +46,7 @@ class remotefilelognodemap(object):
             raise KeyError(node)
         return node
 
-class remotefilelog(object):
+class remotefilelog(flagutil.flagprocessorsmixin):
 
     _generaldelta = True
 
@@ -56,6 +57,8 @@ class remotefilelog(object):
         self.nodemap = remotefilelognodemap(self.filename, repo.contentstore)
 
         self.version = 1
+
+        self._flagprocessors = dict(flagutil.flagprocessors)
 
     def read(self, node):
         """returns the file contents at this node"""
@@ -326,28 +329,6 @@ class remotefilelog(object):
 
     def rawdata(self, node):
         return self.revision(node, raw=False)
-
-    def _processflags(self, text, flags, operation, raw=False):
-        # mostly copied from hg/mercurial/revlog.py
-        validatehash = True
-        orderedflags = revlog.REVIDX_FLAGS_ORDER
-        if operation == 'write':
-            orderedflags = reversed(orderedflags)
-        for flag in orderedflags:
-            if flag & flags:
-                vhash = True
-                if flag not in revlog._flagprocessors:
-                    message = _("missing processor for flag '%#x'") % (flag)
-                    raise revlog.RevlogError(message)
-                readfunc, writefunc, rawfunc = revlog._flagprocessors[flag]
-                if raw:
-                    vhash = rawfunc(self, text)
-                elif operation == 'read':
-                    text, vhash = readfunc(self, text)
-                elif operation == 'write':
-                    text, vhash = writefunc(self, text)
-                validatehash = validatehash and vhash
-        return text, validatehash
 
     def _read(self, id):
         """reads the raw file blob from disk, cache, or server"""
