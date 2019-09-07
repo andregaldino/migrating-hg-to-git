@@ -91,6 +91,8 @@ class flagprocessorsmixin(object):
 
     def _processflags(self, text, flags, operation, raw=False):
         """deprecated entry point to access flag processors"""
+        msg = ('_processflag(...) use the specialized variant')
+        util.nouideprecwarn(msg, '5.2', stacklevel=2)
         if raw:
             return text, self._processflagsraw(text, flags)
         elif operation == 'read':
