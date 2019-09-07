@@ -81,14 +81,12 @@ def _collectrevlog(revlog, striprev):
     _, brokenset = revlog.getstrippoint(striprev)
     return [revlog.linkrev(r) for r in brokenset]
 
-def _collectmanifest(repo, striprev):
-    return _collectrevlog(repo.manifestlog.getstorage(b''), striprev)
-
 def _collectbrokencsets(repo, files, striprev):
     """return the changesets which will be broken by the truncation"""
     s = set()
 
-    s.update(_collectmanifest(repo, striprev))
+    for revlog in manifestrevlogs(repo):
+        s.update(_collectrevlog(revlog, striprev))
     for fname in files:
         s.update(_collectrevlog(repo.file(fname), striprev))
 

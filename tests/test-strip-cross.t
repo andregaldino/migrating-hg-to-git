@@ -203,14 +203,9 @@ Now a similar test for a non-root manifest revlog
   checking changesets
   checking manifests
   checking directory manifests
-   dir/@0: parent-directory manifest refers to unknown revision 1c556153fe54
-   dir/@1: parent-directory manifest refers to unknown revision 1f76dba919fd
   crosschecking files in changesets and manifests
   checking files
-   dir/other@1: 5d9299349fc0 not in manifests
   checked 3 changesets with 4 changes to 3 files
-  3 integrity errors encountered!
-  (first damaged changeset appears to be 0)
   
   % Trying to strip revision 3
   saved backup bundle to $TESTTMP/treemanifests/3/.hg/strip-backup/e4e3de5c3cb2-f4c70376-backup.hg
