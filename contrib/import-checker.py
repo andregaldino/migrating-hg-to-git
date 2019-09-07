@@ -392,9 +392,10 @@ def imported_modules(source, modulename, f, localmods, ignore_nested=False):
                     modnotfound = True
                     continue
                 yield found[1]
-            if modnotfound:
+            if modnotfound and dottedpath != modulename:
                 # "dottedpath" is a package, but imported because of non-module
                 # lookup
+                # specifically allow "from . import foo" from __init__.py
                 yield dottedpath
 
 

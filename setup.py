@@ -1210,6 +1210,7 @@ packages = [
     'hgext.fastannotate',
     'hgext.fsmonitor.pywatchman',
     'hgext.highlight',
+    'hgext.hooklib',
     'hgext.infinitepush',
     'hgext.largefiles',
     'hgext.lfs',
