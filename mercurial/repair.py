@@ -364,11 +364,11 @@ def delayedstrip(ui, repo, nodelist, topic=None, backup=True):
     callback.addnodes(nodelist)
 
 def stripmanifest(repo, striprev, tr, files):
-    revlog = repo.manifestlog.getstorage(b'')
-    revlog.strip(striprev, tr)
-    striptrees(repo, tr, striprev, files)
+    for revlog in manifestrevlogs(repo):
+        revlog.strip(striprev, tr)
 
-def striptrees(repo, tr, striprev, files):
+def manifestrevlogs(repo):
+    yield repo.manifestlog.getstorage(b'')
     if 'treemanifest' in repo.requirements:
         # This logic is safe if treemanifest isn't enabled, but also
         # pointless, so we skip it if treemanifest isn't enabled.
@@ -376,7 +376,7 @@ def striptrees(repo, tr, striprev, files):
             if (unencoded.startswith('meta/') and
                 unencoded.endswith('00manifest.i')):
                 dir = unencoded[5:-12]
-                repo.manifestlog.getstorage(dir).strip(striprev, tr)
+                yield repo.manifestlog.getstorage(dir)
 
 def rebuildfncache(ui, repo):
     """Rebuilds the fncache file from repo history.
