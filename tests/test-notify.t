@@ -99,7 +99,13 @@
     "/long/path/repository" into "repository". Default: 0.
   
   notify.domain
-    Default email domain for sender or recipients with no explicit domain.
+    Default email domain for sender or recipients with no explicit domain. It is
+    also used for the domain part of the "Message-Id" when using
+    "notify.messageidseed".
+  
+  notify.messageidseed
+    Create deterministic "Message-Id" headers for the mails based on the seed
+    and the revision identifier of the first commit in the changeset.
   
   notify.style
     Style file to use when formatting emails.
@@ -190,7 +196,7 @@ the python call below wraps continuation lines, which appear on Mac OS X 10.5 be
 of the very long subject line
 pull (minimal config)
 
-  $ hg --traceback --cwd b pull ../a | "$PYTHON" $TESTTMP/filter.py
+  $ hg --traceback --cwd b --config notify.domain=example.com --config notify.messageidseed=example pull ../a | "$PYTHON" $TESTTMP/filter.py
   pulling from ../a
   searching for changes
   adding changesets
@@ -203,10 +209,10 @@ pull (minimal config)
   Content-Transfer-Encoding: 7bit
   Date: * (glob)
   Subject: changeset in $TESTTMP/b: b
-  From: test
+  From: test@example.com
   X-Hg-Notification: changeset 00a13f371396
-  Message-Id: <*> (glob)
-  To: baz, foo@bar
+  Message-Id: <hg.ba3098a36bd4c297288d16788623a841f81f618ea961a0f0fd65de7eb1191b66@example.com>
+  To: baz@example.com, foo@bar
   
   changeset 00a13f371396 in $TESTTMP/b
   details: $TESTTMP/b?cmd=changeset;node=00a13f371396

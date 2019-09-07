@@ -82,6 +82,12 @@ notify.strip
 
 notify.domain
   Default email domain for sender or recipients with no explicit domain.
+  It is also used for the domain part of the ``Message-Id`` when using
+  ``notify.messageidseed``.
+
+notify.messageidseed
+  Create deterministic ``Message-Id`` headers for the mails based on the seed
+  and the revision identifier of the first commit in the changeset.
 
 notify.style
   Style file to use when formatting emails.
@@ -144,6 +150,7 @@ from __future__ import absolute_import
 import email.errors as emailerrors
 import email.parser as emailparser
 import fnmatch
+import hashlib
 import socket
 import time
 
@@ -181,6 +188,9 @@ configitem('notify', 'diffstat',
     default=True,
 )
 configitem('notify', 'domain',
+    default=None,
+)
+configitem('notify', 'messageidseed',
     default=None,
 )
 configitem('notify', 'fromauthor',
@@ -268,6 +278,7 @@ class notifier(object):
         self.subs = self.subscribers()
         self.merge = self.ui.configbool('notify', 'merge')
         self.showfunc = self.ui.configbool('notify', 'showfunc')
+        self.messageidseed = self.ui.config('notify', 'messageidseed')
         if self.showfunc is None:
             self.showfunc = self.ui.configbool('diff', 'showfunc')
 
@@ -412,10 +423,7 @@ class notifier(object):
 
         msg[r'X-Hg-Notification'] = r'changeset %s' % ctx
         if not msg[r'Message-Id']:
-            msg[r'Message-Id'] = encoding.strfromlocal(
-                '<hg.%s.%d.%d@%s>' % (ctx, int(time.time()),
-                                      hash(self.repo.root),
-                                      encoding.strtolocal(socket.getfqdn())))
+            msg[r'Message-Id'] = messageid(ctx, self.domain, self.messageidseed)
         msg[r'To'] = encoding.strfromlocal(', '.join(sorted(subs)))
 
         msgtext = encoding.strtolocal(msg.as_string())
@@ -517,3 +525,16 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
 
     if count:
         n.send(ctx, count, data)
+
+def messageid(ctx, domain, messageidseed):
+    if domain and messageidseed:
+        host = domain
+    else:
+        host = encoding.strtolocal(socket.getfqdn())
+    if messageidseed:
+        messagehash = hashlib.sha512(ctx.hex() + messageidseed)
+        messageid = '<hg.%s@%s>' % (messagehash.hexdigest()[:64], host)
+    else:
+        messageid = '<hg.%s.%d.%d@%s>' % (ctx, int(time.time()),
+                                          hash(ctx.repo().root), host)
+    return encoding.strfromlocal(messageid)
