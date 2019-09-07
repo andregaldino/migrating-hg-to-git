@@ -154,13 +154,13 @@ class flagprocessorsmixin(object):
         processed text and ``validatehash`` is a bool indicating whether the
         returned text should be checked for hash integrity.
         """
-        return self._processflagsfunc(text, flags, 'read', raw=True)[1]
+        return self._processflagsfunc(text, flags, 'raw')[1]
 
-    def _processflagsfunc(self, text, flags, operation, raw=False):
+    def _processflagsfunc(self, text, flags, operation):
         # fast path: no flag processors will run
         if flags == 0:
             return text, True
-        if not operation in ('read', 'write'):
+        if operation not in ('read', 'write', 'raw'):
             raise error.ProgrammingError(_("invalid '%s' operation") %
                                          operation)
         # Check all flags are known.
@@ -188,7 +188,7 @@ class flagprocessorsmixin(object):
                 if processor is not None:
                     readtransform, writetransform, rawtransform = processor
 
-                    if raw:
+                    if operation == 'raw':
                         vhash = rawtransform(self, text)
                     elif operation == 'read':
                         text, vhash = readtransform(self, text)
