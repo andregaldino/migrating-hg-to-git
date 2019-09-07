@@ -238,16 +238,16 @@ def handlechangegroup_widen(op, inpart):
     f = vfs.open(chgrpfile, "rb")
     try:
         gen = exchange.readbundle(ui, f, chgrpfile, vfs)
-        if not ui.verbose:
-            # silence internal shuffling chatter
-            ui.pushbuffer()
-        if isinstance(gen, bundle2.unbundle20):
-            with repo.transaction('strip') as tr:
-                bundle2.processbundle(repo, gen, lambda: tr)
-        else:
-            gen.apply(repo, 'strip', 'bundle:' + vfs.join(chgrpfile), True)
-        if not ui.verbose:
-            ui.popbuffer()
+        # silence internal shuffling chatter
+        override = {('ui', 'quiet'): True}
+        if ui.verbose:
+            override = {}
+        with ui.configoverride(override):
+            if isinstance(gen, bundle2.unbundle20):
+                with repo.transaction('strip') as tr:
+                    bundle2.processbundle(repo, gen, lambda: tr)
+            else:
+                gen.apply(repo, 'strip', 'bundle:' + vfs.join(chgrpfile), True)
     finally:
         f.close()
 
