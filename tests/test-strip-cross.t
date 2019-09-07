@@ -8,6 +8,7 @@ test stripping of filelogs where the linkrev doesn't always increase
   >     count=1
   >     for i in "$@"; do
   >         for f in $i; do
+  >             mkdir -p `dirname $f`
   >             echo $count > $f
   >         done
   >         count=`expr $count + 1`
@@ -158,5 +159,67 @@ Do a similar test where the manifest revlog has unordered linkrevs
   crosschecking files in changesets and manifests
   checking files
   checked 3 changesets with 3 changes to 2 files
+  
+  $ cd ..
+
+Now a similar test for a non-root manifest revlog
+  $ cat >> $HGRCPATH <<EOF
+  > [experimental]
+  > treemanifests = yes
+  > EOF
+  $ mkdir treemanifests
+  $ cd treemanifests
+  $ 
+  $ hg --config experimental.treemanifest=True init orig
+  $ cd orig
+  $ commit 'dir/file'
+  $ commit 'dir/other'
+  $ commit '' 'dir/other'
+  $ HGUSER=yet-another-user; export HGUSER
+  $ commit 'otherdir dir/file'
+  $ commit 'otherdir dir/other' 'otherdir dir/file'
+  $ cd ..
+  $ hg --config experimental.treemanifest=True clone -q -U -r 1 -r 2 -r 3 -r 4 orig crossed
+  $ cd crossed
+  $ hg debugindex --dir dir
+     rev linkrev nodeid       p1           p2
+       0       2 6bbc6fee55c2 000000000000 000000000000
+       1       0 1c556153fe54 000000000000 000000000000
+       2       1 1f76dba919fd 000000000000 000000000000
+       3       3 bbee06ad59d5 000000000000 000000000000
+
+  $ cd ..
+  $ for i in 2 3; do
+  >     hg --config experimental.treemanifest=True clone -q -U --pull crossed $i
+  >     echo "% Trying to strip revision $i"
+  >     hg --cwd $i strip $i
+  >     echo "% Verifying"
+  >     hg --cwd $i verify
+  >     echo
+  > done
+  % Trying to strip revision 2
+  saved backup bundle to $TESTTMP/treemanifests/2/.hg/strip-backup/145f5c75f9ac-a105cfbe-backup.hg
+  % Verifying
+  checking changesets
+  checking manifests
+  checking directory manifests
+   dir/@0: parent-directory manifest refers to unknown revision 1c556153fe54
+   dir/@1: parent-directory manifest refers to unknown revision 1f76dba919fd
+  crosschecking files in changesets and manifests
+  checking files
+   dir/other@1: 5d9299349fc0 not in manifests
+  checked 3 changesets with 4 changes to 3 files
+  3 integrity errors encountered!
+  (first damaged changeset appears to be 0)
+  
+  % Trying to strip revision 3
+  saved backup bundle to $TESTTMP/treemanifests/3/.hg/strip-backup/e4e3de5c3cb2-f4c70376-backup.hg
+  % Verifying
+  checking changesets
+  checking manifests
+  checking directory manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 4 changes to 3 files
   
   $ cd ..
