@@ -55,7 +55,8 @@ configitem('experimental', 'uncommit.keep',
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-def _commitfiltered(repo, ctx, match, keepcommit):
+def _commitfiltered(repo, ctx, match, keepcommit, message=None, user=None,
+                    date=None):
     """Recommit ctx with changed files not in match. Return the new
     node identifier, or None if nothing changed.
     """
@@ -90,13 +91,20 @@ def _commitfiltered(repo, ctx, match, keepcommit):
     if not files:
         repo.ui.status(_("note: keeping empty commit\n"))
 
+    if message is None:
+        message = ctx.description()
+    if not user:
+        user = ctx.user()
+    if not date:
+        date = ctx.date()
+
     new = context.memctx(repo,
                          parents=[base.node(), node.nullid],
-                         text=ctx.description(),
+                         text=message,
                          files=files,
                          filectxfn=filectxfn,
-                         user=ctx.user(),
-                         date=ctx.date(),
+                         user=user,
+                         date=date,
                          extra=ctx.extra())
     return repo.commitctx(new)
 
@@ -104,7 +112,7 @@ def _commitfiltered(repo, ctx, match, keepcommit):
     [('', 'keep', None, _('allow an empty commit after uncommiting')),
      ('', 'allow-dirty-working-copy', False,
     _('allow uncommit with outstanding changes'))
-    ] + commands.walkopts,
+    ] + commands.walkopts + commands.commitopts + commands.commitopts2,
     _('[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def uncommit(ui, repo, *pats, **opts):
@@ -162,13 +170,19 @@ def uncommit(ui, repo, *pats, **opts):
                                   % scmutil.getuipathfn(repo)(f), hint=hint)
 
         with repo.transaction('uncommit'):
+            if not (opts[b'message'] or opts[b'logfile']):
+                opts[b'message'] = old.description()
+            message = cmdutil.logmessage(ui, pycompat.byteskwargs(opts))
+
             keepcommit = pats
             if not keepcommit:
                 if opts.get('keep') is not None:
                     keepcommit = opts.get('keep')
                 else:
                     keepcommit = ui.configbool('experimental', 'uncommit.keep')
-            newid = _commitfiltered(repo, old, match, keepcommit)
+            newid = _commitfiltered(repo, old, match, keepcommit,
+                                    message=message, user=opts.get(b'user'),
+                                    date=opts.get(b'date'))
             if newid is None:
                 ui.status(_("nothing to uncommit\n"))
                 return 1

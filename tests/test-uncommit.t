@@ -38,6 +38,10 @@ Help for uncommit
       --allow-dirty-working-copy allow uncommit with outstanding changes
    -I --include PATTERN [+]      include names matching the given patterns
    -X --exclude PATTERN [+]      exclude names matching the given patterns
+   -m --message TEXT             use text as commit message
+   -l --logfile FILE             read commit message from file
+   -d --date DATE                record the specified date as commit date
+   -u --user USER                record the specified user as committer
   
   (some details hidden, use --verbose to show complete help)
 
@@ -531,9 +535,18 @@ can be uncommitted.
   $ mkdir dir
   $ echo 1 > dir/file.txt
   $ hg ci -Aqm 'add file in directory'
-  $ hg uncommit dir
+  $ hg uncommit dir -m 'uncommit with message' -u 'different user' \
+  >                 -d 'Jun 30 12:12:12 1980 +0000'
   $ hg status
   A dir/file.txt
+  $ hg log -r .
+  changeset:   8:b4dd26dc42e0
+  tag:         tip
+  parent:      6:2278a4c24330
+  user:        different user
+  date:        Mon Jun 30 12:12:12 1980 +0000
+  summary:     uncommit with message
+  
 
 `uncommit <dir>` and `cd <dir> && uncommit .` behave the same...
 
