@@ -98,7 +98,7 @@ impl CopyMap {
     }
 }
 
-py_shared_iterator_impl!(
+py_shared_iterator!(
     CopyMapKeysIterator,
     DirstateMapLeakedRef,
     CopyMapIter<'static>,
@@ -106,7 +106,7 @@ py_shared_iterator_impl!(
     Option<PyBytes>
 );
 
-py_shared_iterator_impl!(
+py_shared_iterator!(
     CopyMapItemsIterator,
     DirstateMapLeakedRef,
     CopyMapIter<'static>,

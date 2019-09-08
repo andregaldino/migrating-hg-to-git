@@ -121,7 +121,7 @@ impl Dirs {
     }
 }
 
-py_shared_iterator_impl!(
+py_shared_iterator!(
     DirsMultisetKeysIterator,
     DirsMultisetLeakedRef,
     DirsMultisetIter<'static>,

@@ -193,7 +193,7 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 /// that will be shared.
 /// * `$leaked` is the identifier to give to the struct that will manage
 /// references to `$name`, to be used for example in other macros like
-/// `py_shared_iterator_impl`.
+/// `py_shared_iterator`.
 ///
 /// # Example
 ///
@@ -332,7 +332,7 @@ macro_rules! py_shared_ref {
 ///
 /// py_shared_ref!(MyType, MyStruct, inner, MyTypeLeakedRef);
 ///
-/// py_shared_iterator_impl!(
+/// py_shared_iterator!(
 ///     MyTypeItemsIterator,
 ///     MyTypeLeakedRef,
 ///     HashMap<'static, Vec<u8>, Vec<u8>>,
@@ -340,7 +340,7 @@ macro_rules! py_shared_ref {
 ///     Option<(PyBytes, PyBytes)>
 /// );
 /// ```
-macro_rules! py_shared_iterator_impl {
+macro_rules! py_shared_iterator {
     (
         $name: ident,
         $leaked: ident,
