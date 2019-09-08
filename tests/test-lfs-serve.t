@@ -499,8 +499,8 @@ lfs content, and the extension enabled.
   adding changesets
   adding manifests
   adding file changes
-  added 6 changesets with 5 changes to 5 files (+1 heads)
   calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
+  added 6 changesets with 5 changes to 5 files (+1 heads)
   new changesets d437e1d24fbd:d3b84d50eacb
   resolving manifests
   lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs

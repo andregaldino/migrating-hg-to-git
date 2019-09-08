@@ -762,9 +762,9 @@ pull --update works the same as pull && update
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   updating bookmark Y
   updating bookmark Z
+  added 2 changesets with 2 changes to 2 files (+1 heads)
   new changesets 125c9a1d6df6:9ba5f110a0b3
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
@@ -788,9 +788,9 @@ pull --update works the same as pull && update
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   updating bookmark Y
   updating bookmark Z
+  added 2 changesets with 2 changes to 2 files (+1 heads)
   new changesets 125c9a1d6df6:9ba5f110a0b3
   updating to active bookmark Y
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -813,9 +813,9 @@ We warn about divergent during bare update to the active bookmark
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   updating bookmark Y
   updating bookmark Z
+  added 2 changesets with 2 changes to 2 files (+1 heads)
   new changesets 125c9a1d6df6:9ba5f110a0b3
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg -R ../cloned-bookmarks-manual-update-with-divergence update
@@ -996,11 +996,11 @@ case)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   divergent bookmark Z stored as Z@default
   adding remote bookmark foo
   adding remote bookmark four
   adding remote bookmark should-end-on-two
+  added 1 changesets with 1 changes to 1 files
   new changesets 5fb12f0f2d51
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R ../cloned-bookmarks-update parents -T "{rev}:{node|short}\n"
@@ -1023,8 +1023,8 @@ updates the working directory and current active bookmark)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   divergent bookmark Z stored as Z@default
+  added 1 changesets with 1 changes to 1 files
   new changesets 81dcce76aa0b
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   updating bookmark Y

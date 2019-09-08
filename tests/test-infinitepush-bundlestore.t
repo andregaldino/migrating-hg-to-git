@@ -168,8 +168,8 @@ Pull scratch and non-scratch bookmark at the same time
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 2 files
   adding remote bookmark newbook
+  added 1 changesets with 1 changes to 2 files
   new changesets 1de1d7d92f89 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg log -G -T '{desc} {phase} {bookmarks}'

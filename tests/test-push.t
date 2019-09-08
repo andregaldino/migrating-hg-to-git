@@ -287,9 +287,9 @@ Test push hook locking
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   lock:  user *, process * (*s) (glob)
   wlock: free
+  added 1 changesets with 1 changes to 1 files
 
   $ hg --cwd 1 --config extensions.strip= strip tip -q
   $ hg --cwd 2 --config extensions.strip= strip tip -q
@@ -299,9 +299,9 @@ Test push hook locking
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   lock:  user *, process * (*s) (glob)
   wlock: user *, process * (*s) (glob)
+  added 1 changesets with 1 changes to 1 files
 
 Test bare push with multiple race checking options
 --------------------------------------------------

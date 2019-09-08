@@ -242,8 +242,8 @@ make the bookmark move by updating it on a, and then pulling with a local change
   $ echo "more" >> test
   $ hg pull -u 2>&1 | fgrep -v TESTTMP| fgrep -v "searching for changes" | fgrep -v adding
   pulling from $TESTTMP/a
-  added 1 changesets with 0 changes to 0 files (+1 heads)
   updating bookmark X
+  added 1 changesets with 0 changes to 0 files (+1 heads)
   new changesets * (glob)
   updating to active bookmark X
   merging test

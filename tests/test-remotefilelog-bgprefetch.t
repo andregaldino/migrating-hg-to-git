@@ -73,8 +73,8 @@
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 0 changes to 0 files
   updating bookmark foo
+  added 1 changesets with 0 changes to 0 files
   new changesets 6b4b6f66ef8c
   (run 'hg update' to get a working copy)
   prefetching file contents
@@ -102,8 +102,8 @@
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 0 changes to 0 files
   updating bookmark foo
+  added 1 changesets with 0 changes to 0 files
   new changesets 6b4b6f66ef8c
   (run 'hg update' to get a working copy)
   prefetching file contents

@@ -58,8 +58,8 @@ The extension requires a repo (currently unused)
   adding changesets
   adding manifests
   adding file changes
-  added 8 changesets with 7 changes to 7 files (+3 heads)
   pre-close-tip:02de42196ebe draft 
+  added 8 changesets with 7 changes to 7 files (+3 heads)
   new changesets cd010b8cd998:02de42196ebe (8 drafts)
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NODE=cd010b8cd998f3981a5a8115f94f8da4ab506089 HG_NODE_LAST=02de42196ebee42ef284b6780a87cdc96e8eaab6 HG_PHASES_MOVED=1 HG_SOURCE=unbundle HG_TXNID=TXN:$ID$ HG_TXNNAME=unbundle
@@ -94,8 +94,8 @@ clone --pull
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files
   pre-close-tip:9520eea781bc draft 
+  added 2 changesets with 2 changes to 2 files
   1 new obsolescence markers
   new changesets cd010b8cd998:9520eea781bc (1 drafts)
   postclose-tip:9520eea781bc draft 
@@ -123,8 +123,8 @@ pull
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   pre-close-tip:24b6387c8c8c draft 
+  added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   new changesets 24b6387c8c8c (1 drafts)
   postclose-tip:24b6387c8c8c draft 
@@ -268,8 +268,8 @@ push
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 0 changes to 0 files (-1 heads)
   remote: pre-close-tip:eea13746799a public book_eea1
+  remote: added 1 changesets with 0 changes to 0 files (-1 heads)
   remote: 1 new obsolescence markers
   remote: pushkey: lock state after "bookmarks"
   remote: lock:  free
@@ -303,9 +303,9 @@ pull over ssh
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   updating bookmark book_02de
   pre-close-tip:02de42196ebe draft book_02de
+  added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   new changesets 02de42196ebe (1 drafts)
   postclose-tip:02de42196ebe draft book_02de
@@ -329,9 +329,9 @@ pull over http
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   updating bookmark book_42cc
   pre-close-tip:42ccdea3bb16 draft book_42cc
+  added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   new changesets 42ccdea3bb16 (1 drafts)
   postclose-tip:42ccdea3bb16 draft book_42cc
@@ -354,8 +354,8 @@ push over ssh
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: pre-close-tip:5fddd98957c8 draft book_5fdd
+  remote: added 1 changesets with 1 changes to 1 files
   remote: 1 new obsolescence markers
   remote: pushkey: lock state after "bookmarks"
   remote: lock:  free
@@ -405,8 +405,8 @@ push over http
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: pre-close-tip:32af7686d403 public book_32af
+  remote: added 1 changesets with 1 changes to 1 files
   remote: 1 new obsolescence markers
   remote: pushkey: lock state after "bookmarks"
   remote: lock:  free
@@ -631,7 +631,6 @@ Doing the actual push: hook abort
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: pre-close-tip:e7ec4e813ba6 draft 
   remote: You shall not pass!
   remote: transaction abort!
@@ -646,7 +645,6 @@ Doing the actual push: hook abort
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: pre-close-tip:e7ec4e813ba6 draft 
   remote: You shall not pass!
   remote: transaction abort!
@@ -662,7 +660,6 @@ Doing the actual push: hook abort
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: pre-close-tip:e7ec4e813ba6 draft 
   remote: You shall not pass!
   remote: transaction abort!
@@ -696,7 +693,6 @@ Check error from hook during the unbundling process itself
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -709,7 +705,6 @@ Check error from hook during the unbundling process itself
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -723,7 +718,6 @@ Check error from hook during the unbundling process itself
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -747,7 +741,6 @@ Check output capture control.
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   Fail early!
   transaction abort!
   Cleaning up the mess...
@@ -760,7 +753,6 @@ Check output capture control.
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -774,7 +766,6 @@ Check output capture control.
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -822,7 +813,6 @@ Check abort from mandatory pushkey
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   do not push the key !
   pushkey-abort: prepushkey.failpush hook exited with status 1
   transaction abort!
@@ -836,7 +826,6 @@ Check abort from mandatory pushkey
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: do not push the key !
   remote: pushkey-abort: prepushkey.failpush hook exited with status 1
   remote: transaction abort!
@@ -850,7 +839,6 @@ Check abort from mandatory pushkey
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: do not push the key !
   remote: pushkey-abort: prepushkey.failpush hook exited with status 1
   remote: transaction abort!
@@ -892,7 +880,6 @@ Check abort from mandatory pushkey
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   transaction abort!
   Cleaning up the mess...
   rollback completed
@@ -907,7 +894,6 @@ Check abort from mandatory pushkey
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: transaction abort!
   remote: Cleaning up the mess...
   remote: rollback completed
@@ -922,7 +908,6 @@ Check abort from mandatory pushkey
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: transaction abort!
   remote: Cleaning up the mess...
   remote: rollback completed

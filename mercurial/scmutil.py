@@ -1762,6 +1762,20 @@ def registersummarycallback(repo, otr, txnname=''):
         categories.append(newcat)
         return wrapped
 
+
+    @reportsummary
+    def reportchangegroup(repo, tr):
+        cgchangesets = tr.changes.get('changegroup-count-changesets', 0)
+        cgrevisions = tr.changes.get('changegroup-count-revisions', 0)
+        cgfiles = tr.changes.get('changegroup-count-files', 0)
+        cgheads = tr.changes.get('changegroup-count-heads', 0)
+        if cgchangesets or cgrevisions or cgfiles:
+            htext = ""
+            if cgheads:
+                htext = _(" (%+d heads)") % cgheads
+            msg = _("added %d changesets with %d changes to %d files%s\n")
+            repo.ui.status(msg % (cgchangesets, cgrevisions, cgfiles, htext))
+
     if txmatch(_reportobsoletedsource):
         @reportsummary
         def reportobsoleted(repo, tr):

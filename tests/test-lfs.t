@@ -124,8 +124,8 @@ lfs requirement
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
+  added 2 changesets with 3 changes to 3 files
   $ grep lfs $TESTTMP/server/.hg/requires
   lfs
 

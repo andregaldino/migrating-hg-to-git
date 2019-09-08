@@ -270,7 +270,7 @@ class cg1unpacker(object):
         def revmap(x):
             return cl.rev(x)
 
-        changesets = files = revisions = 0
+        changesets = 0
 
         try:
             # The transaction may already carry source information. In this
@@ -337,23 +337,38 @@ class cg1unpacker(object):
             repo.ui.status(_("adding file changes\n"))
             newrevs, newfiles = _addchangegroupfiles(
                 repo, self, revmap, trp, efiles, needfiles)
-            revisions += newrevs
-            files += newfiles
+
+            # making sure the value exists
+            tr.changes.setdefault('changegroup-count-changesets', 0)
+            tr.changes.setdefault('changegroup-count-revisions', 0)
+            tr.changes.setdefault('changegroup-count-files', 0)
+            tr.changes.setdefault('changegroup-count-heads', 0)
+
+            # some code use bundle operation for internal purpose. They usually
+            # set `ui.quiet` to do this outside of user sight. Size the report
+            # of such operation now happens at the end of the transaction, that
+            # ui.quiet has not direct effect on the output.
+            #
+            # To preserve this intend use an inelegant hack, we fail to report
+            # the change if `quiet` is set. We should probably move to
+            # something better, but this is a good first step to allow the "end
+            # of transaction report" to pass tests.
+            if not repo.ui.quiet:
+                tr.changes['changegroup-count-changesets'] += changesets
+                tr.changes['changegroup-count-revisions'] += newrevs
+                tr.changes['changegroup-count-files'] += newfiles
 
             deltaheads = 0
             if oldheads:
                 heads = cl.heads()
-                deltaheads = len(heads) - len(oldheads)
+                deltaheads += len(heads) - len(oldheads)
                 for h in heads:
                     if h not in oldheads and repo[h].closesbranch():
                         deltaheads -= 1
-            htext = ""
-            if deltaheads:
-                htext = _(" (%+d heads)") % deltaheads
 
-            repo.ui.status(_("added %d changesets"
-                             " with %d changes to %d files%s\n")
-                             % (changesets, revisions, files, htext))
+            # see previous comment about checking ui.quiet
+            if not repo.ui.quiet:
+                tr.changes['changegroup-count-heads'] += deltaheads
             repo.invalidatevolatilesets()
 
             if changesets > 0:

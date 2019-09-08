@@ -105,7 +105,6 @@ Blob URIs are correct when --prefix is used
   adding manifests
   adding file changes
   adding lfs.bin revisions
-  added 1 changesets with 1 changes to 1 files
   bundle2-input-part: total payload size 648
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
@@ -115,6 +114,7 @@ Blob URIs are correct when --prefix is used
   bundle2-input-bundle: 3 parts total
   checking for updated bookmarks
   updating the branch cache
+  added 1 changesets with 1 changes to 1 files
   new changesets 525251863cad
   updating to branch default
   resolving manifests

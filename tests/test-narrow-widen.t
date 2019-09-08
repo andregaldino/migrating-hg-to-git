@@ -340,7 +340,6 @@ Widening that fails can be recovered from
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 2 changes to 2 files
   transaction abort!
   rollback completed
   abort: pretxnchangegroup.bad hook exited with status 1

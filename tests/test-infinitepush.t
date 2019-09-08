@@ -78,11 +78,10 @@ Pull two bookmarks from the second client
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
+  added 2 changesets with 2 changes to 2 files (+1 heads)
   new changesets * (glob)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg log -r scratch/secondpart -T '{node}'
@@ -158,11 +157,10 @@ Make sure phase on the client is public.
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
+  added 2 changesets with 2 changes to 2 files (+1 heads)
   new changesets a79b6597f322:c70aee6da07d (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg log -r scratch/scratchontopofpublic -T '{phase}'

@@ -720,7 +720,6 @@ incoming changes no longer there after
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   4:539e4b31b6dc
   pretxnchangegroup.forbid hook: HG_HOOKNAME=pretxnchangegroup.forbid1
   HG_HOOKTYPE=pretxnchangegroup
@@ -763,8 +762,8 @@ outgoing hooks can see env vars
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding remote bookmark quux
+  added 1 changesets with 1 changes to 1 files
   new changesets 539e4b31b6dc
   (run 'hg update' to get a working copy)
   $ hg rollback
@@ -995,8 +994,8 @@ different between Python 2.6 and Python 2.7.
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding remote bookmark quux
+  added 1 changesets with 1 changes to 1 files
   new changesets 539e4b31b6dc
   (run 'hg update' to get a working copy)
 
@@ -1235,13 +1234,13 @@ new commits must be visible in pretxnchangegroup (issue3428)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   changeset:   1:9836a07b9b9d
   tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     b
   
+  added 1 changesets with 1 changes to 1 files
 
 pretxnclose hook failure should abort the transaction
 

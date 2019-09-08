@@ -170,7 +170,6 @@ client only pulls down 1 changeset
   adding manifests
   adding file changes
   adding foo revisions
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   bundle2-input-part: total payload size 476
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
@@ -180,5 +179,6 @@ client only pulls down 1 changeset
   bundle2-input-bundle: 3 parts total
   checking for updated bookmarks
   updating the branch cache
+  added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets bec0734cd68e
   (run 'hg heads' to see heads, 'hg merge' to merge)

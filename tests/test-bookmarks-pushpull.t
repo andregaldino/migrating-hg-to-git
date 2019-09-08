@@ -51,10 +51,10 @@ import bookmark by name
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding remote bookmark X
   updating bookmark Y
   adding remote bookmark Z
+  added 1 changesets with 1 changes to 1 files
   new changesets 4e3505fd9583 (1 drafts)
   test-hook-bookmark: X:   -> 4e3505fd95835d721066b76e75dbb8cc554d7f77
   test-hook-bookmark: Y:  0000000000000000000000000000000000000000 -> 4e3505fd95835d721066b76e75dbb8cc554d7f77
@@ -414,10 +414,10 @@ divergent bookmarks
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   divergent bookmark @ stored as @foo
   divergent bookmark X stored as X@foo
   updating bookmark Z
+  added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets 0d2164f0ce0d (1 drafts)
   test-hook-bookmark: @foo:   -> 0d2164f0ce0d8f1d6f94351eba04b794909be66c
   test-hook-bookmark: X@foo:   -> 0d2164f0ce0d8f1d6f94351eba04b794909be66c
@@ -580,8 +580,8 @@ race conditions
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   updating bookmark Y
+  added 1 changesets with 1 changes to 1 files
   new changesets b0a5eff05604 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book
@@ -629,8 +629,8 @@ Update a bookmark right after the initial lookup -B (issue4689)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   updating bookmark Y
+  added 1 changesets with 1 changes to 1 files
   new changesets 35d1ef0a8d1b (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book
@@ -672,8 +672,8 @@ Update a bookmark right after the initial lookup -r (issue4700)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   updating bookmark Y
+  added 1 changesets with 1 changes to 1 files
   new changesets 0d60821d2197 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book

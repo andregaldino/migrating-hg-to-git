@@ -217,7 +217,7 @@ TODO: lfs shouldn't abort like this
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 0 changes to 0 files
+  remote: added 1 changesets with 0 changes to 0 files (no-lfs-on !)
   remote: error: pretxnchangegroup.lfs hook raised an exception: data/inside2/f.i@f59b4e021835: no match found (lfs-on !)
   remote: transaction abort! (lfs-on !)
   remote: rollback completed (lfs-on !)

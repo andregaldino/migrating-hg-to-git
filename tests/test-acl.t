@@ -131,12 +131,12 @@ Extension disabled for lack of a hook
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -196,7 +196,6 @@ Extension disabled for lack of acl.sources
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: changes have source "push" - skipping
   bundle2-input-part: total payload size 1553
@@ -204,6 +203,7 @@ Extension disabled for lack of acl.sources
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -263,7 +263,6 @@ No [acl.allow]/[acl.deny]
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -281,6 +280,7 @@ No [acl.allow]/[acl.deny]
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -340,7 +340,6 @@ Empty [acl.allow]
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -409,7 +408,6 @@ fred is allowed inside foo/
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -483,7 +481,6 @@ Empty [acl.deny]
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "barney"
   acl: acl.allow.branches not enabled
@@ -554,7 +551,6 @@ fred is allowed inside foo/, but not foo/bar/ (case matters)
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -630,7 +626,6 @@ fred is allowed inside foo/, but not foo/Bar/
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -703,7 +698,6 @@ fred is allowed inside foo/, but not foo/Bar/
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "barney"
   acl: acl.allow.branches not enabled
@@ -775,7 +769,6 @@ fred is not blocked from moving bookmarks
   adding manifests
   adding file changes
   adding foo/file.txt revisions
-  added 1 changesets with 1 changes to 1 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -796,6 +789,7 @@ fred is not blocked from moving bookmarks
   acl: bookmark access granted: "ef1ea85a6374b77d6da9dcda9541f498f2d17df7" on bookmark "moving-bookmark"
   bundle2-input-bundle: 6 parts total
   updating the branch cache
+  added 1 changesets with 1 changes to 1 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -861,7 +855,6 @@ fred is not allowed to move bookmarks
   adding manifests
   adding file changes
   adding foo/file.txt revisions
-  added 1 changesets with 1 changes to 1 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -950,7 +943,6 @@ barney is allowed everywhere
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "barney"
   acl: acl.allow.branches not enabled
@@ -968,6 +960,7 @@ barney is allowed everywhere
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -1034,7 +1027,6 @@ wilma can change files with a .txt extension
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "wilma"
   acl: acl.allow.branches not enabled
@@ -1116,7 +1108,6 @@ file specified by acl.config does not exist
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "barney"
   error: pretxnchangegroup.acl hook raised an exception: [Errno *] * (glob)
@@ -1193,7 +1184,6 @@ betty is allowed inside foo/ by a acl.config file
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "betty"
   acl: acl.allow.branches not enabled
@@ -1281,7 +1271,6 @@ acl.config can set only [acl.allow]/[acl.deny]
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "barney"
   acl: acl.allow.branches not enabled
@@ -1299,6 +1288,7 @@ acl.config can set only [acl.allow]/[acl.deny]
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -1369,7 +1359,6 @@ fred is always allowed
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -1387,6 +1376,7 @@ fred is always allowed
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -1453,7 +1443,6 @@ no one is allowed inside foo/Bar/
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -1534,7 +1523,6 @@ OS-level groups
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -1553,6 +1541,7 @@ OS-level groups
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -1619,7 +1608,6 @@ OS-level groups
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "fred"
   acl: acl.allow.branches not enabled
@@ -1743,7 +1731,6 @@ No branch acls specified
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "astro"
   acl: acl.allow.branches not enabled
@@ -1763,6 +1750,7 @@ No branch acls specified
   bundle2-input-part: total payload size 48
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -1829,7 +1817,6 @@ Branch acl deny test
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "astro"
   acl: acl.allow.branches not enabled
@@ -1908,7 +1895,6 @@ Branch acl empty allow test
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "astro"
   acl: acl.allow.branches enabled, 0 entries for user astro
@@ -1983,7 +1969,6 @@ Branch acl allow other
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "astro"
   acl: acl.allow.branches enabled, 0 entries for user astro
@@ -2052,7 +2037,6 @@ Branch acl allow other
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "george"
   acl: acl.allow.branches enabled, 1 entries for user george
@@ -2072,6 +2056,7 @@ Branch acl allow other
   bundle2-input-part: total payload size 48
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -2143,7 +2128,6 @@ push foobar into the remote
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "george"
   acl: acl.allow.branches enabled, 1 entries for user george
@@ -2163,6 +2147,7 @@ push foobar into the remote
   bundle2-input-part: total payload size 48
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -2233,7 +2218,6 @@ Branch acl conflicting deny
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "george"
   acl: acl.allow.branches not enabled
@@ -2307,7 +2291,6 @@ User 'astro' must not be denied
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "astro"
   acl: acl.allow.branches not enabled
@@ -2327,6 +2310,7 @@ User 'astro' must not be denied
   bundle2-input-part: total payload size 48
   bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
@@ -2391,7 +2375,6 @@ Non-astro users must be denied
   adding foo/Bar/file.txt revisions
   adding foo/file.txt revisions
   adding quux/file.py revisions
-  added 4 changesets with 4 changes to 4 files (+1 heads)
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: checking access for user "george"
   acl: acl.allow.branches not enabled

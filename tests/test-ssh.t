@@ -644,7 +644,6 @@ remote hook failure is attributed to remote
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: hook failure!
   remote: transaction abort!
   remote: rollback completed

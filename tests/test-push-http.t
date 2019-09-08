@@ -88,8 +88,8 @@ expect success
   remote: adding manifests
   remote: adding file changes
   remote: adding a revisions
-  remote: added 1 changesets with 1 changes to 1 files
   remote: updating the branch cache
+  remote: added 1 changesets with 1 changes to 1 files
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
@@ -117,8 +117,8 @@ expect success
   remote: adding manifests
   remote: adding file changes
   remote: adding a revisions
-  remote: added 1 changesets with 1 changes to 1 files
   remote: updating the branch cache
+  remote: added 1 changesets with 1 changes to 1 files
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
@@ -309,7 +309,6 @@ and fails the entire push.
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: prepushkey hook: HG_BUNDLE2=1
   remote: HG_HOOKNAME=prepushkey
   remote: HG_HOOKTYPE=prepushkey
@@ -351,7 +350,6 @@ We don't need to test bundle1 because it succeeded above.
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: prepushkey hook: HG_BUNDLE2=1
   remote: HG_HOOKNAME=prepushkey
   remote: HG_HOOKTYPE=prepushkey
@@ -368,6 +366,7 @@ We don't need to test bundle1 because it succeeded above.
   remote: HG_TXNNAME=serve
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
+  remote: added 1 changesets with 1 changes to 1 files
   % serve errors
 #endif
 
@@ -410,7 +409,6 @@ Now do a variant of the above, except on a non-publishing repository
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: prepushkey hook: HG_BUNDLE2=1
   remote: HG_HOOKNAME=prepushkey
   remote: HG_HOOKTYPE=prepushkey
@@ -465,7 +463,6 @@ Make phases updates work
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: prepushkey hook: HG_BUNDLE2=1
   remote: HG_HOOKNAME=prepushkey
   remote: HG_HOOKTYPE=prepushkey
@@ -482,6 +479,7 @@ Make phases updates work
   remote: HG_TXNNAME=serve
   remote: HG_URL=remote:http:$LOCALIP: (glob)
   remote: 
+  remote: added 1 changesets with 1 changes to 1 files
   % serve errors
 #endif
 

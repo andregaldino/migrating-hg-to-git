@@ -41,9 +41,9 @@ Setting pushvars.sever = true and then pushing.
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   HG_USERVAR_BYPASS_REVIEW=true
   HG_USERVAR_DEBUG=1
+  added 1 changesets with 1 changes to 1 files
 
 Test pushing var with empty right-hand side
 
@@ -55,8 +55,8 @@ Test pushing var with empty right-hand side
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   HG_USERVAR_DEBUG=
+  added 1 changesets with 1 changes to 1 files
 
 Test pushing bad vars
 

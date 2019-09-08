@@ -338,12 +338,13 @@ test http authentication
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "output" (advisory) (params: 0 advisory) supported
-  bundle2-input-part: total payload size 100
+  bundle2-input-part: total payload size 55
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   bundle2-input-part: "output" (advisory) supported
+  bundle2-input-part: total payload size 45
+  remote: added 1 changesets with 1 changes to 1 files
   bundle2-input-bundle: 2 parts total
   preparing listkeys for "phases"
   sending listkeys command

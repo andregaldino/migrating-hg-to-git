@@ -71,7 +71,6 @@ Create a new head on the default branch
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   transaction abort!
   rollback completed
   abort: rejecting multiple heads on branch "default"
