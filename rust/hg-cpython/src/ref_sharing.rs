@@ -23,7 +23,7 @@
 //! Macros for use in the `hg-cpython` bridge library.
 
 use crate::exceptions::AlreadyBorrowed;
-use cpython::{PyResult, Python};
+use cpython::{PyClone, PyObject, PyResult, Python};
 use std::cell::{Cell, Ref, RefCell, RefMut};
 
 /// Manages the shared state between Python and Rust
@@ -219,9 +219,6 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 /// * `$inner_struct` is the identifier of the underlying Rust struct
 /// * `$data_member` is the identifier of the data member of `$inner_struct`
 /// that will be shared.
-/// * `$leaked` is the identifier to give to the struct that will manage
-/// references to `$name`, to be used for example in other macros like
-/// `py_shared_iterator`.
 ///
 /// # Example
 ///
@@ -234,14 +231,13 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 ///     data inner: PySharedRefCell<MyStruct>;
 /// });
 ///
-/// py_shared_ref!(MyType, MyStruct, inner, MyTypeLeakedRef);
+/// py_shared_ref!(MyType, MyStruct, inner);
 /// ```
 macro_rules! py_shared_ref {
     (
         $name: ident,
         $inner_struct: ident,
-        $data_member: ident,
-        $leaked: ident,
+        $data_member: ident
     ) => {
         impl $name {
             // TODO: remove this function in favor of inner(py).borrow_mut()
@@ -266,59 +262,59 @@ macro_rules! py_shared_ref {
             unsafe fn leak_immutable<'a>(
                 &'a self,
                 py: Python<'a>,
-            ) -> PyResult<($leaked, &'static $inner_struct)> {
+            ) -> PyResult<(PyLeakedRef, &'static $inner_struct)> {
+                use cpython::PythonObject;
                 // assert $data_member type
                 use crate::ref_sharing::PySharedRefCell;
                 let data: &PySharedRefCell<_> = self.$data_member(py);
                 let (static_ref, static_state_ref) =
                     data.py_shared_state.leak_immutable(py, data)?;
-                let leak_handle = $leaked::new(py, self, static_state_ref);
+                let leak_handle =
+                    PyLeakedRef::new(py, self.as_object(), static_state_ref);
                 Ok((leak_handle, static_ref))
             }
         }
-
-        /// Manage immutable references to `$name` leaked into Python
-        /// iterators.
-        ///
-        /// In truth, this does not represent leaked references themselves;
-        /// it is instead useful alongside them to manage them.
-        pub struct $leaked {
-            _inner: $name,
-            py_shared_state: &'static crate::ref_sharing::PySharedState,
-        }
-
-        impl $leaked {
-            /// # Safety
-            ///
-            /// The `py_shared_state` must be owned by the `inner` Python
-            /// object.
-            // Marked as unsafe so client code wouldn't construct $leaked
-            // struct by mistake. Its drop() is unsafe.
-            unsafe fn new(
-                py: Python,
-                inner: &$name,
-                py_shared_state: &'static crate::ref_sharing::PySharedState,
-            ) -> Self {
-                Self {
-                    _inner: inner.clone_ref(py),
-                    py_shared_state,
-                }
-            }
-        }
-
-        impl Drop for $leaked {
-            fn drop(&mut self) {
-                // py_shared_state should be alive since we do have
-                // a Python reference to the owner object. Taking GIL makes
-                // sure that the state is only accessed by this thread.
-                let gil = Python::acquire_gil();
-                let py = gil.python();
-                unsafe {
-                    self.py_shared_state.decrease_leak_count(py, false);
-                }
-            }
-        }
     };
+}
+
+/// Manage immutable references to `PyObject` leaked into Python iterators.
+///
+/// In truth, this does not represent leaked references themselves;
+/// it is instead useful alongside them to manage them.
+pub struct PyLeakedRef {
+    _inner: PyObject,
+    py_shared_state: &'static PySharedState,
+}
+
+impl PyLeakedRef {
+    /// # Safety
+    ///
+    /// The `py_shared_state` must be owned by the `inner` Python object.
+    // Marked as unsafe so client code wouldn't construct PyLeakedRef
+    // struct by mistake. Its drop() is unsafe.
+    pub unsafe fn new(
+        py: Python,
+        inner: &PyObject,
+        py_shared_state: &'static PySharedState,
+    ) -> Self {
+        Self {
+            _inner: inner.clone_ref(py),
+            py_shared_state,
+        }
+    }
+}
+
+impl Drop for PyLeakedRef {
+    fn drop(&mut self) {
+        // py_shared_state should be alive since we do have
+        // a Python reference to the owner object. Taking GIL makes
+        // sure that the state is only accessed by this thread.
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+        unsafe {
+            self.py_shared_state.decrease_leak_count(py, false);
+        }
+    }
 }
 
 /// Defines a `py_class!` that acts as a Python iterator over a Rust iterator.
@@ -372,7 +368,7 @@ macro_rules! py_shared_ref {
 ///
 /// py_shared_iterator!(
 ///     MyTypeItemsIterator,
-///     MyTypeLeakedRef,
+///     PyLeakedRef,
 ///     HashMap<'static, Vec<u8>, Vec<u8>>,
 ///     MyType::translate_key_value,
 ///     Option<(PyBytes, PyBytes)>
@@ -381,7 +377,7 @@ macro_rules! py_shared_ref {
 macro_rules! py_shared_iterator {
     (
         $name: ident,
-        $leaked: ident,
+        $leaked: ty,
         $iterator_type: ty,
         $success_func: expr,
         $success_type: ty

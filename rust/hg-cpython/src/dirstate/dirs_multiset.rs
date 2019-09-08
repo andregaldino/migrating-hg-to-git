@@ -16,7 +16,8 @@ use cpython::{
     Python,
 };
 
-use crate::{dirstate::extract_dirstate, ref_sharing::PySharedRefCell};
+use crate::dirstate::extract_dirstate;
+use crate::ref_sharing::{PyLeakedRef, PySharedRefCell};
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirsMultisetIter, DirstateMapError, DirstateParseError,
@@ -106,7 +107,7 @@ py_class!(pub class Dirs |py| {
     }
 });
 
-py_shared_ref!(Dirs, DirsMultiset, inner, DirsMultisetLeakedRef,);
+py_shared_ref!(Dirs, DirsMultiset, inner);
 
 impl Dirs {
     pub fn from_inner(py: Python, d: DirsMultiset) -> PyResult<Self> {
@@ -123,7 +124,7 @@ impl Dirs {
 
 py_shared_iterator!(
     DirsMultisetKeysIterator,
-    DirsMultisetLeakedRef,
+    PyLeakedRef,
     DirsMultisetIter<'static>,
     Dirs::translate_key,
     Option<PyBytes>
