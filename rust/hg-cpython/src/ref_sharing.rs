@@ -417,23 +417,3 @@ macro_rules! py_shared_mapping_iterator {
         );
     };
 }
-
-/// Works basically the same as `py_shared_mapping_iterator`, but with only a
-/// key.
-macro_rules! py_shared_sequence_iterator {
-    (
-        $name:ident,
-        $leaked:ident,
-        $key_type: ty,
-        $success_func: path,
-        $success_type: ty
-    ) => {
-        py_shared_iterator_impl!(
-            $name,
-            $leaked,
-            Box<dyn Iterator<Item = &'static $key_type> + Send>,
-            $success_func,
-            $success_type
-        );
-    };
-}

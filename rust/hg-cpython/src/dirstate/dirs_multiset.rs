@@ -18,7 +18,10 @@ use cpython::{
 
 use crate::dirstate::extract_dirstate;
 use crate::ref_sharing::{PySharedRefCell, PySharedState};
-use hg::{DirsMultiset, DirstateMapError, DirstateParseError, EntryState};
+use hg::{
+    DirsMultiset, DirsMultisetIter, DirstateMapError, DirstateParseError,
+    EntryState,
+};
 
 py_class!(pub class Dirs |py| {
     data inner: PySharedRefCell<DirsMultiset>;
@@ -90,7 +93,7 @@ py_class!(pub class Dirs |py| {
         DirsMultisetKeysIterator::create_instance(
             py,
             RefCell::new(Some(leak_handle)),
-            RefCell::new(Box::new(leaked_ref.iter())),
+            RefCell::new(leaked_ref.iter()),
         )
     }
 
@@ -118,10 +121,10 @@ impl Dirs {
     }
 }
 
-py_shared_sequence_iterator!(
+py_shared_iterator_impl!(
     DirsMultisetKeysIterator,
     DirsMultisetLeakedRef,
-    Vec<u8>,
+    DirsMultisetIter<'static>,
     Dirs::translate_key,
     Option<PyBytes>
 );
