@@ -309,10 +309,10 @@ macro_rules! py_shared_ref {
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
 ///         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
-///         MyTypeItemsIterator::create_instance(
+///         MyTypeItemsIterator::from_inner(
 ///             py,
-///             RefCell::new(Some(leak_handle)),
-///             RefCell::new(leaked_ref.iter()),
+///             leak_handle,
+///             leaked_ref.iter(),
 ///         )
 ///     }
 /// });
