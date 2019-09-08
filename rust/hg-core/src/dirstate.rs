@@ -6,6 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::DirstateParseError;
+use std::collections::hash_map;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
@@ -31,7 +32,9 @@ pub struct DirstateEntry {
 }
 
 pub type StateMap = HashMap<Vec<u8>, DirstateEntry>;
+pub type StateMapIter<'a> = hash_map::Iter<'a, Vec<u8>, DirstateEntry>;
 pub type CopyMap = HashMap<Vec<u8>, Vec<u8>>;
+pub type CopyMapIter<'a> = hash_map::Iter<'a, Vec<u8>, Vec<u8>>;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryState {
