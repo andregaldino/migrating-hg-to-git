@@ -25,7 +25,8 @@ use crate::{
 };
 use hg::{
     DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
-    DirstateParents, DirstateParseError, EntryState, PARENT_SIZE,
+    DirstateParents, DirstateParseError, EntryState, StateMapIter,
+    PARENT_SIZE,
 };
 
 // TODO
@@ -323,7 +324,7 @@ py_class!(pub class DirstateMap |py| {
         DirstateMapKeysIterator::from_inner(
             py,
             Some(leak_handle),
-            Box::new(leaked_ref.iter()),
+            leaked_ref.iter(),
         )
     }
 
@@ -332,7 +333,7 @@ py_class!(pub class DirstateMap |py| {
         DirstateMapItemsIterator::from_inner(
             py,
             Some(leak_handle),
-            Box::new(leaked_ref.iter()),
+            leaked_ref.iter(),
         )
     }
 
@@ -341,7 +342,7 @@ py_class!(pub class DirstateMap |py| {
         DirstateMapKeysIterator::from_inner(
             py,
             Some(leak_handle),
-            Box::new(leaked_ref.iter()),
+            leaked_ref.iter(),
         )
     }
 
@@ -438,7 +439,7 @@ py_class!(pub class DirstateMap |py| {
         CopyMapKeysIterator::from_inner(
             py,
             Some(leak_handle),
-            Box::new(leaked_ref.copy_map.iter()),
+            leaked_ref.copy_map.iter(),
         )
     }
 
@@ -447,7 +448,7 @@ py_class!(pub class DirstateMap |py| {
         CopyMapItemsIterator::from_inner(
             py,
             Some(leak_handle),
-            Box::new(leaked_ref.copy_map.iter()),
+            leaked_ref.copy_map.iter(),
         )
     }
 
@@ -483,20 +484,18 @@ impl DirstateMap {
 
 py_shared_ref!(DirstateMap, RustDirstateMap, inner, DirstateMapLeakedRef,);
 
-py_shared_mapping_iterator!(
+py_shared_iterator_impl!(
     DirstateMapKeysIterator,
     DirstateMapLeakedRef,
-    Vec<u8>,
-    DirstateEntry,
+    StateMapIter<'static>,
     DirstateMap::translate_key,
     Option<PyBytes>
 );
 
-py_shared_mapping_iterator!(
+py_shared_iterator_impl!(
     DirstateMapItemsIterator,
     DirstateMapLeakedRef,
-    Vec<u8>,
-    DirstateEntry,
+    StateMapIter<'static>,
     DirstateMap::translate_key_value,
     Option<(PyBytes, PyObject)>
 );

@@ -193,7 +193,7 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 /// that will be shared.
 /// * `$leaked` is the identifier to give to the struct that will manage
 /// references to `$name`, to be used for example in other macros like
-/// `py_shared_mapping_iterator`.
+/// `py_shared_iterator_impl`.
 ///
 /// # Example
 ///
@@ -283,6 +283,63 @@ macro_rules! py_shared_ref {
 }
 
 /// Defines a `py_class!` that acts as a Python iterator over a Rust iterator.
+///
+/// TODO: this is a bit awkward to use, and a better (more complicated)
+///     procedural macro would simplify the interface a lot.
+///
+/// # Parameters
+///
+/// * `$name` is the identifier to give to the resulting Rust struct.
+/// * `$leaked` corresponds to `$leaked` in the matching `py_shared_ref!` call.
+/// * `$iterator_type` is the type of the Rust iterator.
+/// * `$success_func` is a function for processing the Rust `(key, value)`
+/// tuple on iteration success, turning it into something Python understands.
+/// * `$success_func` is the return type of `$success_func`
+///
+/// # Example
+///
+/// ```
+/// struct MyStruct {
+///     inner: HashMap<Vec<u8>, Vec<u8>>;
+/// }
+///
+/// py_class!(pub class MyType |py| {
+///     data inner: PySharedRefCell<MyStruct>;
+///     data py_shared_state: PySharedState;
+///
+///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
+///         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
+///         MyTypeItemsIterator::create_instance(
+///             py,
+///             RefCell::new(Some(leak_handle)),
+///             RefCell::new(leaked_ref.iter()),
+///         )
+///     }
+/// });
+///
+/// impl MyType {
+///     fn translate_key_value(
+///         py: Python,
+///         res: (&Vec<u8>, &Vec<u8>),
+///     ) -> PyResult<Option<(PyBytes, PyBytes)>> {
+///         let (f, entry) = res;
+///         Ok(Some((
+///             PyBytes::new(py, f),
+///             PyBytes::new(py, entry),
+///         )))
+///     }
+/// }
+///
+/// py_shared_ref!(MyType, MyStruct, inner, MyTypeLeakedRef);
+///
+/// py_shared_iterator_impl!(
+///     MyTypeItemsIterator,
+///     MyTypeLeakedRef,
+///     HashMap<'static, Vec<u8>, Vec<u8>>,
+///     MyType::translate_key_value,
+///     Option<(PyBytes, PyBytes)>
+/// );
+/// ```
 macro_rules! py_shared_iterator_impl {
     (
         $name: ident,
@@ -331,89 +388,5 @@ macro_rules! py_shared_iterator_impl {
                 )
             }
         }
-    };
-}
-
-/// Defines a `py_class!` that acts as a Python mapping iterator over a Rust
-/// iterator.
-///
-/// TODO: this is a bit awkward to use, and a better (more complicated)
-///     procedural macro would simplify the interface a lot.
-///
-/// # Parameters
-///
-/// * `$name` is the identifier to give to the resulting Rust struct.
-/// * `$leaked` corresponds to `$leaked` in the matching `py_shared_ref!` call.
-/// * `$key_type` is the type of the key in the mapping
-/// * `$value_type` is the type of the value in the mapping
-/// * `$success_func` is a function for processing the Rust `(key, value)`
-/// tuple on iteration success, turning it into something Python understands.
-/// * `$success_func` is the return type of `$success_func`
-///
-/// # Example
-///
-/// ```
-/// struct MyStruct {
-///     inner: HashMap<Vec<u8>, Vec<u8>>;
-/// }
-///
-/// py_class!(pub class MyType |py| {
-///     data inner: PySharedRefCell<MyStruct>;
-///     data py_shared_state: PySharedState;
-///
-///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
-///         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
-///         MyTypeItemsIterator::create_instance(
-///             py,
-///             RefCell::new(Some(leak_handle)),
-///             RefCell::new(leaked_ref.iter()),
-///         )
-///     }
-/// });
-///
-/// impl MyType {
-///     fn translate_key_value(
-///         py: Python,
-///         res: (&Vec<u8>, &Vec<u8>),
-///     ) -> PyResult<Option<(PyBytes, PyBytes)>> {
-///         let (f, entry) = res;
-///         Ok(Some((
-///             PyBytes::new(py, f),
-///             PyBytes::new(py, entry),
-///         )))
-///     }
-/// }
-///
-/// py_shared_ref!(MyType, MyStruct, inner, MyTypeLeakedRef);
-///
-/// py_shared_mapping_iterator!(
-///     MyTypeItemsIterator,
-///     MyTypeLeakedRef,
-///     Vec<u8>,
-///     Vec<u8>,
-///     MyType::translate_key_value,
-///     Option<(PyBytes, PyBytes)>
-/// );
-/// ```
-#[allow(unused)] // Removed in a future patch
-macro_rules! py_shared_mapping_iterator {
-    (
-        $name:ident,
-        $leaked:ident,
-        $key_type: ty,
-        $value_type: ty,
-        $success_func: path,
-        $success_type: ty
-    ) => {
-        py_shared_iterator_impl!(
-            $name,
-            $leaked,
-            Box<
-                dyn Iterator<Item = (&'static $key_type, &'static $value_type)>
-                    + Send,
-            >,
-            $success_func,
-            $success_type
-        );
     };
 }

@@ -12,6 +12,7 @@ use cpython::{PyBytes, PyClone, PyDict, PyObject, PyResult, Python};
 use std::cell::RefCell;
 
 use crate::dirstate::dirstate_map::{DirstateMap, DirstateMapLeakedRef};
+use hg::CopyMapIter;
 
 py_class!(pub class CopyMap |py| {
     data dirstate_map: DirstateMap;
@@ -97,20 +98,18 @@ impl CopyMap {
     }
 }
 
-py_shared_mapping_iterator!(
+py_shared_iterator_impl!(
     CopyMapKeysIterator,
     DirstateMapLeakedRef,
-    Vec<u8>,
-    Vec<u8>,
+    CopyMapIter<'static>,
     CopyMap::translate_key,
     Option<PyBytes>
 );
 
-py_shared_mapping_iterator!(
+py_shared_iterator_impl!(
     CopyMapItemsIterator,
     DirstateMapLeakedRef,
-    Vec<u8>,
-    Vec<u8>,
+    CopyMapIter<'static>,
     CopyMap::translate_key_value,
     Option<(PyBytes, PyBytes)>
 );
