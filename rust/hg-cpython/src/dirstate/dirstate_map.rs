@@ -323,7 +323,7 @@ py_class!(pub class DirstateMap |py| {
         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
         DirstateMapKeysIterator::from_inner(
             py,
-            Some(leak_handle),
+            leak_handle,
             leaked_ref.iter(),
         )
     }
@@ -332,7 +332,7 @@ py_class!(pub class DirstateMap |py| {
         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
         DirstateMapItemsIterator::from_inner(
             py,
-            Some(leak_handle),
+            leak_handle,
             leaked_ref.iter(),
         )
     }
@@ -341,7 +341,7 @@ py_class!(pub class DirstateMap |py| {
         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
         DirstateMapKeysIterator::from_inner(
             py,
-            Some(leak_handle),
+            leak_handle,
             leaked_ref.iter(),
         )
     }
@@ -438,7 +438,7 @@ py_class!(pub class DirstateMap |py| {
         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
         CopyMapKeysIterator::from_inner(
             py,
-            Some(leak_handle),
+            leak_handle,
             leaked_ref.copy_map.iter(),
         )
     }
@@ -447,7 +447,7 @@ py_class!(pub class DirstateMap |py| {
         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
         CopyMapItemsIterator::from_inner(
             py,
-            Some(leak_handle),
+            leak_handle,
             leaked_ref.copy_map.iter(),
         )
     }

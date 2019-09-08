@@ -378,12 +378,12 @@ macro_rules! py_shared_iterator {
         impl $name {
             pub fn from_inner(
                 py: Python,
-                leaked: Option<$leaked>,
+                leaked: $leaked,
                 it: $iterator_type
             ) -> PyResult<Self> {
                 Self::create_instance(
                     py,
-                    RefCell::new(leaked),
+                    RefCell::new(Some(leaked)),
                     RefCell::new(it)
                 )
             }
