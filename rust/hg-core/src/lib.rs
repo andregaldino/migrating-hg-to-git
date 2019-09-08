@@ -9,7 +9,7 @@ mod dirstate;
 pub mod discovery;
 pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{
-    dirs_multiset::DirsMultiset,
+    dirs_multiset::{DirsMultiset, DirsMultisetIter},
     dirstate_map::DirstateMap,
     parsers::{pack_dirstate, parse_dirstate, PARENT_SIZE},
     CopyMap, DirstateEntry, DirstateParents, EntryState, StateMap,

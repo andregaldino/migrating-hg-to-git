@@ -11,8 +11,11 @@
 use crate::{
     dirstate::EntryState, utils::files, DirstateEntry, DirstateMapError,
 };
-use std::collections::hash_map::Entry;
+use std::collections::hash_map::{self, Entry};
 use std::collections::HashMap;
+
+// could be encapsulated if we care API stability more seriously
+pub type DirsMultisetIter<'a> = hash_map::Keys<'a, Vec<u8>, u32>;
 
 #[derive(PartialEq, Debug)]
 pub struct DirsMultiset {
@@ -105,7 +108,7 @@ impl DirsMultiset {
         self.inner.contains_key(key)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Vec<u8>> {
+    pub fn iter(&self) -> DirsMultisetIter {
         self.inner.keys()
     }
 
