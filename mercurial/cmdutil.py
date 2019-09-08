@@ -100,6 +100,13 @@ commitopts2 = [
      _('record the specified user as committer'), _('USER')),
 ]
 
+commitopts3 = [
+    (b'D', b'current-date', None,
+     _(b'record the current date as commit date')),
+    (b'U', b'current-user', None,
+     _(b'record the current user as committer')),
+]
+
 formatteropts = [
     ('T', 'template', '',
      _('display with template'), _('TEMPLATE')),
@@ -174,6 +181,15 @@ debugrevlogopts = [
 # special string such that everything below this line will be ingored in the
 # editor text
 _linebelow = "^HG: ------------------------ >8 ------------------------$"
+
+def resolvecommitoptions(ui, opts):
+    """modify commit options dict to handle related options
+    """
+    # N.B. this is extremely similar to setupheaderopts() in mq.py
+    if not opts.get(b'date') and opts.get(b'current_date'):
+        opts[b'date'] = b'%d %d' % dateutil.makedate()
+    if not opts.get(b'user') and opts.get(b'current_user'):
+        opts[b'user'] = ui.username()
 
 def ishunk(x):
     hunkclasses = (crecordmod.uihunk, patch.recordhunk)

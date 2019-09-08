@@ -118,6 +118,7 @@ remoteopts = cmdutil.remoteopts
 walkopts = cmdutil.walkopts
 commitopts = cmdutil.commitopts
 commitopts2 = cmdutil.commitopts2
+commitopts3 = cmdutil.commitopts3
 formatteropts = cmdutil.formatteropts
 templateopts = cmdutil.templateopts
 logopts = cmdutil.logopts

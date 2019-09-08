@@ -42,6 +42,8 @@ Help for uncommit
    -l --logfile FILE             read commit message from file
    -d --date DATE                record the specified date as commit date
    -u --user USER                record the specified user as committer
+   -D --current-date             record the current date as commit date
+   -U --current-user             record the current user as committer
   
   (some details hidden, use --verbose to show complete help)
 
