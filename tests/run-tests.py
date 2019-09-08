@@ -1695,15 +1695,7 @@ class TTest(Test):
                                 continue
                     postout.append(b'  ' + el)
 
-            if cmd_line:
-                # Add on last return code.
-                ret = int(cmd_line.split()[1])
-                if ret != 0:
-                    postout.append(b'  [%d]\n' % ret)
-                if pos in after:
-                    # Merge in non-active test bits.
-                    postout += after.pop(pos)
-                pos = int(cmd_line.split()[0])
+            pos, postout = self._process_cmd_line(cmd_line, pos, postout, after)
 
         if pos in after:
             postout += after.pop(pos)
@@ -1712,6 +1704,19 @@ class TTest(Test):
             exitcode = False # Set exitcode to warned.
 
         return exitcode, postout
+
+    def _process_cmd_line(self, cmd_line, pos, postout, after):
+        """process a "command" part of a line from unified test output"""
+        if cmd_line:
+            # Add on last return code.
+            ret = int(cmd_line.split()[1])
+            if ret != 0:
+                postout.append(b'  [%d]\n' % ret)
+            if pos in after:
+                # Merge in non-active test bits.
+                postout += after.pop(pos)
+            pos = int(cmd_line.split()[0])
+        return pos, postout
 
     @staticmethod
     def rematch(el, l):
