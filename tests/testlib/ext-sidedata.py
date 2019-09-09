@@ -12,6 +12,7 @@ import struct
 
 from mercurial import (
     extensions,
+    node,
     revlog,
 )
 
@@ -32,5 +33,18 @@ def wrapaddrevision(orig, self, text, transaction, link, p1, p2, *args,
     sd[sidedata.SD_TEST2] = struct.pack('>32s', sha256)
     return orig(self, text, transaction, link, p1, p2, *args, **kwargs)
 
+def wraprevision(orig, self, nodeorrev, *args, **kwargs):
+    text = orig(self, nodeorrev, *args, **kwargs)
+    if nodeorrev != node.nullrev and nodeorrev != node.nullid:
+        sd = self.sidedata(nodeorrev)
+        if len(text) != struct.unpack('>I', sd[sidedata.SD_TEST1])[0]:
+            raise RuntimeError('text size mismatch')
+        expected = sd[sidedata.SD_TEST2]
+        got = hashlib.sha256(text).digest()
+        if got != expected:
+            raise RuntimeError('sha256 mismatch')
+    return text
+
 def extsetup(ui):
     extensions.wrapfunction(revlog.revlog, 'addrevision', wrapaddrevision)
+    extensions.wrapfunction(revlog.revlog, 'revision', wraprevision)
