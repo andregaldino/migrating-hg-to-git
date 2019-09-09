@@ -2249,17 +2249,23 @@ def graft(repo, ctx, pctx, labels=None, keepparent=False,
                    mergeancestor=mergeancestor, labels=labels)
 
 
+    potherp1 = False
     if keepconflictparent and stats.unresolvedcount:
         pother = ctx.node()
     else:
         pother = nullid
         parents = ctx.parents()
         if keepparent and len(parents) == 2 and pctx in parents:
+            if pctx == parents[0]:
+                potherp1 = True
             parents.remove(pctx)
             pother = parents[0].node()
 
     with repo.dirstate.parentchange():
-        repo.setparents(repo['.'].node(), pother)
+        if potherp1:
+            repo.setparents(pother, repo['.'].node())
+        else:
+            repo.setparents(repo['.'].node(), pother)
         repo.dirstate.write(repo.currenttransaction())
         # fix up dirstate for copies and renames
         copies.duplicatecopies(repo, repo[None], ctx.rev(), pctx.rev())
