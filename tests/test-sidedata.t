@@ -21,6 +21,25 @@ Check data can be written/read from sidedata
   $ echo xxx >> a
   $ hg commit -m aa
 
+  $ hg debugsidedata -c 0
+  2 sidedata entries
+   entry-0001 size 4
+   entry-0002 size 32
+  $ hg debugsidedata -c 1 -v
+  2 sidedata entries
+   entry-0001 size 4
+    '\x00\x00\x006'
+   entry-0002 size 32
+    '\x98\t\xf9\xc4v\xf0\xc5P\x90\xf7wRf\xe8\xe27e\xfc\xc1\x93\xa4\x96\xd0\x1d\x97\xaaG\x1d\xd7t\xfa\xde'
+  $ hg debugsidedata -m 2
+  2 sidedata entries
+   entry-0001 size 4
+   entry-0002 size 32
+  $ hg debugsidedata a  1
+  2 sidedata entries
+   entry-0001 size 4
+   entry-0002 size 32
+
 Check upgrade behavior
 ======================
 

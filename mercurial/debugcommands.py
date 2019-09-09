@@ -2640,6 +2640,31 @@ def debugsetparents(ui, repo, rev1, rev2=None):
     with repo.wlock():
         repo.setparents(node1, node2)
 
+@command('debugsidedata', cmdutil.debugrevlogopts, _('-c|-m|FILE REV'))
+def debugsidedata(ui, repo, file_, rev=None, **opts):
+    """dump the side data for a cl/manifest/file revision"""
+    opts = pycompat.byteskwargs(opts)
+    if opts.get('changelog') or opts.get('manifest') or opts.get('dir'):
+        if rev is not None:
+            raise error.CommandError('debugdata', _('invalid arguments'))
+        file_, rev = None, file_
+    elif rev is None:
+        raise error.CommandError('debugdata', _('invalid arguments'))
+    r = cmdutil.openstorage(repo, 'debugdata', file_, opts)
+    r = getattr(r, '_revlog', r)
+    try:
+        sidedata = r.sidedata(r.lookup(rev))
+    except KeyError:
+        raise error.Abort(_('invalid revision identifier %s') % rev)
+    if sidedata:
+        sidedata = list(sidedata.items())
+        sidedata.sort()
+        ui.write(('%d sidedata entries\n' % len(sidedata)))
+        for key, value in sidedata:
+            ui.write((' entry-%04o size %d\n' % (key, len(value))))
+            if ui.verbose:
+                ui.write(('  %s\n' % repr(value)))
+
 @command('debugssl', [], '[SOURCE]', optionalrepo=True)
 def debugssl(ui, repo, source=None, **opts):
     '''test a secure connection to a server
