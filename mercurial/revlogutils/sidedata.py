@@ -38,6 +38,17 @@ import struct
 
 from .. import error
 
+## sidedata type constant
+# reserve a block for testing purposes.
+SD_TEST1 = 1
+SD_TEST2 = 2
+SD_TEST3 = 3
+SD_TEST4 = 4
+SD_TEST5 = 5
+SD_TEST6 = 6
+SD_TEST7 = 7
+
+# internal format constant
 SIDEDATA_HEADER = struct.Struct('>H')
 SIDEDATA_ENTRY = struct.Struct('>HL20s')
 

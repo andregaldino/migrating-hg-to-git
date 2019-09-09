@@ -2,6 +2,24 @@
 Test file dedicated to checking side-data related behavior
 ==========================================================
 
+Check data can be written/read from sidedata
+============================================
+
+  $ cat << EOF >> $HGRCPATH
+  > [extensions]
+  > testsidedata=$TESTDIR/testlib/ext-sidedata.py
+  > EOF
+
+  $ hg init test-sidedata --config format.use-side-data=yes
+  $ cd test-sidedata
+  $ echo aaa > a
+  $ hg add a
+  $ hg commit -m a --traceback
+  $ echo aaa > b
+  $ hg add b
+  $ hg commit -m b
+  $ echo xxx >> a
+  $ hg commit -m aa
 
 Check upgrade behavior
 ======================
