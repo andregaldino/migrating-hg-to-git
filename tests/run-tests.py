@@ -2538,6 +2538,7 @@ def sorttests(testdescs, previoustimes, shuffle=False):
                 b'check': 100,
                 b'gendoc': 100,
                 b'contrib-perf': 200,
+                b'merge-combination': 100,
                 }
         perf = {}
 

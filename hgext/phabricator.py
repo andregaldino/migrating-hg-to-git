@@ -659,7 +659,12 @@ def phabsend(ui, repo, *revs, **opts):
 
                     mapping[old.node()] = [newnode]
                     # Update diff property
-                    writediffproperties(unfi[newnode], diffmap[old.node()])
+                    # If it fails just warn and keep going, otherwise the DREV
+                    # associations will be lost
+                    try:
+                        writediffproperties(unfi[newnode], diffmap[old.node()])
+                    except util.urlerr.urlerror:
+                        ui.warn(b'Failed to update metadata for D%s\n' % drevid)
                 # Remove local tags since it's no longer necessary
                 tagname = b'D%d' % drevid
                 if tagname in repo.tags():

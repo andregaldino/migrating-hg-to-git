@@ -171,7 +171,7 @@ checking zstd options
   $ $RUNTESTDIR/f -s zstd-*/.hg/store/data/*
   zstd-level-1/.hg/store/data/a.i: size=4097
   zstd-level-22/.hg/store/data/a.i: size=4091
-  zstd-level-default/.hg/store/data/a.i: size=4094
+  zstd-level-default/\.hg/store/data/a\.i: size=(4094|4102) (re)
 
 Test error cases
 
