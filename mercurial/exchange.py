@@ -708,12 +708,11 @@ def _pushdiscoverybookmarks(pushop):
         revnums = pycompat.maplist(repo.changelog.rev, pushop.revs)
         ancestors = repo.changelog.ancestors(revnums, inclusive=True)
 
-    remotebookmark = listkeys(remote, 'bookmarks')
+    remotebookmark = bookmod.unhexlifybookmarks(listkeys(remote, 'bookmarks'))
 
     explicit = {repo._bookmarks.expandname(bookmark)
                 for bookmark in pushop.bookmarks}
 
-    remotebookmark = bookmod.unhexlifybookmarks(remotebookmark)
     comp = bookmod.comparebookmarks(repo, repo._bookmarks, remotebookmark)
     return _processcompared(pushop, ancestors, explicit, remotebookmark, comp)
 
