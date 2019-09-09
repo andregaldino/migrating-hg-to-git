@@ -15,6 +15,7 @@ demandimport.IGNORES.update(['pkgutil', 'pkg_resources', '__main__'])
 
 from mercurial import (
     encoding,
+    pycompat,
 )
 
 from mercurial.utils import (
@@ -61,11 +62,12 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
 
     # Pygments is best used with Unicode strings:
     # <http://pygments.org/docs/unicode/>
-    text = text.decode(encoding.encoding, 'replace')
+    text = text.decode(pycompat.sysstr(encoding.encoding), 'replace')
 
     # To get multi-line strings right, we can't format line-by-line
     try:
-        lexer = guess_lexer_for_filename(fctx.path(), text[:1024],
+        path = pycompat.sysstr(fctx.path())
+        lexer = guess_lexer_for_filename(path, text[:1024],
                                          stripnl=False)
     except (ClassNotFound, ValueError):
         # guess_lexer will return a lexer if *any* lexer matches. There is
@@ -84,10 +86,10 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
     if isinstance(lexer, TextLexer):
         return
 
-    formatter = HtmlFormatter(nowrap=True, style=style)
+    formatter = HtmlFormatter(nowrap=True, style=pycompat.sysstr(style))
 
     colorized = highlight(text, lexer, formatter)
-    coloriter = (s.encode(encoding.encoding, 'replace')
+    coloriter = (s.encode(pycompat.sysstr(encoding.encoding), 'replace')
                  for s in colorized.splitlines())
 
     tmpl._filters['colorize'] = lambda x: next(coloriter)

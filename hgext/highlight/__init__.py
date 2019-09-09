@@ -36,6 +36,7 @@ from mercurial.hgweb import (
 
 from mercurial import (
     extensions,
+    pycompat,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -79,11 +80,12 @@ def annotate_highlight(orig, web):
 
 def generate_css(web):
     pg_style = web.config('web', 'pygments_style', 'colorful')
-    fmter = highlight.HtmlFormatter(style=pg_style)
+    fmter = highlight.HtmlFormatter(style=pycompat.sysstr(pg_style))
     web.res.headers['Content-Type'] = 'text/css'
+    style_defs = fmter.get_style_defs(pycompat.sysstr(''))
     web.res.setbodybytes(''.join([
         '/* pygments_style = %s */\n\n' % pg_style,
-        fmter.get_style_defs(''),
+        pycompat.bytestr(style_defs),
     ]))
     return web.res.sendresponse()
 

@@ -296,6 +296,7 @@ test-hgweb.t
 test-hgwebdir-paths.py
 test-hgwebdir.t
 test-hgwebdirsym.t
+test-highlight.t
 test-histedit-arguments.t
 test-histedit-base.t
 test-histedit-bookmark-motion.t
