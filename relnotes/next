@@ -9,6 +9,11 @@
 
 == Backwards Compatibility Changes ==
 
+ * A shell that supports `$(command)`` syntax for command substitution is now
+   required for running the test suite. The test runner normally uses
+   `sh`, so if that is a shell that doesn't support `$(command)` syntax,
+   you can override it by setting `$HGTEST_SHELL` or by passing it to
+   `run-tests.py --shell <shell>`.
 
 == Internal API Changes ==
 
