@@ -394,6 +394,10 @@ REVLOGV2_REQUIREMENT = 'exp-revlogv2.1'
 # This is why once a repository has enabled sparse-read, it becomes required.
 SPARSEREVLOG_REQUIREMENT = 'sparserevlog'
 
+# A repository with the sidedataflag requirement will allow to store extra
+# information for revision without altering their original hashes.
+SIDEDATA_REQUIREMENT = 'exp-sidedata-flag'
+
 # Functions receiving (ui, features) that extensions can register to impact
 # the ability to load repositories with custom requirements. Only
 # functions defined in loaded extensions are called.
@@ -814,6 +818,9 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if sparserevlog:
         options[b'generaldelta'] = True
 
+    sidedata = SIDEDATA_REQUIREMENT in requirements
+    options[b'side-data'] = sidedata
+
     maxchainlen = None
     if sparserevlog:
         maxchainlen = revlogconst.SPARSE_REVLOG_MAX_CHAIN_LENGTH
@@ -917,6 +924,7 @@ class localrepository(object):
         'generaldelta',
         'treemanifest',
         REVLOGV2_REQUIREMENT,
+        SIDEDATA_REQUIREMENT,
         SPARSEREVLOG_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
     }
@@ -3153,6 +3161,10 @@ def newreporequirements(ui, createopts):
         requirements.add('generaldelta')
         if ui.configbool('format', 'sparse-revlog'):
             requirements.add(SPARSEREVLOG_REQUIREMENT)
+
+    # experimental config: format.use-side-data
+    if ui.configbool('format', 'use-side-data'):
+        requirements.add(SIDEDATA_REQUIREMENT)
     if ui.configbool('experimental', 'treemanifest'):
         requirements.add('treemanifest')
 

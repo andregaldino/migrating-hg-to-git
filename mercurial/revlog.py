@@ -388,6 +388,7 @@ class revlog(object):
             self._maxdeltachainspan = opts['maxdeltachainspan']
         if self._mmaplargeindex and 'mmapindexthreshold' in opts:
             mmapindexthreshold = opts['mmapindexthreshold']
+        self.hassidedata = bool(opts.get('side-data', False))
         self._sparserevlog = bool(opts.get('sparse-revlog', False))
         withsparseread = bool(opts.get('with-sparse-read', False))
         # sparse-revlog forces sparse-read
@@ -1849,6 +1850,10 @@ class revlog(object):
 
         if sidedata is None:
             sidedata = {}
+        elif not self.hassidedata:
+            raise error.ProgrammingError(
+                _("trying to add sidedata to a revlog who don't support them")
+                )
 
         if flags:
             node = node or self.hash(text, p1, p2)

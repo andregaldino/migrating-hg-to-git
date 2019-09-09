@@ -733,6 +733,10 @@ coreconfigitem('format', 'usegeneraldelta',
 coreconfigitem('format', 'usestore',
     default=True,
 )
+coreconfigitem('format', 'use-side-data',
+    default=False,
+    experimental=True,
+)
 coreconfigitem('format', 'internal-phase',
     default=False,
     experimental=True,
