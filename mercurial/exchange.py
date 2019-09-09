@@ -12,7 +12,6 @@ import hashlib
 
 from .i18n import _
 from .node import (
-    bin,
     hex,
     nullid,
     nullrev,
@@ -441,7 +440,7 @@ class pushoperation(object):
         self.fallbackoutdatedphases = None
         # outgoing obsmarkers
         self.outobsmarkers = set()
-        # outgoing bookmarks
+        # outgoing bookmarks, list of (bm, oldnode | '', newnode | '')
         self.outbookmarks = []
         # transaction manager
         self.trmanager = None
@@ -716,17 +715,6 @@ def _pushdiscoverybookmarks(pushop):
 
     remotebookmark = bookmod.unhexlifybookmarks(remotebookmark)
     comp = bookmod.comparebookmarks(repo, repo._bookmarks, remotebookmark)
-
-    def safehex(x):
-        if x is None:
-            return x
-        return hex(x)
-
-    def hexifycompbookmarks(bookmarks):
-        return [(b, safehex(scid), safehex(dcid))
-                for (b, scid, dcid) in bookmarks]
-
-    comp = [hexifycompbookmarks(marks) for marks in comp]
     return _processcompared(pushop, ancestors, explicit, remotebookmark, comp)
 
 def _processcompared(pushop, pushed, explicit, remotebms, comp):
@@ -877,7 +865,6 @@ def _pushb2checkbookmarks(pushop, bundler):
         return
     data = []
     for book, old, new in pushop.outbookmarks:
-        old = bin(old)
         data.append((book, old))
     checkdata = bookmod.binaryencode(data)
     bundler.newpart('check:bookmarks', data=checkdata)
@@ -1051,7 +1038,6 @@ def _pushb2bookmarkspart(pushop, bundler):
     data = []
     for book, old, new in pushop.outbookmarks:
         _abortonsecretctx(pushop, new, book)
-        new = bin(new)
         data.append((book, new))
         allactions.append((book, _bmaction(old, new)))
     checkdata = bookmod.binaryencode(data)
@@ -1083,8 +1069,8 @@ def _pushb2bookmarkspushkey(pushop, bundler):
         part = bundler.newpart('pushkey')
         part.addparam('namespace', enc('bookmarks'))
         part.addparam('key', enc(book))
-        part.addparam('old', enc(old))
-        part.addparam('new', enc(new))
+        part.addparam('old', enc(hex(old)))
+        part.addparam('new', enc(hex(new)))
         action = 'update'
         if not old:
             action = 'export'
@@ -1339,8 +1325,8 @@ def _pushbookmark(pushop):
             r = e.callcommand('pushkey', {
                 'namespace': 'bookmarks',
                 'key': b,
-                'old': old,
-                'new': new,
+                'old': hex(old),
+                'new': hex(new),
             }).result()
 
         if r:
