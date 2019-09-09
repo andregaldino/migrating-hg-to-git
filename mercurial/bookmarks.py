@@ -480,8 +480,7 @@ def comparebookmarks(repo, srcmarks, dstmarks, targets=None):
 
     Each elements of lists in result tuple is tuple "(bookmark name,
     changeset ID on source side, changeset ID on destination
-    side)". Each changeset IDs are 40 hexadecimal digit string or
-    None.
+    side)". Each changeset ID is a binary node or None.
 
     Changeset IDs of tuples in "addsrc", "adddst", "differ" or
      "invalid" list may be unknown for repo.

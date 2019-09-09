@@ -730,9 +730,9 @@ def _pushdiscoverybookmarks(pushop):
     return _processcompared(pushop, ancestors, explicit, remotebookmark, comp)
 
 def _processcompared(pushop, pushed, explicit, remotebms, comp):
-    """take decision on bookmark to pull from the remote bookmark
+    """take decision on bookmarks to push to the remote repo
 
-    Exist to help extensions who want to alter this behavior.
+    Exists to help extensions alter this behavior.
     """
     addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = comp
 
