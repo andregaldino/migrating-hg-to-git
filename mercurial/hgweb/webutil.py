@@ -791,7 +791,7 @@ def getwebsubs(repo):
         flagin = match.group(3)
         flags = 0
         if flagin:
-            for flag in flagin.upper():
+            for flag in pycompat.sysstr(flagin.upper()):
                 flags |= re.__dict__[flag]
 
         try:
