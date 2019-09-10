@@ -34,13 +34,6 @@ class idirstate(interfaceutil.Interface):
         that modify the dirstate parent.
         '''
 
-    _map = interfaceutil.Attribute(
-        """Return the dirstate contents (see documentation for dirstatemap).
-
-        TODO this should not be exposed.
-        """
-        )
-
     def hasdir(d):
         pass
 
