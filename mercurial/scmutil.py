@@ -319,7 +319,7 @@ class casecollisionauditor(object):
     def __init__(self, ui, abort, dirstate):
         self._ui = ui
         self._abort = abort
-        allfiles = '\0'.join(dirstate._map)
+        allfiles = '\0'.join(dirstate)
         self._loweredfiles = set(encoding.lower(allfiles).split('\0'))
         self._dirstate = dirstate
         # The purpose of _newfiles is so that we don't complain about

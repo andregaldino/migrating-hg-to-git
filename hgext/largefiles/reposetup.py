@@ -234,7 +234,7 @@ def reposetup(ui, repo):
                     result[2] = [f for f in result[2]
                                  if f not in lfdirstate]
 
-                    lfiles = set(lfdirstate._map)
+                    lfiles = set(lfdirstate)
                     # Unknown files
                     result[4] = set(result[4]).difference(lfiles)
                     # Ignored files

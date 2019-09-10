@@ -751,7 +751,7 @@ def debugstate(ui, repo, **opts):
         keyfunc = lambda x: (x[1][3], x[0]) # sort by mtime, then by filename
     else:
         keyfunc = None # sort by filename
-    for file_, ent in sorted(repo.dirstate._map.iteritems(), key=keyfunc):
+    for file_, ent in sorted(repo.dirstate.iteritems(), key=keyfunc):
         if ent[3] == -1:
             timestr = 'unset               '
         elif nodates:
