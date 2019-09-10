@@ -106,6 +106,7 @@ class ErrorResponse(Exception):
         if headers is None:
             headers = []
         self.headers = headers
+        self.message = message
 
 class continuereader(object):
     """File object wrapper to handle HTTP 100-continue.
