@@ -15,6 +15,7 @@ if subprocess.call(['python', '%s/hghave' % os.environ['TESTDIR'],
     sys.exit(80)
 
 from mercurial.interfaces import (
+    dirstate as intdirstate,
     repository,
 )
 from mercurial.thirdparty.zope import (
@@ -25,6 +26,7 @@ from mercurial.thirdparty.zope.interface import (
 )
 from mercurial import (
     bundlerepo,
+    dirstate,
     filelog,
     httppeer,
     localrepo,
@@ -188,6 +190,8 @@ def main():
     ziverify.verifyClass(repository.ifilestorage, simplestorerepo.filestorage)
     ziverify.verifyClass(repository.iverifyproblem,
                          simplestorerepo.simplefilestoreproblem)
+
+    ziverify.verifyClass(intdirstate.idirstate, dirstate.dirstate)
 
     vfs = vfsmod.vfs(b'.')
     fl = filelog.filelog(vfs, b'dummy.i')

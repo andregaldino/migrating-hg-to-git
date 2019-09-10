@@ -27,6 +27,11 @@ from . import (
     util,
 )
 
+from .interfaces import (
+    dirstate as intdirstate,
+    util as interfaceutil,
+)
+
 parsers = policy.importmod(r'parsers')
 rustmod = policy.importrust(r'dirstate')
 
@@ -55,6 +60,7 @@ def _getfsnow(vfs):
         os.close(tmpfd)
         vfs.unlink(tmpname)
 
+@interfaceutil.implementer(intdirstate.idirstate)
 class dirstate(object):
 
     def __init__(self, opener, ui, root, validate, sparsematchfn):
