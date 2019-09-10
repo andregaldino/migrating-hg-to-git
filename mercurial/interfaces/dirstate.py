@@ -20,6 +20,19 @@ class idirstate(interfaceutil.Interface):
         the dirstate.
         '''
 
+    # TODO: all these private methods and attributes should be made
+    # public or removed from the interface.
+    _ignore = interfaceutil.Attribute('Matcher for ignored files.')
+
+    def _ignorefiles():
+        """Return a list of files containing patterns to ignore."""
+
+    def _ignorefileandline(f):
+        "Given a file `f`, return the ignore file and line that ignores it."
+
+    _checklink = interfaceutil.Attribute('Callable for checking symlinks.')
+    _checkexec = interfaceutil.Attribute('Callable for checking exec bits.')
+
     @contextlib.contextmanager
     def parentchange():
         '''Context manager for handling dirstate parents.
@@ -36,11 +49,6 @@ class idirstate(interfaceutil.Interface):
 
     def hasdir(d):
         pass
-
-    _ignore = interfaceutil.Attribute('Matcher for ignored files.')
-
-    _checklink = interfaceutil.Attribute('Callable for checking symlinks.')
-    _checkexec = interfaceutil.Attribute('Callable for checking exec bits.')
 
     def flagfunc(buildfallback):
         pass
@@ -195,16 +203,6 @@ class idirstate(interfaceutil.Interface):
         Category is a unique identifier to allow overwriting an old callback
         with a newer callback.
         """
-
-    def _ignorefiles():
-        """Return a list of files containing patterns to ignore.
-
-        TODO this should not be exposed."""
-
-    def _ignorefileandline(f):
-        """Given a file `f`, return the ignore file and line that ignores it.
-
-        TODO this should not be exposed."""
 
     def walk(match, subrepos, unknown, ignored, full=True):
         '''
