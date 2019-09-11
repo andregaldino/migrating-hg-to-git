@@ -101,9 +101,9 @@ commitopts2 = [
 ]
 
 commitopts3 = [
-    (b'D', b'current-date', None,
+    (b'D', b'currentdate', None,
      _(b'record the current date as commit date')),
-    (b'U', b'current-user', None,
+    (b'U', b'currentuser', None,
      _(b'record the current user as committer')),
 ]
 
@@ -186,9 +186,9 @@ def resolvecommitoptions(ui, opts):
     """modify commit options dict to handle related options
     """
     # N.B. this is extremely similar to setupheaderopts() in mq.py
-    if not opts.get(b'date') and opts.get(b'current_date'):
+    if not opts.get(b'date') and opts.get(b'currentdate'):
         opts[b'date'] = b'%d %d' % dateutil.makedate()
-    if not opts.get(b'user') and opts.get(b'current_user'):
+    if not opts.get(b'user') and opts.get(b'currentuser'):
         opts[b'user'] = ui.username()
 
 def ishunk(x):
