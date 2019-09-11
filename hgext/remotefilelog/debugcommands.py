@@ -15,6 +15,7 @@ from mercurial.i18n import _
 from mercurial import (
     error,
     filelog,
+    lock as lockmod,
     node as nodemod,
     pycompat,
     revlog,
@@ -22,7 +23,6 @@ from mercurial import (
 from . import (
     constants,
     datapack,
-    extutil,
     fileserverclient,
     historypack,
     repack,
@@ -369,7 +369,7 @@ def debughistorypack(ui, path):
             short(p2node), short(linknode), copyfrom))
 
 def debugwaitonrepack(repo):
-    with extutil.flock(repack.repacklockvfs(repo).join('repacklock'), ''):
+    with lockmod.lock(repack.repacklockvfs(repo), "repacklock", timeout=-1):
         return
 
 def debugwaitonprefetch(repo):

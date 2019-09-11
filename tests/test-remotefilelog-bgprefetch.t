@@ -117,7 +117,6 @@
   $TESTTMP/hgcache/master/packs/6e8633deba6e544e5f8edbd7b996d6e31a2c42ae.histpack
   $TESTTMP/hgcache/master/packs/8ce5ab3745465ab83bba30a7b9c295e0c8404652.dataidx
   $TESTTMP/hgcache/master/packs/8ce5ab3745465ab83bba30a7b9c295e0c8404652.datapack
-  $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
 # background prefetch with repack on update when wcprevset configured
@@ -154,7 +153,6 @@
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
   $TESTTMP/hgcache/master/packs/f4d50848e0b465e9bfd2875f213044c06cfd7407.dataidx
   $TESTTMP/hgcache/master/packs/f4d50848e0b465e9bfd2875f213044c06cfd7407.datapack
-  $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
 # Ensure that file 'w' was prefetched - it was not part of the update operation and therefore
@@ -207,7 +205,6 @@
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
   $TESTTMP/hgcache/master/packs/f4d50848e0b465e9bfd2875f213044c06cfd7407.dataidx
   $TESTTMP/hgcache/master/packs/f4d50848e0b465e9bfd2875f213044c06cfd7407.datapack
-  $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
 # Ensure that file 'w' was prefetched - it was not part of the commit operation and therefore
@@ -246,7 +243,7 @@
   $ find $CACHEDIR -type f | sort
   $ hg rebase -s temporary -d foo
   rebasing 3:58147a5b5242 "b" (temporary tip)
-  saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/58147a5b5242-c3678817-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/58147a5b5242-c3678817-rebase.hg
   3 files fetched over 1 fetches - (3 misses, 0.00% hit ratio) over *s (glob)
   $ sleep 1
   $ hg debugwaitonprefetch >/dev/null 2>%1
@@ -301,7 +298,6 @@
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
   $TESTTMP/hgcache/master/packs/f4d50848e0b465e9bfd2875f213044c06cfd7407.dataidx
   $TESTTMP/hgcache/master/packs/f4d50848e0b465e9bfd2875f213044c06cfd7407.datapack
-  $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
 # Ensure that files were prefetched
@@ -346,7 +342,6 @@
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
   $TESTTMP/hgcache/master/packs/f4d50848e0b465e9bfd2875f213044c06cfd7407.dataidx
   $TESTTMP/hgcache/master/packs/f4d50848e0b465e9bfd2875f213044c06cfd7407.datapack
-  $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
 # Ensure that files were prefetched

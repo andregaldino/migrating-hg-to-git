@@ -11,6 +11,7 @@ from mercurial.node import (
 from mercurial import (
     encoding,
     error,
+    lock as lockmod,
     mdiff,
     policy,
     pycompat,
@@ -23,7 +24,6 @@ from . import (
     constants,
     contentstore,
     datapack,
-    extutil,
     historypack,
     metadatastore,
     shallowutil,
@@ -432,8 +432,8 @@ class repacker(object):
     def run(self, targetdata, targethistory):
         ledger = repackledger()
 
-        with extutil.flock(repacklockvfs(self.repo).join("repacklock"),
-                           _('repacking %s') % self.repo.origroot, timeout=0):
+        with lockmod.lock(repacklockvfs(self.repo), "repacklock", desc=None,
+                          timeout=0):
             self.repo.hook('prerepack')
 
             # Populate ledger from source
