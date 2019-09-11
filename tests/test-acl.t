@@ -134,14 +134,14 @@ Extension disabled for lack of a hook
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 0 (undo push)
   0:6675d58eff77
@@ -201,14 +201,14 @@ Extension disabled for lack of acl.sources
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 0 (undo push)
   0:6675d58eff77
@@ -278,14 +278,14 @@ No [acl.allow]/[acl.deny]
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 0 (undo push)
   0:6675d58eff77
@@ -350,7 +350,7 @@ Empty [acl.allow]
   error: pretxnchangegroup.acl hook failed: acl: user "fred" not allowed on "foo/file.txt" (changeset "ef1ea85a6374")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "fred" not allowed on "foo/file.txt" (changeset "ef1ea85a6374")
@@ -422,7 +422,7 @@ fred is allowed inside foo/
   error: pretxnchangegroup.acl hook failed: acl: user "fred" not allowed on "quux/file.py" (changeset "911600dab2ae")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "fred" not allowed on "quux/file.py" (changeset "911600dab2ae")
@@ -491,7 +491,7 @@ Empty [acl.deny]
   error: pretxnchangegroup.acl hook failed: acl: user "barney" not allowed on "foo/file.txt" (changeset "ef1ea85a6374")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "barney" not allowed on "foo/file.txt" (changeset "ef1ea85a6374")
@@ -565,7 +565,7 @@ fred is allowed inside foo/, but not foo/bar/ (case matters)
   error: pretxnchangegroup.acl hook failed: acl: user "fred" not allowed on "quux/file.py" (changeset "911600dab2ae")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "fred" not allowed on "quux/file.py" (changeset "911600dab2ae")
@@ -638,7 +638,7 @@ fred is allowed inside foo/, but not foo/Bar/
   error: pretxnchangegroup.acl hook failed: acl: user "fred" denied on "foo/Bar/file.txt" (changeset "f9cafe1212c8")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "fred" denied on "foo/Bar/file.txt" (changeset "f9cafe1212c8")
@@ -708,7 +708,7 @@ fred is allowed inside foo/, but not foo/Bar/
   error: pretxnchangegroup.acl hook failed: acl: user "barney" not allowed on "foo/file.txt" (changeset "ef1ea85a6374")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "barney" not allowed on "foo/file.txt" (changeset "ef1ea85a6374")
@@ -787,14 +787,14 @@ fred is not blocked from moving bookmarks
   acl: acl.allow.bookmarks not enabled
   acl: acl.deny.bookmarks not enabled
   acl: bookmark access granted: "ef1ea85a6374b77d6da9dcda9541f498f2d17df7" on bookmark "moving-bookmark"
-  bundle2-input-bundle: 6 parts total
+  bundle2-input-bundle: 7 parts total
   updating the branch cache
   added 1 changesets with 1 changes to 1 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   updating bookmark moving-bookmark
   listing keys for "phases"
   repository tip rolled back to revision 0 (undo push)
@@ -873,7 +873,7 @@ fred is not allowed to move bookmarks
   acl: acl.allow.bookmarks not enabled
   acl: acl.deny.bookmarks enabled, 1 entries for user fred
   error: prepushkey.acl hook failed: acl: user "fred" denied on bookmark "moving-bookmark" (changeset "ef1ea85a6374b77d6da9dcda9541f498f2d17df7")
-  bundle2-input-bundle: 6 parts total
+  bundle2-input-bundle: 7 parts total
   transaction abort!
   rollback completed
   abort: acl: user "fred" denied on bookmark "moving-bookmark" (changeset "ef1ea85a6374b77d6da9dcda9541f498f2d17df7")
@@ -958,14 +958,14 @@ barney is allowed everywhere
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 0 (undo push)
   0:6675d58eff77
@@ -1041,7 +1041,7 @@ wilma can change files with a .txt extension
   error: pretxnchangegroup.acl hook failed: acl: user "wilma" not allowed on "quux/file.py" (changeset "911600dab2ae")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "wilma" not allowed on "quux/file.py" (changeset "911600dab2ae")
@@ -1113,7 +1113,7 @@ file specified by acl.config does not exist
   error: pretxnchangegroup.acl hook raised an exception: [Errno *] * (glob)
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: $ENOENT$: '../acl.config'
@@ -1198,7 +1198,7 @@ betty is allowed inside foo/ by a acl.config file
   error: pretxnchangegroup.acl hook failed: acl: user "betty" not allowed on "quux/file.py" (changeset "911600dab2ae")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "betty" not allowed on "quux/file.py" (changeset "911600dab2ae")
@@ -1286,14 +1286,14 @@ acl.config can set only [acl.allow]/[acl.deny]
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 0 (undo push)
   0:6675d58eff77
@@ -1374,14 +1374,14 @@ fred is always allowed
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 0 (undo push)
   0:6675d58eff77
@@ -1455,7 +1455,7 @@ no one is allowed inside foo/Bar/
   error: pretxnchangegroup.acl hook failed: acl: user "fred" denied on "foo/Bar/file.txt" (changeset "f9cafe1212c8")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "fred" denied on "foo/Bar/file.txt" (changeset "f9cafe1212c8")
@@ -1539,14 +1539,14 @@ OS-level groups
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 0 (undo push)
   0:6675d58eff77
@@ -1622,7 +1622,7 @@ OS-level groups
   error: pretxnchangegroup.acl hook failed: acl: user "fred" denied on "foo/Bar/file.txt" (changeset "f9cafe1212c8")
   bundle2-input-part: total payload size 1553
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "fred" denied on "foo/Bar/file.txt" (changeset "f9cafe1212c8")
@@ -1748,14 +1748,14 @@ No branch acls specified
   bundle2-input-part: total payload size 2068
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 2 (undo push)
   2:fb35475503ef
@@ -1832,7 +1832,7 @@ Branch acl deny test
   error: pretxnchangegroup.acl hook failed: acl: user "astro" denied on branch "foobar" (changeset "e8fc755d4d82")
   bundle2-input-part: total payload size 2068
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "astro" denied on branch "foobar" (changeset "e8fc755d4d82")
@@ -1904,7 +1904,7 @@ Branch acl empty allow test
   error: pretxnchangegroup.acl hook failed: acl: user "astro" not allowed on branch "default" (changeset "ef1ea85a6374")
   bundle2-input-part: total payload size 2068
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "astro" not allowed on branch "default" (changeset "ef1ea85a6374")
@@ -1978,7 +1978,7 @@ Branch acl allow other
   error: pretxnchangegroup.acl hook failed: acl: user "astro" not allowed on branch "default" (changeset "ef1ea85a6374")
   bundle2-input-part: total payload size 2068
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "astro" not allowed on branch "default" (changeset "ef1ea85a6374")
@@ -2054,14 +2054,14 @@ Branch acl allow other
   bundle2-input-part: total payload size 2068
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 2 (undo push)
   2:fb35475503ef
@@ -2145,14 +2145,14 @@ push foobar into the remote
   bundle2-input-part: total payload size 2068
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 2 (undo push)
   2:fb35475503ef
@@ -2227,7 +2227,7 @@ Branch acl conflicting deny
   error: pretxnchangegroup.acl hook failed: acl: user "george" denied on branch "default" (changeset "ef1ea85a6374")
   bundle2-input-part: total payload size 2068
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "george" denied on branch "default" (changeset "ef1ea85a6374")
@@ -2308,14 +2308,14 @@ User 'astro' must not be denied
   bundle2-input-part: total payload size 2068
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
   added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   repository tip rolled back to revision 2 (undo push)
   2:fb35475503ef
@@ -2384,7 +2384,7 @@ Non-astro users must be denied
   error: pretxnchangegroup.acl hook failed: acl: user "george" denied on branch "default" (changeset "ef1ea85a6374")
   bundle2-input-part: total payload size 2068
   bundle2-input-part: total payload size 48
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   transaction abort!
   rollback completed
   abort: acl: user "george" denied on branch "default" (changeset "ef1ea85a6374")

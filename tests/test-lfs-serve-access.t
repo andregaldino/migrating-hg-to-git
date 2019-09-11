@@ -111,7 +111,7 @@ Blob URIs are correct when --prefix is used
   bundle2-input-part: total payload size 24
   bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
   bundle2-input-part: total payload size 39
-  bundle2-input-bundle: 3 parts total
+  bundle2-input-bundle: 4 parts total
   checking for updated bookmarks
   updating the branch cache
   added 1 changesets with 1 changes to 1 files

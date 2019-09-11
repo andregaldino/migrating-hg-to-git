@@ -368,7 +368,7 @@ class partiterator(object):
 
     def __enter__(self):
         def func():
-            itr = enumerate(self.unbundler.iterparts())
+            itr = enumerate(self.unbundler.iterparts(), 1)
             for count, p in itr:
                 self.count = count
                 self.current = p

@@ -546,7 +546,7 @@ debug output
   bundle2-input-part: total payload size 45
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 72
-  bundle2-input-bundle: 2 parts total
+  bundle2-input-bundle: 3 parts total
   checking for updated bookmarks
 
   $ cd $TESTTMP

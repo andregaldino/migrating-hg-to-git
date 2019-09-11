@@ -193,7 +193,7 @@ delete a remote bookmark
   bundle2-input: payload chunk size: 0
   bundle2-input: part header size: 0
   bundle2-input: end of bundle2 stream
-  bundle2-input-bundle: 3 parts total
+  bundle2-input-bundle: 4 parts total
   running hook txnclose-bookmark.test: sh $TESTTMP/hook.sh
   test-hook-bookmark: W:  0000000000000000000000000000000000000000 -> 
   bundle2-output-bundle: "HG20", 1 parts total
@@ -219,7 +219,7 @@ delete a remote bookmark
   bundle2-input: payload chunk size: 0
   bundle2-input: part header size: 0
   bundle2-input: end of bundle2 stream
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   deleting remote bookmark W
   listing keys for "phases"
   [1]
@@ -307,7 +307,7 @@ delete a remote bookmark
   bundle2-input-part: total payload size 23
   bundle2-input: part header size: 0
   bundle2-input: end of bundle2 stream
-  bundle2-input-bundle: 3 parts total
+  bundle2-input-bundle: 4 parts total
   running hook txnclose-bookmark.test: sh $TESTTMP/hook.sh
   test-hook-bookmark: W:  0000000000000000000000000000000000000000 -> 
   bundle2-output-bundle: "HG20", 0 parts total

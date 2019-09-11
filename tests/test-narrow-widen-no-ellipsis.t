@@ -126,7 +126,7 @@ added upstream revisions.
   adding file changes
   adding widest/f revisions
   bundle2-input-part: total payload size * (glob)
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   added 0 changesets with 1 changes to 1 files
    widest/f: narrowspec updated -> g
   getting widest/f

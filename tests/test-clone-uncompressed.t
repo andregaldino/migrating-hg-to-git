@@ -259,7 +259,7 @@ Clone with background file closing enabled
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 1 parts total
+  bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
@@ -281,7 +281,7 @@ Clone with background file closing enabled
   transferred 96.5 KB in * seconds (* */sec) (glob)
   bundle2-input-part: total payload size 112094
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
-  bundle2-input-bundle: 1 parts total
+  bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
   (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
