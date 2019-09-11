@@ -185,10 +185,17 @@ _linebelow = "^HG: ------------------------ >8 ------------------------$"
 def resolvecommitoptions(ui, opts):
     """modify commit options dict to handle related options
     """
+    if opts.get('date') and opts.get('currentdate'):
+        raise error.Abort(_('--date and --currentdate are mutually '
+                            'exclusive'))
+    if opts.get(b'user') and opts.get(b'currentuser'):
+        raise error.Abort(_('--user and --currentuser are mutually '
+                            'exclusive'))
+
     # N.B. this is extremely similar to setupheaderopts() in mq.py
-    if not opts.get(b'date') and opts.get(b'currentdate'):
+    if opts.get(b'currentdate'):
         opts[b'date'] = b'%d %d' % dateutil.makedate()
-    if not opts.get(b'user') and opts.get(b'currentuser'):
+    if opts.get(b'currentuser'):
         opts[b'user'] = ui.username()
 
 def ishunk(x):

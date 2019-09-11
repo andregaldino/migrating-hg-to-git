@@ -549,10 +549,18 @@ can be uncommitted.
   date:        Mon Jun 30 12:12:12 1980 +0000
   summary:     uncommit with message
   
+Bad option combinations
+
+  $ hg rollback -q --config ui.rollback=True
+  $ hg uncommit -U --user 'user'
+  abort: --user and --currentuser are mutually exclusive
+  [255]
+  $ hg uncommit -D --date today
+  abort: --date and --currentdate are mutually exclusive
+  [255]
 
 `uncommit <dir>` and `cd <dir> && uncommit .` behave the same...
 
-  $ hg rollback -q --config ui.rollback=True
   $ echo 2 > dir/file2.txt
   $ hg ci -Aqm 'add file2 in directory'
   $ hg uncommit dir
