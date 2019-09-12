@@ -1072,6 +1072,13 @@ class ui(object):
         Label names take the form of "topic.type". For example, ui.debug()
         issues a label of "ui.debug".
 
+        Progress reports via stderr are normally cleared before writing as
+        stdout and stderr go to the same terminal. This can be skipped with
+        the optional keyword argument "keepprogressbar". The progress bar
+        will continue to occupy a partial line on stderr in that case.
+        This functionality is intended when Mercurial acts as data source
+        in a pipe.
+
         When labeling output for a specific command, a label of
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
@@ -1087,8 +1094,9 @@ class ui(object):
                 self._buffers[-1].extend(args)
             return
 
-        # inliend _writenobuf() for speed
-        self._progclear()
+        # inlined _writenobuf() for speed
+        if not opts.get(r'keepprogressbar', False):
+            self._progclear()
         msg = b''.join(args)
 
         # opencode timeblockedsection because this is a critical path
@@ -1126,7 +1134,8 @@ class ui(object):
 
     def _writenobuf(self, dest, *args, **opts):
         # update write() as well if you touch this code
-        self._progclear()
+        if not opts.get(r'keepprogressbar', False):
+            self._progclear()
         msg = b''.join(args)
 
         # opencode timeblockedsection because this is a critical path
