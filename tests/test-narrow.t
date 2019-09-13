@@ -447,3 +447,48 @@ Now test it *with* verbose.
   abort: local changes found
   (use --force-delete-local-changes to ignore)
   [255]
+  $ cd ..
+
+Test --auto-remove-includes
+  $ hg clone --narrow ssh://user@dummy/master narrow-auto-remove -q \
+  > --include d0 --include d1 --include d2
+  $ cd narrow-auto-remove
+  $ echo a >> d0/f
+  $ hg ci -m 'local change to d0'
+  $ hg co '.^'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo a >> d1/f
+  $ hg ci -m 'local change to d1'
+  created new head
+  $ hg debugobsolete $(hg log -T '{node}' -r 'desc("local change to d0")')
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ echo n | hg tracked --auto-remove-includes --config ui.interactive=yes
+  comparing with ssh://user@dummy/master
+  searching for changes
+  looking for unused includes to remove
+  path:d0
+  path:d2
+  remove these unused includes (yn)? n
+  $ hg tracked --auto-remove-includes
+  comparing with ssh://user@dummy/master
+  searching for changes
+  looking for unused includes to remove
+  path:d0
+  path:d2
+  remove these unused includes (yn)? y
+  looking for local changes to affected paths
+  saved backup bundle to $TESTTMP/narrow-auto-remove/.hg/strip-backup/*-narrow.hg (glob)
+  deleting data/d0/f.i
+  deleting data/d2/f.i
+  deleting meta/d0/00manifest.i (tree !)
+  deleting meta/d2/00manifest.i (tree !)
+  $ hg tracked
+  I path:d1
+  $ hg files
+  d1/f
+  $ hg tracked --auto-remove-includes
+  comparing with ssh://user@dummy/master
+  searching for changes
+  looking for unused includes to remove
+  found no unused includes

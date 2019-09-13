@@ -328,6 +328,8 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
 @command('tracked',
     [('', 'addinclude', [], _('new paths to include')),
      ('', 'removeinclude', [], _('old paths to no longer include')),
+     ('', 'auto-remove-includes', False,
+      _('automatically choose unused includes to remove')),
      ('', 'addexclude', [], _('new paths to exclude')),
      ('', 'import-rules', '', _('import narrowspecs from a file')),
      ('', 'removeexclude', [], _('old paths to no longer exclude')),
@@ -362,6 +364,11 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     and replaced by the new ones specified to --addinclude and --addexclude.
     If --clear is specified without any further options, the narrowspec will be
     empty and will not match any files.
+
+    If --auto-remove-includes is specified, then those includes that don't match
+    any files modified by currently visible local commits (those not shared by
+    the remote) will be added to the set of explicitly specified includes to
+    remove.
 
     --import-rules accepts a path to a file containing rules, allowing you to
     add --addinclude, --addexclude rules in bulk. Like the other include and
@@ -398,10 +405,12 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     removedincludes = narrowspec.parsepatterns(opts['removeinclude'])
     addedexcludes = narrowspec.parsepatterns(opts['addexclude'])
     removedexcludes = narrowspec.parsepatterns(opts['removeexclude'])
+    autoremoveincludes = opts['auto_remove_includes']
 
     update_working_copy = opts['update_working_copy']
     only_show = not (addedincludes or removedincludes or addedexcludes or
-                     removedexcludes or newrules or update_working_copy)
+                     removedexcludes or newrules or autoremoveincludes or
+                     update_working_copy)
 
     oldincludes, oldexcludes = repo.narrowpats
 
@@ -436,7 +445,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
             narrowspec.copytoworkingcopy(repo)
         return 0
 
-    if not widening and not narrowing:
+    if not (widening or narrowing or autoremoveincludes):
         ui.status(_("nothing to widen or narrow\n"))
         return 0
 
@@ -458,6 +467,28 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
             raise error.Abort(_("server does not support narrow clones"))
 
         commoninc = discovery.findcommonincoming(repo, remote)
+
+        if autoremoveincludes:
+            outgoing = discovery.findcommonoutgoing(repo, remote,
+                                                    commoninc=commoninc)
+            ui.status(_('looking for unused includes to remove\n'))
+            localfiles = set()
+            for n in itertools.chain(outgoing.missing, outgoing.excluded):
+                localfiles.update(repo[n].files())
+            suggestedremovals = []
+            for include in sorted(oldincludes):
+                match = narrowspec.match(repo.root, [include], oldexcludes)
+                if not any(match(f) for f in localfiles):
+                    suggestedremovals.append(include)
+            if suggestedremovals:
+                for s in suggestedremovals:
+                    ui.status('%s\n' % s)
+                if (ui.promptchoice(_('remove these unused includes (yn)?'
+                                      '$$ &Yes $$ &No')) == 0):
+                    removedincludes.update(suggestedremovals)
+                    narrowing = True
+            else:
+                ui.status(_('found no unused includes\n'))
 
         if narrowing:
             newincludes = oldincludes - removedincludes
