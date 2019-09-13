@@ -293,7 +293,7 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
         else:
             known = []
             if ellipsesremote:
-                known = [node.hex(ctx.node()) for ctx in
+                known = [ctx.node() for ctx in
                          repo.set('::%ln', common)
                          if ctx.node() != node.nullid]
             with remote.commandexecutor() as e:

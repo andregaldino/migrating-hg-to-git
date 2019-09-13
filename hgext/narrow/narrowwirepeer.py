@@ -13,7 +13,6 @@ from mercurial import (
     extensions,
     hg,
     narrowspec,
-    node as nodemod,
     pycompat,
     wireprototypes,
     wireprotov1peer,
@@ -61,10 +60,13 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
 
     preferuncompressed = False
     try:
-        oldincludes = wireprototypes.decodelist(oldincludes)
-        newincludes = wireprototypes.decodelist(newincludes)
-        oldexcludes = wireprototypes.decodelist(oldexcludes)
-        newexcludes = wireprototypes.decodelist(newexcludes)
+        def splitpaths(data):
+            # work around ''.split(',') => ['']
+            return data.split(b',') if data else []
+        oldincludes = splitpaths(oldincludes)
+        newincludes = splitpaths(newincludes)
+        oldexcludes = splitpaths(oldexcludes)
+        newexcludes = splitpaths(newexcludes)
         # validate the patterns
         narrowspec.validatepatterns(set(oldincludes))
         narrowspec.validatepatterns(set(newincludes))
@@ -73,7 +75,6 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
 
         common = wireprototypes.decodelist(commonheads)
         known = wireprototypes.decodelist(known)
-        known = {nodemod.bin(n) for n in known}
         if ellipses == '0':
             ellipses = False
         else:
@@ -106,9 +107,11 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
                                     prefer_uncompressed=preferuncompressed)
 
 def peernarrowwiden(remote, **kwargs):
-    for ch in (r'oldincludes', r'newincludes', r'oldexcludes', r'newexcludes',
-               r'commonheads', r'known'):
+    for ch in (r'commonheads', r'known'):
         kwargs[ch] = wireprototypes.encodelist(kwargs[ch])
+
+    for ch in (r'oldincludes', r'newincludes', r'oldexcludes', r'newexcludes'):
+        kwargs[ch] = b','.join(kwargs[ch])
 
     kwargs[r'ellipses'] = '%i' % bool(kwargs[r'ellipses'])
     f = remote._callcompressable('narrow_widen', **kwargs)

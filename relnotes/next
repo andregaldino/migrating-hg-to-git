@@ -22,5 +22,9 @@
    you can override it by setting `$HGTEST_SHELL` or by passing it to
    `run-tests.py --shell <shell>`.
 
+ * The (experimental) narrow extension's wire protocol changed. If
+   you're using it, you'll need to make sure to upgrade server and
+   client at the same time.
+
 == Internal API Changes ==
 
