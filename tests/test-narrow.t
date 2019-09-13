@@ -1,6 +1,11 @@
 #testcases flat tree
 #testcases lfs-on lfs-off
 
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > evolution=createmarkers
+  > EOF
+
 #if lfs-on
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
@@ -77,10 +82,6 @@ Test repo with local changes
   updating to branch default
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd narrow-local-changes
-  $ cat >> $HGRCPATH << EOF
-  > [experimental]
-  > evolution=createmarkers
-  > EOF
   $ echo local change >> d0/f
   $ hg ci -m 'local change to d0'
   $ hg co '.^'
