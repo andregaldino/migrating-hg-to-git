@@ -140,9 +140,15 @@ impl<T> PySharedRefCell<T> {
         self.inner.as_ptr()
     }
 
-    pub unsafe fn borrow_mut(&self) -> RefMut<T> {
-        // must be borrowed by self.py_shared_state(py).borrow_mut().
-        self.inner.borrow_mut()
+    // TODO: maybe this should be named as try_borrow_mut(), and use
+    // inner.try_borrow_mut(). The current implementation panics if
+    // self.inner has been borrowed, but returns error if py_shared_state
+    // refuses to borrow.
+    pub fn borrow_mut<'a>(
+        &'a self,
+        py: Python<'a>,
+    ) -> PyResult<PyRefMut<'a, T>> {
+        self.py_shared_state.borrow_mut(py, self.inner.borrow_mut())
     }
 }
 
@@ -231,6 +237,7 @@ macro_rules! py_shared_ref {
         $leaked: ident,
     ) => {
         impl $name {
+            // TODO: remove this function in favor of inner(py).borrow_mut()
             fn borrow_mut<'a>(
                 &'a self,
                 py: Python<'a>,
@@ -239,8 +246,7 @@ macro_rules! py_shared_ref {
                 // assert $data_member type
                 use crate::ref_sharing::PySharedRefCell;
                 let data: &PySharedRefCell<_> = self.$data_member(py);
-                data.py_shared_state
-                    .borrow_mut(py, unsafe { data.borrow_mut() })
+                data.borrow_mut(py)
             }
 
             /// Returns a leaked reference and its management object.
