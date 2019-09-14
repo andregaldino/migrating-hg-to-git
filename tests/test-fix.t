@@ -1297,7 +1297,7 @@ reasonable with that.
 
   $ cat >> .hg/hgrc <<EOF
   > [fix]
-  > printcwd:command = pwd
+  > printcwd:command = "$PYTHON" -c "import os; print(os.getcwd())"
   > printcwd:pattern = path:foo/bar
   > EOF
 
@@ -1382,9 +1382,15 @@ changes.
   $ printf "a\nc\n" > foo
   $ printf "a\nx\nc\n" > baz
 
+  $ cat >> print.py <<EOF
+  > import sys
+  > for a in sys.argv[1:]:
+  >    print(a)
+  > EOF
+
   $ hg fix --working-dir foo bar baz \
-  >        --config 'fix.changedlines:command=printf "Line ranges:\n"; ' \
-  >        --config 'fix.changedlines:linerange=printf "{first} through {last}\n"; ' \
+  >        --config "fix.changedlines:command=\"$PYTHON\" print.py \"Line ranges:\"" \
+  >        --config 'fix.changedlines:linerange="{first} through {last}"' \
   >        --config 'fix.changedlines:pattern=rootglob:**' \
   >        --config 'fix.changedlines:skipclean=false'
 
