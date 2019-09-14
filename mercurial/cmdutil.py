@@ -210,6 +210,18 @@ def resolvecommitoptions(ui, opts):
 
     return datemaydiffer
 
+def checknotesize(ui, opts):
+    """ make sure note is of valid format """
+
+    note = opts.get('note')
+    if not note:
+        return
+
+    if len(note) > 255:
+        raise error.Abort(_(b"cannot store a note of more than 255 bytes"))
+    if b'\n' in note:
+        raise error.Abort(_(b"note cannot contain a newline"))
+
 def ishunk(x):
     hunkclasses = (crecordmod.uihunk, patch.recordhunk)
     return isinstance(x, hunkclasses)
