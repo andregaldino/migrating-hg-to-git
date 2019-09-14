@@ -21,7 +21,7 @@ use libc::c_char;
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
     dirstate::{decapsule_make_dirstate_tuple, dirs_multiset::Dirs},
-    ref_sharing::{PySharedRefCell, PySharedState},
+    ref_sharing::PySharedRefCell,
 };
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
@@ -44,14 +44,12 @@ use hg::{
 //     leaks, with all methods that go along for reference sharing.
 py_class!(pub class DirstateMap |py| {
     data inner: PySharedRefCell<RustDirstateMap>;
-    data py_shared_state: PySharedState;
 
     def __new__(_cls, _root: PyObject) -> PyResult<Self> {
         let inner = RustDirstateMap::default();
         Self::create_instance(
             py,
             PySharedRefCell::new(inner),
-            PySharedState::default()
         )
     }
 

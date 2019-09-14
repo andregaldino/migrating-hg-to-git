@@ -27,7 +27,7 @@ use cpython::{PyResult, Python};
 use std::cell::{Cell, Ref, RefCell, RefMut};
 
 /// Manages the shared state between Python and Rust
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct PySharedState {
     leak_count: Cell<usize>,
     mutably_borrowed: Cell<bool>,
@@ -118,12 +118,14 @@ impl PySharedState {
 #[derive(Debug)]
 pub struct PySharedRefCell<T> {
     inner: RefCell<T>,
+    pub py_shared_state: PySharedState, // TODO: remove pub
 }
 
 impl<T> PySharedRefCell<T> {
-    pub const fn new(value: T) -> PySharedRefCell<T> {
+    pub fn new(value: T) -> PySharedRefCell<T> {
         Self {
             inner: RefCell::new(value),
+            py_shared_state: PySharedState::default(),
         }
     }
 
@@ -193,12 +195,6 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 ///
 /// # Warning
 ///
-/// The targeted `py_class!` needs to have the
-/// `data py_shared_state: PySharedState;` data attribute to compile.
-/// A better, more complicated macro is needed to automatically insert it,
-/// but this one is not yet really battle tested (what happens when
-/// multiple references are needed?). See the example below.
-///
 /// TODO allow Python container types: for now, integration with the garbage
 ///     collector does not extend to Rust structs holding references to Python
 ///     objects. Should the need surface, `__traverse__` and `__clear__` will
@@ -223,7 +219,6 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 ///
 /// py_class!(pub class MyType |py| {
 ///     data inner: PySharedRefCell<MyStruct>;
-///     data py_shared_state: PySharedState;
 /// });
 ///
 /// py_shared_ref!(MyType, MyStruct, inner, MyTypeLeakedRef);
@@ -244,7 +239,7 @@ macro_rules! py_shared_ref {
                 // assert $data_member type
                 use crate::ref_sharing::PySharedRefCell;
                 let data: &PySharedRefCell<_> = self.$data_member(py);
-                self.py_shared_state(py)
+                data.py_shared_state
                     .borrow_mut(py, unsafe { data.borrow_mut() })
             }
 
@@ -263,7 +258,7 @@ macro_rules! py_shared_ref {
                 use crate::ref_sharing::PySharedRefCell;
                 let data: &PySharedRefCell<_> = self.$data_member(py);
                 let static_ref =
-                    self.py_shared_state(py).leak_immutable(py, data)?;
+                    data.py_shared_state.leak_immutable(py, data)?;
                 let leak_handle = $leaked::new(py, self);
                 Ok((leak_handle, static_ref))
             }
@@ -292,7 +287,7 @@ macro_rules! py_shared_ref {
             fn drop(&mut self) {
                 let gil = Python::acquire_gil();
                 let py = gil.python();
-                let state = self.inner.py_shared_state(py);
+                let state = &self.inner.$data_member(py).py_shared_state;
                 unsafe {
                     state.decrease_leak_count(py, false);
                 }
@@ -324,7 +319,6 @@ macro_rules! py_shared_ref {
 ///
 /// py_class!(pub class MyType |py| {
 ///     data inner: PySharedRefCell<MyStruct>;
-///     data py_shared_state: PySharedState;
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
 ///         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
