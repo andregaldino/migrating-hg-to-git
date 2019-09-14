@@ -184,6 +184,9 @@ _linebelow = "^HG: ------------------------ >8 ------------------------$"
 
 def resolvecommitoptions(ui, opts):
     """modify commit options dict to handle related options
+
+    The return value indicates that ``rewrite.update-timestamp`` is the reason
+    the ``date`` option is set.
     """
     if opts.get('date') and opts.get('currentdate'):
         raise error.Abort(_('--date and --currentdate are mutually '
@@ -192,11 +195,20 @@ def resolvecommitoptions(ui, opts):
         raise error.Abort(_('--user and --currentuser are mutually '
                             'exclusive'))
 
-    # N.B. this is extremely similar to setupheaderopts() in mq.py
+    datemaydiffer = False  # date-only change should be ignored?
+
     if opts.get(b'currentdate'):
         opts[b'date'] = b'%d %d' % dateutil.makedate()
+    elif (not opts.get('date')
+          and ui.configbool('rewrite', 'update-timestamp')
+          and opts.get('currentdate') is None):
+        opts[b'date'] = b'%d %d' % dateutil.makedate()
+        datemaydiffer = True
+
     if opts.get(b'currentuser'):
         opts[b'user'] = ui.username()
+
+    return datemaydiffer
 
 def ishunk(x):
     hunkclasses = (crecordmod.uihunk, patch.recordhunk)
@@ -2470,22 +2482,13 @@ def amend(ui, repo, old, extra, pats, opts):
         # Also update it from the from the wctx
         extra.update(wctx.extra())
 
-        user = opts.get('user') or old.user()
+        # date-only change should be ignored?
+        datemaydiffer = resolvecommitoptions(ui, opts)
 
-        datemaydiffer = False  # date-only change should be ignored?
-        if opts.get('date') and opts.get('currentdate'):
-            raise error.Abort(_('--date and --currentdate are mutually '
-                                'exclusive'))
+        date = old.date()
         if opts.get('date'):
             date = dateutil.parsedate(opts.get('date'))
-        elif opts.get('currentdate'):
-            date = dateutil.makedate()
-        elif (ui.configbool('rewrite', 'update-timestamp')
-              and opts.get('currentdate') is None):
-            date = dateutil.makedate()
-            datemaydiffer = True
-        else:
-            date = old.date()
+        user = opts.get('user') or old.user()
 
         if len(old.parents()) > 1:
             # ctx.files() isn't reliable for merges, so fall back to the

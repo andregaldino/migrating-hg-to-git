@@ -36,9 +36,8 @@ command = registrar.command(cmdtable)
      ('e', 'edit', None, _('invoke editor on commit messages')),
      ('i', 'interactive', None, _('use interactive mode')),
      ('n', 'note', '', _('store a note on the amend')),
-     ('D', 'currentdate', None,
-      _('record the current date as commit date')),
-    ] + cmdutil.walkopts + cmdutil.commitopts + cmdutil.commitopts2,
+    ] + cmdutil.walkopts + cmdutil.commitopts + cmdutil.commitopts2
+      + cmdutil.commitopts3,
     _('[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_COMMITTING,
     inferrepo=True)
