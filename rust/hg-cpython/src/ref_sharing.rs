@@ -85,10 +85,14 @@ impl PySharedState {
     /// It's unsafe to update the reference count without knowing the
     /// reference is deleted. Do not call this function directly.
     pub unsafe fn decrease_leak_count(&self, _py: Python, mutable: bool) {
-        self.leak_count
-            .replace(self.leak_count.get().saturating_sub(1));
         if mutable {
+            assert_eq!(self.leak_count.get(), 0);
+            assert!(self.mutably_borrowed.get());
             self.mutably_borrowed.replace(false);
+        } else {
+            let count = self.leak_count.get();
+            assert!(count > 0);
+            self.leak_count.replace(count - 1);
         }
     }
 }
