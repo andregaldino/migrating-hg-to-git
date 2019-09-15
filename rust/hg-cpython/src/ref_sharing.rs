@@ -319,14 +319,6 @@ macro_rules! py_shared_ref {
             {
                 self.$shared_accessor(py).borrow_mut()
             }
-
-            // TODO: remove this function in favor of $shared_accessor(py)
-            unsafe fn leak_immutable<'a>(
-                &'a self,
-                py: Python<'a>,
-            ) -> PyResult<(PyLeakedRef, &'static $inner_struct)> {
-                self.$shared_accessor(py).leak_immutable()
-            }
         }
     };
 }
@@ -396,7 +388,8 @@ impl Drop for PyLeakedRef {
 ///     data inner: PySharedRefCell<MyStruct>;
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
-///         let (leak_handle, leaked_ref) = unsafe { self.leak_immutable(py)? };
+///         let (leak_handle, leaked_ref) =
+///             unsafe { self.inner_shared(py).leak_immutable()? };
 ///         MyTypeItemsIterator::from_inner(
 ///             py,
 ///             leak_handle,
