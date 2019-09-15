@@ -36,6 +36,7 @@ Help for uncommit
   
       --keep                     allow an empty commit after uncommiting
       --allow-dirty-working-copy allow uncommit with outstanding changes
+   -n --note TEXT                store a note on uncommit
    -I --include PATTERN [+]      include names matching the given patterns
    -X --exclude PATTERN [+]      exclude names matching the given patterns
    -m --message TEXT             use text as commit message
@@ -570,7 +571,7 @@ Bad option combinations
 
   $ hg rollback -q --config ui.rollback=True
   $ cd dir
-  $ hg uncommit .
+  $ hg uncommit . -n 'this is a note'
   note: keeping empty commit
   $ hg status
   A dir/file2.txt

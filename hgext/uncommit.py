@@ -111,7 +111,8 @@ def _commitfiltered(repo, ctx, match, keepcommit, message=None, user=None,
 @command('uncommit',
     [('', 'keep', None, _('allow an empty commit after uncommiting')),
      ('', 'allow-dirty-working-copy', False,
-    _('allow uncommit with outstanding changes'))
+    _('allow uncommit with outstanding changes')),
+     (b'n', b'note', b'', _(b'store a note on uncommit'), _(b'TEXT'))
     ] + commands.walkopts + commands.commitopts + commands.commitopts2
     + commands.commitopts3,
     _('[OPTION]... [FILE]...'),
@@ -129,6 +130,7 @@ def uncommit(ui, repo, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
 
+    cmdutil.checknotesize(ui, opts)
     cmdutil.resolvecommitoptions(ui, opts)
 
     with repo.wlock(), repo.lock():
