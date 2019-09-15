@@ -310,15 +310,6 @@ macro_rules! py_shared_ref {
                 let data = self.$data_member(py);
                 unsafe { PySharedRef::new(py, owner, data) }
             }
-
-            // TODO: remove this function in favor of $shared_accessor(py)
-            fn borrow_mut<'a>(
-                &'a self,
-                py: Python<'a>,
-            ) -> PyResult<crate::ref_sharing::PyRefMut<'a, $inner_struct>>
-            {
-                self.$shared_accessor(py).borrow_mut()
-            }
         }
     };
 }
