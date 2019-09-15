@@ -125,7 +125,7 @@ impl PySharedState {
 #[derive(Debug)]
 pub struct PySharedRefCell<T> {
     inner: RefCell<T>,
-    pub py_shared_state: PySharedState, // TODO: remove pub
+    py_shared_state: PySharedState,
 }
 
 impl<T> PySharedRefCell<T> {
@@ -156,6 +156,54 @@ impl<T> PySharedRefCell<T> {
         py: Python<'a>,
     ) -> PyResult<PyRefMut<'a, T>> {
         self.py_shared_state.borrow_mut(py, self.inner.borrow_mut())
+    }
+}
+
+/// Sharable data member of type `T` borrowed from the `PyObject`.
+pub struct PySharedRef<'a, T> {
+    py: Python<'a>,
+    owner: &'a PyObject,
+    data: &'a PySharedRefCell<T>,
+}
+
+impl<'a, T> PySharedRef<'a, T> {
+    /// # Safety
+    ///
+    /// The `data` must be owned by the `owner`. Otherwise, the leak count
+    /// would get wrong.
+    pub unsafe fn new(
+        py: Python<'a>,
+        owner: &'a PyObject,
+        data: &'a PySharedRefCell<T>,
+    ) -> Self {
+        Self { py, owner, data }
+    }
+
+    pub fn borrow(&self) -> Ref<T> {
+        self.data.borrow()
+    }
+
+    pub fn borrow_mut(&self) -> PyResult<PyRefMut<'a, T>> {
+        self.data.borrow_mut(self.py)
+    }
+
+    /// Returns a leaked reference and its management object.
+    ///
+    /// # Safety
+    ///
+    /// It's up to you to make sure that the management object lives
+    /// longer than the leaked reference. Otherwise, you'll get a
+    /// dangling reference.
+    pub unsafe fn leak_immutable(
+        &self,
+    ) -> PyResult<(PyLeakedRef, &'static T)> {
+        let (static_ref, static_state_ref) = self
+            .data
+            .py_shared_state
+            .leak_immutable(self.py, self.data)?;
+        let leak_handle =
+            PyLeakedRef::new(self.py, self.owner, static_state_ref);
+        Ok((leak_handle, static_ref))
     }
 }
 
@@ -219,6 +267,13 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 /// * `$inner_struct` is the identifier of the underlying Rust struct
 /// * `$data_member` is the identifier of the data member of `$inner_struct`
 /// that will be shared.
+/// * `$shared_accessor` is the function name to be generated, which allows
+/// safe access to the data member.
+///
+/// # Safety
+///
+/// `$data_member` must persist while the `$name` object is alive. In other
+/// words, it must be an accessor to a data field of the Python object.
 ///
 /// # Example
 ///
@@ -231,47 +286,46 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 ///     data inner: PySharedRefCell<MyStruct>;
 /// });
 ///
-/// py_shared_ref!(MyType, MyStruct, inner);
+/// py_shared_ref!(MyType, MyStruct, inner, inner_shared);
 /// ```
 macro_rules! py_shared_ref {
     (
         $name: ident,
         $inner_struct: ident,
-        $data_member: ident
+        $data_member: ident,
+        $shared_accessor: ident
     ) => {
         impl $name {
-            // TODO: remove this function in favor of inner(py).borrow_mut()
+            /// Returns a safe reference to the shared `$data_member`.
+            ///
+            /// This function guarantees that `PySharedRef` is created with
+            /// the valid `self` and `self.$data_member(py)` pair.
+            fn $shared_accessor<'a>(
+                &'a self,
+                py: Python<'a>,
+            ) -> $crate::ref_sharing::PySharedRef<'a, $inner_struct> {
+                use cpython::PythonObject;
+                use $crate::ref_sharing::PySharedRef;
+                let owner = self.as_object();
+                let data = self.$data_member(py);
+                unsafe { PySharedRef::new(py, owner, data) }
+            }
+
+            // TODO: remove this function in favor of $shared_accessor(py)
             fn borrow_mut<'a>(
                 &'a self,
                 py: Python<'a>,
             ) -> PyResult<crate::ref_sharing::PyRefMut<'a, $inner_struct>>
             {
-                // assert $data_member type
-                use crate::ref_sharing::PySharedRefCell;
-                let data: &PySharedRefCell<_> = self.$data_member(py);
-                data.borrow_mut(py)
+                self.$shared_accessor(py).borrow_mut()
             }
 
-            /// Returns a leaked reference and its management object.
-            ///
-            /// # Safety
-            ///
-            /// It's up to you to make sure that the management object lives
-            /// longer than the leaked reference. Otherwise, you'll get a
-            /// dangling reference.
+            // TODO: remove this function in favor of $shared_accessor(py)
             unsafe fn leak_immutable<'a>(
                 &'a self,
                 py: Python<'a>,
             ) -> PyResult<(PyLeakedRef, &'static $inner_struct)> {
-                use cpython::PythonObject;
-                // assert $data_member type
-                use crate::ref_sharing::PySharedRefCell;
-                let data: &PySharedRefCell<_> = self.$data_member(py);
-                let (static_ref, static_state_ref) =
-                    data.py_shared_state.leak_immutable(py, data)?;
-                let leak_handle =
-                    PyLeakedRef::new(py, self.as_object(), static_state_ref);
-                Ok((leak_handle, static_ref))
+                self.$shared_accessor(py).leak_immutable()
             }
         }
     };

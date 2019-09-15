@@ -501,7 +501,7 @@ impl DirstateMap {
     }
 }
 
-py_shared_ref!(DirstateMap, RustDirstateMap, inner);
+py_shared_ref!(DirstateMap, RustDirstateMap, inner, inner_shared);
 
 py_shared_iterator!(
     DirstateMapKeysIterator,

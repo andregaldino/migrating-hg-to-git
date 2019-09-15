@@ -107,7 +107,7 @@ py_class!(pub class Dirs |py| {
     }
 });
 
-py_shared_ref!(Dirs, DirsMultiset, inner);
+py_shared_ref!(Dirs, DirsMultiset, inner, inner_shared);
 
 impl Dirs {
     pub fn from_inner(py: Python, d: DirsMultiset) -> PyResult<Self> {
