@@ -187,24 +187,19 @@ impl<'a, T> PySharedRef<'a, T> {
         self.data.borrow_mut(self.py)
     }
 
-    /// Returns a leaked reference temporarily held by its management object.
-    ///
-    /// # Safety
-    ///
-    /// It's up to you to make sure that the management object lives
-    /// longer than the leaked reference. Otherwise, you'll get a
-    /// dangling reference.
-    pub unsafe fn leak_immutable(&self) -> PyResult<PyLeakedRef<&'static T>> {
-        let (static_ref, static_state_ref) = self
-            .data
-            .py_shared_state
-            .leak_immutable(self.py, self.data)?;
-        Ok(PyLeakedRef::new(
-            self.py,
-            self.owner,
-            static_ref,
-            static_state_ref,
-        ))
+    /// Returns a leaked reference.
+    pub fn leak_immutable(&self) -> PyResult<PyLeakedRef<&'static T>> {
+        let state = &self.data.py_shared_state;
+        unsafe {
+            let (static_ref, static_state_ref) =
+                state.leak_immutable(self.py, self.data)?;
+            Ok(PyLeakedRef::new(
+                self.py,
+                self.owner,
+                static_ref,
+                static_state_ref,
+            ))
+        }
     }
 }
 
@@ -316,14 +311,14 @@ macro_rules! py_shared_ref {
 }
 
 /// Manage immutable references to `PyObject` leaked into Python iterators.
-///
-/// In truth, this does not represent leaked references themselves;
-/// it is instead useful alongside them to manage them.
 pub struct PyLeakedRef<T> {
-    _inner: PyObject,
-    pub data: Option<T>, // TODO: remove pub
+    inner: PyObject,
+    data: Option<T>,
     py_shared_state: &'static PySharedState,
 }
+
+// DO NOT implement Deref for PyLeakedRef<T>! Dereferencing PyLeakedRef
+// without taking Python GIL wouldn't be safe.
 
 impl<T> PyLeakedRef<T> {
     /// # Safety
@@ -338,9 +333,50 @@ impl<T> PyLeakedRef<T> {
         py_shared_state: &'static PySharedState,
     ) -> Self {
         Self {
-            _inner: inner.clone_ref(py),
+            inner: inner.clone_ref(py),
             data: Some(data),
             py_shared_state,
+        }
+    }
+
+    /// Returns an immutable reference to the inner value.
+    pub fn get_ref<'a>(&'a self, _py: Python<'a>) -> &'a T {
+        self.data.as_ref().unwrap()
+    }
+
+    /// Returns a mutable reference to the inner value.
+    ///
+    /// Typically `T` is an iterator. If `T` is an immutable reference,
+    /// `get_mut()` is useless since the inner value can't be mutated.
+    pub fn get_mut<'a>(&'a mut self, _py: Python<'a>) -> &'a mut T {
+        self.data.as_mut().unwrap()
+    }
+
+    /// Converts the inner value by the given function.
+    ///
+    /// Typically `T` is a static reference to a container, and `U` is an
+    /// iterator of that container.
+    ///
+    /// # Safety
+    ///
+    /// The lifetime of the object passed in to the function `f` is cheated.
+    /// It's typically a static reference, but is valid only while the
+    /// corresponding `PyLeakedRef` is alive. Do not copy it out of the
+    /// function call.
+    pub unsafe fn map<U>(
+        mut self,
+        py: Python,
+        f: impl FnOnce(T) -> U,
+    ) -> PyLeakedRef<U> {
+        // f() could make the self.data outlive. That's why map() is unsafe.
+        // In order to make this function safe, maybe we'll need a way to
+        // temporarily restrict the lifetime of self.data and translate the
+        // returned object back to Something<'static>.
+        let new_data = f(self.data.take().unwrap());
+        PyLeakedRef {
+            inner: self.inner.clone_ref(py),
+            data: Some(new_data),
+            py_shared_state: self.py_shared_state,
         }
     }
 }
@@ -352,6 +388,9 @@ impl<T> Drop for PyLeakedRef<T> {
         // sure that the state is only accessed by this thread.
         let gil = Python::acquire_gil();
         let py = gil.python();
+        if self.data.is_none() {
+            return; // moved to another PyLeakedRef
+        }
         unsafe {
             self.py_shared_state.decrease_leak_count(py, false);
         }
@@ -383,13 +422,10 @@ impl<T> Drop for PyLeakedRef<T> {
 ///     data inner: PySharedRefCell<MyStruct>;
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
-///         let mut leak_handle =
-///             unsafe { self.inner_shared(py).leak_immutable()? };
-///         let leaked_ref = leak_handle.data.take().unwrap();
+///         let leaked_ref = self.inner_shared(py).leak_immutable()?;
 ///         MyTypeItemsIterator::from_inner(
 ///             py,
-///             leak_handle,
-///             leaked_ref.iter(),
+///             unsafe { leaked_ref.map(py, |o| o.iter()) },
 ///         )
 ///     }
 /// });
@@ -411,8 +447,7 @@ impl<T> Drop for PyLeakedRef<T> {
 ///
 /// py_shared_iterator!(
 ///     MyTypeItemsIterator,
-///     PyLeakedRef<&'static MyStruct>,
-///     HashMap<'static, Vec<u8>, Vec<u8>>,
+///     PyLeakedRef<HashMap<'static, Vec<u8>, Vec<u8>>>,
 ///     MyType::translate_key_value,
 ///     Option<(PyBytes, PyBytes)>
 /// );
@@ -421,18 +456,16 @@ macro_rules! py_shared_iterator {
     (
         $name: ident,
         $leaked: ty,
-        $iterator_type: ty,
         $success_func: expr,
         $success_type: ty
     ) => {
         py_class!(pub class $name |py| {
             data inner: RefCell<Option<$leaked>>;
-            data it: RefCell<$iterator_type>;
 
             def __next__(&self) -> PyResult<$success_type> {
                 let mut inner_opt = self.inner(py).borrow_mut();
-                if inner_opt.is_some() {
-                    match self.it(py).borrow_mut().next() {
+                if let Some(leaked) = inner_opt.as_mut() {
+                    match leaked.get_mut(py).next() {
                         None => {
                             // replace Some(inner) by None, drop $leaked
                             inner_opt.take();
@@ -456,12 +489,10 @@ macro_rules! py_shared_iterator {
             pub fn from_inner(
                 py: Python,
                 leaked: $leaked,
-                it: $iterator_type
             ) -> PyResult<Self> {
                 Self::create_instance(
                     py,
                     RefCell::new(Some(leaked)),
-                    RefCell::new(it)
                 )
             }
         }
