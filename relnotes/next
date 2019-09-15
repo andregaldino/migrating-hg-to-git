@@ -4,6 +4,8 @@
 
  * The amend extension supports the `--close-branch` argument.
 
+ * The amend extension supports the `--secret` argument.
+
  * The uncommit extension supports the `rewrite.update-timestamp` config option.
 
 == New Experimental Features ==

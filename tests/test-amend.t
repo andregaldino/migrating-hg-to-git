@@ -452,9 +452,10 @@ Bad combination of date options:
 
 Close branch
 
-  $ hg amend --close-branch
-  $ hg log --limit 1 -T 'close={get(extras, "close")}\n'
+  $ hg amend --secret --close-branch
+  $ hg log --limit 1 -T 'close={get(extras, "close")}\nphase={phase}\n'
   close=1
+  phase=secret
 
   $ cd ..
 

@@ -36,6 +36,7 @@ command = registrar.command(cmdtable)
      ('i', 'interactive', None, _('use interactive mode')),
      (b'', b'close-branch', None,
       _(b'mark a branch as closed, hiding it from the branch list')),
+     (b's', b'secret', None, _(b'use the secret phase for committing')),
      ('n', 'note', '', _('store a note on the amend')),
     ] + cmdutil.walkopts + cmdutil.commitopts + cmdutil.commitopts2
       + cmdutil.commitopts3,
