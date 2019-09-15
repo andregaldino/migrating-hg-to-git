@@ -74,8 +74,8 @@ impl PySharedState {
         }
     }
 
-    /// Return a reference to the wrapped data with an artificial static
-    /// lifetime.
+    /// Return a reference to the wrapped data and its state with an
+    /// artificial static lifetime.
     /// We need to be protected by the GIL for thread-safety.
     ///
     /// # Safety
@@ -86,7 +86,7 @@ impl PySharedState {
         &self,
         py: Python,
         data: &PySharedRefCell<T>,
-    ) -> PyResult<&'static T> {
+    ) -> PyResult<(&'static T, &'static PySharedState)> {
         if self.mutably_borrowed.get() {
             return Err(AlreadyBorrowed::new(
                 py,
@@ -94,9 +94,12 @@ impl PySharedState {
                  mutable reference in Python objects",
             ));
         }
+        // TODO: it's weird that self is data.py_shared_state. Maybe we
+        // can move stuff to PySharedRefCell?
         let ptr = data.as_ptr();
+        let state_ptr: *const PySharedState = &data.py_shared_state;
         self.leak_count.replace(self.leak_count.get() + 1);
-        Ok(&*ptr)
+        Ok((&*ptr, &*state_ptr))
     }
 
     /// # Safety
@@ -267,9 +270,9 @@ macro_rules! py_shared_ref {
                 // assert $data_member type
                 use crate::ref_sharing::PySharedRefCell;
                 let data: &PySharedRefCell<_> = self.$data_member(py);
-                let static_ref =
+                let (static_ref, static_state_ref) =
                     data.py_shared_state.leak_immutable(py, data)?;
-                let leak_handle = $leaked::new(py, self);
+                let leak_handle = $leaked::new(py, self, static_state_ref);
                 Ok((leak_handle, static_ref))
             }
         }
@@ -280,26 +283,38 @@ macro_rules! py_shared_ref {
         /// In truth, this does not represent leaked references themselves;
         /// it is instead useful alongside them to manage them.
         pub struct $leaked {
-            inner: $name,
+            _inner: $name,
+            py_shared_state: &'static crate::ref_sharing::PySharedState,
         }
 
         impl $leaked {
+            /// # Safety
+            ///
+            /// The `py_shared_state` must be owned by the `inner` Python
+            /// object.
             // Marked as unsafe so client code wouldn't construct $leaked
             // struct by mistake. Its drop() is unsafe.
-            unsafe fn new(py: Python, inner: &$name) -> Self {
+            unsafe fn new(
+                py: Python,
+                inner: &$name,
+                py_shared_state: &'static crate::ref_sharing::PySharedState,
+            ) -> Self {
                 Self {
-                    inner: inner.clone_ref(py),
+                    _inner: inner.clone_ref(py),
+                    py_shared_state,
                 }
             }
         }
 
         impl Drop for $leaked {
             fn drop(&mut self) {
+                // py_shared_state should be alive since we do have
+                // a Python reference to the owner object. Taking GIL makes
+                // sure that the state is only accessed by this thread.
                 let gil = Python::acquire_gil();
                 let py = gil.python();
-                let state = &self.inner.$data_member(py).py_shared_state;
                 unsafe {
-                    state.decrease_leak_count(py, false);
+                    self.py_shared_state.decrease_leak_count(py, false);
                 }
             }
         }
