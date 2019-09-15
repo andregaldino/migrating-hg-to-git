@@ -187,23 +187,24 @@ impl<'a, T> PySharedRef<'a, T> {
         self.data.borrow_mut(self.py)
     }
 
-    /// Returns a leaked reference and its management object.
+    /// Returns a leaked reference temporarily held by its management object.
     ///
     /// # Safety
     ///
     /// It's up to you to make sure that the management object lives
     /// longer than the leaked reference. Otherwise, you'll get a
     /// dangling reference.
-    pub unsafe fn leak_immutable(
-        &self,
-    ) -> PyResult<(PyLeakedRef, &'static T)> {
+    pub unsafe fn leak_immutable(&self) -> PyResult<PyLeakedRef<&'static T>> {
         let (static_ref, static_state_ref) = self
             .data
             .py_shared_state
             .leak_immutable(self.py, self.data)?;
-        let leak_handle =
-            PyLeakedRef::new(self.py, self.owner, static_state_ref);
-        Ok((leak_handle, static_ref))
+        Ok(PyLeakedRef::new(
+            self.py,
+            self.owner,
+            static_ref,
+            static_state_ref,
+        ))
     }
 }
 
@@ -318,12 +319,13 @@ macro_rules! py_shared_ref {
 ///
 /// In truth, this does not represent leaked references themselves;
 /// it is instead useful alongside them to manage them.
-pub struct PyLeakedRef {
+pub struct PyLeakedRef<T> {
     _inner: PyObject,
+    pub data: Option<T>, // TODO: remove pub
     py_shared_state: &'static PySharedState,
 }
 
-impl PyLeakedRef {
+impl<T> PyLeakedRef<T> {
     /// # Safety
     ///
     /// The `py_shared_state` must be owned by the `inner` Python object.
@@ -332,16 +334,18 @@ impl PyLeakedRef {
     pub unsafe fn new(
         py: Python,
         inner: &PyObject,
+        data: T,
         py_shared_state: &'static PySharedState,
     ) -> Self {
         Self {
             _inner: inner.clone_ref(py),
+            data: Some(data),
             py_shared_state,
         }
     }
 }
 
-impl Drop for PyLeakedRef {
+impl<T> Drop for PyLeakedRef<T> {
     fn drop(&mut self) {
         // py_shared_state should be alive since we do have
         // a Python reference to the owner object. Taking GIL makes
@@ -379,8 +383,9 @@ impl Drop for PyLeakedRef {
 ///     data inner: PySharedRefCell<MyStruct>;
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
-///         let (leak_handle, leaked_ref) =
+///         let mut leak_handle =
 ///             unsafe { self.inner_shared(py).leak_immutable()? };
+///         let leaked_ref = leak_handle.data.take().unwrap();
 ///         MyTypeItemsIterator::from_inner(
 ///             py,
 ///             leak_handle,
@@ -406,7 +411,7 @@ impl Drop for PyLeakedRef {
 ///
 /// py_shared_iterator!(
 ///     MyTypeItemsIterator,
-///     PyLeakedRef,
+///     PyLeakedRef<&'static MyStruct>,
 ///     HashMap<'static, Vec<u8>, Vec<u8>>,
 ///     MyType::translate_key_value,
 ///     Option<(PyBytes, PyBytes)>

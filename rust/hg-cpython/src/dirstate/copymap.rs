@@ -13,6 +13,7 @@ use std::cell::RefCell;
 
 use crate::dirstate::dirstate_map::DirstateMap;
 use crate::ref_sharing::PyLeakedRef;
+use hg::DirstateMap as RustDirstateMap;
 use hg::{utils::hg_path::HgPathBuf, CopyMapIter};
 
 py_class!(pub class CopyMap |py| {
@@ -104,7 +105,7 @@ impl CopyMap {
 
 py_shared_iterator!(
     CopyMapKeysIterator,
-    PyLeakedRef,
+    PyLeakedRef<&'static RustDirstateMap>,
     CopyMapIter<'static>,
     CopyMap::translate_key,
     Option<PyBytes>
@@ -112,7 +113,7 @@ py_shared_iterator!(
 
 py_shared_iterator!(
     CopyMapItemsIterator,
-    PyLeakedRef,
+    PyLeakedRef<&'static RustDirstateMap>,
     CopyMapIter<'static>,
     CopyMap::translate_key_value,
     Option<(PyBytes, PyBytes)>

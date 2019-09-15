@@ -92,8 +92,9 @@ py_class!(pub class Dirs |py| {
             })
     }
     def __iter__(&self) -> PyResult<DirsMultisetKeysIterator> {
-        let (leak_handle, leaked_ref) =
+        let mut leak_handle =
             unsafe { self.inner_shared(py).leak_immutable()? };
+        let leaked_ref = leak_handle.data.take().unwrap();
         DirsMultisetKeysIterator::from_inner(
             py,
             leak_handle,
@@ -125,7 +126,7 @@ impl Dirs {
 
 py_shared_iterator!(
     DirsMultisetKeysIterator,
-    PyLeakedRef,
+    PyLeakedRef<&'static DirsMultiset>,
     DirsMultisetIter<'static>,
     Dirs::translate_key,
     Option<PyBytes>

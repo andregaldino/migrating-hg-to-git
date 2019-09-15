@@ -304,8 +304,9 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def keys(&self) -> PyResult<DirstateMapKeysIterator> {
-        let (leak_handle, leaked_ref) =
+        let mut leak_handle =
             unsafe { self.inner_shared(py).leak_immutable()? };
+        let leaked_ref = leak_handle.data.take().unwrap();
         DirstateMapKeysIterator::from_inner(
             py,
             leak_handle,
@@ -314,8 +315,9 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def items(&self) -> PyResult<DirstateMapItemsIterator> {
-        let (leak_handle, leaked_ref) =
+        let mut leak_handle =
             unsafe { self.inner_shared(py).leak_immutable()? };
+        let leaked_ref = leak_handle.data.take().unwrap();
         DirstateMapItemsIterator::from_inner(
             py,
             leak_handle,
@@ -324,8 +326,9 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def __iter__(&self) -> PyResult<DirstateMapKeysIterator> {
-        let (leak_handle, leaked_ref) =
+        let mut leak_handle =
             unsafe { self.inner_shared(py).leak_immutable()? };
+        let leaked_ref = leak_handle.data.take().unwrap();
         DirstateMapKeysIterator::from_inner(
             py,
             leak_handle,
@@ -443,8 +446,9 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymapiter(&self) -> PyResult<CopyMapKeysIterator> {
-        let (leak_handle, leaked_ref) =
+        let mut leak_handle =
             unsafe { self.inner_shared(py).leak_immutable()? };
+        let leaked_ref = leak_handle.data.take().unwrap();
         CopyMapKeysIterator::from_inner(
             py,
             leak_handle,
@@ -453,8 +457,9 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymapitemsiter(&self) -> PyResult<CopyMapItemsIterator> {
-        let (leak_handle, leaked_ref) =
+        let mut leak_handle =
             unsafe { self.inner_shared(py).leak_immutable()? };
+        let leaked_ref = leak_handle.data.take().unwrap();
         CopyMapItemsIterator::from_inner(
             py,
             leak_handle,
@@ -493,7 +498,7 @@ py_shared_ref!(DirstateMap, RustDirstateMap, inner, inner_shared);
 
 py_shared_iterator!(
     DirstateMapKeysIterator,
-    PyLeakedRef,
+    PyLeakedRef<&'static RustDirstateMap>,
     StateMapIter<'static>,
     DirstateMap::translate_key,
     Option<PyBytes>
@@ -501,7 +506,7 @@ py_shared_iterator!(
 
 py_shared_iterator!(
     DirstateMapItemsIterator,
-    PyLeakedRef,
+    PyLeakedRef<&'static RustDirstateMap>,
     StateMapIter<'static>,
     DirstateMap::translate_key_value,
     Option<(PyBytes, PyObject)>
