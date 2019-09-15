@@ -2,6 +2,8 @@
 
  * The amend extension supports the `--currentuser` argument.
 
+ * The amend extension supports the `--close-branch` argument.
+
  * The uncommit extension supports the `rewrite.update-timestamp` config option.
 
 == New Experimental Features ==

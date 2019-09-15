@@ -450,6 +450,12 @@ Bad combination of date options:
   abort: --date and --currentdate are mutually exclusive
   [255]
 
+Close branch
+
+  $ hg amend --close-branch
+  $ hg log --limit 1 -T 'close={get(extras, "close")}\n'
+  close=1
+
   $ cd ..
 
 Corner case of amend from issue6157:
