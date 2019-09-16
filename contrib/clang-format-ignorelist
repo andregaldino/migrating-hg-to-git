@@ -49,6 +49,10 @@ contrib/python-zstandard/zstd/compress/hist.h
 contrib/python-zstandard/zstd/compress/huf_compress.c
 contrib/python-zstandard/zstd/compress/zstd_compress.c
 contrib/python-zstandard/zstd/compress/zstd_compress_internal.h
+contrib/python-zstandard/zstd/compress/zstd_compress_literals.c
+contrib/python-zstandard/zstd/compress/zstd_compress_literals.h
+contrib/python-zstandard/zstd/compress/zstd_compress_sequences.c
+contrib/python-zstandard/zstd/compress/zstd_compress_sequences.h
 contrib/python-zstandard/zstd/compress/zstd_double_fast.c
 contrib/python-zstandard/zstd/compress/zstd_double_fast.h
 contrib/python-zstandard/zstd/compress/zstd_fast.c
