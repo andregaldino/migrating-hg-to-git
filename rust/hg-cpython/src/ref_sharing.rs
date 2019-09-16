@@ -33,6 +33,10 @@ pub struct PySharedState {
     mutably_borrowed: Cell<bool>,
 }
 
+// &PySharedState can be Send because any access to inner cells is
+// synchronized by the GIL.
+unsafe impl Sync for PySharedState {}
+
 impl PySharedState {
     pub fn borrow_mut<'a, T>(
         &'a self,
