@@ -514,6 +514,7 @@ def archive(ui, repo, dest, **opts):
     :``tar``:   tar archive, uncompressed
     :``tbz2``:  tar archive, compressed using bzip2
     :``tgz``:   tar archive, compressed using gzip
+    :``txz``:   tar archive, compressed using lzma (only in Python 3)
     :``uzip``:  zip archive, uncompressed
     :``zip``:   zip archive, compressed using deflate
 

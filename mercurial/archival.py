@@ -67,6 +67,7 @@ exts = {
     'tbz2': ['.tbz2', '.tar.bz2'],
     'tgz': ['.tgz', '.tar.gz'],
     'zip': ['.zip'],
+    'txz': ['.txz', '.tar.xz']
     }
 
 def guesskind(dest):
@@ -270,6 +271,7 @@ archivers = {
     'tar': tarit,
     'tbz2': lambda name, mtime: tarit(name, mtime, 'bz2'),
     'tgz': lambda name, mtime: tarit(name, mtime, 'gz'),
+    'txz': lambda name, mtime: tarit(name, mtime, 'xz'),
     'uzip': lambda name, mtime: zipit(name, mtime, False),
     'zip': zipit,
     }
@@ -294,6 +296,9 @@ def archive(repo, dest, node, kind, decode=True, match=None,
 
     subrepos tells whether to include subrepos.
     '''
+
+    if kind == 'txz' and not pycompat.ispy3:
+        raise error.Abort(_('xz compression is only available in Python 3'))
 
     if kind == 'files':
         if prefix:

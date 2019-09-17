@@ -566,6 +566,19 @@ old file -- date clamped to 1980
   *172*80*00:00*old/.hg_archival.txt (glob)
   *0*80*00:00*old/old (glob)
 
+test xz support only available in Python 3.4
+
+#if py3
+  $ hg archive ../archive.txz
+  $ xz -l ../archive.txz | head -n1
+  Strms  Blocks   Compressed Uncompressed  Ratio  Check   Filename
+  $ rm -f ../archive.txz
+#else
+  $ hg archive ../archive.txz
+  abort: xz compression is only available in Python 3
+  [255]
+#endif
+
 show an error when a provided pattern matches no files
 
   $ hg archive -I file_that_does_not_exist.foo ../empty.zip
