@@ -54,6 +54,10 @@ def _playback(journal, report, opener, vfsmap, entries, backupentries,
             checkambig = checkambigfiles and (f, '') in checkambigfiles
             try:
                 fp = opener(f, 'a', checkambig=checkambig)
+                if fp.tell() < o:
+                    raise error.Abort(_(
+                            "attempted to truncate %s to %d bytes, but it was "
+                            "already %d bytes\n") % (f, o, fp.tell()))
                 fp.truncate(o)
                 fp.close()
             except IOError:
