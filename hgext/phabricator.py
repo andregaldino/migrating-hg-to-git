@@ -136,8 +136,8 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
 
     def sanitiserequest(request):
         request.body = re.sub(
-            r'cli-[a-z0-9]+',
-            r'cli-hahayouwish',
+            br'cli-[a-z0-9]+',
+            br'cli-hahayouwish',
             request.body
         )
         return request
