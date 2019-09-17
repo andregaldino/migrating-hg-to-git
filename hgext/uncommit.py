@@ -177,7 +177,7 @@ def uncommit(ui, repo, *pats, **opts):
         with repo.transaction('uncommit'):
             if not (opts[b'message'] or opts[b'logfile']):
                 opts[b'message'] = old.description()
-            message = cmdutil.logmessage(ui, pycompat.byteskwargs(opts))
+            message = cmdutil.logmessage(ui, opts)
 
             keepcommit = pats
             if not keepcommit:
