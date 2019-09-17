@@ -1745,6 +1745,7 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
          [
           (b'r', b'revs', [], b'restrict search to these revisions'),
           (b'', b'timing', False, b'provides extra data (costly)'),
+          (b'', b'stats', False, b'provides statistic about the measured data'),
          ])
 def perfhelperpathcopies(ui, repo, revs=[], **opts):
     """find statistic about potential parameters for the `perftracecopies`
@@ -1763,6 +1764,7 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
     opts = _byteskwargs(opts)
     fm = ui.formatter(b'perf', opts)
     dotiming = opts[b'timing']
+    dostats = opts[b'stats']
 
     if dotiming:
         header = '%12s %12s %12s %12s %12s %12s\n'
@@ -1781,6 +1783,16 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
     if not revs:
         revs = ['all()']
     revs = scmutil.revrange(repo, revs)
+
+
+    if dostats:
+        alldata = {
+            'nbrevs': [],
+            'nbmissingfiles': [],
+        }
+        if dotiming:
+            alldata['nbrenames'] = []
+            alldata['time'] = []
 
     roi = repo.revs('merge() and %ld', revs)
     for r in roi:
@@ -1801,6 +1813,16 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
                     b'nbrevs': len(repo.revs('%d::%d', b, p)),
                     b'nbmissingfiles': len(missing),
                 }
+                alldata['nbrevs'].append((
+                    data['nbrevs'],
+                    base.hex(),
+                    parent.hex(),
+                ))
+                alldata['nbmissingfiles'].append((
+                    data['nbmissingfiles'],
+                    base.hex(),
+                    parent.hex(),
+                ))
                 if dotiming:
                     begin = util.timer()
                     renames = copies.pathcopies(base, parent)
@@ -1808,6 +1830,16 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
                     # not very stable timing since we did only one run
                     data['time'] = end - begin
                     data['nbrenamedfiles'] = len(renames)
+                    alldata['time'].append((
+                        data['time'],
+                        base.hex(),
+                        parent.hex(),
+                    ))
+                    alldata['nbrenames'].append((
+                        data['nbrenamedfiles'],
+                        base.hex(),
+                        parent.hex(),
+                    ))
                 fm.startitem()
                 fm.data(**data)
                 out = data.copy()
@@ -1816,6 +1848,19 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
                 fm.plain(output % out)
 
     fm.end()
+    if dostats:
+        # use a second formatter because the data are quite different, not sure
+        # how it flies with the templater.
+        fm = ui.formatter(b'perf', opts)
+        entries = [
+            ('nbrevs', 'number of revision covered'),
+            ('nbmissingfiles', 'number of missing files at head'),
+        ]
+        if dotiming:
+            entries.append(('nbrenames',
+                            'renamed files'))
+            entries.append(('time', 'time'))
+        _displaystats(ui, opts, entries, alldata)
 
 @command(b'perfcca', formatteropts)
 def perfcca(ui, repo, **opts):
