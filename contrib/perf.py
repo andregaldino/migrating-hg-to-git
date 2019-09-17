@@ -1502,10 +1502,57 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
     timer(format)
     fm.end()
 
+def _displaystats(ui, opts, entries, data):
+    pass
+    # use a second formatter because the data are quite different, not sure
+    # how it flies with the templater.
+    fm = ui.formatter(b'perf-stats', opts)
+    for key, title in entries:
+        values = data[key]
+        nbvalues = len(data)
+        values.sort()
+        stats = {
+            'key': key,
+            'title': title,
+            'nbitems': len(values),
+            'min': values[0][0],
+            '10%': values[(nbvalues * 10) // 100][0],
+            '25%': values[(nbvalues * 25) // 100][0],
+            '50%': values[(nbvalues * 50) // 100][0],
+            '75%': values[(nbvalues * 75) // 100][0],
+            '80%': values[(nbvalues * 80) // 100][0],
+            '85%': values[(nbvalues * 85) // 100][0],
+            '90%': values[(nbvalues * 90) // 100][0],
+            '95%': values[(nbvalues * 95) // 100][0],
+            '99%': values[(nbvalues * 99) // 100][0],
+            'max': values[-1][0],
+        }
+        fm.startitem()
+        fm.data(**stats)
+        # make node pretty for the human output
+        fm.plain('### %s (%d items)\n' % (title, len(values)))
+        lines = [
+            'min',
+            '10%',
+            '25%',
+            '50%',
+            '75%',
+            '80%',
+            '85%',
+            '90%',
+            '95%',
+            '99%',
+            'max',
+        ]
+        for l in lines:
+            fm.plain('%s: %s\n' % (l, stats[l]))
+    fm.end()
+
 @command(b'perfhelper-mergecopies', formatteropts +
          [
           (b'r', b'revs', [], b'restrict search to these revisions'),
           (b'', b'timing', False, b'provides extra data (costly)'),
+          (b'', b'stats', False, b'provides statistic about the measured data'),
          ])
 def perfhelpermergecopies(ui, repo, revs=[], **opts):
     """find statistics about potential parameters for `perfmergecopies`
@@ -1525,6 +1572,7 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
     opts = _byteskwargs(opts)
     fm = ui.formatter(b'perf', opts)
     dotiming = opts[b'timing']
+    dostats = opts[b'stats']
 
     output_template = [
         ("base", "%(base)12s"),
@@ -1553,6 +1601,17 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
         revs = ['all()']
     revs = scmutil.revrange(repo, revs)
 
+    if dostats:
+        alldata = {
+            'nbrevs': [],
+            'nbmissingfiles': [],
+        }
+        if dotiming:
+            alldata['parentnbrenames'] = []
+            alldata['totalnbrenames'] = []
+            alldata['parenttime'] = []
+            alldata['totaltime'] = []
+
     roi = repo.revs('merge() and %ld', revs)
     for r in roi:
         ctx = repo[r]
@@ -1572,6 +1631,29 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
                 b'p2.nbrevs': len(repo.revs('%d::%d', b.rev(), p2.rev())),
                 b'p2.nbmissingfiles': len(p2missing),
             }
+            if dostats:
+                if p1missing:
+                    alldata['nbrevs'].append((
+                        data['p1.nbrevs'],
+                        b.hex(),
+                        p1.hex()
+                    ))
+                    alldata['nbmissingfiles'].append((
+                        data['p1.nbmissingfiles'],
+                        b.hex(),
+                        p1.hex()
+                    ))
+                if p2missing:
+                    alldata['nbrevs'].append((
+                        data['p2.nbrevs'],
+                        b.hex(),
+                        p2.hex()
+                    ))
+                    alldata['nbmissingfiles'].append((
+                        data['p2.nbmissingfiles'],
+                        b.hex(),
+                        p2.hex()
+                    ))
             if dotiming:
                 begin = util.timer()
                 mergedata = copies.mergecopies(repo, p1, p2, b)
@@ -1596,6 +1678,43 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
                 end = util.timer()
                 data['p1.renamedfiles'] = len(p1renames)
                 data['p2.renamedfiles'] = len(p2renames)
+
+                if dostats:
+                    if p1missing:
+                        alldata['parentnbrenames'].append((
+                            data['p1.renamedfiles'],
+                            b.hex(),
+                            p1.hex()
+                        ))
+                        alldata['parenttime'].append((
+                            data['p1.time'],
+                            b.hex(),
+                            p1.hex()
+                        ))
+                    if p2missing:
+                        alldata['parentnbrenames'].append((
+                            data['p2.renamedfiles'],
+                            b.hex(),
+                            p2.hex()
+                        ))
+                        alldata['parenttime'].append((
+                            data['p2.time'],
+                            b.hex(),
+                            p2.hex()
+                        ))
+                    if p1missing or p2missing:
+                        alldata['totalnbrenames'].append((
+                            data['nbrenamedfiles'],
+                            b.hex(),
+                            p1.hex(),
+                            p2.hex()
+                        ))
+                        alldata['totaltime'].append((
+                            data['time'],
+                            b.hex(),
+                            p1.hex(),
+                            p2.hex()
+                        ))
             fm.startitem()
             fm.data(**data)
             # make node pretty for the human output
@@ -1606,6 +1725,21 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
             fm.plain(output % out)
 
     fm.end()
+    if dostats:
+        # use a second formatter because the data are quite different, not sure
+        # how it flies with the templater.
+        entries = [
+            ('nbrevs', 'number of revision covered'),
+            ('nbmissingfiles', 'number of missing files at head'),
+        ]
+        if dotiming:
+            entries.append(('parentnbrenames',
+                            'rename from one parent to base'))
+            entries.append(('totalnbrenames', 'total number of renames'))
+            entries.append(('parenttime', 'time for one parent'))
+            entries.append(('totaltime', 'time for both parents'))
+        _displaystats(ui, opts, entries, alldata)
+
 
 @command(b'perfhelper-pathcopies', formatteropts +
          [
