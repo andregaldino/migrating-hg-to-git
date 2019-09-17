@@ -62,13 +62,6 @@ annotate cache greatly. Run "debugbuildlinkrevcache" before
     # the server. (default: 10)
     clientfetchthreshold = 10
 
-    # use flock instead of the file existence lock
-    # flock may not work well on some network filesystems, but they avoid
-    # creating and deleting files frequently, which is faster when updating
-    # the annotate cache in batch. if you have issues with this option, set it
-    # to False. (default: True if flock is supported, False otherwise)
-    useflock = True
-
     # for "fctx" mode, always follow renames regardless of command line option.
     # this is a BC with the original command but will reduced the space needed
     # for annotate cache, and is useful for client-server setup since the
@@ -100,8 +93,6 @@ annotate cache greatly. Run "debugbuildlinkrevcache" before
 #
 # * rename the config knob for updating the local cache from a remote server
 #
-# * move `flock` based locking to a common area
-#
 # * revise wireprotocol for sharing annotate files
 #
 # * figure out a sensible default for `mainbranch` (with the caveat
@@ -114,7 +105,6 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial import (
-    configitems,
     error as hgerror,
     localrepo,
     registrar,
@@ -122,7 +112,6 @@ from mercurial import (
 
 from . import (
     commands,
-    context,
     protocol,
 )
 
@@ -139,7 +128,6 @@ configitem = registrar.configitem(configtable)
 
 configitem('fastannotate', 'modes', default=['fastannotate'])
 configitem('fastannotate', 'server', default=False)
-configitem('fastannotate', 'useflock', default=configitems.dynamicdefault)
 configitem('fastannotate', 'client', default=False)
 configitem('fastannotate', 'unfilteredrepo', default=True)
 configitem('fastannotate', 'defaultformat', default=['number'])
@@ -151,14 +139,6 @@ configitem('fastannotate', 'clientfetchthreshold', default=10)
 configitem('fastannotate', 'serverbuildondemand', default=True)
 configitem('fastannotate', 'remotepath', default='default')
 
-def _flockavailable():
-    try:
-        import fcntl
-        fcntl.flock
-    except (AttributeError, ImportError):
-        return False
-    else:
-        return True
 
 def uisetup(ui):
     modes = set(ui.configlist('fastannotate', 'modes'))
@@ -179,9 +159,6 @@ def uisetup(ui):
 
     if ui.configbool('fastannotate', 'server'):
         protocol.serveruisetup(ui)
-
-    if ui.configbool('fastannotate', 'useflock', _flockavailable()):
-        context.pathhelper.lock = context.pathhelper._lockflock
 
 def extsetup(ui):
     # fastannotate has its own locking, without depending on repo lock
