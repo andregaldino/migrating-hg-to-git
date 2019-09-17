@@ -132,60 +132,8 @@ Commenting when phabsending:
   D1253 - updated - 1acd4b60af38: create comment for phabricator test
 
 Phabsending a skipped commit:
-#if no-py3
   $ hg phabsend --no-amend -r . --test-vcr "$VCR/phabsend-skipped.json"
   D1253 - skipped - 1acd4b60af38: create comment for phabricator test
-#endif
-BROKEN: shouldn't error under py3
-#if py3
-  $ hg phabsend --no-amend -r . --test-vcr "$VCR/phabsend-skipped.json"
-  ** unknown exception encountered, please report by visiting
-  ** https://mercurial-scm.org/wiki/BugTracker
-  ** Python 3* (glob)
-  ** Mercurial Distributed SCM (version *) (glob)
-  ** Extensions loaded: phabricator
-  Traceback (most recent call last):
-    File "*/install/bin/hg", line *, in <module> (glob)
-      dispatch.run()
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in run (glob)
-      status = dispatch(req)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in dispatch (glob)
-      ret = _runcatch(req) or 0
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _runcatch (glob)
-      return _callcatch(ui, _runcatchfunc)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _callcatch (glob)
-      return scmutil.callcatch(ui, func)
-    File "*/install/lib/python/mercurial/scmutil.py", line *, in callcatch (glob)
-      return func()
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _runcatchfunc (glob)
-      return _dispatch(req)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _dispatch (glob)
-      cmdpats, cmdoptions)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in runcommand (glob)
-      ret = _runcommand(ui, options, cmd, d)
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in _runcommand (glob)
-      return cmdfunc()
-    File "*/install/lib/python/mercurial/dispatch.py", line *, in <lambda> (glob)
-      d = lambda: util.checksignature(func)(ui, *args, **strcmdopt)
-    File "*/install/lib/python/mercurial/util.py", line *, in check (glob)
-      return func(*args, **kwargs)
-    File "*/install/lib/python/hgext/phabricator.py", line *, in inner (glob)
-      return fn(*args, **kwargs)
-    File "*/install/lib/python/hgext/phabricator.py", line *, in phabsend (glob)
-      newrevphid = querydrev(repo, str(revid))[0][b'phid']
-    File "*/install/lib/python/hgext/phabricator.py", line *, in querydrev (glob)
-      tree = _parse(spec)
-    File "*/install/lib/python/hgext/phabricator.py", line *, in _parse (glob)
-      tree, pos = parser.parser(_elements).parse(_tokenize(text))
-    File "*/install/lib/python/mercurial/parser.py", line *, in parse (glob)
-      self._advance()
-    File "*/install/lib/python/mercurial/parser.py", line *, in _advance (glob)
-      self.current = next(self._iter, None)
-    File "*/install/lib/python/hgext/phabricator.py", line *, in _tokenize (glob)
-      view = memoryview(text) # zero-copy slice
-  TypeError: memoryview: a bytes-like object is required, not 'str'
-  [1]
-#endif
 
 Phabreading a DREV with a local:commits time as a string:
   $ hg phabread --test-vcr "$VCR/phabread-str-time.json" D1285

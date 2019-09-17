@@ -612,7 +612,7 @@ def phabsend(ui, repo, *revs, **opts):
         else:
             # Nothing changed. But still set "newrevphid" so the next revision
             # could depend on this one and "newrevid" for the summary line.
-            newrevphid = querydrev(repo, str(revid))[0][b'phid']
+            newrevphid = querydrev(repo, b'%d' % revid)[0][b'phid']
             newrevid = revid
             action = b'skipped'
 
