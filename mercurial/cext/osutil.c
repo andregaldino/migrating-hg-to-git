@@ -765,6 +765,8 @@ bail:
 
 #endif /* CMSG_LEN */
 
+/* allow disabling setprocname via compiler flags */
+#ifndef SETPROCNAME_USE_NONE
 #if defined(HAVE_SETPROCTITLE)
 /* setproctitle is the first choice - available in FreeBSD */
 #define SETPROCNAME_USE_SETPROCTITLE
@@ -775,6 +777,7 @@ bail:
 #else
 #define SETPROCNAME_USE_NONE
 #endif
+#endif /* ndef SETPROCNAME_USE_NONE */
 
 #ifndef SETPROCNAME_USE_NONE
 static PyObject *setprocname(PyObject *self, PyObject *args)
