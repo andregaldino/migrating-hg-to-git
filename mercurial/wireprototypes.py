@@ -147,14 +147,14 @@ def unescapebatcharg(escaped):
 
 # mapping of options accepted by getbundle and their types
 #
-# Meant to be extended by extensions. It is extensions responsibility to ensure
-# such options are properly processed in exchange.getbundle.
+# Meant to be extended by extensions. It is the extension's responsibility to
+# ensure such options are properly processed in exchange.getbundle.
 #
 # supported types are:
 #
-# :nodes: list of binary nodes
-# :csv:   list of comma-separated values
-# :scsv:  list of comma-separated values return as set
+# :nodes: list of binary nodes, transmitted as space-separated hex nodes
+# :csv:   list of values, transmitted as comma-separated values
+# :scsv:  set of values, transmitted as comma-separated values
 # :plain: string with no transformation needed.
 GETBUNDLE_ARGUMENTS = {
     'heads':  'nodes',
