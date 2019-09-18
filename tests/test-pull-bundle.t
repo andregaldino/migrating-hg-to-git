@@ -2,31 +2,30 @@
 
   $ hg init repo
   $ cd repo
-  $ echo foo > foo
-  $ hg ci -qAm 'add foo'
-  $ echo >> foo
-  $ hg ci -m 'change foo'
-  $ hg up -qC 0
-  $ echo bar > bar
-  $ hg ci -qAm 'add bar'
+  $ hg debugbuilddag '+3<3+1'
 
   $ hg log
-  changeset:   2:effea6de0384
+  changeset:   3:6100d3090acf
   tag:         tip
-  parent:      0:bbd179dfa0a7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     add bar
+  parent:      0:1ea73414a91b
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:03 1970 +0000
+  summary:     r3
   
-  changeset:   1:ed1b79f46b9a
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     change foo
+  changeset:   2:01241442b3c2
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:02 1970 +0000
+  summary:     r2
   
-  changeset:   0:bbd179dfa0a7
-  user:        test
+  changeset:   1:66f7d451a68b
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:01 1970 +0000
+  summary:     r1
+  
+  changeset:   0:1ea73414a91b
+  user:        debugbuilddag
   date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     add foo
+  summary:     r0
   
   $ cd ..
 
@@ -47,10 +46,13 @@ Test pullbundle functionality
   1 changesets found
   $ hg bundle --base 1 -r 2 .hg/2.hg
   1 changesets found
+  $ hg bundle --base 1 -r 3 .hg/3.hg
+  1 changesets found
   $ cat <<EOF > .hg/pullbundles.manifest
-  > 2.hg BUNDLESPEC=none-v2 heads=effea6de0384e684f44435651cb7bd70b8735bd4 bases=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
-  > 1.hg BUNDLESPEC=bzip2-v2 heads=ed1b79f46b9a29f5a6efa59cf12fcfca43bead5a bases=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
-  > 0.hg BUNDLESPEC=gzip-v2 heads=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
+  > 3.hg BUNDLESPEC=none-v2 heads=6100d3090acf50ed11ec23196cec20f5bd7323aa bases=1ea73414a91b0920940797d8fc6a11e447f8ea1e
+  > 2.hg BUNDLESPEC=none-v2 heads=01241442b3c2bf3211e593b549c655ea65b295e3 bases=66f7d451a68b85ed82ff5fcc254daf50c74144bd
+  > 1.hg BUNDLESPEC=bzip2-v2 heads=66f7d451a68b85ed82ff5fcc254daf50c74144bd bases=1ea73414a91b0920940797d8fc6a11e447f8ea1e
+  > 0.hg BUNDLESPEC=gzip-v2 heads=1ea73414a91b0920940797d8fc6a11e447f8ea1e
   > EOF
   $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid -E ../error.txt
   listening at http://*:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (glob) (?)
@@ -60,10 +62,10 @@ Test pullbundle functionality
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets bbd179dfa0a7 (1 drafts)
+  added 1 changesets with 0 changes to 0 files
+  new changesets 1ea73414a91b (1 drafts)
   updating to branch default
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat error.txt
   $ cd repo.pullbundle
   $ hg pull -r 1
@@ -72,24 +74,24 @@ Test pullbundle functionality
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets ed1b79f46b9a (1 drafts)
+  added 1 changesets with 0 changes to 0 files
+  new changesets 66f7d451a68b (1 drafts)
   (run 'hg update' to get a working copy)
-  $ hg pull -r 2
+  $ hg pull -r 3
   pulling from http://localhost:$HGPORT2/
   searching for changes
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets effea6de0384 (1 drafts)
+  added 1 changesets with 0 changes to 0 files (+1 heads)
+  new changesets 6100d3090acf (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ cd ..
   $ killdaemons.py
   $ grep 'sending pullbundle ' repo/.hg/blackbox.log
   * sending pullbundle "0.hg" (glob)
   * sending pullbundle "1.hg" (glob)
-  * sending pullbundle "2.hg" (glob)
+  * sending pullbundle "3.hg" (glob)
   $ rm repo/.hg/blackbox.log
 
 Test pullbundle functionality for incremental pulls
@@ -110,15 +112,19 @@ Test pullbundle functionality for incremental pulls
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 3 changes to 3 files (+1 heads)
-  new changesets bbd179dfa0a7:ed1b79f46b9a (3 drafts)
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 0 changes to 0 files (+1 heads)
+  new changesets 1ea73414a91b:01241442b3c2 (4 drafts)
   updating to branch default
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ killdaemons.py
   $ grep 'sending pullbundle ' repo/.hg/blackbox.log
   * sending pullbundle "0.hg" (glob)
-  * sending pullbundle "2.hg" (glob)
+  * sending pullbundle "3.hg" (glob)
   * sending pullbundle "1.hg" (glob)
+  * sending pullbundle "2.hg" (glob)
   $ rm repo/.hg/blackbox.log
 
 Test pullbundle functionality for incoming
@@ -132,19 +138,19 @@ Test pullbundle functionality for incoming
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets bbd179dfa0a7 (1 drafts)
+  added 1 changesets with 0 changes to 0 files
+  new changesets 1ea73414a91b (1 drafts)
   updating to branch default
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd repo.pullbundle2a
-  $ hg incoming -r ed1b79f46b9a
+  $ hg incoming -r 66f7d451a68b
   comparing with http://localhost:$HGPORT2/
   searching for changes
-  changeset:   1:ed1b79f46b9a
+  changeset:   1:66f7d451a68b
   tag:         tip
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     change foo
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:01 1970 +0000
+  summary:     r1
   
   $ cd ..
   $ killdaemons.py
@@ -157,8 +163,8 @@ Test recovery from misconfigured server sending no new data
 
   $ cd repo
   $ cat <<EOF > .hg/pullbundles.manifest
-  > 0.hg heads=ed1b79f46b9a29f5a6efa59cf12fcfca43bead5a bases=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
-  > 0.hg heads=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
+  > 0.hg heads=66f7d451a68b85ed82ff5fcc254daf50c74144bd bases=1ea73414a91b0920940797d8fc6a11e447f8ea1e
+  > 0.hg heads=1ea73414a91b0920940797d8fc6a11e447f8ea1e
   > EOF
   $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid
   listening at http://*:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (glob) (?)
@@ -168,10 +174,10 @@ Test recovery from misconfigured server sending no new data
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets bbd179dfa0a7 (1 drafts)
+  added 1 changesets with 0 changes to 0 files
+  new changesets 1ea73414a91b (1 drafts)
   updating to branch default
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd repo.pullbundle3
   $ hg pull -r 1
   pulling from http://localhost:$HGPORT2/
@@ -179,8 +185,7 @@ Test recovery from misconfigured server sending no new data
   adding changesets
   adding manifests
   adding file changes
-  added 0 changesets with 0 changes to 1 files
-  abort: 00changelog.i@ed1b79f46b9a: no node
+  abort: 00changelog.i@66f7d451a68b: no node
   [255]
   $ cd ..
   $ killdaemons.py
@@ -193,7 +198,6 @@ Test processing when nodes used in the pullbundle.manifest end up being hidden
 
   $ hg --repo repo debugobsolete ed1b79f46b9a29f5a6efa59cf12fcfca43bead5a
   1 new obsolescence markers
-  obsoleted 1 changesets
   $ hg serve --repo repo --config server.view=visible -p $HGPORT -d --pid-file=hg.pid -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT repo-obs
@@ -204,8 +208,8 @@ Test processing when nodes used in the pullbundle.manifest end up being hidden
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files
-  new changesets bbd179dfa0a7:effea6de0384
+  added 1 changesets with 0 changes to 0 files
+  new changesets 1ea73414a91b (1 drafts)
   updating to branch default
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ killdaemons.py
