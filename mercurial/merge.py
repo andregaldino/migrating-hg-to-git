@@ -2257,7 +2257,7 @@ def graft(repo, ctx, pctx, labels=None, keepparent=False,
         pother = nullid
         parents = ctx.parents()
         if keepparent and len(parents) == 2 and pctx in parents:
-            if pctx == parents[0]:
+            if pctx == parents[1]:
                 potherp1 = True
             parents.remove(pctx)
             pother = parents[0].node()
