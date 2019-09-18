@@ -364,6 +364,7 @@ Test extension help:
        eol           automatically manage newlines in repository files
        extdiff       command to allow external programs to compare revisions
        factotum      http authentication with factotum
+       fastexport    export repositories as git fast-import stream
        githelp       try mapping git commands to Mercurial commands
        gpg           commands to sign and verify changesets
        hgk           browse the repository in a graphical way
