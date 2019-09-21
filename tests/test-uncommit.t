@@ -34,7 +34,7 @@ Help for uncommit
   
   options ([+] can be repeated):
   
-      --keep                     allow an empty commit after uncommiting
+      --keep                     allow an empty commit after uncommitting
       --allow-dirty-working-copy allow uncommit with outstanding changes
    -n --note TEXT                store a note on uncommit
    -I --include PATTERN [+]      include names matching the given patterns

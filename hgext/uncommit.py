@@ -109,7 +109,7 @@ def _commitfiltered(repo, ctx, match, keepcommit, message=None, user=None,
     return repo.commitctx(new)
 
 @command('uncommit',
-    [('', 'keep', None, _('allow an empty commit after uncommiting')),
+    [('', 'keep', None, _('allow an empty commit after uncommitting')),
      ('', 'allow-dirty-working-copy', False,
     _('allow uncommit with outstanding changes')),
      (b'n', b'note', b'', _(b'store a note on uncommit'), _(b'TEXT'))
