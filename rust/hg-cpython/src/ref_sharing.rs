@@ -205,6 +205,7 @@ impl<'a, T> PySharedRef<'a, T> {
 
 /// Holds a mutable reference to data shared between Python and Rust.
 pub struct PyRefMut<'a, T> {
+    py: Python<'a>,
     inner: RefMut<'a, T>,
     py_shared_state: &'a PySharedState,
 }
@@ -213,11 +214,12 @@ impl<'a, T> PyRefMut<'a, T> {
     // Must be constructed by PySharedState after checking its leak_count.
     // Otherwise, drop() would incorrectly update the state.
     fn new(
-        _py: Python<'a>,
+        py: Python<'a>,
         inner: RefMut<'a, T>,
         py_shared_state: &'a PySharedState,
     ) -> Self {
         Self {
+            py,
             inner,
             py_shared_state,
         }
@@ -239,10 +241,8 @@ impl<'a, T> std::ops::DerefMut for PyRefMut<'a, T> {
 
 impl<'a, T> Drop for PyRefMut<'a, T> {
     fn drop(&mut self) {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
         unsafe {
-            self.py_shared_state.decrease_leak_count(py, true);
+            self.py_shared_state.decrease_leak_count(self.py, true);
         }
     }
 }
