@@ -63,7 +63,7 @@ py_class!(pub class DirstateMap |py| {
         default: Option<PyObject> = None
     ) -> PyResult<Option<PyObject>> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.inner(py).borrow().get(HgPath::new(key.data(py))) {
+        match self.inner_shared(py).borrow().get(HgPath::new(key.data(py))) {
             Some(entry) => {
                 Ok(Some(make_dirstate_tuple(py, entry)?))
             },
@@ -170,7 +170,7 @@ py_class!(pub class DirstateMap |py| {
     // TODO share the reference
     def nonnormalentries(&self) -> PyResult<PyObject> {
         let (non_normal, other_parent) =
-            self.inner(py).borrow().non_normal_other_parent_entries();
+            self.inner_shared(py).borrow().non_normal_other_parent_entries();
 
         let locals = PyDict::new(py);
         locals.set_item(
@@ -281,18 +281,18 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def __len__(&self) -> PyResult<usize> {
-        Ok(self.inner(py).borrow().len())
+        Ok(self.inner_shared(py).borrow().len())
     }
 
     def __contains__(&self, key: PyObject) -> PyResult<bool> {
         let key = key.extract::<PyBytes>(py)?;
-        Ok(self.inner(py).borrow().contains_key(HgPath::new(key.data(py))))
+        Ok(self.inner_shared(py).borrow().contains_key(HgPath::new(key.data(py))))
     }
 
     def __getitem__(&self, key: PyObject) -> PyResult<PyObject> {
         let key = key.extract::<PyBytes>(py)?;
         let key = HgPath::new(key.data(py));
-        match self.inner(py).borrow().get(key) {
+        match self.inner_shared(py).borrow().get(key) {
             Some(entry) => {
                 Ok(make_dirstate_tuple(py, entry)?)
             },
@@ -333,7 +333,7 @@ py_class!(pub class DirstateMap |py| {
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
-                &self.inner(py).borrow(),
+                &self.inner_shared(py).borrow(),
                 Some(EntryState::Removed),
             ),
         )
@@ -344,7 +344,7 @@ py_class!(pub class DirstateMap |py| {
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
-                &self.inner(py).borrow(),
+                &self.inner_shared(py).borrow(),
                 None,
             ),
         )
@@ -353,7 +353,7 @@ py_class!(pub class DirstateMap |py| {
     // TODO all copymap* methods, see docstring above
     def copymapcopy(&self) -> PyResult<PyDict> {
         let dict = PyDict::new(py);
-        for (key, value) in self.inner(py).borrow().copy_map.iter() {
+        for (key, value) in self.inner_shared(py).borrow().copy_map.iter() {
             dict.set_item(
                 py,
                 PyBytes::new(py, key.as_ref()),
@@ -365,7 +365,7 @@ py_class!(pub class DirstateMap |py| {
 
     def copymapgetitem(&self, key: PyObject) -> PyResult<PyBytes> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.inner(py).borrow().copy_map.get(HgPath::new(key.data(py))) {
+        match self.inner_shared(py).borrow().copy_map.get(HgPath::new(key.data(py))) {
             Some(copy) => Ok(PyBytes::new(py, copy.as_ref())),
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
@@ -378,12 +378,12 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymaplen(&self) -> PyResult<usize> {
-        Ok(self.inner(py).borrow().copy_map.len())
+        Ok(self.inner_shared(py).borrow().copy_map.len())
     }
     def copymapcontains(&self, key: PyObject) -> PyResult<bool> {
         let key = key.extract::<PyBytes>(py)?;
         Ok(self
-            .inner(py)
+            .inner_shared(py)
             .borrow()
             .copy_map
             .contains_key(HgPath::new(key.data(py))))
@@ -395,7 +395,7 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<Option<PyObject>> {
         let key = key.extract::<PyBytes>(py)?;
         match self
-            .inner(py)
+            .inner_shared(py)
             .borrow()
             .copy_map
             .get(HgPath::new(key.data(py)))

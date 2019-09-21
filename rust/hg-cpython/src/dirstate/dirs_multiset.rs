@@ -100,7 +100,7 @@ py_class!(pub class Dirs |py| {
     }
 
     def __contains__(&self, item: PyObject) -> PyResult<bool> {
-        Ok(self.inner(py).borrow().contains(HgPath::new(
+        Ok(self.inner_shared(py).borrow().contains(HgPath::new(
             item.extract::<PyBytes>(py)?.data(py).as_ref(),
         )))
     }

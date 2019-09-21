@@ -136,7 +136,7 @@ impl<T> PySharedRefCell<T> {
         }
     }
 
-    pub fn borrow(&self) -> Ref<T> {
+    pub fn borrow<'a>(&'a self, _py: Python<'a>) -> Ref<'a, T> {
         // py_shared_state isn't involved since
         // - inner.borrow() would fail if self is mutably borrowed,
         // - and inner.borrow_mut() would fail while self is borrowed.
@@ -180,7 +180,7 @@ impl<'a, T> PySharedRef<'a, T> {
     }
 
     pub fn borrow(&self) -> Ref<'a, T> {
-        self.data.borrow()
+        self.data.borrow(self.py)
     }
 
     pub fn borrow_mut(&self) -> PyResult<PyRefMut<'a, T>> {
