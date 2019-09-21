@@ -57,7 +57,7 @@ struct PySharedState {
 }
 
 impl PySharedState {
-    fn borrow_mut<'a, T>(
+    fn try_borrow_mut<'a, T>(
         &'a self,
         py: Python<'a>,
         pyrefmut: RefMut<'a, T>,
@@ -162,16 +162,19 @@ impl<T> PySharedRefCell<T> {
     fn borrow<'a>(&'a self, _py: Python<'a>) -> Ref<'a, T> {
         // py_shared_state isn't involved since
         // - inner.borrow() would fail if self is mutably borrowed,
-        // - and inner.borrow_mut() would fail while self is borrowed.
+        // - and inner.try_borrow_mut() would fail while self is borrowed.
         self.inner.borrow()
     }
 
-    // TODO: maybe this should be named as try_borrow_mut(), and use
-    // inner.try_borrow_mut(). The current implementation panics if
-    // self.inner has been borrowed, but returns error if py_shared_state
-    // refuses to borrow.
-    fn borrow_mut<'a>(&'a self, py: Python<'a>) -> PyResult<RefMut<'a, T>> {
-        self.py_shared_state.borrow_mut(py, self.inner.borrow_mut())
+    fn try_borrow_mut<'a>(
+        &'a self,
+        py: Python<'a>,
+    ) -> PyResult<RefMut<'a, T>> {
+        let inner_ref = self
+            .inner
+            .try_borrow_mut()
+            .map_err(|e| AlreadyBorrowed::new(py, e.to_string()))?;
+        self.py_shared_state.try_borrow_mut(py, inner_ref)
     }
 }
 
@@ -200,7 +203,7 @@ impl<'a, T> PySharedRef<'a, T> {
     }
 
     pub fn borrow_mut(&self) -> PyResult<RefMut<'a, T>> {
-        self.data.borrow_mut(self.py)
+        self.data.try_borrow_mut(self.py)
     }
 
     /// Returns a leaked reference.
@@ -632,5 +635,13 @@ mod test {
         let py = gil.python();
         let _mut_ref = owner.string_shared(py).borrow_mut();
         owner.string_shared(py).leak_immutable();
+    }
+
+    #[test]
+    fn test_borrow_mut_while_borrow() {
+        let (gil, owner) = prepare_env();
+        let py = gil.python();
+        let _ref = owner.string_shared(py).borrow();
+        assert!(owner.string_shared(py).borrow_mut().is_err());
     }
 }
