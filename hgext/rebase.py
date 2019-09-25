@@ -1783,20 +1783,18 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
             oldnode = tonode(rev)
             newnode = collapsedas or tonode(newrev)
             moves[oldnode] = newnode
-            if not keepf:
-                succs = None
-                if rev in skipped:
-                    if stripcleanup or not repo[rev].obsolete():
-                        succs = ()
-                elif collapsedas:
-                    collapsednodes.append(oldnode)
-                else:
-                    succs = (newnode,)
-                if succs is not None:
-                    replacements[(oldnode,)] = succs
+            succs = None
+            if rev in skipped:
+                if stripcleanup or not repo[rev].obsolete():
+                    succs = ()
+            elif collapsedas:
+                collapsednodes.append(oldnode)
+            else:
+                succs = (newnode,)
+            if succs is not None:
+                replacements[(oldnode,)] = succs
     if collapsednodes:
         replacements[tuple(collapsednodes)] = (collapsedas,)
-    scmutil.cleanupnodes(repo, replacements, 'rebase', moves, backup=backup)
     if fm:
         hf = fm.hexfunc
         fl = fm.formatlist
@@ -1807,6 +1805,9 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
                 changes[hf(oldn)] = fl([hf(n) for n in newn], name='node')
         nodechanges = fd(changes, key="oldnode", value="newnodes")
         fm.data(nodechanges=nodechanges)
+    if keepf:
+        replacements = {}
+    scmutil.cleanupnodes(repo, replacements, 'rebase', moves, backup=backup)
 
 def pullrebase(orig, ui, repo, *args, **opts):
     'Call rebase after pull if the latter has been invoked with --rebase'

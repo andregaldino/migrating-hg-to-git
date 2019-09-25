@@ -55,3 +55,30 @@ Getting the JSON output for nodechanges
 
   $ hg rebase -s 6 -d 4 -q -T "{nodechanges % '{oldnode}:{newnodes % ' {node} '}'}"
   d9d6773efc831c274eace04bc13e8e6412517139: f48cd65c6dc3d2acb55da54402a5b029546e546f  (no-eol)
+
+  $ hg log -G -T "{rev}:{node|short} {desc}"
+  o  7:f48cd65c6dc3 Added b
+  |
+  | @  5:df21b32134ba Added d
+  |/
+  o  4:849767420fd5 Added c
+  |
+  o  0:18d04c59bb5d Added a
+  
+
+
+  $ hg rebase -s 7 -d 5 -q --keep -T "{nodechanges % '{oldnode}:{newnodes % ' {node} '}'}"
+  f48cd65c6dc3d2acb55da54402a5b029546e546f: 6f7dda91e55e728fb798f3e44dbecf0ebaa83267  (no-eol)
+
+  $ hg log -G -T "{rev}:{node|short} {desc}"
+  o  8:6f7dda91e55e Added b
+  |
+  | o  7:f48cd65c6dc3 Added b
+  | |
+  @ |  5:df21b32134ba Added d
+  |/
+  o  4:849767420fd5 Added c
+  |
+  o  0:18d04c59bb5d Added a
+  
+
