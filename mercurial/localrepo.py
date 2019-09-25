@@ -751,6 +751,11 @@ def resolvestorevfsoptions(ui, requirements, features):
     else: # explicitly mark repo as using revlogv0
         options['revlogv0'] = True
 
+    writecopiesto = ui.config('experimental', 'copies.write-to')
+    copiesextramode = ('changeset-only', 'compatibility')
+    if (writecopiesto in copiesextramode):
+        options['copies-storage'] = 'extra'
+
     return options
 
 def resolverevlogstorevfsoptions(ui, requirements, features):

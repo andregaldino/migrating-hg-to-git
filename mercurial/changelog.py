@@ -391,6 +391,7 @@ class changelog(revlog.revlog):
         self._delaybuf = None
         self._divert = False
         self.filteredrevs = frozenset()
+        self._copiesstorage = opener.options.get('copies-storage')
 
     def tiprev(self):
         for i in pycompat.xrange(len(self) -1, -2, -1):
@@ -633,21 +634,22 @@ class changelog(revlog.revlog):
             elif branch in (".", "null", "tip"):
                 raise error.StorageError(_('the name \'%s\' is reserved')
                                          % branch)
-        extrasentries = p1copies, p2copies, filesadded, filesremoved
-        if extra is None and any(x is not None for x in extrasentries):
-            extra = {}
         sortedfiles = sorted(files)
         if extra is not None:
             for name in ('p1copies', 'p2copies', 'filesadded', 'filesremoved'):
                 extra.pop(name, None)
-        if p1copies is not None:
-            extra['p1copies'] = encodecopies(sortedfiles, p1copies)
-        if p2copies is not None:
-            extra['p2copies'] = encodecopies(sortedfiles, p2copies)
-        if filesadded is not None:
-            extra['filesadded'] = encodefileindices(sortedfiles, filesadded)
-        if filesremoved is not None:
-            extra['filesremoved'] = encodefileindices(sortedfiles, filesremoved)
+        if self._copiesstorage == 'extra':
+            extrasentries = p1copies, p2copies, filesadded, filesremoved
+            if extra is None and any(x is not None for x in extrasentries):
+                extra = {}
+            if p1copies is not None:
+                extra['p1copies'] = encodecopies(sortedfiles, p1copies)
+            if p2copies is not None:
+                extra['p2copies'] = encodecopies(sortedfiles, p2copies)
+            if filesadded is not None:
+                extra['filesadded'] = encodefileindices(sortedfiles, filesadded)
+            if filesremoved is not None:
+                extra['filesremoved'] = encodefileindices(sortedfiles, filesremoved)
 
         if extra:
             extra = encodeextra(extra)
