@@ -883,6 +883,12 @@ def clean(repo, node, show_stats=True, quietempty=False):
 # naming conflict in updatetotally()
 _clean = clean
 
+_VALID_UPDATECHECKS = {mergemod.UPDATECHECK_ABORT,
+                       mergemod.UPDATECHECK_NONE,
+                       mergemod.UPDATECHECK_LINEAR,
+                       mergemod.UPDATECHECK_NO_CONFLICT,
+}
+
 def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
     """Update the working directory with extra care for non-file components
 
@@ -911,12 +917,12 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
     """
     if updatecheck is None:
         updatecheck = ui.config('commands', 'update.check')
-        if updatecheck not in (mergemod.UPDATECHECK_ABORT,
-                               mergemod.UPDATECHECK_NONE,
-                               mergemod.UPDATECHECK_LINEAR,
-                               mergemod.UPDATECHECK_NO_CONFLICT):
+        if updatecheck not in _VALID_UPDATECHECKS:
             # If not configured, or invalid value configured
             updatecheck = mergemod.UPDATECHECK_LINEAR
+    if updatecheck not in _VALID_UPDATECHECKS:
+        raise ValueError(r'Invalid updatecheck value %r (can accept %r)' % (
+            updatecheck, _VALID_UPDATECHECKS))
     with repo.wlock():
         movemarkfrom = None
         warndest = False
