@@ -638,18 +638,26 @@ class changelog(revlog.revlog):
         if extra is not None:
             for name in ('p1copies', 'p2copies', 'filesadded', 'filesremoved'):
                 extra.pop(name, None)
+        if p1copies is not None:
+            p1copies = encodecopies(sortedfiles, p1copies)
+        if p2copies is not None:
+            p2copies = encodecopies(sortedfiles, p2copies)
+        if filesadded is not None:
+            filesadded = encodefileindices(sortedfiles, filesadded)
+        if filesremoved is not None:
+            filesremoved = encodefileindices(sortedfiles, filesremoved)
         if self._copiesstorage == 'extra':
             extrasentries = p1copies, p2copies, filesadded, filesremoved
             if extra is None and any(x is not None for x in extrasentries):
                 extra = {}
             if p1copies is not None:
-                extra['p1copies'] = encodecopies(sortedfiles, p1copies)
+                extra['p1copies'] = p1copies
             if p2copies is not None:
-                extra['p2copies'] = encodecopies(sortedfiles, p2copies)
+                extra['p2copies'] = p2copies
             if filesadded is not None:
-                extra['filesadded'] = encodefileindices(sortedfiles, filesadded)
+                extra['filesadded'] = filesadded
             if filesremoved is not None:
-                extra['filesremoved'] = encodefileindices(sortedfiles, filesremoved)
+                extra['filesremoved'] = filesremoved
 
         if extra:
             extra = encodeextra(extra)
