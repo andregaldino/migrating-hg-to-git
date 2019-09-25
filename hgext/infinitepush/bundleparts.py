@@ -12,6 +12,7 @@ from mercurial import (
     changegroup,
     error,
     extensions,
+    node as nodemod,
     revsetlang,
     util,
 )
@@ -48,7 +49,7 @@ def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
         params['bookprevnode'] = ''
         bookmarks = repo._bookmarks
         if bookmark in bookmarks:
-            params['bookprevnode'] = bookmarks.changectx(bookmark).hex()
+            params['bookprevnode'] = nodemod.hex(bookmarks[bookmark])
 
     # Do not send pushback bundle2 part with bookmarks if remotenames extension
     # is enabled. It will be handled manually in `_push()`

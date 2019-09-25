@@ -177,10 +177,6 @@ class bmstore(object):
         """Return a sorted list of bookmarks pointing to the specified node"""
         return self._nodemap.get(node, [])
 
-    def changectx(self, mark):
-        node = self._refmap[mark]
-        return self._repo[node]
-
     def applychanges(self, repo, tr, changes):
         """Apply a list of changes to bookmarks
         """
@@ -271,7 +267,7 @@ class bmstore(object):
                     return []
                 rev = self._repo[target].rev()
                 anc = self._repo.changelog.ancestors([rev])
-                bmctx = self.changectx(mark)
+                bmctx = self._repo[self[mark]]
                 divs = [self._refmap[b] for b in self._refmap
                         if b.split('@', 1)[0] == mark.split('@', 1)[0]]
 
@@ -412,11 +408,11 @@ def update(repo, parents, node):
     bmchanges = []
     if marks[active] in parents:
         new = repo[node]
-        divs = [marks.changectx(b) for b in marks
+        divs = [repo[marks[b]] for b in marks
                 if b.split('@', 1)[0] == active.split('@', 1)[0]]
         anc = repo.changelog.ancestors([new.rev()])
         deletefrom = [b.node() for b in divs if b.rev() in anc or b == new]
-        if validdest(repo, marks.changectx(active), new):
+        if validdest(repo, repo[marks[active]], new):
             bmchanges.append((active, new.node()))
 
     for bm in divergent2delete(repo, deletefrom, active):
