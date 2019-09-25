@@ -1986,11 +1986,8 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
                 repo, wctx, c, ancs,
                 # These parameters were determined by print-debugging
                 # what happens later on inside histedit.
-                False, # branchmerge
-                False, # force
-                False, # acceptremote
-                False, # followcopies
-            )
+                branchmerge=False, force=False, acceptremote=False,
+                followcopies=False)
         except error.Abort:
             raise error.Abort(
        _("untracked files in working directory conflict with files in %s") % (

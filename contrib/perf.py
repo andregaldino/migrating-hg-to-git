@@ -1030,8 +1030,9 @@ def perfmergecalculate(ui, repo, **opts):
     def d():
         # acceptremote is True because we don't want prompts in the middle of
         # our benchmark
-        merge.calculateupdates(repo, wctx, rctx, [ancestor], False, False,
-                               acceptremote=True, followcopies=True)
+        merge.calculateupdates(repo, wctx, rctx, [ancestor], branchmerge=False,
+                               force=False, acceptremote=True,
+                               followcopies=True)
     timer(d)
     fm.end()
 

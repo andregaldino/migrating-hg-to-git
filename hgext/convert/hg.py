@@ -204,12 +204,8 @@ class mercurial_sink(common.converter_sink):
         anc = [p1ctx.ancestor(p2ctx)]
         # Calculate what files are coming from p2
         actions, diverge, rename = mergemod.calculateupdates(
-            self.repo, p1ctx, p2ctx, anc,
-            True,  # branchmerge
-            True,  # force
-            False, # acceptremote
-            False, # followcopies
-        )
+            self.repo, p1ctx, p2ctx, anc, branchmerge=True,
+            force=True, acceptremote=False, followcopies=False)
 
         for file, (action, info, msg) in actions.iteritems():
             if source.targetfilebelongstosource(file):
