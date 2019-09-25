@@ -1,7 +1,9 @@
 mkcommit() {
-   echo "$1" > "$1"
-   hg add "$1"
-   hg ci -m "$1"
+   name="$1"
+   shift
+   echo "$name" > "$name"
+   hg add "$name"
+   hg ci -m "$name" "$@"
 }
 
 getid() {
