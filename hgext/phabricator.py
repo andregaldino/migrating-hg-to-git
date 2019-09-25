@@ -54,6 +54,7 @@ from mercurial import (
     context,
     encoding,
     error,
+    exthelper,
     httpconnection as httpconnectionmod,
     mdiff,
     obsutil,
@@ -61,7 +62,6 @@ from mercurial import (
     patch,
     phases,
     pycompat,
-    registrar,
     scmutil,
     smartset,
     tags,
@@ -81,30 +81,31 @@ from mercurial.utils import (
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-cmdtable = {}
-command = registrar.command(cmdtable)
+eh = exthelper.exthelper()
 
-configtable = {}
-configitem = registrar.configitem(configtable)
+cmdtable = eh.cmdtable
+command = eh.command
+configtable = eh.configtable
+templatekeyword = eh.templatekeyword
 
 # developer config: phabricator.batchsize
-configitem(b'phabricator', b'batchsize',
+eh.configitem(b'phabricator', b'batchsize',
     default=12,
 )
-configitem(b'phabricator', b'callsign',
+eh.configitem(b'phabricator', b'callsign',
     default=None,
 )
-configitem(b'phabricator', b'curlcmd',
+eh.configitem(b'phabricator', b'curlcmd',
     default=None,
 )
 # developer config: phabricator.repophid
-configitem(b'phabricator', b'repophid',
+eh.configitem(b'phabricator', b'repophid',
     default=None,
 )
-configitem(b'phabricator', b'url',
+eh.configitem(b'phabricator', b'url',
     default=None,
 )
-configitem(b'phabsend', b'confirm',
+eh.configitem(b'phabsend', b'confirm',
     default=False,
 )
 
@@ -1064,9 +1065,7 @@ def phabupdate(ui, repo, spec, **opts):
                       b'transactions': actions}
             callconduit(ui, b'differential.revision.edit', params)
 
-templatekeyword = registrar.templatekeyword()
-
-@templatekeyword(b'phabreview', requires={b'ctx'})
+@eh.templatekeyword(b'phabreview', requires={b'ctx'})
 def template_review(context, mapping):
     """:phabreview: Object describing the review for this changeset.
     Has attributes `url` and `id`.
