@@ -645,6 +645,9 @@ coreconfigitem('experimental', 'server.stream-narrow-clones',
 coreconfigitem('experimental', 'single-head-per-branch',
     default=False,
 )
+coreconfigitem('experimental', 'single-head-per-branch:account-closed-heads',
+    default=False,
+)
 coreconfigitem('experimental', 'sshserver.support-v2',
     default=False,
 )

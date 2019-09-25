@@ -200,3 +200,62 @@ actual stripping
   $ hg strip --config extensions.strip= --rev 'desc("c_dH0")'
   saved backup bundle to $TESTTMP/client/.hg/strip-backup/fe47ea669cea-a41bf5a9-backup.hg
 
+Test that closing heads are ignored by default
+-----------------------------------------------
+
+  $ hg up 'desc("c_aG0")'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ mkcommit c_aJ0
+  created new head
+
+pushing the new head should fails
+
+  $ hg push -f
+  pushing to $TESTTMP/single-head-server
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  transaction abort!
+  rollback completed
+  abort: rejecting multiple heads on branch "branch_A"
+  (2 heads: 49003e504178 468bd81ccc5d)
+  [255]
+
+
+closing the head and pushing should succeed
+
+  $ mkcommit c_aK0 --close-branch
+  $ hg push -f
+  pushing to $TESTTMP/single-head-server
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 4 changes to 4 files (-1 heads)
+
+
+Test that closing heads can be explicitly accounted for
+-------------------------------------------------------
+
+  $ cat <<EOF >> $TESTTMP/single-head-server/.hg/hgrc
+  > [experimental]
+  > single-head-per-branch:account-closed-heads = yes
+  > EOF
+
+  $ hg up 'desc("c_aG0")'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ mkcommit c_aL0
+  created new head
+  $ mkcommit c_aM0 --close-branch
+  $ hg push -f
+  pushing to $TESTTMP/single-head-server
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  transaction abort!
+  rollback completed
+  abort: rejecting multiple heads on branch "branch_A"
+  (3 heads: 49003e504178 5254bcccab93 42b9fe70a3c1)
+  [255]

@@ -1920,8 +1920,13 @@ class localrepository(object):
             # gating.
             tracktags(tr2)
             repo = reporef()
-            if repo.ui.configbool('experimental', 'single-head-per-branch'):
-                scmutil.enforcesinglehead(repo, tr2, desc)
+
+            r = repo.ui.configsuboptions('experimental',
+                                         'single-head-per-branch')
+            singlehead, singleheadsub = r
+            if singlehead:
+                accountclosed = singleheadsub.get("account-closed-heads", False)
+                scmutil.enforcesinglehead(repo, tr2, desc, accountclosed)
             if hook.hashook(repo.ui, 'pretxnclose-bookmark'):
                 for name, (old, new) in sorted(tr.changes['bookmarks'].items()):
                     args = tr.hookargs.copy()
