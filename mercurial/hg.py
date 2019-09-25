@@ -897,21 +897,26 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
     :clean: whether changes in the working directory can be discarded
     :updatecheck: how to deal with a dirty working directory
 
-    Valid values for updatecheck are (None => linear):
+    Valid values for updatecheck are the UPDATECHECK_* constants
+    defined in the merge module. Passing `None` will result in using the
+    configured default.
 
-     * abort: abort if the working directory is dirty
-     * none: don't check (merge working directory changes into destination)
-     * linear: check that update is linear before merging working directory
+     * ABORT: abort if the working directory is dirty
+     * NONE: don't check (merge working directory changes into destination)
+     * LINEAR: check that update is linear before merging working directory
                changes into destination
-     * noconflict: check that the update does not result in file merges
+     * NO_CONFLICT: check that the update does not result in file merges
 
     This returns whether conflict is detected at updating or not.
     """
     if updatecheck is None:
         updatecheck = ui.config('commands', 'update.check')
-        if updatecheck not in ('abort', 'none', 'linear', 'noconflict'):
+        if updatecheck not in (mergemod.UPDATECHECK_ABORT,
+                               mergemod.UPDATECHECK_NONE,
+                               mergemod.UPDATECHECK_LINEAR,
+                               mergemod.UPDATECHECK_NO_CONFLICT):
             # If not configured, or invalid value configured
-            updatecheck = 'linear'
+            updatecheck = mergemod.UPDATECHECK_LINEAR
     with repo.wlock():
         movemarkfrom = None
         warndest = False
@@ -923,9 +928,9 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
         if clean:
             ret = _clean(repo, checkout)
         else:
-            if updatecheck == 'abort':
+            if updatecheck == mergemod.UPDATECHECK_ABORT:
                 cmdutil.bailifchanged(repo, merge=False)
-                updatecheck = 'none'
+                updatecheck = mergemod.UPDATECHECK_NONE
             ret = _update(repo, checkout, updatecheck=updatecheck)
 
         if not ret and movemarkfrom:

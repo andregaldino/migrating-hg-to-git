@@ -1926,6 +1926,11 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
         else:
             repo.dirstate.normal(f)
 
+UPDATECHECK_ABORT = 'abort'  # handled at higher layers
+UPDATECHECK_NONE = 'none'
+UPDATECHECK_LINEAR = 'linear'
+UPDATECHECK_NO_CONFLICT = 'noconflict'
+
 def update(repo, node, branchmerge, force, ancestor=None,
            mergeancestor=False, labels=None, matcher=None, mergeforce=False,
            updatecheck=None, wc=None):
@@ -1992,8 +1997,11 @@ def update(repo, node, branchmerge, force, ancestor=None,
         # and force=False pass a value for updatecheck. We may want to allow
         # updatecheck='abort' to better suppport some of these callers.
         if updatecheck is None:
-            updatecheck = 'linear'
-        assert updatecheck in ('none', 'linear', 'noconflict')
+            updatecheck = UPDATECHECK_LINEAR
+        assert updatecheck in (UPDATECHECK_NONE,
+                               UPDATECHECK_LINEAR,
+                               UPDATECHECK_NO_CONFLICT,
+        )
     # If we're doing a partial update, we need to skip updating
     # the dirstate, so make a note of any partial-ness to the
     # update here.
@@ -2050,7 +2058,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
                 repo.hook('update', parent1=xp2, parent2='', error=0)
                 return updateresult(0, 0, 0, 0)
 
-            if (updatecheck == 'linear' and
+            if (updatecheck == UPDATECHECK_LINEAR and
                     pas not in ([p1], [p2])):  # nonlinear
                 dirty = wc.dirty(missing=True)
                 if dirty:
@@ -2087,7 +2095,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
             repo, wc, p2, pas, branchmerge, force, mergeancestor,
             followcopies, matcher=matcher, mergeforce=mergeforce)
 
-        if updatecheck == 'noconflict':
+        if updatecheck == UPDATECHECK_NO_CONFLICT:
             for f, (m, args, msg) in actionbyfile.iteritems():
                 if m not in (ACTION_GET, ACTION_KEEP, ACTION_EXEC,
                              ACTION_REMOVE, ACTION_PATH_CONFLICT_RESOLVE):
