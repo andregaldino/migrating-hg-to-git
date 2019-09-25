@@ -113,8 +113,8 @@ Test single head enforcing - after rewrite
   1 new obsolescence markers
   obsoleted 1 changesets
 
-Check it does to interfer with strip
-------------------------------------
+Check it does not interfer with strip
+-------------------------------------
 
 setup
 
