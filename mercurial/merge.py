@@ -1998,10 +1998,15 @@ def update(repo, node, branchmerge, force, ancestor=None,
         # updatecheck='abort' to better suppport some of these callers.
         if updatecheck is None:
             updatecheck = UPDATECHECK_LINEAR
-        assert updatecheck in (UPDATECHECK_NONE,
+        if updatecheck not in (UPDATECHECK_NONE,
                                UPDATECHECK_LINEAR,
                                UPDATECHECK_NO_CONFLICT,
-        )
+        ):
+            raise ValueError(r'Invalid updatecheck %r (can accept %r)' % (
+                updatecheck, (UPDATECHECK_NONE,
+                               UPDATECHECK_LINEAR,
+                               UPDATECHECK_NO_CONFLICT,
+                )))
     # If we're doing a partial update, we need to skip updating
     # the dirstate, so make a note of any partial-ness to the
     # update here.
