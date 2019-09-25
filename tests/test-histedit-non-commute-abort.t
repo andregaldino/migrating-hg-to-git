@@ -162,55 +162,26 @@ log after abort
      summary:     a
   
 
-Early tree conflict doesn't leave histedit in a wedged state.
+Early tree conflict doesn't leave histedit in a wedged state. Note
+that we don't specify --commands here: we catch the problem before we
+even prompt the user for rules, sidestepping any dataloss issues.
+
   $ hg rm c
   $ hg ci -m 'remove c'
   $ echo collision > c
 
-  $ hg histedit e860deea161a --commands - 2>&1 <<EOF
-  > edit e860deea161a
-  > pick 652413bf663e
-  > pick bfa474341cc9
-  > pick 1b0954ff00fc
-  > EOF
+  $ hg histedit e860deea161a
   c: untracked file differs
-  abort: untracked files in working directory differ from files in requested revision
+  abort: untracked files in working directory conflict with files in 055a42cdd887
   [255]
 
-BUG: we didn't actually change p1 of the working copy, but we're in a
-histedit state. This confuses the process very badly and leads to
-histedit stripping things it shouldn't (in obsmarker mode it inserts
-bogus prune markers in this case.)
+We should have detected the collision early enough we're not in a
+histedit state, and p1 is unchanged.
 
   $ hg log -r 'p1()' -T'{node}\n'
   1b0954ff00fccb15a37b679e4a35e9b01dfe685e
   $ hg status --config ui.tweakdefaults=yes
   ? c
   ? e.orig
-  # The repository is in an unfinished *histedit* state.
-  
-  # To continue:    hg histedit --continue
-  # To abort:       hg histedit --abort
-  
-  $ hg histedit --continue
-  652413bf663e: skipping changeset (no changes)
-  bfa474341cc9: skipping changeset (no changes)
-  1b0954ff00fc: skipping changeset (no changes)
-  saved backup bundle to $TESTTMP/r/.hg/strip-backup/e860deea161a-a0738322-histedit.hg
-
-  $ hg log -GTcompact
-  warning: ignoring unknown working parent 1b0954ff00fc!
-  o  3[tip]   055a42cdd887   1970-01-01 00:00 +0000   test
-  |    d
-  |
-  o  2   177f92b77385   1970-01-01 00:00 +0000   test
-  |    c
-  |
-  o  1   d2ae7f538514   1970-01-01 00:00 +0000   test
-  |    b
-  |
-  o  0   cb9a9f314b8b   1970-01-01 00:00 +0000   test
-       a
-  
 
   $ cd ..

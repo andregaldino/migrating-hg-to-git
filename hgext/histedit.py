@@ -1970,6 +1970,32 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
                          node.short(root))
 
     ctxs = [repo[r] for r in revs]
+
+    wctx = repo[None]
+    # Please don't ask me why `ancestors` is this value. I figured it
+    # out with print-debugging, not by actually understanding what the
+    # merge code is doing. :(
+    ancs = [repo['.']]
+    # Sniff-test to make sure we won't collide with untracked files in
+    # the working directory. If we don't do this, we can get a
+    # collision after we've started histedit and backing out gets ugly
+    # for everyone, especially the user.
+    for c in [ctxs[0].p1()] + ctxs:
+        try:
+            mergemod.calculateupdates(
+                repo, wctx, c, ancs,
+                # These parameters were determined by print-debugging
+                # what happens later on inside histedit.
+                False, # branchmerge
+                False, # force
+                False, # acceptremote
+                False, # followcopies
+            )
+        except error.Abort:
+            raise error.Abort(
+       _("untracked files in working directory conflict with files in %s") % (
+           c))
+
     if not rules:
         comment = geteditcomment(ui, node.short(root), node.short(topmost))
         actions = [pick(state, r) for r in revs]
