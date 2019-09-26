@@ -182,8 +182,9 @@ def _computeforwardmissing(a, b, match=None):
 
 def usechangesetcentricalgo(repo):
     """Checks if we should use changeset-centric copy algorithms"""
-    return (repo.ui.config('experimental', 'copies.read-from') in
-            ('changeset-only', 'compatibility'))
+    readfrom = repo.ui.config('experimental', 'copies.read-from')
+    changesetsource = ('changeset-only', 'compatibility')
+    return readfrom in changesetsource
 
 def _committedforwardcopies(a, b, base, match):
     """Like _forwardcopies(), but b.rev() cannot be None (working copy)"""
