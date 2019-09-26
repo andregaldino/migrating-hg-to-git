@@ -490,14 +490,22 @@ class changectx(basectx):
         # In compatibility mode, we return copy data from the changeset if
         # it was recorded there, and otherwise we fall back to getting it from
         # the filelogs (below).
-        if (source == 'changeset-only' or
-            (source == 'compatibility' and p1copies is not None)):
-            return p1copies or {}, p2copies or {}
+        if source == 'changeset-only':
+            if p1copies is None:
+                p1copies = {}
+            if p2copies is None:
+                p2copies = {}
+        elif source == 'compatibility':
+            if p1copies is None:
+                # we are in compatiblity mode and there is not data in the
+                # changeset), we get the copy metadata from the filelogs.
+                p1copies, p2copies = super(changectx, self)._copies
+        else:
+            # config said to read only from filelog, we get the copy metadata
+            # from the filelogs.
+            p1copies, p2copies = super(changectx, self)._copies
+        return p1copies, p2copies
 
-        # Otherwise (config said to read only from filelog, or we are in
-        # compatiblity mode and there is not data in the changeset), we get
-        # the copy metadata from the filelogs.
-        return super(changectx, self)._copies
     def description(self):
         return self._changeset.description
     def branch(self):
