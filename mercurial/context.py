@@ -469,11 +469,16 @@ class changectx(basectx):
 
     def filesremoved(self):
         source = self._repo.ui.config('experimental', 'copies.read-from')
-        if (source == 'changeset-only' or
-            (source == 'compatibility' and
-             self._changeset.filesremoved is not None)):
-            return self._changeset.filesremoved or []
-        return scmutil.computechangesetfilesremoved(self)
+        filesremoved = self._changeset.filesremoved
+        if source == 'changeset-only':
+            if filesremoved is None:
+                filesremoved = []
+        elif source == 'compatibility':
+            if filesremoved is None:
+                filesremoved = scmutil.computechangesetfilesremoved(self)
+        else:
+            filesremoved = scmutil.computechangesetfilesremoved(self)
+        return filesremoved
 
     @propertycache
     def _copies(self):
