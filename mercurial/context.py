@@ -453,13 +453,20 @@ class changectx(basectx):
         modified.difference_update(self.filesadded())
         modified.difference_update(self.filesremoved())
         return sorted(modified)
+
     def filesadded(self):
         source = self._repo.ui.config('experimental', 'copies.read-from')
-        if (source == 'changeset-only' or
-            (source == 'compatibility' and
-             self._changeset.filesadded is not None)):
-            return self._changeset.filesadded or []
-        return scmutil.computechangesetfilesadded(self)
+        filesadded = self._changeset.filesadded
+        if source == 'changeset-only':
+            if filesadded is None:
+                filesadded = []
+        elif source == 'compatibility':
+            if filesadded is None:
+                filesadded = scmutil.computechangesetfilesadded(self)
+        else:
+            filesadded = scmutil.computechangesetfilesadded(self)
+        return filesadded
+
     def filesremoved(self):
         source = self._repo.ui.config('experimental', 'copies.read-from')
         if (source == 'changeset-only' or
