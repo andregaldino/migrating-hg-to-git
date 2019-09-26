@@ -1814,16 +1814,17 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
                     b'nbrevs': len(repo.revs('%d::%d', b, p)),
                     b'nbmissingfiles': len(missing),
                 }
-                alldata['nbrevs'].append((
-                    data['nbrevs'],
-                    base.hex(),
-                    parent.hex(),
-                ))
-                alldata['nbmissingfiles'].append((
-                    data['nbmissingfiles'],
-                    base.hex(),
-                    parent.hex(),
-                ))
+                if dostats:
+                    alldata['nbrevs'].append((
+                        data['nbrevs'],
+                        base.hex(),
+                        parent.hex(),
+                    ))
+                    alldata['nbmissingfiles'].append((
+                        data['nbmissingfiles'],
+                        base.hex(),
+                        parent.hex(),
+                    ))
                 if dotiming:
                     begin = util.timer()
                     renames = copies.pathcopies(base, parent)
@@ -1831,16 +1832,17 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
                     # not very stable timing since we did only one run
                     data['time'] = end - begin
                     data['nbrenamedfiles'] = len(renames)
-                    alldata['time'].append((
-                        data['time'],
-                        base.hex(),
-                        parent.hex(),
-                    ))
-                    alldata['nbrenames'].append((
-                        data['nbrenamedfiles'],
-                        base.hex(),
-                        parent.hex(),
-                    ))
+                    if dostats:
+                        alldata['time'].append((
+                            data['time'],
+                            base.hex(),
+                            parent.hex(),
+                        ))
+                        alldata['nbrenames'].append((
+                            data['nbrenamedfiles'],
+                            base.hex(),
+                            parent.hex(),
+                        ))
                 fm.startitem()
                 fm.data(**data)
                 out = data.copy()
