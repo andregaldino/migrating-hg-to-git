@@ -1861,6 +1861,7 @@ class revlog(object):
 
         if sidedata is None:
             sidedata = {}
+            flags = flags & ~REVIDX_SIDEDATA
         elif not self.hassidedata:
             raise error.ProgrammingError(
                 _("trying to add sidedata to a revlog who don't support them")
