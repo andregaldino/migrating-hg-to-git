@@ -2437,21 +2437,21 @@ class revlog(object):
             # the revlog chunk is a delta.
             cachedelta = None
             rawtext = None
-            if (deltareuse != self.DELTAREUSEFULLADD and destrevlog._lazydelta):
-                dp = self.deltaparent(rev)
-                if dp != nullrev:
-                    cachedelta = (dp, bytes(self._chunk(rev)))
-
-            if not cachedelta:
-                rawtext = self.rawdata(rev)
-
-
             if deltareuse == self.DELTAREUSEFULLADD:
-                destrevlog.addrevision(rawtext, tr, linkrev, p1, p2,
+                text = self.revision(rev)
+                destrevlog.addrevision(text, tr, linkrev, p1, p2,
                                        cachedelta=cachedelta,
                                        node=node, flags=flags,
                                        deltacomputer=deltacomputer)
             else:
+                if destrevlog._lazydelta:
+                    dp = self.deltaparent(rev)
+                    if dp != nullrev:
+                        cachedelta = (dp, bytes(self._chunk(rev)))
+
+                if not cachedelta:
+                    rawtext = self.rawdata(rev)
+
                 ifh = destrevlog.opener(destrevlog.indexfile, 'a+',
                                         checkambig=False)
                 dfh = None
