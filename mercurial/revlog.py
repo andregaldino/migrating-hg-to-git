@@ -355,7 +355,7 @@ class revlog(object):
 
     def _loadindex(self):
         mmapindexthreshold = None
-        opts = getattr(self.opener, 'options', {}) or {}
+        opts = self.opener.options
 
         if 'revlogv2' in opts:
             newversionflags = REVLOGV2 | FLAG_INLINE_DATA
@@ -363,7 +363,7 @@ class revlog(object):
             newversionflags = REVLOGV1 | FLAG_INLINE_DATA
             if 'generaldelta' in opts:
                 newversionflags |= FLAG_GENERALDELTA
-        elif 'revlogv0' in getattr(self.opener, 'options', {}):
+        elif 'revlogv0' in self.opener.options:
             newversionflags = REVLOGV0
         else:
             newversionflags = REVLOG_DEFAULT_VERSION

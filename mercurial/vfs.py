@@ -327,6 +327,7 @@ class vfs(abstractvfs):
             self.audit = (lambda path, mode=None: True)
         self.createmode = None
         self._trustnlink = None
+        self.options = {}
 
     @util.propertycache
     def _cansymlink(self):

@@ -115,6 +115,7 @@ def build_opener(ui, authinfo):
     class statichttpvfs(vfsmod.abstractvfs):
         def __init__(self, base):
             self.base = base
+            self.options = {}
 
         def __call__(self, path, mode='r', *args, **kw):
             if mode not in ('r', 'rb'):
