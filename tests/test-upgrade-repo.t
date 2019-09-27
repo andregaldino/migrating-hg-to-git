@@ -385,8 +385,21 @@ Upgrading a repository to generaldelta works
   $ touch FooBarDirectory.d/f1
   $ hg -q commit -A -m 'add f1'
   $ hg -q up -r 0
-  $ touch f2
+  >>> from __future__ import absolute_import, print_function
+  >>> import random
+  >>> random.seed(0) # have a reproducible content
+  >>> with open("f2", "w") as f:
+  ...     for i in range(100000):
+  ...         f.write("%d\n" % random.randint(1000000000, 9999999999))
   $ hg -q commit -A -m 'add f2'
+
+make sure we have a .d file
+
+  $ ls -d .hg/store/data/*
+  .hg/store/data/_foo_bar_directory.d.hg
+  .hg/store/data/f0.i
+  .hg/store/data/f2.d
+  .hg/store/data/f2.i
 
   $ hg debugupgraderepo --run --config format.sparse-revlog=false
   upgrade will perform the following actions:
@@ -403,14 +416,14 @@ Upgrading a repository to generaldelta works
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 953 bytes in store; 437 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  migrating 519 KB in store; 1.05 MB tracked data
+  migrating 3 filelogs containing 3 revisions (518 KB in store; 1.05 MB tracked data)
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
-  finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
+  migrating 1 manifests containing 3 revisions (384 bytes in store; 238 bytes tracked data)
+  finished migrating 3 manifest revisions across 1 manifests; change in size: -17 bytes
   migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   finished migrating 3 changelog revisions; change in size: 0 bytes
-  finished migrating 9 total revisions; total change in store size: 0 bytes
+  finished migrating 9 total revisions; total change in store size: -17 bytes
   copying phaseroots
   data fully migrated to temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
@@ -499,8 +512,8 @@ unless --no-backup is passed
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 953 bytes in store; 437 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  migrating 519 KB in store; 1.05 MB tracked data
+  migrating 3 filelogs containing 3 revisions (518 KB in store; 1.05 MB tracked data)
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
   migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
@@ -536,8 +549,8 @@ We can restrict optimization to some revlog:
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 953 bytes in store; 437 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  migrating 519 KB in store; 1.05 MB tracked data
+  migrating 3 filelogs containing 3 revisions (518 KB in store; 1.05 MB tracked data)
   blindly copying data/FooBarDirectory.d/f1.i containing 1 revisions
   blindly copying data/f0.i containing 1 revisions
   blindly copying data/f2.i containing 1 revisions
@@ -562,14 +575,16 @@ We can restrict optimization to some revlog:
 
 Check that the repo still works fine
 
-  $ hg log -G --patch
-  @  changeset:   2:b5a3b78015e5
+  $ hg log -G --stat
+  @  changeset:   2:76d4395f5413
   |  tag:         tip
   |  parent:      0:ba592bf28da2
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     add f2
   |
+  |   f2 |  100000 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  |   1 files changed, 100000 insertions(+), 0 deletions(-)
   |
   | o  changeset:   1:2029ce2354e2
   |/   user:        test
@@ -589,7 +604,10 @@ Check that the repo still works fine
   checking manifests
   crosschecking files in changesets and manifests
   checking files
+   warning: revlog 'data/f2.d' not in fncache!
   checked 3 changesets with 3 changes to 3 files
+  1 warnings encountered!
+  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
 
 Check we can select negatively
 
@@ -607,8 +625,8 @@ Check we can select negatively
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 953 bytes in store; 437 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  migrating 519 KB in store; 1.05 MB tracked data
+  migrating 3 filelogs containing 3 revisions (518 KB in store; 1.05 MB tracked data)
   cloning 1 revisions from data/FooBarDirectory.d/f1.i
   cloning 1 revisions from data/f0.i
   cloning 1 revisions from data/f2.i
@@ -653,8 +671,8 @@ Check that we can select changelog only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 953 bytes in store; 437 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  migrating 519 KB in store; 1.05 MB tracked data
+  migrating 3 filelogs containing 3 revisions (518 KB in store; 1.05 MB tracked data)
   blindly copying data/FooBarDirectory.d/f1.i containing 1 revisions
   blindly copying data/f0.i containing 1 revisions
   blindly copying data/f2.i containing 1 revisions
@@ -681,7 +699,10 @@ Check that we can select changelog only
   checking manifests
   crosschecking files in changesets and manifests
   checking files
+   warning: revlog 'data/f2.d' not in fncache!
   checked 3 changesets with 3 changes to 3 files
+  1 warnings encountered!
+  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
 
 Check that we can select filelog only
 
@@ -699,8 +720,8 @@ Check that we can select filelog only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 953 bytes in store; 437 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  migrating 519 KB in store; 1.05 MB tracked data
+  migrating 3 filelogs containing 3 revisions (518 KB in store; 1.05 MB tracked data)
   cloning 1 revisions from data/FooBarDirectory.d/f1.i
   cloning 1 revisions from data/f0.i
   cloning 1 revisions from data/f2.i
@@ -750,8 +771,8 @@ Check you can't skip revlog clone during important format downgrade
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 953 bytes in store; 437 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  migrating 519 KB in store; 1.05 MB tracked data
+  migrating 3 filelogs containing 3 revisions (518 KB in store; 1.05 MB tracked data)
   cloning 1 revisions from data/FooBarDirectory.d/f1.i
   cloning 1 revisions from data/f0.i
   cloning 1 revisions from data/f2.i
@@ -802,8 +823,8 @@ Check you can't skip revlog clone during important format upgrade
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 953 bytes in store; 437 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  migrating 519 KB in store; 1.05 MB tracked data
+  migrating 3 filelogs containing 3 revisions (518 KB in store; 1.05 MB tracked data)
   cloning 1 revisions from data/FooBarDirectory.d/f1.i
   cloning 1 revisions from data/f0.i
   cloning 1 revisions from data/f2.i
