@@ -561,7 +561,7 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
         pass # create all the directories
 
     util.copyfile(oldindex, newindex)
-    if oldrl.opener.exists(olddata):
+    if oldrl.opener.exists(oldrl.datafile):
         util.copyfile(olddata, newdata)
 
     if not (unencodedname.endswith('00changelog.i')
