@@ -2360,6 +2360,10 @@ class revlog(object):
            Deltas will never be reused. This is the slowest mode of execution.
            This mode can be used to recompute deltas (e.g. if the diff/delta
            algorithm changes).
+        DELTAREUSEFULLADD
+           Revision will be re-added as if their were new content. This is
+           slower than DELTAREUSEALWAYS but allow more mechanism to kicks in.
+           eg: large file detection and handling.
 
         Delta computation can be slow, so the choice of delta reuse policy can
         significantly affect run time.
