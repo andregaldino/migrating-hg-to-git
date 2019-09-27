@@ -561,12 +561,15 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
         pass # create all the directories
 
     util.copyfile(oldindex, newindex)
-    if oldrl.opener.exists(oldrl.datafile):
+    copydata = oldrl.opener.exists(oldrl.datafile)
+    if copydata:
         util.copyfile(olddata, newdata)
 
     if not (unencodedname.endswith('00changelog.i')
             or unencodedname.endswith('00manifest.i')):
         destrepo.svfs.fncache.add(unencodedname)
+        if copydata:
+            destrepo.svfs.fncache.add(unencodedname[:-2] + '.d')
 
 UPGRADE_CHANGELOG = object()
 UPGRADE_MANIFEST = object()

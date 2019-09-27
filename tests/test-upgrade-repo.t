@@ -604,10 +604,7 @@ Check that the repo still works fine
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-   warning: revlog 'data/f2.d' not in fncache!
   checked 3 changesets with 3 changes to 3 files
-  1 warnings encountered!
-  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
 
 Check we can select negatively
 
@@ -699,10 +696,7 @@ Check that we can select changelog only
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-   warning: revlog 'data/f2.d' not in fncache!
   checked 3 changesets with 3 changes to 3 files
-  1 warnings encountered!
-  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
 
 Check that we can select filelog only
 
