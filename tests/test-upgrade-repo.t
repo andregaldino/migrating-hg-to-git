@@ -381,7 +381,8 @@ Upgrading a repository to generaldelta works
   $ cd upgradegd
   $ touch f0
   $ hg -q commit -A -m initial
-  $ touch f1
+  $ mkdir FooBarDirectory.d
+  $ touch FooBarDirectory.d/f1
   $ hg -q commit -A -m 'add f1'
   $ hg -q up -r 0
   $ touch f2
@@ -402,12 +403,12 @@ Upgrading a repository to generaldelta works
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 953 bytes in store; 437 bytes tracked data
   migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
@@ -498,12 +499,12 @@ unless --no-backup is passed
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 953 bytes in store; 437 bytes tracked data
   migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
@@ -535,16 +536,16 @@ We can restrict optimization to some revlog:
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 953 bytes in store; 437 bytes tracked data
   migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  blindly copying data/FooBarDirectory.d/f1.i containing 1 revisions
   blindly copying data/f0.i containing 1 revisions
-  blindly copying data/f1.i containing 1 revisions
   blindly copying data/f2.i containing 1 revisions
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   cloning 3 revisions from 00manifest.i
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   blindly copying 00changelog.i containing 3 revisions
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
@@ -570,7 +571,7 @@ Check that the repo still works fine
   |  summary:     add f2
   |
   |
-  | o  changeset:   1:da8c0fc4833c
+  | o  changeset:   1:2029ce2354e2
   |/   user:        test
   |    date:        Thu Jan 01 00:00:00 1970 +0000
   |    summary:     add f1
@@ -606,16 +607,16 @@ Check we can select negatively
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 953 bytes in store; 437 bytes tracked data
   migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  cloning 1 revisions from data/FooBarDirectory.d/f1.i
   cloning 1 revisions from data/f0.i
-  cloning 1 revisions from data/f1.i
   cloning 1 revisions from data/f2.i
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   blindly copying 00manifest.i containing 3 revisions
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   cloning 3 revisions from 00changelog.i
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
@@ -652,16 +653,16 @@ Check that we can select changelog only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 953 bytes in store; 437 bytes tracked data
   migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  blindly copying data/FooBarDirectory.d/f1.i containing 1 revisions
   blindly copying data/f0.i containing 1 revisions
-  blindly copying data/f1.i containing 1 revisions
   blindly copying data/f2.i containing 1 revisions
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   blindly copying 00manifest.i containing 3 revisions
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   cloning 3 revisions from 00changelog.i
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
@@ -698,16 +699,16 @@ Check that we can select filelog only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 953 bytes in store; 437 bytes tracked data
   migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  cloning 1 revisions from data/FooBarDirectory.d/f1.i
   cloning 1 revisions from data/f0.i
-  cloning 1 revisions from data/f1.i
   cloning 1 revisions from data/f2.i
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   blindly copying 00manifest.i containing 3 revisions
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   blindly copying 00changelog.i containing 3 revisions
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
@@ -749,16 +750,16 @@ Check you can't skip revlog clone during important format downgrade
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 953 bytes in store; 437 bytes tracked data
   migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  cloning 1 revisions from data/FooBarDirectory.d/f1.i
   cloning 1 revisions from data/f0.i
-  cloning 1 revisions from data/f1.i
   cloning 1 revisions from data/f2.i
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   cloning 3 revisions from 00manifest.i
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   cloning 3 revisions from 00changelog.i
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
@@ -801,16 +802,16 @@ Check you can't skip revlog clone during important format upgrade
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 953 bytes in store; 437 bytes tracked data
   migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
+  cloning 1 revisions from data/FooBarDirectory.d/f1.i
   cloning 1 revisions from data/f0.i
-  cloning 1 revisions from data/f1.i
   cloning 1 revisions from data/f2.i
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (367 bytes in store; 238 bytes tracked data)
   cloning 3 revisions from 00manifest.i
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (394 bytes in store; 199 bytes tracked data)
   cloning 3 revisions from 00changelog.i
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes

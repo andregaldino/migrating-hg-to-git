@@ -557,8 +557,8 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
     olddata = oldvfs.join(oldrl.datafile)
     newdata = newvfs.join(newrl.datafile)
 
-    newdir = newvfs.dirname(newrl.indexfile)
-    newvfs.makedirs(newdir)
+    with newvfs(newrl.indexfile, 'w'):
+        pass # create all the directories
 
     util.copyfile(oldindex, newindex)
     if oldrl.opener.exists(olddata):
