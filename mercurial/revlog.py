@@ -2337,7 +2337,7 @@ class revlog(object):
     DELTAREUSEALL = {'always', 'samerevs', 'never', 'fulladd'}
 
     def clone(self, tr, destrevlog, addrevisioncb=None,
-              deltareuse=DELTAREUSESAMEREVS, forcedeltabothparents=None):
+            deltareuse=DELTAREUSESAMEREVS, forcedeltabothparents=None):
         """Copy this revlog to another, possibly with format changes.
 
         The destination revlog will contain the same revisions and nodes.
@@ -2405,59 +2405,65 @@ class revlog(object):
 
             destrevlog._deltabothparents = forcedeltabothparents or oldamd
 
-            deltacomputer = deltautil.deltacomputer(destrevlog)
-            index = self.index
-            for rev in self:
-                entry = index[rev]
+            self._clone(tr, destrevlog, addrevisioncb, deltareuse,
+                        forcedeltabothparents)
 
-                # Some classes override linkrev to take filtered revs into
-                # account. Use raw entry from index.
-                flags = entry[0] & 0xffff
-                linkrev = entry[4]
-                p1 = index[entry[5]][7]
-                p2 = index[entry[6]][7]
-                node = entry[7]
-
-                # (Possibly) reuse the delta from the revlog if allowed and
-                # the revlog chunk is a delta.
-                cachedelta = None
-                rawtext = None
-                if (deltareuse != self.DELTAREUSEFULLADD
-                        and destrevlog._lazydelta):
-                    dp = self.deltaparent(rev)
-                    if dp != nullrev:
-                        cachedelta = (dp, bytes(self._chunk(rev)))
-
-                if not cachedelta:
-                    rawtext = self.rawdata(rev)
-
-
-                if deltareuse == self.DELTAREUSEFULLADD:
-                    destrevlog.addrevision(rawtext, tr, linkrev, p1, p2,
-                                           cachedelta=cachedelta,
-                                           node=node, flags=flags,
-                                           deltacomputer=deltacomputer)
-                else:
-                    ifh = destrevlog.opener(destrevlog.indexfile, 'a+',
-                                            checkambig=False)
-                    dfh = None
-                    if not destrevlog._inline:
-                        dfh = destrevlog.opener(destrevlog.datafile, 'a+')
-                    try:
-                        destrevlog._addrevision(node, rawtext, tr, linkrev, p1,
-                                                p2, flags, cachedelta, ifh, dfh,
-                                                deltacomputer=deltacomputer)
-                    finally:
-                        if dfh:
-                            dfh.close()
-                        ifh.close()
-
-                if addrevisioncb:
-                    addrevisioncb(self, rev, node)
         finally:
             destrevlog._lazydelta = oldlazydelta
             destrevlog._lazydeltabase = oldlazydeltabase
             destrevlog._deltabothparents = oldamd
+
+    def _clone(self, tr, destrevlog, addrevisioncb, deltareuse,
+               forcedeltabothparents):
+        """perform the core duty of `revlog.clone` after parameter processing"""
+        deltacomputer = deltautil.deltacomputer(destrevlog)
+        index = self.index
+        for rev in self:
+            entry = index[rev]
+
+            # Some classes override linkrev to take filtered revs into
+            # account. Use raw entry from index.
+            flags = entry[0] & 0xffff
+            linkrev = entry[4]
+            p1 = index[entry[5]][7]
+            p2 = index[entry[6]][7]
+            node = entry[7]
+
+            # (Possibly) reuse the delta from the revlog if allowed and
+            # the revlog chunk is a delta.
+            cachedelta = None
+            rawtext = None
+            if (deltareuse != self.DELTAREUSEFULLADD and destrevlog._lazydelta):
+                dp = self.deltaparent(rev)
+                if dp != nullrev:
+                    cachedelta = (dp, bytes(self._chunk(rev)))
+
+            if not cachedelta:
+                rawtext = self.rawdata(rev)
+
+
+            if deltareuse == self.DELTAREUSEFULLADD:
+                destrevlog.addrevision(rawtext, tr, linkrev, p1, p2,
+                                       cachedelta=cachedelta,
+                                       node=node, flags=flags,
+                                       deltacomputer=deltacomputer)
+            else:
+                ifh = destrevlog.opener(destrevlog.indexfile, 'a+',
+                                        checkambig=False)
+                dfh = None
+                if not destrevlog._inline:
+                    dfh = destrevlog.opener(destrevlog.datafile, 'a+')
+                try:
+                    destrevlog._addrevision(node, rawtext, tr, linkrev, p1,
+                                            p2, flags, cachedelta, ifh, dfh,
+                                            deltacomputer=deltacomputer)
+                finally:
+                    if dfh:
+                        dfh.close()
+                    ifh.close()
+
+            if addrevisioncb:
+                addrevisioncb(self, rev, node)
 
     def censorrevision(self, tr, censornode, tombstone=b''):
         if (self.version & 0xFFFF) == REVLOGV0:
