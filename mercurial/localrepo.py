@@ -748,6 +748,8 @@ def resolvestorevfsoptions(ui, requirements, features):
     # meaningful on such old repos.
     if b'revlogv1' in requirements or REVLOGV2_REQUIREMENT in requirements:
         options.update(resolverevlogstorevfsoptions(ui, requirements, features))
+    else: # explicitly mark repo as using revlogv0
+        options['revlogv0'] = True
 
     return options
 
