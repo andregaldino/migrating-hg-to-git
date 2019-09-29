@@ -187,7 +187,7 @@ EOF
 
 sudo apt-key add docker-apt-key
 
-if [ "$DEBIAN_VERSION" = "9.8" ]; then
+if [ "$LSB_RELEASE" = "stretch" ]; then
 cat << EOF | sudo tee -a /etc/apt/sources.list
 # Need backports for clang-format-6.0
 deb http://deb.debian.org/debian stretch-backports main
@@ -271,7 +271,7 @@ PACKAGES="\
     zip \
     zlib1g-dev"
 
-if [ "$DEBIAN_VERSION" = "9.8" ]; then
+if [ "LSB_RELEASE" = "stretch" ]; then
     PACKAGES="$PACKAGES linux-perf"
 elif [ "$DISTRO" = "Ubuntu" ]; then
     PACKAGES="$PACKAGES linux-tools-common"
