@@ -58,6 +58,7 @@ from mercurial import (
     error,
     hg,
     patch,
+    pycompat,
     registrar,
     scmutil,
 )
@@ -365,7 +366,7 @@ def synthesize(ui, repo, descpath, **opts):
             return True
 
         progress = ui.makeprogress(_synthesizing, unit=_files, total=initcount)
-        for i in xrange(0, initcount):
+        for i in pycompat.xrange(0, initcount):
             progress.update(i)
 
             path = pickpath()
@@ -398,7 +399,7 @@ def synthesize(ui, repo, descpath, **opts):
     count = int(opts['count'])
     heads = set(map(repo.changelog.rev, repo.heads()))
     progress = ui.makeprogress(_synthesizing, unit=_changesets, total=count)
-    for i in xrange(count):
+    for i in pycompat.xrange(count):
         progress.update(i)
 
         node = repo.changelog.node
@@ -432,8 +433,8 @@ def synthesize(ui, repo, descpath, **opts):
         mfk = mf.keys()
         changes = {}
         if mfk:
-            for __ in xrange(pick(fileschanged)):
-                for __ in xrange(10):
+            for __ in pycompat.xrange(pick(fileschanged)):
+                for __ in pycompat.xrange(10):
                     fctx = pctx.filectx(random.choice(mfk))
                     path = fctx.path()
                     if not (path in nevertouch or fctx.isbinary() or
@@ -441,23 +442,23 @@ def synthesize(ui, repo, descpath, **opts):
                         break
                 lines = fctx.data().splitlines()
                 add, remove = pick(lineschanged)
-                for __ in xrange(remove):
+                for __ in pycompat.xrange(remove):
                     if not lines:
                         break
                     del lines[random.randrange(0, len(lines))]
-                for __ in xrange(add):
+                for __ in pycompat.xrange(add):
                     lines.insert(random.randint(0, len(lines)), makeline())
                 path = fctx.path()
                 changes[path] = '\n'.join(lines) + '\n'
-            for __ in xrange(pick(filesremoved)):
-                for __ in xrange(10):
+            for __ in pycompat.xrange(pick(filesremoved)):
+                for __ in pycompat.xrange(10):
                     path = random.choice(mfk)
                     if path not in changes:
                         break
         if filesadded:
             dirs = list(pctx.dirs())
             dirs.insert(0, '')
-        for __ in xrange(pick(filesadded)):
+        for __ in pycompat.xrange(pick(filesadded)):
             pathstr = ''
             while pathstr in dirs:
                 path = [random.choice(dirs)]
@@ -465,8 +466,9 @@ def synthesize(ui, repo, descpath, **opts):
                     path.append(random.choice(words))
                 path.append(random.choice(words))
                 pathstr = '/'.join(filter(None, path))
-            data = '\n'.join(makeline()
-                             for __ in xrange(pick(linesinfilesadded))) + '\n'
+            data = '\n'.join(
+                makeline()
+                for __ in pycompat.xrange(pick(linesinfilesadded))) + '\n'
             changes[pathstr] = data
         def filectxfn(repo, memctx, path):
             if path not in changes:
