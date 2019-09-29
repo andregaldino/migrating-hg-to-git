@@ -847,7 +847,7 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian9', prefix='hg-'):
                 'DeviceName': image.block_device_mappings[0]['DeviceName'],
                 'Ebs': {
                     'DeleteOnTermination': True,
-                    'VolumeSize': 8,
+                    'VolumeSize': 10,
                     'VolumeType': 'gp2',
                 },
             },
