@@ -6,6 +6,7 @@ import sys
 
 from mercurial import (
     mdiff,
+    pycompat,
 )
 
 def reducetest(a, b):
@@ -63,7 +64,7 @@ def test(a, b):
 def rndtest(size, noise):
     a = []
     src = "                aaaaaaaabbbbccd"
-    for x in xrange(size):
+    for x in pycompat.xrange(size):
         a.append(src[random.randint(0, len(src) - 1)])
 
     while True:
