@@ -831,13 +831,6 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian9', prefix='hg-'):
             'ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20190403',
         )
         ssh_username = 'ubuntu'
-    elif distro == 'ubuntu18.10':
-        image = find_image(
-            ec2resource,
-            UBUNTU_ACCOUNT_ID,
-            'ubuntu/images/hvm-ssd/ubuntu-cosmic-18.10-amd64-server-20190402',
-        )
-        ssh_username = 'ubuntu'
     elif distro == 'ubuntu19.04':
         image = find_image(
             ec2resource,

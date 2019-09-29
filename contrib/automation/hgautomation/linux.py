@@ -22,7 +22,6 @@ from .ssh import (
 DISTROS = {
     'debian9',
     'ubuntu18.04',
-    'ubuntu18.10',
     'ubuntu19.04',
 }
 
