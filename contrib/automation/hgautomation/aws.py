@@ -821,21 +821,21 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian9', prefix='hg-'):
         image = find_image(
             ec2resource,
             DEBIAN_ACCOUNT_ID,
-            'debian-stretch-hvm-x86_64-gp2-2019-02-19-26620',
+            'debian-stretch-hvm-x86_64-gp2-2019-09-08-17994',
         )
         ssh_username = 'admin'
     elif distro == 'ubuntu18.04':
         image = find_image(
             ec2resource,
             UBUNTU_ACCOUNT_ID,
-            'ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20190403',
+            'ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-20190918',
         )
         ssh_username = 'ubuntu'
     elif distro == 'ubuntu19.04':
         image = find_image(
             ec2resource,
             UBUNTU_ACCOUNT_ID,
-            'ubuntu/images/hvm-ssd/ubuntu-disco-19.04-amd64-server-20190417',
+            'ubuntu/images/hvm-ssd/ubuntu-disco-19.04-amd64-server-20190918',
         )
         ssh_username = 'ubuntu'
     else:
