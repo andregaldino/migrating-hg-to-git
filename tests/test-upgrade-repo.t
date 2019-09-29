@@ -390,7 +390,7 @@ Upgrading a repository to generaldelta works
   >>> random.seed(0) # have a reproducible content
   >>> with open("f2", "w") as f:
   ...     for i in range(100000):
-  ...         f.write("%d\n" % random.randint(1000000000, 9999999999))
+  ...         f.write("%d\n" % random.randint(1000000000, 9999999999)) and None
   $ hg -q commit -A -m 'add f2'
 
 make sure we have a .d file
