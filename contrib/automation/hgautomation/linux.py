@@ -219,6 +219,7 @@ PACKAGES="\
     darcs \
     debhelper \
     devscripts \
+    docker-ce \
     dpkg-dev \
     dstat \
     emacs \
@@ -280,12 +281,6 @@ fi
 # Ubuntu 19.04 removes monotone.
 if [ "$LSB_RELEASE" != "disco" ]; then
     PACKAGES="$PACKAGES monotone"
-fi
-
-# As of April 27, 2019, Docker hasn't published packages for
-# Ubuntu 19.04 yet.
-if [ "$LSB_RELEASE" != "disco" ]; then
-    PACKAGES="$PACKAGES docker-ce"
 fi
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends $PACKAGES
