@@ -706,6 +706,9 @@ coreconfigitem(
     b'experimental', b'worker.wdir-get-thread-safe', default=False,
 )
 coreconfigitem(
+    b'experimental', b'worker.repository-upgrade', default=False,
+)
+coreconfigitem(
     b'experimental', b'xdiff', default=False,
 )
 coreconfigitem(
