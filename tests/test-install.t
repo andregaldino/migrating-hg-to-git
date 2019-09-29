@@ -249,10 +249,12 @@ the default for them.
   $ unset PYTHONPATH
   $ "$PYTHON" -m virtualenv --no-site-packages --never-download installenv >> pip.log
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
+  DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. More details about Python 2 support in pip, can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support (?)
 Note: we use this weird path to run pip and hg to avoid platform differences,
 since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
+  DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. More details about Python 2 support in pip, can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support (?)
   $ ./installenv/*/hg debuginstall || cat pip.log
   checking encoding (ascii)...
   checking Python executable (*) (glob)
