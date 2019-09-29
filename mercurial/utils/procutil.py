@@ -70,6 +70,7 @@ shellsplit = platform.shellsplit
 spawndetached = platform.spawndetached
 sshargs = platform.sshargs
 testpid = platform.testpid
+quote = pycompat.shlexquote
 
 try:
     setprocname = osutil.setprocname

@@ -152,7 +152,8 @@ def _smtp(ui):
 def _sendmail(ui, sender, recipients, msg):
     '''send mail using sendmail.'''
     program = ui.config('email', 'method')
-    stremail = lambda x: stringutil.email(encoding.strtolocal(x))
+    stremail = lambda x: (
+        procutil.quote(stringutil.email(encoding.strtolocal(x))))
     cmdline = '%s -f %s %s' % (program, stremail(sender),
                                ' '.join(map(stremail, recipients)))
     ui.note(_('sending mail: %s\n') % cmdline)
