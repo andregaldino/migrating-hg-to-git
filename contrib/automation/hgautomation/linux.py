@@ -210,6 +210,7 @@ fi
 sudo apt-get update
 
 PACKAGES="\
+    awscli \
     btrfs-progs \
     build-essential \
     bzr \
@@ -251,6 +252,7 @@ PACKAGES="\
     python-pygments \
     python-subversion \
     python-vcr \
+    python3-boto3 \
     python3-dev \
     python3-docutils \
     python3-fuzzywuzzy \
