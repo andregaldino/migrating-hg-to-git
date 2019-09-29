@@ -355,11 +355,5 @@ bbb
                          b'>>>>>>> THIS\r'.splitlines(True), list(m_lines))
 
 if __name__ == '__main__':
-    # hide the timer
-    import time
-    orig = time.time
-    try:
-        time.time = lambda: 0
-        unittest.main()
-    finally:
-        time.time = orig
+    import silenttestrunner
+    silenttestrunner.main(__name__)
