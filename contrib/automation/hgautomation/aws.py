@@ -54,6 +54,7 @@ INSTANCE_TYPES_WITH_STORAGE = {
 
 AMAZON_ACCOUNT_ID = '801119661308'
 DEBIAN_ACCOUNT_ID = '379101102735'
+DEBIAN_ACCOUNT_ID_2 = '136693071363'
 UBUNTU_ACCOUNT_ID = '099720109477'
 
 
@@ -807,7 +808,7 @@ def create_ami_from_instance(ec2client, instance, name, description,
     return image
 
 
-def ensure_linux_dev_ami(c: AWSConnection, distro='debian9', prefix='hg-'):
+def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
     """Ensures a Linux development AMI is available and up-to-date.
 
     Returns an ``ec2.Image`` of either an existing AMI or a newly-built one.
@@ -822,6 +823,13 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian9', prefix='hg-'):
             ec2resource,
             DEBIAN_ACCOUNT_ID,
             'debian-stretch-hvm-x86_64-gp2-2019-09-08-17994',
+        )
+        ssh_username = 'admin'
+    elif distro == 'debian10':
+        image = find_image(
+            ec2resource,
+            DEBIAN_ACCOUNT_ID_2,
+            'debian-10-amd64-20190909-10',
         )
         ssh_username = 'admin'
     elif distro == 'ubuntu18.04':

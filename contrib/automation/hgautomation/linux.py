@@ -21,6 +21,7 @@ from .ssh import (
 # Linux distributions that are supported.
 DISTROS = {
     'debian9',
+    'debian10',
     'ubuntu18.04',
     'ubuntu19.04',
 }
@@ -190,14 +191,18 @@ if [ "$LSB_RELEASE" = "stretch" ]; then
 cat << EOF | sudo tee -a /etc/apt/sources.list
 # Need backports for clang-format-6.0
 deb http://deb.debian.org/debian stretch-backports main
+EOF
+fi
 
+if [ "$LSB_RELEASE" = "stretch" -o "$LSB_RELEASE" = "buster" ]; then
+cat << EOF | sudo tee -a /etc/apt/sources.list
 # Sources are useful if we want to compile things locally.
-deb-src http://deb.debian.org/debian stretch main
-deb-src http://security.debian.org/debian-security stretch/updates main
-deb-src http://deb.debian.org/debian stretch-updates main
-deb-src http://deb.debian.org/debian stretch-backports main
+deb-src http://deb.debian.org/debian $LSB_RELEASE main
+deb-src http://security.debian.org/debian-security $LSB_RELEASE/updates main
+deb-src http://deb.debian.org/debian $LSB_RELEASE-updates main
+deb-src http://deb.debian.org/debian $LSB_RELEASE-backports main
 
-deb [arch=amd64] https://download.docker.com/linux/debian stretch stable
+deb [arch=amd64] https://download.docker.com/linux/debian $LSB_RELEASE stable
 EOF
 
 elif [ "$DISTRO" = "Ubuntu" ]; then
@@ -279,8 +284,8 @@ elif [ "$DISTRO" = "Ubuntu" ]; then
     PACKAGES="$PACKAGES linux-tools-common"
 fi
 
-# Ubuntu 19.04 removes monotone.
-if [ "$LSB_RELEASE" != "disco" ]; then
+# Monotone only available in older releases.
+if [ "$LSB_RELEASE" = "stretch" -o "$LSB_RELEASE" = "xenial" ]; then
     PACKAGES="$PACKAGES monotone"
 fi
 

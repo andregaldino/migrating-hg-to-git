@@ -352,7 +352,7 @@ def get_parser():
         '--distro',
         help='Linux distribution to run tests on',
         choices=linux.DISTROS,
-        default='debian9',
+        default='debian10',
     )
     sp.add_argument(
         '--filesystem',
