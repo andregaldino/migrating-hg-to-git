@@ -37,14 +37,14 @@ popd
 export PYENV_ROOT="/hgdev/pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
 
-# pip 19.0.3.
-PIP_SHA256=efe99298f3fbb1f56201ce6b81d2658067d2f7d7dfc2d412e0d3cacc9a397c61
-wget -O get-pip.py --progress dot:mega https://github.com/pypa/get-pip/raw/fee32c376da1ff6496a798986d7939cd51e1644f/get-pip.py
+# pip 19.2.3.
+PIP_SHA256=57e3643ff19f018f8a00dfaa6b7e4620e3c1a7a2171fd218425366ec006b3bfe
+wget -O get-pip.py --progress dot:mega https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py
 echo "${PIP_SHA256} get-pip.py" | sha256sum --check -
 
-VIRTUALENV_SHA256=984d7e607b0a5d1329425dd8845bd971b957424b5ba664729fab51ab8c11bc39
-VIRTUALENV_TARBALL=virtualenv-16.4.3.tar.gz
-wget -O ${VIRTUALENV_TARBALL} --progress dot:mega https://files.pythonhosted.org/packages/37/db/89d6b043b22052109da35416abc3c397655e4bd3cff031446ba02b9654fa/${VIRTUALENV_TARBALL}
+VIRTUALENV_SHA256=f78d81b62d3147396ac33fc9d77579ddc42cc2a98dd9ea38886f616b33bc7fb2
+VIRTUALENV_TARBALL=virtualenv-16.7.5.tar.gz
+wget -O ${VIRTUALENV_TARBALL} --progress dot:mega https://files.pythonhosted.org/packages/66/f0/6867af06d2e2f511e4e1d7094ff663acdebc4f15d4a0cb0fed1007395124/${VIRTUALENV_TARBALL}
 echo "${VIRTUALENV_SHA256} ${VIRTUALENV_TARBALL}" | sha256sum --check -
 
 for v in ${PYENV2_VERSIONS}; do
@@ -79,8 +79,8 @@ sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup component add clippy
 BOOTSTRAP_VIRTUALENV = r'''
 /usr/bin/virtualenv /hgdev/venv-bootstrap
 
-HG_SHA256=1bdd21bb87d1e05fb5cd395d488d0e0cc2f2f90ce0fd248e31a03595da5ccb47
-HG_TARBALL=mercurial-4.9.1.tar.gz
+HG_SHA256=35fc8ba5e0379c1b3affa2757e83fb0509e8ac314cbd9f1fd133cf265d16e49f
+HG_TARBALL=mercurial-5.1.1.tar.gz
 
 wget -O ${HG_TARBALL} --progress dot:mega https://www.mercurial-scm.org/release/${HG_TARBALL}
 echo "${HG_SHA256} ${HG_TARBALL}" | sha256sum --check -
