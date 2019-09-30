@@ -10,9 +10,7 @@
 //!
 //! From Python, this will be seen as `mercurial.rustext.dagop`
 use crate::{
-    cindex::Index,
-    conversion::{py_set, rev_pyiter_collect},
-    exceptions::GraphError,
+    cindex::Index, conversion::rev_pyiter_collect, exceptions::GraphError,
 };
 use cpython::{PyDict, PyModule, PyObject, PyResult, Python};
 use hg::dagops;
@@ -26,11 +24,11 @@ pub fn headrevs(
     py: Python,
     index: PyObject,
     revs: PyObject,
-) -> PyResult<PyObject> {
+) -> PyResult<HashSet<Revision>> {
     let mut as_set: HashSet<Revision> = rev_pyiter_collect(py, &revs)?;
     dagops::retain_heads(&Index::new(py, index)?, &mut as_set)
         .map_err(|e| GraphError::pynew(py, e))?;
-    py_set(py, &as_set)
+    Ok(as_set)
 }
 
 /// Create the module, with `__package__` given from parent

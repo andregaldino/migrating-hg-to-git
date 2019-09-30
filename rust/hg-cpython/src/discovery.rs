@@ -13,9 +13,7 @@
 //!   `mercurial.setdiscovery.partialdiscovery`.
 
 use crate::{
-    cindex::Index,
-    conversion::{py_set, rev_pyiter_collect},
-    exceptions::GraphError,
+    cindex::Index, conversion::rev_pyiter_collect, exceptions::GraphError,
 };
 use cpython::{
     ObjectProtocol, PyDict, PyModule, PyObject, PyResult, PyTuple, Python,
@@ -23,6 +21,7 @@ use cpython::{
 };
 use hg::discovery::PartialDiscovery as CorePartialDiscovery;
 use hg::Revision;
+use std::collections::HashSet;
 
 use std::cell::RefCell;
 
@@ -106,12 +105,9 @@ py_class!(pub class PartialDiscovery |py| {
         Ok(as_dict)
     }
 
-    def commonheads(&self) -> PyResult<PyObject> {
-        py_set(
-            py,
-            &self.inner(py).borrow().common_heads()
-                .map_err(|e| GraphError::pynew(py, e))?
-        )
+    def commonheads(&self) -> PyResult<HashSet<Revision>> {
+        self.inner(py).borrow().common_heads()
+            .map_err(|e| GraphError::pynew(py, e))
     }
 
     def takefullsample(&self, _headrevs: PyObject,
