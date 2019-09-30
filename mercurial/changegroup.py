@@ -1281,9 +1281,19 @@ _packermap = {'01': (_makecg1packer, cg1unpacker),
 
 def allsupportedversions(repo):
     versions = set(_packermap.keys())
-    if not (repo.ui.configbool('experimental', 'changegroup3') or
-            repo.ui.configbool('experimental', 'treemanifest') or
-            'treemanifest' in repo.requirements):
+    needv03 = False
+    if (repo.ui.configbool('experimental', 'changegroup3') or
+        repo.ui.configbool('experimental', 'treemanifest') or
+        'treemanifest' in repo.requirements):
+        # we keep version 03 because we need to to exchange treemanifest data
+        #
+        # we also keep vresion 01 and 02, because it is possible for repo to
+        # contains both normal and tree manifest at the same time. so using
+        # older version to pull data is viable
+        #
+        # (or even to push subset of history)
+        needv03 = True
+    if not needv03:
         versions.discard('03')
     return versions
 
