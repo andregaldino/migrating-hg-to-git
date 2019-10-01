@@ -337,11 +337,9 @@ if ispy3:
         ret = shlex.split(s.decode('latin-1'), comments, posix)
         return [a.encode('latin-1') for a in ret]
 
-    shlexquote = shlex.quote
 
 else:
     import cStringIO
-    import pipes
 
     xrange = xrange
     unicode = unicode
@@ -408,7 +406,6 @@ else:
     sysplatform = sys.platform
     sysexecutable = sys.executable
     shlexsplit = shlex.split
-    shlexquote = pipes.quote
     bytesio = cStringIO.StringIO
     stringio = bytesio
     maplist = map
