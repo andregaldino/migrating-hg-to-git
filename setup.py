@@ -490,6 +490,14 @@ class hgbuildext(build_ext):
 
         return build_ext.initialize_options(self)
 
+    def finalize_options(self):
+        # Unless overridden by the end user, build extensions in parallel.
+        # Only influences behavior on Python 3.5+.
+        if getattr(self, 'parallel', None) is None:
+            self.parallel = True
+
+        return build_ext.finalize_options(self)
+
     def build_extensions(self):
         ruststandalones = [e for e in self.extensions
                            if isinstance(e, RustStandaloneExtension)]
