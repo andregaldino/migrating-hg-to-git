@@ -178,12 +178,36 @@ def _committedforwardcopies(a, b, base, match):
     return cm
 
 
+def _revinfogetter(repo):
+    """return a function that return multiple data given a <rev>"i
+
+    * p1: revision number of first parent
+    * p2: revision number of first parent
+    * p1copies: mapping of copies from p1
+    * p2copies: mapping of copies from p2
+    * removed: a list of removed files
+    """
+    cl = repo.changelog
+    parents = cl.parentrevs
+
+    def revinfo(rev):
+        p1, p2 = parents(rev)
+        ctx = repo[rev]
+        p1copies, p2copies = ctx._copies
+        removed = ctx.filesremoved()
+        return p1, p2, p1copies, p2copies, removed
+
+    return revinfo
+
+
 def _changesetforwardcopies(a, b, match):
     if a.rev() in (node.nullrev, b.rev()):
         return {}
 
     repo = a.repo()
     children = {}
+    revinfo = _revinfogetter(repo)
+
     cl = repo.changelog
     missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
     for r in missingrevs:
@@ -206,9 +230,7 @@ def _changesetforwardcopies(a, b, match):
         if r == b.rev():
             return copies
         for i, c in enumerate(children[r]):
-            childctx = repo[c]
-            p1, p2 = cl.parentrevs(c)
-            p1copies, p2copies = childctx._copies
+            p1, p2, p1copies, p2copies, removed = revinfo(c)
             if r == p1:
                 parent = 1
                 childcopies = p1copies
@@ -227,7 +249,7 @@ def _changesetforwardcopies(a, b, match):
                 newcopies = copies
             if childcopies:
                 newcopies = _chain(newcopies, childcopies)
-            for f in childctx.filesremoved():
+            for f in removed:
                 if f in newcopies:
                     del newcopies[f]
             othercopies = all_copies.get(c)
