@@ -215,9 +215,10 @@ class changelogrevision(object):
         r'_offsets',
         r'_text',
         r'_sidedata',
+        r'_cpsd',
     )
 
-    def __new__(cls, text, sidedata):
+    def __new__(cls, text, sidedata, cpsd):
         if not text:
             return _changelogrevision(extra=_defaultextra)
 
@@ -250,6 +251,7 @@ class changelogrevision(object):
         self._offsets = (nl1, nl2, nl3, doublenl)
         self._text = text
         self._sidedata = sidedata
+        self._cpsd = cpsd
 
         return self
 
@@ -308,8 +310,10 @@ class changelogrevision(object):
 
     @property
     def filesadded(self):
-        if sidedatamod.SD_FILESADDED in self._sidedata:
+        if self._cpsd:
             rawindices = self._sidedata.get(sidedatamod.SD_FILESADDED)
+            if not rawindices:
+                return []
         else:
             rawindices = self.extra.get(b'filesadded')
         if rawindices is None:
@@ -318,8 +322,10 @@ class changelogrevision(object):
 
     @property
     def filesremoved(self):
-        if sidedatamod.SD_FILESREMOVED in self._sidedata:
+        if self._cpsd:
             rawindices = self._sidedata.get(sidedatamod.SD_FILESREMOVED)
+            if not rawindices:
+                return []
         else:
             rawindices = self.extra.get(b'filesremoved')
         if rawindices is None:
@@ -328,8 +334,10 @@ class changelogrevision(object):
 
     @property
     def p1copies(self):
-        if sidedatamod.SD_P1COPIES in self._sidedata:
+        if self._cpsd:
             rawcopies = self._sidedata.get(sidedatamod.SD_P1COPIES)
+            if not rawcopies:
+                return {}
         else:
             rawcopies = self.extra.get(b'p1copies')
         if rawcopies is None:
@@ -338,8 +346,10 @@ class changelogrevision(object):
 
     @property
     def p2copies(self):
-        if sidedatamod.SD_P2COPIES in self._sidedata:
+        if self._cpsd:
             rawcopies = self._sidedata.get(sidedatamod.SD_P2COPIES)
+            if not rawcopies:
+                return {}
         else:
             rawcopies = self.extra.get(b'p2copies')
         if rawcopies is None:
@@ -581,13 +591,18 @@ class changelog(revlog.revlog):
         ``changelogrevision`` instead, as it is faster for partial object
         access.
         """
-        c = changelogrevision(*self._revisiondata(node))
+        d, s = self._revisiondata(node)
+        c = changelogrevision(
+            d, s, self._copiesstorage == b'changeset-sidedata'
+        )
         return (c.manifest, c.user, c.date, c.files, c.description, c.extra)
 
     def changelogrevision(self, nodeorrev):
         """Obtain a ``changelogrevision`` for a node or revision."""
         text, sidedata = self._revisiondata(nodeorrev)
-        return changelogrevision(text, sidedata)
+        return changelogrevision(
+            text, sidedata, self._copiesstorage == b'changeset-sidedata'
+        )
 
     def readfiles(self, node):
         """
