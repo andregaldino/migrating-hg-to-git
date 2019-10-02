@@ -890,10 +890,14 @@ def _getsidedata(srcrepo, rev):
         p2copies = encodecopies(sortedfiles, p2copies)
         filesadded = encodefileindices(sortedfiles, filesadded)
         filesremoved = encodefileindices(sortedfiles, filesremoved)
-        sidedata[sidedatamod.SD_P1COPIES] = p1copies
-        sidedata[sidedatamod.SD_P2COPIES] = p2copies
-        sidedata[sidedatamod.SD_FILESADDED] = filesadded
-        sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
+        if p1copies:
+            sidedata[sidedatamod.SD_P1COPIES] = p1copies
+        if p2copies:
+            sidedata[sidedatamod.SD_P2COPIES] = p2copies
+        if filesadded:
+            sidedata[sidedatamod.SD_FILESADDED] = filesadded
+        if filesremoved:
+            sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
     return sidedata
 
 

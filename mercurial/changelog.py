@@ -693,14 +693,16 @@ class changelog(revlog.revlog):
                 extra[b'filesremoved'] = filesremoved
         elif self._copiesstorage == b'changeset-sidedata':
             sidedata = {}
-            if p1copies is not None:
+            if p1copies:
                 sidedata[sidedatamod.SD_P1COPIES] = p1copies
-            if p2copies is not None:
+            if p2copies:
                 sidedata[sidedatamod.SD_P2COPIES] = p2copies
-            if filesadded is not None:
+            if filesadded:
                 sidedata[sidedatamod.SD_FILESADDED] = filesadded
-            if filesremoved is not None:
+            if filesremoved:
                 sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
+            if not sidedata:
+                sidedata = None
 
         if extra:
             extra = encodeextra(extra)
