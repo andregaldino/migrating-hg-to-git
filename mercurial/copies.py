@@ -190,12 +190,25 @@ def _revinfogetter(repo):
     cl = repo.changelog
     parents = cl.parentrevs
 
-    def revinfo(rev):
-        p1, p2 = parents(rev)
-        ctx = repo[rev]
-        p1copies, p2copies = ctx._copies
-        removed = ctx.filesremoved()
-        return p1, p2, p1copies, p2copies, removed
+    if repo.filecopiesmode == b'changeset-sidedata':
+        changelogrevision = cl.changelogrevision
+
+        def revinfo(rev):
+            p1, p2 = parents(rev)
+            c = changelogrevision(rev)
+            p1copies = c.p1copies
+            p2copies = c.p2copies
+            removed = c.filesremoved
+            return p1, p2, p1copies, p2copies, removed
+
+    else:
+
+        def revinfo(rev):
+            p1, p2 = parents(rev)
+            ctx = repo[rev]
+            p1copies, p2copies = ctx._copies
+            removed = ctx.filesremoved()
+            return p1, p2, p1copies, p2copies, removed
 
     return revinfo
 
