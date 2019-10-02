@@ -2122,7 +2122,7 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
                 data = {
                     b'source': base.hex(),
                     b'destination': parent.hex(),
-                    b'nbrevs': len(repo.revs('%d::%d', b, p)),
+                    b'nbrevs': len(repo.revs('only(%d, %d)', p, b)),
                     b'nbmissingfiles': len(missing),
                 }
                 if dostats:
