@@ -196,30 +196,13 @@ def _changesetforwardcopies(a, b, match):
                 children[p].append(r)
 
     roots = set(children) - set(missingrevs)
-    # 'work' contains 3-tuples of a (revision number, parent number, copies).
-    # The parent number is only used for knowing which parent the copies dict
-    # came from.
-    # NOTE: To reduce costly copying the 'copies' dicts, we reuse the same
-    # instance for *one* of the child nodes (the last one). Once an instance
-    # has been put on the queue, it is thus no longer safe to modify it.
-    # Conversely, it *is* safe to modify an instance popped off the queue.
-    work = [(r, 1, {}) for r in roots]
+    work = list(roots)
+    all_copies = {r: {} for r in roots}
     heapq.heapify(work)
     alwaysmatch = match.always()
     while work:
-        r, i1, copies = heapq.heappop(work)
-        if work and work[0][0] == r:
-            # We are tracing copies from both parents
-            r, i2, copies2 = heapq.heappop(work)
-            for dst, src in copies2.items():
-                # Unlike when copies are stored in the filelog, we consider
-                # it a copy even if the destination already existed on the
-                # other branch. It's simply too expensive to check if the
-                # file existed in the manifest.
-                if dst not in copies:
-                    # If it was copied on the p1 side, leave it as copied from
-                    # that side, even if it was also copied on the p2 side.
-                    copies[dst] = copies2[dst]
+        r = heapq.heappop(work)
+        copies = all_copies.pop(r)
         if r == b.rev():
             return copies
         for i, c in enumerate(children[r]):
@@ -245,7 +228,28 @@ def _changesetforwardcopies(a, b, match):
             for f in childctx.filesremoved():
                 if f in newcopies:
                     del newcopies[f]
-            heapq.heappush(work, (c, parent, newcopies))
+            othercopies = all_copies.get(c)
+            if othercopies is None:
+                heapq.heappush(work, c)
+                all_copies[c] = newcopies
+            else:
+                # we are the second parent to work on c, we need to merge our
+                # work with the other.
+                #
+                # Unlike when copies are stored in the filelog, we consider
+                # it a copy even if the destination already existed on the
+                # other branch. It's simply too expensive to check if the
+                # file existed in the manifest.
+                #
+                # In case of conflict, parent 1 take precedence over parent 2.
+                # This is an arbitrary choice made anew when implementing
+                # changeset based copies. It was made without regards with
+                # potential filelog related behavior.
+                if parent == 1:
+                    othercopies.update(newcopies)
+                else:
+                    newcopies.update(othercopies)
+                    all_copies[c] = newcopies
     assert False
 
 
