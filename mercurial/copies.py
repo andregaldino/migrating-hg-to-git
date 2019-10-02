@@ -192,13 +192,19 @@ def _revinfogetter(repo):
 
     if repo.filecopiesmode == b'changeset-sidedata':
         changelogrevision = cl.changelogrevision
+        flags = cl.flags
 
         def revinfo(rev):
             p1, p2 = parents(rev)
-            c = changelogrevision(rev)
-            p1copies = c.p1copies
-            p2copies = c.p2copies
-            removed = c.filesremoved
+            if flags(rev) & REVIDX_SIDEDATA:
+                c = changelogrevision(rev)
+                p1copies = c.p1copies
+                p2copies = c.p2copies
+                removed = c.filesremoved
+            else:
+                p1copies = {}
+                p2copies = {}
+                removed = ()
             return p1, p2, p1copies, p2copies, removed
 
     else:
