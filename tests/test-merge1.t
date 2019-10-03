@@ -49,7 +49,7 @@ Detect interrupted update by hg status --verbose
   ? b/nonempty
   # The repository is in an unfinished *update* state.
   
-  # To continue:    hg update
+  # To continue:    hg update .
   
 
   $ rm b/nonempty

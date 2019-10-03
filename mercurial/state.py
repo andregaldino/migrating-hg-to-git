@@ -201,7 +201,7 @@ addunfinished(
     'update', fname='updatestate', clearable=True,
     cmdmsg=_('last update was interrupted'),
     cmdhint=_("use 'hg update' to get a consistent checkout"),
-    statushint=_("To continue:    hg update")
+    statushint=_("To continue:    hg update .")
 )
 addunfinished(
     'bisect', fname='bisect.state', allowcommit=True, reportonly=True,
