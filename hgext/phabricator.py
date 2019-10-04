@@ -251,7 +251,8 @@ def callconduit(ui, name, params):
     parsed = pycompat.rapply(
         lambda x: encoding.unitolocal(x) if isinstance(x, pycompat.unicode)
         else x,
-        json.loads(body)
+        # json.loads only accepts bytes from py3.6+
+        json.loads(encoding.unifromlocal(body))
     )
     if parsed.get(b'error_code'):
         msg = (_(b'Conduit Error (%s): %s')
