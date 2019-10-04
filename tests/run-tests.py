@@ -3170,7 +3170,7 @@ class TestRunner(object):
                 print('WARNING: cannot fix hg.bat reference to python.exe')
 
         if self.options.anycoverage:
-            custom = os.path.join(self._testdir, 'sitecustomize.py')
+            custom = os.path.join(osenvironb[b'RUNTESTDIR'], 'sitecustomize.py')
             target = os.path.join(self._pythondir, 'sitecustomize.py')
             vlog('# Installing coverage trigger to %s' % target)
             shutil.copyfile(custom, target)
