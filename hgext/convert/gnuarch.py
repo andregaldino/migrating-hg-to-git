@@ -85,7 +85,7 @@ class gnuarch_source(common.converter_source, common.commandline):
 
         # Get name of temporary directory
         version = self.treeversion.split('/')
-        self.tmppath = os.path.join(tempfile.gettempdir(),
+        self.tmppath = os.path.join(pycompat.fsencode(tempfile.gettempdir()),
                                     'hg-%s' % version[1])
 
         # Generate parents dictionary
