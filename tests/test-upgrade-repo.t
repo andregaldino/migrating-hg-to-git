@@ -617,7 +617,8 @@ We can restrict optimization to some revlog:
 Check that the repo still works fine
 
   $ hg log -G --stat
-  @  changeset:   2:76d4395f5413
+  @  changeset:   2:76d4395f5413 (no-py3 !)
+  @  changeset:   2:fca376863211 (py3 !)
   |  tag:         tip
   |  parent:      0:ba592bf28da2
   |  user:        test
