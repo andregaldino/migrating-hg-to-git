@@ -300,22 +300,25 @@ def _scantemplate(tmpl, start, stop, quote=b'', raw=False):
         if quote:
             raise error.ParseError(_(b"unterminated string"), start)
     except error.ParseError as inst:
-        if len(inst.args) > 1:  # has location
-            loc = inst.args[1]
-            # Offset the caret location by the number of newlines before the
-            # location of the error, since we will replace one-char newlines
-            # with the two-char literal r'\n'.
-            offset = tmpl[:loc].count(b'\n')
-            tmpl = tmpl.replace(b'\n', br'\n')
-            # We want the caret to point to the place in the template that
-            # failed to parse, but in a hint we get a open paren at the
-            # start. Therefore, we print "loc + 1" spaces (instead of "loc")
-            # to line up the caret with the location of the error.
-            inst.hint = (
-                tmpl + b'\n' + b' ' * (loc + 1 + offset) + b'^ ' + _(b'here')
-            )
+        _addparseerrorhint(inst, tmpl)
         raise
     yield (b'end', None, pos)
+
+
+def _addparseerrorhint(inst, tmpl):
+    if len(inst.args) <= 1:
+        return  # no location
+    loc = inst.args[1]
+    # Offset the caret location by the number of newlines before the
+    # location of the error, since we will replace one-char newlines
+    # with the two-char literal r'\n'.
+    offset = tmpl[:loc].count(b'\n')
+    tmpl = tmpl.replace(b'\n', br'\n')
+    # We want the caret to point to the place in the template that
+    # failed to parse, but in a hint we get a open paren at the
+    # start. Therefore, we print "loc + 1" spaces (instead of "loc")
+    # to line up the caret with the location of the error.
+    inst.hint = tmpl + b'\n' + b' ' * (loc + 1 + offset) + b'^ ' + _(b'here')
 
 
 def _unnesttemplatelist(tree):
@@ -360,22 +363,30 @@ def parse(tmpl):
     return _unnesttemplatelist((b'template', parsed))
 
 
-def _parseexpr(expr):
+def parseexpr(expr):
     """Parse a template expression into tree
 
-    >>> _parseexpr(b'"foo"')
+    >>> parseexpr(b'"foo"')
     ('string', 'foo')
-    >>> _parseexpr(b'foo(bar)')
+    >>> parseexpr(b'foo(bar)')
     ('func', ('symbol', 'foo'), ('symbol', 'bar'))
-    >>> _parseexpr(b'foo(')
+    >>> parseexpr(b'foo(')
     Traceback (most recent call last):
       ...
     ParseError: ('not a prefix: end', 4)
-    >>> _parseexpr(b'"foo" "bar"')
+    >>> parseexpr(b'"foo" "bar"')
     Traceback (most recent call last):
       ...
     ParseError: ('invalid token', 7)
     """
+    try:
+        return _parseexpr(expr)
+    except error.ParseError as inst:
+        _addparseerrorhint(inst, expr)
+        raise
+
+
+def _parseexpr(expr):
     p = parser.parser(elements)
     tree, pos = p.parse(tokenize(expr, 0, len(expr)))
     if pos != len(expr):
