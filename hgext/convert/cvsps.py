@@ -138,7 +138,8 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
         # Get the real directory in the repository
         try:
-            prefix = open(os.path.join('CVS','Repository'), 'rb').read().strip()
+            with open(os.path.join(b'CVS', b'Repository'), 'rb') as f:
+                prefix = f.read().strip()
             directory = prefix
             if prefix == ".":
                 prefix = ""
