@@ -61,14 +61,14 @@ impl PySharedState {
         &'a self,
         py: Python<'a>,
         pyrefmut: RefMut<'a, T>,
-    ) -> PyResult<PyRefMut<'a, T>> {
+    ) -> PyResult<RefMut<'a, T>> {
         match self.current_borrow_count(py) {
             0 => {
                 // Note that this wraps around to the same value if mutably
                 // borrowed more than usize::MAX times, which wouldn't happen
                 // in practice.
                 self.generation.fetch_add(1, Ordering::Relaxed);
-                Ok(PyRefMut::new(py, pyrefmut, self))
+                Ok(pyrefmut)
             }
             _ => Err(AlreadyBorrowed::new(
                 py,
@@ -170,7 +170,7 @@ impl<T> PySharedRefCell<T> {
     // inner.try_borrow_mut(). The current implementation panics if
     // self.inner has been borrowed, but returns error if py_shared_state
     // refuses to borrow.
-    fn borrow_mut<'a>(&'a self, py: Python<'a>) -> PyResult<PyRefMut<'a, T>> {
+    fn borrow_mut<'a>(&'a self, py: Python<'a>) -> PyResult<RefMut<'a, T>> {
         self.py_shared_state.borrow_mut(py, self.inner.borrow_mut())
     }
 }
@@ -199,7 +199,7 @@ impl<'a, T> PySharedRef<'a, T> {
         self.data.borrow(self.py)
     }
 
-    pub fn borrow_mut(&self) -> PyResult<PyRefMut<'a, T>> {
+    pub fn borrow_mut(&self) -> PyResult<RefMut<'a, T>> {
         self.data.borrow_mut(self.py)
     }
 
@@ -223,38 +223,6 @@ impl<'a, T> PySharedRef<'a, T> {
                 static_state_ref,
             ))
         }
-    }
-}
-
-/// Holds a mutable reference to data shared between Python and Rust.
-pub struct PyRefMut<'a, T> {
-    inner: RefMut<'a, T>,
-}
-
-impl<'a, T> PyRefMut<'a, T> {
-    // Must be constructed by PySharedState after checking its leak_count.
-    // Otherwise, drop() would incorrectly update the state.
-    fn new(
-        _py: Python<'a>,
-        inner: RefMut<'a, T>,
-        _py_shared_state: &'a PySharedState,
-    ) -> Self {
-        Self {
-            inner,
-        }
-    }
-}
-
-impl<'a, T> std::ops::Deref for PyRefMut<'a, T> {
-    type Target = RefMut<'a, T>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-impl<'a, T> std::ops::DerefMut for PyRefMut<'a, T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
     }
 }
 
