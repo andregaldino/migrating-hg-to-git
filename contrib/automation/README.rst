@@ -33,6 +33,46 @@ side-effects so they don't impact the local system. e.g. when we SSH
 into a remote machine, we create a temporary directory for the SSH
 config so the user's known hosts file isn't updated.
 
+Try Server
+==========
+
+There exists a *Try Server* which allows automation to run against
+an arbitrary Mercurial changeset and displays results via the web.
+
+.. note::
+
+   The *Try Server* is still experimental infrastructure.
+
+To use the *Try Server*::
+
+   $ ./automation.py try
+
+With a custom AWS profile::
+
+   $ AWS_PROFILE=hg contrib/automation/automation.py try
+
+By default, the ``.`` revision is submitted. **Any uncommitted changes
+are not submitted.**
+
+To switch which revision is used::
+
+   $ ./automation.py try -r abcdef
+
+Access to the *Try Server* requires access to a special AWS account.
+This account is currently run by Gregory Szorc. Here is the procedure
+for accessing the *Try Server*:
+
+1. Email Gregory Szorc at gregory.szorc@gmail.com and request a
+   username. This username will be stored in the public domain.
+2. Wait for an email reply containing your temporary AWS credentials.
+3. Log in at https://gregoryszorc-hg.signin.aws.amazon.com/console
+   and set a new, secure password.
+4. Go to https://console.aws.amazon.com/iam/home?region=us-west-2#/security_credentials
+5. Under ``Access keys for CLI, SDK, & API access``, click the
+   ``Create access key`` button.
+6. See the ``AWS Integration`` section for instructions on
+   configuring your local client to use the generated credentials.
+
 AWS Integration
 ===============
 

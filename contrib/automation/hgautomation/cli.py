@@ -17,6 +17,7 @@ from . import (
     aws,
     HGAutomation,
     linux,
+    try_server,
     windows,
 )
 
@@ -191,6 +192,11 @@ def publish_windows_artifacts(hg: HGAutomation, aws_region, version: str,
     windows.publish_artifacts(DIST_PATH, version,
                               pypi=pypi, mercurial_scm_org=mercurial_scm_org,
                               ssh_username=ssh_username)
+
+
+def run_try(hga: HGAutomation, aws_region: str, rev: str):
+    c = hga.aws_connection(aws_region, ensure_ec2_state=False)
+    try_server.trigger_try(c, rev=rev)
 
 
 def get_parser():
@@ -438,6 +444,15 @@ def get_parser():
         help='Mercurial version string to locate local packages',
     )
     sp.set_defaults(func=publish_windows_artifacts)
+
+    sp = subparsers.add_parser(
+        'try',
+        help='Run CI automation against a custom changeset'
+    )
+    sp.add_argument('-r', '--rev',
+                    default='.',
+                    help='Revision to run CI on')
+    sp.set_defaults(func=run_try)
 
     return parser
 
