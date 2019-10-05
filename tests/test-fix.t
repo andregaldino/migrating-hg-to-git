@@ -1341,6 +1341,22 @@ pattern config is missing, and that we only warn about it once.
 
   $ cd ..
 
+Tools can be disabled. Disabled tools do nothing but print a debug message.
+
+  $ hg init disabled
+  $ cd disabled
+
+  $ printf "foo\n" > foo
+  $ hg add -q
+  $ hg fix --debug --working-dir --config "fix.disabled:command=echo fixed" \
+  >                              --config "fix.disabled:pattern=foo" \
+  >                              --config "fix.disabled:enabled=false"
+  ignoring disabled fixer tool: disabled
+  $ cat foo
+  foo
+
+  $ cd ..
+
 Test that we can configure a fixer to affect all files regardless of the cwd.
 The way we invoke matching must not prohibit this.
 

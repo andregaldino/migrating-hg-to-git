@@ -173,6 +173,7 @@ FIXER_ATTRS = {
     'priority': 0,
     'metadata': 'false',
     'skipclean': 'true',
+    'enabled': 'true',
 }
 
 for key, default in FIXER_ATTRS.items():
@@ -726,6 +727,7 @@ def getfixers(ui):
         fixers[name]._priority = int(fixers[name]._priority)
         fixers[name]._metadata = stringutil.parsebool(fixers[name]._metadata)
         fixers[name]._skipclean = stringutil.parsebool(fixers[name]._skipclean)
+        fixers[name]._enabled = stringutil.parsebool(fixers[name]._enabled)
         # Don't use a fixer if it has no pattern configured. It would be
         # dangerous to let it affect all files. It would be pointless to let it
         # affect no files. There is no reasonable subset of files to use as the
@@ -733,6 +735,9 @@ def getfixers(ui):
         if fixers[name]._pattern is None:
             ui.warn(
                 _('fixer tool has no pattern configuration: %s\n') % (name,))
+            del fixers[name]
+        elif not fixers[name]._enabled:
+            ui.debug('ignoring disabled fixer tool: %s\n' % (name,))
             del fixers[name]
     return collections.OrderedDict(
         sorted(fixers.items(), key=lambda item: item[1]._priority,
