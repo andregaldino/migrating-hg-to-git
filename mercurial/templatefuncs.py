@@ -16,6 +16,7 @@ from .node import (
 )
 from . import (
     color,
+    diffutil,
     encoding,
     error,
     minirst,
@@ -86,7 +87,8 @@ def dict_(context, mapping, args):
                 for k, v in args['kwargs'].iteritems())
     return templateutil.hybriddict(data)
 
-@templatefunc('diff([includepattern [, excludepattern]])', requires={'ctx'})
+@templatefunc('diff([includepattern [, excludepattern]])',
+              requires={'ctx', 'ui'})
 def diff(context, mapping, args):
     """Show a diff, optionally
     specifying files to include or exclude."""
@@ -102,7 +104,10 @@ def diff(context, mapping, args):
         return []
 
     ctx = context.resource(mapping, 'ctx')
-    chunks = ctx.diff(match=ctx.match([], getpatterns(0), getpatterns(1)))
+    ui = context.resource(mapping, 'ui')
+    diffopts = diffutil.diffallopts(ui)
+    chunks = ctx.diff(match=ctx.match([], getpatterns(0), getpatterns(1)),
+                      opts=diffopts)
 
     return ''.join(chunks)
 

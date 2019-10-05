@@ -370,6 +370,17 @@ Test diff function:
   @@ -0,0 +1,1 @@
   +second
 
+  $ hg --config diff.git=true log -r 8 -T "{diff()}"
+  diff --git a/second b/fourth
+  rename from second
+  rename to fourth
+  diff --git a/third b/third
+  new file mode 100644
+  --- /dev/null
+  +++ b/third
+  @@ -0,0 +1,1 @@
+  +third
+
   $ cd ..
 
 latesttag() function:
