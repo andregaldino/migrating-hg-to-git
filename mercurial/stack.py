@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+
 def getstack(repo, rev=None):
     """return a sorted smartrev of the stack containing either rev if it is
     not None or the current working directory parent.

@@ -14,6 +14,7 @@ from . import (
     pycompat,
 )
 
+
 def addlines(fp, hunk, lena, lenb, a, b):
     """Read lines from fp into the hunk
 
@@ -47,6 +48,7 @@ def addlines(fp, hunk, lena, lenb, a, b):
                 b.append(s[1:])
                 a.append(s)
 
+
 def fixnewline(hunk, a, b):
     """Fix up the last lines of a and b when the patch has no newline at EOF"""
     l = hunk[-1]
@@ -61,6 +63,7 @@ def fixnewline(hunk, a, b):
     if hline.startswith((' ', '-')):
         a[-1] = hline
     hunk[-1] = hline
+
 
 def testhunk(a, b, bstart):
     """Compare the lines in a with the lines in b

@@ -15,6 +15,7 @@ from . import (
     util,
 )
 
+
 class dirstateguard(util.transactional):
     '''Restore dirstate at unexpected failure.
 
@@ -34,14 +35,16 @@ class dirstateguard(util.transactional):
         self._active = False
         self._closed = False
         self._backupname = 'dirstate.backup.%s.%d' % (name, id(self))
-        self._narrowspecbackupname = ('narrowspec.backup.%s.%d' %
-                                      (name, id(self)))
+        self._narrowspecbackupname = 'narrowspec.backup.%s.%d' % (
+            name,
+            id(self),
+        )
         repo.dirstate.savebackup(repo.currenttransaction(), self._backupname)
         narrowspec.savewcbackup(repo, self._narrowspecbackupname)
         self._active = True
 
     def __del__(self):
-        if self._active: # still active
+        if self._active:  # still active
             # this may occur, even if this class is used correctly:
             # for example, releasing other resources like transaction
             # may raise exception before ``dirstateguard.release`` in
@@ -49,27 +52,33 @@ class dirstateguard(util.transactional):
             self._abort()
 
     def close(self):
-        if not self._active: # already inactivated
-            msg = (_("can't close already inactivated backup: %s")
-                   % self._backupname)
+        if not self._active:  # already inactivated
+            msg = (
+                _("can't close already inactivated backup: %s")
+                % self._backupname
+            )
             raise error.Abort(msg)
 
-        self._repo.dirstate.clearbackup(self._repo.currenttransaction(),
-                                         self._backupname)
+        self._repo.dirstate.clearbackup(
+            self._repo.currenttransaction(), self._backupname
+        )
         narrowspec.clearwcbackup(self._repo, self._narrowspecbackupname)
         self._active = False
         self._closed = True
 
     def _abort(self):
         narrowspec.restorewcbackup(self._repo, self._narrowspecbackupname)
-        self._repo.dirstate.restorebackup(self._repo.currenttransaction(),
-                                           self._backupname)
+        self._repo.dirstate.restorebackup(
+            self._repo.currenttransaction(), self._backupname
+        )
         self._active = False
 
     def release(self):
         if not self._closed:
-            if not self._active: # already inactivated
-                msg = (_("can't release already inactivated backup: %s")
-                       % self._backupname)
+            if not self._active:  # already inactivated
+                msg = (
+                    _("can't release already inactivated backup: %s")
+                    % self._backupname
+                )
                 raise error.Abort(msg)
             self._abort()

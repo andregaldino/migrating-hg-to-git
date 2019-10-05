@@ -20,6 +20,7 @@ def bin(s):
     except binascii.Error as e:
         raise TypeError(e)
 
+
 nullrev = -1
 # In hex, this is '0000000000000000000000000000000000000000'
 nullid = b"\0" * 20
@@ -38,10 +39,11 @@ wdirfilenodeids = {newnodeid, addednodeid, modifiednodeid}
 
 # pseudo identifiers for working directory
 # (they are experimental, so don't add too many dependencies on them)
-wdirrev = 0x7fffffff
+wdirrev = 0x7FFFFFFF
 # In hex, this is 'ffffffffffffffffffffffffffffffffffffffff'
 wdirid = b"\xff" * 20
 wdirhex = hex(wdirid)
+
 
 def short(node):
     return hex(node[:6])

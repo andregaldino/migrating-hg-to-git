@@ -16,6 +16,7 @@ from . import (
     revset,
 )
 
+
 def precheck(repo, revs, action='rewrite'):
     """check if revs can be rewritten
     action is used to control the error message.
@@ -23,7 +24,7 @@ def precheck(repo, revs, action='rewrite'):
     Make sure this function is called after taking the lock.
     """
     if node.nullrev in revs:
-        msg = _("cannot %s null changeset") % (action)
+        msg = _("cannot %s null changeset") % action
         hint = _("no changeset checked out")
         raise error.Abort(msg, hint=hint)
 
@@ -32,13 +33,14 @@ def precheck(repo, revs, action='rewrite'):
 
     publicrevs = repo.revs('%ld and public()', revs)
     if publicrevs:
-        msg = _("cannot %s public changesets") % (action)
+        msg = _("cannot %s public changesets") % action
         hint = _("see 'hg help phases' for details")
         raise error.Abort(msg, hint=hint)
 
     newunstable = disallowednewunstable(repo, revs)
     if newunstable:
         raise error.Abort(_("cannot %s changeset with children") % action)
+
 
 def disallowednewunstable(repo, revs):
     """Checks whether editing the revs will create new unstable changesets and

@@ -18,16 +18,22 @@ from . import (
 # 'less' as the default seems reasonable.
 fallbackpager = 'less'
 
+
 def _rcfiles(path):
     rcs = [os.path.join(path, 'hgrc')]
     rcdir = os.path.join(path, 'hgrc.d')
     try:
-        rcs.extend([os.path.join(rcdir, f)
-                    for f, kind in util.listdir(rcdir)
-                    if f.endswith(".rc")])
+        rcs.extend(
+            [
+                os.path.join(rcdir, f)
+                for f, kind in util.listdir(rcdir)
+                if f.endswith(".rc")
+            ]
+        )
     except OSError:
         pass
     return rcs
+
 
 def systemrcpath():
     path = []
@@ -43,6 +49,7 @@ def systemrcpath():
     path.extend(_rcfiles('/' + root))
     return path
 
+
 def userrcpath():
     if pycompat.sysplatform == 'plan9':
         return [encoding.environ['home'] + '/lib/hgrc']
@@ -53,12 +60,16 @@ def userrcpath():
         if confighome is None or not os.path.isabs(confighome):
             confighome = os.path.expanduser('~/.config')
 
-        return [os.path.expanduser('~/.hgrc'),
-                os.path.join(confighome, 'hg', 'hgrc')]
+        return [
+            os.path.expanduser('~/.hgrc'),
+            os.path.join(confighome, 'hg', 'hgrc'),
+        ]
+
 
 def termsize(ui):
     try:
         import termios
+
         TIOCGWINSZ = termios.TIOCGWINSZ  # unavailable on IRIX (issue3449)
     except (AttributeError, ImportError):
         return 80, 24

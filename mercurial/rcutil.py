@@ -24,14 +24,17 @@ fallbackpager = scmplatform.fallbackpager
 systemrcpath = scmplatform.systemrcpath
 userrcpath = scmplatform.userrcpath
 
+
 def _expandrcpath(path):
     '''path could be a file or a directory. return a list of file paths'''
     p = util.expandpath(path)
     if os.path.isdir(p):
         join = os.path.join
-        return sorted(join(p, f) for f, k in util.listdir(p)
-                      if f.endswith('.rc'))
+        return sorted(
+            join(p, f) for f, k in util.listdir(p) if f.endswith('.rc')
+        )
     return [p]
+
 
 def envrcitems(env=None):
     '''Return [(section, name, value, source)] config items.
@@ -55,6 +58,7 @@ def envrcitems(env=None):
         result.append((section, configname, env[envname], '$%s' % envname))
     return result
 
+
 def defaultrcpath():
     '''return rc paths in default.d'''
     path = []
@@ -62,6 +66,7 @@ def defaultrcpath():
     if os.path.isdir(defaultpath):
         path = _expandrcpath(defaultpath)
     return path
+
 
 def rccomponents():
     '''return an ordered [(type, obj)] about where to load configs.
@@ -91,6 +96,7 @@ def rccomponents():
         _rccomponents.append(envrc)
         _rccomponents.extend(normpaths(userrcpath()))
     return _rccomponents
+
 
 def defaultpagerenv():
     '''return a dict of default environment variables and their values,

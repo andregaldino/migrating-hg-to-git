@@ -39,6 +39,7 @@ _packageprefs = {
 
 try:
     from . import __modulepolicy__
+
     policy = __modulepolicy__.modulepolicy
 except ImportError:
     pass
@@ -57,6 +58,7 @@ if sys.version_info[0] >= 3:
 else:
     policy = os.environ.get(r'HGMODULEPOLICY', policy)
 
+
 def _importfrom(pkgname, modname):
     # from .<pkgname> import <modname> (where . is looked through this module)
     fakelocals = {}
@@ -68,6 +70,7 @@ def _importfrom(pkgname, modname):
     # force import; fakelocals[modname] may be replaced with the real module
     getattr(mod, r'__doc__', None)
     return fakelocals[modname]
+
 
 # keep in sync with "version" in C modules
 _cextversions = {
@@ -86,13 +89,17 @@ _modredirects = {
     (r'cffi', r'parsers'): (r'pure', r'parsers'),
 }
 
+
 def _checkmod(pkgname, modname, mod):
     expected = _cextversions.get((pkgname, modname))
     actual = getattr(mod, r'version', None)
     if actual != expected:
-        raise ImportError(r'cannot import module %s.%s '
-                          r'(expected version: %d, actual: %r)'
-                          % (pkgname, modname, expected, actual))
+        raise ImportError(
+            r'cannot import module %s.%s '
+            r'(expected version: %d, actual: %r)'
+            % (pkgname, modname, expected, actual)
+        )
+
 
 def importmod(modname):
     """Import module according to policy and check API version"""
@@ -114,9 +121,11 @@ def importmod(modname):
     pn, mn = _modredirects.get((purepkg, modname), (purepkg, modname))
     return _importfrom(pn, mn)
 
+
 def _isrustpermissive():
     """Assuming the policy is a Rust one, tell if it's permissive."""
     return policy.endswith(b'-allow')
+
 
 def importrust(modname, member=None, default=None):
     """Import Rust module according to policy and availability.

@@ -11,12 +11,14 @@ from . import (
 
 try:
     import _winreg as winreg
+
     winreg.CloseKey
 except ImportError:
     import winreg
 
 # MS-DOS 'more' is the only pager available by default on Windows.
 fallbackpager = 'more'
+
 
 def systemrcpath():
     '''return default os-specific hgrc search path'''
@@ -32,8 +34,9 @@ def systemrcpath():
             if f.endswith('.rc'):
                 rcpath.append(os.path.join(progrcd, f))
     # else look for a system rcpath in the registry
-    value = util.lookupreg('SOFTWARE\\Mercurial', None,
-                           winreg.HKEY_LOCAL_MACHINE)
+    value = util.lookupreg(
+        'SOFTWARE\\Mercurial', None, winreg.HKEY_LOCAL_MACHINE
+    )
     if not isinstance(value, str) or not value:
         return rcpath
     value = util.localpath(value)
@@ -46,16 +49,17 @@ def systemrcpath():
                     rcpath.append(os.path.join(p, f))
     return rcpath
 
+
 def userrcpath():
     '''return os-specific hgrc search path to the user dir'''
     home = os.path.expanduser('~')
-    path = [os.path.join(home, 'mercurial.ini'),
-            os.path.join(home, '.hgrc')]
+    path = [os.path.join(home, 'mercurial.ini'), os.path.join(home, '.hgrc')]
     userprofile = encoding.environ.get('USERPROFILE')
     if userprofile and userprofile != home:
         path.append(os.path.join(userprofile, 'mercurial.ini'))
         path.append(os.path.join(userprofile, '.hgrc'))
     return path
+
 
 def termsize(ui):
     return win32.termsize()

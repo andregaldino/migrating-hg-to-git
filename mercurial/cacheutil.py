@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 from . import repoview
 
+
 def cachetocopy(srcrepo):
     """return the list of cache file valuable to copy during a clone"""
     # In local clones we're copying all nodes, not just served
