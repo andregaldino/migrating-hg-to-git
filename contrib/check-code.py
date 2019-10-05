@@ -280,7 +280,6 @@ commonpypats = [
     (r'\b(%s)\(' % '|'.join(k for k in keyword.kwlist
                             if k not in ('print', 'exec')),
      "Python keyword is not a function"),
-    (r',]', "unneeded trailing ',' in list"),
 #    (r'class\s[A-Z][^\(]*\((?!Exception)',
 #     "don't capitalize non-exception classes"),
 #    (r'in range\(', "use xrange"),
