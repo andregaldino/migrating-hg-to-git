@@ -348,3 +348,55 @@ SEC: check for unsafe ssh url
   [255]
 
   $ [ ! -f owned ] || echo 'you got owned'
+
+Test `commands.push.require-revs`
+---------------------------------
+
+  $ hg clone -q test-revflag test-require-revs-source
+  $ hg init test-require-revs-dest
+  $ cd test-require-revs-source
+  $ cat >> .hg/hgrc << EOF
+  > [paths]
+  > default = ../test-require-revs-dest
+  > [commands]
+  > push.require-revs=1
+  > EOF
+  $ hg push
+  pushing to $TESTTMP/test-require-revs-dest
+  abort: no revisions specified to push
+  (did you mean "hg push -r ."?)
+  [255]
+  $ hg push -r 0
+  pushing to $TESTTMP/test-require-revs-dest
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  $ hg bookmark -r 0 push-this-bookmark
+(test that -B (bookmark) works for specifying "revs")
+  $ hg push -B push-this-bookmark
+  pushing to $TESTTMP/test-require-revs-dest
+  searching for changes
+  no changes found
+  exporting bookmark push-this-bookmark
+  [1]
+(test that -b (branch)  works for specifying "revs")
+  $ hg push -b default
+  pushing to $TESTTMP/test-require-revs-dest
+  searching for changes
+  abort: push creates new remote head [0-9a-f]+! (re)
+  (merge or see 'hg help push' for details about pushing new heads)
+  [255]
+(demonstrate that even though we don't have anything to exchange, we're still
+showing the error)
+  $ hg push
+  pushing to $TESTTMP/test-require-revs-dest
+  abort: no revisions specified to push
+  (did you mean "hg push -r ."?)
+  [255]
+  $ hg push --config paths.default:pushrev=0
+  pushing to $TESTTMP/test-require-revs-dest
+  searching for changes
+  no changes found
+  [1]

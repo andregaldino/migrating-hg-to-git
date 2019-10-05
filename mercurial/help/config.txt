@@ -442,6 +442,14 @@ effect and style see :hg:`help color`.
     Show status of files in the working directory after successful commit.
     (default: False)
 
+``push.require-revs``
+    Require revisions to push be specified using one or more mechanisms such as
+    specifying them positionally on the command line, using ``-r``, ``-b``,
+    and/or ``-B`` on the command line, or using ``paths.<path>:pushrev`` in the
+    configuration. If this is enabled and revisions are not specified, the
+    command aborts.
+    (default: False)
+
 ``resolve.confirm``
     Confirm before performing action if no filename is passed.
     (default: False)

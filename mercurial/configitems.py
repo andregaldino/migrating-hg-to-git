@@ -228,6 +228,9 @@ coreconfigitem(
     b'commands', b'grep.all-files', default=False, experimental=True,
 )
 coreconfigitem(
+    b'commands', b'push.require-revs', default=False,
+)
+coreconfigitem(
     b'commands', b'resolve.confirm', default=False,
 )
 coreconfigitem(
