@@ -38,6 +38,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 ///   `PySharedRefCell` is allowed only through its `borrow_mut()`.
 /// - The `py: Python<'_>` token, which makes sure that any data access is
 ///   synchronized by the GIL.
+/// - The underlying `RefCell`, which prevents `PySharedRefCell` data from
+///   being directly borrowed or leaked while it is mutably borrowed.
 /// - The `borrow_count`, which is the number of references borrowed from
 ///   `PyLeaked`. Just like `RefCell`, mutation is prohibited while `PyLeaked`
 ///   is borrowed.
@@ -99,7 +101,7 @@ impl PySharedState {
     unsafe fn leak_immutable<T>(
         &self,
         py: Python,
-        data: &PySharedRefCell<T>,
+        data: Ref<T>,
     ) -> PyResult<(&'static T, &'static PySharedState)> {
         if self.mutably_borrowed.get() {
             return Err(AlreadyBorrowed::new(
@@ -108,10 +110,8 @@ impl PySharedState {
                  mutable reference in Python objects",
             ));
         }
-        // TODO: it's weird that self is data.py_shared_state. Maybe we
-        // can move stuff to PySharedRefCell?
-        let ptr = data.as_ptr();
-        let state_ptr: *const PySharedState = &data.py_shared_state;
+        let ptr: *const T = &*data;
+        let state_ptr: *const PySharedState = self;
         Ok((&*ptr, &*state_ptr))
     }
 
@@ -200,10 +200,6 @@ impl<T> PySharedRefCell<T> {
         self.inner.borrow()
     }
 
-    fn as_ptr(&self) -> *mut T {
-        self.inner.as_ptr()
-    }
-
     // TODO: maybe this should be named as try_borrow_mut(), and use
     // inner.try_borrow_mut(). The current implementation panics if
     // self.inner has been borrowed, but returns error if py_shared_state
@@ -242,11 +238,18 @@ impl<'a, T> PySharedRef<'a, T> {
     }
 
     /// Returns a leaked reference.
+    ///
+    /// # Panics
+    ///
+    /// Panics if this is mutably borrowed.
     pub fn leak_immutable(&self) -> PyResult<PyLeaked<&'static T>> {
         let state = &self.data.py_shared_state;
+        // make sure self.data isn't mutably borrowed; otherwise the
+        // generation number can't be trusted.
+        let data_ref = self.borrow();
         unsafe {
             let (static_ref, static_state_ref) =
-                state.leak_immutable(self.py, self.data)?;
+                state.leak_immutable(self.py, data_ref)?;
             Ok(PyLeaked::new(
                 self.py,
                 self.owner,
@@ -701,5 +704,14 @@ mod test {
             assert!(owner.string_shared(py).borrow_mut().is_err());
         }
         assert!(owner.string_shared(py).borrow_mut().is_ok());
+    }
+
+    #[test]
+    #[should_panic(expected = "mutably borrowed")]
+    fn test_leak_while_borrow_mut() {
+        let (gil, owner) = prepare_env();
+        let py = gil.python();
+        let _mut_ref = owner.string_shared(py).borrow_mut();
+        let _ = owner.string_shared(py).leak_immutable();
     }
 }
