@@ -364,7 +364,6 @@ pypats = [
     # python code fragments embedded in test scripts. Fixing test
     # scripts for these patterns requires many changes, and has less
     # profit than effort.
-    (r'.{81}', "line too long"),
     (r'raise Exception', "don't raise generic exceptions"),
     (r'[\s\(](open|file)\([^)]*\)\.read\(',
      "use util.readfile() instead"),
@@ -462,7 +461,6 @@ cpats = [
     (r'//', "don't use //-style comments"),
     (r'\S\t', "don't use tabs except for indent"),
     (r'(\S[ \t]+|^[ \t]+)\n', "trailing whitespace"),
-    (r'.{81}', "line too long"),
     (r'(while|if|do|for)\(', "use space after while/if/do/for"),
     (r'return\(', "return is not a function"),
     (r' ;', "no space before ;"),
