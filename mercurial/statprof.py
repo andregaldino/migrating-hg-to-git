@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ## statprof.py
 ## Copyright (C) 2012 Bryan O'Sullivan <bos@serpentine.com>
 ## Copyright (C) 2011 Alex Fraser <alex at phatcore dot com>
