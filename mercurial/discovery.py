@@ -394,8 +394,10 @@ def checkheads(pushop):
             if len(newhs) > 1:
                 dhs = list(newhs)
                 if errormsg is None:
-                    errormsg = (_("push creates new branch '%s' "
-                                  "with multiple heads") % (branch))
+                    errormsg = (
+                        _("push creates new branch '%s' with multiple heads") %
+                        branch
+                    )
                     hint = _("merge or"
                              " see 'hg help push' for details about"
                              " pushing new heads")
