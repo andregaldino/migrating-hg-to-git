@@ -24,7 +24,7 @@
 
 use crate::exceptions::AlreadyBorrowed;
 use cpython::{exc, PyClone, PyErr, PyObject, PyResult, Python};
-use std::cell::{Cell, Ref, RefCell, RefMut};
+use std::cell::{Ref, RefCell, RefMut};
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -48,7 +48,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 ///   `generation` at the time of `leak_immutable()`.
 #[derive(Debug, Default)]
 struct PySharedState {
-    mutably_borrowed: Cell<bool>,
     // The counter variable could be Cell<usize> since any operation on
     // PySharedState is synchronized by the GIL, but being "atomic" makes
     // PySharedState inherently Sync. The ordering requirement doesn't
@@ -57,26 +56,14 @@ struct PySharedState {
     generation: AtomicUsize,
 }
 
-// &PySharedState can be Send because any access to inner cells is
-// synchronized by the GIL.
-unsafe impl Sync for PySharedState {}
-
 impl PySharedState {
     fn borrow_mut<'a, T>(
         &'a self,
         py: Python<'a>,
         pyrefmut: RefMut<'a, T>,
     ) -> PyResult<PyRefMut<'a, T>> {
-        if self.mutably_borrowed.get() {
-            return Err(AlreadyBorrowed::new(
-                py,
-                "Cannot borrow mutably while there exists another \
-                 mutable reference in a Python object",
-            ));
-        }
         match self.current_borrow_count(py) {
             0 => {
-                self.mutably_borrowed.replace(true);
                 // Note that this wraps around to the same value if mutably
                 // borrowed more than usize::MAX times, which wouldn't happen
                 // in practice.
@@ -100,16 +87,9 @@ impl PySharedState {
     /// extended. Do not call this function directly.
     unsafe fn leak_immutable<T>(
         &self,
-        py: Python,
+        _py: Python,
         data: Ref<T>,
     ) -> PyResult<(&'static T, &'static PySharedState)> {
-        if self.mutably_borrowed.get() {
-            return Err(AlreadyBorrowed::new(
-                py,
-                "Cannot borrow immutably while there is a \
-                 mutable reference in Python objects",
-            ));
-        }
         let ptr: *const T = &*data;
         let state_ptr: *const PySharedState = self;
         Ok((&*ptr, &*state_ptr))
@@ -128,20 +108,6 @@ impl PySharedState {
     fn decrease_borrow_count(&self, _py: Python) {
         let prev_count = self.borrow_count.fetch_sub(1, Ordering::Relaxed);
         assert!(prev_count > 0);
-    }
-
-    /// # Safety
-    ///
-    /// It's up to you to make sure the reference is about to be deleted
-    /// when updating the leak count.
-    fn decrease_leak_count(&self, py: Python, mutable: bool) {
-        if mutable {
-            assert_eq!(self.current_borrow_count(py), 0);
-            assert!(self.mutably_borrowed.get());
-            self.mutably_borrowed.replace(false);
-        } else {
-            unimplemented!();
-        }
     }
 
     fn current_generation(&self, _py: Python) -> usize {
@@ -262,23 +228,19 @@ impl<'a, T> PySharedRef<'a, T> {
 
 /// Holds a mutable reference to data shared between Python and Rust.
 pub struct PyRefMut<'a, T> {
-    py: Python<'a>,
     inner: RefMut<'a, T>,
-    py_shared_state: &'a PySharedState,
 }
 
 impl<'a, T> PyRefMut<'a, T> {
     // Must be constructed by PySharedState after checking its leak_count.
     // Otherwise, drop() would incorrectly update the state.
     fn new(
-        py: Python<'a>,
+        _py: Python<'a>,
         inner: RefMut<'a, T>,
-        py_shared_state: &'a PySharedState,
+        _py_shared_state: &'a PySharedState,
     ) -> Self {
         Self {
-            py,
             inner,
-            py_shared_state,
         }
     }
 }
@@ -293,12 +255,6 @@ impl<'a, T> std::ops::Deref for PyRefMut<'a, T> {
 impl<'a, T> std::ops::DerefMut for PyRefMut<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
-    }
-}
-
-impl<'a, T> Drop for PyRefMut<'a, T> {
-    fn drop(&mut self) {
-        self.py_shared_state.decrease_leak_count(self.py, true);
     }
 }
 
