@@ -28,7 +28,7 @@ use std::cell::{Cell, Ref, RefCell, RefMut};
 
 /// Manages the shared state between Python and Rust
 #[derive(Debug, Default)]
-pub struct PySharedState {
+struct PySharedState {
     leak_count: Cell<usize>,
     mutably_borrowed: Cell<bool>,
 }
@@ -38,7 +38,7 @@ pub struct PySharedState {
 unsafe impl Sync for PySharedState {}
 
 impl PySharedState {
-    pub fn borrow_mut<'a, T>(
+    fn borrow_mut<'a, T>(
         &'a self,
         py: Python<'a>,
         pyrefmut: RefMut<'a, T>,
@@ -82,7 +82,7 @@ impl PySharedState {
     ///
     /// This is highly unsafe since the lifetime of the given data can be
     /// extended. Do not call this function directly.
-    pub unsafe fn leak_immutable<T>(
+    unsafe fn leak_immutable<T>(
         &self,
         py: Python,
         data: &PySharedRefCell<T>,
@@ -104,9 +104,9 @@ impl PySharedState {
 
     /// # Safety
     ///
-    /// It's unsafe to update the reference count without knowing the
-    /// reference is deleted. Do not call this function directly.
-    pub unsafe fn decrease_leak_count(&self, _py: Python, mutable: bool) {
+    /// It's up to you to make sure the reference is about to be deleted
+    /// when updating the leak count.
+    fn decrease_leak_count(&self, _py: Python, mutable: bool) {
         if mutable {
             assert_eq!(self.leak_count.get(), 0);
             assert!(self.mutably_borrowed.get());
@@ -121,7 +121,8 @@ impl PySharedState {
 
 /// `RefCell` wrapper to be safely used in conjunction with `PySharedState`.
 ///
-/// Only immutable operation is allowed through this interface.
+/// This object can be stored in a `py_class!` object as a data field. Any
+/// operation is allowed through the `PySharedRef` interface.
 #[derive(Debug)]
 pub struct PySharedRefCell<T> {
     inner: RefCell<T>,
@@ -136,14 +137,14 @@ impl<T> PySharedRefCell<T> {
         }
     }
 
-    pub fn borrow<'a>(&'a self, _py: Python<'a>) -> Ref<'a, T> {
+    fn borrow<'a>(&'a self, _py: Python<'a>) -> Ref<'a, T> {
         // py_shared_state isn't involved since
         // - inner.borrow() would fail if self is mutably borrowed,
         // - and inner.borrow_mut() would fail while self is borrowed.
         self.inner.borrow()
     }
 
-    pub fn as_ptr(&self) -> *mut T {
+    fn as_ptr(&self) -> *mut T {
         self.inner.as_ptr()
     }
 
@@ -151,10 +152,7 @@ impl<T> PySharedRefCell<T> {
     // inner.try_borrow_mut(). The current implementation panics if
     // self.inner has been borrowed, but returns error if py_shared_state
     // refuses to borrow.
-    pub fn borrow_mut<'a>(
-        &'a self,
-        py: Python<'a>,
-    ) -> PyResult<PyRefMut<'a, T>> {
+    fn borrow_mut<'a>(&'a self, py: Python<'a>) -> PyResult<PyRefMut<'a, T>> {
         self.py_shared_state.borrow_mut(py, self.inner.borrow_mut())
     }
 }
@@ -241,9 +239,7 @@ impl<'a, T> std::ops::DerefMut for PyRefMut<'a, T> {
 
 impl<'a, T> Drop for PyRefMut<'a, T> {
     fn drop(&mut self) {
-        unsafe {
-            self.py_shared_state.decrease_leak_count(self.py, true);
-        }
+        self.py_shared_state.decrease_leak_count(self.py, true);
     }
 }
 
@@ -324,9 +320,7 @@ impl<T> PyLeakedRef<T> {
     /// # Safety
     ///
     /// The `py_shared_state` must be owned by the `inner` Python object.
-    // Marked as unsafe so client code wouldn't construct PyLeakedRef
-    // struct by mistake. Its drop() is unsafe.
-    pub unsafe fn new(
+    fn new(
         py: Python,
         inner: &PyObject,
         data: T,
@@ -391,9 +385,7 @@ impl<T> Drop for PyLeakedRef<T> {
         if self.data.is_none() {
             return; // moved to another PyLeakedRef
         }
-        unsafe {
-            self.py_shared_state.decrease_leak_count(py, false);
-        }
+        self.py_shared_state.decrease_leak_count(py, false);
     }
 }
 
