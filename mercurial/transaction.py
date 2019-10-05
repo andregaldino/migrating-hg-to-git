@@ -333,8 +333,10 @@ class transaction(util.transactional):
 
             # for generation at closing, check if it's before or after finalize
             postfinalize = group == gengrouppostfinalize
-            if (group != gengroupall and
-                (id in postfinalizegenerators) != (postfinalize)):
+            if (
+                    group != gengroupall
+                    and (id in postfinalizegenerators) != postfinalize
+            ):
                 continue
 
             vfs = self._vfsmap[location]
