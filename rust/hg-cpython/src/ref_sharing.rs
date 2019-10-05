@@ -89,10 +89,10 @@ impl PySharedState {
         &self,
         _py: Python,
         data: Ref<T>,
-    ) -> PyResult<(&'static T, &'static PySharedState)> {
+    ) -> (&'static T, &'static PySharedState) {
         let ptr: *const T = &*data;
         let state_ptr: *const PySharedState = self;
-        Ok((&*ptr, &*state_ptr))
+        (&*ptr, &*state_ptr)
     }
 
     fn current_borrow_count(&self, _py: Python) -> usize {
@@ -208,20 +208,15 @@ impl<'a, T> PySharedRef<'a, T> {
     /// # Panics
     ///
     /// Panics if this is mutably borrowed.
-    pub fn leak_immutable(&self) -> PyResult<PyLeaked<&'static T>> {
+    pub fn leak_immutable(&self) -> PyLeaked<&'static T> {
         let state = &self.data.py_shared_state;
         // make sure self.data isn't mutably borrowed; otherwise the
         // generation number can't be trusted.
         let data_ref = self.borrow();
         unsafe {
             let (static_ref, static_state_ref) =
-                state.leak_immutable(self.py, data_ref)?;
-            Ok(PyLeaked::new(
-                self.py,
-                self.owner,
-                static_ref,
-                static_state_ref,
-            ))
+                state.leak_immutable(self.py, data_ref);
+            PyLeaked::new(self.py, self.owner, static_ref, static_state_ref)
         }
     }
 }
@@ -459,7 +454,7 @@ impl<T> DerefMut for PyLeakedRefMut<'_, T> {
 ///     data inner: PySharedRefCell<MyStruct>;
 ///
 ///     def __iter__(&self) -> PyResult<MyTypeItemsIterator> {
-///         let leaked_ref = self.inner_shared(py).leak_immutable()?;
+///         let leaked_ref = self.inner_shared(py).leak_immutable();
 ///         MyTypeItemsIterator::from_inner(
 ///             py,
 ///             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -551,7 +546,7 @@ mod test {
     fn test_leaked_borrow() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
-        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        let leaked = owner.string_shared(py).leak_immutable();
         let leaked_ref = leaked.try_borrow(py).unwrap();
         assert_eq!(*leaked_ref, "new");
     }
@@ -560,7 +555,7 @@ mod test {
     fn test_leaked_borrow_mut() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
-        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        let leaked = owner.string_shared(py).leak_immutable();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
         let mut leaked_ref = leaked_iter.try_borrow_mut(py).unwrap();
         assert_eq!(leaked_ref.next(), Some('n'));
@@ -573,7 +568,7 @@ mod test {
     fn test_leaked_borrow_after_mut() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
-        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        let leaked = owner.string_shared(py).leak_immutable();
         owner.string_shared(py).borrow_mut().unwrap().clear();
         assert!(leaked.try_borrow(py).is_err());
     }
@@ -582,7 +577,7 @@ mod test {
     fn test_leaked_borrow_mut_after_mut() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
-        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        let leaked = owner.string_shared(py).leak_immutable();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
         owner.string_shared(py).borrow_mut().unwrap().clear();
         assert!(leaked_iter.try_borrow_mut(py).is_err());
@@ -593,7 +588,7 @@ mod test {
     fn test_leaked_map_after_mut() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
-        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        let leaked = owner.string_shared(py).leak_immutable();
         owner.string_shared(py).borrow_mut().unwrap().clear();
         let _leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
     }
@@ -603,7 +598,7 @@ mod test {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         assert!(owner.string_shared(py).borrow_mut().is_ok());
-        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        let leaked = owner.string_shared(py).leak_immutable();
         {
             let _leaked_ref = leaked.try_borrow(py).unwrap();
             assert!(owner.string_shared(py).borrow_mut().is_err());
@@ -621,7 +616,7 @@ mod test {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         assert!(owner.string_shared(py).borrow_mut().is_ok());
-        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        let leaked = owner.string_shared(py).leak_immutable();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
         {
             let _leaked_ref = leaked_iter.try_borrow_mut(py).unwrap();
@@ -636,6 +631,6 @@ mod test {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         let _mut_ref = owner.string_shared(py).borrow_mut();
-        let _ = owner.string_shared(py).leak_immutable();
+        owner.string_shared(py).leak_immutable();
     }
 }

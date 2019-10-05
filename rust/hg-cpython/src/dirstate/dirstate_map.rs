@@ -304,7 +304,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def keys(&self) -> PyResult<DirstateMapKeysIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         DirstateMapKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -312,7 +312,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def items(&self) -> PyResult<DirstateMapItemsIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         DirstateMapItemsIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -320,7 +320,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def __iter__(&self) -> PyResult<DirstateMapKeysIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         DirstateMapKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -437,7 +437,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymapiter(&self) -> PyResult<CopyMapKeysIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         CopyMapKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.copy_map.iter()) },
@@ -445,7 +445,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymapitemsiter(&self) -> PyResult<CopyMapItemsIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         CopyMapItemsIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.copy_map.iter()) },
