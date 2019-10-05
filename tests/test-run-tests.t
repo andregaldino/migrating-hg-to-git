@@ -403,18 +403,21 @@ test --xunit support
   <testsuite errors="0" failures="2" name="run-tests" skipped="0" tests="3">
     <testcase name="test-success.t" time="*"/> (glob)
     <testcase name="test-failure-unicode.t" time="*"> (glob)
-      <failure message="output changed" type="output-mismatch">
-  <![CDATA[--- $TESTTMP/test-failure-unicode.t
+      <failure message="output changed" type="output-mismatch"><![CDATA[--- $TESTTMP/test-failure-unicode.t (py38 !)
+      <failure message="output changed" type="output-mismatch"> (no-py38 !)
+  <![CDATA[--- $TESTTMP/test-failure-unicode.t (no-py38 !)
   +++ $TESTTMP/test-failure-unicode.t.err
   @@ -1,2 +1,2 @@
      $ echo babar\xce\xb1 (esc)
   -  l\xce\xb5\xce\xb5t (esc)
   +  babar\xce\xb1 (esc)
-  ]]>    </failure>
+  ]]></failure> (py38 !)
+  ]]>    </failure> (no-py38 !)
     </testcase>
     <testcase name="test-failure.t" time="*"> (glob)
-      <failure message="output changed" type="output-mismatch">
-  <![CDATA[--- $TESTTMP/test-failure.t
+      <failure message="output changed" type="output-mismatch"><![CDATA[--- $TESTTMP/test-failure.t (py38 !)
+      <failure message="output changed" type="output-mismatch"> (no-py38 !)
+  <![CDATA[--- $TESTTMP/test-failure.t (no-py38 !)
   +++ $TESTTMP/test-failure.t.err
   @@ -1,5 +1,5 @@
      $ echo babar
@@ -423,7 +426,8 @@ test --xunit support
    This is a noop statement so that
    this test is still more bytes than success.
    pad pad pad pad............................................................
-  ]]>    </failure>
+  ]]></failure> (py38 !)
+  ]]>    </failure> (no-py38 !)
     </testcase>
   </testsuite>
 
@@ -1084,8 +1088,9 @@ Skips with xml
   <testsuite errors="0" failures="0" name="run-tests" skipped="2" tests="2">
     <testcase name="test-success.t" time="*"/> (glob)
     <testcase name="test-skip.t">
-      <skipped>
-  <![CDATA[missing feature: nail clipper]]>    </skipped>
+      <skipped><![CDATA[missing feature: nail clipper]]></skipped> (py38 !)
+      <skipped> (no-py38 !)
+  <![CDATA[missing feature: nail clipper]]>    </skipped> (no-py38 !)
     </testcase>
   </testsuite>
 
