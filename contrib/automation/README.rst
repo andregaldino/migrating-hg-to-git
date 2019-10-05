@@ -47,12 +47,25 @@ https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
 for how ``boto3`` works. Once you have configured your environment such
 that ``boto3`` can find credentials, interaction with AWS should *just work*.
 
-.. hint::
+To configure ``boto3``, you can use the ``aws configure`` command to
+write out configuration files. (The ``aws`` command is typically provided
+by an ``awscli`` package available in your package manager, including
+``pip``.) Alternatively, you can write out files in ``~/.aws/`` directly.
+e.g.::
 
-   Typically you have a ``~/.aws/credentials`` file containing AWS
-   credentials. If you manage multiple credentials, you can override which
-   *profile* to use at run-time by setting the ``AWS_PROFILE`` environment
-   variable.
+   # ~/.aws/config
+   [default]
+   region = us-west-2
+
+   # ~/.aws/credentials
+   [default]
+   aws_access_key_id = XXXX
+   aws_secret_access_key = YYYY
+
+If you have multiple AWS accounts, you can name the profile something
+different from ``default``. e.g. ``hg``. You can influence which profile
+is used by ``boto3`` by setting the ``AWS_PROFILE`` environment variable.
+e.g. ``AWS_PROFILE=hg``.
 
 Resource Management
 -------------------
