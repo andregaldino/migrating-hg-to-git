@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import errno
+import importlib
 import os
 import socket
 import sys
@@ -370,7 +371,11 @@ def create_server(ui, app):
         # codec is hardcoded as ascii.
 
         sys.argv # unwrap demand-loader so that reload() works
-        reload(sys) # resurrect sys.setdefaultencoding()
+        # resurrect sys.setdefaultencoding()
+        try:
+            importlib.reload(sys)
+        except AttributeError:
+            reload(sys)
         oldenc = sys.getdefaultencoding()
         sys.setdefaultencoding("latin1") # or any full 8-bit encoding
         mimetypes.init()
