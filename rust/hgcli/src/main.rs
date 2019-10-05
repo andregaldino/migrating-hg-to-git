@@ -104,19 +104,6 @@ fn set_python_home(env: &Environment) {
     }
 }
 
-fn update_encoding(_py: Python, _sys_mod: &PyModule) {
-    // Call sys.setdefaultencoding("undefined") if HGUNICODEPEDANTRY is set.
-    let pedantry = env::var("HGUNICODEPEDANTRY").is_ok();
-
-    if pedantry {
-        // site.py removes the sys.setdefaultencoding attribute. So we need
-        // to reload the module to get a handle on it. This is a lesser
-        // used feature and we'll support this later.
-        // TODO support this
-        panic!("HGUNICODEPEDANTRY is not yet supported");
-    }
-}
-
 fn update_modules_path(env: &Environment, py: Python, sys_mod: &PyModule) {
     let sys_path = sys_mod.get(py, "path").unwrap();
     sys_path
@@ -210,7 +197,6 @@ fn run() -> Result<(), i32> {
 fn run_py(env: &Environment, py: Python) -> PyResult<()> {
     let sys_mod = py.import("sys").unwrap();
 
-    update_encoding(py, &sys_mod);
     update_modules_path(&env, py, &sys_mod);
 
     // TODO consider a better error message on failure to import.

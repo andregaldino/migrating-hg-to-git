@@ -80,13 +80,6 @@ except (ImportError, AttributeError):
     import pipes
     shellquote = pipes.quote
 
-if os.environ.get('RTUNICODEPEDANTRY', False):
-    try:
-        reload(sys)
-        sys.setdefaultencoding("undefined")
-    except NameError:
-        pass
-
 processlock = threading.Lock()
 
 pygmentspresent = False
