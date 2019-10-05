@@ -204,7 +204,7 @@ def get_parser():
     parser.add_argument(
         '--aws-region',
         help='AWS region to use',
-        default='us-west-1',
+        default='us-west-2',
     )
 
     subparsers = parser.add_subparsers()
