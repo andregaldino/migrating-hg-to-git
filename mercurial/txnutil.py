@@ -16,7 +16,7 @@ def mayhavepending(root):
     '''return whether 'root' may have pending changes, which are
     visible to this process.
     '''
-    return root == encoding.environ.get('HG_PENDING')
+    return root == encoding.environ.get(b'HG_PENDING')
 
 
 def trypending(root, vfs, filename, **kwargs):
@@ -29,7 +29,7 @@ def trypending(root, vfs, filename, **kwargs):
     '''
     if mayhavepending(root):
         try:
-            return (vfs('%s.pending' % filename, **kwargs), True)
+            return (vfs(b'%s.pending' % filename, **kwargs), True)
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise

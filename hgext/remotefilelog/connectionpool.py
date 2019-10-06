@@ -46,13 +46,13 @@ class connectionpool(object):
                 # close pipee first so peer.cleanup reading it won't deadlock,
                 # if there are other processes with pipeo open (i.e. us).
                 peer = orig.im_self
-                if util.safehasattr(peer, 'pipee'):
+                if util.safehasattr(peer, b'pipee'):
                     peer.pipee.close()
                 return orig()
 
             peer = hg.peer(self._repo.ui, {}, path)
-            if util.safehasattr(peer, 'cleanup'):
-                extensions.wrapfunction(peer, 'cleanup', _cleanup)
+            if util.safehasattr(peer, b'cleanup'):
+                extensions.wrapfunction(peer, b'cleanup', _cleanup)
 
             conn = connection(pathpool, peer)
 
@@ -83,5 +83,5 @@ class connection(object):
             self.close()
 
     def close(self):
-        if util.safehasattr(self.peer, 'cleanup'):
+        if util.safehasattr(self.peer, b'cleanup'):
             self.peer.cleanup()

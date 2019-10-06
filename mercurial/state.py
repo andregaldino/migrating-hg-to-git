@@ -60,23 +60,23 @@ class cmdstate(object):
         """
         if not isinstance(version, int):
             raise error.ProgrammingError(
-                "version of state file should be" " an integer"
+                b"version of state file should be" b" an integer"
             )
 
-        with self._repo.vfs(self.fname, 'wb', atomictemp=True) as fp:
-            fp.write('%d\n' % version)
+        with self._repo.vfs(self.fname, b'wb', atomictemp=True) as fp:
+            fp.write(b'%d\n' % version)
             for chunk in cborutil.streamencode(data):
                 fp.write(chunk)
 
     def _read(self):
         """reads the state file and returns a dictionary which contain
         data in the same format as it was before storing"""
-        with self._repo.vfs(self.fname, 'rb') as fp:
+        with self._repo.vfs(self.fname, b'rb') as fp:
             try:
                 int(fp.readline())
             except ValueError:
                 raise error.CorruptedState(
-                    "unknown version of state file" " found"
+                    b"unknown version of state file" b" found"
                 )
 
             return cborutil.decodeall(fp.read())[0]
@@ -133,12 +133,12 @@ class _statecheck(object):
         """
         if not self._statushint:
             hint = _(
-                'To continue:    hg %s --continue\n'
-                'To abort:       hg %s --abort'
+                b'To continue:    hg %s --continue\n'
+                b'To abort:       hg %s --abort'
             ) % (self._opname, self._opname)
             if self._stopflag:
                 hint = hint + (
-                    _('\nTo stop:        hg %s --stop') % (self._opname)
+                    _(b'\nTo stop:        hg %s --stop') % (self._opname)
                 )
             return hint
         return self._statushint
@@ -148,7 +148,7 @@ class _statecheck(object):
         operation
         """
         if not self._cmdhint:
-            return _("use 'hg %s --continue' or 'hg %s --abort'") % (
+            return _(b"use 'hg %s --continue' or 'hg %s --abort'") % (
                 self._opname,
                 self._opname,
             )
@@ -157,18 +157,18 @@ class _statecheck(object):
     def msg(self):
         """returns the status message corresponding to the command"""
         if not self._cmdmsg:
-            return _('%s in progress') % (self._opname)
+            return _(b'%s in progress') % (self._opname)
         return self._cmdmsg
 
     def continuemsg(self):
         """ returns appropriate continue message corresponding to command"""
-        return _('hg %s --continue') % (self._opname)
+        return _(b'hg %s --continue') % (self._opname)
 
     def isunfinished(self, repo):
         """determines whether a multi-step operation is in progress
         or not
         """
-        if self._opname == 'merge':
+        if self._opname == b'merge':
             return len(repo[None].parents()) > 1
         else:
             return repo.vfs.exists(self._fname)
@@ -186,9 +186,9 @@ def addunfinished(
     reportonly=False,
     continueflag=False,
     stopflag=False,
-    cmdmsg="",
-    cmdhint="",
-    statushint="",
+    cmdmsg=b"",
+    cmdhint=b"",
+    statushint=b"",
     abortfunc=None,
     continuefunc=None,
 ):
@@ -233,36 +233,36 @@ def addunfinished(
         abortfunc,
         continuefunc,
     )
-    if opname == 'merge':
+    if opname == b'merge':
         _unfinishedstates.append(statecheckobj)
     else:
         _unfinishedstates.insert(0, statecheckobj)
 
 
 addunfinished(
-    'update',
-    fname='updatestate',
+    b'update',
+    fname=b'updatestate',
     clearable=True,
-    cmdmsg=_('last update was interrupted'),
-    cmdhint=_("use 'hg update' to get a consistent checkout"),
-    statushint=_("To continue:    hg update ."),
+    cmdmsg=_(b'last update was interrupted'),
+    cmdhint=_(b"use 'hg update' to get a consistent checkout"),
+    statushint=_(b"To continue:    hg update ."),
 )
 addunfinished(
-    'bisect',
-    fname='bisect.state',
+    b'bisect',
+    fname=b'bisect.state',
     allowcommit=True,
     reportonly=True,
     statushint=_(
-        'To mark the changeset good:    hg bisect --good\n'
-        'To mark the changeset bad:     hg bisect --bad\n'
-        'To abort:                      hg bisect --reset\n'
+        b'To mark the changeset good:    hg bisect --good\n'
+        b'To mark the changeset bad:     hg bisect --bad\n'
+        b'To abort:                      hg bisect --reset\n'
     ),
 )
 
 
 def getrepostate(repo):
     # experimental config: commands.status.skipstates
-    skip = set(repo.ui.configlist('commands', 'status.skipstates'))
+    skip = set(repo.ui.configlist(b'commands', b'status.skipstates'))
     for state in _unfinishedstates:
         if state._opname in skip:
             continue

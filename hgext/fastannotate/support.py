@@ -64,7 +64,7 @@ def _convertoutputs(repo, annotated, contents):
 
 def _getmaster(fctx):
     """(fctx) -> str"""
-    return fctx._repo.ui.config('fastannotate', 'mainbranch') or 'default'
+    return fctx._repo.ui.config(b'fastannotate', b'mainbranch') or b'default'
 
 
 def _doannotate(fctx, follow=True, diffopts=None):
@@ -83,7 +83,7 @@ def _doannotate(fctx, follow=True, diffopts=None):
         except Exception:
             ac.rebuild()  # try rebuild once
             fctx._repo.ui.debug(
-                'fastannotate: %s: rebuilding broken cache\n' % fctx._path
+                b'fastannotate: %s: rebuilding broken cache\n' % fctx._path
             )
             try:
                 annotated, contents = ac.annotate(
@@ -98,7 +98,7 @@ def _doannotate(fctx, follow=True, diffopts=None):
 
 def _hgwebannotate(orig, fctx, ui):
     diffopts = patch.difffeatureopts(
-        ui, untrusted=True, section='annotate', whitespace=True
+        ui, untrusted=True, section=b'annotate', whitespace=True
     )
     return _doannotate(fctx, diffopts=diffopts)
 
@@ -115,7 +115,7 @@ def _fctxannotate(
         return _doannotate(self, follow, diffopts)
     except Exception as ex:
         self._repo.ui.debug(
-            'fastannotate: falling back to the vanilla ' 'annotate: %r\n' % ex
+            b'fastannotate: falling back to the vanilla ' b'annotate: %r\n' % ex
         )
         return orig(self, follow=follow, skiprevs=skiprevs, diffopts=diffopts)
 
@@ -130,8 +130,8 @@ def _remotefctxannotate(orig, self, follow=False, skiprevs=None, diffopts=None):
 
 
 def replacehgwebannotate():
-    extensions.wrapfunction(hgweb.webutil, 'annotate', _hgwebannotate)
+    extensions.wrapfunction(hgweb.webutil, b'annotate', _hgwebannotate)
 
 
 def replacefctxannotate():
-    extensions.wrapfunction(hgcontext.basefilectx, 'annotate', _fctxannotate)
+    extensions.wrapfunction(hgcontext.basefilectx, b'annotate', _fctxannotate)

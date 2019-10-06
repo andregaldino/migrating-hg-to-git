@@ -69,7 +69,7 @@ class multidict(object):
         vals = self._items[key]
 
         if len(vals) > 1:
-            raise KeyError('multiple values for %r' % key)
+            raise KeyError(b'multiple values for %r' % key)
 
         return vals[0]
 
@@ -172,7 +172,7 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # to an hgweb instance using this environment variable.  This was always
     # checked prior to d7fd203e36cc; keep doing so to avoid breaking them.
     if not reponame:
-        reponame = env.get('REPO_NAME')
+        reponame = env.get(b'REPO_NAME')
 
     if altbaseurl:
         altbaseurl = util.url(altbaseurl)
@@ -181,114 +181,114 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # the environment variables.
     # https://www.python.org/dev/peps/pep-0333/#url-reconstruction defines
     # how URLs are reconstructed.
-    fullurl = env['wsgi.url_scheme'] + '://'
+    fullurl = env[b'wsgi.url_scheme'] + b'://'
 
     if altbaseurl and altbaseurl.scheme:
-        advertisedfullurl = altbaseurl.scheme + '://'
+        advertisedfullurl = altbaseurl.scheme + b'://'
     else:
         advertisedfullurl = fullurl
 
     def addport(s, port):
-        if s.startswith('https://'):
-            if port != '443':
-                s += ':' + port
+        if s.startswith(b'https://'):
+            if port != b'443':
+                s += b':' + port
         else:
-            if port != '80':
-                s += ':' + port
+            if port != b'80':
+                s += b':' + port
 
         return s
 
-    if env.get('HTTP_HOST'):
-        fullurl += env['HTTP_HOST']
+    if env.get(b'HTTP_HOST'):
+        fullurl += env[b'HTTP_HOST']
     else:
-        fullurl += env['SERVER_NAME']
-        fullurl = addport(fullurl, env['SERVER_PORT'])
+        fullurl += env[b'SERVER_NAME']
+        fullurl = addport(fullurl, env[b'SERVER_PORT'])
 
     if altbaseurl and altbaseurl.host:
         advertisedfullurl += altbaseurl.host
 
         if altbaseurl.port:
             port = altbaseurl.port
-        elif altbaseurl.scheme == 'http' and not altbaseurl.port:
-            port = '80'
-        elif altbaseurl.scheme == 'https' and not altbaseurl.port:
-            port = '443'
+        elif altbaseurl.scheme == b'http' and not altbaseurl.port:
+            port = b'80'
+        elif altbaseurl.scheme == b'https' and not altbaseurl.port:
+            port = b'443'
         else:
-            port = env['SERVER_PORT']
+            port = env[b'SERVER_PORT']
 
         advertisedfullurl = addport(advertisedfullurl, port)
     else:
-        advertisedfullurl += env['SERVER_NAME']
-        advertisedfullurl = addport(advertisedfullurl, env['SERVER_PORT'])
+        advertisedfullurl += env[b'SERVER_NAME']
+        advertisedfullurl = addport(advertisedfullurl, env[b'SERVER_PORT'])
 
     baseurl = fullurl
     advertisedbaseurl = advertisedfullurl
 
-    fullurl += util.urlreq.quote(env.get('SCRIPT_NAME', ''))
-    fullurl += util.urlreq.quote(env.get('PATH_INFO', ''))
+    fullurl += util.urlreq.quote(env.get(b'SCRIPT_NAME', b''))
+    fullurl += util.urlreq.quote(env.get(b'PATH_INFO', b''))
 
     if altbaseurl:
-        path = altbaseurl.path or ''
-        if path and not path.startswith('/'):
-            path = '/' + path
+        path = altbaseurl.path or b''
+        if path and not path.startswith(b'/'):
+            path = b'/' + path
         advertisedfullurl += util.urlreq.quote(path)
     else:
-        advertisedfullurl += util.urlreq.quote(env.get('SCRIPT_NAME', ''))
+        advertisedfullurl += util.urlreq.quote(env.get(b'SCRIPT_NAME', b''))
 
-    advertisedfullurl += util.urlreq.quote(env.get('PATH_INFO', ''))
+    advertisedfullurl += util.urlreq.quote(env.get(b'PATH_INFO', b''))
 
-    if env.get('QUERY_STRING'):
-        fullurl += '?' + env['QUERY_STRING']
-        advertisedfullurl += '?' + env['QUERY_STRING']
+    if env.get(b'QUERY_STRING'):
+        fullurl += b'?' + env[b'QUERY_STRING']
+        advertisedfullurl += b'?' + env[b'QUERY_STRING']
 
     # If ``reponame`` is defined, that must be a prefix on PATH_INFO
     # that represents the repository being dispatched to. When computing
     # the dispatch info, we ignore these leading path components.
 
     if altbaseurl:
-        apppath = altbaseurl.path or ''
-        if apppath and not apppath.startswith('/'):
-            apppath = '/' + apppath
+        apppath = altbaseurl.path or b''
+        if apppath and not apppath.startswith(b'/'):
+            apppath = b'/' + apppath
     else:
-        apppath = env.get('SCRIPT_NAME', '')
+        apppath = env.get(b'SCRIPT_NAME', b'')
 
     if reponame:
-        repoprefix = '/' + reponame.strip('/')
+        repoprefix = b'/' + reponame.strip(b'/')
 
-        if not env.get('PATH_INFO'):
-            raise error.ProgrammingError('reponame requires PATH_INFO')
+        if not env.get(b'PATH_INFO'):
+            raise error.ProgrammingError(b'reponame requires PATH_INFO')
 
-        if not env['PATH_INFO'].startswith(repoprefix):
+        if not env[b'PATH_INFO'].startswith(repoprefix):
             raise error.ProgrammingError(
-                'PATH_INFO does not begin with repo '
-                'name: %s (%s)' % (env['PATH_INFO'], reponame)
+                b'PATH_INFO does not begin with repo '
+                b'name: %s (%s)' % (env[b'PATH_INFO'], reponame)
             )
 
-        dispatchpath = env['PATH_INFO'][len(repoprefix) :]
+        dispatchpath = env[b'PATH_INFO'][len(repoprefix) :]
 
-        if dispatchpath and not dispatchpath.startswith('/'):
+        if dispatchpath and not dispatchpath.startswith(b'/'):
             raise error.ProgrammingError(
-                'reponame prefix of PATH_INFO does '
-                'not end at path delimiter: %s (%s)'
-                % (env['PATH_INFO'], reponame)
+                b'reponame prefix of PATH_INFO does '
+                b'not end at path delimiter: %s (%s)'
+                % (env[b'PATH_INFO'], reponame)
             )
 
-        apppath = apppath.rstrip('/') + repoprefix
-        dispatchparts = dispatchpath.strip('/').split('/')
-        dispatchpath = '/'.join(dispatchparts)
+        apppath = apppath.rstrip(b'/') + repoprefix
+        dispatchparts = dispatchpath.strip(b'/').split(b'/')
+        dispatchpath = b'/'.join(dispatchparts)
 
-    elif 'PATH_INFO' in env:
-        if env['PATH_INFO'].strip('/'):
-            dispatchparts = env['PATH_INFO'].strip('/').split('/')
-            dispatchpath = '/'.join(dispatchparts)
+    elif b'PATH_INFO' in env:
+        if env[b'PATH_INFO'].strip(b'/'):
+            dispatchparts = env[b'PATH_INFO'].strip(b'/').split(b'/')
+            dispatchpath = b'/'.join(dispatchparts)
         else:
             dispatchparts = []
-            dispatchpath = ''
+            dispatchpath = b''
     else:
         dispatchparts = []
         dispatchpath = None
 
-    querystring = env.get('QUERY_STRING', '')
+    querystring = env.get(b'QUERY_STRING', b'')
 
     # We store as a list so we have ordering information. We also store as
     # a dict to facilitate fast lookup.
@@ -301,8 +301,8 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # so keys match what likely went over the wire.
     headers = []
     for k, v in env.iteritems():
-        if k.startswith('HTTP_'):
-            headers.append((k[len('HTTP_') :].replace('_', '-'), v))
+        if k.startswith(b'HTTP_'):
+            headers.append((k[len(b'HTTP_') :].replace(b'_', b'-'), v))
 
     from . import wsgiheaders  # avoid cycle
 
@@ -312,28 +312,28 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # sent. But for all intents and purposes it should be OK to lie about
     # this, since a consumer will either either value to determine how many
     # bytes are available to read.
-    if 'CONTENT_LENGTH' in env and 'HTTP_CONTENT_LENGTH' not in env:
-        headers['Content-Length'] = env['CONTENT_LENGTH']
+    if b'CONTENT_LENGTH' in env and b'HTTP_CONTENT_LENGTH' not in env:
+        headers[b'Content-Length'] = env[b'CONTENT_LENGTH']
 
-    if 'CONTENT_TYPE' in env and 'HTTP_CONTENT_TYPE' not in env:
-        headers['Content-Type'] = env['CONTENT_TYPE']
+    if b'CONTENT_TYPE' in env and b'HTTP_CONTENT_TYPE' not in env:
+        headers[b'Content-Type'] = env[b'CONTENT_TYPE']
 
     if bodyfh is None:
-        bodyfh = env['wsgi.input']
-        if 'Content-Length' in headers:
+        bodyfh = env[b'wsgi.input']
+        if b'Content-Length' in headers:
             bodyfh = util.cappedreader(
-                bodyfh, int(headers['Content-Length'] or '0')
+                bodyfh, int(headers[b'Content-Length'] or b'0')
             )
 
     return parsedrequest(
-        method=env['REQUEST_METHOD'],
+        method=env[b'REQUEST_METHOD'],
         url=fullurl,
         baseurl=baseurl,
         advertisedurl=advertisedfullurl,
         advertisedbaseurl=advertisedbaseurl,
-        urlscheme=env['wsgi.url_scheme'],
-        remoteuser=env.get('REMOTE_USER'),
-        remotehost=env.get('REMOTE_HOST'),
+        urlscheme=env[b'wsgi.url_scheme'],
+        remoteuser=env.get(b'REMOTE_USER'),
+        remotehost=env.get(b'REMOTE_HOST'),
         apppath=apppath,
         dispatchparts=dispatchparts,
         dispatchpath=dispatchpath,
@@ -421,7 +421,7 @@ class wsgiresponse(object):
             or self._bodygen is not None
             or self._bodywillwrite
         ):
-            raise error.ProgrammingError('cannot define body multiple times')
+            raise error.ProgrammingError(b'cannot define body multiple times')
 
     def setbodybytes(self, b):
         """Define the response body as static bytes.
@@ -430,7 +430,7 @@ class wsgiresponse(object):
         """
         self._verifybody()
         self._bodybytes = b
-        self.headers['Content-Length'] = '%d' % len(b)
+        self.headers[b'Content-Length'] = b'%d' % len(b)
 
     def setbodygen(self, gen):
         """Define the response body as a generator of bytes."""
@@ -463,19 +463,21 @@ class wsgiresponse(object):
         Calling this method multiple times is not allowed.
         """
         if self._started:
-            raise error.ProgrammingError('sendresponse() called multiple times')
+            raise error.ProgrammingError(
+                b'sendresponse() called multiple times'
+            )
 
         self._started = True
 
         if not self.status:
-            raise error.ProgrammingError('status line not defined')
+            raise error.ProgrammingError(b'status line not defined')
 
         if (
             self._bodybytes is None
             and self._bodygen is None
             and not self._bodywillwrite
         ):
-            raise error.ProgrammingError('response body not defined')
+            raise error.ProgrammingError(b'response body not defined')
 
         # RFC 7232 Section 4.1 states that a 304 MUST generate one of
         # {Cache-Control, Content-Location, Date, ETag, Expires, Vary}
@@ -484,11 +486,11 @@ class wsgiresponse(object):
         # states that no response body can be issued. Content-Length can
         # be sent. But if it is present, it should be the size of the response
         # that wasn't transferred.
-        if self.status.startswith('304 '):
+        if self.status.startswith(b'304 '):
             # setbodybytes('') will set C-L to 0. This doesn't conform with the
             # spec. So remove it.
-            if self.headers.get('Content-Length') == '0':
-                del self.headers['Content-Length']
+            if self.headers.get(b'Content-Length') == b'0':
+                del self.headers[b'Content-Length']
 
             # Strictly speaking, this is too strict. But until it causes
             # problems, let's be strict.
@@ -497,24 +499,24 @@ class wsgiresponse(object):
                 for k in self.headers.keys()
                 if k.lower()
                 not in (
-                    'date',
-                    'etag',
-                    'expires',
-                    'cache-control',
-                    'content-location',
-                    'content-security-policy',
-                    'vary',
+                    b'date',
+                    b'etag',
+                    b'expires',
+                    b'cache-control',
+                    b'content-location',
+                    b'content-security-policy',
+                    b'vary',
                 )
             }
             if badheaders:
                 raise error.ProgrammingError(
-                    'illegal header on 304 response: %s'
-                    % ', '.join(sorted(badheaders))
+                    b'illegal header on 304 response: %s'
+                    % b', '.join(sorted(badheaders))
                 )
 
             if self._bodygen is not None or self._bodywillwrite:
                 raise error.ProgrammingError(
-                    "must use setbodybytes('') with " "304 responses"
+                    b"must use setbodybytes('') with " b"304 responses"
                 )
 
         # Various HTTP clients (notably httplib) won't read the HTTP response
@@ -530,12 +532,12 @@ class wsgiresponse(object):
         # If the client sent Expect: 100-continue, we assume it is smart enough
         # to deal with the server sending a response before reading the request.
         # (httplib doesn't do this.)
-        if self._req.headers.get('Expect', '').lower() == '100-continue':
+        if self._req.headers.get(b'Expect', b'').lower() == b'100-continue':
             pass
         # Only tend to request methods that have bodies. Strictly speaking,
         # we should sniff for a body. But this is fine for our existing
         # WSGI applications.
-        elif self._req.method not in ('POST', 'PUT'):
+        elif self._req.method not in (b'POST', b'PUT'):
             pass
         else:
             # If we don't know how much data to read, there's no guarantee
@@ -555,7 +557,7 @@ class wsgiresponse(object):
                 drain = True
 
         if close:
-            self.headers['Connection'] = 'Close'
+            self.headers[b'Connection'] = b'Close'
 
         if drain:
             assert isinstance(self._req.bodyfh, util.cappedreader)
@@ -584,7 +586,7 @@ class wsgiresponse(object):
         elif self._bodywillwrite:
             self._bodywritefn = write
         else:
-            error.ProgrammingError('do not know how to send body')
+            error.ProgrammingError(b'do not know how to send body')
 
     def getbodyfile(self):
         """Obtain a file object like object representing the response body.
@@ -597,13 +599,13 @@ class wsgiresponse(object):
         ``[]``.
         """
         if not self._bodywillwrite:
-            raise error.ProgrammingError('must call setbodywillwrite() first')
+            raise error.ProgrammingError(b'must call setbodywillwrite() first')
 
         if not self._started:
             raise error.ProgrammingError(
-                'must call sendresponse() first; did '
-                'you remember to consume it since it '
-                'is a generator?'
+                b'must call sendresponse() first; did '
+                b'you remember to consume it since it '
+                b'is a generator?'
             )
 
         assert self._bodywritefn

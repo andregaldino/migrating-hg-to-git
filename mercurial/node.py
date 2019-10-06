@@ -29,11 +29,11 @@ nullhex = hex(nullid)
 # Phony node value to stand-in for new files in some uses of
 # manifests.
 # In hex, this is '2121212121212121212121212121212121212121'
-newnodeid = '!!!!!!!!!!!!!!!!!!!!'
+newnodeid = b'!!!!!!!!!!!!!!!!!!!!'
 # In hex, this is '3030303030303030303030303030306164646564'
-addednodeid = '000000000000000added'
+addednodeid = b'000000000000000added'
 # In hex, this is '3030303030303030303030306d6f646966696564'
-modifiednodeid = '000000000000modified'
+modifiednodeid = b'000000000000modified'
 
 wdirfilenodeids = {newnodeid, addednodeid, modifiednodeid}
 

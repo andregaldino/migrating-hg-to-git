@@ -33,35 +33,35 @@ class defaultformatter(object):
         hexfunc = self._hexfunc
 
         # special handling working copy "changeset" and "rev" functions
-        if self.opts.get('rev') == 'wdir()':
+        if self.opts.get(b'rev') == b'wdir()':
             orig = hexfunc
             hexfunc = lambda x: None if x is None else orig(x)
-            wnode = hexfunc(repo['.'].node()) + '+'
-            wrev = '%d' % repo['.'].rev()
-            wrevpad = ''
-            if not opts.get('changeset'):  # only show + if changeset is hidden
-                wrev += '+'
-                wrevpad = ' '
-            revenc = lambda x: wrev if x is None else ('%d' % x) + wrevpad
+            wnode = hexfunc(repo[b'.'].node()) + b'+'
+            wrev = b'%d' % repo[b'.'].rev()
+            wrevpad = b''
+            if not opts.get(b'changeset'):  # only show + if changeset is hidden
+                wrev += b'+'
+                wrevpad = b' '
+            revenc = lambda x: wrev if x is None else (b'%d' % x) + wrevpad
 
             def csetenc(x):
                 if x is None:
                     return wnode
-                return pycompat.bytestr(x) + ' '
+                return pycompat.bytestr(x) + b' '
 
         else:
             revenc = csetenc = pycompat.bytestr
 
         # opt name, separator, raw value (for json/plain), encoder (for plain)
         opmap = [
-            ('user', ' ', lambda x: getctx(x).user(), ui.shortuser),
-            ('number', ' ', lambda x: getctx(x).rev(), revenc),
-            ('changeset', ' ', lambda x: hexfunc(x[0]), csetenc),
-            ('date', ' ', lambda x: getctx(x).date(), datefunc),
-            ('file', ' ', lambda x: x[2], pycompat.bytestr),
-            ('line_number', ':', lambda x: x[1] + 1, pycompat.bytestr),
+            (b'user', b' ', lambda x: getctx(x).user(), ui.shortuser),
+            (b'number', b' ', lambda x: getctx(x).rev(), revenc),
+            (b'changeset', b' ', lambda x: hexfunc(x[0]), csetenc),
+            (b'date', b' ', lambda x: getctx(x).date(), datefunc),
+            (b'file', b' ', lambda x: x[2], pycompat.bytestr),
+            (b'line_number', b':', lambda x: x[1] + 1, pycompat.bytestr),
         ]
-        fieldnamemap = {'number': 'rev', 'changeset': 'node'}
+        fieldnamemap = {b'number': b'rev', b'changeset': b'node'}
         funcmap = [
             (get, sep, fieldnamemap.get(op, op), enc)
             for op, sep, get, enc in opmap
@@ -69,7 +69,7 @@ class defaultformatter(object):
         ]
         # no separator for first column
         funcmap[0] = list(funcmap[0])
-        funcmap[0][1] = ''
+        funcmap[0][1] = b''
         self.funcmap = funcmap
 
     def write(self, annotatedresult, lines=None, existinglines=None):
@@ -83,39 +83,39 @@ class defaultformatter(object):
         for f, sep, name, enc in self.funcmap:
             l = [enc(f(x)) for x in annotatedresult]
             pieces.append(l)
-            if name in ['node', 'date']:  # node and date has fixed size
+            if name in [b'node', b'date']:  # node and date has fixed size
                 l = l[:1]
             widths = pycompat.maplist(encoding.colwidth, set(l))
             maxwidth = max(widths) if widths else 0
             maxwidths.append(maxwidth)
 
         # buffered output
-        result = ''
+        result = b''
         for i in pycompat.xrange(len(annotatedresult)):
             for j, p in enumerate(pieces):
                 sep = self.funcmap[j][1]
-                padding = ' ' * (maxwidths[j] - len(p[i]))
+                padding = b' ' * (maxwidths[j] - len(p[i]))
                 result += sep + padding + p[i]
             if lines:
                 if existinglines is None:
-                    result += ': ' + lines[i]
+                    result += b': ' + lines[i]
                 else:  # extra formatting showing whether a line exists
                     key = (annotatedresult[i][0], annotatedresult[i][1])
                     if key in existinglines:
-                        result += ':  ' + lines[i]
+                        result += b':  ' + lines[i]
                     else:
-                        result += ': ' + self.ui.label(
-                            '-' + lines[i], 'diff.deleted'
+                        result += b': ' + self.ui.label(
+                            b'-' + lines[i], b'diff.deleted'
                         )
 
-            if result[-1:] != '\n':
-                result += '\n'
+            if result[-1:] != b'\n':
+                result += b'\n'
 
         self.ui.write(result)
 
     @util.propertycache
     def _hexfunc(self):
-        if self.ui.debugflag or self.opts.get('long_hash'):
+        if self.ui.debugflag or self.opts.get(b'long_hash'):
             return node.hex
         else:
             return node.short
@@ -127,7 +127,7 @@ class defaultformatter(object):
 class jsonformatter(defaultformatter):
     def __init__(self, ui, repo, opts):
         super(jsonformatter, self).__init__(ui, repo, opts)
-        self.ui.write('[')
+        self.ui.write(b'[')
         self.needcomma = False
 
     def write(self, annotatedresult, lines=None, existinglines=None):
@@ -139,23 +139,23 @@ class jsonformatter(defaultformatter):
             for f, sep, name, enc in self.funcmap
         ]
         if lines is not None:
-            pieces.append(('line', lines))
+            pieces.append((b'line', lines))
         pieces.sort()
 
-        seps = [','] * len(pieces[:-1]) + ['']
+        seps = [b','] * len(pieces[:-1]) + [b'']
 
-        result = ''
+        result = b''
         lasti = len(annotatedresult) - 1
         for i in pycompat.xrange(len(annotatedresult)):
-            result += '\n {\n'
+            result += b'\n {\n'
             for j, p in enumerate(pieces):
                 k, vs = p
-                result += '  "%s": %s%s\n' % (
+                result += b'  "%s": %s%s\n' % (
                     k,
                     templatefilters.json(vs[i], paranoid=False),
                     seps[j],
                 )
-            result += ' }%s' % ('' if i == lasti else ',')
+            result += b' }%s' % (b'' if i == lasti else b',')
         if lasti >= 0:
             self.needcomma = True
 
@@ -163,7 +163,7 @@ class jsonformatter(defaultformatter):
 
     def _writecomma(self):
         if self.needcomma:
-            self.ui.write(',')
+            self.ui.write(b',')
             self.needcomma = False
 
     @util.propertycache
@@ -171,4 +171,4 @@ class jsonformatter(defaultformatter):
         return node.hex
 
     def end(self):
-        self.ui.write('\n]\n')
+        self.ui.write(b'\n]\n')

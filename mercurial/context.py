@@ -201,29 +201,29 @@ class basectx(object):
 
     def obsolete(self):
         """True if the changeset is obsolete"""
-        return self.rev() in obsmod.getrevs(self._repo, 'obsolete')
+        return self.rev() in obsmod.getrevs(self._repo, b'obsolete')
 
     def extinct(self):
         """True if the changeset is extinct"""
-        return self.rev() in obsmod.getrevs(self._repo, 'extinct')
+        return self.rev() in obsmod.getrevs(self._repo, b'extinct')
 
     def orphan(self):
         """True if the changeset is not obsolete, but its ancestor is"""
-        return self.rev() in obsmod.getrevs(self._repo, 'orphan')
+        return self.rev() in obsmod.getrevs(self._repo, b'orphan')
 
     def phasedivergent(self):
         """True if the changeset tries to be a successor of a public changeset
 
         Only non-public and non-obsolete changesets may be phase-divergent.
         """
-        return self.rev() in obsmod.getrevs(self._repo, 'phasedivergent')
+        return self.rev() in obsmod.getrevs(self._repo, b'phasedivergent')
 
     def contentdivergent(self):
         """Is a successor of a changeset with multiple possible successor sets
 
         Only non-public and non-obsolete changesets may be content-divergent.
         """
-        return self.rev() in obsmod.getrevs(self._repo, 'contentdivergent')
+        return self.rev() in obsmod.getrevs(self._repo, b'contentdivergent')
 
     def isunstable(self):
         """True if the changeset is either orphan, phase-divergent or
@@ -240,11 +240,11 @@ class basectx(object):
         """
         instabilities = []
         if self.orphan():
-            instabilities.append('orphan')
+            instabilities.append(b'orphan')
         if self.phasedivergent():
-            instabilities.append('phase-divergent')
+            instabilities.append(b'phase-divergent')
         if self.contentdivergent():
-            instabilities.append('content-divergent')
+            instabilities.append(b'content-divergent')
         return instabilities
 
     def parents(self):
@@ -266,7 +266,7 @@ class basectx(object):
                 return self._manifest[path], self._manifest.flags(path)
             except KeyError:
                 raise error.ManifestLookupError(
-                    self._node, path, _('not found in manifest')
+                    self._node, path, _(b'not found in manifest')
                 )
         if r'_manifestdelta' in self.__dict__ or path in self.files():
             if path in self._manifestdelta:
@@ -279,7 +279,7 @@ class basectx(object):
             node, flag = mfl[self._changeset.manifest].find(path)
         except KeyError:
             raise error.ManifestLookupError(
-                self._node, path, _('not found in manifest')
+                self._node, path, _(b'not found in manifest')
             )
 
         return node, flag
@@ -291,7 +291,7 @@ class basectx(object):
         try:
             return self._fileinfo(path)[1]
         except error.LookupError:
-            return ''
+            return b''
 
     @propertycache
     def _copies(self):
@@ -321,7 +321,7 @@ class basectx(object):
         pats=None,
         include=None,
         exclude=None,
-        default='glob',
+        default=b'glob',
         listsubrepos=False,
         badfn=None,
     ):
@@ -446,7 +446,7 @@ class basectx(object):
                     listsubrepos=True,
                 )
                 for rfiles, sfiles in zip(r, s):
-                    rfiles.extend("%s/%s" % (subpath, f) for f in sfiles)
+                    rfiles.extend(b"%s/%s" % (subpath, f) for f in sfiles)
 
         for l in r:
             l.sort()
@@ -529,12 +529,12 @@ class changectx(basectx):
         return sorted(modified)
 
     def filesadded(self):
-        source = self._repo.ui.config('experimental', 'copies.read-from')
+        source = self._repo.ui.config(b'experimental', b'copies.read-from')
         filesadded = self._changeset.filesadded
-        if source == 'changeset-only':
+        if source == b'changeset-only':
             if filesadded is None:
                 filesadded = []
-        elif source == 'compatibility':
+        elif source == b'compatibility':
             if filesadded is None:
                 filesadded = scmutil.computechangesetfilesadded(self)
         else:
@@ -542,12 +542,12 @@ class changectx(basectx):
         return filesadded
 
     def filesremoved(self):
-        source = self._repo.ui.config('experimental', 'copies.read-from')
+        source = self._repo.ui.config(b'experimental', b'copies.read-from')
         filesremoved = self._changeset.filesremoved
-        if source == 'changeset-only':
+        if source == b'changeset-only':
             if filesremoved is None:
                 filesremoved = []
-        elif source == 'compatibility':
+        elif source == b'compatibility':
             if filesremoved is None:
                 filesremoved = scmutil.computechangesetfilesremoved(self)
         else:
@@ -556,7 +556,7 @@ class changectx(basectx):
 
     @propertycache
     def _copies(self):
-        source = self._repo.ui.config('experimental', 'copies.read-from')
+        source = self._repo.ui.config(b'experimental', b'copies.read-from')
         p1copies = self._changeset.p1copies
         p2copies = self._changeset.p2copies
         # If config says to get copy metadata only from changeset, then return
@@ -564,12 +564,12 @@ class changectx(basectx):
         # In compatibility mode, we return copy data from the changeset if
         # it was recorded there, and otherwise we fall back to getting it from
         # the filelogs (below).
-        if source == 'changeset-only':
+        if source == b'changeset-only':
             if p1copies is None:
                 p1copies = {}
             if p2copies is None:
                 p2copies = {}
-        elif source == 'compatibility':
+        elif source == b'compatibility':
             if p1copies is None:
                 # we are in compatiblity mode and there is not data in the
                 # changeset), we get the copy metadata from the filelogs.
@@ -584,10 +584,10 @@ class changectx(basectx):
         return self._changeset.description
 
     def branch(self):
-        return encoding.tolocal(self._changeset.extra.get("branch"))
+        return encoding.tolocal(self._changeset.extra.get(b"branch"))
 
     def closesbranch(self):
-        return 'close' in self._changeset.extra
+        return b'close' in self._changeset.extra
 
     def extra(self):
         """Return a dict of extra information."""
@@ -605,7 +605,7 @@ class changectx(basectx):
         return self._repo._phasecache.phase(self._repo, self._rev)
 
     def hidden(self):
-        return self._rev in repoview.filterrevs(self._repo, 'visible')
+        return self._rev in repoview.filterrevs(self._repo, b'visible')
 
     def isinmemory(self):
         return False
@@ -656,7 +656,7 @@ class changectx(basectx):
             anc = cahs[0]
         else:
             # experimental config: merge.preferancestor
-            for r in self._repo.ui.configlist('merge', 'preferancestor'):
+            for r in self._repo.ui.configlist(b'merge', b'preferancestor'):
                 try:
                     ctx = scmutil.revsymbol(self._repo, r)
                 except error.RepoLookupError:
@@ -669,13 +669,13 @@ class changectx(basectx):
             if warn:
                 self._repo.ui.status(
                     (
-                        _("note: using %s as ancestor of %s and %s\n")
+                        _(b"note: using %s as ancestor of %s and %s\n")
                         % (short(anc), short(self._node), short(n2))
                     )
-                    + ''.join(
+                    + b''.join(
                         _(
-                            "      alternatively, use --config "
-                            "merge.preferancestor=%s\n"
+                            b"      alternatively, use --config "
+                            b"merge.preferancestor=%s\n"
                         )
                         % short(n)
                         for n in sorted(cahs)
@@ -695,9 +695,9 @@ class changectx(basectx):
         def bad(fn, msg):
             # The manifest doesn't know about subrepos, so don't complain about
             # paths into valid subrepos.
-            if any(fn == s or fn.startswith(s + '/') for s in self.substate):
+            if any(fn == s or fn.startswith(s + b'/') for s in self.substate):
                 return
-            match.bad(fn, _('no such file in rev %s') % self)
+            match.bad(fn, _(b'no such file in rev %s') % self)
 
         m = matchmod.badmatch(self._repo.narrowmatch(match), bad)
         return self._manifest.walk(m)
@@ -757,9 +757,9 @@ class basefilectx(object):
 
     def __bytes__(self):
         try:
-            return "%s@%s" % (self.path(), self._changectx)
+            return b"%s@%s" % (self.path(), self._changectx)
         except error.LookupError:
-            return "%s@???" % self.path()
+            return b"%s@???" % self.path()
 
     __str__ = encoding.strmethod(__bytes__)
 
@@ -871,10 +871,10 @@ class basefilectx(object):
             return False
 
     def isexec(self):
-        return 'x' in self.flags()
+        return b'x' in self.flags()
 
     def islink(self):
-        return 'l' in self.flags()
+        return b'l' in self.flags()
 
     def isabsent(self):
         """whether this filectx represents a file not in self._changectx
@@ -895,7 +895,7 @@ class basefilectx(object):
 
         if self._filenode is None:
             raise error.ProgrammingError(
-                'filectx.cmp() must be reimplemented if not backed by revlog'
+                b'filectx.cmp() must be reimplemented if not backed by revlog'
             )
 
         if fctx._filenode is None:
@@ -1162,7 +1162,7 @@ class filectx(basefilectx):
 
         assert (
             changeid is not None or fileid is not None or changectx is not None
-        ), "bad args: changeid=%r, fileid=%r, changectx=%r" % (
+        ), b"bad args: changeid=%r, fileid=%r, changectx=%r" % (
             changeid,
             fileid,
             changectx,
@@ -1223,11 +1223,11 @@ class filectx(basefilectx):
         try:
             return self._filelog.read(self._filenode)
         except error.CensoredNodeError:
-            if self._repo.ui.config("censor", "policy") == "ignore":
-                return ""
+            if self._repo.ui.config(b"censor", b"policy") == b"ignore":
+                return b""
             raise error.Abort(
-                _("censored node: %s") % short(self._filenode),
-                hint=_("set censor.policy to ignore errors"),
+                _(b"censored node: %s") % short(self._filenode),
+                hint=_(b"set censor.policy to ignore errors"),
             )
 
     def size(self):
@@ -1275,7 +1275,7 @@ class committablectx(basectx):
     def __init__(
         self,
         repo,
-        text="",
+        text=b"",
         user=None,
         date=None,
         extra=None,
@@ -1297,12 +1297,12 @@ class committablectx(basectx):
         if extra:
             self._extra = extra.copy()
         if branch is not None:
-            self._extra['branch'] = encoding.fromlocal(branch)
-        if not self._extra.get('branch'):
-            self._extra['branch'] = 'default'
+            self._extra[b'branch'] = encoding.fromlocal(branch)
+        if not self._extra.get(b'branch'):
+            self._extra[b'branch'] = b'default'
 
     def __bytes__(self):
-        return bytes(self._parents[0]) + "+"
+        return bytes(self._parents[0]) + b"+"
 
     __str__ = encoding.strmethod(__bytes__)
 
@@ -1322,7 +1322,7 @@ class committablectx(basectx):
     @propertycache
     def _date(self):
         ui = self._repo.ui
-        date = ui.configdate('devel', 'default-date')
+        date = ui.configdate(b'devel', b'default-date')
         if date is None:
             date = dateutil.makedate()
         return date
@@ -1364,10 +1364,10 @@ class committablectx(basectx):
     filesremoved = removed
 
     def branch(self):
-        return encoding.tolocal(self._extra['branch'])
+        return encoding.tolocal(self._extra[b'branch'])
 
     def closesbranch(self):
-        return 'close' in self._extra
+        return b'close' in self._extra
 
     def extra(self):
         return self._extra
@@ -1433,14 +1433,14 @@ class workingctx(committablectx):
     """
 
     def __init__(
-        self, repo, text="", user=None, date=None, extra=None, changes=None
+        self, repo, text=b"", user=None, date=None, extra=None, changes=None
     ):
         branch = None
-        if not extra or 'branch' not in extra:
+        if not extra or b'branch' not in extra:
             try:
                 branch = repo.dirstate.branch()
             except UnicodeDecodeError:
-                raise error.Abort(_('branch name not in UTF-8!'))
+                raise error.Abort(_(b'branch name not in UTF-8!'))
         super(workingctx, self).__init__(
             repo, text, user, date, extra, changes, branch=branch
         )
@@ -1448,11 +1448,11 @@ class workingctx(committablectx):
     def __iter__(self):
         d = self._repo.dirstate
         for f in d:
-            if d[f] != 'r':
+            if d[f] != b'r':
                 yield f
 
     def __contains__(self, key):
-        return self._repo.dirstate[key] not in "?r"
+        return self._repo.dirstate[key] not in b"?r"
 
     def hex(self):
         return wdirhex
@@ -1501,7 +1501,7 @@ class workingctx(committablectx):
                     return fl2
                 if fl2 == fla:
                     return fl1
-                return ''  # punt for conflicts
+                return b''  # punt for conflicts
 
         return func
 
@@ -1514,12 +1514,12 @@ class workingctx(committablectx):
             try:
                 return self._manifest.flags(path)
             except KeyError:
-                return ''
+                return b''
 
         try:
             return self._flagfunc(path)
         except OSError:
-            return ''
+            return b''
 
     def filectx(self, path, filelog=None):
         """get a file context from the working directory"""
@@ -1528,7 +1528,7 @@ class workingctx(committablectx):
         )
 
     def dirty(self, missing=False, merge=True, branch=True):
-        "check whether a working directory is modified"
+        b"check whether a working directory is modified"
         # check subrepos first
         for s in sorted(self.substate):
             if self.sub(s).dirty(missing=missing):
@@ -1543,7 +1543,7 @@ class workingctx(committablectx):
             or (missing and self.deleted())
         )
 
-    def add(self, list, prefix=""):
+    def add(self, list, prefix=b""):
         with self._repo.wlock():
             ui, ds = self._repo.ui, self._repo.dirstate
             uipath = lambda f: ds.pathto(pathutil.join(prefix, f))
@@ -1557,47 +1557,47 @@ class workingctx(committablectx):
                 try:
                     st = lstat(f)
                 except OSError:
-                    ui.warn(_("%s does not exist!\n") % uipath(f))
+                    ui.warn(_(b"%s does not exist!\n") % uipath(f))
                     rejected.append(f)
                     continue
-                limit = ui.configbytes('ui', 'large-file-limit')
+                limit = ui.configbytes(b'ui', b'large-file-limit')
                 if limit != 0 and st.st_size > limit:
                     ui.warn(
                         _(
-                            "%s: up to %d MB of RAM may be required "
-                            "to manage this file\n"
-                            "(use 'hg revert %s' to cancel the "
-                            "pending addition)\n"
+                            b"%s: up to %d MB of RAM may be required "
+                            b"to manage this file\n"
+                            b"(use 'hg revert %s' to cancel the "
+                            b"pending addition)\n"
                         )
                         % (f, 3 * st.st_size // 1000000, uipath(f))
                     )
                 if not (stat.S_ISREG(st.st_mode) or stat.S_ISLNK(st.st_mode)):
                     ui.warn(
                         _(
-                            "%s not added: only files and symlinks "
-                            "supported currently\n"
+                            b"%s not added: only files and symlinks "
+                            b"supported currently\n"
                         )
                         % uipath(f)
                     )
                     rejected.append(f)
-                elif ds[f] in 'amn':
-                    ui.warn(_("%s already tracked!\n") % uipath(f))
-                elif ds[f] == 'r':
+                elif ds[f] in b'amn':
+                    ui.warn(_(b"%s already tracked!\n") % uipath(f))
+                elif ds[f] == b'r':
                     ds.normallookup(f)
                 else:
                     ds.add(f)
             return rejected
 
-    def forget(self, files, prefix=""):
+    def forget(self, files, prefix=b""):
         with self._repo.wlock():
             ds = self._repo.dirstate
             uipath = lambda f: ds.pathto(pathutil.join(prefix, f))
             rejected = []
             for f in files:
                 if f not in ds:
-                    self._repo.ui.warn(_("%s not tracked!\n") % uipath(f))
+                    self._repo.ui.warn(_(b"%s not tracked!\n") % uipath(f))
                     rejected.append(f)
-                elif ds[f] != 'a':
+                elif ds[f] != b'a':
                     ds.remove(f)
                 else:
                     ds.drop(f)
@@ -1610,20 +1610,20 @@ class workingctx(committablectx):
             if err.errno != errno.ENOENT:
                 raise
             self._repo.ui.warn(
-                _("%s does not exist!\n") % self._repo.dirstate.pathto(dest)
+                _(b"%s does not exist!\n") % self._repo.dirstate.pathto(dest)
             )
             return
         if not (stat.S_ISREG(st.st_mode) or stat.S_ISLNK(st.st_mode)):
             self._repo.ui.warn(
-                _("copy failed: %s is not a file or a " "symbolic link\n")
+                _(b"copy failed: %s is not a file or a " b"symbolic link\n")
                 % self._repo.dirstate.pathto(dest)
             )
         else:
             with self._repo.wlock():
                 ds = self._repo.dirstate
-                if ds[dest] in '?':
+                if ds[dest] in b'?':
                     ds.add(dest)
-                elif ds[dest] in 'r':
+                elif ds[dest] in b'r':
                     ds.normallookup(dest)
                 ds.copy(source, dest)
 
@@ -1632,7 +1632,7 @@ class workingctx(committablectx):
         pats=None,
         include=None,
         exclude=None,
-        default='glob',
+        default=b'glob',
         listsubrepos=False,
         badfn=None,
     ):
@@ -1665,16 +1665,16 @@ class workingctx(committablectx):
         # symlink
         sane = []
         for f in files:
-            if self.flags(f) == 'l':
+            if self.flags(f) == b'l':
                 d = self[f].data()
                 if (
-                    d == ''
+                    d == b''
                     or len(d) >= 1024
-                    or '\n' in d
+                    or b'\n' in d
                     or stringutil.binary(d)
                 ):
                     self._repo.ui.debug(
-                        'ignoring suspect symlink placeholder' ' "%s"\n' % f
+                        b'ignoring suspect symlink placeholder' b' "%s"\n' % f
                     )
                     continue
             sane.append(f)
@@ -1746,7 +1746,7 @@ class workingctx(committablectx):
                         # already changed simultaneously after last
                         # caching (see also issue5584 for detail)
                         self._repo.ui.debug(
-                            'skip updating dirstate: ' 'identity mismatch\n'
+                            b'skip updating dirstate: ' b'identity mismatch\n'
                         )
             except error.LockError:
                 pass
@@ -1757,7 +1757,7 @@ class workingctx(committablectx):
     def _dirstatestatus(self, match, ignored=False, clean=False, unknown=False):
         '''Gets the status from the dirstate -- internal use only.'''
         subrepos = []
-        if '.hgsub' in self:
+        if b'.hgsub' in self:
             subrepos = sorted(self.substate)
         cmp, s = self._repo.dirstate.status(
             match, subrepos, ignored=ignored, clean=clean, unknown=unknown
@@ -1855,7 +1855,7 @@ class workingctx(committablectx):
         # might have accidentally ended up with the entire contents of the file
         # they are supposed to be linking to.
         s.modified[:] = self._filtersuspectsymlink(s.modified)
-        if other != self._repo['.']:
+        if other != self._repo[b'.']:
             s = super(workingctx, self)._buildstatus(
                 other, s, match, listignored, listclean, listunknown
             )
@@ -1871,14 +1871,14 @@ class workingctx(committablectx):
         If we aren't comparing against the working directory's parent, then we
         just use the default match object sent to us.
         """
-        if other != self._repo['.']:
+        if other != self._repo[b'.']:
 
             def bad(f, msg):
                 # 'f' may be a directory pattern from 'match.files()',
                 # so 'f not in ctx1' is not enough
                 if f not in other and not other.hasdir(f):
                     self._repo.ui.warn(
-                        '%s: %s\n' % (self._repo.dirstate.pathto(f), msg)
+                        b'%s: %s\n' % (self._repo.dirstate.pathto(f), msg)
                     )
 
             match.bad = bad
@@ -1898,7 +1898,7 @@ class workingctx(committablectx):
     def matches(self, match):
         match = self._repo.narrowmatch(match)
         ds = self._repo.dirstate
-        return sorted(f for f in ds.matches(match) if ds[f] != 'r')
+        return sorted(f for f in ds.matches(match) if ds[f] != b'r')
 
     def markcommitted(self, node):
         with self._repo.dirstate.parentchange():
@@ -2027,7 +2027,7 @@ class workingfilectx(committablefilectx):
 
     def remove(self, ignoremissing=False):
         """wraps unlink for a repo's working directory"""
-        rmdir = self._repo.ui.configbool('experimental', 'removeemptydirs')
+        rmdir = self._repo.ui.configbool(b'experimental', b'removeemptydirs')
         self._repo.wvfs.unlinkpath(
             self._path, ignoremissing=ignoremissing, rmdir=rmdir
         )
@@ -2049,7 +2049,9 @@ class workingfilectx(committablefilectx):
         wvfs = self._repo.wvfs
         f = self._path
         wvfs.audit(f)
-        if self._repo.ui.configbool('experimental', 'merge.checkpathconflicts'):
+        if self._repo.ui.configbool(
+            b'experimental', b'merge.checkpathconflicts'
+        ):
             # remove files under the directory as they should already be
             # warned and backed up
             if wvfs.isdir(f) and not wvfs.islink(f):
@@ -2092,19 +2094,19 @@ class overlayworkingctx(committablectx):
         # Drop old manifest cache as it is now out of date.
         # This is necessary when, e.g., rebasing several nodes with one
         # ``overlayworkingctx`` (e.g. with --collapse).
-        util.clearcachedproperty(self, '_manifest')
+        util.clearcachedproperty(self, b'_manifest')
 
     def data(self, path):
         if self.isdirty(path):
-            if self._cache[path]['exists']:
-                if self._cache[path]['data'] is not None:
-                    return self._cache[path]['data']
+            if self._cache[path][b'exists']:
+                if self._cache[path][b'data'] is not None:
+                    return self._cache[path][b'data']
                 else:
                     # Must fallback here, too, because we only set flags.
                     return self._wrappedctx[path].data()
             else:
                 raise error.ProgrammingError(
-                    "No such file or directory: %s" % path
+                    b"No such file or directory: %s" % path
                 )
         else:
             return self._wrappedctx[path].data()
@@ -2128,7 +2130,7 @@ class overlayworkingctx(committablectx):
     @propertycache
     def _flagfunc(self):
         def f(path):
-            return self._cache[path]['flags']
+            return self._cache[path][b'flags']
 
         return f
 
@@ -2139,21 +2141,21 @@ class overlayworkingctx(committablectx):
         return [
             f
             for f in self._cache.keys()
-            if self._cache[f]['exists'] and self._existsinparent(f)
+            if self._cache[f][b'exists'] and self._existsinparent(f)
         ]
 
     def added(self):
         return [
             f
             for f in self._cache.keys()
-            if self._cache[f]['exists'] and not self._existsinparent(f)
+            if self._cache[f][b'exists'] and not self._existsinparent(f)
         ]
 
     def removed(self):
         return [
             f
             for f in self._cache.keys()
-            if not self._cache[f]['exists'] and self._existsinparent(f)
+            if not self._cache[f][b'exists'] and self._existsinparent(f)
         ]
 
     def p1copies(self):
@@ -2163,7 +2165,7 @@ class overlayworkingctx(committablectx):
             if not narrowmatch(f):
                 continue
             copies.pop(f, None)  # delete if it exists
-            source = self._cache[f]['copied']
+            source = self._cache[f][b'copied']
             if source:
                 copies[f] = source
         return copies
@@ -2175,7 +2177,7 @@ class overlayworkingctx(committablectx):
             if not narrowmatch(f):
                 continue
             copies.pop(f, None)  # delete if it exists
-            source = self._cache[f]['copied']
+            source = self._cache[f][b'copied']
             if source:
                 copies[f] = source
         return copies
@@ -2185,7 +2187,7 @@ class overlayworkingctx(committablectx):
 
     def filedate(self, path):
         if self.isdirty(path):
-            return self._cache[path]['date']
+            return self._cache[path][b'date']
         else:
             return self._wrappedctx[path].date()
 
@@ -2200,24 +2202,24 @@ class overlayworkingctx(committablectx):
 
     def copydata(self, path):
         if self.isdirty(path):
-            return self._cache[path]['copied']
+            return self._cache[path][b'copied']
         else:
             return None
 
     def flags(self, path):
         if self.isdirty(path):
-            if self._cache[path]['exists']:
-                return self._cache[path]['flags']
+            if self._cache[path][b'exists']:
+                return self._cache[path][b'flags']
             else:
                 raise error.ProgrammingError(
-                    "No such file or directory: %s" % self._path
+                    b"No such file or directory: %s" % self._path
                 )
         else:
             return self._wrappedctx[path].flags()
 
     def __contains__(self, key):
         if key in self._cache:
-            return self._cache[key]['exists']
+            return self._cache[key][b'exists']
         return key in self.p1()
 
     def _existsinparent(self, path):
@@ -2241,22 +2243,22 @@ class overlayworkingctx(committablectx):
         def fail(path, component):
             # p1() is the base and we're receiving "writes" for p2()'s
             # files.
-            if 'l' in self.p1()[component].flags():
+            if b'l' in self.p1()[component].flags():
                 raise error.Abort(
-                    "error: %s conflicts with symlink %s "
-                    "in %d." % (path, component, self.p1().rev())
+                    b"error: %s conflicts with symlink %s "
+                    b"in %d." % (path, component, self.p1().rev())
                 )
             else:
                 raise error.Abort(
-                    "error: '%s' conflicts with file '%s' in "
-                    "%d." % (path, component, self.p1().rev())
+                    b"error: '%s' conflicts with file '%s' in "
+                    b"%d." % (path, component, self.p1().rev())
                 )
 
         # Test that each new directory to be created to write this path from p2
         # is not a file in p1.
-        components = path.split('/')
+        components = path.split(b'/')
         for i in pycompat.xrange(len(components)):
-            component = "/".join(components[0:i])
+            component = b"/".join(components[0:i])
             if component in self:
                 fail(path, component)
 
@@ -2273,26 +2275,26 @@ class overlayworkingctx(committablectx):
             if not mfiles:
                 return
             raise error.Abort(
-                "error: file '%s' cannot be written because "
-                " '%s/' is a directory in %s (containing %d "
-                "entries: %s)"
-                % (path, path, self.p1(), len(mfiles), ', '.join(mfiles))
+                b"error: file '%s' cannot be written because "
+                b" '%s/' is a directory in %s (containing %d "
+                b"entries: %s)"
+                % (path, path, self.p1(), len(mfiles), b', '.join(mfiles))
             )
 
-    def write(self, path, data, flags='', **kwargs):
+    def write(self, path, data, flags=b'', **kwargs):
         if data is None:
-            raise error.ProgrammingError("data must be non-None")
+            raise error.ProgrammingError(b"data must be non-None")
         self._auditconflicts(path)
         self._markdirty(
             path, exists=True, data=data, date=dateutil.makedate(), flags=flags
         )
 
     def setflags(self, path, l, x):
-        flag = ''
+        flag = b''
         if l:
-            flag = 'l'
+            flag = b'l'
         elif x:
-            flag = 'x'
+            flag = b'x'
         self._markdirty(path, exists=True, date=dateutil.makedate(), flags=flag)
 
     def remove(self, path):
@@ -2306,29 +2308,29 @@ class overlayworkingctx(committablectx):
             # If this path exists and is a symlink, "follow" it by calling
             # exists on the destination path.
             if (
-                self._cache[path]['exists']
-                and 'l' in self._cache[path]['flags']
+                self._cache[path][b'exists']
+                and b'l' in self._cache[path][b'flags']
             ):
-                return self.exists(self._cache[path]['data'].strip())
+                return self.exists(self._cache[path][b'data'].strip())
             else:
-                return self._cache[path]['exists']
+                return self._cache[path][b'exists']
 
         return self._existsinparent(path)
 
     def lexists(self, path):
         """lexists returns True if the path exists"""
         if self.isdirty(path):
-            return self._cache[path]['exists']
+            return self._cache[path][b'exists']
 
         return self._existsinparent(path)
 
     def size(self, path):
         if self.isdirty(path):
-            if self._cache[path]['exists']:
-                return len(self._cache[path]['data'])
+            if self._cache[path][b'exists']:
+                return len(self._cache[path][b'data'])
             else:
                 raise error.ProgrammingError(
-                    "No such file or directory: %s" % self._path
+                    b"No such file or directory: %s" % self._path
                 )
         return self._wrappedctx[path].size()
 
@@ -2363,15 +2365,15 @@ class overlayworkingctx(committablectx):
         files = self.files()
 
         def getfile(repo, memctx, path):
-            if self._cache[path]['exists']:
+            if self._cache[path][b'exists']:
                 return memfilectx(
                     repo,
                     memctx,
                     path,
-                    self._cache[path]['data'],
-                    'l' in self._cache[path]['flags'],
-                    'x' in self._cache[path]['flags'],
-                    self._cache[path]['copied'],
+                    self._cache[path][b'data'],
+                    b'l' in self._cache[path][b'flags'],
+                    b'x' in self._cache[path][b'flags'],
+                    self._cache[path][b'copied'],
                 )
             else:
                 # Returning None, but including the path in `files`, is
@@ -2424,8 +2426,8 @@ class overlayworkingctx(committablectx):
             try:
                 underlying = self._wrappedctx[path]
                 if (
-                    underlying.data() == cache['data']
-                    and underlying.flags() == cache['flags']
+                    underlying.data() == cache[b'data']
+                    and underlying.flags() == cache[b'flags']
                 ):
                     keys.append(path)
             except error.ManifestLookupError:
@@ -2437,23 +2439,23 @@ class overlayworkingctx(committablectx):
         return keys
 
     def _markdirty(
-        self, path, exists, data=None, date=None, flags='', copied=None
+        self, path, exists, data=None, date=None, flags=b'', copied=None
     ):
         # data not provided, let's see if we already have some; if not, let's
         # grab it from our underlying context, so that we always have data if
         # the file is marked as existing.
         if exists and data is None:
             oldentry = self._cache.get(path) or {}
-            data = oldentry.get('data')
+            data = oldentry.get(b'data')
             if data is None:
                 data = self._wrappedctx[path].data()
 
         self._cache[path] = {
-            'exists': exists,
-            'data': data,
-            'date': date,
-            'flags': flags,
-            'copied': copied,
+            b'exists': exists,
+            b'data': data,
+            b'date': date,
+            b'flags': flags,
+            b'copied': copied,
         }
 
     def filectx(self, path, filelog=None):
@@ -2527,7 +2529,7 @@ class workingcommitctx(workingctx):
     """
 
     def __init__(
-        self, repo, changes, text="", user=None, date=None, extra=None
+        self, repo, changes, text=b"", user=None, date=None, extra=None
     ):
         super(workingcommitctx, self).__init__(
             repo, text, user, date, extra, changes
@@ -2781,11 +2783,11 @@ class memfilectx(committablefilectx):
         super(memfilectx, self).__init__(repo, path, None, changectx)
         self._data = data
         if islink:
-            self._flags = 'l'
+            self._flags = b'l'
         elif isexec:
-            self._flags = 'x'
+            self._flags = b'x'
         else:
-            self._flags = ''
+            self._flags = b''
         self._copysource = copysource
 
     def copysource(self):
@@ -2930,7 +2932,7 @@ class arbitraryfilectx(object):
     def cmp(self, fctx):
         # filecmp follows symlinks whereas `cmp` should not, so skip the fast
         # path if either side is a symlink.
-        symlinks = 'l' in self.flags() or 'l' in fctx.flags()
+        symlinks = b'l' in self.flags() or b'l' in fctx.flags()
         if not symlinks and isinstance(fctx, workingfilectx) and self._repo:
             # Add a fast-path for merge if both sides are disk-backed.
             # Note that filecmp uses the opposite return values (True if same)
@@ -2942,13 +2944,13 @@ class arbitraryfilectx(object):
         return self._path
 
     def flags(self):
-        return ''
+        return b''
 
     def data(self):
         return util.readfile(self._path)
 
     def decodeddata(self):
-        with open(self._path, "rb") as f:
+        with open(self._path, b"rb") as f:
             return f.read()
 
     def remove(self):
@@ -2956,5 +2958,5 @@ class arbitraryfilectx(object):
 
     def write(self, data, flags, **kwargs):
         assert not flags
-        with open(self._path, "wb") as f:
+        with open(self._path, b"wb") as f:
             f.write(data)

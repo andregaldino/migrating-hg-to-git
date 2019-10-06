@@ -15,21 +15,21 @@ from . import (
 )
 
 # (filename hash, offset, size)
-INDEXFORMAT2 = '!20sQQII'
+INDEXFORMAT2 = b'!20sQQII'
 INDEXENTRYLENGTH2 = struct.calcsize(INDEXFORMAT2)
 NODELENGTH = 20
 
-NODEINDEXFORMAT = '!20sQ'
+NODEINDEXFORMAT = b'!20sQ'
 NODEINDEXENTRYLENGTH = struct.calcsize(NODEINDEXFORMAT)
 
 # (node, p1, p2, linknode)
-PACKFORMAT = "!20s20s20s20sH"
+PACKFORMAT = b"!20s20s20s20sH"
 PACKENTRYLENGTH = 82
 
 ENTRYCOUNTSIZE = 4
 
-INDEXSUFFIX = '.histidx'
-PACKSUFFIX = '.histpack'
+INDEXSUFFIX = b'.histidx'
+PACKSUFFIX = b'.histpack'
 
 ANC_NODE = 0
 ANC_P1NODE = 1
@@ -77,7 +77,7 @@ class historypackstore(basepack.basepackstore):
 
     def add(self, filename, node, p1, p2, linknode, copyfrom):
         raise RuntimeError(
-            "cannot add to historypackstore (%s:%s)" % (filename, hex(node))
+            b"cannot add to historypackstore (%s:%s)" % (filename, hex(node))
         )
 
 
@@ -168,7 +168,7 @@ class historypack(basepack.basepack):
 
     def add(self, filename, node, p1, p2, linknode, copyfrom):
         raise RuntimeError(
-            "cannot add to historypack (%s:%s)" % (filename, hex(node))
+            b"cannot add to historypack (%s:%s)" % (filename, hex(node))
         )
 
     def _findnode(self, name, node):
@@ -193,7 +193,7 @@ class historypack(basepack.basepack):
                 # with the copyfrom string.
                 return entry[:4] + (copyfrom,)
 
-        raise KeyError("unable to find history for %s:%s" % (name, hex(node)))
+        raise KeyError(b"unable to find history for %s:%s" % (name, hex(node)))
 
     def _findsection(self, name):
         params = self.params
@@ -222,19 +222,19 @@ class historypack(basepack.basepack):
         rawnamelen = self._index[
             nodeindexoffset : nodeindexoffset + constants.FILENAMESIZE
         ]
-        actualnamelen = struct.unpack('!H', rawnamelen)[0]
+        actualnamelen = struct.unpack(b'!H', rawnamelen)[0]
         nodeindexoffset += constants.FILENAMESIZE
         actualname = self._index[
             nodeindexoffset : nodeindexoffset + actualnamelen
         ]
         if actualname != name:
             raise KeyError(
-                "found file name %s when looking for %s" % (actualname, name)
+                b"found file name %s when looking for %s" % (actualname, name)
             )
         nodeindexoffset += actualnamelen
 
         filenamelength = struct.unpack(
-            '!H', self._data[offset : offset + constants.FILENAMESIZE]
+            b'!H', self._data[offset : offset + constants.FILENAMESIZE]
         )[0]
         offset += constants.FILENAMESIZE
 
@@ -243,7 +243,7 @@ class historypack(basepack.basepack):
 
         if name != actualname:
             raise KeyError(
-                "found file name %s when looking for %s" % (actualname, name)
+                b"found file name %s when looking for %s" % (actualname, name)
             )
 
         # Skip entry list size
@@ -311,14 +311,14 @@ class historypack(basepack.basepack):
             data = self._data
             # <2 byte len> + <filename>
             filenamelen = struct.unpack(
-                '!H', data[offset : offset + constants.FILENAMESIZE]
+                b'!H', data[offset : offset + constants.FILENAMESIZE]
             )[0]
             offset += constants.FILENAMESIZE
             filename = data[offset : offset + filenamelen]
             offset += filenamelen
 
             revcount = struct.unpack(
-                '!I', data[offset : offset + ENTRYCOUNTSIZE]
+                b'!I', data[offset : offset + ENTRYCOUNTSIZE]
             )[0]
             offset += ENTRYCOUNTSIZE
 
@@ -440,8 +440,8 @@ class mutablehistorypack(basepack.mutablebasepack):
         self.NODEINDEXENTRYLENGTH = NODEINDEXENTRYLENGTH
 
     def add(self, filename, node, p1, p2, linknode, copyfrom):
-        copyfrom = copyfrom or ''
-        copyfromlen = struct.pack('!H', len(copyfrom))
+        copyfrom = copyfrom or b''
+        copyfromlen = struct.pack(b'!H', len(copyfrom))
         self.fileentries.setdefault(filename, []).append(
             (node, p1, p2, linknode, copyfromlen, copyfrom)
         )
@@ -471,11 +471,11 @@ class mutablehistorypack(basepack.mutablebasepack):
 
             # Write the file section header
             self.writeraw(
-                "%s%s%s"
+                b"%s%s%s"
                 % (
-                    struct.pack('!H', len(filename)),
+                    struct.pack(b'!H', len(filename)),
                     filename,
-                    struct.pack('!I', len(sortednodes)),
+                    struct.pack(b'!I', len(sortednodes)),
                 )
             )
 
@@ -488,11 +488,11 @@ class mutablehistorypack(basepack.mutablebasepack):
             offset = sectionstart + sectionlen
             for node in sortednodes:
                 locations[node] = offset
-                raw = '%s%s%s%s%s%s' % entrymap[node]
+                raw = b'%s%s%s%s%s%s' % entrymap[node]
                 rawstrings.append(raw)
                 offset += len(raw)
 
-            rawdata = ''.join(rawstrings)
+            rawdata = b''.join(rawstrings)
             sectionlen += len(rawdata)
 
             self.writeraw(rawdata)
@@ -523,7 +523,7 @@ class mutablehistorypack(basepack.mutablebasepack):
         files = sorted(files)
 
         # node index is after file index size, file index, and node index size
-        indexlensize = struct.calcsize('!Q')
+        indexlensize = struct.calcsize(b'!Q')
         nodeindexoffset = (
             indexoffset
             + indexlensize
@@ -564,7 +564,9 @@ class mutablehistorypack(basepack.mutablebasepack):
 
             fileindexentries.append(rawentry)
 
-        nodecountraw = struct.pack('!Q', nodecount)
+        nodecountraw = struct.pack(b'!Q', nodecount)
         return (
-            ''.join(fileindexentries) + nodecountraw + ''.join(nodeindexentries)
+            b''.join(fileindexentries)
+            + nodecountraw
+            + b''.join(nodeindexentries)
         )

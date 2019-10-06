@@ -195,7 +195,7 @@ def fileidlookup(store, fileid, identifier):
             return store.node(fileid)
         except IndexError:
             raise error.LookupError(
-                '%d' % fileid, identifier, _('no match found')
+                b'%d' % fileid, identifier, _(b'no match found')
             )
 
     if len(fileid) == 20:
@@ -226,7 +226,7 @@ def fileidlookup(store, fileid, identifier):
     except (ValueError, OverflowError):
         pass
 
-    raise error.LookupError(fileid, identifier, _('no match found'))
+    raise error.LookupError(fileid, identifier, _(b'no match found'))
 
 
 def resolvestripinfo(minlinkrev, tiprev, headrevs, linkrevfn, parentrevsfn):
@@ -361,9 +361,9 @@ def emitrevisions(
     fnode = store.node
     frev = store.rev
 
-    if nodesorder == 'nodes':
+    if nodesorder == b'nodes':
         revs = [frev(n) for n in nodes]
-    elif nodesorder == 'linear':
+    elif nodesorder == b'linear':
         revs = set(frev(n) for n in nodes)
         revs = dagop.linearize(revs, store.parentrevs)
     else:  # storage and default
@@ -498,7 +498,7 @@ def deltaiscensored(delta, baserev, baselenfn):
     # "\1\ncensored:". A delta producing such a censored revision must be a
     # full-replacement delta, so we inspect the first and only patch in the
     # delta for this prefix.
-    hlen = struct.calcsize(">lll")
+    hlen = struct.calcsize(b">lll")
     if len(delta) <= hlen:
         return False
 
@@ -507,6 +507,6 @@ def deltaiscensored(delta, baserev, baselenfn):
     if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
         return False
 
-    add = "\1\ncensored:"
+    add = b"\1\ncensored:"
     addlen = len(add)
     return newlen >= addlen and delta[hlen : hlen + addlen] == add

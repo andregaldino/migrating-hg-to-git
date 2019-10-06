@@ -170,7 +170,7 @@ def _dirstatecopies(repo, match=None):
     ds = repo.dirstate
     c = ds.copies().copy()
     for k in list(c):
-        if ds[k] not in 'anm' or (match and not match(k)):
+        if ds[k] not in b'anm' or (match and not match(k)):
             del c[k]
     return c
 
@@ -187,8 +187,8 @@ def _computeforwardmissing(a, b, match=None):
 
 def usechangesetcentricalgo(repo):
     """Checks if we should use changeset-centric copy algorithms"""
-    readfrom = repo.ui.config('experimental', 'copies.read-from')
-    changesetsource = ('changeset-only', 'compatibility')
+    readfrom = repo.ui.config(b'experimental', b'copies.read-from')
+    changesetsource = (b'changeset-only', b'compatibility')
     return readfrom in changesetsource
 
 
@@ -201,13 +201,13 @@ def _committedforwardcopies(a, b, base, match):
     if usechangesetcentricalgo(repo):
         return _changesetforwardcopies(a, b, match)
 
-    debug = repo.ui.debugflag and repo.ui.configbool('devel', 'debug.copies')
+    debug = repo.ui.debugflag and repo.ui.configbool(b'devel', b'debug.copies')
     dbg = repo.ui.debug
     if debug:
-        dbg('debug.copies:    looking into rename from %s to %s\n' % (a, b))
+        dbg(b'debug.copies:    looking into rename from %s to %s\n' % (a, b))
     limit = _findlimit(repo, a, b)
     if debug:
-        dbg('debug.copies:      search limit: %d\n' % limit)
+        dbg(b'debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()
     basemf = None if base is None else base.manifest()
 
@@ -231,11 +231,11 @@ def _committedforwardcopies(a, b, base, match):
     ancestrycontext = a._repo.changelog.ancestors([b.rev()], inclusive=True)
 
     if debug:
-        dbg('debug.copies:      missing files to search: %d\n' % len(missing))
+        dbg(b'debug.copies:      missing files to search: %d\n' % len(missing))
 
     for f in sorted(missing):
         if debug:
-            dbg('debug.copies:        tracing file: %s\n' % f)
+            dbg(b'debug.copies:        tracing file: %s\n' % f)
         fctx = b[f]
         fctx._ancestrycontext = ancestrycontext
 
@@ -244,11 +244,11 @@ def _committedforwardcopies(a, b, base, match):
         opath = _tracefile(fctx, am, basemf, limit)
         if opath:
             if debug:
-                dbg('debug.copies:          rename of: %s\n' % opath)
+                dbg(b'debug.copies:          rename of: %s\n' % opath)
             cm[f] = opath
         if debug:
             dbg(
-                'debug.copies:          time: %f seconds\n'
+                b'debug.copies:          time: %f seconds\n'
                 % (util.timer() - start)
             )
     return cm
@@ -342,7 +342,7 @@ def _forwardcopies(a, b, base=None, match=None):
 
 
 def _backwardrenames(a, b, match):
-    if a._repo.ui.config('experimental', 'copytrace') == 'off':
+    if a._repo.ui.config(b'experimental', b'copytrace') == b'off':
         return {}
 
     # Even though we're not taking copies into account, 1:n rename situations
@@ -366,26 +366,28 @@ def _backwardrenames(a, b, match):
 def pathcopies(x, y, match=None):
     """find {dst@y: src@x} copy mapping for directed compare"""
     repo = x._repo
-    debug = repo.ui.debugflag and repo.ui.configbool('devel', 'debug.copies')
+    debug = repo.ui.debugflag and repo.ui.configbool(b'devel', b'debug.copies')
     if debug:
-        repo.ui.debug('debug.copies: searching copies from %s to %s\n' % (x, y))
+        repo.ui.debug(
+            b'debug.copies: searching copies from %s to %s\n' % (x, y)
+        )
     if x == y or not x or not y:
         return {}
     a = y.ancestor(x)
     if a == x:
         if debug:
-            repo.ui.debug('debug.copies: search mode: forward\n')
+            repo.ui.debug(b'debug.copies: search mode: forward\n')
         if y.rev() is None and x == y.p1():
             # short-circuit to avoid issues with merge states
             return _dirstatecopies(repo, match)
         copies = _forwardcopies(x, y, match=match)
     elif a == y:
         if debug:
-            repo.ui.debug('debug.copies: search mode: backward\n')
+            repo.ui.debug(b'debug.copies: search mode: backward\n')
         copies = _backwardrenames(x, y, match=match)
     else:
         if debug:
-            repo.ui.debug('debug.copies: search mode: combined\n')
+            repo.ui.debug(b'debug.copies: search mode: combined\n')
         base = None
         if a.rev() != node.nullrev:
             base = x
@@ -453,7 +455,7 @@ def mergecopies(repo, c1, c2, base):
     if c2.node() is None and c1.node() == repo.dirstate.p1():
         return _dirstatecopies(repo, narrowmatch), {}, {}, {}, {}
 
-    copytracing = repo.ui.config('experimental', 'copytrace')
+    copytracing = repo.ui.config(b'experimental', b'copytrace')
     if stringutil.parsebool(copytracing) is False:
         # stringutil.parsebool() returns None when it is unable to parse the
         # value, so we should rely on making sure copytracing is on such cases
@@ -466,7 +468,7 @@ def mergecopies(repo, c1, c2, base):
     # Copy trace disabling is explicitly below the node == p1 logic above
     # because the logic above is required for a simple copy to be kept across a
     # rebase.
-    if copytracing == 'heuristics':
+    if copytracing == b'heuristics':
         # Do full copytracing if only non-public revisions are involved as
         # that will be fast enough and will also cover the copies which could
         # be missed by heuristics
@@ -490,9 +492,9 @@ def _isfullcopytraceable(repo, c1, base):
         c1 = c1.p1()
     if c1.mutable() and base.mutable():
         sourcecommitlimit = repo.ui.configint(
-            'experimental', 'copytrace.sourcecommitlimit'
+            b'experimental', b'copytrace.sourcecommitlimit'
         )
-        commits = len(repo.revs('%d::%d', base.rev(), c1.rev()))
+        commits = len(repo.revs(b'%d::%d', base.rev(), c1.rev()))
         return commits < sourcecommitlimit
     return False
 
@@ -592,11 +594,11 @@ def _fullcopytracing(repo, c1, c2, base):
     u1 = sorted(addedinm1 - addedinm2)
     u2 = sorted(addedinm2 - addedinm1)
 
-    header = "  unmatched files in %s"
+    header = b"  unmatched files in %s"
     if u1:
-        repo.ui.debug("%s:\n   %s\n" % (header % 'local', "\n   ".join(u1)))
+        repo.ui.debug(b"%s:\n   %s\n" % (header % b'local', b"\n   ".join(u1)))
     if u2:
-        repo.ui.debug("%s:\n   %s\n" % (header % 'other', "\n   ".join(u2)))
+        repo.ui.debug(b"%s:\n   %s\n" % (header % b'other', b"\n   ".join(u2)))
 
     fullcopy = copies1.copy()
     fullcopy.update(copies2)
@@ -605,23 +607,23 @@ def _fullcopytracing(repo, c1, c2, base):
 
     if repo.ui.debugflag:
         repo.ui.debug(
-            "  all copies found (* = to merge, ! = divergent, "
-            "% = renamed and deleted):\n"
+            b"  all copies found (* = to merge, ! = divergent, "
+            b"% = renamed and deleted):\n"
         )
         for f in sorted(fullcopy):
-            note = ""
+            note = b""
             if f in copy:
-                note += "*"
+                note += b"*"
             if f in divergeset:
-                note += "!"
+                note += b"!"
             if f in renamedeleteset:
-                note += "%"
+                note += b"%"
             repo.ui.debug(
-                "   src: '%s' -> dst: '%s' %s\n" % (fullcopy[f], f, note)
+                b"   src: '%s' -> dst: '%s' %s\n" % (fullcopy[f], f, note)
             )
     del divergeset
 
-    repo.ui.debug("  checking for directory renames\n")
+    repo.ui.debug(b"  checking for directory renames\n")
 
     # generate a directory move map
     d1, d2 = c1.dirs(), c2.dirs()
@@ -656,11 +658,11 @@ def _fullcopytracing(repo, c1, c2, base):
     if not dirmove:
         return copy, {}, diverge, renamedelete, {}
 
-    dirmove = {k + "/": v + "/" for k, v in dirmove.iteritems()}
+    dirmove = {k + b"/": v + b"/" for k, v in dirmove.iteritems()}
 
     for d in dirmove:
         repo.ui.debug(
-            "   discovered dir src: '%s' -> dst: '%s'\n" % (d, dirmove[d])
+            b"   discovered dir src: '%s' -> dst: '%s'\n" % (d, dirmove[d])
         )
 
     movewithdir = {}
@@ -674,7 +676,7 @@ def _fullcopytracing(repo, c1, c2, base):
                     if df not in copy:
                         movewithdir[f] = df
                         repo.ui.debug(
-                            ("   pending file src: '%s' -> " "dst: '%s'\n")
+                            (b"   pending file src: '%s' -> " b"dst: '%s'\n")
                             % (f, df)
                         )
                     break
@@ -716,11 +718,11 @@ def _heuristicscopytracing(repo, c1, c2, base):
 
     changedfiles = set()
     m1 = c1.manifest()
-    if not repo.revs('%d::%d', base.rev(), c2.rev()):
+    if not repo.revs(b'%d::%d', base.rev(), c2.rev()):
         # If base is not in c2 branch, we switch to fullcopytracing
         repo.ui.debug(
-            "switching to full copytracing as base is not "
-            "an ancestor of c2\n"
+            b"switching to full copytracing as base is not "
+            b"an ancestor of c2\n"
         )
         return _fullcopytracing(repo, c1, c2, base)
 
@@ -728,7 +730,7 @@ def _heuristicscopytracing(repo, c1, c2, base):
     while ctx != base:
         if len(ctx.parents()) == 2:
             # To keep things simple let's not handle merges
-            repo.ui.debug("switching to full copytracing because of merges\n")
+            repo.ui.debug(b"switching to full copytracing because of merges\n")
             return _fullcopytracing(repo, c1, c2, base)
         changedfiles.update(ctx.files())
         ctx = ctx.p1()
@@ -767,14 +769,14 @@ def _heuristicscopytracing(repo, c1, c2, base):
             # we can have a lot of candidates which can slow down the heuristics
             # config value to limit the number of candidates moves to check
             maxcandidates = repo.ui.configint(
-                'experimental', 'copytrace.movecandidateslimit'
+                b'experimental', b'copytrace.movecandidateslimit'
             )
 
             if len(movecandidates) > maxcandidates:
                 repo.ui.status(
                     _(
-                        "skipping copytracing for '%s', more "
-                        "candidates than the limit: %d\n"
+                        b"skipping copytracing for '%s', more "
+                        b"candidates than the limit: %d\n"
                     )
                     % (f, len(movecandidates))
                 )
@@ -833,10 +835,10 @@ def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
     copies between fromrev and rev.
     """
     exclude = {}
-    ctraceconfig = repo.ui.config('experimental', 'copytrace')
+    ctraceconfig = repo.ui.config(b'experimental', b'copytrace')
     bctrace = stringutil.parsebool(ctraceconfig)
     if skiprev is not None and (
-        ctraceconfig == 'heuristics' or bctrace or bctrace is None
+        ctraceconfig == b'heuristics' or bctrace or bctrace is None
     ):
         # copytrace='off' skips this line, but not the entire function because
         # the line below is O(size of the repo) during a rebase, while the rest

@@ -37,19 +37,19 @@ def asciiupper(s):
 
 
 _jsonmap = []
-_jsonmap.extend("\\u%04x" % x for x in range(32))
+_jsonmap.extend(b"\\u%04x" % x for x in range(32))
 _jsonmap.extend(pycompat.bytechr(x) for x in range(32, 127))
-_jsonmap.append('\\u007f')
-_jsonmap[0x09] = '\\t'
-_jsonmap[0x0A] = '\\n'
-_jsonmap[0x22] = '\\"'
-_jsonmap[0x5C] = '\\\\'
-_jsonmap[0x08] = '\\b'
-_jsonmap[0x0C] = '\\f'
-_jsonmap[0x0D] = '\\r'
+_jsonmap.append(b'\\u007f')
+_jsonmap[0x09] = b'\\t'
+_jsonmap[0x0A] = b'\\n'
+_jsonmap[0x22] = b'\\"'
+_jsonmap[0x5C] = b'\\\\'
+_jsonmap[0x08] = b'\\b'
+_jsonmap[0x0C] = b'\\f'
+_jsonmap[0x0D] = b'\\r'
 _paranoidjsonmap = _jsonmap[:]
-_paranoidjsonmap[0x3C] = '\\u003c'  # '<' (e.g. escape "</script>")
-_paranoidjsonmap[0x3E] = '\\u003e'  # '>'
+_paranoidjsonmap[0x3C] = b'\\u003c'  # '<' (e.g. escape "</script>")
+_paranoidjsonmap[0x3E] = b'\\u003e'  # '>'
 _jsonmap.extend(pycompat.bytechr(x) for x in range(128, 256))
 
 
@@ -63,7 +63,7 @@ def jsonescapeu8fast(u8chars, paranoid):
     else:
         jm = _jsonmap
     try:
-        return ''.join(jm[x] for x in bytearray(u8chars))
+        return b''.join(jm[x] for x in bytearray(u8chars))
     except IndexError:
         raise ValueError
 
@@ -87,4 +87,4 @@ def jsonescapeu8fallback(u8chars, paranoid):
     u16b = u8chars.decode('utf-8', _utf8strict).encode('utf-16', _utf8strict)
     u16codes = array.array(r'H', u16b)
     u16codes.pop(0)  # drop BOM
-    return ''.join(jm[x] if x < 128 else '\\u%04x' % x for x in u16codes)
+    return b''.join(jm[x] if x < 128 else b'\\u%04x' % x for x in u16codes)

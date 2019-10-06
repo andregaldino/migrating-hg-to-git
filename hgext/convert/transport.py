@@ -54,13 +54,13 @@ def _create_auth_baton(pool):
     )
     if getprovider:
         # Available in svn >= 1.6
-        for name in ('gnome_keyring', 'keychain', 'kwallet', 'windows'):
-            for type in ('simple', 'ssl_client_cert_pw', 'ssl_server_trust'):
+        for name in (b'gnome_keyring', b'keychain', b'kwallet', b'windows'):
+            for type in (b'simple', b'ssl_client_cert_pw', b'ssl_server_trust'):
                 p = getprovider(name, type, pool)
                 if p:
                     providers.append(p)
     else:
-        if util.safehasattr(svn.client, 'get_windows_simple_provider'):
+        if util.safehasattr(svn.client, b'get_windows_simple_provider'):
             providers.append(svn.client.get_windows_simple_provider(pool))
 
     return svn.core.svn_auth_open(providers, pool)
@@ -75,14 +75,14 @@ class SvnRaTransport(object):
     Open an ra connection to a Subversion repository.
     """
 
-    def __init__(self, url="", ra=None):
+    def __init__(self, url=b"", ra=None):
         self.pool = Pool()
         self.svn_url = url
-        self.username = ''
-        self.password = ''
+        self.username = b''
+        self.password = b''
 
         # Only Subversion 1.4 has reparent()
-        if ra is None or not util.safehasattr(svn.ra, 'reparent'):
+        if ra is None or not util.safehasattr(svn.ra, b'reparent'):
             self.client = svn.client.create_context(self.pool)
             ab = _create_auth_baton(self.pool)
             self.client.auth_baton = ab

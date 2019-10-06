@@ -35,26 +35,26 @@ from mercurial.utils import procutil
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 cmdtable = {}
 command = registrar.command(cmdtable)
 
 
 def convert(s):
-    if s.startswith("origin/"):
+    if s.startswith(b"origin/"):
         return s[7:]
-    if 'HEAD' in s:
-        s = s.replace('HEAD', '.')
+    if b'HEAD' in s:
+        s = s.replace(b'HEAD', b'.')
     # HEAD~ in git is .~1 in mercurial
-    s = re.sub('~$', '~1', s)
+    s = re.sub(b'~$', b'~1', s)
     return s
 
 
 @command(
-    'githelp|git',
+    b'githelp|git',
     [],
-    _('hg githelp'),
+    _(b'hg githelp'),
     helpcategory=command.CATEGORY_HELP,
     helpbasic=True,
 )
@@ -64,19 +64,19 @@ def githelp(ui, repo, *args, **kwargs):
     Usage: hg githelp -- <git command>
     '''
 
-    if len(args) == 0 or (len(args) == 1 and args[0] == 'git'):
+    if len(args) == 0 or (len(args) == 1 and args[0] == b'git'):
         raise error.Abort(
-            _('missing git command - ' 'usage: hg githelp -- <git command>')
+            _(b'missing git command - ' b'usage: hg githelp -- <git command>')
         )
 
-    if args[0] == 'git':
+    if args[0] == b'git':
         args = args[1:]
 
     cmd = args[0]
     if not cmd in gitcommands:
-        raise error.Abort(_("error: unknown git command %s") % cmd)
+        raise error.Abort(_(b"error: unknown git command %s") % cmd)
 
-    ui.pager('githelp')
+    ui.pager(b'githelp')
     args = args[1:]
     return gitcommands[cmd](ui, repo, *args, **kwargs)
 
@@ -93,24 +93,24 @@ def parseoptions(ui, cmdoptions, args):
             if r"requires argument" in ex.msg:
                 raise
             if (r'--' + ex.opt) in ex.msg:
-                flag = '--' + pycompat.bytestr(ex.opt)
+                flag = b'--' + pycompat.bytestr(ex.opt)
             elif (r'-' + ex.opt) in ex.msg:
-                flag = '-' + pycompat.bytestr(ex.opt)
+                flag = b'-' + pycompat.bytestr(ex.opt)
             else:
                 raise error.Abort(
-                    _("unknown option %s") % pycompat.bytestr(ex.opt)
+                    _(b"unknown option %s") % pycompat.bytestr(ex.opt)
                 )
             try:
                 args.remove(flag)
             except Exception:
-                msg = _("unknown option '%s' packed with other options")
-                hint = _("please try passing the option as its own flag: -%s")
+                msg = _(b"unknown option '%s' packed with other options")
+                hint = _(b"please try passing the option as its own flag: -%s")
                 raise error.Abort(
                     msg % pycompat.bytestr(ex.opt),
                     hint=hint % pycompat.bytestr(ex.opt),
                 )
 
-            ui.warn(_("ignoring unknown option %s\n") % flag)
+            ui.warn(_(b"ignoring unknown option %s\n") % flag)
 
     args = list([convert(x) for x in args])
     opts = dict(
@@ -130,22 +130,22 @@ class Command(object):
         self.opts = {}
 
     def __bytes__(self):
-        cmd = "hg " + self.name
+        cmd = b"hg " + self.name
         if self.opts:
             for k, values in sorted(self.opts.iteritems()):
                 for v in values:
                     if v:
                         if isinstance(v, int):
-                            fmt = ' %s %d'
+                            fmt = b' %s %d'
                         else:
-                            fmt = ' %s %s'
+                            fmt = b' %s %s'
 
                         cmd += fmt % (k, v)
                     else:
-                        cmd += " %s" % (k,)
+                        cmd += b" %s" % (k,)
         if self.args:
-            cmd += " "
-            cmd += " ".join(self.args)
+            cmd += b" "
+            cmd += b" ".join(self.args)
         return cmd
 
     __str__ = encoding.strmethod(__bytes__)
@@ -170,7 +170,7 @@ class AndCommand(object):
         self.right = right
 
     def __str__(self):
-        return "%s && %s" % (self.left, self.right)
+        return b"%s && %s" % (self.left, self.right)
 
     def __and__(self, other):
         return AndCommand(self, other)
@@ -178,113 +178,113 @@ class AndCommand(object):
 
 def add(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('A', 'all', None, ''),
-        ('p', 'patch', None, ''),
+        (b'A', b'all', None, b''),
+        (b'p', b'patch', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    if opts.get('patch'):
+    if opts.get(b'patch'):
         ui.status(
             _(
-                "note: Mercurial will commit when complete, "
-                "as there is no staging area in Mercurial\n\n"
+                b"note: Mercurial will commit when complete, "
+                b"as there is no staging area in Mercurial\n\n"
             )
         )
-        cmd = Command('commit --interactive')
+        cmd = Command(b'commit --interactive')
     else:
-        cmd = Command("add")
+        cmd = Command(b"add")
 
-        if not opts.get('all'):
+        if not opts.get(b'all'):
             cmd.extend(args)
         else:
             ui.status(
                 _(
-                    "note: use hg addremove to remove files that have "
-                    "been deleted\n\n"
+                    b"note: use hg addremove to remove files that have "
+                    b"been deleted\n\n"
                 )
             )
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def am(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
-    cmd = Command('import')
-    ui.status(bytes(cmd), "\n")
+    cmd = Command(b'import')
+    ui.status(bytes(cmd), b"\n")
 
 
 def apply(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('p', 'p', int, ''),
-        ('', 'directory', '', ''),
+        (b'p', b'p', int, b''),
+        (b'', b'directory', b'', b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('import --no-commit')
-    if opts.get('p'):
-        cmd['-p'] = opts.get('p')
-    if opts.get('directory'):
-        cmd['--prefix'] = opts.get('directory')
+    cmd = Command(b'import --no-commit')
+    if opts.get(b'p'):
+        cmd[b'-p'] = opts.get(b'p')
+    if opts.get(b'directory'):
+        cmd[b'--prefix'] = opts.get(b'directory')
     cmd.extend(args)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def bisect(ui, repo, *args, **kwargs):
-    ui.status(_("see 'hg help bisect' for how to use bisect\n\n"))
+    ui.status(_(b"see 'hg help bisect' for how to use bisect\n\n"))
 
 
 def blame(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
-    cmd = Command('annotate -udl')
+    cmd = Command(b'annotate -udl')
     cmd.extend([convert(v) for v in args])
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def branch(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'set-upstream', None, ''),
-        ('', 'set-upstream-to', '', ''),
-        ('d', 'delete', None, ''),
-        ('D', 'delete', None, ''),
-        ('m', 'move', None, ''),
-        ('M', 'move', None, ''),
+        (b'', b'set-upstream', None, b''),
+        (b'', b'set-upstream-to', b'', b''),
+        (b'd', b'delete', None, b''),
+        (b'D', b'delete', None, b''),
+        (b'm', b'move', None, b''),
+        (b'M', b'move', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command("bookmark")
+    cmd = Command(b"bookmark")
 
-    if opts.get('set_upstream') or opts.get('set_upstream_to'):
-        ui.status(_("Mercurial has no concept of upstream branches\n"))
+    if opts.get(b'set_upstream') or opts.get(b'set_upstream_to'):
+        ui.status(_(b"Mercurial has no concept of upstream branches\n"))
         return
-    elif opts.get('delete'):
-        cmd = Command("strip")
+    elif opts.get(b'delete'):
+        cmd = Command(b"strip")
         for branch in args:
-            cmd['-B'] = branch
+            cmd[b'-B'] = branch
         else:
-            cmd['-B'] = None
-    elif opts.get('move'):
+            cmd[b'-B'] = None
+    elif opts.get(b'move'):
         if len(args) > 0:
             if len(args) > 1:
                 old = args.pop(0)
             else:
                 # shell command to output the active bookmark for the active
                 # revision
-                old = '`hg log -T"{activebookmark}" -r .`'
+                old = b'`hg log -T"{activebookmark}" -r .`'
         else:
-            raise error.Abort(_('missing newbranch argument'))
+            raise error.Abort(_(b'missing newbranch argument'))
         new = args[0]
-        cmd['-m'] = old
+        cmd[b'-m'] = old
         cmd.append(new)
     else:
         if len(args) > 1:
-            cmd['-r'] = args[1]
+            cmd[b'-r'] = args[1]
             cmd.append(args[0])
         elif len(args) == 1:
             cmd.append(args[0])
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def ispath(repo, string):
@@ -300,16 +300,16 @@ def ispath(repo, string):
         return False
 
     cwd = repo.getcwd()
-    if cwd == '':
+    if cwd == b'':
         repopath = string
     else:
-        repopath = cwd + '/' + string
+        repopath = cwd + b'/' + string
 
     exists = repo.wvfs.exists(repopath)
     if exists:
         return True
 
-    manifest = repo['.'].manifest()
+    manifest = repo[b'.'].manifest()
 
     didexist = (repopath in manifest) or manifest.hasdir(repopath)
 
@@ -318,14 +318,14 @@ def ispath(repo, string):
 
 def checkout(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('b', 'branch', '', ''),
-        ('B', 'branch', '', ''),
-        ('f', 'force', None, ''),
-        ('p', 'patch', None, ''),
+        (b'b', b'branch', b'', b''),
+        (b'B', b'branch', b'', b''),
+        (b'f', b'force', None, b''),
+        (b'p', b'patch', None, b''),
     ]
     paths = []
-    if '--' in args:
-        sepindex = args.index('--')
+    if b'--' in args:
+        sepindex = args.index(b'--')
         paths.extend(args[sepindex + 1 :])
         args = args[:sepindex]
 
@@ -338,410 +338,410 @@ def checkout(ui, repo, *args, **kwargs):
         rev = args[0]
         paths = args[1:] + paths
 
-    cmd = Command('update')
+    cmd = Command(b'update')
 
-    if opts.get('force'):
+    if opts.get(b'force'):
         if paths or rev:
-            cmd['-C'] = None
+            cmd[b'-C'] = None
 
-    if opts.get('patch'):
-        cmd = Command('revert')
-        cmd['-i'] = None
+    if opts.get(b'patch'):
+        cmd = Command(b'revert')
+        cmd[b'-i'] = None
 
-    if opts.get('branch'):
+    if opts.get(b'branch'):
         if len(args) == 0:
-            cmd = Command('bookmark')
-            cmd.append(opts.get('branch'))
+            cmd = Command(b'bookmark')
+            cmd.append(opts.get(b'branch'))
         else:
             cmd.append(args[0])
-            bookcmd = Command('bookmark')
-            bookcmd.append(opts.get('branch'))
+            bookcmd = Command(b'bookmark')
+            bookcmd.append(opts.get(b'branch'))
             cmd = cmd & bookcmd
     # if there is any path argument supplied, use revert instead of update
     elif len(paths) > 0:
-        ui.status(_("note: use --no-backup to avoid creating .orig files\n\n"))
-        cmd = Command('revert')
-        if opts.get('patch'):
-            cmd['-i'] = None
+        ui.status(_(b"note: use --no-backup to avoid creating .orig files\n\n"))
+        cmd = Command(b'revert')
+        if opts.get(b'patch'):
+            cmd[b'-i'] = None
         if rev:
-            cmd['-r'] = rev
+            cmd[b'-r'] = rev
         cmd.extend(paths)
     elif rev:
-        if opts.get('patch'):
-            cmd['-r'] = rev
+        if opts.get(b'patch'):
+            cmd[b'-r'] = rev
         else:
             cmd.append(rev)
-    elif opts.get('force'):
-        cmd = Command('revert')
-        cmd['--all'] = None
+    elif opts.get(b'force'):
+        cmd = Command(b'revert')
+        cmd[b'--all'] = None
     else:
-        raise error.Abort(_("a commit must be specified"))
+        raise error.Abort(_(b"a commit must be specified"))
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def cherrypick(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'continue', None, ''),
-        ('', 'abort', None, ''),
-        ('e', 'edit', None, ''),
+        (b'', b'continue', None, b''),
+        (b'', b'abort', None, b''),
+        (b'e', b'edit', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('graft')
+    cmd = Command(b'graft')
 
-    if opts.get('edit'):
-        cmd['--edit'] = None
-    if opts.get('continue'):
-        cmd['--continue'] = None
-    elif opts.get('abort'):
-        ui.status(_("note: hg graft does not have --abort\n\n"))
+    if opts.get(b'edit'):
+        cmd[b'--edit'] = None
+    if opts.get(b'continue'):
+        cmd[b'--continue'] = None
+    elif opts.get(b'abort'):
+        ui.status(_(b"note: hg graft does not have --abort\n\n"))
         return
     else:
         cmd.extend(args)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def clean(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('d', 'd', None, ''),
-        ('f', 'force', None, ''),
-        ('x', 'x', None, ''),
+        (b'd', b'd', None, b''),
+        (b'f', b'force', None, b''),
+        (b'x', b'x', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('purge')
-    if opts.get('x'):
-        cmd['--all'] = None
+    cmd = Command(b'purge')
+    if opts.get(b'x'):
+        cmd[b'--all'] = None
     cmd.extend(args)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def clone(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'bare', None, ''),
-        ('n', 'no-checkout', None, ''),
-        ('b', 'branch', '', ''),
+        (b'', b'bare', None, b''),
+        (b'n', b'no-checkout', None, b''),
+        (b'b', b'branch', b'', b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if len(args) == 0:
-        raise error.Abort(_("a repository to clone must be specified"))
+        raise error.Abort(_(b"a repository to clone must be specified"))
 
-    cmd = Command('clone')
+    cmd = Command(b'clone')
     cmd.append(args[0])
     if len(args) > 1:
         cmd.append(args[1])
 
-    if opts.get('bare'):
-        cmd['-U'] = None
+    if opts.get(b'bare'):
+        cmd[b'-U'] = None
         ui.status(
             _(
-                "note: Mercurial does not have bare clones. "
-                "-U will clone the repo without checking out a commit\n\n"
+                b"note: Mercurial does not have bare clones. "
+                b"-U will clone the repo without checking out a commit\n\n"
             )
         )
-    elif opts.get('no_checkout'):
-        cmd['-U'] = None
+    elif opts.get(b'no_checkout'):
+        cmd[b'-U'] = None
 
-    if opts.get('branch'):
-        cocmd = Command("update")
-        cocmd.append(opts.get('branch'))
+    if opts.get(b'branch'):
+        cocmd = Command(b"update")
+        cocmd.append(opts.get(b'branch'))
         cmd = cmd & cocmd
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def commit(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('a', 'all', None, ''),
-        ('m', 'message', '', ''),
-        ('p', 'patch', None, ''),
-        ('C', 'reuse-message', '', ''),
-        ('F', 'file', '', ''),
-        ('', 'author', '', ''),
-        ('', 'date', '', ''),
-        ('', 'amend', None, ''),
-        ('', 'no-edit', None, ''),
+        (b'a', b'all', None, b''),
+        (b'm', b'message', b'', b''),
+        (b'p', b'patch', None, b''),
+        (b'C', b'reuse-message', b'', b''),
+        (b'F', b'file', b'', b''),
+        (b'', b'author', b'', b''),
+        (b'', b'date', b'', b''),
+        (b'', b'amend', None, b''),
+        (b'', b'no-edit', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('commit')
-    if opts.get('patch'):
-        cmd = Command('commit --interactive')
+    cmd = Command(b'commit')
+    if opts.get(b'patch'):
+        cmd = Command(b'commit --interactive')
 
-    if opts.get('amend'):
-        if opts.get('no_edit'):
-            cmd = Command('amend')
+    if opts.get(b'amend'):
+        if opts.get(b'no_edit'):
+            cmd = Command(b'amend')
         else:
-            cmd['--amend'] = None
+            cmd[b'--amend'] = None
 
-    if opts.get('reuse_message'):
-        cmd['-M'] = opts.get('reuse_message')
+    if opts.get(b'reuse_message'):
+        cmd[b'-M'] = opts.get(b'reuse_message')
 
-    if opts.get('message'):
-        cmd['-m'] = "'%s'" % (opts.get('message'),)
+    if opts.get(b'message'):
+        cmd[b'-m'] = b"'%s'" % (opts.get(b'message'),)
 
-    if opts.get('all'):
+    if opts.get(b'all'):
         ui.status(
             _(
-                "note: Mercurial doesn't have a staging area, "
-                "so there is no --all. -A will add and remove files "
-                "for you though.\n\n"
+                b"note: Mercurial doesn't have a staging area, "
+                b"so there is no --all. -A will add and remove files "
+                b"for you though.\n\n"
             )
         )
 
-    if opts.get('file'):
-        cmd['-l'] = opts.get('file')
+    if opts.get(b'file'):
+        cmd[b'-l'] = opts.get(b'file')
 
-    if opts.get('author'):
-        cmd['-u'] = opts.get('author')
+    if opts.get(b'author'):
+        cmd[b'-u'] = opts.get(b'author')
 
-    if opts.get('date'):
-        cmd['-d'] = opts.get('date')
+    if opts.get(b'date'):
+        cmd[b'-d'] = opts.get(b'date')
 
     cmd.extend(args)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def deprecated(ui, repo, *args, **kwargs):
     ui.warn(
         _(
-            'this command has been deprecated in the git project, '
-            'thus isn\'t supported by this tool\n\n'
+            b'this command has been deprecated in the git project, '
+            b'thus isn\'t supported by this tool\n\n'
         )
     )
 
 
 def diff(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('a', 'all', None, ''),
-        ('', 'cached', None, ''),
-        ('R', 'reverse', None, ''),
+        (b'a', b'all', None, b''),
+        (b'', b'cached', None, b''),
+        (b'R', b'reverse', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('diff')
+    cmd = Command(b'diff')
 
-    if opts.get('cached'):
+    if opts.get(b'cached'):
         ui.status(
             _(
-                'note: Mercurial has no concept of a staging area, '
-                'so --cached does nothing\n\n'
+                b'note: Mercurial has no concept of a staging area, '
+                b'so --cached does nothing\n\n'
             )
         )
 
-    if opts.get('reverse'):
-        cmd['--reverse'] = None
+    if opts.get(b'reverse'):
+        cmd[b'--reverse'] = None
 
     for a in list(args):
         args.remove(a)
         try:
             repo.revs(a)
-            cmd['-r'] = a
+            cmd[b'-r'] = a
         except Exception:
             cmd.append(a)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def difftool(ui, repo, *args, **kwargs):
     ui.status(
         _(
-            'Mercurial does not enable external difftool by default. You '
-            'need to enable the extdiff extension in your .hgrc file by adding\n'
-            'extdiff =\n'
-            'to the [extensions] section and then running\n\n'
-            'hg extdiff -p <program>\n\n'
-            'See \'hg help extdiff\' and \'hg help -e extdiff\' for more '
-            'information.\n'
+            b'Mercurial does not enable external difftool by default. You '
+            b'need to enable the extdiff extension in your .hgrc file by adding\n'
+            b'extdiff =\n'
+            b'to the [extensions] section and then running\n\n'
+            b'hg extdiff -p <program>\n\n'
+            b'See \'hg help extdiff\' and \'hg help -e extdiff\' for more '
+            b'information.\n'
         )
     )
 
 
 def fetch(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'all', None, ''),
-        ('f', 'force', None, ''),
+        (b'', b'all', None, b''),
+        (b'f', b'force', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('pull')
+    cmd = Command(b'pull')
 
     if len(args) > 0:
         cmd.append(args[0])
         if len(args) > 1:
             ui.status(
                 _(
-                    "note: Mercurial doesn't have refspecs. "
-                    "-r can be used to specify which commits you want to "
-                    "pull. -B can be used to specify which bookmark you "
-                    "want to pull.\n\n"
+                    b"note: Mercurial doesn't have refspecs. "
+                    b"-r can be used to specify which commits you want to "
+                    b"pull. -B can be used to specify which bookmark you "
+                    b"want to pull.\n\n"
                 )
             )
             for v in args[1:]:
                 if v in repo._bookmarks:
-                    cmd['-B'] = v
+                    cmd[b'-B'] = v
                 else:
-                    cmd['-r'] = v
+                    cmd[b'-r'] = v
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def grep(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('grep')
+    cmd = Command(b'grep')
 
     # For basic usage, git grep and hg grep are the same. They both have the
     # pattern first, followed by paths.
     cmd.extend(args)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def init(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('init')
+    cmd = Command(b'init')
 
     if len(args) > 0:
         cmd.append(args[0])
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def log(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'follow', None, ''),
-        ('', 'decorate', None, ''),
-        ('n', 'number', '', ''),
-        ('1', '1', None, ''),
-        ('', 'pretty', '', ''),
-        ('', 'format', '', ''),
-        ('', 'oneline', None, ''),
-        ('', 'stat', None, ''),
-        ('', 'graph', None, ''),
-        ('p', 'patch', None, ''),
+        (b'', b'follow', None, b''),
+        (b'', b'decorate', None, b''),
+        (b'n', b'number', b'', b''),
+        (b'1', b'1', None, b''),
+        (b'', b'pretty', b'', b''),
+        (b'', b'format', b'', b''),
+        (b'', b'oneline', None, b''),
+        (b'', b'stat', None, b''),
+        (b'', b'graph', None, b''),
+        (b'p', b'patch', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
     ui.status(
         _(
-            'note: -v prints the entire commit message like Git does. To '
-            'print just the first line, drop the -v.\n\n'
+            b'note: -v prints the entire commit message like Git does. To '
+            b'print just the first line, drop the -v.\n\n'
         )
     )
     ui.status(
         _(
-            "note: see hg help revset for information on how to filter "
-            "log output\n\n"
+            b"note: see hg help revset for information on how to filter "
+            b"log output\n\n"
         )
     )
 
-    cmd = Command('log')
-    cmd['-v'] = None
+    cmd = Command(b'log')
+    cmd[b'-v'] = None
 
-    if opts.get('number'):
-        cmd['-l'] = opts.get('number')
-    if opts.get('1'):
-        cmd['-l'] = '1'
-    if opts.get('stat'):
-        cmd['--stat'] = None
-    if opts.get('graph'):
-        cmd['-G'] = None
-    if opts.get('patch'):
-        cmd['-p'] = None
+    if opts.get(b'number'):
+        cmd[b'-l'] = opts.get(b'number')
+    if opts.get(b'1'):
+        cmd[b'-l'] = b'1'
+    if opts.get(b'stat'):
+        cmd[b'--stat'] = None
+    if opts.get(b'graph'):
+        cmd[b'-G'] = None
+    if opts.get(b'patch'):
+        cmd[b'-p'] = None
 
-    if opts.get('pretty') or opts.get('format') or opts.get('oneline'):
-        format = opts.get('format', '')
-        if 'format:' in format:
+    if opts.get(b'pretty') or opts.get(b'format') or opts.get(b'oneline'):
+        format = opts.get(b'format', b'')
+        if b'format:' in format:
             ui.status(
                 _(
-                    "note: --format format:??? equates to Mercurial's "
-                    "--template. See hg help templates for more info.\n\n"
+                    b"note: --format format:??? equates to Mercurial's "
+                    b"--template. See hg help templates for more info.\n\n"
                 )
             )
-            cmd['--template'] = '???'
+            cmd[b'--template'] = b'???'
         else:
             ui.status(
                 _(
-                    "note: --pretty/format/oneline equate to Mercurial's "
-                    "--style or --template. See hg help templates for "
-                    "more info.\n\n"
+                    b"note: --pretty/format/oneline equate to Mercurial's "
+                    b"--style or --template. See hg help templates for "
+                    b"more info.\n\n"
                 )
             )
-            cmd['--style'] = '???'
+            cmd[b'--style'] = b'???'
 
     if len(args) > 0:
-        if '..' in args[0]:
-            since, until = args[0].split('..')
-            cmd['-r'] = "'%s::%s'" % (since, until)
+        if b'..' in args[0]:
+            since, until = args[0].split(b'..')
+            cmd[b'-r'] = b"'%s::%s'" % (since, until)
             del args[0]
         cmd.extend(args)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def lsfiles(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('c', 'cached', None, ''),
-        ('d', 'deleted', None, ''),
-        ('m', 'modified', None, ''),
-        ('o', 'others', None, ''),
-        ('i', 'ignored', None, ''),
-        ('s', 'stage', None, ''),
-        ('z', '_zero', None, ''),
+        (b'c', b'cached', None, b''),
+        (b'd', b'deleted', None, b''),
+        (b'm', b'modified', None, b''),
+        (b'o', b'others', None, b''),
+        (b'i', b'ignored', None, b''),
+        (b's', b'stage', None, b''),
+        (b'z', b'_zero', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if (
-        opts.get('modified')
-        or opts.get('deleted')
-        or opts.get('others')
-        or opts.get('ignored')
+        opts.get(b'modified')
+        or opts.get(b'deleted')
+        or opts.get(b'others')
+        or opts.get(b'ignored')
     ):
-        cmd = Command('status')
-        if opts.get('deleted'):
-            cmd['-d'] = None
-        if opts.get('modified'):
-            cmd['-m'] = None
-        if opts.get('others'):
-            cmd['-o'] = None
-        if opts.get('ignored'):
-            cmd['-i'] = None
+        cmd = Command(b'status')
+        if opts.get(b'deleted'):
+            cmd[b'-d'] = None
+        if opts.get(b'modified'):
+            cmd[b'-m'] = None
+        if opts.get(b'others'):
+            cmd[b'-o'] = None
+        if opts.get(b'ignored'):
+            cmd[b'-i'] = None
     else:
-        cmd = Command('files')
-    if opts.get('stage'):
+        cmd = Command(b'files')
+    if opts.get(b'stage'):
         ui.status(
             _(
-                "note: Mercurial doesn't have a staging area, ignoring "
-                "--stage\n"
+                b"note: Mercurial doesn't have a staging area, ignoring "
+                b"--stage\n"
             )
         )
-    if opts.get('_zero'):
-        cmd['-0'] = None
-    cmd.append('.')
+    if opts.get(b'_zero'):
+        cmd[b'-0'] = None
+    cmd.append(b'.')
     for include in args:
-        cmd['-I'] = procutil.shellquote(include)
+        cmd[b'-I'] = procutil.shellquote(include)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def merge(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('merge')
+    cmd = Command(b'merge')
 
     if len(args) > 0:
         cmd.append(args[len(args) - 1])
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def mergebase(ui, repo, *args, **kwargs):
@@ -749,228 +749,228 @@ def mergebase(ui, repo, *args, **kwargs):
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if len(args) != 2:
-        args = ['A', 'B']
+        args = [b'A', b'B']
 
     cmd = Command(
-        "log -T '{node}\\n' -r 'ancestor(%s,%s)'" % (args[0], args[1])
+        b"log -T '{node}\\n' -r 'ancestor(%s,%s)'" % (args[0], args[1])
     )
 
     ui.status(
-        _('note: ancestors() is part of the revset language\n'),
-        _("(learn more about revsets with 'hg help revsets')\n\n"),
+        _(b'note: ancestors() is part of the revset language\n'),
+        _(b"(learn more about revsets with 'hg help revsets')\n\n"),
     )
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def mergetool(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command("resolve")
+    cmd = Command(b"resolve")
 
     if len(args) == 0:
-        cmd['--all'] = None
+        cmd[b'--all'] = None
     cmd.extend(args)
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def mv(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('f', 'force', None, ''),
-        ('n', 'dry-run', None, ''),
+        (b'f', b'force', None, b''),
+        (b'n', b'dry-run', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('mv')
+    cmd = Command(b'mv')
     cmd.extend(args)
 
-    if opts.get('force'):
-        cmd['-f'] = None
-    if opts.get('dry_run'):
-        cmd['-n'] = None
+    if opts.get(b'force'):
+        cmd[b'-f'] = None
+    if opts.get(b'dry_run'):
+        cmd[b'-n'] = None
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def pull(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'all', None, ''),
-        ('f', 'force', None, ''),
-        ('r', 'rebase', None, ''),
+        (b'', b'all', None, b''),
+        (b'f', b'force', None, b''),
+        (b'r', b'rebase', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('pull')
-    cmd['--rebase'] = None
+    cmd = Command(b'pull')
+    cmd[b'--rebase'] = None
 
     if len(args) > 0:
         cmd.append(args[0])
         if len(args) > 1:
             ui.status(
                 _(
-                    "note: Mercurial doesn't have refspecs. "
-                    "-r can be used to specify which commits you want to "
-                    "pull. -B can be used to specify which bookmark you "
-                    "want to pull.\n\n"
+                    b"note: Mercurial doesn't have refspecs. "
+                    b"-r can be used to specify which commits you want to "
+                    b"pull. -B can be used to specify which bookmark you "
+                    b"want to pull.\n\n"
                 )
             )
             for v in args[1:]:
                 if v in repo._bookmarks:
-                    cmd['-B'] = v
+                    cmd[b'-B'] = v
                 else:
-                    cmd['-r'] = v
+                    cmd[b'-r'] = v
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def push(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'all', None, ''),
-        ('f', 'force', None, ''),
+        (b'', b'all', None, b''),
+        (b'f', b'force', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('push')
+    cmd = Command(b'push')
 
     if len(args) > 0:
         cmd.append(args[0])
         if len(args) > 1:
             ui.status(
                 _(
-                    "note: Mercurial doesn't have refspecs. "
-                    "-r can be used to specify which commits you want "
-                    "to push. -B can be used to specify which bookmark "
-                    "you want to push.\n\n"
+                    b"note: Mercurial doesn't have refspecs. "
+                    b"-r can be used to specify which commits you want "
+                    b"to push. -B can be used to specify which bookmark "
+                    b"you want to push.\n\n"
                 )
             )
             for v in args[1:]:
                 if v in repo._bookmarks:
-                    cmd['-B'] = v
+                    cmd[b'-B'] = v
                 else:
-                    cmd['-r'] = v
+                    cmd[b'-r'] = v
 
-    if opts.get('force'):
-        cmd['-f'] = None
+    if opts.get(b'force'):
+        cmd[b'-f'] = None
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def rebase(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'all', None, ''),
-        ('i', 'interactive', None, ''),
-        ('', 'onto', '', ''),
-        ('', 'abort', None, ''),
-        ('', 'continue', None, ''),
-        ('', 'skip', None, ''),
+        (b'', b'all', None, b''),
+        (b'i', b'interactive', None, b''),
+        (b'', b'onto', b'', b''),
+        (b'', b'abort', None, b''),
+        (b'', b'continue', None, b''),
+        (b'', b'skip', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    if opts.get('interactive'):
+    if opts.get(b'interactive'):
         ui.status(
             _(
-                "note: hg histedit does not perform a rebase. "
-                "It just edits history.\n\n"
+                b"note: hg histedit does not perform a rebase. "
+                b"It just edits history.\n\n"
             )
         )
-        cmd = Command('histedit')
+        cmd = Command(b'histedit')
         if len(args) > 0:
             ui.status(
                 _(
-                    "also note: 'hg histedit' will automatically detect"
-                    " your stack, so no second argument is necessary\n\n"
+                    b"also note: 'hg histedit' will automatically detect"
+                    b" your stack, so no second argument is necessary\n\n"
                 )
             )
-        ui.status((bytes(cmd)), "\n")
+        ui.status((bytes(cmd)), b"\n")
         return
 
-    if opts.get('skip'):
-        cmd = Command('revert --all -r .')
-        ui.status((bytes(cmd)), "\n")
+    if opts.get(b'skip'):
+        cmd = Command(b'revert --all -r .')
+        ui.status((bytes(cmd)), b"\n")
 
-    cmd = Command('rebase')
+    cmd = Command(b'rebase')
 
-    if opts.get('continue') or opts.get('skip'):
-        cmd['--continue'] = None
-    if opts.get('abort'):
-        cmd['--abort'] = None
+    if opts.get(b'continue') or opts.get(b'skip'):
+        cmd[b'--continue'] = None
+    if opts.get(b'abort'):
+        cmd[b'--abort'] = None
 
-    if opts.get('onto'):
+    if opts.get(b'onto'):
         ui.status(
             _(
-                "note: if you're trying to lift a commit off one branch, "
-                "try hg rebase -d <destination commit> -s <commit to be "
-                "lifted>\n\n"
+                b"note: if you're trying to lift a commit off one branch, "
+                b"try hg rebase -d <destination commit> -s <commit to be "
+                b"lifted>\n\n"
             )
         )
-        cmd['-d'] = convert(opts.get('onto'))
+        cmd[b'-d'] = convert(opts.get(b'onto'))
         if len(args) < 2:
-            raise error.Abort(_("expected format: git rebase --onto X Y Z"))
-        cmd['-s'] = "'::%s - ::%s'" % (convert(args[1]), convert(args[0]))
+            raise error.Abort(_(b"expected format: git rebase --onto X Y Z"))
+        cmd[b'-s'] = b"'::%s - ::%s'" % (convert(args[1]), convert(args[0]))
     else:
         if len(args) == 1:
-            cmd['-d'] = convert(args[0])
+            cmd[b'-d'] = convert(args[0])
         elif len(args) == 2:
-            cmd['-d'] = convert(args[0])
-            cmd['-b'] = convert(args[1])
+            cmd[b'-d'] = convert(args[0])
+            cmd[b'-b'] = convert(args[1])
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def reflog(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'all', None, ''),
+        (b'', b'all', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('journal')
-    if opts.get('all'):
-        cmd['--all'] = None
+    cmd = Command(b'journal')
+    if opts.get(b'all'):
+        cmd[b'--all'] = None
     if len(args) > 0:
         cmd.append(args[0])
 
-    ui.status(bytes(cmd), "\n\n")
+    ui.status(bytes(cmd), b"\n\n")
     ui.status(
         _(
-            "note: in hg commits can be deleted from repo but we always"
-            " have backups\n"
+            b"note: in hg commits can be deleted from repo but we always"
+            b" have backups\n"
         )
     )
 
 
 def reset(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'soft', None, ''),
-        ('', 'hard', None, ''),
-        ('', 'mixed', None, ''),
+        (b'', b'soft', None, b''),
+        (b'', b'hard', None, b''),
+        (b'', b'mixed', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    commit = convert(args[0] if len(args) > 0 else '.')
-    hard = opts.get('hard')
+    commit = convert(args[0] if len(args) > 0 else b'.')
+    hard = opts.get(b'hard')
 
-    if opts.get('mixed'):
+    if opts.get(b'mixed'):
         ui.status(
             _(
-                'note: --mixed has no meaning since Mercurial has no '
-                'staging area\n\n'
+                b'note: --mixed has no meaning since Mercurial has no '
+                b'staging area\n\n'
             )
         )
-    if opts.get('soft'):
+    if opts.get(b'soft'):
         ui.status(
             _(
-                'note: --soft has no meaning since Mercurial has no '
-                'staging area\n\n'
+                b'note: --soft has no meaning since Mercurial has no '
+                b'staging area\n\n'
             )
         )
 
-    cmd = Command('update')
+    cmd = Command(b'update')
     if hard:
-        cmd.append('--clean')
+        cmd.append(b'--clean')
 
     cmd.append(commit)
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def revert(ui, repo, *args, **kwargs):
@@ -980,158 +980,158 @@ def revert(ui, repo, *args, **kwargs):
     if len(args) > 1:
         ui.status(
             _(
-                "note: hg backout doesn't support multiple commits at "
-                "once\n\n"
+                b"note: hg backout doesn't support multiple commits at "
+                b"once\n\n"
             )
         )
 
-    cmd = Command('backout')
+    cmd = Command(b'backout')
     if args:
         cmd.append(args[0])
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def revparse(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'show-cdup', None, ''),
-        ('', 'show-toplevel', None, ''),
+        (b'', b'show-cdup', None, b''),
+        (b'', b'show-toplevel', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    if opts.get('show_cdup') or opts.get('show_toplevel'):
-        cmd = Command('root')
-        if opts.get('show_cdup'):
-            ui.status(_("note: hg root prints the root of the repository\n\n"))
-        ui.status((bytes(cmd)), "\n")
+    if opts.get(b'show_cdup') or opts.get(b'show_toplevel'):
+        cmd = Command(b'root')
+        if opts.get(b'show_cdup'):
+            ui.status(_(b"note: hg root prints the root of the repository\n\n"))
+        ui.status((bytes(cmd)), b"\n")
     else:
-        ui.status(_("note: see hg help revset for how to refer to commits\n"))
+        ui.status(_(b"note: see hg help revset for how to refer to commits\n"))
 
 
 def rm(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('f', 'force', None, ''),
-        ('n', 'dry-run', None, ''),
+        (b'f', b'force', None, b''),
+        (b'n', b'dry-run', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('rm')
+    cmd = Command(b'rm')
     cmd.extend(args)
 
-    if opts.get('force'):
-        cmd['-f'] = None
-    if opts.get('dry_run'):
-        cmd['-n'] = None
+    if opts.get(b'force'):
+        cmd[b'-f'] = None
+    if opts.get(b'dry_run'):
+        cmd[b'-n'] = None
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def show(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'name-status', None, ''),
-        ('', 'pretty', '', ''),
-        ('U', 'unified', int, ''),
+        (b'', b'name-status', None, b''),
+        (b'', b'pretty', b'', b''),
+        (b'U', b'unified', int, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    if opts.get('name_status'):
-        if opts.get('pretty') == 'format:':
-            cmd = Command('status')
-            cmd['--change'] = '.'
+    if opts.get(b'name_status'):
+        if opts.get(b'pretty') == b'format:':
+            cmd = Command(b'status')
+            cmd[b'--change'] = b'.'
         else:
-            cmd = Command('log')
-            cmd.append('--style status')
-            cmd.append('-r .')
+            cmd = Command(b'log')
+            cmd.append(b'--style status')
+            cmd.append(b'-r .')
     elif len(args) > 0:
         if ispath(repo, args[0]):
-            cmd = Command('cat')
+            cmd = Command(b'cat')
         else:
-            cmd = Command('export')
+            cmd = Command(b'export')
         cmd.extend(args)
-        if opts.get('unified'):
-            cmd.append('--config diff.unified=%d' % (opts['unified'],))
-    elif opts.get('unified'):
-        cmd = Command('export')
-        cmd.append('--config diff.unified=%d' % (opts['unified'],))
+        if opts.get(b'unified'):
+            cmd.append(b'--config diff.unified=%d' % (opts[b'unified'],))
+    elif opts.get(b'unified'):
+        cmd = Command(b'export')
+        cmd.append(b'--config diff.unified=%d' % (opts[b'unified'],))
     else:
-        cmd = Command('export')
+        cmd = Command(b'export')
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def stash(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('p', 'patch', None, ''),
+        (b'p', b'patch', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('shelve')
+    cmd = Command(b'shelve')
     action = args[0] if len(args) > 0 else None
 
-    if action == 'list':
-        cmd['-l'] = None
-        if opts.get('patch'):
-            cmd['-p'] = None
-    elif action == 'show':
-        if opts.get('patch'):
-            cmd['-p'] = None
+    if action == b'list':
+        cmd[b'-l'] = None
+        if opts.get(b'patch'):
+            cmd[b'-p'] = None
+    elif action == b'show':
+        if opts.get(b'patch'):
+            cmd[b'-p'] = None
         else:
-            cmd['--stat'] = None
+            cmd[b'--stat'] = None
         if len(args) > 1:
             cmd.append(args[1])
-    elif action == 'clear':
-        cmd['--cleanup'] = None
-    elif action == 'drop':
-        cmd['-d'] = None
+    elif action == b'clear':
+        cmd[b'--cleanup'] = None
+    elif action == b'drop':
+        cmd[b'-d'] = None
         if len(args) > 1:
             cmd.append(args[1])
         else:
-            cmd.append('<shelve name>')
-    elif action == 'pop' or action == 'apply':
-        cmd = Command('unshelve')
+            cmd.append(b'<shelve name>')
+    elif action == b'pop' or action == b'apply':
+        cmd = Command(b'unshelve')
         if len(args) > 1:
             cmd.append(args[1])
-        if action == 'apply':
-            cmd['--keep'] = None
-    elif action == 'branch' or action == 'create':
+        if action == b'apply':
+            cmd[b'--keep'] = None
+    elif action == b'branch' or action == b'create':
         ui.status(
             _(
-                "note: Mercurial doesn't have equivalents to the "
-                "git stash branch or create actions\n\n"
+                b"note: Mercurial doesn't have equivalents to the "
+                b"git stash branch or create actions\n\n"
             )
         )
         return
     else:
         if len(args) > 0:
-            if args[0] != 'save':
-                cmd['--name'] = args[0]
+            if args[0] != b'save':
+                cmd[b'--name'] = args[0]
             elif len(args) > 1:
-                cmd['--name'] = args[1]
+                cmd[b'--name'] = args[1]
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def status(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('', 'ignored', None, ''),
+        (b'', b'ignored', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('status')
+    cmd = Command(b'status')
     cmd.extend(args)
 
-    if opts.get('ignored'):
-        cmd['-i'] = None
+    if opts.get(b'ignored'):
+        cmd[b'-i'] = None
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def svn(ui, repo, *args, **kwargs):
     if not args:
-        raise error.Abort(_('missing svn command'))
+        raise error.Abort(_(b'missing svn command'))
     svncmd = args[0]
     if svncmd not in gitsvncommands:
-        raise error.Abort(_('unknown git svn command "%s"') % svncmd)
+        raise error.Abort(_(b'unknown git svn command "%s"') % svncmd)
 
     args = args[1:]
     return gitsvncommands[svncmd](ui, repo, *args, **kwargs)
@@ -1141,19 +1141,19 @@ def svndcommit(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('push')
+    cmd = Command(b'push')
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def svnfetch(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('pull')
-    cmd.append('default-push')
+    cmd = Command(b'pull')
+    cmd.append(b'default-push')
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def svnfindrev(ui, repo, *args, **kwargs):
@@ -1161,101 +1161,101 @@ def svnfindrev(ui, repo, *args, **kwargs):
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if not args:
-        raise error.Abort(_('missing find-rev argument'))
+        raise error.Abort(_(b'missing find-rev argument'))
 
-    cmd = Command('log')
-    cmd['-r'] = args[0]
+    cmd = Command(b'log')
+    cmd[b'-r'] = args[0]
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def svnrebase(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('l', 'local', None, ''),
+        (b'l', b'local', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    pullcmd = Command('pull')
-    pullcmd.append('default-push')
-    rebasecmd = Command('rebase')
-    rebasecmd.append('tip')
+    pullcmd = Command(b'pull')
+    pullcmd.append(b'default-push')
+    rebasecmd = Command(b'rebase')
+    rebasecmd.append(b'tip')
 
     cmd = pullcmd & rebasecmd
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 def tag(ui, repo, *args, **kwargs):
     cmdoptions = [
-        ('f', 'force', None, ''),
-        ('l', 'list', None, ''),
-        ('d', 'delete', None, ''),
+        (b'f', b'force', None, b''),
+        (b'l', b'list', None, b''),
+        (b'd', b'delete', None, b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    if opts.get('list'):
-        cmd = Command('tags')
+    if opts.get(b'list'):
+        cmd = Command(b'tags')
     else:
-        cmd = Command('tag')
+        cmd = Command(b'tag')
 
         if not args:
-            raise error.Abort(_('missing tag argument'))
+            raise error.Abort(_(b'missing tag argument'))
 
         cmd.append(args[0])
         if len(args) > 1:
-            cmd['-r'] = args[1]
+            cmd[b'-r'] = args[1]
 
-        if opts.get('delete'):
-            cmd['--remove'] = None
+        if opts.get(b'delete'):
+            cmd[b'--remove'] = None
 
-        if opts.get('force'):
-            cmd['-f'] = None
+        if opts.get(b'force'):
+            cmd[b'-f'] = None
 
-    ui.status((bytes(cmd)), "\n")
+    ui.status((bytes(cmd)), b"\n")
 
 
 gitcommands = {
-    'add': add,
-    'am': am,
-    'apply': apply,
-    'bisect': bisect,
-    'blame': blame,
-    'branch': branch,
-    'checkout': checkout,
-    'cherry-pick': cherrypick,
-    'clean': clean,
-    'clone': clone,
-    'commit': commit,
-    'diff': diff,
-    'difftool': difftool,
-    'fetch': fetch,
-    'grep': grep,
-    'init': init,
-    'log': log,
-    'ls-files': lsfiles,
-    'merge': merge,
-    'merge-base': mergebase,
-    'mergetool': mergetool,
-    'mv': mv,
-    'pull': pull,
-    'push': push,
-    'rebase': rebase,
-    'reflog': reflog,
-    'reset': reset,
-    'revert': revert,
-    'rev-parse': revparse,
-    'rm': rm,
-    'show': show,
-    'stash': stash,
-    'status': status,
-    'svn': svn,
-    'tag': tag,
-    'whatchanged': deprecated,
+    b'add': add,
+    b'am': am,
+    b'apply': apply,
+    b'bisect': bisect,
+    b'blame': blame,
+    b'branch': branch,
+    b'checkout': checkout,
+    b'cherry-pick': cherrypick,
+    b'clean': clean,
+    b'clone': clone,
+    b'commit': commit,
+    b'diff': diff,
+    b'difftool': difftool,
+    b'fetch': fetch,
+    b'grep': grep,
+    b'init': init,
+    b'log': log,
+    b'ls-files': lsfiles,
+    b'merge': merge,
+    b'merge-base': mergebase,
+    b'mergetool': mergetool,
+    b'mv': mv,
+    b'pull': pull,
+    b'push': push,
+    b'rebase': rebase,
+    b'reflog': reflog,
+    b'reset': reset,
+    b'revert': revert,
+    b'rev-parse': revparse,
+    b'rm': rm,
+    b'show': show,
+    b'stash': stash,
+    b'status': status,
+    b'svn': svn,
+    b'tag': tag,
+    b'whatchanged': deprecated,
 }
 
 gitsvncommands = {
-    'dcommit': svndcommit,
-    'fetch': svnfetch,
-    'find-rev': svnfindrev,
-    'rebase': svnrebase,
+    b'dcommit': svndcommit,
+    b'fetch': svnfetch,
+    b'find-rev': svnfindrev,
+    b'rebase': svnrebase,
 }

@@ -74,7 +74,7 @@ if not pycompat.iswindows:
     _SCM_RIGHTS = 0x01
     _socklen_t = ctypes.c_uint
 
-    if pycompat.sysplatform.startswith('linux'):
+    if pycompat.sysplatform.startswith(b'linux'):
         # socket.h says "the type should be socklen_t but the definition of
         # the kernel is incompatible with this."
         _cmsg_len_t = ctypes.c_size_t
@@ -122,7 +122,7 @@ if not pycompat.iswindows:
     else:
         # recvmsg isn't always provided by libc; such systems are unsupported
         def _recvmsg(sockfd, msg, flags):
-            raise NotImplementedError('unsupported platform')
+            raise NotImplementedError(b'unsupported platform')
 
     def _CMSG_FIRSTHDR(msgh):
         if msgh.msg_controllen < ctypes.sizeof(_cmsghdr):

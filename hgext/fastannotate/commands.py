@@ -34,7 +34,7 @@ command = registrar.command(cmdtable)
 
 def _matchpaths(repo, rev, pats, opts, aopts=facontext.defaultopts):
     """generate paths matching given patterns"""
-    perfhack = repo.ui.configbool('fastannotate', 'perfhack')
+    perfhack = repo.ui.configbool(b'fastannotate', b'perfhack')
 
     # disable perfhack if:
     # a) any walkopt is used
@@ -44,8 +44,8 @@ def _matchpaths(repo, rev, pats, opts, aopts=facontext.defaultopts):
         # cwd related to reporoot
         reporoot = os.path.dirname(repo.path)
         reldir = os.path.relpath(encoding.getcwd(), reporoot)
-        if reldir == '.':
-            reldir = ''
+        if reldir == b'.':
+            reldir = b''
         if any(opts.get(o[1]) for o in commands.walkopts):  # a)
             perfhack = False
         else:  # b)
@@ -56,7 +56,7 @@ def _matchpaths(repo, rev, pats, opts, aopts=facontext.defaultopts):
             # disable perfhack on '..' since it allows escaping from the repo
             if any(
                 (
-                    '..' in f
+                    b'..' in f
                     or not os.path.isfile(
                         facontext.pathhelper(repo, f, aopts).linelogpath
                     )
@@ -73,7 +73,7 @@ def _matchpaths(repo, rev, pats, opts, aopts=facontext.defaultopts):
     else:
 
         def bad(x, y):
-            raise error.Abort("%s: %s" % (x, y))
+            raise error.Abort(b"%s: %s" % (x, y))
 
         ctx = scmutil.revsingle(repo, rev)
         m = scmutil.match(ctx, pats, opts, badfn=bad)
@@ -83,42 +83,57 @@ def _matchpaths(repo, rev, pats, opts, aopts=facontext.defaultopts):
 
 fastannotatecommandargs = {
     r'options': [
-        ('r', 'rev', '.', _('annotate the specified revision'), _('REV')),
-        ('u', 'user', None, _('list the author (long with -v)')),
-        ('f', 'file', None, _('list the filename')),
-        ('d', 'date', None, _('list the date (short with -q)')),
-        ('n', 'number', None, _('list the revision number (default)')),
-        ('c', 'changeset', None, _('list the changeset')),
+        (b'r', b'rev', b'.', _(b'annotate the specified revision'), _(b'REV')),
+        (b'u', b'user', None, _(b'list the author (long with -v)')),
+        (b'f', b'file', None, _(b'list the filename')),
+        (b'd', b'date', None, _(b'list the date (short with -q)')),
+        (b'n', b'number', None, _(b'list the revision number (default)')),
+        (b'c', b'changeset', None, _(b'list the changeset')),
         (
-            'l',
-            'line-number',
+            b'l',
+            b'line-number',
             None,
-            _('show line number at the first ' 'appearance'),
+            _(b'show line number at the first ' b'appearance'),
         ),
-        ('e', 'deleted', None, _('show deleted lines (slow) (EXPERIMENTAL)')),
-        ('', 'no-content', None, _('do not show file content (EXPERIMENTAL)')),
-        ('', 'no-follow', None, _("don't follow copies and renames")),
         (
-            '',
-            'linear',
+            b'e',
+            b'deleted',
+            None,
+            _(b'show deleted lines (slow) (EXPERIMENTAL)'),
+        ),
+        (
+            b'',
+            b'no-content',
+            None,
+            _(b'do not show file content (EXPERIMENTAL)'),
+        ),
+        (b'', b'no-follow', None, _(b"don't follow copies and renames")),
+        (
+            b'',
+            b'linear',
             None,
             _(
-                'enforce linear history, ignore second parent '
-                'of merges (EXPERIMENTAL)'
+                b'enforce linear history, ignore second parent '
+                b'of merges (EXPERIMENTAL)'
             ),
         ),
-        ('', 'long-hash', None, _('show long changeset hash (EXPERIMENTAL)')),
         (
-            '',
-            'rebuild',
+            b'',
+            b'long-hash',
             None,
-            _('rebuild cache even if it exists ' '(EXPERIMENTAL)'),
+            _(b'show long changeset hash (EXPERIMENTAL)'),
+        ),
+        (
+            b'',
+            b'rebuild',
+            None,
+            _(b'rebuild cache even if it exists ' b'(EXPERIMENTAL)'),
         ),
     ]
     + commands.diffwsopts
     + commands.walkopts
     + commands.formatteropts,
-    r'synopsis': _('[-r REV] [-f] [-a] [-u] [-d] [-n] [-c] [-l] FILE...'),
+    r'synopsis': _(b'[-r REV] [-f] [-a] [-u] [-d] [-n] [-c] [-l] FILE...'),
     r'inferrepo': True,
 }
 
@@ -155,52 +170,55 @@ def fastannotate(ui, repo, *pats, **opts):
         affecting results are used.
     """
     if not pats:
-        raise error.Abort(_('at least one filename or pattern is required'))
+        raise error.Abort(_(b'at least one filename or pattern is required'))
 
     # performance hack: filtered repo can be slow. unfilter by default.
-    if ui.configbool('fastannotate', 'unfilteredrepo'):
+    if ui.configbool(b'fastannotate', b'unfilteredrepo'):
         repo = repo.unfiltered()
 
     opts = pycompat.byteskwargs(opts)
 
-    rev = opts.get('rev', '.')
-    rebuild = opts.get('rebuild', False)
+    rev = opts.get(b'rev', b'.')
+    rebuild = opts.get(b'rebuild', False)
 
     diffopts = patch.difffeatureopts(
-        ui, opts, section='annotate', whitespace=True
+        ui, opts, section=b'annotate', whitespace=True
     )
     aopts = facontext.annotateopts(
         diffopts=diffopts,
-        followmerge=not opts.get('linear', False),
-        followrename=not opts.get('no_follow', False),
+        followmerge=not opts.get(b'linear', False),
+        followrename=not opts.get(b'no_follow', False),
     )
 
     if not any(
-        opts.get(s) for s in ['user', 'date', 'file', 'number', 'changeset']
+        opts.get(s)
+        for s in [b'user', b'date', b'file', b'number', b'changeset']
     ):
         # default 'number' for compatibility. but fastannotate is more
         # efficient with "changeset", "line-number" and "no-content".
-        for name in ui.configlist('fastannotate', 'defaultformat', ['number']):
+        for name in ui.configlist(
+            b'fastannotate', b'defaultformat', [b'number']
+        ):
             opts[name] = True
 
-    ui.pager('fastannotate')
-    template = opts.get('template')
-    if template == 'json':
+    ui.pager(b'fastannotate')
+    template = opts.get(b'template')
+    if template == b'json':
         formatter = faformatter.jsonformatter(ui, repo, opts)
     else:
         formatter = faformatter.defaultformatter(ui, repo, opts)
-    showdeleted = opts.get('deleted', False)
-    showlines = not bool(opts.get('no_content'))
-    showpath = opts.get('file', False)
+    showdeleted = opts.get(b'deleted', False)
+    showlines = not bool(opts.get(b'no_content'))
+    showpath = opts.get(b'file', False)
 
     # find the head of the main (master) branch
-    master = ui.config('fastannotate', 'mainbranch') or rev
+    master = ui.config(b'fastannotate', b'mainbranch') or rev
 
     # paths will be used for prefetching and the real annotating
     paths = list(_matchpaths(repo, rev, pats, opts, aopts))
 
     # for client, prefetch from the server
-    if util.safehasattr(repo, 'prefetchfastannotate'):
+    if util.safehasattr(repo, b'prefetchfastannotate'):
         repo.prefetchfastannotate(paths)
 
     for path in paths:
@@ -238,7 +256,7 @@ def fastannotate(ui, repo, *pats, **opts):
 
 _newopts = set()
 _knownopts = {
-    opt[1].replace('-', '_')
+    opt[1].replace(b'-', b'_')
     for opt in (fastannotatecommandargs[r'options'] + commands.globalopts)
 }
 
@@ -246,16 +264,16 @@ _knownopts = {
 def _annotatewrapper(orig, ui, repo, *pats, **opts):
     """used by wrapdefault"""
     # we need this hack until the obsstore has 0.0 seconds perf impact
-    if ui.configbool('fastannotate', 'unfilteredrepo'):
+    if ui.configbool(b'fastannotate', b'unfilteredrepo'):
         repo = repo.unfiltered()
 
     # treat the file as text (skip the isbinary check)
-    if ui.configbool('fastannotate', 'forcetext'):
+    if ui.configbool(b'fastannotate', b'forcetext'):
         opts[r'text'] = True
 
     # check if we need to do prefetch (client-side)
     rev = opts.get(r'rev')
-    if util.safehasattr(repo, 'prefetchfastannotate') and rev is not None:
+    if util.safehasattr(repo, b'prefetchfastannotate') and rev is not None:
         paths = list(_matchpaths(repo, rev, pats, pycompat.byteskwargs(opts)))
         repo.prefetchfastannotate(paths)
 
@@ -264,20 +282,20 @@ def _annotatewrapper(orig, ui, repo, *pats, **opts):
 
 def registercommand():
     """register the fastannotate command"""
-    name = 'fastannotate|fastblame|fa'
+    name = b'fastannotate|fastblame|fa'
     command(name, helpbasic=True, **fastannotatecommandargs)(fastannotate)
 
 
 def wrapdefault():
     """wrap the default annotate command, to be aware of the protocol"""
-    extensions.wrapcommand(commands.table, 'annotate', _annotatewrapper)
+    extensions.wrapcommand(commands.table, b'annotate', _annotatewrapper)
 
 
 @command(
-    'debugbuildannotatecache',
-    [('r', 'rev', '', _('build up to the specific revision'), _('REV'))]
+    b'debugbuildannotatecache',
+    [(b'r', b'rev', b'', _(b'build up to the specific revision'), _(b'REV'))]
     + commands.walkopts,
-    _('[-r REV] FILE...'),
+    _(b'[-r REV] FILE...'),
 )
 def debugbuildannotatecache(ui, repo, *pats, **opts):
     """incrementally build fastannotate cache up to REV for specified files
@@ -291,25 +309,25 @@ def debugbuildannotatecache(ui, repo, *pats, **opts):
     options and lives in '.hg/fastannotate/default'.
     """
     opts = pycompat.byteskwargs(opts)
-    rev = opts.get('REV') or ui.config('fastannotate', 'mainbranch')
+    rev = opts.get(b'REV') or ui.config(b'fastannotate', b'mainbranch')
     if not rev:
         raise error.Abort(
-            _('you need to provide a revision'),
-            hint=_('set fastannotate.mainbranch or use --rev'),
+            _(b'you need to provide a revision'),
+            hint=_(b'set fastannotate.mainbranch or use --rev'),
         )
-    if ui.configbool('fastannotate', 'unfilteredrepo'):
+    if ui.configbool(b'fastannotate', b'unfilteredrepo'):
         repo = repo.unfiltered()
     ctx = scmutil.revsingle(repo, rev)
     m = scmutil.match(ctx, pats, opts)
     paths = list(ctx.walk(m))
-    if util.safehasattr(repo, 'prefetchfastannotate'):
+    if util.safehasattr(repo, b'prefetchfastannotate'):
         # client
-        if opts.get('REV'):
-            raise error.Abort(_('--rev cannot be used for client'))
+        if opts.get(b'REV'):
+            raise error.Abort(_(b'--rev cannot be used for client'))
         repo.prefetchfastannotate(paths)
     else:
         # server, or full repo
-        progress = ui.makeprogress(_('building'), total=len(paths))
+        progress = ui.makeprogress(_(b'building'), total=len(paths))
         for i, path in enumerate(paths):
             progress.update(i)
             with facontext.annotatecontext(repo, path) as actx:
@@ -321,7 +339,7 @@ def debugbuildannotatecache(ui, repo, *pats, **opts):
                     # the cache is broken (could happen with renaming so the
                     # file history gets invalidated). rebuild and try again.
                     ui.debug(
-                        'fastannotate: %s: rebuilding broken cache\n' % path
+                        b'fastannotate: %s: rebuilding broken cache\n' % path
                     )
                     actx.rebuild()
                     try:
@@ -331,8 +349,8 @@ def debugbuildannotatecache(ui, repo, *pats, **opts):
                         # cache for other files.
                         ui.warn(
                             _(
-                                'fastannotate: %s: failed to '
-                                'build cache: %r\n'
+                                b'fastannotate: %s: failed to '
+                                b'build cache: %r\n'
                             )
                             % (path, ex)
                         )

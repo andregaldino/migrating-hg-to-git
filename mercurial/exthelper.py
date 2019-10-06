@@ -273,9 +273,9 @@ class exthelper(object):
         else:
             for opt in opts:
                 if not isinstance(opt, tuple):
-                    raise error.ProgrammingError('opts must be list of tuples')
+                    raise error.ProgrammingError(b'opts must be list of tuples')
                 if len(opt) not in (4, 5):
-                    msg = 'each opt tuple must contain 4 or 5 values'
+                    msg = b'each opt tuple must contain 4 or 5 values'
                     raise error.ProgrammingError(msg)
 
         def dec(wrapper):

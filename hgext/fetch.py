@@ -30,30 +30,30 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 
 @command(
-    'fetch',
+    b'fetch',
     [
         (
-            'r',
-            'rev',
+            b'r',
+            b'rev',
             [],
-            _('a specific revision you would like to pull'),
-            _('REV'),
+            _(b'a specific revision you would like to pull'),
+            _(b'REV'),
         ),
-        ('', 'edit', None, _('invoke editor on commit messages')),
-        ('', 'force-editor', None, _('edit commit message (DEPRECATED)')),
-        ('', 'switch-parent', None, _('switch parents when merging')),
+        (b'', b'edit', None, _(b'invoke editor on commit messages')),
+        (b'', b'force-editor', None, _(b'edit commit message (DEPRECATED)')),
+        (b'', b'switch-parent', None, _(b'switch parents when merging')),
     ]
     + cmdutil.commitopts
     + cmdutil.commitopts2
     + cmdutil.remoteopts,
-    _('hg fetch [SOURCE]'),
+    _(b'hg fetch [SOURCE]'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
 )
-def fetch(ui, repo, source='default', **opts):
+def fetch(ui, repo, source=b'default', **opts):
     '''pull changes from a remote repository, merge new changes if needed.
 
     This finds all changes from the repository at the specified path
@@ -74,9 +74,9 @@ def fetch(ui, repo, source='default', **opts):
     '''
 
     opts = pycompat.byteskwargs(opts)
-    date = opts.get('date')
+    date = opts.get(b'date')
     if date:
-        opts['date'] = dateutil.parsedate(date)
+        opts[b'date'] = dateutil.parsedate(date)
 
     parent = repo.dirstate.p1()
     branch = repo.dirstate.branch()
@@ -86,8 +86,8 @@ def fetch(ui, repo, source='default', **opts):
         branchnode = None
     if parent != branchnode:
         raise error.Abort(
-            _('working directory not at branch tip'),
-            hint=_("use 'hg update' to check out branch tip"),
+            _(b'working directory not at branch tip'),
+            hint=_(b"use 'hg update' to check out branch tip"),
         )
 
     wlock = lock = None
@@ -102,23 +102,23 @@ def fetch(ui, repo, source='default', **opts):
         if len(bheads) > 1:
             raise error.Abort(
                 _(
-                    'multiple heads in this branch '
-                    '(use "hg heads ." and "hg merge" to merge)'
+                    b'multiple heads in this branch '
+                    b'(use "hg heads ." and "hg merge" to merge)'
                 )
             )
 
         other = hg.peer(repo, opts, ui.expandpath(source))
         ui.status(
-            _('pulling from %s\n') % util.hidepassword(ui.expandpath(source))
+            _(b'pulling from %s\n') % util.hidepassword(ui.expandpath(source))
         )
         revs = None
-        if opts['rev']:
+        if opts[b'rev']:
             try:
-                revs = [other.lookup(rev) for rev in opts['rev']]
+                revs = [other.lookup(rev) for rev in opts[b'rev']]
             except error.CapabilityError:
                 err = _(
-                    "other repository doesn't support revision lookup, "
-                    "so a rev cannot be specified."
+                    b"other repository doesn't support revision lookup, "
+                    b"so a rev cannot be specified."
                 )
                 raise error.Abort(err)
 
@@ -146,8 +146,8 @@ def fetch(ui, repo, source='default', **opts):
         if len(newheads) > 1:
             ui.status(
                 _(
-                    'not merging with %d other new branch heads '
-                    '(use "hg heads ." and "hg merge" to merge them)\n'
+                    b'not merging with %d other new branch heads '
+                    b'(use "hg heads ." and "hg merge" to merge them)\n'
                 )
                 % (len(newheads) - 1)
             )
@@ -162,17 +162,17 @@ def fetch(ui, repo, source='default', **opts):
             # By default, we consider the repository we're pulling
             # *from* as authoritative, so we merge our changes into
             # theirs.
-            if opts['switch_parent']:
+            if opts[b'switch_parent']:
                 firstparent, secondparent = newparent, newheads[0]
             else:
                 firstparent, secondparent = newheads[0], newparent
                 ui.status(
-                    _('updating to %d:%s\n')
+                    _(b'updating to %d:%s\n')
                     % (repo.changelog.rev(firstparent), short(firstparent))
                 )
             hg.clean(repo, firstparent)
             ui.status(
-                _('merging with %d:%s\n')
+                _(b'merging with %d:%s\n')
                 % (repo.changelog.rev(secondparent), short(secondparent))
             )
             err = hg.merge(repo, secondparent, remind=False)
@@ -180,13 +180,15 @@ def fetch(ui, repo, source='default', **opts):
         if not err:
             # we don't translate commit messages
             message = cmdutil.logmessage(ui, opts) or (
-                'Automated merge with %s' % util.removeauth(other.url())
+                b'Automated merge with %s' % util.removeauth(other.url())
             )
-            editopt = opts.get('edit') or opts.get('force_editor')
-            editor = cmdutil.getcommiteditor(edit=editopt, editform='fetch')
-            n = repo.commit(message, opts['user'], opts['date'], editor=editor)
+            editopt = opts.get(b'edit') or opts.get(b'force_editor')
+            editor = cmdutil.getcommiteditor(edit=editopt, editform=b'fetch')
+            n = repo.commit(
+                message, opts[b'user'], opts[b'date'], editor=editor
+            )
             ui.status(
-                _('new changeset %d:%s merges remote changes ' 'with local\n')
+                _(b'new changeset %d:%s merges remote changes ' b'with local\n')
                 % (repo.changelog.rev(n), short(n))
             )
 

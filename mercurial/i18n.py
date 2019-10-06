@@ -26,10 +26,10 @@ else:
 _languages = None
 if (
     pycompat.iswindows
-    and 'LANGUAGE' not in encoding.environ
-    and 'LC_ALL' not in encoding.environ
-    and 'LC_MESSAGES' not in encoding.environ
-    and 'LANG' not in encoding.environ
+    and b'LANGUAGE' not in encoding.environ
+    and b'LC_ALL' not in encoding.environ
+    and b'LC_MESSAGES' not in encoding.environ
+    and b'LANG' not in encoding.environ
 ):
     # Try to detect UI language by "User Interface Language Management" API
     # if no locale variables are set. Note that locale.getdefaultlocale()
@@ -83,7 +83,7 @@ def gettext(message):
         else:
             # should be ascii, but we have unicode docstrings in test, which
             # are converted to utf-8 bytes on Python 3.
-            paragraphs = [p.decode("utf-8") for p in message.split('\n\n')]
+            paragraphs = [p.decode("utf-8") for p in message.split(b'\n\n')]
         # Be careful not to translate the empty string -- it holds the
         # meta data of the .po file.
         u = u'\n\n'.join([p and _ugettext(p) or u'' for p in paragraphs])
@@ -103,12 +103,12 @@ def gettext(message):
 
 def _plain():
     if (
-        'HGPLAIN' not in encoding.environ
-        and 'HGPLAINEXCEPT' not in encoding.environ
+        b'HGPLAIN' not in encoding.environ
+        and b'HGPLAINEXCEPT' not in encoding.environ
     ):
         return False
-    exceptions = encoding.environ.get('HGPLAINEXCEPT', '').strip().split(',')
-    return 'i18n' not in exceptions
+    exceptions = encoding.environ.get(b'HGPLAINEXCEPT', b'').strip().split(b',')
+    return b'i18n' not in exceptions
 
 
 if _plain():

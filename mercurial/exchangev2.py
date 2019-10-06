@@ -39,7 +39,7 @@ def pull(pullop):
     # incremental pull. This is somewhat hacky and is not nearly robust enough
     # for long-term usage.
     if usingrawchangelogandmanifest:
-        with repo.transaction('clone'):
+        with repo.transaction(b'clone'):
             _fetchrawstorefiles(repo, remote)
             repo.invalidate(clearfilecache=True)
 
@@ -51,7 +51,7 @@ def pull(pullop):
         repo.root,
         # Empty maps to nevermatcher. So always
         # set includes if missing.
-        pullop.includepats or {'path:.'},
+        pullop.includepats or {b'path:.'},
         pullop.excludepats,
     )
 
@@ -78,32 +78,32 @@ def pull(pullop):
 
     # Ensure all new changesets are draft by default. If the repo is
     # publishing, the phase will be adjusted by the loop below.
-    if csetres['added']:
-        phases.registernew(repo, tr, phases.draft, csetres['added'])
+    if csetres[b'added']:
+        phases.registernew(repo, tr, phases.draft, csetres[b'added'])
 
     # And adjust the phase of all changesets accordingly.
     for phase in phases.phasenames:
-        if phase == b'secret' or not csetres['nodesbyphase'][phase]:
+        if phase == b'secret' or not csetres[b'nodesbyphase'][phase]:
             continue
 
         phases.advanceboundary(
             repo,
             tr,
             phases.phasenames.index(phase),
-            csetres['nodesbyphase'][phase],
+            csetres[b'nodesbyphase'][phase],
         )
 
     # Write bookmark updates.
     bookmarks.updatefromremote(
         repo.ui,
         repo,
-        csetres['bookmarks'],
+        csetres[b'bookmarks'],
         remote.url(),
         pullop.gettransaction,
         explicit=pullop.explicitbookmarks,
     )
 
-    manres = _fetchmanifests(repo, tr, remote, csetres['manifestnodes'])
+    manres = _fetchmanifests(repo, tr, remote, csetres[b'manifestnodes'])
 
     # We don't properly support shallow changeset and manifest yet. So we apply
     # depth limiting locally.
@@ -142,9 +142,9 @@ def pull(pullop):
             manifestlinkrevs[mnode] = rev
 
     else:
-        csetsforfiles = [n for n in csetres['added'] if csetrelevantfilter(n)]
-        mnodesforfiles = manres['added']
-        manifestlinkrevs = manres['linkrevs']
+        csetsforfiles = [n for n in csetres[b'added'] if csetrelevantfilter(n)]
+        mnodesforfiles = manres[b'added']
+        manifestlinkrevs = manres[b'linkrevs']
 
     # Find all file nodes referenced by added manifests and fetch those
     # revisions.
@@ -197,7 +197,7 @@ def _fetchrawstorefiles(repo, remote):
         overall = next(objs)
 
         progress = repo.ui.makeprogress(
-            _('clone'), total=overall[b'totalsize'], unit=_('bytes')
+            _(b'clone'), total=overall[b'totalsize'], unit=_(b'bytes')
         )
         with progress:
             progress.update(0)
@@ -330,7 +330,7 @@ def _fetchchangesets(repo, tr, remote, common, fetch, remoteheads):
 
 
 def _processchangesetdata(repo, tr, objs):
-    repo.hook('prechangegroup', throw=True, **pycompat.strkwargs(tr.hookargs))
+    repo.hook(b'prechangegroup', throw=True, **pycompat.strkwargs(tr.hookargs))
 
     urepo = repo.unfiltered()
     cl = urepo.changelog
@@ -342,13 +342,13 @@ def _processchangesetdata(repo, tr, objs):
     meta = next(objs)
 
     progress = repo.ui.makeprogress(
-        _('changesets'), unit=_('chunks'), total=meta.get(b'totalitems')
+        _(b'changesets'), unit=_(b'chunks'), total=meta.get(b'totalitems')
     )
 
     manifestnodes = {}
 
     def linkrev(node):
-        repo.ui.debug('add changeset %s\n' % short(node))
+        repo.ui.debug(b'add changeset %s\n' % short(node))
         # Linkrev for changelog is always self.
         return len(cl)
 
@@ -413,10 +413,10 @@ def _processchangesetdata(repo, tr, objs):
     progress.complete()
 
     return {
-        'added': added,
-        'nodesbyphase': nodesbyphase,
-        'bookmarks': remotebookmarks,
-        'manifestnodes': manifestnodes,
+        b'added': added,
+        b'nodesbyphase': nodesbyphase,
+        b'bookmarks': remotebookmarks,
+        b'manifestnodes': manifestnodes,
     }
 
 
@@ -483,7 +483,7 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
             progress.increment()
 
     progress = repo.ui.makeprogress(
-        _('manifests'), unit=_('chunks'), total=len(fetchnodes)
+        _(b'manifests'), unit=_(b'chunks'), total=len(fetchnodes)
     )
 
     commandmeta = remote.apidescriptor[b'commands'][b'manifestdata']
@@ -530,8 +530,8 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
     progress.complete()
 
     return {
-        'added': added,
-        'linkrevs': linkrevs,
+        b'added': added,
+        b'linkrevs': linkrevs,
     }
 
 
@@ -545,7 +545,7 @@ def _derivefilesfrommanifests(repo, matcher, manifestnodes):
     fnodes = collections.defaultdict(dict)
 
     progress = repo.ui.makeprogress(
-        _('scanning manifests'), total=len(manifestnodes)
+        _(b'scanning manifests'), total=len(manifestnodes)
     )
 
     with progress:
@@ -605,8 +605,8 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
             progress.increment()
 
     progress = repo.ui.makeprogress(
-        _('files'),
-        unit=_('chunks'),
+        _(b'files'),
+        unit=_(b'chunks'),
         total=sum(len(v) for v in fnodes.itervalues()),
     )
 
@@ -704,8 +704,8 @@ def _fetchfilesfromcsets(
             remaining -= 1
 
     progress = repo.ui.makeprogress(
-        _('files'),
-        unit=_('chunks'),
+        _(b'files'),
+        unit=_(b'chunks'),
         total=sum(len(v) for v in fnodes.itervalues()),
     )
 

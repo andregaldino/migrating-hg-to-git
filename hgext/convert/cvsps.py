@@ -92,18 +92,18 @@ def getrepopath(cvspath):
     # of the '/' char after the '@' is located. The solution is the rest of the
     # string after that '/' sign including it
 
-    parts = cvspath.split(':')
-    atposition = parts[-1].find('@')
+    parts = cvspath.split(b':')
+    atposition = parts[-1].find(b'@')
     start = 0
 
     if atposition != -1:
         start = atposition
 
-    repopath = parts[-1][parts[-1].find('/', start) :]
+    repopath = parts[-1][parts[-1].find(b'/', start) :]
     return repopath
 
 
-def createlog(ui, directory=None, root="", rlog=True, cache=None):
+def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
     '''Collect the CVS rlog'''
 
     # Because we store many duplicate commit log messages, reusing strings
@@ -111,10 +111,10 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     _scache = {}
 
     def scache(s):
-        "return a shared version of a string"
+        b"return a shared version of a string"
         return _scache.setdefault(s, s)
 
-    ui.status(_('collecting CVS rlog\n'))
+    ui.status(_(b'collecting CVS rlog\n'))
 
     log = []  # list of logentry objects containing the CVS state
 
@@ -144,39 +144,39 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
     file_added_re = re.compile(br'file [^/]+ was (initially )?added on branch')
 
-    prefix = ''  # leading path to strip of what we get from CVS
+    prefix = b''  # leading path to strip of what we get from CVS
 
     if directory is None:
         # Current working directory
 
         # Get the real directory in the repository
         try:
-            with open(os.path.join(b'CVS', b'Repository'), 'rb') as f:
+            with open(os.path.join(b'CVS', b'Repository'), b'rb') as f:
                 prefix = f.read().strip()
             directory = prefix
-            if prefix == ".":
-                prefix = ""
+            if prefix == b".":
+                prefix = b""
         except IOError:
-            raise logerror(_('not a CVS sandbox'))
+            raise logerror(_(b'not a CVS sandbox'))
 
         if prefix and not prefix.endswith(pycompat.ossep):
             prefix += pycompat.ossep
 
         # Use the Root file in the sandbox, if it exists
         try:
-            root = open(os.path.join('CVS', 'Root'), 'rb').read().strip()
+            root = open(os.path.join(b'CVS', b'Root'), b'rb').read().strip()
         except IOError:
             pass
 
     if not root:
-        root = encoding.environ.get('CVSROOT', '')
+        root = encoding.environ.get(b'CVSROOT', b'')
 
     # read log cache if one exists
     oldlog = []
     date = None
 
     if cache:
-        cachedir = os.path.expanduser('~/.hg.cvsps')
+        cachedir = os.path.expanduser(b'~/.hg.cvsps')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
 
@@ -189,50 +189,50 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
         # and
         #    /pserver/user/server/path
         # are mapped to different cache file names.
-        cachefile = root.split(":") + [directory, "cache"]
-        cachefile = ['-'.join(re.findall(br'\w+', s)) for s in cachefile if s]
+        cachefile = root.split(b":") + [directory, b"cache"]
+        cachefile = [b'-'.join(re.findall(br'\w+', s)) for s in cachefile if s]
         cachefile = os.path.join(
-            cachedir, '.'.join([s for s in cachefile if s])
+            cachedir, b'.'.join([s for s in cachefile if s])
         )
 
-    if cache == 'update':
+    if cache == b'update':
         try:
-            ui.note(_('reading cvs log cache %s\n') % cachefile)
-            oldlog = pickle.load(open(cachefile, 'rb'))
+            ui.note(_(b'reading cvs log cache %s\n') % cachefile)
+            oldlog = pickle.load(open(cachefile, b'rb'))
             for e in oldlog:
                 if not (
-                    util.safehasattr(e, 'branchpoints')
-                    and util.safehasattr(e, 'commitid')
-                    and util.safehasattr(e, 'mergepoint')
+                    util.safehasattr(e, b'branchpoints')
+                    and util.safehasattr(e, b'commitid')
+                    and util.safehasattr(e, b'mergepoint')
                 ):
-                    ui.status(_('ignoring old cache\n'))
+                    ui.status(_(b'ignoring old cache\n'))
                     oldlog = []
                     break
 
-            ui.note(_('cache has %d log entries\n') % len(oldlog))
+            ui.note(_(b'cache has %d log entries\n') % len(oldlog))
         except Exception as e:
-            ui.note(_('error reading cache: %r\n') % e)
+            ui.note(_(b'error reading cache: %r\n') % e)
 
         if oldlog:
             date = oldlog[-1].date  # last commit date as a (time,tz) tuple
-            date = dateutil.datestr(date, '%Y/%m/%d %H:%M:%S %1%2')
+            date = dateutil.datestr(date, b'%Y/%m/%d %H:%M:%S %1%2')
 
     # build the CVS commandline
-    cmd = ['cvs', '-q']
+    cmd = [b'cvs', b'-q']
     if root:
-        cmd.append('-d%s' % root)
+        cmd.append(b'-d%s' % root)
         p = util.normpath(getrepopath(root))
-        if not p.endswith('/'):
-            p += '/'
+        if not p.endswith(b'/'):
+            p += b'/'
         if prefix:
             # looks like normpath replaces "" by "."
             prefix = p + util.normpath(prefix)
         else:
             prefix = p
-    cmd.append(['log', 'rlog'][rlog])
+    cmd.append([b'log', b'rlog'][rlog])
     if date:
         # no space between option and date string
-        cmd.append('-d>%s' % date)
+        cmd.append(b'-d>%s' % date)
     cmd.append(directory)
 
     # state machine begins here
@@ -243,17 +243,17 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     store = False  # set when a new record can be appended
 
     cmd = [procutil.shellquote(arg) for arg in cmd]
-    ui.note(_("running %s\n") % (' '.join(cmd)))
-    ui.debug("prefix=%r directory=%r root=%r\n" % (prefix, directory, root))
+    ui.note(_(b"running %s\n") % (b' '.join(cmd)))
+    ui.debug(b"prefix=%r directory=%r root=%r\n" % (prefix, directory, root))
 
-    pfp = procutil.popen(' '.join(cmd), 'rb')
+    pfp = procutil.popen(b' '.join(cmd), b'rb')
     peek = util.fromnativeeol(pfp.readline())
     while True:
         line = peek
-        if line == '':
+        if line == b'':
             break
         peek = util.fromnativeeol(pfp.readline())
-        if line.endswith('\n'):
+        if line.endswith(b'\n'):
             line = line[:-1]
         # ui.debug('state=%d line=%r\n' % (state, line))
 
@@ -267,12 +267,12 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
                     filename = util.normpath(rcs[:-2])
                     if filename.startswith(prefix):
                         filename = filename[len(prefix) :]
-                    if filename.startswith('/'):
+                    if filename.startswith(b'/'):
                         filename = filename[1:]
-                    if filename.startswith('Attic/'):
+                    if filename.startswith(b'Attic/'):
                         filename = filename[6:]
                     else:
-                        filename = filename.replace('/Attic/', '/')
+                        filename = filename.replace(b'/Attic/', b'/')
                     state = 2
                     continue
                 state = 1
@@ -289,7 +289,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
         elif state == 1:
             # expect 'Working file' (only when using log instead of rlog)
             match = re_10.match(line)
-            assert match, _('RCS file must be followed by working file')
+            assert match, _(b'RCS file must be followed by working file')
             filename = util.normpath(match.group(1))
             state = 2
 
@@ -303,7 +303,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             # read the symbolic names and store as tags
             match = re_30.match(line)
             if match:
-                rev = [int(x) for x in match.group(2).split('.')]
+                rev = [int(x) for x in match.group(2).split(b'.')]
 
                 # Convert magic branch number to an odd-numbered one
                 revn = len(rev)
@@ -327,7 +327,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
                 state = 5
             else:
                 assert not re_32.match(line), _(
-                    'must have at least ' 'some revisions'
+                    b'must have at least ' b'some revisions'
                 )
 
         elif state == 5:
@@ -335,11 +335,11 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             # we create the logentry here from values stored in states 0 to 4,
             # as this state is re-entered for subsequent revisions of a file.
             match = re_50.match(line)
-            assert match, _('expected revision number')
+            assert match, _(b'expected revision number')
             e = logentry(
                 rcs=scache(rcs),
                 file=scache(filename),
-                revision=tuple([int(x) for x in match.group(1).split('.')]),
+                revision=tuple([int(x) for x in match.group(1).split(b'.')]),
                 branches=[],
                 parent=None,
                 commitid=None,
@@ -352,21 +352,25 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
         elif state == 6:
             # expecting date, author, state, lines changed
             match = re_60.match(line)
-            assert match, _('revision must be followed by date line')
+            assert match, _(b'revision must be followed by date line')
             d = match.group(1)
-            if d[2] == '/':
+            if d[2] == b'/':
                 # Y2K
-                d = '19' + d
+                d = b'19' + d
 
             if len(d.split()) != 3:
                 # cvs log dates always in GMT
-                d = d + ' UTC'
+                d = d + b' UTC'
             e.date = dateutil.parsedate(
                 d,
-                ['%y/%m/%d %H:%M:%S', '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'],
+                [
+                    b'%y/%m/%d %H:%M:%S',
+                    b'%Y/%m/%d %H:%M:%S',
+                    b'%Y-%m-%d %H:%M:%S',
+                ],
             )
             e.author = scache(match.group(2))
-            e.dead = match.group(3).lower() == 'dead'
+            e.dead = match.group(3).lower() == b'dead'
 
             if match.group(5):
                 if match.group(6):
@@ -382,14 +386,14 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
                 e.commitid = match.group(8)
 
             if match.group(9):  # cvsnt mergepoint
-                myrev = match.group(10).split('.')
+                myrev = match.group(10).split(b'.')
                 if len(myrev) == 2:  # head
-                    e.mergepoint = 'HEAD'
+                    e.mergepoint = b'HEAD'
                 else:
-                    myrev = '.'.join(myrev[:-2] + ['0', myrev[-2]])
+                    myrev = b'.'.join(myrev[:-2] + [b'0', myrev[-2]])
                     branches = [b for b in branchmap if branchmap[b] == myrev]
                     assert len(branches) == 1, (
-                        'unknown branch: %s' % e.mergepoint
+                        b'unknown branch: %s' % e.mergepoint
                     )
                     e.mergepoint = branches[0]
 
@@ -402,8 +406,8 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             m = re_70.match(line)
             if m:
                 e.branches = [
-                    tuple([int(y) for y in x.strip().split('.')])
-                    for x in m.group(1).split(';')
+                    tuple([int(y) for y in x.strip().split(b'.')])
+                    for x in m.group(1).split(b';')
                 ]
                 state = 8
             elif re_31.match(line) and re_50.match(peek):
@@ -419,7 +423,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             # store commit log message
             if re_31.match(line):
                 cpeek = peek
-                if cpeek.endswith('\n'):
+                if cpeek.endswith(b'\n'):
                     cpeek = cpeek[:-1]
                 if re_50.match(cpeek):
                     state = 5
@@ -447,7 +451,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             and file_added_re.match(e.comment[0])
         ):
             ui.debug(
-                'found synthetic revision in %s: %r\n' % (e.rcs, e.comment[0])
+                b'found synthetic revision in %s: %r\n' % (e.rcs, e.comment[0])
             )
             e.synthetic = True
 
@@ -455,7 +459,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             # clean up the results and save in the log.
             store = False
             e.tags = sorted([scache(x) for x in tags.get(e.revision, [])])
-            e.comment = scache('\n'.join(e.comment))
+            e.comment = scache(b'\n'.join(e.comment))
 
             revn = len(e.revision)
             if revn > 3 and (revn % 2) == 0:
@@ -466,7 +470,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             # find the branches starting from this revision
             branchpoints = set()
             for branch, revision in branchmap.iteritems():
-                revparts = tuple([int(i) for i in revision.split('.')])
+                revparts = tuple([int(i) for i in revision.split(b'.')])
                 if len(revparts) < 2:  # bad tags
                     continue
                 if revparts[-2] == 0 and revparts[-1] % 2 == 0:
@@ -480,11 +484,12 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
             log.append(e)
 
-            rcsmap[e.rcs.replace('/Attic/', '/')] = e.rcs
+            rcsmap[e.rcs.replace(b'/Attic/', b'/')] = e.rcs
 
             if len(log) % 100 == 0:
                 ui.status(
-                    stringutil.ellipsis('%d %s' % (len(log), e.file), 80) + '\n'
+                    stringutil.ellipsis(b'%d %s' % (len(log), e.file), 80)
+                    + b'\n'
                 )
 
     log.sort(key=lambda x: (x.rcs, x.revision))
@@ -492,7 +497,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     # find parent revisions of individual files
     versions = {}
     for e in sorted(oldlog, key=lambda x: (x.rcs, x.revision)):
-        rcs = e.rcs.replace('/Attic/', '/')
+        rcs = e.rcs.replace(b'/Attic/', b'/')
         if rcs in rcsmap:
             e.rcs = rcsmap[rcs]
         branch = e.revision[:-1]
@@ -515,28 +520,28 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             if oldlog and oldlog[-1].date >= log[0].date:
                 raise logerror(
                     _(
-                        'log cache overlaps with new log entries,'
-                        ' re-run without cache.'
+                        b'log cache overlaps with new log entries,'
+                        b' re-run without cache.'
                     )
                 )
 
             log = oldlog + log
 
             # write the new cachefile
-            ui.note(_('writing cvs log cache %s\n') % cachefile)
-            pickle.dump(log, open(cachefile, 'wb'))
+            ui.note(_(b'writing cvs log cache %s\n') % cachefile)
+            pickle.dump(log, open(cachefile, b'wb'))
         else:
             log = oldlog
 
-    ui.status(_('%d log entries\n') % len(log))
+    ui.status(_(b'%d log entries\n') % len(log))
 
-    encodings = ui.configlist('convert', 'cvsps.logencoding')
+    encodings = ui.configlist(b'convert', b'cvsps.logencoding')
     if encodings:
 
         def revstr(r):
             # this is needed, because logentry.revision is a tuple of "int"
             # (e.g. (1, 2) for "1.2")
-            return '.'.join(pycompat.maplist(pycompat.bytestr, r))
+            return b'.'.join(pycompat.maplist(pycompat.bytestr, r))
 
         for entry in log:
             comment = entry.comment
@@ -547,7 +552,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
                     )
                     if ui.debugflag:
                         ui.debug(
-                            "transcoding by %s: %s of %s\n"
+                            b"transcoding by %s: %s of %s\n"
                             % (e, revstr(entry.revision), entry.file)
                         )
                     break
@@ -557,20 +562,22 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
                     raise error.Abort(
                         inst,
                         hint=_(
-                            'check convert.cvsps.logencoding' ' configuration'
+                            b'check convert.cvsps.logencoding' b' configuration'
                         ),
                     )
             else:
                 raise error.Abort(
                     _(
-                        "no encoding can transcode"
-                        " CVS log message for %s of %s"
+                        b"no encoding can transcode"
+                        b" CVS log message for %s of %s"
                     )
                     % (revstr(entry.revision), entry.file),
-                    hint=_('check convert.cvsps.logencoding' ' configuration'),
+                    hint=_(
+                        b'check convert.cvsps.logencoding' b' configuration'
+                    ),
                 )
 
-    hook.hook(ui, None, "cvslog", True, log=log)
+    hook.hook(ui, None, b"cvslog", True, log=log)
 
     return log
 
@@ -597,14 +604,16 @@ class changeset(object):
         self.__dict__.update(entries)
 
     def __repr__(self):
-        items = ("%s=%r" % (k, self.__dict__[k]) for k in sorted(self.__dict__))
-        return "%s(%s)" % (type(self).__name__, ", ".join(items))
+        items = (
+            b"%s=%r" % (k, self.__dict__[k]) for k in sorted(self.__dict__)
+        )
+        return b"%s(%s)" % (type(self).__name__, b", ".join(items))
 
 
 def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     '''Convert log into changesets.'''
 
-    ui.status(_('creating changesets\n'))
+    ui.status(_(b'creating changesets\n'))
 
     # try to order commitids by date
     mindate = {}
@@ -619,10 +628,10 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     log.sort(
         key=lambda x: (
             mindate.get(x.commitid, (-1, 0)),
-            x.commitid or '',
+            x.commitid or b'',
             x.comment,
             x.author,
-            x.branch or '',
+            x.branch or b'',
             x.date,
             x.branchpoints,
         )
@@ -682,8 +691,8 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
 
             files = set()
             if len(changesets) % 100 == 0:
-                t = '%d %s' % (len(changesets), repr(e.comment)[1:-1])
-                ui.status(stringutil.ellipsis(t, 80) + '\n')
+                t = b'%d %s' % (len(changesets), repr(e.comment)[1:-1])
+                ui.status(stringutil.ellipsis(t, 80) + b'\n')
 
         c.entries.append(e)
         files.add(e.file)
@@ -705,9 +714,9 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     # Sort files in each changeset
 
     def entitycompare(l, r):
-        'Mimic cvsps sorting order'
-        l = l.file.split('/')
-        r = r.file.split('/')
+        b'Mimic cvsps sorting order'
+        l = l.file.split(b'/')
+        r = r.file.split(b'/')
         nl = len(l)
         nr = len(r)
         n = min(nl, nr)
@@ -842,7 +851,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
             # Ensure no changeset has a synthetic changeset as a parent.
             while p.synthetic:
                 assert len(p.parents) <= 1, _(
-                    'synthetic changeset cannot have multiple parents'
+                    b'synthetic changeset cannot have multiple parents'
                 )
                 if p.parents:
                     p = p.parents[0]
@@ -854,7 +863,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
                 c.parents.append(p)
 
         if c.mergepoint:
-            if c.mergepoint == 'HEAD':
+            if c.mergepoint == b'HEAD':
                 c.mergepoint = None
             c.parents.append(changesets[branches[c.mergepoint]])
 
@@ -862,15 +871,15 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
             m = mergefrom.search(c.comment)
             if m:
                 m = m.group(1)
-                if m == 'HEAD':
+                if m == b'HEAD':
                     m = None
                 try:
                     candidate = changesets[branches[m]]
                 except KeyError:
                     ui.warn(
                         _(
-                            "warning: CVS commit message references "
-                            "non-existent branch %r:\n%s\n"
+                            b"warning: CVS commit message references "
+                            b"non-existent branch %r:\n%s\n"
                         )
                         % (pycompat.bytestr(m), c.comment)
                     )
@@ -882,7 +891,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
             if m:
                 if m.groups():
                     m = m.group(1)
-                    if m == 'HEAD':
+                    if m == b'HEAD':
                         m = None
                 else:
                     m = None  # if no group found then merge to HEAD
@@ -892,7 +901,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
                         author=c.author,
                         branch=m,
                         date=c.date,
-                        comment='convert-repo: CVS merge from branch %s'
+                        comment=b'convert-repo: CVS merge from branch %s'
                         % c.branch,
                         entries=[],
                         tags=[],
@@ -927,13 +936,13 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
         for l, r in odd:
             if l.id is not None and r.id is not None:
                 ui.warn(
-                    _('changeset %d is both before and after %d\n')
+                    _(b'changeset %d is both before and after %d\n')
                     % (l.id, r.id)
                 )
 
-    ui.status(_('%d changeset entries\n') % len(changesets))
+    ui.status(_(b'%d changeset entries\n') % len(changesets))
 
-    hook.hook(ui, None, "cvschangesets", True, changesets=changesets)
+    hook.hook(ui, None, b"cvschangesets", True, changesets=changesets)
 
     return changesets
 
@@ -944,27 +953,27 @@ def debugcvsps(ui, *args, **opts):
     commit log entries and dates.
     '''
     opts = pycompat.byteskwargs(opts)
-    if opts["new_cache"]:
-        cache = "write"
-    elif opts["update_cache"]:
-        cache = "update"
+    if opts[b"new_cache"]:
+        cache = b"write"
+    elif opts[b"update_cache"]:
+        cache = b"update"
     else:
         cache = None
 
-    revisions = opts["revisions"]
+    revisions = opts[b"revisions"]
 
     try:
         if args:
             log = []
             for d in args:
-                log += createlog(ui, d, root=opts["root"], cache=cache)
+                log += createlog(ui, d, root=opts[b"root"], cache=cache)
         else:
-            log = createlog(ui, root=opts["root"], cache=cache)
+            log = createlog(ui, root=opts[b"root"], cache=cache)
     except logerror as e:
-        ui.write("%r\n" % e)
+        ui.write(b"%r\n" % e)
         return
 
-    changesets = createchangeset(ui, log, opts["fuzz"])
+    changesets = createchangeset(ui, log, opts[b"fuzz"])
     del log
 
     # Print changesets (optionally filtered)
@@ -974,7 +983,7 @@ def debugcvsps(ui, *args, **opts):
     ancestors = {}  # parent branch
     for cs in changesets:
 
-        if opts["ancestors"]:
+        if opts[b"ancestors"]:
             if cs.branch not in branches and cs.parents and cs.parents[0].id:
                 ancestors[cs.branch] = (
                     changesets[cs.parents[0].id - 1].branch,
@@ -983,72 +992,75 @@ def debugcvsps(ui, *args, **opts):
             branches[cs.branch] = cs.id
 
         # limit by branches
-        if opts["branches"] and (cs.branch or 'HEAD') not in opts["branches"]:
+        if (
+            opts[b"branches"]
+            and (cs.branch or b'HEAD') not in opts[b"branches"]
+        ):
             continue
 
         if not off:
             # Note: trailing spaces on several lines here are needed to have
             #       bug-for-bug compatibility with cvsps.
-            ui.write('---------------------\n')
-            ui.write(('PatchSet %d \n' % cs.id))
+            ui.write(b'---------------------\n')
+            ui.write((b'PatchSet %d \n' % cs.id))
             ui.write(
                 (
-                    'Date: %s\n'
-                    % dateutil.datestr(cs.date, '%Y/%m/%d %H:%M:%S %1%2')
+                    b'Date: %s\n'
+                    % dateutil.datestr(cs.date, b'%Y/%m/%d %H:%M:%S %1%2')
                 )
             )
-            ui.write(('Author: %s\n' % cs.author))
-            ui.write(('Branch: %s\n' % (cs.branch or 'HEAD')))
+            ui.write((b'Author: %s\n' % cs.author))
+            ui.write((b'Branch: %s\n' % (cs.branch or b'HEAD')))
             ui.write(
                 (
-                    'Tag%s: %s \n'
+                    b'Tag%s: %s \n'
                     % (
-                        ['', 's'][len(cs.tags) > 1],
-                        ','.join(cs.tags) or '(none)',
+                        [b'', b's'][len(cs.tags) > 1],
+                        b','.join(cs.tags) or b'(none)',
                     )
                 )
             )
             if cs.branchpoints:
                 ui.write(
-                    'Branchpoints: %s \n' % ', '.join(sorted(cs.branchpoints))
+                    b'Branchpoints: %s \n' % b', '.join(sorted(cs.branchpoints))
                 )
-            if opts["parents"] and cs.parents:
+            if opts[b"parents"] and cs.parents:
                 if len(cs.parents) > 1:
                     ui.write(
                         (
-                            'Parents: %s\n'
-                            % (','.join([(b"%d" % p.id) for p in cs.parents]))
+                            b'Parents: %s\n'
+                            % (b','.join([(b"%d" % p.id) for p in cs.parents]))
                         )
                     )
                 else:
-                    ui.write(('Parent: %d\n' % cs.parents[0].id))
+                    ui.write((b'Parent: %d\n' % cs.parents[0].id))
 
-            if opts["ancestors"]:
+            if opts[b"ancestors"]:
                 b = cs.branch
                 r = []
                 while b:
                     b, c = ancestors[b]
-                    r.append('%s:%d:%d' % (b or "HEAD", c, branches[b]))
+                    r.append(b'%s:%d:%d' % (b or b"HEAD", c, branches[b]))
                 if r:
-                    ui.write(('Ancestors: %s\n' % (','.join(r))))
+                    ui.write((b'Ancestors: %s\n' % (b','.join(r))))
 
-            ui.write('Log:\n')
-            ui.write('%s\n\n' % cs.comment)
-            ui.write('Members: \n')
+            ui.write(b'Log:\n')
+            ui.write(b'%s\n\n' % cs.comment)
+            ui.write(b'Members: \n')
             for f in cs.entries:
                 fn = f.file
-                if fn.startswith(opts["prefix"]):
-                    fn = fn[len(opts["prefix"]) :]
+                if fn.startswith(opts[b"prefix"]):
+                    fn = fn[len(opts[b"prefix"]) :]
                 ui.write(
-                    '\t%s:%s->%s%s \n'
+                    b'\t%s:%s->%s%s \n'
                     % (
                         fn,
-                        '.'.join([b"%d" % x for x in f.parent]) or 'INITIAL',
-                        '.'.join([(b"%d" % x) for x in f.revision]),
-                        ['', '(DEAD)'][f.dead],
+                        b'.'.join([b"%d" % x for x in f.parent]) or b'INITIAL',
+                        b'.'.join([(b"%d" % x) for x in f.revision]),
+                        [b'', b'(DEAD)'][f.dead],
                     )
                 )
-            ui.write('\n')
+            ui.write(b'\n')
 
         # have we seen the start tag?
         if revisions and off:

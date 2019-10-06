@@ -62,7 +62,7 @@ def encodevalueinheaders(value, header, limit):
     # and using an r-string to make it portable between Python 2 and 3
     # doesn't work because then the \r is a literal backslash-r
     # instead of a carriage return.
-    valuelen = limit - len(fmt % r'000') - len(': \r\n')
+    valuelen = limit - len(fmt % r'000') - len(b': \r\n')
     result = []
 
     n = 0
@@ -76,10 +76,10 @@ def encodevalueinheaders(value, header, limit):
 class _multifile(object):
     def __init__(self, *fileobjs):
         for f in fileobjs:
-            if not util.safehasattr(f, 'length'):
+            if not util.safehasattr(f, b'length'):
                 raise ValueError(
-                    '_multifile only supports file objects that '
-                    'have a length but this one does not:',
+                    b'_multifile only supports file objects that '
+                    b'have a length but this one does not:',
                     type(f),
                     f,
                 )
@@ -92,7 +92,7 @@ class _multifile(object):
 
     def read(self, amt=None):
         if amt <= 0:
-            return ''.join(f.read() for f in self._fileobjs)
+            return b''.join(f.read() for f in self._fileobjs)
         parts = []
         while amt and self._index < len(self._fileobjs):
             parts.append(self._fileobjs[self._index].read(amt))
@@ -100,18 +100,18 @@ class _multifile(object):
             if got < amt:
                 self._index += 1
             amt -= got
-        return ''.join(parts)
+        return b''.join(parts)
 
     def seek(self, offset, whence=os.SEEK_SET):
         if whence != os.SEEK_SET:
             raise NotImplementedError(
-                '_multifile does not support anything other'
-                ' than os.SEEK_SET for whence on seek()'
+                b'_multifile does not support anything other'
+                b' than os.SEEK_SET for whence on seek()'
             )
         if offset != 0:
             raise NotImplementedError(
-                '_multifile only supports seeking to start, but that '
-                'could be fixed if you need it'
+                b'_multifile only supports seeking to start, but that '
+                b'could be fixed if you need it'
             )
         for f in self._fileobjs:
             f.seek(0)
@@ -131,18 +131,18 @@ def makev1commandrequest(
     ``cmd``, ``args``, and ``data`` define the command, its arguments, and
     raw data to pass to it.
     """
-    if cmd == 'pushkey':
-        args['data'] = ''
-    data = args.pop('data', None)
-    headers = args.pop('headers', {})
+    if cmd == b'pushkey':
+        args[b'data'] = b''
+    data = args.pop(b'data', None)
+    headers = args.pop(b'headers', {})
 
-    ui.debug("sending %s command\n" % cmd)
-    q = [('cmd', cmd)]
+    ui.debug(b"sending %s command\n" % cmd)
+    q = [(b'cmd', cmd)]
     headersize = 0
     # Important: don't use self.capable() here or else you end up
     # with infinite recursion when trying to look up capabilities
     # for the first time.
-    postargsok = caps is not None and 'httppostargs' in caps
+    postargsok = caps is not None and b'httppostargs' in caps
 
     # Send arguments via POST.
     if postargsok and args:
@@ -162,27 +162,27 @@ def makev1commandrequest(
         # Calling self.capable() can infinite loop if we are calling
         # "capabilities". But that command should never accept wire
         # protocol arguments. So this should never happen.
-        assert cmd != 'capabilities'
-        httpheader = capablefn('httpheader')
+        assert cmd != b'capabilities'
+        httpheader = capablefn(b'httpheader')
         if httpheader:
-            headersize = int(httpheader.split(',', 1)[0])
+            headersize = int(httpheader.split(b',', 1)[0])
 
         # Send arguments via HTTP headers.
         if headersize > 0:
             # The headers can typically carry more data than the URL.
             encargs = urlreq.urlencode(sorted(args.items()))
             for header, value in encodevalueinheaders(
-                encargs, 'X-HgArg', headersize
+                encargs, b'X-HgArg', headersize
             ):
                 headers[header] = value
         # Send arguments via query string (Mercurial <1.9).
         else:
             q += sorted(args.items())
 
-    qs = '?%s' % urlreq.urlencode(q)
-    cu = "%s%s" % (repobaseurl, qs)
+    qs = b'?%s' % urlreq.urlencode(q)
+    cu = b"%s%s" % (repobaseurl, qs)
     size = 0
-    if util.safehasattr(data, 'length'):
+    if util.safehasattr(data, b'length'):
         size = data.length
     elif data is not None:
         size = len(data)
@@ -198,17 +198,17 @@ def makev1commandrequest(
 
     mediatypes = set()
     if caps is not None:
-        mt = capablefn('httpmediatype')
+        mt = capablefn(b'httpmediatype')
         if mt:
-            protoparams.add('0.1')
-            mediatypes = set(mt.split(','))
+            protoparams.add(b'0.1')
+            mediatypes = set(mt.split(b','))
 
-        protoparams.add('partial-pull')
+        protoparams.add(b'partial-pull')
 
-    if '0.2tx' in mediatypes:
-        protoparams.add('0.2')
+    if b'0.2tx' in mediatypes:
+        protoparams.add(b'0.2')
 
-    if '0.2tx' in mediatypes and capablefn('compression'):
+    if b'0.2tx' in mediatypes and capablefn(b'compression'):
         # We /could/ compare supported compression formats and prune
         # non-mutually supported or error if nothing is mutually supported.
         # For now, send the full list to the server and have it error.
@@ -216,11 +216,11 @@ def makev1commandrequest(
             e.wireprotosupport().name
             for e in util.compengines.supportedwireengines(util.CLIENTROLE)
         ]
-        protoparams.add('comp=%s' % ','.join(comps))
+        protoparams.add(b'comp=%s' % b','.join(comps))
 
     if protoparams:
         protoheaders = encodevalueinheaders(
-            ' '.join(sorted(protoparams)), 'X-HgProto', headersize or 1024
+            b' '.join(sorted(protoparams)), b'X-HgProto', headersize or 1024
         )
         for header, value in protoheaders:
             headers[header] = value
@@ -236,7 +236,7 @@ def makev1commandrequest(
     req = requestbuilder(pycompat.strurl(cu), data, headers)
 
     if data is not None:
-        ui.debug("sending %d bytes\n" % size)
+        ui.debug(b"sending %d bytes\n" % size)
         req.add_unredirected_header(r'Content-Length', r'%d' % size)
 
     return req, cu, qs
@@ -257,11 +257,11 @@ def sendrequest(ui, opener, req):
     Returns the response object.
     """
     dbg = ui.debug
-    if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
-        line = 'devel-peer-request: %s\n'
+    if ui.debugflag and ui.configbool(b'devel', b'debug.peer-request'):
+        line = b'devel-peer-request: %s\n'
         dbg(
             line
-            % '%s %s'
+            % b'%s %s'
             % (
                 pycompat.bytesurl(req.get_method()),
                 pycompat.bytesurl(req.get_full_url()),
@@ -272,17 +272,17 @@ def sendrequest(ui, opener, req):
         for header, value in sorted(req.header_items()):
             header = pycompat.bytesurl(header)
             value = pycompat.bytesurl(value)
-            if header.startswith('X-hgarg-'):
+            if header.startswith(b'X-hgarg-'):
                 if hgargssize is None:
                     hgargssize = 0
                 hgargssize += len(value)
             else:
-                dbg(line % '  %s %s' % (header, value))
+                dbg(line % b'  %s %s' % (header, value))
 
         if hgargssize is not None:
             dbg(
                 line
-                % '  %d bytes of commands arguments in headers'
+                % b'  %d bytes of commands arguments in headers'
                 % hgargssize
             )
         data = _reqdata(req)
@@ -290,7 +290,7 @@ def sendrequest(ui, opener, req):
             length = getattr(data, 'length', None)
             if length is None:
                 length = len(data)
-            dbg(line % '  %d bytes of data' % length)
+            dbg(line % b'  %d bytes of data' % length)
 
         start = util.timer()
 
@@ -299,20 +299,21 @@ def sendrequest(ui, opener, req):
         res = opener.open(req)
     except urlerr.httperror as inst:
         if inst.code == 401:
-            raise error.Abort(_('authorization failed'))
+            raise error.Abort(_(b'authorization failed'))
         raise
     except httplib.HTTPException as inst:
         ui.debug(
-            'http error requesting %s\n' % util.hidepassword(req.get_full_url())
+            b'http error requesting %s\n'
+            % util.hidepassword(req.get_full_url())
         )
         ui.traceback()
         raise IOError(None, inst)
     finally:
-        if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
+        if ui.debugflag and ui.configbool(b'devel', b'debug.peer-request'):
             code = res.code if res else -1
             dbg(
                 line
-                % '  finished in %.4f seconds (%d)'
+                % b'  finished in %.4f seconds (%d)'
                 % (util.timer() - start, code)
             )
 
@@ -340,10 +341,10 @@ def parsev1commandresponse(
     else:
         qsdropped = True
 
-    if baseurl.rstrip('/') != respurl.rstrip('/'):
+    if baseurl.rstrip(b'/') != respurl.rstrip(b'/'):
         redirected = True
         if not ui.quiet:
-            ui.warn(_('real URL is %s\n') % respurl)
+            ui.warn(_(b'real URL is %s\n') % respurl)
 
     try:
         proto = pycompat.bytesurl(resp.getheader(r'content-type', r''))
@@ -351,17 +352,17 @@ def parsev1commandresponse(
         proto = pycompat.bytesurl(resp.headers.get(r'content-type', r''))
 
     safeurl = util.hidepassword(baseurl)
-    if proto.startswith('application/hg-error'):
+    if proto.startswith(b'application/hg-error'):
         raise error.OutOfBandError(resp.read())
 
     # Pre 1.0 versions of Mercurial used text/plain and
     # application/hg-changegroup. We don't support such old servers.
-    if not proto.startswith('application/mercurial-'):
-        ui.debug("requested URL: '%s'\n" % util.hidepassword(requrl))
+    if not proto.startswith(b'application/mercurial-'):
+        ui.debug(b"requested URL: '%s'\n" % util.hidepassword(requrl))
         msg = _(
-            "'%s' does not appear to be an hg repository:\n"
-            "---%%<--- (%s)\n%s\n---%%<---\n"
-        ) % (safeurl, proto or 'no content-type', resp.read(1024))
+            b"'%s' does not appear to be an hg repository:\n"
+            b"---%%<--- (%s)\n%s\n---%%<---\n"
+        ) % (safeurl, proto or b'no content-type', resp.read(1024))
 
         # Some servers may strip the query string from the redirect. We
         # raise a special error type so callers can react to this specially.
@@ -371,23 +372,23 @@ def parsev1commandresponse(
             raise error.RepoError(msg)
 
     try:
-        subtype = proto.split('-', 1)[1]
+        subtype = proto.split(b'-', 1)[1]
 
         # Unless we end up supporting CBOR in the legacy wire protocol,
         # this should ONLY be encountered for the initial capabilities
         # request during handshake.
-        if subtype == 'cbor':
+        if subtype == b'cbor':
             if allowcbor:
                 return respurl, proto, resp
             else:
                 raise error.RepoError(
-                    _('unexpected CBOR response from ' 'server')
+                    _(b'unexpected CBOR response from ' b'server')
                 )
 
-        version_info = tuple([int(n) for n in subtype.split('.')])
+        version_info = tuple([int(n) for n in subtype.split(b'.')])
     except ValueError:
         raise error.RepoError(
-            _("'%s' sent a broken Content-Type " "header (%s)")
+            _(b"'%s' sent a broken Content-Type " b"header (%s)")
             % (safeurl, proto)
         )
 
@@ -395,19 +396,19 @@ def parsev1commandresponse(
     # generators.
     if version_info == (0, 1):
         if compressible:
-            resp = util.compengines['zlib'].decompressorreader(resp)
+            resp = util.compengines[b'zlib'].decompressorreader(resp)
 
     elif version_info == (0, 2):
         # application/mercurial-0.2 always identifies the compression
         # engine in the payload header.
-        elen = struct.unpack('B', util.readexactly(resp, 1))[0]
+        elen = struct.unpack(b'B', util.readexactly(resp, 1))[0]
         ename = util.readexactly(resp, elen)
         engine = util.compengines.forwiretype(ename)
 
         resp = engine.decompressorreader(resp)
     else:
         raise error.RepoError(
-            _("'%s' uses newer protocol %s") % (safeurl, subtype)
+            _(b"'%s' uses newer protocol %s") % (safeurl, subtype)
         )
 
     return respurl, proto, resp
@@ -419,7 +420,7 @@ class httppeer(wireprotov1peer.wirepeer):
         self._path = path
         self._url = url
         self._caps = caps
-        self.limitedarguments = caps is not None and 'httppostargs' not in caps
+        self.limitedarguments = caps is not None and b'httppostargs' not in caps
         self._urlopener = opener
         self._requestbuilder = requestbuilder
 
@@ -453,8 +454,8 @@ class httppeer(wireprotov1peer.wirepeer):
             return
         self.ui.note(
             _(
-                '(sent %d HTTP requests and %d bytes; '
-                'received %d bytes in responses)\n'
+                b'(sent %d HTTP requests and %d bytes; '
+                b'received %d bytes in responses)\n'
             )
             % (reqs, sent, recv)
         )
@@ -501,28 +502,28 @@ class httppeer(wireprotov1peer.wirepeer):
         # have to stream bundle to a temp file because we do not have
         # http 1.1 chunked transfer.
 
-        types = self.capable('unbundle')
+        types = self.capable(b'unbundle')
         try:
-            types = types.split(',')
+            types = types.split(b',')
         except AttributeError:
             # servers older than d1b16a746db6 will send 'unbundle' as a
             # boolean capability. They only support headerless/uncompressed
             # bundles.
-            types = [""]
+            types = [b""]
         for x in types:
             if x in bundle2.bundletypes:
                 type = x
                 break
 
         tempname = bundle2.writebundle(self.ui, cg, None, type)
-        fp = httpconnection.httpsendfile(self.ui, tempname, "rb")
+        fp = httpconnection.httpsendfile(self.ui, tempname, b"rb")
         headers = {r'Content-Type': r'application/mercurial-0.1'}
 
         try:
             r = self._call(cmd, data=fp, headers=headers, **args)
-            vals = r.split('\n', 1)
+            vals = r.split(b'\n', 1)
             if len(vals) < 2:
-                raise error.ResponseError(_("unexpected response:"), r)
+                raise error.ResponseError(_(b"unexpected response:"), r)
             return vals
         except urlerr.httperror:
             # Catch and re-raise these so we don't try and treat them
@@ -531,7 +532,7 @@ class httppeer(wireprotov1peer.wirepeer):
             raise
         except socket.error as err:
             if err.args[0] in (errno.ECONNRESET, errno.EPIPE):
-                raise error.Abort(_('push failed: %s') % err.args[1])
+                raise error.Abort(_(b'push failed: %s') % err.args[1])
             raise error.Abort(err.args[1])
         finally:
             fp.close()
@@ -541,14 +542,14 @@ class httppeer(wireprotov1peer.wirepeer):
         filename = None
         try:
             # dump bundle to disk
-            fd, filename = pycompat.mkstemp(prefix="hg-bundle-", suffix=".hg")
+            fd, filename = pycompat.mkstemp(prefix=b"hg-bundle-", suffix=b".hg")
             with os.fdopen(fd, r"wb") as fh:
                 d = fp.read(4096)
                 while d:
                     fh.write(d)
                     d = fp.read(4096)
             # start http push
-            with httpconnection.httpsendfile(self.ui, filename, "rb") as fp_:
+            with httpconnection.httpsendfile(self.ui, filename, b"rb") as fp_:
                 headers = {r'Content-Type': r'application/mercurial-0.1'}
                 return self._callstream(cmd, data=fp_, headers=headers, **args)
         finally:
@@ -598,17 +599,17 @@ def sendv2request(
         ui, reactor, opener=opener, requestbuilder=requestbuilder
     )
 
-    url = '%s/%s' % (apiurl, permission)
+    url = b'%s/%s' % (apiurl, permission)
 
     if len(requests) > 1:
-        url += '/multirequest'
+        url += b'/multirequest'
     else:
-        url += '/%s' % requests[0][0]
+        url += b'/%s' % requests[0][0]
 
-    ui.debug('sending %d commands\n' % len(requests))
+    ui.debug(b'sending %d commands\n' % len(requests))
     for command, args, f in requests:
         ui.debug(
-            'sending command %s: %s\n'
+            b'sending command %s: %s\n'
             % (command, stringutil.pprint(args, indent=2))
         )
         assert not list(
@@ -631,7 +632,7 @@ def sendv2request(
         res = opener.open(req)
     except urlerr.httperror as e:
         if e.code == 401:
-            raise error.Abort(_('authorization failed'))
+            raise error.Abort(_(b'authorization failed'))
 
         raise
     except httplib.HTTPException as e:
@@ -683,32 +684,32 @@ class httpv2executor(object):
     def callcommand(self, command, args):
         if self._sent:
             raise error.ProgrammingError(
-                'callcommand() cannot be used after ' 'commands are sent'
+                b'callcommand() cannot be used after ' b'commands are sent'
             )
 
         if self._closed:
             raise error.ProgrammingError(
-                'callcommand() cannot be used after ' 'close()'
+                b'callcommand() cannot be used after ' b'close()'
             )
 
         # The service advertises which commands are available. So if we attempt
         # to call an unknown command or pass an unknown argument, we can screen
         # for this.
-        if command not in self._descriptor['commands']:
+        if command not in self._descriptor[b'commands']:
             raise error.ProgrammingError(
-                'wire protocol command %s is not available' % command
+                b'wire protocol command %s is not available' % command
             )
 
-        cmdinfo = self._descriptor['commands'][command]
-        unknownargs = set(args.keys()) - set(cmdinfo.get('args', {}))
+        cmdinfo = self._descriptor[b'commands'][command]
+        unknownargs = set(args.keys()) - set(cmdinfo.get(b'args', {}))
 
         if unknownargs:
             raise error.ProgrammingError(
-                'wire protocol command %s does not accept argument: %s'
-                % (command, ', '.join(sorted(unknownargs)))
+                b'wire protocol command %s does not accept argument: %s'
+                % (command, b', '.join(sorted(unknownargs)))
             )
 
-        self._neededpermissions |= set(cmdinfo['permissions'])
+        self._neededpermissions |= set(cmdinfo[b'permissions'])
 
         # TODO we /could/ also validate types here, since the API descriptor
         # includes types...
@@ -756,16 +757,16 @@ class httpv2executor(object):
 
         permissions = set(self._neededpermissions)
 
-        if 'push' in permissions and 'pull' in permissions:
-            permissions.remove('pull')
+        if b'push' in permissions and b'pull' in permissions:
+            permissions.remove(b'pull')
 
         if len(permissions) > 1:
             raise error.RepoError(
-                _('cannot make request requiring multiple ' 'permissions: %s')
-                % _(', ').join(sorted(permissions))
+                _(b'cannot make request requiring multiple ' b'permissions: %s')
+                % _(b', ').join(sorted(permissions))
             )
 
-        permission = {'push': 'rw', 'pull': 'ro',}[permissions.pop()]
+        permission = {b'push': b'rw', b'pull': b'ro',}[permissions.pop()]
 
         handler, resp = sendv2request(
             self._ui,
@@ -809,7 +810,7 @@ class httpv2executor(object):
             for f in self._futures:
                 if not f.done():
                     f.set_exception(
-                        error.ResponseError(_('unfulfilled command response'))
+                        error.ResponseError(_(b'unfulfilled command response'))
                     )
 
             self._futures = None
@@ -832,12 +833,12 @@ class httpv2peer(object):
         self.ui = ui
         self.apidescriptor = apidescriptor
 
-        if repourl.endswith('/'):
+        if repourl.endswith(b'/'):
             repourl = repourl[:-1]
 
         self._url = repourl
         self._apipath = apipath
-        self._apiurl = '%s/%s' % (repourl, apipath)
+        self._apiurl = b'%s/%s' % (repourl, apipath)
         self._opener = opener
         self._requestbuilder = requestbuilder
 
@@ -861,8 +862,8 @@ class httpv2peer(object):
     def close(self):
         self.ui.note(
             _(
-                '(sent %d HTTP requests and %d bytes; '
-                'received %d bytes in responses)\n'
+                b'(sent %d HTTP requests and %d bytes; '
+                b'received %d bytes in responses)\n'
             )
             % (
                 self._opener.requestscount,
@@ -881,16 +882,22 @@ class httpv2peer(object):
         # version 2 of that command works differently.
 
         # Maps to commands that are available.
-        if name in ('branchmap', 'getbundle', 'known', 'lookup', 'pushkey'):
+        if name in (
+            b'branchmap',
+            b'getbundle',
+            b'known',
+            b'lookup',
+            b'pushkey',
+        ):
             return True
 
         # Other concepts.
-        if name in 'bundle2':
+        if name in b'bundle2':
             return True
 
         # Alias command-* to presence of command of that name.
-        if name.startswith('command-'):
-            return name[len('command-') :] in self.apidescriptor['commands']
+        if name.startswith(b'command-'):
+            return name[len(b'command-') :] in self.apidescriptor[b'commands']
 
         return False
 
@@ -900,8 +907,8 @@ class httpv2peer(object):
 
         raise error.CapabilityError(
             _(
-                'cannot %s; client or remote repository does not support the '
-                '\'%s\' capability'
+                b'cannot %s; client or remote repository does not support the '
+                b'\'%s\' capability'
             )
             % (purpose, name)
         )
@@ -935,7 +942,7 @@ class httpv2peer(object):
 #    Integer priority for the service. If we could choose from multiple
 #    services, we choose the one with the highest priority.
 API_PEERS = {
-    wireprototypes.HTTP_WIREPROTO_V2: {'init': httpv2peer, 'priority': 50,},
+    wireprototypes.HTTP_WIREPROTO_V2: {b'init': httpv2peer, b'priority': 50,},
 }
 
 
@@ -945,7 +952,7 @@ def performhandshake(ui, url, opener, requestbuilder):
     caps = None
 
     def capable(x):
-        raise error.ProgrammingError('should not be called')
+        raise error.ProgrammingError(b'should not be called')
 
     args = {}
 
@@ -954,17 +961,17 @@ def performhandshake(ui, url, opener, requestbuilder):
     # X-HgProto-* header advertising which serializing formats it supports.
     # We only support the HTTP version 2 transport and CBOR responses for
     # now.
-    advertisev2 = ui.configbool('experimental', 'httppeer.advertise-v2')
+    advertisev2 = ui.configbool(b'experimental', b'httppeer.advertise-v2')
 
     if advertisev2:
-        args['headers'] = {
+        args[b'headers'] = {
             r'X-HgProto-1': r'cbor',
         }
 
-        args['headers'].update(
+        args[b'headers'].update(
             encodevalueinheaders(
-                ' '.join(sorted(API_PEERS)),
-                'X-HgUpgrade',
+                b' '.join(sorted(API_PEERS)),
+                b'X-HgUpgrade',
                 # We don't know the header limit this early.
                 # So make it small.
                 1024,
@@ -972,7 +979,7 @@ def performhandshake(ui, url, opener, requestbuilder):
         )
 
     req, requrl, qs = makev1commandrequest(
-        ui, requestbuilder, caps, capable, url, 'capabilities', args
+        ui, requestbuilder, caps, capable, url, b'capabilities', args
     )
     resp = sendrequest(ui, opener, req)
 
@@ -994,7 +1001,7 @@ def performhandshake(ui, url, opener, requestbuilder):
         )
     except RedirectedRepoError as e:
         req, requrl, qs = makev1commandrequest(
-            ui, requestbuilder, caps, capable, e.respurl, 'capabilities', args
+            ui, requestbuilder, caps, capable, e.respurl, b'capabilities', args
         )
         resp = sendrequest(ui, opener, req)
         respurl, ct, resp = parsev1commandresponse(
@@ -1006,32 +1013,32 @@ def performhandshake(ui, url, opener, requestbuilder):
     finally:
         resp.close()
 
-    if not ct.startswith('application/mercurial-'):
-        raise error.ProgrammingError('unexpected content-type: %s' % ct)
+    if not ct.startswith(b'application/mercurial-'):
+        raise error.ProgrammingError(b'unexpected content-type: %s' % ct)
 
     if advertisev2:
-        if ct == 'application/mercurial-cbor':
+        if ct == b'application/mercurial-cbor':
             try:
                 info = cborutil.decodeall(rawdata)[0]
             except cborutil.CBORDecodeError:
                 raise error.Abort(
-                    _('error decoding CBOR from remote server'),
+                    _(b'error decoding CBOR from remote server'),
                     hint=_(
-                        'try again and consider contacting '
-                        'the server operator'
+                        b'try again and consider contacting '
+                        b'the server operator'
                     ),
                 )
 
         # We got a legacy response. That's fine.
-        elif ct in ('application/mercurial-0.1', 'application/mercurial-0.2'):
-            info = {'v1capabilities': set(rawdata.split())}
+        elif ct in (b'application/mercurial-0.1', b'application/mercurial-0.2'):
+            info = {b'v1capabilities': set(rawdata.split())}
 
         else:
             raise error.RepoError(
-                _('unexpected response type from server: %s') % ct
+                _(b'unexpected response type from server: %s') % ct
             )
     else:
-        info = {'v1capabilities': set(rawdata.split())}
+        info = {b'v1capabilities': set(rawdata.split())}
 
     return respurl, info
 
@@ -1048,12 +1055,12 @@ def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     u = util.url(path)
     if u.query or u.fragment:
         raise error.Abort(
-            _('unsupported URL component: "%s"') % (u.query or u.fragment)
+            _(b'unsupported URL component: "%s"') % (u.query or u.fragment)
         )
 
     # urllib cannot handle URLs with embedded user or passwd.
     url, authinfo = u.authinfo()
-    ui.debug('using %s\n' % url)
+    ui.debug(b'using %s\n' % url)
 
     opener = opener or urlmod.opener(ui, authinfo)
 
@@ -1068,32 +1075,32 @@ def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     # capabilities, we could filter out services not meeting the
     # requirements. Possibly by consulting the interfaces defined by the
     # peer type.
-    apipeerchoices = set(info.get('apis', {}).keys()) & set(API_PEERS.keys())
+    apipeerchoices = set(info.get(b'apis', {}).keys()) & set(API_PEERS.keys())
 
     preferredchoices = sorted(
-        apipeerchoices, key=lambda x: API_PEERS[x]['priority'], reverse=True
+        apipeerchoices, key=lambda x: API_PEERS[x][b'priority'], reverse=True
     )
 
     for service in preferredchoices:
-        apipath = '%s/%s' % (info['apibase'].rstrip('/'), service)
+        apipath = b'%s/%s' % (info[b'apibase'].rstrip(b'/'), service)
 
-        return API_PEERS[service]['init'](
-            ui, respurl, apipath, opener, requestbuilder, info['apis'][service]
+        return API_PEERS[service][b'init'](
+            ui, respurl, apipath, opener, requestbuilder, info[b'apis'][service]
         )
 
     # Failed to construct an API peer. Fall back to legacy.
     return httppeer(
-        ui, path, respurl, opener, requestbuilder, info['v1capabilities']
+        ui, path, respurl, opener, requestbuilder, info[b'v1capabilities']
     )
 
 
 def instance(ui, path, create, intents=None, createopts=None):
     if create:
-        raise error.Abort(_('cannot create new http repository'))
+        raise error.Abort(_(b'cannot create new http repository'))
     try:
-        if path.startswith('https:') and not urlmod.has_https:
+        if path.startswith(b'https:') and not urlmod.has_https:
             raise error.Abort(
-                _('Python support for SSL and HTTPS ' 'is not installed')
+                _(b'Python support for SSL and HTTPS ' b'is not installed')
             )
 
         inst = makepeer(ui, path)
@@ -1101,8 +1108,8 @@ def instance(ui, path, create, intents=None, createopts=None):
         return inst
     except error.RepoError as httpexception:
         try:
-            r = statichttprepo.instance(ui, "static-" + path, create)
-            ui.note(_('(falling back to static-http)\n'))
+            r = statichttprepo.instance(ui, b"static-" + path, create)
+            ui.note(_(b'(falling back to static-http)\n'))
             return r
         except error.RepoError:
             raise httpexception  # use the original http RepoError instead

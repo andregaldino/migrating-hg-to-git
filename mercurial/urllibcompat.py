@@ -45,56 +45,56 @@ if pycompat.ispy3:
     urlreq._registeraliases(
         urllib.parse,
         (
-            "splitattr",
-            "splitpasswd",
-            "splitport",
-            "splituser",
-            "urlparse",
-            "urlunparse",
+            b"splitattr",
+            b"splitpasswd",
+            b"splitport",
+            b"splituser",
+            b"urlparse",
+            b"urlunparse",
         ),
     )
-    urlreq._registeralias(urllib.parse, "parse_qs", "parseqs")
-    urlreq._registeralias(urllib.parse, "parse_qsl", "parseqsl")
-    urlreq._registeralias(urllib.parse, "unquote_to_bytes", "unquote")
+    urlreq._registeralias(urllib.parse, b"parse_qs", b"parseqs")
+    urlreq._registeralias(urllib.parse, b"parse_qsl", b"parseqsl")
+    urlreq._registeralias(urllib.parse, b"unquote_to_bytes", b"unquote")
     import urllib.request
 
     urlreq._registeraliases(
         urllib.request,
         (
-            "AbstractHTTPHandler",
-            "BaseHandler",
-            "build_opener",
-            "FileHandler",
-            "FTPHandler",
-            "ftpwrapper",
-            "HTTPHandler",
-            "HTTPSHandler",
-            "install_opener",
-            "pathname2url",
-            "HTTPBasicAuthHandler",
-            "HTTPDigestAuthHandler",
-            "HTTPPasswordMgrWithDefaultRealm",
-            "ProxyHandler",
-            "Request",
-            "url2pathname",
-            "urlopen",
+            b"AbstractHTTPHandler",
+            b"BaseHandler",
+            b"build_opener",
+            b"FileHandler",
+            b"FTPHandler",
+            b"ftpwrapper",
+            b"HTTPHandler",
+            b"HTTPSHandler",
+            b"install_opener",
+            b"pathname2url",
+            b"HTTPBasicAuthHandler",
+            b"HTTPDigestAuthHandler",
+            b"HTTPPasswordMgrWithDefaultRealm",
+            b"ProxyHandler",
+            b"Request",
+            b"url2pathname",
+            b"urlopen",
         ),
     )
     import urllib.response
 
-    urlreq._registeraliases(urllib.response, ("addclosehook", "addinfourl",))
+    urlreq._registeraliases(urllib.response, (b"addclosehook", b"addinfourl",))
     import urllib.error
 
-    urlerr._registeraliases(urllib.error, ("HTTPError", "URLError",))
+    urlerr._registeraliases(urllib.error, (b"HTTPError", b"URLError",))
     import http.server
 
     httpserver._registeraliases(
         http.server,
         (
-            "HTTPServer",
-            "BaseHTTPRequestHandler",
-            "SimpleHTTPRequestHandler",
-            "CGIHTTPRequestHandler",
+            b"HTTPServer",
+            b"BaseHTTPRequestHandler",
+            b"SimpleHTTPRequestHandler",
+            b"CGIHTTPRequestHandler",
         ),
     )
 
@@ -145,48 +145,50 @@ else:
     urlreq._registeraliases(
         urllib,
         (
-            "addclosehook",
-            "addinfourl",
-            "ftpwrapper",
-            "pathname2url",
-            "quote",
-            "splitattr",
-            "splitpasswd",
-            "splitport",
-            "splituser",
-            "unquote",
-            "url2pathname",
-            "urlencode",
+            b"addclosehook",
+            b"addinfourl",
+            b"ftpwrapper",
+            b"pathname2url",
+            b"quote",
+            b"splitattr",
+            b"splitpasswd",
+            b"splitport",
+            b"splituser",
+            b"unquote",
+            b"url2pathname",
+            b"urlencode",
         ),
     )
     urlreq._registeraliases(
         urllib2,
         (
-            "AbstractHTTPHandler",
-            "BaseHandler",
-            "build_opener",
-            "FileHandler",
-            "FTPHandler",
-            "HTTPBasicAuthHandler",
-            "HTTPDigestAuthHandler",
-            "HTTPHandler",
-            "HTTPPasswordMgrWithDefaultRealm",
-            "HTTPSHandler",
-            "install_opener",
-            "ProxyHandler",
-            "Request",
-            "urlopen",
+            b"AbstractHTTPHandler",
+            b"BaseHandler",
+            b"build_opener",
+            b"FileHandler",
+            b"FTPHandler",
+            b"HTTPBasicAuthHandler",
+            b"HTTPDigestAuthHandler",
+            b"HTTPHandler",
+            b"HTTPPasswordMgrWithDefaultRealm",
+            b"HTTPSHandler",
+            b"install_opener",
+            b"ProxyHandler",
+            b"Request",
+            b"urlopen",
         ),
     )
-    urlreq._registeraliases(urlparse, ("urlparse", "urlunparse",))
-    urlreq._registeralias(urlparse, "parse_qs", "parseqs")
-    urlreq._registeralias(urlparse, "parse_qsl", "parseqsl")
-    urlerr._registeraliases(urllib2, ("HTTPError", "URLError",))
+    urlreq._registeraliases(urlparse, (b"urlparse", b"urlunparse",))
+    urlreq._registeralias(urlparse, b"parse_qs", b"parseqs")
+    urlreq._registeralias(urlparse, b"parse_qsl", b"parseqsl")
+    urlerr._registeraliases(urllib2, (b"HTTPError", b"URLError",))
     httpserver._registeraliases(
-        BaseHTTPServer, ("HTTPServer", "BaseHTTPRequestHandler",)
+        BaseHTTPServer, (b"HTTPServer", b"BaseHTTPRequestHandler",)
     )
-    httpserver._registeraliases(SimpleHTTPServer, ("SimpleHTTPRequestHandler",))
-    httpserver._registeraliases(CGIHTTPServer, ("CGIHTTPRequestHandler",))
+    httpserver._registeraliases(
+        SimpleHTTPServer, (b"SimpleHTTPRequestHandler",)
+    )
+    httpserver._registeraliases(CGIHTTPServer, (b"CGIHTTPRequestHandler",))
 
     def gethost(req):
         return req.get_host()

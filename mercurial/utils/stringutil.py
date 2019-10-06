@@ -66,24 +66,24 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
 
     if isinstance(o, bytes):
         if bprefix:
-            yield "b'%s'" % escapestr(o)
+            yield b"b'%s'" % escapestr(o)
         else:
-            yield "'%s'" % escapestr(o)
+            yield b"'%s'" % escapestr(o)
     elif isinstance(o, bytearray):
         # codecs.escape_encode() can't handle bytearray, so escapestr fails
         # without coercion.
-        yield "bytearray['%s']" % escapestr(bytes(o))
+        yield b"bytearray['%s']" % escapestr(bytes(o))
     elif isinstance(o, list):
         if not o:
-            yield '[]'
+            yield b'[]'
             return
 
-        yield '['
+        yield b'['
 
         if indent:
             level += 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
         for i, a in enumerate(o):
             for chunk in pprintgen(
@@ -93,28 +93,28 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
 
             if i + 1 < len(o):
                 if indent:
-                    yield ',\n'
-                    yield ' ' * (level * indent)
+                    yield b',\n'
+                    yield b' ' * (level * indent)
                 else:
-                    yield ', '
+                    yield b', '
 
         if indent:
             level -= 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
-        yield ']'
+        yield b']'
     elif isinstance(o, dict):
         if not o:
-            yield '{}'
+            yield b'{}'
             return
 
-        yield '{'
+        yield b'{'
 
         if indent:
             level += 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
         for i, (k, v) in enumerate(sorted(o.items())):
             for chunk in pprintgen(
@@ -122,7 +122,7 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
             ):
                 yield chunk
 
-            yield ': '
+            yield b': '
 
             for chunk in pprintgen(
                 v, bprefix=bprefix, indent=indent, level=level
@@ -131,28 +131,28 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
 
             if i + 1 < len(o):
                 if indent:
-                    yield ',\n'
-                    yield ' ' * (level * indent)
+                    yield b',\n'
+                    yield b' ' * (level * indent)
                 else:
-                    yield ', '
+                    yield b', '
 
         if indent:
             level -= 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
-        yield '}'
+        yield b'}'
     elif isinstance(o, set):
         if not o:
-            yield 'set([])'
+            yield b'set([])'
             return
 
-        yield 'set(['
+        yield b'set(['
 
         if indent:
             level += 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
         for i, k in enumerate(sorted(o)):
             for chunk in pprintgen(
@@ -162,28 +162,28 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
 
             if i + 1 < len(o):
                 if indent:
-                    yield ',\n'
-                    yield ' ' * (level * indent)
+                    yield b',\n'
+                    yield b' ' * (level * indent)
                 else:
-                    yield ', '
+                    yield b', '
 
         if indent:
             level -= 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
-        yield '])'
+        yield b'])'
     elif isinstance(o, tuple):
         if not o:
-            yield '()'
+            yield b'()'
             return
 
-        yield '('
+        yield b'('
 
         if indent:
             level += 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
         for i, a in enumerate(o):
             for chunk in pprintgen(
@@ -193,31 +193,31 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
 
             if i + 1 < len(o):
                 if indent:
-                    yield ',\n'
-                    yield ' ' * (level * indent)
+                    yield b',\n'
+                    yield b' ' * (level * indent)
                 else:
-                    yield ', '
+                    yield b', '
 
         if indent:
             level -= 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
-        yield ')'
+        yield b')'
     elif isinstance(o, types.GeneratorType):
         # Special case of empty generator.
         try:
             nextitem = next(o)
         except StopIteration:
-            yield 'gen[]'
+            yield b'gen[]'
             return
 
-        yield 'gen['
+        yield b'gen['
 
         if indent:
             level += 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
         last = False
 
@@ -236,17 +236,17 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
 
             if not last:
                 if indent:
-                    yield ',\n'
-                    yield ' ' * (level * indent)
+                    yield b',\n'
+                    yield b' ' * (level * indent)
                 else:
-                    yield ', '
+                    yield b', '
 
         if indent:
             level -= 1
-            yield '\n'
-            yield ' ' * (level * indent)
+            yield b'\n'
+            yield b' ' * (level * indent)
 
-        yield ']'
+        yield b']'
     else:
         yield pycompat.byterepr(o)
 
@@ -261,21 +261,21 @@ def prettyrepr(o):
         #      ~~~~~~~~~~~~~~~~
         #      p0    p1        q0    q1
         q0 = -1
-        q1 = rs.find('<', p1 + 1)
+        q1 = rs.find(b'<', p1 + 1)
         if q1 < 0:
             q1 = len(rs)
-        elif q1 > p1 + 1 and rs.startswith('=', q1 - 1):
+        elif q1 > p1 + 1 and rs.startswith(b'=', q1 - 1):
             # backtrack for ' field=<'
-            q0 = rs.rfind(' ', p1 + 1, q1 - 1)
+            q0 = rs.rfind(b' ', p1 + 1, q1 - 1)
         if q0 < 0:
             q0 = q1
         else:
             q0 += 1  # skip ' '
-        l = rs.count('<', 0, p0) - rs.count('>', 0, p0)
+        l = rs.count(b'<', 0, p0) - rs.count(b'>', 0, p0)
         assert l >= 0
         lines.append((l, rs[p0:q0].rstrip()))
         p0, p1 = q0, q1
-    return '\n'.join('  ' * l + s for l, s in lines)
+    return b'\n'.join(b'  ' * l + s for l, s in lines)
 
 
 def buildrepr(r):
@@ -291,7 +291,7 @@ def buildrepr(r):
     ========  =================================
     """
     if r is None:
-        return ''
+        return b''
     elif isinstance(r, tuple):
         return r[0] % pycompat.rapply(pycompat.maybebytestr, r[1:])
     elif isinstance(r, bytes):
@@ -304,7 +304,7 @@ def buildrepr(r):
 
 def binary(s):
     """return true if a string is binary data"""
-    return bool(s and '\0' in s)
+    return bool(s and b'\0' in s)
 
 
 def stringmatcher(pattern, casesensitive=True):
@@ -345,7 +345,7 @@ def stringmatcher(pattern, casesensitive=True):
     >>> itest(b'ABCDEFG', b'abc', b'def', b'abcdefg')
     ('literal', 'ABCDEFG', [False, False, True])
     """
-    if pattern.startswith('re:'):
+    if pattern.startswith(b're:'):
         pattern = pattern[3:]
         try:
             flags = 0
@@ -353,9 +353,9 @@ def stringmatcher(pattern, casesensitive=True):
                 flags = remod.I
             regex = remod.compile(pattern, flags)
         except remod.error as e:
-            raise error.ParseError(_('invalid regular expression: %s') % e)
-        return 're', pattern, regex.search
-    elif pattern.startswith('literal:'):
+            raise error.ParseError(_(b'invalid regular expression: %s') % e)
+        return b're', pattern, regex.search
+    elif pattern.startswith(b'literal:'):
         pattern = pattern[8:]
 
     match = pattern.__eq__
@@ -363,21 +363,21 @@ def stringmatcher(pattern, casesensitive=True):
     if not casesensitive:
         ipat = encoding.lower(pattern)
         match = lambda s: ipat == encoding.lower(s)
-    return 'literal', pattern, match
+    return b'literal', pattern, match
 
 
 def shortuser(user):
     """Return a short representation of a user name or email address."""
-    f = user.find('@')
+    f = user.find(b'@')
     if f >= 0:
         user = user[:f]
-    f = user.find('<')
+    f = user.find(b'<')
     if f >= 0:
         user = user[f + 1 :]
-    f = user.find(' ')
+    f = user.find(b' ')
     if f >= 0:
         user = user[:f]
-    f = user.find('.')
+    f = user.find(b'.')
     if f >= 0:
         user = user[:f]
     return user
@@ -385,10 +385,10 @@ def shortuser(user):
 
 def emailuser(user):
     """Return the user portion of an email address."""
-    f = user.find('@')
+    f = user.find(b'@')
     if f >= 0:
         user = user[:f]
-    f = user.find('<')
+    f = user.find(b'<')
     if f >= 0:
         user = user[f + 1 :]
     return user
@@ -396,10 +396,10 @@ def emailuser(user):
 
 def email(author):
     '''get email of author.'''
-    r = author.find('>')
+    r = author.find(b'>')
     if r == -1:
         r = None
-    return author[author.find('<') + 1 : r]
+    return author[author.find(b'<') + 1 : r]
 
 
 def person(author):
@@ -421,13 +421,13 @@ def person(author):
     >>> person(b'"Foo Bar <foo@bar>')
     'Foo Bar'
     """
-    if '@' not in author:
+    if b'@' not in author:
         return author
-    f = author.find('<')
+    f = author.find(b'<')
     if f != -1:
-        return author[:f].strip(' "').replace('\\"', '"')
-    f = author.find('@')
-    return author[:f].replace('.', ' ')
+        return author[:f].strip(b' "').replace(b'\\"', b'"')
+    f = author.find(b'@')
+    return author[:f].replace(b'.', b' ')
 
 
 @attr.s(hash=True)
@@ -497,7 +497,7 @@ def parsemailmap(mailmapcontent):
 
         # Don't bother checking the line if it is a comment or
         # is an improperly formed author field
-        if line.lstrip().startswith('#'):
+        if line.lstrip().startswith(b'#'):
             continue
 
         # names, emails hold the parsed emails and names for each line
@@ -506,17 +506,17 @@ def parsemailmap(mailmapcontent):
         namebuilder = []
 
         for element in line.split():
-            if element.startswith('#'):
+            if element.startswith(b'#'):
                 # If we reach a comment in the mailmap file, move on
                 break
 
-            elif element.startswith('<') and element.endswith('>'):
+            elif element.startswith(b'<') and element.endswith(b'>'):
                 # We have found an email.
                 # Parse it, and finalize any names from earlier
                 emails.append(element[1:-1])  # Slice off the "<>"
 
                 if namebuilder:
-                    names.append(' '.join(namebuilder))
+                    names.append(b' '.join(namebuilder))
                     namebuilder = []
 
                 # Break if we have found a second email, any other
@@ -587,7 +587,7 @@ def mapname(mailmap, author):
         proper = mailmap.get(commit2, mailmapping(None, None))
 
     # Return the author field with proper values filled in
-    return '%s <%s>' % (
+    return b'%s <%s>' % (
         proper.name if proper.name else commit.name,
         proper.email if proper.email else commit.email,
     )
@@ -620,7 +620,7 @@ def isauthorwellformed(author):
 
 def ellipsis(text, maxlength=400):
     """Trim string to at most maxlength (default: 400) columns in display."""
-    return encoding.trim(text, maxlength, ellipsis='...')
+    return encoding.trim(text, maxlength, ellipsis=b'...')
 
 
 def escapestr(s):
@@ -675,7 +675,7 @@ def _MBTextWrapper(**kwargs):
                 l += colwidth(ucstr[i])
                 if space_left < l:
                     return (ucstr[:i], ucstr[i:])
-            return ucstr, ''
+            return ucstr, b''
 
         # overriding of base class
         def _handle_long_word(self, reversed_chunks, cur_line, cur_len, width):
@@ -695,7 +695,7 @@ def _MBTextWrapper(**kwargs):
 
             lines = []
             if self.width <= 0:
-                raise ValueError("invalid width %r (must be > 0)" % self.width)
+                raise ValueError(b"invalid width %r (must be > 0)" % self.width)
 
             # Arrange in reverse order so items can be efficiently popped
             # from a stack of chucks.
@@ -759,7 +759,7 @@ def _MBTextWrapper(**kwargs):
     return tw(**kwargs)
 
 
-def wrap(line, width, initindent='', hangindent=''):
+def wrap(line, width, initindent=b'', hangindent=b''):
     maxindent = max(len(hangindent), len(initindent))
     if width <= maxindent:
         # adjust for weird terminal size
@@ -783,16 +783,16 @@ def wrap(line, width, initindent='', hangindent=''):
 
 
 _booleans = {
-    '1': True,
-    'yes': True,
-    'true': True,
-    'on': True,
-    'always': True,
-    '0': False,
-    'no': False,
-    'false': False,
-    'off': False,
-    'never': False,
+    b'1': True,
+    b'yes': True,
+    b'true': True,
+    b'on': True,
+    b'always': True,
+    b'0': False,
+    b'no': False,
+    b'false': False,
+    b'off': False,
+    b'never': False,
 }
 
 

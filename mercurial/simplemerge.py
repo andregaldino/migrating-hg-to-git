@@ -93,9 +93,9 @@ class Merge3Text(object):
         name_a=None,
         name_b=None,
         name_base=None,
-        start_marker='<<<<<<<',
-        mid_marker='=======',
-        end_marker='>>>>>>>',
+        start_marker=b'<<<<<<<',
+        mid_marker=b'=======',
+        end_marker=b'>>>>>>>',
         base_marker=None,
         localorother=None,
         minimize=False,
@@ -103,37 +103,37 @@ class Merge3Text(object):
         """Return merge in cvs-like form.
         """
         self.conflicts = False
-        newline = '\n'
+        newline = b'\n'
         if len(self.a) > 0:
-            if self.a[0].endswith('\r\n'):
-                newline = '\r\n'
-            elif self.a[0].endswith('\r'):
-                newline = '\r'
+            if self.a[0].endswith(b'\r\n'):
+                newline = b'\r\n'
+            elif self.a[0].endswith(b'\r'):
+                newline = b'\r'
         if name_a and start_marker:
-            start_marker = start_marker + ' ' + name_a
+            start_marker = start_marker + b' ' + name_a
         if name_b and end_marker:
-            end_marker = end_marker + ' ' + name_b
+            end_marker = end_marker + b' ' + name_b
         if name_base and base_marker:
-            base_marker = base_marker + ' ' + name_base
+            base_marker = base_marker + b' ' + name_base
         merge_regions = self.merge_regions()
         if minimize:
             merge_regions = self.minimize(merge_regions)
         for t in merge_regions:
             what = t[0]
-            if what == 'unchanged':
+            if what == b'unchanged':
                 for i in range(t[1], t[2]):
                     yield self.base[i]
-            elif what == 'a' or what == 'same':
+            elif what == b'a' or what == b'same':
                 for i in range(t[1], t[2]):
                     yield self.a[i]
-            elif what == 'b':
+            elif what == b'b':
                 for i in range(t[1], t[2]):
                     yield self.b[i]
-            elif what == 'conflict':
-                if localorother == 'local':
+            elif what == b'conflict':
+                if localorother == b'local':
                     for i in range(t[3], t[4]):
                         yield self.a[i]
-                elif localorother == 'other':
+                elif localorother == b'other':
                     for i in range(t[5], t[6]):
                         yield self.b[i]
                 else:
@@ -175,13 +175,13 @@ class Merge3Text(object):
         """
         for t in self.merge_regions():
             what = t[0]
-            if what == 'unchanged':
+            if what == b'unchanged':
                 yield what, self.base[t[1] : t[2]]
-            elif what == 'a' or what == 'same':
+            elif what == b'a' or what == b'same':
                 yield what, self.a[t[1] : t[2]]
-            elif what == 'b':
+            elif what == b'b':
                 yield what, self.b[t[1] : t[2]]
-            elif what == 'conflict':
+            elif what == b'conflict':
                 yield (
                     what,
                     self.base[t[1] : t[2]],
@@ -253,15 +253,15 @@ class Merge3Text(object):
                 same = compare_range(self.a, ia, amatch, self.b, ib, bmatch)
 
                 if same:
-                    yield 'same', ia, amatch
+                    yield b'same', ia, amatch
                 elif equal_a and not equal_b:
-                    yield 'b', ib, bmatch
+                    yield b'b', ib, bmatch
                 elif equal_b and not equal_a:
-                    yield 'a', ia, amatch
+                    yield b'a', ia, amatch
                 elif not equal_a and not equal_b:
-                    yield 'conflict', iz, zmatch, ia, amatch, ib, bmatch
+                    yield b'conflict', iz, zmatch, ia, amatch, ib, bmatch
                 else:
-                    raise AssertionError("can't handle a=b=base but unmatched")
+                    raise AssertionError(b"can't handle a=b=base but unmatched")
 
                 ia = amatch
                 ib = bmatch
@@ -275,7 +275,7 @@ class Merge3Text(object):
                 assert ib == bmatch
                 assert iz == zmatch
 
-                yield 'unchanged', zmatch, zend
+                yield b'unchanged', zmatch, zend
                 iz = zend
                 ia = aend
                 ib = bend
@@ -288,7 +288,7 @@ class Merge3Text(object):
         region and are instead considered the same.
         """
         for region in merge_regions:
-            if region[0] != "conflict":
+            if region[0] != b"conflict":
                 yield region
                 continue
             issue, z1, z2, a1, a2, b1, b2 = region
@@ -314,10 +314,10 @@ class Merge3Text(object):
             endmatches = ii
 
             if startmatches > 0:
-                yield 'same', a1, a1 + startmatches
+                yield b'same', a1, a1 + startmatches
 
             yield (
-                'conflict',
+                b'conflict',
                 z1,
                 z2,
                 a1 + startmatches,
@@ -327,7 +327,7 @@ class Merge3Text(object):
             )
 
             if endmatches > 0:
-                yield 'same', a2 - endmatches, a2
+                yield b'same', a2 - endmatches, a2
 
     def find_sync_regions(self):
         """Return a list of sync regions, where both descendants match the base.
@@ -420,17 +420,17 @@ def _verifytext(text, path, ui, opts):
     """verifies that text is non-binary (unless opts[text] is passed,
     then we just warn)"""
     if stringutil.binary(text):
-        msg = _("%s looks like a binary file.") % path
-        if not opts.get('quiet'):
-            ui.warn(_('warning: %s\n') % msg)
-        if not opts.get('text'):
+        msg = _(b"%s looks like a binary file.") % path
+        if not opts.get(b'quiet'):
+            ui.warn(_(b'warning: %s\n') % msg)
+        if not opts.get(b'text'):
             raise error.Abort(msg)
     return text
 
 
 def _picklabels(defaults, overrides):
     if len(overrides) > 3:
-        raise error.Abort(_("can only specify three labels."))
+        raise error.Abort(_(b"can only specify three labels."))
     result = defaults[:]
     for i, override in enumerate(overrides):
         result[i] = override
@@ -454,11 +454,11 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         # repository usually sees) might be more useful.
         return _verifytext(ctx.decodeddata(), ctx.path(), ui, opts)
 
-    mode = opts.get('mode', 'merge')
+    mode = opts.get(b'mode', b'merge')
     name_a, name_b, name_base = None, None, None
-    if mode != 'union':
+    if mode != b'union':
         name_a, name_b, name_base = _picklabels(
-            [localctx.path(), otherctx.path(), None], opts.get('label', [])
+            [localctx.path(), otherctx.path(), None], opts.get(b'label', [])
         )
 
     try:
@@ -470,29 +470,29 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
 
     m3 = Merge3Text(basetext, localtext, othertext)
     extrakwargs = {
-        "localorother": opts.get("localorother", None),
-        'minimize': True,
+        b"localorother": opts.get(b"localorother", None),
+        b'minimize': True,
     }
-    if mode == 'union':
-        extrakwargs['start_marker'] = None
-        extrakwargs['mid_marker'] = None
-        extrakwargs['end_marker'] = None
+    if mode == b'union':
+        extrakwargs[b'start_marker'] = None
+        extrakwargs[b'mid_marker'] = None
+        extrakwargs[b'end_marker'] = None
     elif name_base is not None:
-        extrakwargs['base_marker'] = '|||||||'
-        extrakwargs['name_base'] = name_base
-        extrakwargs['minimize'] = False
+        extrakwargs[b'base_marker'] = b'|||||||'
+        extrakwargs[b'name_base'] = name_base
+        extrakwargs[b'minimize'] = False
 
-    mergedtext = ""
+    mergedtext = b""
     for line in m3.merge_lines(
         name_a=name_a, name_b=name_b, **pycompat.strkwargs(extrakwargs)
     ):
-        if opts.get('print'):
+        if opts.get(b'print'):
             ui.fout.write(line)
         else:
             mergedtext += line
 
-    if not opts.get('print'):
+    if not opts.get(b'print'):
         localctx.write(mergedtext, localctx.flags())
 
-    if m3.conflicts and not mode == 'union':
+    if m3.conflicts and not mode == b'union':
         return 1

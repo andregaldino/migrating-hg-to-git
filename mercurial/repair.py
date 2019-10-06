@@ -36,16 +36,16 @@ def backupbundle(
 ):
     """create a bundle with the specified revisions as a backup"""
 
-    backupdir = "strip-backup"
+    backupdir = b"strip-backup"
     vfs = repo.vfs
     if not vfs.isdir(backupdir):
         vfs.mkdir(backupdir)
 
     # Include a hash of all the nodes in the filename for uniqueness
-    allcommits = repo.set('%ln::%ln', bases, heads)
+    allcommits = repo.set(b'%ln::%ln', bases, heads)
     allhashes = sorted(c.hex() for c in allcommits)
-    totalhash = hashlib.sha1(''.join(allhashes)).digest()
-    name = "%s/%s-%s-%s.hg" % (
+    totalhash = hashlib.sha1(b''.join(allhashes)).digest()
+    name = b"%s/%s-%s-%s.hg" % (
         backupdir,
         short(node),
         hex(totalhash[:4]),
@@ -54,25 +54,25 @@ def backupbundle(
 
     cgversion = changegroup.localversion(repo)
     comp = None
-    if cgversion != '01':
-        bundletype = "HG20"
+    if cgversion != b'01':
+        bundletype = b"HG20"
         if compress:
-            comp = 'BZ'
+            comp = b'BZ'
     elif compress:
-        bundletype = "HG10BZ"
+        bundletype = b"HG10BZ"
     else:
-        bundletype = "HG10UN"
+        bundletype = b"HG10UN"
 
     outgoing = discovery.outgoing(repo, missingroots=bases, missingheads=heads)
     contentopts = {
-        'cg.version': cgversion,
-        'obsolescence': obsolescence,
-        'phases': True,
+        b'cg.version': cgversion,
+        b'obsolescence': obsolescence,
+        b'phases': True,
     }
     return bundle2.writenewbundle(
         repo.ui,
         repo,
-        'strip',
+        b'strip',
         name,
         bundletype,
         outgoing,
@@ -109,16 +109,16 @@ def _collectbrokencsets(repo, files, striprev):
     return s
 
 
-def strip(ui, repo, nodelist, backup=True, topic='backup'):
+def strip(ui, repo, nodelist, backup=True, topic=b'backup'):
     # This function requires the caller to lock the repo, but it operates
     # within a transaction of its own, and thus requires there to be no current
     # transaction when it is called.
     if repo.currenttransaction() is not None:
-        raise error.ProgrammingError('cannot strip from inside a transaction')
+        raise error.ProgrammingError(b'cannot strip from inside a transaction')
 
     # Simple way to maintain backwards compatibility for this
     # argument.
-    if backup in ['none', 'strip']:
+    if backup in [b'none', b'strip']:
         backup = False
 
     repo = repo.unfiltered()
@@ -165,7 +165,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     stripbases = [cl.node(r) for r in tostrip]
 
     stripobsidx = obsmarkers = ()
-    if repo.ui.configbool('devel', 'strip-obsmarkers'):
+    if repo.ui.configbool(b'devel', b'strip-obsmarkers'):
         obsmarkers = obsutil.exclusivemarkers(repo, stripbases)
     if obsmarkers:
         stripobsidx = [
@@ -192,14 +192,14 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
             savebases,
             saveheads,
             node,
-            'temp',
+            b'temp',
             compress=False,
             obsolescence=False,
         )
 
     with ui.uninterruptible():
         try:
-            with repo.transaction("strip") as tr:
+            with repo.transaction(b"strip") as tr:
                 # TODO this code violates the interface abstraction of the
                 # transaction and makes assumptions that file storage is
                 # using append-only files. We'll need some kind of storage
@@ -216,7 +216,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
                 for i in pycompat.xrange(offset, len(tr._entries)):
                     file, troffset, ignore = tr._entries[i]
-                    with repo.svfs(file, 'a', checkambig=True) as fp:
+                    with repo.svfs(file, b'a', checkambig=True) as fp:
                         fp.truncate(troffset)
                     if troffset == 0:
                         repo.store.markremoved(file)
@@ -227,25 +227,25 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
                 repo._phasecache.filterunknown(repo)
 
             if tmpbundlefile:
-                ui.note(_("adding branch\n"))
-                f = vfs.open(tmpbundlefile, "rb")
+                ui.note(_(b"adding branch\n"))
+                f = vfs.open(tmpbundlefile, b"rb")
                 gen = exchange.readbundle(ui, f, tmpbundlefile, vfs)
                 if not repo.ui.verbose:
                     # silence internal shuffling chatter
                     repo.ui.pushbuffer()
-                tmpbundleurl = 'bundle:' + vfs.join(tmpbundlefile)
-                txnname = 'strip'
+                tmpbundleurl = b'bundle:' + vfs.join(tmpbundlefile)
+                txnname = b'strip'
                 if not isinstance(gen, bundle2.unbundle20):
-                    txnname = "strip\n%s" % util.hidepassword(tmpbundleurl)
+                    txnname = b"strip\n%s" % util.hidepassword(tmpbundleurl)
                 with repo.transaction(txnname) as tr:
                     bundle2.applybundle(
-                        repo, gen, tr, source='strip', url=tmpbundleurl
+                        repo, gen, tr, source=b'strip', url=tmpbundleurl
                     )
                 if not repo.ui.verbose:
                     repo.ui.popbuffer()
                 f.close()
 
-            with repo.transaction('repair') as tr:
+            with repo.transaction(b'repair') as tr:
                 bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
                 repo._bookmarks.applychanges(repo, tr, bmchanges)
 
@@ -256,7 +256,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
                 except OSError as e:
                     if e.errno != errno.ENOENT:
                         ui.warn(
-                            _('error removing %s: %s\n')
+                            _(b'error removing %s: %s\n')
                             % (
                                 undovfs.join(undofile),
                                 stringutil.forcebytestr(e),
@@ -266,18 +266,18 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         except:  # re-raises
             if backupfile:
                 ui.warn(
-                    _("strip failed, backup bundle stored in '%s'\n")
+                    _(b"strip failed, backup bundle stored in '%s'\n")
                     % vfs.join(backupfile)
                 )
             if tmpbundlefile:
                 ui.warn(
-                    _("strip failed, unrecovered changes stored in '%s'\n")
+                    _(b"strip failed, unrecovered changes stored in '%s'\n")
                     % vfs.join(tmpbundlefile)
                 )
                 ui.warn(
                     _(
-                        "(fix the problem, then recover the changesets with "
-                        "\"hg unbundle '%s'\")\n"
+                        b"(fix the problem, then recover the changesets with "
+                        b"\"hg unbundle '%s'\")\n"
                     )
                     % vfs.join(tmpbundlefile)
                 )
@@ -293,9 +293,9 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     return backupfile
 
 
-def softstrip(ui, repo, nodelist, backup=True, topic='backup'):
+def softstrip(ui, repo, nodelist, backup=True, topic=b'backup'):
     """perform a "soft" strip using the archived phase"""
-    tostrip = [c.node() for c in repo.set('sort(%ln::)', nodelist)]
+    tostrip = [c.node() for c in repo.set(b'sort(%ln::)', nodelist)]
     if not tostrip:
         return None
 
@@ -304,7 +304,7 @@ def softstrip(ui, repo, nodelist, backup=True, topic='backup'):
         node = tostrip[0]
         backupfile = _createstripbackup(repo, tostrip, node, topic)
 
-    with repo.transaction('strip') as tr:
+    with repo.transaction(b'strip') as tr:
         phases.retractboundary(repo, tr, phases.archived, tostrip)
         bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
         repo._bookmarks.applychanges(repo, tr, bmchanges)
@@ -325,11 +325,11 @@ def _bookmarkmovements(repo, tostrip):
     if updatebm:
         # For a set s, max(parents(s) - s) is the same as max(heads(::s - s)),
         # but is much faster
-        newbmtarget = repo.revs('max(parents(%ld) - (%ld))', tostrip, tostrip)
+        newbmtarget = repo.revs(b'max(parents(%ld) - (%ld))', tostrip, tostrip)
         if newbmtarget:
             newbmtarget = repo[newbmtarget.first()].node()
         else:
-            newbmtarget = '.'
+            newbmtarget = b'.'
     return newbmtarget, updatebm
 
 
@@ -338,9 +338,9 @@ def _createstripbackup(repo, stripbases, node, topic):
     vfs = repo.vfs
     cl = repo.changelog
     backupfile = backupbundle(repo, stripbases, cl.heads(), node, topic)
-    repo.ui.status(_("saved backup bundle to %s\n") % vfs.join(backupfile))
+    repo.ui.status(_(b"saved backup bundle to %s\n") % vfs.join(backupfile))
     repo.ui.log(
-        "backupbundle", "saved backup bundle to %s\n", vfs.join(backupfile)
+        b"backupbundle", b"saved backup bundle to %s\n", vfs.join(backupfile)
     )
     return backupfile
 
@@ -353,16 +353,16 @@ def safestriproots(ui, repo, nodes):
     # orphaned = affected - wanted
     # affected = descendants(roots(wanted))
     # wanted = revs
-    revset = '%ld - ( ::( (roots(%ld):: and not _phase(%s)) -%ld) )'
+    revset = b'%ld - ( ::( (roots(%ld):: and not _phase(%s)) -%ld) )'
     tostrip = set(repo.revs(revset, revs, revs, phases.internal, revs))
     notstrip = revs - tostrip
     if notstrip:
-        nodestr = ', '.join(sorted(short(repo[n].node()) for n in notstrip))
+        nodestr = b', '.join(sorted(short(repo[n].node()) for n in notstrip))
         ui.warn(
-            _('warning: orphaned descendants detected, ' 'not stripping %s\n')
+            _(b'warning: orphaned descendants detected, ' b'not stripping %s\n')
             % nodestr
         )
-    return [c.node() for c in repo.set('roots(%ld)', tostrip)]
+    return [c.node() for c in repo.set(b'roots(%ld)', tostrip)]
 
 
 class stripcallback(object):
@@ -372,7 +372,7 @@ class stripcallback(object):
         self.ui = ui
         self.repo = repo
         self.backup = backup
-        self.topic = topic or 'backup'
+        self.topic = topic or b'backup'
         self.nodelist = []
 
     def addnodes(self, nodes):
@@ -399,10 +399,10 @@ def delayedstrip(ui, repo, nodelist, topic=None, backup=True):
         return strip(ui, repo, nodes, backup=backup, topic=topic)
     # transaction postclose callbacks are called in alphabet order.
     # use '\xff' as prefix so we are likely to be called last.
-    callback = tr.getpostclose('\xffstrip')
+    callback = tr.getpostclose(b'\xffstrip')
     if callback is None:
         callback = stripcallback(ui, repo, backup=backup, topic=topic)
-        tr.addpostclose('\xffstrip', callback)
+        tr.addpostclose(b'\xffstrip', callback)
     if topic:
         callback.topic = topic
     callback.addnodes(nodelist)
@@ -415,12 +415,12 @@ def stripmanifest(repo, striprev, tr, files):
 
 def manifestrevlogs(repo):
     yield repo.manifestlog.getstorage(b'')
-    if 'treemanifest' in repo.requirements:
+    if b'treemanifest' in repo.requirements:
         # This logic is safe if treemanifest isn't enabled, but also
         # pointless, so we skip it if treemanifest isn't enabled.
         for unencoded, encoded, size in repo.store.datafiles():
-            if unencoded.startswith('meta/') and unencoded.endswith(
-                '00manifest.i'
+            if unencoded.startswith(b'meta/') and unencoded.endswith(
+                b'00manifest.i'
             ):
                 dir = unencoded[5:-12]
                 yield repo.manifestlog.getstorage(dir)
@@ -433,11 +433,11 @@ def rebuildfncache(ui, repo):
     """
     repo = repo.unfiltered()
 
-    if 'fncache' not in repo.requirements:
+    if b'fncache' not in repo.requirements:
         ui.warn(
             _(
-                '(not rebuilding fncache because repository does not '
-                'support fncache)\n'
+                b'(not rebuilding fncache because repository does not '
+                b'support fncache)\n'
             )
         )
         return
@@ -451,7 +451,7 @@ def rebuildfncache(ui, repo):
         seenfiles = set()
 
         progress = ui.makeprogress(
-            _('rebuilding'), unit=_('changesets'), total=len(repo)
+            _(b'rebuilding'), unit=_(b'changesets'), total=len(repo)
         )
         for rev in repo:
             progress.update(rev)
@@ -463,8 +463,8 @@ def rebuildfncache(ui, repo):
                     continue
                 seenfiles.add(f)
 
-                i = 'data/%s.i' % f
-                d = 'data/%s.d' % f
+                i = b'data/%s.i' % f
+                d = b'data/%s.d' % f
 
                 if repo.store._exists(i):
                     newentries.add(i)
@@ -473,12 +473,12 @@ def rebuildfncache(ui, repo):
 
         progress.complete()
 
-        if 'treemanifest' in repo.requirements:
+        if b'treemanifest' in repo.requirements:
             # This logic is safe if treemanifest isn't enabled, but also
             # pointless, so we skip it if treemanifest isn't enabled.
             for dir in util.dirs(seenfiles):
-                i = 'meta/%s/00manifest.i' % dir
-                d = 'meta/%s/00manifest.d' % dir
+                i = b'meta/%s/00manifest.i' % dir
+                d = b'meta/%s/00manifest.d' % dir
 
                 if repo.store._exists(i):
                     newentries.add(i)
@@ -488,22 +488,22 @@ def rebuildfncache(ui, repo):
         addcount = len(newentries - oldentries)
         removecount = len(oldentries - newentries)
         for p in sorted(oldentries - newentries):
-            ui.write(_('removing %s\n') % p)
+            ui.write(_(b'removing %s\n') % p)
         for p in sorted(newentries - oldentries):
-            ui.write(_('adding %s\n') % p)
+            ui.write(_(b'adding %s\n') % p)
 
         if addcount or removecount:
             ui.write(
-                _('%d items added, %d removed from fncache\n')
+                _(b'%d items added, %d removed from fncache\n')
                 % (addcount, removecount)
             )
             fnc.entries = newentries
             fnc._dirty = True
 
-            with repo.transaction('fncache') as tr:
+            with repo.transaction(b'fncache') as tr:
                 fnc.write(tr)
         else:
-            ui.write(_('fncache already up to date\n'))
+            ui.write(_(b'fncache already up to date\n'))
 
 
 def deleteobsmarkers(obsstore, indices):
@@ -529,7 +529,7 @@ def deleteobsmarkers(obsstore, indices):
             continue
         left.append(m)
 
-    newobsstorefile = obsstore.svfs('obsstore', 'w', atomictemp=True)
+    newobsstorefile = obsstore.svfs(b'obsstore', b'w', atomictemp=True)
     for bytes in obsolete.encodemarkers(left, True, obsstore._version):
         newobsstorefile.write(bytes)
     newobsstorefile.close()

@@ -404,7 +404,7 @@ def checkcertificatechain(cert, build=True):
         X509_ASN_ENCODING, cert, len(cert)
     )
     if certctx is None:
-        _raiseoserror('CertCreateCertificateContext')
+        _raiseoserror(b'CertCreateCertificateContext')
 
     flags = 0
 
@@ -423,7 +423,7 @@ def checkcertificatechain(cert, build=True):
             None,  # pvReserved
             ctypes.byref(pchainctx),
         ):
-            _raiseoserror('CertGetCertificateChain')
+            _raiseoserror(b'CertGetCertificateChain')
 
         chainctx = pchainctx.contents
 
@@ -543,7 +543,7 @@ def getfstype(path):
     t = _kernel32.GetDriveTypeA(volume)
 
     if t == _DRIVE_REMOTE:
-        return 'cifs'
+        return b'cifs'
     elif t not in (
         _DRIVE_REMOVABLE,
         _DRIVE_FIXED,
@@ -663,12 +663,12 @@ def spawndetached(args):
 
     pi = _PROCESS_INFORMATION()
 
-    env = ''
+    env = b''
     for k in encoding.environ:
-        env += "%s=%s\0" % (k, encoding.environ[k])
+        env += b"%s=%s\0" % (k, encoding.environ[k])
     if not env:
-        env = '\0'
-    env += '\0'
+        env = b'\0'
+    env += b'\0'
 
     args = subprocess.list2cmdline(pycompat.rapply(encoding.strfromlocal, args))
 
@@ -724,7 +724,7 @@ def unlink(f):
     # implicit zombie filename blocking on a temporary name.
 
     for tries in pycompat.xrange(10):
-        temp = '%s-%08x' % (f, random.randint(0, 0xFFFFFFFF))
+        temp = b'%s-%08x' % (f, random.randint(0, 0xFFFFFFFF))
         try:
             os.rename(f, temp)  # raises OSError EEXIST if temp exists
             break

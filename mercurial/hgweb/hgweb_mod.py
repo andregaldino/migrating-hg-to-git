@@ -48,35 +48,35 @@ from . import (
 
 def getstyle(req, configfn, templatepath):
     styles = (
-        req.qsparams.get('style', None),
-        configfn('web', 'style'),
-        'paper',
+        req.qsparams.get(b'style', None),
+        configfn(b'web', b'style'),
+        b'paper',
     )
     return styles, templater.stylemap(styles, templatepath)
 
 
-def makebreadcrumb(url, prefix=''):
+def makebreadcrumb(url, prefix=b''):
     '''Return a 'URL breadcrumb' list
 
     A 'URL breadcrumb' is a list of URL-name pairs,
     corresponding to each of the path items on a URL.
     This can be used to create path navigation entries.
     '''
-    if url.endswith('/'):
+    if url.endswith(b'/'):
         url = url[:-1]
     if prefix:
-        url = '/' + prefix + url
+        url = b'/' + prefix + url
     relpath = url
-    if relpath.startswith('/'):
+    if relpath.startswith(b'/'):
         relpath = relpath[1:]
 
     breadcrumb = []
     urlel = url
-    pathitems = [''] + relpath.split('/')
+    pathitems = [b''] + relpath.split(b'/')
     for pathel in reversed(pathitems):
         if not pathel or not urlel:
             break
-        breadcrumb.append({'url': urlel, 'name': pathel})
+        breadcrumb.append({b'url': urlel, b'name': pathel})
         urlel = os.path.dirname(urlel)
     return templateutil.mappinglist(reversed(breadcrumb))
 
@@ -95,16 +95,16 @@ class requestcontext(object):
         self.req = req
         self.res = res
 
-        self.maxchanges = self.configint('web', 'maxchanges')
-        self.stripecount = self.configint('web', 'stripes')
-        self.maxshortchanges = self.configint('web', 'maxshortchanges')
-        self.maxfiles = self.configint('web', 'maxfiles')
-        self.allowpull = self.configbool('web', 'allow-pull')
+        self.maxchanges = self.configint(b'web', b'maxchanges')
+        self.stripecount = self.configint(b'web', b'stripes')
+        self.maxshortchanges = self.configint(b'web', b'maxshortchanges')
+        self.maxfiles = self.configint(b'web', b'maxfiles')
+        self.allowpull = self.configbool(b'web', b'allow-pull')
 
         # we use untrusted=False to prevent a repo owner from using
         # web.templates in .hg/hgrc to get access to any file readable
         # by the user running the CGI script
-        self.templatepath = self.config('web', 'templates', untrusted=False)
+        self.templatepath = self.config(b'web', b'templates', untrusted=False)
 
         # This object is more expensive to build than simple config values.
         # It is shared across requests. The app will replace the object
@@ -140,27 +140,27 @@ class requestcontext(object):
     def templater(self, req):
         # determine scheme, port and server name
         # this is needed to create absolute urls
-        logourl = self.config('web', 'logourl')
-        logoimg = self.config('web', 'logoimg')
+        logourl = self.config(b'web', b'logourl')
+        logoimg = self.config(b'web', b'logoimg')
         staticurl = (
-            self.config('web', 'staticurl')
-            or req.apppath.rstrip('/') + '/static/'
+            self.config(b'web', b'staticurl')
+            or req.apppath.rstrip(b'/') + b'/static/'
         )
-        if not staticurl.endswith('/'):
-            staticurl += '/'
+        if not staticurl.endswith(b'/'):
+            staticurl += b'/'
 
         # figure out which style to use
 
         vars = {}
         styles, (style, mapfile) = getstyle(req, self.config, self.templatepath)
         if style == styles[0]:
-            vars['style'] = style
+            vars[b'style'] = style
 
-        sessionvars = webutil.sessionvars(vars, '?')
+        sessionvars = webutil.sessionvars(vars, b'?')
 
         if not self.reponame:
             self.reponame = (
-                self.config('web', 'name', '')
+                self.config(b'web', b'name', b'')
                 or req.reponame
                 or req.apppath
                 or self.repo.root
@@ -169,30 +169,30 @@ class requestcontext(object):
         filters = {}
         templatefilter = registrar.templatefilter(filters)
 
-        @templatefilter('websub', intype=bytes)
+        @templatefilter(b'websub', intype=bytes)
         def websubfilter(text):
             return templatefilters.websub(text, self.websubtable)
 
         # create the templater
         # TODO: export all keywords: defaults = templatekw.keywords.copy()
         defaults = {
-            'url': req.apppath + '/',
-            'logourl': logourl,
-            'logoimg': logoimg,
-            'staticurl': staticurl,
-            'urlbase': req.advertisedbaseurl,
-            'repo': self.reponame,
-            'encoding': encoding.encoding,
-            'sessionvars': sessionvars,
-            'pathdef': makebreadcrumb(req.apppath),
-            'style': style,
-            'nonce': self.nonce,
+            b'url': req.apppath + b'/',
+            b'logourl': logourl,
+            b'logoimg': logoimg,
+            b'staticurl': staticurl,
+            b'urlbase': req.advertisedbaseurl,
+            b'repo': self.reponame,
+            b'encoding': encoding.encoding,
+            b'sessionvars': sessionvars,
+            b'pathdef': makebreadcrumb(req.apppath),
+            b'style': style,
+            b'nonce': self.nonce,
         }
         templatekeyword = registrar.templatekeyword(defaults)
 
-        @templatekeyword('motd', requires=())
+        @templatekeyword(b'motd', requires=())
         def motd(context, mapping):
-            yield self.config('web', 'motd')
+            yield self.config(b'web', b'motd')
 
         tres = formatter.templateresources(self.repo.ui, self.repo)
         tmpl = templater.templater.frommapfile(
@@ -232,23 +232,23 @@ class hgweb(object):
             # we trust caller to give us a private copy
             r = repo
 
-        r.ui.setconfig('ui', 'report_untrusted', 'off', 'hgweb')
-        r.baseui.setconfig('ui', 'report_untrusted', 'off', 'hgweb')
-        r.ui.setconfig('ui', 'nontty', 'true', 'hgweb')
-        r.baseui.setconfig('ui', 'nontty', 'true', 'hgweb')
+        r.ui.setconfig(b'ui', b'report_untrusted', b'off', b'hgweb')
+        r.baseui.setconfig(b'ui', b'report_untrusted', b'off', b'hgweb')
+        r.ui.setconfig(b'ui', b'nontty', b'true', b'hgweb')
+        r.baseui.setconfig(b'ui', b'nontty', b'true', b'hgweb')
         # resolve file patterns relative to repo root
-        r.ui.setconfig('ui', 'forcecwd', r.root, 'hgweb')
-        r.baseui.setconfig('ui', 'forcecwd', r.root, 'hgweb')
+        r.ui.setconfig(b'ui', b'forcecwd', r.root, b'hgweb')
+        r.baseui.setconfig(b'ui', b'forcecwd', r.root, b'hgweb')
         # it's unlikely that we can replace signal handlers in WSGI server,
         # and mod_wsgi issues a big warning. a plain hgweb process (with no
         # threading) could replace signal handlers, but we don't bother
         # conditionally enabling it.
-        r.ui.setconfig('ui', 'signal-safe-lock', 'false', 'hgweb')
-        r.baseui.setconfig('ui', 'signal-safe-lock', 'false', 'hgweb')
+        r.ui.setconfig(b'ui', b'signal-safe-lock', b'false', b'hgweb')
+        r.baseui.setconfig(b'ui', b'signal-safe-lock', b'false', b'hgweb')
         # displaying bundling progress bar while serving feel wrong and may
         # break some wsgi implementation.
-        r.ui.setconfig('progress', 'disable', 'true', 'hgweb')
-        r.baseui.setconfig('progress', 'disable', 'true', 'hgweb')
+        r.ui.setconfig(b'progress', b'disable', b'true', b'hgweb')
+        r.baseui.setconfig(b'progress', b'disable', b'true', b'hgweb')
         self._repos = [hg.cachedlocalrepo(self._webifyrepo(r))]
         self._lastrepo = self._repos[0]
         hook.redirect(True)
@@ -294,12 +294,12 @@ class hgweb(object):
         Modern servers should be using WSGI and should avoid this
         method, if possible.
         """
-        if not encoding.environ.get('GATEWAY_INTERFACE', '').startswith(
-            "CGI/1."
+        if not encoding.environ.get(b'GATEWAY_INTERFACE', b'').startswith(
+            b"CGI/1."
         ):
             raise RuntimeError(
-                "This function is only intended to be "
-                "called while running as a CGI script."
+                b"This function is only intended to be "
+                b"called while running as a CGI script."
             )
         wsgicgi.launch(self)
 
@@ -320,7 +320,7 @@ class hgweb(object):
         should be using instances of this class as the WSGI application.
         """
         with self._obtainrepo() as repo:
-            profile = repo.ui.configbool('profiling', 'enabled')
+            profile = repo.ui.configbool(b'profiling', b'enabled')
             with profiling.profile(repo.ui, enabled=profile):
                 for r in self._runwsgi(req, res, repo):
                     yield r
@@ -329,19 +329,19 @@ class hgweb(object):
         rctx = requestcontext(self, repo, req, res)
 
         # This state is global across all threads.
-        encoding.encoding = rctx.config('web', 'encoding')
+        encoding.encoding = rctx.config(b'web', b'encoding')
         rctx.repo.ui.environ = req.rawenv
 
         if rctx.csp:
             # hgwebdir may have added CSP header. Since we generate our own,
             # replace it.
-            res.headers['Content-Security-Policy'] = rctx.csp
+            res.headers[b'Content-Security-Policy'] = rctx.csp
 
         # /api/* is reserved for various API implementations. Dispatch
         # accordingly. But URL paths can conflict with subrepos and virtual
         # repos in hgwebdir. So until we have a workaround for this, only
         # expose the URLs if the feature is enabled.
-        apienabled = rctx.repo.ui.configbool('experimental', 'web.apiserver')
+        apienabled = rctx.repo.ui.configbool(b'experimental', b'web.apiserver')
         if apienabled and req.dispatchparts and req.dispatchparts[0] == b'api':
             wireprotoserver.handlewsgiapirequest(
                 rctx, req, res, self.check_perm
@@ -361,70 +361,70 @@ class hgweb(object):
         if req.dispatchpath is not None:
             query = req.dispatchpath
         else:
-            query = req.querystring.partition('&')[0].partition(';')[0]
+            query = req.querystring.partition(b'&')[0].partition(b';')[0]
 
         # translate user-visible url structure to internal structure
 
-        args = query.split('/', 2)
-        if 'cmd' not in req.qsparams and args and args[0]:
+        args = query.split(b'/', 2)
+        if b'cmd' not in req.qsparams and args and args[0]:
             cmd = args.pop(0)
-            style = cmd.rfind('-')
+            style = cmd.rfind(b'-')
             if style != -1:
-                req.qsparams['style'] = cmd[:style]
+                req.qsparams[b'style'] = cmd[:style]
                 cmd = cmd[style + 1 :]
 
             # avoid accepting e.g. style parameter as command
             if util.safehasattr(webcommands, cmd):
-                req.qsparams['cmd'] = cmd
+                req.qsparams[b'cmd'] = cmd
 
-            if cmd == 'static':
-                req.qsparams['file'] = '/'.join(args)
+            if cmd == b'static':
+                req.qsparams[b'file'] = b'/'.join(args)
             else:
                 if args and args[0]:
-                    node = args.pop(0).replace('%2F', '/')
-                    req.qsparams['node'] = node
+                    node = args.pop(0).replace(b'%2F', b'/')
+                    req.qsparams[b'node'] = node
                 if args:
-                    if 'file' in req.qsparams:
-                        del req.qsparams['file']
+                    if b'file' in req.qsparams:
+                        del req.qsparams[b'file']
                     for a in args:
-                        req.qsparams.add('file', a)
+                        req.qsparams.add(b'file', a)
 
-            ua = req.headers.get('User-Agent', '')
-            if cmd == 'rev' and 'mercurial' in ua:
-                req.qsparams['style'] = 'raw'
+            ua = req.headers.get(b'User-Agent', b'')
+            if cmd == b'rev' and b'mercurial' in ua:
+                req.qsparams[b'style'] = b'raw'
 
-            if cmd == 'archive':
-                fn = req.qsparams['node']
+            if cmd == b'archive':
+                fn = req.qsparams[b'node']
                 for type_, spec in webutil.archivespecs.iteritems():
                     ext = spec[2]
                     if fn.endswith(ext):
-                        req.qsparams['node'] = fn[: -len(ext)]
-                        req.qsparams['type'] = type_
+                        req.qsparams[b'node'] = fn[: -len(ext)]
+                        req.qsparams[b'type'] = type_
         else:
-            cmd = req.qsparams.get('cmd', '')
+            cmd = req.qsparams.get(b'cmd', b'')
 
         # process the web interface request
 
         try:
             rctx.tmpl = rctx.templater(req)
             ctype = rctx.tmpl.render(
-                'mimetype', {'encoding': encoding.encoding}
+                b'mimetype', {b'encoding': encoding.encoding}
             )
 
             # check read permissions non-static content
-            if cmd != 'static':
+            if cmd != b'static':
                 self.check_perm(rctx, req, None)
 
-            if cmd == '':
-                req.qsparams['cmd'] = rctx.tmpl.render('default', {})
-                cmd = req.qsparams['cmd']
+            if cmd == b'':
+                req.qsparams[b'cmd'] = rctx.tmpl.render(b'default', {})
+                cmd = req.qsparams[b'cmd']
 
             # Don't enable caching if using a CSP nonce because then it wouldn't
             # be a nonce.
-            if rctx.configbool('web', 'cache') and not rctx.nonce:
-                tag = 'W/"%d"' % self.mtime
-                if req.headers.get('If-None-Match') == tag:
-                    res.status = '304 Not Modified'
+            if rctx.configbool(b'web', b'cache') and not rctx.nonce:
+                tag = b'W/"%d"' % self.mtime
+                if req.headers.get(b'If-None-Match') == tag:
+                    res.status = b'304 Not Modified'
                     # Content-Type may be defined globally. It isn't valid on a
                     # 304, so discard it.
                     try:
@@ -432,45 +432,45 @@ class hgweb(object):
                     except KeyError:
                         pass
                     # Response body not allowed on 304.
-                    res.setbodybytes('')
+                    res.setbodybytes(b'')
                     return res.sendresponse()
 
-                res.headers['ETag'] = tag
+                res.headers[b'ETag'] = tag
 
             if cmd not in webcommands.__all__:
-                msg = 'no such method: %s' % cmd
+                msg = b'no such method: %s' % cmd
                 raise ErrorResponse(HTTP_BAD_REQUEST, msg)
             else:
                 # Set some globals appropriate for web handlers. Commands can
                 # override easily enough.
-                res.status = '200 Script output follows'
-                res.headers['Content-Type'] = ctype
+                res.status = b'200 Script output follows'
+                res.headers[b'Content-Type'] = ctype
                 return getattr(webcommands, cmd)(rctx)
 
         except (error.LookupError, error.RepoLookupError) as err:
             msg = pycompat.bytestr(err)
-            if util.safehasattr(err, 'name') and not isinstance(
+            if util.safehasattr(err, b'name') and not isinstance(
                 err, error.ManifestLookupError
             ):
-                msg = 'revision not found: %s' % err.name
+                msg = b'revision not found: %s' % err.name
 
-            res.status = '404 Not Found'
-            res.headers['Content-Type'] = ctype
-            return rctx.sendtemplate('error', error=msg)
+            res.status = b'404 Not Found'
+            res.headers[b'Content-Type'] = ctype
+            return rctx.sendtemplate(b'error', error=msg)
         except (error.RepoError, error.StorageError) as e:
-            res.status = '500 Internal Server Error'
-            res.headers['Content-Type'] = ctype
-            return rctx.sendtemplate('error', error=pycompat.bytestr(e))
+            res.status = b'500 Internal Server Error'
+            res.headers[b'Content-Type'] = ctype
+            return rctx.sendtemplate(b'error', error=pycompat.bytestr(e))
         except error.Abort as e:
-            res.status = '403 Forbidden'
-            res.headers['Content-Type'] = ctype
-            return rctx.sendtemplate('error', error=pycompat.bytestr(e))
+            res.status = b'403 Forbidden'
+            res.headers[b'Content-Type'] = ctype
+            return rctx.sendtemplate(b'error', error=pycompat.bytestr(e))
         except ErrorResponse as e:
             for k, v in e.headers:
                 res.headers[k] = v
             res.status = statusmessage(e.code, pycompat.bytestr(e))
-            res.headers['Content-Type'] = ctype
-            return rctx.sendtemplate('error', error=pycompat.bytestr(e))
+            res.headers[b'Content-Type'] = ctype
+            return rctx.sendtemplate(b'error', error=pycompat.bytestr(e))
 
     def check_perm(self, rctx, req, op):
         for permhook in permhooks:
@@ -489,10 +489,10 @@ def getwebview(repo):
     The option has been around undocumented since Mercurial 2.5, but no
     user ever asked about it. So we better keep it undocumented for now."""
     # experimental config: web.view
-    viewconfig = repo.ui.config('web', 'view', untrusted=True)
-    if viewconfig == 'all':
+    viewconfig = repo.ui.config(b'web', b'view', untrusted=True)
+    if viewconfig == b'all':
         return repo.unfiltered()
     elif viewconfig in repoview.filtertable:
         return repo.filtered(viewconfig)
     else:
-        return repo.filtered('served')
+        return repo.filtered(b'served')

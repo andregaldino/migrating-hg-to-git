@@ -51,15 +51,15 @@ def setupserver(ui, repo):
             includepattern = None
             excludepattern = None
             for cap in self._bundlecaps or []:
-                if cap.startswith("includepattern="):
-                    includepattern = cap[len("includepattern=") :].split('\0')
-                elif cap.startswith("excludepattern="):
-                    excludepattern = cap[len("excludepattern=") :].split('\0')
+                if cap.startswith(b"includepattern="):
+                    includepattern = cap[len(b"includepattern=") :].split(b'\0')
+                elif cap.startswith(b"excludepattern="):
+                    excludepattern = cap[len(b"excludepattern=") :].split(b'\0')
 
             m = match.always()
             if includepattern or excludepattern:
                 m = match.match(
-                    repo.root, '', None, includepattern, excludepattern
+                    repo.root, b'', None, includepattern, excludepattern
                 )
 
             changedfiles = list([f for f in changedfiles if not m(f)])
@@ -68,7 +68,7 @@ def setupserver(ui, repo):
         )
 
     extensions.wrapfunction(
-        changegroup.cgpacker, 'generatefiles', generatefiles
+        changegroup.cgpacker, b'generatefiles', generatefiles
     )
 
 
@@ -85,13 +85,13 @@ def onetimesetup(ui):
 
     # support file content requests
     wireprotov1server.wireprotocommand(
-        'x_rfl_getflogheads', 'path', permission='pull'
+        b'x_rfl_getflogheads', b'path', permission=b'pull'
     )(getflogheads)
-    wireprotov1server.wireprotocommand('x_rfl_getfiles', '', permission='pull')(
-        getfiles
-    )
     wireprotov1server.wireprotocommand(
-        'x_rfl_getfile', 'file node', permission='pull'
+        b'x_rfl_getfiles', b'', permission=b'pull'
+    )(getfiles)
+    wireprotov1server.wireprotocommand(
+        b'x_rfl_getfile', b'file node', permission=b'pull'
     )(getfile)
 
     class streamstate(object):
@@ -104,12 +104,12 @@ def onetimesetup(ui):
     def stream_out_shallow(repo, proto, other):
         includepattern = None
         excludepattern = None
-        raw = other.get('includepattern')
+        raw = other.get(b'includepattern')
         if raw:
-            includepattern = raw.split('\0')
-        raw = other.get('excludepattern')
+            includepattern = raw.split(b'\0')
+        raw = other.get(b'excludepattern')
         if raw:
-            excludepattern = raw.split('\0')
+            excludepattern = raw.split(b'\0')
 
         oldshallow = state.shallowremote
         oldmatch = state.match
@@ -117,10 +117,10 @@ def onetimesetup(ui):
         try:
             state.shallowremote = True
             state.match = match.always()
-            state.noflatmf = other.get('noflatmanifest') == 'True'
+            state.noflatmf = other.get(b'noflatmanifest') == b'True'
             if includepattern or excludepattern:
                 state.match = match.match(
-                    repo.root, '', None, includepattern, excludepattern
+                    repo.root, b'', None, includepattern, excludepattern
                 )
             streamres = wireprotov1server.stream(repo, proto)
 
@@ -141,7 +141,10 @@ def onetimesetup(ui):
             state.match = oldmatch
             state.noflatmf = oldnoflatmf
 
-    wireprotov1server.commands['stream_out_shallow'] = (stream_out_shallow, '*')
+    wireprotov1server.commands[b'stream_out_shallow'] = (
+        stream_out_shallow,
+        b'*',
+    )
 
     # don't clone filelogs to shallow clients
     def _walkstreamfiles(orig, repo, matcher=None):
@@ -150,22 +153,24 @@ def onetimesetup(ui):
             if shallowutil.isenabled(repo):
                 striplen = len(repo.store.path) + 1
                 readdir = repo.store.rawvfs.readdir
-                visit = [os.path.join(repo.store.path, 'data')]
+                visit = [os.path.join(repo.store.path, b'data')]
                 while visit:
                     p = visit.pop()
                     for f, kind, st in readdir(p, stat=True):
-                        fp = p + '/' + f
+                        fp = p + b'/' + f
                         if kind == stat.S_IFREG:
-                            if not fp.endswith('.i') and not fp.endswith('.d'):
+                            if not fp.endswith(b'.i') and not fp.endswith(
+                                b'.d'
+                            ):
                                 n = util.pconvert(fp[striplen:])
                                 yield (store.decodedir(n), n, st.st_size)
                         if kind == stat.S_IFDIR:
                             visit.append(fp)
 
-            if 'treemanifest' in repo.requirements:
+            if b'treemanifest' in repo.requirements:
                 for (u, e, s) in repo.store.datafiles():
-                    if u.startswith('meta/') and (
-                        u.endswith('.i') or u.endswith('.d')
+                    if u.startswith(b'meta/') and (
+                        u.endswith(b'.i') or u.endswith(b'.d')
                     ):
                         yield (u, e, s)
 
@@ -178,7 +183,7 @@ def onetimesetup(ui):
                         yield (u, e, s)
 
             for x in repo.store.topfiles():
-                if state.noflatmf and x[0][:11] == '00manifest.':
+                if state.noflatmf and x[0][:11] == b'00manifest.':
                     continue
                 yield x
 
@@ -187,47 +192,47 @@ def onetimesetup(ui):
             # since it would require fetching every version of every
             # file in order to create the revlogs.
             raise error.Abort(
-                _("Cannot clone from a shallow repo " "to a full repo.")
+                _(b"Cannot clone from a shallow repo " b"to a full repo.")
             )
         else:
             for x in orig(repo, matcher):
                 yield x
 
-    extensions.wrapfunction(streamclone, '_walkstreamfiles', _walkstreamfiles)
+    extensions.wrapfunction(streamclone, b'_walkstreamfiles', _walkstreamfiles)
 
     # expose remotefilelog capabilities
     def _capabilities(orig, repo, proto):
         caps = orig(repo, proto)
         if shallowutil.isenabled(repo) or ui.configbool(
-            'remotefilelog', 'server'
+            b'remotefilelog', b'server'
         ):
             if isinstance(proto, _sshv1server):
                 # legacy getfiles method which only works over ssh
                 caps.append(constants.NETWORK_CAP_LEGACY_SSH_GETFILES)
-            caps.append('x_rfl_getflogheads')
-            caps.append('x_rfl_getfile')
+            caps.append(b'x_rfl_getflogheads')
+            caps.append(b'x_rfl_getfile')
         return caps
 
-    extensions.wrapfunction(wireprotov1server, '_capabilities', _capabilities)
+    extensions.wrapfunction(wireprotov1server, b'_capabilities', _capabilities)
 
     def _adjustlinkrev(orig, self, *args, **kwargs):
         # When generating file blobs, taking the real path is too slow on large
         # repos, so force it to just return the linkrev directly.
         repo = self._repo
-        if util.safehasattr(repo, 'forcelinkrev') and repo.forcelinkrev:
+        if util.safehasattr(repo, b'forcelinkrev') and repo.forcelinkrev:
             return self._filelog.linkrev(self._filelog.rev(self._filenode))
         return orig(self, *args, **kwargs)
 
     extensions.wrapfunction(
-        context.basefilectx, '_adjustlinkrev', _adjustlinkrev
+        context.basefilectx, b'_adjustlinkrev', _adjustlinkrev
     )
 
     def _iscmd(orig, cmd):
-        if cmd == 'x_rfl_getfiles':
+        if cmd == b'x_rfl_getfiles':
             return False
         return orig(cmd)
 
-    extensions.wrapfunction(wireprotoserver, 'iscmd', _iscmd)
+    extensions.wrapfunction(wireprotoserver, b'iscmd', _iscmd)
 
 
 def _loadfileblob(repo, cachepath, path, node):
@@ -255,7 +260,7 @@ def _loadfileblob(repo, cachepath, path, node):
 
             f = None
             try:
-                f = util.atomictempfile(filecachepath, "wb")
+                f = util.atomictempfile(filecachepath, b"wb")
                 f.write(text)
             except (IOError, OSError):
                 # Don't abort if the user only has permission to read,
@@ -267,7 +272,7 @@ def _loadfileblob(repo, cachepath, path, node):
         finally:
             os.umask(oldumask)
     else:
-        with open(filecachepath, "rb") as f:
+        with open(filecachepath, b"rb") as f:
             text = f.read()
     return text
 
@@ -277,7 +282,7 @@ def getflogheads(repo, proto, path):
     """
     flog = repo.file(path)
     heads = flog.heads()
-    return '\n'.join((hex(head) for head in heads if head != nullid))
+    return b'\n'.join((hex(head) for head in heads if head != nullid))
 
 
 def getfile(repo, proto, file, node):
@@ -290,30 +295,30 @@ def getfile(repo, proto, file, node):
     createfileblob for its content.
     """
     if shallowutil.isenabled(repo):
-        return '1\0' + _('cannot fetch remote files from shallow repo')
-    cachepath = repo.ui.config("remotefilelog", "servercachepath")
+        return b'1\0' + _(b'cannot fetch remote files from shallow repo')
+    cachepath = repo.ui.config(b"remotefilelog", b"servercachepath")
     if not cachepath:
-        cachepath = os.path.join(repo.path, "remotefilelogcache")
+        cachepath = os.path.join(repo.path, b"remotefilelogcache")
     node = bin(node.strip())
     if node == nullid:
-        return '0\0'
-    return '0\0' + _loadfileblob(repo, cachepath, file, node)
+        return b'0\0'
+    return b'0\0' + _loadfileblob(repo, cachepath, file, node)
 
 
 def getfiles(repo, proto):
     """A server api for requesting particular versions of particular files.
     """
     if shallowutil.isenabled(repo):
-        raise error.Abort(_('cannot fetch remote files from shallow repo'))
+        raise error.Abort(_(b'cannot fetch remote files from shallow repo'))
     if not isinstance(proto, _sshv1server):
-        raise error.Abort(_('cannot fetch remote files over non-ssh protocol'))
+        raise error.Abort(_(b'cannot fetch remote files over non-ssh protocol'))
 
     def streamer():
         fin = proto._fin
 
-        cachepath = repo.ui.config("remotefilelog", "servercachepath")
+        cachepath = repo.ui.config(b"remotefilelog", b"servercachepath")
         if not cachepath:
-            cachepath = os.path.join(repo.path, "remotefilelogcache")
+            cachepath = os.path.join(repo.path, b"remotefilelogcache")
 
         while True:
             request = fin.readline()[:-1]
@@ -322,14 +327,14 @@ def getfiles(repo, proto):
 
             node = bin(request[:40])
             if node == nullid:
-                yield '0\n'
+                yield b'0\n'
                 continue
 
             path = request[40:]
 
             text = _loadfileblob(repo, cachepath, path, node)
 
-            yield '%d\n%s' % (len(text), text)
+            yield b'%d\n%s' % (len(text), text)
 
             # it would be better to only flush after processing a whole batch
             # but currently we don't know if there are more requests coming
@@ -371,7 +376,7 @@ def createfileblob(filectx):
         repo.forcelinkrev = True
         ancestors.extend([f for f in filectx.ancestors()])
 
-        ancestortext = ""
+        ancestortext = b""
         for ancestorctx in ancestors:
             parents = ancestorctx.parents()
             p1 = nullid
@@ -381,12 +386,12 @@ def createfileblob(filectx):
             if len(parents) > 1:
                 p2 = parents[1].filenode()
 
-            copyname = ""
+            copyname = b""
             rename = ancestorctx.renamed()
             if rename:
                 copyname = rename[0]
             linknode = ancestorctx.node()
-            ancestortext += "%s%s%s%s%s\0" % (
+            ancestortext += b"%s%s%s%s%s\0" % (
                 ancestorctx.filenode(),
                 p1,
                 p2,
@@ -398,17 +403,17 @@ def createfileblob(filectx):
 
     header = shallowutil.buildfileblobheader(len(text), revlogflags)
 
-    return "%s\0%s%s" % (header, text, ancestortext)
+    return b"%s\0%s%s" % (header, text, ancestortext)
 
 
 def gcserver(ui, repo):
-    if not repo.ui.configbool("remotefilelog", "server"):
+    if not repo.ui.configbool(b"remotefilelog", b"server"):
         return
 
     neededfiles = set()
-    heads = repo.revs("heads(tip~25000:) - null")
+    heads = repo.revs(b"heads(tip~25000:) - null")
 
-    cachepath = repo.vfs.join("remotefilelogcache")
+    cachepath = repo.vfs.join(b"remotefilelogcache")
     for head in heads:
         mf = repo[head].manifest()
         for filename, filenode in mf.iteritems():
@@ -416,10 +421,10 @@ def gcserver(ui, repo):
             neededfiles.add(filecachepath)
 
     # delete unneeded older files
-    days = repo.ui.configint("remotefilelog", "serverexpiration")
+    days = repo.ui.configint(b"remotefilelog", b"serverexpiration")
     expiration = time.time() - (days * 24 * 60 * 60)
 
-    progress = ui.makeprogress(_("removing old server cache"), unit="files")
+    progress = ui.makeprogress(_(b"removing old server cache"), unit=b"files")
     progress.update(0)
     for root, dirs, files in os.walk(cachepath):
         for file in files:

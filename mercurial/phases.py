@@ -121,7 +121,7 @@ from . import (
     util,
 )
 
-_fphasesentry = struct.Struct('>i20s')
+_fphasesentry = struct.Struct(b'>i20s')
 
 INTERNAL_FLAG = 64  # Phases for mercurial internal usage only
 HIDEABLE_FLAG = 32  # Phases that are hideable
@@ -133,11 +133,11 @@ archived = HIDEABLE_FLAG
 allphases = range(internal + 1)
 trackedphases = allphases[1:]
 # record phase names
-cmdphasenames = ['public', 'draft', 'secret']  # known to `hg phase` command
+cmdphasenames = [b'public', b'draft', b'secret']  # known to `hg phase` command
 phasenames = [None] * len(allphases)
 phasenames[: len(cmdphasenames)] = cmdphasenames
-phasenames[archived] = 'archived'
-phasenames[internal] = 'internal'
+phasenames[archived] = b'archived'
+phasenames[internal] = b'internal'
 # record phase property
 mutablephases = tuple(allphases[1:])
 remotehiddenphases = tuple(allphases[2:])
@@ -146,7 +146,7 @@ localhiddenphases = tuple(p for p in allphases if p & HIDEABLE_FLAG)
 
 def supportinternal(repo):
     """True if the internal phase can be used on a repository"""
-    return 'internal-phase' in repo.requirements
+    return b'internal-phase' in repo.requirements
 
 
 def _readroots(repo, phasedefaults=None):
@@ -164,7 +164,7 @@ def _readroots(repo, phasedefaults=None):
     dirty = False
     roots = [set() for i in allphases]
     try:
-        f, pending = txnutil.trypending(repo.root, repo.svfs, 'phaseroots')
+        f, pending = txnutil.trypending(repo.root, repo.svfs, b'phaseroots')
         try:
             for line in f:
                 phase, nh = line.split()
@@ -191,7 +191,7 @@ def binaryencode(phasemapping):
     for phase, nodes in enumerate(phasemapping):
         for head in nodes:
             binarydata.append(_fphasesentry.pack(phase, head))
-    return ''.join(binarydata)
+    return b''.join(binarydata)
 
 
 def binarydecode(stream):
@@ -204,7 +204,7 @@ def binarydecode(stream):
         entry = stream.read(entrysize)
         if len(entry) < entrysize:
             if entry:
-                raise error.Abort(_('bad phase-heads stream'))
+                raise error.Abort(_(b'bad phase-heads stream'))
             break
         phase, node = _fphasesentry.unpack(entry)
         headsbyphase[phase].append(node)
@@ -281,11 +281,11 @@ class phasecache(object):
     def replace(self, phcache):
         """replace all values in 'self' with content of phcache"""
         for a in (
-            'phaseroots',
-            'dirty',
-            'opener',
-            '_loadedrevslen',
-            '_phasesets',
+            b'phaseroots',
+            b'dirty',
+            b'opener',
+            b'_loadedrevslen',
+            b'_phasesets',
         ):
             setattr(self, a, getattr(phcache, a))
 
@@ -336,7 +336,7 @@ class phasecache(object):
         if rev == nullrev:
             return public
         if rev < nullrev:
-            raise ValueError(_('cannot lookup negative revision'))
+            raise ValueError(_(b'cannot lookup negative revision'))
         if rev >= self._loadedrevslen:
             self.invalidate()
             self.loadphaserevs(repo)
@@ -348,7 +348,7 @@ class phasecache(object):
     def write(self):
         if not self.dirty:
             return
-        f = self.opener('phaseroots', 'w', atomictemp=True, checkambig=True)
+        f = self.opener(b'phaseroots', b'w', atomictemp=True, checkambig=True)
         try:
             self._write(f)
         finally:
@@ -357,7 +357,7 @@ class phasecache(object):
     def _write(self, fp):
         for phase, roots in enumerate(self.phaseroots):
             for h in sorted(roots):
-                fp.write('%i %s\n' % (phase, hex(h)))
+                fp.write(b'%i %s\n' % (phase, hex(h)))
         self.dirty = False
 
     def _updateroots(self, phase, newroots, tr):
@@ -365,14 +365,14 @@ class phasecache(object):
         self.invalidate()
         self.dirty = True
 
-        tr.addfilegenerator('phase', ('phaseroots',), self._write)
-        tr.hookargs['phases_moved'] = '1'
+        tr.addfilegenerator(b'phase', (b'phaseroots',), self._write)
+        tr.hookargs[b'phases_moved'] = b'1'
 
     def registernew(self, repo, tr, targetphase, nodes):
         repo = repo.unfiltered()
         self._retractboundary(repo, tr, targetphase, nodes)
-        if tr is not None and 'phases' in tr.changes:
-            phasetracking = tr.changes['phases']
+        if tr is not None and b'phases' in tr.changes:
+            phasetracking = tr.changes[b'phases']
             torev = repo.changelog.rev
             phase = self.phase
             for n in nodes:
@@ -395,7 +395,7 @@ class phasecache(object):
         if tr is None:
             phasetracking = None
         else:
-            phasetracking = tr.changes.get('phases')
+            phasetracking = tr.changes.get(b'phases')
 
         repo = repo.unfiltered()
 
@@ -411,7 +411,7 @@ class phasecache(object):
 
             olds = self.phaseroots[phase]
 
-            affected = repo.revs('%ln::%ln', olds, nodes)
+            affected = repo.revs(b'%ln::%ln', olds, nodes)
             changes.update(affected)
             if dryrun:
                 continue
@@ -422,7 +422,7 @@ class phasecache(object):
 
             roots = set(
                 ctx.node()
-                for ctx in repo.set('roots((%ln::) - %ld)', olds, affected)
+                for ctx in repo.set(b'roots((%ln::) - %ld)', olds, affected)
             )
             if olds != roots:
                 self._updateroots(phase, roots, tr)
@@ -440,7 +440,7 @@ class phasecache(object):
         if tr is None:
             phasetracking = None
         else:
-            phasetracking = tr.changes.get('phases')
+            phasetracking = tr.changes.get(b'phases')
         repo = repo.unfiltered()
         if (
             self._retractboundary(repo, tr, targetphase, nodes)
@@ -450,13 +450,13 @@ class phasecache(object):
             # find the affected revisions
             new = self.phaseroots[targetphase]
             old = oldroots[targetphase]
-            affected = set(repo.revs('(%ln::) - (%ln::)', new, old))
+            affected = set(repo.revs(b'(%ln::) - (%ln::)', new, old))
 
             # find the phase of the affected revision
             for phase in pycompat.xrange(targetphase, -1, -1):
                 if phase:
                     roots = oldroots[phase]
-                    revs = set(repo.revs('%ln::%ld', roots, affected))
+                    revs = set(repo.revs(b'%ln::%ld', roots, affected))
                     affected -= revs
                 else:  # public phase
                     revs = affected
@@ -469,7 +469,7 @@ class phasecache(object):
         # phaseroots values, replace them.
         if targetphase in (archived, internal) and not supportinternal(repo):
             name = phasenames[targetphase]
-            msg = 'this repository does not support the %s phase' % name
+            msg = b'this repository does not support the %s phase' % name
             raise error.ProgrammingError(msg)
 
         repo = repo.unfiltered()
@@ -481,7 +481,7 @@ class phasecache(object):
         if newroots:
 
             if nullid in newroots:
-                raise error.Abort(_('cannot change null revision phase'))
+                raise error.Abort(_(b'cannot change null revision phase'))
             currentroots = currentroots.copy()
             currentroots.update(newroots)
 
@@ -491,7 +491,7 @@ class phasecache(object):
             aboveroots = [
                 n for n in currentroots if repo[n].rev() >= minnewroot
             ]
-            updatedroots = repo.set('roots(%ln::)', aboveroots)
+            updatedroots = repo.set(b'roots(%ln::)', aboveroots)
 
             finalroots = set(
                 n for n in currentroots if repo[n].rev() < minnewroot
@@ -514,7 +514,7 @@ class phasecache(object):
             if missing:
                 for mnode in missing:
                     repo.ui.debug(
-                        'removing unknown node %s from %i-phase boundary\n'
+                        b'removing unknown node %s from %i-phase boundary\n'
                         % (short(mnode), phase)
                     )
                 nodes.symmetric_difference_update(missing)
@@ -581,7 +581,7 @@ def listphases(repo):
     """List phases root for serialization over pushkey"""
     # Use ordered dictionary so behavior is deterministic.
     keys = util.sortdict()
-    value = '%i' % draft
+    value = b'%i' % draft
     cl = repo.unfiltered().changelog
     for root in repo._phasecache.phaseroots[draft]:
         if repo._phasecache.phase(repo, cl.rev(root)) <= draft:
@@ -604,7 +604,7 @@ def listphases(repo):
         #
         # The server can't handle it on it's own as it has no idea of
         # client phase data.
-        keys['publishing'] = 'True'
+        keys[b'publishing'] = b'True'
     return keys
 
 
@@ -616,7 +616,7 @@ def pushphase(repo, nhex, oldphasestr, newphasestr):
         newphase = abs(int(newphasestr))  # let's avoid negative index surprise
         oldphase = abs(int(oldphasestr))  # let's avoid negative index surprise
         if currentphase == oldphase and newphase < oldphase:
-            with repo.transaction('pushkey-phase') as tr:
+            with repo.transaction(b'pushkey-phase') as tr:
                 advanceboundary(repo, tr, newphase, [bin(nhex)])
             return True
         elif currentphase == newphase:
@@ -638,7 +638,7 @@ def subsetphaseheads(repo, subset):
     # No need to keep track of secret phase; any heads in the subset that
     # are not mentioned are implicitly secret.
     for phase in allphases[:secret]:
-        revset = "heads(%%ln & %s())" % phasenames[phase]
+        revset = b"heads(%%ln & %s())" % phasenames[phase]
         headsbyphase[phase] = [cl.node(r) for r in repo.revs(revset, subset)]
     return headsbyphase
 
@@ -651,7 +651,7 @@ def updatephases(repo, trgetter, headsbyphase):
     # to update. This avoid creating empty transaction during no-op operation.
 
     for phase in allphases[:-1]:
-        revset = '%ln - _phase(%s)'
+        revset = b'%ln - _phase(%s)'
         heads = [c.node() for c in repo.set(revset, headsbyphase[phase], phase)]
         if heads:
             advanceboundary(repo, trgetter(), phase, heads)
@@ -670,14 +670,17 @@ def analyzeremotephases(repo, subset, roots):
     draftroots = []
     nodemap = repo.changelog.nodemap  # to filter unknown nodes
     for nhex, phase in roots.iteritems():
-        if nhex == 'publishing':  # ignore data related to publish option
+        if nhex == b'publishing':  # ignore data related to publish option
             continue
         node = bin(nhex)
         phase = int(phase)
         if phase == public:
             if node != nullid:
                 repo.ui.warn(
-                    _('ignoring inconsistent public root' ' from remote: %s\n')
+                    _(
+                        b'ignoring inconsistent public root'
+                        b' from remote: %s\n'
+                    )
                     % nhex
                 )
         elif phase == draft:
@@ -685,7 +688,7 @@ def analyzeremotephases(repo, subset, roots):
                 draftroots.append(node)
         else:
             repo.ui.warn(
-                _('ignoring unexpected root from remote: %i %s\n')
+                _(b'ignoring unexpected root from remote: %i %s\n')
                 % (phase, nhex)
             )
     # compute heads
@@ -706,12 +709,12 @@ class remotephasessummary(object):
         unfi = repo.unfiltered()
         self._allremoteroots = remoteroots
 
-        self.publishing = remoteroots.get('publishing', False)
+        self.publishing = remoteroots.get(b'publishing', False)
 
         ana = analyzeremotephases(repo, remotesubset, remoteroots)
         self.publicheads, self.draftroots = ana
         # Get the list of all "heads" revs draft on remote
-        dheads = unfi.set('heads(%ln::%ln)', self.draftroots, remotesubset)
+        dheads = unfi.set(b'heads(%ln::%ln)', self.draftroots, remotesubset)
         self.draftheads = [c.node() for c in dheads]
 
 
@@ -735,19 +738,19 @@ def newheads(repo, heads, roots):
     new_heads = set(rev(n) for n in heads if n != nullid)
     roots = [rev(n) for n in roots]
     # compute the area we need to remove
-    affected_zone = repo.revs("(%ld::%ld)", roots, new_heads)
+    affected_zone = repo.revs(b"(%ld::%ld)", roots, new_heads)
     # heads in the area are no longer heads
     new_heads.difference_update(affected_zone)
     # revisions in the area have children outside of it,
     # They might be new heads
     candidates = repo.revs(
-        "parents(%ld + (%ld and merge())) and not null", roots, affected_zone
+        b"parents(%ld + (%ld and merge())) and not null", roots, affected_zone
     )
     candidates -= affected_zone
     if new_heads or candidates:
         # remove candidate that are ancestors of other heads
         new_heads.update(candidates)
-        prunestart = repo.revs("parents(%ld) and not null", new_heads)
+        prunestart = repo.revs(b"parents(%ld) and not null", new_heads)
         pruned = dagop.reachableroots(repo, candidates, prunestart)
         new_heads.difference_update(pruned)
 
@@ -760,14 +763,14 @@ def newcommitphase(ui):
     Handle all possible values for the phases.new-commit options.
 
     """
-    v = ui.config('phases', 'new-commit')
+    v = ui.config(b'phases', b'new-commit')
     try:
         return phasenames.index(v)
     except ValueError:
         try:
             return int(v)
         except ValueError:
-            msg = _("phases.new-commit: not a valid phase name ('%s')")
+            msg = _(b"phases.new-commit: not a valid phase name ('%s')")
             raise error.ConfigError(msg % v)
 
 
@@ -778,7 +781,7 @@ def hassecret(repo):
 
 def preparehookargs(node, old, new):
     if old is None:
-        old = ''
+        old = b''
     else:
         old = phasenames[old]
-    return {'node': node, 'oldphase': old, 'phase': phasenames[new]}
+    return {b'node': node, b'oldphase': old, b'phase': phasenames[new]}

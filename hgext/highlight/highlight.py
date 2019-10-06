@@ -12,7 +12,7 @@ from __future__ import absolute_import
 
 from mercurial import demandimport
 
-demandimport.IGNORES.update(['pkgutil', 'pkg_resources', '__main__'])
+demandimport.IGNORES.update([b'pkgutil', b'pkg_resources', b'__main__'])
 
 from mercurial import (
     encoding,
@@ -39,27 +39,27 @@ TextLexer = pygments.lexers.TextLexer
 HtmlFormatter = pygments.formatters.HtmlFormatter
 
 SYNTAX_CSS = (
-    '\n<link rel="stylesheet" href="{url}highlightcss" ' 'type="text/css" />'
+    b'\n<link rel="stylesheet" href="{url}highlightcss" ' b'type="text/css" />'
 )
 
 
 def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
 
     # append a <link ...> to the syntax highlighting css
-    tmpl.load('header')
-    old_header = tmpl.cache['header']
+    tmpl.load(b'header')
+    old_header = tmpl.cache[b'header']
     if SYNTAX_CSS not in old_header:
         new_header = old_header + SYNTAX_CSS
-        tmpl.cache['header'] = new_header
+        tmpl.cache[b'header'] = new_header
 
     text = fctx.data()
     if stringutil.binary(text):
         return
 
     # str.splitlines() != unicode.splitlines() because "reasons"
-    for c in "\x0c\x1c\x1d\x1e":
+    for c in b"\x0c\x1c\x1d\x1e":
         if c in text:
-            text = text.replace(c, '')
+            text = text.replace(c, b'')
 
     # Pygments is best used with Unicode strings:
     # <http://pygments.org/docs/unicode/>
@@ -94,8 +94,8 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
         for s in colorized.splitlines()
     )
 
-    tmpl._filters['colorize'] = lambda x: next(coloriter)
+    tmpl._filters[b'colorize'] = lambda x: next(coloriter)
 
     oldl = tmpl.cache[field]
-    newl = oldl.replace('line|escape', 'line|colorize')
+    newl = oldl.replace(b'line|escape', b'line|colorize')
     tmpl.cache[field] = newl

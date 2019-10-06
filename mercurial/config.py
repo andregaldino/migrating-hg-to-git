@@ -79,7 +79,7 @@ class config(object):
             return (section, item)
 
     def source(self, section, item):
-        return self._source.get((section, item), "")
+        return self._source.get((section, item), b"")
 
     def sections(self):
         return sorted(self._data.keys())
@@ -87,17 +87,17 @@ class config(object):
     def items(self, section):
         return list(self._data.get(section, {}).iteritems())
 
-    def set(self, section, item, value, source=""):
+    def set(self, section, item, value, source=b""):
         if pycompat.ispy3:
             assert not isinstance(
                 section, str
-            ), 'config section may not be unicode strings on Python 3'
+            ), b'config section may not be unicode strings on Python 3'
             assert not isinstance(
                 item, str
-            ), 'config item may not be unicode strings on Python 3'
+            ), b'config item may not be unicode strings on Python 3'
             assert not isinstance(
                 value, str
-            ), 'config values may not be unicode strings on Python 3'
+            ), b'config values may not be unicode strings on Python 3'
         if section not in self:
             self._data[section] = util.cowsortdict()
         else:
@@ -131,7 +131,7 @@ class config(object):
         commentre = util.re.compile(br'(;|#)')
         unsetre = util.re.compile(br'%unset\s+(\S+)')
         includere = util.re.compile(br'%include\s+(\S|\S.*\S)\s*$')
-        section = ""
+        section = b""
         item = None
         line = 0
         cont = False
@@ -141,7 +141,7 @@ class config(object):
 
         for l in data.splitlines(True):
             line += 1
-            if line == 1 and l.startswith('\xef\xbb\xbf'):
+            if line == 1 and l.startswith(b'\xef\xbb\xbf'):
                 # Someone set us up the BOM
                 l = l[3:]
             if cont:
@@ -151,8 +151,8 @@ class config(object):
                 if m:
                     if sections and section not in sections:
                         continue
-                    v = self.get(section, item) + "\n" + m.group(1)
-                    self.set(section, item, v, "%s:%d" % (src, line))
+                    v = self.get(section, item) + b"\n" + m.group(1)
+                    self.set(section, item, v, b"%s:%d" % (src, line))
                     continue
                 item = None
                 cont = False
@@ -171,9 +171,9 @@ class config(object):
                     except IOError as inst:
                         if inst.errno != errno.ENOENT:
                             raise error.ParseError(
-                                _("cannot include %s (%s)")
+                                _(b"cannot include %s (%s)")
                                 % (inc, inst.strerror),
-                                "%s:%d" % (src, line),
+                                b"%s:%d" % (src, line),
                             )
                 continue
             if emptyre.match(l):
@@ -192,7 +192,7 @@ class config(object):
                 cont = True
                 if sections and section not in sections:
                     continue
-                self.set(section, item, m.group(2), "%s:%d" % (src, line))
+                self.set(section, item, m.group(2), b"%s:%d" % (src, line))
                 continue
             m = unsetre.match(l)
             if m:
@@ -205,14 +205,14 @@ class config(object):
                 self._unset.append((section, name))
                 continue
 
-            raise error.ParseError(l.rstrip(), ("%s:%d" % (src, line)))
+            raise error.ParseError(l.rstrip(), (b"%s:%d" % (src, line)))
 
     def read(self, path, fp=None, sections=None, remap=None):
         if not fp:
-            fp = util.posixfile(path, 'rb')
+            fp = util.posixfile(path, b'rb')
         assert (
             getattr(fp, 'mode', r'rb') == r'rb'
-        ), 'config files must be opened in binary mode, got fp=%r mode=%r' % (
+        ), b'config files must be opened in binary mode, got fp=%r mode=%r' % (
             fp,
             fp.mode,
         )
@@ -231,41 +231,41 @@ def parselist(value):
     def _parse_plain(parts, s, offset):
         whitespace = False
         while offset < len(s) and (
-            s[offset : offset + 1].isspace() or s[offset : offset + 1] == ','
+            s[offset : offset + 1].isspace() or s[offset : offset + 1] == b','
         ):
             whitespace = True
             offset += 1
         if offset >= len(s):
             return None, parts, offset
         if whitespace:
-            parts.append('')
-        if s[offset : offset + 1] == '"' and not parts[-1]:
+            parts.append(b'')
+        if s[offset : offset + 1] == b'"' and not parts[-1]:
             return _parse_quote, parts, offset + 1
-        elif s[offset : offset + 1] == '"' and parts[-1][-1:] == '\\':
+        elif s[offset : offset + 1] == b'"' and parts[-1][-1:] == b'\\':
             parts[-1] = parts[-1][:-1] + s[offset : offset + 1]
             return _parse_plain, parts, offset + 1
         parts[-1] += s[offset : offset + 1]
         return _parse_plain, parts, offset + 1
 
     def _parse_quote(parts, s, offset):
-        if offset < len(s) and s[offset : offset + 1] == '"':  # ""
-            parts.append('')
+        if offset < len(s) and s[offset : offset + 1] == b'"':  # ""
+            parts.append(b'')
             offset += 1
             while offset < len(s) and (
                 s[offset : offset + 1].isspace()
-                or s[offset : offset + 1] == ','
+                or s[offset : offset + 1] == b','
             ):
                 offset += 1
             return _parse_plain, parts, offset
 
-        while offset < len(s) and s[offset : offset + 1] != '"':
+        while offset < len(s) and s[offset : offset + 1] != b'"':
             if (
-                s[offset : offset + 1] == '\\'
+                s[offset : offset + 1] == b'\\'
                 and offset + 1 < len(s)
-                and s[offset + 1 : offset + 2] == '"'
+                and s[offset + 1 : offset + 2] == b'"'
             ):
                 offset += 1
-                parts[-1] += '"'
+                parts[-1] += b'"'
             else:
                 parts[-1] += s[offset : offset + 1]
             offset += 1
@@ -273,39 +273,39 @@ def parselist(value):
         if offset >= len(s):
             real_parts = _configlist(parts[-1])
             if not real_parts:
-                parts[-1] = '"'
+                parts[-1] = b'"'
             else:
-                real_parts[0] = '"' + real_parts[0]
+                real_parts[0] = b'"' + real_parts[0]
                 parts = parts[:-1]
                 parts.extend(real_parts)
             return None, parts, offset
 
         offset += 1
-        while offset < len(s) and s[offset : offset + 1] in [' ', ',']:
+        while offset < len(s) and s[offset : offset + 1] in [b' ', b',']:
             offset += 1
 
         if offset < len(s):
-            if offset + 1 == len(s) and s[offset : offset + 1] == '"':
-                parts[-1] += '"'
+            if offset + 1 == len(s) and s[offset : offset + 1] == b'"':
+                parts[-1] += b'"'
                 offset += 1
             else:
-                parts.append('')
+                parts.append(b'')
         else:
             return None, parts, offset
 
         return _parse_plain, parts, offset
 
     def _configlist(s):
-        s = s.rstrip(' ,')
+        s = s.rstrip(b' ,')
         if not s:
             return []
-        parser, parts, offset = _parse_plain, [''], 0
+        parser, parts, offset = _parse_plain, [b''], 0
         while parser:
             parser, parts, offset = parser(parts, s, offset)
         return parts
 
     if value is not None and isinstance(value, bytes):
-        result = _configlist(value.lstrip(' ,\n'))
+        result = _configlist(value.lstrip(b' ,\n'))
     else:
         result = value
     return result or []

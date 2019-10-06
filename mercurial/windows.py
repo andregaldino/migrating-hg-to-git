@@ -153,7 +153,7 @@ class fdproxy(object):
         return getattr(self._fp, name)
 
 
-def posixfile(name, mode='r', buffering=-1):
+def posixfile(name, mode=b'r', buffering=-1):
     '''Open a file with even more POSIX-like semantics'''
     try:
         fp = osutil.posixfile(name, mode, buffering)  # may raise WindowsError
@@ -165,10 +165,10 @@ def posixfile(name, mode='r', buffering=-1):
 
         # The position when opening in append mode is implementation defined, so
         # make it consistent with other platforms, which position at EOF.
-        if 'a' in mode:
+        if b'a' in mode:
             fp.seek(0, os.SEEK_END)
 
-        if '+' in mode:
+        if b'+' in mode:
             return mixedfilemodewrapper(fp)
 
         return fp
@@ -230,7 +230,7 @@ def _is_win_9x():
     try:
         return sys.getwindowsversion()[3] == 1
     except AttributeError:
-        return 'command' in encoding.environ.get('comspec', '')
+        return b'command' in encoding.environ.get(b'comspec', b'')
 
 
 def openhardlinks():
@@ -240,23 +240,23 @@ def openhardlinks():
 def parsepatchoutput(output_line):
     """parses the output produced by patch and returns the filename"""
     pf = output_line[14:]
-    if pf[0] == '`':
+    if pf[0] == b'`':
         pf = pf[1:-1]  # Remove the quotes
     return pf
 
 
 def sshargs(sshcmd, host, user, port):
     '''Build argument list for ssh or Plink'''
-    pflag = 'plink' in sshcmd.lower() and '-P' or '-p'
-    args = user and ("%s@%s" % (user, host)) or host
-    if args.startswith('-') or args.startswith('/'):
+    pflag = b'plink' in sshcmd.lower() and b'-P' or b'-p'
+    args = user and (b"%s@%s" % (user, host)) or host
+    if args.startswith(b'-') or args.startswith(b'/'):
         raise error.Abort(
-            _('illegal ssh hostname or username starting with - or /: %s')
+            _(b'illegal ssh hostname or username starting with - or /: %s')
             % args
         )
     args = shellquote(args)
     if port:
-        args = '%s %s %s' % (pflag, shellquote(port), args)
+        args = b'%s %s %s' % (pflag, shellquote(port), args)
     return args
 
 
@@ -285,11 +285,11 @@ def setbinary(fd):
 
 
 def pconvert(path):
-    return path.replace(pycompat.ossep, '/')
+    return path.replace(pycompat.ossep, b'/')
 
 
 def localpath(path):
-    return path.replace('/', '\\')
+    return path.replace(b'/', b'\\')
 
 
 def normpath(path):
@@ -407,7 +407,7 @@ def shelltocmdexe(path, env):
             and index + 1 < pathlen
             and path[index + 1 : index + 2] in (b'\\', b'/')
         ):
-            res += "%USERPROFILE%"
+            res += b"%USERPROFILE%"
         elif (
             c == b'\\'
             and index + 1 < pathlen
@@ -483,7 +483,7 @@ def quotecommand(cmd):
     """Build a command string suitable for os.popen* calls."""
     if sys.version_info < (2, 7, 1):
         # Python versions since 2.7.1 do this extra quoting themselves
-        return '"' + cmd + '"'
+        return b'"' + cmd + b'"'
     return cmd
 
 
@@ -499,13 +499,13 @@ def findexe(command):
     PATH isn't searched if command is an absolute or relative path.
     An extension from PATHEXT is found and added if not present.
     If command isn't found None is returned.'''
-    pathext = encoding.environ.get('PATHEXT', '.COM;.EXE;.BAT;.CMD')
+    pathext = encoding.environ.get(b'PATHEXT', b'.COM;.EXE;.BAT;.CMD')
     pathexts = [ext for ext in pathext.lower().split(pycompat.ospathsep)]
     if os.path.splitext(command)[1].lower() in pathexts:
-        pathexts = ['']
+        pathexts = [b'']
 
     def findexisting(pathcommand):
-        'Will append extension (if needed) and return existing file'
+        b'Will append extension (if needed) and return existing file'
         for ext in pathexts:
             executable = pathcommand + ext
             if os.path.exists(executable):
@@ -515,7 +515,7 @@ def findexe(command):
     if pycompat.ossep in command:
         return findexisting(command)
 
-    for path in encoding.environ.get('PATH', '').split(pycompat.ospathsep):
+    for path in encoding.environ.get(b'PATH', b'').split(pycompat.ospathsep):
         executable = findexisting(os.path.join(path, command))
         if executable is not None:
             return executable
@@ -536,7 +536,7 @@ def statfiles(files):
         nf = normcase(nf)
         dir, base = os.path.split(nf)
         if not dir:
-            dir = '.'
+            dir = b'.'
         cache = dircache.get(dir, None)
         if cache is None:
             try:
@@ -681,7 +681,7 @@ def readpipe(pipe):
             break
         chunks.append(s)
 
-    return ''.join(chunks)
+    return b''.join(chunks)
 
 
 def bindunixsocket(sock, path):

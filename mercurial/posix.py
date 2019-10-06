@@ -41,7 +41,7 @@ except AttributeError:
     # to copies.
     def oslink(src, dst):
         raise OSError(
-            errno.EINVAL, 'hardlinks not supported: %s to %s' % (src, dst)
+            errno.EINVAL, b'hardlinks not supported: %s to %s' % (src, dst)
         )
 
 
@@ -85,13 +85,13 @@ def split(p):
     ...           b'']:
     ...     assert split(f) == posixpath.split(f), f
     '''
-    ht = p.rsplit('/', 1)
+    ht = p.rsplit(b'/', 1)
     if len(ht) == 1:
-        return '', p
-    nh = ht[0].rstrip('/')
+        return b'', p
+    nh = ht[0].rstrip(b'/')
     if nh:
         return nh, ht[1]
-    return ht[0] + '/', ht[1]
+    return ht[0] + b'/', ht[1]
 
 
 def openhardlinks():
@@ -107,25 +107,25 @@ def nlinks(name):
 def parsepatchoutput(output_line):
     """parses the output produced by patch and returns the filename"""
     pf = output_line[14:]
-    if pycompat.sysplatform == 'OpenVMS':
-        if pf[0] == '`':
+    if pycompat.sysplatform == b'OpenVMS':
+        if pf[0] == b'`':
             pf = pf[1:-1]  # Remove the quotes
     else:
-        if pf.startswith("'") and pf.endswith("'") and " " in pf:
+        if pf.startswith(b"'") and pf.endswith(b"'") and b" " in pf:
             pf = pf[1:-1]  # Remove the quotes
     return pf
 
 
 def sshargs(sshcmd, host, user, port):
     '''Build argument list for ssh'''
-    args = user and ("%s@%s" % (user, host)) or host
-    if '-' in args[:1]:
+    args = user and (b"%s@%s" % (user, host)) or host
+    if b'-' in args[:1]:
         raise error.Abort(
-            _('illegal ssh hostname or username starting with -: %s') % args
+            _(b'illegal ssh hostname or username starting with -: %s') % args
         )
     args = shellquote(args)
     if port:
-        args = '-p %s %s' % (shellquote(port), args)
+        args = b'-p %s %s' % (shellquote(port), args)
     return args
 
 
@@ -140,7 +140,7 @@ def setflags(f, l, x):
     if l:
         if not stat.S_ISLNK(s):
             # switch file to link
-            fp = open(f, 'rb')
+            fp = open(f, b'rb')
             data = fp.read()
             fp.close()
             unlink(f)
@@ -148,7 +148,7 @@ def setflags(f, l, x):
                 os.symlink(data, f)
             except OSError:
                 # failed to make a link, rewrite file
-                fp = open(f, "wb")
+                fp = open(f, b"wb")
                 fp.write(data)
                 fp.close()
         # no chmod needed at this point
@@ -157,7 +157,7 @@ def setflags(f, l, x):
         # switch link to file
         data = os.readlink(f)
         unlink(f)
-        fp = open(f, "wb")
+        fp = open(f, b"wb")
         fp.write(data)
         fp.close()
         s = 0o666 & ~umask  # avoid restatting for chmod
@@ -165,10 +165,10 @@ def setflags(f, l, x):
     sx = s & 0o100
     if st.st_nlink > 1 and bool(x) != bool(sx):
         # the file is a hardlink, break it
-        with open(f, "rb") as fp:
+        with open(f, b"rb") as fp:
             data = fp.read()
         unlink(f)
-        with open(f, "wb") as fp:
+        with open(f, b"wb") as fp:
             fp.write(data)
 
     if x and not sx:
@@ -215,9 +215,9 @@ def checkexec(path):
 
     try:
         EXECFLAGS = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-        basedir = os.path.join(path, '.hg')
-        cachedir = os.path.join(basedir, 'wcache')
-        storedir = os.path.join(basedir, 'store')
+        basedir = os.path.join(path, b'.hg')
+        cachedir = os.path.join(basedir, b'wcache')
+        storedir = os.path.join(basedir, b'store')
         if not os.path.exists(cachedir):
             try:
                 # we want to create the 'cache' directory, not the '.hg' one.
@@ -232,8 +232,8 @@ def checkexec(path):
                 # we other fallback logic triggers
                 pass
         if os.path.isdir(cachedir):
-            checkisexec = os.path.join(cachedir, 'checkisexec')
-            checknoexec = os.path.join(cachedir, 'checknoexec')
+            checkisexec = os.path.join(cachedir, b'checkisexec')
+            checknoexec = os.path.join(cachedir, b'checknoexec')
 
             try:
                 m = os.stat(checkisexec).st_mode
@@ -250,7 +250,7 @@ def checkexec(path):
                     except OSError as e:
                         if e.errno != errno.ENOENT:
                             raise
-                        open(checknoexec, 'w').close()  # might fail
+                        open(checknoexec, b'w').close()  # might fail
                         m = os.stat(checknoexec).st_mode
                     if m & EXECFLAGS == 0:
                         # check-exec is exec and check-no-exec is not exec
@@ -266,7 +266,7 @@ def checkexec(path):
             # check directly in path and don't leave checkisexec behind
             checkdir = path
             checkisexec = None
-        fh, fn = pycompat.mkstemp(dir=checkdir, prefix='hg-checkexec-')
+        fh, fn = pycompat.mkstemp(dir=checkdir, prefix=b'hg-checkexec-')
         try:
             os.close(fh)
             m = os.stat(fn).st_mode
@@ -290,8 +290,8 @@ def checklink(path):
     # mktemp is not racy because symlink creation will fail if the
     # file already exists
     while True:
-        cachedir = os.path.join(path, '.hg', 'wcache')
-        checklink = os.path.join(cachedir, 'checklink')
+        cachedir = os.path.join(path, b'.hg', b'wcache')
+        checklink = os.path.join(cachedir, b'checklink')
         # try fast path, read only
         if os.path.islink(checklink):
             return True
@@ -308,16 +308,16 @@ def checklink(path):
             fd = None
             if cachedir is None:
                 fd = pycompat.namedtempfile(
-                    dir=checkdir, prefix='hg-checklink-'
+                    dir=checkdir, prefix=b'hg-checklink-'
                 )
                 target = os.path.basename(fd.name)
             else:
                 # create a fixed file to link to; doesn't matter if it
                 # already exists.
-                target = 'checklink-target'
+                target = b'checklink-target'
                 try:
                     fullpath = os.path.join(cachedir, target)
-                    open(fullpath, 'w').close()
+                    open(fullpath, b'w').close()
                 except IOError as inst:
                     if inst[0] == errno.EACCES:
                         # If we can't write to cachedir, just pretend
@@ -444,7 +444,7 @@ if pycompat.isdarwin:
             u = path.decode('utf-8')
         except UnicodeDecodeError:
             # OS X percent-encodes any bytes that aren't valid utf-8
-            s = ''
+            s = b''
             pos = 0
             l = len(path)
             while pos < l:
@@ -452,7 +452,7 @@ if pycompat.isdarwin:
                     c = encoding.getutf8char(path, pos)
                     pos += len(c)
                 except ValueError:
-                    c = '%%%02X' % ord(path[pos : pos + 1])
+                    c = b'%%%02X' % ord(path[pos : pos + 1])
                     pos += 1
                 s += c
 
@@ -464,14 +464,14 @@ if pycompat.isdarwin:
         return encoding.hfsignoreclean(enc)
 
 
-if pycompat.sysplatform == 'cygwin':
+if pycompat.sysplatform == b'cygwin':
     # workaround for cygwin, in which mount point part of path is
     # treated as case sensitive, even though underlying NTFS is case
     # insensitive.
 
     # default mount points
     cygwinmountpoints = sorted(
-        ["/usr/bin", "/usr/lib", "/cygdrive",], reverse=True
+        [b"/usr/bin", b"/usr/lib", b"/cygdrive",], reverse=True
     )
 
     # use upper-ing as normcase as same as NTFS workaround
@@ -515,8 +515,8 @@ _needsshellquote = None
 
 
 def shellquote(s):
-    if pycompat.sysplatform == 'OpenVMS':
-        return '"%s"' % s
+    if pycompat.sysplatform == b'OpenVMS':
+        return b'"%s"' % s
     global _needsshellquote
     if _needsshellquote is None:
         _needsshellquote = re.compile(br'[^a-zA-Z0-9._/+-]').search
@@ -524,7 +524,7 @@ def shellquote(s):
         # "s" shouldn't have to be quoted
         return s
     else:
-        return "'%s'" % s.replace("'", "'\\''")
+        return b"'%s'" % s.replace(b"'", b"'\\''")
 
 
 def shellsplit(s):
@@ -538,7 +538,7 @@ def quotecommand(cmd):
 
 def testpid(pid):
     '''return False if pid dead, True if running or not sure'''
-    if pycompat.sysplatform == 'OpenVMS':
+    if pycompat.sysplatform == b'OpenVMS':
         return True
     try:
         os.kill(pid, 0)
@@ -557,11 +557,11 @@ def findexe(command):
     If command is a basename then PATH is searched for command.
     PATH isn't searched if command is an absolute or relative path.
     If command isn't found None is returned.'''
-    if pycompat.sysplatform == 'OpenVMS':
+    if pycompat.sysplatform == b'OpenVMS':
         return command
 
     def findexisting(executable):
-        'Will return executable if existing file'
+        b'Will return executable if existing file'
         if os.path.isfile(executable) and os.access(executable, os.X_OK):
             return executable
         return None
@@ -569,10 +569,10 @@ def findexe(command):
     if pycompat.ossep in command:
         return findexisting(command)
 
-    if pycompat.sysplatform == 'plan9':
-        return findexisting(os.path.join('/bin', command))
+    if pycompat.sysplatform == b'plan9':
+        return findexisting(os.path.join(b'/bin', command))
 
-    for path in encoding.environ.get('PATH', '').split(pycompat.ospathsep):
+    for path in encoding.environ.get(b'PATH', b'').split(pycompat.ospathsep):
         executable = findexisting(os.path.join(path, command))
         if executable is not None:
             return executable
@@ -752,7 +752,7 @@ def readpipe(pipe):
             except IOError:
                 break
 
-        return ''.join(chunks)
+        return b''.join(chunks)
     finally:
         fcntl.fcntl(pipe, fcntl.F_SETFL, oldflags)
 
@@ -765,7 +765,7 @@ def bindunixsocket(sock, path):
     dirname, basename = os.path.split(path)
     bakwdfd = None
     if dirname:
-        bakwdfd = os.open('.', os.O_DIRECTORY)
+        bakwdfd = os.open(b'.', os.O_DIRECTORY)
         os.chdir(dirname)
     sock.bind(basename)
     if bakwdfd:

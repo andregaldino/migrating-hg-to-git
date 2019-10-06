@@ -72,12 +72,12 @@ class bundlerevlog(revlog.revlog):
             for p in (p1, p2):
                 if p not in self.nodemap:
                     raise error.LookupError(
-                        p, self.indexfile, _("unknown parent")
+                        p, self.indexfile, _(b"unknown parent")
                     )
 
             if deltabase not in self.nodemap:
                 raise LookupError(
-                    deltabase, self.indexfile, _('unknown delta base')
+                    deltabase, self.indexfile, _(b'unknown delta base')
                 )
 
             baserev = self.rev(deltabase)
@@ -133,7 +133,7 @@ class bundlerevlog(revlog.revlog):
             chain.append(iterrev)
             iterrev = self.index[iterrev][3]
         if iterrev == nullrev:
-            rawtext = ''
+            rawtext = b''
         elif rawtext is None:
             r = super(bundlerevlog, self)._rawtext(
                 self.node(iterrev), iterrev, _df=_df
@@ -170,7 +170,7 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
 
 class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     def __init__(
-        self, opener, cgunpacker, linkmapper, dirlogstarts=None, dir=''
+        self, opener, cgunpacker, linkmapper, dirlogstarts=None, dir=b''
     ):
         manifest.manifestrevlog.__init__(self, opener, tree=dir)
         bundlerevlog.__init__(
@@ -178,7 +178,7 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
         )
         if dirlogstarts is None:
             dirlogstarts = {}
-            if self.bundle.version == "03":
+            if self.bundle.version == b"03":
                 dirlogstarts = _getfilestarts(self.bundle)
         self._dirlogstarts = dirlogstarts
         self._linkmapper = linkmapper
@@ -212,7 +212,7 @@ class bundlepeer(localrepo.localpeer):
 class bundlephasecache(phases.phasecache):
     def __init__(self, *args, **kwargs):
         super(bundlephasecache, self).__init__(*args, **kwargs)
-        if util.safehasattr(self, 'opener'):
+        if util.safehasattr(self, b'opener'):
             self.opener = vfsmod.readonlyvfs(self.opener)
 
     def write(self):
@@ -230,7 +230,7 @@ class bundlephasecache(phases.phasecache):
 def _getfilestarts(cgunpacker):
     filespos = {}
     for chunkdata in iter(cgunpacker.filelogheader, {}):
-        fname = chunkdata['filename']
+        fname = chunkdata[b'filename']
         filespos[fname] = cgunpacker.tell()
         for chunk in iter(lambda: cgunpacker.deltachunk(None), {}):
             pass
@@ -254,10 +254,10 @@ class bundlerepository(object):
         self._tempparent = tempparent
         self._url = url
 
-        self.ui.setconfig('phases', 'publish', False, 'bundlerepo')
+        self.ui.setconfig(b'phases', b'publish', False, b'bundlerepo')
 
         self.tempfile = None
-        f = util.posixfile(bundlepath, "rb")
+        f = util.posixfile(bundlepath, b"rb")
         bundle = exchange.readbundle(self.ui, f, bundlepath)
 
         if isinstance(bundle, bundle2.unbundle20):
@@ -266,17 +266,17 @@ class bundlerepository(object):
 
             cgpart = None
             for part in bundle.iterparts(seekable=True):
-                if part.type == 'changegroup':
+                if part.type == b'changegroup':
                     if cgpart:
                         raise NotImplementedError(
-                            "can't process " "multiple changegroups"
+                            b"can't process " b"multiple changegroups"
                         )
                     cgpart = part
 
                 self._handlebundle2part(bundle, part)
 
             if not cgpart:
-                raise error.Abort(_("No changegroups found"))
+                raise error.Abort(_(b"No changegroups found"))
 
             # This is required to placate a later consumer, which expects
             # the payload offset to be at the beginning of the changegroup.
@@ -288,14 +288,16 @@ class bundlerepository(object):
         elif isinstance(bundle, changegroup.cg1unpacker):
             if bundle.compressed():
                 f = self._writetempbundle(
-                    bundle.read, '.hg10un', header='HG10UN'
+                    bundle.read, b'.hg10un', header=b'HG10UN'
                 )
                 bundle = exchange.readbundle(self.ui, f, bundlepath, self.vfs)
 
             self._bundlefile = bundle
             self._cgunpacker = bundle
         else:
-            raise error.Abort(_('bundle type %s cannot be read') % type(bundle))
+            raise error.Abort(
+                _(b'bundle type %s cannot be read') % type(bundle)
+            )
 
         # dict with the mapping 'filename' -> position in the changegroup.
         self._cgfilespos = {}
@@ -309,24 +311,24 @@ class bundlerepository(object):
         )
 
     def _handlebundle2part(self, bundle, part):
-        if part.type != 'changegroup':
+        if part.type != b'changegroup':
             return
 
         cgstream = part
-        version = part.params.get('version', '01')
+        version = part.params.get(b'version', b'01')
         legalcgvers = changegroup.supportedincomingversions(self)
         if version not in legalcgvers:
-            msg = _('Unsupported changegroup version: %s')
+            msg = _(b'Unsupported changegroup version: %s')
             raise error.Abort(msg % version)
         if bundle.compressed():
-            cgstream = self._writetempbundle(part.read, '.cg%sun' % version)
+            cgstream = self._writetempbundle(part.read, b'.cg%sun' % version)
 
-        self._cgunpacker = changegroup.getunbundler(version, cgstream, 'UN')
+        self._cgunpacker = changegroup.getunbundler(version, cgstream, b'UN')
 
-    def _writetempbundle(self, readfn, suffix, header=''):
+    def _writetempbundle(self, readfn, suffix, header=b''):
         """Write a temporary file to disk
         """
-        fdtemp, temp = self.vfs.mkstemp(prefix="hg-bundle-", suffix=suffix)
+        fdtemp, temp = self.vfs.mkstemp(prefix=b"hg-bundle-", suffix=suffix)
         self.tempfile = temp
 
         with os.fdopen(fdtemp, r'wb') as fptemp:
@@ -337,7 +339,7 @@ class bundlerepository(object):
                     break
                 fptemp.write(chunk)
 
-        return self.vfs.open(self.tempfile, mode="rb")
+        return self.vfs.open(self.tempfile, mode=b"rb")
 
     @localrepo.unfilteredpropertycache
     def _phasecache(self):
@@ -432,7 +434,7 @@ class bundlerepository(object):
     def setparents(self, p1, p2=nullid):
         p1rev = self.changelog.rev(p1)
         p2rev = self.changelog.rev(p2)
-        msg = _("setting parent to node %s that only exists in the bundle\n")
+        msg = _(b"setting parent to node %s that only exists in the bundle\n")
         if self.changelog.repotiprev < p1rev:
             self.ui.warn(msg % nodemod.hex(p1))
         if self.changelog.repotiprev < p2rev:
@@ -442,28 +444,28 @@ class bundlerepository(object):
 
 def instance(ui, path, create, intents=None, createopts=None):
     if create:
-        raise error.Abort(_('cannot create new bundle repository'))
+        raise error.Abort(_(b'cannot create new bundle repository'))
     # internal config: bundle.mainreporoot
-    parentpath = ui.config("bundle", "mainreporoot")
+    parentpath = ui.config(b"bundle", b"mainreporoot")
     if not parentpath:
         # try to find the correct path to the working directory repo
         parentpath = cmdutil.findrepo(encoding.getcwd())
         if parentpath is None:
-            parentpath = ''
+            parentpath = b''
     if parentpath:
         # Try to make the full path relative so we get a nice, short URL.
         # In particular, we don't want temp dir names in test outputs.
         cwd = encoding.getcwd()
         if parentpath == cwd:
-            parentpath = ''
+            parentpath = b''
         else:
             cwd = pathutil.normasprefix(cwd)
             if parentpath.startswith(cwd):
                 parentpath = parentpath[len(cwd) :]
     u = util.url(path)
     path = u.localpath()
-    if u.scheme == 'bundle':
-        s = path.split("+", 1)
+    if u.scheme == b'bundle':
+        s = path.split(b"+", 1)
         if len(s) == 1:
             repopath, bundlename = parentpath, s[0]
         else:
@@ -477,9 +479,9 @@ def instance(ui, path, create, intents=None, createopts=None):
 def makebundlerepository(ui, repopath, bundlepath):
     """Make a bundle repository object based on repo and bundle paths."""
     if repopath:
-        url = 'bundle:%s+%s' % (util.expandpath(repopath), bundlepath)
+        url = b'bundle:%s+%s' % (util.expandpath(repopath), bundlepath)
     else:
-        url = 'bundle:%s' % bundlepath
+        url = b'bundle:%s' % bundlepath
 
     # Because we can't make any guarantees about the type of the base
     # repository, we can't have a static class representing the bundle
@@ -565,23 +567,25 @@ def getremotechanges(
         # create a bundle (uncompressed if peer repo is not local)
 
         # developer config: devel.legacy.exchange
-        legexc = ui.configlist('devel', 'legacy.exchange')
-        forcebundle1 = 'bundle2' not in legexc and 'bundle1' in legexc
+        legexc = ui.configlist(b'devel', b'legacy.exchange')
+        forcebundle1 = b'bundle2' not in legexc and b'bundle1' in legexc
         canbundle2 = (
             not forcebundle1
-            and peer.capable('getbundle')
-            and peer.capable('bundle2')
+            and peer.capable(b'getbundle')
+            and peer.capable(b'bundle2')
         )
         if canbundle2:
             with peer.commandexecutor() as e:
                 b2 = e.callcommand(
-                    'getbundle',
+                    b'getbundle',
                     {
-                        'source': 'incoming',
-                        'common': common,
-                        'heads': rheads,
-                        'bundlecaps': exchange.caps20to10(repo, role='client'),
-                        'cg': True,
+                        b'source': b'incoming',
+                        b'common': common,
+                        b'heads': rheads,
+                        b'bundlecaps': exchange.caps20to10(
+                            repo, role=b'client'
+                        ),
+                        b'cg': True,
                     },
                 ).result()
 
@@ -589,41 +593,41 @@ def getremotechanges(
                     ui, b2._forwardchunks(), bundlename
                 )
         else:
-            if peer.capable('getbundle'):
+            if peer.capable(b'getbundle'):
                 with peer.commandexecutor() as e:
                     cg = e.callcommand(
-                        'getbundle',
+                        b'getbundle',
                         {
-                            'source': 'incoming',
-                            'common': common,
-                            'heads': rheads,
+                            b'source': b'incoming',
+                            b'common': common,
+                            b'heads': rheads,
                         },
                     ).result()
-            elif onlyheads is None and not peer.capable('changegroupsubset'):
+            elif onlyheads is None and not peer.capable(b'changegroupsubset'):
                 # compat with older servers when pulling all remote heads
 
                 with peer.commandexecutor() as e:
                     cg = e.callcommand(
-                        'changegroup',
-                        {'nodes': incoming, 'source': 'incoming',},
+                        b'changegroup',
+                        {b'nodes': incoming, b'source': b'incoming',},
                     ).result()
 
                 rheads = None
             else:
                 with peer.commandexecutor() as e:
                     cg = e.callcommand(
-                        'changegroupsubset',
+                        b'changegroupsubset',
                         {
-                            'bases': incoming,
-                            'heads': rheads,
-                            'source': 'incoming',
+                            b'bases': incoming,
+                            b'heads': rheads,
+                            b'source': b'incoming',
                         },
                     ).result()
 
             if localrepo:
-                bundletype = "HG10BZ"
+                bundletype = b"HG10BZ"
             else:
-                bundletype = "HG10UN"
+                bundletype = b"HG10UN"
             fname = bundle = bundle2.writebundle(ui, cg, bundlename, bundletype)
         # keep written bundle?
         if bundlename:
@@ -649,7 +653,7 @@ def getremotechanges(
 
         with peer.commandexecutor() as e:
             remotephases = e.callcommand(
-                'listkeys', {'namespace': 'phases',}
+                b'listkeys', {b'namespace': b'phases',}
             ).result()
 
         pullop = exchange.pulloperation(bundlerepo, peer, heads=reponodes)

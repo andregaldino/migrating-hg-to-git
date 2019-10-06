@@ -44,7 +44,7 @@ def countcpus():
 
     # windows
     try:
-        n = int(encoding.environ['NUMBER_OF_PROCESSORS'])
+        n = int(encoding.environ[b'NUMBER_OF_PROCESSORS'])
         if n > 0:
             return n
     except (KeyError, ValueError):
@@ -54,14 +54,14 @@ def countcpus():
 
 
 def _numworkers(ui):
-    s = ui.config('worker', 'numcpus')
+    s = ui.config(b'worker', b'numcpus')
     if s:
         try:
             n = int(s)
             if n >= 1:
                 return n
         except ValueError:
-            raise error.Abort(_('number of cpus must be an integer'))
+            raise error.Abort(_(b'number of cpus must be an integer'))
     return min(max(countcpus(), 4), 32)
 
 
@@ -115,7 +115,7 @@ def worker(
     a thread-based worker. Should be disabled for CPU heavy tasks that don't
     release the GIL.
     '''
-    enabled = ui.configbool('worker', 'enabled')
+    enabled = ui.configbool(b'worker', b'enabled')
     if enabled and worthwhile(ui, costperarg, len(args), threadsafe=threadsafe):
         return _platformworker(ui, func, staticargs, args, hasretval)
     return func(*staticargs + (args,))
@@ -331,8 +331,8 @@ def _windowsworker(ui, func, staticargs, args, hasretval):
                 # task and does not get to handle the interruption.
                 ui.warn(
                     _(
-                        "failed to kill worker threads while "
-                        "handling an exception\n"
+                        b"failed to kill worker threads while "
+                        b"handling an exception\n"
                     )
                 )
                 return

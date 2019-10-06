@@ -13,7 +13,7 @@ from __future__ import absolute_import
 
 from .. import encoding
 
-if encoding.environ.get('HGREALINTERFACES'):
+if encoding.environ.get(b'HGREALINTERFACES'):
     from ..thirdparty.zope import interface as zi
 
     Attribute = zi.Attribute
@@ -22,7 +22,7 @@ if encoding.environ.get('HGREALINTERFACES'):
 else:
 
     class Attribute(object):
-        def __init__(self, __name__, __doc__=''):
+        def __init__(self, __name__, __doc__=b''):
             pass
 
     class Interface(object):

@@ -122,7 +122,7 @@ from . import (
 defaultdict = collections.defaultdict
 contextmanager = contextlib.contextmanager
 
-__all__ = ['start', 'stop', 'reset', 'display', 'profile']
+__all__ = [b'start', b'stop', b'reset', b'display', b'profile']
 
 skips = {
     r"util.py:check",
@@ -157,7 +157,7 @@ def clock():
 class ProfileState(object):
     def __init__(self, frequency=None):
         self.reset(frequency)
-        self.track = 'cpu'
+        self.track = b'cpu'
 
     def reset(self, frequency=None):
         # total so far
@@ -194,7 +194,7 @@ class ProfileState(object):
 
     @property
     def timeidx(self):
-        if self.track == 'real':
+        if self.track == b'real':
             return 1
         return 0
 
@@ -238,7 +238,7 @@ class CodeSite(object):
         if self.source is None:
             lineno = self.lineno - 1
             try:
-                with open(self.path, 'rb') as fp:
+                with open(self.path, b'rb') as fp:
                     for i, line in enumerate(fp):
                         if i == lineno:
                             self.source = line.strip()
@@ -246,11 +246,11 @@ class CodeSite(object):
             except:
                 pass
             if self.source is None:
-                self.source = ''
+                self.source = b''
 
         source = self.source
         if len(source) > length:
-            source = source[: (length - 3)] + "..."
+            source = source[: (length - 3)] + b"..."
         return source
 
     def filename(self):
@@ -330,7 +330,7 @@ def is_active():
 lastmechanism = None
 
 
-def start(mechanism='thread', track='cpu'):
+def start(mechanism=b'thread', track=b'cpu'):
     '''Install the profiling signal handler, and start profiling.'''
     state.track = track  # note: nesting different mode won't work
     state.profile_level += 1
@@ -342,16 +342,16 @@ def start(mechanism='thread', track='cpu'):
         global lastmechanism
         lastmechanism = mechanism
 
-        if mechanism == 'signal':
+        if mechanism == b'signal':
             signal.signal(signal.SIGPROF, profile_signal_handler)
             signal.setitimer(
                 signal.ITIMER_PROF, rpt or state.sample_interval, 0.0
             )
-        elif mechanism == 'thread':
+        elif mechanism == b'thread':
             frame = inspect.currentframe()
             tid = [k for k, f in sys._current_frames().items() if f == frame][0]
             state.thread = threading.Thread(
-                target=samplerthread, args=(tid,), name="samplerthread"
+                target=samplerthread, args=(tid,), name=b"samplerthread"
             )
             state.thread.start()
 
@@ -360,17 +360,17 @@ def stop():
     '''Stop profiling, and uninstall the profiling signal handler.'''
     state.profile_level -= 1
     if state.profile_level == 0:
-        if lastmechanism == 'signal':
+        if lastmechanism == b'signal':
             rpt = signal.setitimer(signal.ITIMER_PROF, 0.0, 0.0)
             signal.signal(signal.SIGPROF, signal.SIG_IGN)
             state.remaining_prof_time = rpt[0]
-        elif lastmechanism == 'thread':
+        elif lastmechanism == b'thread':
             stopthread.set()
             state.thread.join()
 
         state.accumulate_time(clock())
         state.last_start_time = None
-        statprofpath = encoding.environ.get('STATPROF_DEST')
+        statprofpath = encoding.environ.get(b'STATPROF_DEST')
         if statprofpath:
             save_data(statprofpath)
 
@@ -378,29 +378,30 @@ def stop():
 
 
 def save_data(path):
-    with open(path, 'w+') as file:
-        file.write("%f %f\n" % state.accumulated_time)
+    with open(path, b'w+') as file:
+        file.write(b"%f %f\n" % state.accumulated_time)
         for sample in state.samples:
             time = sample.time
             stack = sample.stack
             sites = [
-                '\1'.join([s.path, b'%d' % s.lineno, s.function]) for s in stack
+                b'\1'.join([s.path, b'%d' % s.lineno, s.function])
+                for s in stack
             ]
-            file.write("%d\0%s\n" % (time, '\0'.join(sites)))
+            file.write(b"%d\0%s\n" % (time, b'\0'.join(sites)))
 
 
 def load_data(path):
-    lines = open(path, 'rb').read().splitlines()
+    lines = open(path, b'rb').read().splitlines()
 
     state.accumulated_time = [float(value) for value in lines[0].split()]
     state.samples = []
     for line in lines[1:]:
-        parts = line.split('\0')
+        parts = line.split(b'\0')
         time = float(parts[0])
         rawsites = parts[1:]
         sites = []
         for rawsite in rawsites:
-            siteparts = rawsite.split('\1')
+            siteparts = rawsite.split(b'\1')
             sites.append(
                 CodeSite.get(siteparts[0], int(siteparts[1]), siteparts[2])
             )
@@ -414,7 +415,7 @@ def reset(frequency=None):
 
     The optional frequency argument specifies the number of samples to
     collect per second.'''
-    assert state.profile_level == 0, "Can't reset() while statprof is running"
+    assert state.profile_level == 0, b"Can't reset() while statprof is running"
     CodeSite.cache.clear()
     state.reset(frequency)
 
@@ -514,7 +515,7 @@ def display(fp=None, format=3, data=None, **kwargs):
     elif format == DisplayFormats.Chrome:
         write_to_chrome(data, fp, **kwargs)
     else:
-        raise Exception("Invalid display format")
+        raise Exception(b"Invalid display format")
 
     if format not in (DisplayFormats.Json, DisplayFormats.Chrome):
         fp.write(b'---\n')
@@ -539,7 +540,7 @@ def display_by_line(data, fp):
 
     for stat in stats:
         site = stat.site
-        sitelabel = '%s:%d:%s' % (site.filename(), site.lineno, site.function)
+        sitelabel = b'%s:%d:%s' % (site.filename(), site.lineno, site.function)
         fp.write(
             b'%6.2f %9.2f %9.2f  %s\n'
             % (
@@ -556,11 +557,12 @@ def display_by_method(data, fp):
     as one row in a table.  Important lines within that function are
     output as nested rows.  Sorted by self-time per line.'''
     fp.write(
-        b'%5.5s %10.10s   %7.7s  %-8.8s\n' % ('%  ', 'cumulative', 'self', '')
+        b'%5.5s %10.10s   %7.7s  %-8.8s\n'
+        % (b'%  ', b'cumulative', b'self', b'')
     )
     fp.write(
         b'%5.5s  %9.9s  %8.8s  %-8.8s\n'
-        % ("time", "seconds", "seconds", "name")
+        % (b"time", b"seconds", b"seconds", b"name")
     )
 
     stats = SiteStats.buildstats(data.samples)
@@ -622,11 +624,11 @@ def display_by_method(data, fp):
 
 def display_about_method(data, fp, function=None, **kwargs):
     if function is None:
-        raise Exception("Invalid function")
+        raise Exception(b"Invalid function")
 
     filename = None
-    if ':' in function:
-        filename, function = function.split(':')
+    if b':' in function:
+        filename, function = function.split(b':')
 
     relevant_samples = 0
     parents = {}
@@ -685,7 +687,7 @@ def display_about_method(data, fp, function=None, **kwargs):
     fp.write(
         b'\n    %s:%s    Total: %0.2fs (%0.2f%%)    Self: %0.2fs (%0.2f%%)\n\n'
         % (
-            pycompat.sysbytes(filename or '___'),
+            pycompat.sysbytes(filename or b'___'),
             pycompat.sysbytes(function),
             total_cum_sec,
             total_cum_percent,
@@ -746,37 +748,41 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
         ]
         if site:
             indent = depth * 2 - 1
-            filename = ''
-            function = ''
+            filename = b''
+            function = b''
             if len(node.children) > 0:
                 childsite = list(node.children.itervalues())[0].site
-                filename = (childsite.filename() + ':').ljust(15)
+                filename = (childsite.filename() + b':').ljust(15)
                 function = childsite.function
 
             # lots of string formatting
             listpattern = (
-                ''.ljust(indent)
-                + ('\\' if multiple_siblings else '|')
-                + ' %4.1f%%'
-                + (' %5.2fs' % node.count if showtime else '')
-                + '  %s %s'
+                b''.ljust(indent)
+                + (b'\\' if multiple_siblings else b'|')
+                + b' %4.1f%%'
+                + (b' %5.2fs' % node.count if showtime else b'')
+                + b'  %s %s'
             )
             liststring = listpattern % (
                 node.count / root.count * 100,
                 filename,
                 function,
             )
-            codepattern = '%' + ('%d' % (55 - len(liststring))) + 's %d:  %s'
-            codestring = codepattern % ('line', site.lineno, site.getsource(30))
+            codepattern = b'%' + (b'%d' % (55 - len(liststring))) + b's %d:  %s'
+            codestring = codepattern % (
+                b'line',
+                site.lineno,
+                site.getsource(30),
+            )
 
             finalstring = liststring + codestring
             childrensamples = sum([c.count for c in node.children.itervalues()])
             # Make frames that performed more than 10% of the operation red
             if node.count - childrensamples > (0.1 * root.count):
-                finalstring = '\033[91m' + finalstring + '\033[0m'
+                finalstring = b'\033[91m' + finalstring + b'\033[0m'
             # Make frames that didn't actually perform work dark grey
             elif node.count - childrensamples == 0:
-                finalstring = '\033[90m' + finalstring + '\033[0m'
+                finalstring = b'\033[90m' + finalstring + b'\033[0m'
             fp.write(finalstring + b'\n')
 
         newdepth = depth
@@ -793,7 +799,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
 
 def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
     if scriptpath is None:
-        scriptpath = encoding.environ['HOME'] + '/flamegraph.pl'
+        scriptpath = encoding.environ[b'HOME'] + b'/flamegraph.pl'
     if not os.path.exists(scriptpath):
         fp.write(b'error: missing %s\n' % scriptpath)
         fp.write(b'get it here: https://github.com/brendangregg/FlameGraph\n')
@@ -803,7 +809,7 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
     for sample in data.samples:
         sites = [s.function for s in sample.stack]
         sites.reverse()
-        line = ';'.join(sites)
+        line = b';'.join(sites)
         if line in lines:
             lines[line] = lines[line] + 1
         else:
@@ -811,14 +817,14 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
 
     fd, path = pycompat.mkstemp()
 
-    with open(path, "w+") as file:
+    with open(path, b"w+") as file:
         for line, count in lines.iteritems():
-            file.write("%s %d\n" % (line, count))
+            file.write(b"%s %d\n" % (line, count))
 
     if outputfile is None:
-        outputfile = '~/flamegraph.svg'
+        outputfile = b'~/flamegraph.svg'
 
-    os.system("perl ~/flamegraph.pl %s > %s" % (path, outputfile))
+    os.system(b"perl ~/flamegraph.pl %s > %s" % (path, outputfile))
     fp.write(b'Written to %s\n' % outputfile)
 
 
@@ -983,7 +989,7 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
     if not isinstance(data, bytes):
         data = data.encode('utf-8')
     fp.write(data)
-    fp.write('\n')
+    fp.write(b'\n')
 
 
 def printusage():
@@ -1020,19 +1026,19 @@ def main(argv=None):
     displayargs = {}
 
     optstart = 2
-    displayargs['function'] = None
+    displayargs[b'function'] = None
     if argv[1] == r'hotpath':
-        displayargs['format'] = DisplayFormats.Hotpath
+        displayargs[b'format'] = DisplayFormats.Hotpath
     elif argv[1] == r'lines':
-        displayargs['format'] = DisplayFormats.ByLine
+        displayargs[b'format'] = DisplayFormats.ByLine
     elif argv[1] == r'functions':
-        displayargs['format'] = DisplayFormats.ByMethod
+        displayargs[b'format'] = DisplayFormats.ByMethod
     elif argv[1] == r'function':
-        displayargs['format'] = DisplayFormats.AboutMethod
-        displayargs['function'] = argv[2]
+        displayargs[b'format'] = DisplayFormats.AboutMethod
+        displayargs[b'function'] = argv[2]
         optstart = 3
     elif argv[1] == r'flame':
-        displayargs['format'] = DisplayFormats.FlameGraph
+        displayargs[b'format'] = DisplayFormats.FlameGraph
     else:
         printusage()
         return 0
@@ -1041,30 +1047,30 @@ def main(argv=None):
     try:
         opts, args = pycompat.getoptb(
             sys.argv[optstart:],
-            "hl:f:o:p:",
-            ["help", "limit=", "file=", "output-file=", "script-path="],
+            b"hl:f:o:p:",
+            [b"help", b"limit=", b"file=", b"output-file=", b"script-path="],
         )
     except getopt.error as msg:
         print(msg)
         printusage()
         return 2
 
-    displayargs['limit'] = 0.05
+    displayargs[b'limit'] = 0.05
     path = None
     for o, value in opts:
         if o in (r"-l", r"--limit"):
-            displayargs['limit'] = float(value)
+            displayargs[b'limit'] = float(value)
         elif o in (r"-f", r"--file"):
             path = value
         elif o in (r"-o", r"--output-file"):
-            displayargs['outputfile'] = value
+            displayargs[b'outputfile'] = value
         elif o in (r"-p", r"--script-path"):
-            displayargs['scriptpath'] = value
+            displayargs[b'scriptpath'] = value
         elif o in (r"-h", r"help"):
             printusage()
             return 0
         else:
-            assert False, "unhandled option %s" % o
+            assert False, b"unhandled option %s" % o
 
     if not path:
         print(r'must specify --file to load')

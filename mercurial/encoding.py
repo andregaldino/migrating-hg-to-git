@@ -36,11 +36,11 @@ if pycompat.ispy3:
 # sanity.
 _ignore = [
     unichr(int(x, 16)).encode("utf-8")
-    for x in "200c 200d 200e 200f 202a 202b 202c 202d 202e "
-    "206a 206b 206c 206d 206e 206f feff".split()
+    for x in b"200c 200d 200e 200f 202a 202b 202c 202d 202e "
+    b"206a 206b 206c 206d 206e 206f feff".split()
 ]
 # verify the next function will work
-assert all(i.startswith(("\xe2", "\xef")) for i in _ignore)
+assert all(i.startswith((b"\xe2", b"\xef")) for i in _ignore)
 
 
 def hfsignoreclean(s):
@@ -51,9 +51,9 @@ def hfsignoreclean(s):
     >>> hfsignoreclean(u'.h\ufeffg'.encode('utf-8'))
     '.hg'
     """
-    if "\xe2" in s or "\xef" in s:
+    if b"\xe2" in s or b"\xef" in s:
         for c in _ignore:
-            s = s.replace(c, '')
+            s = s.replace(c, b'')
     return s
 
 
@@ -73,24 +73,24 @@ else:
     )
 
 _encodingrewrites = {
-    '646': 'ascii',
-    'ANSI_X3.4-1968': 'ascii',
+    b'646': b'ascii',
+    b'ANSI_X3.4-1968': b'ascii',
 }
 # cp65001 is a Windows variant of utf-8, which isn't supported on Python 2.
 # No idea if it should be rewritten to the canonical name 'utf-8' on Python 3.
 # https://bugs.python.org/issue13216
 if pycompat.iswindows and not pycompat.ispy3:
-    _encodingrewrites['cp65001'] = 'utf-8'
+    _encodingrewrites[b'cp65001'] = b'utf-8'
 
 try:
-    encoding = environ.get("HGENCODING")
+    encoding = environ.get(b"HGENCODING")
     if not encoding:
-        encoding = locale.getpreferredencoding().encode('ascii') or 'ascii'
+        encoding = locale.getpreferredencoding().encode('ascii') or b'ascii'
         encoding = _encodingrewrites.get(encoding, encoding)
 except locale.Error:
-    encoding = 'ascii'
-encodingmode = environ.get("HGENCODINGMODE", "strict")
-fallbackencoding = 'ISO-8859-1'
+    encoding = b'ascii'
+encodingmode = environ.get(b"HGENCODINGMODE", b"strict")
+fallbackencoding = b'ISO-8859-1'
 
 
 class localstr(bytes):
@@ -158,7 +158,7 @@ def tolocal(s):
         try:
             # make sure string is actually stored in UTF-8
             u = s.decode('UTF-8')
-            if encoding == 'UTF-8':
+            if encoding == b'UTF-8':
                 # fast path
                 return s
             r = u.encode(_sysstr(encoding), r"replace")
@@ -180,7 +180,7 @@ def tolocal(s):
                 # can't round-trip
                 return u.encode(_sysstr(encoding), r"replace")
     except LookupError as k:
-        raise error.Abort(k, hint="please check your locale settings")
+        raise error.Abort(k, hint=b"please check your locale settings")
 
 
 def fromlocal(s):
@@ -206,10 +206,10 @@ def fromlocal(s):
     except UnicodeDecodeError as inst:
         sub = s[max(0, inst.start - 10) : inst.start + 10]
         raise error.Abort(
-            "decoding near '%s': %s!" % (sub, pycompat.bytestr(inst))
+            b"decoding near '%s': %s!" % (sub, pycompat.bytestr(inst))
         )
     except LookupError as k:
-        raise error.Abort(k, hint="please check your locale settings")
+        raise error.Abort(k, hint=b"please check your locale settings")
 
 
 def unitolocal(u):
@@ -266,17 +266,19 @@ else:
 
 # How to treat ambiguous-width characters. Set to 'wide' to treat as wide.
 _wide = _sysstr(
-    environ.get("HGENCODINGAMBIGUOUS", "narrow") == "wide" and "WFA" or "WF"
+    environ.get(b"HGENCODINGAMBIGUOUS", b"narrow") == b"wide"
+    and b"WFA"
+    or b"WF"
 )
 
 
 def colwidth(s):
-    "Find the column width of a string for display in the local encoding"
+    b"Find the column width of a string for display in the local encoding"
     return ucolwidth(s.decode(_sysstr(encoding), r'replace'))
 
 
 def ucolwidth(d):
-    "Find the column width of a Unicode string for display"
+    b"Find the column width of a Unicode string for display"
     eaw = getattr(unicodedata, 'east_asian_width', None)
     if eaw is not None:
         return sum([eaw(c) in _wide and 2 or 1 for c in d])
@@ -292,7 +294,7 @@ def getcols(s, start, c):
             return t
 
 
-def trim(s, width, ellipsis='', leftside=False):
+def trim(s, width, ellipsis=b'', leftside=False):
     """Trim string 's' to at most 'width' columns (including 'ellipsis').
 
     If 'leftside' is True, left side of string 's' is trimmed.
@@ -390,7 +392,7 @@ def trim(s, width, ellipsis='', leftside=False):
 
 
 def lower(s):
-    "best-effort encoding-aware case-folding of local string s"
+    b"best-effort encoding-aware case-folding of local string s"
     try:
         return asciilower(s)
     except UnicodeDecodeError:
@@ -408,11 +410,11 @@ def lower(s):
     except UnicodeError:
         return s.lower()  # we don't know how to fold this except in ASCII
     except LookupError as k:
-        raise error.Abort(k, hint="please check your locale settings")
+        raise error.Abort(k, hint=b"please check your locale settings")
 
 
 def upper(s):
-    "best-effort encoding-aware case-folding of local string s"
+    b"best-effort encoding-aware case-folding of local string s"
     try:
         return asciiupper(s)
     except UnicodeDecodeError:
@@ -433,7 +435,7 @@ def upperfallback(s):
     except UnicodeError:
         return s.upper()  # we don't know how to fold this except in ASCII
     except LookupError as k:
-        raise error.Abort(k, hint="please check your locale settings")
+        raise error.Abort(k, hint=b"please check your locale settings")
 
 
 class normcasespecs(object):
@@ -575,7 +577,7 @@ def toutf8b(s):
         return fromlocal(s)
     elif isasciistr(s):
         return s
-    if "\xed" not in s:
+    if b"\xed" not in s:
         try:
             s.decode('utf-8', _utf8strict)
             return s
@@ -583,13 +585,13 @@ def toutf8b(s):
             pass
 
     s = pycompat.bytestr(s)
-    r = ""
+    r = b""
     pos = 0
     l = len(s)
     while pos < l:
         try:
             c = getutf8char(s, pos)
-            if "\xed\xb0\x80" <= c <= "\xed\xb3\xbf":
+            if b"\xed\xb0\x80" <= c <= b"\xed\xb3\xbf":
                 # have to re-escape existing U+DCxx characters
                 c = unichr(0xDC00 + ord(s[pos])).encode('utf-8', _utf8strict)
                 pos += 1
@@ -628,7 +630,7 @@ def fromutf8b(s):
     if isasciistr(s):
         return s
     # fast path - look for uDxxx prefixes in s
-    if "\xed" not in s:
+    if b"\xed" not in s:
         return s
 
     # We could do this with the unicode type but some Python builds
@@ -637,14 +639,14 @@ def fromutf8b(s):
     # helper again to walk the string without "decoding" it.
 
     s = pycompat.bytestr(s)
-    r = ""
+    r = b""
     pos = 0
     l = len(s)
     while pos < l:
         c = getutf8char(s, pos)
         pos += len(c)
         # unescape U+DCxx characters
-        if "\xed\xb0\x80" <= c <= "\xed\xb3\xbf":
+        if b"\xed\xb0\x80" <= c <= b"\xed\xb3\xbf":
             c = pycompat.bytechr(ord(c.decode("utf-8", _utf8strict)) & 0xFF)
         r += c
     return r

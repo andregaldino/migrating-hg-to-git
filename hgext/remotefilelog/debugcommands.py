@@ -35,13 +35,13 @@ def debugremotefilelog(ui, path, **opts):
 
     size, firstnode, mapping = parsefileblob(path, decompress)
 
-    ui.status(_("size: %d bytes\n") % size)
-    ui.status(_("path: %s \n") % path)
-    ui.status(_("key: %s \n") % (short(firstnode)))
-    ui.status(_("\n"))
+    ui.status(_(b"size: %d bytes\n") % size)
+    ui.status(_(b"path: %s \n") % path)
+    ui.status(_(b"key: %s \n") % (short(firstnode)))
+    ui.status(_(b"\n"))
     ui.status(
-        _("%12s => %12s %13s %13s %12s\n")
-        % ("node", "p1", "p2", "linknode", "copyfrom")
+        _(b"%12s => %12s %13s %13s %12s\n")
+        % (b"node", b"p1", b"p2", b"linknode", b"copyfrom")
     )
 
     queue = [firstnode]
@@ -49,7 +49,7 @@ def debugremotefilelog(ui, path, **opts):
         node = queue.pop(0)
         p1, p2, linknode, copyfrom = mapping[node]
         ui.status(
-            _("%s => %s  %s  %s  %s\n")
+            _(b"%s => %s  %s  %s  %s\n")
             % (short(node), short(p1), short(p2), short(linknode), copyfrom)
         )
         if p1 != nullid:
@@ -61,21 +61,21 @@ def debugremotefilelog(ui, path, **opts):
 def buildtemprevlog(repo, file):
     # get filename key
     filekey = nodemod.hex(hashlib.sha1(file).digest())
-    filedir = os.path.join(repo.path, 'store/data', filekey)
+    filedir = os.path.join(repo.path, b'store/data', filekey)
 
     # sort all entries based on linkrev
     fctxs = []
     for filenode in os.listdir(filedir):
-        if '_old' not in filenode:
+        if b'_old' not in filenode:
             fctxs.append(repo.filectx(file, fileid=bin(filenode)))
 
     fctxs = sorted(fctxs, key=lambda x: x.linkrev())
 
     # add to revlog
-    temppath = repo.sjoin('data/temprevlog.i')
+    temppath = repo.sjoin(b'data/temprevlog.i')
     if os.path.exists(temppath):
         os.remove(temppath)
-    r = filelog.filelog(repo.svfs, 'temprevlog')
+    r = filelog.filelog(repo.svfs, b'temprevlog')
 
     class faket(object):
         def add(self, a, b, c):
@@ -89,8 +89,8 @@ def buildtemprevlog(repo, file):
         p = fctx.filelog().parents(fctx.filenode())
         meta = {}
         if fctx.renamed():
-            meta['copy'] = fctx.renamed()[0]
-            meta['copyrev'] = hex(fctx.renamed()[1])
+            meta[b'copy'] = fctx.renamed()[0]
+            meta[b'copyrev'] = hex(fctx.renamed()[1])
 
         r.add(fctx.data(), meta, t, fctx.linkrev(), p[0], p[1])
 
@@ -111,29 +111,29 @@ def debugindex(orig, ui, repo, file_=None, **opts):
     r = buildtemprevlog(repo, file_)
 
     # debugindex like normal
-    format = opts.get('format', 0)
+    format = opts.get(b'format', 0)
     if format not in (0, 1):
-        raise error.Abort(_("unknown format %d") % format)
+        raise error.Abort(_(b"unknown format %d") % format)
 
     generaldelta = r.version & revlog.FLAG_GENERALDELTA
     if generaldelta:
-        basehdr = ' delta'
+        basehdr = b' delta'
     else:
-        basehdr = '  base'
+        basehdr = b'  base'
 
     if format == 0:
         ui.write(
             (
-                "   rev    offset  length " + basehdr + " linkrev"
-                " nodeid       p1           p2\n"
+                b"   rev    offset  length " + basehdr + b" linkrev"
+                b" nodeid       p1           p2\n"
             )
         )
     elif format == 1:
         ui.write(
             (
-                "   rev flag   offset   length"
-                "     size " + basehdr + "   link     p1     p2"
-                "       nodeid\n"
+                b"   rev flag   offset   length"
+                b"     size " + basehdr + b"   link     p1     p2"
+                b"       nodeid\n"
             )
         )
 
@@ -149,7 +149,7 @@ def debugindex(orig, ui, repo, file_=None, **opts):
             except Exception:
                 pp = [nullid, nullid]
             ui.write(
-                "% 6d % 9d % 7d % 6d % 7d %s %s %s\n"
+                b"% 6d % 9d % 7d % 6d % 7d %s %s %s\n"
                 % (
                     i,
                     r.start(i),
@@ -164,7 +164,7 @@ def debugindex(orig, ui, repo, file_=None, **opts):
         elif format == 1:
             pr = r.parentrevs(i)
             ui.write(
-                "% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d % 6d %s\n"
+                b"% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d % 6d %s\n"
                 % (
                     i,
                     r.flags(i),
@@ -187,14 +187,14 @@ def debugindexdot(orig, ui, repo, file_):
 
     r = buildtemprevlog(repo, os.path.basename(file_)[:-2])
 
-    ui.write("digraph G {\n")
+    ui.write(b"digraph G {\n")
     for i in r:
         node = r.node(i)
         pp = r.parents(node)
-        ui.write("\t%d -> %d\n" % (r.rev(pp[0]), i))
+        ui.write(b"\t%d -> %d\n" % (r.rev(pp[0]), i))
         if pp[1] != nullid:
-            ui.write("\t%d -> %d\n" % (r.rev(pp[1]), i))
-    ui.write("}\n")
+            ui.write(b"\t%d -> %d\n" % (r.rev(pp[1]), i))
+    ui.write(b"}\n")
 
 
 def verifyremotefilelog(ui, path, **opts):
@@ -202,7 +202,7 @@ def verifyremotefilelog(ui, path, **opts):
 
     for root, dirs, files in os.walk(path):
         for file in files:
-            if file == "repos":
+            if file == b"repos":
                 continue
             filepath = os.path.join(root, file)
             size, firstnode, mapping = parsefileblob(filepath, decompress)
@@ -210,10 +210,10 @@ def verifyremotefilelog(ui, path, **opts):
                 if linknode == nullid:
                     actualpath = os.path.relpath(root, path)
                     key = fileserverclient.getcachekey(
-                        "reponame", actualpath, file
+                        b"reponame", actualpath, file
                     )
                     ui.status(
-                        "%s %s\n" % (key, os.path.relpath(filepath, path))
+                        b"%s %s\n" % (key, os.path.relpath(filepath, path))
                     )
 
 
@@ -222,7 +222,7 @@ def _decompressblob(raw):
 
 
 def parsefileblob(path, decompress):
-    f = open(path, "rb")
+    f = open(path, b"rb")
     try:
         raw = f.read()
     finally:
@@ -238,7 +238,7 @@ def parsefileblob(path, decompress):
 
     mapping = {}
     while start < len(raw):
-        divider = raw.index('\0', start + 80)
+        divider = raw.index(b'\0', start + 80)
 
         currentnode = raw[start : (start + 20)]
         if not firstnode:
@@ -257,13 +257,13 @@ def parsefileblob(path, decompress):
 
 def debugdatapack(ui, *paths, **opts):
     for path in paths:
-        if '.data' in path:
-            path = path[: path.index('.data')]
-        ui.write("%s:\n" % path)
+        if b'.data' in path:
+            path = path[: path.index(b'.data')]
+        ui.write(b"%s:\n" % path)
         dpack = datapack.datapack(path)
         node = opts.get(r'node')
         if node:
-            deltachain = dpack.getdeltachain('', bin(node))
+            deltachain = dpack.getdeltachain(b'', bin(node))
             dumpdeltachain(ui, deltachain, **opts)
             return
 
@@ -280,21 +280,21 @@ def debugdatapack(ui, *paths, **opts):
 
         def printtotals():
             if lastfilename is not None:
-                ui.write("\n")
+                ui.write(b"\n")
             if not totaldeltasize or not totalblobsize:
                 return
             difference = totalblobsize - totaldeltasize
-            deltastr = "%0.1f%% %s" % (
+            deltastr = b"%0.1f%% %s" % (
                 (100.0 * abs(difference) / totalblobsize),
-                ("smaller" if difference > 0 else "bigger"),
+                (b"smaller" if difference > 0 else b"bigger"),
             )
 
             ui.write(
-                "Total:%s%s  %s (%s)\n"
+                b"Total:%s%s  %s (%s)\n"
                 % (
-                    "".ljust(2 * hashlen - len("Total:")),
-                    ('%d' % totaldeltasize).ljust(12),
-                    ('%d' % totalblobsize).ljust(9),
+                    b"".ljust(2 * hashlen - len(b"Total:")),
+                    (b'%d' % totaldeltasize).ljust(12),
+                    (b'%d' % totalblobsize).ljust(9),
                     deltastr,
                 )
             )
@@ -305,20 +305,20 @@ def debugdatapack(ui, *paths, **opts):
         for filename, node, deltabase, deltalen in dpack.iterentries():
             bases[node] = deltabase
             if node in nodes:
-                ui.write(("Bad entry: %s appears twice\n" % short(node)))
+                ui.write((b"Bad entry: %s appears twice\n" % short(node)))
                 failures += 1
             nodes.add(node)
             if filename != lastfilename:
                 printtotals()
-                name = '(empty name)' if filename == '' else filename
-                ui.write("%s:\n" % name)
+                name = b'(empty name)' if filename == b'' else filename
+                ui.write(b"%s:\n" % name)
                 ui.write(
-                    "%s%s%s%s\n"
+                    b"%s%s%s%s\n"
                     % (
-                        "Node".ljust(hashlen),
-                        "Delta Base".ljust(hashlen),
-                        "Delta Length".ljust(14),
-                        "Blob Size".ljust(9),
+                        b"Node".ljust(hashlen),
+                        b"Delta Base".ljust(hashlen),
+                        b"Delta Length".ljust(14),
+                        b"Blob Size".ljust(9),
                     )
                 )
                 lastfilename = filename
@@ -332,13 +332,13 @@ def debugdatapack(ui, *paths, **opts):
                 totaldeltasize += deltalen
                 totalblobsize += blobsize
             else:
-                blobsize = "(missing)"
+                blobsize = b"(missing)"
             ui.write(
-                "%s  %s  %s%s\n"
+                b"%s  %s  %s%s\n"
                 % (
                     hashformatter(node),
                     hashformatter(deltabase),
-                    ('%d' % deltalen).ljust(14),
+                    (b'%d' % deltalen).ljust(14),
                     pycompat.bytestr(blobsize),
                 )
             )
@@ -348,7 +348,7 @@ def debugdatapack(ui, *paths, **opts):
 
         failures += _sanitycheck(ui, set(nodes), bases)
         if failures > 1:
-            ui.warn(("%d failures\n" % failures))
+            ui.warn((b"%d failures\n" % failures))
             return 1
 
 
@@ -370,7 +370,7 @@ def _sanitycheck(ui, nodes, bases):
             if deltabase not in nodes:
                 ui.warn(
                     (
-                        "Bad entry: %s has an unknown deltabase (%s)\n"
+                        b"Bad entry: %s has an unknown deltabase (%s)\n"
                         % (short(node), short(deltabase))
                     )
                 )
@@ -380,7 +380,7 @@ def _sanitycheck(ui, nodes, bases):
             if deltabase in seen:
                 ui.warn(
                     (
-                        "Bad entry: %s has a cycle (at %s)\n"
+                        b"Bad entry: %s has a cycle (at %s)\n"
                         % (short(node), short(deltabase))
                     )
                 )
@@ -403,20 +403,20 @@ def dumpdeltachain(ui, deltachain, **opts):
     lastfilename = None
     for filename, node, filename, deltabasenode, delta in deltachain:
         if filename != lastfilename:
-            ui.write("\n%s\n" % filename)
+            ui.write(b"\n%s\n" % filename)
             lastfilename = filename
         ui.write(
-            "%s  %s  %s  %s\n"
+            b"%s  %s  %s  %s\n"
             % (
-                "Node".ljust(hashlen),
-                "Delta Base".ljust(hashlen),
-                "Delta SHA1".ljust(hashlen),
-                "Delta Length".ljust(6),
+                b"Node".ljust(hashlen),
+                b"Delta Base".ljust(hashlen),
+                b"Delta SHA1".ljust(hashlen),
+                b"Delta Length".ljust(6),
             )
         )
 
         ui.write(
-            "%s  %s  %s  %d\n"
+            b"%s  %s  %s  %d\n"
             % (
                 hashformatter(node),
                 hashformatter(deltabasenode),
@@ -427,28 +427,28 @@ def dumpdeltachain(ui, deltachain, **opts):
 
 
 def debughistorypack(ui, path):
-    if '.hist' in path:
-        path = path[: path.index('.hist')]
+    if b'.hist' in path:
+        path = path[: path.index(b'.hist')]
     hpack = historypack.historypack(path)
 
     lastfilename = None
     for entry in hpack.iterentries():
         filename, node, p1node, p2node, linknode, copyfrom = entry
         if filename != lastfilename:
-            ui.write("\n%s\n" % filename)
+            ui.write(b"\n%s\n" % filename)
             ui.write(
-                "%s%s%s%s%s\n"
+                b"%s%s%s%s%s\n"
                 % (
-                    "Node".ljust(14),
-                    "P1 Node".ljust(14),
-                    "P2 Node".ljust(14),
-                    "Link Node".ljust(14),
-                    "Copy From",
+                    b"Node".ljust(14),
+                    b"P1 Node".ljust(14),
+                    b"P2 Node".ljust(14),
+                    b"Link Node".ljust(14),
+                    b"Copy From",
                 )
             )
             lastfilename = filename
         ui.write(
-            "%s  %s  %s  %s  %s\n"
+            b"%s  %s  %s  %s  %s\n"
             % (
                 short(node),
                 short(p1node),
@@ -460,17 +460,17 @@ def debughistorypack(ui, path):
 
 
 def debugwaitonrepack(repo):
-    with lockmod.lock(repack.repacklockvfs(repo), "repacklock", timeout=-1):
+    with lockmod.lock(repack.repacklockvfs(repo), b"repacklock", timeout=-1):
         return
 
 
 def debugwaitonprefetch(repo):
     with repo._lock(
         repo.svfs,
-        "prefetchlock",
+        b"prefetchlock",
         True,
         None,
         None,
-        _('prefetching in %s') % repo.origroot,
+        _(b'prefetching in %s') % repo.origroot,
     ):
         pass

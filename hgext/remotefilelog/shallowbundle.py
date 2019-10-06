@@ -79,11 +79,11 @@ class shallowcg1packer(changegroup.cgpacker):
                 # bundlerepo is heavily tied to revlogs. Instead require that
                 # the user use unbundle instead.
                 # Force load the filelog data.
-                bundlerepo.bundlerepository.file(repo, 'foo')
+                bundlerepo.bundlerepository.file(repo, b'foo')
                 if repo._cgfilespos:
                     raise error.Abort(
-                        "cannot pull from full bundles",
-                        hint="use `hg unbundle` instead",
+                        b"cannot pull from full bundles",
+                        hint=b"use `hg unbundle` instead",
                     )
                 return []
             filestosend = self.shouldaddfilegroups(source)
@@ -99,16 +99,16 @@ class shallowcg1packer(changegroup.cgpacker):
         if not shallowutil.isenabled(repo):
             return AllFiles
 
-        if source == "push" or source == "bundle":
+        if source == b"push" or source == b"bundle":
             return AllFiles
 
         caps = self._bundlecaps or []
-        if source == "serve" or source == "pull":
+        if source == b"serve" or source == b"pull":
             if constants.BUNDLE2_CAPABLITY in caps:
                 return LocalFiles
             else:
                 # Serving to a full repo requires us to serve everything
-                repo.ui.warn(_("pulling from a shallow repo\n"))
+                repo.ui.warn(_(b"pulling from a shallow repo\n"))
                 return AllFiles
 
         return NoFiles
@@ -128,7 +128,7 @@ class shallowcg1packer(changegroup.cgpacker):
         return results
 
     def nodechunk(self, revlog, node, prevnode, linknode):
-        prefix = ''
+        prefix = b''
         if prevnode == nullid:
             delta = revlog.rawdata(node)
             prefix = mdiff.trivialdiffheader(len(delta))
@@ -152,22 +152,22 @@ def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
     original = repo.shallowmatch
     try:
         # if serving, only send files the clients has patterns for
-        if source == 'serve':
+        if source == b'serve':
             bundlecaps = kwargs.get(r'bundlecaps')
             includepattern = None
             excludepattern = None
             for cap in bundlecaps or []:
-                if cap.startswith("includepattern="):
-                    raw = cap[len("includepattern=") :]
+                if cap.startswith(b"includepattern="):
+                    raw = cap[len(b"includepattern=") :]
                     if raw:
-                        includepattern = raw.split('\0')
-                elif cap.startswith("excludepattern="):
-                    raw = cap[len("excludepattern=") :]
+                        includepattern = raw.split(b'\0')
+                elif cap.startswith(b"excludepattern="):
+                    raw = cap[len(b"excludepattern=") :]
                     if raw:
-                        excludepattern = raw.split('\0')
+                        excludepattern = raw.split(b'\0')
             if includepattern or excludepattern:
                 repo.shallowmatch = match.match(
-                    repo.root, '', None, includepattern, excludepattern
+                    repo.root, b'', None, includepattern, excludepattern
                 )
             else:
                 repo.shallowmatch = match.always()
@@ -192,13 +192,13 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
     # files in topological order.
 
     # read all the file chunks but don't add them
-    progress = repo.ui.makeprogress(_('files'), total=expectedfiles)
+    progress = repo.ui.makeprogress(_(b'files'), total=expectedfiles)
     while True:
         chunkdata = source.filelogheader()
         if not chunkdata:
             break
-        f = chunkdata["filename"]
-        repo.ui.debug("adding %s revisions\n" % f)
+        f = chunkdata[b"filename"]
+        repo.ui.debug(b"adding %s revisions\n" % f)
         progress.increment()
 
         if not repo.shallowmatch(f):
@@ -224,7 +224,7 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
                 visited.add(f)
 
         if chain is None:
-            raise error.Abort(_("received file revlog group is empty"))
+            raise error.Abort(_(b"received file revlog group is empty"))
 
     processed = set()
 
@@ -266,7 +266,7 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
 
         skipcount += 1
         if skipcount > len(queue) + 1:
-            raise error.Abort(_("circular node dependency"))
+            raise error.Abort(_(b"circular node dependency"))
 
         fl = repo.file(f)
 
@@ -283,9 +283,9 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
             text = bytes(text)
 
         meta, text = shallowutil.parsemeta(text)
-        if 'copy' in meta:
-            copyfrom = meta['copy']
-            copynode = bin(meta['copyrev'])
+        if b'copy' in meta:
+            copyfrom = meta[b'copy']
+            copynode = bin(meta[b'copyrev'])
             if not available(f, node, copyfrom, copynode):
                 continue
 

@@ -22,57 +22,64 @@ from mercurial import (
 
 cmdtable = {}
 command = registrar.command(cmdtable)
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 usedinternally = {
-    'amend_source',
-    'branch',
-    'close',
-    'histedit_source',
-    'topic',
-    'rebase_source',
-    'intermediate-source',
-    '__touch-noise__',
-    'source',
-    'transplant_source',
+    b'amend_source',
+    b'branch',
+    b'close',
+    b'histedit_source',
+    b'topic',
+    b'rebase_source',
+    b'intermediate-source',
+    b'__touch-noise__',
+    b'source',
+    b'transplant_source',
 }
 
 
 def extsetup(ui):
-    entry = extensions.wrapcommand(commands.table, 'commit', _commit)
+    entry = extensions.wrapcommand(commands.table, b'commit', _commit)
     options = entry[1]
     options.append(
-        ('', 'extra', [], _('set a changeset\'s extra values'), _("KEY=VALUE"))
+        (
+            b'',
+            b'extra',
+            [],
+            _(b'set a changeset\'s extra values'),
+            _(b"KEY=VALUE"),
+        )
     )
 
 
 def _commit(orig, ui, repo, *pats, **opts):
-    if util.safehasattr(repo, 'unfiltered'):
+    if util.safehasattr(repo, b'unfiltered'):
         repo = repo.unfiltered()
 
     class repoextra(repo.__class__):
         def commit(self, *innerpats, **inneropts):
             extras = opts.get(r'extra')
             for raw in extras:
-                if '=' not in raw:
+                if b'=' not in raw:
                     msg = _(
-                        "unable to parse '%s', should follow "
-                        "KEY=VALUE format"
+                        b"unable to parse '%s', should follow "
+                        b"KEY=VALUE format"
                     )
                     raise error.Abort(msg % raw)
-                k, v = raw.split('=', 1)
+                k, v = raw.split(b'=', 1)
                 if not k:
-                    msg = _("unable to parse '%s', keys can't be empty")
+                    msg = _(b"unable to parse '%s', keys can't be empty")
                     raise error.Abort(msg % raw)
                 if re.search(br'[^\w-]', k):
                     msg = _(
-                        "keys can only contain ascii letters, digits,"
-                        " '_' and '-'"
+                        b"keys can only contain ascii letters, digits,"
+                        b" '_' and '-'"
                     )
                     raise error.Abort(msg)
                 if k in usedinternally:
                     msg = _(
-                        "key '%s' is used internally, can't be set " "manually"
+                        b"key '%s' is used internally, can't be set "
+                        b"manually"
                     )
                     raise error.Abort(msg % k)
                 inneropts[r'extra'][k] = v

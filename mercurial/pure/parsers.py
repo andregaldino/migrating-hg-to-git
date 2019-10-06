@@ -28,9 +28,9 @@ def dirstatetuple(*x):
     return x
 
 
-indexformatng = ">Qiiiiii20s12x"
-indexfirst = struct.calcsize('Q')
-sizeint = struct.calcsize('i')
+indexformatng = b">Qiiiiii20s12x"
+indexfirst = struct.calcsize(b'Q')
+sizeint = struct.calcsize(b'i')
 indexsize = struct.calcsize(indexformatng)
 
 
@@ -51,7 +51,7 @@ class BaseIndexObject(object):
 
     def _check_index(self, i):
         if not isinstance(i, int):
-            raise TypeError("expecting int indexes")
+            raise TypeError(b"expecting int indexes")
         if i < 0 or i >= len(self):
             raise IndexError
 
@@ -83,7 +83,7 @@ class IndexObject(BaseIndexObject):
 
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
-            raise ValueError("deleting slices only supports a:-1 with step 1")
+            raise ValueError(b"deleting slices only supports a:-1 with step 1")
         i = i.start
         self._check_index(i)
         if i < self._lgt:
@@ -108,19 +108,19 @@ class InlinedIndexObject(BaseIndexObject):
         count = 0
         while off <= len(self._data) - indexsize:
             (s,) = struct.unpack(
-                '>i', self._data[off + indexfirst : off + sizeint + indexfirst]
+                b'>i', self._data[off + indexfirst : off + sizeint + indexfirst]
             )
             if lgt is not None:
                 self._offsets[count] = off
             count += 1
             off += indexsize + s
         if off != len(self._data):
-            raise ValueError("corrupted data")
+            raise ValueError(b"corrupted data")
         return count
 
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
-            raise ValueError("deleting slices only supports a:-1 with step 1")
+            raise ValueError(b"deleting slices only supports a:-1 with step 1")
         i = i.start
         self._check_index(i)
         if i < self._lgt:
@@ -143,7 +143,7 @@ def parse_index2(data, inline):
 def parse_dirstate(dmap, copymap, st):
     parents = [st[:20], st[20:40]]
     # dereference fields so they will be local in loop
-    format = ">cllll"
+    format = b">cllll"
     e_size = struct.calcsize(format)
     pos1 = 40
     l = len(st)
@@ -151,11 +151,11 @@ def parse_dirstate(dmap, copymap, st):
     # the inner loop
     while pos1 < l:
         pos2 = pos1 + e_size
-        e = _unpack(">cllll", st[pos1:pos2])  # a literal here is faster
+        e = _unpack(b">cllll", st[pos1:pos2])  # a literal here is faster
         pos1 = pos2 + e[4]
         f = st[pos2:pos1]
-        if '\0' in f:
-            f, c = f.split('\0')
+        if b'\0' in f:
+            f, c = f.split(b'\0')
             copymap[f] = c
         dmap[f] = e[:4]
     return parents
@@ -165,9 +165,9 @@ def pack_dirstate(dmap, copymap, pl, now):
     now = int(now)
     cs = stringio()
     write = cs.write
-    write("".join(pl))
+    write(b"".join(pl))
     for f, e in dmap.iteritems():
-        if e[0] == 'n' and e[3] == now:
+        if e[0] == b'n' and e[3] == now:
             # The file was last modified "simultaneously" with the current
             # write to dirstate (i.e. within the same second for file-
             # systems with a granularity of 1 sec). This commonly happens
@@ -181,8 +181,8 @@ def pack_dirstate(dmap, copymap, pl, now):
             dmap[f] = e
 
         if f in copymap:
-            f = "%s\0%s" % (f, copymap[f])
-        e = _pack(">cllll", e[0], e[1], e[2], e[3], len(f))
+            f = b"%s\0%s" % (f, copymap[f])
+        e = _pack(b">cllll", e[0], e[1], e[2], e[3], len(f))
         write(e)
         write(f)
     return cs.getvalue()

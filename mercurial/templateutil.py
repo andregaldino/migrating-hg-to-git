@@ -130,7 +130,7 @@ class wrappedbytes(wrapped):
 
     def getmember(self, context, mapping, key):
         raise error.ParseError(
-            _('%r is not a dictionary') % pycompat.bytestr(self._value)
+            _(b'%r is not a dictionary') % pycompat.bytestr(self._value)
         )
 
     def getmin(self, context, mapping):
@@ -141,17 +141,17 @@ class wrappedbytes(wrapped):
 
     def _getby(self, context, mapping, func):
         if not self._value:
-            raise error.ParseError(_('empty string'))
+            raise error.ParseError(_(b'empty string'))
         return func(pycompat.iterbytestr(self._value))
 
     def filter(self, context, mapping, select):
         raise error.ParseError(
-            _('%r is not filterable') % pycompat.bytestr(self._value)
+            _(b'%r is not filterable') % pycompat.bytestr(self._value)
         )
 
     def itermaps(self, context):
         raise error.ParseError(
-            _('%r is not iterable of mappings') % pycompat.bytestr(self._value)
+            _(b'%r is not iterable of mappings') % pycompat.bytestr(self._value)
         )
 
     def join(self, context, mapping, sep):
@@ -174,27 +174,27 @@ class wrappedvalue(wrapped):
         self._value = value
 
     def contains(self, context, mapping, item):
-        raise error.ParseError(_("%r is not iterable") % self._value)
+        raise error.ParseError(_(b"%r is not iterable") % self._value)
 
     def getmember(self, context, mapping, key):
-        raise error.ParseError(_('%r is not a dictionary') % self._value)
+        raise error.ParseError(_(b'%r is not a dictionary') % self._value)
 
     def getmin(self, context, mapping):
-        raise error.ParseError(_("%r is not iterable") % self._value)
+        raise error.ParseError(_(b"%r is not iterable") % self._value)
 
     def getmax(self, context, mapping):
-        raise error.ParseError(_("%r is not iterable") % self._value)
+        raise error.ParseError(_(b"%r is not iterable") % self._value)
 
     def filter(self, context, mapping, select):
-        raise error.ParseError(_("%r is not iterable") % self._value)
+        raise error.ParseError(_(b"%r is not iterable") % self._value)
 
     def itermaps(self, context):
         raise error.ParseError(
-            _('%r is not iterable of mappings') % self._value
+            _(b'%r is not iterable of mappings') % self._value
         )
 
     def join(self, context, mapping, sep):
-        raise error.ParseError(_('%r is not iterable') % self._value)
+        raise error.ParseError(_(b'%r is not iterable') % self._value)
 
     def show(self, context, mapping):
         if self._value is None:
@@ -216,35 +216,35 @@ class wrappedvalue(wrapped):
 class date(mappable, wrapped):
     """Wrapper for date tuple"""
 
-    def __init__(self, value, showfmt='%d %d'):
+    def __init__(self, value, showfmt=b'%d %d'):
         # value may be (float, int), but public interface shouldn't support
         # floating-point timestamp
         self._unixtime, self._tzoffset = map(int, value)
         self._showfmt = showfmt
 
     def contains(self, context, mapping, item):
-        raise error.ParseError(_('date is not iterable'))
+        raise error.ParseError(_(b'date is not iterable'))
 
     def getmember(self, context, mapping, key):
-        raise error.ParseError(_('date is not a dictionary'))
+        raise error.ParseError(_(b'date is not a dictionary'))
 
     def getmin(self, context, mapping):
-        raise error.ParseError(_('date is not iterable'))
+        raise error.ParseError(_(b'date is not iterable'))
 
     def getmax(self, context, mapping):
-        raise error.ParseError(_('date is not iterable'))
+        raise error.ParseError(_(b'date is not iterable'))
 
     def filter(self, context, mapping, select):
-        raise error.ParseError(_('date is not iterable'))
+        raise error.ParseError(_(b'date is not iterable'))
 
     def join(self, context, mapping, sep):
-        raise error.ParseError(_("date is not iterable"))
+        raise error.ParseError(_(b"date is not iterable"))
 
     def show(self, context, mapping):
         return self._showfmt % (self._unixtime, self._tzoffset)
 
     def tomap(self, context):
-        return {'unixtime': self._unixtime, 'tzoffset': self._tzoffset}
+        return {b'unixtime': self._unixtime, b'tzoffset': self._tzoffset}
 
     def tobool(self, context, mapping):
         return True
@@ -278,8 +278,8 @@ class hybrid(wrapped):
 
     def getmember(self, context, mapping, key):
         # TODO: maybe split hybrid list/dict types?
-        if not util.safehasattr(self._values, 'get'):
-            raise error.ParseError(_('not a dictionary'))
+        if not util.safehasattr(self._values, b'get'):
+            raise error.ParseError(_(b'not a dictionary'))
         key = unwrapastype(context, mapping, key, self._keytype)
         return self._wrapvalue(key, self._values.get(key))
 
@@ -291,20 +291,20 @@ class hybrid(wrapped):
 
     def _getby(self, context, mapping, func):
         if not self._values:
-            raise error.ParseError(_('empty sequence'))
+            raise error.ParseError(_(b'empty sequence'))
         val = func(self._values)
         return self._wrapvalue(val, val)
 
     def _wrapvalue(self, key, val):
         if val is None:
             return
-        if util.safehasattr(val, '_makemap'):
+        if util.safehasattr(val, b'_makemap'):
             # a nested hybrid list/dict, which has its own way of map operation
             return val
         return hybriditem(None, key, val, self._makemap)
 
     def filter(self, context, mapping, select):
-        if util.safehasattr(self._values, 'get'):
+        if util.safehasattr(self._values, b'get'):
             values = {
                 k: v
                 for k, v in self._values.iteritems()
@@ -327,7 +327,7 @@ class hybrid(wrapped):
         # TODO: switch gen to (context, mapping) API?
         gen = self._gen
         if gen is None:
-            return self.join(context, mapping, ' ')
+            return self.join(context, mapping, b' ')
         if callable(gen):
             return gen()
         return gen
@@ -338,7 +338,7 @@ class hybrid(wrapped):
     def tovalue(self, context, mapping):
         # TODO: make it non-recursive for trivial lists/dicts
         xs = self._values
-        if util.safehasattr(xs, 'get'):
+        if util.safehasattr(xs, b'get'):
             return {
                 k: unwrapvalue(context, mapping, v) for k, v in xs.iteritems()
             }
@@ -413,28 +413,30 @@ class _mappingsequence(wrapped):
     Template mappings may be nested.
     """
 
-    def __init__(self, name=None, tmpl=None, sep=''):
+    def __init__(self, name=None, tmpl=None, sep=b''):
         if name is not None and tmpl is not None:
-            raise error.ProgrammingError('name and tmpl are mutually exclusive')
+            raise error.ProgrammingError(
+                b'name and tmpl are mutually exclusive'
+            )
         self._name = name
         self._tmpl = tmpl
         self._defaultsep = sep
 
     def contains(self, context, mapping, item):
-        raise error.ParseError(_('not comparable'))
+        raise error.ParseError(_(b'not comparable'))
 
     def getmember(self, context, mapping, key):
-        raise error.ParseError(_('not a dictionary'))
+        raise error.ParseError(_(b'not a dictionary'))
 
     def getmin(self, context, mapping):
-        raise error.ParseError(_('not comparable'))
+        raise error.ParseError(_(b'not comparable'))
 
     def getmax(self, context, mapping):
-        raise error.ParseError(_('not comparable'))
+        raise error.ParseError(_(b'not comparable'))
 
     def filter(self, context, mapping, select):
         # implement if necessary; we'll need a wrapped type for a mapping dict
-        raise error.ParseError(_('not filterable without template'))
+        raise error.ParseError(_(b'not filterable without template'))
 
     def join(self, context, mapping, sep):
         mapsiter = _iteroverlaymaps(context, mapping, self.itermaps(context))
@@ -443,7 +445,7 @@ class _mappingsequence(wrapped):
         elif self._tmpl:
             itemiter = (context.expand(self._tmpl, m) for m in mapsiter)
         else:
-            raise error.ParseError(_('not displayable without template'))
+            raise error.ParseError(_(b'not displayable without template'))
         return joinitems(itemiter, sep)
 
     def show(self, context, mapping):
@@ -472,7 +474,7 @@ class mappinggenerator(_mappingsequence):
     mapping dicts.
     """
 
-    def __init__(self, make, args=(), name=None, tmpl=None, sep=''):
+    def __init__(self, make, args=(), name=None, tmpl=None, sep=b''):
         super(mappinggenerator, self).__init__(name, tmpl, sep)
         self._make = make
         self._args = args
@@ -487,7 +489,7 @@ class mappinggenerator(_mappingsequence):
 class mappinglist(_mappingsequence):
     """Wrapper for list of template mappings"""
 
-    def __init__(self, mappings, name=None, tmpl=None, sep=''):
+    def __init__(self, mappings, name=None, tmpl=None, sep=b''):
         super(mappinglist, self).__init__(name, tmpl, sep)
         self._mappings = mappings
 
@@ -556,7 +558,7 @@ class mappedgenerator(wrapped):
         return self._make(context, *self._args)
 
     def getmember(self, context, mapping, key):
-        raise error.ParseError(_('not a dictionary'))
+        raise error.ParseError(_(b'not a dictionary'))
 
     def getmin(self, context, mapping):
         return self._getby(context, mapping, min)
@@ -567,7 +569,7 @@ class mappedgenerator(wrapped):
     def _getby(self, context, mapping, func):
         xs = self.tovalue(context, mapping)
         if not xs:
-            raise error.ParseError(_('empty sequence'))
+            raise error.ParseError(_(b'empty sequence'))
         return func(xs)
 
     @staticmethod
@@ -582,13 +584,13 @@ class mappedgenerator(wrapped):
         return mappedgenerator(self._filteredgen, args)
 
     def itermaps(self, context):
-        raise error.ParseError(_('list of strings is not mappable'))
+        raise error.ParseError(_(b'list of strings is not mappable'))
 
     def join(self, context, mapping, sep):
         return joinitems(self._gen(context), sep)
 
     def show(self, context, mapping):
-        return self.join(context, mapping, '')
+        return self.join(context, mapping, b'')
 
     def tobool(self, context, mapping):
         return _nonempty(self._gen(context))
@@ -597,11 +599,11 @@ class mappedgenerator(wrapped):
         return [stringify(context, mapping, x) for x in self._gen(context)]
 
 
-def hybriddict(data, key='key', value='value', fmt=None, gen=None):
+def hybriddict(data, key=b'key', value=b'value', fmt=None, gen=None):
     """Wrap data to support both dict-like and string-like operations"""
     prefmt = pycompat.identity
     if fmt is None:
-        fmt = '%s=%s'
+        fmt = b'%s=%s'
         prefmt = pycompat.bytestr
     return hybrid(
         gen,
@@ -615,7 +617,7 @@ def hybridlist(data, name, fmt=None, gen=None):
     """Wrap data to support both list-like and string-like operations"""
     prefmt = pycompat.identity
     if fmt is None:
-        fmt = '%s'
+        fmt = b'%s'
         prefmt = pycompat.bytestr
     return hybrid(gen, data, lambda x: {name: x}, lambda x: fmt % prefmt(x))
 
@@ -625,11 +627,11 @@ def compatdict(
     mapping,
     name,
     data,
-    key='key',
-    value='value',
+    key=b'key',
+    value=b'value',
     fmt=None,
     plural=None,
-    separator=' ',
+    separator=b' ',
 ):
     """Wrap data like hybriddict(), but also supports old-style list template
 
@@ -649,7 +651,7 @@ def compatlist(
     element=None,
     fmt=None,
     plural=None,
-    separator=' ',
+    separator=b' ',
 ):
     """Wrap data like hybridlist(), but also supports old-style list template
 
@@ -668,14 +670,14 @@ def compatfilecopiesdict(context, mapping, name, copies):
     keywords.
     """
     # no need to provide {path} to old-style list template
-    c = [{'name': k, 'source': v} for k, v in copies]
-    f = _showcompatlist(context, mapping, name, c, plural='file_copies')
+    c = [{b'name': k, b'source': v} for k, v in copies]
+    f = _showcompatlist(context, mapping, name, c, plural=b'file_copies')
     copies = util.sortdict(copies)
     return hybrid(
         f,
         copies,
-        lambda k: {'name': k, 'path': k, 'source': copies[k]},
-        lambda k: '%s (%s)' % (k, copies[k]),
+        lambda k: {b'name': k, b'path': k, b'source': copies[k]},
+        lambda k: b'%s (%s)' % (k, copies[k]),
     )
 
 
@@ -687,10 +689,14 @@ def compatfileslist(context, mapping, name, files):
     keywords.
     """
     f = _showcompatlist(context, mapping, name, files)
-    return hybrid(f, files, lambda x: {'file': x, 'path': x}, pycompat.identity)
+    return hybrid(
+        f, files, lambda x: {b'file': x, b'path': x}, pycompat.identity
+    )
 
 
-def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
+def _showcompatlist(
+    context, mapping, name, values, plural=None, separator=b' '
+):
     """Return a generator that renders old-style list template
 
     name is name of key in template map.
@@ -713,9 +719,9 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
     expand 'end_foos'.
     """
     if not plural:
-        plural = name + 's'
+        plural = name + b's'
     if not values:
-        noname = 'no_' + plural
+        noname = b'no_' + plural
         if context.preload(noname):
             yield context.process(noname, mapping)
         return
@@ -728,7 +734,7 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
                 r.update(mapping)
                 yield r
         return
-    startname = 'start_' + plural
+    startname = b'start_' + plural
     if context.preload(startname):
         yield context.process(startname, mapping)
 
@@ -749,7 +755,7 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
         vmapping = context.overlaymap(mapping, vmapping)
         return context.process(tag, vmapping)
 
-    lastname = 'last_' + name
+    lastname = b'last_' + name
     if context.preload(lastname):
         last = values.pop()
     else:
@@ -758,7 +764,7 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
         yield one(v)
     if last is not None:
         yield one(last, tag=lastname)
-    endname = 'end_' + plural
+    endname = b'end_' + plural
     if context.preload(endname):
         yield context.process(endname, mapping)
 
@@ -773,12 +779,12 @@ def flatten(context, mapping, thing):
         # We can only hit this on Python 3, and it's here to guard
         # against infinite recursion.
         raise error.ProgrammingError(
-            'Mercurial IO including templates is done'
-            ' with bytes, not strings, got %r' % thing
+            b'Mercurial IO including templates is done'
+            b' with bytes, not strings, got %r' % thing
         )
     elif thing is None:
         pass
-    elif not util.safehasattr(thing, '__iter__'):
+    elif not util.safehasattr(thing, b'__iter__'):
         yield pycompat.bytestr(thing)
     else:
         for i in thing:
@@ -788,7 +794,7 @@ def flatten(context, mapping, thing):
                 yield i
             elif i is None:
                 pass
-            elif not util.safehasattr(i, '__iter__'):
+            elif not util.safehasattr(i, b'__iter__'):
                 yield pycompat.bytestr(i)
             else:
                 for j in flatten(context, mapping, i):
@@ -895,7 +901,7 @@ def unwrapdate(context, mapping, thing, err=None):
     try:
         return dateutil.parsedate(thing)
     except AttributeError:
-        raise error.ParseError(err or _('not a date tuple nor a string'))
+        raise error.ParseError(err or _(b'not a date tuple nor a string'))
     except error.ParseError:
         if not err:
             raise
@@ -912,7 +918,7 @@ def unwrapinteger(context, mapping, thing, err=None):
     try:
         return int(thing)
     except (TypeError, ValueError):
-        raise error.ParseError(err or _('not an integer'))
+        raise error.ParseError(err or _(b'not an integer'))
 
 
 def evalstring(context, mapping, arg):
@@ -943,7 +949,7 @@ def unwrapastype(context, mapping, thing, typ):
     try:
         f = _unwrapfuncbytype[typ]
     except KeyError:
-        raise error.ProgrammingError('invalid type specified: %r' % typ)
+        raise error.ProgrammingError(b'invalid type specified: %r' % typ)
     return f(context, mapping, thing)
 
 
@@ -957,12 +963,12 @@ def runstring(context, mapping, data):
 
 def _recursivesymbolblocker(key):
     def showrecursion(context, mapping):
-        raise error.Abort(_("recursive reference '%s' in template") % key)
+        raise error.Abort(_(b"recursive reference '%s' in template") % key)
 
     return showrecursion
 
 
-def runsymbol(context, mapping, key, default=''):
+def runsymbol(context, mapping, key, default=b''):
     v = context.symbol(mapping, key)
     if v is None:
         # put poison to cut recursion. we can't move this to parsing phase
@@ -1003,8 +1009,8 @@ def _formatfiltererror(arg, filt):
     fn = pycompat.sysbytes(filt.__name__)
     sym = findsymbolicname(arg)
     if not sym:
-        return _("incompatible use of template filter '%s'") % fn
-    return _("template filter '%s' is not compatible with keyword '%s'") % (
+        return _(b"incompatible use of template filter '%s'") % fn
+    return _(b"template filter '%s' is not compatible with keyword '%s'") % (
         fn,
         sym,
     )
@@ -1015,7 +1021,7 @@ def _iteroverlaymaps(context, origmapping, newmappings):
     of partial mappings to override the original"""
     for i, nm in enumerate(newmappings):
         lm = context.overlaymap(origmapping, nm)
-        lm['index'] = i
+        lm[b'index'] = i
         yield lm
 
 
@@ -1026,7 +1032,7 @@ def _applymap(context, mapping, d, darg, targ):
         sym = findsymbolicname(darg)
         if not sym:
             raise
-        hint = _("keyword '%s' does not support map operation") % sym
+        hint = _(b"keyword '%s' does not support map operation") % sym
         raise error.ParseError(bytes(err), hint=hint)
     for lm in _iteroverlaymaps(context, mapping, diter):
         yield evalrawexp(context, lm, targ)
@@ -1050,13 +1056,13 @@ def runmember(context, mapping, data):
         sym = findsymbolicname(darg)
         if not sym:
             raise
-        hint = _("keyword '%s' does not support member operation") % sym
+        hint = _(b"keyword '%s' does not support member operation") % sym
         raise error.ParseError(bytes(err), hint=hint)
 
 
 def runnegate(context, mapping, data):
     data = evalinteger(
-        context, mapping, data, _('negation needs an integer argument')
+        context, mapping, data, _(b'negation needs an integer argument')
     )
     return -data
 
@@ -1064,15 +1070,15 @@ def runnegate(context, mapping, data):
 def runarithmetic(context, mapping, data):
     func, left, right = data
     left = evalinteger(
-        context, mapping, left, _('arithmetic only defined on integers')
+        context, mapping, left, _(b'arithmetic only defined on integers')
     )
     right = evalinteger(
-        context, mapping, right, _('arithmetic only defined on integers')
+        context, mapping, right, _(b'arithmetic only defined on integers')
     )
     try:
         return func(left, right)
     except ZeroDivisionError:
-        raise error.Abort(_('division by zero is not defined'))
+        raise error.Abort(_(b'division by zero is not defined'))
 
 
 def joinitems(itemiter, sep):

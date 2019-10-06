@@ -128,7 +128,7 @@ from . import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 eh = exthelper.exthelper()
 eh.merge(lfcommands.eh)
@@ -136,13 +136,13 @@ eh.merge(overrides.eh)
 eh.merge(proto.eh)
 
 eh.configitem(
-    'largefiles', 'minsize', default=eh.configitem.dynamicdefault,
+    b'largefiles', b'minsize', default=eh.configitem.dynamicdefault,
 )
 eh.configitem(
-    'largefiles', 'patterns', default=list,
+    b'largefiles', b'patterns', default=list,
 )
 eh.configitem(
-    'largefiles', 'usercache', default=None,
+    b'largefiles', b'usercache', default=None,
 )
 
 cmdtable = eh.cmdtable
@@ -154,7 +154,7 @@ uisetup = eh.finaluisetup
 
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the largefiles requirement
-    supported |= {'largefiles'}
+    supported |= {b'largefiles'}
 
 
 @eh.uisetup
@@ -162,25 +162,25 @@ def _uisetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
     hg.wirepeersetupfuncs.append(proto.wirereposetup)
 
-    cmdutil.outgoinghooks.add('largefiles', overrides.outgoinghook)
-    cmdutil.summaryremotehooks.add('largefiles', overrides.summaryremotehook)
+    cmdutil.outgoinghooks.add(b'largefiles', overrides.outgoinghook)
+    cmdutil.summaryremotehooks.add(b'largefiles', overrides.summaryremotehook)
 
     # create the new wireproto commands ...
-    wireprotov1server.wireprotocommand('putlfile', 'sha', permission='push')(
+    wireprotov1server.wireprotocommand(b'putlfile', b'sha', permission=b'push')(
         proto.putlfile
     )
-    wireprotov1server.wireprotocommand('getlfile', 'sha', permission='pull')(
+    wireprotov1server.wireprotocommand(b'getlfile', b'sha', permission=b'pull')(
         proto.getlfile
     )
-    wireprotov1server.wireprotocommand('statlfile', 'sha', permission='pull')(
-        proto.statlfile
-    )
-    wireprotov1server.wireprotocommand('lheads', '', permission='pull')(
+    wireprotov1server.wireprotocommand(
+        b'statlfile', b'sha', permission=b'pull'
+    )(proto.statlfile)
+    wireprotov1server.wireprotocommand(b'lheads', b'', permission=b'pull')(
         wireprotov1server.heads
     )
 
     extensions.wrapfunction(
-        wireprotov1server.commands['heads'], 'func', proto.heads
+        wireprotov1server.commands[b'heads'], b'func', proto.heads
     )
     # TODO also wrap wireproto.commandsv2 once heads is implemented there.
 
@@ -193,9 +193,9 @@ def _uisetup(ui):
 
     # override some extensions' stuff as well
     for name, module in extensions.extensions():
-        if name == 'rebase':
+        if name == b'rebase':
             # TODO: teach exthelper to handle this
-            extensions.wrapfunction(module, 'rebase', overrides.overriderebase)
+            extensions.wrapfunction(module, b'rebase', overrides.overriderebase)
 
 
 revsetpredicate = eh.revsetpredicate

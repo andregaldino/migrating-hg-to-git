@@ -35,9 +35,9 @@ def _getlockprefix():
     extra Linux-specific pid namespace identifier.
     """
     result = encoding.strtolocal(socket.gethostname())
-    if pycompat.sysplatform.startswith('linux'):
+    if pycompat.sysplatform.startswith(b'linux'):
         try:
-            result += '/%x' % os.stat('/proc/self/ns/pid').st_ino
+            result += b'/%x' % os.stat(b'/proc/self/ns/pid').st_ino
         except OSError as ex:
             if ex.errno not in (errno.ENOENT, errno.EACCES, errno.ENOTDIR):
                 raise
@@ -76,7 +76,13 @@ def _delayedinterrupt():
     try:
         # save handlers first so they can be restored even if a setup is
         # interrupted between signal.signal() and orighandlers[] =.
-        for name in ['CTRL_C_EVENT', 'SIGINT', 'SIGBREAK', 'SIGHUP', 'SIGTERM']:
+        for name in [
+            b'CTRL_C_EVENT',
+            b'SIGINT',
+            b'SIGBREAK',
+            b'SIGHUP',
+            b'SIGTERM',
+        ]:
             num = getattr(signal, name, None)
             if num and num not in orighandlers:
                 orighandlers[num] = signal.getsignal(num)
@@ -114,17 +120,17 @@ def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
     def printwarning(printer, locker):
         """issue the usual "waiting on lock" message through any channel"""
         # show more details for new-style locks
-        if ':' in locker:
-            host, pid = locker.split(":", 1)
+        if b':' in locker:
+            host, pid = locker.split(b":", 1)
             msg = _(
-                "waiting for lock on %s held by process %r on host %r\n"
+                b"waiting for lock on %s held by process %r on host %r\n"
             ) % (
                 pycompat.bytestr(l.desc),
                 pycompat.bytestr(pid),
                 pycompat.bytestr(host),
             )
         else:
-            msg = _("waiting for lock on %s held by %r\n") % (
+            msg = _(b"waiting for lock on %s held by %r\n") % (
                 l.desc,
                 pycompat.bytestr(locker),
             )
@@ -159,9 +165,9 @@ def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
     l.delay = delay
     if l.delay:
         if 0 <= warningidx <= l.delay:
-            ui.warn(_("got lock after %d seconds\n") % l.delay)
+            ui.warn(_(b"got lock after %d seconds\n") % l.delay)
         else:
-            ui.debug("got lock after %d seconds\n" % l.delay)
+            ui.debug(b"got lock after %d seconds\n" % l.delay)
     if l.acquirefn:
         l.acquirefn()
     return l
@@ -268,7 +274,7 @@ class lock(object):
             return
         if lock._host is None:
             lock._host = _getlockprefix()
-        lockname = '%s:%d' % (lock._host, self.pid)
+        lockname = b'%s:%d' % (lock._host, self.pid)
         retry = 5
         while not self.held and retry:
             retry -= 1
@@ -307,7 +313,7 @@ class lock(object):
             # use empty locker to mean "busy for frequent lock/unlock
             # by many processes"
             raise error.LockHeld(
-                errno.EAGAIN, self.vfs.join(self.f), self.desc, ""
+                errno.EAGAIN, self.vfs.join(self.f), self.desc, b""
             )
 
     def _readlock(self):
@@ -327,7 +333,7 @@ class lock(object):
         if locker is None:
             return None
         try:
-            host, pid = locker.split(":", 1)
+            host, pid = locker.split(b":", 1)
         except ValueError:
             return locker
         if host != lock._host:
@@ -341,7 +347,7 @@ class lock(object):
         # if locker dead, break lock.  must do this with another lock
         # held, or can race and break valid lock.
         try:
-            l = lock(self.vfs, self.f + '.break', timeout=0)
+            l = lock(self.vfs, self.f + b'.break', timeout=0)
             self.vfs.unlink(self.f)
             l.release()
         except error.LockError:
@@ -371,11 +377,11 @@ class lock(object):
         """
         if not self.held:
             raise error.LockInheritanceContractViolation(
-                'inherit can only be called while lock is held'
+                b'inherit can only be called while lock is held'
             )
         if self._inherited:
             raise error.LockInheritanceContractViolation(
-                'inherit cannot be called while lock is already inherited'
+                b'inherit cannot be called while lock is already inherited'
             )
         if self._inheritchecker is not None:
             self._inheritchecker()

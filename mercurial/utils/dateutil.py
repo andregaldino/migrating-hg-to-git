@@ -20,40 +20,40 @@ from .. import (
 
 # used by parsedate
 defaultdateformats = (
-    '%Y-%m-%dT%H:%M:%S',  # the 'real' ISO8601
-    '%Y-%m-%dT%H:%M',  #   without seconds
-    '%Y-%m-%dT%H%M%S',  # another awful but legal variant without :
-    '%Y-%m-%dT%H%M',  #   without seconds
-    '%Y-%m-%d %H:%M:%S',  # our common legal variant
-    '%Y-%m-%d %H:%M',  #   without seconds
-    '%Y-%m-%d %H%M%S',  # without :
-    '%Y-%m-%d %H%M',  #   without seconds
-    '%Y-%m-%d %I:%M:%S%p',
-    '%Y-%m-%d %H:%M',
-    '%Y-%m-%d %I:%M%p',
-    '%Y-%m-%d',
-    '%m-%d',
-    '%m/%d',
-    '%m/%d/%y',
-    '%m/%d/%Y',
-    '%a %b %d %H:%M:%S %Y',
-    '%a %b %d %I:%M:%S%p %Y',
-    '%a, %d %b %Y %H:%M:%S',  #  GNU coreutils "/bin/date --rfc-2822"
-    '%b %d %H:%M:%S %Y',
-    '%b %d %I:%M:%S%p %Y',
-    '%b %d %H:%M:%S',
-    '%b %d %I:%M:%S%p',
-    '%b %d %H:%M',
-    '%b %d %I:%M%p',
-    '%b %d %Y',
-    '%b %d',
-    '%H:%M:%S',
-    '%I:%M:%S%p',
-    '%H:%M',
-    '%I:%M%p',
+    b'%Y-%m-%dT%H:%M:%S',  # the 'real' ISO8601
+    b'%Y-%m-%dT%H:%M',  #   without seconds
+    b'%Y-%m-%dT%H%M%S',  # another awful but legal variant without :
+    b'%Y-%m-%dT%H%M',  #   without seconds
+    b'%Y-%m-%d %H:%M:%S',  # our common legal variant
+    b'%Y-%m-%d %H:%M',  #   without seconds
+    b'%Y-%m-%d %H%M%S',  # without :
+    b'%Y-%m-%d %H%M',  #   without seconds
+    b'%Y-%m-%d %I:%M:%S%p',
+    b'%Y-%m-%d %H:%M',
+    b'%Y-%m-%d %I:%M%p',
+    b'%Y-%m-%d',
+    b'%m-%d',
+    b'%m/%d',
+    b'%m/%d/%y',
+    b'%m/%d/%Y',
+    b'%a %b %d %H:%M:%S %Y',
+    b'%a %b %d %I:%M:%S%p %Y',
+    b'%a, %d %b %Y %H:%M:%S',  #  GNU coreutils "/bin/date --rfc-2822"
+    b'%b %d %H:%M:%S %Y',
+    b'%b %d %I:%M:%S%p %Y',
+    b'%b %d %H:%M:%S',
+    b'%b %d %I:%M:%S%p',
+    b'%b %d %H:%M',
+    b'%b %d %I:%M%p',
+    b'%b %d %Y',
+    b'%b %d',
+    b'%H:%M:%S',
+    b'%I:%M:%S%p',
+    b'%H:%M',
+    b'%I:%M%p',
 )
 
-extendeddateformats = defaultdateformats + ("%Y", "%Y-%m", "%b", "%b %Y",)
+extendeddateformats = defaultdateformats + (b"%Y", b"%Y-%m", b"%b", b"%b %Y",)
 
 
 def makedate(timestamp=None):
@@ -62,8 +62,8 @@ def makedate(timestamp=None):
     if timestamp is None:
         timestamp = time.time()
     if timestamp < 0:
-        hint = _("check your clock")
-        raise error.Abort(_("negative timestamp: %d") % timestamp, hint=hint)
+        hint = _(b"check your clock")
+        raise error.Abort(_(b"negative timestamp: %d") % timestamp, hint=hint)
     delta = datetime.datetime.utcfromtimestamp(
         timestamp
     ) - datetime.datetime.fromtimestamp(timestamp)
@@ -71,7 +71,7 @@ def makedate(timestamp=None):
     return timestamp, tz
 
 
-def datestr(date=None, format='%a %b %d %H:%M:%S %Y %1%2'):
+def datestr(date=None, format=b'%a %b %d %H:%M:%S %Y %1%2'):
     """represent a (unixtime, offset) tuple as a localized time.
     unixtime is seconds since the epoch, and offset is the time zone's
     number of seconds away from UTC.
@@ -88,13 +88,13 @@ def datestr(date=None, format='%a %b %d %H:%M:%S %Y %1%2'):
     'Fri Dec 13 20:45:52 1901 +0000'
     """
     t, tz = date or makedate()
-    if "%1" in format or "%2" in format or "%z" in format:
-        sign = (tz > 0) and "-" or "+"
+    if b"%1" in format or b"%2" in format or b"%z" in format:
+        sign = (tz > 0) and b"-" or b"+"
         minutes = abs(tz) // 60
         q, r = divmod(minutes, 60)
-        format = format.replace("%z", "%1%2")
-        format = format.replace("%1", "%c%02d" % (sign, q))
-        format = format.replace("%2", "%02d" % r)
+        format = format.replace(b"%z", b"%1%2")
+        format = format.replace(b"%1", b"%c%02d" % (sign, q))
+        format = format.replace(b"%2", b"%02d" % r)
     d = t - tz
     if d > 0x7FFFFFFF:
         d = 0x7FFFFFFF
@@ -110,7 +110,7 @@ def datestr(date=None, format='%a %b %d %H:%M:%S %Y %1%2'):
 
 def shortdate(date=None):
     """turn (timestamp, tzoff) tuple into iso 8631 date."""
-    return datestr(date, format='%Y-%m-%d')
+    return datestr(date, format=b'%Y-%m-%d')
 
 
 def parsetimezone(s):
@@ -118,29 +118,29 @@ def parsetimezone(s):
        (offset, remainder) pair"""
     s = pycompat.bytestr(s)
 
-    if s.endswith("GMT") or s.endswith("UTC"):
+    if s.endswith(b"GMT") or s.endswith(b"UTC"):
         return 0, s[:-3].rstrip()
 
     # Unix-style timezones [+-]hhmm
-    if len(s) >= 5 and s[-5] in "+-" and s[-4:].isdigit():
-        sign = (s[-5] == "+") and 1 or -1
+    if len(s) >= 5 and s[-5] in b"+-" and s[-4:].isdigit():
+        sign = (s[-5] == b"+") and 1 or -1
         hours = int(s[-4:-2])
         minutes = int(s[-2:])
         return -sign * (hours * 60 + minutes) * 60, s[:-5].rstrip()
 
     # ISO8601 trailing Z
-    if s.endswith("Z") and s[-2:-1].isdigit():
+    if s.endswith(b"Z") and s[-2:-1].isdigit():
         return 0, s[:-1]
 
     # ISO8601-style [+-]hh:mm
     if (
         len(s) >= 6
-        and s[-6] in "+-"
-        and s[-3] == ":"
+        and s[-6] in b"+-"
+        and s[-3] == b":"
         and s[-5:-3].isdigit()
         and s[-2:].isdigit()
     ):
-        sign = (s[-6] == "+") and 1 or -1
+        sign = (s[-6] == b"+") and 1 or -1
         hours = int(s[-5:-3])
         minutes = int(s[-2:])
         return -sign * (hours * 60 + minutes) * 60, s[:-6]
@@ -159,12 +159,19 @@ def strdate(string, format, defaults=None):
 
     # add missing elements from defaults
     usenow = False  # default to using biased defaults
-    for part in ("S", "M", "HI", "d", "mb", "yY"):  # decreasing specificity
+    for part in (
+        b"S",
+        b"M",
+        b"HI",
+        b"d",
+        b"mb",
+        b"yY",
+    ):  # decreasing specificity
         part = pycompat.bytestr(part)
-        found = [True for p in part if ("%" + p) in format]
+        found = [True for p in part if (b"%" + p) in format]
         if not found:
-            date += "@" + defaults[part][usenow]
-            format += "@%" + part[0]
+            date += b"@" + defaults[part][usenow]
+            format += b"@%" + part[0]
         else:
             # We've found a specific time element, less specific time
             # elements are relative to today
@@ -213,34 +220,34 @@ def parsedate(date, formats=None, bias=None):
         formats = defaultdateformats
     date = date.strip()
 
-    if date == 'now' or date == _('now'):
+    if date == b'now' or date == _(b'now'):
         return makedate()
-    if date == 'today' or date == _('today'):
+    if date == b'today' or date == _(b'today'):
         date = datetime.date.today().strftime(r'%b %d')
         date = encoding.strtolocal(date)
-    elif date == 'yesterday' or date == _('yesterday'):
+    elif date == b'yesterday' or date == _(b'yesterday'):
         date = (datetime.date.today() - datetime.timedelta(days=1)).strftime(
             r'%b %d'
         )
         date = encoding.strtolocal(date)
 
     try:
-        when, offset = map(int, date.split(' '))
+        when, offset = map(int, date.split(b' '))
     except ValueError:
         # fill out defaults
         now = makedate()
         defaults = {}
-        for part in ("d", "mb", "yY", "HI", "M", "S"):
+        for part in (b"d", b"mb", b"yY", b"HI", b"M", b"S"):
             # this piece is for rounding the specific end of unknowns
             b = bias.get(part)
             if b is None:
-                if part[0:1] in "HMS":
-                    b = "00"
+                if part[0:1] in b"HMS":
+                    b = b"00"
                 else:
-                    b = "0"
+                    b = b"0"
 
             # this piece is for matching the generic end to today's date
-            n = datestr(now, "%" + part[0:1])
+            n = datestr(now, b"%" + part[0:1])
 
             defaults[part] = (b, n)
 
@@ -253,16 +260,16 @@ def parsedate(date, formats=None, bias=None):
                 break
         else:
             raise error.ParseError(
-                _('invalid date: %r') % pycompat.bytestr(date)
+                _(b'invalid date: %r') % pycompat.bytestr(date)
             )
     # validate explicit (probably user-specified) date and
     # time zone offset. values must fit in signed 32 bits for
     # current 32-bit linux runtimes. timezones go from UTC-12
     # to UTC+14
     if when < -0x80000000 or when > 0x7FFFFFFF:
-        raise error.ParseError(_('date exceeds 32 bits: %d') % when)
+        raise error.ParseError(_(b'date exceeds 32 bits: %d') % when)
     if offset < -50400 or offset > 43200:
-        raise error.ParseError(_('impossible time zone offset: %d') % offset)
+        raise error.ParseError(_(b'impossible time zone offset: %d') % offset)
     return when, offset
 
 
@@ -296,42 +303,42 @@ def matchdate(date):
     """
 
     def lower(date):
-        d = {'mb': "1", 'd': "1"}
+        d = {b'mb': b"1", b'd': b"1"}
         return parsedate(date, extendeddateformats, d)[0]
 
     def upper(date):
-        d = {'mb': "12", 'HI': "23", 'M': "59", 'S': "59"}
-        for days in ("31", "30", "29"):
+        d = {b'mb': b"12", b'HI': b"23", b'M': b"59", b'S': b"59"}
+        for days in (b"31", b"30", b"29"):
             try:
-                d["d"] = days
+                d[b"d"] = days
                 return parsedate(date, extendeddateformats, d)[0]
             except error.ParseError:
                 pass
-        d["d"] = "28"
+        d[b"d"] = b"28"
         return parsedate(date, extendeddateformats, d)[0]
 
     date = date.strip()
 
     if not date:
-        raise error.Abort(_("dates cannot consist entirely of whitespace"))
+        raise error.Abort(_(b"dates cannot consist entirely of whitespace"))
     elif date[0:1] == b"<":
         if not date[1:]:
-            raise error.Abort(_("invalid day spec, use '<DATE'"))
+            raise error.Abort(_(b"invalid day spec, use '<DATE'"))
         when = upper(date[1:])
         return lambda x: x <= when
     elif date[0:1] == b">":
         if not date[1:]:
-            raise error.Abort(_("invalid day spec, use '>DATE'"))
+            raise error.Abort(_(b"invalid day spec, use '>DATE'"))
         when = lower(date[1:])
         return lambda x: x >= when
     elif date[0:1] == b"-":
         try:
             days = int(date[1:])
         except ValueError:
-            raise error.Abort(_("invalid day spec: %s") % date[1:])
+            raise error.Abort(_(b"invalid day spec: %s") % date[1:])
         if days < 0:
             raise error.Abort(
-                _("%s must be nonnegative (see 'hg help dates')") % date[1:]
+                _(b"%s must be nonnegative (see 'hg help dates')") % date[1:]
             )
         when = makedate()[0] - days * 3600 * 24
         return lambda x: x >= when

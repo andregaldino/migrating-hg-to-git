@@ -34,32 +34,32 @@ def bisect(repo, state):
     repo = repo.unfiltered()
     changelog = repo.changelog
     clparents = changelog.parentrevs
-    skip = {changelog.rev(n) for n in state['skip']}
+    skip = {changelog.rev(n) for n in state[b'skip']}
 
     def buildancestors(bad, good):
         badrev = min([changelog.rev(n) for n in bad])
         ancestors = collections.defaultdict(lambda: None)
-        for rev in repo.revs("descendants(%ln) - ancestors(%ln)", good, good):
+        for rev in repo.revs(b"descendants(%ln) - ancestors(%ln)", good, good):
             ancestors[rev] = []
         if ancestors[badrev] is None:
             return badrev, None
         return badrev, ancestors
 
     good = False
-    badrev, ancestors = buildancestors(state['bad'], state['good'])
+    badrev, ancestors = buildancestors(state[b'bad'], state[b'good'])
     if not ancestors:  # looking for bad to good transition?
         good = True
-        badrev, ancestors = buildancestors(state['good'], state['bad'])
+        badrev, ancestors = buildancestors(state[b'good'], state[b'bad'])
     bad = changelog.node(badrev)
     if not ancestors:  # now we're confused
         if (
-            len(state['bad']) == 1
-            and len(state['good']) == 1
-            and state['bad'] != state['good']
+            len(state[b'bad']) == 1
+            and len(state[b'good']) == 1
+            and state[b'bad'] != state[b'good']
         ):
-            raise error.Abort(_("starting revisions are not directly related"))
+            raise error.Abort(_(b"starting revisions are not directly related"))
         raise error.Abort(
-            _("inconsistent state, %d:%s is good and bad")
+            _(b"inconsistent state, %d:%s is good and bad")
             % (badrev, short(bad))
         )
 
@@ -133,9 +133,9 @@ def extendrange(repo, state, nodes, good):
     parents = repo[nodes[0]].parents()
     if len(parents) > 1:
         if good:
-            side = state['bad']
+            side = state[b'bad']
         else:
-            side = state['good']
+            side = state[b'good']
         num = len(set(i.node() for i in parents) & set(side))
         if num == 1:
             return parents[0].ancestor(parents[1])
@@ -143,41 +143,41 @@ def extendrange(repo, state, nodes, good):
 
 
 def load_state(repo):
-    state = {'current': [], 'good': [], 'bad': [], 'skip': []}
-    for l in repo.vfs.tryreadlines("bisect.state"):
+    state = {b'current': [], b'good': [], b'bad': [], b'skip': []}
+    for l in repo.vfs.tryreadlines(b"bisect.state"):
         kind, node = l[:-1].split()
         node = repo.unfiltered().lookup(node)
         if kind not in state:
-            raise error.Abort(_("unknown bisect kind %s") % kind)
+            raise error.Abort(_(b"unknown bisect kind %s") % kind)
         state[kind].append(node)
     return state
 
 
 def save_state(repo, state):
-    f = repo.vfs("bisect.state", "w", atomictemp=True)
+    f = repo.vfs(b"bisect.state", b"w", atomictemp=True)
     with repo.wlock():
         for kind in sorted(state):
             for node in state[kind]:
-                f.write("%s %s\n" % (kind, hex(node)))
+                f.write(b"%s %s\n" % (kind, hex(node)))
         f.close()
 
 
 def resetstate(repo):
     """remove any bisect state from the repository"""
-    if repo.vfs.exists("bisect.state"):
-        repo.vfs.unlink("bisect.state")
+    if repo.vfs.exists(b"bisect.state"):
+        repo.vfs.unlink(b"bisect.state")
 
 
 def checkstate(state):
     """check we have both 'good' and 'bad' to define a range
 
     Raise Abort exception otherwise."""
-    if state['good'] and state['bad']:
+    if state[b'good'] and state[b'bad']:
         return True
-    if not state['good']:
-        raise error.Abort(_('cannot bisect (no known good revisions)'))
+    if not state[b'good']:
+        raise error.Abort(_(b'cannot bisect (no known good revisions)'))
     else:
-        raise error.Abort(_('cannot bisect (no known bad revisions)'))
+        raise error.Abort(_(b'cannot bisect (no known bad revisions)'))
 
 
 def get(repo, status):
@@ -193,7 +193,7 @@ def get(repo, status):
     - ``current``            : the cset currently being bisected
     """
     state = load_state(repo)
-    if status in ('good', 'bad', 'skip', 'current'):
+    if status in (b'good', b'bad', b'skip', b'current'):
         return map(repo.unfiltered().changelog.rev, state[status])
     else:
         # In the following sets, we do *not* call 'bisect()' with more
@@ -204,77 +204,77 @@ def get(repo, status):
         # 'range' is all csets that make the bisection:
         #   - have a good ancestor and a bad descendant, or conversely
         # that's because the bisection can go either way
-        range = '( bisect(bad)::bisect(good) | bisect(good)::bisect(bad) )'
+        range = b'( bisect(bad)::bisect(good) | bisect(good)::bisect(bad) )'
 
-        _t = repo.revs('bisect(good)::bisect(bad)')
+        _t = repo.revs(b'bisect(good)::bisect(bad)')
         # The sets of topologically good or bad csets
         if len(_t) == 0:
             # Goods are topologically after bads
-            goods = 'bisect(good)::'  # Pruned good csets
-            bads = '::bisect(bad)'  # Pruned bad csets
+            goods = b'bisect(good)::'  # Pruned good csets
+            bads = b'::bisect(bad)'  # Pruned bad csets
         else:
             # Goods are topologically before bads
-            goods = '::bisect(good)'  # Pruned good csets
-            bads = 'bisect(bad)::'  # Pruned bad csets
+            goods = b'::bisect(good)'  # Pruned good csets
+            bads = b'bisect(bad)::'  # Pruned bad csets
 
         # 'pruned' is all csets whose fate is already known: good, bad, skip
-        skips = 'bisect(skip)'  # Pruned skipped csets
-        pruned = '( (%s) | (%s) | (%s) )' % (goods, bads, skips)
+        skips = b'bisect(skip)'  # Pruned skipped csets
+        pruned = b'( (%s) | (%s) | (%s) )' % (goods, bads, skips)
 
         # 'untested' is all cset that are- in 'range', but not in 'pruned'
-        untested = '( (%s) - (%s) )' % (range, pruned)
+        untested = b'( (%s) - (%s) )' % (range, pruned)
 
         # 'ignored' is all csets that were not used during the bisection
         # due to DAG topology, but may however have had an impact.
         # E.g., a branch merged between bads and goods, but whose branch-
         # point is out-side of the range.
-        iba = '::bisect(bad) - ::bisect(good)'  # Ignored bads' ancestors
-        iga = '::bisect(good) - ::bisect(bad)'  # Ignored goods' ancestors
-        ignored = '( ( (%s) | (%s) ) - (%s) )' % (iba, iga, range)
+        iba = b'::bisect(bad) - ::bisect(good)'  # Ignored bads' ancestors
+        iga = b'::bisect(good) - ::bisect(bad)'  # Ignored goods' ancestors
+        ignored = b'( ( (%s) | (%s) ) - (%s) )' % (iba, iga, range)
 
-        if status == 'range':
+        if status == b'range':
             return repo.revs(range)
-        elif status == 'pruned':
+        elif status == b'pruned':
             return repo.revs(pruned)
-        elif status == 'untested':
+        elif status == b'untested':
             return repo.revs(untested)
-        elif status == 'ignored':
+        elif status == b'ignored':
             return repo.revs(ignored)
-        elif status == "goods":
+        elif status == b"goods":
             return repo.revs(goods)
-        elif status == "bads":
+        elif status == b"bads":
             return repo.revs(bads)
         else:
-            raise error.ParseError(_('invalid bisect state'))
+            raise error.ParseError(_(b'invalid bisect state'))
 
 
 def label(repo, node):
     rev = repo.changelog.rev(node)
 
     # Try explicit sets
-    if rev in get(repo, 'good'):
+    if rev in get(repo, b'good'):
         # i18n: bisect changeset status
-        return _('good')
-    if rev in get(repo, 'bad'):
+        return _(b'good')
+    if rev in get(repo, b'bad'):
         # i18n: bisect changeset status
-        return _('bad')
-    if rev in get(repo, 'skip'):
+        return _(b'bad')
+    if rev in get(repo, b'skip'):
         # i18n: bisect changeset status
-        return _('skipped')
-    if rev in get(repo, 'untested') or rev in get(repo, 'current'):
+        return _(b'skipped')
+    if rev in get(repo, b'untested') or rev in get(repo, b'current'):
         # i18n: bisect changeset status
-        return _('untested')
-    if rev in get(repo, 'ignored'):
+        return _(b'untested')
+    if rev in get(repo, b'ignored'):
         # i18n: bisect changeset status
-        return _('ignored')
+        return _(b'ignored')
 
     # Try implicit sets
-    if rev in get(repo, 'goods'):
+    if rev in get(repo, b'goods'):
         # i18n: bisect changeset status
-        return _('good (implicit)')
-    if rev in get(repo, 'bads'):
+        return _(b'good (implicit)')
+    if rev in get(repo, b'bads'):
         # i18n: bisect changeset status
-        return _('bad (implicit)')
+        return _(b'bad (implicit)')
 
     return None
 
@@ -284,17 +284,17 @@ def printresult(ui, repo, state, displayer, nodes, good):
     if len(nodes) == 1:
         # narrowed it down to a single revision
         if good:
-            ui.write(_("The first good revision is:\n"))
+            ui.write(_(b"The first good revision is:\n"))
         else:
-            ui.write(_("The first bad revision is:\n"))
+            ui.write(_(b"The first bad revision is:\n"))
         displayer.show(repo[nodes[0]])
         extendnode = extendrange(repo, state, nodes, good)
         if extendnode is not None:
             ui.write(
                 _(
-                    'Not all ancestors of this changeset have been'
-                    ' checked.\nUse bisect --extend to continue the '
-                    'bisection from\nthe common ancestor, %s.\n'
+                    b'Not all ancestors of this changeset have been'
+                    b' checked.\nUse bisect --extend to continue the '
+                    b'bisection from\nthe common ancestor, %s.\n'
                 )
                 % extendnode
             )
@@ -303,15 +303,15 @@ def printresult(ui, repo, state, displayer, nodes, good):
         if good:
             ui.write(
                 _(
-                    "Due to skipped revisions, the first "
-                    "good revision could be any of:\n"
+                    b"Due to skipped revisions, the first "
+                    b"good revision could be any of:\n"
                 )
             )
         else:
             ui.write(
                 _(
-                    "Due to skipped revisions, the first "
-                    "bad revision could be any of:\n"
+                    b"Due to skipped revisions, the first "
+                    b"bad revision could be any of:\n"
                 )
             )
         for n in nodes:

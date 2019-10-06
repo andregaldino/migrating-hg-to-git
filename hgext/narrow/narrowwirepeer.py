@@ -29,26 +29,26 @@ def uisetup():
 def reposetup(repo):
     def wirereposetup(ui, peer):
         def wrapped(orig, cmd, *args, **kwargs):
-            if cmd == 'unbundle':
+            if cmd == b'unbundle':
                 # TODO: don't blindly add include/exclude wireproto
                 # arguments to unbundle.
                 include, exclude = repo.narrowpats
-                kwargs[r"includepats"] = ','.join(include)
-                kwargs[r"excludepats"] = ','.join(exclude)
+                kwargs[r"includepats"] = b','.join(include)
+                kwargs[r"excludepats"] = b','.join(exclude)
             return orig(cmd, *args, **kwargs)
 
-        extensions.wrapfunction(peer, '_calltwowaystream', wrapped)
+        extensions.wrapfunction(peer, b'_calltwowaystream', wrapped)
 
     hg.wirepeersetupfuncs.append(wirereposetup)
 
 
 @wireprotov1server.wireprotocommand(
-    'narrow_widen',
-    'oldincludes oldexcludes'
-    ' newincludes newexcludes'
-    ' commonheads cgversion'
-    ' known ellipses',
-    permission='pull',
+    b'narrow_widen',
+    b'oldincludes oldexcludes'
+    b' newincludes newexcludes'
+    b' commonheads cgversion'
+    b' known ellipses',
+    permission=b'pull',
 )
 def narrow_widen(
     repo,
@@ -95,7 +95,7 @@ def narrow_widen(
 
         common = wireprototypes.decodelist(commonheads)
         known = wireprototypes.decodelist(known)
-        if ellipses == '0':
+        if ellipses == b'0':
             ellipses = False
         else:
             ellipses = bool(ellipses)
@@ -135,11 +135,11 @@ def narrow_widen(
             )
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)
-        manargs = [('message', pycompat.bytestr(exc))]
+        manargs = [(b'message', pycompat.bytestr(exc))]
         advargs = []
         if exc.hint is not None:
-            advargs.append(('hint', exc.hint))
-        bundler.addpart(bundle2.bundlepart('error:abort', manargs, advargs))
+            advargs.append((b'hint', exc.hint))
+        bundler.addpart(bundle2.bundlepart(b'error:abort', manargs, advargs))
         preferuncompressed = True
 
     chunks = bundler.getchunks()
@@ -155,6 +155,6 @@ def peernarrowwiden(remote, **kwargs):
     for ch in (r'oldincludes', r'newincludes', r'oldexcludes', r'newexcludes'):
         kwargs[ch] = b','.join(kwargs[ch])
 
-    kwargs[r'ellipses'] = '%i' % bool(kwargs[r'ellipses'])
-    f = remote._callcompressable('narrow_widen', **kwargs)
+    kwargs[r'ellipses'] = b'%i' % bool(kwargs[r'ellipses'])
+    f = remote._callcompressable(b'narrow_widen', **kwargs)
     return bundle2.getunbundler(remote.ui, f)

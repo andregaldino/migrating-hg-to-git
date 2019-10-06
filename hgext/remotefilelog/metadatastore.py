@@ -99,7 +99,7 @@ class unionmetadatastore(basestore.baseunionstore):
 
     def add(self, name, node, data):
         raise RuntimeError(
-            "cannot add content only to remotefilelog " "contentstore"
+            b"cannot add content only to remotefilelog " b"contentstore"
         )
 
     def getmissing(self, keys):
@@ -136,7 +136,7 @@ class remotefilelogmetadatastore(basestore.basestore):
 
     def add(self, name, node, parents, linknode):
         raise RuntimeError(
-            "cannot add metadata only to remotefilelog " "metadatastore"
+            b"cannot add metadata only to remotefilelog " b"metadatastore"
         )
 
 
@@ -155,7 +155,7 @@ class remotemetadatastore(object):
         return self.getancestors(name, node)[node]
 
     def add(self, name, node, data):
-        raise RuntimeError("cannot add to a remote store")
+        raise RuntimeError(b"cannot add to a remote store")
 
     def getmissing(self, keys):
         return keys

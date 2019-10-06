@@ -39,12 +39,12 @@ getargs = filesetlang.getargs
 
 def getmatch(mctx, x):
     if not x:
-        raise error.ParseError(_("missing argument"))
+        raise error.ParseError(_(b"missing argument"))
     return methods[x[0]](mctx, *x[1:])
 
 
 def getmatchwithstatus(mctx, x, hint):
-    keys = set(getstring(hint, 'status hint must be a string').split())
+    keys = set(getstring(hint, b'status hint must be a string').split())
     return getmatch(mctx.withstatus(keys), x)
 
 
@@ -56,7 +56,7 @@ def kindpatmatch(mctx, x, y):
     return stringmatch(
         mctx,
         _getkindpat(
-            x, y, matchmod.allpatternkinds, _("pattern must be a string")
+            x, y, matchmod.allpatternkinds, _(b"pattern must be a string")
         ),
     )
 
@@ -64,7 +64,7 @@ def kindpatmatch(mctx, x, y):
 def patternsmatch(mctx, *xs):
     allkinds = matchmod.allpatternkinds
     patterns = [
-        getpattern(x, allkinds, _("pattern must be a string")) for x in xs
+        getpattern(x, allkinds, _(b"pattern must be a string")) for x in xs
     ]
     return mctx.matcher(patterns)
 
@@ -82,7 +82,7 @@ def ormatch(mctx, *xs):
 
 def notmatch(mctx, x):
     m = getmatch(mctx, x)
-    return mctx.predicate(lambda f: not m(f), predrepr=('<not %r>', m))
+    return mctx.predicate(lambda f: not m(f), predrepr=(b'<not %r>', m))
 
 
 def minusmatch(mctx, x, y):
@@ -93,8 +93,8 @@ def minusmatch(mctx, x, y):
 
 def listmatch(mctx, *xs):
     raise error.ParseError(
-        _("can't use a list in this context"),
-        hint=_('see \'hg help "filesets.x or y"\''),
+        _(b"can't use a list in this context"),
+        hint=_(b'see \'hg help "filesets.x or y"\''),
     )
 
 
@@ -119,186 +119,186 @@ symbols = filesetlang.symbols
 predicate = registrar.filesetpredicate(symbols)
 
 
-@predicate('modified()', callstatus=True, weight=_WEIGHT_STATUS)
+@predicate(b'modified()', callstatus=True, weight=_WEIGHT_STATUS)
 def modified(mctx, x):
     """File that is modified according to :hg:`status`.
     """
     # i18n: "modified" is a keyword
-    getargs(x, 0, 0, _("modified takes no arguments"))
+    getargs(x, 0, 0, _(b"modified takes no arguments"))
     s = set(mctx.status().modified)
-    return mctx.predicate(s.__contains__, predrepr='modified')
+    return mctx.predicate(s.__contains__, predrepr=b'modified')
 
 
-@predicate('added()', callstatus=True, weight=_WEIGHT_STATUS)
+@predicate(b'added()', callstatus=True, weight=_WEIGHT_STATUS)
 def added(mctx, x):
     """File that is added according to :hg:`status`.
     """
     # i18n: "added" is a keyword
-    getargs(x, 0, 0, _("added takes no arguments"))
+    getargs(x, 0, 0, _(b"added takes no arguments"))
     s = set(mctx.status().added)
-    return mctx.predicate(s.__contains__, predrepr='added')
+    return mctx.predicate(s.__contains__, predrepr=b'added')
 
 
-@predicate('removed()', callstatus=True, weight=_WEIGHT_STATUS)
+@predicate(b'removed()', callstatus=True, weight=_WEIGHT_STATUS)
 def removed(mctx, x):
     """File that is removed according to :hg:`status`.
     """
     # i18n: "removed" is a keyword
-    getargs(x, 0, 0, _("removed takes no arguments"))
+    getargs(x, 0, 0, _(b"removed takes no arguments"))
     s = set(mctx.status().removed)
-    return mctx.predicate(s.__contains__, predrepr='removed')
+    return mctx.predicate(s.__contains__, predrepr=b'removed')
 
 
-@predicate('deleted()', callstatus=True, weight=_WEIGHT_STATUS)
+@predicate(b'deleted()', callstatus=True, weight=_WEIGHT_STATUS)
 def deleted(mctx, x):
     """Alias for ``missing()``.
     """
     # i18n: "deleted" is a keyword
-    getargs(x, 0, 0, _("deleted takes no arguments"))
+    getargs(x, 0, 0, _(b"deleted takes no arguments"))
     s = set(mctx.status().deleted)
-    return mctx.predicate(s.__contains__, predrepr='deleted')
+    return mctx.predicate(s.__contains__, predrepr=b'deleted')
 
 
-@predicate('missing()', callstatus=True, weight=_WEIGHT_STATUS)
+@predicate(b'missing()', callstatus=True, weight=_WEIGHT_STATUS)
 def missing(mctx, x):
     """File that is missing according to :hg:`status`.
     """
     # i18n: "missing" is a keyword
-    getargs(x, 0, 0, _("missing takes no arguments"))
+    getargs(x, 0, 0, _(b"missing takes no arguments"))
     s = set(mctx.status().deleted)
-    return mctx.predicate(s.__contains__, predrepr='deleted')
+    return mctx.predicate(s.__contains__, predrepr=b'deleted')
 
 
-@predicate('unknown()', callstatus=True, weight=_WEIGHT_STATUS_THOROUGH)
+@predicate(b'unknown()', callstatus=True, weight=_WEIGHT_STATUS_THOROUGH)
 def unknown(mctx, x):
     """File that is unknown according to :hg:`status`."""
     # i18n: "unknown" is a keyword
-    getargs(x, 0, 0, _("unknown takes no arguments"))
+    getargs(x, 0, 0, _(b"unknown takes no arguments"))
     s = set(mctx.status().unknown)
-    return mctx.predicate(s.__contains__, predrepr='unknown')
+    return mctx.predicate(s.__contains__, predrepr=b'unknown')
 
 
-@predicate('ignored()', callstatus=True, weight=_WEIGHT_STATUS_THOROUGH)
+@predicate(b'ignored()', callstatus=True, weight=_WEIGHT_STATUS_THOROUGH)
 def ignored(mctx, x):
     """File that is ignored according to :hg:`status`."""
     # i18n: "ignored" is a keyword
-    getargs(x, 0, 0, _("ignored takes no arguments"))
+    getargs(x, 0, 0, _(b"ignored takes no arguments"))
     s = set(mctx.status().ignored)
-    return mctx.predicate(s.__contains__, predrepr='ignored')
+    return mctx.predicate(s.__contains__, predrepr=b'ignored')
 
 
-@predicate('clean()', callstatus=True, weight=_WEIGHT_STATUS)
+@predicate(b'clean()', callstatus=True, weight=_WEIGHT_STATUS)
 def clean(mctx, x):
     """File that is clean according to :hg:`status`.
     """
     # i18n: "clean" is a keyword
-    getargs(x, 0, 0, _("clean takes no arguments"))
+    getargs(x, 0, 0, _(b"clean takes no arguments"))
     s = set(mctx.status().clean)
-    return mctx.predicate(s.__contains__, predrepr='clean')
+    return mctx.predicate(s.__contains__, predrepr=b'clean')
 
 
-@predicate('tracked()')
+@predicate(b'tracked()')
 def tracked(mctx, x):
     """File that is under Mercurial control."""
     # i18n: "tracked" is a keyword
-    getargs(x, 0, 0, _("tracked takes no arguments"))
-    return mctx.predicate(mctx.ctx.__contains__, predrepr='tracked')
+    getargs(x, 0, 0, _(b"tracked takes no arguments"))
+    return mctx.predicate(mctx.ctx.__contains__, predrepr=b'tracked')
 
 
-@predicate('binary()', weight=_WEIGHT_READ_CONTENTS)
+@predicate(b'binary()', weight=_WEIGHT_READ_CONTENTS)
 def binary(mctx, x):
     """File that appears to be binary (contains NUL bytes).
     """
     # i18n: "binary" is a keyword
-    getargs(x, 0, 0, _("binary takes no arguments"))
+    getargs(x, 0, 0, _(b"binary takes no arguments"))
     return mctx.fpredicate(
-        lambda fctx: fctx.isbinary(), predrepr='binary', cache=True
+        lambda fctx: fctx.isbinary(), predrepr=b'binary', cache=True
     )
 
 
-@predicate('exec()')
+@predicate(b'exec()')
 def exec_(mctx, x):
     """File that is marked as executable.
     """
     # i18n: "exec" is a keyword
-    getargs(x, 0, 0, _("exec takes no arguments"))
+    getargs(x, 0, 0, _(b"exec takes no arguments"))
     ctx = mctx.ctx
-    return mctx.predicate(lambda f: ctx.flags(f) == 'x', predrepr='exec')
+    return mctx.predicate(lambda f: ctx.flags(f) == b'x', predrepr=b'exec')
 
 
-@predicate('symlink()')
+@predicate(b'symlink()')
 def symlink(mctx, x):
     """File that is marked as a symlink.
     """
     # i18n: "symlink" is a keyword
-    getargs(x, 0, 0, _("symlink takes no arguments"))
+    getargs(x, 0, 0, _(b"symlink takes no arguments"))
     ctx = mctx.ctx
-    return mctx.predicate(lambda f: ctx.flags(f) == 'l', predrepr='symlink')
+    return mctx.predicate(lambda f: ctx.flags(f) == b'l', predrepr=b'symlink')
 
 
-@predicate('resolved()', weight=_WEIGHT_STATUS)
+@predicate(b'resolved()', weight=_WEIGHT_STATUS)
 def resolved(mctx, x):
     """File that is marked resolved according to :hg:`resolve -l`.
     """
     # i18n: "resolved" is a keyword
-    getargs(x, 0, 0, _("resolved takes no arguments"))
+    getargs(x, 0, 0, _(b"resolved takes no arguments"))
     if mctx.ctx.rev() is not None:
         return mctx.never()
     ms = merge.mergestate.read(mctx.ctx.repo())
     return mctx.predicate(
-        lambda f: f in ms and ms[f] == 'r', predrepr='resolved'
+        lambda f: f in ms and ms[f] == b'r', predrepr=b'resolved'
     )
 
 
-@predicate('unresolved()', weight=_WEIGHT_STATUS)
+@predicate(b'unresolved()', weight=_WEIGHT_STATUS)
 def unresolved(mctx, x):
     """File that is marked unresolved according to :hg:`resolve -l`.
     """
     # i18n: "unresolved" is a keyword
-    getargs(x, 0, 0, _("unresolved takes no arguments"))
+    getargs(x, 0, 0, _(b"unresolved takes no arguments"))
     if mctx.ctx.rev() is not None:
         return mctx.never()
     ms = merge.mergestate.read(mctx.ctx.repo())
     return mctx.predicate(
-        lambda f: f in ms and ms[f] == 'u', predrepr='unresolved'
+        lambda f: f in ms and ms[f] == b'u', predrepr=b'unresolved'
     )
 
 
-@predicate('hgignore()', weight=_WEIGHT_STATUS)
+@predicate(b'hgignore()', weight=_WEIGHT_STATUS)
 def hgignore(mctx, x):
     """File that matches the active .hgignore pattern.
     """
     # i18n: "hgignore" is a keyword
-    getargs(x, 0, 0, _("hgignore takes no arguments"))
+    getargs(x, 0, 0, _(b"hgignore takes no arguments"))
     return mctx.ctx.repo().dirstate._ignore
 
 
-@predicate('portable()', weight=_WEIGHT_CHECK_FILENAME)
+@predicate(b'portable()', weight=_WEIGHT_CHECK_FILENAME)
 def portable(mctx, x):
     """File that has a portable name. (This doesn't include filenames with case
     collisions.)
     """
     # i18n: "portable" is a keyword
-    getargs(x, 0, 0, _("portable takes no arguments"))
+    getargs(x, 0, 0, _(b"portable takes no arguments"))
     return mctx.predicate(
-        lambda f: util.checkwinfilename(f) is None, predrepr='portable'
+        lambda f: util.checkwinfilename(f) is None, predrepr=b'portable'
     )
 
 
-@predicate('grep(regex)', weight=_WEIGHT_READ_CONTENTS)
+@predicate(b'grep(regex)', weight=_WEIGHT_READ_CONTENTS)
 def grep(mctx, x):
     """File contains the given regular expression.
     """
     try:
         # i18n: "grep" is a keyword
-        r = re.compile(getstring(x, _("grep requires a pattern")))
+        r = re.compile(getstring(x, _(b"grep requires a pattern")))
     except re.error as e:
         raise error.ParseError(
-            _('invalid match pattern: %s') % stringutil.forcebytestr(e)
+            _(b'invalid match pattern: %s') % stringutil.forcebytestr(e)
         )
     return mctx.fpredicate(
         lambda fctx: r.search(fctx.data()),
-        predrepr=('grep(%r)', r.pattern),
+        predrepr=(b'grep(%r)', r.pattern),
         cache=True,
     )
 
@@ -311,33 +311,33 @@ def _sizetomax(s):
                 # max(4k) = 5k - 1, max(4.5k) = 4.6k - 1
                 n = s[: -len(k)]
                 inc = 1.0
-                if "." in n:
-                    inc /= 10 ** len(n.split(".")[1])
+                if b"." in n:
+                    inc /= 10 ** len(n.split(b".")[1])
                 return int((float(n) + inc) * v) - 1
         # no extension, this is a precise value
         return int(s)
     except ValueError:
-        raise error.ParseError(_("couldn't parse size: %s") % s)
+        raise error.ParseError(_(b"couldn't parse size: %s") % s)
 
 
 def sizematcher(expr):
     """Return a function(size) -> bool from the ``size()`` expression"""
     expr = expr.strip()
-    if '-' in expr:  # do we have a range?
-        a, b = expr.split('-', 1)
+    if b'-' in expr:  # do we have a range?
+        a, b = expr.split(b'-', 1)
         a = util.sizetoint(a)
         b = util.sizetoint(b)
         return lambda x: x >= a and x <= b
-    elif expr.startswith("<="):
+    elif expr.startswith(b"<="):
         a = util.sizetoint(expr[2:])
         return lambda x: x <= a
-    elif expr.startswith("<"):
+    elif expr.startswith(b"<"):
         a = util.sizetoint(expr[1:])
         return lambda x: x < a
-    elif expr.startswith(">="):
+    elif expr.startswith(b">="):
         a = util.sizetoint(expr[2:])
         return lambda x: x >= a
-    elif expr.startswith(">"):
+    elif expr.startswith(b">"):
         a = util.sizetoint(expr[1:])
         return lambda x: x > a
     else:
@@ -346,7 +346,7 @@ def sizematcher(expr):
         return lambda x: x >= a and x <= b
 
 
-@predicate('size(expression)', weight=_WEIGHT_STATUS)
+@predicate(b'size(expression)', weight=_WEIGHT_STATUS)
 def size(mctx, x):
     """File size matches the given expression. Examples:
 
@@ -356,14 +356,14 @@ def size(mctx, x):
     - size('4k - 1MB') - files from 4096 bytes to 1048576 bytes
     """
     # i18n: "size" is a keyword
-    expr = getstring(x, _("size requires an expression"))
+    expr = getstring(x, _(b"size requires an expression"))
     m = sizematcher(expr)
     return mctx.fpredicate(
-        lambda fctx: m(fctx.size()), predrepr=('size(%r)', expr), cache=True
+        lambda fctx: m(fctx.size()), predrepr=(b'size(%r)', expr), cache=True
     )
 
 
-@predicate('encoding(name)', weight=_WEIGHT_READ_CONTENTS)
+@predicate(b'encoding(name)', weight=_WEIGHT_READ_CONTENTS)
 def encoding(mctx, x):
     """File can be successfully decoded with the given character
     encoding. May not be useful for encodings other than ASCII and
@@ -371,7 +371,7 @@ def encoding(mctx, x):
     """
 
     # i18n: "encoding" is a keyword
-    enc = getstring(x, _("encoding requires an encoding name"))
+    enc = getstring(x, _(b"encoding requires an encoding name"))
 
     def encp(fctx):
         d = fctx.data()
@@ -379,14 +379,14 @@ def encoding(mctx, x):
             d.decode(pycompat.sysstr(enc))
             return True
         except LookupError:
-            raise error.Abort(_("unknown encoding '%s'") % enc)
+            raise error.Abort(_(b"unknown encoding '%s'") % enc)
         except UnicodeDecodeError:
             return False
 
-    return mctx.fpredicate(encp, predrepr=('encoding(%r)', enc), cache=True)
+    return mctx.fpredicate(encp, predrepr=(b'encoding(%r)', enc), cache=True)
 
 
-@predicate('eol(style)', weight=_WEIGHT_READ_CONTENTS)
+@predicate(b'eol(style)', weight=_WEIGHT_READ_CONTENTS)
 def eol(mctx, x):
     """File contains newlines of the given style (dos, unix, mac). Binary
     files are excluded, files with mixed line endings match multiple
@@ -394,46 +394,46 @@ def eol(mctx, x):
     """
 
     # i18n: "eol" is a keyword
-    enc = getstring(x, _("eol requires a style name"))
+    enc = getstring(x, _(b"eol requires a style name"))
 
     def eolp(fctx):
         if fctx.isbinary():
             return False
         d = fctx.data()
-        if (enc == 'dos' or enc == 'win') and '\r\n' in d:
+        if (enc == b'dos' or enc == b'win') and b'\r\n' in d:
             return True
-        elif enc == 'unix' and re.search('(?<!\r)\n', d):
+        elif enc == b'unix' and re.search(b'(?<!\r)\n', d):
             return True
-        elif enc == 'mac' and re.search('\r(?!\n)', d):
+        elif enc == b'mac' and re.search(b'\r(?!\n)', d):
             return True
         return False
 
-    return mctx.fpredicate(eolp, predrepr=('eol(%r)', enc), cache=True)
+    return mctx.fpredicate(eolp, predrepr=(b'eol(%r)', enc), cache=True)
 
 
-@predicate('copied()')
+@predicate(b'copied()')
 def copied(mctx, x):
     """File that is recorded as being copied.
     """
     # i18n: "copied" is a keyword
-    getargs(x, 0, 0, _("copied takes no arguments"))
+    getargs(x, 0, 0, _(b"copied takes no arguments"))
 
     def copiedp(fctx):
         p = fctx.parents()
         return p and p[0].path() != fctx.path()
 
-    return mctx.fpredicate(copiedp, predrepr='copied', cache=True)
+    return mctx.fpredicate(copiedp, predrepr=b'copied', cache=True)
 
 
-@predicate('revs(revs, pattern)', weight=_WEIGHT_STATUS)
+@predicate(b'revs(revs, pattern)', weight=_WEIGHT_STATUS)
 def revs(mctx, x):
     """Evaluate set in the specified revisions. If the revset match multiple
     revs, this will return file matching pattern in any of the revision.
     """
     # i18n: "revs" is a keyword
-    r, x = getargs(x, 2, 2, _("revs takes two arguments"))
+    r, x = getargs(x, 2, 2, _(b"revs takes two arguments"))
     # i18n: "revs" is a keyword
-    revspec = getstring(r, _("first argument to revs must be a revision"))
+    revspec = getstring(r, _(b"first argument to revs must be a revision"))
     repo = mctx.ctx.repo()
     revs = scmutil.revrange(repo, [revspec])
 
@@ -449,7 +449,7 @@ def revs(mctx, x):
     return matchmod.unionmatcher(matchers)
 
 
-@predicate('status(base, rev, pattern)', weight=_WEIGHT_STATUS)
+@predicate(b'status(base, rev, pattern)', weight=_WEIGHT_STATUS)
 def status(mctx, x):
     """Evaluate predicate using status change between ``base`` and
     ``rev``. Examples:
@@ -458,13 +458,13 @@ def status(mctx, x):
     """
     repo = mctx.ctx.repo()
     # i18n: "status" is a keyword
-    b, r, x = getargs(x, 3, 3, _("status takes three arguments"))
+    b, r, x = getargs(x, 3, 3, _(b"status takes three arguments"))
     # i18n: "status" is a keyword
-    baseerr = _("first argument to status must be a revision")
+    baseerr = _(b"first argument to status must be a revision")
     baserevspec = getstring(b, baseerr)
     if not baserevspec:
         raise error.ParseError(baseerr)
-    reverr = _("second argument to status must be a revision")
+    reverr = _(b"second argument to status must be a revision")
     revspec = getstring(r, reverr)
     if not revspec:
         raise error.ParseError(reverr)
@@ -473,12 +473,12 @@ def status(mctx, x):
     return getmatch(mc, x)
 
 
-@predicate('subrepo([pattern])')
+@predicate(b'subrepo([pattern])')
 def subrepo(mctx, x):
     """Subrepositories whose paths match the given pattern.
     """
     # i18n: "subrepo" is a keyword
-    getargs(x, 0, 1, _("subrepo takes at most one argument"))
+    getargs(x, 0, 1, _(b"subrepo takes at most one argument"))
     ctx = mctx.ctx
     sstate = ctx.substate
     if x:
@@ -486,7 +486,7 @@ def subrepo(mctx, x):
             x,
             matchmod.allpatternkinds,
             # i18n: "subrepo" is a keyword
-            _("subrepo requires a pattern or no arguments"),
+            _(b"subrepo requires a pattern or no arguments"),
         )
         fast = not matchmod.patkind(pat)
         if fast:
@@ -495,26 +495,26 @@ def subrepo(mctx, x):
                 return s == pat
 
         else:
-            m = matchmod.match(ctx.repo().root, '', [pat], ctx=ctx)
+            m = matchmod.match(ctx.repo().root, b'', [pat], ctx=ctx)
         return mctx.predicate(
-            lambda f: f in sstate and m(f), predrepr=('subrepo(%r)', pat)
+            lambda f: f in sstate and m(f), predrepr=(b'subrepo(%r)', pat)
         )
     else:
-        return mctx.predicate(sstate.__contains__, predrepr='subrepo')
+        return mctx.predicate(sstate.__contains__, predrepr=b'subrepo')
 
 
 methods = {
-    'withstatus': getmatchwithstatus,
-    'string': stringmatch,
-    'symbol': stringmatch,
-    'kindpat': kindpatmatch,
-    'patterns': patternsmatch,
-    'and': andmatch,
-    'or': ormatch,
-    'minus': minusmatch,
-    'list': listmatch,
-    'not': notmatch,
-    'func': func,
+    b'withstatus': getmatchwithstatus,
+    b'string': stringmatch,
+    b'symbol': stringmatch,
+    b'kindpat': kindpatmatch,
+    b'patterns': patternsmatch,
+    b'and': andmatch,
+    b'or': ormatch,
+    b'minus': minusmatch,
+    b'list': listmatch,
+    b'not': notmatch,
+    b'func': func,
 }
 
 
@@ -550,9 +550,9 @@ class matchctx(object):
         self._status = self._basectx.status(
             self.ctx,
             self._match,
-            listignored='ignored' in keys,
-            listclean='clean' in keys,
-            listunknown='unknown' in keys,
+            listignored=b'ignored' in keys,
+            listclean=b'clean' in keys,
+            listunknown=b'unknown' in keys,
         )
 
     def status(self):

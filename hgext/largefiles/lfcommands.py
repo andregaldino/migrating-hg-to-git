@@ -45,23 +45,23 @@ eh = exthelper.exthelper()
 
 
 @eh.command(
-    'lfconvert',
+    b'lfconvert',
     [
         (
-            's',
-            'size',
-            '',
-            _('minimum size (MB) for files to be converted as largefiles'),
-            'SIZE',
+            b's',
+            b'size',
+            b'',
+            _(b'minimum size (MB) for files to be converted as largefiles'),
+            b'SIZE',
         ),
         (
-            '',
-            'to-normal',
+            b'',
+            b'to-normal',
             False,
-            _('convert from a largefiles repo to a normal repo'),
+            _(b'convert from a largefiles repo to a normal repo'),
         ),
     ],
-    _('hg lfconvert SOURCE DEST [FILE ...]'),
+    _(b'hg lfconvert SOURCE DEST [FILE ...]'),
     norepo=True,
     inferrepo=True,
 )
@@ -85,19 +85,19 @@ def lfconvert(ui, src, dest, *pats, **opts):
     this, the DEST repository can be used without largefiles at all.'''
 
     opts = pycompat.byteskwargs(opts)
-    if opts['to_normal']:
+    if opts[b'to_normal']:
         tolfile = False
     else:
         tolfile = True
-        size = lfutil.getminsize(ui, True, opts.get('size'), default=None)
+        size = lfutil.getminsize(ui, True, opts.get(b'size'), default=None)
 
     if not hg.islocal(src):
-        raise error.Abort(_('%s is not a local Mercurial repo') % src)
+        raise error.Abort(_(b'%s is not a local Mercurial repo') % src)
     if not hg.islocal(dest):
-        raise error.Abort(_('%s is not a local Mercurial repo') % dest)
+        raise error.Abort(_(b'%s is not a local Mercurial repo') % dest)
 
     rsrc = hg.repository(ui, src)
-    ui.status(_('initializing destination %s\n') % dest)
+    ui.status(_(b'initializing destination %s\n') % dest)
     rdst = hg.repository(ui, dest, create=True)
 
     success = False
@@ -122,17 +122,17 @@ def lfconvert(ui, src, dest, *pats, **opts):
             lfiles = set()
             normalfiles = set()
             if not pats:
-                pats = ui.configlist(lfutil.longname, 'patterns')
+                pats = ui.configlist(lfutil.longname, b'patterns')
             if pats:
-                matcher = matchmod.match(rsrc.root, '', list(pats))
+                matcher = matchmod.match(rsrc.root, b'', list(pats))
             else:
                 matcher = None
 
             lfiletohash = {}
             with ui.makeprogress(
-                _('converting revisions'),
-                unit=_('revisions'),
-                total=rsrc['tip'].rev(),
+                _(b'converting revisions'),
+                unit=_(b'revisions'),
+                total=rsrc[b'tip'].rev(),
             ) as progress:
                 for ctx in ctxs:
                     progress.update(ctx.rev())
@@ -162,14 +162,14 @@ def lfconvert(ui, src, dest, *pats, **opts):
             # If there were any files converted to largefiles, add largefiles
             # to the destination repository's requirements.
             if lfiles:
-                rdst.requirements.add('largefiles')
+                rdst.requirements.add(b'largefiles')
                 rdst._writerequirements()
         else:
 
             class lfsource(filemap.filemap_source):
                 def __init__(self, ui, source):
                     super(lfsource, self).__init__(ui, source, None)
-                    self.filemapper.rename[lfutil.shortname] = '.'
+                    self.filemapper.rename[lfutil.shortname] = b'.'
 
                 def getfile(self, name, rev):
                     realname, realrev = rev
@@ -187,7 +187,7 @@ def lfconvert(ui, src, dest, *pats, **opts):
 
                     if path is None:
                         raise error.Abort(
-                            _("missing largefile for '%s' in %s")
+                            _(b"missing largefile for '%s' in %s")
                             % (realname, realrev)
                         )
                     return util.readfile(path), f[1]
@@ -202,13 +202,15 @@ def lfconvert(ui, src, dest, *pats, **opts):
 
             found, missing = downloadlfiles(ui, rsrc)
             if missing != 0:
-                raise error.Abort(_("all largefiles must be present locally"))
+                raise error.Abort(_(b"all largefiles must be present locally"))
 
             orig = convcmd.converter
             convcmd.converter = converter
 
             try:
-                convcmd.convert(ui, src, dest, source_type='hg', dest_type='hg')
+                convcmd.convert(
+                    ui, src, dest, source_type=b'hg', dest_type=b'hg'
+                )
             finally:
                 convcmd.converter = orig
         success = True
@@ -245,10 +247,11 @@ def _lfconvert_addchangeset(
                     renamed = False
                 renamedlfile = renamed and renamed in lfiles
                 islfile |= renamedlfile
-                if 'l' in fctx.flags():
+                if b'l' in fctx.flags():
                     if renamedlfile:
                         raise error.Abort(
-                            _('renamed/copied largefile %s becomes symlink') % f
+                            _(b'renamed/copied largefile %s becomes symlink')
+                            % f
                         )
                     islfile = False
             if islfile:
@@ -262,18 +265,20 @@ def _lfconvert_addchangeset(
             # largefile in manifest if it has not been removed/renamed
             if f in ctx.manifest():
                 fctx = ctx.filectx(f)
-                if 'l' in fctx.flags():
+                if b'l' in fctx.flags():
                     renamed = fctx.copysource()
                     if renamed and renamed in lfiles:
-                        raise error.Abort(_('largefile %s becomes symlink') % f)
+                        raise error.Abort(
+                            _(b'largefile %s becomes symlink') % f
+                        )
 
                 # largefile was modified, update standins
-                m = hashlib.sha1('')
+                m = hashlib.sha1(b'')
                 m.update(ctx[f].data())
                 hash = node.hex(m.digest())
                 if f not in lfiletohash or lfiletohash[f] != hash:
                     rdst.wwrite(f, ctx[f].data(), ctx[f].flags())
-                    executable = 'x' in ctx[f].flags()
+                    executable = b'x' in ctx[f].flags()
                     lfutil.writestandin(rdst, fstandin, hash, executable)
                     lfiletohash[f] = hash
         else:
@@ -299,9 +304,9 @@ def _lfconvert_addchangeset(
                 repo,
                 memctx,
                 f,
-                lfiletohash[srcfname] + '\n',
-                'l' in fctx.flags(),
-                'x' in fctx.flags(),
+                lfiletohash[srcfname] + b'\n',
+                b'l' in fctx.flags(),
+                b'x' in fctx.flags(),
                 renamed,
             )
         else:
@@ -358,10 +363,10 @@ def _getnormalcontext(repo, ctx, f, revmap):
     renamed = fctx.copysource()
 
     data = fctx.data()
-    if f == '.hgtags':
+    if f == b'.hgtags':
         data = _converttags(repo.ui, revmap, data)
     return context.memfilectx(
-        repo, ctx, f, data, 'l' in fctx.flags(), 'x' in fctx.flags(), renamed
+        repo, ctx, f, data, b'l' in fctx.flags(), b'x' in fctx.flags(), renamed
     )
 
 
@@ -370,28 +375,28 @@ def _converttags(ui, revmap, data):
     newdata = []
     for line in data.splitlines():
         try:
-            id, name = line.split(' ', 1)
+            id, name = line.split(b' ', 1)
         except ValueError:
-            ui.warn(_('skipping incorrectly formatted tag %s\n') % line)
+            ui.warn(_(b'skipping incorrectly formatted tag %s\n') % line)
             continue
         try:
             newid = node.bin(id)
         except TypeError:
-            ui.warn(_('skipping incorrectly formatted id %s\n') % id)
+            ui.warn(_(b'skipping incorrectly formatted id %s\n') % id)
             continue
         try:
-            newdata.append('%s %s\n' % (node.hex(revmap[newid]), name))
+            newdata.append(b'%s %s\n' % (node.hex(revmap[newid]), name))
         except KeyError:
-            ui.warn(_('no mapping for id %s\n') % id)
+            ui.warn(_(b'no mapping for id %s\n') % id)
             continue
-    return ''.join(newdata)
+    return b''.join(newdata)
 
 
 def _islfile(file, ctx, matcher, size):
     '''Return true if file should be considered a largefile, i.e.
     matcher matches it or it is larger than size.'''
     # never store special .hg* files as largefiles
-    if file == '.hgtags' or file == '.hgignore' or file == '.hgsigs':
+    if file == b'.hgtags' or file == b'.hgignore' or file == b'.hgsigs':
         return False
     if matcher and matcher(file):
         return True
@@ -410,13 +415,13 @@ def uploadlfiles(ui, rsrc, rdst, files):
     store = storefactory.openstore(rsrc, rdst, put=True)
 
     at = 0
-    ui.debug("sending statlfile command for %d largefiles\n" % len(files))
+    ui.debug(b"sending statlfile command for %d largefiles\n" % len(files))
     retval = store.exists(files)
     files = [h for h in files if not retval[h]]
-    ui.debug("%d largefiles need to be uploaded\n" % len(files))
+    ui.debug(b"%d largefiles need to be uploaded\n" % len(files))
 
     with ui.makeprogress(
-        _('uploading largefiles'), unit=_('files'), total=len(files)
+        _(b'uploading largefiles'), unit=_(b'files'), total=len(files)
     ) as progress:
         for hash in files:
             progress.update(at)
@@ -424,8 +429,8 @@ def uploadlfiles(ui, rsrc, rdst, files):
             if not source:
                 raise error.Abort(
                     _(
-                        'largefile %s missing from store'
-                        ' (needs to be uploaded)'
+                        b'largefile %s missing from store'
+                        b' (needs to be uploaded)'
                     )
                     % hash
                 )
@@ -441,9 +446,9 @@ def verifylfiles(ui, repo, all=False, contents=False):
     matches the revision ID).  With --all, check every changeset in
     this repository.'''
     if all:
-        revs = repo.revs('all()')
+        revs = repo.revs(b'all()')
     else:
-        revs = ['.']
+        revs = [b'.']
 
     store = storefactory.openstore(repo)
     return store.verify(revs, contents=contents)
@@ -489,13 +494,13 @@ def downloadlfiles(ui, repo, rev=None):
     totalsuccess = 0
     totalmissing = 0
     if rev != []:  # walkchangerevs on empty list would return all revs
-        for ctx in cmdutil.walkchangerevs(repo, match, {'rev': rev}, prepare):
+        for ctx in cmdutil.walkchangerevs(repo, match, {b'rev': rev}, prepare):
             success, missing = cachelfiles(ui, repo, ctx.node())
             totalsuccess += len(success)
             totalmissing += len(missing)
-    ui.status(_("%d additional largefiles cached\n") % totalsuccess)
+    ui.status(_(b"%d additional largefiles cached\n") % totalsuccess)
     if totalmissing > 0:
-        ui.status(_("%d largefiles failed to download\n") % totalmissing)
+        ui.status(_(b"%d largefiles failed to download\n") % totalmissing)
     return totalsuccess, totalmissing
 
 
@@ -534,9 +539,9 @@ def updatelfiles(
                     shutil.copyfile(wvfs.join(lfile), wvfs.join(lfileorig))
                     wvfs.unlinkpath(standinorig)
                 expecthash = lfutil.readasstandin(wctx[standin])
-                if expecthash != '':
+                if expecthash != b'':
                     if lfile not in wctx:  # not switched to normal file
-                        if repo.dirstate[standin] != '?':
+                        if repo.dirstate[standin] != b'?':
                             wvfs.unlinkpath(lfile, ignoremissing=True)
                         else:
                             dropped.add(lfile)
@@ -571,7 +576,7 @@ def updatelfiles(
                 # the M state.
                 lfutil.synclfdirstate(repo, lfdirstate, f, normallookup)
 
-            statuswriter(_('getting changed largefiles\n'))
+            statuswriter(_(b'getting changed largefiles\n'))
             cachelfiles(ui, repo, None, lfiles)
 
         for lfile in lfiles:
@@ -610,17 +615,17 @@ def updatelfiles(
         lfdirstate.write()
         if lfiles:
             statuswriter(
-                _('%d largefiles updated, %d removed\n') % (updated, removed)
+                _(b'%d largefiles updated, %d removed\n') % (updated, removed)
             )
 
 
 @eh.command(
-    'lfpull',
-    [('r', 'rev', [], _('pull largefiles for these revisions'))]
+    b'lfpull',
+    [(b'r', b'rev', [], _(b'pull largefiles for these revisions'))]
     + cmdutil.remoteopts,
-    _('-r REV... [-e CMD] [--remotecmd CMD] [SOURCE]'),
+    _(b'-r REV... [-e CMD] [--remotecmd CMD] [SOURCE]'),
 )
-def lfpull(ui, repo, source="default", **opts):
+def lfpull(ui, repo, source=b"default", **opts):
     """pull largefiles for the specified revisions from the specified source
 
     Pull largefiles that are referenced from local changesets but missing
@@ -645,20 +650,20 @@ def lfpull(ui, repo, source="default", **opts):
 
     revs = opts.get(r'rev', [])
     if not revs:
-        raise error.Abort(_('no revisions specified'))
+        raise error.Abort(_(b'no revisions specified'))
     revs = scmutil.revrange(repo, revs)
 
     numcached = 0
     for rev in revs:
-        ui.note(_('pulling largefiles for revision %d\n') % rev)
+        ui.note(_(b'pulling largefiles for revision %d\n') % rev)
         (cached, missing) = cachelfiles(ui, repo, rev)
         numcached += len(cached)
-    ui.status(_("%d largefiles cached\n") % numcached)
+    ui.status(_(b"%d largefiles cached\n") % numcached)
 
 
-@eh.command('debuglfput', [] + cmdutil.remoteopts, _('FILE'))
+@eh.command(b'debuglfput', [] + cmdutil.remoteopts, _(b'FILE'))
 def debuglfput(ui, repo, filepath, **kwargs):
     hash = lfutil.hashfile(filepath)
     storefactory.openstore(repo).put(filepath, hash)
-    ui.write('%s\n' % hash)
+    ui.write(b'%s\n' % hash)
     return 0

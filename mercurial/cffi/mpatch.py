@@ -18,8 +18,8 @@ lib = _mpatch.lib
 @ffi.def_extern()
 def cffi_get_next_item(arg, pos):
     all, bins = ffi.from_handle(arg)
-    container = ffi.new("struct mpatch_flist*[1]")
-    to_pass = ffi.new("char[]", str(bins[pos]))
+    container = ffi.new(b"struct mpatch_flist*[1]")
+    to_pass = ffi.new(b"char[]", str(bins[pos]))
     all.append(to_pass)
     r = lib.mpatch_decode(to_pass, len(to_pass) - 1, container)
     if r < 0:
@@ -35,15 +35,15 @@ def patches(text, bins):
     arg = (all, bins)
     patch = lib.mpatch_fold(ffi.new_handle(arg), lib.cffi_get_next_item, 0, lgt)
     if not patch:
-        raise mpatchError("cannot decode chunk")
+        raise mpatchError(b"cannot decode chunk")
     outlen = lib.mpatch_calcsize(len(text), patch)
     if outlen < 0:
         lib.mpatch_lfree(patch)
-        raise mpatchError("inconsistency detected")
-    buf = ffi.new("char[]", outlen)
+        raise mpatchError(b"inconsistency detected")
+    buf = ffi.new(b"char[]", outlen)
     if lib.mpatch_apply(buf, text, len(text), patch) < 0:
         lib.mpatch_lfree(patch)
-        raise mpatchError("error applying patches")
+        raise mpatchError(b"error applying patches")
     res = ffi.buffer(buf, outlen)[:]
     lib.mpatch_lfree(patch)
     return res

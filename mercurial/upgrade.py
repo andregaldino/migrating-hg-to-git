@@ -28,7 +28,7 @@ from .utils import compression
 
 # list of requirements that request a clone of all revlog if added/removed
 RECLONES_REQUIREMENTS = {
-    'generaldelta',
+    b'generaldelta',
     localrepo.SPARSEREVLOG_REQUIREMENT,
 }
 
@@ -41,9 +41,9 @@ def requiredsourcerequirements(repo):
     """
     return {
         # Introduced in Mercurial 0.9.2.
-        'revlogv1',
+        b'revlogv1',
         # Introduced in Mercurial 0.9.2.
-        'store',
+        b'store',
     }
 
 
@@ -56,12 +56,12 @@ def blocksourcerequirements(repo):
     return {
         # The upgrade code does not yet support these experimental features.
         # This is an artificial limitation.
-        'treemanifest',
+        b'treemanifest',
         # This was a precursor to generaldelta and was never enabled by default.
         # It should (hopefully) not exist in the wild.
-        'parentdelta',
+        b'parentdelta',
         # Upgrade should operate on the actual store, not the shared link.
-        'shared',
+        b'shared',
     }
 
 
@@ -79,7 +79,7 @@ def supportremovedrequirements(repo):
         engine = compression.compengines[name]
         if engine.available() and engine.revlogheader():
             supported.add(b'exp-compression-%s' % name)
-            if engine.name() == 'zstd':
+            if engine.name() == b'zstd':
                 supported.add(b'revlog-compression-zstd')
     return supported
 
@@ -93,18 +93,18 @@ def supporteddestrequirements(repo):
     Extensions should monkeypatch this to add their custom requirements.
     """
     supported = {
-        'dotencode',
-        'fncache',
-        'generaldelta',
-        'revlogv1',
-        'store',
+        b'dotencode',
+        b'fncache',
+        b'generaldelta',
+        b'revlogv1',
+        b'store',
         localrepo.SPARSEREVLOG_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
         if engine.available() and engine.revlogheader():
             supported.add(b'exp-compression-%s' % name)
-            if engine.name() == 'zstd':
+            if engine.name() == b'zstd':
                 supported.add(b'revlog-compression-zstd')
     return supported
 
@@ -120,16 +120,16 @@ def allowednewrequirements(repo):
     future, unknown requirements from accidentally being added.
     """
     supported = {
-        'dotencode',
-        'fncache',
-        'generaldelta',
+        b'dotencode',
+        b'fncache',
+        b'generaldelta',
         localrepo.SPARSEREVLOG_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
         if engine.available() and engine.revlogheader():
             supported.add(b'exp-compression-%s' % name)
-            if engine.name() == 'zstd':
+            if engine.name() == b'zstd':
                 supported.add(b'revlog-compression-zstd')
     return supported
 
@@ -138,8 +138,8 @@ def preservedrequirements(repo):
     return set()
 
 
-deficiency = 'deficiency'
-optimisation = 'optimization'
+deficiency = b'deficiency'
+optimisation = b'optimization'
 
 
 class improvement(object):
@@ -259,129 +259,129 @@ class requirementformatvariant(formatvariant):
 
 @registerformatvariant
 class fncache(requirementformatvariant):
-    name = 'fncache'
+    name = b'fncache'
 
-    _requirement = 'fncache'
+    _requirement = b'fncache'
 
     default = True
 
     description = _(
-        'long and reserved filenames may not work correctly; '
-        'repository performance is sub-optimal'
+        b'long and reserved filenames may not work correctly; '
+        b'repository performance is sub-optimal'
     )
 
     upgrademessage = _(
-        'repository will be more resilient to storing '
-        'certain paths and performance of certain '
-        'operations should be improved'
+        b'repository will be more resilient to storing '
+        b'certain paths and performance of certain '
+        b'operations should be improved'
     )
 
 
 @registerformatvariant
 class dotencode(requirementformatvariant):
-    name = 'dotencode'
+    name = b'dotencode'
 
-    _requirement = 'dotencode'
+    _requirement = b'dotencode'
 
     default = True
 
     description = _(
-        'storage of filenames beginning with a period or '
-        'space may not work correctly'
+        b'storage of filenames beginning with a period or '
+        b'space may not work correctly'
     )
 
     upgrademessage = _(
-        'repository will be better able to store files '
-        'beginning with a space or period'
+        b'repository will be better able to store files '
+        b'beginning with a space or period'
     )
 
 
 @registerformatvariant
 class generaldelta(requirementformatvariant):
-    name = 'generaldelta'
+    name = b'generaldelta'
 
-    _requirement = 'generaldelta'
+    _requirement = b'generaldelta'
 
     default = True
 
     description = _(
-        'deltas within internal storage are unable to '
-        'choose optimal revisions; repository is larger and '
-        'slower than it could be; interaction with other '
-        'repositories may require extra network and CPU '
-        'resources, making "hg push" and "hg pull" slower'
+        b'deltas within internal storage are unable to '
+        b'choose optimal revisions; repository is larger and '
+        b'slower than it could be; interaction with other '
+        b'repositories may require extra network and CPU '
+        b'resources, making "hg push" and "hg pull" slower'
     )
 
     upgrademessage = _(
-        'repository storage will be able to create '
-        'optimal deltas; new repository data will be '
-        'smaller and read times should decrease; '
-        'interacting with other repositories using this '
-        'storage model should require less network and '
-        'CPU resources, making "hg push" and "hg pull" '
-        'faster'
+        b'repository storage will be able to create '
+        b'optimal deltas; new repository data will be '
+        b'smaller and read times should decrease; '
+        b'interacting with other repositories using this '
+        b'storage model should require less network and '
+        b'CPU resources, making "hg push" and "hg pull" '
+        b'faster'
     )
 
 
 @registerformatvariant
 class sparserevlog(requirementformatvariant):
-    name = 'sparserevlog'
+    name = b'sparserevlog'
 
     _requirement = localrepo.SPARSEREVLOG_REQUIREMENT
 
     default = True
 
     description = _(
-        'in order to limit disk reading and memory usage on older '
-        'version, the span of a delta chain from its root to its '
-        'end is limited, whatever the relevant data in this span. '
-        'This can severly limit Mercurial ability to build good '
-        'chain of delta resulting is much more storage space being '
-        'taken and limit reusability of on disk delta during '
-        'exchange.'
+        b'in order to limit disk reading and memory usage on older '
+        b'version, the span of a delta chain from its root to its '
+        b'end is limited, whatever the relevant data in this span. '
+        b'This can severly limit Mercurial ability to build good '
+        b'chain of delta resulting is much more storage space being '
+        b'taken and limit reusability of on disk delta during '
+        b'exchange.'
     )
 
     upgrademessage = _(
-        'Revlog supports delta chain with more unused data '
-        'between payload. These gaps will be skipped at read '
-        'time. This allows for better delta chains, making a '
-        'better compression and faster exchange with server.'
+        b'Revlog supports delta chain with more unused data '
+        b'between payload. These gaps will be skipped at read '
+        b'time. This allows for better delta chains, making a '
+        b'better compression and faster exchange with server.'
     )
 
 
 @registerformatvariant
 class sidedata(requirementformatvariant):
-    name = 'sidedata'
+    name = b'sidedata'
 
     _requirement = localrepo.SIDEDATA_REQUIREMENT
 
     default = False
 
     description = _(
-        'Allows storage of extra data alongside a revision, '
-        'unlocking various caching options.'
+        b'Allows storage of extra data alongside a revision, '
+        b'unlocking various caching options.'
     )
 
-    upgrademessage = _('Allows storage of extra data alongside a revision.')
+    upgrademessage = _(b'Allows storage of extra data alongside a revision.')
 
 
 @registerformatvariant
 class removecldeltachain(formatvariant):
-    name = 'plain-cl-delta'
+    name = b'plain-cl-delta'
 
     default = True
 
     description = _(
-        'changelog storage is using deltas instead of '
-        'raw entries; changelog reading and any '
-        'operation relying on changelog data are slower '
-        'than they could be'
+        b'changelog storage is using deltas instead of '
+        b'raw entries; changelog reading and any '
+        b'operation relying on changelog data are slower '
+        b'than they could be'
     )
 
     upgrademessage = _(
-        'changelog storage will be reformated to '
-        'store raw entries; changelog reading will be '
-        'faster; changelog size may be reduced'
+        b'changelog storage will be reformated to '
+        b'store raw entries; changelog reading will be '
+        b'faster; changelog size may be reduced'
     )
 
     @staticmethod
@@ -399,16 +399,16 @@ class removecldeltachain(formatvariant):
 
 @registerformatvariant
 class compressionengine(formatvariant):
-    name = 'compression'
-    default = 'zlib'
+    name = b'compression'
+    default = b'zlib'
 
     description = _(
-        'Compresion algorithm used to compress data. '
-        'Some engine are faster than other'
+        b'Compresion algorithm used to compress data. '
+        b'Some engine are faster than other'
     )
 
     upgrademessage = _(
-        'revlog content will be recompressed with the new ' 'algorithm.'
+        b'revlog content will be recompressed with the new ' b'algorithm.'
     )
 
     @classmethod
@@ -417,49 +417,49 @@ class compressionengine(formatvariant):
         # strickly speaking, revlog seems to support mixed compression style.
         #
         # The compression used for new entries will be "the last one"
-        compression = 'zlib'
+        compression = b'zlib'
         for req in repo.requirements:
             prefix = req.startswith
-            if prefix('revlog-compression-') or prefix('exp-compression-'):
-                compression = req.split('-', 2)[2]
+            if prefix(b'revlog-compression-') or prefix(b'exp-compression-'):
+                compression = req.split(b'-', 2)[2]
         return compression
 
     @classmethod
     def fromconfig(cls, repo):
-        return repo.ui.config('format', 'revlog-compression')
+        return repo.ui.config(b'format', b'revlog-compression')
 
 
 @registerformatvariant
 class compressionlevel(formatvariant):
-    name = 'compression-level'
-    default = 'default'
+    name = b'compression-level'
+    default = b'default'
 
-    description = _('compression level')
+    description = _(b'compression level')
 
-    upgrademessage = _('revlog content will be recompressed')
+    upgrademessage = _(b'revlog content will be recompressed')
 
     @classmethod
     def fromrepo(cls, repo):
         comp = compressionengine.fromrepo(repo)
         level = None
-        if comp == 'zlib':
-            level = repo.ui.configint('storage', 'revlog.zlib.level')
-        elif comp == 'zstd':
-            level = repo.ui.configint('storage', 'revlog.zstd.level')
+        if comp == b'zlib':
+            level = repo.ui.configint(b'storage', b'revlog.zlib.level')
+        elif comp == b'zstd':
+            level = repo.ui.configint(b'storage', b'revlog.zstd.level')
         if level is None:
-            return 'default'
+            return b'default'
         return bytes(level)
 
     @classmethod
     def fromconfig(cls, repo):
         comp = compressionengine.fromconfig(repo)
         level = None
-        if comp == 'zlib':
-            level = repo.ui.configint('storage', 'revlog.zlib.level')
-        elif comp == 'zstd':
-            level = repo.ui.configint('storage', 'revlog.zstd.level')
+        if comp == b'zlib':
+            level = repo.ui.configint(b'storage', b'revlog.zlib.level')
+        elif comp == b'zstd':
+            level = repo.ui.configint(b'storage', b'revlog.zstd.level')
         if level is None:
-            return 'default'
+            return b'default'
         return bytes(level)
 
 
@@ -485,10 +485,10 @@ def finddeficiencies(repo):
 # forms in script when comparing result is anoying enough to add
 # backward compatibility for a while.
 legacy_opts_map = {
-    'redeltaparent': 're-delta-parent',
-    'redeltamultibase': 're-delta-multibase',
-    'redeltaall': 're-delta-all',
-    'redeltafulladd': 're-delta-fulladd',
+    b'redeltaparent': b're-delta-parent',
+    b'redeltamultibase': b're-delta-multibase',
+    b'redeltaall': b're-delta-all',
+    b'redeltafulladd': b're-delta-fulladd',
 }
 
 
@@ -500,82 +500,82 @@ def findoptimizations(repo):
 
     optimizations.append(
         improvement(
-            name='re-delta-parent',
+            name=b're-delta-parent',
             type=optimisation,
             description=_(
-                'deltas within internal storage will be recalculated to '
-                'choose an optimal base revision where this was not '
-                'already done; the size of the repository may shrink and '
-                'various operations may become faster; the first time '
-                'this optimization is performed could slow down upgrade '
-                'execution considerably; subsequent invocations should '
-                'not run noticeably slower'
+                b'deltas within internal storage will be recalculated to '
+                b'choose an optimal base revision where this was not '
+                b'already done; the size of the repository may shrink and '
+                b'various operations may become faster; the first time '
+                b'this optimization is performed could slow down upgrade '
+                b'execution considerably; subsequent invocations should '
+                b'not run noticeably slower'
             ),
             upgrademessage=_(
-                'deltas within internal storage will choose a new '
-                'base revision if needed'
+                b'deltas within internal storage will choose a new '
+                b'base revision if needed'
             ),
         )
     )
 
     optimizations.append(
         improvement(
-            name='re-delta-multibase',
+            name=b're-delta-multibase',
             type=optimisation,
             description=_(
-                'deltas within internal storage will be recalculated '
-                'against multiple base revision and the smallest '
-                'difference will be used; the size of the repository may '
-                'shrink significantly when there are many merges; this '
-                'optimization will slow down execution in proportion to '
-                'the number of merges in the repository and the amount '
-                'of files in the repository; this slow down should not '
-                'be significant unless there are tens of thousands of '
-                'files and thousands of merges'
+                b'deltas within internal storage will be recalculated '
+                b'against multiple base revision and the smallest '
+                b'difference will be used; the size of the repository may '
+                b'shrink significantly when there are many merges; this '
+                b'optimization will slow down execution in proportion to '
+                b'the number of merges in the repository and the amount '
+                b'of files in the repository; this slow down should not '
+                b'be significant unless there are tens of thousands of '
+                b'files and thousands of merges'
             ),
             upgrademessage=_(
-                'deltas within internal storage will choose an '
-                'optimal delta by computing deltas against multiple '
-                'parents; may slow down execution time '
-                'significantly'
+                b'deltas within internal storage will choose an '
+                b'optimal delta by computing deltas against multiple '
+                b'parents; may slow down execution time '
+                b'significantly'
             ),
         )
     )
 
     optimizations.append(
         improvement(
-            name='re-delta-all',
+            name=b're-delta-all',
             type=optimisation,
             description=_(
-                'deltas within internal storage will always be '
-                'recalculated without reusing prior deltas; this will '
-                'likely make execution run several times slower; this '
-                'optimization is typically not needed'
+                b'deltas within internal storage will always be '
+                b'recalculated without reusing prior deltas; this will '
+                b'likely make execution run several times slower; this '
+                b'optimization is typically not needed'
             ),
             upgrademessage=_(
-                'deltas within internal storage will be fully '
-                'recomputed; this will likely drastically slow down '
-                'execution time'
+                b'deltas within internal storage will be fully '
+                b'recomputed; this will likely drastically slow down '
+                b'execution time'
             ),
         )
     )
 
     optimizations.append(
         improvement(
-            name='re-delta-fulladd',
+            name=b're-delta-fulladd',
             type=optimisation,
             description=_(
-                'every revision will be re-added as if it was new '
-                'content. It will go through the full storage '
-                'mechanism giving extensions a chance to process it '
-                '(eg. lfs). This is similar to "re-delta-all" but even '
-                'slower since more logic is involved.'
+                b'every revision will be re-added as if it was new '
+                b'content. It will go through the full storage '
+                b'mechanism giving extensions a chance to process it '
+                b'(eg. lfs). This is similar to "re-delta-all" but even '
+                b'slower since more logic is involved.'
             ),
             upgrademessage=_(
-                'each revision will be added as new content to the '
-                'internal storage; this will likely drastically slow '
-                'down execution time, but some extensions might need '
-                'it'
+                b'each revision will be added as new content to the '
+                b'internal storage; this will likely drastically slow '
+                b'down execution time, but some extensions might need '
+                b'it'
             ),
         )
     )
@@ -621,10 +621,10 @@ def _revlogfrompath(repo, path):
 
     An instance of the appropriate class is returned.
     """
-    if path == '00changelog.i':
+    if path == b'00changelog.i':
         return changelog.changelog(repo.svfs)
-    elif path.endswith('00manifest.i'):
-        mandir = path[: -len('00manifest.i')]
+    elif path.endswith(b'00manifest.i'):
+        mandir = path[: -len(b'00manifest.i')]
         return manifest.manifestrevlog(repo.svfs, tree=mandir)
     else:
         # reverse of "/".join(("data", path + ".i"))
@@ -649,7 +649,7 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
     olddata = oldvfs.join(oldrl.datafile)
     newdata = newvfs.join(newrl.datafile)
 
-    with newvfs(newrl.indexfile, 'w'):
+    with newvfs(newrl.indexfile, b'w'):
         pass  # create all the directories
 
     util.copyfile(oldindex, newindex)
@@ -658,12 +658,12 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
         util.copyfile(olddata, newdata)
 
     if not (
-        unencodedname.endswith('00changelog.i')
-        or unencodedname.endswith('00manifest.i')
+        unencodedname.endswith(b'00changelog.i')
+        or unencodedname.endswith(b'00manifest.i')
     ):
         destrepo.svfs.fncache.add(unencodedname)
         if copydata:
-            destrepo.svfs.fncache.add(unencodedname[:-2] + '.d')
+            destrepo.svfs.fncache.add(unencodedname[:-2] + b'.d')
 
 
 UPGRADE_CHANGELOG = object()
@@ -679,9 +679,9 @@ def matchrevlog(revlogfilter, entry):
     """check is a revlog is selected for cloning
 
     The store entry is checked against the passed filter"""
-    if entry.endswith('00changelog.i'):
+    if entry.endswith(b'00changelog.i'):
         return UPGRADE_CHANGELOG in revlogfilter
-    elif entry.endswith('00manifest.i'):
+    elif entry.endswith(b'00manifest.i'):
         return UPGRADE_MANIFEST in revlogfilter
     return UPGRADE_FILELOG in revlogfilter
 
@@ -720,7 +720,7 @@ def _clonerevlogs(
     # Perform a pass to collect metadata. This validates we can open all
     # source files and allows a unified progress bar to be displayed.
     for unencoded, encoded, size in alldatafiles:
-        if unencoded.endswith('.d'):
+        if unencoded.endswith(b'.d'):
             continue
 
         rl = _revlogfrompath(srcrepo, unencoded)
@@ -732,9 +732,9 @@ def _clonerevlogs(
             storedsize=True,
         )
 
-        revcount += info['revisionscount'] or 0
-        datasize = info['storedsize'] or 0
-        rawsize = info['trackedsize'] or 0
+        revcount += info[b'revisionscount'] or 0
+        datasize = info[b'storedsize'] or 0
+        rawsize = info[b'trackedsize'] or 0
 
         srcsize += datasize
         srcrawsize += rawsize
@@ -755,20 +755,20 @@ def _clonerevlogs(
             fsrcsize += datasize
             frawsize += rawsize
         else:
-            error.ProgrammingError('unknown revlog type')
+            error.ProgrammingError(b'unknown revlog type')
 
     if not revcount:
         return
 
     ui.write(
         _(
-            'migrating %d total revisions (%d in filelogs, %d in manifests, '
-            '%d in changelog)\n'
+            b'migrating %d total revisions (%d in filelogs, %d in manifests, '
+            b'%d in changelog)\n'
         )
         % (revcount, frevcount, mrevcount, crevcount)
     )
     ui.write(
-        _('migrating %s in store; %s tracked data\n')
+        _(b'migrating %s in store; %s tracked data\n')
         % ((util.bytecount(srcsize), util.bytecount(srcrawsize)))
     )
 
@@ -782,24 +782,24 @@ def _clonerevlogs(
     # FUTURE this operation can be farmed off to worker processes.
     seen = set()
     for unencoded, encoded, size in alldatafiles:
-        if unencoded.endswith('.d'):
+        if unencoded.endswith(b'.d'):
             continue
 
         oldrl = _revlogfrompath(srcrepo, unencoded)
 
-        if isinstance(oldrl, changelog.changelog) and 'c' not in seen:
+        if isinstance(oldrl, changelog.changelog) and b'c' not in seen:
             ui.write(
                 _(
-                    'finished migrating %d manifest revisions across %d '
-                    'manifests; change in size: %s\n'
+                    b'finished migrating %d manifest revisions across %d '
+                    b'manifests; change in size: %s\n'
                 )
                 % (mrevcount, mcount, util.bytecount(mdstsize - msrcsize))
             )
 
             ui.write(
                 _(
-                    'migrating changelog containing %d revisions '
-                    '(%s in store; %s tracked data)\n'
+                    b'migrating changelog containing %d revisions '
+                    b'(%s in store; %s tracked data)\n'
                 )
                 % (
                     crevcount,
@@ -807,23 +807,23 @@ def _clonerevlogs(
                     util.bytecount(crawsize),
                 )
             )
-            seen.add('c')
+            seen.add(b'c')
             progress = srcrepo.ui.makeprogress(
-                _('changelog revisions'), total=crevcount
+                _(b'changelog revisions'), total=crevcount
             )
-        elif isinstance(oldrl, manifest.manifestrevlog) and 'm' not in seen:
+        elif isinstance(oldrl, manifest.manifestrevlog) and b'm' not in seen:
             ui.write(
                 _(
-                    'finished migrating %d filelog revisions across %d '
-                    'filelogs; change in size: %s\n'
+                    b'finished migrating %d filelog revisions across %d '
+                    b'filelogs; change in size: %s\n'
                 )
                 % (frevcount, fcount, util.bytecount(fdstsize - fsrcsize))
             )
 
             ui.write(
                 _(
-                    'migrating %d manifests containing %d revisions '
-                    '(%s in store; %s tracked data)\n'
+                    b'migrating %d manifests containing %d revisions '
+                    b'(%s in store; %s tracked data)\n'
                 )
                 % (
                     mcount,
@@ -832,17 +832,17 @@ def _clonerevlogs(
                     util.bytecount(mrawsize),
                 )
             )
-            seen.add('m')
+            seen.add(b'm')
             if progress:
                 progress.complete()
             progress = srcrepo.ui.makeprogress(
-                _('manifest revisions'), total=mrevcount
+                _(b'manifest revisions'), total=mrevcount
             )
-        elif 'f' not in seen:
+        elif b'f' not in seen:
             ui.write(
                 _(
-                    'migrating %d filelogs containing %d revisions '
-                    '(%s in store; %s tracked data)\n'
+                    b'migrating %d filelogs containing %d revisions '
+                    b'(%s in store; %s tracked data)\n'
                 )
                 % (
                     fcount,
@@ -851,16 +851,16 @@ def _clonerevlogs(
                     util.bytecount(frawsize),
                 )
             )
-            seen.add('f')
+            seen.add(b'f')
             if progress:
                 progress.complete()
             progress = srcrepo.ui.makeprogress(
-                _('file revisions'), total=frevcount
+                _(b'file revisions'), total=frevcount
             )
 
         if matchrevlog(revlogs, unencoded):
             ui.note(
-                _('cloning %d revisions from %s\n') % (len(oldrl), unencoded)
+                _(b'cloning %d revisions from %s\n') % (len(oldrl), unencoded)
             )
             newrl = _revlogfrompath(dstrepo, unencoded)
             oldrl.clone(
@@ -871,14 +871,14 @@ def _clonerevlogs(
                 forcedeltabothparents=forcedeltabothparents,
             )
         else:
-            msg = _('blindly copying %s containing %i revisions\n')
+            msg = _(b'blindly copying %s containing %i revisions\n')
             ui.note(msg % (unencoded, len(oldrl)))
             _copyrevlog(tr, dstrepo, oldrl, unencoded)
 
             newrl = _revlogfrompath(dstrepo, unencoded)
 
         info = newrl.storageinfo(storedsize=True)
-        datasize = info['storedsize'] or 0
+        datasize = info[b'storedsize'] or 0
 
         dstsize += datasize
 
@@ -892,14 +892,17 @@ def _clonerevlogs(
     progress.complete()
 
     ui.write(
-        _('finished migrating %d changelog revisions; change in size: ' '%s\n')
+        _(
+            b'finished migrating %d changelog revisions; change in size: '
+            b'%s\n'
+        )
         % (crevcount, util.bytecount(cdstsize - csrcsize))
     )
 
     ui.write(
         _(
-            'finished migrating %d total revisions; total change in store '
-            'size: %s\n'
+            b'finished migrating %d total revisions; total change in store '
+            b'size: %s\n'
         )
         % (revcount, util.bytecount(dstsize - srcsize))
     )
@@ -922,16 +925,16 @@ def _filterstorefile(srcrepo, dstrepo, requirements, path, mode, st):
     Function should return ``True`` if the file is to be copied.
     """
     # Skip revlogs.
-    if path.endswith(('.i', '.d')):
+    if path.endswith((b'.i', b'.d')):
         return False
     # Skip transaction related files.
-    if path.startswith('undo'):
+    if path.startswith(b'undo'):
         return False
     # Only copy regular files.
     if mode != stat.S_IFREG:
         return False
     # Skip other skipped files.
-    if path in ('lock', 'fncache'):
+    if path in (b'lock', b'fncache'):
         return False
 
     return True
@@ -962,53 +965,53 @@ def _upgraderepo(
 
     ui.write(
         _(
-            '(it is safe to interrupt this process any time before '
-            'data migration completes)\n'
+            b'(it is safe to interrupt this process any time before '
+            b'data migration completes)\n'
         )
     )
 
-    if 're-delta-all' in actions:
+    if b're-delta-all' in actions:
         deltareuse = revlog.revlog.DELTAREUSENEVER
-    elif 're-delta-parent' in actions:
+    elif b're-delta-parent' in actions:
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif 're-delta-multibase' in actions:
+    elif b're-delta-multibase' in actions:
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif 're-delta-fulladd' in actions:
+    elif b're-delta-fulladd' in actions:
         deltareuse = revlog.revlog.DELTAREUSEFULLADD
     else:
         deltareuse = revlog.revlog.DELTAREUSEALWAYS
 
-    with dstrepo.transaction('upgrade') as tr:
+    with dstrepo.transaction(b'upgrade') as tr:
         _clonerevlogs(
             ui,
             srcrepo,
             dstrepo,
             tr,
             deltareuse,
-            're-delta-multibase' in actions,
+            b're-delta-multibase' in actions,
             revlogs=revlogs,
         )
 
     # Now copy other files in the store directory.
     # The sorted() makes execution deterministic.
-    for p, kind, st in sorted(srcrepo.store.vfs.readdir('', stat=True)):
+    for p, kind, st in sorted(srcrepo.store.vfs.readdir(b'', stat=True)):
         if not _filterstorefile(srcrepo, dstrepo, requirements, p, kind, st):
             continue
 
-        srcrepo.ui.write(_('copying %s\n') % p)
+        srcrepo.ui.write(_(b'copying %s\n') % p)
         src = srcrepo.store.rawvfs.join(p)
         dst = dstrepo.store.rawvfs.join(p)
         util.copyfile(src, dst, copystat=True)
 
     _finishdatamigration(ui, srcrepo, dstrepo, requirements)
 
-    ui.write(_('data fully migrated to temporary repository\n'))
+    ui.write(_(b'data fully migrated to temporary repository\n'))
 
-    backuppath = pycompat.mkdtemp(prefix='upgradebackup.', dir=srcrepo.path)
+    backuppath = pycompat.mkdtemp(prefix=b'upgradebackup.', dir=srcrepo.path)
     backupvfs = vfsmod.vfs(backuppath)
 
     # Make a backup of requires file first, as it is the first to be modified.
-    util.copyfile(srcrepo.vfs.join('requires'), backupvfs.join('requires'))
+    util.copyfile(srcrepo.vfs.join(b'requires'), backupvfs.join(b'requires'))
 
     # We install an arbitrary requirement that clients must not support
     # as a mechanism to lock out new clients during the data swap. This is
@@ -1016,29 +1019,29 @@ def _upgraderepo(
     # an inconsistent state.
     ui.write(
         _(
-            'marking source repository as being upgraded; clients will be '
-            'unable to read from repository\n'
+            b'marking source repository as being upgraded; clients will be '
+            b'unable to read from repository\n'
         )
     )
     scmutil.writerequires(
-        srcrepo.vfs, srcrepo.requirements | {'upgradeinprogress'}
+        srcrepo.vfs, srcrepo.requirements | {b'upgradeinprogress'}
     )
 
-    ui.write(_('starting in-place swap of repository data\n'))
-    ui.write(_('replaced files will be backed up at %s\n') % backuppath)
+    ui.write(_(b'starting in-place swap of repository data\n'))
+    ui.write(_(b'replaced files will be backed up at %s\n') % backuppath)
 
     # Now swap in the new store directory. Doing it as a rename should make
     # the operation nearly instantaneous and atomic (at least in well-behaved
     # environments).
-    ui.write(_('replacing store...\n'))
+    ui.write(_(b'replacing store...\n'))
     tstart = util.timer()
-    util.rename(srcrepo.spath, backupvfs.join('store'))
+    util.rename(srcrepo.spath, backupvfs.join(b'store'))
     util.rename(dstrepo.spath, srcrepo.spath)
     elapsed = util.timer() - tstart
     ui.write(
         _(
-            'store replacement complete; repository was inconsistent for '
-            '%0.1fs\n'
+            b'store replacement complete; repository was inconsistent for '
+            b'%0.1fs\n'
         )
         % elapsed
     )
@@ -1047,8 +1050,8 @@ def _upgraderepo(
     # out legacy clients.
     ui.write(
         _(
-            'finalizing requirements file and making repository readable '
-            'again\n'
+            b'finalizing requirements file and making repository readable '
+            b'again\n'
         )
     )
     scmutil.writerequires(srcrepo.vfs, requirements)
@@ -1057,7 +1060,7 @@ def _upgraderepo(
     # reference to its new location. So clean it up manually. Alternatively, we
     # could update srcrepo.svfs and other variables to point to the new
     # location. This is simpler.
-    backupvfs.unlink('store/lock')
+    backupvfs.unlink(b'store/lock')
 
     return backuppath
 
@@ -1078,7 +1081,7 @@ def upgraderepo(
     repo = repo.unfiltered()
 
     revlogs = set(UPGRADE_ALL_REVLOGS)
-    specentries = (('c', changelog), ('m', manifest))
+    specentries = ((b'c', changelog), (b'm', manifest))
     specified = [(y, x) for (y, x) in specentries if x is not None]
     if specified:
         # we have some limitation on revlogs to be recloned
@@ -1086,34 +1089,34 @@ def upgraderepo(
             revlogs = set()
             for r, enabled in specified:
                 if enabled:
-                    if r == 'c':
+                    if r == b'c':
                         revlogs.add(UPGRADE_CHANGELOG)
-                    elif r == 'm':
+                    elif r == b'm':
                         revlogs.add(UPGRADE_MANIFEST)
         else:
             # none are enabled
             for r, __ in specified:
-                if r == 'c':
+                if r == b'c':
                     revlogs.discard(UPGRADE_CHANGELOG)
-                elif r == 'm':
+                elif r == b'm':
                     revlogs.discard(UPGRADE_MANIFEST)
 
     # Ensure the repository can be upgraded.
     missingreqs = requiredsourcerequirements(repo) - repo.requirements
     if missingreqs:
         raise error.Abort(
-            _('cannot upgrade repository; requirement ' 'missing: %s')
-            % _(', ').join(sorted(missingreqs))
+            _(b'cannot upgrade repository; requirement ' b'missing: %s')
+            % _(b', ').join(sorted(missingreqs))
         )
 
     blockedreqs = blocksourcerequirements(repo) & repo.requirements
     if blockedreqs:
         raise error.Abort(
             _(
-                'cannot upgrade repository; unsupported source '
-                'requirement: %s'
+                b'cannot upgrade repository; unsupported source '
+                b'requirement: %s'
             )
-            % _(', ').join(sorted(blockedreqs))
+            % _(b', ').join(sorted(blockedreqs))
         )
 
     # FUTURE there is potentially a need to control the wanted requirements via
@@ -1128,28 +1131,31 @@ def upgraderepo(
     )
     if noremovereqs:
         raise error.Abort(
-            _('cannot upgrade repository; requirement would be ' 'removed: %s')
-            % _(', ').join(sorted(noremovereqs))
+            _(
+                b'cannot upgrade repository; requirement would be '
+                b'removed: %s'
+            )
+            % _(b', ').join(sorted(noremovereqs))
         )
 
     noaddreqs = newreqs - repo.requirements - allowednewrequirements(repo)
     if noaddreqs:
         raise error.Abort(
             _(
-                'cannot upgrade repository; do not support adding '
-                'requirement: %s'
+                b'cannot upgrade repository; do not support adding '
+                b'requirement: %s'
             )
-            % _(', ').join(sorted(noaddreqs))
+            % _(b', ').join(sorted(noaddreqs))
         )
 
     unsupportedreqs = newreqs - supporteddestrequirements(repo)
     if unsupportedreqs:
         raise error.Abort(
             _(
-                'cannot upgrade repository; do not support '
-                'destination requirement: %s'
+                b'cannot upgrade repository; do not support '
+                b'destination requirement: %s'
             )
-            % _(', ').join(sorted(unsupportedreqs))
+            % _(b', ').join(sorted(unsupportedreqs))
         )
 
     # Find and validate all improvements that can be made.
@@ -1164,9 +1170,9 @@ def upgraderepo(
 
     if optimize:  # anything left is unknown
         raise error.Abort(
-            _('unknown optimization action requested: %s')
-            % ', '.join(sorted(optimize)),
-            hint=_('run without arguments to see valid ' 'optimizations'),
+            _(b'unknown optimization action requested: %s')
+            % b', '.join(sorted(optimize)),
+            hint=_(b'run without arguments to see valid ' b'optimizations'),
         )
 
     deficiencies = finddeficiencies(repo)
@@ -1185,36 +1191,36 @@ def upgraderepo(
         incompatible = RECLONES_REQUIREMENTS & (removedreqs | addedreqs)
         if incompatible:
             msg = _(
-                'ignoring revlogs selection flags, format requirements '
-                'change: %s\n'
+                b'ignoring revlogs selection flags, format requirements '
+                b'change: %s\n'
             )
-            ui.warn(msg % ', '.join(sorted(incompatible)))
+            ui.warn(msg % b', '.join(sorted(incompatible)))
             revlogs = UPGRADE_ALL_REVLOGS
 
     def printrequirements():
-        ui.write(_('requirements\n'))
+        ui.write(_(b'requirements\n'))
         ui.write(
-            _('   preserved: %s\n')
-            % _(', ').join(sorted(newreqs & repo.requirements))
+            _(b'   preserved: %s\n')
+            % _(b', ').join(sorted(newreqs & repo.requirements))
         )
 
         if repo.requirements - newreqs:
             ui.write(
-                _('   removed: %s\n')
-                % _(', ').join(sorted(repo.requirements - newreqs))
+                _(b'   removed: %s\n')
+                % _(b', ').join(sorted(repo.requirements - newreqs))
             )
 
         if newreqs - repo.requirements:
             ui.write(
-                _('   added: %s\n')
-                % _(', ').join(sorted(newreqs - repo.requirements))
+                _(b'   added: %s\n')
+                % _(b', ').join(sorted(newreqs - repo.requirements))
             )
 
-        ui.write('\n')
+        ui.write(b'\n')
 
     def printupgradeactions():
         for a in actions:
-            ui.write('%s\n   %s\n\n' % (a.name, a.upgrademessage))
+            ui.write(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
 
     if not run:
         fromconfig = []
@@ -1231,33 +1237,36 @@ def upgraderepo(
             if fromconfig:
                 ui.write(
                     _(
-                        'repository lacks features recommended by '
-                        'current config options:\n\n'
+                        b'repository lacks features recommended by '
+                        b'current config options:\n\n'
                     )
                 )
                 for i in fromconfig:
-                    ui.write('%s\n   %s\n\n' % (i.name, i.description))
+                    ui.write(b'%s\n   %s\n\n' % (i.name, i.description))
 
             if onlydefault:
                 ui.write(
                     _(
-                        'repository lacks features used by the default '
-                        'config options:\n\n'
+                        b'repository lacks features used by the default '
+                        b'config options:\n\n'
                     )
                 )
                 for i in onlydefault:
-                    ui.write('%s\n   %s\n\n' % (i.name, i.description))
+                    ui.write(b'%s\n   %s\n\n' % (i.name, i.description))
 
-            ui.write('\n')
+            ui.write(b'\n')
         else:
             ui.write(
-                _('(no feature deficiencies found in existing ' 'repository)\n')
+                _(
+                    b'(no feature deficiencies found in existing '
+                    b'repository)\n'
+                )
             )
 
         ui.write(
             _(
-                'performing an upgrade with "--run" will make the following '
-                'changes:\n\n'
+                b'performing an upgrade with "--run" will make the following '
+                b'changes:\n\n'
             )
         )
 
@@ -1269,36 +1278,36 @@ def upgraderepo(
         if unusedoptimize:
             ui.write(
                 _(
-                    'additional optimizations are available by specifying '
-                    '"--optimize <name>":\n\n'
+                    b'additional optimizations are available by specifying '
+                    b'"--optimize <name>":\n\n'
                 )
             )
             for i in unusedoptimize:
-                ui.write(_('%s\n   %s\n\n') % (i.name, i.description))
+                ui.write(_(b'%s\n   %s\n\n') % (i.name, i.description))
         return
 
     # Else we're in the run=true case.
-    ui.write(_('upgrade will perform the following actions:\n\n'))
+    ui.write(_(b'upgrade will perform the following actions:\n\n'))
     printrequirements()
     printupgradeactions()
 
     upgradeactions = [a.name for a in actions]
 
-    ui.write(_('beginning upgrade...\n'))
+    ui.write(_(b'beginning upgrade...\n'))
     with repo.wlock(), repo.lock():
-        ui.write(_('repository locked and read-only\n'))
+        ui.write(_(b'repository locked and read-only\n'))
         # Our strategy for upgrading the repository is to create a new,
         # temporary repository, write data to it, then do a swap of the
         # data. There are less heavyweight ways to do this, but it is easier
         # to create a new repo object than to instantiate all the components
         # (like the store) separately.
-        tmppath = pycompat.mkdtemp(prefix='upgrade.', dir=repo.path)
+        tmppath = pycompat.mkdtemp(prefix=b'upgrade.', dir=repo.path)
         backuppath = None
         try:
             ui.write(
                 _(
-                    'creating temporary repository to stage migrated '
-                    'data: %s\n'
+                    b'creating temporary repository to stage migrated '
+                    b'data: %s\n'
                 )
                 % tmppath
             )
@@ -1312,22 +1321,22 @@ def upgraderepo(
                     ui, repo, dstrepo, newreqs, upgradeactions, revlogs=revlogs
                 )
             if not (backup or backuppath is None):
-                ui.write(_('removing old repository content%s\n') % backuppath)
+                ui.write(_(b'removing old repository content%s\n') % backuppath)
                 repo.vfs.rmtree(backuppath, forcibly=True)
                 backuppath = None
 
         finally:
-            ui.write(_('removing temporary repository %s\n') % tmppath)
+            ui.write(_(b'removing temporary repository %s\n') % tmppath)
             repo.vfs.rmtree(tmppath, forcibly=True)
 
             if backuppath:
                 ui.warn(
-                    _('copy of old repository backed up at %s\n') % backuppath
+                    _(b'copy of old repository backed up at %s\n') % backuppath
                 )
                 ui.warn(
                     _(
-                        'the old repository will not be deleted; remove '
-                        'it to free up disk space once the upgraded '
-                        'repository is verified\n'
+                        b'the old repository will not be deleted; remove '
+                        b'it to free up disk space once the upgraded '
+                        b'repository is verified\n'
                     )
                 )

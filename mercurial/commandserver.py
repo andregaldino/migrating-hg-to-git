@@ -53,13 +53,13 @@ class channeledoutput(object):
 
     @property
     def name(self):
-        return '<%c-channel>' % self.channel
+        return b'<%c-channel>' % self.channel
 
     def write(self, data):
         if not data:
             return
         # single write() to guarantee the same atomicity as the underlying file
-        self.out.write(struct.pack('>cI', self.channel, len(data)) + data)
+        self.out.write(struct.pack(b'>cI', self.channel, len(data)) + data)
         self.out.flush()
 
     def __getattr__(self, attr):
@@ -119,7 +119,7 @@ class channeledinput(object):
 
     @property
     def name(self):
-        return '<%c-channel>' % self.channel
+        return b'<%c-channel>' % self.channel
 
     def read(self, size=-1):
         if size < 0:
@@ -138,34 +138,34 @@ class channeledinput(object):
 
     def _read(self, size, channel):
         if not size:
-            return ''
+            return b''
         assert size > 0
 
         # tell the client we need at most size bytes
-        self.out.write(struct.pack('>cI', channel, size))
+        self.out.write(struct.pack(b'>cI', channel, size))
         self.out.flush()
 
         length = self.in_.read(4)
-        length = struct.unpack('>I', length)[0]
+        length = struct.unpack(b'>I', length)[0]
         if not length:
-            return ''
+            return b''
         else:
             return self.in_.read(length)
 
     def readline(self, size=-1):
         if size < 0:
             size = self.maxchunksize
-            s = self._read(size, 'L')
+            s = self._read(size, b'L')
             buf = s
             # keep asking for more until there's either no more or
             # we got a full line
-            while s and s[-1] != '\n':
-                s = self._read(size, 'L')
+            while s and s[-1] != b'\n':
+                s = self._read(size, b'L')
                 buf += s
 
             return buf
         else:
-            return self._read(size, 'L')
+            return self._read(size, b'L')
 
     def __iter__(self):
         return self
@@ -221,11 +221,11 @@ class server(object):
             self.repo = self.repoui = None
         self._prereposetups = prereposetups
 
-        self.cdebug = channeledoutput(fout, 'd')
-        self.cerr = channeledoutput(fout, 'e')
-        self.cout = channeledoutput(fout, 'o')
-        self.cin = channeledinput(fin, fout, 'I')
-        self.cresult = channeledoutput(fout, 'r')
+        self.cdebug = channeledoutput(fout, b'd')
+        self.cerr = channeledoutput(fout, b'e')
+        self.cout = channeledoutput(fout, b'o')
+        self.cin = channeledinput(fin, fout, b'I')
+        self.cresult = channeledoutput(fout, b'r')
 
         if self.ui.config(b'cmdserver', b'log') == b'-':
             # switch log stream of server's ui to the 'd' (debug) channel
@@ -248,7 +248,7 @@ class server(object):
 
     def _read(self, size):
         if not size:
-            return ''
+            return b''
 
         data = self.client.read(size)
 
@@ -264,16 +264,16 @@ class server(object):
         format:
         data length (uint32), data
         """
-        length = struct.unpack('>I', self._read(4))[0]
+        length = struct.unpack(b'>I', self._read(4))[0]
         if not length:
-            return ''
+            return b''
         return self._read(length)
 
     def _readlist(self):
         """read a list of NULL separated strings from the channel"""
         s = self._readstr()
         if s:
-            return s.split('\0')
+            return s.split(b'\0')
         else:
             return []
 
@@ -302,8 +302,8 @@ class server(object):
             # any kind of interaction must use server channels, but chg may
             # replace channels by fully functional tty files. so nontty is
             # enforced only if cin is a channel.
-            if not util.safehasattr(self.cin, 'fileno'):
-                ui.setconfig('ui', 'nontty', 'true', 'commandserver')
+            if not util.safehasattr(self.cin, b'fileno'):
+                ui.setconfig(b'ui', b'nontty', b'true', b'commandserver')
 
         req = dispatch.request(
             args[:],
@@ -318,10 +318,10 @@ class server(object):
 
         try:
             ret = dispatch.dispatch(req) & 255
-            self.cresult.write(struct.pack('>i', int(ret)))
+            self.cresult.write(struct.pack(b'>i', int(ret)))
         finally:
             # restore old cwd
-            if '--cwd' in args:
+            if b'--cwd' in args:
                 os.chdir(self.cwd)
 
     def getencoding(self):
@@ -337,23 +337,23 @@ class server(object):
             else:
                 # clients are expected to check what commands are supported by
                 # looking at the servers capabilities
-                raise error.Abort(_('unknown command %s') % cmd)
+                raise error.Abort(_(b'unknown command %s') % cmd)
 
-        return cmd != ''
+        return cmd != b''
 
-    capabilities = {'runcommand': runcommand, 'getencoding': getencoding}
+    capabilities = {b'runcommand': runcommand, b'getencoding': getencoding}
 
     def serve(self):
-        hellomsg = 'capabilities: ' + ' '.join(sorted(self.capabilities))
-        hellomsg += '\n'
-        hellomsg += 'encoding: ' + encoding.encoding
-        hellomsg += '\n'
+        hellomsg = b'capabilities: ' + b' '.join(sorted(self.capabilities))
+        hellomsg += b'\n'
+        hellomsg += b'encoding: ' + encoding.encoding
+        hellomsg += b'\n'
         if self.cmsg:
-            hellomsg += 'message-encoding: %s\n' % self.cmsg.encoding
-        hellomsg += 'pid: %d' % procutil.getpid()
-        if util.safehasattr(os, 'getpgid'):
-            hellomsg += '\n'
-            hellomsg += 'pgid: %d' % os.getpgid(0)
+            hellomsg += b'message-encoding: %s\n' % self.cmsg.encoding
+        hellomsg += b'pid: %d' % procutil.getpid()
+        if util.safehasattr(os, b'getpgid'):
+            hellomsg += b'\n'
+            hellomsg += b'pgid: %d' % os.getpgid(0)
 
         # write the hello msg in -one- chunk
         self.cout.write(hellomsg)
@@ -459,7 +459,7 @@ def _serverequest(ui, repo, conn, createcmdserver, prereposetups):
         # handle exceptions that may be raised by command server. most of
         # known exceptions are caught by dispatch.
         except error.Abort as inst:
-            ui.error(_('abort: %s\n') % inst)
+            ui.error(_(b'abort: %s\n') % inst)
         except IOError as inst:
             if inst.errno != errno.EPIPE:
                 raise
@@ -473,7 +473,7 @@ def _serverequest(ui, repo, conn, createcmdserver, prereposetups):
         if sv:
             cerr = sv.cerr
         else:
-            cerr = channeledoutput(fout, 'e')
+            cerr = channeledoutput(fout, b'e')
         cerr.write(encoding.strtolocal(traceback.format_exc()))
         raise
     finally:
@@ -500,7 +500,7 @@ class unixservicehandler(object):
     def bindsocket(self, sock, address):
         util.bindunixsocket(sock, address)
         sock.listen(socket.SOMAXCONN)
-        self.ui.status(_('listening at %s\n') % address)
+        self.ui.status(_(b'listening at %s\n') % address)
         self.ui.flush()  # avoid buffering of status message
 
     def unlinksocket(self, address):
@@ -527,11 +527,11 @@ class unixforkingservice(object):
     def __init__(self, ui, repo, opts, handler=None):
         self.ui = ui
         self.repo = repo
-        self.address = opts['address']
-        if not util.safehasattr(socket, 'AF_UNIX'):
-            raise error.Abort(_('unsupported platform'))
+        self.address = opts[b'address']
+        if not util.safehasattr(socket, b'AF_UNIX'):
+            raise error.Abort(_(b'unsupported platform'))
         if not self.address:
-            raise error.Abort(_('no socket path specified with --address'))
+            raise error.Abort(_(b'no socket path specified with --address'))
         self._servicehandler = handler or unixservicehandler(ui)
         self._sock = None
         self._mainipc = None
@@ -542,7 +542,7 @@ class unixforkingservice(object):
         # experimental config: cmdserver.max-repo-cache
         maxlen = ui.configint(b'cmdserver', b'max-repo-cache')
         if maxlen < 0:
-            raise error.Abort(_('negative max-repo-cache size not allowed'))
+            raise error.Abort(_(b'negative max-repo-cache size not allowed'))
         self._repoloader = repocache.repoloader(ui, maxlen)
 
     def init(self):
@@ -553,7 +553,7 @@ class unixforkingservice(object):
         o = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
         self._mainipc, self._workeripc = o
         self._servicehandler.bindsocket(self._sock, self.address)
-        if util.safehasattr(procutil, 'unblocksignal'):
+        if util.safehasattr(procutil, b'unblocksignal'):
             procutil.unblocksignal(signal.SIGCHLD)
         o = signal.signal(signal.SIGCHLD, self._sigchldhandler)
         self._oldsigchldhandler = o

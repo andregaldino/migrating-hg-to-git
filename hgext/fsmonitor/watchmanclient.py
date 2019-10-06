@@ -18,15 +18,15 @@ class Unavailable(Exception):
     def __init__(self, msg, warn=True, invalidate=False):
         self.msg = msg
         self.warn = warn
-        if self.msg == 'timed out waiting for response':
+        if self.msg == b'timed out waiting for response':
             self.warn = False
         self.invalidate = invalidate
 
     def __str__(self):
         if self.warn:
-            return 'warning: Watchman unavailable: %s' % self.msg
+            return b'warning: Watchman unavailable: %s' % self.msg
         else:
-            return 'Watchman unavailable: %s' % self.msg
+            return b'Watchman unavailable: %s' % self.msg
 
 
 class WatchmanNoRoot(Unavailable):
@@ -39,10 +39,10 @@ class client(object):
     def __init__(self, ui, root, timeout=1.0):
         err = None
         if not self._user:
-            err = "couldn't get user"
+            err = b"couldn't get user"
             warn = True
-        if self._user in ui.configlist('fsmonitor', 'blacklistusers'):
-            err = 'user %s in blacklist' % self._user
+        if self._user in ui.configlist(b'fsmonitor', b'blacklistusers'):
+            err = b'user %s in blacklist' % self._user
             warn = False
 
         if err:
@@ -60,10 +60,10 @@ class client(object):
             self._watchmanclient.setTimeout(timeout)
 
     def getcurrentclock(self):
-        result = self.command('clock')
-        if not util.safehasattr(result, 'clock'):
+        result = self.command(b'clock')
+        if not util.safehasattr(result, b'clock'):
             raise Unavailable(
-                'clock result is missing clock value', invalidate=True
+                b'clock result is missing clock value', invalidate=True
             )
         return result.clock
 
@@ -86,7 +86,9 @@ class client(object):
         try:
             if self._watchmanclient is None:
                 self._firsttime = False
-                watchman_exe = self._ui.configpath('fsmonitor', 'watchman_exe')
+                watchman_exe = self._ui.configpath(
+                    b'fsmonitor', b'watchman_exe'
+                )
                 self._watchmanclient = pywatchman.client(
                     timeout=self._timeout,
                     useImmutableBser=True,
@@ -94,7 +96,7 @@ class client(object):
                 )
             return self._watchmanclient.query(*watchmanargs)
         except pywatchman.CommandError as ex:
-            if 'unable to resolve root' in ex.msg:
+            if b'unable to resolve root' in ex.msg:
                 raise WatchmanNoRoot(self._root, ex.msg)
             raise Unavailable(ex.msg)
         except pywatchman.WatchmanError as ex:
@@ -107,7 +109,7 @@ class client(object):
             except WatchmanNoRoot:
                 # this 'watch' command can also raise a WatchmanNoRoot if
                 # watchman refuses to accept this root
-                self._command('watch')
+                self._command(b'watch')
                 return self._command(*args)
         except Unavailable:
             # this is in an outer scope to catch Unavailable form any of the

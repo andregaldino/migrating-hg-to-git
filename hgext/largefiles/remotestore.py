@@ -38,11 +38,11 @@ class remotestore(basestore.basestore):
     def put(self, source, hash):
         if self.sendfile(source, hash):
             raise error.Abort(
-                _('remotestore: could not put %s to remote store %s')
+                _(b'remotestore: could not put %s to remote store %s')
                 % (source, util.hidepassword(self.url))
             )
         self.ui.debug(
-            _('remotestore: put %s to remote store %s\n')
+            _(b'remotestore: put %s to remote store %s\n')
             % (source, util.hidepassword(self.url))
         )
 
@@ -53,13 +53,13 @@ class remotestore(basestore.basestore):
         )
 
     def sendfile(self, filename, hash):
-        self.ui.debug('remotestore: sendfile(%s, %s)\n' % (filename, hash))
+        self.ui.debug(b'remotestore: sendfile(%s, %s)\n' % (filename, hash))
         try:
             with lfutil.httpsendfile(self.ui, filename) as fd:
                 return self._put(hash, fd)
         except IOError as e:
             raise error.Abort(
-                _('remotestore: could not open file %s: %s')
+                _(b'remotestore: could not open file %s: %s')
                 % (filename, stringutil.forcebytestr(e))
             )
 
@@ -77,7 +77,7 @@ class remotestore(basestore.basestore):
             # keep trying with the other files... they will probably
             # all fail too.
             raise error.Abort(
-                '%s: %s' % (util.hidepassword(self.url), e.reason)
+                b'%s: %s' % (util.hidepassword(self.url), e.reason)
             )
         except IOError as e:
             raise basestore.StoreError(
@@ -118,33 +118,33 @@ class remotestore(basestore.basestore):
                 if stat:
                     if stat == 1:
                         self.ui.warn(
-                            _('changeset %s: %s: contents differ\n')
+                            _(b'changeset %s: %s: contents differ\n')
                             % (cset, filename)
                         )
                         failed = True
                     elif stat == 2:
                         self.ui.warn(
-                            _('changeset %s: %s missing\n') % (cset, filename)
+                            _(b'changeset %s: %s missing\n') % (cset, filename)
                         )
                         failed = True
                     else:
                         raise RuntimeError(
-                            'verify failed: unexpected response '
-                            'from statlfile (%r)' % stat
+                            b'verify failed: unexpected response '
+                            b'from statlfile (%r)' % stat
                         )
         return failed
 
     def _put(self, hash, fd):
         '''Put file with the given hash in the remote store.'''
-        raise NotImplementedError('abstract method')
+        raise NotImplementedError(b'abstract method')
 
     def _get(self, hash):
         '''Get a iterator for content with the given hash.'''
-        raise NotImplementedError('abstract method')
+        raise NotImplementedError(b'abstract method')
 
     def _stat(self, hashes):
         '''Get information about availability of files specified by
         hashes in the remote store. Return dictionary mapping hashes
         to return code where 0 means that file is available, other
         values if not.'''
-        raise NotImplementedError('abstract method')
+        raise NotImplementedError(b'abstract method')

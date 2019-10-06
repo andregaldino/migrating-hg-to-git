@@ -31,7 +31,7 @@ def _expandrcpath(path):
     if os.path.isdir(p):
         join = os.path.join
         return sorted(
-            join(p, f) for f, k in util.listdir(p) if f.endswith('.rc')
+            join(p, f) for f, k in util.listdir(p) if f.endswith(b'.rc')
         )
     return [p]
 
@@ -47,22 +47,22 @@ def envrcitems(env=None):
     if env is None:
         env = encoding.environ
     checklist = [
-        ('EDITOR', 'ui', 'editor'),
-        ('VISUAL', 'ui', 'editor'),
-        ('PAGER', 'pager', 'pager'),
+        (b'EDITOR', b'ui', b'editor'),
+        (b'VISUAL', b'ui', b'editor'),
+        (b'PAGER', b'pager', b'pager'),
     ]
     result = []
     for envname, section, configname in checklist:
         if envname not in env:
             continue
-        result.append((section, configname, env[envname], '$%s' % envname))
+        result.append((section, configname, env[envname], b'$%s' % envname))
     return result
 
 
 def defaultrcpath():
     '''return rc paths in default.d'''
     path = []
-    defaultpath = os.path.join(util.datapath, 'default.d')
+    defaultpath = os.path.join(util.datapath, b'default.d')
     if os.path.isdir(defaultpath):
         path = _expandrcpath(defaultpath)
     return path
@@ -80,18 +80,20 @@ def rccomponents():
     and is the config file path. if type is 'items', obj is a list of (section,
     name, value, source) that should fill the config directly.
     '''
-    envrc = ('items', envrcitems())
+    envrc = (b'items', envrcitems())
 
-    if 'HGRCPATH' in encoding.environ:
+    if b'HGRCPATH' in encoding.environ:
         # assume HGRCPATH is all about user configs so environments can be
         # overridden.
         _rccomponents = [envrc]
-        for p in encoding.environ['HGRCPATH'].split(pycompat.ospathsep):
+        for p in encoding.environ[b'HGRCPATH'].split(pycompat.ospathsep):
             if not p:
                 continue
-            _rccomponents.extend(('path', p) for p in _expandrcpath(p))
+            _rccomponents.extend((b'path', p) for p in _expandrcpath(p))
     else:
-        normpaths = lambda paths: [('path', os.path.normpath(p)) for p in paths]
+        normpaths = lambda paths: [
+            (b'path', os.path.normpath(p)) for p in paths
+        ]
         _rccomponents = normpaths(defaultrcpath() + systemrcpath())
         _rccomponents.append(envrc)
         _rccomponents.extend(normpaths(userrcpath()))
@@ -102,4 +104,4 @@ def defaultpagerenv():
     '''return a dict of default environment variables and their values,
     intended to be set before starting a pager.
     '''
-    return {'LESS': 'FRX', 'LV': '-c'}
+    return {b'LESS': b'FRX', b'LV': b'-c'}

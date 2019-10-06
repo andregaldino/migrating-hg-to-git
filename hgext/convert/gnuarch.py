@@ -31,9 +31,9 @@ class gnuarch_source(common.converter_source, common.commandline):
     class gnuarch_rev(object):
         def __init__(self, rev):
             self.rev = rev
-            self.summary = ''
+            self.summary = b''
             self.date = None
-            self.author = ''
+            self.author = b''
             self.continuationof = None
             self.add_files = []
             self.mod_files = []
@@ -44,20 +44,20 @@ class gnuarch_source(common.converter_source, common.commandline):
     def __init__(self, ui, repotype, path, revs=None):
         super(gnuarch_source, self).__init__(ui, repotype, path, revs=revs)
 
-        if not os.path.exists(os.path.join(path, '{arch}')):
+        if not os.path.exists(os.path.join(path, b'{arch}')):
             raise common.NoRepo(
-                _("%s does not look like a GNU Arch repository") % path
+                _(b"%s does not look like a GNU Arch repository") % path
             )
 
         # Could use checktool, but we want to check for baz or tla.
         self.execmd = None
-        if procutil.findexe('baz'):
-            self.execmd = 'baz'
+        if procutil.findexe(b'baz'):
+            self.execmd = b'baz'
         else:
-            if procutil.findexe('tla'):
-                self.execmd = 'tla'
+            if procutil.findexe(b'tla'):
+                self.execmd = b'tla'
             else:
-                raise error.Abort(_('cannot find a GNU Arch tool'))
+                raise error.Abort(_(b'cannot find a GNU Arch tool'))
 
         common.commandline.__init__(self, ui, self.execmd)
 
@@ -76,19 +76,19 @@ class gnuarch_source(common.converter_source, common.commandline):
     def before(self):
         # Get registered archives
         self.archives = [
-            i.rstrip('\n') for i in self.runlines0('archives', '-n')
+            i.rstrip(b'\n') for i in self.runlines0(b'archives', b'-n')
         ]
 
-        if self.execmd == 'tla':
-            output = self.run0('tree-version', self.path)
+        if self.execmd == b'tla':
+            output = self.run0(b'tree-version', self.path)
         else:
-            output = self.run0('tree-version', '-d', self.path)
+            output = self.run0(b'tree-version', b'-d', self.path)
         self.treeversion = output.strip()
 
         # Get name of temporary directory
-        version = self.treeversion.split('/')
+        version = self.treeversion.split(b'/')
         self.tmppath = os.path.join(
-            pycompat.fsencode(tempfile.gettempdir()), 'hg-%s' % version[1]
+            pycompat.fsencode(tempfile.gettempdir()), b'hg-%s' % version[1]
         )
 
         # Generate parents dictionary
@@ -96,23 +96,25 @@ class gnuarch_source(common.converter_source, common.commandline):
         treeversion = self.treeversion
         child = None
         while treeversion:
-            self.ui.status(_('analyzing tree version %s...\n') % treeversion)
+            self.ui.status(_(b'analyzing tree version %s...\n') % treeversion)
 
-            archive = treeversion.split('/')[0]
+            archive = treeversion.split(b'/')[0]
             if archive not in self.archives:
                 self.ui.status(
                     _(
-                        'tree analysis stopped because it points to '
-                        'an unregistered archive %s...\n'
+                        b'tree analysis stopped because it points to '
+                        b'an unregistered archive %s...\n'
                     )
                     % archive
                 )
                 break
 
             # Get the complete list of revisions for that tree version
-            output, status = self.runlines('revisions', '-r', '-f', treeversion)
+            output, status = self.runlines(
+                b'revisions', b'-r', b'-f', treeversion
+            )
             self.checkexit(
-                status, 'failed retrieving revisions for %s' % treeversion
+                status, b'failed retrieving revisions for %s' % treeversion
             )
 
             # No new iteration unless a revision has a continuation-of header
@@ -124,9 +126,9 @@ class gnuarch_source(common.converter_source, common.commandline):
                 self.parents[rev] = []
 
                 # Read author, date and summary
-                catlog, status = self.run('cat-log', '-d', self.path, rev)
+                catlog, status = self.run(b'cat-log', b'-d', self.path, rev)
                 if status:
-                    catlog = self.run0('cat-archive-log', rev)
+                    catlog = self.run0(b'cat-archive-log', rev)
                 self._parsecatlog(catlog, rev)
 
                 # Populate the parents map
@@ -140,18 +142,18 @@ class gnuarch_source(common.converter_source, common.commandline):
                 # or if we have to 'jump' to a different treeversion given
                 # by the continuation-of header.
                 if self.changes[rev].continuationof:
-                    treeversion = '--'.join(
-                        self.changes[rev].continuationof.split('--')[:-1]
+                    treeversion = b'--'.join(
+                        self.changes[rev].continuationof.split(b'--')[:-1]
                     )
                     break
 
                 # If we reached a base-0 revision w/o any continuation-of
                 # header, it means the tree history ends here.
-                if rev[-6:] == 'base-0':
+                if rev[-6:] == b'base-0':
                     break
 
     def after(self):
-        self.ui.debug('cleaning up %s\n' % self.tmppath)
+        self.ui.debug(b'cleaning up %s\n' % self.tmppath)
         shutil.rmtree(self.tmppath, ignore_errors=True)
 
     def getheads(self):
@@ -159,7 +161,7 @@ class gnuarch_source(common.converter_source, common.commandline):
 
     def getfile(self, name, rev):
         if rev != self.lastrev:
-            raise error.Abort(_('internal calling inconsistency'))
+            raise error.Abort(_(b'internal calling inconsistency'))
 
         if not os.path.lexists(os.path.join(self.tmppath, name)):
             return None, None
@@ -168,7 +170,7 @@ class gnuarch_source(common.converter_source, common.commandline):
 
     def getchanges(self, rev, full):
         if full:
-            raise error.Abort(_("convert from arch does not support --full"))
+            raise error.Abort(_(b"convert from arch does not support --full"))
         self._update(rev)
         changes = []
         copies = {}
@@ -214,14 +216,14 @@ class gnuarch_source(common.converter_source, common.commandline):
         cmdline = [self.execmd, cmd]
         cmdline += args
         cmdline = [procutil.shellquote(arg) for arg in cmdline]
-        cmdline += ['>', os.devnull, '2>', os.devnull]
-        cmdline = procutil.quotecommand(' '.join(cmdline))
-        self.ui.debug(cmdline, '\n')
+        cmdline += [b'>', os.devnull, b'2>', os.devnull]
+        cmdline = procutil.quotecommand(b' '.join(cmdline))
+        self.ui.debug(cmdline, b'\n')
         return os.system(pycompat.rapply(procutil.tonativestr, cmdline))
 
     def _update(self, rev):
-        self.ui.debug('applying revision %s...\n' % rev)
-        changeset, status = self.runlines('replay', '-d', self.tmppath, rev)
+        self.ui.debug(b'applying revision %s...\n' % rev)
+        changeset, status = self.runlines(b'replay', b'-d', self.tmppath, rev)
         if status:
             # Something went wrong while merging (baz or tla
             # issue?), get latest revision and try from there
@@ -230,7 +232,7 @@ class gnuarch_source(common.converter_source, common.commandline):
         else:
             old_rev = self.parents[rev][0]
             self.ui.debug(
-                'computing changeset between %s and %s...\n' % (old_rev, rev)
+                b'computing changeset between %s and %s...\n' % (old_rev, rev)
             )
             self._parsechangeset(changeset, rev)
 
@@ -239,16 +241,16 @@ class gnuarch_source(common.converter_source, common.commandline):
         if stat.S_ISLNK(mode):
             data = util.readlink(os.path.join(self.tmppath, name))
             if mode:
-                mode = 'l'
+                mode = b'l'
             else:
-                mode = ''
+                mode = b''
         else:
             data = util.readfile(os.path.join(self.tmppath, name))
-            mode = (mode & 0o111) and 'x' or ''
+            mode = (mode & 0o111) and b'x' or b''
         return data, mode
 
     def _exclude(self, name):
-        exclude = ['{arch}', '.arch-ids', '.arch-inventory']
+        exclude = [b'{arch}', b'.arch-ids', b'.arch-inventory']
         for exc in exclude:
             if name.find(exc) != -1:
                 return True
@@ -282,15 +284,15 @@ class gnuarch_source(common.converter_source, common.commandline):
         return changes, copies
 
     def _obtainrevision(self, rev):
-        self.ui.debug('obtaining revision %s...\n' % rev)
-        output = self._execute('get', rev, self.tmppath)
+        self.ui.debug(b'obtaining revision %s...\n' % rev)
+        output = self._execute(b'get', rev, self.tmppath)
         self.checkexit(output)
-        self.ui.debug('analyzing revision %s...\n' % rev)
+        self.ui.debug(b'analyzing revision %s...\n' % rev)
         files = self._readcontents(self.tmppath)
         self.changes[rev].add_files += files
 
     def _stripbasepath(self, path):
-        if path.startswith('./'):
+        if path.startswith(b'./'):
             return path[2:]
         return path
 
@@ -300,73 +302,73 @@ class gnuarch_source(common.converter_source, common.commandline):
 
             # Commit date
             self.changes[rev].date = dateutil.datestr(
-                dateutil.strdate(catlog['Standard-date'], '%Y-%m-%d %H:%M:%S')
+                dateutil.strdate(catlog[b'Standard-date'], b'%Y-%m-%d %H:%M:%S')
             )
 
             # Commit author
-            self.changes[rev].author = self.recode(catlog['Creator'])
+            self.changes[rev].author = self.recode(catlog[b'Creator'])
 
             # Commit description
-            self.changes[rev].summary = '\n\n'.join(
-                (catlog['Summary'], catlog.get_payload())
+            self.changes[rev].summary = b'\n\n'.join(
+                (catlog[b'Summary'], catlog.get_payload())
             )
             self.changes[rev].summary = self.recode(self.changes[rev].summary)
 
             # Commit revision origin when dealing with a branch or tag
-            if 'Continuation-of' in catlog:
+            if b'Continuation-of' in catlog:
                 self.changes[rev].continuationof = self.recode(
-                    catlog['Continuation-of']
+                    catlog[b'Continuation-of']
                 )
         except Exception:
-            raise error.Abort(_('could not parse cat-log of %s') % rev)
+            raise error.Abort(_(b'could not parse cat-log of %s') % rev)
 
     def _parsechangeset(self, data, rev):
         for l in data:
             l = l.strip()
             # Added file (ignore added directory)
-            if l.startswith('A') and not l.startswith('A/'):
+            if l.startswith(b'A') and not l.startswith(b'A/'):
                 file = self._stripbasepath(l[1:].strip())
                 if not self._exclude(file):
                     self.changes[rev].add_files.append(file)
             # Deleted file (ignore deleted directory)
-            elif l.startswith('D') and not l.startswith('D/'):
+            elif l.startswith(b'D') and not l.startswith(b'D/'):
                 file = self._stripbasepath(l[1:].strip())
                 if not self._exclude(file):
                     self.changes[rev].del_files.append(file)
             # Modified binary file
-            elif l.startswith('Mb'):
+            elif l.startswith(b'Mb'):
                 file = self._stripbasepath(l[2:].strip())
                 if not self._exclude(file):
                     self.changes[rev].mod_files.append(file)
             # Modified link
-            elif l.startswith('M->'):
+            elif l.startswith(b'M->'):
                 file = self._stripbasepath(l[3:].strip())
                 if not self._exclude(file):
                     self.changes[rev].mod_files.append(file)
             # Modified file
-            elif l.startswith('M'):
+            elif l.startswith(b'M'):
                 file = self._stripbasepath(l[1:].strip())
                 if not self._exclude(file):
                     self.changes[rev].mod_files.append(file)
             # Renamed file (or link)
-            elif l.startswith('=>'):
-                files = l[2:].strip().split(' ')
+            elif l.startswith(b'=>'):
+                files = l[2:].strip().split(b' ')
                 if len(files) == 1:
-                    files = l[2:].strip().split('\t')
+                    files = l[2:].strip().split(b'\t')
                 src = self._stripbasepath(files[0])
                 dst = self._stripbasepath(files[1])
                 if not self._exclude(src) and not self._exclude(dst):
                     self.changes[rev].ren_files[src] = dst
             # Conversion from file to link or from link to file (modified)
-            elif l.startswith('ch'):
+            elif l.startswith(b'ch'):
                 file = self._stripbasepath(l[2:].strip())
                 if not self._exclude(file):
                     self.changes[rev].mod_files.append(file)
             # Renamed directory
-            elif l.startswith('/>'):
-                dirs = l[2:].strip().split(' ')
+            elif l.startswith(b'/>'):
+                dirs = l[2:].strip().split(b' ')
                 if len(dirs) == 1:
-                    dirs = l[2:].strip().split('\t')
+                    dirs = l[2:].strip().split(b'\t')
                 src = self._stripbasepath(dirs[0])
                 dst = self._stripbasepath(dirs[1])
                 if not self._exclude(src) and not self._exclude(dst):

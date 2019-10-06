@@ -40,7 +40,7 @@ def canperformstreamclone(pullop, bundle2=False):
 
     bundle2supported = False
     if pullop.canusebundle2:
-        if 'v2' in pullop.remotebundle2caps.get('stream', []):
+        if b'v2' in pullop.remotebundle2caps.get(b'stream', []):
             bundle2supported = True
         # else
         # Server doesn't support bundle2 stream clone or doesn't support
@@ -67,7 +67,7 @@ def canperformstreamclone(pullop, bundle2=False):
     # likely only comes into play in LANs.
     if streamrequested is None:
         # The server can advertise whether to prefer streaming clone.
-        streamrequested = remote.capable('stream-preferred')
+        streamrequested = remote.capable(b'stream-preferred')
 
     if not streamrequested:
         return False, None
@@ -80,35 +80,35 @@ def canperformstreamclone(pullop, bundle2=False):
     # if the only requirement is "revlogv1." Else, the "streamreqs" capability
     # is advertised and contains a comma-delimited list of requirements.
     requirements = set()
-    if remote.capable('stream'):
-        requirements.add('revlogv1')
+    if remote.capable(b'stream'):
+        requirements.add(b'revlogv1')
     else:
-        streamreqs = remote.capable('streamreqs')
+        streamreqs = remote.capable(b'streamreqs')
         # This is weird and shouldn't happen with modern servers.
         if not streamreqs:
             pullop.repo.ui.warn(
                 _(
-                    'warning: stream clone requested but server has them '
-                    'disabled\n'
+                    b'warning: stream clone requested but server has them '
+                    b'disabled\n'
                 )
             )
             return False, None
 
-        streamreqs = set(streamreqs.split(','))
+        streamreqs = set(streamreqs.split(b','))
         # Server requires something we don't support. Bail.
         missingreqs = streamreqs - repo.supportedformats
         if missingreqs:
             pullop.repo.ui.warn(
                 _(
-                    'warning: stream clone requested but client is missing '
-                    'requirements: %s\n'
+                    b'warning: stream clone requested but client is missing '
+                    b'requirements: %s\n'
                 )
-                % ', '.join(sorted(missingreqs))
+                % b', '.join(sorted(missingreqs))
             )
             pullop.repo.ui.warn(
                 _(
-                    '(see https://www.mercurial-scm.org/wiki/MissingRequirement '
-                    'for more information)\n'
+                    b'(see https://www.mercurial-scm.org/wiki/MissingRequirement '
+                    b'for more information)\n'
                 )
             )
             return False, None
@@ -139,14 +139,14 @@ def maybeperformlegacystreamclone(pullop):
     # Save remote branchmap. We will use it later to speed up branchcache
     # creation.
     rbranchmap = None
-    if remote.capable('branchmap'):
+    if remote.capable(b'branchmap'):
         with remote.commandexecutor() as e:
-            rbranchmap = e.callcommand('branchmap', {}).result()
+            rbranchmap = e.callcommand(b'branchmap', {}).result()
 
-    repo.ui.status(_('streaming all changes\n'))
+    repo.ui.status(_(b'streaming all changes\n'))
 
     with remote.commandexecutor() as e:
-        fp = e.callcommand('stream_out', {}).result()
+        fp = e.callcommand(b'stream_out', {}).result()
 
     # TODO strictly speaking, this code should all be inside the context
     # manager because the context manager is supposed to ensure all wire state
@@ -157,21 +157,21 @@ def maybeperformlegacystreamclone(pullop):
         resp = int(l)
     except ValueError:
         raise error.ResponseError(
-            _('unexpected response from remote server:'), l
+            _(b'unexpected response from remote server:'), l
         )
     if resp == 1:
-        raise error.Abort(_('operation forbidden by server'))
+        raise error.Abort(_(b'operation forbidden by server'))
     elif resp == 2:
-        raise error.Abort(_('locking the remote repository failed'))
+        raise error.Abort(_(b'locking the remote repository failed'))
     elif resp != 0:
-        raise error.Abort(_('the server sent an unknown error code'))
+        raise error.Abort(_(b'the server sent an unknown error code'))
 
     l = fp.readline()
     try:
-        filecount, bytecount = map(int, l.split(' ', 1))
+        filecount, bytecount = map(int, l.split(b' ', 1))
     except (ValueError, TypeError):
         raise error.ResponseError(
-            _('unexpected response from remote server:'), l
+            _(b'unexpected response from remote server:'), l
         )
 
     with repo.lock():
@@ -199,14 +199,14 @@ def allowservergeneration(repo):
     if repository.REPO_FEATURE_STREAM_CLONE not in repo.features:
         return False
 
-    if not repo.ui.configbool('server', 'uncompressed', untrusted=True):
+    if not repo.ui.configbool(b'server', b'uncompressed', untrusted=True):
         return False
 
     # The way stream clone works makes it impossible to hide secret changesets.
     # So don't allow this by default.
     secret = phases.hassecret(repo)
     if secret:
-        return repo.ui.configbool('server', 'uncompressedallowsecret')
+        return repo.ui.configbool(b'server', b'uncompressedallowsecret')
 
     return True
 
@@ -239,14 +239,14 @@ def generatev1(repo):
     total_bytes = 0
     # Get consistent snapshot of repo, lock during scan.
     with repo.lock():
-        repo.ui.debug('scanning\n')
+        repo.ui.debug(b'scanning\n')
         for name, ename, size in _walkstreamfiles(repo):
             if size:
                 entries.append((name, size))
                 total_bytes += size
 
     repo.ui.debug(
-        '%d files, %d bytes to transfer\n' % (len(entries), total_bytes)
+        b'%d files, %d bytes to transfer\n' % (len(entries), total_bytes)
     )
 
     svfs = repo.svfs
@@ -255,12 +255,12 @@ def generatev1(repo):
     def emitrevlogdata():
         for name, size in entries:
             if debugflag:
-                repo.ui.debug('sending %s (%d bytes)\n' % (name, size))
+                repo.ui.debug(b'sending %s (%d bytes)\n' % (name, size))
             # partially encode name over the wire for backwards compat
-            yield '%s\0%d\n' % (store.encodedir(name), size)
+            yield b'%s\0%d\n' % (store.encodedir(name), size)
             # auditing at this stage is both pointless (paths are already
             # trusted by the local repo) and expensive
-            with svfs(name, 'rb', auditpath=False) as fp:
+            with svfs(name, b'rb', auditpath=False) as fp:
                 if size <= 65536:
                     yield fp.read(size)
                 else:
@@ -282,23 +282,23 @@ def generatev1wireproto(repo):
     a permissions error for the server process).
     """
     if not allowservergeneration(repo):
-        yield '1\n'
+        yield b'1\n'
         return
 
     try:
         filecount, bytecount, it = generatev1(repo)
     except error.LockError:
-        yield '2\n'
+        yield b'2\n'
         return
 
     # Indicates successful response.
-    yield '0\n'
-    yield '%d %d\n' % (filecount, bytecount)
+    yield b'0\n'
+    yield b'%d %d\n' % (filecount, bytecount)
     for chunk in it:
         yield chunk
 
 
-def generatebundlev1(repo, compression='UN'):
+def generatebundlev1(repo, compression=b'UN'):
     """Emit content for version 1 of a stream clone bundle.
 
     The first 4 bytes of the output ("HGS1") denote this as stream clone
@@ -320,30 +320,30 @@ def generatebundlev1(repo, compression='UN'):
 
     Returns a tuple of (requirements, data generator).
     """
-    if compression != 'UN':
-        raise ValueError('we do not support the compression argument yet')
+    if compression != b'UN':
+        raise ValueError(b'we do not support the compression argument yet')
 
     requirements = repo.requirements & repo.supportedformats
-    requires = ','.join(sorted(requirements))
+    requires = b','.join(sorted(requirements))
 
     def gen():
-        yield 'HGS1'
+        yield b'HGS1'
         yield compression
 
         filecount, bytecount, it = generatev1(repo)
         repo.ui.status(
-            _('writing %d bytes for %d files\n') % (bytecount, filecount)
+            _(b'writing %d bytes for %d files\n') % (bytecount, filecount)
         )
 
-        yield struct.pack('>QQ', filecount, bytecount)
-        yield struct.pack('>H', len(requires) + 1)
-        yield requires + '\0'
+        yield struct.pack(b'>QQ', filecount, bytecount)
+        yield struct.pack(b'>H', len(requires) + 1)
+        yield requires + b'\0'
 
         # This is where we'll add compression in the future.
-        assert compression == 'UN'
+        assert compression == b'UN'
 
         progress = repo.ui.makeprogress(
-            _('bundle'), total=bytecount, unit=_('bytes')
+            _(b'bundle'), total=bytecount, unit=_(b'bytes')
         )
         progress.update(0)
 
@@ -367,11 +367,11 @@ def consumev1(repo, fp, filecount, bytecount):
     """
     with repo.lock():
         repo.ui.status(
-            _('%d files to transfer, %s of data\n')
+            _(b'%d files to transfer, %s of data\n')
             % (filecount, util.bytecount(bytecount))
         )
         progress = repo.ui.makeprogress(
-            _('clone'), total=bytecount, unit=_('bytes')
+            _(b'clone'), total=bytecount, unit=_(b'bytes')
         )
         progress.update(0)
         start = util.timer()
@@ -390,25 +390,25 @@ def consumev1(repo, fp, filecount, bytecount):
         # nesting occurs also in ordinary case (e.g. enabling
         # clonebundles).
 
-        with repo.transaction('clone'):
+        with repo.transaction(b'clone'):
             with repo.svfs.backgroundclosing(repo.ui, expectedcount=filecount):
                 for i in pycompat.xrange(filecount):
                     # XXX doesn't support '\n' or '\r' in filenames
                     l = fp.readline()
                     try:
-                        name, size = l.split('\0', 1)
+                        name, size = l.split(b'\0', 1)
                         size = int(size)
                     except (ValueError, TypeError):
                         raise error.ResponseError(
-                            _('unexpected response from remote server:'), l
+                            _(b'unexpected response from remote server:'), l
                         )
                     if repo.ui.debugflag:
                         repo.ui.debug(
-                            'adding %s (%s)\n' % (name, util.bytecount(size))
+                            b'adding %s (%s)\n' % (name, util.bytecount(size))
                         )
                     # for backwards compat, name was partially encoded
                     path = store.decodedir(name)
-                    with repo.svfs(path, 'w', backgroundclose=True) as ofp:
+                    with repo.svfs(path, b'w', backgroundclose=True) as ofp:
                         for chunk in util.filechunkiter(fp, limit=size):
                             progress.increment(step=len(chunk))
                             ofp.write(chunk)
@@ -422,7 +422,7 @@ def consumev1(repo, fp, filecount, bytecount):
             elapsed = 0.001
         progress.complete()
         repo.ui.status(
-            _('transferred %s in %.1f seconds (%s/sec)\n')
+            _(b'transferred %s in %.1f seconds (%s/sec)\n')
             % (
                 util.bytecount(bytecount),
                 elapsed,
@@ -433,25 +433,28 @@ def consumev1(repo, fp, filecount, bytecount):
 
 def readbundle1header(fp):
     compression = fp.read(2)
-    if compression != 'UN':
+    if compression != b'UN':
         raise error.Abort(
-            _('only uncompressed stream clone bundles are ' 'supported; got %s')
+            _(
+                b'only uncompressed stream clone bundles are '
+                b'supported; got %s'
+            )
             % compression
         )
 
-    filecount, bytecount = struct.unpack('>QQ', fp.read(16))
-    requireslen = struct.unpack('>H', fp.read(2))[0]
+    filecount, bytecount = struct.unpack(b'>QQ', fp.read(16))
+    requireslen = struct.unpack(b'>H', fp.read(2))[0]
     requires = fp.read(requireslen)
 
-    if not requires.endswith('\0'):
+    if not requires.endswith(b'\0'):
         raise error.Abort(
             _(
-                'malformed stream clone bundle: '
-                'requirements not properly encoded'
+                b'malformed stream clone bundle: '
+                b'requirements not properly encoded'
             )
         )
 
-    requirements = set(requires.rstrip('\0').split(','))
+    requirements = set(requires.rstrip(b'\0').split(b','))
 
     return filecount, bytecount, requirements
 
@@ -464,15 +467,15 @@ def applybundlev1(repo, fp):
     """
     if len(repo):
         raise error.Abort(
-            _('cannot apply stream clone bundle on non-empty ' 'repo')
+            _(b'cannot apply stream clone bundle on non-empty ' b'repo')
         )
 
     filecount, bytecount, requirements = readbundle1header(fp)
     missingreqs = requirements - repo.supportedformats
     if missingreqs:
         raise error.Abort(
-            _('unable to apply stream clone: ' 'unsupported format: %s')
-            % ', '.join(sorted(missingreqs))
+            _(b'unable to apply stream clone: ' b'unsupported format: %s')
+            % b', '.join(sorted(missingreqs))
         )
 
     consumev1(repo, fp, filecount, bytecount)
@@ -497,15 +500,15 @@ _fileappend = 0  # append only file
 _filefull = 1  # full snapshot file
 
 # Source of the file
-_srcstore = 's'  # store (svfs)
-_srccache = 'c'  # cache (cache)
+_srcstore = b's'  # store (svfs)
+_srccache = b'c'  # cache (cache)
 
 # This is it's own function so extensions can override it.
 def _walkstreamfullstorefiles(repo):
     """list snapshot file from the store"""
     fnames = []
     if not repo.publishing():
-        fnames.append('phaseroots')
+        fnames.append(b'phaseroots')
     return fnames
 
 
@@ -553,7 +556,7 @@ def _emit2(repo, entries, totalfilesize):
     """actually emit the stream bundle"""
     vfsmap = _makemap(repo)
     progress = repo.ui.makeprogress(
-        _('bundle'), total=totalfilesize, unit=_('bytes')
+        _(b'bundle'), total=totalfilesize, unit=_(b'bytes')
     )
     progress.update(0)
     with maketempcopies() as copy, progress:
@@ -570,7 +573,7 @@ def _emit2(repo, entries, totalfilesize):
                 fp = vfs(name)
                 size = data
             elif ftype == _filefull:
-                fp = open(data, 'rb')
+                fp = open(data, b'rb')
                 size = util.fstat(fp).st_size
             try:
                 yield util.uvarintencode(size)
@@ -609,7 +612,7 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
         if includes or excludes:
             matcher = narrowspec.match(repo.root, includes, excludes)
 
-        repo.ui.debug('scanning\n')
+        repo.ui.debug(b'scanning\n')
         for name, ename, size in _walkstreamfiles(repo, matcher):
             if size:
                 entries.append((_srcstore, name, _fileappend, size))
@@ -618,9 +621,9 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
             if repo.svfs.exists(name):
                 totalfilesize += repo.svfs.lstat(name).st_size
                 entries.append((_srcstore, name, _filefull, None))
-        if includeobsmarkers and repo.svfs.exists('obsstore'):
-            totalfilesize += repo.svfs.lstat('obsstore').st_size
-            entries.append((_srcstore, 'obsstore', _filefull, None))
+        if includeobsmarkers and repo.svfs.exists(b'obsstore'):
+            totalfilesize += repo.svfs.lstat(b'obsstore').st_size
+            entries.append((_srcstore, b'obsstore', _filefull, None))
         for name in cacheutil.cachetocopy(repo):
             if repo.cachevfs.exists(name):
                 totalfilesize += repo.cachevfs.lstat(name).st_size
@@ -653,19 +656,19 @@ def consumev2(repo, fp, filecount, filesize):
     """
     with repo.lock():
         repo.ui.status(
-            _('%d files to transfer, %s of data\n')
+            _(b'%d files to transfer, %s of data\n')
             % (filecount, util.bytecount(filesize))
         )
 
         start = util.timer()
         progress = repo.ui.makeprogress(
-            _('clone'), total=filesize, unit=_('bytes')
+            _(b'clone'), total=filesize, unit=_(b'bytes')
         )
         progress.update(0)
 
         vfsmap = _makemap(repo)
 
-        with repo.transaction('clone'):
+        with repo.transaction(b'clone'):
             ctxs = (vfs.backgroundclosing(repo.ui) for vfs in vfsmap.values())
             with nested(*ctxs):
                 for i in range(filecount):
@@ -678,11 +681,11 @@ def consumev2(repo, fp, filecount, filesize):
 
                     if repo.ui.debugflag:
                         repo.ui.debug(
-                            'adding [%s] %s (%s)\n'
+                            b'adding [%s] %s (%s)\n'
                             % (src, name, util.bytecount(datalen))
                         )
 
-                    with vfs(name, 'w') as ofp:
+                    with vfs(name, b'w') as ofp:
                         for chunk in util.filechunkiter(fp, limit=datalen):
                             progress.increment(step=len(chunk))
                             ofp.write(chunk)
@@ -695,7 +698,7 @@ def consumev2(repo, fp, filecount, filesize):
         if elapsed <= 0:
             elapsed = 0.001
         repo.ui.status(
-            _('transferred %s in %.1f seconds (%s/sec)\n')
+            _(b'transferred %s in %.1f seconds (%s/sec)\n')
             % (
                 util.bytecount(progress.pos),
                 elapsed,
@@ -711,8 +714,8 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
     missingreqs = [r for r in requirements if r not in repo.supported]
     if missingreqs:
         raise error.Abort(
-            _('unable to apply stream clone: ' 'unsupported format: %s')
-            % ', '.join(sorted(missingreqs))
+            _(b'unable to apply stream clone: ' b'unsupported format: %s')
+            % b', '.join(sorted(missingreqs))
         )
 
     consumev2(repo, fp, filecount, filesize)

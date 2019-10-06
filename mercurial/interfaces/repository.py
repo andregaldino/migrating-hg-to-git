@@ -13,7 +13,7 @@ from . import util as interfaceutil
 
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.
-NARROW_REQUIREMENT = 'narrowhg-experimental'
+NARROW_REQUIREMENT = b'narrowhg-experimental'
 
 # Local repository feature string.
 
@@ -352,7 +352,7 @@ class peer(object):
         if name in caps:
             return True
 
-        name = '%s=' % name
+        name = b'%s=' % name
         for cap in caps:
             if cap.startswith(name):
                 return cap[len(name) :]
@@ -365,8 +365,8 @@ class peer(object):
 
         raise error.CapabilityError(
             _(
-                'cannot %s; remote repository does not support the '
-                '\'%s\' capability'
+                b'cannot %s; remote repository does not support the '
+                b'\'%s\' capability'
             )
             % (purpose, name)
         )
@@ -1025,7 +1025,7 @@ class imanifestdict(interfaceutil.Interface):
     def get(path, default=None):
         """Obtain the node value for a path or a default value if missing."""
 
-    def flags(path, default=''):
+    def flags(path, default=b''):
         """Return the flags value for a path or a default value if missing."""
 
     def copy():
@@ -1746,7 +1746,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
         pass
 
     def commit(
-        text='',
+        text=b'',
         user=None,
         date=None,
         match=None,
@@ -1766,7 +1766,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
         """Inform the repository that nodes have been destroyed."""
 
     def status(
-        node1='.',
+        node1=b'.',
         node2=None,
         match=None,
         ignored=False,

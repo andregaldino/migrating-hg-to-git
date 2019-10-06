@@ -24,17 +24,17 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 commitopts = cmdutil.commitopts
 commitopts2 = cmdutil.commitopts2
-commitopts3 = [('r', 'rev', [], _('revision to check'), _('REV'))]
+commitopts3 = [(b'r', b'rev', [], _(b'revision to check'), _(b'REV'))]
 
 
 @command(
-    'close-head|close-heads',
+    b'close-head|close-heads',
     commitopts + commitopts2 + commitopts3,
-    _('[OPTION]... [REV]...'),
+    _(b'[OPTION]... [REV]...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
     inferrepo=True,
 )
@@ -55,11 +55,11 @@ def close_branch(ui, repo, *revs, **opts):
             text=message,
             files=[],
             filectxfn=None,
-            user=opts.get('user'),
-            date=opts.get('date'),
+            user=opts.get(b'user'),
+            date=opts.get(b'date'),
             extra=extra,
         )
-        tr = repo.transaction('commit')
+        tr = repo.transaction(b'commit')
         ret = repo.commitctx(cctx, True)
         bookmarks.update(repo, [rev, None], ret)
         cctx.markcommitted(ret)
@@ -67,11 +67,11 @@ def close_branch(ui, repo, *revs, **opts):
 
     opts = pycompat.byteskwargs(opts)
 
-    revs += tuple(opts.get('rev', []))
+    revs += tuple(opts.get(b'rev', []))
     revs = scmutil.revrange(repo, revs)
 
     if not revs:
-        raise error.Abort(_('no revisions specified'))
+        raise error.Abort(_(b'no revisions specified'))
 
     heads = []
     for branch in repo.branchmap():
@@ -79,17 +79,17 @@ def close_branch(ui, repo, *revs, **opts):
     heads = set(repo[h].rev() for h in heads)
     for rev in revs:
         if rev not in heads:
-            raise error.Abort(_('revision is not an open head: %d') % rev)
+            raise error.Abort(_(b'revision is not an open head: %d') % rev)
 
     message = cmdutil.logmessage(ui, opts)
     if not message:
-        raise error.Abort(_("no commit message specified with -l or -m"))
-    extra = {'close': '1'}
+        raise error.Abort(_(b"no commit message specified with -l or -m"))
+    extra = {b'close': b'1'}
 
     with repo.wlock(), repo.lock():
         for rev in revs:
             r = repo[rev]
             branch = r.branch()
-            extra['branch'] = branch
+            extra[b'branch'] = branch
             docommit(r)
     return 0

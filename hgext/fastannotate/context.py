@@ -52,7 +52,7 @@ def _parents(f, follow=True):
     # renamed filectx won't have a filelog yet, so set it
     # from the cache to save time
     for p in pl:
-        if not '_filelog' in p.__dict__:
+        if not b'_filelog' in p.__dict__:
             p._filelog = _getflog(f._repo, p.path())
 
     return pl
@@ -62,8 +62,8 @@ def _parents(f, follow=True):
 # so it takes a fctx instead of a pair of text and fctx.
 def _decorate(fctx):
     text = fctx.data()
-    linecount = text.count('\n')
-    if text and not text.endswith('\n'):
+    linecount = text.count(b'\n')
+    if text and not text.endswith(b'\n'):
         linecount += 1
     return ([(fctx, i) for i in pycompat.xrange(linecount)], text)
 
@@ -75,7 +75,7 @@ def _pair(parent, child, blocks):
     for (a1, a2, b1, b2), t in blocks:
         # Changed blocks ('!') or blocks made only of blank lines ('~')
         # belong to the child.
-        if t == '=':
+        if t == b'=':
             child[0][b1:b2] = parent[0][a1:a2]
     return child
 
@@ -119,7 +119,7 @@ def resolvefctx(repo, rev, path, resolverev=False, adjustctx=None):
             fctx = repo.filectx(path, changeid=ctx.rev())
     else:
         fctx = ctx[path]
-        if adjustctx == 'linkrev':
+        if adjustctx == b'linkrev':
             introrev = fctx.linkrev()
         else:
             introrev = fctx.introrev()
@@ -132,10 +132,10 @@ def resolvefctx(repo, rev, path, resolverev=False, adjustctx=None):
 # like mercurial.store.encodedir, but use linelog suffixes: .m, .l, .lock
 def encodedir(path):
     return (
-        path.replace('.hg/', '.hg.hg/')
-        .replace('.l/', '.l.hg/')
-        .replace('.m/', '.m.hg/')
-        .replace('.lock/', '.lock.hg/')
+        path.replace(b'.hg/', b'.hg.hg/')
+        .replace(b'.l/', b'.l.hg/')
+        .replace(b'.m/', b'.m.hg/')
+        .replace(b'.lock/', b'.lock.hg/')
     )
 
 
@@ -157,9 +157,9 @@ class annotateopts(object):
     """
 
     defaults = {
-        'diffopts': None,
-        'followrename': True,
-        'followmerge': True,
+        b'diffopts': None,
+        b'followrename': True,
+        b'followmerge': True,
     }
 
     def __init__(self, **opts):
@@ -170,17 +170,17 @@ class annotateopts(object):
     @util.propertycache
     def shortstr(self):
         """represent opts in a short string, suitable for a directory name"""
-        result = ''
+        result = b''
         if not self.followrename:
-            result += 'r0'
+            result += b'r0'
         if not self.followmerge:
-            result += 'm0'
+            result += b'm0'
         if self.diffopts is not None:
             assert isinstance(self.diffopts, mdiff.diffopts)
             diffopthash = hashdiffopts(self.diffopts)
             if diffopthash != _defaultdiffopthash:
-                result += 'i' + diffopthash
-        return result or 'default'
+                result += b'i' + diffopthash
+        return result or b'default'
 
 
 defaultopts = annotateopts()
@@ -206,7 +206,7 @@ class _annotatecontext(object):
     def linelog(self):
         if self._linelog is None:
             if os.path.exists(self.linelogpath):
-                with open(self.linelogpath, 'rb') as f:
+                with open(self.linelogpath, b'rb') as f:
                     try:
                         self._linelog = linelogmod.linelog.fromdata(f.read())
                     except linelogmod.LineLogError:
@@ -226,7 +226,7 @@ class _annotatecontext(object):
             self._revmap.flush()
             self._revmap = None
         if self._linelog is not None:
-            with open(self.linelogpath, 'wb') as f:
+            with open(self.linelogpath, b'wb') as f:
                 f.write(self._linelog.encode())
             self._linelog = None
 
@@ -308,11 +308,11 @@ class _annotatecontext(object):
         if directly:
             if self.ui.debugflag:
                 self.ui.debug(
-                    'fastannotate: %s: using fast path '
-                    '(resolved fctx: %s)\n'
+                    b'fastannotate: %s: using fast path '
+                    b'(resolved fctx: %s)\n'
                     % (
                         self.path,
-                        stringutil.pprint(util.safehasattr(revfctx, 'node')),
+                        stringutil.pprint(util.safehasattr(revfctx, b'node')),
                     )
                 )
             return self.annotatedirectly(revfctx, showpath, showlines)
@@ -356,8 +356,8 @@ class _annotatecontext(object):
         if masterfctx:
             if masterfctx.rev() is None:
                 raise error.Abort(
-                    _('cannot update linelog to wdir()'),
-                    hint=_('set fastannotate.mainbranch'),
+                    _(b'cannot update linelog to wdir()'),
+                    hint=_(b'set fastannotate.mainbranch'),
                 )
             initvisit.append(masterfctx)
         visit = initvisit[:]
@@ -403,13 +403,13 @@ class _annotatecontext(object):
         if self.ui.debugflag:
             if newmainbranch:
                 self.ui.debug(
-                    'fastannotate: %s: %d new changesets in the main'
-                    ' branch\n' % (self.path, len(newmainbranch))
+                    b'fastannotate: %s: %d new changesets in the main'
+                    b' branch\n' % (self.path, len(newmainbranch))
                 )
             elif not hist:  # no joints, no updates
                 self.ui.debug(
-                    'fastannotate: %s: linelog cannot help in '
-                    'annotating this revision\n' % self.path
+                    b'fastannotate: %s: linelog cannot help in '
+                    b'annotating this revision\n' % self.path
                 )
 
         # prepare annotateresult so we can update linelog incrementally
@@ -418,7 +418,7 @@ class _annotatecontext(object):
         # 3rd DFS does the actual annotate
         visit = initvisit[:]
         progress = self.ui.makeprogress(
-            'building cache', total=len(newmainbranch)
+            b'building cache', total=len(newmainbranch)
         )
         while visit:
             f = visit[-1]
@@ -463,7 +463,7 @@ class _annotatecontext(object):
                 if len(pl) == 2 and self.opts.followmerge:  # merge
                     bannotated = curr[0]
                 if blocks is None:  # no parents, add an empty one
-                    blocks = list(self._diffblocks('', curr[1]))
+                    blocks = list(self._diffblocks(b'', curr[1]))
                 self._appendrev(f, blocks, bannotated)
             elif showpath:  # not append linelog, but we need to record path
                 self._node2path[f.node()] = f.path()
@@ -490,7 +490,7 @@ class _annotatecontext(object):
             if hsh is not None and (hsh, self.path) in self.revmap:
                 f = hsh
         if f is None:
-            adjustctx = 'linkrev' if self._perfhack else True
+            adjustctx = b'linkrev' if self._perfhack else True
             f = self._resolvefctx(rev, adjustctx=adjustctx, resolverev=True)
             result = f in self.revmap
             if not result and self._perfhack:
@@ -511,7 +511,7 @@ class _annotatecontext(object):
         # find a chain from rev to anything in the mainbranch
         if revfctx not in self.revmap:
             chain = [revfctx]
-            a = ''
+            a = b''
             while True:
                 f = chain[-1]
                 pl = self._parentfunc(f)
@@ -589,8 +589,8 @@ class _annotatecontext(object):
                         hsh = annotateresult[idxs[0]][0]
                         if self.ui.debugflag:
                             self.ui.debug(
-                                'fastannotate: reading %s line #%d '
-                                'to resolve lines %r\n'
+                                b'fastannotate: reading %s line #%d '
+                                b'to resolve lines %r\n'
                                 % (node.short(hsh), linenum, idxs)
                             )
                         fctx = self._resolvefctx(hsh, revmap.rev2path(rev))
@@ -603,14 +603,15 @@ class _annotatecontext(object):
 
             # run the annotate and the lines should match to the file content
             self.ui.debug(
-                'fastannotate: annotate %s to resolve lines\n' % node.short(hsh)
+                b'fastannotate: annotate %s to resolve lines\n'
+                % node.short(hsh)
             )
             linelog.annotate(rev)
             fctx = self._resolvefctx(hsh, revmap.rev2path(rev))
             annotated = linelog.annotateresult
             lines = mdiff.splitnewlines(fctx.data())
             if len(lines) != len(annotated):
-                raise faerror.CorruptedFileError('unexpected annotated lines')
+                raise faerror.CorruptedFileError(b'unexpected annotated lines')
             # resolve lines from the annotate result
             for i, line in enumerate(lines):
                 k = annotated[i]
@@ -633,11 +634,11 @@ class _annotatecontext(object):
         llrev = self.revmap.hsh2rev(hsh)
         if not llrev:
             raise faerror.CorruptedFileError(
-                '%s is not in revmap' % node.hex(hsh)
+                b'%s is not in revmap' % node.hex(hsh)
             )
         if (self.revmap.rev2flag(llrev) & revmapmod.sidebranchflag) != 0:
             raise faerror.CorruptedFileError(
-                '%s is not in revmap mainbranch' % node.hex(hsh)
+                b'%s is not in revmap mainbranch' % node.hex(hsh)
             )
         self.linelog.annotate(llrev)
         result = [
@@ -677,7 +678,7 @@ class _annotatecontext(object):
             """(fctx) -> int"""
             # f should not be a linelog revision
             if isinstance(f, int):
-                raise error.ProgrammingError('f should not be an int')
+                raise error.ProgrammingError(b'f should not be an int')
             # f is a fctx, allocate linelog rev on demand
             hsh = f.node()
             rev = revmap.hsh2rev(hsh)
@@ -690,7 +691,7 @@ class _annotatecontext(object):
         siderevmap = {}  # node: int
         if bannotated is not None:
             for (a1, a2, b1, b2), op in blocks:
-                if op != '=':
+                if op != b'=':
                     # f could be either linelong rev, or fctx.
                     siderevs += [
                         f
@@ -708,7 +709,7 @@ class _annotatecontext(object):
         siderevmap[fctx] = llrev
 
         for (a1, a2, b1, b2), op in reversed(blocks):
-            if op == '=':
+            if op == b'=':
                 continue
             if bannotated is None:
                 linelog.replacelines(llrev, a1, a2, b1, b2)
@@ -760,7 +761,7 @@ class _annotatecontext(object):
 
     @util.propertycache
     def _perfhack(self):
-        return self.ui.configbool('fastannotate', 'perfhack')
+        return self.ui.configbool(b'fastannotate', b'perfhack')
 
     def _resolvefctx(self, rev, path=None, **kwds):
         return resolvefctx(self.repo, rev, (path or self.path), **kwds)
@@ -781,7 +782,7 @@ class pathhelper(object):
     def __init__(self, repo, path, opts=defaultopts):
         # different options use different directories
         self._vfspath = os.path.join(
-            'fastannotate', opts.shortstr, encodedir(path)
+            b'fastannotate', opts.shortstr, encodedir(path)
         )
         self._repo = repo
 
@@ -791,14 +792,14 @@ class pathhelper(object):
 
     @property
     def linelogpath(self):
-        return self._repo.vfs.join(self._vfspath + '.l')
+        return self._repo.vfs.join(self._vfspath + b'.l')
 
     def lock(self):
-        return lockmod.lock(self._repo.vfs, self._vfspath + '.lock')
+        return lockmod.lock(self._repo.vfs, self._vfspath + b'.lock')
 
     @property
     def revmappath(self):
-        return self._repo.vfs.join(self._vfspath + '.m')
+        return self._repo.vfs.join(self._vfspath + b'.m')
 
 
 @contextlib.contextmanager
@@ -831,7 +832,7 @@ def annotatecontext(repo, path, opts=defaultopts, rebuild=False):
     except Exception:
         if actx is not None:
             actx.rebuild()
-        repo.ui.debug('fastannotate: %s: cache broken and deleted\n' % path)
+        repo.ui.debug(b'fastannotate: %s: cache broken and deleted\n' % path)
         raise
     finally:
         if actx is not None:
@@ -844,7 +845,7 @@ def fctxannotatecontext(fctx, follow=True, diffopts=None, rebuild=False):
     """
     repo = fctx._repo
     path = fctx._path
-    if repo.ui.configbool('fastannotate', 'forcefollow', True):
+    if repo.ui.configbool(b'fastannotate', b'forcefollow', True):
         follow = True
     aopts = annotateopts(diffopts=diffopts, followrename=follow)
     return annotatecontext(repo, path, aopts, rebuild)

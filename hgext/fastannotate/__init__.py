@@ -119,56 +119,56 @@ from . import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 cmdtable = commands.cmdtable
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('fastannotate', 'modes', default=['fastannotate'])
-configitem('fastannotate', 'server', default=False)
-configitem('fastannotate', 'client', default=False)
-configitem('fastannotate', 'unfilteredrepo', default=True)
-configitem('fastannotate', 'defaultformat', default=['number'])
-configitem('fastannotate', 'perfhack', default=False)
-configitem('fastannotate', 'mainbranch')
-configitem('fastannotate', 'forcetext', default=True)
-configitem('fastannotate', 'forcefollow', default=True)
-configitem('fastannotate', 'clientfetchthreshold', default=10)
-configitem('fastannotate', 'serverbuildondemand', default=True)
-configitem('fastannotate', 'remotepath', default='default')
+configitem(b'fastannotate', b'modes', default=[b'fastannotate'])
+configitem(b'fastannotate', b'server', default=False)
+configitem(b'fastannotate', b'client', default=False)
+configitem(b'fastannotate', b'unfilteredrepo', default=True)
+configitem(b'fastannotate', b'defaultformat', default=[b'number'])
+configitem(b'fastannotate', b'perfhack', default=False)
+configitem(b'fastannotate', b'mainbranch')
+configitem(b'fastannotate', b'forcetext', default=True)
+configitem(b'fastannotate', b'forcefollow', default=True)
+configitem(b'fastannotate', b'clientfetchthreshold', default=10)
+configitem(b'fastannotate', b'serverbuildondemand', default=True)
+configitem(b'fastannotate', b'remotepath', default=b'default')
 
 
 def uisetup(ui):
-    modes = set(ui.configlist('fastannotate', 'modes'))
-    if 'fctx' in modes:
-        modes.discard('hgweb')
+    modes = set(ui.configlist(b'fastannotate', b'modes'))
+    if b'fctx' in modes:
+        modes.discard(b'hgweb')
     for name in modes:
-        if name == 'fastannotate':
+        if name == b'fastannotate':
             commands.registercommand()
-        elif name == 'hgweb':
+        elif name == b'hgweb':
             from . import support
 
             support.replacehgwebannotate()
-        elif name == 'fctx':
+        elif name == b'fctx':
             from . import support
 
             support.replacefctxannotate()
             commands.wrapdefault()
         else:
-            raise hgerror.Abort(_('fastannotate: invalid mode: %s') % name)
+            raise hgerror.Abort(_(b'fastannotate: invalid mode: %s') % name)
 
-    if ui.configbool('fastannotate', 'server'):
+    if ui.configbool(b'fastannotate', b'server'):
         protocol.serveruisetup(ui)
 
 
 def extsetup(ui):
     # fastannotate has its own locking, without depending on repo lock
     # TODO: avoid mutating this unless the specific repo has it enabled
-    localrepo.localrepository._wlockfreeprefix.add('fastannotate/')
+    localrepo.localrepository._wlockfreeprefix.add(b'fastannotate/')
 
 
 def reposetup(ui, repo):
-    if ui.configbool('fastannotate', 'client'):
+    if ui.configbool(b'fastannotate', b'client'):
         protocol.clientreposetup(ui, repo)

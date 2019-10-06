@@ -12,7 +12,7 @@ from __future__ import absolute_import
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 from mercurial import (
     localrepo,
@@ -41,10 +41,10 @@ configitem = registrar.configitem(configtable)
 # ellipsis nodes to be a hard requirement also enforce strictly linear
 # history for other scaling reasons.
 configitem(
-    'experimental',
-    'narrowservebrokenellipses',
+    b'experimental',
+    b'narrowservebrokenellipses',
     default=False,
-    alias=[('narrow', 'serveellipses')],
+    alias=[(b'narrow', b'serveellipses')],
 )
 
 # Export the commands table for Mercurial to see.
@@ -68,7 +68,7 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    repo.ui.setconfig('experimental', 'narrow', True, 'narrow-ext')
+    repo.ui.setconfig(b'experimental', b'narrow', True, b'narrow-ext')
     if repository.NARROW_REQUIREMENT in repo.requirements:
         narrowrepo.wraprepo(repo)
         narrowwirepeer.reposetup(repo)

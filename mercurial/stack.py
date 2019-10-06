@@ -16,9 +16,9 @@ def getstack(repo, rev=None):
     the revision and are not merges.
     """
     if rev is None:
-        rev = '.'
+        rev = b'.'
 
-    revspec = 'only(%s) and not public() and not ::merge()'
+    revspec = b'only(%s) and not public() and not ::merge()'
     revisions = repo.revs(revspec, rev)
     revisions.sort()
     return revisions

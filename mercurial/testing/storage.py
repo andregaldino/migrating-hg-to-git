@@ -40,8 +40,8 @@ class ifileindextests(basetestcase):
 
     def testempty(self):
         f = self._makefilefn()
-        self.assertEqual(len(f), 0, 'new file store has 0 length by default')
-        self.assertEqual(list(f), [], 'iter yields nothing by default')
+        self.assertEqual(len(f), 0, b'new file store has 0 length by default')
+        self.assertEqual(list(f), [], b'iter yields nothing by default')
 
         gen = iter(f)
         with self.assertRaises(StopIteration):
@@ -414,7 +414,7 @@ class ifiledatatests(basetestcase):
         self.assertEqual(f.storageinfo(), {})
         self.assertEqual(
             f.storageinfo(revisionscount=True, trackedsize=True),
-            {'revisionscount': 0, 'trackedsize': 0},
+            {b'revisionscount': 0, b'trackedsize': 0},
         )
 
         self.assertEqual(f.size(nullrev), 0)
@@ -472,7 +472,7 @@ class ifiledatatests(basetestcase):
         self.assertEqual(f.storageinfo(), {})
         self.assertEqual(
             f.storageinfo(revisionscount=True, trackedsize=True),
-            {'revisionscount': 1, 'trackedsize': len(fulltext)},
+            {b'revisionscount': 1, b'trackedsize': len(fulltext)},
         )
 
         self.assertEqual(f.size(0), len(fulltext))
@@ -541,8 +541,10 @@ class ifiledatatests(basetestcase):
         self.assertEqual(
             f.storageinfo(revisionscount=True, trackedsize=True),
             {
-                'revisionscount': 3,
-                'trackedsize': len(fulltext0) + len(fulltext1) + len(fulltext2),
+                b'revisionscount': 3,
+                b'trackedsize': len(fulltext0)
+                + len(fulltext1)
+                + len(fulltext2),
             },
         )
 
@@ -679,17 +681,19 @@ class ifiledatatests(basetestcase):
 
         # Unrecognized nodesorder value raises ProgrammingError.
         with self.assertRaises(error.ProgrammingError):
-            list(f.emitrevisions([], nodesorder='bad'))
+            list(f.emitrevisions([], nodesorder=b'bad'))
 
         # nodesorder=storage is recognized. But we can't test it thoroughly
         # because behavior is storage-dependent.
-        res = list(f.emitrevisions([node2, node1, node0], nodesorder='storage'))
+        res = list(
+            f.emitrevisions([node2, node1, node0], nodesorder=b'storage')
+        )
         self.assertEqual(len(res), 3)
         self.assertEqual({o.node for o in res}, {node0, node1, node2})
 
         # nodesorder=nodes forces the order.
         gen = f.emitrevisions(
-            [node2, node0], nodesorder='nodes', revisiondata=True
+            [node2, node0], nodesorder=b'nodes', revisiondata=True
         )
 
         rev = next(gen)

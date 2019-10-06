@@ -30,8 +30,8 @@ def rpairs(path):
     i = len(path)
     while i != -1:
         yield path[:i], path[i + 1 :]
-        i = path.rfind('/', 0, i)
-    yield '.', path
+        i = path.rfind(b'/', 0, i)
+    yield b'.', path
 
 
 def normalize(path):
@@ -55,7 +55,7 @@ class filemapper(object):
         self.targetprefixes = None
         if path:
             if self.parse(path):
-                raise error.Abort(_('errors in filemap'))
+                raise error.Abort(_(b'errors in filemap'))
 
     def parse(self, path):
         errs = 0
@@ -63,48 +63,48 @@ class filemapper(object):
         def check(name, mapping, listname):
             if not name:
                 self.ui.warn(
-                    _('%s:%d: path to %s is missing\n')
+                    _(b'%s:%d: path to %s is missing\n')
                     % (lex.infile, lex.lineno, listname)
                 )
                 return 1
             if name in mapping:
                 self.ui.warn(
-                    _('%s:%d: %r already in %s list\n')
+                    _(b'%s:%d: %r already in %s list\n')
                     % (lex.infile, lex.lineno, name, listname)
                 )
                 return 1
-            if name.startswith('/') or name.endswith('/') or '//' in name:
+            if name.startswith(b'/') or name.endswith(b'/') or b'//' in name:
                 self.ui.warn(
-                    _('%s:%d: superfluous / in %s %r\n')
+                    _(b'%s:%d: superfluous / in %s %r\n')
                     % (lex.infile, lex.lineno, listname, pycompat.bytestr(name))
                 )
                 return 1
             return 0
 
         lex = common.shlexer(
-            filepath=path, wordchars='!@#$%^&*()-=+[]{}|;:,./<>?'
+            filepath=path, wordchars=b'!@#$%^&*()-=+[]{}|;:,./<>?'
         )
         cmd = lex.get_token()
         while cmd:
-            if cmd == 'include':
+            if cmd == b'include':
                 name = normalize(lex.get_token())
-                errs += check(name, self.exclude, 'exclude')
+                errs += check(name, self.exclude, b'exclude')
                 self.include[name] = name
-            elif cmd == 'exclude':
+            elif cmd == b'exclude':
                 name = normalize(lex.get_token())
-                errs += check(name, self.include, 'include')
-                errs += check(name, self.rename, 'rename')
+                errs += check(name, self.include, b'include')
+                errs += check(name, self.rename, b'rename')
                 self.exclude[name] = name
-            elif cmd == 'rename':
+            elif cmd == b'rename':
                 src = normalize(lex.get_token())
                 dest = normalize(lex.get_token())
-                errs += check(src, self.exclude, 'exclude')
+                errs += check(src, self.exclude, b'exclude')
                 self.rename[src] = dest
-            elif cmd == 'source':
+            elif cmd == b'source':
                 errs += self.parse(normalize(lex.get_token()))
             else:
                 self.ui.warn(
-                    _('%s:%d: unknown directive %r\n')
+                    _(b'%s:%d: unknown directive %r\n')
                     % (lex.infile, lex.lineno, pycompat.bytestr(cmd))
                 )
                 errs += 1
@@ -118,7 +118,7 @@ class filemapper(object):
                 return mapping[pre], pre, suf
             except KeyError:
                 pass
-        return '', name, ''
+        return b'', name, b''
 
     def istargetfile(self, filename):
         """Return true if the given target filename is covered as a destination
@@ -131,7 +131,7 @@ class filemapper(object):
 
         # If "." is a target, then all target files are considered from the
         # source.
-        if not self.targetprefixes or '.' in self.targetprefixes:
+        if not self.targetprefixes or b'.' in self.targetprefixes:
             return True
 
         filename = normalize(filename)
@@ -152,17 +152,17 @@ class filemapper(object):
         if self.exclude:
             exc = self.lookup(name, self.exclude)[0]
         else:
-            exc = ''
+            exc = b''
         if (not self.include and exc) or (len(inc) <= len(exc)):
             return None
         newpre, pre, suf = self.lookup(name, self.rename)
         if newpre:
-            if newpre == '.':
+            if newpre == b'.':
                 return suf
             if suf:
-                if newpre.endswith('/'):
+                if newpre.endswith(b'/'):
                     return newpre + suf
-                return newpre + '/' + suf
+                return newpre + b'/' + suf
             return newpre
         return name
 
@@ -204,7 +204,7 @@ class filemap_source(common.converter_source):
         self.seenchildren = {}
         # experimental config: convert.ignoreancestorcheck
         self.ignoreancestorcheck = self.ui.configbool(
-            'convert', 'ignoreancestorcheck'
+            b'convert', b'ignoreancestorcheck'
         )
 
     def before(self):
@@ -256,7 +256,7 @@ class filemap_source(common.converter_source):
                 try:
                     self.origparents[rev] = self.getcommit(rev).parents
                 except error.RepoLookupError:
-                    self.ui.debug("unknown revmap source: %s\n" % rev)
+                    self.ui.debug(b"unknown revmap source: %s\n" % rev)
                     continue
             if arg is not None:
                 self.children[arg] = self.children.get(arg, 0) + 1
@@ -316,7 +316,7 @@ class filemap_source(common.converter_source):
         try:
             files = self.base.getchangedfiles(rev, i)
         except NotImplementedError:
-            raise error.Abort(_("source repository doesn't support --filemap"))
+            raise error.Abort(_(b"source repository doesn't support --filemap"))
         for f in files:
             if self.filemapper(f):
                 return True
@@ -331,7 +331,7 @@ class filemap_source(common.converter_source):
         # close marker is significant (i.e. all of the branch ancestors weren't
         # eliminated).  Therefore if there *is* a close marker, getchanges()
         # doesn't consider it significant, and this revision should be dropped.
-        return not files and 'close' not in self.commits[rev].extra
+        return not files and b'close' not in self.commits[rev].extra
 
     def mark_not_wanted(self, rev, p):
         # Mark rev as not interesting and update data structures.
@@ -363,7 +363,9 @@ class filemap_source(common.converter_source):
             if p in self.wantedancestors:
                 wrev.update(self.wantedancestors[p])
             else:
-                self.ui.warn(_('warning: %s parent %s is missing\n') % (rev, p))
+                self.ui.warn(
+                    _(b'warning: %s parent %s is missing\n') % (rev, p)
+                )
         wrev.add(rev)
         self.wantedancestors[rev] = wrev
 
@@ -423,7 +425,7 @@ class filemap_source(common.converter_source):
         self.origparents[rev] = parents
 
         closed = False
-        if 'close' in self.commits[rev].extra:
+        if b'close' in self.commits[rev].extra:
             # A branch closing revision is only useful if one of its
             # parents belong to the branch being closed
             pbranches = [self._cachedcommit(p).branch for p in mparents]

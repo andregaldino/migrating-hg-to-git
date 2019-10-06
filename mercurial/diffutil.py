@@ -18,7 +18,7 @@ from . import (
 
 
 def diffallopts(
-    ui, opts=None, untrusted=False, section='diff', configprefix=''
+    ui, opts=None, untrusted=False, section=b'diff', configprefix=b''
 ):
     '''return diffopts with all features supported and parsed'''
     return difffeatureopts(
@@ -37,11 +37,11 @@ def difffeatureopts(
     ui,
     opts=None,
     untrusted=False,
-    section='diff',
+    section=b'diff',
     git=False,
     whitespace=False,
     formatchanging=False,
-    configprefix='',
+    configprefix=b'',
 ):
     '''return diffopts with only opted-in features parsed
 
@@ -72,24 +72,24 @@ def difffeatureopts(
 
     # core options, expected to be understood by every diff parser
     buildopts = {
-        'nodates': get('nodates'),
-        'showfunc': get('show_function', 'showfunc'),
-        'context': get('unified', getter=ui.config),
+        b'nodates': get(b'nodates'),
+        b'showfunc': get(b'show_function', b'showfunc'),
+        b'context': get(b'unified', getter=ui.config),
     }
-    buildopts['xdiff'] = ui.configbool('experimental', 'xdiff')
+    buildopts[b'xdiff'] = ui.configbool(b'experimental', b'xdiff')
 
     if git:
-        buildopts['git'] = get('git')
+        buildopts[b'git'] = get(b'git')
 
         # since this is in the experimental section, we need to call
         # ui.configbool directory
-        buildopts['showsimilarity'] = ui.configbool(
-            'experimental', 'extendedheader.similarity'
+        buildopts[b'showsimilarity'] = ui.configbool(
+            b'experimental', b'extendedheader.similarity'
         )
 
         # need to inspect the ui object instead of using get() since we want to
         # test for an int
-        hconf = ui.config('experimental', 'extendedheader.index')
+        hconf = ui.config(b'experimental', b'extendedheader.index')
         if hconf is not None:
             hlen = None
             try:
@@ -97,38 +97,40 @@ def difffeatureopts(
                 # word (e.g. short, full, none)
                 hlen = int(hconf)
                 if hlen < 0 or hlen > 40:
-                    msg = _("invalid length for extendedheader.index: '%d'\n")
+                    msg = _(b"invalid length for extendedheader.index: '%d'\n")
                     ui.warn(msg % hlen)
             except ValueError:
                 # default value
-                if hconf == 'short' or hconf == '':
+                if hconf == b'short' or hconf == b'':
                     hlen = 12
-                elif hconf == 'full':
+                elif hconf == b'full':
                     hlen = 40
-                elif hconf != 'none':
-                    msg = _("invalid value for extendedheader.index: '%s'\n")
+                elif hconf != b'none':
+                    msg = _(b"invalid value for extendedheader.index: '%s'\n")
                     ui.warn(msg % hconf)
             finally:
-                buildopts['index'] = hlen
+                buildopts[b'index'] = hlen
 
     if whitespace:
-        buildopts['ignorews'] = get('ignore_all_space', 'ignorews')
-        buildopts['ignorewsamount'] = get(
-            'ignore_space_change', 'ignorewsamount'
+        buildopts[b'ignorews'] = get(b'ignore_all_space', b'ignorews')
+        buildopts[b'ignorewsamount'] = get(
+            b'ignore_space_change', b'ignorewsamount'
         )
-        buildopts['ignoreblanklines'] = get(
-            'ignore_blank_lines', 'ignoreblanklines'
+        buildopts[b'ignoreblanklines'] = get(
+            b'ignore_blank_lines', b'ignoreblanklines'
         )
-        buildopts['ignorewseol'] = get('ignore_space_at_eol', 'ignorewseol')
+        buildopts[b'ignorewseol'] = get(b'ignore_space_at_eol', b'ignorewseol')
     if formatchanging:
-        buildopts['text'] = opts and opts.get('text')
-        binary = None if opts is None else opts.get('binary')
-        buildopts['nobinary'] = (
+        buildopts[b'text'] = opts and opts.get(b'text')
+        binary = None if opts is None else opts.get(b'binary')
+        buildopts[b'nobinary'] = (
             not binary
             if binary is not None
-            else get('nobinary', forceplain=False)
+            else get(b'nobinary', forceplain=False)
         )
-        buildopts['noprefix'] = get('noprefix', forceplain=False)
-        buildopts['worddiff'] = get('word_diff', 'word-diff', forceplain=False)
+        buildopts[b'noprefix'] = get(b'noprefix', forceplain=False)
+        buildopts[b'worddiff'] = get(
+            b'word_diff', b'word-diff', forceplain=False
+        )
 
     return mdiff.diffopts(**pycompat.strkwargs(buildopts))

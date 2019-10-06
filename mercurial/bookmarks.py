@@ -31,9 +31,9 @@ from . import (
 # until 3.5, bookmarks.current was the advertised name, not
 # bookmarks.active, so we must use both to avoid breaking old
 # custom styles
-activebookmarklabel = 'bookmarks.active bookmarks.current'
+activebookmarklabel = b'bookmarks.active bookmarks.current'
 
-BOOKMARKS_IN_STORE_REQUIREMENT = 'bookmarksinstore'
+BOOKMARKS_IN_STORE_REQUIREMENT = b'bookmarksinstore'
 
 
 def bookmarksinstore(repo):
@@ -51,7 +51,9 @@ def _getbkfile(repo):
     bookmarks or the committed ones. Other extensions (like share)
     may need to tweak this behavior further.
     """
-    fp, pending = txnutil.trypending(repo.root, bookmarksvfs(repo), 'bookmarks')
+    fp, pending = txnutil.trypending(
+        repo.root, bookmarksvfs(repo), b'bookmarks'
+    )
     return fp
 
 
@@ -84,7 +86,7 @@ class bmstore(object):
                     if not line:
                         continue
                     try:
-                        sha, refspec = line.split(' ', 1)
+                        sha, refspec = line.split(b' ', 1)
                         node = tonode(sha)
                         if node in nm:
                             refspec = encoding.tolocal(refspec)
@@ -103,11 +105,11 @@ class bmstore(object):
                         # ValueError:
                         # - node in nm, for non-20-bytes entry
                         # - split(...), for string without ' '
-                        bookmarkspath = '.hg/bookmarks'
+                        bookmarkspath = b'.hg/bookmarks'
                         if bookmarksinstore(repo):
-                            bookmarkspath = '.hg/store/bookmarks'
+                            bookmarkspath = b'.hg/store/bookmarks'
                         repo.ui.warn(
-                            _('malformed line in %s: %r\n')
+                            _(b'malformed line in %s: %r\n')
                             % (bookmarkspath, pycompat.bytestr(line))
                         )
         except IOError as inst:
@@ -122,7 +124,7 @@ class bmstore(object):
     @active.setter
     def active(self, mark):
         if mark is not None and mark not in self._refmap:
-            raise AssertionError('bookmark %s does not exist!' % mark)
+            raise AssertionError(b'bookmark %s does not exist!' % mark)
 
         self._active = mark
         self._aclean = False
@@ -186,7 +188,7 @@ class bmstore(object):
     def applychanges(self, repo, tr, changes):
         """Apply a list of changes to bookmarks
         """
-        bmchanges = tr.changes.get('bookmarks')
+        bmchanges = tr.changes.get(b'bookmarks')
         for name, node in changes:
             old = self._refmap.get(name)
             if node is None:
@@ -205,11 +207,11 @@ class bmstore(object):
         """record that bookmarks have been changed in a transaction
 
         The transaction is then responsible for updating the file content."""
-        location = '' if bookmarksinstore(self._repo) else 'plain'
+        location = b'' if bookmarksinstore(self._repo) else b'plain'
         tr.addfilegenerator(
-            'bookmarks', ('bookmarks',), self._write, location=location
+            b'bookmarks', (b'bookmarks',), self._write, location=location
         )
-        tr.hookargs['bookmark_moved'] = '1'
+        tr.hookargs[b'bookmark_moved'] = b'1'
 
     def _writerepo(self, repo):
         """Factored out for extensibility"""
@@ -225,7 +227,7 @@ class bmstore(object):
             vfs = repo.vfs
             lock = repo.wlock()
         with lock:
-            with vfs('bookmarks', 'w', atomictemp=True, checkambig=True) as f:
+            with vfs(b'bookmarks', b'w', atomictemp=True, checkambig=True) as f:
                 self._write(f)
 
     def _writeactive(self):
@@ -234,25 +236,25 @@ class bmstore(object):
         with self._repo.wlock():
             if self._active is not None:
                 with self._repo.vfs(
-                    'bookmarks.current', 'w', atomictemp=True, checkambig=True
+                    b'bookmarks.current', b'w', atomictemp=True, checkambig=True
                 ) as f:
                     f.write(encoding.fromlocal(self._active))
             else:
-                self._repo.vfs.tryunlink('bookmarks.current')
+                self._repo.vfs.tryunlink(b'bookmarks.current')
         self._aclean = True
 
     def _write(self, fp):
         for name, node in sorted(self._refmap.iteritems()):
-            fp.write("%s %s\n" % (hex(node), encoding.fromlocal(name)))
+            fp.write(b"%s %s\n" % (hex(node), encoding.fromlocal(name)))
         self._clean = True
         self._repo.invalidatevolatilesets()
 
     def expandname(self, bname):
-        if bname == '.':
+        if bname == b'.':
             if self.active:
                 return self.active
             else:
-                raise error.RepoLookupError(_("no active bookmark"))
+                raise error.RepoLookupError(_(b"no active bookmark"))
         return bname
 
     def checkconflict(self, mark, force=False, target=None):
@@ -267,7 +269,7 @@ class bmstore(object):
 
         If divergent bookmark are to be deleted, they will be returned as list.
         """
-        cur = self._repo['.'].node()
+        cur = self._repo[b'.'].node()
         if mark in self._refmap and not force:
             if target:
                 if self._refmap[mark] == target and target == cur:
@@ -279,7 +281,7 @@ class bmstore(object):
                 divs = [
                     self._refmap[b]
                     for b in self._refmap
-                    if b.split('@', 1)[0] == mark.split('@', 1)[0]
+                    if b.split(b'@', 1)[0] == mark.split(b'@', 1)[0]
                 ]
 
                 # allow resolving a single divergent bookmark even if moving
@@ -294,19 +296,19 @@ class bmstore(object):
                 delbms = divergent2delete(self._repo, deletefrom, mark)
                 if validdest(self._repo, bmctx, self._repo[target]):
                     self._repo.ui.status(
-                        _("moving bookmark '%s' forward from %s\n")
+                        _(b"moving bookmark '%s' forward from %s\n")
                         % (mark, short(bmctx.node()))
                     )
                     return delbms
             raise error.Abort(
-                _("bookmark '%s' already exists " "(use -f to force)") % mark
+                _(b"bookmark '%s' already exists " b"(use -f to force)") % mark
             )
         if (
             mark in self._repo.branchmap()
             or mark == self._repo.dirstate.branch()
         ) and not force:
             raise error.Abort(
-                _("a bookmark cannot have the name of an existing branch")
+                _(b"a bookmark cannot have the name of an existing branch")
             )
         if len(mark) > 3 and not force:
             try:
@@ -316,9 +318,9 @@ class bmstore(object):
             if shadowhash:
                 self._repo.ui.warn(
                     _(
-                        "bookmark %s matches a changeset hash\n"
-                        "(did you leave a -r out of an 'hg bookmark' "
-                        "command?)\n"
+                        b"bookmark %s matches a changeset hash\n"
+                        b"(did you leave a -r out of an 'hg bookmark' "
+                        b"command?)\n"
                     )
                     % mark
                 )
@@ -333,9 +335,9 @@ def _readactive(repo, marks):
     """
     # No readline() in osutil.posixfile, reading everything is
     # cheap.
-    content = repo.vfs.tryread('bookmarks.current')
-    mark = encoding.tolocal((content.splitlines() or [''])[0])
-    if mark == '' or mark not in marks:
+    content = repo.vfs.tryread(b'bookmarks.current')
+    mark = encoding.tolocal((content.splitlines() or [b''])[0])
+    if mark == b'' or mark not in marks:
         mark = None
     return mark
 
@@ -379,9 +381,11 @@ def divergent2delete(repo, deletefrom, bm):
     the list of bookmark to delete."""
     todelete = []
     marks = repo._bookmarks
-    divergent = [b for b in marks if b.split('@', 1)[0] == bm.split('@', 1)[0]]
+    divergent = [
+        b for b in marks if b.split(b'@', 1)[0] == bm.split(b'@', 1)[0]
+    ]
     for mark in divergent:
-        if mark == '@' or '@' not in mark:
+        if mark == b'@' or b'@' not in mark:
             # can't be divergent by definition
             continue
         if mark and marks[mark] in deletefrom:
@@ -404,12 +408,12 @@ def headsforactive(repo):
     """
     if not repo._activebookmark:
         raise ValueError(
-            'headsforactive() only makes sense with an active bookmark'
+            b'headsforactive() only makes sense with an active bookmark'
         )
-    name = repo._activebookmark.split('@', 1)[0]
+    name = repo._activebookmark.split(b'@', 1)[0]
     heads = []
     for mark, n in repo._bookmarks.iteritems():
-        if mark.split('@', 1)[0] == name:
+        if mark.split(b'@', 1)[0] == name:
             heads.append(n)
     return heads
 
@@ -420,9 +424,9 @@ def calculateupdate(ui, repo):
     checkout, movemarkfrom = None, None
     activemark = repo._activebookmark
     if isactivewdirparent(repo):
-        movemarkfrom = repo['.'].node()
+        movemarkfrom = repo[b'.'].node()
     elif activemark:
-        ui.status(_("updating to active bookmark %s\n") % activemark)
+        ui.status(_(b"updating to active bookmark %s\n") % activemark)
         checkout = activemark
     return (checkout, movemarkfrom)
 
@@ -440,7 +444,7 @@ def update(repo, parents, node):
         divs = [
             repo[marks[b]]
             for b in marks
-            if b.split('@', 1)[0] == active.split('@', 1)[0]
+            if b.split(b'@', 1)[0] == active.split(b'@', 1)[0]
         ]
         anc = repo.changelog.ancestors([new.rev()])
         deletefrom = [b.node() for b in divs if b.rev() in anc or b == new]
@@ -451,7 +455,7 @@ def update(repo, parents, node):
         bmchanges.append((bm, None))
 
     if bmchanges:
-        with repo.lock(), repo.transaction('bookmark') as tr:
+        with repo.lock(), repo.transaction(b'bookmark') as tr:
             marks.applychanges(repo, tr, bmchanges)
     return bool(bmchanges)
 
@@ -464,7 +468,7 @@ def listbinbookmarks(repo):
     hasnode = repo.changelog.hasnode
     for k, v in marks.iteritems():
         # don't expose local divergent bookmarks
-        if hasnode(v) and ('@' not in k or k.endswith('@')):
+        if hasnode(v) and (b'@' not in k or k.endswith(b'@')):
             yield k, v
 
 
@@ -480,12 +484,12 @@ def pushbookmark(repo, key, old, new):
         wlock = util.nullcontextmanager()
     else:
         wlock = repo.wlock()
-    with wlock, repo.lock(), repo.transaction('bookmarks') as tr:
+    with wlock, repo.lock(), repo.transaction(b'bookmarks') as tr:
         marks = repo._bookmarks
-        existing = hex(marks.get(key, ''))
+        existing = hex(marks.get(key, b''))
         if existing != old and existing != new:
             return False
-        if new == '':
+        if new == b'':
             changes = [(key, None)]
         else:
             if new not in repo:
@@ -580,21 +584,21 @@ def _diverge(ui, b, path, localmarks, remotenode):
     This reuses already existing one with "@number" suffix, if it
     refers ``remotenode``.
     '''
-    if b == '@':
-        b = ''
+    if b == b'@':
+        b = b''
     # try to use an @pathalias suffix
     # if an @pathalias already exists, we overwrite (update) it
-    if path.startswith("file:"):
+    if path.startswith(b"file:"):
         path = util.url(path).path
-    for p, u in ui.configitems("paths"):
-        if u.startswith("file:"):
+    for p, u in ui.configitems(b"paths"):
+        if u.startswith(b"file:"):
             u = util.url(u).path
         if path == u:
-            return '%s@%s' % (b, p)
+            return b'%s@%s' % (b, p)
 
     # assign a unique "@number" suffix newly
     for x in range(1, 100):
-        n = '%s@%d' % (b, x)
+        n = b'%s@%d' % (b, x)
         if n not in localmarks or localmarks[n] == remotenode:
             return n
 
@@ -608,7 +612,7 @@ def unhexlifybookmarks(marks):
     return binremotemarks
 
 
-_binaryentry = struct.Struct('>20sH')
+_binaryentry = struct.Struct(b'>20sH')
 
 
 def binaryencode(bookmarks):
@@ -630,7 +634,7 @@ def binaryencode(bookmarks):
             node = wdirid
         binarydata.append(_binaryentry.pack(node, len(book)))
         binarydata.append(book)
-    return ''.join(binarydata)
+    return b''.join(binarydata)
 
 
 def binarydecode(stream):
@@ -652,13 +656,13 @@ def binarydecode(stream):
         entry = stream.read(entrysize)
         if len(entry) < entrysize:
             if entry:
-                raise error.Abort(_('bad bookmark stream'))
+                raise error.Abort(_(b'bad bookmark stream'))
             break
         node, length = _binaryentry.unpack(entry)
         bookmark = stream.read(length)
         if len(bookmark) < length:
             if entry:
-                raise error.Abort(_('bad bookmark stream'))
+                raise error.Abort(_(b'bad bookmark stream'))
         if node == wdirid:
             node = None
         books.append((bookmark, node))
@@ -666,7 +670,7 @@ def binarydecode(stream):
 
 
 def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
-    ui.debug("checking for updated bookmarks\n")
+    ui.debug(b"checking for updated bookmarks\n")
     localmarks = repo._bookmarks
     (
         addsrc,
@@ -681,7 +685,7 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
 
     status = ui.status
     warn = ui.warn
-    if ui.configbool('ui', 'quietbookmarkmove'):
+    if ui.configbool(b'ui', b'quietbookmarkmove'):
         status = warn = ui.debug
 
     explicit = set(explicit)
@@ -689,24 +693,24 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
     for b, scid, dcid in addsrc:
         if scid in repo:  # add remote bookmarks for changes we already have
             changed.append(
-                (b, scid, status, _("adding remote bookmark %s\n") % b)
+                (b, scid, status, _(b"adding remote bookmark %s\n") % b)
             )
         elif b in explicit:
             explicit.remove(b)
             ui.warn(
-                _("remote bookmark %s points to locally missing %s\n")
+                _(b"remote bookmark %s points to locally missing %s\n")
                 % (b, hex(scid)[:12])
             )
 
     for b, scid, dcid in advsrc:
-        changed.append((b, scid, status, _("updating bookmark %s\n") % b))
+        changed.append((b, scid, status, _(b"updating bookmark %s\n") % b))
     # remove normal movement from explicit set
     explicit.difference_update(d[0] for d in changed)
 
     for b, scid, dcid in diverge:
         if b in explicit:
             explicit.discard(b)
-            changed.append((b, scid, status, _("importing bookmark %s\n") % b))
+            changed.append((b, scid, status, _(b"importing bookmark %s\n") % b))
         else:
             db = _diverge(ui, b, path, localmarks, scid)
             if db:
@@ -715,26 +719,26 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
                         db,
                         scid,
                         warn,
-                        _("divergent bookmark %s stored as %s\n") % (b, db),
+                        _(b"divergent bookmark %s stored as %s\n") % (b, db),
                     )
                 )
             else:
                 warn(
                     _(
-                        "warning: failed to assign numbered name "
-                        "to divergent bookmark %s\n"
+                        b"warning: failed to assign numbered name "
+                        b"to divergent bookmark %s\n"
                     )
                     % b
                 )
     for b, scid, dcid in adddst + advdst:
         if b in explicit:
             explicit.discard(b)
-            changed.append((b, scid, status, _("importing bookmark %s\n") % b))
+            changed.append((b, scid, status, _(b"importing bookmark %s\n") % b))
     for b, scid, dcid in differ:
         if b in explicit:
             explicit.remove(b)
             ui.warn(
-                _("remote bookmark %s points to locally missing %s\n")
+                _(b"remote bookmark %s points to locally missing %s\n")
                 % (b, hex(scid)[:12])
             )
 
@@ -750,11 +754,11 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
 def incoming(ui, repo, peer):
     '''Show bookmarks incoming from other to repo
     '''
-    ui.status(_("searching for changed bookmarks\n"))
+    ui.status(_(b"searching for changed bookmarks\n"))
 
     with peer.commandexecutor() as e:
         remotemarks = unhexlifybookmarks(
-            e.callcommand('listkeys', {'namespace': 'bookmarks',}).result()
+            e.callcommand(b'listkeys', {b'namespace': b'bookmarks',}).result()
         )
 
     r = comparebookmarks(repo, remotemarks, repo._bookmarks)
@@ -768,28 +772,28 @@ def incoming(ui, repo, peer):
     if ui.verbose:
 
         def add(b, id, st):
-            incomings.append("   %-25s %s %s\n" % (b, getid(id), st))
+            incomings.append(b"   %-25s %s %s\n" % (b, getid(id), st))
 
     else:
 
         def add(b, id, st):
-            incomings.append("   %-25s %s\n" % (b, getid(id)))
+            incomings.append(b"   %-25s %s\n" % (b, getid(id)))
 
     for b, scid, dcid in addsrc:
         # i18n: "added" refers to a bookmark
-        add(b, hex(scid), _('added'))
+        add(b, hex(scid), _(b'added'))
     for b, scid, dcid in advsrc:
         # i18n: "advanced" refers to a bookmark
-        add(b, hex(scid), _('advanced'))
+        add(b, hex(scid), _(b'advanced'))
     for b, scid, dcid in diverge:
         # i18n: "diverged" refers to a bookmark
-        add(b, hex(scid), _('diverged'))
+        add(b, hex(scid), _(b'diverged'))
     for b, scid, dcid in differ:
         # i18n: "changed" refers to a bookmark
-        add(b, hex(scid), _('changed'))
+        add(b, hex(scid), _(b'changed'))
 
     if not incomings:
-        ui.status(_("no changed bookmarks found\n"))
+        ui.status(_(b"no changed bookmarks found\n"))
         return 1
 
     for s in sorted(incomings):
@@ -801,9 +805,9 @@ def incoming(ui, repo, peer):
 def outgoing(ui, repo, other):
     '''Show bookmarks outgoing from repo to other
     '''
-    ui.status(_("searching for changed bookmarks\n"))
+    ui.status(_(b"searching for changed bookmarks\n"))
 
-    remotemarks = unhexlifybookmarks(other.listkeys('bookmarks'))
+    remotemarks = unhexlifybookmarks(other.listkeys(b'bookmarks'))
     r = comparebookmarks(repo, repo._bookmarks, remotemarks)
     addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = r
 
@@ -815,31 +819,31 @@ def outgoing(ui, repo, other):
     if ui.verbose:
 
         def add(b, id, st):
-            outgoings.append("   %-25s %s %s\n" % (b, getid(id), st))
+            outgoings.append(b"   %-25s %s %s\n" % (b, getid(id), st))
 
     else:
 
         def add(b, id, st):
-            outgoings.append("   %-25s %s\n" % (b, getid(id)))
+            outgoings.append(b"   %-25s %s\n" % (b, getid(id)))
 
     for b, scid, dcid in addsrc:
         # i18n: "added refers to a bookmark
-        add(b, hex(scid), _('added'))
+        add(b, hex(scid), _(b'added'))
     for b, scid, dcid in adddst:
         # i18n: "deleted" refers to a bookmark
-        add(b, ' ' * 40, _('deleted'))
+        add(b, b' ' * 40, _(b'deleted'))
     for b, scid, dcid in advsrc:
         # i18n: "advanced" refers to a bookmark
-        add(b, hex(scid), _('advanced'))
+        add(b, hex(scid), _(b'advanced'))
     for b, scid, dcid in diverge:
         # i18n: "diverged" refers to a bookmark
-        add(b, hex(scid), _('diverged'))
+        add(b, hex(scid), _(b'diverged'))
     for b, scid, dcid in differ:
         # i18n: "changed" refers to a bookmark
-        add(b, hex(scid), _('changed'))
+        add(b, hex(scid), _(b'changed'))
 
     if not outgoings:
-        ui.status(_("no changed bookmarks found\n"))
+        ui.status(_(b"no changed bookmarks found\n"))
         return 1
 
     for s in sorted(outgoings):
@@ -855,7 +859,7 @@ def summary(repo, peer):
     '''
     with peer.commandexecutor() as e:
         remotemarks = unhexlifybookmarks(
-            e.callcommand('listkeys', {'namespace': 'bookmarks',}).result()
+            e.callcommand(b'listkeys', {b'namespace': b'bookmarks',}).result()
         )
 
     r = comparebookmarks(repo, remotemarks, repo._bookmarks)
@@ -888,9 +892,9 @@ def checkformat(repo, mark):
     mark = mark.strip()
     if not mark:
         raise error.Abort(
-            _("bookmark names cannot consist entirely of " "whitespace")
+            _(b"bookmark names cannot consist entirely of " b"whitespace")
         )
-    scmutil.checknewlabel(repo, mark, 'bookmark')
+    scmutil.checknewlabel(repo, mark, b'bookmark')
     return mark
 
 
@@ -903,7 +907,7 @@ def delete(repo, tr, names):
     changes = []
     for mark in names:
         if mark not in marks:
-            raise error.Abort(_("bookmark '%s' does not exist") % mark)
+            raise error.Abort(_(b"bookmark '%s' does not exist") % mark)
         if mark == repo._activebookmark:
             deactivate(repo)
         changes.append((mark, None))
@@ -923,7 +927,7 @@ def rename(repo, tr, old, new, force=False, inactive=False):
     marks = repo._bookmarks
     mark = checkformat(repo, new)
     if old not in marks:
-        raise error.Abort(_("bookmark '%s' does not exist") % old)
+        raise error.Abort(_(b"bookmark '%s' does not exist") % old)
     changes = []
     for bm in marks.checkconflict(mark, force):
         changes.append((bm, None))
@@ -945,14 +949,14 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
     Raises an abort error if old is not in the bookmark store.
     """
     marks = repo._bookmarks
-    cur = repo['.'].node()
+    cur = repo[b'.'].node()
     newact = None
     changes = []
     hiddenrev = None
 
     # unhide revs if any
     if rev:
-        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+        repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
 
     for mark in names:
         mark = checkformat(repo, mark)
@@ -972,11 +976,11 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
         changes.append((mark, tgt))
 
     if hiddenrev:
-        repo.ui.warn(_("bookmarking hidden changeset %s\n") % hiddenrev)
+        repo.ui.warn(_(b"bookmarking hidden changeset %s\n") % hiddenrev)
 
         if ctx.obsolete():
-            msg = obsutil._getfilteredreason(repo, "%s" % hiddenrev, ctx)
-            repo.ui.warn("(%s)\n" % msg)
+            msg = obsutil._getfilteredreason(repo, b"%s" % hiddenrev, ctx)
+            repo.ui.warn(b"(%s)\n" % msg)
 
     marks.applychanges(repo, tr, changes)
     if not inactive and cur == marks[newact] and not rev:
@@ -993,24 +997,24 @@ def _printbookmarks(ui, repo, fm, bmarks):
     """
     hexfn = fm.hexfunc
     if len(bmarks) == 0 and fm.isplain():
-        ui.status(_("no bookmarks set\n"))
+        ui.status(_(b"no bookmarks set\n"))
     for bmark, (n, prefix, label) in sorted(bmarks.iteritems()):
         fm.startitem()
         fm.context(repo=repo)
         if not ui.quiet:
-            fm.plain(' %s ' % prefix, label=label)
-        fm.write('bookmark', '%s', bmark, label=label)
-        pad = " " * (25 - encoding.colwidth(bmark))
+            fm.plain(b' %s ' % prefix, label=label)
+        fm.write(b'bookmark', b'%s', bmark, label=label)
+        pad = b" " * (25 - encoding.colwidth(bmark))
         fm.condwrite(
             not ui.quiet,
-            'rev node',
-            pad + ' %d:%s',
+            b'rev node',
+            pad + b' %d:%s',
             repo.changelog.rev(n),
             hexfn(n),
             label=label,
         )
         fm.data(active=(activebookmarklabel in label))
-        fm.plain('\n')
+        fm.plain(b'\n')
 
 
 def printbookmarks(ui, repo, fm, names=None):
@@ -1022,12 +1026,12 @@ def printbookmarks(ui, repo, fm, names=None):
     bmarks = {}
     for bmark in names or marks:
         if bmark not in marks:
-            raise error.Abort(_("bookmark '%s' does not exist") % bmark)
+            raise error.Abort(_(b"bookmark '%s' does not exist") % bmark)
         active = repo._activebookmark
         if bmark == active:
-            prefix, label = '*', activebookmarklabel
+            prefix, label = b'*', activebookmarklabel
         else:
-            prefix, label = ' ', ''
+            prefix, label = b' ', b''
 
         bmarks[bmark] = (marks[bmark], prefix, label)
     _printbookmarks(ui, repo, fm, bmarks)
@@ -1035,7 +1039,7 @@ def printbookmarks(ui, repo, fm, names=None):
 
 def preparehookargs(name, old, new):
     if new is None:
-        new = ''
+        new = b''
     if old is None:
-        old = ''
-    return {'bookmark': name, 'node': hex(new), 'oldnode': hex(old)}
+        old = b''
+    return {b'bookmark': name, b'node': hex(new), b'oldnode': hex(old)}

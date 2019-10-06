@@ -34,15 +34,15 @@ _disabledextensions = {}
 _aftercallbacks = {}
 _order = []
 _builtin = {
-    'hbisect',
-    'bookmarks',
-    'color',
-    'parentrevspec',
-    'progress',
-    'interhg',
-    'inotify',
-    'hgcia',
-    'shelve',
+    b'hbisect',
+    b'bookmarks',
+    b'color',
+    b'parentrevspec',
+    b'progress',
+    b'interhg',
+    b'inotify',
+    b'hgcia',
+    b'shelve',
 }
 
 
@@ -50,9 +50,9 @@ def extensions(ui=None):
     if ui:
 
         def enabled(name):
-            for format in ['%s', 'hgext.%s']:
-                conf = ui.config('extensions', format % name)
-                if conf is not None and not conf.startswith('!'):
+            for format in [b'%s', b'hgext.%s']:
+                conf = ui.config(b'extensions', format % name)
+                if conf is not None and not conf.startswith(b'!'):
                     return True
 
     else:
@@ -70,7 +70,7 @@ def find(name):
         mod = _extensions[name]
     except KeyError:
         for k, v in _extensions.iteritems():
-            if k.endswith('.' + name) or k.endswith('/' + name):
+            if k.endswith(b'.' + name) or k.endswith(b'/' + name):
                 mod = v
                 break
     if not mod:
@@ -79,7 +79,7 @@ def find(name):
 
 
 def loadpath(path, module_name):
-    module_name = module_name.replace('.', '_')
+    module_name = module_name.replace(b'.', b'_')
     path = util.normpath(util.expandpath(path))
     module_name = pycompat.fsdecode(module_name)
     path = pycompat.fsdecode(path)
@@ -100,7 +100,7 @@ def loadpath(path, module_name):
 def _importh(name):
     """import and return the <name> module"""
     mod = __import__(pycompat.sysstr(name))
-    components = name.split('.')
+    components = name.split(b'.')
     for comp in components[1:]:
         mod = getattr(mod, comp)
     return mod
@@ -111,18 +111,18 @@ def _importext(name, path=None, reportfunc=None):
         # the module will be loaded in sys.modules
         # choose an unique name so that it doesn't
         # conflicts with other modules
-        mod = loadpath(path, 'hgext.%s' % name)
+        mod = loadpath(path, b'hgext.%s' % name)
     else:
         try:
-            mod = _importh("hgext.%s" % name)
+            mod = _importh(b"hgext.%s" % name)
         except ImportError as err:
             if reportfunc:
-                reportfunc(err, "hgext.%s" % name, "hgext3rd.%s" % name)
+                reportfunc(err, b"hgext.%s" % name, b"hgext3rd.%s" % name)
             try:
-                mod = _importh("hgext3rd.%s" % name)
+                mod = _importh(b"hgext3rd.%s" % name)
             except ImportError as err:
                 if reportfunc:
-                    reportfunc(err, "hgext3rd.%s" % name, name)
+                    reportfunc(err, b"hgext3rd.%s" % name, name)
                 mod = _importh(name)
     return mod
 
@@ -137,7 +137,7 @@ def _reportimporterror(ui, err, failed, next):
         stringutil.forcebytestr(err),
         next,
     )
-    if ui.debugflag and ui.configbool('devel', 'debug.extensions'):
+    if ui.debugflag and ui.configbool(b'devel', b'debug.extensions'):
         ui.traceback()
 
 
@@ -152,12 +152,12 @@ def _rejectunicode(name, xs):
     elif isinstance(xs, type(u'')):
         raise error.ProgrammingError(
             b"unicode %r found in %s" % (xs, name),
-            hint="use b'' to make it byte string",
+            hint=b"use b'' to make it byte string",
         )
 
 
 # attributes set by registrar.command
-_cmdfuncattrs = ('norepo', 'optionalrepo', 'inferrepo')
+_cmdfuncattrs = (b'norepo', b'optionalrepo', b'inferrepo')
 
 
 def _validatecmdtable(ui, cmdtable):
@@ -168,22 +168,22 @@ def _validatecmdtable(ui, cmdtable):
         if not missing:
             continue
         raise error.ProgrammingError(
-            'missing attributes: %s' % ', '.join(missing),
-            hint="use @command decorator to register '%s'" % c,
+            b'missing attributes: %s' % b', '.join(missing),
+            hint=b"use @command decorator to register '%s'" % c,
         )
 
 
 def _validatetables(ui, mod):
     """Sanity check for loadable tables provided by extension module"""
-    for t in ['cmdtable', 'colortable', 'configtable']:
+    for t in [b'cmdtable', b'colortable', b'configtable']:
         _rejectunicode(t, getattr(mod, t, {}))
     for t in [
-        'filesetpredicate',
-        'internalmerge',
-        'revsetpredicate',
-        'templatefilter',
-        'templatefunc',
-        'templatekeyword',
+        b'filesetpredicate',
+        b'internalmerge',
+        b'revsetpredicate',
+        b'templatefilter',
+        b'templatefunc',
+        b'templatekeyword',
     ]:
         o = getattr(mod, t, None)
         if o:
@@ -192,7 +192,7 @@ def _validatetables(ui, mod):
 
 
 def load(ui, name, path, loadingtime=None):
-    if name.startswith('hgext.') or name.startswith('hgext/'):
+    if name.startswith(b'hgext.') or name.startswith(b'hgext/'):
         shortname = name[6:]
     else:
         shortname = name
@@ -202,7 +202,7 @@ def load(ui, name, path, loadingtime=None):
         return _extensions[shortname]
     ui.log(b'extension', b'  - loading extension: %s\n', shortname)
     _extensions[shortname] = None
-    with util.timedcm('load extension %s', shortname) as stats:
+    with util.timedcm(b'load extension %s', shortname) as stats:
         mod = _importext(name, path, bind(_reportimporterror, ui))
     ui.log(b'extension', b'  > %s extension loaded in %s\n', shortname, stats)
     if loadingtime is not None:
@@ -215,8 +215,8 @@ def load(ui, name, path, loadingtime=None):
     minver = getattr(mod, 'minimumhgversion', None)
     if minver and util.versiontuple(minver, 2) > util.versiontuple(n=2):
         msg = _(
-            '(third party extension %s requires version %s or newer '
-            'of Mercurial (current: %s); disabling)\n'
+            b'(third party extension %s requires version %s or newer '
+            b'of Mercurial (current: %s); disabling)\n'
         )
         ui.warn(msg % (shortname, minver, util.version()))
         return
@@ -228,7 +228,7 @@ def load(ui, name, path, loadingtime=None):
     ui.log(
         b'extension', b'    - invoking registered callbacks: %s\n', shortname
     )
-    with util.timedcm('callbacks extension %s', shortname) as stats:
+    with util.timedcm(b'callbacks extension %s', shortname) as stats:
         for fn in _aftercallbacks.get(shortname, []):
             fn(loaded=True)
     ui.log(b'extension', b'    > callbacks completed in %s\n', stats)
@@ -243,7 +243,7 @@ def _runuisetup(name, ui):
         except Exception as inst:
             ui.traceback(force=True)
             msg = stringutil.forcebytestr(inst)
-            ui.warn(_("*** failed to set up extension %s: %s\n") % (name, msg))
+            ui.warn(_(b"*** failed to set up extension %s: %s\n") % (name, msg))
             return False
     return True
 
@@ -256,27 +256,27 @@ def _runextsetup(name, ui):
         except Exception as inst:
             ui.traceback(force=True)
             msg = stringutil.forcebytestr(inst)
-            ui.warn(_("*** failed to set up extension %s: %s\n") % (name, msg))
+            ui.warn(_(b"*** failed to set up extension %s: %s\n") % (name, msg))
             return False
     return True
 
 
 def loadall(ui, whitelist=None):
     loadingtime = collections.defaultdict(int)
-    result = ui.configitems("extensions")
+    result = ui.configitems(b"extensions")
     if whitelist is not None:
         result = [(k, v) for (k, v) in result if k in whitelist]
     newindex = len(_order)
     ui.log(
         b'extension',
         b'loading %sextensions\n',
-        'additional ' if newindex else '',
+        b'additional ' if newindex else b'',
     )
     ui.log(b'extension', b'- processing %d entries\n', len(result))
-    with util.timedcm('load all extensions') as stats:
+    with util.timedcm(b'load all extensions') as stats:
         for (name, path) in result:
             if path:
-                if path[0:1] == '!':
+                if path[0:1] == b'!':
                     if name not in _disabledextensions:
                         ui.log(
                             b'extension',
@@ -291,16 +291,16 @@ def loadall(ui, whitelist=None):
                 msg = stringutil.forcebytestr(inst)
                 if path:
                     ui.warn(
-                        _("*** failed to import extension %s from %s: %s\n")
+                        _(b"*** failed to import extension %s from %s: %s\n")
                         % (name, path, msg)
                     )
                 else:
                     ui.warn(
-                        _("*** failed to import extension %s: %s\n")
+                        _(b"*** failed to import extension %s: %s\n")
                         % (name, msg)
                     )
                 if isinstance(inst, error.Hint) and inst.hint:
-                    ui.warn(_("*** (%s)\n") % inst.hint)
+                    ui.warn(_(b"*** (%s)\n") % inst.hint)
                 ui.traceback()
 
     ui.log(
@@ -318,7 +318,7 @@ def loadall(ui, whitelist=None):
     #
     # This one is for the list of item that must be run before running any setup
     earlyextraloaders = [
-        ('configtable', configitems, 'loadconfigtable'),
+        (b'configtable', configitems, b'loadconfigtable'),
     ]
 
     ui.log(b'extension', b'- loading configtable attributes\n')
@@ -326,10 +326,10 @@ def loadall(ui, whitelist=None):
 
     broken = set()
     ui.log(b'extension', b'- executing uisetup hooks\n')
-    with util.timedcm('all uisetup') as alluisetupstats:
+    with util.timedcm(b'all uisetup') as alluisetupstats:
         for name in _order[newindex:]:
             ui.log(b'extension', b'  - running uisetup for %s\n', name)
-            with util.timedcm('uisetup %s', name) as stats:
+            with util.timedcm(b'uisetup %s', name) as stats:
                 if not _runuisetup(name, ui):
                     ui.log(
                         b'extension',
@@ -342,12 +342,12 @@ def loadall(ui, whitelist=None):
     ui.log(b'extension', b'> all uisetup took %s\n', alluisetupstats)
 
     ui.log(b'extension', b'- executing extsetup hooks\n')
-    with util.timedcm('all extsetup') as allextetupstats:
+    with util.timedcm(b'all extsetup') as allextetupstats:
         for name in _order[newindex:]:
             if name in broken:
                 continue
             ui.log(b'extension', b'  - running extsetup for %s\n', name)
-            with util.timedcm('extsetup %s', name) as stats:
+            with util.timedcm(b'extsetup %s', name) as stats:
                 if not _runextsetup(name, ui):
                     ui.log(
                         b'extension',
@@ -365,7 +365,7 @@ def loadall(ui, whitelist=None):
 
     # Call aftercallbacks that were never met.
     ui.log(b'extension', b'- executing remaining aftercallbacks\n')
-    with util.timedcm('aftercallbacks') as stats:
+    with util.timedcm(b'aftercallbacks') as stats:
         for shortname in _aftercallbacks:
             if shortname in _extensions:
                 continue
@@ -403,16 +403,16 @@ def loadall(ui, whitelist=None):
     #   which takes (ui, extensionname, extraobj) arguments
     ui.log(b'extension', b'- loading extension registration objects\n')
     extraloaders = [
-        ('cmdtable', commands, 'loadcmdtable'),
-        ('colortable', color, 'loadcolortable'),
-        ('filesetpredicate', fileset, 'loadpredicate'),
-        ('internalmerge', filemerge, 'loadinternalmerge'),
-        ('revsetpredicate', revset, 'loadpredicate'),
-        ('templatefilter', templatefilters, 'loadfilter'),
-        ('templatefunc', templatefuncs, 'loadfunction'),
-        ('templatekeyword', templatekw, 'loadkeyword'),
+        (b'cmdtable', commands, b'loadcmdtable'),
+        (b'colortable', color, b'loadcolortable'),
+        (b'filesetpredicate', fileset, b'loadpredicate'),
+        (b'internalmerge', filemerge, b'loadinternalmerge'),
+        (b'revsetpredicate', revset, b'loadpredicate'),
+        (b'templatefilter', templatefilters, b'loadfilter'),
+        (b'templatefunc', templatefuncs, b'loadfunction'),
+        (b'templatekeyword', templatekw, b'loadkeyword'),
     ]
-    with util.timedcm('load registration objects') as stats:
+    with util.timedcm(b'load registration objects') as stats:
         _loadextra(ui, newindex, extraloaders)
     ui.log(
         b'extension',
@@ -482,7 +482,7 @@ def populateui(ui):
         except Exception as inst:
             ui.traceback(force=True)
             ui.warn(
-                _('*** failed to populate ui by extension %s: %s\n')
+                _(b'*** failed to populate ui by extension %s: %s\n')
                 % (name, stringutil.forcebytestr(inst))
             )
 
@@ -709,15 +709,15 @@ def _disabledpaths():
 
     exts = {}
     for e in files:
-        if e.endswith('.py'):
-            name = e.rsplit('.', 1)[0]
+        if e.endswith(b'.py'):
+            name = e.rsplit(b'.', 1)[0]
             path = os.path.join(extpath, e)
         else:
             name = e
-            path = os.path.join(extpath, e, '__init__.py')
+            path = os.path.join(extpath, e, b'__init__.py')
             if not os.path.exists(path):
                 continue
-        if name in exts or name in _order or name == '__init__':
+        if name in exts or name in _order or name == b'__init__':
             continue
         exts[name] = path
     for name, path in _disabledextensions.iteritems():
@@ -737,13 +737,13 @@ def _moduledoc(file):
     result = []
 
     line = file.readline()
-    while line[:1] == '#' or not line.strip():
+    while line[:1] == b'#' or not line.strip():
         line = file.readline()
         if not line:
             break
 
     start = line[:3]
-    if start == '"""' or start == "'''":
+    if start == b'"""' or start == b"'''":
         line = line[3:]
         while line:
             if line.rstrip().endswith(start):
@@ -758,13 +758,13 @@ def _moduledoc(file):
     else:
         return None
 
-    return ''.join(result)
+    return b''.join(result)
 
 
 def _disabledhelp(path):
     '''retrieve help synopsis of a disabled extension (without importing)'''
     try:
-        with open(path, 'rb') as src:
+        with open(path, b'rb') as src:
             doc = _moduledoc(src)
     except IOError:
         return
@@ -772,7 +772,7 @@ def _disabledhelp(path):
     if doc:  # extracting localized synopsis
         return gettext(doc)
     else:
-        return _('(no help text available)')
+        return _(b'(no help text available)')
 
 
 def disabled():
@@ -841,7 +841,7 @@ def _disabledcmdtable(path):
 
     This may raise IOError or SyntaxError.
     """
-    with open(path, 'rb') as src:
+    with open(path, b'rb') as src:
         root = ast.parse(src.read(), path)
     cmdtable = {}
     for node in _walkcommand(root):
@@ -906,9 +906,9 @@ def enabled(shortname=True):
     '''return a dict of {name: desc} of extensions'''
     exts = {}
     for ename, ext in extensions():
-        doc = gettext(ext.__doc__) or _('(no help text available)')
+        doc = gettext(ext.__doc__) or _(b'(no help text available)')
         if shortname:
-            ename = ename.split('.')[-1]
+            ename = ename.split(b'.')[-1]
         exts[ename] = doc.splitlines()[0].strip()
 
     return exts
@@ -921,17 +921,17 @@ def notloaded():
 
 def moduleversion(module):
     '''return version information from given module as a string'''
-    if util.safehasattr(module, 'getversion') and callable(module.getversion):
+    if util.safehasattr(module, b'getversion') and callable(module.getversion):
         version = module.getversion()
-    elif util.safehasattr(module, '__version__'):
+    elif util.safehasattr(module, b'__version__'):
         version = module.__version__
     else:
-        version = ''
+        version = b''
     if isinstance(version, (list, tuple)):
-        version = '.'.join(pycompat.bytestr(o) for o in version)
+        version = b'.'.join(pycompat.bytestr(o) for o in version)
     return version
 
 
 def ismoduleinternal(module):
     exttestedwith = getattr(module, 'testedwith', None)
-    return exttestedwith == "ships-with-hg-core"
+    return exttestedwith == b"ships-with-hg-core"

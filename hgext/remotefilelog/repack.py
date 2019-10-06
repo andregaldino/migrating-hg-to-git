@@ -39,13 +39,13 @@ class RepackAlreadyRunning(error.Abort):
 def backgroundrepack(
     repo, incremental=True, packsonly=False, ensurestart=False
 ):
-    cmd = [procutil.hgexecutable(), '-R', repo.origroot, 'repack']
-    msg = _("(running background repack)\n")
+    cmd = [procutil.hgexecutable(), b'-R', repo.origroot, b'repack']
+    msg = _(b"(running background repack)\n")
     if incremental:
-        cmd.append('--incremental')
-        msg = _("(running background incremental repack)\n")
+        cmd.append(b'--incremental')
+        msg = _(b"(running background incremental repack)\n")
     if packsonly:
-        cmd.append('--packsonly')
+        cmd.append(b'--packsonly')
     repo.ui.warn(msg)
     # We know this command will find a binary, so don't block on it starting.
     procutil.runbgcommand(cmd, encoding.environ, ensurestart=ensurestart)
@@ -54,7 +54,7 @@ def backgroundrepack(
 def fullrepack(repo, options=None):
     """If ``packsonly`` is True, stores creating only loose objects are skipped.
     """
-    if util.safehasattr(repo, 'shareddatastores'):
+    if util.safehasattr(repo, b'shareddatastores'):
         datasource = contentstore.unioncontentstore(*repo.shareddatastores)
         historysource = metadatastore.unionmetadatastore(
             *repo.sharedhistorystores, allowincomplete=True
@@ -72,7 +72,7 @@ def fullrepack(repo, options=None):
             options=options,
         )
 
-    if util.safehasattr(repo.manifestlog, 'datastore'):
+    if util.safehasattr(repo.manifestlog, b'datastore'):
         localdata, shareddata = _getmanifeststores(repo)
         lpackpath, ldstores, lhstores = localdata
         spackpath, sdstores, shstores = shareddata
@@ -112,7 +112,7 @@ def incrementalrepack(repo, options=None):
     """This repacks the repo by looking at the distribution of pack files in the
     repo and performing the most minimal repack to keep the repo in good shape.
     """
-    if util.safehasattr(repo, 'shareddatastores'):
+    if util.safehasattr(repo, b'shareddatastores'):
         packpath = shallowutil.getcachepackpath(
             repo, constants.FILEPACK_CATEGORY
         )
@@ -125,7 +125,7 @@ def incrementalrepack(repo, options=None):
             options=options,
         )
 
-    if util.safehasattr(repo.manifestlog, 'datastore'):
+    if util.safehasattr(repo.manifestlog, b'datastore'):
         localdata, shareddata = _getmanifeststores(repo)
         lpackpath, ldstores, lhstores = localdata
         spackpath, sdstores, shstores = shareddata
@@ -181,13 +181,13 @@ def _deletebigpacks(repo, folder, files):
     """Deletes packfiles that are bigger than ``packs.maxpacksize``.
 
     Returns ``files` with the removed files omitted."""
-    maxsize = repo.ui.configbytes("packs", "maxpacksize")
+    maxsize = repo.ui.configbytes(b"packs", b"maxpacksize")
     if maxsize <= 0:
         return files
 
     # This only considers datapacks today, but we could broaden it to include
     # historypacks.
-    VALIDEXTS = [".datapack", ".dataidx"]
+    VALIDEXTS = [b".datapack", b".dataidx"]
 
     # Either an oversize index or datapack will trigger cleanup of the whole
     # pack:
@@ -202,7 +202,7 @@ def _deletebigpacks(repo, folder, files):
         for ext in VALIDEXTS:
             path = rootpath + ext
             repo.ui.debug(
-                'removing oversize packfile %s (%s)\n'
+                b'removing oversize packfile %s (%s)\n'
                 % (path, util.bytecount(os.stat(path).st_size))
             )
             os.unlink(path)
@@ -273,14 +273,16 @@ def _incrementalrepack(
 
 def _computeincrementaldatapack(ui, files):
     opts = {
-        'gencountlimit': ui.configint('remotefilelog', 'data.gencountlimit'),
-        'generations': ui.configlist('remotefilelog', 'data.generations'),
-        'maxrepackpacks': ui.configint('remotefilelog', 'data.maxrepackpacks'),
-        'repackmaxpacksize': ui.configbytes(
-            'remotefilelog', 'data.repackmaxpacksize'
+        b'gencountlimit': ui.configint(b'remotefilelog', b'data.gencountlimit'),
+        b'generations': ui.configlist(b'remotefilelog', b'data.generations'),
+        b'maxrepackpacks': ui.configint(
+            b'remotefilelog', b'data.maxrepackpacks'
         ),
-        'repacksizelimit': ui.configbytes(
-            'remotefilelog', 'data.repacksizelimit'
+        b'repackmaxpacksize': ui.configbytes(
+            b'remotefilelog', b'data.repackmaxpacksize'
+        ),
+        b'repacksizelimit': ui.configbytes(
+            b'remotefilelog', b'data.repacksizelimit'
         ),
     }
 
@@ -292,18 +294,20 @@ def _computeincrementaldatapack(ui, files):
 
 def _computeincrementalhistorypack(ui, files):
     opts = {
-        'gencountlimit': ui.configint('remotefilelog', 'history.gencountlimit'),
-        'generations': ui.configlist(
-            'remotefilelog', 'history.generations', ['100MB']
+        b'gencountlimit': ui.configint(
+            b'remotefilelog', b'history.gencountlimit'
         ),
-        'maxrepackpacks': ui.configint(
-            'remotefilelog', 'history.maxrepackpacks'
+        b'generations': ui.configlist(
+            b'remotefilelog', b'history.generations', [b'100MB']
         ),
-        'repackmaxpacksize': ui.configbytes(
-            'remotefilelog', 'history.repackmaxpacksize', '400MB'
+        b'maxrepackpacks': ui.configint(
+            b'remotefilelog', b'history.maxrepackpacks'
         ),
-        'repacksizelimit': ui.configbytes(
-            'remotefilelog', 'history.repacksizelimit'
+        b'repackmaxpacksize': ui.configbytes(
+            b'remotefilelog', b'history.repackmaxpacksize', b'400MB'
+        ),
+        b'repacksizelimit': ui.configbytes(
+            b'remotefilelog', b'history.repacksizelimit'
         ),
     }
 
@@ -341,7 +345,7 @@ def _computeincrementalpack(files, opts):
     """
 
     limits = list(
-        sorted((util.sizetoint(s) for s in opts['generations']), reverse=True)
+        sorted((util.sizetoint(s) for s in opts[b'generations']), reverse=True)
     )
     limits.append(0)
 
@@ -353,7 +357,7 @@ def _computeincrementalpack(files, opts):
     sizes = {}
     for prefix, mode, stat in files:
         size = stat.st_size
-        if size > opts['repackmaxpacksize']:
+        if size > opts[b'repackmaxpacksize']:
             continue
 
         sizes[prefix] = size
@@ -370,7 +374,7 @@ def _computeincrementalpack(files, opts):
     # Find the largest generation with more than gencountlimit packs
     genpacks = []
     for i, limit in enumerate(limits):
-        if len(generations[i]) > opts['gencountlimit']:
+        if len(generations[i]) > opts[b'gencountlimit']:
             # Sort to be smallest last, for easy popping later
             genpacks.extend(
                 sorted(generations[i], reverse=True, key=lambda x: sizes[x])
@@ -382,9 +386,9 @@ def _computeincrementalpack(files, opts):
     genpacks = genpacks[:-3]
     repacksize = sum(sizes[n] for n in chosenpacks)
     while (
-        repacksize < opts['repacksizelimit']
+        repacksize < opts[b'repacksizelimit']
         and genpacks
-        and len(chosenpacks) < opts['maxrepackpacks']
+        and len(chosenpacks) < opts[b'maxrepackpacks']
     ):
         chosenpacks.append(genpacks.pop())
         repacksize += sizes[chosenpacks[-1]]
@@ -404,12 +408,12 @@ def _runrepack(
         filectx = repo.filectx(filename, fileid=node)
         filetime = repo[filectx.linkrev()].date()
 
-        ttl = repo.ui.configint('remotefilelog', 'nodettl')
+        ttl = repo.ui.configint(b'remotefilelog', b'nodettl')
 
         limit = time.time() - ttl
         return filetime[0] < limit
 
-    garbagecollect = repo.ui.configbool('remotefilelog', 'gcrepack')
+    garbagecollect = repo.ui.configbool(b'remotefilelog', b'gcrepack')
     if not fullhistory:
         fullhistory = history
     packer = repacker(
@@ -429,7 +433,10 @@ def _runrepack(
                 packer.run(dpack, hpack)
             except error.LockHeld:
                 raise RepackAlreadyRunning(
-                    _("skipping repack - another repack " "is already running")
+                    _(
+                        b"skipping repack - another repack "
+                        b"is already running"
+                    )
                 )
 
 
@@ -449,16 +456,16 @@ def keepset(repo, keyfn, lastkeepkeys=None):
     # 2. Draft commits
     # 3. Parents of draft commits
     # 4. Pullprefetch and bgprefetchrevs revsets if specified
-    revs = ['.', 'draft()', 'parents(draft())']
-    prefetchrevs = repo.ui.config('remotefilelog', 'pullprefetch', None)
+    revs = [b'.', b'draft()', b'parents(draft())']
+    prefetchrevs = repo.ui.config(b'remotefilelog', b'pullprefetch', None)
     if prefetchrevs:
-        revs.append('(%s)' % prefetchrevs)
-    prefetchrevs = repo.ui.config('remotefilelog', 'bgprefetchrevs', None)
+        revs.append(b'(%s)' % prefetchrevs)
+    prefetchrevs = repo.ui.config(b'remotefilelog', b'bgprefetchrevs', None)
     if prefetchrevs:
-        revs.append('(%s)' % prefetchrevs)
-    revs = '+'.join(revs)
+        revs.append(b'(%s)' % prefetchrevs)
+    revs = b'+'.join(revs)
 
-    revs = ['sort((%s), "topo")' % revs]
+    revs = [b'sort((%s), "topo")' % revs]
     keep = scmutil.revrange(repo, revs)
 
     processed = set()
@@ -520,7 +527,7 @@ class repacker(object):
         self.options = options
         if self.garbagecollect:
             if not isold:
-                raise ValueError("Function 'isold' is not properly specified")
+                raise ValueError(b"Function 'isold' is not properly specified")
             # use (filename, node) tuple as a keepset key
             self.keepkeys = keepset(repo, lambda f, n: (f, n))
             self.isold = isold
@@ -529,9 +536,9 @@ class repacker(object):
         ledger = repackledger()
 
         with lockmod.lock(
-            repacklockvfs(self.repo), "repacklock", desc=None, timeout=0
+            repacklockvfs(self.repo), b"repacklock", desc=None, timeout=0
         ):
-            self.repo.hook('prerepack')
+            self.repo.hook(b'prerepack')
 
             # Populate ledger from source
             self.data.markledger(ledger, options=self.options)
@@ -571,8 +578,8 @@ class repacker(object):
         orphans = list(sorted(orphans, key=getsize, reverse=True))
         if ui.debugflag:
             ui.debug(
-                "%s: orphan chain: %s\n"
-                % (filename, ", ".join([short(s) for s in orphans]))
+                b"%s: orphan chain: %s\n"
+                % (filename, b", ".join([short(s) for s in orphans]))
             )
 
         # Create one contiguous chain and reassign deltabases.
@@ -588,7 +595,7 @@ class repacker(object):
 
     def repackdata(self, ledger, target):
         ui = self.repo.ui
-        maxchainlen = ui.configint('packs', 'maxchainlen', 1000)
+        maxchainlen = ui.configint(b'packs', b'maxchainlen', 1000)
 
         byfile = {}
         for entry in ledger.entries.itervalues():
@@ -597,7 +604,7 @@ class repacker(object):
 
         count = 0
         repackprogress = ui.makeprogress(
-            _("repacking data"), unit=self.unit, total=len(byfile)
+            _(b"repacking data"), unit=self.unit, total=len(byfile)
         )
         for filename, entries in sorted(byfile.iteritems()):
             repackprogress.update(count)
@@ -606,7 +613,7 @@ class repacker(object):
             nodes = list(node for node in entries)
             nohistory = []
             buildprogress = ui.makeprogress(
-                _("building history"), unit='nodes', total=len(nodes)
+                _(b"building history"), unit=b'nodes', total=len(nodes)
             )
             for i, node in enumerate(nodes):
                 if node in ancestors:
@@ -629,7 +636,7 @@ class repacker(object):
             orderednodes = list(reversed(self._toposort(ancestors)))
             if len(nohistory) > 0:
                 ui.debug(
-                    'repackdata: %d nodes without history\n' % len(nohistory)
+                    b'repackdata: %d nodes without history\n' % len(nohistory)
                 )
             orderednodes.extend(sorted(nohistory))
 
@@ -659,7 +666,7 @@ class repacker(object):
             referenced = set()
             nodes = set(nodes)
             processprogress = ui.makeprogress(
-                _("processing nodes"), unit='nodes', total=len(orderednodes)
+                _(b"processing nodes"), unit=b'nodes', total=len(orderednodes)
             )
             for i, node in enumerate(orderednodes):
                 processprogress.update(i)
@@ -698,7 +705,7 @@ class repacker(object):
                             deltabases[p2] = (node, chainlen + 1)
 
             # experimental config: repack.chainorphansbysize
-            if ui.configbool('repack', 'chainorphansbysize'):
+            if ui.configbool(b'repack', b'chainorphansbysize'):
                 orphans = nobase - referenced
                 orderednodes = self._chainorphans(
                     ui, filename, orderednodes, orphans, deltabases
@@ -751,7 +758,7 @@ class repacker(object):
                 byfile.setdefault(entry.filename, {})[entry.node] = entry
 
         progress = ui.makeprogress(
-            _("repacking history"), unit=self.unit, total=len(byfile)
+            _(b"repacking history"), unit=self.unit, total=len(byfile)
         )
         for filename, entries in sorted(byfile.iteritems()):
             ancestors = {}
@@ -894,7 +901,7 @@ class repackentry(object):
 
 
 def repacklockvfs(repo):
-    if util.safehasattr(repo, 'name'):
+    if util.safehasattr(repo, b'name'):
         # Lock in the shared cache so repacks across multiple copies of the same
         # repo are coordinated.
         sharedcachepath = shallowutil.getcachepackpath(

@@ -128,12 +128,12 @@ def copycache(srcrepo, destrepo):
     """Copy cached attributes from srcrepo to destrepo"""
     destfilecache = destrepo._filecache
     srcfilecache = srcrepo._filecache
-    if 'changelog' in srcfilecache:
-        destfilecache['changelog'] = ce = srcfilecache['changelog']
+    if b'changelog' in srcfilecache:
+        destfilecache[b'changelog'] = ce = srcfilecache[b'changelog']
         ce.obj.opener = ce.obj._realopener = destrepo.svfs
-    if 'obsstore' in srcfilecache:
-        destfilecache['obsstore'] = ce = srcfilecache['obsstore']
+    if b'obsstore' in srcfilecache:
+        destfilecache[b'obsstore'] = ce = srcfilecache[b'obsstore']
         ce.obj.svfs = destrepo.svfs
-    if '_phasecache' in srcfilecache:
-        destfilecache['_phasecache'] = ce = srcfilecache['_phasecache']
+    if b'_phasecache' in srcfilecache:
+        destfilecache[b'_phasecache'] = ce = srcfilecache[b'_phasecache']
         ce.obj.opener = destrepo.svfs

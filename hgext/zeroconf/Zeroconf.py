@@ -76,9 +76,9 @@ from __future__ import absolute_import, print_function
                  ensure names end in '.local.'
                  timeout on receiving socket for clean shutdown"""
 
-__author__ = "Paul Scott-Murphy"
-__email__ = "paul at scott dash murphy dot com"
-__version__ = "0.12"
+__author__ = b"Paul Scott-Murphy"
+__email__ = b"paul at scott dash murphy dot com"
+__version__ = b"0.12"
 
 import errno
 import itertools
@@ -91,11 +91,11 @@ import traceback
 
 from mercurial import pycompat
 
-__all__ = ["Zeroconf", "ServiceInfo", "ServiceBrowser"]
+__all__ = [b"Zeroconf", b"ServiceInfo", b"ServiceBrowser"]
 
 # hook for threads
 
-globals()['_GLOBAL_DONE'] = 0
+globals()[b'_GLOBAL_DONE'] = 0
 
 # Some timing constants
 
@@ -160,34 +160,34 @@ _TYPE_ANY = 255
 # Mapping constants to names
 
 _CLASSES = {
-    _CLASS_IN: "in",
-    _CLASS_CS: "cs",
-    _CLASS_CH: "ch",
-    _CLASS_HS: "hs",
-    _CLASS_NONE: "none",
-    _CLASS_ANY: "any",
+    _CLASS_IN: b"in",
+    _CLASS_CS: b"cs",
+    _CLASS_CH: b"ch",
+    _CLASS_HS: b"hs",
+    _CLASS_NONE: b"none",
+    _CLASS_ANY: b"any",
 }
 
 _TYPES = {
-    _TYPE_A: "a",
-    _TYPE_NS: "ns",
-    _TYPE_MD: "md",
-    _TYPE_MF: "mf",
-    _TYPE_CNAME: "cname",
-    _TYPE_SOA: "soa",
-    _TYPE_MB: "mb",
-    _TYPE_MG: "mg",
-    _TYPE_MR: "mr",
-    _TYPE_NULL: "null",
-    _TYPE_WKS: "wks",
-    _TYPE_PTR: "ptr",
-    _TYPE_HINFO: "hinfo",
-    _TYPE_MINFO: "minfo",
-    _TYPE_MX: "mx",
-    _TYPE_TXT: "txt",
-    _TYPE_AAAA: "quada",
-    _TYPE_SRV: "srv",
-    _TYPE_ANY: "any",
+    _TYPE_A: b"a",
+    _TYPE_NS: b"ns",
+    _TYPE_MD: b"md",
+    _TYPE_MF: b"mf",
+    _TYPE_CNAME: b"cname",
+    _TYPE_SOA: b"soa",
+    _TYPE_MB: b"mb",
+    _TYPE_MG: b"mg",
+    _TYPE_MR: b"mr",
+    _TYPE_NULL: b"null",
+    _TYPE_WKS: b"wks",
+    _TYPE_PTR: b"ptr",
+    _TYPE_HINFO: b"hinfo",
+    _TYPE_MINFO: b"minfo",
+    _TYPE_MX: b"mx",
+    _TYPE_TXT: b"txt",
+    _TYPE_AAAA: b"quada",
+    _TYPE_SRV: b"srv",
+    _TYPE_ANY: b"any",
 }
 
 # utility functions
@@ -223,7 +223,7 @@ class BadTypeInNameException(Exception):
 
 class BadDomainName(Exception):
     def __init__(self, pos):
-        Exception.__init__(self, "at position %s" % pos)
+        Exception.__init__(self, b"at position %s" % pos)
 
 
 class BadDomainNameCircular(BadDomainName):
@@ -262,31 +262,31 @@ class DNSEntry(object):
         try:
             return _CLASSES[clazz]
         except KeyError:
-            return "?(%s)" % clazz
+            return b"?(%s)" % clazz
 
     def getType(self, type):
         """Type accessor"""
         try:
             return _TYPES[type]
         except KeyError:
-            return "?(%s)" % type
+            return b"?(%s)" % type
 
     def toString(self, hdr, other):
         """String representation with additional information"""
-        result = "%s[%s,%s" % (
+        result = b"%s[%s,%s" % (
             hdr,
             self.getType(self.type),
             self.getClazz(self.clazz),
         )
         if self.unique:
-            result += "-unique,"
+            result += b"-unique,"
         else:
-            result += ","
+            result += b","
         result += self.name
         if other is not None:
-            result += ",%s]" % other
+            result += b",%s]" % other
         else:
-            result += "]"
+            result += b"]"
         return result
 
 
@@ -296,7 +296,7 @@ class DNSQuestion(DNSEntry):
     def __init__(self, name, type, clazz):
         if pycompat.ispy3 and isinstance(name, str):
             name = name.encode('ascii')
-        if not name.endswith(".local."):
+        if not name.endswith(b".local."):
             raise NonLocalNameException(name)
         DNSEntry.__init__(self, name, type, clazz)
 
@@ -310,7 +310,7 @@ class DNSQuestion(DNSEntry):
 
     def __repr__(self):
         """String representation"""
-        return DNSEntry.toString(self, "question", None)
+        return DNSEntry.toString(self, b"question", None)
 
 
 class DNSRecord(DNSEntry):
@@ -371,12 +371,12 @@ class DNSRecord(DNSEntry):
 
     def toString(self, other):
         """String representation with additional information"""
-        arg = "%s/%s,%s" % (
+        arg = b"%s/%s,%s" % (
             self.ttl,
             self.getRemainingTTL(currentTimeMillis()),
             other,
         )
-        return DNSEntry.toString(self, "record", arg)
+        return DNSEntry.toString(self, b"record", arg)
 
 
 class DNSAddress(DNSRecord):
@@ -425,7 +425,7 @@ class DNSHinfo(DNSRecord):
 
     def __repr__(self):
         """String representation"""
-        return self.cpu + " " + self.os
+        return self.cpu + b" " + self.os
 
 
 class DNSPointer(DNSRecord):
@@ -470,7 +470,7 @@ class DNSText(DNSRecord):
     def __repr__(self):
         """String representation"""
         if len(self.text) > 10:
-            return self.toString(self.text[:7] + "...")
+            return self.toString(self.text[:7] + b"...")
         else:
             return self.toString(self.text)
 
@@ -505,7 +505,7 @@ class DNSService(DNSRecord):
 
     def __repr__(self):
         """String representation"""
-        return self.toString("%s:%s" % (self.server, self.port))
+        return self.toString(b"%s:%s" % (self.server, self.port))
 
 
 class DNSIncoming(object):
@@ -528,7 +528,7 @@ class DNSIncoming(object):
 
     def readHeader(self):
         """Reads header portion of packet"""
-        format = '!HHHHHH'
+        format = b'!HHHHHH'
         length = struct.calcsize(format)
         info = struct.unpack(
             format, self.data[self.offset : self.offset + length]
@@ -544,7 +544,7 @@ class DNSIncoming(object):
 
     def readQuestions(self):
         """Reads questions section of packet"""
-        format = '!HH'
+        format = b'!HH'
         length = struct.calcsize(format)
         for i in range(0, self.numquestions):
             name = self.readName()
@@ -561,7 +561,7 @@ class DNSIncoming(object):
 
     def readInt(self):
         """Reads an integer from the packet"""
-        format = '!I'
+        format = b'!I'
         length = struct.calcsize(format)
         info = struct.unpack(
             format, self.data[self.offset : self.offset + length]
@@ -577,7 +577,7 @@ class DNSIncoming(object):
 
     def readString(self, len):
         """Reads a string of a given length from the packet"""
-        format = '!%ds' % len
+        format = b'!%ds' % len
         length = struct.calcsize(format)
         info = struct.unpack(
             format, self.data[self.offset : self.offset + length]
@@ -587,7 +587,7 @@ class DNSIncoming(object):
 
     def readUnsignedShort(self):
         """Reads an unsigned short from the packet"""
-        format = '!H'
+        format = b'!H'
         length = struct.calcsize(format)
         info = struct.unpack(
             format, self.data[self.offset : self.offset + length]
@@ -597,7 +597,7 @@ class DNSIncoming(object):
 
     def readOthers(self):
         """Reads answers, authorities and additionals section of the packet"""
-        format = '!HHiH'
+        format = b'!HHiH'
         length = struct.calcsize(format)
         n = self.numanswers + self.numauthorities + self.numadditionals
         for i in range(0, n):
@@ -746,31 +746,31 @@ class DNSOutgoing(object):
 
     def writeByte(self, value):
         """Writes a single byte to the packet"""
-        format = '!c'
+        format = b'!c'
         self.data.append(struct.pack(format, chr(value)))
         self.size += 1
 
     def insertShort(self, index, value):
         """Inserts an unsigned short in a certain position in the packet"""
-        format = '!H'
+        format = b'!H'
         self.data.insert(index, struct.pack(format, value))
         self.size += 2
 
     def writeShort(self, value):
         """Writes an unsigned short to the packet"""
-        format = '!H'
+        format = b'!H'
         self.data.append(struct.pack(format, value))
         self.size += 2
 
     def writeInt(self, value):
         """Writes an unsigned integer to the packet"""
-        format = '!I'
+        format = b'!I'
         self.data.append(struct.pack(format, int(value)))
         self.size += 4
 
     def writeString(self, value, length):
         """Writes a string to the packet"""
-        format = '!' + str(length) + 's'
+        format = b'!' + str(length) + b's'
         self.data.append(struct.pack(format, value))
         self.size += length
 
@@ -796,8 +796,8 @@ class DNSOutgoing(object):
             # for future pointers to it.
             #
             self.names[name] = self.size
-            parts = name.split('.')
-            if parts[-1] == '':
+            parts = name.split(b'.')
+            if parts[-1] == b'':
                 parts = parts[:-1]
             for part in parts:
                 self.writeUTF(part)
@@ -835,7 +835,7 @@ class DNSOutgoing(object):
         record.write(self)
         self.size -= 2
 
-        length = len(''.join(self.data[index:]))
+        length = len(b''.join(self.data[index:]))
         self.insertShort(index, length)  # Here is the short we adjusted for
 
     def packet(self):
@@ -863,7 +863,7 @@ class DNSOutgoing(object):
                 self.insertShort(0, 0)
             else:
                 self.insertShort(0, self.id)
-        return ''.join(self.data)
+        return b''.join(self.data)
 
 
 class DNSCache(object):
@@ -939,7 +939,7 @@ class Engine(threading.Thread):
         self.start()
 
     def run(self):
-        while not globals()['_GLOBAL_DONE']:
+        while not globals()[b'_GLOBAL_DONE']:
             rs = self.getReaders()
             if len(rs) == 0:
                 # No sockets to manage, but we wait for the timeout
@@ -955,7 +955,7 @@ class Engine(threading.Thread):
                         try:
                             self.readers[sock].handle_read()
                         except Exception:
-                            if not globals()['_GLOBAL_DONE']:
+                            if not globals()[b'_GLOBAL_DONE']:
                                 traceback.print_exc()
                 except Exception:
                     pass
@@ -1035,7 +1035,7 @@ class Reaper(threading.Thread):
     def run(self):
         while True:
             self.zeroconf.wait(10 * 1000)
-            if globals()['_GLOBAL_DONE']:
+            if globals()[b'_GLOBAL_DONE']:
                 return
             now = currentTimeMillis()
             for record in self.zeroconf.cache.entries():
@@ -1108,7 +1108,7 @@ class ServiceBrowser(threading.Thread):
             now = currentTimeMillis()
             if len(self.list) == 0 and self.nexttime > now:
                 self.zeroconf.wait(self.nexttime - now)
-            if globals()['_GLOBAL_DONE'] or self.done:
+            if globals()[b'_GLOBAL_DONE'] or self.done:
                 return
             now = currentTimeMillis()
 
@@ -1174,24 +1174,24 @@ class ServiceInfo(object):
         if isinstance(properties, dict):
             self.properties = properties
             list = []
-            result = ''
+            result = b''
             for key in properties:
                 value = properties[key]
                 if value is None:
-                    suffix = ''
+                    suffix = b''
                 elif isinstance(value, str):
                     suffix = value
                 elif isinstance(value, int):
                     if value:
-                        suffix = 'true'
+                        suffix = b'true'
                     else:
-                        suffix = 'false'
+                        suffix = b'false'
                 else:
-                    suffix = ''
-                list.append('='.join((key, suffix)))
+                    suffix = b''
+                list.append(b'='.join((key, suffix)))
             for item in list:
-                result = ''.join(
-                    (result, struct.pack('!c', chr(len(item))), item)
+                result = b''.join(
+                    (result, struct.pack(b'!c', chr(len(item))), item)
                 )
             self.text = result
         else:
@@ -1212,7 +1212,7 @@ class ServiceInfo(object):
                 index += length
 
             for s in strs:
-                eindex = s.find('=')
+                eindex = s.find(b'=')
                 if eindex == -1:
                     # No equals sign at all
                     key = s
@@ -1220,9 +1220,9 @@ class ServiceInfo(object):
                 else:
                     key = s[:eindex]
                     value = s[eindex + 1 :]
-                    if value == 'true':
+                    if value == b'true':
                         value = 1
-                    elif value == 'false' or not value:
+                    elif value == b'false' or not value:
                         value = 0
 
                 # Only update non-existent properties
@@ -1240,7 +1240,7 @@ class ServiceInfo(object):
 
     def getName(self):
         """Name accessor"""
-        if self.type is not None and self.name.endswith("." + self.type):
+        if self.type is not None and self.name.endswith(b"." + self.type):
             return self.name[: len(self.name) - len(self.type) - 1]
         return self.name
 
@@ -1368,19 +1368,19 @@ class ServiceInfo(object):
 
     def __repr__(self):
         """String representation"""
-        result = "service[%s,%s:%s," % (
+        result = b"service[%s,%s:%s," % (
             self.name,
             socket.inet_ntoa(self.getAddress()),
             self.port,
         )
         if self.text is None:
-            result += "None"
+            result += b"None"
         else:
             if len(self.text) < 20:
                 result += self.text
             else:
-                result += self.text[:17] + "..."
-        result += "]"
+                result += self.text[:17] + b"..."
+        result += b"]"
         return result
 
 
@@ -1393,12 +1393,12 @@ class Zeroconf(object):
     def __init__(self, bindaddress=None):
         """Creates an instance of the Zeroconf class, establishing
         multicast communications, listening and reaping threads."""
-        globals()['_GLOBAL_DONE'] = 0
+        globals()[b'_GLOBAL_DONE'] = 0
         if bindaddress is None:
             self.intf = socket.gethostbyname(socket.gethostname())
         else:
             self.intf = bindaddress
-        self.group = ('', _MDNS_PORT)
+        self.group = (b'', _MDNS_PORT)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -1414,8 +1414,8 @@ class Zeroconf(object):
             # work as expected.
             #
             pass
-        self.socket.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_TTL, "\xff")
-        self.socket.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, "\x01")
+        self.socket.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_TTL, b"\xff")
+        self.socket.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, b"\x01")
         try:
             self.socket.bind(self.group)
         except Exception:
@@ -1442,10 +1442,10 @@ class Zeroconf(object):
         self.reaper = Reaper(self)
 
     def isLoopback(self):
-        return self.intf.startswith("127.0.0.1")
+        return self.intf.startswith(b"127.0.0.1")
 
     def isLinklocal(self):
-        return self.intf.startswith("169.254.")
+        return self.intf.startswith(b"169.254.")
 
     def wait(self, timeout):
         """Calling thread waits for a given number of milliseconds or
@@ -1642,8 +1642,8 @@ class Zeroconf(object):
                     and not record.isExpired(now)
                     and record.alias == info.name
                 ):
-                    if info.name.find('.') < 0:
-                        info.name = "%w.[%s:%d].%s" % (
+                    if info.name.find(b'.') < 0:
+                        info.name = b"%w.[%s:%d].%s" % (
                             info.name,
                             info.address,
                             info.port,
@@ -1726,14 +1726,14 @@ class Zeroconf(object):
 
         for question in msg.questions:
             if question.type == _TYPE_PTR:
-                if question.name == "_services._dns-sd._udp.local.":
+                if question.name == b"_services._dns-sd._udp.local.":
                     for stype in self.servicetypes.keys():
                         if out is None:
                             out = DNSOutgoing(_FLAGS_QR_RESPONSE | _FLAGS_AA)
                         out.addAnswer(
                             msg,
                             DNSPointer(
-                                "_services._dns-sd._udp.local.",
+                                b"_services._dns-sd._udp.local.",
                                 _TYPE_PTR,
                                 _CLASS_IN,
                                 _DNS_TTL,
@@ -1833,8 +1833,8 @@ class Zeroconf(object):
     def close(self):
         """Ends the background threads, and prevent this instance from
         servicing further queries."""
-        if globals()['_GLOBAL_DONE'] == 0:
-            globals()['_GLOBAL_DONE'] = 1
+        if globals()[b'_GLOBAL_DONE'] == 0:
+            globals()[b'_GLOBAL_DONE'] = 1
             self.notifyAll()
             self.engine.notify()
             self.unregisterAllServices()
@@ -1850,39 +1850,39 @@ class Zeroconf(object):
 # query (for Zoe), and service unregistration.
 
 if __name__ == '__main__':
-    print("Multicast DNS Service Discovery for Python, version", __version__)
+    print(b"Multicast DNS Service Discovery for Python, version", __version__)
     r = Zeroconf()
-    print("1. Testing registration of a service...")
-    desc = {'version': '0.10', 'a': 'test value', 'b': 'another value'}
+    print(b"1. Testing registration of a service...")
+    desc = {b'version': b'0.10', b'a': b'test value', b'b': b'another value'}
     info = ServiceInfo(
-        "_http._tcp.local.",
-        "My Service Name._http._tcp.local.",
-        socket.inet_aton("127.0.0.1"),
+        b"_http._tcp.local.",
+        b"My Service Name._http._tcp.local.",
+        socket.inet_aton(b"127.0.0.1"),
         1234,
         0,
         0,
         desc,
     )
-    print("   Registering service...")
+    print(b"   Registering service...")
     r.registerService(info)
-    print("   Registration done.")
-    print("2. Testing query of service information...")
+    print(b"   Registration done.")
+    print(b"2. Testing query of service information...")
     print(
-        "   Getting ZOE service:",
-        str(r.getServiceInfo("_http._tcp.local.", "ZOE._http._tcp.local.")),
+        b"   Getting ZOE service:",
+        str(r.getServiceInfo(b"_http._tcp.local.", b"ZOE._http._tcp.local.")),
     )
-    print("   Query done.")
-    print("3. Testing query of own service...")
+    print(b"   Query done.")
+    print(b"3. Testing query of own service...")
     print(
-        "   Getting self:",
+        b"   Getting self:",
         str(
             r.getServiceInfo(
-                "_http._tcp.local.", "My Service Name._http._tcp.local."
+                b"_http._tcp.local.", b"My Service Name._http._tcp.local."
             )
         ),
     )
-    print("   Query done.")
-    print("4. Testing unregister of service information...")
+    print(b"   Query done.")
+    print(b"4. Testing unregister of service information...")
     r.unregisterService(info)
-    print("   Unregister done.")
+    print(b"   Unregister done.")
     r.close()

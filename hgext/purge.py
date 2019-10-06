@@ -40,29 +40,29 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 
 @command(
-    'purge|clean',
+    b'purge|clean',
     [
-        ('a', 'abort-on-err', None, _('abort if an error occurs')),
-        ('', 'all', None, _('purge ignored files too')),
-        ('', 'dirs', None, _('purge empty directories')),
-        ('', 'files', None, _('purge files')),
-        ('p', 'print', None, _('print filenames instead of deleting them')),
+        (b'a', b'abort-on-err', None, _(b'abort if an error occurs')),
+        (b'', b'all', None, _(b'purge ignored files too')),
+        (b'', b'dirs', None, _(b'purge empty directories')),
+        (b'', b'files', None, _(b'purge files')),
+        (b'p', b'print', None, _(b'print filenames instead of deleting them')),
         (
-            '0',
-            'print0',
+            b'0',
+            b'print0',
             None,
             _(
-                'end filenames with NUL, for use with xargs'
-                ' (implies -p/--print)'
+                b'end filenames with NUL, for use with xargs'
+                b' (implies -p/--print)'
             ),
         ),
     ]
     + cmdutil.walkopts,
-    _('hg purge [OPTION]... [DIR]...'),
+    _(b'hg purge [OPTION]... [DIR]...'),
     helpcategory=command.CATEGORY_MAINTENANCE,
 )
 def purge(ui, repo, *dirs, **opts):
@@ -97,14 +97,14 @@ def purge(ui, repo, *dirs, **opts):
     '''
     opts = pycompat.byteskwargs(opts)
 
-    act = not opts.get('print')
-    eol = '\n'
-    if opts.get('print0'):
-        eol = '\0'
+    act = not opts.get(b'print')
+    eol = b'\n'
+    if opts.get(b'print0'):
+        eol = b'\0'
         act = False  # --print0 implies --print
 
-    removefiles = opts.get('files')
-    removedirs = opts.get('dirs')
+    removefiles = opts.get(b'files')
+    removedirs = opts.get(b'dirs')
 
     if not removefiles and not removedirs:
         removefiles = True
@@ -115,13 +115,13 @@ def purge(ui, repo, *dirs, **opts):
     paths = mergemod.purge(
         repo,
         match,
-        ignored=opts.get('all', False),
+        ignored=opts.get(b'all', False),
         removeemptydirs=removedirs,
         removefiles=removefiles,
-        abortonerror=opts.get('abort_on_err'),
+        abortonerror=opts.get(b'abort_on_err'),
         noop=not act,
     )
 
     for path in paths:
         if not act:
-            ui.write('%s%s' % (path, eol))
+            ui.write(b'%s%s' % (path, eol))

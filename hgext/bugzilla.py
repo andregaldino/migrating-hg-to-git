@@ -319,32 +319,32 @@ xmlrpclib = util.xmlrpclib
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    'bugzilla', 'apikey', default='',
+    b'bugzilla', b'apikey', default=b'',
 )
 configitem(
-    'bugzilla', 'bzdir', default='/var/www/html/bugzilla',
+    b'bugzilla', b'bzdir', default=b'/var/www/html/bugzilla',
 )
 configitem(
-    'bugzilla', 'bzemail', default=None,
+    b'bugzilla', b'bzemail', default=None,
 )
 configitem(
-    'bugzilla', 'bzurl', default='http://localhost/bugzilla/',
+    b'bugzilla', b'bzurl', default=b'http://localhost/bugzilla/',
 )
 configitem(
-    'bugzilla', 'bzuser', default=None,
+    b'bugzilla', b'bzuser', default=None,
 )
 configitem(
-    'bugzilla', 'db', default='bugs',
+    b'bugzilla', b'db', default=b'bugs',
 )
 configitem(
-    'bugzilla',
-    'fixregexp',
+    b'bugzilla',
+    b'fixregexp',
     default=(
         br'fix(?:es)?\s*(?:bugs?\s*)?,?\s*'
         br'(?:nos?\.?|num(?:ber)?s?)?\s*'
@@ -353,23 +353,23 @@ configitem(
     ),
 )
 configitem(
-    'bugzilla', 'fixresolution', default='FIXED',
+    b'bugzilla', b'fixresolution', default=b'FIXED',
 )
 configitem(
-    'bugzilla', 'fixstatus', default='RESOLVED',
+    b'bugzilla', b'fixstatus', default=b'RESOLVED',
 )
 configitem(
-    'bugzilla', 'host', default='localhost',
+    b'bugzilla', b'host', default=b'localhost',
 )
 configitem(
-    'bugzilla', 'notify', default=configitem.dynamicdefault,
+    b'bugzilla', b'notify', default=configitem.dynamicdefault,
 )
 configitem(
-    'bugzilla', 'password', default=None,
+    b'bugzilla', b'password', default=None,
 )
 configitem(
-    'bugzilla',
-    'regexp',
+    b'bugzilla',
+    b'regexp',
     default=(
         br'bugs?\s*,?\s*(?:#|nos?\.?|num(?:ber)?s?)?\s*'
         br'(?P<ids>(?:\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
@@ -377,25 +377,25 @@ configitem(
     ),
 )
 configitem(
-    'bugzilla', 'strip', default=0,
+    b'bugzilla', b'strip', default=0,
 )
 configitem(
-    'bugzilla', 'style', default=None,
+    b'bugzilla', b'style', default=None,
 )
 configitem(
-    'bugzilla', 'template', default=None,
+    b'bugzilla', b'template', default=None,
 )
 configitem(
-    'bugzilla', 'timeout', default=5,
+    b'bugzilla', b'timeout', default=5,
 )
 configitem(
-    'bugzilla', 'user', default='bugs',
+    b'bugzilla', b'user', default=b'bugs',
 )
 configitem(
-    'bugzilla', 'usermap', default=None,
+    b'bugzilla', b'usermap', default=None,
 )
 configitem(
-    'bugzilla', 'version', default=None,
+    b'bugzilla', b'version', default=None,
 )
 
 
@@ -404,13 +404,13 @@ class bzaccess(object):
 
     def __init__(self, ui):
         self.ui = ui
-        usermap = self.ui.config('bugzilla', 'usermap')
+        usermap = self.ui.config(b'bugzilla', b'usermap')
         if usermap:
-            self.ui.readconfig(usermap, sections=['usermap'])
+            self.ui.readconfig(usermap, sections=[b'usermap'])
 
     def map_committer(self, user):
         '''map name of committer to Bugzilla user name.'''
-        for committer, bzuser in self.ui.configitems('usermap'):
+        for committer, bzuser in self.ui.configitems(b'usermap'):
             if committer.lower() == user.lower():
                 return bzuser
         return user
@@ -457,7 +457,7 @@ class bzmysql(bzaccess):
     @staticmethod
     def sql_buglist(ids):
         '''return SQL-friendly list of bug ids'''
-        return '(' + ','.join(map(str, ids)) + ')'
+        return b'(' + b','.join(map(str, ids)) + b')'
 
     _MySQLdb = None
 
@@ -467,18 +467,20 @@ class bzmysql(bzaccess):
 
             bzmysql._MySQLdb = mysql
         except ImportError as err:
-            raise error.Abort(_('python mysql support not available: %s') % err)
+            raise error.Abort(
+                _(b'python mysql support not available: %s') % err
+            )
 
         bzaccess.__init__(self, ui)
 
-        host = self.ui.config('bugzilla', 'host')
-        user = self.ui.config('bugzilla', 'user')
-        passwd = self.ui.config('bugzilla', 'password')
-        db = self.ui.config('bugzilla', 'db')
-        timeout = int(self.ui.config('bugzilla', 'timeout'))
+        host = self.ui.config(b'bugzilla', b'host')
+        user = self.ui.config(b'bugzilla', b'user')
+        passwd = self.ui.config(b'bugzilla', b'password')
+        db = self.ui.config(b'bugzilla', b'db')
+        timeout = int(self.ui.config(b'bugzilla', b'timeout'))
         self.ui.note(
-            _('connecting to %s:%s as %s, password %s\n')
-            % (host, db, user, '*' * len(passwd))
+            _(b'connecting to %s:%s as %s, password %s\n')
+            % (host, db, user, b'*' * len(passwd))
         )
         self.conn = bzmysql._MySQLdb.connect(
             host=host, user=user, passwd=passwd, db=db, connect_timeout=timeout
@@ -486,35 +488,35 @@ class bzmysql(bzaccess):
         self.cursor = self.conn.cursor()
         self.longdesc_id = self.get_longdesc_id()
         self.user_ids = {}
-        self.default_notify = "cd %(bzdir)s && ./processmail %(id)s %(user)s"
+        self.default_notify = b"cd %(bzdir)s && ./processmail %(id)s %(user)s"
 
     def run(self, *args, **kwargs):
         '''run a query.'''
-        self.ui.note(_('query: %s %s\n') % (args, kwargs))
+        self.ui.note(_(b'query: %s %s\n') % (args, kwargs))
         try:
             self.cursor.execute(*args, **kwargs)
         except bzmysql._MySQLdb.MySQLError:
-            self.ui.note(_('failed query: %s %s\n') % (args, kwargs))
+            self.ui.note(_(b'failed query: %s %s\n') % (args, kwargs))
             raise
 
     def get_longdesc_id(self):
         '''get identity of longdesc field'''
-        self.run('select fieldid from fielddefs where name = "longdesc"')
+        self.run(b'select fieldid from fielddefs where name = "longdesc"')
         ids = self.cursor.fetchall()
         if len(ids) != 1:
-            raise error.Abort(_('unknown database schema'))
+            raise error.Abort(_(b'unknown database schema'))
         return ids[0][0]
 
     def filter_real_bug_ids(self, bugs):
         '''filter not-existing bugs from set.'''
         self.run(
-            'select bug_id from bugs where bug_id in %s'
+            b'select bug_id from bugs where bug_id in %s'
             % bzmysql.sql_buglist(bugs.keys())
         )
         existing = [id for (id,) in self.cursor.fetchall()]
         for id in bugs.keys():
             if id not in existing:
-                self.ui.status(_('bug %d does not exist\n') % id)
+                self.ui.status(_(b'bug %d does not exist\n') % id)
                 del bugs[id]
 
     def filter_cset_known_bug_ids(self, node, bugs):
@@ -526,36 +528,36 @@ class bzmysql(bzaccess):
         )
         for (id,) in self.cursor.fetchall():
             self.ui.status(
-                _('bug %d already knows about changeset %s\n')
+                _(b'bug %d already knows about changeset %s\n')
                 % (id, short(node))
             )
             del bugs[id]
 
     def notify(self, bugs, committer):
         '''tell bugzilla to send mail.'''
-        self.ui.status(_('telling bugzilla to send mail:\n'))
+        self.ui.status(_(b'telling bugzilla to send mail:\n'))
         (user, userid) = self.get_bugzilla_user(committer)
         for id in bugs.keys():
-            self.ui.status(_('  bug %s\n') % id)
-            cmdfmt = self.ui.config('bugzilla', 'notify', self.default_notify)
-            bzdir = self.ui.config('bugzilla', 'bzdir')
+            self.ui.status(_(b'  bug %s\n') % id)
+            cmdfmt = self.ui.config(b'bugzilla', b'notify', self.default_notify)
+            bzdir = self.ui.config(b'bugzilla', b'bzdir')
             try:
                 # Backwards-compatible with old notify string, which
                 # took one string. This will throw with a new format
                 # string.
                 cmd = cmdfmt % id
             except TypeError:
-                cmd = cmdfmt % {'bzdir': bzdir, 'id': id, 'user': user}
-            self.ui.note(_('running notify command %s\n') % cmd)
-            fp = procutil.popen('(%s) 2>&1' % cmd, 'rb')
+                cmd = cmdfmt % {b'bzdir': bzdir, b'id': id, b'user': user}
+            self.ui.note(_(b'running notify command %s\n') % cmd)
+            fp = procutil.popen(b'(%s) 2>&1' % cmd, b'rb')
             out = util.fromnativeeol(fp.read())
             ret = fp.close()
             if ret:
                 self.ui.warn(out)
                 raise error.Abort(
-                    _('bugzilla notify command %s') % procutil.explainexit(ret)
+                    _(b'bugzilla notify command %s') % procutil.explainexit(ret)
                 )
-        self.ui.status(_('done\n'))
+        self.ui.status(_(b'done\n'))
 
     def get_user_id(self, user):
         '''look up numeric bugzilla user id.'''
@@ -565,7 +567,7 @@ class bzmysql(bzaccess):
             try:
                 userid = int(user)
             except ValueError:
-                self.ui.note(_('looking up user %s\n') % user)
+                self.ui.note(_(b'looking up user %s\n') % user)
                 self.run(
                     '''select userid from profiles
                             where login_name like %s''',
@@ -587,16 +589,16 @@ class bzmysql(bzaccess):
             userid = self.get_user_id(user)
         except KeyError:
             try:
-                defaultuser = self.ui.config('bugzilla', 'bzuser')
+                defaultuser = self.ui.config(b'bugzilla', b'bzuser')
                 if not defaultuser:
                     raise error.Abort(
-                        _('cannot find bugzilla user id for %s') % user
+                        _(b'cannot find bugzilla user id for %s') % user
                     )
                 userid = self.get_user_id(defaultuser)
                 user = defaultuser
             except KeyError:
                 raise error.Abort(
-                    _('cannot find bugzilla user id for %s or %s')
+                    _(b'cannot find bugzilla user id for %s or %s')
                     % (user, defaultuser)
                 )
         return (user, userid)
@@ -607,7 +609,7 @@ class bzmysql(bzaccess):
         Try adding comment as committer of changeset, otherwise as
         default bugzilla user.'''
         if len(newstate) > 0:
-            self.ui.warn(_("Bugzilla/MySQL cannot update bug state\n"))
+            self.ui.warn(_(b"Bugzilla/MySQL cannot update bug state\n"))
 
         (user, userid) = self.get_bugzilla_user(committer)
         now = time.strftime(r'%Y-%m-%d %H:%M:%S')
@@ -631,7 +633,7 @@ class bzmysql_2_18(bzmysql):
     def __init__(self, ui):
         bzmysql.__init__(self, ui)
         self.default_notify = (
-            "cd %(bzdir)s && perl -T contrib/sendbugmail.pl %(id)s %(user)s"
+            b"cd %(bzdir)s && perl -T contrib/sendbugmail.pl %(id)s %(user)s"
         )
 
 
@@ -643,10 +645,10 @@ class bzmysql_3_0(bzmysql_2_18):
 
     def get_longdesc_id(self):
         '''get identity of longdesc field'''
-        self.run('select id from fielddefs where name = "longdesc"')
+        self.run(b'select id from fielddefs where name = "longdesc"')
         ids = self.cursor.fetchall()
         if len(ids) != 1:
-            raise error.Abort(_('unknown database schema'))
+            raise error.Abort(_(b'unknown database schema'))
         return ids[0][0]
 
 
@@ -674,7 +676,7 @@ class cookietransportrequest(object):
     def send_cookies(self, connection):
         if self.cookies:
             for cookie in self.cookies:
-                connection.putheader("Cookie", cookie)
+                connection.putheader(b"Cookie", cookie)
 
     def request(self, host, handler, request_body, verbose=0):
         self.verbose = verbose
@@ -702,9 +704,9 @@ class cookietransportrequest(object):
             response = h._conn.getresponse()
 
         # Add any cookie definitions to our list.
-        for header in response.msg.getallmatchingheaders("Set-Cookie"):
-            val = header.split(": ", 1)[1]
-            cookie = val.split(";", 1)[0]
+        for header in response.msg.getallmatchingheaders(b"Set-Cookie"):
+            val = header.split(b": ", 1)[1]
+            cookie = val.split(b";", 1)[0]
             self.cookies.append(cookie)
 
         if response.status != 200:
@@ -729,13 +731,13 @@ class cookietransportrequest(object):
 # inheritance with a new-style class.
 class cookietransport(cookietransportrequest, xmlrpclib.Transport):
     def __init__(self, use_datetime=0):
-        if util.safehasattr(xmlrpclib.Transport, "__init__"):
+        if util.safehasattr(xmlrpclib.Transport, b"__init__"):
             xmlrpclib.Transport.__init__(self, use_datetime)
 
 
 class cookiesafetransport(cookietransportrequest, xmlrpclib.SafeTransport):
     def __init__(self, use_datetime=0):
-        if util.safehasattr(xmlrpclib.Transport, "__init__"):
+        if util.safehasattr(xmlrpclib.Transport, b"__init__"):
             xmlrpclib.SafeTransport.__init__(self, use_datetime)
 
 
@@ -748,26 +750,26 @@ class bzxmlrpc(bzaccess):
     def __init__(self, ui):
         bzaccess.__init__(self, ui)
 
-        bzweb = self.ui.config('bugzilla', 'bzurl')
-        bzweb = bzweb.rstrip("/") + "/xmlrpc.cgi"
+        bzweb = self.ui.config(b'bugzilla', b'bzurl')
+        bzweb = bzweb.rstrip(b"/") + b"/xmlrpc.cgi"
 
-        user = self.ui.config('bugzilla', 'user')
-        passwd = self.ui.config('bugzilla', 'password')
+        user = self.ui.config(b'bugzilla', b'user')
+        passwd = self.ui.config(b'bugzilla', b'password')
 
-        self.fixstatus = self.ui.config('bugzilla', 'fixstatus')
-        self.fixresolution = self.ui.config('bugzilla', 'fixresolution')
+        self.fixstatus = self.ui.config(b'bugzilla', b'fixstatus')
+        self.fixresolution = self.ui.config(b'bugzilla', b'fixresolution')
 
         self.bzproxy = xmlrpclib.ServerProxy(bzweb, self.transport(bzweb))
-        ver = self.bzproxy.Bugzilla.version()['version'].split('.')
+        ver = self.bzproxy.Bugzilla.version()[b'version'].split(b'.')
         self.bzvermajor = int(ver[0])
         self.bzverminor = int(ver[1])
         login = self.bzproxy.User.login(
-            {'login': user, 'password': passwd, 'restrict_login': True}
+            {b'login': user, b'password': passwd, b'restrict_login': True}
         )
-        self.bztoken = login.get('token', '')
+        self.bztoken = login.get(b'token', b'')
 
     def transport(self, uri):
-        if util.urlreq.urlparse(uri, "http")[0] == "https":
+        if util.urlreq.urlparse(uri, b"http")[0] == b"https":
             return cookiesafetransport()
         else:
             return cookietransport()
@@ -775,56 +777,58 @@ class bzxmlrpc(bzaccess):
     def get_bug_comments(self, id):
         """Return a string with all comment text for a bug."""
         c = self.bzproxy.Bug.comments(
-            {'ids': [id], 'include_fields': ['text'], 'token': self.bztoken}
+            {b'ids': [id], b'include_fields': [b'text'], b'token': self.bztoken}
         )
-        return ''.join([t['text'] for t in c['bugs']['%d' % id]['comments']])
+        return b''.join(
+            [t[b'text'] for t in c[b'bugs'][b'%d' % id][b'comments']]
+        )
 
     def filter_real_bug_ids(self, bugs):
         probe = self.bzproxy.Bug.get(
             {
-                'ids': sorted(bugs.keys()),
-                'include_fields': [],
-                'permissive': True,
-                'token': self.bztoken,
+                b'ids': sorted(bugs.keys()),
+                b'include_fields': [],
+                b'permissive': True,
+                b'token': self.bztoken,
             }
         )
-        for badbug in probe['faults']:
-            id = badbug['id']
-            self.ui.status(_('bug %d does not exist\n') % id)
+        for badbug in probe[b'faults']:
+            id = badbug[b'id']
+            self.ui.status(_(b'bug %d does not exist\n') % id)
             del bugs[id]
 
     def filter_cset_known_bug_ids(self, node, bugs):
         for id in sorted(bugs.keys()):
             if self.get_bug_comments(id).find(short(node)) != -1:
                 self.ui.status(
-                    _('bug %d already knows about changeset %s\n')
+                    _(b'bug %d already knows about changeset %s\n')
                     % (id, short(node))
                 )
                 del bugs[id]
 
     def updatebug(self, bugid, newstate, text, committer):
         args = {}
-        if 'hours' in newstate:
-            args['work_time'] = newstate['hours']
+        if b'hours' in newstate:
+            args[b'work_time'] = newstate[b'hours']
 
         if self.bzvermajor >= 4:
-            args['ids'] = [bugid]
-            args['comment'] = {'body': text}
-            if 'fix' in newstate:
-                args['status'] = self.fixstatus
-                args['resolution'] = self.fixresolution
-            args['token'] = self.bztoken
+            args[b'ids'] = [bugid]
+            args[b'comment'] = {b'body': text}
+            if b'fix' in newstate:
+                args[b'status'] = self.fixstatus
+                args[b'resolution'] = self.fixresolution
+            args[b'token'] = self.bztoken
             self.bzproxy.Bug.update(args)
         else:
-            if 'fix' in newstate:
+            if b'fix' in newstate:
                 self.ui.warn(
                     _(
-                        "Bugzilla/XMLRPC needs Bugzilla 4.0 or later "
-                        "to mark bugs fixed\n"
+                        b"Bugzilla/XMLRPC needs Bugzilla 4.0 or later "
+                        b"to mark bugs fixed\n"
                     )
                 )
-            args['id'] = bugid
-            args['comment'] = text
+            args[b'id'] = bugid
+            args[b'comment'] = text
             self.bzproxy.Bug.add_comment(args)
 
 
@@ -851,18 +855,18 @@ class bzxmlrpcemail(bzxmlrpc):
     def __init__(self, ui):
         bzxmlrpc.__init__(self, ui)
 
-        self.bzemail = self.ui.config('bugzilla', 'bzemail')
+        self.bzemail = self.ui.config(b'bugzilla', b'bzemail')
         if not self.bzemail:
-            raise error.Abort(_("configuration 'bzemail' missing"))
+            raise error.Abort(_(b"configuration 'bzemail' missing"))
         mail.validateconfig(self.ui)
 
     def makecommandline(self, fieldname, value):
         if self.bzvermajor >= 4:
-            return "@%s %s" % (fieldname, pycompat.bytestr(value))
+            return b"@%s %s" % (fieldname, pycompat.bytestr(value))
         else:
-            if fieldname == "id":
-                fieldname = "bug_id"
-            return "@%s = %s" % (fieldname, pycompat.bytestr(value))
+            if fieldname == b"id":
+                fieldname = b"bug_id"
+            return b"@%s = %s" % (fieldname, pycompat.bytestr(value))
 
     def send_bug_modify_email(self, bugid, commands, comment, committer):
         '''send modification message to Bugzilla bug via email.
@@ -877,39 +881,41 @@ class bzxmlrpcemail(bzxmlrpc):
         '''
         user = self.map_committer(committer)
         matches = self.bzproxy.User.get(
-            {'match': [user], 'token': self.bztoken}
+            {b'match': [user], b'token': self.bztoken}
         )
-        if not matches['users']:
-            user = self.ui.config('bugzilla', 'user')
+        if not matches[b'users']:
+            user = self.ui.config(b'bugzilla', b'user')
             matches = self.bzproxy.User.get(
-                {'match': [user], 'token': self.bztoken}
+                {b'match': [user], b'token': self.bztoken}
             )
-            if not matches['users']:
+            if not matches[b'users']:
                 raise error.Abort(
-                    _("default bugzilla user %s email not found") % user
+                    _(b"default bugzilla user %s email not found") % user
                 )
-        user = matches['users'][0]['email']
-        commands.append(self.makecommandline("id", bugid))
+        user = matches[b'users'][0][b'email']
+        commands.append(self.makecommandline(b"id", bugid))
 
-        text = "\n".join(commands) + "\n\n" + comment
+        text = b"\n".join(commands) + b"\n\n" + comment
 
         _charsets = mail._charsets(self.ui)
         user = mail.addressencode(self.ui, user, _charsets)
         bzemail = mail.addressencode(self.ui, self.bzemail, _charsets)
         msg = mail.mimeencode(self.ui, text, _charsets)
-        msg['From'] = user
-        msg['To'] = bzemail
-        msg['Subject'] = mail.headencode(self.ui, "Bug modification", _charsets)
+        msg[b'From'] = user
+        msg[b'To'] = bzemail
+        msg[b'Subject'] = mail.headencode(
+            self.ui, b"Bug modification", _charsets
+        )
         sendmail = mail.connect(self.ui)
         sendmail(user, bzemail, msg.as_string())
 
     def updatebug(self, bugid, newstate, text, committer):
         cmds = []
-        if 'hours' in newstate:
-            cmds.append(self.makecommandline("work_time", newstate['hours']))
-        if 'fix' in newstate:
-            cmds.append(self.makecommandline("bug_status", self.fixstatus))
-            cmds.append(self.makecommandline("resolution", self.fixresolution))
+        if b'hours' in newstate:
+            cmds.append(self.makecommandline(b"work_time", newstate[b'hours']))
+        if b'fix' in newstate:
+            cmds.append(self.makecommandline(b"bug_status", self.fixstatus))
+            cmds.append(self.makecommandline(b"resolution", self.fixresolution))
         self.send_bug_modify_email(bugid, cmds, text, committer)
 
 
@@ -924,26 +930,26 @@ class bzrestapi(bzaccess):
 
     def __init__(self, ui):
         bzaccess.__init__(self, ui)
-        bz = self.ui.config('bugzilla', 'bzurl')
-        self.bzroot = '/'.join([bz, 'rest'])
-        self.apikey = self.ui.config('bugzilla', 'apikey')
-        self.user = self.ui.config('bugzilla', 'user')
-        self.passwd = self.ui.config('bugzilla', 'password')
-        self.fixstatus = self.ui.config('bugzilla', 'fixstatus')
-        self.fixresolution = self.ui.config('bugzilla', 'fixresolution')
+        bz = self.ui.config(b'bugzilla', b'bzurl')
+        self.bzroot = b'/'.join([bz, b'rest'])
+        self.apikey = self.ui.config(b'bugzilla', b'apikey')
+        self.user = self.ui.config(b'bugzilla', b'user')
+        self.passwd = self.ui.config(b'bugzilla', b'password')
+        self.fixstatus = self.ui.config(b'bugzilla', b'fixstatus')
+        self.fixresolution = self.ui.config(b'bugzilla', b'fixresolution')
 
     def apiurl(self, targets, include_fields=None):
-        url = '/'.join([self.bzroot] + [pycompat.bytestr(t) for t in targets])
+        url = b'/'.join([self.bzroot] + [pycompat.bytestr(t) for t in targets])
         qv = {}
         if self.apikey:
-            qv['api_key'] = self.apikey
+            qv[b'api_key'] = self.apikey
         elif self.user and self.passwd:
-            qv['login'] = self.user
-            qv['password'] = self.passwd
+            qv[b'login'] = self.user
+            qv[b'password'] = self.passwd
         if include_fields:
-            qv['include_fields'] = include_fields
+            qv[b'include_fields'] = include_fields
         if qv:
-            url = '%s?%s' % (url, util.urlreq.urlencode(qv))
+            url = b'%s?%s' % (url, util.urlreq.urlencode(qv))
         return url
 
     def _fetch(self, burl):
@@ -952,30 +958,30 @@ class bzrestapi(bzaccess):
             return json.loads(resp.read())
         except util.urlerr.httperror as inst:
             if inst.code == 401:
-                raise error.Abort(_('authorization failed'))
+                raise error.Abort(_(b'authorization failed'))
             if inst.code == 404:
                 raise NotFound()
             else:
                 raise
 
-    def _submit(self, burl, data, method='POST'):
+    def _submit(self, burl, data, method=b'POST'):
         data = json.dumps(data)
-        if method == 'PUT':
+        if method == b'PUT':
 
             class putrequest(util.urlreq.request):
                 def get_method(self):
-                    return 'PUT'
+                    return b'PUT'
 
             request_type = putrequest
         else:
             request_type = util.urlreq.request
-        req = request_type(burl, data, {'Content-Type': 'application/json'})
+        req = request_type(burl, data, {b'Content-Type': b'application/json'})
         try:
             resp = url.opener(self.ui).open(req)
             return json.loads(resp.read())
         except util.urlerr.httperror as inst:
             if inst.code == 401:
-                raise error.Abort(_('authorization failed'))
+                raise error.Abort(_(b'authorization failed'))
             if inst.code == 404:
                 raise NotFound()
             else:
@@ -985,7 +991,7 @@ class bzrestapi(bzaccess):
         '''remove bug IDs that do not exist in Bugzilla from bugs.'''
         badbugs = set()
         for bugid in bugs:
-            burl = self.apiurl(('bug', bugid), include_fields='status')
+            burl = self.apiurl((b'bug', bugid), include_fields=b'status')
             try:
                 self._fetch(burl)
             except NotFound:
@@ -997,12 +1003,15 @@ class bzrestapi(bzaccess):
         '''remove bug IDs where node occurs in comment text from bugs.'''
         sn = short(node)
         for bugid in bugs.keys():
-            burl = self.apiurl(('bug', bugid, 'comment'), include_fields='text')
+            burl = self.apiurl(
+                (b'bug', bugid, b'comment'), include_fields=b'text'
+            )
             result = self._fetch(burl)
-            comments = result['bugs'][pycompat.bytestr(bugid)]['comments']
-            if any(sn in c['text'] for c in comments):
+            comments = result[b'bugs'][pycompat.bytestr(bugid)][b'comments']
+            if any(sn in c[b'text'] for c in comments):
                 self.ui.status(
-                    _('bug %d already knows about changeset %s\n') % (bugid, sn)
+                    _(b'bug %d already knows about changeset %s\n')
+                    % (bugid, sn)
                 )
                 del bugs[bugid]
 
@@ -1013,28 +1022,32 @@ class bzrestapi(bzaccess):
         the changeset. Otherwise use the default Bugzilla user.
         '''
         bugmod = {}
-        if 'hours' in newstate:
-            bugmod['work_time'] = newstate['hours']
-        if 'fix' in newstate:
-            bugmod['status'] = self.fixstatus
-            bugmod['resolution'] = self.fixresolution
+        if b'hours' in newstate:
+            bugmod[b'work_time'] = newstate[b'hours']
+        if b'fix' in newstate:
+            bugmod[b'status'] = self.fixstatus
+            bugmod[b'resolution'] = self.fixresolution
         if bugmod:
             # if we have to change the bugs state do it here
-            bugmod['comment'] = {
-                'comment': text,
-                'is_private': False,
-                'is_markdown': False,
+            bugmod[b'comment'] = {
+                b'comment': text,
+                b'is_private': False,
+                b'is_markdown': False,
             }
-            burl = self.apiurl(('bug', bugid))
-            self._submit(burl, bugmod, method='PUT')
-            self.ui.debug('updated bug %s\n' % bugid)
+            burl = self.apiurl((b'bug', bugid))
+            self._submit(burl, bugmod, method=b'PUT')
+            self.ui.debug(b'updated bug %s\n' % bugid)
         else:
-            burl = self.apiurl(('bug', bugid, 'comment'))
+            burl = self.apiurl((b'bug', bugid, b'comment'))
             self._submit(
                 burl,
-                {'comment': text, 'is_private': False, 'is_markdown': False,},
+                {
+                    b'comment': text,
+                    b'is_private': False,
+                    b'is_markdown': False,
+                },
             )
-            self.ui.debug('added comment to bug %s\n' % bugid)
+            self.ui.debug(b'added comment to bug %s\n' % bugid)
 
     def notify(self, bugs, committer):
         '''Force sending of Bugzilla notification emails.
@@ -1049,32 +1062,32 @@ class bugzilla(object):
     # supported versions of bugzilla. different versions have
     # different schemas.
     _versions = {
-        '2.16': bzmysql,
-        '2.18': bzmysql_2_18,
-        '3.0': bzmysql_3_0,
-        'xmlrpc': bzxmlrpc,
-        'xmlrpc+email': bzxmlrpcemail,
-        'restapi': bzrestapi,
+        b'2.16': bzmysql,
+        b'2.18': bzmysql_2_18,
+        b'3.0': bzmysql_3_0,
+        b'xmlrpc': bzxmlrpc,
+        b'xmlrpc+email': bzxmlrpcemail,
+        b'restapi': bzrestapi,
     }
 
     def __init__(self, ui, repo):
         self.ui = ui
         self.repo = repo
 
-        bzversion = self.ui.config('bugzilla', 'version')
+        bzversion = self.ui.config(b'bugzilla', b'version')
         try:
             bzclass = bugzilla._versions[bzversion]
         except KeyError:
             raise error.Abort(
-                _('bugzilla version %s not supported') % bzversion
+                _(b'bugzilla version %s not supported') % bzversion
             )
         self.bzdriver = bzclass(self.ui)
 
         self.bug_re = re.compile(
-            self.ui.config('bugzilla', 'regexp'), re.IGNORECASE
+            self.ui.config(b'bugzilla', b'regexp'), re.IGNORECASE
         )
         self.fix_re = re.compile(
-            self.ui.config('bugzilla', 'fixregexp'), re.IGNORECASE
+            self.ui.config(b'bugzilla', b'fixregexp'), re.IGNORECASE
         )
         self.split_re = re.compile(br'\D+')
 
@@ -1106,25 +1119,25 @@ class bugzilla(object):
             start = m.end()
             if m is bugmatch:
                 bugmatch = self.bug_re.search(ctx.description(), start)
-                if 'fix' in bugattribs:
-                    del bugattribs['fix']
+                if b'fix' in bugattribs:
+                    del bugattribs[b'fix']
             else:
                 fixmatch = self.fix_re.search(ctx.description(), start)
-                bugattribs['fix'] = None
+                bugattribs[b'fix'] = None
 
             try:
-                ids = m.group('ids')
+                ids = m.group(b'ids')
             except IndexError:
                 ids = m.group(1)
             try:
-                hours = float(m.group('hours'))
-                bugattribs['hours'] = hours
+                hours = float(m.group(b'hours'))
+                bugattribs[b'hours'] = hours
             except IndexError:
                 pass
             except TypeError:
                 pass
             except ValueError:
-                self.ui.status(_("%s: invalid hours\n") % m.group('hours'))
+                self.ui.status(_(b"%s: invalid hours\n") % m.group(b'hours'))
 
             for id in self.split_re.split(ids):
                 if not id:
@@ -1142,10 +1155,10 @@ class bugzilla(object):
         def webroot(root):
             '''strip leading prefix of repo root and turn into
             url-safe path.'''
-            count = int(self.ui.config('bugzilla', 'strip'))
+            count = int(self.ui.config(b'bugzilla', b'strip'))
             root = util.pconvert(root)
             while count > 0:
-                c = root.find('/')
+                c = root.find(b'/')
                 if c == -1:
                     break
                 root = root[c + 1 :]
@@ -1153,13 +1166,13 @@ class bugzilla(object):
             return root
 
         mapfile = None
-        tmpl = self.ui.config('bugzilla', 'template')
+        tmpl = self.ui.config(b'bugzilla', b'template')
         if not tmpl:
-            mapfile = self.ui.config('bugzilla', 'style')
+            mapfile = self.ui.config(b'bugzilla', b'style')
         if not mapfile and not tmpl:
             tmpl = _(
-                'changeset {node|short} in repo {root} refers '
-                'to bug {bug}.\ndetails:\n\t{desc|tabindent}'
+                b'changeset {node|short} in repo {root} refers '
+                b'to bug {bug}.\ndetails:\n\t{desc|tabindent}'
             )
         spec = logcmdutil.templatespec(tmpl, mapfile)
         t = logcmdutil.changesettemplater(self.ui, self.repo, spec)
@@ -1168,7 +1181,7 @@ class bugzilla(object):
             ctx,
             changes=ctx.changeset(),
             bug=pycompat.bytestr(bugid),
-            hgweb=self.ui.config('web', 'baseurl'),
+            hgweb=self.ui.config(b'web', b'baseurl'),
             root=self.repo.root,
             webroot=webroot(self.repo.root),
         )
@@ -1188,7 +1201,7 @@ def hook(ui, repo, hooktype, node=None, **kwargs):
     seen multiple times does not fill bug with duplicate data.'''
     if node is None:
         raise error.Abort(
-            _('hook type %s does not pass a changeset id') % hooktype
+            _(b'hook type %s does not pass a changeset id') % hooktype
         )
     try:
         bz = bugzilla(ui, repo)
@@ -1199,4 +1212,4 @@ def hook(ui, repo, hooktype, node=None, **kwargs):
                 bz.update(bug, bugs[bug], ctx)
             bz.notify(bugs, stringutil.email(ctx.user()))
     except Exception as e:
-        raise error.Abort(_('Bugzilla error: %s') % e)
+        raise error.Abort(_(b'Bugzilla error: %s') % e)

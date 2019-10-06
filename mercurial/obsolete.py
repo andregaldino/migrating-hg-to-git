@@ -94,17 +94,17 @@ _calcsize = struct.calcsize
 propertycache = util.propertycache
 
 # Options for obsolescence
-createmarkersopt = 'createmarkers'
-allowunstableopt = 'allowunstable'
-exchangeopt = 'exchange'
+createmarkersopt = b'createmarkers'
+allowunstableopt = b'allowunstable'
+exchangeopt = b'exchange'
 
 
 def _getoptionvalue(repo, option):
     """Returns True if the given repository has the given obsolete option
     enabled.
     """
-    configkey = 'evolution.%s' % option
-    newconfig = repo.ui.configbool('experimental', configkey)
+    configkey = b'evolution.%s' % option
+    newconfig = repo.ui.configbool(b'experimental', configkey)
 
     # Return the value only if defined
     if newconfig is not None:
@@ -112,19 +112,19 @@ def _getoptionvalue(repo, option):
 
     # Fallback on generic option
     try:
-        return repo.ui.configbool('experimental', 'evolution')
+        return repo.ui.configbool(b'experimental', b'evolution')
     except (error.ConfigError, AttributeError):
         # Fallback on old-fashion config
         # inconsistent config: experimental.evolution
-        result = set(repo.ui.configlist('experimental', 'evolution'))
+        result = set(repo.ui.configlist(b'experimental', b'evolution'))
 
-        if 'all' in result:
+        if b'all' in result:
             return True
 
         # Temporary hack for next check
-        newconfig = repo.ui.config('experimental', 'evolution.createmarkers')
+        newconfig = repo.ui.config(b'experimental', b'evolution.createmarkers')
         if newconfig:
-            result.add('createmarkers')
+            result.add(b'createmarkers')
 
         return option in result
 
@@ -140,8 +140,8 @@ def getoptions(repo):
     if (unstablevalue or exchangevalue) and not createmarkersvalue:
         raise error.Abort(
             _(
-                "'createmarkers' obsolete option must be enabled "
-                "if other obsolete options are enabled"
+                b"'createmarkers' obsolete option must be enabled "
+                b"if other obsolete options are enabled"
             )
         )
 
@@ -185,8 +185,8 @@ usingsha256 = obsutil.usingsha256
 #   additional encoding. Keys cannot contain '\0' or ':' and values
 #   cannot contain '\0'.
 _fm0version = 0
-_fm0fixed = '>BIB20s'
-_fm0node = '20s'
+_fm0fixed = b'>BIB20s'
+_fm0node = b'20s'
 _fm0fsize = _calcsize(_fm0fixed)
 _fm0fnodesize = _calcsize(_fm0node)
 
@@ -211,24 +211,24 @@ def _fm0readmarkers(data, off, stop):
         if len(metadata) != mdsize:
             raise error.Abort(
                 _(
-                    'parsing obsolete marker: metadata is too '
-                    'short, %d bytes expected, got %d'
+                    b'parsing obsolete marker: metadata is too '
+                    b'short, %d bytes expected, got %d'
                 )
                 % (mdsize, len(metadata))
             )
         off += mdsize
         metadata = _fm0decodemeta(metadata)
         try:
-            when, offset = metadata.pop('date', '0 0').split(' ')
+            when, offset = metadata.pop(b'date', b'0 0').split(b' ')
             date = float(when), int(offset)
         except ValueError:
             date = (0.0, 0)
         parents = None
-        if 'p2' in metadata:
-            parents = (metadata.pop('p1', None), metadata.pop('p2', None))
-        elif 'p1' in metadata:
-            parents = (metadata.pop('p1', None),)
-        elif 'p0' in metadata:
+        if b'p2' in metadata:
+            parents = (metadata.pop(b'p1', None), metadata.pop(b'p2', None))
+        elif b'p1' in metadata:
+            parents = (metadata.pop(b'p1', None),)
+        elif b'p0' in metadata:
             parents = ()
         if parents is not None:
             try:
@@ -250,16 +250,16 @@ def _fm0readmarkers(data, off, stop):
 def _fm0encodeonemarker(marker):
     pre, sucs, flags, metadata, date, parents = marker
     if flags & usingsha256:
-        raise error.Abort(_('cannot handle sha256 with old obsstore format'))
+        raise error.Abort(_(b'cannot handle sha256 with old obsstore format'))
     metadata = dict(metadata)
     time, tz = date
-    metadata['date'] = '%r %i' % (time, tz)
+    metadata[b'date'] = b'%r %i' % (time, tz)
     if parents is not None:
         if not parents:
             # mark that we explicitly recorded no parents
-            metadata['p0'] = ''
+            metadata[b'p0'] = b''
         for i, p in enumerate(parents, 1):
-            metadata['p%i' % i] = node.hex(p)
+            metadata[b'p%i' % i] = node.hex(p)
     metadata = _fm0encodemeta(metadata)
     numsuc = len(sucs)
     format = _fm0fixed + (_fm0node * numsuc)
@@ -273,19 +273,19 @@ def _fm0encodemeta(meta):
 
     Assume no ':' in key and no '\0' in both key and value."""
     for key, value in meta.iteritems():
-        if ':' in key or '\0' in key:
-            raise ValueError("':' and '\0' are forbidden in metadata key'")
-        if '\0' in value:
-            raise ValueError("':' is forbidden in metadata value'")
-    return '\0'.join(['%s:%s' % (k, meta[k]) for k in sorted(meta)])
+        if b':' in key or b'\0' in key:
+            raise ValueError(b"':' and '\0' are forbidden in metadata key'")
+        if b'\0' in value:
+            raise ValueError(b"':' is forbidden in metadata value'")
+    return b'\0'.join([b'%s:%s' % (k, meta[k]) for k in sorted(meta)])
 
 
 def _fm0decodemeta(data):
     """Return string to string dictionary from encoded version."""
     d = {}
-    for l in data.split('\0'):
+    for l in data.split(b'\0'):
         if l:
-            key, value = l.split(':', 1)
+            key, value = l.split(b':', 1)
             d[key] = value
     return d
 
@@ -325,16 +325,16 @@ def _fm0decodemeta(data):
 #
 # - remaining bytes: the metadata, each (key, value) pair after the other.
 _fm1version = 1
-_fm1fixed = '>IdhHBBB20s'
-_fm1nodesha1 = '20s'
-_fm1nodesha256 = '32s'
+_fm1fixed = b'>IdhHBBB20s'
+_fm1nodesha1 = b'20s'
+_fm1nodesha256 = b'32s'
 _fm1nodesha1size = _calcsize(_fm1nodesha1)
 _fm1nodesha256size = _calcsize(_fm1nodesha256)
 _fm1fsize = _calcsize(_fm1fixed)
 _fm1parentnone = 3
 _fm1parentshift = 14
 _fm1parentmask = _fm1parentnone << _fm1parentshift
-_fm1metapair = 'BB'
+_fm1metapair = b'BB'
 _fm1metapairsize = _calcsize(_fm1metapair)
 
 
@@ -402,7 +402,7 @@ def _fm1purereadmarkers(data, off, stop):
 
         # read metadata
         off = o3 + metasize * nummeta
-        metapairsize = unpack('>' + (metafmt * nummeta), data[o3:off])
+        metapairsize = unpack(b'>' + (metafmt * nummeta), data[o3:off])
         metadata = []
         for idx in pycompat.xrange(0, len(metapairsize), 2):
             o1 = off + metapairsize[idx]
@@ -441,14 +441,14 @@ def _fm1encodeonemarker(marker):
         lv = len(value)
         if lk > 255:
             msg = (
-                'obsstore metadata key cannot be longer than 255 bytes'
-                ' (key "%s" is %u bytes)'
+                b'obsstore metadata key cannot be longer than 255 bytes'
+                b' (key "%s" is %u bytes)'
             ) % (key, lk)
             raise error.ProgrammingError(msg)
         if lv > 255:
             msg = (
-                'obsstore metadata value cannot be longer than 255 bytes'
-                ' (value "%s" for key "%s" is %u bytes)'
+                b'obsstore metadata value cannot be longer than 255 bytes'
+                b' (value "%s" for key "%s" is %u bytes)'
             ) % (value, key, lv)
             raise error.ProgrammingError(msg)
         data.append(lk)
@@ -459,7 +459,7 @@ def _fm1encodeonemarker(marker):
     for key, value in metadata:
         data.append(key)
         data.append(value)
-    return ''.join(data)
+    return b''.join(data)
 
 
 def _fm1readmarkers(data, off, stop):
@@ -478,7 +478,7 @@ formats = {
 
 
 def _readmarkerversion(data):
-    return _unpack('>B', data[0:1])[0]
+    return _unpack(b'>B', data[0:1])[0]
 
 
 @util.nogc
@@ -490,13 +490,13 @@ def _readmarkers(data, off=None, stop=None):
     if stop is None:
         stop = len(data)
     if diskversion not in formats:
-        msg = _('parsing obsolete marker: unknown version %r') % diskversion
+        msg = _(b'parsing obsolete marker: unknown version %r') % diskversion
         raise error.UnknownVersion(msg, version=diskversion)
     return diskversion, formats[diskversion][0](data, off, stop)
 
 
 def encodeheader(version=_fm0version):
-    return _pack('>B', version)
+    return _pack(b'>B', version)
 
 
 def encodemarkers(markers, addheader=False, version=_fm0version):
@@ -541,8 +541,8 @@ def _checkinvalidmarkers(markers):
         if node.nullid in mark[1]:
             raise error.Abort(
                 _(
-                    'bad obsolescence marker detected: '
-                    'invalid successors nullid'
+                    b'bad obsolescence marker detected: '
+                    b'invalid successors nullid'
                 )
             )
 
@@ -556,7 +556,7 @@ class obsstore(object):
     - children[x]   -> set(markers on predecessors edges of children(x)
     """
 
-    fields = ('prec', 'succs', 'flag', 'meta', 'date', 'parents')
+    fields = (b'prec', b'succs', b'flag', b'meta', b'date', b'parents')
     # prec:    nodeid, predecessors changesets
     # succs:   tuple of nodeid, successor changesets (0-N length)
     # flag:    integer, flag field carrying modifier for the markers (see doc)
@@ -581,7 +581,7 @@ class obsstore(object):
     def __nonzero__(self):
         if not self._cached(r'_all'):
             try:
-                return self.svfs.stat('obsstore').st_size > 1
+                return self.svfs.stat(b'obsstore').st_size > 1
             except OSError as inst:
                 if inst.errno != errno.ENOENT:
                     raise
@@ -624,11 +624,11 @@ class obsstore(object):
         if metadata is None:
             metadata = {}
         if date is None:
-            if 'date' in metadata:
+            if b'date' in metadata:
                 # as a courtesy for out-of-tree extensions
-                date = dateutil.parsedate(metadata.pop('date'))
+                date = dateutil.parsedate(metadata.pop(b'date'))
             elif ui is not None:
-                date = ui.configdate('devel', 'default-date')
+                date = ui.configdate(b'devel', b'default-date')
                 if date is None:
                     date = dateutil.makedate()
             else:
@@ -651,8 +651,8 @@ class obsstore(object):
                 v.decode('utf-8')
             except UnicodeDecodeError:
                 raise error.ProgrammingError(
-                    'obsstore metadata must be valid UTF-8 sequence '
-                    '(key = %r, value = %r)'
+                    b'obsstore metadata must be valid UTF-8 sequence '
+                    b'(key = %r, value = %r)'
                     % (pycompat.bytestr(k), pycompat.bytestr(v))
                 )
 
@@ -666,7 +666,7 @@ class obsstore(object):
         Return the number of new marker."""
         if self._readonly:
             raise error.Abort(
-                _('creating obsolete markers is not enabled on ' 'this repo')
+                _(b'creating obsolete markers is not enabled on ' b'this repo')
             )
         known = set()
         getsuccessors = self.successors.get
@@ -676,10 +676,10 @@ class obsstore(object):
                 known.add(m)
                 new.append(m)
         if new:
-            f = self.svfs('obsstore', 'ab')
+            f = self.svfs(b'obsstore', b'ab')
             try:
                 offset = f.tell()
-                transaction.add('obsstore', offset)
+                transaction.add(b'obsstore', offset)
                 # offset == 0: new file - add the version header
                 data = b''.join(encodemarkers(new, offset == 0, self._version))
                 f.write(data)
@@ -687,15 +687,15 @@ class obsstore(object):
                 # XXX: f.close() == filecache invalidation == obsstore rebuilt.
                 # call 'filecacheentry.refresh()'  here
                 f.close()
-            addedmarkers = transaction.changes.get('obsmarkers')
+            addedmarkers = transaction.changes.get(b'obsmarkers')
             if addedmarkers is not None:
                 addedmarkers.update(new)
             self._addmarkers(new, data)
             # new marker *may* have changed several set. invalidate the cache.
             self.caches.clear()
         # records the number of new markers for the transaction hooks
-        previous = int(transaction.hookargs.get('new_obsmarkers', '0'))
-        transaction.hookargs['new_obsmarkers'] = '%d' % (previous + len(new))
+        previous = int(transaction.hookargs.get(b'new_obsmarkers', b'0'))
+        transaction.hookargs[b'new_obsmarkers'] = b'%d' % (previous + len(new))
         return len(new)
 
     def mergemarkers(self, transaction, data):
@@ -707,7 +707,7 @@ class obsstore(object):
 
     @propertycache
     def _data(self):
-        return self.svfs.tryread('obsstore')
+        return self.svfs.tryread(b'obsstore')
 
     @propertycache
     def _version(self):
@@ -797,7 +797,7 @@ def makestore(ui, repo):
     """Create an obsstore instance from a repo."""
     # read default format for new obsstore.
     # developer config: format.obsstore-version
-    defaultformat = ui.configint('format', 'obsstore-version')
+    defaultformat = ui.configint(b'format', b'obsstore-version')
     # rely on obsstore class default when possible.
     kwargs = {}
     if defaultformat is not None:
@@ -806,7 +806,7 @@ def makestore(ui, repo):
     store = obsstore(repo.svfs, readonly=readonly, **kwargs)
     if store and readonly:
         ui.warn(
-            _('obsolete feature not enabled but %i markers found!\n')
+            _(b'obsolete feature not enabled but %i markers found!\n')
             % len(list(store))
         )
     return store
@@ -849,8 +849,8 @@ def _pushkeyescape(markers):
         currentpart.append(nextdata)
         currentlen += len(nextdata)
     for idx, part in enumerate(reversed(parts)):
-        data = ''.join([_pack('>B', _fm0version)] + part)
-        keys['dump%i' % idx] = util.b85encode(data)
+        data = b''.join([_pack(b'>B', _fm0version)] + part)
+        keys[b'dump%i' % idx] = util.b85encode(data)
     return keys
 
 
@@ -863,14 +863,14 @@ def listmarkers(repo):
 
 def pushmarker(repo, key, old, new):
     """Push markers over pushkey"""
-    if not key.startswith('dump'):
-        repo.ui.warn(_('unknown key: %r') % key)
+    if not key.startswith(b'dump'):
+        repo.ui.warn(_(b'unknown key: %r') % key)
         return False
     if old:
-        repo.ui.warn(_('unexpected old value for %r') % key)
+        repo.ui.warn(_(b'unexpected old value for %r') % key)
         return False
     data = util.b85decode(new)
-    with repo.lock(), repo.transaction('pushkey: obsolete markers') as tr:
+    with repo.lock(), repo.transaction(b'pushkey: obsolete markers') as tr:
         repo.obsstore.mergemarkers(tr, data)
         repo.invalidatevolatilesets()
         return True
@@ -885,7 +885,7 @@ def cachefor(name):
 
     def decorator(func):
         if name in cachefuncs:
-            msg = "duplicated registration for volatileset '%s' (existing: %r)"
+            msg = b"duplicated registration for volatileset '%s' (existing: %r)"
             raise error.ProgrammingError(msg % (name, cachefuncs[name]))
         cachefuncs[name] = func
         return func
@@ -920,7 +920,7 @@ def clearobscaches(repo):
     (We could be smarter here given the exact event that trigger the cache
     clearing)"""
     # only clear cache is there is obsstore data in this repo
-    if 'obsstore' in repo._filecache:
+    if b'obsstore' in repo._filecache:
         repo.obsstore.caches.clear()
 
 
@@ -929,7 +929,7 @@ def _mutablerevs(repo):
     return repo._phasecache.getrevset(repo, phases.mutablephases)
 
 
-@cachefor('obsolete')
+@cachefor(b'obsolete')
 def _computeobsoleteset(repo):
     """the set of obsolete revisions"""
     getnode = repo.changelog.node
@@ -939,12 +939,12 @@ def _computeobsoleteset(repo):
     return obs
 
 
-@cachefor('orphan')
+@cachefor(b'orphan')
 def _computeorphanset(repo):
     """the set of non obsolete revisions with obsolete parents"""
     pfunc = repo.changelog.parentrevs
     mutable = _mutablerevs(repo)
-    obsolete = getrevs(repo, 'obsolete')
+    obsolete = getrevs(repo, b'obsolete')
     others = mutable - obsolete
     unstable = set()
     for r in sorted(others):
@@ -957,20 +957,20 @@ def _computeorphanset(repo):
     return unstable
 
 
-@cachefor('suspended')
+@cachefor(b'suspended')
 def _computesuspendedset(repo):
     """the set of obsolete parents with non obsolete descendants"""
-    suspended = repo.changelog.ancestors(getrevs(repo, 'orphan'))
-    return set(r for r in getrevs(repo, 'obsolete') if r in suspended)
+    suspended = repo.changelog.ancestors(getrevs(repo, b'orphan'))
+    return set(r for r in getrevs(repo, b'obsolete') if r in suspended)
 
 
-@cachefor('extinct')
+@cachefor(b'extinct')
 def _computeextinctset(repo):
     """the set of obsolete parents without non obsolete descendants"""
-    return getrevs(repo, 'obsolete') - getrevs(repo, 'suspended')
+    return getrevs(repo, b'obsolete') - getrevs(repo, b'suspended')
 
 
-@cachefor('phasedivergent')
+@cachefor(b'phasedivergent')
 def _computephasedivergentset(repo):
     """the set of revs trying to obsolete public revisions"""
     bumped = set()
@@ -981,7 +981,7 @@ def _computephasedivergentset(repo):
     torev = cl.nodemap.get
     tonode = cl.node
     obsstore = repo.obsstore
-    for rev in repo.revs('(not public()) and (not obsolete())'):
+    for rev in repo.revs(b'(not public()) and (not obsolete())'):
         # We only evaluate mutable, non-obsolete revision
         node = tonode(rev)
         # (future) A cache of predecessors may worth if split is very common
@@ -996,7 +996,7 @@ def _computephasedivergentset(repo):
     return bumped
 
 
-@cachefor('contentdivergent')
+@cachefor(b'contentdivergent')
 def _computecontentdivergentset(repo):
     """the set of rev that compete to be the final successors of some revision.
     """
@@ -1004,7 +1004,7 @@ def _computecontentdivergentset(repo):
     obsstore = repo.obsstore
     newermap = {}
     tonode = repo.changelog.node
-    for rev in repo.revs('(not public()) - obsolete()'):
+    for rev in repo.revs(b'(not public()) - obsolete()'):
         node = tonode(rev)
         mark = obsstore.predecessors.get(node, ())
         toprocess = set(mark)
@@ -1028,7 +1028,7 @@ def makefoldid(relation, user):
 
     folddigest = hashlib.sha1(user)
     for p in relation[0] + relation[1]:
-        folddigest.update('%d' % p.rev())
+        folddigest.update(b'%d' % p.rev())
         folddigest.update(p.node())
     # Since fold only has to compete against fold for the same successors, it
     # seems fine to use a small ID. Smaller ID save space.
@@ -1057,23 +1057,25 @@ def createmarkers(
     # prepare metadata
     if metadata is None:
         metadata = {}
-    if 'user' not in metadata:
-        luser = repo.ui.config('devel', 'user.obsmarker') or repo.ui.username()
-        metadata['user'] = encoding.fromlocal(luser)
+    if b'user' not in metadata:
+        luser = (
+            repo.ui.config(b'devel', b'user.obsmarker') or repo.ui.username()
+        )
+        metadata[b'user'] = encoding.fromlocal(luser)
 
     # Operation metadata handling
     useoperation = repo.ui.configbool(
-        'experimental', 'evolution.track-operation'
+        b'experimental', b'evolution.track-operation'
     )
     if useoperation and operation:
-        metadata['operation'] = operation
+        metadata[b'operation'] = operation
 
     # Effect flag metadata handling
     saveeffectflag = repo.ui.configbool(
-        'experimental', 'evolution.effect-flags'
+        b'experimental', b'evolution.effect-flags'
     )
 
-    with repo.transaction('add-obsolescence-marker') as tr:
+    with repo.transaction(b'add-obsolescence-marker') as tr:
         markerargs = []
         for rel in relations:
             predecessors = rel[0]
@@ -1081,26 +1083,26 @@ def createmarkers(
                 # preserve compat with old API until all caller are migrated
                 predecessors = (predecessors,)
             if len(predecessors) > 1 and len(rel[1]) != 1:
-                msg = 'Fold markers can only have 1 successors, not %d'
+                msg = b'Fold markers can only have 1 successors, not %d'
                 raise error.ProgrammingError(msg % len(rel[1]))
             foldid = None
             foldsize = len(predecessors)
             if 1 < foldsize:
-                foldid = makefoldid(rel, metadata['user'])
+                foldid = makefoldid(rel, metadata[b'user'])
             for foldidx, prec in enumerate(predecessors, 1):
                 sucs = rel[1]
                 localmetadata = metadata.copy()
                 if len(rel) > 2:
                     localmetadata.update(rel[2])
                 if foldid is not None:
-                    localmetadata['fold-id'] = foldid
-                    localmetadata['fold-idx'] = '%d' % foldidx
-                    localmetadata['fold-size'] = '%d' % foldsize
+                    localmetadata[b'fold-id'] = foldid
+                    localmetadata[b'fold-idx'] = b'%d' % foldidx
+                    localmetadata[b'fold-size'] = b'%d' % foldsize
 
                 if not prec.mutable():
                     raise error.Abort(
-                        _("cannot obsolete public changeset: %s") % prec,
-                        hint="see 'hg help phases' for details",
+                        _(b"cannot obsolete public changeset: %s") % prec,
+                        hint=b"see 'hg help phases' for details",
                     )
                 nprec = prec.node()
                 nsucs = tuple(s.node() for s in sucs)
@@ -1109,7 +1111,7 @@ def createmarkers(
                     npare = tuple(p.node() for p in prec.parents())
                 if nprec in nsucs:
                     raise error.Abort(
-                        _("changeset %s cannot obsolete itself") % prec
+                        _(b"changeset %s cannot obsolete itself") % prec
                     )
 
                 # Effect flag can be different by relation
@@ -1117,7 +1119,7 @@ def createmarkers(
                     # The effect flag is saved in a versioned field name for
                     # future evolution
                     effectflag = obsutil.geteffectflag(prec, sucs)
-                    localmetadata[obsutil.EFFECTFLAGFIELD] = "%d" % effectflag
+                    localmetadata[obsutil.EFFECTFLAGFIELD] = b"%d" % effectflag
 
                 # Creating the marker causes the hidden cache to become
                 # invalid, which causes recomputation when we ask for

@@ -31,7 +31,7 @@ def hideablerevs(repo):
     branchmap (see mercurial.utils.repoviewutils.subsettable), you cannot set
     "public" changesets as "hideable". Doing so would break multiple code
     assertions and lead to crashes."""
-    obsoletes = obsolete.getrevs(repo, 'obsolete')
+    obsoletes = obsolete.getrevs(repo, b'obsolete')
     internals = repo._phasecache.getrevset(repo, phases.localhiddenphases)
     internals = frozenset(internals)
     return obsoletes | internals
@@ -107,8 +107,8 @@ def computeunserved(repo, visibilityexceptions=None):
     Secret and hidden changeset should not pretend to be here."""
     assert not repo.changelog.filteredrevs
     # fast path in simple case to avoid impact of non optimised code
-    hiddens = filterrevs(repo, 'visible')
-    secrets = filterrevs(repo, 'served.hidden')
+    hiddens = filterrevs(repo, b'visible')
+    secrets = filterrevs(repo, b'served.hidden')
     if secrets:
         return frozenset(hiddens | secrets)
     else:
@@ -120,7 +120,7 @@ def computemutable(repo, visibilityexceptions=None):
     # fast check to avoid revset call on huge repo
     if any(repo._phasecache.phaseroots[1:]):
         getphase = repo._phasecache.phase
-        maymutable = filterrevs(repo, 'base')
+        maymutable = filterrevs(repo, b'base')
         return frozenset(r for r in maymutable if getphase(repo, r))
     return frozenset()
 
@@ -158,12 +158,12 @@ def computeimpactable(repo, visibilityexceptions=None):
 # Otherwise your filter will have to recompute all its branches cache
 # from scratch (very slow).
 filtertable = {
-    'visible': computehidden,
-    'visible-hidden': computehidden,
-    'served.hidden': computesecret,
-    'served': computeunserved,
-    'immutable': computemutable,
-    'base': computeimpactable,
+    b'visible': computehidden,
+    b'visible-hidden': computehidden,
+    b'served.hidden': computesecret,
+    b'served': computeunserved,
+    b'immutable': computemutable,
+    b'base': computeimpactable,
 }
 
 _basefiltername = list(filtertable)
@@ -175,17 +175,17 @@ def extrafilter(ui):
     If extra filtering is configured, we make sure the associated filtered view
     are declared and return the associated id.
     """
-    frevs = ui.config('experimental', 'extra-filter-revs')
+    frevs = ui.config(b'experimental', b'extra-filter-revs')
     if frevs is None:
         return None
 
-    fid = pycompat.sysbytes(util.DIGESTS['sha1'](frevs).hexdigest())[:12]
+    fid = pycompat.sysbytes(util.DIGESTS[b'sha1'](frevs).hexdigest())[:12]
 
-    combine = lambda fname: fname + '%' + fid
+    combine = lambda fname: fname + b'%' + fid
 
     subsettable = repoviewutil.subsettable
 
-    if combine('base') not in filtertable:
+    if combine(b'base') not in filtertable:
         for name in _basefiltername:
 
             def extrafilteredrevs(repo, *args, **kwargs):

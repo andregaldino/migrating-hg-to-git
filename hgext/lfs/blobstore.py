@@ -66,7 +66,7 @@ class lfsvfs(vfsmod.vfs):
                     [dirpath + f for f in files if _lfsre.match(dirpath + f)]
                 )
 
-        yield ('', [], oids)
+        yield (b'', [], oids)
 
 
 class nullvfs(lfsvfs):
@@ -256,7 +256,7 @@ def _urlerrorreason(urlerror):
     if isinstance(urlerror.reason, Exception):
         inst = urlerror.reason
 
-    if util.safehasattr(inst, 'reason'):
+    if util.safehasattr(inst, b'reason'):
         try:  # usually it is in the form (errno, strerror)
             reason = inst.reason.args[1]
         except (AttributeError, IndexError):
@@ -703,11 +703,11 @@ def remote(repo, remote=None):
     https://github.com/git-lfs/git-lfs/blob/master/docs/api/server-discovery.md
     """
     lfsurl = repo.ui.config(b'lfs', b'url')
-    url = util.url(lfsurl or '')
+    url = util.url(lfsurl or b'')
     if lfsurl is None:
         if remote:
             path = remote
-        elif util.safehasattr(repo, '_subtoppath'):
+        elif util.safehasattr(repo, b'_subtoppath'):
             # The pull command sets this during the optional update phase, which
             # tells exactly where the pull originated, whether 'paths.default'
             # or explicit.

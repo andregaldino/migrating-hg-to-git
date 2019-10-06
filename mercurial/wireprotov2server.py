@@ -56,14 +56,14 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     if not urlparts:
         res.status = b'200 OK'
         res.headers[b'Content-Type'] = b'text/plain'
-        res.setbodybytes(_('HTTP version 2 API handler'))
+        res.setbodybytes(_(b'HTTP version 2 API handler'))
         return
 
     if len(urlparts) == 1:
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(
-            _('do not know how to process %s\n') % req.dispatchpath
+            _(b'do not know how to process %s\n') % req.dispatchpath
         )
         return
 
@@ -72,13 +72,13 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     if permission not in (b'ro', b'rw'):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
-        res.setbodybytes(_('unknown permission: %s') % permission)
+        res.setbodybytes(_(b'unknown permission: %s') % permission)
         return
 
-    if req.method != 'POST':
+    if req.method != b'POST':
         res.status = b'405 Method Not Allowed'
         res.headers[b'Allow'] = b'POST'
-        res.setbodybytes(_('commands require POST requests'))
+        res.setbodybytes(_(b'commands require POST requests'))
         return
 
     # At some point we'll want to use our own API instead of recycling the
@@ -86,12 +86,12 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     # TODO return reasonable responses - not responses that overload the
     # HTTP status line message for error reporting.
     try:
-        checkperm(rctx, req, 'pull' if permission == b'ro' else 'push')
+        checkperm(rctx, req, b'pull' if permission == b'ro' else b'push')
     except hgwebcommon.ErrorResponse as e:
         res.status = hgwebcommon.statusmessage(e.code, pycompat.bytestr(e))
         for k, v in e.headers:
             res.headers[k] = v
-        res.setbodybytes('permission denied')
+        res.setbodybytes(b'permission denied')
         return
 
     # We have a special endpoint to reflect the request back at the client.
@@ -102,12 +102,12 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     # Extra commands that we handle that aren't really wire protocol
     # commands. Think extra hard before making this hackery available to
     # extension.
-    extracommands = {'multirequest'}
+    extracommands = {b'multirequest'}
 
     if command not in COMMANDS and command not in extracommands:
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
-        res.setbodybytes(_('unknown wire protocol command: %s\n') % command)
+        res.setbodybytes(_(b'unknown wire protocol command: %s\n') % command)
         return
 
     repo = rctx.repo
@@ -121,7 +121,7 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     ):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
-        res.setbodybytes(_('invalid wire protocol command: %s') % command)
+        res.setbodybytes(_(b'invalid wire protocol command: %s') % command)
         return
 
     # TODO consider cases where proxies may add additional Accept headers.
@@ -129,7 +129,7 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
         res.status = b'406 Not Acceptable'
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(
-            _('client MUST specify Accept header with value: %s\n')
+            _(b'client MUST specify Accept header with value: %s\n')
             % FRAMINGTYPE
         )
         return
@@ -140,7 +140,7 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
         # since client does Accept it.
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(
-            _('client MUST send Content-Type header with ' 'value: %s\n')
+            _(b'client MUST send Content-Type header with ' b'value: %s\n')
             % FRAMINGTYPE
         )
         return
@@ -160,10 +160,10 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
     """
     # Reflection APIs have a history of being abused, accidentally disclosing
     # sensitive data, etc. So we have a config knob.
-    if not ui.configbool('experimental', 'web.api.debugreflect'):
+    if not ui.configbool(b'experimental', b'web.api.debugreflect'):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
-        res.setbodybytes(_('debugreflect service not available'))
+        res.setbodybytes(_(b'debugreflect service not available'))
         return
 
     # We assume we have a unified framing protocol request body.
@@ -187,7 +187,7 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
         states.append(templatefilters.json((action, meta)))
 
     action, meta = reactor.oninputeof()
-    meta['action'] = action
+    meta[b'action'] = action
     states.append(templatefilters.json(meta))
 
     res.status = b'200 OK'
@@ -216,10 +216,10 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
 
         action, meta = reactor.onframerecv(frame)
 
-        if action == 'wantframe':
+        if action == b'wantframe':
             # Need more data before we can do anything.
             continue
-        elif action == 'runcommand':
+        elif action == b'runcommand':
             # Defer creating output stream because we need to wait for
             # protocol settings frames so proper encoding can be applied.
             if not outstream:
@@ -243,29 +243,29 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
 
             seencommand = True
 
-        elif action == 'error':
+        elif action == b'error':
             # TODO define proper error mechanism.
             res.status = b'200 OK'
             res.headers[b'Content-Type'] = b'text/plain'
-            res.setbodybytes(meta['message'] + b'\n')
+            res.setbodybytes(meta[b'message'] + b'\n')
             return
         else:
             raise error.ProgrammingError(
-                'unhandled action from frame processor: %s' % action
+                b'unhandled action from frame processor: %s' % action
             )
 
     action, meta = reactor.oninputeof()
-    if action == 'sendframes':
+    if action == b'sendframes':
         # We assume we haven't started sending the response yet. If we're
         # wrong, the response type will raise an exception.
         res.status = b'200 OK'
         res.headers[b'Content-Type'] = FRAMINGTYPE
-        res.setbodygen(meta['framegen'])
-    elif action == 'noop':
+        res.setbodygen(meta[b'framegen'])
+    elif action == b'noop':
         pass
     else:
         raise error.ProgrammingError(
-            'unhandled action from frame processor: %s' % action
+            b'unhandled action from frame processor: %s' % action
         )
 
 
@@ -301,31 +301,31 @@ def _httpv2runcommand(
     # TODO consider allowing multiple commands to regular command URLs
     # iff each command is the same.
 
-    proto = httpv2protocolhandler(req, ui, args=command['args'])
+    proto = httpv2protocolhandler(req, ui, args=command[b'args'])
 
     if reqcommand == b'multirequest':
-        if not COMMANDS.commandavailable(command['command'], proto):
+        if not COMMANDS.commandavailable(command[b'command'], proto):
             # TODO proper error mechanism
             res.status = b'200 OK'
             res.headers[b'Content-Type'] = b'text/plain'
             res.setbodybytes(
-                _('wire protocol command not available: %s')
-                % command['command']
+                _(b'wire protocol command not available: %s')
+                % command[b'command']
             )
             return True
 
         # TODO don't use assert here, since it may be elided by -O.
         assert authedperm in (b'ro', b'rw')
-        wirecommand = COMMANDS[command['command']]
-        assert wirecommand.permission in ('push', 'pull')
+        wirecommand = COMMANDS[command[b'command']]
+        assert wirecommand.permission in (b'push', b'pull')
 
-        if authedperm == b'ro' and wirecommand.permission != 'pull':
+        if authedperm == b'ro' and wirecommand.permission != b'pull':
             # TODO proper error mechanism
             res.status = b'403 Forbidden'
             res.headers[b'Content-Type'] = b'text/plain'
             res.setbodybytes(
-                _('insufficient permissions to execute ' 'command: %s')
-                % command['command']
+                _(b'insufficient permissions to execute ' b'command: %s')
+                % command[b'command']
             )
             return True
 
@@ -340,53 +340,53 @@ def _httpv2runcommand(
             res.status = b'200 OK'
             res.headers[b'Content-Type'] = b'text/plain'
             res.setbodybytes(
-                _('multiple commands cannot be issued to this ' 'URL')
+                _(b'multiple commands cannot be issued to this ' b'URL')
             )
             return True
 
-        if reqcommand != command['command']:
+        if reqcommand != command[b'command']:
             # TODO define proper error mechanism
             res.status = b'200 OK'
             res.headers[b'Content-Type'] = b'text/plain'
-            res.setbodybytes(_('command in frame must match command in URL'))
+            res.setbodybytes(_(b'command in frame must match command in URL'))
             return True
 
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = FRAMINGTYPE
 
     try:
-        objs = dispatch(repo, proto, command['command'], command['redirect'])
+        objs = dispatch(repo, proto, command[b'command'], command[b'redirect'])
 
         action, meta = reactor.oncommandresponsereadyobjects(
-            outstream, command['requestid'], objs
+            outstream, command[b'requestid'], objs
         )
 
     except error.WireprotoCommandError as e:
         action, meta = reactor.oncommanderror(
-            outstream, command['requestid'], e.message, e.messageargs
+            outstream, command[b'requestid'], e.message, e.messageargs
         )
 
     except Exception as e:
         action, meta = reactor.onservererror(
             outstream,
-            command['requestid'],
-            _('exception when invoking command: %s')
+            command[b'requestid'],
+            _(b'exception when invoking command: %s')
             % stringutil.forcebytestr(e),
         )
 
-    if action == 'sendframes':
-        res.setbodygen(meta['framegen'])
+    if action == b'sendframes':
+        res.setbodygen(meta[b'framegen'])
         return True
-    elif action == 'noop':
+    elif action == b'noop':
         return False
     else:
         raise error.ProgrammingError(
-            'unhandled event from reactor: %s' % action
+            b'unhandled event from reactor: %s' % action
         )
 
 
 def getdispatchrepo(repo, proto, command):
-    viewconfig = repo.ui.config('server', 'view')
+    viewconfig = repo.ui.config(b'server', b'view')
     return repo.filtered(viewconfig)
 
 
@@ -453,7 +453,7 @@ def dispatch(repo, proto, command, redirect):
         cached = cacher.lookup()
 
         if cached:
-            for o in cached['objs']:
+            for o in cached[b'objs']:
                 yield o
             return
 
@@ -484,15 +484,16 @@ class httpv2protocolhandler(object):
         extra = set(self._args) - set(args)
         if extra:
             raise error.WireprotoCommandError(
-                'unsupported argument to command: %s' % ', '.join(sorted(extra))
+                b'unsupported argument to command: %s'
+                % b', '.join(sorted(extra))
             )
 
         # And look for required arguments that are missing.
-        missing = {a for a in args if args[a]['required']} - set(self._args)
+        missing = {a for a in args if args[a][b'required']} - set(self._args)
 
         if missing:
             raise error.WireprotoCommandError(
-                'missing required arguments: %s' % ', '.join(sorted(missing))
+                b'missing required arguments: %s' % b', '.join(sorted(missing))
             )
 
         # Now derive the arguments to pass to the command, taking into
@@ -501,13 +502,13 @@ class httpv2protocolhandler(object):
         for k, meta in sorted(args.items()):
             # This argument wasn't passed by the client.
             if k not in self._args:
-                data[k] = meta['default']()
+                data[k] = meta[b'default']()
                 continue
 
             v = self._args[k]
 
             # Sets may be expressed as lists. Silently normalize.
-            if meta['type'] == 'set' and isinstance(v, list):
+            if meta[b'type'] == b'set' and isinstance(v, list):
                 v = set(v)
 
             # TODO consider more/stronger type validation.
@@ -550,9 +551,9 @@ def _capabilitiesv2(repo, proto):
     transports.
     """
     caps = {
-        'commands': {},
-        'framingmediatypes': [FRAMINGTYPE],
-        'pathfilterprefixes': set(narrowspec.VALID_PREFIXES),
+        b'commands': {},
+        b'framingmediatypes': [FRAMINGTYPE],
+        b'pathfilterprefixes': set(narrowspec.VALID_PREFIXES),
     }
 
     for command, entry in COMMANDS.items():
@@ -562,15 +563,15 @@ def _capabilitiesv2(repo, proto):
             args[arg] = {
                 # TODO should this be a normalized type using CBOR's
                 # terminology?
-                b'type': meta['type'],
-                b'required': meta['required'],
+                b'type': meta[b'type'],
+                b'required': meta[b'required'],
             }
 
-            if not meta['required']:
-                args[arg][b'default'] = meta['default']()
+            if not meta[b'required']:
+                args[arg][b'default'] = meta[b'default']()
 
-            if meta['validvalues']:
-                args[arg][b'validvalues'] = meta['validvalues']
+            if meta[b'validvalues']:
+                args[arg][b'validvalues'] = meta[b'validvalues']
 
         # TODO this type of check should be defined in a per-command callback.
         if (
@@ -579,16 +580,16 @@ def _capabilitiesv2(repo, proto):
         ):
             continue
 
-        caps['commands'][command] = {
-            'args': args,
-            'permissions': [entry.permission],
+        caps[b'commands'][command] = {
+            b'args': args,
+            b'permissions': [entry.permission],
         }
 
         if entry.extracapabilitiesfn:
             extracaps = entry.extracapabilitiesfn(repo, proto)
-            caps['commands'][command].update(extracaps)
+            caps[b'commands'][command].update(extracaps)
 
-    caps['rawrepoformats'] = sorted(repo.requirements & repo.supportedformats)
+    caps[b'rawrepoformats'] = sorted(repo.requirements & repo.supportedformats)
 
     targets = getadvertisedredirecttargets(repo, proto)
     if targets:
@@ -599,12 +600,12 @@ def _capabilitiesv2(repo, proto):
 
         for target in targets:
             entry = {
-                b'name': target['name'],
-                b'protocol': target['protocol'],
-                b'uris': target['uris'],
+                b'name': target[b'name'],
+                b'protocol': target[b'protocol'],
+                b'uris': target[b'uris'],
             }
 
-            for key in ('snirequired', 'tlsversions'):
+            for key in (b'snirequired', b'tlsversions'):
                 if key in target:
                     entry[key] = target[key]
 
@@ -655,7 +656,7 @@ def getadvertisedredirecttargets(repo, proto):
 def wireprotocommand(
     name,
     args=None,
-    permission='push',
+    permission=b'push',
     cachekeyfn=None,
     extracapabilitiesfn=None,
 ):
@@ -710,13 +711,13 @@ def wireprotocommand(
     under.
     """
     transports = {
-        k for k, v in wireprototypes.TRANSPORTS.items() if v['version'] == 2
+        k for k, v in wireprototypes.TRANSPORTS.items() if v[b'version'] == 2
     }
 
-    if permission not in ('push', 'pull'):
+    if permission not in (b'push', b'pull'):
         raise error.ProgrammingError(
-            'invalid wire protocol permission; '
-            'got %s; expected "push" or "pull"' % permission
+            b'invalid wire protocol permission; '
+            b'got %s; expected "push" or "pull"' % permission
         )
 
     if args is None:
@@ -724,48 +725,55 @@ def wireprotocommand(
 
     if not isinstance(args, dict):
         raise error.ProgrammingError(
-            'arguments for version 2 commands ' 'must be declared as dicts'
+            b'arguments for version 2 commands ' b'must be declared as dicts'
         )
 
     for arg, meta in args.items():
-        if arg == '*':
+        if arg == b'*':
             raise error.ProgrammingError(
-                '* argument name not allowed on ' 'version 2 commands'
+                b'* argument name not allowed on ' b'version 2 commands'
             )
 
         if not isinstance(meta, dict):
             raise error.ProgrammingError(
-                'arguments for version 2 commands '
-                'must declare metadata as a dict'
+                b'arguments for version 2 commands '
+                b'must declare metadata as a dict'
             )
 
-        if 'type' not in meta:
+        if b'type' not in meta:
             raise error.ProgrammingError(
-                '%s argument for command %s does not '
-                'declare type field' % (arg, name)
+                b'%s argument for command %s does not '
+                b'declare type field' % (arg, name)
             )
 
-        if meta['type'] not in ('bytes', 'int', 'list', 'dict', 'set', 'bool'):
+        if meta[b'type'] not in (
+            b'bytes',
+            b'int',
+            b'list',
+            b'dict',
+            b'set',
+            b'bool',
+        ):
             raise error.ProgrammingError(
-                '%s argument for command %s has '
-                'illegal type: %s' % (arg, name, meta['type'])
+                b'%s argument for command %s has '
+                b'illegal type: %s' % (arg, name, meta[b'type'])
             )
 
-        if 'example' not in meta:
+        if b'example' not in meta:
             raise error.ProgrammingError(
-                '%s argument for command %s does not '
-                'declare example field' % (arg, name)
+                b'%s argument for command %s does not '
+                b'declare example field' % (arg, name)
             )
 
-        meta['required'] = 'default' not in meta
+        meta[b'required'] = b'default' not in meta
 
-        meta.setdefault('default', lambda: None)
-        meta.setdefault('validvalues', None)
+        meta.setdefault(b'default', lambda: None)
+        meta.setdefault(b'validvalues', None)
 
     def register(func):
         if name in COMMANDS:
             raise error.ProgrammingError(
-                '%s command already registered ' 'for version 2' % name
+                b'%s command already registered ' b'for version 2' % name
             )
 
         COMMANDS[name] = wireprototypes.commandentry(
@@ -796,16 +804,18 @@ def makecommandcachekeyfn(command, localversion=None, allargs=False):
     * The repository path.
     """
     if not allargs:
-        raise error.ProgrammingError('only allargs=True is currently supported')
+        raise error.ProgrammingError(
+            b'only allargs=True is currently supported'
+        )
 
     if localversion is None:
-        raise error.ProgrammingError('must set localversion argument value')
+        raise error.ProgrammingError(b'must set localversion argument value')
 
     def cachekeyfn(repo, proto, cacher, **args):
         spec = COMMANDS[command]
 
         # Commands that mutate the repo can not be cached.
-        if spec.permission == 'push':
+        if spec.permission == b'push':
             return None
 
         # TODO config option to disable caching.
@@ -880,13 +890,13 @@ def resolvenodes(repo, revisions):
 
     if not isinstance(revisions, list):
         raise error.WireprotoCommandError(
-            'revisions must be defined as an ' 'array'
+            b'revisions must be defined as an ' b'array'
         )
 
     for spec in revisions:
         if b'type' not in spec:
             raise error.WireprotoCommandError(
-                'type key not present in revision specifier'
+                b'type key not present in revision specifier'
             )
 
         typ = spec[b'type']
@@ -894,8 +904,8 @@ def resolvenodes(repo, revisions):
         if typ == b'changesetexplicit':
             if b'nodes' not in spec:
                 raise error.WireprotoCommandError(
-                    'nodes key not present in changesetexplicit revision '
-                    'specifier'
+                    b'nodes key not present in changesetexplicit revision '
+                    b'specifier'
                 )
 
             for node in spec[b'nodes']:
@@ -907,8 +917,8 @@ def resolvenodes(repo, revisions):
             for key in (b'nodes', b'depth'):
                 if key not in spec:
                     raise error.WireprotoCommandError(
-                        '%s key not present in changesetexplicitdepth revision '
-                        'specifier',
+                        b'%s key not present in changesetexplicitdepth revision '
+                        b'specifier',
                         (key,),
                     )
 
@@ -925,14 +935,14 @@ def resolvenodes(repo, revisions):
             for key in (b'roots', b'heads'):
                 if key not in spec:
                     raise error.WireprotoCommandError(
-                        '%s key not present in changesetdagrange revision '
-                        'specifier',
+                        b'%s key not present in changesetdagrange revision '
+                        b'specifier',
                         (key,),
                     )
 
             if not spec[b'heads']:
                 raise error.WireprotoCommandError(
-                    'heads key in changesetdagrange cannot be empty'
+                    b'heads key in changesetdagrange cannot be empty'
                 )
 
             if spec[b'roots']:
@@ -947,39 +957,39 @@ def resolvenodes(repo, revisions):
 
         else:
             raise error.WireprotoCommandError(
-                'unknown revision specifier type: %s', (typ,)
+                b'unknown revision specifier type: %s', (typ,)
             )
 
     return nodes
 
 
-@wireprotocommand('branchmap', permission='pull')
+@wireprotocommand(b'branchmap', permission=b'pull')
 def branchmapv2(repo, proto):
     yield {encoding.fromlocal(k): v for k, v in repo.branchmap().iteritems()}
 
 
-@wireprotocommand('capabilities', permission='pull')
+@wireprotocommand(b'capabilities', permission=b'pull')
 def capabilitiesv2(repo, proto):
     yield _capabilitiesv2(repo, proto)
 
 
 @wireprotocommand(
-    'changesetdata',
+    b'changesetdata',
     args={
-        'revisions': {
-            'type': 'list',
-            'example': [
+        b'revisions': {
+            b'type': b'list',
+            b'example': [
                 {b'type': b'changesetexplicit', b'nodes': [b'abcdef...'],}
             ],
         },
-        'fields': {
-            'type': 'set',
-            'default': set,
-            'example': {b'parents', b'revision'},
-            'validvalues': {b'bookmarks', b'parents', b'phase', b'revision'},
+        b'fields': {
+            b'type': b'set',
+            b'default': set,
+            b'example': {b'parents', b'revision'},
+            b'validvalues': {b'bookmarks', b'parents', b'phase', b'revision'},
         },
     },
-    permission='pull',
+    permission=b'pull',
 )
 def changesetdata(repo, proto, revisions, fields):
     # TODO look for unknown fields and abort when they can't be serviced.
@@ -990,7 +1000,7 @@ def changesetdata(repo, proto, revisions, fields):
     publishing = repo.publishing()
 
     if outgoing:
-        repo.hook('preoutgoing', throw=True, source='serve')
+        repo.hook(b'preoutgoing', throw=True, source=b'serve')
 
     yield {
         b'totalitems': len(outgoing),
@@ -1078,7 +1088,7 @@ def getfilestore(repo, proto, path):
     fl = repo.file(path)
 
     if not len(fl):
-        raise FileAccessError(path, 'unknown file: %s', (path,))
+        raise FileAccessError(path, b'unknown file: %s', (path,))
 
     return fl
 
@@ -1125,8 +1135,8 @@ def makefilematcher(repo, pathfilter):
             for pattern in pathfilter.get(key, []):
                 if not pattern.startswith((b'path:', b'rootfilesin:')):
                     raise error.WireprotoCommandError(
-                        '%s pattern must begin with `path:` or `rootfilesin:`; '
-                        'got %s',
+                        b'%s pattern must begin with `path:` or `rootfilesin:`; '
+                        b'got %s',
                         (key, pattern),
                     )
 
@@ -1146,27 +1156,27 @@ def makefilematcher(repo, pathfilter):
 
 
 @wireprotocommand(
-    'filedata',
+    b'filedata',
     args={
-        'haveparents': {
-            'type': 'bool',
-            'default': lambda: False,
-            'example': True,
+        b'haveparents': {
+            b'type': b'bool',
+            b'default': lambda: False,
+            b'example': True,
         },
-        'nodes': {'type': 'list', 'example': [b'0123456...'],},
-        'fields': {
-            'type': 'set',
-            'default': set,
-            'example': {b'parents', b'revision'},
-            'validvalues': {b'parents', b'revision', b'linknode'},
+        b'nodes': {b'type': b'list', b'example': [b'0123456...'],},
+        b'fields': {
+            b'type': b'set',
+            b'default': set,
+            b'example': {b'parents', b'revision'},
+            b'validvalues': {b'parents', b'revision', b'linknode'},
         },
-        'path': {'type': 'bytes', 'example': b'foo.txt',},
+        b'path': {b'type': b'bytes', b'example': b'foo.txt',},
     },
-    permission='pull',
+    permission=b'pull',
     # TODO censoring a file revision won't invalidate the cache.
     # Figure out a way to take censoring into account when deriving
     # the cache key.
-    cachekeyfn=makecommandcachekeyfn('filedata', 1, allargs=True),
+    cachekeyfn=makecommandcachekeyfn(b'filedata', 1, allargs=True),
 )
 def filedata(repo, proto, haveparents, nodes, fields, path):
     # TODO this API allows access to file revisions that are attached to
@@ -1188,7 +1198,7 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
             store.rev(node)
         except error.LookupError:
             raise error.WireprotoCommandError(
-                'unknown file node: %s', (hex(node),)
+                b'unknown file node: %s', (hex(node),)
             )
 
         # TODO by creating the filectx against a specific file revision
@@ -1223,41 +1233,41 @@ def filesdatacapabilities(repo, proto):
 
 
 @wireprotocommand(
-    'filesdata',
+    b'filesdata',
     args={
-        'haveparents': {
-            'type': 'bool',
-            'default': lambda: False,
-            'example': True,
+        b'haveparents': {
+            b'type': b'bool',
+            b'default': lambda: False,
+            b'example': True,
         },
-        'fields': {
-            'type': 'set',
-            'default': set,
-            'example': {b'parents', b'revision'},
-            'validvalues': {
+        b'fields': {
+            b'type': b'set',
+            b'default': set,
+            b'example': {b'parents', b'revision'},
+            b'validvalues': {
                 b'firstchangeset',
                 b'linknode',
                 b'parents',
                 b'revision',
             },
         },
-        'pathfilter': {
-            'type': 'dict',
-            'default': lambda: None,
-            'example': {b'include': [b'path:tests']},
+        b'pathfilter': {
+            b'type': b'dict',
+            b'default': lambda: None,
+            b'example': {b'include': [b'path:tests']},
         },
-        'revisions': {
-            'type': 'list',
-            'example': [
+        b'revisions': {
+            b'type': b'list',
+            b'example': [
                 {b'type': b'changesetexplicit', b'nodes': [b'abcdef...'],}
             ],
         },
     },
-    permission='pull',
+    permission=b'pull',
     # TODO censoring a file revision won't invalidate the cache.
     # Figure out a way to take censoring into account when deriving
     # the cache key.
-    cachekeyfn=makecommandcachekeyfn('filesdata', 1, allargs=True),
+    cachekeyfn=makecommandcachekeyfn(b'filesdata', 1, allargs=True),
     extracapabilitiesfn=filesdatacapabilities,
 )
 def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
@@ -1327,29 +1337,33 @@ def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
 
 
 @wireprotocommand(
-    'heads',
+    b'heads',
     args={
-        'publiconly': {
-            'type': 'bool',
-            'default': lambda: False,
-            'example': False,
+        b'publiconly': {
+            b'type': b'bool',
+            b'default': lambda: False,
+            b'example': False,
         },
     },
-    permission='pull',
+    permission=b'pull',
 )
 def headsv2(repo, proto, publiconly):
     if publiconly:
-        repo = repo.filtered('immutable')
+        repo = repo.filtered(b'immutable')
 
     yield repo.heads()
 
 
 @wireprotocommand(
-    'known',
+    b'known',
     args={
-        'nodes': {'type': 'list', 'default': list, 'example': [b'deadbeef'],},
+        b'nodes': {
+            b'type': b'list',
+            b'default': list,
+            b'example': [b'deadbeef'],
+        },
     },
-    permission='pull',
+    permission=b'pull',
 )
 def knownv2(repo, proto, nodes):
     result = b''.join(b'1' if n else b'0' for n in repo.known(nodes))
@@ -1357,9 +1371,9 @@ def knownv2(repo, proto, nodes):
 
 
 @wireprotocommand(
-    'listkeys',
-    args={'namespace': {'type': 'bytes', 'example': b'ns',},},
-    permission='pull',
+    b'listkeys',
+    args={b'namespace': {b'type': b'bytes', b'example': b'ns',},},
+    permission=b'pull',
 )
 def listkeysv2(repo, proto, namespace):
     keys = repo.listkeys(encoding.tolocal(namespace))
@@ -1372,9 +1386,9 @@ def listkeysv2(repo, proto, namespace):
 
 
 @wireprotocommand(
-    'lookup',
-    args={'key': {'type': 'bytes', 'example': b'foo',},},
-    permission='pull',
+    b'lookup',
+    args={b'key': {b'type': b'bytes', b'example': b'foo',},},
+    permission=b'pull',
 )
 def lookupv2(repo, proto, key):
     key = encoding.tolocal(key)
@@ -1396,24 +1410,24 @@ def manifestdatacapabilities(repo, proto):
 
 
 @wireprotocommand(
-    'manifestdata',
+    b'manifestdata',
     args={
-        'nodes': {'type': 'list', 'example': [b'0123456...'],},
-        'haveparents': {
-            'type': 'bool',
-            'default': lambda: False,
-            'example': True,
+        b'nodes': {b'type': b'list', b'example': [b'0123456...'],},
+        b'haveparents': {
+            b'type': b'bool',
+            b'default': lambda: False,
+            b'example': True,
         },
-        'fields': {
-            'type': 'set',
-            'default': set,
-            'example': {b'parents', b'revision'},
-            'validvalues': {b'parents', b'revision'},
+        b'fields': {
+            b'type': b'set',
+            b'default': set,
+            b'example': {b'parents', b'revision'},
+            b'validvalues': {b'parents', b'revision'},
         },
-        'tree': {'type': 'bytes', 'example': b'',},
+        b'tree': {b'type': b'bytes', b'example': b'',},
     },
-    permission='pull',
-    cachekeyfn=makecommandcachekeyfn('manifestdata', 1, allargs=True),
+    permission=b'pull',
+    cachekeyfn=makecommandcachekeyfn(b'manifestdata', 1, allargs=True),
     extracapabilitiesfn=manifestdatacapabilities,
 )
 def manifestdata(repo, proto, haveparents, nodes, fields, tree):
@@ -1424,7 +1438,7 @@ def manifestdata(repo, proto, haveparents, nodes, fields, tree):
         try:
             store.rev(node)
         except error.LookupError:
-            raise error.WireprotoCommandError('unknown node: %s', (node,))
+            raise error.WireprotoCommandError(b'unknown node: %s', (node,))
 
     revisions = store.emitrevisions(
         nodes,
@@ -1466,14 +1480,14 @@ def manifestdata(repo, proto, haveparents, nodes, fields, tree):
 
 
 @wireprotocommand(
-    'pushkey',
+    b'pushkey',
     args={
-        'namespace': {'type': 'bytes', 'example': b'ns',},
-        'key': {'type': 'bytes', 'example': b'key',},
-        'old': {'type': 'bytes', 'example': b'old',},
-        'new': {'type': 'bytes', 'example': 'new',},
+        b'namespace': {b'type': b'bytes', b'example': b'ns',},
+        b'key': {b'type': b'bytes', b'example': b'key',},
+        b'old': {b'type': b'bytes', b'example': b'old',},
+        b'new': {b'type': b'bytes', b'example': b'new',},
     },
-    permission='push',
+    permission=b'push',
 )
 def pushkeyv2(repo, proto, namespace, key, old, new):
     # TODO handle ui output redirection
@@ -1486,16 +1500,19 @@ def pushkeyv2(repo, proto, namespace, key, old, new):
 
 
 @wireprotocommand(
-    'rawstorefiledata',
+    b'rawstorefiledata',
     args={
-        'files': {'type': 'list', 'example': [b'changelog', b'manifestlog'],},
-        'pathfilter': {
-            'type': 'list',
-            'default': lambda: None,
-            'example': {b'include': [b'path:tests']},
+        b'files': {
+            b'type': b'list',
+            b'example': [b'changelog', b'manifestlog'],
+        },
+        b'pathfilter': {
+            b'type': b'list',
+            b'default': lambda: None,
+            b'example': {b'include': [b'path:tests']},
         },
     },
-    permission='pull',
+    permission=b'pull',
 )
 def rawstorefiledata(repo, proto, files, pathfilter):
     if not streamclone.allowservergeneration(repo):
@@ -1546,7 +1563,7 @@ def rawstorefiledata(repo, proto, files, pathfilter):
         # We have to use a closure for this to ensure the context manager is
         # closed only after sending the final chunk.
         def getfiledata():
-            with repo.svfs(name, 'rb', auditpath=False) as fh:
+            with repo.svfs(name, b'rb', auditpath=False) as fh:
                 for chunk in util.filechunkiter(fh, limit=size):
                     yield chunk
 

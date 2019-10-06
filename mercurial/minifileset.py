@@ -18,49 +18,51 @@ from . import (
 
 def _sizep(x):
     # i18n: "size" is a keyword
-    expr = filesetlang.getstring(x, _("size requires an expression"))
+    expr = filesetlang.getstring(x, _(b"size requires an expression"))
     return fileset.sizematcher(expr)
 
 
 def _compile(tree):
     if not tree:
-        raise error.ParseError(_("missing argument"))
+        raise error.ParseError(_(b"missing argument"))
     op = tree[0]
-    if op == 'withstatus':
+    if op == b'withstatus':
         return _compile(tree[1])
-    elif op in {'symbol', 'string', 'kindpat'}:
-        name = filesetlang.getpattern(tree, {'path'}, _('invalid file pattern'))
-        if name.startswith('**'):  # file extension test, ex. "**.tar.gz"
+    elif op in {b'symbol', b'string', b'kindpat'}:
+        name = filesetlang.getpattern(
+            tree, {b'path'}, _(b'invalid file pattern')
+        )
+        if name.startswith(b'**'):  # file extension test, ex. "**.tar.gz"
             ext = name[2:]
             for c in pycompat.bytestr(ext):
-                if c in '*{}[]?/\\':
-                    raise error.ParseError(_('reserved character: %s') % c)
+                if c in b'*{}[]?/\\':
+                    raise error.ParseError(_(b'reserved character: %s') % c)
             return lambda n, s: n.endswith(ext)
-        elif name.startswith('path:'):  # directory or full path test
+        elif name.startswith(b'path:'):  # directory or full path test
             p = name[5:]  # prefix
             pl = len(p)
             f = lambda n, s: n.startswith(p) and (
-                len(n) == pl or n[pl : pl + 1] == '/'
+                len(n) == pl or n[pl : pl + 1] == b'/'
             )
             return f
         raise error.ParseError(
-            _("unsupported file pattern: %s") % name,
-            hint=_('paths must be prefixed with "path:"'),
+            _(b"unsupported file pattern: %s") % name,
+            hint=_(b'paths must be prefixed with "path:"'),
         )
-    elif op in {'or', 'patterns'}:
+    elif op in {b'or', b'patterns'}:
         funcs = [_compile(x) for x in tree[1:]]
         return lambda n, s: any(f(n, s) for f in funcs)
-    elif op == 'and':
+    elif op == b'and':
         func1 = _compile(tree[1])
         func2 = _compile(tree[2])
         return lambda n, s: func1(n, s) and func2(n, s)
-    elif op == 'not':
+    elif op == b'not':
         return lambda n, s: not _compile(tree[1])(n, s)
-    elif op == 'func':
+    elif op == b'func':
         symbols = {
-            'all': lambda n, s: True,
-            'none': lambda n, s: False,
-            'size': lambda n, s: _sizep(tree[2])(s),
+            b'all': lambda n, s: True,
+            b'none': lambda n, s: False,
+            b'size': lambda n, s: _sizep(tree[2])(s),
         }
 
         name = filesetlang.getsymbol(tree[1])
@@ -68,16 +70,16 @@ def _compile(tree):
             return symbols[name]
 
         raise error.UnknownIdentifier(name, symbols.keys())
-    elif op == 'minus':  # equivalent to 'x and not y'
+    elif op == b'minus':  # equivalent to 'x and not y'
         func1 = _compile(tree[1])
         func2 = _compile(tree[2])
         return lambda n, s: func1(n, s) and not func2(n, s)
-    elif op == 'list':
+    elif op == b'list':
         raise error.ParseError(
-            _("can't use a list in this context"),
-            hint=_('see \'hg help "filesets.x or y"\''),
+            _(b"can't use a list in this context"),
+            hint=_(b'see \'hg help "filesets.x or y"\''),
         )
-    raise error.ProgrammingError('illegal tree: %r' % (tree,))
+    raise error.ProgrammingError(b'illegal tree: %r' % (tree,))
 
 
 def compile(text):

@@ -89,9 +89,9 @@ configitem = registrar.configitem(configtable)
 
 # experimental config: storage.sqlite.compression
 configitem(
-    'storage',
-    'sqlite.compression',
-    default='zstd' if zstd else 'zlib',
+    b'storage',
+    b'sqlite.compression',
+    default=b'zstd' if zstd else b'zlib',
     experimental=True,
 )
 
@@ -99,7 +99,7 @@ configitem(
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 REQUIREMENT = b'exp-sqlite-001'
 REQUIREMENT_ZSTD = b'exp-sqlite-comp-001=zstd'
@@ -224,7 +224,7 @@ def resolvedeltachain(db, pathid, node, revisioncache, stoprids, zstddctx=None):
             delta = zlib.decompress(delta)
         else:
             raise SQLiteStoreError(
-                'unhandled compression type: %d' % compression
+                b'unhandled compression type: %d' % compression
             )
 
         deltas.append(delta)
@@ -319,7 +319,7 @@ class sqlitefilestore(object):
 
         self._compengine = compression
 
-        if compression == 'zstd':
+        if compression == b'zstd':
             self._cctx = zstd.ZstdCompressor(level=3)
             self._dctx = zstd.ZstdDecompressor()
         else:
@@ -358,7 +358,7 @@ class sqlitefilestore(object):
 
             if i != rev:
                 raise SQLiteStoreError(
-                    _('sqlite database has inconsistent ' 'revision numbers')
+                    _(b'sqlite database has inconsistent ' b'revision numbers')
                 )
 
             if p1rev == nullrev:
@@ -411,7 +411,7 @@ class sqlitefilestore(object):
             return nullid, nullid
 
         if node not in self._revisions:
-            raise error.LookupError(node, self._path, _('no node'))
+            raise error.LookupError(node, self._path, _(b'no node'))
 
         entry = self._revisions[node]
         return entry.p1node, entry.p2node
@@ -431,7 +431,7 @@ class sqlitefilestore(object):
             return nullrev
 
         if node not in self._nodetorev:
-            raise error.LookupError(node, self._path, _('no node'))
+            raise error.LookupError(node, self._path, _(b'no node'))
 
         return self._nodetorev[node]
 
@@ -532,7 +532,7 @@ class sqlitefilestore(object):
             node = self.node(node)
 
         if node not in self._nodetorev:
-            raise error.LookupError(node, self._path, _('no node'))
+            raise error.LookupError(node, self._path, _(b'no node'))
 
         if node in self._revisioncache:
             return self._revisioncache[node]
@@ -586,9 +586,9 @@ class sqlitefilestore(object):
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
     ):
-        if nodesorder not in ('nodes', 'storage', 'linear', None):
+        if nodesorder not in (b'nodes', b'storage', b'linear', None):
             raise error.ProgrammingError(
-                'unhandled value for nodesorder: %s' % nodesorder
+                b'unhandled value for nodesorder: %s' % nodesorder
             )
 
         nodes = [n for n in nodes if n != nullid]
@@ -649,7 +649,7 @@ class sqlitefilestore(object):
         cachedelta=None,
     ):
         if flags:
-            raise SQLiteStoreError(_('flags not supported on revisions'))
+            raise SQLiteStoreError(_(b'flags not supported on revisions'))
 
         validatehash = node is not None
         node = node or storageutil.hashrevisionsha1(revisiondata, p1, p2)
@@ -684,7 +684,7 @@ class sqlitefilestore(object):
                 storeflags |= FLAG_CENSORED
 
             if wireflags & ~repository.REVISION_FLAG_CENSORED:
-                raise SQLiteStoreError('unhandled revision flag')
+                raise SQLiteStoreError(b'unhandled revision flag')
 
             if maybemissingparents:
                 if p1 != nullid and not self.hasnode(p1):
@@ -700,7 +700,7 @@ class sqlitefilestore(object):
             # If base is censored, delta must be full replacement in a single
             # patch operation.
             if baserev != nullrev and self.iscensored(baserev):
-                hlen = struct.calcsize('>lll')
+                hlen = struct.calcsize(b'>lll')
                 oldlen = len(self.rawdata(deltabase, _verifyhash=False))
                 newlen = len(delta) - hlen
 
@@ -772,7 +772,7 @@ class sqlitefilestore(object):
         # SQLite, since columns can be resized at will.
         if len(tombstone) > len(self.rawdata(censornode)):
             raise error.Abort(
-                _('censor tombstone must be no longer than ' 'censored data')
+                _(b'censor tombstone must be no longer than ' b'censored data')
             )
 
         # We need to replace the censored revision's data with the tombstone.
@@ -811,18 +811,18 @@ class sqlitefilestore(object):
 
             deltahash = hashlib.sha1(fulltext).digest()
 
-            if self._compengine == 'zstd':
+            if self._compengine == b'zstd':
                 deltablob = self._cctx.compress(fulltext)
                 compression = COMPRESSION_ZSTD
-            elif self._compengine == 'zlib':
+            elif self._compengine == b'zlib':
                 deltablob = zlib.compress(fulltext)
                 compression = COMPRESSION_ZLIB
-            elif self._compengine == 'none':
+            elif self._compengine == b'none':
                 deltablob = fulltext
                 compression = COMPRESSION_NONE
             else:
                 raise error.ProgrammingError(
-                    'unhandled compression engine: %s' % self._compengine
+                    b'unhandled compression engine: %s' % self._compengine
                 )
 
             if len(deltablob) >= len(fulltext):
@@ -904,28 +904,28 @@ class sqlitefilestore(object):
         d = {}
 
         if exclusivefiles:
-            d['exclusivefiles'] = []
+            d[b'exclusivefiles'] = []
 
         if sharedfiles:
             # TODO list sqlite file(s) here.
-            d['sharedfiles'] = []
+            d[b'sharedfiles'] = []
 
         if revisionscount:
-            d['revisionscount'] = len(self)
+            d[b'revisionscount'] = len(self)
 
         if trackedsize:
-            d['trackedsize'] = sum(
+            d[b'trackedsize'] = sum(
                 len(self.revision(node)) for node in self._nodetorev
             )
 
         if storedsize:
             # TODO implement this?
-            d['storedsize'] = None
+            d[b'storedsize'] = None
 
         return d
 
     def verifyintegrity(self, state):
-        state['skipread'] = set()
+        state[b'skipread'] = set()
 
         for rev in self:
             node = self.node(rev)
@@ -934,10 +934,10 @@ class sqlitefilestore(object):
                 self.revision(node)
             except Exception as e:
                 yield sqliteproblem(
-                    error=_('unpacking %s: %s') % (short(node), e), node=node
+                    error=_(b'unpacking %s: %s') % (short(node), e), node=node
                 )
 
-                state['skipread'].add(node)
+                state[b'skipread'].add(node)
 
     # End of ifilestorage interface.
 
@@ -956,7 +956,7 @@ class sqlitefilestore(object):
         if storageutil.iscensoredtext(fulltext):
             raise error.CensoredNodeError(self._path, node, fulltext)
 
-        raise SQLiteStoreError(_('integrity check failed on %s') % self._path)
+        raise SQLiteStoreError(_(b'integrity check failed on %s') % self._path)
 
     def _addrawrevision(
         self,
@@ -1008,18 +1008,18 @@ class sqlitefilestore(object):
         # first.
         deltahash = hashlib.sha1(delta).digest()
 
-        if self._compengine == 'zstd':
+        if self._compengine == b'zstd':
             deltablob = self._cctx.compress(delta)
             compression = COMPRESSION_ZSTD
-        elif self._compengine == 'zlib':
+        elif self._compengine == b'zlib':
             deltablob = zlib.compress(delta)
             compression = COMPRESSION_ZLIB
-        elif self._compengine == 'none':
+        elif self._compengine == b'none':
             deltablob = delta
             compression = COMPRESSION_NONE
         else:
             raise error.ProgrammingError(
-                'unhandled compression engine: %s' % self._compengine
+                b'unhandled compression engine: %s' % self._compengine
             )
 
         # Don't store compressed data if it isn't practical.
@@ -1095,7 +1095,7 @@ class sqliterepository(localrepo.localrepository):
         def committransaction(_):
             self._dbconn.commit()
 
-        tr.addfinalize('sqlitestore', committransaction)
+        tr.addfinalize(b'sqlitestore', committransaction)
 
         return tr
 
@@ -1110,7 +1110,7 @@ class sqliterepository(localrepo.localrepository):
             if self._db[0] == tid:
                 return self._db[1]
 
-        db = makedb(self.svfs.join('db.sqlite'))
+        db = makedb(self.svfs.join(b'db.sqlite'))
         self._db = (tid, db)
 
         return db
@@ -1135,7 +1135,7 @@ def makedb(path):
         pass
 
     else:
-        raise error.Abort(_('sqlite database has unrecognized version'))
+        raise error.Abort(_(b'sqlite database has unrecognized version'))
 
     db.execute(r'PRAGMA journal_mode=WAL')
 
@@ -1155,65 +1155,65 @@ def featuresetup(ui, supported):
 
 
 def newreporequirements(orig, ui, createopts):
-    if createopts['backend'] != 'sqlite':
+    if createopts[b'backend'] != b'sqlite':
         return orig(ui, createopts)
 
     # This restriction can be lifted once we have more confidence.
-    if 'sharedrepo' in createopts:
+    if b'sharedrepo' in createopts:
         raise error.Abort(
-            _('shared repositories not supported with SQLite ' 'store')
+            _(b'shared repositories not supported with SQLite ' b'store')
         )
 
     # This filtering is out of an abundance of caution: we want to ensure
     # we honor creation options and we do that by annotating exactly the
     # creation options we recognize.
     known = {
-        'narrowfiles',
-        'backend',
-        'shallowfilestore',
+        b'narrowfiles',
+        b'backend',
+        b'shallowfilestore',
     }
 
     unsupported = set(createopts) - known
     if unsupported:
         raise error.Abort(
-            _('SQLite store does not support repo creation ' 'option: %s')
-            % ', '.join(sorted(unsupported))
+            _(b'SQLite store does not support repo creation ' b'option: %s')
+            % b', '.join(sorted(unsupported))
         )
 
     # Since we're a hybrid store that still relies on revlogs, we fall back
     # to using the revlogv1 backend's storage requirements then adding our
     # own requirement.
-    createopts['backend'] = 'revlogv1'
+    createopts[b'backend'] = b'revlogv1'
     requirements = orig(ui, createopts)
     requirements.add(REQUIREMENT)
 
-    compression = ui.config('storage', 'sqlite.compression')
+    compression = ui.config(b'storage', b'sqlite.compression')
 
-    if compression == 'zstd' and not zstd:
+    if compression == b'zstd' and not zstd:
         raise error.Abort(
             _(
-                'storage.sqlite.compression set to "zstd" but '
-                'zstandard compression not available to this '
-                'Mercurial install'
+                b'storage.sqlite.compression set to "zstd" but '
+                b'zstandard compression not available to this '
+                b'Mercurial install'
             )
         )
 
-    if compression == 'zstd':
+    if compression == b'zstd':
         requirements.add(REQUIREMENT_ZSTD)
-    elif compression == 'zlib':
+    elif compression == b'zlib':
         requirements.add(REQUIREMENT_ZLIB)
-    elif compression == 'none':
+    elif compression == b'none':
         requirements.add(REQUIREMENT_NONE)
     else:
         raise error.Abort(
             _(
-                'unknown compression engine defined in '
-                'storage.sqlite.compression: %s'
+                b'unknown compression engine defined in '
+                b'storage.sqlite.compression: %s'
             )
             % compression
         )
 
-    if createopts.get('shallowfilestore'):
+    if createopts.get(b'shallowfilestore'):
         requirements.add(REQUIREMENT_SHALLOW_FILES)
 
     return requirements
@@ -1228,16 +1228,16 @@ class sqlitefilestorage(object):
             path = path[1:]
 
         if REQUIREMENT_ZSTD in self.requirements:
-            compression = 'zstd'
+            compression = b'zstd'
         elif REQUIREMENT_ZLIB in self.requirements:
-            compression = 'zlib'
+            compression = b'zlib'
         elif REQUIREMENT_NONE in self.requirements:
-            compression = 'none'
+            compression = b'none'
         else:
             raise error.Abort(
                 _(
-                    'unable to determine what compression engine '
-                    'to use for SQLite storage'
+                    b'unable to determine what compression engine '
+                    b'to use for SQLite storage'
                 )
             )
 
@@ -1260,8 +1260,8 @@ def makemain(orig, ui, requirements, **kwargs):
         if REQUIREMENT_ZSTD in requirements and not zstd:
             raise error.Abort(
                 _(
-                    'repository uses zstandard compression, which '
-                    'is not available to this Mercurial install'
+                    b'repository uses zstandard compression, which '
+                    b'is not available to this Mercurial install'
                 )
             )
 
@@ -1281,11 +1281,11 @@ def verifierinit(orig, self, *args, **kwargs):
 def extsetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
     extensions.wrapfunction(
-        localrepo, 'newreporequirements', newreporequirements
+        localrepo, b'newreporequirements', newreporequirements
     )
-    extensions.wrapfunction(localrepo, 'makefilestorage', makefilestorage)
-    extensions.wrapfunction(localrepo, 'makemain', makemain)
-    extensions.wrapfunction(verify.verifier, '__init__', verifierinit)
+    extensions.wrapfunction(localrepo, b'makefilestorage', makefilestorage)
+    extensions.wrapfunction(localrepo, b'makemain', makemain)
+    extensions.wrapfunction(verify.verifier, b'__init__', verifierinit)
 
 
 def reposetup(ui, repo):

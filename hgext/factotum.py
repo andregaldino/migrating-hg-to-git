@@ -69,44 +69,44 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    'factotum', 'executable', default='/bin/auth/factotum',
+    b'factotum', b'executable', default=b'/bin/auth/factotum',
 )
 configitem(
-    'factotum', 'mountpoint', default='/mnt/factotum',
+    b'factotum', b'mountpoint', default=b'/mnt/factotum',
 )
 configitem(
-    'factotum', 'service', default='hg',
+    b'factotum', b'service', default=b'hg',
 )
 
 
 def auth_getkey(self, params):
     if not self.ui.interactive():
-        raise error.Abort(_('factotum not interactive'))
-    if 'user=' not in params:
-        params = '%s user?' % params
-    params = '%s !password?' % params
-    os.system(procutil.tonativestr("%s -g '%s'" % (_executable, params)))
+        raise error.Abort(_(b'factotum not interactive'))
+    if b'user=' not in params:
+        params = b'%s user?' % params
+    params = b'%s !password?' % params
+    os.system(procutil.tonativestr(b"%s -g '%s'" % (_executable, params)))
 
 
 def auth_getuserpasswd(self, getkey, params):
-    params = 'proto=pass %s' % params
+    params = b'proto=pass %s' % params
     while True:
-        fd = os.open('%s/rpc' % _mountpoint, os.O_RDWR)
+        fd = os.open(b'%s/rpc' % _mountpoint, os.O_RDWR)
         try:
-            os.write(fd, 'start %s' % params)
+            os.write(fd, b'start %s' % params)
             l = os.read(fd, ERRMAX).split()
-            if l[0] == 'ok':
-                os.write(fd, 'read')
+            if l[0] == b'ok':
+                os.write(fd, b'read')
                 status, user, passwd = os.read(fd, ERRMAX).split(None, 2)
-                if status == 'ok':
-                    if passwd.startswith("'"):
-                        if passwd.endswith("'"):
-                            passwd = passwd[1:-1].replace("''", "'")
+                if status == b'ok':
+                    if passwd.startswith(b"'"):
+                        if passwd.endswith(b"'"):
+                            passwd = passwd[1:-1].replace(b"''", b"'")
                         else:
-                            raise error.Abort(_('malformed password string'))
+                            raise error.Abort(_(b'malformed password string'))
                     return (user, passwd)
         except (OSError, IOError):
-            raise error.Abort(_('factotum not responding'))
+            raise error.Abort(_(b'factotum not responding'))
         finally:
             os.close(fd)
         getkey(self, params)
@@ -127,18 +127,18 @@ def find_user_password(self, realm, authuri):
         self._writedebug(user, passwd)
         return (user, passwd)
 
-    prefix = ''
+    prefix = b''
     res = httpconnection.readauthforuri(self.ui, authuri, user)
     if res:
         _, auth = res
-        prefix = auth.get('prefix')
-        user, passwd = auth.get('username'), auth.get('password')
+        prefix = auth.get(b'prefix')
+        user, passwd = auth.get(b'username'), auth.get(b'password')
     if not user or not passwd:
         if not prefix:
-            prefix = realm.split(' ')[0].lower()
-        params = 'service=%s prefix=%s' % (_service, prefix)
+            prefix = realm.split(b' ')[0].lower()
+        params = b'service=%s prefix=%s' % (_service, prefix)
         if user:
-            params = '%s user=%s' % (params, user)
+            params = b'%s user=%s' % (params, user)
         user, passwd = auth_getuserpasswd(self, auth_getkey, params)
 
     self.add_password(realm, authuri, user, passwd)
@@ -148,8 +148,8 @@ def find_user_password(self, realm, authuri):
 
 def uisetup(ui):
     global _executable
-    _executable = ui.config('factotum', 'executable')
+    _executable = ui.config(b'factotum', b'executable')
     global _mountpoint
-    _mountpoint = ui.config('factotum', 'mountpoint')
+    _mountpoint = ui.config(b'factotum', b'mountpoint')
     global _service
-    _service = ui.config('factotum', 'service')
+    _service = ui.config(b'factotum', b'service')

@@ -24,24 +24,24 @@ try:
     # Mapping from effect name to terminfo attribute name (or raw code) or
     # color number.  This will also force-load the curses module.
     _baseterminfoparams = {
-        'none': (True, 'sgr0', ''),
-        'standout': (True, 'smso', ''),
-        'underline': (True, 'smul', ''),
-        'reverse': (True, 'rev', ''),
-        'inverse': (True, 'rev', ''),
-        'blink': (True, 'blink', ''),
-        'dim': (True, 'dim', ''),
-        'bold': (True, 'bold', ''),
-        'invisible': (True, 'invis', ''),
-        'italic': (True, 'sitm', ''),
-        'black': (False, curses.COLOR_BLACK, ''),
-        'red': (False, curses.COLOR_RED, ''),
-        'green': (False, curses.COLOR_GREEN, ''),
-        'yellow': (False, curses.COLOR_YELLOW, ''),
-        'blue': (False, curses.COLOR_BLUE, ''),
-        'magenta': (False, curses.COLOR_MAGENTA, ''),
-        'cyan': (False, curses.COLOR_CYAN, ''),
-        'white': (False, curses.COLOR_WHITE, ''),
+        b'none': (True, b'sgr0', b''),
+        b'standout': (True, b'smso', b''),
+        b'underline': (True, b'smul', b''),
+        b'reverse': (True, b'rev', b''),
+        b'inverse': (True, b'rev', b''),
+        b'blink': (True, b'blink', b''),
+        b'dim': (True, b'dim', b''),
+        b'bold': (True, b'bold', b''),
+        b'invisible': (True, b'invis', b''),
+        b'italic': (True, b'sitm', b''),
+        b'black': (False, curses.COLOR_BLACK, b''),
+        b'red': (False, curses.COLOR_RED, b''),
+        b'green': (False, curses.COLOR_GREEN, b''),
+        b'yellow': (False, curses.COLOR_YELLOW, b''),
+        b'blue': (False, curses.COLOR_BLUE, b''),
+        b'magenta': (False, curses.COLOR_MAGENTA, b''),
+        b'cyan': (False, curses.COLOR_CYAN, b''),
+        b'white': (False, curses.COLOR_WHITE, b''),
     }
 except ImportError:
     curses = None
@@ -49,101 +49,101 @@ except ImportError:
 
 # start and stop parameters for effects
 _effects = {
-    'none': 0,
-    'black': 30,
-    'red': 31,
-    'green': 32,
-    'yellow': 33,
-    'blue': 34,
-    'magenta': 35,
-    'cyan': 36,
-    'white': 37,
-    'bold': 1,
-    'italic': 3,
-    'underline': 4,
-    'inverse': 7,
-    'dim': 2,
-    'black_background': 40,
-    'red_background': 41,
-    'green_background': 42,
-    'yellow_background': 43,
-    'blue_background': 44,
-    'purple_background': 45,
-    'cyan_background': 46,
-    'white_background': 47,
+    b'none': 0,
+    b'black': 30,
+    b'red': 31,
+    b'green': 32,
+    b'yellow': 33,
+    b'blue': 34,
+    b'magenta': 35,
+    b'cyan': 36,
+    b'white': 37,
+    b'bold': 1,
+    b'italic': 3,
+    b'underline': 4,
+    b'inverse': 7,
+    b'dim': 2,
+    b'black_background': 40,
+    b'red_background': 41,
+    b'green_background': 42,
+    b'yellow_background': 43,
+    b'blue_background': 44,
+    b'purple_background': 45,
+    b'cyan_background': 46,
+    b'white_background': 47,
 }
 
 _defaultstyles = {
-    'grep.match': 'red bold',
-    'grep.linenumber': 'green',
-    'grep.rev': 'blue',
-    'grep.sep': 'cyan',
-    'grep.filename': 'magenta',
-    'grep.user': 'magenta',
-    'grep.date': 'magenta',
-    'grep.inserted': 'green bold',
-    'grep.deleted': 'red bold',
-    'bookmarks.active': 'green',
-    'branches.active': 'none',
-    'branches.closed': 'black bold',
-    'branches.current': 'green',
-    'branches.inactive': 'none',
-    'diff.changed': 'white',
-    'diff.deleted': 'red',
-    'diff.deleted.changed': 'red bold underline',
-    'diff.deleted.unchanged': 'red',
-    'diff.diffline': 'bold',
-    'diff.extended': 'cyan bold',
-    'diff.file_a': 'red bold',
-    'diff.file_b': 'green bold',
-    'diff.hunk': 'magenta',
-    'diff.inserted': 'green',
-    'diff.inserted.changed': 'green bold underline',
-    'diff.inserted.unchanged': 'green',
-    'diff.tab': '',
-    'diff.trailingwhitespace': 'bold red_background',
-    'changeset.public': '',
-    'changeset.draft': '',
-    'changeset.secret': '',
-    'diffstat.deleted': 'red',
-    'diffstat.inserted': 'green',
-    'formatvariant.name.mismatchconfig': 'red',
-    'formatvariant.name.mismatchdefault': 'yellow',
-    'formatvariant.name.uptodate': 'green',
-    'formatvariant.repo.mismatchconfig': 'red',
-    'formatvariant.repo.mismatchdefault': 'yellow',
-    'formatvariant.repo.uptodate': 'green',
-    'formatvariant.config.special': 'yellow',
-    'formatvariant.config.default': 'green',
-    'formatvariant.default': '',
-    'histedit.remaining': 'red bold',
-    'ui.addremove.added': 'green',
-    'ui.addremove.removed': 'red',
-    'ui.error': 'red',
-    'ui.prompt': 'yellow',
-    'log.changeset': 'yellow',
-    'patchbomb.finalsummary': '',
-    'patchbomb.from': 'magenta',
-    'patchbomb.to': 'cyan',
-    'patchbomb.subject': 'green',
-    'patchbomb.diffstats': '',
-    'rebase.rebased': 'blue',
-    'rebase.remaining': 'red bold',
-    'resolve.resolved': 'green bold',
-    'resolve.unresolved': 'red bold',
-    'shelve.age': 'cyan',
-    'shelve.newest': 'green bold',
-    'shelve.name': 'blue bold',
-    'status.added': 'green bold',
-    'status.clean': 'none',
-    'status.copied': 'none',
-    'status.deleted': 'cyan bold underline',
-    'status.ignored': 'black bold',
-    'status.modified': 'blue bold',
-    'status.removed': 'red bold',
-    'status.unknown': 'magenta bold underline',
-    'tags.normal': 'green',
-    'tags.local': 'black bold',
+    b'grep.match': b'red bold',
+    b'grep.linenumber': b'green',
+    b'grep.rev': b'blue',
+    b'grep.sep': b'cyan',
+    b'grep.filename': b'magenta',
+    b'grep.user': b'magenta',
+    b'grep.date': b'magenta',
+    b'grep.inserted': b'green bold',
+    b'grep.deleted': b'red bold',
+    b'bookmarks.active': b'green',
+    b'branches.active': b'none',
+    b'branches.closed': b'black bold',
+    b'branches.current': b'green',
+    b'branches.inactive': b'none',
+    b'diff.changed': b'white',
+    b'diff.deleted': b'red',
+    b'diff.deleted.changed': b'red bold underline',
+    b'diff.deleted.unchanged': b'red',
+    b'diff.diffline': b'bold',
+    b'diff.extended': b'cyan bold',
+    b'diff.file_a': b'red bold',
+    b'diff.file_b': b'green bold',
+    b'diff.hunk': b'magenta',
+    b'diff.inserted': b'green',
+    b'diff.inserted.changed': b'green bold underline',
+    b'diff.inserted.unchanged': b'green',
+    b'diff.tab': b'',
+    b'diff.trailingwhitespace': b'bold red_background',
+    b'changeset.public': b'',
+    b'changeset.draft': b'',
+    b'changeset.secret': b'',
+    b'diffstat.deleted': b'red',
+    b'diffstat.inserted': b'green',
+    b'formatvariant.name.mismatchconfig': b'red',
+    b'formatvariant.name.mismatchdefault': b'yellow',
+    b'formatvariant.name.uptodate': b'green',
+    b'formatvariant.repo.mismatchconfig': b'red',
+    b'formatvariant.repo.mismatchdefault': b'yellow',
+    b'formatvariant.repo.uptodate': b'green',
+    b'formatvariant.config.special': b'yellow',
+    b'formatvariant.config.default': b'green',
+    b'formatvariant.default': b'',
+    b'histedit.remaining': b'red bold',
+    b'ui.addremove.added': b'green',
+    b'ui.addremove.removed': b'red',
+    b'ui.error': b'red',
+    b'ui.prompt': b'yellow',
+    b'log.changeset': b'yellow',
+    b'patchbomb.finalsummary': b'',
+    b'patchbomb.from': b'magenta',
+    b'patchbomb.to': b'cyan',
+    b'patchbomb.subject': b'green',
+    b'patchbomb.diffstats': b'',
+    b'rebase.rebased': b'blue',
+    b'rebase.remaining': b'red bold',
+    b'resolve.resolved': b'green bold',
+    b'resolve.unresolved': b'red bold',
+    b'shelve.age': b'cyan',
+    b'shelve.newest': b'green bold',
+    b'shelve.name': b'blue bold',
+    b'status.added': b'green bold',
+    b'status.clean': b'none',
+    b'status.copied': b'none',
+    b'status.deleted': b'cyan bold underline',
+    b'status.ignored': b'black bold',
+    b'status.modified': b'blue bold',
+    b'status.removed': b'red bold',
+    b'status.unknown': b'magenta bold underline',
+    b'tags.normal': b'green',
+    b'tags.local': b'black bold',
 }
 
 
@@ -158,16 +158,16 @@ def _terminfosetup(ui, mode, formatted):
     if curses is None:
         return
     # Otherwise, see what the config file says.
-    if mode not in ('auto', 'terminfo'):
+    if mode not in (b'auto', b'terminfo'):
         return
     ui._terminfoparams.update(_baseterminfoparams)
 
-    for key, val in ui.configitems('color'):
-        if key.startswith('color.'):
-            newval = (False, int(val), '')
+    for key, val in ui.configitems(b'color'):
+        if key.startswith(b'color.'):
+            newval = (False, int(val), b'')
             ui._terminfoparams[key[6:]] = newval
-        elif key.startswith('terminfo.'):
-            newval = (True, '', val.replace('\\E', '\x1b'))
+        elif key.startswith(b'terminfo.'):
+            newval = (True, b'', val.replace(b'\\E', b'\x1b'))
             ui._terminfoparams[key[9:]] = newval
     try:
         curses.setupterm()
@@ -181,16 +181,16 @@ def _terminfosetup(ui, mode, formatted):
         if not c and not curses.tigetstr(pycompat.sysstr(e)):
             # Most terminals don't support dim, invis, etc, so don't be
             # noisy and use ui.debug().
-            ui.debug("no terminfo entry for %s\n" % e)
+            ui.debug(b"no terminfo entry for %s\n" % e)
             del ui._terminfoparams[key]
     if not curses.tigetstr(r'setaf') or not curses.tigetstr(r'setab'):
         # Only warn about missing terminfo entries if we explicitly asked for
         # terminfo mode and we're in a formatted terminal.
-        if mode == "terminfo" and formatted:
+        if mode == b"terminfo" and formatted:
             ui.warn(
                 _(
-                    "no terminfo entry for setab/setaf: reverting to "
-                    "ECMA-48 color\n"
+                    b"no terminfo entry for setab/setaf: reverting to "
+                    b"ECMA-48 color\n"
                 )
             )
         ui._terminfoparams.clear()
@@ -203,23 +203,26 @@ def setup(ui):
     the configuration looking for custom colors and effect definitions."""
     mode = _modesetup(ui)
     ui._colormode = mode
-    if mode and mode != 'debug':
+    if mode and mode != b'debug':
         configstyles(ui)
 
 
 def _modesetup(ui):
-    if ui.plain('color'):
+    if ui.plain(b'color'):
         return None
-    config = ui.config('ui', 'color')
-    if config == 'debug':
-        return 'debug'
+    config = ui.config(b'ui', b'color')
+    if config == b'debug':
+        return b'debug'
 
-    auto = config == 'auto'
+    auto = config == b'auto'
     always = False
     if not auto and stringutil.parsebool(config):
         # We want the config to behave like a boolean, "on" is actually auto,
         # but "always" value is treated as a special case to reduce confusion.
-        if ui.configsource('ui', 'color') == '--color' or config == 'always':
+        if (
+            ui.configsource(b'ui', b'color') == b'--color'
+            or config == b'always'
+        ):
             always = True
         else:
             auto = True
@@ -228,64 +231,64 @@ def _modesetup(ui):
         return None
 
     formatted = always or (
-        encoding.environ.get('TERM') != 'dumb' and ui.formatted()
+        encoding.environ.get(b'TERM') != b'dumb' and ui.formatted()
     )
 
-    mode = ui.config('color', 'mode')
+    mode = ui.config(b'color', b'mode')
 
     # If pager is active, color.pagermode overrides color.mode.
     if getattr(ui, 'pageractive', False):
-        mode = ui.config('color', 'pagermode', mode)
+        mode = ui.config(b'color', b'pagermode', mode)
 
     realmode = mode
     if pycompat.iswindows:
         from . import win32
 
-        term = encoding.environ.get('TERM')
+        term = encoding.environ.get(b'TERM')
         # TERM won't be defined in a vanilla cmd.exe environment.
 
         # UNIX-like environments on Windows such as Cygwin and MSYS will
         # set TERM. They appear to make a best effort attempt at setting it
         # to something appropriate. However, not all environments with TERM
         # defined support ANSI.
-        ansienviron = term and 'xterm' in term
+        ansienviron = term and b'xterm' in term
 
-        if mode == 'auto':
+        if mode == b'auto':
             # Since "ansi" could result in terminal gibberish, we error on the
             # side of selecting "win32". However, if w32effects is not defined,
             # we almost certainly don't support "win32", so don't even try.
             # w32effects is not populated when stdout is redirected, so checking
             # it first avoids win32 calls in a state known to error out.
             if ansienviron or not w32effects or win32.enablevtmode():
-                realmode = 'ansi'
+                realmode = b'ansi'
             else:
-                realmode = 'win32'
+                realmode = b'win32'
         # An empty w32effects is a clue that stdout is redirected, and thus
         # cannot enable VT mode.
-        elif mode == 'ansi' and w32effects and not ansienviron:
+        elif mode == b'ansi' and w32effects and not ansienviron:
             win32.enablevtmode()
-    elif mode == 'auto':
-        realmode = 'ansi'
+    elif mode == b'auto':
+        realmode = b'ansi'
 
     def modewarn():
         # only warn if color.mode was explicitly set and we're in
         # a formatted terminal
         if mode == realmode and formatted:
-            ui.warn(_('warning: failed to set color mode to %s\n') % mode)
+            ui.warn(_(b'warning: failed to set color mode to %s\n') % mode)
 
-    if realmode == 'win32':
+    if realmode == b'win32':
         ui._terminfoparams.clear()
         if not w32effects:
             modewarn()
             return None
-    elif realmode == 'ansi':
+    elif realmode == b'ansi':
         ui._terminfoparams.clear()
-    elif realmode == 'terminfo':
+    elif realmode == b'terminfo':
         _terminfosetup(ui, mode, formatted)
         if not ui._terminfoparams:
             ## FIXME Shouldn't we return None in this case too?
             modewarn()
-            realmode = 'ansi'
+            realmode = b'ansi'
     else:
         return None
 
@@ -296,10 +299,10 @@ def _modesetup(ui):
 
 def configstyles(ui):
     ui._styles.update(_defaultstyles)
-    for status, cfgeffects in ui.configitems('color'):
-        if '.' not in status or status.startswith(('color.', 'terminfo.')):
+    for status, cfgeffects in ui.configitems(b'color'):
+        if b'.' not in status or status.startswith((b'color.', b'terminfo.')):
             continue
-        cfgeffects = ui.configlist('color', status)
+        cfgeffects = ui.configlist(b'color', status)
         if cfgeffects:
             good = []
             for e in cfgeffects:
@@ -308,17 +311,17 @@ def configstyles(ui):
                 else:
                     ui.warn(
                         _(
-                            "ignoring unknown color/effect %s "
-                            "(configured in color.%s)\n"
+                            b"ignoring unknown color/effect %s "
+                            b"(configured in color.%s)\n"
                         )
                         % (stringutil.pprint(e), status)
                     )
-            ui._styles[status] = ' '.join(good)
+            ui._styles[status] = b' '.join(good)
 
 
 def _activeeffects(ui):
     '''Return the effects map for the color mode set on the ui.'''
-    if ui._colormode == 'win32':
+    if ui._colormode == b'win32':
         return w32effects
     elif ui._colormode is not None:
         return _effects
@@ -326,7 +329,7 @@ def _activeeffects(ui):
 
 
 def valideffect(ui, effect):
-    'Determine if the effect is valid or not.'
+    b'Determine if the effect is valid or not.'
     return (not ui._terminfoparams and effect in _activeeffects(ui)) or (
         effect in ui._terminfoparams or effect[:-11] in ui._terminfoparams
     )
@@ -336,13 +339,13 @@ def _effect_str(ui, effect):
     '''Helper function for render_effects().'''
 
     bg = False
-    if effect.endswith('_background'):
+    if effect.endswith(b'_background'):
         bg = True
         effect = effect[:-11]
     try:
         attr, val, termcode = ui._terminfoparams[effect]
     except KeyError:
-        return ''
+        return b''
     if attr:
         if termcode:
             return termcode
@@ -369,26 +372,26 @@ def _mergeeffects(text, start, stop):
         if not t:
             continue
         parts.extend([start, t, stop])
-    return ''.join(parts)
+    return b''.join(parts)
 
 
 def _render_effects(ui, text, effects):
-    'Wrap text in commands to turn on each effect.'
+    b'Wrap text in commands to turn on each effect.'
     if not text:
         return text
     if ui._terminfoparams:
-        start = ''.join(
-            _effect_str(ui, effect) for effect in ['none'] + effects.split()
+        start = b''.join(
+            _effect_str(ui, effect) for effect in [b'none'] + effects.split()
         )
-        stop = _effect_str(ui, 'none')
+        stop = _effect_str(ui, b'none')
     else:
         activeeffects = _activeeffects(ui)
         start = [
             pycompat.bytestr(activeeffects[e])
-            for e in ['none'] + effects.split()
+            for e in [b'none'] + effects.split()
         ]
-        start = '\033[' + ';'.join(start) + 'm'
-        stop = '\033[' + pycompat.bytestr(activeeffects['none']) + 'm'
+        start = b'\033[' + b';'.join(start) + b'm'
+        stop = b'\033[' + pycompat.bytestr(activeeffects[b'none']) + b'm'
     return _mergeeffects(text, start, stop)
 
 
@@ -397,29 +400,32 @@ _ansieffectre = re.compile(br'\x1b\[[0-9;]*m')
 
 def stripeffects(text):
     """Strip ANSI control codes which could be inserted by colorlabel()"""
-    return _ansieffectre.sub('', text)
+    return _ansieffectre.sub(b'', text)
 
 
 def colorlabel(ui, msg, label):
     """add color control code according to the mode"""
-    if ui._colormode == 'debug':
+    if ui._colormode == b'debug':
         if label and msg:
-            if msg.endswith('\n'):
-                msg = "[%s|%s]\n" % (label, msg[:-1])
+            if msg.endswith(b'\n'):
+                msg = b"[%s|%s]\n" % (label, msg[:-1])
             else:
-                msg = "[%s|%s]" % (label, msg)
+                msg = b"[%s|%s]" % (label, msg)
     elif ui._colormode is not None:
         effects = []
         for l in label.split():
-            s = ui._styles.get(l, '')
+            s = ui._styles.get(l, b'')
             if s:
                 effects.append(s)
             elif valideffect(ui, l):
                 effects.append(l)
-        effects = ' '.join(effects)
+        effects = b' '.join(effects)
         if effects:
-            msg = '\n'.join(
-                [_render_effects(ui, line, effects) for line in msg.split('\n')]
+            msg = b'\n'.join(
+                [
+                    _render_effects(ui, line, effects)
+                    for line in msg.split(b'\n')
+                ]
             )
     return msg
 
@@ -472,29 +478,29 @@ if pycompat.iswindows:
 
     # http://msdn.microsoft.com/en-us/library/ms682088%28VS.85%29.aspx
     w32effects = {
-        'none': -1,
-        'black': 0,
-        'red': _FOREGROUND_RED,
-        'green': _FOREGROUND_GREEN,
-        'yellow': _FOREGROUND_RED | _FOREGROUND_GREEN,
-        'blue': _FOREGROUND_BLUE,
-        'magenta': _FOREGROUND_BLUE | _FOREGROUND_RED,
-        'cyan': _FOREGROUND_BLUE | _FOREGROUND_GREEN,
-        'white': _FOREGROUND_RED | _FOREGROUND_GREEN | _FOREGROUND_BLUE,
-        'bold': _FOREGROUND_INTENSITY,
-        'black_background': 0x100,  # unused value > 0x0f
-        'red_background': _BACKGROUND_RED,
-        'green_background': _BACKGROUND_GREEN,
-        'yellow_background': _BACKGROUND_RED | _BACKGROUND_GREEN,
-        'blue_background': _BACKGROUND_BLUE,
-        'purple_background': _BACKGROUND_BLUE | _BACKGROUND_RED,
-        'cyan_background': _BACKGROUND_BLUE | _BACKGROUND_GREEN,
-        'white_background': (
+        b'none': -1,
+        b'black': 0,
+        b'red': _FOREGROUND_RED,
+        b'green': _FOREGROUND_GREEN,
+        b'yellow': _FOREGROUND_RED | _FOREGROUND_GREEN,
+        b'blue': _FOREGROUND_BLUE,
+        b'magenta': _FOREGROUND_BLUE | _FOREGROUND_RED,
+        b'cyan': _FOREGROUND_BLUE | _FOREGROUND_GREEN,
+        b'white': _FOREGROUND_RED | _FOREGROUND_GREEN | _FOREGROUND_BLUE,
+        b'bold': _FOREGROUND_INTENSITY,
+        b'black_background': 0x100,  # unused value > 0x0f
+        b'red_background': _BACKGROUND_RED,
+        b'green_background': _BACKGROUND_GREEN,
+        b'yellow_background': _BACKGROUND_RED | _BACKGROUND_GREEN,
+        b'blue_background': _BACKGROUND_BLUE,
+        b'purple_background': _BACKGROUND_BLUE | _BACKGROUND_RED,
+        b'cyan_background': _BACKGROUND_BLUE | _BACKGROUND_GREEN,
+        b'white_background': (
             _BACKGROUND_RED | _BACKGROUND_GREEN | _BACKGROUND_BLUE
         ),
-        'bold_background': _BACKGROUND_INTENSITY,
-        'underline': _COMMON_LVB_UNDERSCORE,  # double-byte charsets only
-        'inverse': _COMMON_LVB_REVERSE_VIDEO,  # double-byte charsets only
+        b'bold_background': _BACKGROUND_INTENSITY,
+        b'underline': _COMMON_LVB_UNDERSCORE,  # double-byte charsets only
+        b'inverse': _COMMON_LVB_REVERSE_VIDEO,  # double-byte charsets only
     }
 
     passthrough = {
@@ -522,7 +528,7 @@ if pycompat.iswindows:
             )
 
     def win32print(ui, writefunc, text, **opts):
-        label = opts.get(r'label', '')
+        label = opts.get(r'label', b'')
         attr = origattr
 
         def mapcolor(val, attr):
@@ -537,7 +543,7 @@ if pycompat.iswindows:
 
         # determine console attributes based on labels
         for l in label.split():
-            style = ui._styles.get(l, '')
+            style = ui._styles.get(l, b'')
             for effect in style.split():
                 try:
                     attr = mapcolor(w32effects[effect], attr)

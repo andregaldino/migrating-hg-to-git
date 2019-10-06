@@ -74,7 +74,7 @@ def _bin(bs):
 
 
 def _str(v, l):
-    bs = ""
+    bs = b""
     for p in pycompat.xrange(l):
         bs = chr(v & 255) + bs
         v >>= 8
@@ -159,7 +159,7 @@ def _flipbit(v, node):
 def ctxpvec(ctx):
     '''construct a pvec for ctx while filling in the cache'''
     r = ctx.repo()
-    if not util.safehasattr(r, "_pveccache"):
+    if not util.safehasattr(r, b"_pveccache"):
         r._pveccache = {}
     pvc = r._pveccache
     if ctx.rev() not in pvc:
@@ -213,7 +213,7 @@ class pvec(object):
 
     def __sub__(self, b):
         if self | b:
-            raise ValueError("concurrent pvecs")
+            raise ValueError(b"concurrent pvecs")
         return self._depth - b._depth
 
     def distance(self, b):

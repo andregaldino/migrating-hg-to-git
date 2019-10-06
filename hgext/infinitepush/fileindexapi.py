@@ -26,13 +26,13 @@ class fileindexapi(indexapi.indexapi):
     def __init__(self, repo):
         super(fileindexapi, self).__init__()
         self._repo = repo
-        root = repo.ui.config('infinitepush', 'indexpath')
+        root = repo.ui.config(b'infinitepush', b'indexpath')
         if not root:
-            root = os.path.join('scratchbranches', 'index')
+            root = os.path.join(b'scratchbranches', b'index')
 
-        self._nodemap = os.path.join(root, 'nodemap')
-        self._bookmarkmap = os.path.join(root, 'bookmarkmap')
-        self._metadatamap = os.path.join(root, 'nodemetadatamap')
+        self._nodemap = os.path.join(root, b'nodemap')
+        self._bookmarkmap = os.path.join(root, b'bookmarkmap')
+        self._metadatamap = os.path.join(root, b'nodemetadatamap')
         self._lock = None
 
     def __enter__(self):
@@ -78,8 +78,8 @@ class fileindexapi(indexapi.indexapi):
         vfs.write(os.path.join(self._metadatamap, node), jsonmetadata)
 
     def _listbookmarks(self, pattern):
-        if pattern.endswith('*'):
-            pattern = 're:^' + pattern[:-1] + '.*'
+        if pattern.endswith(b'*'):
+            pattern = b're:^' + pattern[:-1] + b'.*'
         kind, pat, matcher = stringutil.stringmatcher(pattern)
         prefixlen = len(self._bookmarkmap) + 1
         for dirpath, _, books in self._repo.vfs.walk(self._bookmarkmap):

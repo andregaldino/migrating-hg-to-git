@@ -31,7 +31,7 @@ def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
         except OSError as err:
             if err.errno != errno.ENOENT:
                 ui.debug(
-                    "warning: cannot remove '%s': %s\n"
+                    b"warning: cannot remove '%s': %s\n"
                     % (newpath, err.strerror)
                 )
         try:
@@ -40,7 +40,7 @@ def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
         except OSError as err:
             if err.errno != errno.ENOENT:
                 ui.debug(
-                    "warning: cannot rename '%s' to '%s': %s\n"
+                    b"warning: cannot rename '%s' to '%s': %s\n"
                     % (newpath, oldpath, err.strerror)
                 )
 
@@ -54,11 +54,11 @@ def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
                 path = vfs.join(name)
                 for i in pycompat.xrange(maxfiles - 1, 1, -1):
                     rotate(
-                        oldpath='%s.%d' % (path, i - 1),
-                        newpath='%s.%d' % (path, i),
+                        oldpath=b'%s.%d' % (path, i - 1),
+                        newpath=b'%s.%d' % (path, i),
                     )
-                rotate(oldpath=path, newpath=maxfiles > 0 and path + '.1')
-    return vfs(name, 'a', makeparentdirs=False)
+                rotate(oldpath=path, newpath=maxfiles > 0 and path + b'.1')
+    return vfs(name, b'a', makeparentdirs=False)
 
 
 def _formatlogline(msg):

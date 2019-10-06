@@ -49,7 +49,7 @@ class httprangereader(object):
 
     def read(self, bytes=None):
         req = urlreq.request(pycompat.strurl(self.url))
-        end = ''
+        end = b''
         if bytes:
             end = self.pos + bytes - 1
         if self.pos or end:
@@ -112,7 +112,7 @@ class _HTTPRangeHandler(urlreq.basehandler):
 
     def http_error_416(self, req, fp, code, msg, hdrs):
         # HTTP's Range Not Satisfiable error
-        raise _RangeError('Requested Range Not Satisfiable')
+        raise _RangeError(b'Requested Range Not Satisfiable')
 
 
 def build_opener(ui, authinfo):
@@ -125,10 +125,10 @@ def build_opener(ui, authinfo):
             self.base = base
             self.options = {}
 
-        def __call__(self, path, mode='r', *args, **kw):
-            if mode not in ('r', 'rb'):
-                raise IOError('Permission denied')
-            f = "/".join((self.base, urlreq.quote(path)))
+        def __call__(self, path, mode=b'r', *args, **kw):
+            if mode not in (b'r', b'rb'):
+                raise IOError(b'Permission denied')
+            f = b"/".join((self.base, urlreq.quote(path)))
             return httprangereader(f, urlopener)
 
         def join(self, path):
@@ -158,12 +158,12 @@ class statichttprepository(
         self.ui = ui
 
         self.root = path
-        u = util.url(path.rstrip('/') + "/.hg")
+        u = util.url(path.rstrip(b'/') + b"/.hg")
         self.path, authinfo = u.authinfo()
 
         vfsclass = build_opener(ui, authinfo)
         self.vfs = vfsclass(self.path)
-        self.cachevfs = vfsclass(self.vfs.join('cache'))
+        self.cachevfs = vfsclass(self.vfs.join(b'cache'))
         self._phasedefaults = []
 
         self.names = namespaces.namespaces()
@@ -179,14 +179,14 @@ class statichttprepository(
 
             # check if it is a non-empty old-style repository
             try:
-                fp = self.vfs("00changelog.i")
+                fp = self.vfs(b"00changelog.i")
                 fp.read(1)
                 fp.close()
             except IOError as inst:
                 if inst.errno != errno.ENOENT:
                     raise
                 # we do not care about empty old-style repositories here
-                msg = _("'%s' does not appear to be an hg repository") % path
+                msg = _(b"'%s' does not appear to be an hg repository") % path
                 raise error.RepoError(msg)
 
         supportedrequirements = localrepo.gathersupportedrequirements(ui)
@@ -218,7 +218,7 @@ class statichttprepository(
 
     def _restrictcapabilities(self, caps):
         caps = super(statichttprepository, self)._restrictcapabilities(caps)
-        return caps.difference(["pushkey"])
+        return caps.difference([b"pushkey"])
 
     def url(self):
         return self._url
@@ -232,13 +232,13 @@ class statichttprepository(
     def wlock(self, wait=True):
         raise error.LockUnavailable(
             0,
-            _('lock not available'),
-            'lock',
-            _('cannot lock static-http repository'),
+            _(b'lock not available'),
+            b'lock',
+            _(b'cannot lock static-http repository'),
         )
 
     def lock(self, wait=True):
-        raise error.Abort(_('cannot lock static-http repository'))
+        raise error.Abort(_(b'cannot lock static-http repository'))
 
     def _writecaches(self):
         pass  # statichttprepository are read only
@@ -246,5 +246,5 @@ class statichttprepository(
 
 def instance(ui, path, create, intents=None, createopts=None):
     if create:
-        raise error.Abort(_('cannot create new static-http repository'))
+        raise error.Abort(_(b'cannot create new static-http repository'))
     return statichttprepository(ui, path[7:])

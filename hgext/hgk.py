@@ -59,27 +59,27 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    'hgk', 'path', default='hgk',
+    b'hgk', b'path', default=b'hgk',
 )
 
 
 @command(
-    'debug-diff-tree',
+    b'debug-diff-tree',
     [
-        ('p', 'patch', None, _('generate patch')),
-        ('r', 'recursive', None, _('recursive')),
-        ('P', 'pretty', None, _('pretty')),
-        ('s', 'stdin', None, _('stdin')),
-        ('C', 'copy', None, _('detect copies')),
-        ('S', 'search', "", _('search')),
+        (b'p', b'patch', None, _(b'generate patch')),
+        (b'r', b'recursive', None, _(b'recursive')),
+        (b'P', b'pretty', None, _(b'pretty')),
+        (b's', b'stdin', None, _(b'stdin')),
+        (b'C', b'copy', None, _(b'detect copies')),
+        (b'S', b'search', b"", _(b'search')),
     ],
-    '[OPTION]... NODE1 NODE2 [FILE]...',
+    b'[OPTION]... NODE1 NODE2 [FILE]...',
     inferrepo=True,
 )
 def difftree(ui, repo, node1=None, node2=None, *files, **opts):
@@ -98,17 +98,17 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
         for f in modified:
             # TODO get file permissions
             ui.write(
-                ":100664 100664 %s %s M\t%s\t%s\n"
+                b":100664 100664 %s %s M\t%s\t%s\n"
                 % (short(mmap[f]), short(mmap2[f]), f, f)
             )
         for f in added:
             ui.write(
-                ":000000 100664 %s %s N\t%s\t%s\n"
+                b":000000 100664 %s %s N\t%s\t%s\n"
                 % (empty, short(mmap2[f]), f, f)
             )
         for f in removed:
             ui.write(
-                ":100664 000000 %s %s D\t%s\t%s\n"
+                b":100664 000000 %s %s D\t%s\t%s\n"
                 % (short(mmap[f]), empty, f, f)
             )
 
@@ -133,7 +133,7 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
             node1 = repo.changelog.parents(node1)[0]
         if opts[r'patch']:
             if opts[r'pretty']:
-                catcommit(ui, repo, node2, "")
+                catcommit(ui, repo, node2, b"")
             m = scmutil.match(repo[node1], files)
             diffopts = patch.difffeatureopts(ui)
             diffopts.git = True
@@ -147,51 +147,51 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
 
 
 def catcommit(ui, repo, n, prefix, ctx=None):
-    nlprefix = '\n' + prefix
+    nlprefix = b'\n' + prefix
     if ctx is None:
         ctx = repo[n]
     # use ctx.node() instead ??
-    ui.write(("tree %s\n" % short(ctx.changeset()[0])))
+    ui.write((b"tree %s\n" % short(ctx.changeset()[0])))
     for p in ctx.parents():
-        ui.write(("parent %s\n" % p))
+        ui.write((b"parent %s\n" % p))
 
     date = ctx.date()
-    description = ctx.description().replace("\0", "")
-    ui.write(("author %s %d %d\n" % (ctx.user(), int(date[0]), date[1])))
+    description = ctx.description().replace(b"\0", b"")
+    ui.write((b"author %s %d %d\n" % (ctx.user(), int(date[0]), date[1])))
 
-    if 'committer' in ctx.extra():
-        ui.write(("committer %s\n" % ctx.extra()['committer']))
+    if b'committer' in ctx.extra():
+        ui.write((b"committer %s\n" % ctx.extra()[b'committer']))
 
-    ui.write(("revision %d\n" % ctx.rev()))
-    ui.write(("branch %s\n" % ctx.branch()))
+    ui.write((b"revision %d\n" % ctx.rev()))
+    ui.write((b"branch %s\n" % ctx.branch()))
     if obsolete.isenabled(repo, obsolete.createmarkersopt):
         if ctx.obsolete():
-            ui.write("obsolete\n")
-    ui.write(("phase %s\n\n" % ctx.phasestr()))
+            ui.write(b"obsolete\n")
+    ui.write((b"phase %s\n\n" % ctx.phasestr()))
 
-    if prefix != "":
+    if prefix != b"":
         ui.write(
-            "%s%s\n" % (prefix, description.replace('\n', nlprefix).strip())
+            b"%s%s\n" % (prefix, description.replace(b'\n', nlprefix).strip())
         )
     else:
-        ui.write(description + "\n")
+        ui.write(description + b"\n")
     if prefix:
-        ui.write('\0')
+        ui.write(b'\0')
 
 
-@command('debug-merge-base', [], _('REV REV'))
+@command(b'debug-merge-base', [], _(b'REV REV'))
 def base(ui, repo, node1, node2):
     """output common ancestor information"""
     node1 = repo.lookup(node1)
     node2 = repo.lookup(node2)
     n = repo.changelog.ancestor(node1, node2)
-    ui.write(short(n) + "\n")
+    ui.write(short(n) + b"\n")
 
 
 @command(
-    'debug-cat-file',
-    [('s', 'stdin', None, _('stdin'))],
-    _('[OPTION]... TYPE FILE'),
+    b'debug-cat-file',
+    [(b's', b'stdin', None, _(b'stdin'))],
+    _(b'[OPTION]... TYPE FILE'),
     inferrepo=True,
 )
 def catfile(ui, repo, type=None, r=None, **opts):
@@ -200,21 +200,21 @@ def catfile(ui, repo, type=None, r=None, **opts):
     # spaces.  This way the our caller can find the commit without magic
     # strings
     #
-    prefix = ""
+    prefix = b""
     if opts[r'stdin']:
         line = ui.fin.readline()
         if not line:
             return
         (type, r) = line.rstrip(pycompat.oslinesep).split(b' ')
-        prefix = "    "
+        prefix = b"    "
     else:
         if not type or not r:
-            ui.warn(_("cat-file: type or revision not supplied\n"))
-            commands.help_(ui, 'cat-file')
+            ui.warn(_(b"cat-file: type or revision not supplied\n"))
+            commands.help_(ui, b'cat-file')
 
     while r:
-        if type != "commit":
-            ui.warn(_("aborting hg cat-file only understands commits\n"))
+        if type != b"commit":
+            ui.warn(_(b"aborting hg cat-file only understands commits\n"))
             return 1
         n = repo.lookup(r)
         catcommit(ui, repo, n, prefix)
@@ -232,7 +232,7 @@ def catfile(ui, repo, type=None, r=None, **opts):
 # telling you which commits are reachable from the supplied ones via
 # a bitmask based on arg position.
 # you can specify a commit to stop at by starting the sha1 with ^
-def revtree(ui, args, repo, full="tree", maxnr=0, parents=False):
+def revtree(ui, args, repo, full=b"tree", maxnr=0, parents=False):
     def chlogwalk():
         count = len(repo)
         i = count
@@ -281,11 +281,11 @@ def revtree(ui, args, repo, full="tree", maxnr=0, parents=False):
     # figure out which commits they are asking for and which ones they
     # want us to stop on
     for i, arg in enumerate(args):
-        if arg.startswith('^'):
+        if arg.startswith(b'^'):
             s = repo.lookup(arg[1:])
             stop_sha1.append(s)
             want_sha1.append(s)
-        elif arg != 'HEAD':
+        elif arg != b'HEAD':
             want_sha1.append(repo.lookup(arg))
 
     # calculate the graph for the supplied commits
@@ -312,32 +312,32 @@ def revtree(ui, args, repo, full="tree", maxnr=0, parents=False):
         n = repo.changelog.node(i)
         mask = is_reachable(want_sha1, reachable, n)
         if mask:
-            parentstr = ""
+            parentstr = b""
             if parents:
                 pp = repo.changelog.parents(n)
                 if pp[0] != nullid:
-                    parentstr += " " + short(pp[0])
+                    parentstr += b" " + short(pp[0])
                 if pp[1] != nullid:
-                    parentstr += " " + short(pp[1])
+                    parentstr += b" " + short(pp[1])
             if not full:
-                ui.write("%s%s\n" % (short(n), parentstr))
-            elif full == "commit":
-                ui.write("%s%s\n" % (short(n), parentstr))
-                catcommit(ui, repo, n, '    ', ctx)
+                ui.write(b"%s%s\n" % (short(n), parentstr))
+            elif full == b"commit":
+                ui.write(b"%s%s\n" % (short(n), parentstr))
+                catcommit(ui, repo, n, b'    ', ctx)
             else:
                 (p1, p2) = repo.changelog.parents(n)
                 (h, h1, h2) = map(short, (n, p1, p2))
                 (i1, i2) = map(repo.changelog.rev, (p1, p2))
 
                 date = ctx.date()[0]
-                ui.write("%s %s:%s" % (date, h, mask))
+                ui.write(b"%s %s:%s" % (date, h, mask))
                 mask = is_reachable(want_sha1, reachable, p1)
                 if i1 != nullrev and mask > 0:
-                    ui.write("%s:%s " % (h1, mask)),
+                    ui.write(b"%s:%s " % (h1, mask)),
                 mask = is_reachable(want_sha1, reachable, p2)
                 if i2 != nullrev and mask > 0:
-                    ui.write("%s:%s " % (h2, mask))
-                ui.write("\n")
+                    ui.write(b"%s:%s " % (h2, mask))
+                ui.write(b"\n")
             if maxnr and count >= maxnr:
                 break
             count += 1
@@ -347,19 +347,19 @@ def revtree(ui, args, repo, full="tree", maxnr=0, parents=False):
 # at a given commit without walking the whole repo.  TODO add the stop
 # parameter
 @command(
-    'debug-rev-list',
+    b'debug-rev-list',
     [
-        ('H', 'header', None, _('header')),
-        ('t', 'topo-order', None, _('topo-order')),
-        ('p', 'parents', None, _('parents')),
-        ('n', 'max-count', 0, _('max-count')),
+        (b'H', b'header', None, _(b'header')),
+        (b't', b'topo-order', None, _(b'topo-order')),
+        (b'p', b'parents', None, _(b'parents')),
+        (b'n', b'max-count', 0, _(b'max-count')),
     ],
-    '[OPTION]... REV...',
+    b'[OPTION]... REV...',
 )
 def revlist(ui, repo, *revs, **opts):
     """print revisions"""
-    if opts['header']:
-        full = "commit"
+    if opts[b'header']:
+        full = b"commit"
     else:
         full = None
     copy = [x for x in revs]
@@ -367,19 +367,19 @@ def revlist(ui, repo, *revs, **opts):
 
 
 @command(
-    'view',
-    [('l', 'limit', '', _('limit number of changes displayed'), _('NUM'))],
-    _('[-l LIMIT] [REVRANGE]'),
+    b'view',
+    [(b'l', b'limit', b'', _(b'limit number of changes displayed'), _(b'NUM'))],
+    _(b'[-l LIMIT] [REVRANGE]'),
     helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
 )
 def view(ui, repo, *etc, **opts):
-    "start interactive history viewer"
+    b"start interactive history viewer"
     opts = pycompat.byteskwargs(opts)
     os.chdir(repo.root)
-    optstr = ' '.join(['--%s %s' % (k, v) for k, v in opts.iteritems() if v])
+    optstr = b' '.join([b'--%s %s' % (k, v) for k, v in opts.iteritems() if v])
     if repo.filtername is None:
-        optstr += '--hidden'
+        optstr += b'--hidden'
 
-    cmd = ui.config("hgk", "path") + " %s %s" % (optstr, " ".join(etc))
-    ui.debug("running %s\n" % cmd)
-    ui.system(cmd, blockedtag='hgk_view')
+    cmd = ui.config(b"hgk", b"path") + b" %s %s" % (optstr, b" ".join(etc))
+    ui.debug(b"running %s\n" % cmd)
+    ui.system(cmd, blockedtag=b'hgk_view')

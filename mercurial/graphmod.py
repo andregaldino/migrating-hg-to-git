@@ -27,15 +27,15 @@ from . import (
     util,
 )
 
-CHANGESET = 'C'
-PARENT = 'P'
-GRANDPARENT = 'G'
-MISSINGPARENT = 'M'
+CHANGESET = b'C'
+PARENT = b'P'
+GRANDPARENT = b'G'
+MISSINGPARENT = b'M'
 # Style of line to draw. None signals a line that ends and is removed at this
 # point. A number prefix means only the last N characters of the current block
 # will use that style, the rest will use the PARENT style. Add a - sign
 # (so making N negative) and all but the first N characters use that style.
-EDGES = {PARENT: '|', GRANDPARENT: ':', MISSINGPARENT: None}
+EDGES = {PARENT: b'|', GRANDPARENT: b':', MISSINGPARENT: None}
 
 
 def dagwalker(repo, revs):
@@ -118,13 +118,13 @@ def colored(dag, repo):
     newcolor = 1
     config = {}
 
-    for key, val in repo.ui.configitems('graph'):
-        if '.' in key:
-            branch, setting = key.rsplit('.', 1)
+    for key, val in repo.ui.configitems(b'graph'):
+        if b'.' in key:
+            branch, setting = key.rsplit(b'.', 1)
             # Validation
-            if setting == "width" and val.isdigit():
+            if setting == b"width" and val.isdigit():
                 config.setdefault(branch, {})[setting] = int(val)
-            elif setting == "color" and val.isalnum():
+            elif setting == b"color" and val.isalnum():
                 config.setdefault(branch, {})[setting] = val
 
     if config:
@@ -168,8 +168,8 @@ def colored(dag, repo):
                         ecol,
                         next.index(eid),
                         colors[eid],
-                        bconf.get('width', -1),
-                        bconf.get('color', ''),
+                        bconf.get(b'width', -1),
+                        bconf.get(b'color', b''),
                     )
                 )
             elif eid == cur:
@@ -180,8 +180,8 @@ def colored(dag, repo):
                             ecol,
                             next.index(p),
                             color,
-                            bconf.get('width', -1),
-                            bconf.get('color', ''),
+                            bconf.get(b'width', -1),
+                            bconf.get(b'color', b''),
                         )
                     )
 
@@ -192,7 +192,7 @@ def colored(dag, repo):
 
 def asciiedges(type, char, state, rev, parents):
     """adds edge info to changelog DAG walk suitable for ascii()"""
-    seen = state['seen']
+    seen = state[b'seen']
     if rev not in seen:
         seen.append(rev)
     nodeidx = seen.index(rev)
@@ -207,7 +207,7 @@ def asciiedges(type, char, state, rev, parents):
             knownparents.append(parent)
         else:
             newparents.append(parent)
-            state['edges'][parent] = state['styles'].get(ptype, '|')
+            state[b'edges'][parent] = state[b'styles'].get(ptype, b'|')
 
     ncols = len(seen)
     width = 1 + ncols * 2
@@ -226,7 +226,7 @@ def asciiedges(type, char, state, rev, parents):
         nmorecols = 1
         width += 2
         yield (type, char, width, (nodeidx, edges, ncols, nmorecols))
-        char = '\\'
+        char = b'\\'
         nodeidx += 1
         ncols += 1
         edges = []
@@ -240,7 +240,7 @@ def asciiedges(type, char, state, rev, parents):
     if nmorecols > 0:
         width += 2
     # remove current node from edge characters, no longer needed
-    state['edges'].pop(rev, None)
+    state[b'edges'].pop(rev, None)
     yield (type, char, width, (nodeidx, edges, ncols, nmorecols))
 
 
@@ -256,10 +256,10 @@ def _getnodelineedgestail(echars, idx, pidx, ncols, coldiff, pdiff, fix_tail):
         if coldiff == -1:
             start = max(idx + 1, pidx)
             tail = echars[idx * 2 : (start - 1) * 2]
-            tail.extend(["/", " "] * (ncols - start))
+            tail.extend([b"/", b" "] * (ncols - start))
             return tail
         else:
-            return ["\\", " "] * (ncols - idx - 1)
+            return [b"\\", b" "] * (ncols - idx - 1)
     else:
         remainder = ncols - idx - 1
         return echars[-(remainder * 2) :] if remainder > 0 else []
@@ -268,20 +268,20 @@ def _getnodelineedgestail(echars, idx, pidx, ncols, coldiff, pdiff, fix_tail):
 def _drawedges(echars, edges, nodeline, interline):
     for (start, end) in edges:
         if start == end + 1:
-            interline[2 * end + 1] = "/"
+            interline[2 * end + 1] = b"/"
         elif start == end - 1:
-            interline[2 * start + 1] = "\\"
+            interline[2 * start + 1] = b"\\"
         elif start == end:
             interline[2 * start] = echars[2 * start]
         else:
             if 2 * end >= len(nodeline):
                 continue
-            nodeline[2 * end] = "+"
+            nodeline[2 * end] = b"+"
             if start > end:
                 (start, end) = (end, start)
             for i in range(2 * start + 1, 2 * end):
-                if nodeline[i] != "+":
-                    nodeline[i] = "-"
+                if nodeline[i] != b"+":
+                    nodeline[i] = b"-"
 
 
 def _getpaddingline(echars, idx, ncols, edges):
@@ -297,7 +297,7 @@ def _getpaddingline(echars, idx, ncols, edges):
         # | | |             | | |
         line.extend(echars[idx * 2 : (idx + 1) * 2])
     else:
-        line.extend([' ', ' '])
+        line.extend([b' ', b' '])
     # all edges to the right of the current node
     remainder = ncols - idx - 1
     if remainder > 0:
@@ -322,7 +322,7 @@ def _drawendinglines(lines, extra, edgemap, seen, state):
     while edgechars and edgechars[-1] is None:
         edgechars.pop()
     shift_size = max((edgechars.count(None) * 2) - 1, 0)
-    minlines = 3 if not state['graphshorten'] else 2
+    minlines = 3 if not state[b'graphshorten'] else 2
     while len(lines) < minlines + shift_size:
         lines.append(extra[:])
 
@@ -338,17 +338,17 @@ def _drawendinglines(lines, extra, edgemap, seen, state):
         targets = list(range(first_empty, first_empty + len(toshift) * 2, 2))
         positions = toshift[:]
         for line in lines[-shift_size:]:
-            line[first_empty:] = [' '] * (len(line) - first_empty)
+            line[first_empty:] = [b' '] * (len(line) - first_empty)
             for i in range(len(positions)):
                 pos = positions[i] - 1
                 positions[i] = max(pos, targets[i])
-                line[pos] = '/' if pos > targets[i] else extra[toshift[i]]
+                line[pos] = b'/' if pos > targets[i] else extra[toshift[i]]
 
-    map = {1: '|', 2: '~'} if not state['graphshorten'] else {1: '~'}
+    map = {1: b'|', 2: b'~'} if not state[b'graphshorten'] else {1: b'~'}
     for i, line in enumerate(lines):
         if None not in line:
             continue
-        line[:] = [c or map.get(i, ' ') for c in line]
+        line[:] = [c or map.get(i, b' ') for c in line]
 
     # remove edges that ended
     remove = [p for p, c in edgemap.items() if c is None]
@@ -360,12 +360,12 @@ def _drawendinglines(lines, extra, edgemap, seen, state):
 def asciistate():
     """returns the initial value for the "state" argument to ascii()"""
     return {
-        'seen': [],
-        'edges': {},
-        'lastcoldiff': 0,
-        'lastindex': 0,
-        'styles': EDGES.copy(),
-        'graphshorten': False,
+        b'seen': [],
+        b'edges': {},
+        b'lastcoldiff': 0,
+        b'lastindex': 0,
+        b'styles': EDGES.copy(),
+        b'graphshorten': False,
     }
 
 
@@ -383,7 +383,7 @@ def outputgraph(ui, graph):
     without needing to mimic all of the edge-fixup logic in ascii()
     """
     for (ln, logstr) in graph:
-        ui.write((ln + logstr).rstrip() + "\n")
+        ui.write((ln + logstr).rstrip() + b"\n")
 
 
 def ascii(ui, state, type, char, text, coldata):
@@ -409,11 +409,11 @@ def ascii(ui, state, type, char, text, coldata):
     idx, edges, ncols, coldiff = coldata
     assert -2 < coldiff < 2
 
-    edgemap, seen = state['edges'], state['seen']
+    edgemap, seen = state[b'edges'], state[b'seen']
     # Be tolerant of history issues; make sure we have at least ncols + coldiff
     # elements to work with. See test-glog.t for broken history test cases.
-    echars = [c for p in seen for c in (edgemap.get(p, '|'), ' ')]
-    echars.extend(('|', ' ') * max(ncols + coldiff - len(seen), 0))
+    echars = [c for p in seen for c in (edgemap.get(p, b'|'), b' ')]
+    echars.extend((b'|', b' ') * max(ncols + coldiff - len(seen), 0))
 
     if coldiff == -1:
         # Transform
@@ -446,16 +446,16 @@ def ascii(ui, state, type, char, text, coldata):
 
     # nodeline is the line containing the node character (typically o)
     nodeline = echars[: idx * 2]
-    nodeline.extend([char, " "])
+    nodeline.extend([char, b" "])
 
     nodeline.extend(
         _getnodelineedgestail(
             echars,
             idx,
-            state['lastindex'],
+            state[b'lastindex'],
             ncols,
             coldiff,
-            state['lastcoldiff'],
+            state[b'lastcoldiff'],
             fix_nodeline_tail,
         )
     )
@@ -464,16 +464,16 @@ def ascii(ui, state, type, char, text, coldata):
     # edges between this entry and the next
     shift_interline = echars[: idx * 2]
     for i in pycompat.xrange(2 + coldiff):
-        shift_interline.append(' ')
+        shift_interline.append(b' ')
     count = ncols - idx - 1
     if coldiff == -1:
         for i in pycompat.xrange(count):
-            shift_interline.extend(['/', ' '])
+            shift_interline.extend([b'/', b' '])
     elif coldiff == 0:
         shift_interline.extend(echars[(idx + 1) * 2 : ncols * 2])
     else:
         for i in pycompat.xrange(count):
-            shift_interline.extend(['\\', ' '])
+            shift_interline.extend([b'\\', b' '])
 
     # draw edges from the current node to its parents
     _drawedges(echars, edges, nodeline, shift_interline)
@@ -485,7 +485,7 @@ def ascii(ui, state, type, char, text, coldata):
 
     # If 'graphshorten' config, only draw shift_interline
     # when there is any non vertical flow in graph.
-    if state['graphshorten']:
+    if state[b'graphshorten']:
         if any(c in br'\/' for c in shift_interline if c):
             lines.append(shift_interline)
     # Else, no 'graphshorten' config so draw shift_interline.
@@ -502,13 +502,15 @@ def ascii(ui, state, type, char, text, coldata):
     _drawendinglines(lines, extra_interline, edgemap, seen, state)
 
     while len(text) < len(lines):
-        text.append("")
+        text.append(b"")
 
     # print lines
     indentation_level = max(ncols, ncols + coldiff)
-    lines = ["%-*s " % (2 * indentation_level, "".join(line)) for line in lines]
+    lines = [
+        b"%-*s " % (2 * indentation_level, b"".join(line)) for line in lines
+    ]
     outputgraph(ui, zip(lines, text))
 
     # ... and start over
-    state['lastcoldiff'] = coldiff
-    state['lastindex'] = idx
+    state[b'lastcoldiff'] = coldiff
+    state[b'lastindex'] = idx

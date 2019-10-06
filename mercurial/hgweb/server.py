@@ -54,7 +54,7 @@ class _error_logger(object):
         pass
 
     def write(self, str):
-        self.writelines(str.split('\n'))
+        self.writelines(str.split(b'\n'))
 
     def writelines(self, seq):
         for msg in seq:
@@ -63,7 +63,7 @@ class _error_logger(object):
 
 class _httprequesthandler(httpservermod.basehttprequesthandler):
 
-    url_scheme = 'http'
+    url_scheme = b'http'
 
     @staticmethod
     def preparehttpserver(httpserver, ui):
@@ -83,7 +83,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
                     format % args,
                 )
             )
-            + '\n'
+            + b'\n'
         )
         fp.flush()
 
@@ -95,7 +95,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
 
     def log_request(self, code=r'-', size=r'-'):
         xheaders = []
-        if util.safehasattr(self, 'headers'):
+        if util.safehasattr(self, b'headers'):
             xheaders = [
                 h for h in self.headers.items() if h[0].startswith(r'x-')
             ]
@@ -156,7 +156,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             self.server.prefix + b'/'
         ):
             self._start_response(pycompat.strurl(common.statusmessage(404)), [])
-            if self.command == 'POST':
+            if self.command == b'POST':
                 # Paranoia: tell the client we're going to close the
                 # socket so they don't try and reuse a socket that
                 # might have a POST body waiting to confuse us. We do
@@ -206,7 +206,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'SERVER_PROTOCOL'] = self.request_version
         env[r'wsgi.version'] = (1, 0)
         env[r'wsgi.url_scheme'] = pycompat.sysstr(self.url_scheme)
-        if env.get(r'HTTP_EXPECT', '').lower() == '100-continue':
+        if env.get(r'HTTP_EXPECT', b'').lower() == b'100-continue':
             self.rfile = common.continuereader(self.rfile, self.wfile.write)
 
         env[r'wsgi.input'] = self.rfile
@@ -214,7 +214,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'wsgi.multithread'] = isinstance(
             self.server, socketserver.ThreadingMixIn
         )
-        if util.safehasattr(socketserver, 'ForkingMixIn'):
+        if util.safehasattr(socketserver, b'ForkingMixIn'):
             env[r'wsgi.multiprocess'] = isinstance(
                 self.server, socketserver.ForkingMixIn
             )
@@ -238,7 +238,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
     def send_headers(self):
         if not self.saved_status:
             raise AssertionError(
-                "Sending headers before " "start_response() called"
+                b"Sending headers before " b"start_response() called"
             )
         saved_status = self.saved_status.split(None, 1)
         saved_status[0] = int(saved_status[0])
@@ -274,24 +274,24 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
 
     def _write(self, data):
         if not self.saved_status:
-            raise AssertionError("data written before start_response() called")
+            raise AssertionError(b"data written before start_response() called")
         elif not self.sent_headers:
             self.send_headers()
         if self.length is not None:
             if len(data) > self.length:
                 raise AssertionError(
-                    "Content-length header sent, but more "
-                    "bytes than specified are being written."
+                    b"Content-length header sent, but more "
+                    b"bytes than specified are being written."
                 )
             self.length = self.length - len(data)
         elif self._chunked and data:
-            data = '%x\r\n%s\r\n' % (len(data), data)
+            data = b'%x\r\n%s\r\n' % (len(data), data)
         self.wfile.write(data)
         self.wfile.flush()
 
     def _done(self):
         if self._chunked:
-            self.wfile.write('0\r\n\r\n')
+            self.wfile.write(b'0\r\n\r\n')
             self.wfile.flush()
 
     def version_string(self):
@@ -303,7 +303,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
 class _httprequesthandlerssl(_httprequesthandler):
     """HTTPS handler based on Python's ssl module"""
 
-    url_scheme = 'https'
+    url_scheme = b'https'
 
     @staticmethod
     def preparehttpserver(httpserver, ui):
@@ -312,14 +312,14 @@ class _httprequesthandlerssl(_httprequesthandler):
 
             sslutil.modernssl
         except ImportError:
-            raise error.Abort(_("SSL support is unavailable"))
+            raise error.Abort(_(b"SSL support is unavailable"))
 
-        certfile = ui.config('web', 'certificate')
+        certfile = ui.config(b'web', b'certificate')
 
         # These config options are currently only meant for testing. Use
         # at your own risk.
-        cafile = ui.config('devel', 'servercafile')
-        reqcert = ui.configbool('devel', 'serverrequirecert')
+        cafile = ui.config(b'devel', b'servercafile')
+        reqcert = ui.configbool(b'devel', b'serverrequirecert')
 
         httpserver.socket = sslutil.wrapserversocket(
             httpserver.socket,
@@ -341,7 +341,7 @@ try:
     threading.activeCount()  # silence pyflakes and bypass demandimport
     _mixin = socketserver.ThreadingMixIn
 except ImportError:
-    if util.safehasattr(os, "fork"):
+    if util.safehasattr(os, b"fork"):
         _mixin = socketserver.ForkingMixIn
     else:
 
@@ -350,8 +350,8 @@ except ImportError:
 
 
 def openlog(opt, default):
-    if opt and opt != '-':
-        return open(opt, 'ab')
+    if opt and opt != b'-':
+        return open(opt, b'ab')
     return default
 
 
@@ -368,20 +368,20 @@ class MercurialHTTPServer(_mixin, httpservermod.httpserver, object):
 
         handler.preparehttpserver(self, ui)
 
-        prefix = ui.config('web', 'prefix')
+        prefix = ui.config(b'web', b'prefix')
         if prefix:
-            prefix = '/' + prefix.strip('/')
+            prefix = b'/' + prefix.strip(b'/')
         self.prefix = prefix
 
-        alog = openlog(ui.config('web', 'accesslog'), ui.fout)
-        elog = openlog(ui.config('web', 'errorlog'), ui.ferr)
+        alog = openlog(ui.config(b'web', b'accesslog'), ui.fout)
+        elog = openlog(ui.config(b'web', b'errorlog'), ui.ferr)
         self.accesslog = alog
         self.errorlog = elog
 
         self.addr, self.port = self.socket.getsockname()[0:2]
         self.fqaddr = socket.getfqdn(addr[0])
 
-        self.serverheader = ui.config('web', 'server-header')
+        self.serverheader = ui.config(b'web', b'server-header')
 
 
 class IPv6HTTPServer(MercurialHTTPServer):
@@ -389,18 +389,18 @@ class IPv6HTTPServer(MercurialHTTPServer):
 
     def __init__(self, *args, **kwargs):
         if self.address_family is None:
-            raise error.RepoError(_('IPv6 is not available on this system'))
+            raise error.RepoError(_(b'IPv6 is not available on this system'))
         super(IPv6HTTPServer, self).__init__(*args, **kwargs)
 
 
 def create_server(ui, app):
 
-    if ui.config('web', 'certificate'):
+    if ui.config(b'web', b'certificate'):
         handler = _httprequesthandlerssl
     else:
         handler = _httprequesthandler
 
-    if ui.configbool('web', 'ipv6'):
+    if ui.configbool(b'web', b'ipv6'):
         cls = IPv6HTTPServer
     else:
         cls = MercurialHTTPServer
@@ -423,16 +423,16 @@ def create_server(ui, app):
         except AttributeError:
             reload(sys)
         oldenc = sys.getdefaultencoding()
-        sys.setdefaultencoding("latin1")  # or any full 8-bit encoding
+        sys.setdefaultencoding(b"latin1")  # or any full 8-bit encoding
         mimetypes.init()
         sys.setdefaultencoding(oldenc)
 
-    address = ui.config('web', 'address')
-    port = util.getport(ui.config('web', 'port'))
+    address = ui.config(b'web', b'address')
+    port = util.getport(ui.config(b'web', b'port'))
     try:
         return cls(ui, app, (address, port), handler)
     except socket.error as inst:
         raise error.Abort(
-            _("cannot start server at '%s:%d': %s")
+            _(b"cannot start server at '%s:%d': %s")
             % (address, port, encoding.strtolocal(inst.args[1]))
         )

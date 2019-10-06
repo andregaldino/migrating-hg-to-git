@@ -58,22 +58,22 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 
 @command(
-    'share',
+    b'share',
     [
-        ('U', 'noupdate', None, _('do not create a working directory')),
-        ('B', 'bookmarks', None, _('also share bookmarks')),
+        (b'U', b'noupdate', None, _(b'do not create a working directory')),
+        (b'B', b'bookmarks', None, _(b'also share bookmarks')),
         (
-            '',
-            'relative',
+            b'',
+            b'relative',
             None,
-            _('point to source using a relative path ' '(EXPERIMENTAL)'),
+            _(b'point to source using a relative path ' b'(EXPERIMENTAL)'),
         ),
     ],
-    _('[-U] [-B] SOURCE [DEST]'),
+    _(b'[-U] [-B] SOURCE [DEST]'),
     helpcategory=command.CATEGORY_REPO_CREATION,
     norepo=True,
 )
@@ -108,7 +108,7 @@ def share(
     return 0
 
 
-@command('unshare', [], '', helpcategory=command.CATEGORY_MAINTENANCE)
+@command(b'unshare', [], b'', helpcategory=command.CATEGORY_MAINTENANCE)
 def unshare(ui, repo):
     """convert a shared repository to a normal one
 
@@ -116,30 +116,30 @@ def unshare(ui, repo):
     """
 
     if not repo.shared():
-        raise error.Abort(_("this is not a shared repo"))
+        raise error.Abort(_(b"this is not a shared repo"))
 
     hg.unshare(ui, repo)
 
 
 # Wrap clone command to pass auto share options.
 def clone(orig, ui, source, *args, **opts):
-    pool = ui.config('share', 'pool')
+    pool = ui.config(b'share', b'pool')
     if pool:
         pool = util.expandpath(pool)
 
     opts[r'shareopts'] = {
-        'pool': pool,
-        'mode': ui.config('share', 'poolnaming'),
+        b'pool': pool,
+        b'mode': ui.config(b'share', b'poolnaming'),
     }
 
     return orig(ui, source, *args, **opts)
 
 
 def extsetup(ui):
-    extensions.wrapfunction(bookmarks, '_getbkfile', getbkfile)
-    extensions.wrapfunction(bookmarks.bmstore, '_recordchange', recordchange)
-    extensions.wrapfunction(bookmarks.bmstore, '_writerepo', writerepo)
-    extensions.wrapcommand(commands.table, 'clone', clone)
+    extensions.wrapfunction(bookmarks, b'_getbkfile', getbkfile)
+    extensions.wrapfunction(bookmarks.bmstore, b'_recordchange', recordchange)
+    extensions.wrapfunction(bookmarks.bmstore, b'_writerepo', writerepo)
+    extensions.wrapcommand(commands.table, b'clone', clone)
 
 
 def _hassharedbookmarks(repo):
@@ -149,7 +149,7 @@ def _hassharedbookmarks(repo):
         # from/to the source repo.
         return False
     try:
-        shared = repo.vfs.read('shared').splitlines()
+        shared = repo.vfs.read(b'shared').splitlines()
     except IOError as inst:
         if inst.errno != errno.ENOENT:
             raise
@@ -165,7 +165,7 @@ def getbkfile(orig, repo):
             # HG_PENDING refers repo.root.
             try:
                 fp, pending = txnutil.trypending(
-                    repo.root, repo.vfs, 'bookmarks'
+                    repo.root, repo.vfs, b'bookmarks'
                 )
                 if pending:
                     # only in this case, bookmark information in repo
@@ -194,7 +194,7 @@ def recordchange(orig, self, tr):
     if _hassharedbookmarks(self._repo):
         srcrepo = hg.sharedreposource(self._repo)
         if srcrepo is not None:
-            category = 'share-bookmarks'
+            category = b'share-bookmarks'
             tr.addpostclose(category, lambda tr: self._writerepo(srcrepo))
 
 

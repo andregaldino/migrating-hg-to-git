@@ -45,37 +45,42 @@ from ..utils import stringutil
 
 archivespecs = util.sortdict(
     (
-        ('zip', ('application/zip', 'zip', '.zip', None)),
-        ('gz', ('application/x-gzip', 'tgz', '.tar.gz', None)),
-        ('bz2', ('application/x-bzip2', 'tbz2', '.tar.bz2', None)),
+        (b'zip', (b'application/zip', b'zip', b'.zip', None)),
+        (b'gz', (b'application/x-gzip', b'tgz', b'.tar.gz', None)),
+        (b'bz2', (b'application/x-bzip2', b'tbz2', b'.tar.bz2', None)),
     )
 )
 
 
 def archivelist(ui, nodeid, url=None):
-    allowed = ui.configlist('web', 'allow-archive', untrusted=True)
+    allowed = ui.configlist(b'web', b'allow-archive', untrusted=True)
     archives = []
 
     for typ, spec in archivespecs.iteritems():
         if typ in allowed or ui.configbool(
-            'web', 'allow' + typ, untrusted=True
+            b'web', b'allow' + typ, untrusted=True
         ):
             archives.append(
-                {'type': typ, 'extension': spec[2], 'node': nodeid, 'url': url,}
+                {
+                    b'type': typ,
+                    b'extension': spec[2],
+                    b'node': nodeid,
+                    b'url': url,
+                }
             )
 
     return templateutil.mappinglist(archives)
 
 
 def up(p):
-    if p[0:1] != "/":
-        p = "/" + p
-    if p[-1:] == "/":
+    if p[0:1] != b"/":
+        p = b"/" + p
+    if p[-1:] == b"/":
         p = p[:-1]
     up = os.path.dirname(p)
-    if up == "/":
-        return "/"
-    return up + "/"
+    if up == b"/":
+        return b"/"
+    return up + b"/"
 
 
 def _navseq(step, firststep=None):
@@ -136,8 +141,8 @@ class revnav(object):
             return templateutil.mappinglist(
                 [
                     {
-                        'before': templateutil.mappinglist([]),
-                        'after': templateutil.mappinglist([]),
+                        b'before': templateutil.mappinglist([]),
+                        b'after': templateutil.mappinglist([]),
                     },
                 ]
             )
@@ -151,28 +156,28 @@ class revnav(object):
         targets.sort()
 
         first = self._first()
-        navbefore = [{'label': '(%i)' % first, 'node': self.hex(first)}]
+        navbefore = [{b'label': b'(%i)' % first, b'node': self.hex(first)}]
         navafter = []
         for rev in targets:
             if rev not in self._revlog:
                 continue
             if pos < rev < limit:
                 navafter.append(
-                    {'label': '+%d' % abs(rev - pos), 'node': self.hex(rev)}
+                    {b'label': b'+%d' % abs(rev - pos), b'node': self.hex(rev)}
                 )
             if 0 < rev < pos:
                 navbefore.append(
-                    {'label': '-%d' % abs(rev - pos), 'node': self.hex(rev)}
+                    {b'label': b'-%d' % abs(rev - pos), b'node': self.hex(rev)}
                 )
 
-        navafter.append({'label': 'tip', 'node': 'tip'})
+        navafter.append({b'label': b'tip', b'node': b'tip'})
 
         # TODO: maybe this can be a scalar object supporting tomap()
         return templateutil.mappinglist(
             [
                 {
-                    'before': templateutil.mappinglist(navbefore),
-                    'after': templateutil.mappinglist(navafter),
+                    b'before': templateutil.mappinglist(navbefore),
+                    b'after': templateutil.mappinglist(navafter),
                 },
             ]
         )
@@ -199,15 +204,15 @@ class filerevnav(revnav):
 def _ctxsgen(context, ctxs):
     for s in ctxs:
         d = {
-            'node': s.hex(),
-            'rev': s.rev(),
-            'user': s.user(),
-            'date': s.date(),
-            'description': s.description(),
-            'branch': s.branch(),
+            b'node': s.hex(),
+            b'rev': s.rev(),
+            b'user': s.user(),
+            b'date': s.date(),
+            b'description': s.description(),
+            b'branch': s.branch(),
         }
-        if util.safehasattr(s, 'path'):
-            d['file'] = s.path()
+        if util.safehasattr(s, b'path'):
+            d[b'file'] = s.path()
         yield d
 
 
@@ -225,7 +230,12 @@ def difffeatureopts(req, ui, section):
         ui, untrusted=True, section=section, whitespace=True
     )
 
-    for k in ('ignorews', 'ignorewsamount', 'ignorewseol', 'ignoreblanklines'):
+    for k in (
+        b'ignorews',
+        b'ignorewsamount',
+        b'ignorewseol',
+        b'ignoreblanklines',
+    ):
         v = req.qsparams.get(k)
         if v is not None:
             v = stringutil.parsebool(v)
@@ -235,7 +245,7 @@ def difffeatureopts(req, ui, section):
 
 
 def annotate(req, fctx, ui):
-    diffopts = difffeatureopts(req, ui, 'annotate')
+    diffopts = difffeatureopts(req, ui, b'annotate')
     return fctx.annotate(follow=True, diffopts=diffopts)
 
 
@@ -254,16 +264,16 @@ def children(ctx, hide=None):
 def renamelink(fctx):
     r = fctx.renamed()
     if r:
-        return templateutil.mappinglist([{'file': r[0], 'node': hex(r[1])}])
+        return templateutil.mappinglist([{b'file': r[0], b'node': hex(r[1])}])
     return templateutil.mappinglist([])
 
 
 def nodetagsdict(repo, node):
-    return templateutil.hybridlist(repo.nodetags(node), name='name')
+    return templateutil.hybridlist(repo.nodetags(node), name=b'name')
 
 
 def nodebookmarksdict(repo, node):
-    return templateutil.hybridlist(repo.nodebookmarks(node), name='name')
+    return templateutil.hybridlist(repo.nodebookmarks(node), name=b'name')
 
 
 def nodebranchdict(repo, ctx):
@@ -277,7 +287,7 @@ def nodebranchdict(repo, ctx):
         branchnode = None
     if branchnode == ctx.node():
         branches.append(branch)
-    return templateutil.hybridlist(branches, name='name')
+    return templateutil.hybridlist(branches, name=b'name')
 
 
 def nodeinbranch(repo, ctx):
@@ -287,17 +297,17 @@ def nodeinbranch(repo, ctx):
         branchnode = repo.branchtip(branch)
     except error.RepoLookupError:
         branchnode = None
-    if branch != 'default' and branchnode != ctx.node():
+    if branch != b'default' and branchnode != ctx.node():
         branches.append(branch)
-    return templateutil.hybridlist(branches, name='name')
+    return templateutil.hybridlist(branches, name=b'name')
 
 
 def nodebranchnodefault(ctx):
     branches = []
     branch = ctx.branch()
-    if branch != 'default':
+    if branch != b'default':
         branches.append(branch)
-    return templateutil.hybridlist(branches, name='name')
+    return templateutil.hybridlist(branches, name=b'name')
 
 
 def _nodenamesgen(context, f, node, name):
@@ -306,12 +316,12 @@ def _nodenamesgen(context, f, node, name):
 
 
 def showtag(repo, t1, node=nullid):
-    args = (repo.nodetags, node, 'tag')
+    args = (repo.nodetags, node, b'tag')
     return templateutil.mappinggenerator(_nodenamesgen, args=args, name=t1)
 
 
 def showbookmark(repo, t1, node=nullid):
-    args = (repo.nodebookmarks, node, 'bookmark')
+    args = (repo.nodebookmarks, node, b'bookmark')
     return templateutil.mappinggenerator(_nodenamesgen, args=args, name=t1)
 
 
@@ -331,33 +341,33 @@ def branchentries(repo, stripecount, limit=0):
                 return
             count += 1
             if closed:
-                status = 'closed'
+                status = b'closed'
             elif ctx.node() not in heads:
-                status = 'inactive'
+                status = b'inactive'
             else:
-                status = 'open'
+                status = b'open'
             yield {
-                'parity': next(parity),
-                'branch': ctx.branch(),
-                'status': status,
-                'node': ctx.hex(),
-                'date': ctx.date(),
+                b'parity': next(parity),
+                b'branch': ctx.branch(),
+                b'status': status,
+                b'node': ctx.hex(),
+                b'date': ctx.date(),
             }
 
     return templateutil.mappinggenerator(entries)
 
 
 def cleanpath(repo, path):
-    path = path.lstrip('/')
+    path = path.lstrip(b'/')
     auditor = pathutil.pathauditor(repo.root, realfs=False)
-    return pathutil.canonpath(repo.root, '', path, auditor=auditor)
+    return pathutil.canonpath(repo.root, b'', path, auditor=auditor)
 
 
 def changectx(repo, req):
-    changeid = "tip"
-    if 'node' in req.qsparams:
-        changeid = req.qsparams['node']
-        ipos = changeid.find(':')
+    changeid = b"tip"
+    if b'node' in req.qsparams:
+        changeid = req.qsparams[b'node']
+        ipos = changeid.find(b':')
         if ipos != -1:
             changeid = changeid[(ipos + 1) :]
 
@@ -365,9 +375,9 @@ def changectx(repo, req):
 
 
 def basechangectx(repo, req):
-    if 'node' in req.qsparams:
-        changeid = req.qsparams['node']
-        ipos = changeid.find(':')
+    if b'node' in req.qsparams:
+        changeid = req.qsparams[b'node']
+        ipos = changeid.find(b':')
         if ipos != -1:
             changeid = changeid[:ipos]
             return scmutil.revsymbol(repo, changeid)
@@ -376,15 +386,15 @@ def basechangectx(repo, req):
 
 
 def filectx(repo, req):
-    if 'file' not in req.qsparams:
-        raise ErrorResponse(HTTP_NOT_FOUND, 'file not given')
-    path = cleanpath(repo, req.qsparams['file'])
-    if 'node' in req.qsparams:
-        changeid = req.qsparams['node']
-    elif 'filenode' in req.qsparams:
-        changeid = req.qsparams['filenode']
+    if b'file' not in req.qsparams:
+        raise ErrorResponse(HTTP_NOT_FOUND, b'file not given')
+    path = cleanpath(repo, req.qsparams[b'file'])
+    if b'node' in req.qsparams:
+        changeid = req.qsparams[b'node']
+    elif b'filenode' in req.qsparams:
+        changeid = req.qsparams[b'filenode']
     else:
-        raise ErrorResponse(HTTP_NOT_FOUND, 'node or filenode not given')
+        raise ErrorResponse(HTTP_NOT_FOUND, b'node or filenode not given')
     try:
         fctx = scmutil.revsymbol(repo, changeid)[path]
     except error.RepoError:
@@ -394,15 +404,15 @@ def filectx(repo, req):
 
 
 def linerange(req):
-    linerange = req.qsparams.getall('linerange')
+    linerange = req.qsparams.getall(b'linerange')
     if not linerange:
         return None
     if len(linerange) > 1:
-        raise ErrorResponse(HTTP_BAD_REQUEST, 'redundant linerange parameter')
+        raise ErrorResponse(HTTP_BAD_REQUEST, b'redundant linerange parameter')
     try:
-        fromline, toline = map(int, linerange[0].split(':', 1))
+        fromline, toline = map(int, linerange[0].split(b':', 1))
     except ValueError:
-        raise ErrorResponse(HTTP_BAD_REQUEST, 'invalid linerange parameter')
+        raise ErrorResponse(HTTP_BAD_REQUEST, b'invalid linerange parameter')
     try:
         return util.processlinerange(fromline, toline)
     except error.ParseError as exc:
@@ -410,15 +420,15 @@ def linerange(req):
 
 
 def formatlinerange(fromline, toline):
-    return '%d:%d' % (fromline + 1, toline)
+    return b'%d:%d' % (fromline + 1, toline)
 
 
 def _succsandmarkersgen(context, mapping):
-    repo = context.resource(mapping, 'repo')
+    repo = context.resource(mapping, b'repo')
     itemmappings = templatekw.showsuccsandmarkers(context, mapping)
     for item in itemmappings.tovalue(context, mapping):
-        item['successors'] = _siblings(
-            repo[successor] for successor in item['successors']
+        item[b'successors'] = _siblings(
+            repo[successor] for successor in item[b'successors']
         )
         yield item
 
@@ -428,17 +438,17 @@ def succsandmarkers(context, mapping):
 
 
 # teach templater succsandmarkers is switched to (context, mapping) API
-succsandmarkers._requires = {'repo', 'ctx'}
+succsandmarkers._requires = {b'repo', b'ctx'}
 
 
 def _whyunstablegen(context, mapping):
-    repo = context.resource(mapping, 'repo')
-    ctx = context.resource(mapping, 'ctx')
+    repo = context.resource(mapping, b'repo')
+    ctx = context.resource(mapping, b'ctx')
 
     entries = obsutil.whyunstable(repo, ctx)
     for entry in entries:
-        if entry.get('divergentnodes'):
-            entry['divergentnodes'] = _siblings(entry['divergentnodes'])
+        if entry.get(b'divergentnodes'):
+            entry[b'divergentnodes'] = _siblings(entry[b'divergentnodes'])
         yield entry
 
 
@@ -446,7 +456,7 @@ def whyunstable(context, mapping):
     return templateutil.mappinggenerator(_whyunstablegen, args=(mapping,))
 
 
-whyunstable._requires = {'repo', 'ctx'}
+whyunstable._requires = {b'repo', b'ctx'}
 
 
 def commonentry(repo, ctx):
@@ -455,27 +465,27 @@ def commonentry(repo, ctx):
         # TODO: perhaps ctx.changectx() should be assigned if ctx is a
         # filectx, but I'm not pretty sure if that would always work because
         # fctx.parents() != fctx.changectx.parents() for example.
-        'ctx': ctx,
-        'rev': ctx.rev(),
-        'node': hex(node),
-        'author': ctx.user(),
-        'desc': ctx.description(),
-        'date': ctx.date(),
-        'extra': ctx.extra(),
-        'phase': ctx.phasestr(),
-        'obsolete': ctx.obsolete(),
-        'succsandmarkers': succsandmarkers,
-        'instabilities': templateutil.hybridlist(
-            ctx.instabilities(), name='instability'
+        b'ctx': ctx,
+        b'rev': ctx.rev(),
+        b'node': hex(node),
+        b'author': ctx.user(),
+        b'desc': ctx.description(),
+        b'date': ctx.date(),
+        b'extra': ctx.extra(),
+        b'phase': ctx.phasestr(),
+        b'obsolete': ctx.obsolete(),
+        b'succsandmarkers': succsandmarkers,
+        b'instabilities': templateutil.hybridlist(
+            ctx.instabilities(), name=b'instability'
         ),
-        'whyunstable': whyunstable,
-        'branch': nodebranchnodefault(ctx),
-        'inbranch': nodeinbranch(repo, ctx),
-        'branches': nodebranchdict(repo, ctx),
-        'tags': nodetagsdict(repo, node),
-        'bookmarks': nodebookmarksdict(repo, node),
-        'parent': lambda context, mapping: parents(ctx),
-        'child': lambda context, mapping: children(ctx),
+        b'whyunstable': whyunstable,
+        b'branch': nodebranchnodefault(ctx),
+        b'inbranch': nodeinbranch(repo, ctx),
+        b'branches': nodebranchdict(repo, ctx),
+        b'tags': nodetagsdict(repo, node),
+        b'bookmarks': nodebookmarksdict(repo, node),
+        b'parent': lambda context, mapping: parents(ctx),
+        b'child': lambda context, mapping: children(ctx),
     }
 
 
@@ -488,17 +498,17 @@ def changelistentry(web, ctx):
     repo = web.repo
     rev = ctx.rev()
     n = scmutil.binnode(ctx)
-    showtags = showtag(repo, 'changelogtag', n)
+    showtags = showtag(repo, b'changelogtag', n)
     files = listfilediffs(ctx.files(), n, web.maxfiles)
 
     entry = commonentry(repo, ctx)
     entry.update(
         {
-            'allparents': lambda context, mapping: parents(ctx),
-            'parent': lambda context, mapping: parents(ctx, rev - 1),
-            'child': lambda context, mapping: children(ctx, rev + 1),
-            'changelogtag': showtags,
-            'files': files,
+            b'allparents': lambda context, mapping: parents(ctx),
+            b'parent': lambda context, mapping: parents(ctx, rev - 1),
+            b'child': lambda context, mapping: children(ctx, rev + 1),
+            b'changelogtag': showtags,
+            b'files': files,
         }
     )
     return entry
@@ -516,14 +526,14 @@ def changelistentries(web, revs, maxcount, parityfn):
         count += 1
 
         entry = changelistentry(web, repo[rev])
-        entry['parity'] = next(parityfn)
+        entry[b'parity'] = next(parityfn)
 
         yield entry
 
 
 def symrevorshortnode(req, ctx):
-    if 'node' in req.qsparams:
-        return templatefilters.revescape(req.qsparams['node'])
+    if b'node' in req.qsparams:
+        return templatefilters.revescape(req.qsparams[b'node'])
     else:
         return short(scmutil.binnode(ctx))
 
@@ -531,14 +541,14 @@ def symrevorshortnode(req, ctx):
 def _listfilesgen(context, ctx, stripecount):
     parity = paritygen(stripecount)
     for blockno, f in enumerate(ctx.files()):
-        template = 'filenodelink' if f in ctx else 'filenolink'
+        template = b'filenodelink' if f in ctx else b'filenolink'
         yield context.process(
             template,
             {
-                'node': ctx.hex(),
-                'file': f,
-                'blockno': blockno + 1,
-                'parity': next(parity),
+                b'node': ctx.hex(),
+                b'file': f,
+                b'blockno': blockno + 1,
+                b'parity': next(parity),
             },
         )
 
@@ -546,9 +556,9 @@ def _listfilesgen(context, ctx, stripecount):
 def changesetentry(web, ctx):
     '''Obtain a dictionary to be used to render the "changeset" template.'''
 
-    showtags = showtag(web.repo, 'changesettag', scmutil.binnode(ctx))
+    showtags = showtag(web.repo, b'changesettag', scmutil.binnode(ctx))
     showbookmarks = showbookmark(
-        web.repo, 'changesetbookmark', scmutil.binnode(ctx)
+        web.repo, b'changesetbookmark', scmutil.binnode(ctx)
     )
     showbranch = nodebranchnodefault(ctx)
 
@@ -556,9 +566,9 @@ def changesetentry(web, ctx):
     if basectx is None:
         basectx = ctx.p1()
 
-    style = web.config('web', 'style')
-    if 'style' in web.req.qsparams:
-        style = web.req.qsparams['style']
+    style = web.config(b'web', b'style')
+    if b'style' in web.req.qsparams:
+        style = web.req.qsparams[b'style']
 
     diff = diffs(web, ctx, basectx, None, style)
 
@@ -585,9 +595,9 @@ def changesetentry(web, ctx):
 
 def _listfilediffsgen(context, files, node, max):
     for f in files[:max]:
-        yield context.process('filedifflink', {'node': hex(node), 'file': f})
+        yield context.process(b'filedifflink', {b'node': hex(node), b'file': f})
     if len(files) > max:
-        yield context.process('fileellipses', {})
+        yield context.process(b'fileellipses', {})
 
 
 def listfilediffs(files, node, max):
@@ -598,22 +608,22 @@ def listfilediffs(files, node, max):
 
 def _prettyprintdifflines(context, lines, blockno, lineidprefix):
     for lineno, l in enumerate(lines, 1):
-        difflineno = "%d.%d" % (blockno, lineno)
-        if l.startswith('+'):
-            ltype = "difflineplus"
-        elif l.startswith('-'):
-            ltype = "difflineminus"
-        elif l.startswith('@'):
-            ltype = "difflineat"
+        difflineno = b"%d.%d" % (blockno, lineno)
+        if l.startswith(b'+'):
+            ltype = b"difflineplus"
+        elif l.startswith(b'-'):
+            ltype = b"difflineminus"
+        elif l.startswith(b'@'):
+            ltype = b"difflineat"
         else:
-            ltype = "diffline"
+            ltype = b"diffline"
         yield context.process(
             ltype,
             {
-                'line': l,
-                'lineno': lineno,
-                'lineid': lineidprefix + "l%s" % difflineno,
-                'linenumber': "% 8s" % difflineno,
+                b'line': l,
+                b'lineno': lineno,
+                b'lineid': lineidprefix + b"l%s" % difflineno,
+                b'linenumber': b"% 8s" % difflineno,
             },
         )
 
@@ -639,9 +649,9 @@ def _diffsgen(
 
     diffhunks = patch.diffhunks(repo, basectx, ctx, m, opts=diffopts)
     for blockno, (fctx1, fctx2, header, hunks) in enumerate(diffhunks, 1):
-        if style != 'raw':
+        if style != b'raw':
             header = header[1:]
-        lines = [h + '\n' for h in header]
+        lines = [h + b'\n' for h in header]
         for hunkrange, hunklines in hunks:
             if linerange is not None and hunkrange is not None:
                 s1, l1, s2, l2 = hunkrange
@@ -653,13 +663,13 @@ def _diffsgen(
                 _prettyprintdifflines, args=(lines, blockno, lineidprefix)
             )
             yield {
-                'parity': next(parity),
-                'blockno': blockno,
-                'lines': l,
+                b'parity': next(parity),
+                b'blockno': blockno,
+                b'lines': l,
             }
 
 
-def diffs(web, ctx, basectx, files, style, linerange=None, lineidprefix=''):
+def diffs(web, ctx, basectx, files, style, linerange=None, lineidprefix=b''):
     args = (
         web.repo,
         ctx,
@@ -670,23 +680,25 @@ def diffs(web, ctx, basectx, files, style, linerange=None, lineidprefix=''):
         linerange,
         lineidprefix,
     )
-    return templateutil.mappinggenerator(_diffsgen, args=args, name='diffblock')
+    return templateutil.mappinggenerator(
+        _diffsgen, args=args, name=b'diffblock'
+    )
 
 
 def _compline(type, leftlineno, leftline, rightlineno, rightline):
-    lineid = leftlineno and ("l%d" % leftlineno) or ''
-    lineid += rightlineno and ("r%d" % rightlineno) or ''
-    llno = '%d' % leftlineno if leftlineno else ''
-    rlno = '%d' % rightlineno if rightlineno else ''
+    lineid = leftlineno and (b"l%d" % leftlineno) or b''
+    lineid += rightlineno and (b"r%d" % rightlineno) or b''
+    llno = b'%d' % leftlineno if leftlineno else b''
+    rlno = b'%d' % rightlineno if rightlineno else b''
     return {
-        'type': type,
-        'lineid': lineid,
-        'leftlineno': leftlineno,
-        'leftlinenumber': "% 6s" % llno,
-        'leftline': leftline or '',
-        'rightlineno': rightlineno,
-        'rightlinenumber': "% 6s" % rlno,
-        'rightline': rightline or '',
+        b'type': type,
+        b'lineid': lineid,
+        b'leftlineno': leftlineno,
+        b'leftlinenumber': b"% 6s" % llno,
+        b'leftline': leftline or b'',
+        b'rightlineno': rightlineno,
+        b'rightlinenumber': b"% 6s" % rlno,
+        b'rightline': rightline or b'',
     }
 
 
@@ -727,7 +739,7 @@ def _getcompblockgen(context, leftlines, rightlines, opcodes):
 def _getcompblock(leftlines, rightlines, opcodes):
     args = (leftlines, rightlines, opcodes)
     return templateutil.mappinggenerator(
-        _getcompblockgen, args=args, name='comparisonline'
+        _getcompblockgen, args=args, name=b'comparisonline'
     )
 
 
@@ -736,24 +748,24 @@ def _comparegen(context, contextnum, leftlines, rightlines):
     s = difflib.SequenceMatcher(None, leftlines, rightlines)
     if contextnum < 0:
         l = _getcompblock(leftlines, rightlines, s.get_opcodes())
-        yield {'lines': l}
+        yield {b'lines': l}
     else:
         for oc in s.get_grouped_opcodes(n=contextnum):
             l = _getcompblock(leftlines, rightlines, oc)
-            yield {'lines': l}
+            yield {b'lines': l}
 
 
 def compare(contextnum, leftlines, rightlines):
     args = (contextnum, leftlines, rightlines)
     return templateutil.mappinggenerator(
-        _comparegen, args=args, name='comparisonblock'
+        _comparegen, args=args, name=b'comparisonblock'
     )
 
 
 def diffstatgen(ui, ctx, basectx):
     '''Generator function that provides the diffstat data.'''
 
-    diffopts = patch.diffopts(ui, {'noprefix': False})
+    diffopts = patch.diffopts(ui, {b'noprefix': False})
     stats = patch.diffstatdata(util.iterlines(ctx.diff(basectx, opts=diffopts)))
     maxname, maxtotal, addtotal, removetotal, binary = patch.diffstatsum(stats)
     while True:
@@ -764,7 +776,7 @@ def diffsummary(statgen):
     '''Return a short summary of the diff.'''
 
     stats, maxname, maxtotal, addtotal, removetotal, binary = next(statgen)
-    return _(' %d files changed, %d insertions(+), %d deletions(-)\n') % (
+    return _(b' %d files changed, %d insertions(+), %d deletions(-)\n') % (
         len(stats),
         addtotal,
         removetotal,
@@ -782,19 +794,19 @@ def _diffstattmplgen(context, ctx, statgen, parity):
 
     fileno = 0
     for filename, adds, removes, isbinary in stats:
-        template = 'diffstatlink' if filename in files else 'diffstatnolink'
+        template = b'diffstatlink' if filename in files else b'diffstatnolink'
         total = adds + removes
         fileno += 1
         yield context.process(
             template,
             {
-                'node': ctx.hex(),
-                'file': filename,
-                'fileno': fileno,
-                'total': total,
-                'addpct': pct(adds),
-                'removepct': pct(removes),
-                'parity': next(parity),
+                b'node': ctx.hex(),
+                b'file': filename,
+                b'fileno': fileno,
+                b'total': total,
+                b'addpct': pct(adds),
+                b'removepct': pct(removes),
+                b'parity': next(parity),
             },
         )
 
@@ -806,7 +818,7 @@ def diffstat(ctx, statgen, parity):
 
 
 class sessionvars(templateutil.wrapped):
-    def __init__(self, vars, start='?'):
+    def __init__(self, vars, start=b'?'):
         self._start = start
         self._vars = vars
 
@@ -828,31 +840,31 @@ class sessionvars(templateutil.wrapped):
         return self._vars.get(key)
 
     def getmin(self, context, mapping):
-        raise error.ParseError(_('not comparable'))
+        raise error.ParseError(_(b'not comparable'))
 
     def getmax(self, context, mapping):
-        raise error.ParseError(_('not comparable'))
+        raise error.ParseError(_(b'not comparable'))
 
     def filter(self, context, mapping, select):
         # implement if necessary
-        raise error.ParseError(_('not filterable'))
+        raise error.ParseError(_(b'not filterable'))
 
     def itermaps(self, context):
         separator = self._start
         for key, value in sorted(self._vars.iteritems()):
             yield {
-                'name': key,
-                'value': pycompat.bytestr(value),
-                'separator': separator,
+                b'name': key,
+                b'value': pycompat.bytestr(value),
+                b'separator': separator,
             }
-            separator = '&'
+            separator = b'&'
 
     def join(self, context, mapping, sep):
         # could be '{separator}{name}={value|urlescape}'
-        raise error.ParseError(_('not displayable without template'))
+        raise error.ParseError(_(b'not displayable without template'))
 
     def show(self, context, mapping):
-        return self.join(context, '')
+        return self.join(context, b'')
 
     def tobool(self, context, mapping):
         return bool(self._vars)
@@ -869,9 +881,9 @@ class wsgiui(uimod.ui):
 
 def getwebsubs(repo):
     websubtable = []
-    websubdefs = repo.ui.configitems('websub')
+    websubdefs = repo.ui.configitems(b'websub')
     # we must maintain interhg backwards compatibility
-    websubdefs += repo.ui.configitems('interhg')
+    websubdefs += repo.ui.configitems(b'interhg')
     for key, pattern in websubdefs:
         # grab the delimiter from the character after the "s"
         unesc = pattern[1:2]
@@ -887,7 +899,7 @@ def getwebsubs(repo):
         )
         if not match:
             repo.ui.warn(
-                _("websub: invalid pattern for %s: %s\n") % (key, pattern)
+                _(b"websub: invalid pattern for %s: %s\n") % (key, pattern)
             )
             continue
 
@@ -908,7 +920,7 @@ def getwebsubs(repo):
             websubtable.append((regexp, format))
         except re.error:
             repo.ui.warn(
-                _("websub: invalid regexp for %s: %s\n") % (key, regexp)
+                _(b"websub: invalid regexp for %s: %s\n") % (key, regexp)
             )
     return websubtable
 

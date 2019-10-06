@@ -12,8 +12,8 @@ import struct
 from .. import pycompat
 
 _b85chars = pycompat.bytestr(
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
-    "ghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
+    b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+    b"ghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
 )
 _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
 _b85dec = {}
@@ -29,11 +29,11 @@ def b85encode(text, pad=False):
     l = len(text)
     r = l % 4
     if r:
-        text += '\0' * (4 - r)
+        text += b'\0' * (4 - r)
     longs = len(text) >> 2
-    words = struct.unpack('>%dL' % longs, text)
+    words = struct.unpack(b'>%dL' % longs, text)
 
-    out = ''.join(
+    out = b''.join(
         _b85chars[(word // 52200625) % 85]
         + _b85chars2[(word // 7225) % 7225]
         + _b85chars2[word % 7225]
@@ -67,10 +67,10 @@ def b85decode(text):
                 acc = acc * 85 + _b85dec[c]
             except KeyError:
                 raise ValueError(
-                    'bad base85 character at position %d' % (i + j)
+                    b'bad base85 character at position %d' % (i + j)
                 )
         if acc > 4294967295:
-            raise ValueError('Base85 overflow in hunk starting at byte %d' % i)
+            raise ValueError(b'Base85 overflow in hunk starting at byte %d' % i)
         out.append(acc)
 
     # Pad final chunk if necessary
@@ -81,7 +81,7 @@ def b85decode(text):
             acc += 0xFFFFFF >> (cl - 2) * 8
         out[-1] = acc
 
-    out = struct.pack('>%dL' % (len(out)), *out)
+    out = struct.pack(b'>%dL' % (len(out)), *out)
     if cl:
         out = out[: -(5 - cl)]
 

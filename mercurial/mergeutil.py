@@ -15,10 +15,10 @@ from . import error
 def checkunresolved(ms):
     if list(ms.unresolved()):
         raise error.Abort(
-            _("unresolved merge conflicts " "(see 'hg help resolve')")
+            _(b"unresolved merge conflicts " b"(see 'hg help resolve')")
         )
-    if ms.mdstate() != 's' or list(ms.driverresolved()):
+    if ms.mdstate() != b's' or list(ms.driverresolved()):
         raise error.Abort(
-            _('driver-resolved merge conflicts'),
-            hint=_('run "hg resolve --all" to resolve'),
+            _(b'driver-resolved merge conflicts'),
+            hint=_(b'run "hg resolve --all" to resolve'),
         )

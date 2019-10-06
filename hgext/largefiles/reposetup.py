@@ -84,7 +84,7 @@ def reposetup(ui, repo):
                             else:
                                 result = orig(lfutil.standin(path), fileid)
                             olddata = result.data
-                            result.data = lambda: olddata() + '\0'
+                            result.data = lambda: olddata() + b'\0'
                         return result
 
                 ctx.__class__ = lfilesctx
@@ -99,7 +99,7 @@ def reposetup(ui, repo):
         @localrepo.unfilteredmethod
         def status(
             self,
-            node1='.',
+            node1=b'.',
             node2=None,
             match=None,
             ignored=False,
@@ -125,7 +125,7 @@ def reposetup(ui, repo):
             ctx1 = self[node1]
             ctx2 = self[node2]
             working = ctx2.rev() is None
-            parentworking = working and ctx1 == self['.']
+            parentworking = working and ctx1 == self[b'.']
 
             if match is None:
                 match = matchmod.always()
@@ -236,7 +236,7 @@ def reposetup(ui, repo):
                                     != lfutil.hashfile(abslfile)
                                 ) or (
                                     checkexec
-                                    and ('x' in ctx1.flags(standin))
+                                    and (b'x' in ctx1.flags(standin))
                                     != bool(lfutil.getexecutable(abslfile))
                                 ):
                                     modified.append(lfile)
@@ -334,7 +334,7 @@ def reposetup(ui, repo):
         # Do that here.
         def commit(
             self,
-            text="",
+            text=b"",
             user=None,
             date=None,
             match=None,
@@ -365,10 +365,10 @@ def reposetup(ui, repo):
                 missing = set(self.requirements) - remote.local().supported
                 if missing:
                     msg = _(
-                        "required features are not"
-                        " supported in the destination:"
-                        " %s"
-                    ) % (', '.join(sorted(missing)))
+                        b"required features are not"
+                        b" supported in the destination:"
+                        b" %s"
+                    ) % (b', '.join(sorted(missing)))
                     raise error.Abort(msg)
             return super(lfilesrepo, self).push(
                 remote, force=force, revs=revs, newbranch=newbranch
@@ -393,10 +393,10 @@ def reposetup(ui, repo):
             regulars = []
 
             for f in files:
-                if lfutil.isstandin(f + '/'):
+                if lfutil.isstandin(f + b'/'):
                     raise error.Abort(
-                        _('file "%s" is a largefile standin') % f,
-                        hint='commit the largefile itself instead',
+                        _(b'file "%s" is a largefile standin') % f,
+                        hint=b'commit the largefile itself instead',
                     )
                 # Scan directories
                 if self.wvfs.isdir(f):
@@ -406,7 +406,7 @@ def reposetup(ui, repo):
 
             for f in dirs:
                 matcheddir = False
-                d = self.dirstate.normalize(f) + '/'
+                d = self.dirstate.normalize(f) + b'/'
                 # Check for matched normal files
                 for mf in regulars:
                     if self.dirstate.normalize(mf).startswith(d):
@@ -425,7 +425,7 @@ def reposetup(ui, repo):
                                 # forces status/dirstate to walk all files and
                                 # call the match function on the matcher, even
                                 # on case sensitive filesystems.
-                                actualfiles.append('.')
+                                actualfiles.append(b'.')
                                 matcheddir = True
                 # Nothing in dir, so readd it
                 # and let commit reject it
@@ -458,16 +458,16 @@ def reposetup(ui, repo):
             lfutil.getlfilestoupload(pushop.repo, lfrevs, addfunc)
             lfcommands.uploadlfiles(ui, pushop.repo, pushop.remote, toupload)
 
-    repo.prepushoutgoinghooks.add("largefiles", prepushoutgoinghook)
+    repo.prepushoutgoinghooks.add(b"largefiles", prepushoutgoinghook)
 
     def checkrequireslfiles(ui, repo, **kwargs):
-        if 'largefiles' not in repo.requirements and any(
-            lfutil.shortname + '/' in f[0] for f in repo.store.datafiles()
+        if b'largefiles' not in repo.requirements and any(
+            lfutil.shortname + b'/' in f[0] for f in repo.store.datafiles()
         ):
-            repo.requirements.add('largefiles')
+            repo.requirements.add(b'largefiles')
             repo._writerequirements()
 
     ui.setconfig(
-        'hooks', 'changegroup.lfiles', checkrequireslfiles, 'largefiles'
+        b'hooks', b'changegroup.lfiles', checkrequireslfiles, b'largefiles'
     )
-    ui.setconfig('hooks', 'commit.lfiles', checkrequireslfiles, 'largefiles')
+    ui.setconfig(b'hooks', b'commit.lfiles', checkrequireslfiles, b'largefiles')

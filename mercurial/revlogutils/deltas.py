@@ -514,7 +514,7 @@ def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
     # special case deltas which replace entire base; no need to decode
     # base revision. this neatly avoids censored bases, which throw when
     # they're decoded.
-    hlen = struct.calcsize(">lll")
+    hlen = struct.calcsize(b">lll")
     if delta[:hlen] == mdiff.replacediffheader(
         revlog.rawsize(baserev), len(delta) - hlen
     ):
@@ -531,7 +531,7 @@ def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
             revlog.checkhash(fulltext, expectednode, p1=p1, p2=p2)
         if flags & REVIDX_ISCENSORED:
             raise error.StorageError(
-                _('node %s is not censored') % expectednode
+                _(b'node %s is not censored') % expectednode
             )
     except error.CensoredNodeError:
         # must pass the censored index flag to add censored revisions
@@ -726,7 +726,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 
 def _findsnapshots(revlog, cache, start_rev):
     """find snapshot from start_rev to tip"""
-    if util.safehasattr(revlog.index, 'findsnapshots'):
+    if util.safehasattr(revlog.index, b'findsnapshots'):
         revlog.index.findsnapshots(cache, start_rev)
     else:
         deltaparent = revlog.deltaparent

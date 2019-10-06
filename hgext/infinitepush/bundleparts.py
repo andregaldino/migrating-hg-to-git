@@ -21,42 +21,44 @@ from . import common
 
 isremotebooksenabled = common.isremotebooksenabled
 
-scratchbranchparttype = 'b2x:infinitepush'
+scratchbranchparttype = b'b2x:infinitepush'
 
 
 def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
     if not outgoing.missing:
-        raise error.Abort(_('no commits to push'))
+        raise error.Abort(_(b'no commits to push'))
 
     if scratchbranchparttype not in bundle2.bundle2caps(peer):
-        raise error.Abort(_('no server support for %r') % scratchbranchparttype)
+        raise error.Abort(
+            _(b'no server support for %r') % scratchbranchparttype
+        )
 
     _validaterevset(
-        repo, revsetlang.formatspec('%ln', outgoing.missing), bookmark
+        repo, revsetlang.formatspec(b'%ln', outgoing.missing), bookmark
     )
 
     supportedversions = changegroup.supportedoutgoingversions(repo)
     # Explicitly avoid using '01' changegroup version in infinitepush to
     # support general delta
-    supportedversions.discard('01')
+    supportedversions.discard(b'01')
     cgversion = min(supportedversions)
     _handlelfs(repo, outgoing.missing)
-    cg = changegroup.makestream(repo, outgoing, cgversion, 'push')
+    cg = changegroup.makestream(repo, outgoing, cgversion, b'push')
 
     params = {}
-    params['cgversion'] = cgversion
+    params[b'cgversion'] = cgversion
     if bookmark:
-        params['bookmark'] = bookmark
+        params[b'bookmark'] = bookmark
         # 'prevbooknode' is necessary for pushkey reply part
-        params['bookprevnode'] = ''
+        params[b'bookprevnode'] = b''
         bookmarks = repo._bookmarks
         if bookmark in bookmarks:
-            params['bookprevnode'] = nodemod.hex(bookmarks[bookmark])
+            params[b'bookprevnode'] = nodemod.hex(bookmarks[bookmark])
 
     # Do not send pushback bundle2 part with bookmarks if remotenames extension
     # is enabled. It will be handled manually in `_push()`
     if not isremotebooksenabled(ui):
-        params['pushbackbookmarks'] = '1'
+        params[b'pushbackbookmarks'] = b'1'
 
     parts = []
 
@@ -76,13 +78,13 @@ def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
 def _validaterevset(repo, revset, bookmark):
     """Abort if the revs to be pushed aren't valid for a scratch branch."""
     if not repo.revs(revset):
-        raise error.Abort(_('nothing to push'))
+        raise error.Abort(_(b'nothing to push'))
     if bookmark:
         # Allow bundle with many heads only if no bookmark is specified
-        heads = repo.revs('heads(%r)', revset)
+        heads = repo.revs(b'heads(%r)', revset)
         if len(heads) > 1:
             raise error.Abort(
-                _('cannot push more than one head to a scratch branch')
+                _(b'cannot push more than one head to a scratch branch')
             )
 
 
@@ -93,7 +95,7 @@ def _handlelfs(repo, missing):
     to make sure large files are uploaded to lfs
     '''
     try:
-        lfsmod = extensions.find('lfs')
+        lfsmod = extensions.find(b'lfs')
         lfsmod.wrapper.uploadblobsfromrevs(repo, missing)
     except KeyError:
         # Ignore if lfs extension is not enabled

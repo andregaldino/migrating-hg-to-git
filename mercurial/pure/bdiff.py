@@ -14,9 +14,9 @@ import struct
 
 def splitnewlines(text):
     '''like str.splitlines, but only split on newlines.'''
-    lines = [l + '\n' for l in text.split('\n')]
+    lines = [l + b'\n' for l in text.split(b'\n')]
     if lines:
-        if lines[-1] == '\n':
+        if lines[-1] == b'\n':
             lines.pop()
         else:
             lines[-1] = lines[-1][:-1]
@@ -60,8 +60,8 @@ def bdiff(a, b):
     b = bytes(b).splitlines(True)
 
     if not a:
-        s = "".join(b)
-        return s and (struct.pack(">lll", 0, 0, len(s)) + s)
+        s = b"".join(b)
+        return s and (struct.pack(b">lll", 0, 0, len(s)) + s)
 
     bin = []
     p = [0]
@@ -73,13 +73,13 @@ def bdiff(a, b):
     la = 0
     lb = 0
     for am, bm, size in d:
-        s = "".join(b[lb:bm])
+        s = b"".join(b[lb:bm])
         if am > la or s:
-            bin.append(struct.pack(">lll", p[la], p[am], len(s)) + s)
+            bin.append(struct.pack(b">lll", p[la], p[am], len(s)) + s)
         la = am + size
         lb = bm + size
 
-    return "".join(bin)
+    return b"".join(bin)
 
 
 def blocks(a, b):
@@ -92,8 +92,8 @@ def blocks(a, b):
 
 def fixws(text, allws):
     if allws:
-        text = re.sub('[ \t\r]+', '', text)
+        text = re.sub(b'[ \t\r]+', b'', text)
     else:
-        text = re.sub('[ \t\r]+', ' ', text)
-        text = text.replace(' \n', '\n')
+        text = re.sub(b'[ \t\r]+', b' ', text)
+        text = text.replace(b' \n', b'\n')
     return text

@@ -63,7 +63,7 @@ def sidedatawriteprocessor(rl, text, sidedata):
     for key, value in sidedata:
         rawtext.append(value)
     rawtext.append(bytes(text))
-    return ''.join(rawtext), False
+    return b''.join(rawtext), False
 
 
 def sidedatareadprocessor(rl, text):

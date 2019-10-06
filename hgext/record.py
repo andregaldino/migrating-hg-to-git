@@ -27,15 +27,15 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 
 @command(
-    "record",
+    b"record",
     # same options as commit + white space diff options
-    [c for c in commands.table['commit|ci'][1][:] if c[1] != "interactive"]
+    [c for c in commands.table[b'commit|ci'][1][:] if c[1] != b"interactive"]
     + cmdutil.diffwsopts,
-    _('hg record [OPTION]... [FILE]...'),
+    _(b'hg record [OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_COMMITTING,
 )
 def record(ui, repo, *pats, **opts):
@@ -69,12 +69,12 @@ def record(ui, repo, *pats, **opts):
 
     if not ui.interactive():
         raise error.Abort(
-            _('running non-interactively, use %s instead') % 'commit'
+            _(b'running non-interactively, use %s instead') % b'commit'
         )
 
     opts[r"interactive"] = True
-    overrides = {('experimental', 'crecord'): False}
-    with ui.configoverride(overrides, 'record'):
+    overrides = {(b'experimental', b'crecord'): False}
+    with ui.configoverride(overrides, b'record'):
         return commands.commit(ui, repo, *pats, **opts)
 
 
@@ -82,7 +82,7 @@ def qrefresh(origfn, ui, repo, *pats, **opts):
     if not opts[r'interactive']:
         return origfn(ui, repo, *pats, **opts)
 
-    mq = extensions.find('mq')
+    mq = extensions.find(b'mq')
 
     def committomq(ui, repo, *pats, **opts):
         # At this point the working copy contains only changes that
@@ -99,9 +99,9 @@ def qrefresh(origfn, ui, repo, *pats, **opts):
 
 # This command registration is replaced during uisetup().
 @command(
-    'qrecord',
+    b'qrecord',
     [],
-    _('hg qrecord [OPTION]... PATCH [FILE]...'),
+    _(b'hg qrecord [OPTION]... PATCH [FILE]...'),
     helpcategory=command.CATEGORY_COMMITTING,
     inferrepo=True,
 )
@@ -111,14 +111,14 @@ def qrecord(ui, repo, patch, *pats, **opts):
     See :hg:`help qnew` & :hg:`help record` for more information and
     usage.
     '''
-    return _qrecord('qnew', ui, repo, patch, *pats, **opts)
+    return _qrecord(b'qnew', ui, repo, patch, *pats, **opts)
 
 
 def _qrecord(cmdsuggest, ui, repo, patch, *pats, **opts):
     try:
-        mq = extensions.find('mq')
+        mq = extensions.find(b'mq')
     except KeyError:
-        raise error.Abort(_("'mq' extension not loaded"))
+        raise error.Abort(_(b"'mq' extension not loaded"))
 
     repo.mq.checkpatchname(patch)
 
@@ -126,8 +126,8 @@ def _qrecord(cmdsuggest, ui, repo, patch, *pats, **opts):
         opts[r'checkname'] = False
         mq.new(ui, repo, patch, *pats, **opts)
 
-    overrides = {('experimental', 'crecord'): False}
-    with ui.configoverride(overrides, 'record'):
+    overrides = {(b'experimental', b'crecord'): False}
+    with ui.configoverride(overrides, b'record'):
         cmdutil.checkunfinished(repo)
         cmdutil.dorecord(
             ui,
@@ -149,27 +149,27 @@ def qnew(origfn, ui, repo, patch, *args, **opts):
 
 def uisetup(ui):
     try:
-        mq = extensions.find('mq')
+        mq = extensions.find(b'mq')
     except KeyError:
         return
 
-    cmdtable["qrecord"] = (
+    cmdtable[b"qrecord"] = (
         qrecord,
         # same options as qnew, but copy them so we don't get
         # -i/--interactive for qrecord and add white space diff options
-        mq.cmdtable['qnew'][1][:] + cmdutil.diffwsopts,
-        _('hg qrecord [OPTION]... PATCH [FILE]...'),
+        mq.cmdtable[b'qnew'][1][:] + cmdutil.diffwsopts,
+        _(b'hg qrecord [OPTION]... PATCH [FILE]...'),
     )
 
-    _wrapcmd('qnew', mq.cmdtable, qnew, _("interactively record a new patch"))
+    _wrapcmd(b'qnew', mq.cmdtable, qnew, _(b"interactively record a new patch"))
     _wrapcmd(
-        'qrefresh',
+        b'qrefresh',
         mq.cmdtable,
         qrefresh,
-        _("interactively select changes to refresh"),
+        _(b"interactively select changes to refresh"),
     )
 
 
 def _wrapcmd(cmd, table, wrapfn, msg):
     entry = extensions.wrapcommand(table, cmd, wrapfn)
-    entry[1].append(('i', 'interactive', None, msg))
+    entry[1].append((b'i', b'interactive', None, msg))

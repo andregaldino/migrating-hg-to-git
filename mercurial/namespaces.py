@@ -36,9 +36,9 @@ class namespaces(object):
         bmknamemap = lambda repo, name: tolist(repo._bookmarks.get(name))
         bmknodemap = lambda repo, node: repo.nodebookmarks(node)
         n = namespace(
-            "bookmarks",
-            templatename="bookmark",
-            logfmt=columns['bookmark'],
+            b"bookmarks",
+            templatename=b"bookmark",
+            logfmt=columns[b'bookmark'],
             listnames=bmknames,
             namemap=bmknamemap,
             nodemap=bmknodemap,
@@ -50,13 +50,13 @@ class namespaces(object):
         tagnamemap = lambda repo, name: tolist(repo._tagscache.tags.get(name))
         tagnodemap = lambda repo, node: repo.nodetags(node)
         n = namespace(
-            "tags",
-            templatename="tag",
-            logfmt=columns['tag'],
+            b"tags",
+            templatename=b"tag",
+            logfmt=columns[b'tag'],
             listnames=tagnames,
             namemap=tagnamemap,
             nodemap=tagnodemap,
-            deprecated={'tip'},
+            deprecated={b'tip'},
             builtin=True,
         )
         self.addnamespace(n)
@@ -65,9 +65,9 @@ class namespaces(object):
         bnamemap = lambda repo, name: tolist(repo.branchtip(name, True))
         bnodemap = lambda repo, node: [repo[node].branch()]
         n = namespace(
-            "branches",
-            templatename="branch",
-            logfmt=columns['branch'],
+            b"branches",
+            templatename=b"branch",
+            logfmt=columns[b'branch'],
             listnames=bnames,
             namemap=bnamemap,
             nodemap=bnodemap,
@@ -104,7 +104,7 @@ class namespaces(object):
         if namespace.name not in templatekw.keywords:
             templatekeyword = registrar.templatekeyword(templatekw.keywords)
 
-            @templatekeyword(namespace.name, requires={'repo', 'ctx'})
+            @templatekeyword(namespace.name, requires={b'repo', b'ctx'})
             def generatekw(context, mapping):
                 return templatekw.shownames(context, mapping, namespace.name)
 
@@ -120,7 +120,7 @@ class namespaces(object):
             n = v.singlenode(repo, name)
             if n:
                 return n
-        raise KeyError(_('no such name: %s') % name)
+        raise KeyError(_(b'no such name: %s') % name)
 
 
 class namespace(object):
@@ -204,7 +204,7 @@ class namespace(object):
         # if logfmt is not specified, compose it from logname as backup
         if self.logfmt is None:
             # i18n: column positioning for "hg log"
-            self.logfmt = ("%s:" % self.logname).ljust(13) + "%s\n"
+            self.logfmt = (b"%s:" % self.logname).ljust(13) + b"%s\n"
 
         if deprecated is None:
             self.deprecated = set()

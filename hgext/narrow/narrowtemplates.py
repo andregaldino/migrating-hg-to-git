@@ -23,30 +23,30 @@ def _isellipsis(repo, rev):
     return False
 
 
-@templatekeyword('ellipsis', requires={'repo', 'ctx'})
+@templatekeyword(b'ellipsis', requires={b'repo', b'ctx'})
 def ellipsis(context, mapping):
     """String. 'ellipsis' if the change is an ellipsis node, else ''."""
-    repo = context.resource(mapping, 'repo')
-    ctx = context.resource(mapping, 'ctx')
+    repo = context.resource(mapping, b'repo')
+    ctx = context.resource(mapping, b'ctx')
     if _isellipsis(repo, ctx.rev()):
-        return 'ellipsis'
-    return ''
+        return b'ellipsis'
+    return b''
 
 
-@templatekeyword('outsidenarrow', requires={'repo', 'ctx'})
+@templatekeyword(b'outsidenarrow', requires={b'repo', b'ctx'})
 def outsidenarrow(context, mapping):
     """String. 'outsidenarrow' if the change affects no tracked files,
     else ''."""
-    repo = context.resource(mapping, 'repo')
-    ctx = context.resource(mapping, 'ctx')
+    repo = context.resource(mapping, b'repo')
+    ctx = context.resource(mapping, b'ctx')
     m = repo.narrowmatch()
     if ctx.files() and not m.always():
         if not any(m(f) for f in ctx.files()):
-            return 'outsidenarrow'
-    return ''
+            return b'outsidenarrow'
+    return b''
 
 
-@revsetpredicate('ellipsis()')
+@revsetpredicate(b'ellipsis()')
 def ellipsisrevset(repo, subset, x):
     """Changesets that are ellipsis nodes."""
     return subset.filter(lambda r: _isellipsis(repo, r))

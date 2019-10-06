@@ -215,7 +215,7 @@ class KeepAliveHandler(object):
     def do_open(self, http_class, req):
         host = urllibcompat.gethost(req)
         if not host:
-            raise urlerr.urlerror('no host given')
+            raise urlerr.urlerror(b'no host given')
 
         try:
             h = self._cm.get_ready_conn(host)
@@ -237,7 +237,7 @@ class KeepAliveHandler(object):
                 h = http_class(host, timeout=self._timeout)
                 if DEBUG:
                     DEBUG.info(
-                        "creating new connection to %s (%d)", host, id(h)
+                        b"creating new connection to %s (%d)", host, id(h)
                     )
                 self._cm.add(host, h, False)
                 self._start_transaction(h, req)
@@ -246,7 +246,7 @@ class KeepAliveHandler(object):
         # to make the error message slightly more useful.
         except httplib.BadStatusLine as err:
             raise urlerr.urlerror(
-                _('bad HTTP status line: %s') % pycompat.sysbytes(err.line)
+                _(b'bad HTTP status line: %s') % pycompat.sysbytes(err.line)
             )
         except (socket.error, httplib.HTTPException) as err:
             raise urlerr.urlerror(err)
@@ -258,7 +258,7 @@ class KeepAliveHandler(object):
             self._cm.remove(h)
 
         if DEBUG:
-            DEBUG.info("STATUS: %s, %s", r.status, r.reason)
+            DEBUG.info(b"STATUS: %s, %s", r.status, r.reason)
         r._handler = self
         r._host = host
         r._url = req.get_full_url()
@@ -295,7 +295,7 @@ class KeepAliveHandler(object):
             # a DIFFERENT exception
             if DEBUG:
                 DEBUG.error(
-                    "unexpected exception - closing " "connection to %s (%d)",
+                    b"unexpected exception - closing " b"connection to %s (%d)",
                     host,
                     id(h),
                 )
@@ -310,12 +310,12 @@ class KeepAliveHandler(object):
             # last used the connection.
             if DEBUG:
                 DEBUG.info(
-                    "failed to re-use connection to %s (%d)", host, id(h)
+                    b"failed to re-use connection to %s (%d)", host, id(h)
                 )
             r = None
         else:
             if DEBUG:
-                DEBUG.info("re-using connection to %s (%d)", host, id(h))
+                DEBUG.info(b"re-using connection to %s (%d)", host, id(h))
 
         return r
 
@@ -408,7 +408,7 @@ class HTTPResponse(httplib.HTTPResponse):
         self.fileno = sock.fileno
         self.code = None
         self.receivedbytescount = 0
-        self._rbuf = ''
+        self._rbuf = b''
         self._rbufsize = 8096
         self._handler = None  # inserted by the handler later
         self._host = None  # (same)
@@ -460,7 +460,7 @@ class HTTPResponse(httplib.HTTPResponse):
         # implemented using readinto(), which can duplicate self._rbuf
         # if it's not empty.
         s = self._rbuf
-        self._rbuf = ''
+        self._rbuf = b''
         data = self._raw_read(amt)
 
         self.receivedbytescount += len(data)
@@ -484,7 +484,7 @@ class HTTPResponse(httplib.HTTPResponse):
         while True:
             if chunk_left is None:
                 line = self.fp.readline()
-                i = line.find(';')
+                i = line.find(b';')
                 if i >= 0:
                     line = line[:i]  # strip chunk-extensions
                 try:
@@ -493,7 +493,7 @@ class HTTPResponse(httplib.HTTPResponse):
                     # close the connection as protocol synchronization is
                     # probably lost
                     self.close()
-                    raise httplib.IncompleteRead(''.join(parts))
+                    raise httplib.IncompleteRead(b''.join(parts))
                 if chunk_left == 0:
                     break
             if amt is None:
@@ -501,12 +501,12 @@ class HTTPResponse(httplib.HTTPResponse):
             elif amt < chunk_left:
                 parts.append(self._safe_read(amt))
                 self.chunk_left = chunk_left - amt
-                return ''.join(parts)
+                return b''.join(parts)
             elif amt == chunk_left:
                 parts.append(self._safe_read(amt))
                 self._safe_read(2)  # toss the CRLF at the end of the chunk
                 self.chunk_left = None
-                return ''.join(parts)
+                return b''.join(parts)
             else:
                 parts.append(self._safe_read(chunk_left))
                 amt -= chunk_left
@@ -523,17 +523,17 @@ class HTTPResponse(httplib.HTTPResponse):
                 # a vanishingly small number of sites EOF without
                 # sending the trailer
                 break
-            if line == '\r\n':
+            if line == b'\r\n':
                 break
 
         # we read everything; close the "file"
         self.close()
 
-        return ''.join(parts)
+        return b''.join(parts)
 
     def readline(self):
         # Fast path for a line is already available in read buffer.
-        i = self._rbuf.find('\n')
+        i = self._rbuf.find(b'\n')
         if i >= 0:
             i += 1
             line = self._rbuf[:i]
@@ -557,7 +557,7 @@ class HTTPResponse(httplib.HTTPResponse):
                 pass
 
             chunks.append(new)
-            i = new.find('\n')
+            i = new.find(b'\n')
             if i >= 0:
                 break
 
@@ -565,13 +565,13 @@ class HTTPResponse(httplib.HTTPResponse):
 
         # EOF
         if i == -1:
-            self._rbuf = ''
-            return ''.join(chunks)
+            self._rbuf = b''
+            return b''.join(chunks)
 
         i += 1
         self._rbuf = chunks[-1][i:]
         chunks[-1] = chunks[-1][:i]
-        return ''.join(chunks)
+        return b''.join(chunks)
 
     def readlines(self, sizehint=0):
         total = 0
@@ -611,7 +611,7 @@ class HTTPResponse(httplib.HTTPResponse):
 
         dest[0:have] = self._rbuf
         got += len(self._rbuf)
-        self._rbuf = ''
+        self._rbuf = b''
         return got
 
 
@@ -642,13 +642,13 @@ def safesend(self, str):
     # NOTE: we DO propagate the error, though, because we cannot simply
     #       ignore the error... the caller will know if they can retry.
     if self.debuglevel > 0:
-        print("send:", repr(str))
+        print(b"send:", repr(str))
     try:
         blocksize = 8192
         read = getattr(str, 'read', None)
         if read is not None:
             if self.debuglevel > 0:
-                print("sending a read()able")
+                print(b"sending a read()able")
             data = read(blocksize)
             while data:
                 self.sock.sendall(data)
@@ -710,7 +710,7 @@ class HTTPConnection(httplib.HTTPConnection):
 
 def continuity(url):
     md5 = hashlib.md5
-    format = '%25s: %s'
+    format = b'%25s: %s'
 
     # first fetch the file with the normal http handler
     opener = urlreq.buildopener()
@@ -719,7 +719,7 @@ def continuity(url):
     foo = fo.read()
     fo.close()
     m = md5(foo)
-    print(format % ('normal urllib', node.hex(m.digest())))
+    print(format % (b'normal urllib', node.hex(m.digest())))
 
     # now install the keepalive handler and try again
     opener = urlreq.buildopener(HTTPHandler())
@@ -729,10 +729,10 @@ def continuity(url):
     foo = fo.read()
     fo.close()
     m = md5(foo)
-    print(format % ('keepalive read', node.hex(m.digest())))
+    print(format % (b'keepalive read', node.hex(m.digest())))
 
     fo = urlreq.urlopen(url)
-    foo = ''
+    foo = b''
     while True:
         f = fo.readline()
         if f:
@@ -741,26 +741,26 @@ def continuity(url):
             break
     fo.close()
     m = md5(foo)
-    print(format % ('keepalive readline', node.hex(m.digest())))
+    print(format % (b'keepalive readline', node.hex(m.digest())))
 
 
 def comp(N, url):
-    print('  making %i connections to:\n  %s' % (N, url))
+    print(b'  making %i connections to:\n  %s' % (N, url))
 
-    procutil.stdout.write('  first using the normal urllib handlers')
+    procutil.stdout.write(b'  first using the normal urllib handlers')
     # first use normal opener
     opener = urlreq.buildopener()
     urlreq.installopener(opener)
     t1 = fetch(N, url)
-    print('  TIME: %.3f s' % t1)
+    print(b'  TIME: %.3f s' % t1)
 
-    procutil.stdout.write('  now using the keepalive handler       ')
+    procutil.stdout.write(b'  now using the keepalive handler       ')
     # now install the keepalive handler and try again
     opener = urlreq.buildopener(HTTPHandler())
     urlreq.installopener(opener)
     t2 = fetch(N, url)
-    print('  TIME: %.3f s' % t2)
-    print('  improvement factor: %.2f' % (t1 / t2))
+    print(b'  TIME: %.3f s' % t2)
+    print(b'  improvement factor: %.2f' % (t1 / t2))
 
 
 def fetch(N, url, delay=0):
@@ -781,7 +781,7 @@ def fetch(N, url, delay=0):
     for i in lens[1:]:
         j = j + 1
         if not i == lens[0]:
-            print("WARNING: inconsistent length on read %i: %i" % (j, i))
+            print(b"WARNING: inconsistent length on read %i: %i" % (j, i))
 
     return diff
 
@@ -797,41 +797,41 @@ def test_timeout(url):
         info = warning = error = debug
 
     DEBUG = FakeLogger()
-    print("  fetching the file to establish a connection")
+    print(b"  fetching the file to establish a connection")
     fo = urlreq.urlopen(url)
     data1 = fo.read()
     fo.close()
 
     i = 20
-    print("  waiting %i seconds for the server to close the connection" % i)
+    print(b"  waiting %i seconds for the server to close the connection" % i)
     while i > 0:
-        procutil.stdout.write('\r  %2i' % i)
+        procutil.stdout.write(b'\r  %2i' % i)
         procutil.stdout.flush()
         time.sleep(1)
         i -= 1
-    procutil.stderr.write('\r')
+    procutil.stderr.write(b'\r')
 
-    print("  fetching the file a second time")
+    print(b"  fetching the file a second time")
     fo = urlreq.urlopen(url)
     data2 = fo.read()
     fo.close()
 
     if data1 == data2:
-        print('  data are identical')
+        print(b'  data are identical')
     else:
-        print('  ERROR: DATA DIFFER')
+        print(b'  ERROR: DATA DIFFER')
 
     DEBUG = dbbackup
 
 
 def test(url, N=10):
-    print("performing continuity test (making sure stuff isn't corrupted)")
+    print(b"performing continuity test (making sure stuff isn't corrupted)")
     continuity(url)
-    print('')
-    print("performing speed comparison")
+    print(b'')
+    print(b"performing speed comparison")
     comp(N, url)
-    print('')
-    print("performing dropped-connection check")
+    print(b'')
+    print(b"performing dropped-connection check")
     test_timeout(url)
 
 
@@ -842,6 +842,6 @@ if __name__ == '__main__':
         N = int(sys.argv[1])
         url = sys.argv[2]
     except (IndexError, ValueError):
-        print("%s <integer> <url>" % sys.argv[0])
+        print(b"%s <integer> <url>" % sys.argv[0])
     else:
         test(url, N)

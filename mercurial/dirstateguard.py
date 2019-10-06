@@ -34,8 +34,8 @@ class dirstateguard(util.transactional):
         self._repo = repo
         self._active = False
         self._closed = False
-        self._backupname = 'dirstate.backup.%s.%d' % (name, id(self))
-        self._narrowspecbackupname = 'narrowspec.backup.%s.%d' % (
+        self._backupname = b'dirstate.backup.%s.%d' % (name, id(self))
+        self._narrowspecbackupname = b'narrowspec.backup.%s.%d' % (
             name,
             id(self),
         )
@@ -54,7 +54,7 @@ class dirstateguard(util.transactional):
     def close(self):
         if not self._active:  # already inactivated
             msg = (
-                _("can't close already inactivated backup: %s")
+                _(b"can't close already inactivated backup: %s")
                 % self._backupname
             )
             raise error.Abort(msg)
@@ -77,7 +77,7 @@ class dirstateguard(util.transactional):
         if not self._closed:
             if not self._active:  # already inactivated
                 msg = (
-                    _("can't release already inactivated backup: %s")
+                    _(b"can't release already inactivated backup: %s")
                     % self._backupname
                 )
                 raise error.Abort(msg)

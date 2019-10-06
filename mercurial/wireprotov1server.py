@@ -38,11 +38,11 @@ from .utils import (
 urlerr = util.urlerr
 urlreq = util.urlreq
 
-bundle2requiredmain = _('incompatible Mercurial client; bundle2 required')
+bundle2requiredmain = _(b'incompatible Mercurial client; bundle2 required')
 bundle2requiredhint = _(
-    'see https://www.mercurial-scm.org/wiki/' 'IncompatibleClient'
+    b'see https://www.mercurial-scm.org/wiki/' b'IncompatibleClient'
 )
-bundle2required = '%s\n(%s)\n' % (bundle2requiredmain, bundle2requiredhint)
+bundle2required = b'%s\n(%s)\n' % (bundle2requiredmain, bundle2requiredhint)
 
 
 def clientcompressionsupport(proto):
@@ -53,9 +53,9 @@ def clientcompressionsupport(proto):
     been announced, fallback to the default of zlib and uncompressed.
     """
     for cap in proto.getprotocaps():
-        if cap.startswith('comp='):
-            return cap[5:].split(',')
-    return ['zlib', 'none']
+        if cap.startswith(b'comp='):
+            return cap[5:].split(b',')
+    return [b'zlib', b'none']
 
 
 # wire protocol command can either return a string or one of these classes.
@@ -68,7 +68,7 @@ def getdispatchrepo(repo, proto, command):
     extensions that need commands to operate on different repo views under
     specialized circumstances.
     """
-    viewconfig = repo.ui.config('server', 'view')
+    viewconfig = repo.ui.config(b'server', b'view')
     return repo.filtered(viewconfig)
 
 
@@ -89,8 +89,8 @@ def options(cmd, keys, others):
             del others[k]
     if others:
         procutil.stderr.write(
-            "warning: %s ignored unexpected arguments %s\n"
-            % (cmd, ",".join(others))
+            b"warning: %s ignored unexpected arguments %s\n"
+            % (cmd, b",".join(others))
         )
     return opts
 
@@ -106,29 +106,29 @@ def bundle1allowed(repo, action):
     4. server.bundle1
     """
     ui = repo.ui
-    gd = 'generaldelta' in repo.requirements
+    gd = b'generaldelta' in repo.requirements
 
     if gd:
-        v = ui.configbool('server', 'bundle1gd.%s' % action)
+        v = ui.configbool(b'server', b'bundle1gd.%s' % action)
         if v is not None:
             return v
 
-    v = ui.configbool('server', 'bundle1.%s' % action)
+    v = ui.configbool(b'server', b'bundle1.%s' % action)
     if v is not None:
         return v
 
     if gd:
-        v = ui.configbool('server', 'bundle1gd')
+        v = ui.configbool(b'server', b'bundle1gd')
         if v is not None:
             return v
 
-    return ui.configbool('server', 'bundle1')
+    return ui.configbool(b'server', b'bundle1')
 
 
 commands = wireprototypes.commanddict()
 
 
-def wireprotocommand(name, args=None, permission='push'):
+def wireprotocommand(name, args=None, permission=b'push'):
     """Decorator to declare a wire protocol command.
 
     ``name`` is the name of the wire protocol command being provided.
@@ -144,7 +144,7 @@ def wireprotocommand(name, args=None, permission='push'):
     a repository that is supposed to be read-only.
     """
     transports = {
-        k for k, v in wireprototypes.TRANSPORTS.items() if v['version'] == 1
+        k for k, v in wireprototypes.TRANSPORTS.items() if v[b'version'] == 1
     }
 
     # Because SSHv2 is a mirror of SSHv1, we allow "batch" commands through to
@@ -153,24 +153,24 @@ def wireprotocommand(name, args=None, permission='push'):
     if name == b'batch':
         transports.add(wireprototypes.SSHV2)
 
-    if permission not in ('push', 'pull'):
+    if permission not in (b'push', b'pull'):
         raise error.ProgrammingError(
-            'invalid wire protocol permission; '
-            'got %s; expected "push" or "pull"' % permission
+            b'invalid wire protocol permission; '
+            b'got %s; expected "push" or "pull"' % permission
         )
 
     if args is None:
-        args = ''
+        args = b''
 
     if not isinstance(args, bytes):
         raise error.ProgrammingError(
-            'arguments for version 1 commands ' 'must be declared as bytes'
+            b'arguments for version 1 commands ' b'must be declared as bytes'
         )
 
     def register(func):
         if name in commands:
             raise error.ProgrammingError(
-                '%s command already registered ' 'for version 1' % name
+                b'%s command already registered ' b'for version 1' % name
             )
         commands[name] = wireprototypes.commandentry(
             func, args=args, transports=transports, permission=permission
@@ -182,34 +182,34 @@ def wireprotocommand(name, args=None, permission='push'):
 
 
 # TODO define a more appropriate permissions type to use for this.
-@wireprotocommand('batch', 'cmds *', permission='pull')
+@wireprotocommand(b'batch', b'cmds *', permission=b'pull')
 def batch(repo, proto, cmds, others):
     unescapearg = wireprototypes.unescapebatcharg
     res = []
-    for pair in cmds.split(';'):
-        op, args = pair.split(' ', 1)
+    for pair in cmds.split(b';'):
+        op, args = pair.split(b' ', 1)
         vals = {}
-        for a in args.split(','):
+        for a in args.split(b','):
             if a:
-                n, v = a.split('=')
+                n, v = a.split(b'=')
                 vals[unescapearg(n)] = unescapearg(v)
         func, spec = commands[op]
 
         # Validate that client has permissions to perform this command.
         perm = commands[op].permission
-        assert perm in ('push', 'pull')
+        assert perm in (b'push', b'pull')
         proto.checkperm(perm)
 
         if spec:
             keys = spec.split()
             data = {}
             for k in keys:
-                if k == '*':
+                if k == b'*':
                     star = {}
                     for key in vals.keys():
                         if key not in keys:
                             star[key] = vals[key]
-                    data['*'] = star
+                    data[b'*'] = star
                 else:
                     data[k] = vals[k]
             result = func(repo, proto, *[data[k] for k in keys])
@@ -225,42 +225,42 @@ def batch(repo, proto, cmds, others):
             result = result.data
         res.append(wireprototypes.escapebatcharg(result))
 
-    return wireprototypes.bytesresponse(';'.join(res))
+    return wireprototypes.bytesresponse(b';'.join(res))
 
 
-@wireprotocommand('between', 'pairs', permission='pull')
+@wireprotocommand(b'between', b'pairs', permission=b'pull')
 def between(repo, proto, pairs):
-    pairs = [wireprototypes.decodelist(p, '-') for p in pairs.split(" ")]
+    pairs = [wireprototypes.decodelist(p, b'-') for p in pairs.split(b" ")]
     r = []
     for b in repo.between(pairs):
-        r.append(wireprototypes.encodelist(b) + "\n")
+        r.append(wireprototypes.encodelist(b) + b"\n")
 
-    return wireprototypes.bytesresponse(''.join(r))
+    return wireprototypes.bytesresponse(b''.join(r))
 
 
-@wireprotocommand('branchmap', permission='pull')
+@wireprotocommand(b'branchmap', permission=b'pull')
 def branchmap(repo, proto):
     branchmap = repo.branchmap()
     heads = []
     for branch, nodes in branchmap.iteritems():
         branchname = urlreq.quote(encoding.fromlocal(branch))
         branchnodes = wireprototypes.encodelist(nodes)
-        heads.append('%s %s' % (branchname, branchnodes))
+        heads.append(b'%s %s' % (branchname, branchnodes))
 
-    return wireprototypes.bytesresponse('\n'.join(heads))
+    return wireprototypes.bytesresponse(b'\n'.join(heads))
 
 
-@wireprotocommand('branches', 'nodes', permission='pull')
+@wireprotocommand(b'branches', b'nodes', permission=b'pull')
 def branches(repo, proto, nodes):
     nodes = wireprototypes.decodelist(nodes)
     r = []
     for b in repo.branches(nodes):
-        r.append(wireprototypes.encodelist(b) + "\n")
+        r.append(wireprototypes.encodelist(b) + b"\n")
 
-    return wireprototypes.bytesresponse(''.join(r))
+    return wireprototypes.bytesresponse(b''.join(r))
 
 
-@wireprotocommand('clonebundles', '', permission='pull')
+@wireprotocommand(b'clonebundles', b'', permission=b'pull')
 def clonebundles(repo, proto):
     """Server command for returning info for available bundles to seed clones.
 
@@ -271,17 +271,17 @@ def clonebundles(repo, proto):
     data center given the client's IP address.
     """
     return wireprototypes.bytesresponse(
-        repo.vfs.tryread('clonebundles.manifest')
+        repo.vfs.tryread(b'clonebundles.manifest')
     )
 
 
 wireprotocaps = [
-    'lookup',
-    'branchmap',
-    'pushkey',
-    'known',
-    'getbundle',
-    'unbundlehash',
+    b'lookup',
+    b'branchmap',
+    b'pushkey',
+    b'known',
+    b'getbundle',
+    b'unbundlehash',
 ]
 
 
@@ -300,27 +300,27 @@ def _capabilities(repo, proto):
 
     # Command of same name as capability isn't exposed to version 1 of
     # transports. So conditionally add it.
-    if commands.commandavailable('changegroupsubset', proto):
-        caps.append('changegroupsubset')
+    if commands.commandavailable(b'changegroupsubset', proto):
+        caps.append(b'changegroupsubset')
 
     if streamclone.allowservergeneration(repo):
-        if repo.ui.configbool('server', 'preferuncompressed'):
-            caps.append('stream-preferred')
+        if repo.ui.configbool(b'server', b'preferuncompressed'):
+            caps.append(b'stream-preferred')
         requiredformats = repo.requirements & repo.supportedformats
         # if our local revlogs are just revlogv1, add 'stream' cap
-        if not requiredformats - {'revlogv1'}:
-            caps.append('stream')
+        if not requiredformats - {b'revlogv1'}:
+            caps.append(b'stream')
         # otherwise, add 'streamreqs' detailing our local revlog format
         else:
-            caps.append('streamreqs=%s' % ','.join(sorted(requiredformats)))
-    if repo.ui.configbool('experimental', 'bundle2-advertise'):
-        capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo, role='server'))
-        caps.append('bundle2=' + urlreq.quote(capsblob))
-    caps.append('unbundle=%s' % ','.join(bundle2.bundlepriority))
+            caps.append(b'streamreqs=%s' % b','.join(sorted(requiredformats)))
+    if repo.ui.configbool(b'experimental', b'bundle2-advertise'):
+        capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo, role=b'server'))
+        caps.append(b'bundle2=' + urlreq.quote(capsblob))
+    caps.append(b'unbundle=%s' % b','.join(bundle2.bundlepriority))
 
-    if repo.ui.configbool('experimental', 'narrow'):
+    if repo.ui.configbool(b'experimental', b'narrow'):
         caps.append(wireprototypes.NARROWCAP)
-        if repo.ui.configbool('experimental', 'narrowservebrokenellipses'):
+        if repo.ui.configbool(b'experimental', b'narrowservebrokenellipses'):
             caps.append(wireprototypes.ELLIPSESCAP)
 
     return proto.addcapabilities(repo, caps)
@@ -328,37 +328,37 @@ def _capabilities(repo, proto):
 
 # If you are writing an extension and consider wrapping this function. Wrap
 # `_capabilities` instead.
-@wireprotocommand('capabilities', permission='pull')
+@wireprotocommand(b'capabilities', permission=b'pull')
 def capabilities(repo, proto):
     caps = _capabilities(repo, proto)
-    return wireprototypes.bytesresponse(' '.join(sorted(caps)))
+    return wireprototypes.bytesresponse(b' '.join(sorted(caps)))
 
 
-@wireprotocommand('changegroup', 'roots', permission='pull')
+@wireprotocommand(b'changegroup', b'roots', permission=b'pull')
 def changegroup(repo, proto, roots):
     nodes = wireprototypes.decodelist(roots)
     outgoing = discovery.outgoing(
         repo, missingroots=nodes, missingheads=repo.heads()
     )
-    cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
-    gen = iter(lambda: cg.read(32768), '')
+    cg = changegroupmod.makechangegroup(repo, outgoing, b'01', b'serve')
+    gen = iter(lambda: cg.read(32768), b'')
     return wireprototypes.streamres(gen=gen)
 
 
-@wireprotocommand('changegroupsubset', 'bases heads', permission='pull')
+@wireprotocommand(b'changegroupsubset', b'bases heads', permission=b'pull')
 def changegroupsubset(repo, proto, bases, heads):
     bases = wireprototypes.decodelist(bases)
     heads = wireprototypes.decodelist(heads)
     outgoing = discovery.outgoing(repo, missingroots=bases, missingheads=heads)
-    cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
-    gen = iter(lambda: cg.read(32768), '')
+    cg = changegroupmod.makechangegroup(repo, outgoing, b'01', b'serve')
+    gen = iter(lambda: cg.read(32768), b'')
     return wireprototypes.streamres(gen=gen)
 
 
-@wireprotocommand('debugwireargs', 'one two *', permission='pull')
+@wireprotocommand(b'debugwireargs', b'one two *', permission=b'pull')
 def debugwireargs(repo, proto, one, two, others):
     # only accept optional args from the known set
-    opts = options('debugwireargs', ['three', 'four'], others)
+    opts = options(b'debugwireargs', [b'three', b'four'], others)
     return wireprototypes.bytesresponse(
         repo.debugwireargs(one, two, **pycompat.strkwargs(opts))
     )
@@ -381,9 +381,9 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
     """
 
     def decodehexstring(s):
-        return {binascii.unhexlify(h) for h in s.split(';')}
+        return {binascii.unhexlify(h) for h in s.split(b';')}
 
-    manifest = repo.vfs.tryread('pullbundles.manifest')
+    manifest = repo.vfs.tryread(b'pullbundles.manifest')
     if not manifest:
         return None
     res = exchange.parseclonebundlesmanifest(repo, manifest)
@@ -395,15 +395,15 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
     common_anc = cl.ancestors([cl.rev(rev) for rev in common], inclusive=True)
     compformats = clientcompressionsupport(proto)
     for entry in res:
-        comp = entry.get('COMPRESSION')
+        comp = entry.get(b'COMPRESSION')
         altcomp = util.compengines._bundlenames.get(comp)
         if comp and comp not in compformats and altcomp not in compformats:
             continue
         # No test yet for VERSION, since V2 is supported by any client
         # that advertises partial pulls
-        if 'heads' in entry:
+        if b'heads' in entry:
             try:
-                bundle_heads = decodehexstring(entry['heads'])
+                bundle_heads = decodehexstring(entry[b'heads'])
             except TypeError:
                 # Bad heads entry
                 continue
@@ -416,61 +416,61 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
                 for rev in bundle_heads
             ):
                 continue
-        if 'bases' in entry:
+        if b'bases' in entry:
             try:
-                bundle_bases = decodehexstring(entry['bases'])
+                bundle_bases = decodehexstring(entry[b'bases'])
             except TypeError:
                 # Bad bases entry
                 continue
             if not all(cl.rev(rev) in common_anc for rev in bundle_bases):
                 continue
-        path = entry['URL']
-        repo.ui.debug('sending pullbundle "%s"\n' % path)
+        path = entry[b'URL']
+        repo.ui.debug(b'sending pullbundle "%s"\n' % path)
         try:
             return repo.vfs.open(path)
         except IOError:
-            repo.ui.debug('pullbundle "%s" not accessible\n' % path)
+            repo.ui.debug(b'pullbundle "%s" not accessible\n' % path)
             continue
     return None
 
 
-@wireprotocommand('getbundle', '*', permission='pull')
+@wireprotocommand(b'getbundle', b'*', permission=b'pull')
 def getbundle(repo, proto, others):
     opts = options(
-        'getbundle', wireprototypes.GETBUNDLE_ARGUMENTS.keys(), others
+        b'getbundle', wireprototypes.GETBUNDLE_ARGUMENTS.keys(), others
     )
     for k, v in opts.iteritems():
         keytype = wireprototypes.GETBUNDLE_ARGUMENTS[k]
-        if keytype == 'nodes':
+        if keytype == b'nodes':
             opts[k] = wireprototypes.decodelist(v)
-        elif keytype == 'csv':
-            opts[k] = list(v.split(','))
-        elif keytype == 'scsv':
-            opts[k] = set(v.split(','))
-        elif keytype == 'boolean':
+        elif keytype == b'csv':
+            opts[k] = list(v.split(b','))
+        elif keytype == b'scsv':
+            opts[k] = set(v.split(b','))
+        elif keytype == b'boolean':
             # Client should serialize False as '0', which is a non-empty string
             # so it evaluates as a True bool.
-            if v == '0':
+            if v == b'0':
                 opts[k] = False
             else:
                 opts[k] = bool(v)
-        elif keytype != 'plain':
-            raise KeyError('unknown getbundle option type %s' % keytype)
+        elif keytype != b'plain':
+            raise KeyError(b'unknown getbundle option type %s' % keytype)
 
-    if not bundle1allowed(repo, 'pull'):
-        if not exchange.bundle2requested(opts.get('bundlecaps')):
-            if proto.name == 'http-v1':
+    if not bundle1allowed(repo, b'pull'):
+        if not exchange.bundle2requested(opts.get(b'bundlecaps')):
+            if proto.name == b'http-v1':
                 return wireprototypes.ooberror(bundle2required)
             raise error.Abort(bundle2requiredmain, hint=bundle2requiredhint)
 
     try:
         clheads = set(repo.changelog.heads())
-        heads = set(opts.get('heads', set()))
-        common = set(opts.get('common', set()))
+        heads = set(opts.get(b'heads', set()))
+        common = set(opts.get(b'common', set()))
         common.discard(nullid)
         if (
-            repo.ui.configbool('server', 'pullbundle')
-            and 'partial-pull' in proto.getprotocaps()
+            repo.ui.configbool(b'server', b'pullbundle')
+            and b'partial-pull' in proto.getprotocaps()
         ):
             # Check if a pre-built bundle covers this request.
             bundle = find_pullbundle(repo, proto, opts, clheads, heads, common)
@@ -479,32 +479,32 @@ def getbundle(repo, proto, others):
                     gen=util.filechunkiter(bundle), prefer_uncompressed=True
                 )
 
-        if repo.ui.configbool('server', 'disablefullbundle'):
+        if repo.ui.configbool(b'server', b'disablefullbundle'):
             # Check to see if this is a full clone.
-            changegroup = opts.get('cg', True)
+            changegroup = opts.get(b'cg', True)
             if changegroup and not common and clheads == heads:
                 raise error.Abort(
-                    _('server has pull-based clones disabled'),
-                    hint=_('remove --pull if specified or upgrade Mercurial'),
+                    _(b'server has pull-based clones disabled'),
+                    hint=_(b'remove --pull if specified or upgrade Mercurial'),
                 )
 
         info, chunks = exchange.getbundlechunks(
-            repo, 'serve', **pycompat.strkwargs(opts)
+            repo, b'serve', **pycompat.strkwargs(opts)
         )
-        prefercompressed = info.get('prefercompressed', True)
+        prefercompressed = info.get(b'prefercompressed', True)
     except error.Abort as exc:
         # cleanly forward Abort error to the client
-        if not exchange.bundle2requested(opts.get('bundlecaps')):
-            if proto.name == 'http-v1':
-                return wireprototypes.ooberror(pycompat.bytestr(exc) + '\n')
+        if not exchange.bundle2requested(opts.get(b'bundlecaps')):
+            if proto.name == b'http-v1':
+                return wireprototypes.ooberror(pycompat.bytestr(exc) + b'\n')
             raise  # cannot do better for bundle1 + ssh
         # bundle2 request expect a bundle2 reply
         bundler = bundle2.bundle20(repo.ui)
-        manargs = [('message', pycompat.bytestr(exc))]
+        manargs = [(b'message', pycompat.bytestr(exc))]
         advargs = []
         if exc.hint is not None:
-            advargs.append(('hint', exc.hint))
-        bundler.addpart(bundle2.bundlepart('error:abort', manargs, advargs))
+            advargs.append((b'hint', exc.hint))
+        bundler.addpart(bundle2.bundlepart(b'error:abort', manargs, advargs))
         chunks = bundler.getchunks()
         prefercompressed = False
 
@@ -513,13 +513,13 @@ def getbundle(repo, proto, others):
     )
 
 
-@wireprotocommand('heads', permission='pull')
+@wireprotocommand(b'heads', permission=b'pull')
 def heads(repo, proto):
     h = repo.heads()
-    return wireprototypes.bytesresponse(wireprototypes.encodelist(h) + '\n')
+    return wireprototypes.bytesresponse(wireprototypes.encodelist(h) + b'\n')
 
 
-@wireprotocommand('hello', permission='pull')
+@wireprotocommand(b'hello', permission=b'pull')
 def hello(repo, proto):
     """Called as part of SSH handshake to obtain server info.
 
@@ -532,16 +532,16 @@ def hello(repo, proto):
         capabilities: <token0> <token1> <token2>
     """
     caps = capabilities(repo, proto).data
-    return wireprototypes.bytesresponse('capabilities: %s\n' % caps)
+    return wireprototypes.bytesresponse(b'capabilities: %s\n' % caps)
 
 
-@wireprotocommand('listkeys', 'namespace', permission='pull')
+@wireprotocommand(b'listkeys', b'namespace', permission=b'pull')
 def listkeys(repo, proto, namespace):
     d = sorted(repo.listkeys(encoding.tolocal(namespace)).items())
     return wireprototypes.bytesresponse(pushkeymod.encodekeys(d))
 
 
-@wireprotocommand('lookup', 'key', permission='pull')
+@wireprotocommand(b'lookup', b'key', permission=b'pull')
 def lookup(repo, proto, key):
     try:
         k = encoding.tolocal(key)
@@ -551,25 +551,25 @@ def lookup(repo, proto, key):
     except Exception as inst:
         r = stringutil.forcebytestr(inst)
         success = 0
-    return wireprototypes.bytesresponse('%d %s\n' % (success, r))
+    return wireprototypes.bytesresponse(b'%d %s\n' % (success, r))
 
 
-@wireprotocommand('known', 'nodes *', permission='pull')
+@wireprotocommand(b'known', b'nodes *', permission=b'pull')
 def known(repo, proto, nodes, others):
-    v = ''.join(
-        b and '1' or '0' for b in repo.known(wireprototypes.decodelist(nodes))
+    v = b''.join(
+        b and b'1' or b'0' for b in repo.known(wireprototypes.decodelist(nodes))
     )
     return wireprototypes.bytesresponse(v)
 
 
-@wireprotocommand('protocaps', 'caps', permission='pull')
+@wireprotocommand(b'protocaps', b'caps', permission=b'pull')
 def protocaps(repo, proto, caps):
     if proto.name == wireprototypes.SSHV1:
-        proto._protocaps = set(caps.split(' '))
-    return wireprototypes.bytesresponse('OK')
+        proto._protocaps = set(caps.split(b' '))
+    return wireprototypes.bytesresponse(b'OK')
 
 
-@wireprotocommand('pushkey', 'namespace key old new', permission='push')
+@wireprotocommand(b'pushkey', b'namespace key old new', permission=b'push')
 def pushkey(repo, proto, namespace, key, old, new):
     # compatibility with pre-1.8 clients which were accidentally
     # sending raw binary nodes rather than utf-8-encoded hex
@@ -594,11 +594,11 @@ def pushkey(repo, proto, namespace, key, old, new):
             or False
         )
 
-    output = output.getvalue() if output else ''
-    return wireprototypes.bytesresponse('%d\n%s' % (int(r), output))
+    output = output.getvalue() if output else b''
+    return wireprototypes.bytesresponse(b'%d\n%s' % (int(r), output))
 
 
-@wireprotocommand('stream_out', permission='pull')
+@wireprotocommand(b'stream_out', permission=b'pull')
 def stream(repo, proto):
     '''If the server supports streaming clone, it advertises the "stream"
     capability with a value representing the version and flags of the repo
@@ -607,17 +607,17 @@ def stream(repo, proto):
     return wireprototypes.streamreslegacy(streamclone.generatev1wireproto(repo))
 
 
-@wireprotocommand('unbundle', 'heads', permission='push')
+@wireprotocommand(b'unbundle', b'heads', permission=b'push')
 def unbundle(repo, proto, heads):
     their_heads = wireprototypes.decodelist(heads)
 
     with proto.mayberedirectstdio() as output:
         try:
-            exchange.check_heads(repo, their_heads, 'preparing changes')
+            exchange.check_heads(repo, their_heads, b'preparing changes')
             cleanup = lambda: None
             try:
                 payload = proto.getpayload()
-                if repo.ui.configbool('server', 'streamunbundle'):
+                if repo.ui.configbool(b'server', b'streamunbundle'):
 
                     def cleanup():
                         # Ensure that the full payload is consumed, so
@@ -636,11 +636,11 @@ def unbundle(repo, proto, heads):
                         if tempname:
                             os.unlink(tempname)
 
-                    fd, tempname = pycompat.mkstemp(prefix='hg-unbundle-')
+                    fd, tempname = pycompat.mkstemp(prefix=b'hg-unbundle-')
                     repo.ui.debug(
-                        'redirecting incoming bundle to %s\n' % tempname
+                        b'redirecting incoming bundle to %s\n' % tempname
                     )
-                    fp = os.fdopen(fd, pycompat.sysstr('wb+'))
+                    fp = os.fdopen(fd, pycompat.sysstr(b'wb+'))
                     for p in payload:
                         fp.write(p)
                     fp.seek(0)
@@ -648,8 +648,8 @@ def unbundle(repo, proto, heads):
                 gen = exchange.readbundle(repo.ui, fp, None)
                 if isinstance(
                     gen, changegroupmod.cg1unpacker
-                ) and not bundle1allowed(repo, 'push'):
-                    if proto.name == 'http-v1':
+                ) and not bundle1allowed(repo, b'push'):
+                    if proto.name == b'http-v1':
                         # need to special case http because stderr do not get to
                         # the http client on failed push so we need to abuse
                         # some other error type to make sure the message get to
@@ -660,14 +660,14 @@ def unbundle(repo, proto, heads):
                     )
 
                 r = exchange.unbundle(
-                    repo, gen, their_heads, 'serve', proto.client()
+                    repo, gen, their_heads, b'serve', proto.client()
                 )
-                if util.safehasattr(r, 'addpart'):
+                if util.safehasattr(r, b'addpart'):
                     # The return looks streamable, we are in the bundle2 case
                     # and should return a stream.
                     return wireprototypes.streamreslegacy(gen=r.getchunks())
                 return wireprototypes.pushres(
-                    r, output.getvalue() if output else ''
+                    r, output.getvalue() if output else b''
                 )
 
             finally:
@@ -683,17 +683,17 @@ def unbundle(repo, proto, heads):
                     # We did not change it to minimise code change.
                     # This need to be moved to something proper.
                     # Feel free to do it.
-                    procutil.stderr.write("abort: %s\n" % exc)
+                    procutil.stderr.write(b"abort: %s\n" % exc)
                     if exc.hint is not None:
-                        procutil.stderr.write("(%s)\n" % exc.hint)
+                        procutil.stderr.write(b"(%s)\n" % exc.hint)
                     procutil.stderr.flush()
                     return wireprototypes.pushres(
-                        0, output.getvalue() if output else ''
+                        0, output.getvalue() if output else b''
                     )
                 except error.PushRaced:
                     return wireprototypes.pusherr(
                         pycompat.bytestr(exc),
-                        output.getvalue() if output else '',
+                        output.getvalue() if output else b'',
                     )
 
             bundler = bundle2.bundle20(repo.ui)
@@ -707,41 +707,41 @@ def unbundle(repo, proto, heads):
                     remotecaps = getattr(exc, '_replycaps', None)
                     if (
                         remotecaps is not None
-                        and 'pushkey' not in remotecaps.get('error', ())
+                        and b'pushkey' not in remotecaps.get(b'error', ())
                     ):
                         # no support remote side, fallback to Abort handler.
                         raise
-                    part = bundler.newpart('error:pushkey')
-                    part.addparam('in-reply-to', exc.partid)
+                    part = bundler.newpart(b'error:pushkey')
+                    part.addparam(b'in-reply-to', exc.partid)
                     if exc.namespace is not None:
                         part.addparam(
-                            'namespace', exc.namespace, mandatory=False
+                            b'namespace', exc.namespace, mandatory=False
                         )
                     if exc.key is not None:
-                        part.addparam('key', exc.key, mandatory=False)
+                        part.addparam(b'key', exc.key, mandatory=False)
                     if exc.new is not None:
-                        part.addparam('new', exc.new, mandatory=False)
+                        part.addparam(b'new', exc.new, mandatory=False)
                     if exc.old is not None:
-                        part.addparam('old', exc.old, mandatory=False)
+                        part.addparam(b'old', exc.old, mandatory=False)
                     if exc.ret is not None:
-                        part.addparam('ret', exc.ret, mandatory=False)
+                        part.addparam(b'ret', exc.ret, mandatory=False)
             except error.BundleValueError as exc:
-                errpart = bundler.newpart('error:unsupportedcontent')
+                errpart = bundler.newpart(b'error:unsupportedcontent')
                 if exc.parttype is not None:
-                    errpart.addparam('parttype', exc.parttype)
+                    errpart.addparam(b'parttype', exc.parttype)
                 if exc.params:
-                    errpart.addparam('params', '\0'.join(exc.params))
+                    errpart.addparam(b'params', b'\0'.join(exc.params))
             except error.Abort as exc:
-                manargs = [('message', stringutil.forcebytestr(exc))]
+                manargs = [(b'message', stringutil.forcebytestr(exc))]
                 advargs = []
                 if exc.hint is not None:
-                    advargs.append(('hint', exc.hint))
+                    advargs.append((b'hint', exc.hint))
                 bundler.addpart(
-                    bundle2.bundlepart('error:abort', manargs, advargs)
+                    bundle2.bundlepart(b'error:abort', manargs, advargs)
                 )
             except error.PushRaced as exc:
                 bundler.newpart(
-                    'error:pushraced',
-                    [('message', stringutil.forcebytestr(exc))],
+                    b'error:pushraced',
+                    [(b'message', stringutil.forcebytestr(exc))],
                 )
             return wireprototypes.streamreslegacy(gen=bundler.getchunks())

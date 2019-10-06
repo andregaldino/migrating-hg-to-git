@@ -246,14 +246,14 @@ class remotefilectx(context.filectx):
             return linknode
 
         commonlogkwargs = {
-            r'revs': ' '.join([hex(cl.node(rev)) for rev in revs]),
+            r'revs': b' '.join([hex(cl.node(rev)) for rev in revs]),
             r'fnode': hex(fnode),
             r'filepath': path,
             r'user': shallowutil.getusername(repo.ui),
             r'reponame': shallowutil.getreponame(repo.ui),
         }
 
-        repo.ui.log('linkrevfixup', 'adjusting linknode\n', **commonlogkwargs)
+        repo.ui.log(b'linkrevfixup', b'adjusting linknode\n', **commonlogkwargs)
 
         pc = repo._phasecache
         seenpublic = False
@@ -322,7 +322,7 @@ class remotefilectx(context.filectx):
         # the slow path is used too much. One promising possibility is using
         # obsolescence markers to find a more-likely-correct linkrev.
 
-        logmsg = ''
+        logmsg = b''
         start = time.time()
         try:
             repo.fileservice.prefetch([(path, hex(fnode))], force=True)
@@ -333,18 +333,18 @@ class remotefilectx(context.filectx):
             self._ancestormap = None
             linknode = self.ancestormap()[fnode][2]  # 2 is linknode
             if self._verifylinknode(revs, linknode):
-                logmsg = 'remotefilelog prefetching succeeded'
+                logmsg = b'remotefilelog prefetching succeeded'
                 return linknode
-            logmsg = 'remotefilelog prefetching not found'
+            logmsg = b'remotefilelog prefetching not found'
             return None
         except Exception as e:
-            logmsg = 'remotefilelog prefetching failed (%s)' % e
+            logmsg = b'remotefilelog prefetching failed (%s)' % e
             return None
         finally:
             elapsed = time.time() - start
             repo.ui.log(
-                'linkrevfixup',
-                logmsg + '\n',
+                b'linkrevfixup',
+                logmsg + b'\n',
                 elapsed=elapsed * 1000,
                 **commonlogkwargs
             )
@@ -473,7 +473,8 @@ class remotefilectx(context.filectx):
                     queue.append(parent)
 
         self._repo.ui.debug(
-            'remotefilelog: prefetching %d files ' 'for annotate\n' % len(fetch)
+            b'remotefilelog: prefetching %d files '
+            b'for annotate\n' % len(fetch)
         )
         if fetch:
             self._repo.fileservice.prefetch(fetch)
@@ -518,7 +519,7 @@ class remoteworkingfilectx(context.workingfilectx, remotefilectx):
                 p2ctx = self._repo.filectx(p2[0], fileid=p2[1])
                 m.update(p2ctx.filelog().ancestormap(p2[1]))
 
-            copyfrom = ''
+            copyfrom = b''
             if renamed:
                 copyfrom = renamed[0]
             m[None] = (p1[1], p2[1], nullid, copyfrom)

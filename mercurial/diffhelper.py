@@ -31,18 +31,18 @@ def addlines(fp, hunk, lena, lenb, a, b):
         for i in pycompat.xrange(num):
             s = fp.readline()
             if not s:
-                raise error.ParseError(_('incomplete hunk'))
-            if s == "\\ No newline at end of file\n":
+                raise error.ParseError(_(b'incomplete hunk'))
+            if s == b"\\ No newline at end of file\n":
                 fixnewline(hunk, a, b)
                 continue
-            if s == '\n' or s == '\r\n':
+            if s == b'\n' or s == b'\r\n':
                 # Some patches may be missing the control char
                 # on empty lines. Supply a leading space.
-                s = ' ' + s
+                s = b' ' + s
             hunk.append(s)
-            if s.startswith('+'):
+            if s.startswith(b'+'):
                 b.append(s[1:])
-            elif s.startswith('-'):
+            elif s.startswith(b'-'):
                 a.append(s)
             else:
                 b.append(s[1:])
@@ -53,14 +53,14 @@ def fixnewline(hunk, a, b):
     """Fix up the last lines of a and b when the patch has no newline at EOF"""
     l = hunk[-1]
     # tolerate CRLF in last line
-    if l.endswith('\r\n'):
+    if l.endswith(b'\r\n'):
         hline = l[:-2]
     else:
         hline = l[:-1]
 
-    if hline.startswith((' ', '+')):
+    if hline.startswith((b' ', b'+')):
         b[-1] = hline[1:]
-    if hline.startswith((' ', '-')):
+    if hline.startswith((b' ', b'-')):
         a[-1] = hline
     hunk[-1] = hline
 

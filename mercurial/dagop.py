@@ -43,7 +43,7 @@ def _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse):
     if stopdepth == 0:
         return
     if stopdepth < 0:
-        raise error.ProgrammingError('negative stopdepth')
+        raise error.ProgrammingError(b'negative stopdepth')
     if reverse:
         heapsign = -1  # max heap
     else:
@@ -330,7 +330,7 @@ def _changesrange(fctx1, fctx2, linerange2, diffopts):
     """
     blocks = mdiff.allblocks(fctx1.data(), fctx2.data(), diffopts)
     filteredblocks, linerange1 = mdiff.blocksinrange(blocks, linerange2)
-    diffinrange = any(stype == '!' for _, stype in filteredblocks)
+    diffinrange = any(stype == b'!' for _, stype in filteredblocks)
     return diffinrange, linerange1
 
 
@@ -428,9 +428,9 @@ class _annotatedfile(object):
 
 
 def _countlines(text):
-    if text.endswith("\n"):
-        return text.count("\n")
-    return text.count("\n") + int(bool(text))
+    if text.endswith(b"\n"):
+        return text.count(b"\n")
+    return text.count(b"\n") + int(bool(text))
 
 
 def _decoratelines(text, fctx):
@@ -464,7 +464,7 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
         for (a1, a2, b1, b2), t in blocks:
             # Changed blocks ('!') or blocks made only of blank lines ('~')
             # belong to the child.
-            if t == '=':
+            if t == b'=':
                 child.fctxs[b1:b2] = parent.fctxs[a1:a2]
                 child.linenos[b1:b2] = parent.linenos[a1:a2]
                 child.skips[b1:b2] = parent.skips[a1:a2]

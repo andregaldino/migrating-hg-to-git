@@ -26,11 +26,11 @@ class monotone_source(common.converter_source, common.commandline):
         if revs and len(revs) > 1:
             raise error.Abort(
                 _(
-                    'monotone source does not support specifying '
-                    'multiple revs'
+                    b'monotone source does not support specifying '
+                    b'multiple revs'
                 )
             )
-        common.commandline.__init__(self, ui, 'mtn')
+        common.commandline.__init__(self, ui, b'mtn')
 
         self.ui = ui
         self.path = path
@@ -38,17 +38,17 @@ class monotone_source(common.converter_source, common.commandline):
         self.revs = revs
 
         norepo = common.NoRepo(
-            _("%s does not look like a monotone repository") % path
+            _(b"%s does not look like a monotone repository") % path
         )
-        if not os.path.exists(os.path.join(path, '_MTN')):
+        if not os.path.exists(os.path.join(path, b'_MTN')):
             # Could be a monotone repository (SQLite db file)
             try:
-                f = open(path, 'rb')
+                f = open(path, b'rb')
                 header = f.read(16)
                 f.close()
             except IOError:
-                header = ''
-            if header != 'SQLite format 3\x00':
+                header = b''
+            if header != b'SQLite format 3\x00':
                 raise norepo
 
         # regular expressions for parsing monotone output
@@ -58,24 +58,26 @@ class monotone_source(common.converter_source, common.commandline):
         revision = br'\s+\[(\w+)\]\s*'
         lines = br'(?:.|\n)+'
 
-        self.dir_re = re.compile(space + "dir" + name)
-        self.file_re = re.compile(space + "file" + name + "content" + revision)
+        self.dir_re = re.compile(space + b"dir" + name)
+        self.file_re = re.compile(
+            space + b"file" + name + b"content" + revision
+        )
         self.add_file_re = re.compile(
-            space + "add_file" + name + "content" + revision
+            space + b"add_file" + name + b"content" + revision
         )
         self.patch_re = re.compile(
-            space + "patch" + name + "from" + revision + "to" + revision
+            space + b"patch" + name + b"from" + revision + b"to" + revision
         )
-        self.rename_re = re.compile(space + "rename" + name + "to" + name)
-        self.delete_re = re.compile(space + "delete" + name)
-        self.tag_re = re.compile(space + "tag" + name + "revision" + revision)
+        self.rename_re = re.compile(space + b"rename" + name + b"to" + name)
+        self.delete_re = re.compile(space + b"delete" + name)
+        self.tag_re = re.compile(space + b"tag" + name + b"revision" + revision)
         self.cert_re = re.compile(
-            lines + space + "name" + name + "value" + value
+            lines + space + b"name" + name + b"value" + value
         )
 
-        attr = space + "file" + lines + space + "attr" + space
+        attr = space + b"file" + lines + space + b"attr" + space
         self.attr_execute_re = re.compile(
-            attr + '"mtn:execute"' + space + '"true"'
+            attr + b'"mtn:execute"' + space + b'"true"'
         )
 
         # cached data
@@ -84,7 +86,7 @@ class monotone_source(common.converter_source, common.commandline):
         self.files = None
         self.dirs = None
 
-        common.checktool('mtn', abort=False)
+        common.checktool(b'mtn', abort=False)
 
     def mtnrun(self, *args, **kwargs):
         if self.automatestdio:
@@ -94,27 +96,27 @@ class monotone_source(common.converter_source, common.commandline):
 
     def mtnrunsingle(self, *args, **kwargs):
         kwargs[r'd'] = self.path
-        return self.run0('automate', *args, **kwargs)
+        return self.run0(b'automate', *args, **kwargs)
 
     def mtnrunstdio(self, *args, **kwargs):
         # Prepare the command in automate stdio format
         kwargs = pycompat.byteskwargs(kwargs)
         command = []
         for k, v in kwargs.iteritems():
-            command.append("%d:%s" % (len(k), k))
+            command.append(b"%d:%s" % (len(k), k))
             if v:
-                command.append("%d:%s" % (len(v), v))
+                command.append(b"%d:%s" % (len(v), v))
         if command:
-            command.insert(0, 'o')
-            command.append('e')
+            command.insert(0, b'o')
+            command.append(b'e')
 
-        command.append('l')
+        command.append(b'l')
         for arg in args:
-            command.append("%d:%s" % (len(arg), arg))
-        command.append('e')
-        command = ''.join(command)
+            command.append(b"%d:%s" % (len(arg), arg))
+        command.append(b'e')
+        command = b''.join(command)
 
-        self.ui.debug("mtn: sending '%s'\n" % command)
+        self.ui.debug(b"mtn: sending '%s'\n" % command)
         self.mtnwritefp.write(command)
         self.mtnwritefp.flush()
 
@@ -122,42 +124,44 @@ class monotone_source(common.converter_source, common.commandline):
 
     def mtnstdioreadpacket(self):
         read = None
-        commandnbr = ''
-        while read != ':':
+        commandnbr = b''
+        while read != b':':
             read = self.mtnreadfp.read(1)
             if not read:
-                raise error.Abort(_('bad mtn packet - no end of commandnbr'))
+                raise error.Abort(_(b'bad mtn packet - no end of commandnbr'))
             commandnbr += read
         commandnbr = commandnbr[:-1]
 
         stream = self.mtnreadfp.read(1)
-        if stream not in 'mewptl':
-            raise error.Abort(_('bad mtn packet - bad stream type %s') % stream)
+        if stream not in b'mewptl':
+            raise error.Abort(
+                _(b'bad mtn packet - bad stream type %s') % stream
+            )
 
         read = self.mtnreadfp.read(1)
-        if read != ':':
-            raise error.Abort(_('bad mtn packet - no divider before size'))
+        if read != b':':
+            raise error.Abort(_(b'bad mtn packet - no divider before size'))
 
         read = None
-        lengthstr = ''
-        while read != ':':
+        lengthstr = b''
+        while read != b':':
             read = self.mtnreadfp.read(1)
             if not read:
-                raise error.Abort(_('bad mtn packet - no end of packet size'))
+                raise error.Abort(_(b'bad mtn packet - no end of packet size'))
             lengthstr += read
         try:
             length = pycompat.long(lengthstr[:-1])
         except TypeError:
             raise error.Abort(
-                _('bad mtn packet - bad packet size %s') % lengthstr
+                _(b'bad mtn packet - bad packet size %s') % lengthstr
             )
 
         read = self.mtnreadfp.read(length)
         if len(read) != length:
             raise error.Abort(
                 _(
-                    "bad mtn packet - unable to read full packet "
-                    "read %s of %s"
+                    b"bad mtn packet - unable to read full packet "
+                    b"read %s of %s"
                 )
                 % (len(read), length)
             )
@@ -169,33 +173,33 @@ class monotone_source(common.converter_source, common.commandline):
         while True:
             commandnbr, stream, length, output = self.mtnstdioreadpacket()
             self.ui.debug(
-                'mtn: read packet %s:%s:%d\n' % (commandnbr, stream, length)
+                b'mtn: read packet %s:%s:%d\n' % (commandnbr, stream, length)
             )
 
-            if stream == 'l':
+            if stream == b'l':
                 # End of command
-                if output != '0':
+                if output != b'0':
                     raise error.Abort(
-                        _("mtn command '%s' returned %s") % (command, output)
+                        _(b"mtn command '%s' returned %s") % (command, output)
                     )
                 break
-            elif stream in 'ew':
+            elif stream in b'ew':
                 # Error, warning output
-                self.ui.warn(_('%s error:\n') % self.command)
+                self.ui.warn(_(b'%s error:\n') % self.command)
                 self.ui.warn(output)
-            elif stream == 'p':
+            elif stream == b'p':
                 # Progress messages
-                self.ui.debug('mtn: ' + output)
-            elif stream == 'm':
+                self.ui.debug(b'mtn: ' + output)
+            elif stream == b'm':
                 # Main stream - command output
                 retval.append(output)
 
-        return ''.join(retval)
+        return b''.join(retval)
 
     def mtnloadmanifest(self, rev):
         if self.manifest_rev == rev:
             return
-        self.manifest = self.mtnrun("get_manifest_of", rev).split("\n\n")
+        self.manifest = self.mtnrun(b"get_manifest_of", rev).split(b"\n\n")
         self.manifest_rev = rev
         self.files = {}
         self.dirs = {}
@@ -203,11 +207,11 @@ class monotone_source(common.converter_source, common.commandline):
         for e in self.manifest:
             m = self.file_re.match(e)
             if m:
-                attr = ""
+                attr = b""
                 name = m.group(1)
                 node = m.group(2)
                 if self.attr_execute_re.match(e):
-                    attr += "x"
+                    attr += b"x"
                 self.files[name] = (node, attr)
             m = self.dir_re.match(e)
             if m:
@@ -224,12 +228,12 @@ class monotone_source(common.converter_source, common.commandline):
 
     def mtngetcerts(self, rev):
         certs = {
-            "author": "<missing>",
-            "date": "<missing>",
-            "changelog": "<missing>",
-            "branch": "<missing>",
+            b"author": b"<missing>",
+            b"date": b"<missing>",
+            b"changelog": b"<missing>",
+            b"branch": b"<missing>",
         }
-        certlist = self.mtnrun("certs", rev)
+        certlist = self.mtnrun(b"certs", rev)
         # mtn < 0.45:
         #   key "test@selenic.com"
         # mtn >= 0.45:
@@ -239,28 +243,28 @@ class monotone_source(common.converter_source, common.commandline):
             m = self.cert_re.match(e)
             if m:
                 name, value = m.groups()
-                value = value.replace(br'\"', '"')
-                value = value.replace(br'\\', '\\')
+                value = value.replace(br'\"', b'"')
+                value = value.replace(br'\\', b'\\')
                 certs[name] = value
         # Monotone may have subsecond dates: 2005-02-05T09:39:12.364306
         # and all times are stored in UTC
-        certs["date"] = certs["date"].split('.')[0] + " UTC"
+        certs[b"date"] = certs[b"date"].split(b'.')[0] + b" UTC"
         return certs
 
     # implement the converter_source interface:
 
     def getheads(self):
         if not self.revs:
-            return self.mtnrun("leaves").splitlines()
+            return self.mtnrun(b"leaves").splitlines()
         else:
             return self.revs
 
     def getchanges(self, rev, full):
         if full:
             raise error.Abort(
-                _("convert from monotone does not support " "--full")
+                _(b"convert from monotone does not support " b"--full")
             )
-        revision = self.mtnrun("get_revision", rev).split("\n\n")
+        revision = self.mtnrun(b"get_revision", rev).split(b"\n\n")
         files = {}
         ignoremove = {}
         renameddirs = []
@@ -298,7 +302,7 @@ class monotone_source(common.converter_source, common.commandline):
             for tofile in self.files:
                 if tofile in ignoremove:
                     continue
-                if tofile.startswith(todir + '/'):
+                if tofile.startswith(todir + b'/'):
                     renamed[tofile] = fromdir + tofile[len(todir) :]
                     # Avoid chained moves like:
                     # d1(/a) => d3/d1(/a)
@@ -306,9 +310,9 @@ class monotone_source(common.converter_source, common.commandline):
                     ignoremove[tofile] = 1
             for tofile, fromfile in renamed.items():
                 self.ui.debug(
-                    "copying file in renamed directory from '%s' to '%s'"
+                    b"copying file in renamed directory from '%s' to '%s'"
                     % (fromfile, tofile),
-                    '\n',
+                    b'\n',
                 )
                 files[tofile] = rev
                 copies[tofile] = fromfile
@@ -321,32 +325,32 @@ class monotone_source(common.converter_source, common.commandline):
         if not self.mtnisfile(name, rev):
             return None, None
         try:
-            data = self.mtnrun("get_file_of", name, r=rev)
+            data = self.mtnrun(b"get_file_of", name, r=rev)
         except Exception:
             return None, None
         self.mtnloadmanifest(rev)
-        node, attr = self.files.get(name, (None, ""))
+        node, attr = self.files.get(name, (None, b""))
         return data, attr
 
     def getcommit(self, rev):
         extra = {}
         certs = self.mtngetcerts(rev)
-        if certs.get('suspend') == certs["branch"]:
-            extra['close'] = 1
-        dateformat = "%Y-%m-%dT%H:%M:%S"
+        if certs.get(b'suspend') == certs[b"branch"]:
+            extra[b'close'] = 1
+        dateformat = b"%Y-%m-%dT%H:%M:%S"
         return common.commit(
-            author=certs["author"],
-            date=dateutil.datestr(dateutil.strdate(certs["date"], dateformat)),
-            desc=certs["changelog"],
+            author=certs[b"author"],
+            date=dateutil.datestr(dateutil.strdate(certs[b"date"], dateformat)),
+            desc=certs[b"changelog"],
             rev=rev,
-            parents=self.mtnrun("parents", rev).splitlines(),
-            branch=certs["branch"],
+            parents=self.mtnrun(b"parents", rev).splitlines(),
+            branch=certs[b"branch"],
             extra=extra,
         )
 
     def gettags(self):
         tags = {}
-        for e in self.mtnrun("tags").split("\n\n"):
+        for e in self.mtnrun(b"tags").split(b"\n\n"):
             m = self.tag_re.match(e)
             if m:
                 tags[m.group(1)] = m.group(2)
@@ -360,42 +364,42 @@ class monotone_source(common.converter_source, common.commandline):
     def before(self):
         # Check if we have a new enough version to use automate stdio
         try:
-            versionstr = self.mtnrunsingle("interface_version")
+            versionstr = self.mtnrunsingle(b"interface_version")
             version = float(versionstr)
         except Exception:
             raise error.Abort(
-                _("unable to determine mtn automate interface " "version")
+                _(b"unable to determine mtn automate interface " b"version")
             )
 
         if version >= 12.0:
             self.automatestdio = True
             self.ui.debug(
-                "mtn automate version %f - using automate stdio\n" % version
+                b"mtn automate version %f - using automate stdio\n" % version
             )
 
             # launch the long-running automate stdio process
             self.mtnwritefp, self.mtnreadfp = self._run2(
-                'automate', 'stdio', '-d', self.path
+                b'automate', b'stdio', b'-d', self.path
             )
             # read the headers
             read = self.mtnreadfp.readline()
-            if read != 'format-version: 2\n':
+            if read != b'format-version: 2\n':
                 raise error.Abort(
-                    _('mtn automate stdio header unexpected: %s') % read
+                    _(b'mtn automate stdio header unexpected: %s') % read
                 )
-            while read != '\n':
+            while read != b'\n':
                 read = self.mtnreadfp.readline()
                 if not read:
                     raise error.Abort(
                         _(
-                            "failed to reach end of mtn automate "
-                            "stdio headers"
+                            b"failed to reach end of mtn automate "
+                            b"stdio headers"
                         )
                     )
         else:
             self.ui.debug(
-                "mtn automate version %s - not using automate stdio "
-                "(automate >= 12.0 - mtn >= 0.46 is needed)\n" % version
+                b"mtn automate version %s - not using automate stdio "
+                b"(automate >= 12.0 - mtn >= 0.46 is needed)\n" % version
             )
 
     def after(self):

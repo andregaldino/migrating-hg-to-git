@@ -48,13 +48,13 @@ def getlocalkey(file, id):
 
 
 def getcachepath(ui, allowempty=False):
-    cachepath = ui.config("remotefilelog", "cachepath")
+    cachepath = ui.config(b"remotefilelog", b"cachepath")
     if not cachepath:
         if allowempty:
             return None
         else:
             raise error.Abort(
-                _("could not find config option " "remotefilelog.cachepath")
+                _(b"could not find config option " b"remotefilelog.cachepath")
             )
     return util.expandpath(cachepath)
 
@@ -62,13 +62,13 @@ def getcachepath(ui, allowempty=False):
 def getcachepackpath(repo, category):
     cachepath = getcachepath(repo.ui)
     if category != constants.FILEPACK_CATEGORY:
-        return os.path.join(cachepath, repo.name, 'packs', category)
+        return os.path.join(cachepath, repo.name, b'packs', category)
     else:
-        return os.path.join(cachepath, repo.name, 'packs')
+        return os.path.join(cachepath, repo.name, b'packs')
 
 
 def getlocalpackpath(base, category):
-    return os.path.join(base, 'packs', category)
+    return os.path.join(base, b'packs', category)
 
 
 def createrevlogtext(text, copyfrom=None, copyrev=None):
@@ -76,10 +76,10 @@ def createrevlogtext(text, copyfrom=None, copyrev=None):
     traditional revlog
     """
     meta = {}
-    if copyfrom or text.startswith('\1\n'):
+    if copyfrom or text.startswith(b'\1\n'):
         if copyfrom:
-            meta['copy'] = copyfrom
-            meta['copyrev'] = copyrev
+            meta[b'copy'] = copyfrom
+            meta[b'copyrev'] = copyrev
         text = storageutil.packmeta(meta, text)
 
     return text
@@ -88,8 +88,8 @@ def createrevlogtext(text, copyfrom=None, copyrev=None):
 def parsemeta(text):
     """parse mercurial filelog metadata"""
     meta, size = storageutil.parsemeta(text)
-    if text.startswith('\1\n'):
-        s = text.index('\1\n', 2)
+    if text.startswith(b'\1\n'):
+        s = text.index(b'\1\n', 2)
         text = text[s + 2 :]
     return meta or {}, text
 
@@ -117,8 +117,8 @@ def prefixkeys(dict, prefix):
 
 def reportpackmetrics(ui, prefix, *stores):
     dicts = [s.getmetrics() for s in stores]
-    dict = prefixkeys(sumdicts(*dicts), prefix + '_')
-    ui.log(prefix + "_packsizes", "\n", **pycompat.strkwargs(dict))
+    dict = prefixkeys(sumdicts(*dicts), prefix + b'_')
+    ui.log(prefix + b"_packsizes", b"\n", **pycompat.strkwargs(dict))
 
 
 def _parsepackmeta(metabuf):
@@ -136,15 +136,15 @@ def _parsepackmeta(metabuf):
     while buflen - offset >= 3:
         key = metabuf[offset : offset + 1]
         offset += 1
-        metalen = struct.unpack_from('!H', metabuf, offset)[0]
+        metalen = struct.unpack_from(b'!H', metabuf, offset)[0]
         offset += 2
         if offset + metalen > buflen:
-            raise ValueError('corrupted metadata: incomplete buffer')
+            raise ValueError(b'corrupted metadata: incomplete buffer')
         value = metabuf[offset : offset + metalen]
         metadict[key] = value
         offset += metalen
     if offset != buflen:
-        raise ValueError('corrupted metadata: redundant data')
+        raise ValueError(b'corrupted metadata: redundant data')
     return metadict
 
 
@@ -158,16 +158,16 @@ def _buildpackmeta(metadict):
     raise ProgrammingError when metadata key is illegal, or ValueError if
     length limit is exceeded
     """
-    metabuf = ''
+    metabuf = b''
     for k, v in sorted((metadict or {}).iteritems()):
         if len(k) != 1:
-            raise error.ProgrammingError('packmeta: illegal key: %s' % k)
+            raise error.ProgrammingError(b'packmeta: illegal key: %s' % k)
         if len(v) > 0xFFFE:
             raise ValueError(
-                'metadata value is too long: 0x%x > 0xfffe' % len(v)
+                b'metadata value is too long: 0x%x > 0xfffe' % len(v)
             )
         metabuf += k
-        metabuf += struct.pack('!H', len(v))
+        metabuf += struct.pack(b'!H', len(v))
         metabuf += v
     # len(metabuf) is guaranteed representable in 4 bytes, because there are
     # only 256 keys, and for each value, len(value) <= 0xfffe.
@@ -190,7 +190,7 @@ def buildpackmeta(metadict):
     for k, v in (metadict or {}).iteritems():
         expectedtype = _metaitemtypes.get(k, (bytes,))
         if not isinstance(v, expectedtype):
-            raise error.ProgrammingError('packmeta: wrong type of key %s' % k)
+            raise error.ProgrammingError(b'packmeta: wrong type of key %s' % k)
         # normalize int to binary buffer
         if int in expectedtype:
             # optimization: remove flag if it's 0 to save space
@@ -241,19 +241,19 @@ def parsesizeflags(raw):
     flags = revlog.REVIDX_DEFAULT_FLAGS
     size = None
     try:
-        index = raw.index('\0')
+        index = raw.index(b'\0')
         header = raw[:index]
-        if header.startswith('v'):
+        if header.startswith(b'v'):
             # v1 and above, header starts with 'v'
-            if header.startswith('v1\n'):
-                for s in header.split('\n'):
+            if header.startswith(b'v1\n'):
+                for s in header.split(b'\n'):
                     if s.startswith(constants.METAKEYSIZE):
                         size = int(s[len(constants.METAKEYSIZE) :])
                     elif s.startswith(constants.METAKEYFLAG):
                         flags = int(s[len(constants.METAKEYFLAG) :])
             else:
                 raise RuntimeError(
-                    'unsupported remotefilelog header: %s' % header
+                    b'unsupported remotefilelog header: %s' % header
                 )
         else:
             # v0, str(int(size)) is the header
@@ -277,7 +277,7 @@ def buildfileblobheader(size, flags, version=None):
     if version is None:
         version = int(bool(flags))
     if version == 1:
-        header = 'v1\n%s%d\n%s%d' % (
+        header = b'v1\n%s%d\n%s%d' % (
             constants.METAKEYSIZE,
             size,
             constants.METAKEYFLAG,
@@ -285,10 +285,10 @@ def buildfileblobheader(size, flags, version=None):
         )
     elif version == 0:
         if flags:
-            raise error.ProgrammingError('fileblob v0 does not support flag')
-        header = '%d' % size
+            raise error.ProgrammingError(b'fileblob v0 does not support flag')
+        header = b'%d' % size
     else:
-        raise error.ProgrammingError('unknown fileblob version %d' % version)
+        raise error.ProgrammingError(b'unknown fileblob version %d' % version)
     return header
 
 
@@ -298,7 +298,7 @@ def ancestormap(raw):
 
     mapping = {}
     while start < len(raw):
-        divider = raw.index('\0', start + 80)
+        divider = raw.index(b'\0', start + 80)
 
         currentnode = raw[start : (start + 20)]
         p1 = raw[(start + 20) : (start + 40)]
@@ -313,14 +313,14 @@ def ancestormap(raw):
 
 
 def readfile(path):
-    f = open(path, 'rb')
+    f = open(path, b'rb')
     try:
         result = f.read()
 
         # we should never have empty files
         if not result:
             os.remove(path)
-            raise IOError("empty file: %s" % path)
+            raise IOError(b"empty file: %s" % path)
 
         return result
     finally:
@@ -355,11 +355,11 @@ def writefile(path, content, readonly=False):
             if ex.errno != errno.EEXIST:
                 raise
 
-    fd, temp = tempfile.mkstemp(prefix='.%s-' % filename, dir=dirname)
+    fd, temp = tempfile.mkstemp(prefix=b'.%s-' % filename, dir=dirname)
     os.close(fd)
 
     try:
-        f = util.posixfile(temp, 'wb')
+        f = util.posixfile(temp, b'wb')
         f.write(content)
         f.close()
 
@@ -426,7 +426,7 @@ def readexactly(stream, n):
     s = stream.read(n)
     if len(s) < n:
         raise error.Abort(
-            _("stream ended unexpectedly" " (got %d bytes, expected %d)")
+            _(b"stream ended unexpectedly" b" (got %d bytes, expected %d)")
             % (len(s), n)
         )
     return s
@@ -473,18 +473,18 @@ def setstickygroupdir(path, gid, warn=None):
         os.chmod(path, 0o2775)
     except (IOError, OSError) as ex:
         if warn:
-            warn(_('unable to chown/chmod on %s: %s\n') % (path, ex))
+            warn(_(b'unable to chown/chmod on %s: %s\n') % (path, ex))
 
 
 def mkstickygroupdir(ui, path):
     """Creates the given directory (if it doesn't exist) and give it a
     particular group with setgid enabled."""
     gid = None
-    groupname = ui.config("remotefilelog", "cachegroup")
+    groupname = ui.config(b"remotefilelog", b"cachegroup")
     if groupname:
         gid = getgid(groupname)
         if gid is None:
-            ui.warn(_('unable to resolve group name: %s\n') % groupname)
+            ui.warn(_(b'unable to resolve group name: %s\n') % groupname)
 
     # we use a single stat syscall to test the existence and mode / group bit
     st = None
@@ -525,11 +525,11 @@ def getusername(ui):
     try:
         return stringutil.shortuser(ui.username())
     except Exception:
-        return 'unknown'
+        return b'unknown'
 
 
 def getreponame(ui):
-    reponame = ui.config('paths', 'default')
+    reponame = ui.config(b'paths', b'default')
     if reponame:
         return os.path.basename(reponame)
-    return "unknown"
+    return b"unknown"

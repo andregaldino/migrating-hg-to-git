@@ -24,7 +24,7 @@ def launch(application):
     procutil.setbinary(procutil.stdout)
 
     environ = dict(os.environ.iteritems())  # re-exports
-    environ.setdefault(r'PATH_INFO', '')
+    environ.setdefault(r'PATH_INFO', b'')
     if environ.get(r'SERVER_SOFTWARE', r'').startswith(r'Microsoft-IIS'):
         # IIS includes script_name in PATH_INFO
         scriptname = environ[r'SCRIPT_NAME']
@@ -53,18 +53,18 @@ def launch(application):
 
     def write(data):
         if not headers_set:
-            raise AssertionError("write() before start_response()")
+            raise AssertionError(b"write() before start_response()")
 
         elif not headers_sent:
             # Before the first output, send the stored headers
             status, response_headers = headers_sent[:] = headers_set
-            out.write('Status: %s\r\n' % pycompat.bytesurl(status))
+            out.write(b'Status: %s\r\n' % pycompat.bytesurl(status))
             for hk, hv in response_headers:
                 out.write(
-                    '%s: %s\r\n'
+                    b'%s: %s\r\n'
                     % (pycompat.bytesurl(hk), pycompat.bytesurl(hv))
                 )
-            out.write('\r\n')
+            out.write(b'\r\n')
 
         out.write(data)
         out.flush()
@@ -78,7 +78,7 @@ def launch(application):
             finally:
                 exc_info = None  # avoid dangling circular ref
         elif headers_set:
-            raise AssertionError("Headers already set!")
+            raise AssertionError(b"Headers already set!")
 
         headers_set[:] = [status, response_headers]
         return write
@@ -88,6 +88,6 @@ def launch(application):
         for chunk in content:
             write(chunk)
         if not headers_sent:
-            write('')  # send headers now if body was empty
+            write(b'')  # send headers now if body was empty
     finally:
         getattr(content, 'close', lambda: None)()

@@ -140,7 +140,7 @@ class partialdiscovery(object):
 
     def addmissings(self, missings):
         """register some nodes as missing"""
-        newmissing = self._repo.revs('%ld::%ld', missings, self.undecided)
+        newmissing = self._repo.revs(b'%ld::%ld', missings, self.undecided)
         if newmissing:
             self.missing.update(newmissing)
             self.undecided.difference_update(newmissing)
@@ -176,7 +176,7 @@ class partialdiscovery(object):
 
     def stats(self):
         return {
-            'undecided': len(self.undecided),
+            b'undecided': len(self.undecided),
         }
 
     def commonheads(self):
@@ -234,7 +234,7 @@ class partialdiscovery(object):
         revs = self.undecided
         if len(revs) <= size:
             return list(revs)
-        sample = set(self._repo.revs('heads(%ld)', revs))
+        sample = set(self._repo.revs(b'heads(%ld)', revs))
 
         if len(sample) >= size:
             return _limitsample(sample, size, randomize=self.randomize)
@@ -249,7 +249,7 @@ class partialdiscovery(object):
         if len(revs) <= size:
             return list(revs)
         repo = self._repo
-        sample = set(repo.revs('heads(%ld)', revs))
+        sample = set(repo.revs(b'heads(%ld)', revs))
         parentrevs = self._parentsgetter()
 
         # update from heads
@@ -257,7 +257,7 @@ class partialdiscovery(object):
         _updatesample(revs, revsheads, sample, parentrevs)
 
         # update from roots
-        revsroots = set(repo.revs('roots(%ld)', revs))
+        revsroots = set(repo.revs(b'roots(%ld)', revs))
         childrenrevs = self._childrengetter()
         _updatesample(revs, revsroots, sample, childrenrevs)
         assert sample
@@ -308,7 +308,7 @@ def findcommonheads(
         ownheads = [rev for rev in cl.headrevs() if rev != nullrev]
 
     # early exit if we know all the specified remote heads already
-    ui.debug("query 1; heads\n")
+    ui.debug(b"query 1; heads\n")
     roundtrips += 1
     # We also ask remote about all the local heads. That set can be arbitrarily
     # large, so we used to limit it size to `initialsamplesize`. We no longer
@@ -369,8 +369,10 @@ def findcommonheads(
         sample = ownheads
 
     with remote.commandexecutor() as e:
-        fheads = e.callcommand('heads', {})
-        fknown = e.callcommand('known', {'nodes': [clnode(r) for r in sample],})
+        fheads = e.callcommand(b'heads', {})
+        fknown = e.callcommand(
+            b'known', {b'nodes': [clnode(r) for r in sample],}
+        )
 
     srvheadhashes, yesno = fheads.result(), fknown.result()
 
@@ -381,7 +383,7 @@ def findcommonheads(
 
     # start actual discovery (we note this before the next "if" for
     # compatibility reasons)
-    ui.status(_("searching for changes\n"))
+    ui.status(_(b"searching for changes\n"))
 
     knownsrvheads = []  # revnos of remote heads that are known locally
     for node in srvheadhashes:
@@ -395,17 +397,17 @@ def findcommonheads(
             continue
 
     if len(knownsrvheads) == len(srvheadhashes):
-        ui.debug("all remote heads known locally\n")
+        ui.debug(b"all remote heads known locally\n")
         return srvheadhashes, False, srvheadhashes
 
     if len(sample) == len(ownheads) and all(yesno):
-        ui.note(_("all local changesets known remotely\n"))
+        ui.note(_(b"all local changesets known remotely\n"))
         ownheadhashes = [clnode(r) for r in ownheads]
         return ownheadhashes, True, srvheadhashes
 
     # full blown discovery
 
-    randomize = ui.configbool('devel', 'discovery.randomize')
+    randomize = ui.configbool(b'devel', b'discovery.randomize')
     disco = partialdiscovery(
         local, ownheads, remote.limitedarguments, randomize=randomize
     )
@@ -415,21 +417,21 @@ def findcommonheads(
     disco.addinfo(zip(sample, yesno))
 
     full = False
-    progress = ui.makeprogress(_('searching'), unit=_('queries'))
+    progress = ui.makeprogress(_(b'searching'), unit=_(b'queries'))
     while not disco.iscomplete():
 
         if full or disco.hasinfo():
             if full:
-                ui.note(_("sampling from both directions\n"))
+                ui.note(_(b"sampling from both directions\n"))
             else:
-                ui.debug("taking initial sample\n")
+                ui.debug(b"taking initial sample\n")
             samplefunc = disco.takefullsample
             targetsize = fullsamplesize
             if not remote.limitedarguments:
                 fullsamplesize = int(fullsamplesize * samplegrowth)
         else:
             # use even cheaper initial sample
-            ui.debug("taking quick initial sample\n")
+            ui.debug(b"taking quick initial sample\n")
             samplefunc = disco.takequicksample
             targetsize = initialsamplesize
         sample = samplefunc(ownheads, targetsize)
@@ -438,8 +440,8 @@ def findcommonheads(
         progress.update(roundtrips)
         stats = disco.stats()
         ui.debug(
-            "query %i; still undecided: %i, sample size is: %i\n"
-            % (roundtrips, stats['undecided'], len(sample))
+            b"query %i; still undecided: %i, sample size is: %i\n"
+            % (roundtrips, stats[b'undecided'], len(sample))
         )
 
         # indices between sample and externalized version must match
@@ -447,7 +449,7 @@ def findcommonheads(
 
         with remote.commandexecutor() as e:
             yesno = e.callcommand(
-                'known', {'nodes': [clnode(r) for r in sample],}
+                b'known', {b'nodes': [clnode(r) for r in sample],}
             ).result()
 
         full = True
@@ -457,19 +459,19 @@ def findcommonheads(
     result = disco.commonheads()
     elapsed = util.timer() - start
     progress.complete()
-    ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
+    ui.debug(b"%d total queries in %.4fs\n" % (roundtrips, elapsed))
     msg = (
-        'found %d common and %d unknown server heads,'
-        ' %d roundtrips in %.4fs\n'
+        b'found %d common and %d unknown server heads,'
+        b' %d roundtrips in %.4fs\n'
     )
     missing = set(result) - set(knownsrvheads)
-    ui.log('discovery', msg, len(result), len(missing), roundtrips, elapsed)
+    ui.log(b'discovery', msg, len(result), len(missing), roundtrips, elapsed)
 
     if not result and srvheadhashes != [nullid]:
         if abortwhenunrelated:
-            raise error.Abort(_("repository is unrelated"))
+            raise error.Abort(_(b"repository is unrelated"))
         else:
-            ui.warn(_("warning: repository is unrelated\n"))
+            ui.warn(_(b"warning: repository is unrelated\n"))
         return (
             {nullid},
             True,

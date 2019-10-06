@@ -14,11 +14,11 @@ from . import (
 
 class wirestore(remotestore.remotestore):
     def __init__(self, ui, repo, remote):
-        cap = remote.capable('largefiles')
+        cap = remote.capable(b'largefiles')
         if not cap:
             raise lfutil.storeprotonotcapable([])
-        storetypes = cap.split(',')
-        if 'serve' not in storetypes:
+        storetypes = cap.split(b',')
+        if b'serve' not in storetypes:
             raise lfutil.storeprotonotcapable(storetypes)
         self.remote = remote
         super(wirestore, self).__init__(ui, repo, remote.url())
@@ -37,6 +37,6 @@ class wirestore(remotestore.remotestore):
         with self.remote.commandexecutor() as e:
             fs = []
             for hash in hashes:
-                fs.append((hash, e.callcommand('statlfile', {'sha': hash,})))
+                fs.append((hash, e.callcommand(b'statlfile', {b'sha': hash,})))
 
             return {hash: f.result() for hash, f in fs}

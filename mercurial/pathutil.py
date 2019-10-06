@@ -63,30 +63,30 @@ class pathauditor(object):
             return
         # AIX ignores "/" at end of path, others raise EISDIR.
         if util.endswithsep(path):
-            raise error.Abort(_("path ends in directory separator: %s") % path)
+            raise error.Abort(_(b"path ends in directory separator: %s") % path)
         parts = util.splitpath(path)
         if (
             os.path.splitdrive(path)[0]
-            or _lowerclean(parts[0]) in ('.hg', '.hg.', '')
+            or _lowerclean(parts[0]) in (b'.hg', b'.hg.', b'')
             or pycompat.ospardir in parts
         ):
-            raise error.Abort(_("path contains illegal component: %s") % path)
+            raise error.Abort(_(b"path contains illegal component: %s") % path)
         # Windows shortname aliases
         for p in parts:
-            if "~" in p:
-                first, last = p.split("~", 1)
-                if last.isdigit() and first.upper() in ["HG", "HG8B6C"]:
+            if b"~" in p:
+                first, last = p.split(b"~", 1)
+                if last.isdigit() and first.upper() in [b"HG", b"HG8B6C"]:
                     raise error.Abort(
-                        _("path contains illegal component: %s") % path
+                        _(b"path contains illegal component: %s") % path
                     )
-        if '.hg' in _lowerclean(path):
+        if b'.hg' in _lowerclean(path):
             lparts = [_lowerclean(p.lower()) for p in parts]
-            for p in '.hg', '.hg.':
+            for p in b'.hg', b'.hg.':
                 if p in lparts[1:]:
                     pos = lparts.index(p)
                     base = os.path.join(*parts[:pos])
                     raise error.Abort(
-                        _("path '%s' is inside nested repo %r")
+                        _(b"path '%s' is inside nested repo %r")
                         % (path, pycompat.bytestr(base))
                     )
 
@@ -126,16 +126,16 @@ class pathauditor(object):
                 raise
         else:
             if stat.S_ISLNK(st.st_mode):
-                msg = _('path %r traverses symbolic link %r') % (
+                msg = _(b'path %r traverses symbolic link %r') % (
                     pycompat.bytestr(path),
                     pycompat.bytestr(prefix),
                 )
                 raise error.Abort(msg)
             elif stat.S_ISDIR(st.st_mode) and os.path.isdir(
-                os.path.join(curpath, '.hg')
+                os.path.join(curpath, b'.hg')
             ):
                 if not self.callback or not self.callback(curpath):
-                    msg = _("path '%s' is inside nested repo %r")
+                    msg = _(b"path '%s' is inside nested repo %r")
                     raise error.Abort(msg % (path, pycompat.bytestr(prefix)))
 
     def check(self, path):
@@ -203,7 +203,7 @@ def canonpath(root, cwd, myname, auditor=None):
         auditor(name)
         return util.pconvert(name)
     elif name == root:
-        return ''
+        return b''
     else:
         # Determine whether `name' is in the hierarchy at or beneath `root',
         # by iterating name=dirname(name) until that causes no change (can't
@@ -219,7 +219,7 @@ def canonpath(root, cwd, myname, auditor=None):
             if s:
                 if not rel:
                     # name was actually the same as root (maybe a symlink)
-                    return ''
+                    return b''
                 rel.reverse()
                 name = os.path.join(*rel)
                 auditor(name)
@@ -236,15 +236,15 @@ def canonpath(root, cwd, myname, auditor=None):
         try:
             if cwd != root:
                 canonpath(root, root, myname, auditor)
-                relpath = util.pathto(root, cwd, '')
+                relpath = util.pathto(root, cwd, b'')
                 if relpath.endswith(pycompat.ossep):
                     relpath = relpath[:-1]
-                hint = _("consider using '--cwd %s'") % relpath
+                hint = _(b"consider using '--cwd %s'") % relpath
         except error.Abort:
             pass
 
         raise error.Abort(
-            _("%s not under root '%s'") % (myname, root), hint=hint
+            _(b"%s not under root '%s'") % (myname, root), hint=hint
         )
 
 

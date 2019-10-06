@@ -16,18 +16,18 @@ from . import (
 # $MORE variable, but there's no compatible option with Linux 'more'. Given
 # OS X is widely used and most modern Unix systems would have 'less', setting
 # 'less' as the default seems reasonable.
-fallbackpager = 'less'
+fallbackpager = b'less'
 
 
 def _rcfiles(path):
-    rcs = [os.path.join(path, 'hgrc')]
-    rcdir = os.path.join(path, 'hgrc.d')
+    rcs = [os.path.join(path, b'hgrc')]
+    rcdir = os.path.join(path, b'hgrc.d')
     try:
         rcs.extend(
             [
                 os.path.join(rcdir, f)
                 for f, kind in util.listdir(rcdir)
-                if f.endswith(".rc")
+                if f.endswith(b".rc")
             ]
         )
     except OSError:
@@ -37,32 +37,32 @@ def _rcfiles(path):
 
 def systemrcpath():
     path = []
-    if pycompat.sysplatform == 'plan9':
-        root = 'lib/mercurial'
+    if pycompat.sysplatform == b'plan9':
+        root = b'lib/mercurial'
     else:
-        root = 'etc/mercurial'
+        root = b'etc/mercurial'
     # old mod_python does not set sys.argv
     if len(getattr(sys, 'argv', [])) > 0:
         p = os.path.dirname(os.path.dirname(pycompat.sysargv[0]))
-        if p != '/':
+        if p != b'/':
             path.extend(_rcfiles(os.path.join(p, root)))
-    path.extend(_rcfiles('/' + root))
+    path.extend(_rcfiles(b'/' + root))
     return path
 
 
 def userrcpath():
-    if pycompat.sysplatform == 'plan9':
-        return [encoding.environ['home'] + '/lib/hgrc']
+    if pycompat.sysplatform == b'plan9':
+        return [encoding.environ[b'home'] + b'/lib/hgrc']
     elif pycompat.isdarwin:
-        return [os.path.expanduser('~/.hgrc')]
+        return [os.path.expanduser(b'~/.hgrc')]
     else:
-        confighome = encoding.environ.get('XDG_CONFIG_HOME')
+        confighome = encoding.environ.get(b'XDG_CONFIG_HOME')
         if confighome is None or not os.path.isabs(confighome):
-            confighome = os.path.expanduser('~/.config')
+            confighome = os.path.expanduser(b'~/.config')
 
         return [
-            os.path.expanduser('~/.hgrc'),
-            os.path.join(confighome, 'hg', 'hgrc'),
+            os.path.expanduser(b'~/.hgrc'),
+            os.path.join(confighome, b'hg', b'hgrc'),
         ]
 
 
@@ -82,7 +82,7 @@ def termsize(ui):
                 continue
             if not os.isatty(fd):
                 continue
-            arri = fcntl.ioctl(fd, TIOCGWINSZ, '\0' * 8)
+            arri = fcntl.ioctl(fd, TIOCGWINSZ, b'\0' * 8)
             height, width = array.array(r'h', arri)[:2]
             if width > 0 and height > 0:
                 return width, height

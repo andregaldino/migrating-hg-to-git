@@ -151,7 +151,7 @@ def bitsfrom(container):
 # python 2.6 still have deprecation warning enabled by default. We do not want
 # to display anything to standard user so detect if we are running test and
 # only use python deprecation warning in this case.
-_dowarn = bool(encoding.environ.get('HGEMITWARNINGS'))
+_dowarn = bool(encoding.environ.get(b'HGEMITWARNINGS'))
 if _dowarn:
     # explicitly unfilter our warning for python 2.7
     #
@@ -186,19 +186,19 @@ def nouideprecwarn(msg, version, stacklevel=1):
     """
     if _dowarn:
         msg += (
-            "\n(compatibility will be dropped after Mercurial-%s,"
-            " update your code.)"
+            b"\n(compatibility will be dropped after Mercurial-%s,"
+            b" update your code.)"
         ) % version
         warnings.warn(pycompat.sysstr(msg), DeprecationWarning, stacklevel + 1)
 
 
 DIGESTS = {
-    'md5': hashlib.md5,
-    'sha1': hashlib.sha1,
-    'sha512': hashlib.sha512,
+    b'md5': hashlib.md5,
+    b'sha1': hashlib.sha1,
+    b'sha512': hashlib.sha512,
 }
 # List of digest types from strongest to weakest
-DIGESTS_BY_STRENGTH = ['sha512', 'sha1', 'md5']
+DIGESTS_BY_STRENGTH = [b'sha512', b'sha1', b'md5']
 
 for k in DIGESTS_BY_STRENGTH:
     assert k in DIGESTS
@@ -221,11 +221,11 @@ class digester(object):
     'sha1'
     """
 
-    def __init__(self, digests, s=''):
+    def __init__(self, digests, s=b''):
         self._hashes = {}
         for k in digests:
             if k not in DIGESTS:
-                raise error.Abort(_('unknown digest type: %s') % k)
+                raise error.Abort(_(b'unknown digest type: %s') % k)
             self._hashes[k] = DIGESTS[k]()
         if s:
             self.update(s)
@@ -236,7 +236,7 @@ class digester(object):
 
     def __getitem__(self, key):
         if key not in DIGESTS:
-            raise error.Abort(_('unknown digest type: %s') % k)
+            raise error.Abort(_(b'unknown digest type: %s') % k)
         return nodemod.hex(self._hashes[key].digest())
 
     def __iter__(self):
@@ -277,14 +277,14 @@ class digestchecker(object):
     def validate(self):
         if self._size != self._got:
             raise error.Abort(
-                _('size mismatch: expected %d, got %d')
+                _(b'size mismatch: expected %d, got %d')
                 % (self._size, self._got)
             )
         for k, v in self._digests.items():
             if v != self._digester[k]:
                 # i18n: first parameter is a digest name
                 raise error.Abort(
-                    _('%s mismatch: expected %s, got %s')
+                    _(b'%s mismatch: expected %s, got %s')
                     % (k, v, self._digester[k])
                 )
 
@@ -363,15 +363,15 @@ class bufferedinputpipe(object):
         if len(self._buffer) > 1:
             # this should not happen because both read and readline end with a
             # _frombuffer call that collapse it.
-            self._buffer = [''.join(self._buffer)]
+            self._buffer = [b''.join(self._buffer)]
             self._lenbuf = len(self._buffer[0])
         lfi = -1
         if self._buffer:
-            lfi = self._buffer[-1].find('\n')
+            lfi = self._buffer[-1].find(b'\n')
         while (not self._eof) and lfi < 0:
             self._fillbuffer()
             if self._buffer:
-                lfi = self._buffer[-1].find('\n')
+                lfi = self._buffer[-1].find(b'\n')
         size = lfi + 1
         if lfi < 0:  # end of file
             size = self._lenbuf
@@ -385,10 +385,10 @@ class bufferedinputpipe(object):
 
         The data are removed from the buffer."""
         if size == 0 or not self._buffer:
-            return ''
+            return b''
         buf = self._buffer[0]
         if len(self._buffer) > 1:
-            buf = ''.join(self._buffer)
+            buf = b''.join(self._buffer)
 
         data = buf[:size]
         buf = buf[len(data) :]
@@ -420,7 +420,7 @@ def mmapread(fp):
         # Empty files cannot be mmapped, but mmapread should still work.  Check
         # if the file is empty, and if so, return an empty buffer.
         if os.fstat(fd).st_size == 0:
-            return ''
+            return b''
         raise
 
 
@@ -787,29 +787,29 @@ class baseproxyobserver(object):
     def _writedata(self, data):
         if not self.logdata:
             if self.logdataapis:
-                self.fh.write('\n')
+                self.fh.write(b'\n')
                 self.fh.flush()
             return
 
         # Simple case writes all data on a single line.
         if b'\n' not in data:
             if self.logdataapis:
-                self.fh.write(': %s\n' % stringutil.escapestr(data))
+                self.fh.write(b': %s\n' % stringutil.escapestr(data))
             else:
                 self.fh.write(
-                    '%s>     %s\n' % (self.name, stringutil.escapestr(data))
+                    b'%s>     %s\n' % (self.name, stringutil.escapestr(data))
                 )
             self.fh.flush()
             return
 
         # Data with newlines is written to multiple lines.
         if self.logdataapis:
-            self.fh.write(':\n')
+            self.fh.write(b':\n')
 
         lines = data.splitlines(True)
         for line in lines:
             self.fh.write(
-                '%s>     %s\n' % (self.name, stringutil.escapestr(line))
+                b'%s>     %s\n' % (self.name, stringutil.escapestr(line))
             )
         self.fh.flush()
 
@@ -832,9 +832,9 @@ class fileobjectobserver(baseproxyobserver):
             return
         # Python 3 can return None from reads at EOF instead of empty strings.
         if res is None:
-            res = ''
+            res = b''
 
-        if size == -1 and res == '':
+        if size == -1 and res == b'':
             # Suppress pointless read(-1) calls that return
             # nothing. These happen _a lot_ on Python 3, and there
             # doesn't seem to be a better workaround to have matching
@@ -842,7 +842,7 @@ class fileobjectobserver(baseproxyobserver):
             return
 
         if self.logdataapis:
-            self.fh.write('%s> read(%d) -> %d' % (self.name, size, len(res)))
+            self.fh.write(b'%s> read(%d) -> %d' % (self.name, size, len(res)))
 
         self._writedata(res)
 
@@ -851,7 +851,7 @@ class fileobjectobserver(baseproxyobserver):
             return
 
         if self.logdataapis:
-            self.fh.write('%s> readline() -> %d' % (self.name, len(res)))
+            self.fh.write(b'%s> readline() -> %d' % (self.name, len(res)))
 
         self._writedata(res)
 
@@ -861,7 +861,7 @@ class fileobjectobserver(baseproxyobserver):
 
         if self.logdataapis:
             self.fh.write(
-                '%s> readinto(%d) -> %r' % (self.name, len(dest), res)
+                b'%s> readinto(%d) -> %r' % (self.name, len(dest), res)
             )
 
         data = dest[0:res] if res is not None else b''
@@ -883,7 +883,7 @@ class fileobjectobserver(baseproxyobserver):
             res = len(data)
 
         if self.logdataapis:
-            self.fh.write('%s> write(%d) -> %r' % (self.name, len(data), res))
+            self.fh.write(b'%s> write(%d) -> %r' % (self.name, len(data), res))
 
         self._writedata(data)
 
@@ -891,7 +891,7 @@ class fileobjectobserver(baseproxyobserver):
         if not self.writes:
             return
 
-        self.fh.write('%s> flush() -> %r\n' % (self.name, res))
+        self.fh.write(b'%s> flush() -> %r\n' % (self.name, res))
 
     # For observedbufferedinputpipe.
     def bufferedread(self, res, size):
@@ -900,7 +900,7 @@ class fileobjectobserver(baseproxyobserver):
 
         if self.logdataapis:
             self.fh.write(
-                '%s> bufferedread(%d) -> %d' % (self.name, size, len(res))
+                b'%s> bufferedread(%d) -> %d' % (self.name, size, len(res))
             )
 
         self._writedata(res)
@@ -911,7 +911,7 @@ class fileobjectobserver(baseproxyobserver):
 
         if self.logdataapis:
             self.fh.write(
-                '%s> bufferedreadline() -> %d' % (self.name, len(res))
+                b'%s> bufferedreadline() -> %d' % (self.name, len(res))
             )
 
         self._writedata(res)
@@ -958,7 +958,7 @@ class socketobserver(baseproxyobserver):
         if not self.states:
             return
 
-        self.fh.write('%s> makefile(%r, %r)\n' % (self.name, mode, bufsize))
+        self.fh.write(b'%s> makefile(%r, %r)\n' % (self.name, mode, bufsize))
 
     def recv(self, res, size, flags=0):
         if not self.reads:
@@ -966,7 +966,7 @@ class socketobserver(baseproxyobserver):
 
         if self.logdataapis:
             self.fh.write(
-                '%s> recv(%d, %d) -> %d' % (self.name, size, flags, len(res))
+                b'%s> recv(%d, %d) -> %d' % (self.name, size, flags, len(res))
             )
         self._writedata(res)
 
@@ -976,7 +976,7 @@ class socketobserver(baseproxyobserver):
 
         if self.logdataapis:
             self.fh.write(
-                '%s> recvfrom(%d, %d) -> %d'
+                b'%s> recvfrom(%d, %d) -> %d'
                 % (self.name, size, flags, len(res[0]))
             )
 
@@ -988,7 +988,7 @@ class socketobserver(baseproxyobserver):
 
         if self.logdataapis:
             self.fh.write(
-                '%s> recvfrom_into(%d, %d) -> %d'
+                b'%s> recvfrom_into(%d, %d) -> %d'
                 % (self.name, size, flags, res[0])
             )
 
@@ -1000,7 +1000,7 @@ class socketobserver(baseproxyobserver):
 
         if self.logdataapis:
             self.fh.write(
-                '%s> recv_into(%d, %d) -> %d' % (self.name, size, flags, res)
+                b'%s> recv_into(%d, %d) -> %d' % (self.name, size, flags, res)
             )
 
         self._writedata(buf[0:res])
@@ -1010,7 +1010,7 @@ class socketobserver(baseproxyobserver):
             return
 
         self.fh.write(
-            '%s> send(%d, %d) -> %d' % (self.name, len(data), flags, len(res))
+            b'%s> send(%d, %d) -> %d' % (self.name, len(data), flags, len(res))
         )
         self._writedata(data)
 
@@ -1020,7 +1020,9 @@ class socketobserver(baseproxyobserver):
 
         if self.logdataapis:
             # Returns None on success. So don't bother reporting return value.
-            self.fh.write('%s> sendall(%d, %d)' % (self.name, len(data), flags))
+            self.fh.write(
+                b'%s> sendall(%d, %d)' % (self.name, len(data), flags)
+            )
 
         self._writedata(data)
 
@@ -1035,7 +1037,7 @@ class socketobserver(baseproxyobserver):
 
         if self.logdataapis:
             self.fh.write(
-                '%s> sendto(%d, %d, %r) -> %d'
+                b'%s> sendto(%d, %d, %r) -> %d'
                 % (self.name, len(data), flags, address, res)
             )
 
@@ -1045,26 +1047,26 @@ class socketobserver(baseproxyobserver):
         if not self.states:
             return
 
-        self.fh.write('%s> setblocking(%r)\n' % (self.name, flag))
+        self.fh.write(b'%s> setblocking(%r)\n' % (self.name, flag))
 
     def settimeout(self, res, value):
         if not self.states:
             return
 
-        self.fh.write('%s> settimeout(%r)\n' % (self.name, value))
+        self.fh.write(b'%s> settimeout(%r)\n' % (self.name, value))
 
     def gettimeout(self, res):
         if not self.states:
             return
 
-        self.fh.write('%s> gettimeout() -> %f\n' % (self.name, res))
+        self.fh.write(b'%s> gettimeout() -> %f\n' % (self.name, res))
 
     def setsockopt(self, res, level, optname, value):
         if not self.states:
             return
 
         self.fh.write(
-            '%s> setsockopt(%r, %r, %r) -> %r\n'
+            b'%s> setsockopt(%r, %r, %r) -> %r\n'
             % (self.name, level, optname, value, res)
         )
 
@@ -1100,7 +1102,7 @@ def version():
 
         return __version__.version
     except ImportError:
-        return 'unknown'
+        return b'unknown'
 
 
 def versiontuple(v=None, n=4):
@@ -1162,14 +1164,14 @@ def versiontuple(v=None, n=4):
         v = version()
     m = remod.match(br'(\d+(?:\.\d+){,2})[\+-]?(.*)', v)
     if not m:
-        vparts, extra = '', v
+        vparts, extra = b'', v
     elif m.group(2):
         vparts, extra = m.groups()
     else:
         vparts, extra = m.group(1), None
 
     vints = []
-    for i in vparts.split('.'):
+    for i in vparts.split(b'.'):
         try:
             vints.append(int(i))
         except ValueError:
@@ -1744,11 +1746,11 @@ def increasingchunks(source, min=1024, max=65536):
                     min = nmin
                 if min > max:
                     min = max
-            yield ''.join(buf)
+            yield b''.join(buf)
             blen = 0
             buf = []
     if buf:
-        yield ''.join(buf)
+        yield b''.join(buf)
 
 
 def always(fn):
@@ -1806,19 +1808,19 @@ def pathto(root, n1, n2):
     if os.path.isabs(n1):
         if os.path.splitdrive(root)[0] != os.path.splitdrive(n1)[0]:
             return os.path.join(root, localpath(n2))
-        n2 = '/'.join((pconvert(root), n2))
-    a, b = splitpath(n1), n2.split('/')
+        n2 = b'/'.join((pconvert(root), n2))
+    a, b = splitpath(n1), n2.split(b'/')
     a.reverse()
     b.reverse()
     while a and b and a[-1] == b[-1]:
         a.pop()
         b.pop()
     b.reverse()
-    return pycompat.ossep.join((['..'] * len(a)) + b) or '.'
+    return pycompat.ossep.join(([b'..'] * len(a)) + b) or b'.'
 
 
 # the location of data files matching the source code
-if procutil.mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
+if procutil.mainfrozen() and getattr(sys, 'frozen', None) != b'macosx_app':
     # executable version (py2exe) doesn't support __file__
     datapath = os.path.dirname(pycompat.sysexecutable)
 else:
@@ -1843,19 +1845,19 @@ def checksignature(func):
 
 # a whilelist of known filesystems where hardlink works reliably
 _hardlinkfswhitelist = {
-    'apfs',
-    'btrfs',
-    'ext2',
-    'ext3',
-    'ext4',
-    'hfs',
-    'jfs',
-    'NTFS',
-    'reiserfs',
-    'tmpfs',
-    'ufs',
-    'xfs',
-    'zfs',
+    b'apfs',
+    b'btrfs',
+    b'ext2',
+    b'ext3',
+    b'ext4',
+    b'hfs',
+    b'jfs',
+    b'NTFS',
+    b'reiserfs',
+    b'tmpfs',
+    b'ufs',
+    b'xfs',
+    b'zfs',
 }
 
 
@@ -1920,7 +1922,7 @@ def copyfiles(src, dst, hardlink=None, progress=None):
 
     def settopic():
         if progress:
-            progress.topic = _('linking') if hardlink else _('copying')
+            progress.topic = _(b'linking') if hardlink else _(b'copying')
 
     if os.path.isdir(src):
         if hardlink is None:
@@ -1958,30 +1960,30 @@ def copyfiles(src, dst, hardlink=None, progress=None):
 
 
 _winreservednames = {
-    'con',
-    'prn',
-    'aux',
-    'nul',
-    'com1',
-    'com2',
-    'com3',
-    'com4',
-    'com5',
-    'com6',
-    'com7',
-    'com8',
-    'com9',
-    'lpt1',
-    'lpt2',
-    'lpt3',
-    'lpt4',
-    'lpt5',
-    'lpt6',
-    'lpt7',
-    'lpt8',
-    'lpt9',
+    b'con',
+    b'prn',
+    b'aux',
+    b'nul',
+    b'com1',
+    b'com2',
+    b'com3',
+    b'com4',
+    b'com5',
+    b'com6',
+    b'com7',
+    b'com8',
+    b'com9',
+    b'lpt1',
+    b'lpt2',
+    b'lpt3',
+    b'lpt4',
+    b'lpt5',
+    b'lpt6',
+    b'lpt7',
+    b'lpt8',
+    b'lpt9',
 }
-_winreservedchars = ':*?"<>|'
+_winreservedchars = b':*?"<>|'
 
 
 def checkwinfilename(path):
@@ -2008,33 +2010,39 @@ def checkwinfilename(path):
     >>> checkwinfilename(b"foo\\/bar")
     "directory name ends with '\\', which is invalid on Windows"
     '''
-    if path.endswith('\\'):
-        return _("filename ends with '\\', which is invalid on Windows")
-    if '\\/' in path:
-        return _("directory name ends with '\\', which is invalid on Windows")
-    for n in path.replace('\\', '/').split('/'):
+    if path.endswith(b'\\'):
+        return _(b"filename ends with '\\', which is invalid on Windows")
+    if b'\\/' in path:
+        return _(b"directory name ends with '\\', which is invalid on Windows")
+    for n in path.replace(b'\\', b'/').split(b'/'):
         if not n:
             continue
         for c in _filenamebytestr(n):
             if c in _winreservedchars:
                 return (
-                    _("filename contains '%s', which is reserved " "on Windows")
+                    _(
+                        b"filename contains '%s', which is reserved "
+                        b"on Windows"
+                    )
                     % c
                 )
             if ord(c) <= 31:
                 return _(
-                    "filename contains '%s', which is invalid " "on Windows"
+                    b"filename contains '%s', which is invalid " b"on Windows"
                 ) % stringutil.escapestr(c)
-        base = n.split('.')[0]
+        base = n.split(b'.')[0]
         if base and base.lower() in _winreservednames:
             return (
-                _("filename contains '%s', which is reserved " "on Windows")
+                _(b"filename contains '%s', which is reserved " b"on Windows")
                 % base
             )
         t = n[-1:]
-        if t in '. ' and n not in '..':
+        if t in b'. ' and n not in b'..':
             return (
-                _("filename ends with '%s', which is not allowed " "on Windows")
+                _(
+                    b"filename ends with '%s', which is not allowed "
+                    b"on Windows"
+                )
                 % t
             )
 
@@ -2078,7 +2086,7 @@ def readlock(pathname):
             raise
     except AttributeError:  # no symlink in os
         pass
-    with posixfile(pathname, 'rb') as fp:
+    with posixfile(pathname, b'rb') as fp:
         return fp.read()
 
 
@@ -2130,7 +2138,7 @@ class _re(object):
         global _re2
         try:
             # check if match works, see issue3964
-            _re2 = bool(re2.match(r'\[([^\[]+)\]', '[ui]'))
+            _re2 = bool(re2.match(r'\[([^\[]+)\]', b'[ui]'))
         except ImportError:
             _re2 = False
 
@@ -2144,9 +2152,9 @@ class _re(object):
             self._checkre2()
         if _re2 and (flags & ~(remod.IGNORECASE | remod.MULTILINE)) == 0:
             if flags & remod.IGNORECASE:
-                pat = '(?i)' + pat
+                pat = b'(?i)' + pat
             if flags & remod.MULTILINE:
-                pat = '(?m)' + pat
+                pat = b'(?m)' + pat
             try:
                 return re2.compile(pat)
             except re2.error:
@@ -2192,7 +2200,7 @@ def fspath(name, root):
     if pycompat.osaltsep:
         seps = seps + pycompat.osaltsep
     # Protect backslashes. This gets silly very quickly.
-    seps.replace('\\', '\\\\')
+    seps.replace(b'\\', b'\\\\')
     pattern = remod.compile(br'([^%s]+)|([%s]+)' % (seps, seps))
     dir = os.path.normpath(root)
     result = []
@@ -2215,7 +2223,7 @@ def fspath(name, root):
         result.append(found or part)
         dir = os.path.join(dir, part)
 
-    return ''.join(result)
+    return b''.join(result)
 
 
 def checknlink(testfile):
@@ -2226,12 +2234,12 @@ def checknlink(testfile):
     f1, f2, fp = None, None, None
     try:
         fd, f1 = pycompat.mkstemp(
-            prefix='.%s-' % os.path.basename(testfile),
-            suffix='1~',
+            prefix=b'.%s-' % os.path.basename(testfile),
+            suffix=b'1~',
             dir=os.path.dirname(testfile),
         )
         os.close(fd)
-        f2 = '%s2~' % f1[:-2]
+        f2 = b'%s2~' % f1[:-2]
 
         oslink(f1, f2)
         # nlinks() may behave differently for files on Windows shares if
@@ -2280,7 +2288,7 @@ def mktempcopy(name, emptyok=False, createmode=None, enforcewritable=False):
     Returns the name of the temporary file.
     """
     d, fn = os.path.split(name)
-    fd, temp = pycompat.mkstemp(prefix='.%s-' % fn, suffix='~', dir=d)
+    fd, temp = pycompat.mkstemp(prefix=b'.%s-' % fn, suffix=b'~', dir=d)
     os.close(fd)
     # Temporary files are created with mode 0600, which is usually not
     # what we want.  If the original file already exists, just copy
@@ -2291,14 +2299,14 @@ def mktempcopy(name, emptyok=False, createmode=None, enforcewritable=False):
         return temp
     try:
         try:
-            ifp = posixfile(name, "rb")
+            ifp = posixfile(name, b"rb")
         except IOError as inst:
             if inst.errno == errno.ENOENT:
                 return temp
             if not getattr(inst, 'filename', None):
                 inst.filename = name
             raise
-        ofp = posixfile(temp, "wb")
+        ofp = posixfile(temp, b"wb")
         for chunk in filechunkiter(ifp):
             ofp.write(chunk)
         ifp.close()
@@ -2432,13 +2440,13 @@ class atomictempfile(object):
     or repo.wlock).
     '''
 
-    def __init__(self, name, mode='w+b', createmode=None, checkambig=False):
+    def __init__(self, name, mode=b'w+b', createmode=None, checkambig=False):
         self.__name = name  # permanent name
         self._tempname = mktempcopy(
             name,
-            emptyok=('w' in mode),
+            emptyok=(b'w' in mode),
             createmode=createmode,
-            enforcewritable=('w' in mode),
+            enforcewritable=(b'w' in mode),
         )
 
         self._fp = posixfile(self._tempname, mode)
@@ -2541,17 +2549,17 @@ def makedirs(name, mode=None, notindexed=False):
 
 
 def readfile(path):
-    with open(path, 'rb') as fp:
+    with open(path, b'rb') as fp:
         return fp.read()
 
 
 def writefile(path, text):
-    with open(path, 'wb') as fp:
+    with open(path, b'wb') as fp:
         fp.write(text)
 
 
 def appendfile(path, text):
-    with open(path, 'ab') as fp:
+    with open(path, b'ab') as fp:
         fp.write(text)
 
 
@@ -2583,7 +2591,7 @@ class chunkbuffer(object):
 
         If size parameter is omitted, read everything"""
         if l is None:
-            return ''.join(self.iter)
+            return b''.join(self.iter)
 
         left = l
         buf = []
@@ -2635,7 +2643,7 @@ class chunkbuffer(object):
                 self._chunkoffset += left
                 left -= chunkremaining
 
-        return ''.join(buf)
+        return b''.join(buf)
 
 
 def filechunkiter(f, size=131072, limit=None):
@@ -2727,23 +2735,23 @@ def processlinerange(fromline, toline):
     ParseError: fromline must be strictly positive
     """
     if toline - fromline < 0:
-        raise error.ParseError(_("line range must be positive"))
+        raise error.ParseError(_(b"line range must be positive"))
     if fromline < 1:
-        raise error.ParseError(_("fromline must be strictly positive"))
+        raise error.ParseError(_(b"fromline must be strictly positive"))
     return fromline - 1, toline
 
 
 bytecount = unitcountfn(
-    (100, 1 << 30, _('%.0f GB')),
-    (10, 1 << 30, _('%.1f GB')),
-    (1, 1 << 30, _('%.2f GB')),
-    (100, 1 << 20, _('%.0f MB')),
-    (10, 1 << 20, _('%.1f MB')),
-    (1, 1 << 20, _('%.2f MB')),
-    (100, 1 << 10, _('%.0f KB')),
-    (10, 1 << 10, _('%.1f KB')),
-    (1, 1 << 10, _('%.2f KB')),
-    (1, 1, _('%.0f bytes')),
+    (100, 1 << 30, _(b'%.0f GB')),
+    (10, 1 << 30, _(b'%.1f GB')),
+    (1, 1 << 30, _(b'%.2f GB')),
+    (100, 1 << 20, _(b'%.0f MB')),
+    (10, 1 << 20, _(b'%.1f MB')),
+    (1, 1 << 20, _(b'%.2f MB')),
+    (100, 1 << 10, _(b'%.0f KB')),
+    (10, 1 << 10, _(b'%.1f KB')),
+    (1, 1 << 10, _(b'%.2f KB')),
+    (1, 1, _(b'%.0f bytes')),
 )
 
 
@@ -2771,18 +2779,18 @@ _eolre = remod.compile(br'\r*\n')
 
 
 def tolf(s):
-    return _eolre.sub('\n', s)
+    return _eolre.sub(b'\n', s)
 
 
 def tocrlf(s):
-    return _eolre.sub('\r\n', s)
+    return _eolre.sub(b'\r\n', s)
 
 
 def _crlfwriter(fp):
     return transformingwriter(fp, tocrlf)
 
 
-if pycompat.oslinesep == '\r\n':
+if pycompat.oslinesep == b'\r\n':
     tonativeeol = tocrlf
     fromnativeeol = tolf
     nativeeolwriter = _crlfwriter
@@ -2791,7 +2799,7 @@ else:
     fromnativeeol = pycompat.identity
     nativeeolwriter = pycompat.identity
 
-if pyplatform.python_implementation() == 'CPython' and sys.version_info < (
+if pyplatform.python_implementation() == b'CPython' and sys.version_info < (
     3,
     0,
 ):
@@ -2822,14 +2830,14 @@ if pyplatform.python_implementation() == 'CPython' and sys.version_info < (
     if sys.version_info >= (2, 7, 4):
         # fp.readline deals with EINTR correctly, use it as a workaround.
         def _safeiterfile(fp):
-            return iter(fp.readline, '')
+            return iter(fp.readline, b'')
 
     else:
         # fp.read* are broken too, manually deal with EINTR in a stupid way.
         # note: this may block longer than necessary because of bufsize.
         def _safeiterfile(fp, bufsize=4096):
             fd = fp.fileno()
-            line = ''
+            line = b''
             while True:
                 try:
                     buf = os.read(fd, bufsize)
@@ -2840,11 +2848,11 @@ if pyplatform.python_implementation() == 'CPython' and sys.version_info < (
                     else:
                         raise
                 line += buf
-                if '\n' in buf:
+                if b'\n' in buf:
                     splitted = line.splitlines(True)
-                    line = ''
+                    line = b''
                     for l in splitted:
-                        if l[-1] == '\n':
+                        if l[-1] == b'\n':
                             yield l
                         else:
                             line = l
@@ -2893,9 +2901,9 @@ def interpolate(prefix, mapping, s, fn=None, escape_prefix=False):
     its escaping.
     """
     fn = fn or (lambda s: s)
-    patterns = '|'.join(mapping.keys())
+    patterns = b'|'.join(mapping.keys())
     if escape_prefix:
-        patterns += '|' + prefix
+        patterns += b'|' + prefix
         if len(prefix) > 1:
             prefix_char = prefix[1:]
         else:
@@ -2921,7 +2929,7 @@ def getport(port):
         return socket.getservbyname(pycompat.sysstr(port))
     except socket.error:
         raise error.Abort(
-            _("no port number associated with service '%s'") % port
+            _(b"no port number associated with service '%s'") % port
         )
 
 
@@ -2999,38 +3007,38 @@ class url(object):
     <url scheme: 'http'>
     """
 
-    _safechars = "!~*'()+"
-    _safepchars = "/!~*'()+:\\"
-    _matchscheme = remod.compile('^[a-zA-Z0-9+.\\-]+:').match
+    _safechars = b"!~*'()+"
+    _safepchars = b"/!~*'()+:\\"
+    _matchscheme = remod.compile(b'^[a-zA-Z0-9+.\\-]+:').match
 
     def __init__(self, path, parsequery=True, parsefragment=True):
         # We slowly chomp away at path until we have only the path left
         self.scheme = self.user = self.passwd = self.host = None
         self.port = self.path = self.query = self.fragment = None
         self._localpath = True
-        self._hostport = ''
+        self._hostport = b''
         self._origpath = path
 
-        if parsefragment and '#' in path:
-            path, self.fragment = path.split('#', 1)
+        if parsefragment and b'#' in path:
+            path, self.fragment = path.split(b'#', 1)
 
         # special case for Windows drive letters and UNC paths
-        if hasdriveletter(path) or path.startswith('\\\\'):
+        if hasdriveletter(path) or path.startswith(b'\\\\'):
             self.path = path
             return
 
         # For compatibility reasons, we can't handle bundle paths as
         # normal URLS
-        if path.startswith('bundle:'):
-            self.scheme = 'bundle'
+        if path.startswith(b'bundle:'):
+            self.scheme = b'bundle'
             path = path[7:]
-            if path.startswith('//'):
+            if path.startswith(b'//'):
                 path = path[2:]
             self.path = path
             return
 
         if self._matchscheme(path):
-            parts = path.split(':', 1)
+            parts = path.split(b':', 1)
             if parts[0]:
                 self.scheme, path = parts
                 self._localpath = False
@@ -3038,23 +3046,23 @@ class url(object):
         if not path:
             path = None
             if self._localpath:
-                self.path = ''
+                self.path = b''
                 return
         else:
             if self._localpath:
                 self.path = path
                 return
 
-            if parsequery and '?' in path:
-                path, self.query = path.split('?', 1)
+            if parsequery and b'?' in path:
+                path, self.query = path.split(b'?', 1)
                 if not path:
                     path = None
                 if not self.query:
                     self.query = None
 
             # // is required to specify a host/authority
-            if path and path.startswith('//'):
-                parts = path[2:].split('/', 1)
+            if path and path.startswith(b'//'):
+                parts = path[2:].split(b'/', 1)
                 if len(parts) > 1:
                     self.host, path = parts
                 else:
@@ -3065,37 +3073,41 @@ class url(object):
                     # path of file:///d is /d
                     # path of file:///d:/ is d:/, not /d:/
                     if path and not hasdriveletter(path):
-                        path = '/' + path
+                        path = b'/' + path
 
-            if self.host and '@' in self.host:
-                self.user, self.host = self.host.rsplit('@', 1)
-                if ':' in self.user:
-                    self.user, self.passwd = self.user.split(':', 1)
+            if self.host and b'@' in self.host:
+                self.user, self.host = self.host.rsplit(b'@', 1)
+                if b':' in self.user:
+                    self.user, self.passwd = self.user.split(b':', 1)
                 if not self.host:
                     self.host = None
 
             # Don't split on colons in IPv6 addresses without ports
             if (
                 self.host
-                and ':' in self.host
-                and not (self.host.startswith('[') and self.host.endswith(']'))
+                and b':' in self.host
+                and not (
+                    self.host.startswith(b'[') and self.host.endswith(b']')
+                )
             ):
                 self._hostport = self.host
-                self.host, self.port = self.host.rsplit(':', 1)
+                self.host, self.port = self.host.rsplit(b':', 1)
                 if not self.host:
                     self.host = None
 
             if (
                 self.host
-                and self.scheme == 'file'
-                and self.host not in ('localhost', '127.0.0.1', '[::1]')
+                and self.scheme == b'file'
+                and self.host not in (b'localhost', b'127.0.0.1', b'[::1]')
             ):
-                raise error.Abort(_('file:// URLs can only refer to localhost'))
+                raise error.Abort(
+                    _(b'file:// URLs can only refer to localhost')
+                )
 
         self.path = path
 
         # leave the query string escaped
-        for a in ('user', 'passwd', 'host', 'port', 'path', 'fragment'):
+        for a in (b'user', b'passwd', b'host', b'port', b'path', b'fragment'):
             v = getattr(self, a)
             if v is not None:
                 setattr(self, a, urlreq.unquote(v))
@@ -3104,19 +3116,19 @@ class url(object):
     def __repr__(self):
         attrs = []
         for a in (
-            'scheme',
-            'user',
-            'passwd',
-            'host',
-            'port',
-            'path',
-            'query',
-            'fragment',
+            b'scheme',
+            b'user',
+            b'passwd',
+            b'host',
+            b'port',
+            b'path',
+            b'query',
+            b'fragment',
         ):
             v = getattr(self, a)
             if v is not None:
-                attrs.append('%s: %r' % (a, pycompat.bytestr(v)))
-        return '<url %s>' % ', '.join(attrs)
+                attrs.append(b'%s: %r' % (a, pycompat.bytestr(v)))
+        return b'<url %s>' % b', '.join(attrs)
 
     def __bytes__(self):
         r"""Join the URL's components back into a URL string.
@@ -3154,38 +3166,38 @@ class url(object):
         """
         if self._localpath:
             s = self.path
-            if self.scheme == 'bundle':
-                s = 'bundle:' + s
+            if self.scheme == b'bundle':
+                s = b'bundle:' + s
             if self.fragment:
-                s += '#' + self.fragment
+                s += b'#' + self.fragment
             return s
 
-        s = self.scheme + ':'
+        s = self.scheme + b':'
         if self.user or self.passwd or self.host:
-            s += '//'
+            s += b'//'
         elif self.scheme and (
             not self.path
-            or self.path.startswith('/')
+            or self.path.startswith(b'/')
             or hasdriveletter(self.path)
         ):
-            s += '//'
+            s += b'//'
             if hasdriveletter(self.path):
-                s += '/'
+                s += b'/'
         if self.user:
             s += urlreq.quote(self.user, safe=self._safechars)
         if self.passwd:
-            s += ':' + urlreq.quote(self.passwd, safe=self._safechars)
+            s += b':' + urlreq.quote(self.passwd, safe=self._safechars)
         if self.user or self.passwd:
-            s += '@'
+            s += b'@'
         if self.host:
-            if not (self.host.startswith('[') and self.host.endswith(']')):
+            if not (self.host.startswith(b'[') and self.host.endswith(b']')):
                 s += urlreq.quote(self.host)
             else:
                 s += self.host
         if self.port:
-            s += ':' + urlreq.quote(self.port)
+            s += b':' + urlreq.quote(self.port)
         if self.host:
-            s += '/'
+            s += b'/'
         if self.path:
             # TODO: similar to the query string, we should not unescape the
             # path when we store it, the path might contain '%2f' = '/',
@@ -3193,9 +3205,9 @@ class url(object):
             s += urlreq.quote(self.path, safe=self._safepchars)
         if self.query:
             # we store the query in escaped form.
-            s += '?' + self.query
+            s += b'?' + self.query
         if self.fragment is not None:
-            s += '#' + urlreq.quote(self.fragment, safe=self._safepchars)
+            s += b'#' + urlreq.quote(self.fragment, safe=self._safepchars)
         return s
 
     __str__ = encoding.strmethod(__bytes__)
@@ -3213,37 +3225,39 @@ class url(object):
         # URIs must not contain credentials. The host is passed in the
         # URIs list because Python < 2.4.3 uses only that to search for
         # a password.
-        return (s, (None, (s, self.host), self.user, self.passwd or ''))
+        return (s, (None, (s, self.host), self.user, self.passwd or b''))
 
     def isabs(self):
-        if self.scheme and self.scheme != 'file':
+        if self.scheme and self.scheme != b'file':
             return True  # remote URL
         if hasdriveletter(self.path):
             return True  # absolute for our purposes - can't be joined()
         if self.path.startswith(br'\\'):
             return True  # Windows UNC path
-        if self.path.startswith('/'):
+        if self.path.startswith(b'/'):
             return True  # POSIX-style
         return False
 
     def localpath(self):
-        if self.scheme == 'file' or self.scheme == 'bundle':
-            path = self.path or '/'
+        if self.scheme == b'file' or self.scheme == b'bundle':
+            path = self.path or b'/'
             # For Windows, we need to promote hosts containing drive
             # letters to paths with drive letters.
             if hasdriveletter(self._hostport):
-                path = self._hostport + '/' + self.path
+                path = self._hostport + b'/' + self.path
             elif (
                 self.host is not None and self.path and not hasdriveletter(path)
             ):
-                path = '/' + path
+                path = b'/' + path
             return path
         return self._origpath
 
     def islocal(self):
         '''whether localpath will return something that posixfile can open'''
         return (
-            not self.scheme or self.scheme == 'file' or self.scheme == 'bundle'
+            not self.scheme
+            or self.scheme == b'file'
+            or self.scheme == b'bundle'
         )
 
 
@@ -3252,7 +3266,7 @@ def hasscheme(path):
 
 
 def hasdriveletter(path):
-    return path and path[1:2] == ':' and path[0:1].isalpha()
+    return path and path[1:2] == b':' and path[0:1].isalpha()
 
 
 def urllocalpath(path):
@@ -3270,9 +3284,9 @@ def checksafessh(path):
     Raises an error.Abort when the url is unsafe.
     """
     path = urlreq.unquote(path)
-    if path.startswith('ssh://-') or path.startswith('svn+ssh://-'):
+    if path.startswith(b'ssh://-') or path.startswith(b'svn+ssh://-'):
         raise error.Abort(
-            _('potentially unsafe url: %r') % (pycompat.bytestr(path),)
+            _(b'potentially unsafe url: %r') % (pycompat.bytestr(path),)
         )
 
 
@@ -3280,7 +3294,7 @@ def hidepassword(u):
     '''hide user credential in a url string'''
     u = url(u)
     if u.passwd:
-        u.passwd = '***'
+        u.passwd = b'***'
     return bytes(u)
 
 
@@ -3292,19 +3306,19 @@ def removeauth(u):
 
 
 timecount = unitcountfn(
-    (1, 1e3, _('%.0f s')),
-    (100, 1, _('%.1f s')),
-    (10, 1, _('%.2f s')),
-    (1, 1, _('%.3f s')),
-    (100, 0.001, _('%.1f ms')),
-    (10, 0.001, _('%.2f ms')),
-    (1, 0.001, _('%.3f ms')),
-    (100, 0.000001, _('%.1f us')),
-    (10, 0.000001, _('%.2f us')),
-    (1, 0.000001, _('%.3f us')),
-    (100, 0.000000001, _('%.1f ns')),
-    (10, 0.000000001, _('%.2f ns')),
-    (1, 0.000000001, _('%.3f ns')),
+    (1, 1e3, _(b'%.0f s')),
+    (100, 1, _(b'%.1f s')),
+    (10, 1, _(b'%.2f s')),
+    (1, 1, _(b'%.3f s')),
+    (100, 0.001, _(b'%.1f ms')),
+    (10, 0.001, _(b'%.2f ms')),
+    (1, 0.001, _(b'%.3f ms')),
+    (100, 0.000001, _(b'%.1f us')),
+    (10, 0.000001, _(b'%.2f us')),
+    (1, 0.000001, _(b'%.3f us')),
+    (100, 0.000000001, _(b'%.1f ns')),
+    (10, 0.000000001, _(b'%.2f ns')),
+    (1, 0.000000001, _(b'%.3f ns')),
 )
 
 
@@ -3322,7 +3336,7 @@ class timedcmstats(object):
     level = attr.ib(default=1)
 
     def __bytes__(self):
-        return timecount(self.elapsed) if self.elapsed else '<unknown>'
+        return timecount(self.elapsed) if self.elapsed else b'<unknown>'
 
     __str__ = encoding.strmethod(__bytes__)
 
@@ -3366,9 +3380,9 @@ def timed(func):
             result = func(*args, **kwargs)
         stderr = procutil.stderr
         stderr.write(
-            '%s%s: %s\n'
+            b'%s%s: %s\n'
             % (
-                ' ' * time_stats.level * 2,
+                b' ' * time_stats.level * 2,
                 pycompat.bytestr(func.__name__),
                 time_stats,
             )
@@ -3379,13 +3393,13 @@ def timed(func):
 
 
 _sizeunits = (
-    ('m', 2 ** 20),
-    ('k', 2 ** 10),
-    ('g', 2 ** 30),
-    ('kb', 2 ** 10),
-    ('mb', 2 ** 20),
-    ('gb', 2 ** 30),
-    ('b', 1),
+    (b'm', 2 ** 20),
+    (b'k', 2 ** 10),
+    (b'g', 2 ** 30),
+    (b'kb', 2 ** 10),
+    (b'mb', 2 ** 20),
+    (b'gb', 2 ** 30),
+    (b'b', 1),
 )
 
 
@@ -3406,7 +3420,7 @@ def sizetoint(s):
                 return int(float(t[: -len(k)]) * u)
         return int(t)
     except ValueError:
-        raise error.ParseError(_("couldn't parse size: %s") % s)
+        raise error.ParseError(_(b"couldn't parse size: %s") % s)
 
 
 class hooks(object):
@@ -3428,7 +3442,7 @@ class hooks(object):
         return results
 
 
-def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%d', depth=0):
+def getstackframes(skip=0, line=b' %-*s in %s\n', fileline=b'%s:%d', depth=0):
     '''Yields lines for a nicely formatted stacktrace.
     Skips the 'skip' last entries, then return the last 'depth' entries.
     Each file+linenumber is formatted according to fileline.
@@ -3454,7 +3468,11 @@ def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%d', depth=0):
 
 
 def debugstacktrace(
-    msg='stacktrace', skip=0, f=procutil.stderr, otherf=procutil.stdout, depth=0
+    msg=b'stacktrace',
+    skip=0,
+    f=procutil.stderr,
+    otherf=procutil.stdout,
+    depth=0,
 ):
     '''Writes a message to f (stderr) with a nicely formatted stacktrace.
     Skips the 'skip' entries closest to the call, then show 'depth' entries.
@@ -3464,7 +3482,7 @@ def debugstacktrace(
     '''
     if otherf:
         otherf.flush()
-    f.write('%s at:\n' % msg.rstrip())
+    f.write(b'%s at:\n' % msg.rstrip())
     for line in getstackframes(skip + 1, depth=depth):
         f.write(line)
     f.flush()
@@ -3482,7 +3500,7 @@ class dirs(object):
                     addpath(f)
         elif skip is not None:
             raise error.ProgrammingError(
-                "skip character is only supported " "with a dict source"
+                b"skip character is only supported " b"with a dict source"
             )
         else:
             for f in map:
@@ -3519,11 +3537,11 @@ if rustdirs is not None:
 
 
 def finddirs(path):
-    pos = path.rfind('/')
+    pos = path.rfind(b'/')
     while pos != -1:
         yield path[:pos]
-        pos = path.rfind('/', 0, pos)
-    yield ''
+        pos = path.rfind(b'/', 0, pos)
+    yield b''
 
 
 # convenient shortcut
@@ -3545,11 +3563,11 @@ def safename(f, tag, ctx, others=None):
     if others is None:
         others = set()
 
-    fn = '%s~%s' % (f, tag)
+    fn = b'%s~%s' % (f, tag)
     if fn not in ctx and fn not in others:
         return fn
     for n in itertools.count(1):
-        fn = '%s~%s~%s' % (f, tag, n)
+        fn = b'%s~%s~%s' % (f, tag, n)
         if fn not in ctx and fn not in others:
             return fn
 
@@ -3559,7 +3577,7 @@ def readexactly(stream, n):
     s = stream.read(n)
     if len(s) < n:
         raise error.Abort(
-            _("stream ended unexpectedly" " (got %d bytes, expected %d)")
+            _(b"stream ended unexpectedly" b" (got %d bytes, expected %d)")
             % (len(s), n)
         )
     return s
@@ -3589,7 +3607,7 @@ def uvarintencode(value):
     ProgrammingError: negative value for uvarint: -1
     """
     if value < 0:
-        raise error.ProgrammingError('negative value for uvarint: %d' % value)
+        raise error.ProgrammingError(b'negative value for uvarint: %d' % value)
     bits = value & 0x7F
     value >>= 7
     bytes = []
@@ -3599,7 +3617,7 @@ def uvarintencode(value):
         value >>= 7
     bytes.append(pycompat.bytechr(bits))
 
-    return ''.join(bytes)
+    return b''.join(bytes)
 
 
 def uvarintdecodestream(fh):

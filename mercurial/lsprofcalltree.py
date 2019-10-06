@@ -18,9 +18,9 @@ from . import pycompat
 def label(code):
     if isinstance(code, str):
         # built-in functions ('~' sorts at the end)
-        return '~' + pycompat.sysbytes(code)
+        return b'~' + pycompat.sysbytes(code)
     else:
-        return '%s %s:%d' % (
+        return b'%s %s:%d' % (
             pycompat.sysbytes(code.co_name),
             pycompat.sysbytes(code.co_filename),
             code.co_firstlineno,

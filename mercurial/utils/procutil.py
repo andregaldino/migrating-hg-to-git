@@ -91,8 +91,8 @@ def explainexit(code):
     """return a message describing a subprocess status
     (codes from kill are negative - not os.system/wait encoding)"""
     if code >= 0:
-        return _("exited with status %d") % code
-    return _("killed by signal %d") % -code
+        return _(b"exited with status %d") % code
+    return _(b"killed by signal %d") % -code
 
 
 class _pfile(object):
@@ -120,12 +120,12 @@ class _pfile(object):
         self.close()
 
 
-def popen(cmd, mode='rb', bufsize=-1):
-    if mode == 'rb':
+def popen(cmd, mode=b'rb', bufsize=-1):
+    if mode == b'rb':
         return _popenreader(cmd, bufsize)
-    elif mode == 'wb':
+    elif mode == b'wb':
         return _popenwriter(cmd, bufsize)
-    raise error.ProgrammingError('unsupported mode: %r' % mode)
+    raise error.ProgrammingError(b'unsupported mode: %r' % mode)
 
 
 def _popenreader(cmd, bufsize):
@@ -205,22 +205,22 @@ def tempfilter(s, cmd):
     the temporary files generated.'''
     inname, outname = None, None
     try:
-        infd, inname = pycompat.mkstemp(prefix='hg-filter-in-')
+        infd, inname = pycompat.mkstemp(prefix=b'hg-filter-in-')
         fp = os.fdopen(infd, r'wb')
         fp.write(s)
         fp.close()
-        outfd, outname = pycompat.mkstemp(prefix='hg-filter-out-')
+        outfd, outname = pycompat.mkstemp(prefix=b'hg-filter-out-')
         os.close(outfd)
-        cmd = cmd.replace('INFILE', inname)
-        cmd = cmd.replace('OUTFILE', outname)
+        cmd = cmd.replace(b'INFILE', inname)
+        cmd = cmd.replace(b'OUTFILE', outname)
         code = system(cmd)
-        if pycompat.sysplatform == 'OpenVMS' and code & 1:
+        if pycompat.sysplatform == b'OpenVMS' and code & 1:
             code = 0
         if code:
             raise error.Abort(
-                _("command '%s' failed: %s") % (cmd, explainexit(code))
+                _(b"command '%s' failed: %s") % (cmd, explainexit(code))
             )
-        with open(outname, 'rb') as fp:
+        with open(outname, b'rb') as fp:
             return fp.read()
     finally:
         try:
@@ -236,13 +236,13 @@ def tempfilter(s, cmd):
 
 
 _filtertable = {
-    'tempfile:': tempfilter,
-    'pipe:': pipefilter,
+    b'tempfile:': tempfilter,
+    b'pipe:': pipefilter,
 }
 
 
 def filter(s, cmd):
-    "filter a string through a command that transforms its input to its output"
+    b"filter a string through a command that transforms its input to its output"
     for name, fn in _filtertable.iteritems():
         if cmd.startswith(name):
             return fn(s, cmd[len(name) :].lstrip())
@@ -256,8 +256,8 @@ def mainfrozen():
     (portable, not much used).
     """
     return (
-        pycompat.safehasattr(sys, "frozen")
-        or pycompat.safehasattr(sys, "importers")  # new py2exe
+        pycompat.safehasattr(sys, b"frozen")
+        or pycompat.safehasattr(sys, b"importers")  # new py2exe
         or imp.is_frozen(r"__main__")  # old py2exe
     )  # tools/freeze
 
@@ -271,27 +271,27 @@ def hgexecutable():
     Defaults to $HG or 'hg' in the search path.
     """
     if _hgexecutable is None:
-        hg = encoding.environ.get('HG')
+        hg = encoding.environ.get(b'HG')
         mainmod = sys.modules[r'__main__']
         if hg:
             _sethgexecutable(hg)
         elif mainfrozen():
-            if getattr(sys, 'frozen', None) == 'macosx_app':
+            if getattr(sys, 'frozen', None) == b'macosx_app':
                 # Env variable set by py2app
-                _sethgexecutable(encoding.environ['EXECUTABLEPATH'])
+                _sethgexecutable(encoding.environ[b'EXECUTABLEPATH'])
             else:
                 _sethgexecutable(pycompat.sysexecutable)
         elif (
             not pycompat.iswindows
             and os.path.basename(
-                pycompat.fsencode(getattr(mainmod, '__file__', ''))
+                pycompat.fsencode(getattr(mainmod, '__file__', b''))
             )
-            == 'hg'
+            == b'hg'
         ):
             _sethgexecutable(pycompat.fsencode(mainmod.__file__))
         else:
             _sethgexecutable(
-                findexe('hg') or os.path.basename(pycompat.sysargv[0])
+                findexe(b'hg') or os.path.basename(pycompat.sysargv[0])
             )
     return _hgexecutable
 
@@ -356,17 +356,17 @@ def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""
 
     def py2shell(val):
-        'convert python object into string that is useful to shell'
+        b'convert python object into string that is useful to shell'
         if val is None or val is False:
-            return '0'
+            return b'0'
         if val is True:
-            return '1'
+            return b'1'
         return pycompat.bytestr(val)
 
     env = dict(encoding.environ)
     if environ:
         env.update((k, py2shell(v)) for k, v in environ.iteritems())
-    env['HG'] = hgexecutable()
+    env[b'HG'] = hgexecutable()
     return env
 
 
@@ -420,11 +420,11 @@ def system(cmd, environ=None, cwd=None, out=None):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        for line in iter(proc.stdout.readline, ''):
+        for line in iter(proc.stdout.readline, b''):
             out.write(line)
         proc.wait()
         rc = proc.returncode
-    if pycompat.sysplatform == 'OpenVMS' and rc & 1:
+    if pycompat.sysplatform == b'OpenVMS' and rc & 1:
         rc = 0
     return rc
 
@@ -432,7 +432,7 @@ def system(cmd, environ=None, cwd=None, out=None):
 def gui():
     '''Are we running in a GUI?'''
     if pycompat.isdarwin:
-        if 'SSH_CONNECTION' in encoding.environ:
+        if b'SSH_CONNECTION' in encoding.environ:
             # handle SSH access to a box where the user is logged in
             return False
         elif getattr(osutil, 'isgui', None):
@@ -442,7 +442,7 @@ def gui():
             # pure build; use a safe default
             return True
     else:
-        return pycompat.iswindows or encoding.environ.get("DISPLAY")
+        return pycompat.iswindows or encoding.environ.get(b"DISPLAY")
 
 
 def hgcmd():
@@ -453,9 +453,9 @@ def hgcmd():
     get either the python call or current executable.
     """
     if mainfrozen():
-        if getattr(sys, 'frozen', None) == 'macosx_app':
+        if getattr(sys, 'frozen', None) == b'macosx_app':
             # Env variable set by py2app
-            return [encoding.environ['EXECUTABLEPATH']]
+            return [encoding.environ[b'EXECUTABLEPATH']]
         else:
             return [pycompat.sysexecutable]
     return _gethgcmd()
@@ -589,7 +589,7 @@ else:
                     returncode = errno.EINVAL
                 raise OSError(
                     returncode,
-                    'error running %r: %s' % (cmd, os.strerror(returncode)),
+                    b'error running %r: %s' % (cmd, os.strerror(returncode)),
                 )
             return
 
@@ -598,11 +598,11 @@ else:
             # Start a new session
             os.setsid()
 
-            stdin = open(os.devnull, 'r')
+            stdin = open(os.devnull, b'r')
             if stdout is None:
-                stdout = open(os.devnull, 'w')
+                stdout = open(os.devnull, b'w')
             if stderr is None:
-                stderr = open(os.devnull, 'w')
+                stderr = open(os.devnull, b'w')
 
             # connect stdin to devnull to make sure the subprocess can't
             # muck up that stream for mercurial.

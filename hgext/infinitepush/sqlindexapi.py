@@ -18,10 +18,10 @@ from . import indexapi
 
 
 def _convertbookmarkpattern(pattern):
-    pattern = pattern.replace('_', '\\_')
-    pattern = pattern.replace('%', '\\%')
-    if pattern.endswith('*'):
-        pattern = pattern[:-1] + '%'
+    pattern = pattern.replace(b'_', b'\\_')
+    pattern = pattern.replace(b'%', b'\\%')
+    if pattern.endswith(b'*'):
+        pattern = pattern[:-1] + b'%'
     return pattern
 
 
@@ -46,11 +46,11 @@ class sqlindexapi(indexapi.indexapi):
         super(sqlindexapi, self).__init__()
         self.reponame = reponame
         self.sqlargs = {
-            'host': host,
-            'port': port,
-            'database': database,
-            'user': user,
-            'password': password,
+            b'host': host,
+            b'port': port,
+            b'database': database,
+            b'user': user,
+            b'password': password,
         }
         self.sqlconn = None
         self.sqlcursor = None
@@ -65,10 +65,10 @@ class sqlindexapi(indexapi.indexapi):
 
     def sqlconnect(self):
         if self.sqlconn:
-            raise indexapi.indexexception("SQL connection already open")
+            raise indexapi.indexexception(b"SQL connection already open")
         if self.sqlcursor:
             raise indexapi.indexexception(
-                "SQL cursor already open without" " connection"
+                b"SQL cursor already open without" b" connection"
             )
         retry = 3
         while True:
@@ -90,19 +90,19 @@ class sqlindexapi(indexapi.indexapi):
                     raise
                 time.sleep(0.2)
 
-        waittimeout = self.sqlconn.converter.escape('%s' % self._waittimeout)
+        waittimeout = self.sqlconn.converter.escape(b'%s' % self._waittimeout)
 
         self.sqlcursor = self.sqlconn.cursor()
-        self.sqlcursor.execute("SET wait_timeout=%s" % waittimeout)
+        self.sqlcursor.execute(b"SET wait_timeout=%s" % waittimeout)
         self.sqlcursor.execute(
-            "SET innodb_lock_wait_timeout=%s" % self._locktimeout
+            b"SET innodb_lock_wait_timeout=%s" % self._locktimeout
         )
         self._connected = True
 
     def close(self):
         """Cleans up the metadata store connection."""
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.simplefilter(b"ignore")
             self.sqlcursor.close()
             self.sqlconn.close()
         self.sqlcursor = None
@@ -122,29 +122,29 @@ class sqlindexapi(indexapi.indexapi):
     def addbundle(self, bundleid, nodesctx):
         if not self._connected:
             self.sqlconnect()
-        self.log.info("ADD BUNDLE %r %r" % (self.reponame, bundleid))
+        self.log.info(b"ADD BUNDLE %r %r" % (self.reponame, bundleid))
         self.sqlcursor.execute(
-            "INSERT INTO bundles(bundle, reponame) VALUES " "(%s, %s)",
+            b"INSERT INTO bundles(bundle, reponame) VALUES " b"(%s, %s)",
             params=(bundleid, self.reponame),
         )
         for ctx in nodesctx:
             self.sqlcursor.execute(
-                "INSERT INTO nodestobundle(node, bundle, reponame) "
-                "VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE "
-                "bundle=VALUES(bundle)",
+                b"INSERT INTO nodestobundle(node, bundle, reponame) "
+                b"VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE "
+                b"bundle=VALUES(bundle)",
                 params=(ctx.hex(), bundleid, self.reponame),
             )
 
             extra = ctx.extra()
             author_name = ctx.user()
-            committer_name = extra.get('committer', ctx.user())
+            committer_name = extra.get(b'committer', ctx.user())
             author_date = int(ctx.date()[0])
-            committer_date = int(extra.get('committer_date', author_date))
+            committer_date = int(extra.get(b'committer_date', author_date))
             self.sqlcursor.execute(
-                "INSERT IGNORE INTO nodesmetadata(node, message, p1, p2, "
-                "author, committer, author_date, committer_date, "
-                "reponame) VALUES "
-                "(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                b"INSERT IGNORE INTO nodesmetadata(node, message, p1, p2, "
+                b"author, committer, author_date, committer_date, "
+                b"reponame) VALUES "
+                b"(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 params=(
                     ctx.hex(),
                     ctx.description(),
@@ -164,12 +164,12 @@ class sqlindexapi(indexapi.indexapi):
         if not self._connected:
             self.sqlconnect()
         self.log.info(
-            "ADD BOOKMARKS %r bookmark: %r node: %r"
+            b"ADD BOOKMARKS %r bookmark: %r node: %r"
             % (self.reponame, bookmark, node)
         )
         self.sqlcursor.execute(
-            "INSERT INTO bookmarkstonode(bookmark, node, reponame) "
-            "VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE node=VALUES(node)",
+            b"INSERT INTO bookmarkstonode(bookmark, node, reponame) "
+            b"VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE node=VALUES(node)",
             params=(bookmark, node, self.reponame),
         )
 
@@ -179,13 +179,13 @@ class sqlindexapi(indexapi.indexapi):
         args = []
         values = []
         for bookmark, node in bookmarks.iteritems():
-            args.append('(%s, %s, %s)')
+            args.append(b'(%s, %s, %s)')
             values.extend((bookmark, node, self.reponame))
-        args = ','.join(args)
+        args = b','.join(args)
 
         self.sqlcursor.execute(
-            "INSERT INTO bookmarkstonode(bookmark, node, reponame) "
-            "VALUES %s ON DUPLICATE KEY UPDATE node=VALUES(node)" % args,
+            b"INSERT INTO bookmarkstonode(bookmark, node, reponame) "
+            b"VALUES %s ON DUPLICATE KEY UPDATE node=VALUES(node)" % args,
             params=values,
         )
 
@@ -196,12 +196,12 @@ class sqlindexapi(indexapi.indexapi):
         """
         if not self._connected:
             self.sqlconnect()
-        self.log.info("DELETE BOOKMARKS: %s" % patterns)
+        self.log.info(b"DELETE BOOKMARKS: %s" % patterns)
         for pattern in patterns:
             pattern = _convertbookmarkpattern(pattern)
             self.sqlcursor.execute(
-                "DELETE from bookmarkstonode WHERE bookmark LIKE (%s) "
-                "and reponame = %s",
+                b"DELETE from bookmarkstonode WHERE bookmark LIKE (%s) "
+                b"and reponame = %s",
                 params=(pattern, self.reponame),
             )
 
@@ -209,18 +209,18 @@ class sqlindexapi(indexapi.indexapi):
         """Returns the bundleid for the bundle that contains the given node."""
         if not self._connected:
             self.sqlconnect()
-        self.log.info("GET BUNDLE %r %r" % (self.reponame, node))
+        self.log.info(b"GET BUNDLE %r %r" % (self.reponame, node))
         self.sqlcursor.execute(
-            "SELECT bundle from nodestobundle "
-            "WHERE node = %s AND reponame = %s",
+            b"SELECT bundle from nodestobundle "
+            b"WHERE node = %s AND reponame = %s",
             params=(node, self.reponame),
         )
         result = self.sqlcursor.fetchall()
         if len(result) != 1 or len(result[0]) != 1:
-            self.log.info("No matching node")
+            self.log.info(b"No matching node")
             return None
         bundle = result[0][0]
-        self.log.info("Found bundle %r" % bundle)
+        self.log.info(b"Found bundle %r" % bundle)
         return bundle
 
     def getnode(self, bookmark):
@@ -228,38 +228,38 @@ class sqlindexapi(indexapi.indexapi):
         if not self._connected:
             self.sqlconnect()
         self.log.info(
-            "GET NODE reponame: %r bookmark: %r" % (self.reponame, bookmark)
+            b"GET NODE reponame: %r bookmark: %r" % (self.reponame, bookmark)
         )
         self.sqlcursor.execute(
-            "SELECT node from bookmarkstonode WHERE "
-            "bookmark = %s AND reponame = %s",
+            b"SELECT node from bookmarkstonode WHERE "
+            b"bookmark = %s AND reponame = %s",
             params=(bookmark, self.reponame),
         )
         result = self.sqlcursor.fetchall()
         if len(result) != 1 or len(result[0]) != 1:
-            self.log.info("No matching bookmark")
+            self.log.info(b"No matching bookmark")
             return None
         node = result[0][0]
-        self.log.info("Found node %r" % node)
+        self.log.info(b"Found node %r" % node)
         return node
 
     def getbookmarks(self, query):
         if not self._connected:
             self.sqlconnect()
         self.log.info(
-            "QUERY BOOKMARKS reponame: %r query: %r" % (self.reponame, query)
+            b"QUERY BOOKMARKS reponame: %r query: %r" % (self.reponame, query)
         )
         query = _convertbookmarkpattern(query)
         self.sqlcursor.execute(
-            "SELECT bookmark, node from bookmarkstonode WHERE "
-            "reponame = %s AND bookmark LIKE %s",
+            b"SELECT bookmark, node from bookmarkstonode WHERE "
+            b"reponame = %s AND bookmark LIKE %s",
             params=(self.reponame, query),
         )
         result = self.sqlcursor.fetchall()
         bookmarks = {}
         for row in result:
             if len(row) != 2:
-                self.log.info("Bad row returned: %s" % row)
+                self.log.info(b"Bad row returned: %s" % row)
                 continue
             bookmarks[row[0]] = row[1]
         return bookmarks
@@ -269,15 +269,15 @@ class sqlindexapi(indexapi.indexapi):
             self.sqlconnect()
         self.log.info(
             (
-                "INSERT METADATA, QUERY BOOKMARKS reponame: %r "
-                + "node: %r, jsonmetadata: %s"
+                b"INSERT METADATA, QUERY BOOKMARKS reponame: %r "
+                + b"node: %r, jsonmetadata: %s"
             )
             % (self.reponame, node, jsonmetadata)
         )
 
         self.sqlcursor.execute(
-            "UPDATE nodesmetadata SET optional_json_metadata=%s WHERE "
-            "reponame=%s AND node=%s",
+            b"UPDATE nodesmetadata SET optional_json_metadata=%s WHERE "
+            b"reponame=%s AND node=%s",
             params=(jsonmetadata, self.reponame, node),
         )
 

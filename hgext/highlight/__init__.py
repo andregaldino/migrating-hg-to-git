@@ -43,13 +43,13 @@ from mercurial import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 
 def pygmentize(web, field, fctx, tmpl):
-    style = web.config('web', 'pygments_style', 'colorful')
-    expr = web.config('web', 'highlightfiles', "size('<5M')")
-    filenameonly = web.configbool('web', 'highlightonlymatchfilename', False)
+    style = web.config(b'web', b'pygments_style', b'colorful')
+    expr = web.config(b'web', b'highlightfiles', b"size('<5M')")
+    filenameonly = web.configbool(b'web', b'highlightonlymatchfilename', False)
 
     ctx = fctx.changectx()
     m = ctx.matchfileset(expr)
@@ -60,7 +60,7 @@ def pygmentize(web, field, fctx, tmpl):
 
 
 def filerevision_highlight(orig, web, fctx):
-    mt = web.res.headers['Content-Type']
+    mt = web.res.headers[b'Content-Type']
     # only pygmentize for mimetype containing 'html' so we both match
     # 'text/html' and possibly 'application/xhtml+xml' in the future
     # so that we don't have to touch the extension when the mimetype
@@ -68,30 +68,30 @@ def filerevision_highlight(orig, web, fctx):
     # raw file is sent using rawfile() and doesn't call us, so we
     # can't clash with the file's content-type here in case we
     # pygmentize a html file
-    if 'html' in mt:
-        pygmentize(web, 'fileline', fctx, web.tmpl)
+    if b'html' in mt:
+        pygmentize(web, b'fileline', fctx, web.tmpl)
 
     return orig(web, fctx)
 
 
 def annotate_highlight(orig, web):
-    mt = web.res.headers['Content-Type']
-    if 'html' in mt:
+    mt = web.res.headers[b'Content-Type']
+    if b'html' in mt:
         fctx = webutil.filectx(web.repo, web.req)
-        pygmentize(web, 'annotateline', fctx, web.tmpl)
+        pygmentize(web, b'annotateline', fctx, web.tmpl)
 
     return orig(web)
 
 
 def generate_css(web):
-    pg_style = web.config('web', 'pygments_style', 'colorful')
+    pg_style = web.config(b'web', b'pygments_style', b'colorful')
     fmter = highlight.HtmlFormatter(style=pycompat.sysstr(pg_style))
-    web.res.headers['Content-Type'] = 'text/css'
-    style_defs = fmter.get_style_defs(pycompat.sysstr(''))
+    web.res.headers[b'Content-Type'] = b'text/css'
+    style_defs = fmter.get_style_defs(pycompat.sysstr(b''))
     web.res.setbodybytes(
-        ''.join(
+        b''.join(
             [
-                '/* pygments_style = %s */\n\n' % pg_style,
+                b'/* pygments_style = %s */\n\n' % pg_style,
                 pycompat.bytestr(style_defs),
             ]
         )
@@ -102,8 +102,8 @@ def generate_css(web):
 def extsetup(ui):
     # monkeypatch in the new version
     extensions.wrapfunction(
-        webcommands, '_filerevision', filerevision_highlight
+        webcommands, b'_filerevision', filerevision_highlight
     )
-    extensions.wrapfunction(webcommands, 'annotate', annotate_highlight)
+    extensions.wrapfunction(webcommands, b'annotate', annotate_highlight)
     webcommands.highlightcss = generate_css
-    webcommands.__all__.append('highlightcss')
+    webcommands.__all__.append(b'highlightcss')

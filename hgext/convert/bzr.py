@@ -17,7 +17,7 @@ from . import common
 
 # these do not work with demandimport, blacklist
 demandimport.IGNORES.update(
-    ['bzrlib.transactions', 'bzrlib.urlutils', 'ElementPath',]
+    [b'bzrlib.transactions', b'bzrlib.urlutils', b'ElementPath',]
 )
 
 try:
@@ -35,7 +35,7 @@ try:
 except ImportError:
     pass
 
-supportedkinds = ('file', 'symlink')
+supportedkinds = (b'file', b'symlink')
 
 
 class bzr_source(common.converter_source):
@@ -44,16 +44,16 @@ class bzr_source(common.converter_source):
     def __init__(self, ui, repotype, path, revs=None):
         super(bzr_source, self).__init__(ui, repotype, path, revs=revs)
 
-        if not os.path.exists(os.path.join(path, '.bzr')):
+        if not os.path.exists(os.path.join(path, b'.bzr')):
             raise common.NoRepo(
-                _('%s does not look like a Bazaar repository') % path
+                _(b'%s does not look like a Bazaar repository') % path
             )
 
         try:
             # access bzrlib stuff
             bzrdir
         except NameError:
-            raise common.NoRepo(_('Bazaar modules could not be loaded'))
+            raise common.NoRepo(_(b'Bazaar modules could not be loaded'))
 
         path = os.path.abspath(path)
         self._checkrepotype(path)
@@ -61,10 +61,10 @@ class bzr_source(common.converter_source):
             self.sourcerepo = bzrdir.BzrDir.open(path).open_repository()
         except errors.NoRepositoryPresent:
             raise common.NoRepo(
-                _('%s does not look like a Bazaar repository') % path
+                _(b'%s does not look like a Bazaar repository') % path
             )
         self._parentids = {}
-        self._saverev = ui.configbool('convert', 'bzr.saverev')
+        self._saverev = ui.configbool(b'convert', b'bzr.saverev')
 
     def _checkrepotype(self, path):
         # Lightweight checkouts detection is informational but probably
@@ -84,13 +84,13 @@ class bzr_source(common.converter_source):
             ):
                 self.ui.warn(
                     _(
-                        'warning: lightweight checkouts may cause '
-                        'conversion failures, try with a regular '
-                        'branch instead.\n'
+                        b'warning: lightweight checkouts may cause '
+                        b'conversion failures, try with a regular '
+                        b'branch instead.\n'
                     )
                 )
         except Exception:
-            self.ui.note(_('bzr source type could not be determined\n'))
+            self.ui.note(_(b'bzr source type could not be determined\n'))
 
     def before(self):
         """Before the conversion begins, acquire a read lock
@@ -126,16 +126,16 @@ class bzr_source(common.converter_source):
                 revid = info.rev_id
             if revid is None:
                 raise error.Abort(
-                    _('%s is not a valid revision') % self.revs[0]
+                    _(b'%s is not a valid revision') % self.revs[0]
                 )
             heads = [revid]
         # Empty repositories return 'null:', which cannot be retrieved
-        heads = [h for h in heads if h != 'null:']
+        heads = [h for h in heads if h != b'null:']
         return heads
 
     def getfile(self, name, rev):
         revtree = self.sourcerepo.revision_tree(rev)
-        fileid = revtree.path2id(name.decode(self.encoding or 'utf-8'))
+        fileid = revtree.path2id(name.decode(self.encoding or b'utf-8'))
         kind = None
         if fileid is not None:
             kind = revtree.kind(fileid)
@@ -143,11 +143,11 @@ class bzr_source(common.converter_source):
             # the file is not available anymore - was deleted
             return None, None
         mode = self._modecache[(name, rev)]
-        if kind == 'symlink':
+        if kind == b'symlink':
             target = revtree.get_symlink_target(fileid)
             if target is None:
                 raise error.Abort(
-                    _('%s.%s symlink has no target') % (name, rev)
+                    _(b'%s.%s symlink has no target') % (name, rev)
                 )
             return target, mode
         else:
@@ -156,7 +156,7 @@ class bzr_source(common.converter_source):
 
     def getchanges(self, version, full):
         if full:
-            raise error.Abort(_("convert from cvs does not support --full"))
+            raise error.Abort(_(b"convert from cvs does not support --full"))
         self._modecache = {}
         self._revtree = self.sourcerepo.revision_tree(version)
         # get the parentids from the cache
@@ -176,12 +176,12 @@ class bzr_source(common.converter_source):
             parents = self._filterghosts(rev.parent_ids)
             self._parentids[version] = parents
 
-        branch = self.recode(rev.properties.get('branch-nick', u'default'))
-        if branch == 'trunk':
-            branch = 'default'
+        branch = self.recode(rev.properties.get(b'branch-nick', u'default'))
+        if branch == b'trunk':
+            branch = b'default'
         return common.commit(
             parents=parents,
-            date='%d %d' % (rev.timestamp, -rev.timezone),
+            date=b'%d %d' % (rev.timestamp, -rev.timezone),
             author=self.recode(rev.committer),
             desc=self.recode(rev.message),
             branch=branch,
@@ -248,13 +248,13 @@ class bzr_source(common.converter_source):
 
             # bazaar tracks directories, mercurial does not, so
             # we have to rename the directory contents
-            if kind[1] == 'directory':
-                if kind[0] not in (None, 'directory'):
+            if kind[1] == b'directory':
+                if kind[0] not in (None, b'directory'):
                     # Replacing 'something' with a directory, record it
                     # so it can be removed.
                     changes.append((self.recode(paths[0]), revid))
 
-                if kind[0] == 'directory' and None not in paths:
+                if kind[0] == b'directory' and None not in paths:
                     renaming = paths[0] != paths[1]
                     # neither an add nor an delete - a move
                     # rename all directory contents manually
@@ -262,9 +262,9 @@ class bzr_source(common.converter_source):
                     # get all child-entries of the directory
                     for name, entry in inventory.iter_entries(subdir):
                         # hg does not track directory renames
-                        if entry.kind == 'directory':
+                        if entry.kind == b'directory':
                             continue
-                        frompath = self.recode(paths[0] + '/' + name)
+                        frompath = self.recode(paths[0] + b'/' + name)
                         if frompath in seen:
                             # Already handled by a more specific change entry
                             # This is important when you have:
@@ -275,15 +275,15 @@ class bzr_source(common.converter_source):
                         seen.add(frompath)
                         if not renaming:
                             continue
-                        topath = self.recode(paths[1] + '/' + name)
+                        topath = self.recode(paths[1] + b'/' + name)
                         # register the files as changed
                         changes.append((frompath, revid))
                         changes.append((topath, revid))
                         # add to mode cache
                         mode = (
-                            (entry.executable and 'x')
-                            or (entry.kind == 'symlink' and 's')
-                            or ''
+                            (entry.executable and b'x')
+                            or (entry.kind == b'symlink' and b's')
+                            or b''
                         )
                         self._modecache[(topath, revid)] = mode
                         # register the change as move
@@ -312,7 +312,7 @@ class bzr_source(common.converter_source):
 
             # populate the mode cache
             kind, executable = [e[1] for e in (kind, executable)]
-            mode = (executable and 'x') or (kind == 'symlink' and 'l') or ''
+            mode = (executable and b'x') or (kind == b'symlink' and b'l') or b''
             self._modecache[(topath, revid)] = mode
             changes.append((topath, revid))
 

@@ -34,9 +34,9 @@ urlreq = util.urlreq
 
 HTTP_OK = 200
 
-HGTYPE = 'application/mercurial-0.1'
-HGTYPE2 = 'application/mercurial-0.2'
-HGERRTYPE = 'application/hg-error'
+HGTYPE = b'application/mercurial-0.1'
+HGTYPE2 = b'application/mercurial-0.2'
+HGERRTYPE = b'application/hg-error'
 
 SSHV1 = wireprototypes.SSHV1
 SSHV2 = wireprototypes.SSHV2
@@ -56,7 +56,7 @@ def decodevaluefromheaders(req, headerprefix):
         chunks.append(pycompat.bytesurl(v))
         i += 1
 
-    return ''.join(chunks)
+    return b''.join(chunks)
 
 
 @interfaceutil.implementer(wireprototypes.baseprotocolhandler)
@@ -69,19 +69,19 @@ class httpv1protocolhandler(object):
 
     @property
     def name(self):
-        return 'http-v1'
+        return b'http-v1'
 
     def getargs(self, args):
         knownargs = self._args()
         data = {}
         keys = args.split()
         for k in keys:
-            if k == '*':
+            if k == b'*':
                 star = {}
                 for key in knownargs.keys():
-                    if key != 'cmd' and key not in keys:
+                    if key != b'cmd' and key not in keys:
                         star[key] = knownargs[key][0]
-                data['*'] = star
+                data[b'*'] = star
             else:
                 data[k] = knownargs[k][0]
         return [data[k] for k in keys]
@@ -104,7 +104,7 @@ class httpv1protocolhandler(object):
     def getprotocaps(self):
         if self._protocaps is None:
             value = decodevaluefromheaders(self._req, b'X-HgProto')
-            self._protocaps = set(value.split(' '))
+            self._protocaps = set(value.split(b' '))
         return self._protocaps
 
     def getpayload(self):
@@ -132,33 +132,33 @@ class httpv1protocolhandler(object):
             self._ui.ferr = olderr
 
     def client(self):
-        return 'remote:%s:%s:%s' % (
+        return b'remote:%s:%s:%s' % (
             self._req.urlscheme,
-            urlreq.quote(self._req.remotehost or ''),
-            urlreq.quote(self._req.remoteuser or ''),
+            urlreq.quote(self._req.remotehost or b''),
+            urlreq.quote(self._req.remoteuser or b''),
         )
 
     def addcapabilities(self, repo, caps):
         caps.append(b'batch')
 
         caps.append(
-            'httpheader=%d' % repo.ui.configint('server', 'maxhttpheaderlen')
+            b'httpheader=%d' % repo.ui.configint(b'server', b'maxhttpheaderlen')
         )
-        if repo.ui.configbool('experimental', 'httppostargs'):
-            caps.append('httppostargs')
+        if repo.ui.configbool(b'experimental', b'httppostargs'):
+            caps.append(b'httppostargs')
 
         # FUTURE advertise 0.2rx once support is implemented
         # FUTURE advertise minrx and mintx after consulting config option
-        caps.append('httpmediatype=0.1rx,0.1tx,0.2tx')
+        caps.append(b'httpmediatype=0.1rx,0.1tx,0.2tx')
 
         compengines = wireprototypes.supportedcompengines(
             repo.ui, compression.SERVERROLE
         )
         if compengines:
-            comptypes = ','.join(
+            comptypes = b','.join(
                 urlreq.quote(e.wireprotosupport().name) for e in compengines
             )
-            caps.append('compression=%s' % comptypes)
+            caps.append(b'compression=%s' % comptypes)
 
         return caps
 
@@ -194,10 +194,10 @@ def handlewsgirequest(rctx, req, res, checkperm):
     # HTTP version 1 wire protocol requests are denoted by a "cmd" query
     # string parameter. If it isn't present, this isn't a wire protocol
     # request.
-    if 'cmd' not in req.qsparams:
+    if b'cmd' not in req.qsparams:
         return False
 
-    cmd = req.qsparams['cmd']
+    cmd = req.qsparams[b'cmd']
 
     # The "cmd" request parameter is used by both the wire protocol and hgweb.
     # While not all wire protocol commands are available for all transports,
@@ -215,10 +215,10 @@ def handlewsgirequest(rctx, req, res, checkperm):
     # in this case. We send an HTTP 404 for backwards compatibility reasons.
     if req.dispatchpath:
         res.status = hgwebcommon.statusmessage(404)
-        res.headers['Content-Type'] = HGTYPE
+        res.headers[b'Content-Type'] = HGTYPE
         # TODO This is not a good response to issue for this request. This
         # is mostly for BC for now.
-        res.setbodybytes('0\n%s\n' % b'Not Found')
+        res.setbodybytes(b'0\n%s\n' % b'Not Found')
         return True
 
     proto = httpv1protocolhandler(
@@ -237,7 +237,7 @@ def handlewsgirequest(rctx, req, res, checkperm):
         res.status = hgwebcommon.statusmessage(e.code, pycompat.bytestr(e))
         # TODO This response body assumes the failed command was
         # "unbundle." That assumption is not always valid.
-        res.setbodybytes('0\n%s\n' % pycompat.bytestr(e))
+        res.setbodybytes(b'0\n%s\n' % pycompat.bytestr(e))
 
     return True
 
@@ -248,7 +248,7 @@ def _availableapis(repo):
     # Registered APIs are made available via config options of the name of
     # the protocol.
     for k, v in API_HANDLERS.items():
-        section, option = v['config']
+        section, option = v[b'config']
         if repo.ui.configbool(section, option):
             apis.add(k)
 
@@ -263,10 +263,10 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
 
     # This whole URL space is experimental for now. But we want to
     # reserve the URL space. So, 404 all URLs if the feature isn't enabled.
-    if not repo.ui.configbool('experimental', 'web.apiserver'):
+    if not repo.ui.configbool(b'experimental', b'web.apiserver'):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
-        res.setbodybytes(_('Experimental API server endpoint not enabled'))
+        res.setbodybytes(_(b'Experimental API server endpoint not enabled'))
         return
 
     # The URL space is /api/<protocol>/*. The structure of URLs under varies
@@ -280,14 +280,14 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
         res.headers[b'Content-Type'] = b'text/plain'
         lines = [
             _(
-                'APIs can be accessed at /api/<name>, where <name> can be '
-                'one of the following:\n'
+                b'APIs can be accessed at /api/<name>, where <name> can be '
+                b'one of the following:\n'
             )
         ]
         if availableapis:
             lines.extend(sorted(availableapis))
         else:
-            lines.append(_('(no available APIs)\n'))
+            lines.append(_(b'(no available APIs)\n'))
         res.setbodybytes(b'\n'.join(lines))
         return
 
@@ -297,7 +297,7 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(
-            _('Unknown API: %s\nKnown APIs: %s')
+            _(b'Unknown API: %s\nKnown APIs: %s')
             % (proto, b', '.join(sorted(availableapis)))
         )
         return
@@ -305,10 +305,10 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
     if proto not in availableapis:
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
-        res.setbodybytes(_('API %s not enabled\n') % proto)
+        res.setbodybytes(_(b'API %s not enabled\n') % proto)
         return
 
-    API_HANDLERS[proto]['handler'](
+    API_HANDLERS[proto][b'handler'](
         rctx, req, res, checkperm, req.dispatchparts[2:]
     )
 
@@ -326,9 +326,9 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
 #    descriptor for this service. The response must be serializable to CBOR.
 API_HANDLERS = {
     wireprotov2server.HTTP_WIREPROTO_V2: {
-        'config': ('experimental', 'web.api.http-v2'),
-        'handler': wireprotov2server.handlehttpv2request,
-        'apidescriptor': wireprotov2server.httpv2apidescriptor,
+        b'config': (b'experimental', b'web.api.http-v2'),
+        b'handler': wireprotov2server.handlehttpv2request,
+        b'apidescriptor': wireprotov2server.httpv2apidescriptor,
     },
 }
 
@@ -341,7 +341,7 @@ def _httpresponsetype(ui, proto, prefer_uncompressed):
     # Determine the response media type and compression engine based
     # on the request parameters.
 
-    if '0.2' in proto.getprotocaps():
+    if b'0.2' in proto.getprotocaps():
         # All clients are expected to support uncompressed data.
         if prefer_uncompressed:
             return HGTYPE2, compression._noopengine(), {}
@@ -353,9 +353,9 @@ def _httpresponsetype(ui, proto, prefer_uncompressed):
         ):
             if engine.wireprotosupport().name in compformats:
                 opts = {}
-                level = ui.configint('server', '%slevel' % engine.name())
+                level = ui.configint(b'server', b'%slevel' % engine.name())
                 if level is not None:
-                    opts['level'] = level
+                    opts[b'level'] = level
 
                 return HGTYPE2, engine, opts
 
@@ -365,8 +365,8 @@ def _httpresponsetype(ui, proto, prefer_uncompressed):
     # Don't allow untrusted settings because disabling compression or
     # setting a very high compression level could lead to flooding
     # the server's network or CPU.
-    opts = {'level': ui.configint('server', 'zliblevel')}
-    return HGTYPE, util.compengines['zlib'], opts
+    opts = {b'level': ui.configint(b'server', b'zliblevel')}
+    return HGTYPE, util.compengines[b'zlib'], opts
 
 
 def processcapabilitieshandshake(repo, req, res, proto):
@@ -377,7 +377,7 @@ def processcapabilitieshandshake(repo, req, res, proto):
     advertised services are available, we don't handle the request.
     """
     # Fall back to old behavior unless the API server is enabled.
-    if not repo.ui.configbool('experimental', 'web.apiserver'):
+    if not repo.ui.configbool(b'experimental', b'web.apiserver'):
         return False
 
     clientapis = decodevaluefromheaders(req, b'X-HgUpgrade')
@@ -386,7 +386,7 @@ def processcapabilitieshandshake(repo, req, res, proto):
         return False
 
     # We currently only support CBOR responses.
-    protocaps = set(protocaps.split(' '))
+    protocaps = set(protocaps.split(b' '))
     if b'cbor' not in protocaps:
         return False
 
@@ -395,20 +395,20 @@ def processcapabilitieshandshake(repo, req, res, proto):
     for api in sorted(set(clientapis.split()) & _availableapis(repo)):
         handler = API_HANDLERS[api]
 
-        descriptorfn = handler.get('apidescriptor')
+        descriptorfn = handler.get(b'apidescriptor')
         if not descriptorfn:
             continue
 
         descriptors[api] = descriptorfn(req, repo)
 
-    v1caps = wireprotov1server.dispatch(repo, proto, 'capabilities')
+    v1caps = wireprotov1server.dispatch(repo, proto, b'capabilities')
     assert isinstance(v1caps, wireprototypes.bytesresponse)
 
     m = {
         # TODO allow this to be configurable.
-        'apibase': 'api/',
-        'apis': descriptors,
-        'v1capabilities': v1caps.data,
+        b'apibase': b'api/',
+        b'apis': descriptors,
+        b'v1capabilities': v1caps.data,
     }
 
     res.status = b'200 OK'
@@ -427,7 +427,7 @@ def _callhttp(repo, req, res, proto, cmd):
         # identifying the compression engine.
         name = engine.wireprotosupport().name
         assert 0 < len(name) < 256
-        yield struct.pack('B', len(name))
+        yield struct.pack(b'B', len(name))
         yield name
 
         for chunk in gen:
@@ -435,11 +435,11 @@ def _callhttp(repo, req, res, proto, cmd):
 
     def setresponse(code, contenttype, bodybytes=None, bodygen=None):
         if code == HTTP_OK:
-            res.status = '200 Script output follows'
+            res.status = b'200 Script output follows'
         else:
             res.status = hgwebcommon.statusmessage(code)
 
-        res.headers['Content-Type'] = contenttype
+        res.headers[b'Content-Type'] = contenttype
 
         if bodybytes is not None:
             res.setbodybytes(bodybytes)
@@ -450,14 +450,17 @@ def _callhttp(repo, req, res, proto, cmd):
         setresponse(
             HTTP_OK,
             HGERRTYPE,
-            _('requested wire protocol command is not available over ' 'HTTP'),
+            _(
+                b'requested wire protocol command is not available over '
+                b'HTTP'
+            ),
         )
         return
 
     proto.checkperm(wireprotov1server.commands[cmd].permission)
 
     # Possibly handle a modern client wanting to switch protocols.
-    if cmd == 'capabilities' and processcapabilitieshandshake(
+    if cmd == b'capabilities' and processcapabilitieshandshake(
         repo, req, res, proto
     ):
 
@@ -486,21 +489,21 @@ def _callhttp(repo, req, res, proto, cmd):
 
         setresponse(HTTP_OK, mediatype, bodygen=gen)
     elif isinstance(rsp, wireprototypes.pushres):
-        rsp = '%d\n%s' % (rsp.res, rsp.output)
+        rsp = b'%d\n%s' % (rsp.res, rsp.output)
         setresponse(HTTP_OK, HGTYPE, bodybytes=rsp)
     elif isinstance(rsp, wireprototypes.pusherr):
-        rsp = '0\n%s\n' % rsp.res
+        rsp = b'0\n%s\n' % rsp.res
         res.drain = True
         setresponse(HTTP_OK, HGTYPE, bodybytes=rsp)
     elif isinstance(rsp, wireprototypes.ooberror):
         setresponse(HTTP_OK, HGERRTYPE, bodybytes=rsp.message)
     else:
-        raise error.ProgrammingError('hgweb.protocol internal failure', rsp)
+        raise error.ProgrammingError(b'hgweb.protocol internal failure', rsp)
 
 
 def _sshv1respondbytes(fout, value):
     """Send a bytes response for protocol version 1."""
-    fout.write('%d\n' % len(value))
+    fout.write(b'%d\n' % len(value))
     fout.write(value)
     fout.flush()
 
@@ -540,15 +543,15 @@ class sshv1protocolhandler(object):
             argline = self._fin.readline()[:-1]
             arg, l = argline.split()
             if arg not in keys:
-                raise error.Abort(_("unexpected parameter %r") % arg)
-            if arg == '*':
+                raise error.Abort(_(b"unexpected parameter %r") % arg)
+            if arg == b'*':
                 star = {}
                 for k in pycompat.xrange(int(l)):
                     argline = self._fin.readline()[:-1]
                     arg, l = argline.split()
                     val = self._fin.read(int(l))
                     star[arg] = val
-                data['*'] = star
+                data[b'*'] = star
             else:
                 val = self._fin.read(int(l))
                 data[arg] = val
@@ -578,8 +581,8 @@ class sshv1protocolhandler(object):
         yield None
 
     def client(self):
-        client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
-        return 'remote:ssh:' + client
+        client = encoding.environ.get(b'SSH_CLIENT', b'').split(b' ', 1)[0]
+        return b'remote:ssh:' + client
 
     def addcapabilities(self, repo, caps):
         if self.name == wireprototypes.SSHV1:
@@ -655,18 +658,18 @@ def _runsshserver(ui, repo, fin, fout, ev):
     #    Ths happens by default since protocol version 2 is the same as
     #    version 1 except for the handshake.
 
-    state = 'protov1-serving'
+    state = b'protov1-serving'
     proto = sshv1protocolhandler(ui, fin, fout)
     protoswitched = False
 
     while not ev.is_set():
-        if state == 'protov1-serving':
+        if state == b'protov1-serving':
             # Commands are issued on new lines.
             request = fin.readline()[:-1]
 
             # Empty lines signal to terminate the connection.
             if not request:
-                state = 'shutdown'
+                state = b'shutdown'
                 continue
 
             # It looks like a protocol upgrade request. Transition state to
@@ -678,10 +681,10 @@ def _runsshserver(ui, repo, fin, fout, ev):
                         ui.ferr,
                         b'cannot upgrade protocols multiple ' b'times',
                     )
-                    state = 'shutdown'
+                    state = b'shutdown'
                     continue
 
-                state = 'upgrade-initial'
+                state = b'upgrade-initial'
                 continue
 
             available = wireprotov1server.commands.commandavailable(
@@ -715,16 +718,16 @@ def _runsshserver(ui, repo, fin, fout, ev):
                 _sshv1respondooberror(fout, ui.ferr, rsp.message)
             else:
                 raise error.ProgrammingError(
-                    'unhandled response type from '
-                    'wire protocol command: %s' % rsp
+                    b'unhandled response type from '
+                    b'wire protocol command: %s' % rsp
                 )
 
         # For now, protocol version 2 serving just goes back to version 1.
-        elif state == 'protov2-serving':
-            state = 'protov1-serving'
+        elif state == b'protov2-serving':
+            state = b'protov1-serving'
             continue
 
-        elif state == 'upgrade-initial':
+        elif state == b'upgrade-initial':
             # We should never transition into this state if we've switched
             # protocols.
             assert not protoswitched
@@ -738,20 +741,20 @@ def _runsshserver(ui, repo, fin, fout, ev):
                 token, caps = request.split(b' ')[1:]
             except ValueError:
                 _sshv1respondbytes(fout, b'')
-                state = 'protov1-serving'
+                state = b'protov1-serving'
                 continue
 
             # Send empty response if we don't support upgrading protocols.
-            if not ui.configbool('experimental', 'sshserver.support-v2'):
+            if not ui.configbool(b'experimental', b'sshserver.support-v2'):
                 _sshv1respondbytes(fout, b'')
-                state = 'protov1-serving'
+                state = b'protov1-serving'
                 continue
 
             try:
                 caps = urlreq.parseqs(caps)
             except ValueError:
                 _sshv1respondbytes(fout, b'')
-                state = 'protov1-serving'
+                state = b'protov1-serving'
                 continue
 
             # We don't see an upgrade request to protocol version 2. Ignore
@@ -759,15 +762,15 @@ def _runsshserver(ui, repo, fin, fout, ev):
             wantedprotos = caps.get(b'proto', [b''])[0]
             if SSHV2 not in wantedprotos:
                 _sshv1respondbytes(fout, b'')
-                state = 'protov1-serving'
+                state = b'protov1-serving'
                 continue
 
             # It looks like we can honor this upgrade request to protocol 2.
             # Filter the rest of the handshake protocol request lines.
-            state = 'upgrade-v2-filter-legacy-handshake'
+            state = b'upgrade-v2-filter-legacy-handshake'
             continue
 
-        elif state == 'upgrade-v2-filter-legacy-handshake':
+        elif state == b'upgrade-v2-filter-legacy-handshake':
             # Client should have sent legacy handshake after an ``upgrade``
             # request. Expected lines:
             #
@@ -787,7 +790,7 @@ def _runsshserver(ui, repo, fin, fout, ev):
                         b'malformed handshake protocol: ' b'missing %s' % line,
                     )
                     ok = False
-                    state = 'shutdown'
+                    state = b'shutdown'
                     break
 
             if not ok:
@@ -801,13 +804,13 @@ def _runsshserver(ui, repo, fin, fout, ev):
                     b'malformed handshake protocol: '
                     b'missing between argument value',
                 )
-                state = 'shutdown'
+                state = b'shutdown'
                 continue
 
-            state = 'upgrade-v2-finish'
+            state = b'upgrade-v2-finish'
             continue
 
-        elif state == 'upgrade-v2-finish':
+        elif state == b'upgrade-v2-finish':
             # Send the upgrade response.
             fout.write(b'upgraded %s %s\n' % (token, SSHV2))
             servercaps = wireprotov1server.capabilities(repo, proto)
@@ -818,15 +821,15 @@ def _runsshserver(ui, repo, fin, fout, ev):
             proto = sshv2protocolhandler(ui, fin, fout)
             protoswitched = True
 
-            state = 'protov2-serving'
+            state = b'protov2-serving'
             continue
 
-        elif state == 'shutdown':
+        elif state == b'shutdown':
             break
 
         else:
             raise error.ProgrammingError(
-                'unhandled ssh server state: %s' % state
+                b'unhandled ssh server state: %s' % state
             )
 
 
@@ -839,10 +842,10 @@ class sshserver(object):
         # Log write I/O to stdout and stderr if configured.
         if logfh:
             self._fout = util.makeloggingfileobject(
-                logfh, self._fout, 'o', logdata=True
+                logfh, self._fout, b'o', logdata=True
             )
             ui.ferr = util.makeloggingfileobject(
-                logfh, ui.ferr, 'e', logdata=True
+                logfh, ui.ferr, b'e', logdata=True
             )
 
     def serve_forever(self):

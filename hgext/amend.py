@@ -24,23 +24,23 @@ from mercurial import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 cmdtable = {}
 command = registrar.command(cmdtable)
 
 
 @command(
-    'amend',
+    b'amend',
     [
         (
-            'A',
-            'addremove',
+            b'A',
+            b'addremove',
             None,
-            _('mark new/missing files as added/removed before committing'),
+            _(b'mark new/missing files as added/removed before committing'),
         ),
-        ('e', 'edit', None, _('invoke editor on commit messages')),
-        ('i', 'interactive', None, _('use interactive mode')),
+        (b'e', b'edit', None, _(b'invoke editor on commit messages')),
+        (b'i', b'interactive', None, _(b'use interactive mode')),
         (
             b'',
             b'close-branch',
@@ -48,13 +48,13 @@ command = registrar.command(cmdtable)
             _(b'mark a branch as closed, hiding it from the branch list'),
         ),
         (b's', b'secret', None, _(b'use the secret phase for committing')),
-        ('n', 'note', '', _('store a note on the amend')),
+        (b'n', b'note', b'', _(b'store a note on the amend')),
     ]
     + cmdutil.walkopts
     + cmdutil.commitopts
     + cmdutil.commitopts2
     + cmdutil.commitopts3,
-    _('[OPTION]... [FILE]...'),
+    _(b'[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_COMMITTING,
     inferrepo=True,
 )
@@ -70,7 +70,7 @@ def amend(ui, repo, *pats, **opts):
     cmdutil.checknotesize(ui, opts)
 
     with repo.wlock(), repo.lock():
-        if not opts.get('logfile'):
-            opts['message'] = opts.get('message') or repo['.'].description()
-        opts['amend'] = True
+        if not opts.get(b'logfile'):
+            opts[b'message'] = opts.get(b'message') or repo[b'.'].description()
+        opts[b'amend'] = True
         return commands._docommit(ui, repo, *pats, **pycompat.strkwargs(opts))

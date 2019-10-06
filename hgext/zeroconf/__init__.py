@@ -43,7 +43,7 @@ from mercurial.hgweb import server as servermod
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 # publish
 
@@ -99,11 +99,11 @@ def publish(name, desc, path, port):
 
     # advertise to browsers
     svc = Zeroconf.ServiceInfo(
-        '_http._tcp.local.',
+        b'_http._tcp.local.',
         pycompat.bytestr(name + r'._http._tcp.local.'),
         server=host,
         port=port,
-        properties={'description': desc, 'path': "/" + path},
+        properties={b'description': desc, b'path': b"/" + path},
         address=localip,
         weight=0,
         priority=0,
@@ -112,11 +112,11 @@ def publish(name, desc, path, port):
 
     # advertise to Mercurial clients
     svc = Zeroconf.ServiceInfo(
-        '_hg._tcp.local.',
+        b'_hg._tcp.local.',
         pycompat.bytestr(name + r'._hg._tcp.local.'),
         server=host,
         port=port,
-        properties={'description': desc, 'path': "/" + path},
+        properties={b'description': desc, b'path': b"/" + path},
         address=localip,
         weight=0,
         priority=0,
@@ -134,20 +134,20 @@ def zc_create_server(create_server, ui, app):
         # single repo
         with app._obtainrepo() as repo:
             name = app.reponame or os.path.basename(repo.root)
-            path = repo.ui.config("web", "prefix", "").strip('/')
-            desc = repo.ui.config("web", "description")
+            path = repo.ui.config(b"web", b"prefix", b"").strip(b'/')
+            desc = repo.ui.config(b"web", b"description")
             if not desc:
                 desc = name
         publish(name, desc, path, port)
     else:
         # webdir
-        prefix = app.ui.config("web", "prefix", "").strip('/') + '/'
+        prefix = app.ui.config(b"web", b"prefix", b"").strip(b'/') + b'/'
         for repo, path in repos:
             u = app.ui.copy()
-            u.readconfig(os.path.join(path, '.hg', 'hgrc'))
+            u.readconfig(os.path.join(path, b'.hg', b'hgrc'))
             name = os.path.basename(repo)
-            path = (prefix + repo).strip('/')
-            desc = u.config('web', 'description')
+            path = (prefix + repo).strip(b'/')
+            desc = u.config(b'web', b'description')
             if not desc:
                 desc = name
             publish(name, desc, path, port)
@@ -175,7 +175,7 @@ def getzcpaths():
         return
     server = Zeroconf.Zeroconf(ip)
     l = listener()
-    Zeroconf.ServiceBrowser(server, "_hg._tcp.local.", l)
+    Zeroconf.ServiceBrowser(server, b"_hg._tcp.local.", l)
     time.sleep(1)
     server.close()
     for value in l.found.values():
@@ -189,7 +189,7 @@ def getzcpaths():
 
 
 def config(orig, self, section, key, *args, **kwargs):
-    if section == "paths" and key.startswith("zc-"):
+    if section == b"paths" and key.startswith(b"zc-"):
         for name, path in getzcpaths():
             if name == key:
                 return path
@@ -198,14 +198,14 @@ def config(orig, self, section, key, *args, **kwargs):
 
 def configitems(orig, self, section, *args, **kwargs):
     repos = orig(self, section, *args, **kwargs)
-    if section == "paths":
+    if section == b"paths":
         repos += getzcpaths()
     return repos
 
 
 def configsuboptions(orig, self, section, name, *args, **kwargs):
     opt, sub = orig(self, section, name, *args, **kwargs)
-    if section == "paths" and name.startswith("zc-"):
+    if section == b"paths" and name.startswith(b"zc-"):
         # We have to find the URL in the zeroconf paths.  We can't cons up any
         # suboptions, so we use any that we found in the original config.
         for zcname, zcurl in getzcpaths():
@@ -232,10 +232,10 @@ def cleanupafterdispatch(orig, ui, options, cmd, cmdfunc):
             server.close()
 
 
-extensions.wrapfunction(dispatch, '_runcommand', cleanupafterdispatch)
+extensions.wrapfunction(dispatch, b'_runcommand', cleanupafterdispatch)
 
-extensions.wrapfunction(uimod.ui, 'config', config)
-extensions.wrapfunction(uimod.ui, 'configitems', configitems)
-extensions.wrapfunction(uimod.ui, 'configsuboptions', configsuboptions)
-extensions.wrapfunction(hg, 'defaultdest', defaultdest)
-extensions.wrapfunction(servermod, 'create_server', zc_create_server)
+extensions.wrapfunction(uimod.ui, b'config', config)
+extensions.wrapfunction(uimod.ui, b'configitems', configitems)
+extensions.wrapfunction(uimod.ui, b'configsuboptions', configsuboptions)
+extensions.wrapfunction(hg, b'defaultdest', defaultdest)
+extensions.wrapfunction(servermod, b'create_server', zc_create_server)

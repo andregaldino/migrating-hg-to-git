@@ -17,11 +17,11 @@ lib = _bdiff.lib
 
 
 def blocks(sa, sb):
-    a = ffi.new("struct bdiff_line**")
-    b = ffi.new("struct bdiff_line**")
-    ac = ffi.new("char[]", str(sa))
-    bc = ffi.new("char[]", str(sb))
-    l = ffi.new("struct bdiff_hunk*")
+    a = ffi.new(b"struct bdiff_line**")
+    b = ffi.new(b"struct bdiff_line**")
+    ac = ffi.new(b"char[]", str(sa))
+    bc = ffi.new(b"char[]", str(sb))
+    l = ffi.new(b"struct bdiff_hunk*")
     try:
         an = lib.bdiff_splitlines(ac, len(sa), a)
         bn = lib.bdiff_splitlines(bc, len(sb), b)
@@ -45,11 +45,11 @@ def blocks(sa, sb):
 
 
 def bdiff(sa, sb):
-    a = ffi.new("struct bdiff_line**")
-    b = ffi.new("struct bdiff_line**")
-    ac = ffi.new("char[]", str(sa))
-    bc = ffi.new("char[]", str(sb))
-    l = ffi.new("struct bdiff_hunk*")
+    a = ffi.new(b"struct bdiff_line**")
+    b = ffi.new(b"struct bdiff_line**")
+    ac = ffi.new(b"char[]", str(sa))
+    bc = ffi.new(b"char[]", str(sb))
+    l = ffi.new(b"struct bdiff_hunk*")
     try:
         an = lib.bdiff_splitlines(ac, len(sa), a)
         bn = lib.bdiff_splitlines(bc, len(sb), b)
@@ -66,7 +66,7 @@ def bdiff(sa, sb):
                 lgt = (b[0] + h.b1).l - (b[0] + lb).l
                 rl.append(
                     struct.pack(
-                        ">lll",
+                        b">lll",
                         (a[0] + la).l - a[0].l,
                         (a[0] + h.a1).l - a[0].l,
                         lgt,
@@ -81,4 +81,4 @@ def bdiff(sa, sb):
         lib.free(a[0])
         lib.free(b[0])
         lib.bdiff_freehunks(l.next)
-    return "".join(rl)
+    return b"".join(rl)

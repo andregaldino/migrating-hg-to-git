@@ -67,15 +67,15 @@ class remotefilelog(object):
     def read(self, node):
         """returns the file contents at this node"""
         t = self.revision(node)
-        if not t.startswith('\1\n'):
+        if not t.startswith(b'\1\n'):
             return t
-        s = t.index('\1\n', 2)
+        s = t.index(b'\1\n', 2)
         return t[s + 2 :]
 
     def add(self, text, meta, transaction, linknode, p1=None, p2=None):
         # hash with the metadata, like in vanilla filelogs
         hashtext = shallowutil.createrevlogtext(
-            text, meta.get('copy'), meta.get('copyrev')
+            text, meta.get(b'copy'), meta.get(b'copyrev')
         )
         node = storageutil.hashrevisionsha1(hashtext, p1, p2)
         return self.addrevision(
@@ -85,15 +85,15 @@ class remotefilelog(object):
     def _createfileblob(self, text, meta, flags, p1, p2, node, linknode):
         # text passed to "_createfileblob" does not include filelog metadata
         header = shallowutil.buildfileblobheader(len(text), flags)
-        data = "%s\0%s" % (header, text)
+        data = b"%s\0%s" % (header, text)
 
         realp1 = p1
-        copyfrom = ""
-        if meta and 'copy' in meta:
-            copyfrom = meta['copy']
-            realp1 = bin(meta['copyrev'])
+        copyfrom = b""
+        if meta and b'copy' in meta:
+            copyfrom = meta[b'copy']
+            realp1 = bin(meta[b'copyrev'])
 
-        data += "%s%s%s%s%s\0" % (node, realp1, p2, linknode, copyfrom)
+        data += b"%s%s%s%s%s\0" % (node, realp1, p2, linknode, copyfrom)
 
         visited = set()
 
@@ -112,15 +112,15 @@ class remotefilelog(object):
             queue.append(p2)
             visited.add(p2)
 
-        ancestortext = ""
+        ancestortext = b""
 
         # add the ancestors in topological order
         while queue:
             c = queue.pop(0)
             pa1, pa2, ancestorlinknode, pacopyfrom = pancestors[c]
 
-            pacopyfrom = pacopyfrom or ''
-            ancestortext += "%s%s%s%s%s\0" % (
+            pacopyfrom = pacopyfrom or b''
+            ancestortext += b"%s%s%s%s%s\0" % (
                 c,
                 pa1,
                 pa2,
@@ -249,14 +249,14 @@ class remotefilelog(object):
     __bool__ = __nonzero__
 
     def __len__(self):
-        if self.filename == '.hgtags':
+        if self.filename == b'.hgtags':
             # The length of .hgtags is used to fast path tag checking.
             # remotefilelog doesn't support .hgtags since the entire .hgtags
             # history is needed.  Use the excludepattern setting to make
             # .hgtags a normal filelog.
             return 0
 
-        raise RuntimeError("len not supported")
+        raise RuntimeError(b"len not supported")
 
     def empty(self):
         return False
@@ -264,7 +264,7 @@ class remotefilelog(object):
     def flags(self, node):
         if isinstance(node, int):
             raise error.ProgrammingError(
-                'remotefilelog does not accept integer rev for flags'
+                b'remotefilelog does not accept integer rev for flags'
             )
         store = self.repo.contentstore
         return store.getmeta(self.filename, node).get(constants.METAKEYFLAG, 0)
@@ -338,7 +338,7 @@ class remotefilelog(object):
             node = bin(node)
         if len(node) != 20:
             raise error.LookupError(
-                node, self.filename, _('invalid lookup input')
+                node, self.filename, _(b'invalid lookup input')
             )
 
         return node
@@ -351,17 +351,17 @@ class remotefilelog(object):
         # This is a hack.
         if isinstance(rev, int):
             raise error.ProgrammingError(
-                'remotefilelog does not convert integer rev to node'
+                b'remotefilelog does not convert integer rev to node'
             )
         return rev
 
     def _processflags(self, text, flags, operation, raw=False):
         """deprecated entry point to access flag processors"""
-        msg = '_processflag(...) use the specialized variant'
-        util.nouideprecwarn(msg, '5.2', stacklevel=2)
+        msg = b'_processflag(...) use the specialized variant'
+        util.nouideprecwarn(msg, b'5.2', stacklevel=2)
         if raw:
             return text, flagutil.processflagsraw(self, text, flags)
-        elif operation == 'read':
+        elif operation == b'read':
             return flagutil.processflagsread(self, text, flags)
         else:  # write operation
             return flagutil.processflagswrite(self, text, flags)
@@ -373,10 +373,10 @@ class remotefilelog(object):
         hg clients.
         """
         if node == nullid:
-            return ""
+            return b""
         if len(node) != 20:
             raise error.LookupError(
-                node, self.filename, _('invalid revision input')
+                node, self.filename, _(b'invalid revision input')
             )
         if node == wdirid or node in wdirfilenodeids:
             raise error.WdirUnsupported
@@ -418,7 +418,7 @@ class remotefilelog(object):
         except KeyError:
             pass
 
-        raise error.LookupError(id, self.filename, _('no node'))
+        raise error.LookupError(id, self.filename, _(b'no node'))
 
     def ancestormap(self, node):
         return self.repo.metadatastore.getancestors(self.filename, node)

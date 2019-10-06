@@ -185,72 +185,74 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('remotefilelog', 'debug', default=False)
+configitem(b'remotefilelog', b'debug', default=False)
 
-configitem('remotefilelog', 'reponame', default='')
-configitem('remotefilelog', 'cachepath', default=None)
-configitem('remotefilelog', 'cachegroup', default=None)
-configitem('remotefilelog', 'cacheprocess', default=None)
-configitem('remotefilelog', 'cacheprocess.includepath', default=None)
-configitem("remotefilelog", "cachelimit", default="1000 GB")
+configitem(b'remotefilelog', b'reponame', default=b'')
+configitem(b'remotefilelog', b'cachepath', default=None)
+configitem(b'remotefilelog', b'cachegroup', default=None)
+configitem(b'remotefilelog', b'cacheprocess', default=None)
+configitem(b'remotefilelog', b'cacheprocess.includepath', default=None)
+configitem(b"remotefilelog", b"cachelimit", default=b"1000 GB")
 
 configitem(
-    'remotefilelog',
-    'fallbackpath',
+    b'remotefilelog',
+    b'fallbackpath',
     default=configitems.dynamicdefault,
-    alias=[('remotefilelog', 'fallbackrepo')],
+    alias=[(b'remotefilelog', b'fallbackrepo')],
 )
 
-configitem('remotefilelog', 'validatecachelog', default=None)
-configitem('remotefilelog', 'validatecache', default='on')
-configitem('remotefilelog', 'server', default=None)
-configitem('remotefilelog', 'servercachepath', default=None)
-configitem("remotefilelog", "serverexpiration", default=30)
-configitem('remotefilelog', 'backgroundrepack', default=False)
-configitem('remotefilelog', 'bgprefetchrevs', default=None)
-configitem('remotefilelog', 'pullprefetch', default=None)
-configitem('remotefilelog', 'backgroundprefetch', default=False)
-configitem('remotefilelog', 'prefetchdelay', default=120)
-configitem('remotefilelog', 'prefetchdays', default=14)
+configitem(b'remotefilelog', b'validatecachelog', default=None)
+configitem(b'remotefilelog', b'validatecache', default=b'on')
+configitem(b'remotefilelog', b'server', default=None)
+configitem(b'remotefilelog', b'servercachepath', default=None)
+configitem(b"remotefilelog", b"serverexpiration", default=30)
+configitem(b'remotefilelog', b'backgroundrepack', default=False)
+configitem(b'remotefilelog', b'bgprefetchrevs', default=None)
+configitem(b'remotefilelog', b'pullprefetch', default=None)
+configitem(b'remotefilelog', b'backgroundprefetch', default=False)
+configitem(b'remotefilelog', b'prefetchdelay', default=120)
+configitem(b'remotefilelog', b'prefetchdays', default=14)
 
-configitem('remotefilelog', 'getfilesstep', default=10000)
-configitem('remotefilelog', 'getfilestype', default='optimistic')
-configitem('remotefilelog', 'batchsize', configitems.dynamicdefault)
-configitem('remotefilelog', 'fetchwarning', default='')
+configitem(b'remotefilelog', b'getfilesstep', default=10000)
+configitem(b'remotefilelog', b'getfilestype', default=b'optimistic')
+configitem(b'remotefilelog', b'batchsize', configitems.dynamicdefault)
+configitem(b'remotefilelog', b'fetchwarning', default=b'')
 
-configitem('remotefilelog', 'includepattern', default=None)
-configitem('remotefilelog', 'excludepattern', default=None)
+configitem(b'remotefilelog', b'includepattern', default=None)
+configitem(b'remotefilelog', b'excludepattern', default=None)
 
-configitem('remotefilelog', 'gcrepack', default=False)
-configitem('remotefilelog', 'repackonhggc', default=False)
-configitem('repack', 'chainorphansbysize', default=True, experimental=True)
+configitem(b'remotefilelog', b'gcrepack', default=False)
+configitem(b'remotefilelog', b'repackonhggc', default=False)
+configitem(b'repack', b'chainorphansbysize', default=True, experimental=True)
 
-configitem('packs', 'maxpacksize', default=0)
-configitem('packs', 'maxchainlen', default=1000)
+configitem(b'packs', b'maxpacksize', default=0)
+configitem(b'packs', b'maxchainlen', default=1000)
 
-configitem('devel', 'remotefilelog.ensurestart', default=False)
+configitem(b'devel', b'remotefilelog.ensurestart', default=False)
 
 #  default TTL limit is 30 days
 _defaultlimit = 60 * 60 * 24 * 30
-configitem('remotefilelog', 'nodettl', default=_defaultlimit)
+configitem(b'remotefilelog', b'nodettl', default=_defaultlimit)
 
-configitem('remotefilelog', 'data.gencountlimit', default=2),
-configitem('remotefilelog', 'data.generations', default=['1GB', '100MB', '1MB'])
-configitem('remotefilelog', 'data.maxrepackpacks', default=50)
-configitem('remotefilelog', 'data.repackmaxpacksize', default='4GB')
-configitem('remotefilelog', 'data.repacksizelimit', default='100MB')
+configitem(b'remotefilelog', b'data.gencountlimit', default=2),
+configitem(
+    b'remotefilelog', b'data.generations', default=[b'1GB', b'100MB', b'1MB']
+)
+configitem(b'remotefilelog', b'data.maxrepackpacks', default=50)
+configitem(b'remotefilelog', b'data.repackmaxpacksize', default=b'4GB')
+configitem(b'remotefilelog', b'data.repacksizelimit', default=b'100MB')
 
-configitem('remotefilelog', 'history.gencountlimit', default=2),
-configitem('remotefilelog', 'history.generations', default=['100MB'])
-configitem('remotefilelog', 'history.maxrepackpacks', default=50)
-configitem('remotefilelog', 'history.repackmaxpacksize', default='400MB')
-configitem('remotefilelog', 'history.repacksizelimit', default='100MB')
+configitem(b'remotefilelog', b'history.gencountlimit', default=2),
+configitem(b'remotefilelog', b'history.generations', default=[b'100MB'])
+configitem(b'remotefilelog', b'history.maxrepackpacks', default=50)
+configitem(b'remotefilelog', b'history.repackmaxpacksize', default=b'400MB')
+configitem(b'remotefilelog', b'history.repacksizelimit', default=b'100MB')
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 repoclass = localrepo.localrepository
 repoclass._basesupported.add(constants.SHALLOWREPO_REQUIREMENT)
@@ -264,80 +266,80 @@ def uisetup(ui):
     """
     hg.wirepeersetupfuncs.append(fileserverclient.peersetup)
 
-    entry = extensions.wrapcommand(commands.table, 'clone', cloneshallow)
+    entry = extensions.wrapcommand(commands.table, b'clone', cloneshallow)
     entry[1].append(
         (
-            '',
-            'shallow',
+            b'',
+            b'shallow',
             None,
-            _("create a shallow clone which uses remote file " "history"),
+            _(b"create a shallow clone which uses remote file " b"history"),
         )
     )
 
     extensions.wrapcommand(
-        commands.table, 'debugindex', debugcommands.debugindex
+        commands.table, b'debugindex', debugcommands.debugindex
     )
     extensions.wrapcommand(
-        commands.table, 'debugindexdot', debugcommands.debugindexdot
+        commands.table, b'debugindexdot', debugcommands.debugindexdot
     )
-    extensions.wrapcommand(commands.table, 'log', log)
-    extensions.wrapcommand(commands.table, 'pull', pull)
+    extensions.wrapcommand(commands.table, b'log', log)
+    extensions.wrapcommand(commands.table, b'pull', pull)
 
     # Prevent 'hg manifest --all'
     def _manifest(orig, ui, repo, *args, **opts):
         if isenabled(repo) and opts.get(r'all'):
-            raise error.Abort(_("--all is not supported in a shallow repo"))
+            raise error.Abort(_(b"--all is not supported in a shallow repo"))
 
         return orig(ui, repo, *args, **opts)
 
-    extensions.wrapcommand(commands.table, "manifest", _manifest)
+    extensions.wrapcommand(commands.table, b"manifest", _manifest)
 
     # Wrap remotefilelog with lfs code
     def _lfsloaded(loaded=False):
         lfsmod = None
         try:
-            lfsmod = extensions.find('lfs')
+            lfsmod = extensions.find(b'lfs')
         except KeyError:
             pass
         if lfsmod:
             lfsmod.wrapfilelog(remotefilelog.remotefilelog)
             fileserverclient._lfsmod = lfsmod
 
-    extensions.afterloaded('lfs', _lfsloaded)
+    extensions.afterloaded(b'lfs', _lfsloaded)
 
     # debugdata needs remotefilelog.len to work
-    extensions.wrapcommand(commands.table, 'debugdata', debugdatashallow)
+    extensions.wrapcommand(commands.table, b'debugdata', debugdatashallow)
 
     changegroup.cgpacker = shallowbundle.shallowcg1packer
 
     extensions.wrapfunction(
-        changegroup, '_addchangegroupfiles', shallowbundle.addchangegroupfiles
+        changegroup, b'_addchangegroupfiles', shallowbundle.addchangegroupfiles
     )
     extensions.wrapfunction(
-        changegroup, 'makechangegroup', shallowbundle.makechangegroup
+        changegroup, b'makechangegroup', shallowbundle.makechangegroup
     )
-    extensions.wrapfunction(localrepo, 'makestore', storewrapper)
-    extensions.wrapfunction(exchange, 'pull', exchangepull)
-    extensions.wrapfunction(merge, 'applyupdates', applyupdates)
-    extensions.wrapfunction(merge, '_checkunknownfiles', checkunknownfiles)
-    extensions.wrapfunction(context.workingctx, '_checklookup', checklookup)
-    extensions.wrapfunction(scmutil, '_findrenames', findrenames)
+    extensions.wrapfunction(localrepo, b'makestore', storewrapper)
+    extensions.wrapfunction(exchange, b'pull', exchangepull)
+    extensions.wrapfunction(merge, b'applyupdates', applyupdates)
+    extensions.wrapfunction(merge, b'_checkunknownfiles', checkunknownfiles)
+    extensions.wrapfunction(context.workingctx, b'_checklookup', checklookup)
+    extensions.wrapfunction(scmutil, b'_findrenames', findrenames)
     extensions.wrapfunction(
-        copies, '_computeforwardmissing', computeforwardmissing
+        copies, b'_computeforwardmissing', computeforwardmissing
     )
-    extensions.wrapfunction(dispatch, 'runcommand', runcommand)
-    extensions.wrapfunction(repair, '_collectbrokencsets', _collectbrokencsets)
-    extensions.wrapfunction(context.changectx, 'filectx', filectx)
-    extensions.wrapfunction(context.workingctx, 'filectx', workingfilectx)
-    extensions.wrapfunction(patch, 'trydiff', trydiff)
-    extensions.wrapfunction(hg, 'verify', _verify)
-    scmutil.fileprefetchhooks.add('remotefilelog', _fileprefetchhook)
+    extensions.wrapfunction(dispatch, b'runcommand', runcommand)
+    extensions.wrapfunction(repair, b'_collectbrokencsets', _collectbrokencsets)
+    extensions.wrapfunction(context.changectx, b'filectx', filectx)
+    extensions.wrapfunction(context.workingctx, b'filectx', workingfilectx)
+    extensions.wrapfunction(patch, b'trydiff', trydiff)
+    extensions.wrapfunction(hg, b'verify', _verify)
+    scmutil.fileprefetchhooks.add(b'remotefilelog', _fileprefetchhook)
 
     # disappointing hacks below
-    extensions.wrapfunction(scmutil, 'getrenamedfn', getrenamedfn)
-    extensions.wrapfunction(revset, 'filelog', filelogrevset)
-    revset.symbols['filelog'] = revset.filelog
-    extensions.wrapfunction(cmdutil, 'walkfilerevs', walkfilerevs)
+    extensions.wrapfunction(scmutil, b'getrenamedfn', getrenamedfn)
+    extensions.wrapfunction(revset, b'filelog', filelogrevset)
+    revset.symbols[b'filelog'] = revset.filelog
+    extensions.wrapfunction(cmdutil, b'walkfilerevs', walkfilerevs)
 
 
 def cloneshallow(orig, ui, repo, *args, **opts):
@@ -366,7 +368,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
             else:
                 return orig(self, *args, **kwargs)
 
-        extensions.wrapfunction(exchange, 'pull', pull_shallow)
+        extensions.wrapfunction(exchange, b'pull', pull_shallow)
 
         # Wrap the stream logic to add requirements and to pass include/exclude
         # patterns around.
@@ -378,30 +380,34 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                 if constants.NETWORK_CAP_LEGACY_SSH_GETFILES in caps:
                     opts = {}
                     if repo.includepattern:
-                        opts[r'includepattern'] = '\0'.join(repo.includepattern)
+                        opts[r'includepattern'] = b'\0'.join(
+                            repo.includepattern
+                        )
                     if repo.excludepattern:
-                        opts[r'excludepattern'] = '\0'.join(repo.excludepattern)
-                    return remote._callstream('stream_out_shallow', **opts)
+                        opts[r'excludepattern'] = b'\0'.join(
+                            repo.excludepattern
+                        )
+                    return remote._callstream(b'stream_out_shallow', **opts)
                 else:
                     return orig()
 
-            extensions.wrapfunction(remote, 'stream_out', stream_out_shallow)
+            extensions.wrapfunction(remote, b'stream_out', stream_out_shallow)
 
         def stream_wrap(orig, op):
             setup_streamout(op.repo, op.remote)
             return orig(op)
 
         extensions.wrapfunction(
-            streamclone, 'maybeperformlegacystreamclone', stream_wrap
+            streamclone, b'maybeperformlegacystreamclone', stream_wrap
         )
 
         def canperformstreamclone(orig, pullop, bundle2=False):
             # remotefilelog is currently incompatible with the
             # bundle2 flavor of streamclones, so force us to use
             # v1 instead.
-            if 'v2' in pullop.remotebundle2caps.get('stream', []):
-                pullop.remotebundle2caps['stream'] = [
-                    c for c in pullop.remotebundle2caps['stream'] if c != 'v2'
+            if b'v2' in pullop.remotebundle2caps.get(b'stream', []):
+                pullop.remotebundle2caps[b'stream'] = [
+                    c for c in pullop.remotebundle2caps[b'stream'] if c != b'v2'
                 ]
             if bundle2:
                 return False, None
@@ -411,7 +417,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
             return supported, requirements
 
         extensions.wrapfunction(
-            streamclone, 'canperformstreamclone', canperformstreamclone
+            streamclone, b'canperformstreamclone', canperformstreamclone
         )
 
     try:
@@ -419,7 +425,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
     finally:
         if opts.get(r'shallow'):
             for r in repos:
-                if util.safehasattr(r, 'fileservice'):
+                if util.safehasattr(r, b'fileservice'):
                     r.fileservice.close()
 
 
@@ -437,14 +443,14 @@ def reposetup(ui, repo):
         return
 
     # put here intentionally bc doesnt work in uisetup
-    ui.setconfig('hooks', 'update.prefetch', wcpprefetch)
-    ui.setconfig('hooks', 'commit.prefetch', wcpprefetch)
+    ui.setconfig(b'hooks', b'update.prefetch', wcpprefetch)
+    ui.setconfig(b'hooks', b'commit.prefetch', wcpprefetch)
 
-    isserverenabled = ui.configbool('remotefilelog', 'server')
+    isserverenabled = ui.configbool(b'remotefilelog', b'server')
     isshallowclient = isenabled(repo)
 
     if isserverenabled and isshallowclient:
-        raise RuntimeError("Cannot be both a server and shallow client.")
+        raise RuntimeError(b"Cannot be both a server and shallow client.")
 
     if isshallowclient:
         setupclient(ui, repo)
@@ -481,7 +487,7 @@ def applyupdates(
     if isenabled(repo):
         manifest = mctx.manifest()
         files = []
-        for f, args, msg in actions['g']:
+        for f, args, msg in actions[b'g']:
             files.append((f, hex(manifest[f])))
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(files)
@@ -498,9 +504,9 @@ def checkunknownfiles(orig, repo, wctx, mctx, force, actions, *args, **kwargs):
         for f, (m, actionargs, msg) in actions.iteritems():
             if sparsematch and not sparsematch(f):
                 continue
-            if m in ('c', 'dc', 'cm'):
+            if m in (b'c', b'dc', b'cm'):
                 files.append((f, hex(mctx.filenode(f))))
-            elif m == 'dg':
+            elif m == b'dg':
                 f2 = actionargs[0]
                 files.append((f2, hex(mctx.filenode(f2))))
         # batch fetch the needed files from the server
@@ -526,7 +532,7 @@ def checklookup(orig, self, files):
 def findrenames(orig, repo, matcher, added, removed, *args, **kwargs):
     if isenabled(repo):
         files = []
-        pmf = repo['.'].manifest()
+        pmf = repo[b'.'].manifest()
         for f in removed:
             if f in pmf:
                 files.append((f, hex(pmf[f])))
@@ -713,7 +719,7 @@ def onetimeclientsetup(ui):
             )
 
     extensions.wrapfunction(
-        remotefilelog.remotefilelog, 'addrawrevision', addrawrevision
+        remotefilelog.remotefilelog, b'addrawrevision', addrawrevision
     )
 
     def changelogadd(orig, self, *args):
@@ -728,7 +734,7 @@ def onetimeclientsetup(ui):
                     log.addrawrevision(rt, tr, linknode, p1, p2, n, fl, c, m)
                 else:
                     raise error.ProgrammingError(
-                        'pending multiple integer revisions are not supported'
+                        b'pending multiple integer revisions are not supported'
                     )
         else:
             # "link" is actually wrong here (it is set to len(changelog))
@@ -736,12 +742,12 @@ def onetimeclientsetup(ui):
             # but still do a sanity check about pending multiple revisions
             if len(set(x[3] for x in pendingfilecommits)) > 1:
                 raise error.ProgrammingError(
-                    'pending multiple integer revisions are not supported'
+                    b'pending multiple integer revisions are not supported'
                 )
         del pendingfilecommits[:]
         return node
 
-    extensions.wrapfunction(changelog.changelog, 'add', changelogadd)
+    extensions.wrapfunction(changelog.changelog, b'add', changelogadd)
 
 
 def getrenamedfn(orig, repo, endrev=None):
@@ -780,16 +786,16 @@ def walkfilerevs(orig, repo, match, follow, revs, fncache):
     # remotefilelog's can't be walked in rev order, so throw.
     # The caller will see the exception and walk the commit tree instead.
     if not follow:
-        raise cmdutil.FileWalkError("Cannot walk via filelog")
+        raise cmdutil.FileWalkError(b"Cannot walk via filelog")
 
     wanted = set()
     minrev, maxrev = min(revs), max(revs)
 
-    pctx = repo['.']
+    pctx = repo[b'.']
     for filename in match.files():
         if filename not in pctx:
             raise error.Abort(
-                _('cannot follow file not in parent ' 'revision: "%s"')
+                _(b'cannot follow file not in parent ' b'revision: "%s"')
                 % filename
             )
         fctx = pctx[filename]
@@ -821,9 +827,9 @@ def filelogrevset(orig, repo, subset, x):
         return orig(repo, subset, x)
 
     # i18n: "filelog" is a keyword
-    pat = revset.getstring(x, _("filelog requires a pattern"))
+    pat = revset.getstring(x, _(b"filelog requires a pattern"))
     m = match.match(
-        repo.root, repo.getcwd(), [pat], default='relpath', ctx=repo[None]
+        repo.root, repo.getcwd(), [pat], default=b'relpath', ctx=repo[None]
     )
     s = set()
 
@@ -848,7 +854,7 @@ def filelogrevset(orig, repo, subset, x):
     return smartset.baseset([r for r in subset if r in s])
 
 
-@command('gc', [], _('hg gc [REPO...]'), norepo=True)
+@command(b'gc', [], _(b'hg gc [REPO...]'), norepo=True)
 def gc(ui, *args, **opts):
     '''garbage collect the client and server filelog caches
     '''
@@ -861,7 +867,7 @@ def gc(ui, *args, **opts):
 
     # get repo client and server cache
     repopaths = []
-    pwd = ui.environ.get('PWD')
+    pwd = ui.environ.get(b'PWD')
     if pwd:
         repopaths.append(pwd)
 
@@ -889,12 +895,12 @@ def gc(ui, *args, **opts):
 
 def gcclient(ui, cachepath):
     # get list of repos that use this cache
-    repospath = os.path.join(cachepath, 'repos')
+    repospath = os.path.join(cachepath, b'repos')
     if not os.path.exists(repospath):
-        ui.warn(_("no known cache at %s\n") % cachepath)
+        ui.warn(_(b"no known cache at %s\n") % cachepath)
         return
 
-    reposfile = open(repospath, 'rb')
+    reposfile = open(repospath, b'rb')
     repos = {r[:-1] for r in reposfile.readlines()}
     reposfile.close()
 
@@ -907,7 +913,7 @@ def gcclient(ui, cachepath):
 
     count = 0
     progress = ui.makeprogress(
-        _("analyzing repositories"), unit="repos", total=len(repos)
+        _(b"analyzing repositories"), unit=b"repos", total=len(repos)
     )
     for path in repos:
         progress.update(count)
@@ -915,7 +921,7 @@ def gcclient(ui, cachepath):
         try:
             path = ui.expandpath(os.path.normpath(path))
         except TypeError as e:
-            ui.warn(_("warning: malformed path: %r:%s\n") % (path, e))
+            ui.warn(_(b"warning: malformed path: %r:%s\n") % (path, e))
             traceback.print_exc()
             continue
         try:
@@ -932,15 +938,17 @@ def gcclient(ui, cachepath):
         if not isenabled(repo):
             continue
 
-        if not util.safehasattr(repo, 'name'):
-            ui.warn(_("repo %s is a misconfigured remotefilelog repo\n") % path)
+        if not util.safehasattr(repo, b'name'):
+            ui.warn(
+                _(b"repo %s is a misconfigured remotefilelog repo\n") % path
+            )
             continue
 
         # If garbage collection on repack and repack on hg gc are enabled
         # then loose files are repacked and garbage collected.
         # Otherwise regular garbage collection is performed.
-        repackonhggc = repo.ui.configbool('remotefilelog', 'repackonhggc')
-        gcrepack = repo.ui.configbool('remotefilelog', 'gcrepack')
+        repackonhggc = repo.ui.configbool(b'remotefilelog', b'repackonhggc')
+        gcrepack = repo.ui.configbool(b'remotefilelog', b'gcrepack')
         if repackonhggc and gcrepack:
             try:
                 repackmod.incrementalrepack(repo)
@@ -966,8 +974,8 @@ def gcclient(ui, cachepath):
     # write list of valid repos back
     oldumask = os.umask(0o002)
     try:
-        reposfile = open(repospath, 'wb')
-        reposfile.writelines([("%s\n" % r) for r in validrepos])
+        reposfile = open(repospath, b'wb')
+        reposfile.writelines([(b"%s\n" % r) for r in validrepos])
         reposfile.close()
     finally:
         os.umask(oldumask)
@@ -976,7 +984,7 @@ def gcclient(ui, cachepath):
     if sharedcache is not None:
         sharedcache.gc(keepkeys)
     elif not filesrepacked:
-        ui.warn(_("warning: no valid repos in repofile\n"))
+        ui.warn(_(b"warning: no valid repos in repofile\n"))
 
 
 def log(orig, ui, repo, *pats, **opts):
@@ -995,7 +1003,7 @@ def log(orig, ui, repo, *pats, **opts):
         # If this is a non-follow log without any revs specified, recommend that
         # the user add -f to speed it up.
         if not follow and not revs:
-            match = scmutil.match(repo['.'], pats, pycompat.byteskwargs(opts))
+            match = scmutil.match(repo[b'.'], pats, pycompat.byteskwargs(opts))
             isfile = not match.anypats()
             if isfile:
                 for file in match.files():
@@ -1006,8 +1014,8 @@ def log(orig, ui, repo, *pats, **opts):
             if isfile:
                 ui.warn(
                     _(
-                        "warning: file log can be slow on large repos - "
-                        + "use -f to speed it up\n"
+                        b"warning: file log can be slow on large repos - "
+                        + b"use -f to speed it up\n"
                     )
                 )
 
@@ -1019,9 +1027,9 @@ def revdatelimit(ui, revset):
     are included. The default value is set to 14 days. If 'prefetchdays' is set
     to zero or negative value then date restriction is not applied.
     """
-    days = ui.configint('remotefilelog', 'prefetchdays')
+    days = ui.configint(b'remotefilelog', b'prefetchdays')
     if days > 0:
-        revset = '(%s) & date(-%s)' % (revset, days)
+        revset = b'(%s) & date(-%s)' % (revset, days)
     return revset
 
 
@@ -1030,11 +1038,11 @@ def readytofetch(repo):
     This only relates to prefetches after operations that change the working
     copy parent. Default delay between background prefetches is 2 minutes.
     """
-    timeout = repo.ui.configint('remotefilelog', 'prefetchdelay')
-    fname = repo.vfs.join('lastprefetch')
+    timeout = repo.ui.configint(b'remotefilelog', b'prefetchdelay')
+    fname = repo.vfs.join(b'lastprefetch')
 
     ready = False
-    with open(fname, 'a'):
+    with open(fname, b'a'):
         # the with construct above is used to avoid race conditions
         modtime = os.path.getmtime(fname)
         if (time.time() - modtime) > timeout:
@@ -1049,18 +1057,18 @@ def wcpprefetch(ui, repo, **kwargs):
     Does background repack if backgroundrepack flag is set in config.
     """
     shallow = isenabled(repo)
-    bgprefetchrevs = ui.config('remotefilelog', 'bgprefetchrevs')
+    bgprefetchrevs = ui.config(b'remotefilelog', b'bgprefetchrevs')
     isready = readytofetch(repo)
 
     if not (shallow and bgprefetchrevs and isready):
         return
 
-    bgrepack = repo.ui.configbool('remotefilelog', 'backgroundrepack')
+    bgrepack = repo.ui.configbool(b'remotefilelog', b'backgroundrepack')
     # update a revset with a date limit
     bgprefetchrevs = revdatelimit(ui, bgprefetchrevs)
 
     def anon():
-        if util.safehasattr(repo, 'ranprefetch') and repo.ranprefetch:
+        if util.safehasattr(repo, b'ranprefetch') and repo.ranprefetch:
             return
         repo.ranprefetch = True
         repo.backgroundprefetch(bgprefetchrevs, repack=bgrepack)
@@ -1073,15 +1081,15 @@ def pull(orig, ui, repo, *pats, **opts):
 
     if isenabled(repo):
         # prefetch if it's configured
-        prefetchrevset = ui.config('remotefilelog', 'pullprefetch')
-        bgrepack = repo.ui.configbool('remotefilelog', 'backgroundrepack')
-        bgprefetch = repo.ui.configbool('remotefilelog', 'backgroundprefetch')
-        ensurestart = repo.ui.configbool('devel', 'remotefilelog.ensurestart')
+        prefetchrevset = ui.config(b'remotefilelog', b'pullprefetch')
+        bgrepack = repo.ui.configbool(b'remotefilelog', b'backgroundrepack')
+        bgprefetch = repo.ui.configbool(b'remotefilelog', b'backgroundprefetch')
+        ensurestart = repo.ui.configbool(b'devel', b'remotefilelog.ensurestart')
 
         if prefetchrevset:
-            ui.status(_("prefetching file contents\n"))
+            ui.status(_(b"prefetching file contents\n"))
             revs = scmutil.revrange(repo, [prefetchrevset])
-            base = repo['.'].rev()
+            base = repo[b'.'].rev()
             if bgprefetch:
                 repo.backgroundprefetch(
                     prefetchrevset, repack=bgrepack, ensurestart=ensurestart
@@ -1113,10 +1121,10 @@ def exchangepull(orig, repo, remote, *args, **kwargs):
             source, heads=heads, common=common, bundlecaps=bundlecaps, **kwargs
         )
 
-    if util.safehasattr(remote, '_callstream'):
+    if util.safehasattr(remote, b'_callstream'):
         remote._localrepo = repo
-    elif util.safehasattr(remote, 'getbundle'):
-        extensions.wrapfunction(remote, 'getbundle', localgetbundle)
+    elif util.safehasattr(remote, b'getbundle'):
+        extensions.wrapfunction(remote, b'getbundle', localgetbundle)
 
     return orig(repo, remote, *args, **kwargs)
 
@@ -1137,9 +1145,9 @@ def _fileprefetchhook(repo, revs, match):
 
 
 @command(
-    'debugremotefilelog',
-    [('d', 'decompress', None, _('decompress the filelog first')),],
-    _('hg debugremotefilelog <path>'),
+    b'debugremotefilelog',
+    [(b'd', b'decompress', None, _(b'decompress the filelog first')),],
+    _(b'hg debugremotefilelog <path>'),
     norepo=True,
 )
 def debugremotefilelog(ui, path, **opts):
@@ -1147,9 +1155,9 @@ def debugremotefilelog(ui, path, **opts):
 
 
 @command(
-    'verifyremotefilelog',
-    [('d', 'decompress', None, _('decompress the filelogs first')),],
-    _('hg verifyremotefilelogs <directory>'),
+    b'verifyremotefilelog',
+    [(b'd', b'decompress', None, _(b'decompress the filelogs first')),],
+    _(b'hg verifyremotefilelogs <directory>'),
     norepo=True,
 )
 def verifyremotefilelog(ui, path, **opts):
@@ -1157,24 +1165,24 @@ def verifyremotefilelog(ui, path, **opts):
 
 
 @command(
-    'debugdatapack',
+    b'debugdatapack',
     [
-        ('', 'long', None, _('print the long hashes')),
-        ('', 'node', '', _('dump the contents of node'), 'NODE'),
+        (b'', b'long', None, _(b'print the long hashes')),
+        (b'', b'node', b'', _(b'dump the contents of node'), b'NODE'),
     ],
-    _('hg debugdatapack <paths>'),
+    _(b'hg debugdatapack <paths>'),
     norepo=True,
 )
 def debugdatapack(ui, *paths, **opts):
     return debugcommands.debugdatapack(ui, *paths, **opts)
 
 
-@command('debughistorypack', [], _('hg debughistorypack <path>'), norepo=True)
+@command(b'debughistorypack', [], _(b'hg debughistorypack <path>'), norepo=True)
 def debughistorypack(ui, path, **opts):
     return debugcommands.debughistorypack(ui, path)
 
 
-@command('debugkeepset', [], _('hg debugkeepset'))
+@command(b'debugkeepset', [], _(b'hg debugkeepset'))
 def debugkeepset(ui, repo, **opts):
     # The command is used to measure keepset computation time
     def keyfn(fname, fnode):
@@ -1184,48 +1192,48 @@ def debugkeepset(ui, repo, **opts):
     return
 
 
-@command('debugwaitonrepack', [], _('hg debugwaitonrepack'))
+@command(b'debugwaitonrepack', [], _(b'hg debugwaitonrepack'))
 def debugwaitonrepack(ui, repo, **opts):
     return debugcommands.debugwaitonrepack(repo)
 
 
-@command('debugwaitonprefetch', [], _('hg debugwaitonprefetch'))
+@command(b'debugwaitonprefetch', [], _(b'hg debugwaitonprefetch'))
 def debugwaitonprefetch(ui, repo, **opts):
     return debugcommands.debugwaitonprefetch(repo)
 
 
 def resolveprefetchopts(ui, opts):
-    if not opts.get('rev'):
-        revset = ['.', 'draft()']
+    if not opts.get(b'rev'):
+        revset = [b'.', b'draft()']
 
-        prefetchrevset = ui.config('remotefilelog', 'pullprefetch', None)
+        prefetchrevset = ui.config(b'remotefilelog', b'pullprefetch', None)
         if prefetchrevset:
-            revset.append('(%s)' % prefetchrevset)
-        bgprefetchrevs = ui.config('remotefilelog', 'bgprefetchrevs', None)
+            revset.append(b'(%s)' % prefetchrevset)
+        bgprefetchrevs = ui.config(b'remotefilelog', b'bgprefetchrevs', None)
         if bgprefetchrevs:
-            revset.append('(%s)' % bgprefetchrevs)
-        revset = '+'.join(revset)
+            revset.append(b'(%s)' % bgprefetchrevs)
+        revset = b'+'.join(revset)
 
         # update a revset with a date limit
         revset = revdatelimit(ui, revset)
 
-        opts['rev'] = [revset]
+        opts[b'rev'] = [revset]
 
-    if not opts.get('base'):
-        opts['base'] = None
+    if not opts.get(b'base'):
+        opts[b'base'] = None
 
     return opts
 
 
 @command(
-    'prefetch',
+    b'prefetch',
     [
-        ('r', 'rev', [], _('prefetch the specified revisions'), _('REV')),
-        ('', 'repack', False, _('run repack after prefetch')),
-        ('b', 'base', '', _("rev that is assumed to already be local")),
+        (b'r', b'rev', [], _(b'prefetch the specified revisions'), _(b'REV')),
+        (b'', b'repack', False, _(b'run repack after prefetch')),
+        (b'b', b'base', b'', _(b"rev that is assumed to already be local")),
     ]
     + commands.walkopts,
-    _('hg prefetch [OPTIONS] [FILE...]'),
+    _(b'hg prefetch [OPTIONS] [FILE...]'),
 )
 def prefetch(ui, repo, *pats, **opts):
     """prefetch file revisions from the server
@@ -1239,39 +1247,39 @@ def prefetch(ui, repo, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     if not isenabled(repo):
-        raise error.Abort(_("repo is not shallow"))
+        raise error.Abort(_(b"repo is not shallow"))
 
     opts = resolveprefetchopts(ui, opts)
-    revs = scmutil.revrange(repo, opts.get('rev'))
-    repo.prefetch(revs, opts.get('base'), pats, opts)
+    revs = scmutil.revrange(repo, opts.get(b'rev'))
+    repo.prefetch(revs, opts.get(b'base'), pats, opts)
 
-    ensurestart = repo.ui.configbool('devel', 'remotefilelog.ensurestart')
+    ensurestart = repo.ui.configbool(b'devel', b'remotefilelog.ensurestart')
 
     # Run repack in background
-    if opts.get('repack'):
+    if opts.get(b'repack'):
         repackmod.backgroundrepack(
             repo, incremental=True, ensurestart=ensurestart
         )
 
 
 @command(
-    'repack',
+    b'repack',
     [
-        ('', 'background', None, _('run in a background process'), None),
-        ('', 'incremental', None, _('do an incremental repack'), None),
+        (b'', b'background', None, _(b'run in a background process'), None),
+        (b'', b'incremental', None, _(b'do an incremental repack'), None),
         (
-            '',
-            'packsonly',
+            b'',
+            b'packsonly',
             None,
-            _('only repack packs (skip loose objects)'),
+            _(b'only repack packs (skip loose objects)'),
             None,
         ),
     ],
-    _('hg repack [OPTIONS]'),
+    _(b'hg repack [OPTIONS]'),
 )
 def repack_(ui, repo, *pats, **opts):
     if opts.get(r'background'):
-        ensurestart = repo.ui.configbool('devel', 'remotefilelog.ensurestart')
+        ensurestart = repo.ui.configbool(b'devel', b'remotefilelog.ensurestart')
         repackmod.backgroundrepack(
             repo,
             incremental=opts.get(r'incremental'),
@@ -1280,7 +1288,7 @@ def repack_(ui, repo, *pats, **opts):
         )
         return
 
-    options = {'packsonly': opts.get(r'packsonly')}
+    options = {b'packsonly': opts.get(r'packsonly')}
 
     try:
         if opts.get(r'incremental'):
@@ -1290,4 +1298,4 @@ def repack_(ui, repo, *pats, **opts):
     except repackmod.RepackAlreadyRunning as ex:
         # Don't propogate the exception if the repack is already in
         # progress, since we want the command to exit 0.
-        repo.ui.warn('%s\n' % ex)
+        repo.ui.warn(b'%s\n' % ex)

@@ -73,7 +73,7 @@ class LookupError(RevlogError, KeyError):
             from .node import short
 
             name = short(name)
-        RevlogError.__init__(self, '%s@%s: %s' % (index, name, message))
+        RevlogError.__init__(self, b'%s@%s: %s' % (index, name, message))
 
     def __bytes__(self):
         return RevlogError.__bytes__(self)
@@ -150,7 +150,7 @@ class ResponseExpected(Abort):
     def __init__(self):
         from .i18n import _
 
-        Abort.__init__(self, _('response expected'))
+        Abort.__init__(self, _(b'response expected'))
 
 
 class OutOfBandError(Hint, Exception):
@@ -175,7 +175,7 @@ class UnknownIdentifier(ParseError):
     def __init__(self, function, symbols):
         from .i18n import _
 
-        ParseError.__init__(self, _("unknown identifier: %s") % function)
+        ParseError.__init__(self, _(b"unknown identifier: %s") % function)
         self.function = function
         self.symbols = symbols
 
@@ -214,13 +214,13 @@ class UnsupportedMergeRecords(Abort):
         from .i18n import _
 
         self.recordtypes = sorted(recordtypes)
-        s = ' '.join(self.recordtypes)
+        s = b' '.join(self.recordtypes)
         Abort.__init__(
             self,
-            _('unsupported merge state records: %s') % s,
+            _(b'unsupported merge state records: %s') % s,
             hint=_(
-                'see https://mercurial-scm.org/wiki/MergeStateRecords for '
-                'more information'
+                b'see https://mercurial-scm.org/wiki/MergeStateRecords for '
+                b'more information'
             ),
         )
 
@@ -244,7 +244,7 @@ class LockError(IOError):
 
 class LockHeld(LockError):
     def __init__(self, errno, filename, desc, locker):
-        LockError.__init__(self, errno, 'Lock held', filename, desc)
+        LockError.__init__(self, errno, b'Lock held', filename, desc)
         self.locker = locker
 
 
@@ -322,7 +322,7 @@ class BundleUnknownFeatureError(BundleValueError):
         self.params = params
         self.values = values
         if self.parttype is None:
-            msg = 'Stream Parameter'
+            msg = b'Stream Parameter'
         else:
             msg = parttype
         entries = self.params
@@ -334,9 +334,9 @@ class BundleUnknownFeatureError(BundleValueError):
                 if val is None:
                     entries.append(val)
                 else:
-                    entries.append("%s=%r" % (par, pycompat.maybebytestr(val)))
+                    entries.append(b"%s=%r" % (par, pycompat.maybebytestr(val)))
         if entries:
-            msg = '%s - %s' % (msg, ', '.join(entries))
+            msg = b'%s - %s' % (msg, b', '.join(entries))
         ValueError.__init__(self, msg)
 
 
@@ -360,7 +360,7 @@ class PushkeyFailed(Abort):
         self.ret = ret
         # no i18n expected to be processed into a better message
         Abort.__init__(
-            self, 'failed to update value for "%s/%s"' % (namespace, key)
+            self, b'failed to update value for "%s/%s"' % (namespace, key)
         )
 
 
@@ -373,7 +373,7 @@ class CensoredNodeError(StorageError):
     def __init__(self, filename, node, tombstone):
         from .node import short
 
-        StorageError.__init__(self, '%s:%s' % (filename, short(node)))
+        StorageError.__init__(self, b'%s:%s' % (filename, short(node)))
         self.tombstone = tombstone
 
 

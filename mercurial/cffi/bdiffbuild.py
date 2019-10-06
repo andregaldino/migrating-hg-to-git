@@ -5,10 +5,10 @@ import os
 
 ffi = cffi.FFI()
 with open(
-    os.path.join(os.path.join(os.path.dirname(__file__), '..'), 'bdiff.c')
+    os.path.join(os.path.join(os.path.dirname(__file__), b'..'), b'bdiff.c')
 ) as f:
     ffi.set_source(
-        "mercurial.cffi._bdiff", f.read(), include_dirs=['mercurial']
+        b"mercurial.cffi._bdiff", f.read(), include_dirs=[b'mercurial']
     )
 ffi.cdef(
     """

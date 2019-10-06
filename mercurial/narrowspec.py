@@ -19,9 +19,9 @@ from . import (
 )
 
 # The file in .hg/store/ that indicates which paths exit in the store
-FILENAME = 'narrowspec'
+FILENAME = b'narrowspec'
 # The file in .hg/ that indicates which paths exit in the dirstate
-DIRSTATE_FILENAME = 'narrowspec.dirstate'
+DIRSTATE_FILENAME = b'narrowspec.dirstate'
 
 # Pattern prefixes that are allowed in narrow patterns. This list MUST
 # only contain patterns that are fast and safe to evaluate. Keep in mind
@@ -40,7 +40,7 @@ def normalizesplitpattern(kind, pat):
 
     Returns a tuple with the normalized kind and normalized pattern.
     """
-    pat = pat.rstrip('/')
+    pat = pat.rstrip(b'/')
     _validatepattern(pat)
     return kind, pat
 
@@ -50,7 +50,7 @@ def _numlines(s):
     # We use splitlines because it is Unicode-friendly and thus Python 3
     # compatible. However, it does not count empty lines at the end, so trick
     # it by adding a character at the end.
-    return len((s + 'x').splitlines())
+    return len((s + b'x').splitlines())
 
 
 def _validatepattern(pat):
@@ -63,20 +63,22 @@ def _validatepattern(pat):
     # We use newlines as separators in the narrowspec file, so don't allow them
     # in patterns.
     if _numlines(pat) > 1:
-        raise error.Abort(_('newlines are not allowed in narrowspec paths'))
+        raise error.Abort(_(b'newlines are not allowed in narrowspec paths'))
 
-    components = pat.split('/')
-    if '.' in components or '..' in components:
-        raise error.Abort(_('"." and ".." are not allowed in narrowspec paths'))
+    components = pat.split(b'/')
+    if b'.' in components or b'..' in components:
+        raise error.Abort(
+            _(b'"." and ".." are not allowed in narrowspec paths')
+        )
 
 
-def normalizepattern(pattern, defaultkind='path'):
+def normalizepattern(pattern, defaultkind=b'path'):
     """Returns the normalized version of a text-format pattern.
 
     If the pattern has no kind, the default will be added.
     """
     kind, pat = matchmod._patsplit(pattern, defaultkind)
-    return '%s:%s' % normalizesplitpattern(kind, pat)
+    return b'%s:%s' % normalizesplitpattern(kind, pat)
 
 
 def parsepatterns(pats):
@@ -107,7 +109,7 @@ def validatepatterns(pats):
     """
     if not isinstance(pats, set):
         raise error.ProgrammingError(
-            'narrow patterns should be a set; ' 'got %r' % pats
+            b'narrow patterns should be a set; ' b'got %r' % pats
         )
 
     for pat in pats:
@@ -115,22 +117,22 @@ def validatepatterns(pats):
             # Use a Mercurial exception because this can happen due to user
             # bugs (e.g. manually updating spec file).
             raise error.Abort(
-                _('invalid prefix on narrow pattern: %s') % pat,
+                _(b'invalid prefix on narrow pattern: %s') % pat,
                 hint=_(
-                    'narrow patterns must begin with one of '
-                    'the following: %s'
+                    b'narrow patterns must begin with one of '
+                    b'the following: %s'
                 )
-                % ', '.join(VALID_PREFIXES),
+                % b', '.join(VALID_PREFIXES),
             )
 
 
 def format(includes, excludes):
-    output = '[include]\n'
+    output = b'[include]\n'
     for i in sorted(includes - excludes):
-        output += i + '\n'
-    output += '[exclude]\n'
+        output += i + b'\n'
+    output += b'[exclude]\n'
     for e in sorted(excludes):
-        output += e + '\n'
+        output += e + b'\n'
     return output
 
 
@@ -141,18 +143,18 @@ def match(root, include=None, exclude=None):
         # the nevermatcher.
         return matchmod.never()
     return matchmod.match(
-        root, '', [], include=include or [], exclude=exclude or []
+        root, b'', [], include=include or [], exclude=exclude or []
     )
 
 
 def parseconfig(ui, spec):
     # maybe we should care about the profiles returned too
-    includepats, excludepats, profiles = sparse.parseconfig(ui, spec, 'narrow')
+    includepats, excludepats, profiles = sparse.parseconfig(ui, spec, b'narrow')
     if profiles:
         raise error.Abort(
             _(
-                "including other spec files using '%include' is not"
-                " supported in narrowspec"
+                b"including other spec files using '%include' is not"
+                b" supported in narrowspec"
             )
         )
 
@@ -251,7 +253,7 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     invalid_includes = []
     if not req_includes:
         res_includes = set(repo_includes)
-    elif 'path:.' not in repo_includes:
+    elif b'path:.' not in repo_includes:
         res_includes = []
         for req_include in req_includes:
             req_include = util.expandpath(util.normpath(req_include))
@@ -260,14 +262,14 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
                 continue
             valid = False
             for repo_include in repo_includes:
-                if req_include.startswith(repo_include + '/'):
+                if req_include.startswith(repo_include + b'/'):
                     valid = True
                     res_includes.append(req_include)
                     break
             if not valid:
                 invalid_includes.append(req_include)
         if len(res_includes) == 0:
-            res_excludes = {'path:.'}
+            res_excludes = {b'path:.'}
         else:
             res_includes = set(res_includes)
     else:
@@ -285,15 +287,15 @@ def _deletecleanfiles(repo, files):
 def _writeaddedfiles(repo, pctx, files):
     actions = merge.emptyactions()
     addgaction = actions[merge.ACTION_GET].append
-    mf = repo['.'].manifest()
+    mf = repo[b'.'].manifest()
     for f in files:
         if not repo.wvfs.exists(f):
-            addgaction((f, (mf.flags(f), False), "narrowspec updated"))
+            addgaction((f, (mf.flags(f), False), b"narrowspec updated"))
     merge.applyupdates(
         repo,
         actions,
         wctx=repo[None],
-        mctx=repo['.'],
+        mctx=repo[b'.'],
         overwrite=False,
         wantfiledata=False,
     )
@@ -307,8 +309,8 @@ def checkworkingcopynarrowspec(repo):
     wcspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     if wcspec != storespec:
         raise error.Abort(
-            _("working copy's narrowspec is stale"),
-            hint=_("run 'hg tracked --update-working-copy'"),
+            _(b"working copy's narrowspec is stale"),
+            hint=_(b"run 'hg tracked --update-working-copy'"),
         )
 
 
@@ -343,15 +345,17 @@ def updateworkingcopy(repo, assumeclean=False):
     _deletecleanfiles(repo, clean)
     uipathfn = scmutil.getuipathfn(repo)
     for f in sorted(trackeddirty):
-        repo.ui.status(_('not deleting possibly dirty file %s\n') % uipathfn(f))
+        repo.ui.status(
+            _(b'not deleting possibly dirty file %s\n') % uipathfn(f)
+        )
     for f in sorted(status.unknown):
-        repo.ui.status(_('not deleting unknown file %s\n') % uipathfn(f))
+        repo.ui.status(_(b'not deleting unknown file %s\n') % uipathfn(f))
     for f in sorted(status.ignored):
-        repo.ui.status(_('not deleting ignored file %s\n') % uipathfn(f))
+        repo.ui.status(_(b'not deleting ignored file %s\n') % uipathfn(f))
     for f in clean + trackeddirty:
         ds.drop(f)
 
-    pctx = repo['.']
+    pctx = repo[b'.']
     newfiles = [f for f in pctx.manifest().walk(addedmatch) if f not in ds]
     for f in newfiles:
         ds.normallookup(f)

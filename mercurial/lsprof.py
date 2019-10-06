@@ -8,7 +8,7 @@ Profiler = _lsprof.Profiler
 # PyPy doesn't expose profiler_entry from the module.
 profiler_entry = getattr(_lsprof, 'profiler_entry', None)
 
-__all__ = ['profile', 'Stats']
+__all__ = [b'profile', b'Stats']
 
 
 def profile(f, *args, **kwds):
@@ -33,9 +33,9 @@ class Stats(object):
         # profiler_entries isn't defined when running under PyPy.
         if profiler_entry:
             if crit not in profiler_entry.__dict__:
-                raise ValueError("Can't sort by %s" % crit)
+                raise ValueError(b"Can't sort by %s" % crit)
         elif self.data and not getattr(self.data[0], crit, None):
-            raise ValueError("Can't sort by %s" % crit)
+            raise ValueError(b"Can't sort by %s" % crit)
 
         self.data.sort(key=lambda x: getattr(x, crit), reverse=True)
         for e in self.data:
@@ -49,16 +49,16 @@ class Stats(object):
         d = self.data
         if top is not None:
             d = d[:top]
-        cols = "% 12d %12d %11.4f %11.4f   %s\n"
-        hcols = "% 12s %12s %12s %12s %s\n"
+        cols = b"% 12d %12d %11.4f %11.4f   %s\n"
+        hcols = b"% 12s %12s %12s %12s %s\n"
         file.write(
             hcols
             % (
-                "CallCount",
-                "Recursive",
-                "Total(s)",
-                "Inline(s)",
-                "module:lineno(function)",
+                b"CallCount",
+                b"Recursive",
+                b"Total(s)",
+                b"Inline(s)",
+                b"module:lineno(function)",
             )
         )
         count = 0
@@ -86,7 +86,7 @@ class Stats(object):
                             se.reccallcount,
                             se.totaltime,
                             se.inlinetime,
-                            "    %s" % label(se.code),
+                            b"    %s" % label(se.code),
                         )
                     )
                     count += 1
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     sys.argv = sys.argv[1:]
     if not sys.argv:
-        print("usage: lsprof.py <script> <arguments...>", file=sys.stderr)
+        print(b"usage: lsprof.py <script> <arguments...>", file=sys.stderr)
         sys.exit(2)
     sys.path.insert(0, os.path.abspath(os.path.dirname(sys.argv[0])))
     stats = profile(execfile, sys.argv[0], globals(), locals())

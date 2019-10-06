@@ -58,14 +58,14 @@ def redirecttargetsupported(ui, target):
     """
     if target.get(b'protocol') not in SUPPORTED_REDIRECT_PROTOCOLS:
         ui.note(
-            _('(remote redirect target %s uses unsupported protocol: %s)\n')
+            _(b'(remote redirect target %s uses unsupported protocol: %s)\n')
             % (target[b'name'], target.get(b'protocol', b''))
         )
         return False
 
     if target.get(b'snirequired') and not sslutil.hassni:
         ui.note(
-            _('(redirect target %s requires SNI, which is unsupported)\n')
+            _(b'(redirect target %s requires SNI, which is unsupported)\n')
             % target[b'name']
         )
         return False
@@ -81,14 +81,14 @@ def redirecttargetsupported(ui, target):
         if not tlsversions & supported:
             ui.note(
                 _(
-                    '(remote redirect target %s requires unsupported TLS '
-                    'versions: %s)\n'
+                    b'(remote redirect target %s requires unsupported TLS '
+                    b'versions: %s)\n'
                 )
                 % (target[b'name'], b', '.join(sorted(tlsversions)))
             )
             return False
 
-    ui.note(_('(remote redirect target %s is compatible)\n') % target[b'name'])
+    ui.note(_(b'(remote redirect target %s is compatible)\n') % target[b'name'])
 
     return True
 
@@ -181,9 +181,9 @@ class commandresponse(object):
                 if self._redirect:
                     raise error.Abort(
                         _(
-                            'received unexpected response data '
-                            'after content redirect; the remote is '
-                            'buggy'
+                            b'received unexpected response data '
+                            b'after content redirect; the remote is '
+                            b'buggy'
                         )
                     )
 
@@ -215,9 +215,9 @@ class commandresponse(object):
             )
             return
 
-        atoms = [{'msg': o[b'error'][b'message']}]
+        atoms = [{b'msg': o[b'error'][b'message']}]
         if b'args' in o[b'error']:
-            atoms[0]['args'] = o[b'error'][b'args']
+            atoms[0][b'args'] = o[b'error'][b'args']
 
         raise error.RepoError(formatrichmessage(atoms))
 
@@ -293,8 +293,8 @@ class clienthandler(object):
             command, args, redirect=redirect
         )
 
-        if action != 'noop':
-            raise error.ProgrammingError('%s not yet supported' % action)
+        if action != b'noop':
+            raise error.ProgrammingError(b'%s not yet supported' % action)
 
         rid = request.requestid
         self._requests[rid] = request
@@ -312,10 +312,10 @@ class clienthandler(object):
         """
         action, meta = self._reactor.flushcommands()
 
-        if action != 'sendframes':
-            raise error.ProgrammingError('%s not yet supported' % action)
+        if action != b'sendframes':
+            raise error.ProgrammingError(b'%s not yet supported' % action)
 
-        return meta['framegen']
+        return meta[b'framegen']
 
     def readdata(self, framefh):
         """Attempt to read data and do work.
@@ -329,7 +329,7 @@ class clienthandler(object):
                 # TODO tell reactor?
                 self._frameseof = True
             else:
-                self._ui.debug('received %r\n' % frame)
+                self._ui.debug(b'received %r\n' % frame)
                 self._processframe(frame)
 
         # Also try to read the first redirect.
@@ -347,8 +347,8 @@ class clienthandler(object):
 
         action, meta = self._reactor.onframerecv(frame)
 
-        if action == 'error':
-            e = error.RepoError(meta['message'])
+        if action == b'error':
+            e = error.RepoError(meta[b'message'])
 
             if frame.requestid in self._responses:
                 self._responses[frame.requestid]._oninputcomplete()
@@ -360,24 +360,24 @@ class clienthandler(object):
                 raise e
 
             return
-        elif action == 'noop':
+        elif action == b'noop':
             return
-        elif action == 'responsedata':
+        elif action == b'responsedata':
             # Handled below.
             pass
         else:
-            raise error.ProgrammingError('action not handled: %s' % action)
+            raise error.ProgrammingError(b'action not handled: %s' % action)
 
         if frame.requestid not in self._requests:
             raise error.ProgrammingError(
-                'received frame for unknown request; this is either a bug in '
-                'the clientreactor not screening for this or this instance was '
-                'never told about this request: %r' % frame
+                b'received frame for unknown request; this is either a bug in '
+                b'the clientreactor not screening for this or this instance was '
+                b'never told about this request: %r' % frame
             )
 
         response = self._responses[frame.requestid]
 
-        if action == 'responsedata':
+        if action == b'responsedata':
             # Any failures processing this frame should bubble up to the
             # future tracking the request.
             try:
@@ -397,12 +397,12 @@ class clienthandler(object):
                     response._onerror(e)
         else:
             raise error.ProgrammingError(
-                'unhandled action from clientreactor: %s' % action
+                b'unhandled action from clientreactor: %s' % action
             )
 
     def _processresponsedata(self, frame, meta, response):
         # This can raise. The caller can handle it.
-        response._onresponsedata(meta['data'])
+        response._onresponsedata(meta[b'data'])
 
         # We need to be careful about resolving futures prematurely. If a
         # response is a redirect response, resolving the future before the
@@ -414,7 +414,7 @@ class clienthandler(object):
         # EOS occurs or until the initial response object is fully received.
 
         # Always react to eos.
-        if meta['eos']:
+        if meta[b'eos']:
             response._oninputcomplete()
             del self._requests[frame.requestid]
 
@@ -446,28 +446,28 @@ class clienthandler(object):
 
     def _followredirect(self, requestid, redirect):
         """Called to initiate redirect following for a request."""
-        self._ui.note(_('(following redirect to %s)\n') % redirect.url)
+        self._ui.note(_(b'(following redirect to %s)\n') % redirect.url)
 
         # TODO handle framed responses.
         if redirect.mediatype != b'application/mercurial-cbor':
             raise error.Abort(
-                _('cannot handle redirects for the %s media type')
+                _(b'cannot handle redirects for the %s media type')
                 % redirect.mediatype
             )
 
         if redirect.fullhashes:
             self._ui.warn(
                 _(
-                    '(support for validating hashes on content '
-                    'redirects not supported)\n'
+                    b'(support for validating hashes on content '
+                    b'redirects not supported)\n'
                 )
             )
 
         if redirect.serverdercerts or redirect.servercadercerts:
             self._ui.warn(
                 _(
-                    '(support for pinning server certificates on '
-                    'content redirects not supported)\n'
+                    b'(support for pinning server certificates on '
+                    b'content redirects not supported)\n'
                 )
             )
 
@@ -481,10 +481,10 @@ class clienthandler(object):
             res = self._opener.open(req)
         except util.urlerr.httperror as e:
             if e.code == 401:
-                raise error.Abort(_('authorization failed'))
+                raise error.Abort(_(b'authorization failed'))
             raise
         except util.httplib.HTTPException as e:
-            self._ui.debug('http error requesting %s\n' % req.get_full_url())
+            self._ui.debug(b'http error requesting %s\n' % req.get_full_url())
             self._ui.traceback()
             raise IOError(None, e)
 
@@ -567,10 +567,10 @@ def decodepushkey(objs):
 
 
 COMMAND_DECODERS = {
-    'branchmap': decodebranchmap,
-    'heads': decodeheads,
-    'known': decodeknown,
-    'listkeys': decodelistkeys,
-    'lookup': decodelookup,
-    'pushkey': decodepushkey,
+    b'branchmap': decodebranchmap,
+    b'heads': decodeheads,
+    b'known': decodeknown,
+    b'listkeys': decodelistkeys,
+    b'lookup': decodelookup,
+    b'pushkey': decodepushkey,
 }

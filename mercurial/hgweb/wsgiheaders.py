@@ -22,10 +22,10 @@ def _formatparam(param, value=None, quote=1):
     """
     if value is not None and len(value) > 0:
         if quote or tspecials.search(value):
-            value = value.replace('\\', '\\\\').replace('"', r'\"')
-            return '%s="%s"' % (param, value)
+            value = value.replace(b'\\', b'\\\\').replace(b'"', r'\"')
+            return b'%s="%s"' % (param, value)
         else:
-            return '%s=%s' % (param, value)
+            return b'%s=%s' % (param, value)
     else:
         return param
 
@@ -36,7 +36,7 @@ class Headers(object):
     def __init__(self, headers=None):
         headers = headers if headers is not None else []
         if type(headers) is not list:
-            raise TypeError("Headers must be a list of name/value tuples")
+            raise TypeError(b"Headers must be a list of name/value tuples")
         self._headers = headers
         if __debug__:
             for k, v in headers:
@@ -134,7 +134,9 @@ class Headers(object):
     def __str__(self):
         """str() returns the formatted headers, complete with end line,
         suitable for direct HTTP transmission."""
-        return '\r\n'.join(["%s: %s" % kv for kv in self._headers] + ['', ''])
+        return b'\r\n'.join(
+            [b"%s: %s" % kv for kv in self._headers] + [b'', b'']
+        )
 
     def __bytes__(self):
         return str(self).encode('iso-8859-1')
@@ -174,10 +176,10 @@ class Headers(object):
         for k, v in _params.items():
             k = self._convert_string_type(k)
             if v is None:
-                parts.append(k.replace('_', '-'))
+                parts.append(k.replace(b'_', b'-'))
             else:
                 v = self._convert_string_type(v)
-                parts.append(_formatparam(k.replace('_', '-'), v))
+                parts.append(_formatparam(k.replace(b'_', b'-'), v))
         self._headers.append(
-            (self._convert_string_type(_name), "; ".join(parts))
+            (self._convert_string_type(_name), b"; ".join(parts))
         )

@@ -39,7 +39,7 @@ def hgweb(config, name=None, baseui=None):
 
     if isinstance(config, pycompat.unicode):
         raise error.ProgrammingError(
-            'Mercurial only supports encoded strings: %r' % config
+            b'Mercurial only supports encoded strings: %r' % config
         )
     if (
         (isinstance(config, bytes) and not os.path.isdir(config))
@@ -66,16 +66,16 @@ class httpservice(object):
         self.httpd = server.create_server(self.ui, self.app)
 
         if (
-            self.opts['port']
+            self.opts[b'port']
             and not self.ui.verbose
-            and not self.opts['print_url']
+            and not self.opts[b'print_url']
         ):
             return
 
         if self.httpd.prefix:
-            prefix = self.httpd.prefix.strip('/') + '/'
+            prefix = self.httpd.prefix.strip(b'/') + b'/'
         else:
-            prefix = ''
+            prefix = b''
 
         port = r':%d' % self.httpd.port
         if port == r':80':
@@ -91,20 +91,20 @@ class httpservice(object):
         if r':' in fqaddr:
             fqaddr = r'[%s]' % fqaddr
 
-        url = 'http://%s%s/%s' % (
+        url = b'http://%s%s/%s' % (
             pycompat.sysbytes(fqaddr),
             pycompat.sysbytes(port),
             prefix,
         )
-        if self.opts['print_url']:
-            self.ui.write('%s\n' % url)
+        if self.opts[b'print_url']:
+            self.ui.write(b'%s\n' % url)
         else:
-            if self.opts['port']:
+            if self.opts[b'port']:
                 write = self.ui.status
             else:
                 write = self.ui.write
             write(
-                _('listening at %s (bound to %s:%d)\n')
+                _(b'listening at %s (bound to %s:%d)\n')
                 % (url, pycompat.sysbytes(bindaddr), self.httpd.port)
             )
         self.ui.flush()  # avoid buffering of status message
@@ -119,6 +119,6 @@ def createapp(baseui, repo, webconf):
     else:
         if not repo:
             raise error.RepoError(
-                _("there is no Mercurial repository" " here (.hg not found)")
+                _(b"there is no Mercurial repository" b" here (.hg not found)")
             )
         return hgweb_mod.hgweb(repo, baseui=baseui)

@@ -24,7 +24,7 @@ class idirstate(interfaceutil.Interface):
         """Return a list of files containing patterns to ignore."""
 
     def _ignorefileandline(f):
-        "Given a file `f`, return the ignore file and line that ignores it."
+        b"Given a file `f`, return the ignore file and line that ignores it."
 
     _checklink = interfaceutil.Attribute("""Callable for checking symlinks.""")
     _checkexec = interfaceutil.Attribute("""Callable for checking exec bits.""")

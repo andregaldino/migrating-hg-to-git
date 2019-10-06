@@ -17,7 +17,7 @@ from .utils import stringutil
 
 
 def _typename(o):
-    return pycompat.sysbytes(type(o).__name__).lstrip('_')
+    return pycompat.sysbytes(type(o).__name__).lstrip(b'_')
 
 
 class abstractsmartset(object):
@@ -63,7 +63,7 @@ class abstractsmartset(object):
             for v in self.fastasc():
                 break
             else:
-                raise ValueError('arg is an empty sequence')
+                raise ValueError(b'arg is an empty sequence')
         self.min = lambda: v
         return v
 
@@ -75,7 +75,7 @@ class abstractsmartset(object):
             for v in self.fastdesc():
                 break
             else:
-                raise ValueError('arg is an empty sequence')
+                raise ValueError(b'arg is an empty sequence')
         self.max = lambda: v
         return v
 
@@ -125,7 +125,7 @@ class abstractsmartset(object):
         This is part of the mandatory API for smartset."""
         c = other.__contains__
         return self.filter(
-            lambda r: not c(r), condrepr=('<not %r>', other), cache=False
+            lambda r: not c(r), condrepr=(b'<not %r>', other), cache=False
         )
 
     def filter(self, condition, condrepr=None, cache=True):
@@ -137,14 +137,14 @@ class abstractsmartset(object):
 
         This is part of the mandatory API for smartset."""
         # builtin cannot be cached. but do not needs to
-        if cache and util.safehasattr(condition, '__code__'):
+        if cache and util.safehasattr(condition, b'__code__'):
             condition = util.cachefunc(condition)
         return filteredset(self, condition, condrepr)
 
     def slice(self, start, stop):
         """Return new smartset that contains selected elements from this set"""
         if start < 0 or stop < 0:
-            raise error.ProgrammingError('negative index not allowed')
+            raise error.ProgrammingError(b'negative index not allowed')
         return self._slice(start, stop)
 
     def _slice(self, start, stop):
@@ -161,7 +161,7 @@ class abstractsmartset(object):
             if y is None:
                 break
             ys.append(y)
-        return baseset(ys, datarepr=('slice=%d:%d %r', start, stop, self))
+        return baseset(ys, datarepr=(b'slice=%d:%d %r', start, stop, self))
 
 
 class baseset(abstractsmartset):
@@ -359,10 +359,10 @@ class baseset(abstractsmartset):
         return s
 
     def __and__(self, other):
-        return self._fastsetop(other, '__and__')
+        return self._fastsetop(other, b'__and__')
 
     def __sub__(self, other):
-        return self._fastsetop(other, '__sub__')
+        return self._fastsetop(other, b'__sub__')
 
     def _slice(self, start, stop):
         # creating new list should be generally cheaper than iterating items
@@ -378,7 +378,7 @@ class baseset(abstractsmartset):
 
     @encoding.strmethod
     def __repr__(self):
-        d = {None: '', False: '-', True: '+'}[self._ascending]
+        d = {None: b'', False: b'-', True: b'+'}[self._ascending]
         s = stringutil.buildrepr(self._datarepr)
         if not s:
             l = self._list
@@ -388,7 +388,7 @@ class baseset(abstractsmartset):
             if self._ascending is not None:
                 l = self._asclist
             s = pycompat.byterepr(l)
-        return '<%s%s %s>' % (_typename(self), d, s)
+        return b'<%s%s %s>' % (_typename(self), d, s)
 
 
 class filteredset(abstractsmartset):
@@ -508,7 +508,7 @@ class filteredset(abstractsmartset):
         s = stringutil.buildrepr(self._condrepr)
         if s:
             xs.append(s)
-        return '<%s %s>' % (_typename(self), ', '.join(xs))
+        return b'<%s %s>' % (_typename(self), b', '.join(xs))
 
 
 def _iterordered(ascending, iter1, iter2):
@@ -668,9 +668,9 @@ class addset(abstractsmartset):
         # try to use our own fast iterator if it exists
         self._trysetasclist()
         if self._ascending:
-            attr = 'fastasc'
+            attr = b'fastasc'
         else:
-            attr = 'fastdesc'
+            attr = b'fastdesc'
         it = getattr(self, attr)
         if it is not None:
             return it()
@@ -760,8 +760,8 @@ class addset(abstractsmartset):
 
     @encoding.strmethod
     def __repr__(self):
-        d = {None: '', False: '-', True: '+'}[self._ascending]
-        return '<%s%s %r, %r>' % (_typename(self), d, self._r1, self._r2)
+        d = {None: b'', False: b'-', True: b'+'}[self._ascending]
+        return b'<%s%s %r, %r>' % (_typename(self), d, self._r1, self._r2)
 
 
 class generatorset(abstractsmartset):
@@ -928,8 +928,8 @@ class generatorset(abstractsmartset):
 
     @encoding.strmethod
     def __repr__(self):
-        d = {False: '-', True: '+'}[self._ascending]
-        return '<%s%s>' % (_typename(self), d)
+        d = {False: b'-', True: b'+'}[self._ascending]
+        return b'<%s%s>' % (_typename(self), d)
 
 
 class _generatorsetasc(generatorset):
@@ -1104,8 +1104,8 @@ class _spanset(abstractsmartset):
 
     @encoding.strmethod
     def __repr__(self):
-        d = {False: '-', True: '+'}[self._ascending]
-        return '<%s%s %d:%d>' % (_typename(self), d, self._start, self._end)
+        d = {False: b'-', True: b'+'}[self._ascending]
+        return b'<%s%s %d:%d>' % (_typename(self), d, self._start, self._end)
 
 
 class fullreposet(_spanset):
@@ -1127,7 +1127,7 @@ class fullreposet(_spanset):
         This boldly assumes the other contains valid revs only.
         """
         # other not a smartset, make is so
-        if not util.safehasattr(other, 'isascending'):
+        if not util.safehasattr(other, b'isascending'):
             # filter out hidden revision
             # (this boldly assumes all smartset are pure)
             #

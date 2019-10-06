@@ -42,9 +42,9 @@ class localstore(basestore.basestore):
         path = lfutil.findfile(self.remote, hash)
         if not path:
             raise basestore.StoreError(
-                filename, hash, self.url, _("can't get file locally")
+                filename, hash, self.url, _(b"can't get file locally")
             )
-        with open(path, 'rb') as fd:
+        with open(path, b'rb') as fd:
             return lfutil.copyandhash(util.filechunkiter(fd), tmpfile)
 
     def _verifyfiles(self, contents, filestocheck):
@@ -57,7 +57,7 @@ class localstore(basestore.basestore):
                 )
             if not exists:
                 self.ui.warn(
-                    _('changeset %s: %s references missing %s\n')
+                    _(b'changeset %s: %s references missing %s\n')
                     % (cset, filename, storepath)
                 )
                 failed = True
@@ -65,7 +65,7 @@ class localstore(basestore.basestore):
                 actualhash = lfutil.hashfile(storepath)
                 if actualhash != expectedhash:
                     self.ui.warn(
-                        _('changeset %s: %s references corrupted %s\n')
+                        _(b'changeset %s: %s references corrupted %s\n')
                         % (cset, filename, storepath)
                     )
                     failed = True

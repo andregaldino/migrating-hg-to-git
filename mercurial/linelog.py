@@ -26,7 +26,7 @@ import struct
 from .thirdparty import attr
 from . import pycompat
 
-_llentry = struct.Struct('>II')
+_llentry = struct.Struct(b'>II')
 
 
 class LineLogError(Exception):
@@ -122,7 +122,7 @@ class _jump(_llinstruction):
 
     def __init__(self, op1, op2):
         if op1 != 0:
-            raise LineLogError("malformed JUMP, op1 must be 0, got %d" % op1)
+            raise LineLogError(b"malformed JUMP, op1 must be 0, got %d" % op1)
         self._target = op2
 
     def __str__(self):
@@ -143,9 +143,9 @@ class _eof(_llinstruction):
 
     def __init__(self, op1, op2):
         if op1 != 0:
-            raise LineLogError("malformed EOF, op1 must be 0, got %d" % op1)
+            raise LineLogError(b"malformed EOF, op1 must be 0, got %d" % op1)
         if op2 != 0:
-            raise LineLogError("malformed EOF, op2 must be 0, got %d" % op2)
+            raise LineLogError(b"malformed EOF, op2 must be 0, got %d" % op2)
 
     def __str__(self):
         return r'EOF'
@@ -218,7 +218,7 @@ def _decodeone(data, offset):
     try:
         op1, op2 = _llentry.unpack_from(data, offset)
     except struct.error as e:
-        raise LineLogError('reading an instruction failed: %r' % e)
+        raise LineLogError(b'reading an instruction failed: %r' % e)
     opcode = op1 & 0b11
     op1 = op1 >> 2
     if opcode == 0:
@@ -231,7 +231,7 @@ def _decodeone(data, offset):
         return _jl(op1, op2)
     elif opcode == 2:
         return _line(op1, op2)
-    raise NotImplementedError('Unimplemented opcode %r' % opcode)
+    raise NotImplementedError(b'Unimplemented opcode %r' % opcode)
 
 
 class linelog(object):
@@ -255,7 +255,7 @@ class linelog(object):
         )
 
     def __repr__(self):
-        return '<linelog at %s: maxrev=%d size=%d>' % (
+        return b'<linelog at %s: maxrev=%d size=%d>' % (
             hex(id(self)),
             self._maxrev,
             len(self._program),
@@ -263,7 +263,7 @@ class linelog(object):
 
     def debugstr(self):
         fmt = r'%%%dd %%s' % len(str(len(self._program)))
-        return pycompat.sysstr('\n').join(
+        return pycompat.sysstr(b'\n').join(
             fmt % (idx, i) for idx, i in enumerate(self._program[1:], 1)
         )
 
@@ -271,7 +271,7 @@ class linelog(object):
     def fromdata(cls, buf):
         if len(buf) % _llentry.size != 0:
             raise LineLogError(
-                "invalid linelog buffer size %d (must be a multiple of %d)"
+                b"invalid linelog buffer size %d (must be a multiple of %d)"
                 % (len(buf), _llentry.size)
             )
         expected = len(buf) / _llentry.size
@@ -283,8 +283,8 @@ class linelog(object):
         numentries = fakejge._target
         if expected != numentries:
             raise LineLogError(
-                "corrupt linelog data: claimed"
-                " %d entries but given data for %d entries"
+                b"corrupt linelog data: claimed"
+                b" %d entries but given data for %d entries"
                 % (expected, numentries)
             )
         instructions = [_eof(0, 0)]
@@ -294,7 +294,7 @@ class linelog(object):
 
     def encode(self):
         hdr = _jge(self._maxrev, len(self._program)).encode()
-        return hdr + ''.join(i.encode() for i in self._program[1:])
+        return hdr + b''.join(i.encode() for i in self._program[1:])
 
     def clear(self):
         self._program = []
@@ -320,7 +320,7 @@ class linelog(object):
             #        ar = self.annotate(self._maxrev)
         if a1 > len(ar.lines):
             raise LineLogError(
-                '%d contains %d lines, tried to access line %d'
+                b'%d contains %d lines, tried to access line %d'
                 % (rev, len(ar.lines), a1)
             )
         elif a1 == len(ar.lines):
@@ -356,7 +356,7 @@ class linelog(object):
         if a1 < a2:
             if a2 > len(ar.lines):
                 raise LineLogError(
-                    '%d contains %d lines, tried to access line %d'
+                    b'%d contains %d lines, tried to access line %d'
                     % (rev, len(ar.lines), a2)
                 )
             elif a2 == len(ar.lines):
@@ -454,8 +454,8 @@ class linelog(object):
             elif isinstance(inst, _line):
                 lines.append((inst._rev, inst._origlineno))
             else:
-                raise LineLogError("Illegal instruction %r" % inst)
+                raise LineLogError(b"Illegal instruction %r" % inst)
             if nextpc == end:
                 return lines
             pc = nextpc
-        raise LineLogError("Failed to perform getalllines")
+        raise LineLogError(b"Failed to perform getalllines")

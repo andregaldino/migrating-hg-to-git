@@ -61,7 +61,7 @@ from mercurial import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 configtable = {}
 configitem = registrar.configitem(configtable)
@@ -69,7 +69,7 @@ configitem = registrar.configitem(configtable)
 # Encoding.encoding may be updated by --encoding option.
 # Use a lambda do delay the resolution.
 configitem(
-    'win32mbcs', 'encoding', default=lambda: encoding.encoding,
+    b'win32mbcs', b'encoding', default=lambda: encoding.encoding,
 )
 
 _encoding = None  # see extsetup
@@ -80,7 +80,7 @@ def decode(arg):
         uarg = arg.decode(_encoding)
         if arg == uarg.encode(_encoding):
             return uarg
-        raise UnicodeError("Not local encoding")
+        raise UnicodeError(b"Not local encoding")
     elif isinstance(arg, tuple):
         return tuple(map(decode, arg))
     elif isinstance(arg, list):
@@ -110,7 +110,7 @@ def appendsep(s):
         us = decode(s)
     except UnicodeError:
         us = s
-    if us and us[-1] not in ':/\\':
+    if us and us[-1] not in b':/\\':
         s += pycompat.ossep
     return s
 
@@ -127,7 +127,7 @@ def basewrapper(func, argtype, enc, dec, args, kwds):
         return enc(func(*dec(args), **dec(kwds)))
     except UnicodeError:
         raise error.Abort(
-            _("[win32mbcs] filename conversion failed with" " %s encoding\n")
+            _(b"[win32mbcs] filename conversion failed with" b" %s encoding\n")
             % _encoding
         )
 
@@ -146,13 +146,13 @@ def wrapperforlistdir(func, args, kwds):
     if args:
         args = list(args)
         args[0] = appendsep(args[0])
-    if 'path' in kwds:
-        kwds['path'] = appendsep(kwds['path'])
+    if b'path' in kwds:
+        kwds[b'path'] = appendsep(kwds[b'path'])
     return func(*args, **kwds)
 
 
 def wrapname(name, wrapper):
-    module, name = name.rsplit('.', 1)
+    module, name = name.rsplit(b'.', 1)
     module = sys.modules[module]
     func = getattr(module, name)
 
@@ -166,7 +166,7 @@ def wrapname(name, wrapper):
 # List of functions to be wrapped.
 # NOTE: os.path.dirname() and os.path.basename() are safe because
 #       they use result of os.path.split()
-funcs = '''os.path.join os.path.split os.path.splitext
+funcs = b'''os.path.join os.path.split os.path.splitext
  os.path.normpath os.makedirs mercurial.util.endswithsep
  mercurial.util.splitpath mercurial.util.fscasesensitive
  mercurial.util.fspath mercurial.util.pconvert mercurial.util.normpath
@@ -176,14 +176,14 @@ funcs = '''os.path.join os.path.split os.path.splitext
 # These functions are required to be called with local encoded string
 # because they expects argument is local encoded string and cause
 # problem with unicode string.
-rfuncs = '''mercurial.encoding.upper mercurial.encoding.lower
+rfuncs = b'''mercurial.encoding.upper mercurial.encoding.lower
  mercurial.util._filenamebytestr'''
 
 # List of Windows specific functions to be wrapped.
-winfuncs = '''os.path.splitunc'''
+winfuncs = b'''os.path.splitunc'''
 
 # codec and alias names of sjis and big5 to be faked.
-problematic_encodings = '''big5 big5-tw csbig5 big5hkscs big5-hkscs
+problematic_encodings = b'''big5 big5-tw csbig5 big5hkscs big5-hkscs
  hkscs cp932 932 ms932 mskanji ms-kanji shift_jis csshiftjis shiftjis
  sjis s_jis shift_jis_2004 shiftjis2004 sjis_2004 sjis2004
  shift_jisx0213 shiftjisx0213 sjisx0213 s_jisx0213 950 cp950 ms950 '''
@@ -192,13 +192,13 @@ problematic_encodings = '''big5 big5-tw csbig5 big5hkscs big5-hkscs
 def extsetup(ui):
     # TODO: decide use of config section for this extension
     if (not os.path.supports_unicode_filenames) and (
-        pycompat.sysplatform != 'cygwin'
+        pycompat.sysplatform != b'cygwin'
     ):
-        ui.warn(_("[win32mbcs] cannot activate on this platform.\n"))
+        ui.warn(_(b"[win32mbcs] cannot activate on this platform.\n"))
         return
     # determine encoding for filename
     global _encoding
-    _encoding = ui.config('win32mbcs', 'encoding')
+    _encoding = ui.config(b'win32mbcs', b'encoding')
     # fake is only for relevant environment.
     if _encoding.lower() in problematic_encodings.split():
         for f in funcs.split():
@@ -206,13 +206,13 @@ def extsetup(ui):
         if pycompat.iswindows:
             for f in winfuncs.split():
                 wrapname(f, wrapper)
-        wrapname("mercurial.util.listdir", wrapperforlistdir)
-        wrapname("mercurial.windows.listdir", wrapperforlistdir)
+        wrapname(b"mercurial.util.listdir", wrapperforlistdir)
+        wrapname(b"mercurial.windows.listdir", wrapperforlistdir)
         # wrap functions to be called with local byte string arguments
         for f in rfuncs.split():
             wrapname(f, reversewrapper)
         # Check sys.args manually instead of using ui.debug() because
         # command line options is not yet applied when
         # extensions.loadall() is called.
-        if '--debug' in sys.argv:
-            ui.write("[win32mbcs] activated with encoding: %s\n" % _encoding)
+        if b'--debug' in sys.argv:
+            ui.write(b"[win32mbcs] activated with encoding: %s\n" % _encoding)

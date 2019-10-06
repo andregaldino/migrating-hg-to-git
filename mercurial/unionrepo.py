@@ -193,7 +193,7 @@ class unionrepository(object):
         self.repo2 = repo2
         self._url = url
 
-        self.ui.setconfig('phases', 'publish', False, 'unionrepo')
+        self.ui.setconfig(b'phases', b'publish', False, b'unionrepo')
 
     @localrepo.unfilteredpropertycache
     def changelog(self):
@@ -236,25 +236,25 @@ class unionrepository(object):
 
 def instance(ui, path, create, intents=None, createopts=None):
     if create:
-        raise error.Abort(_('cannot create new union repository'))
-    parentpath = ui.config("bundle", "mainreporoot")
+        raise error.Abort(_(b'cannot create new union repository'))
+    parentpath = ui.config(b"bundle", b"mainreporoot")
     if not parentpath:
         # try to find the correct path to the working directory repo
         parentpath = cmdutil.findrepo(encoding.getcwd())
         if parentpath is None:
-            parentpath = ''
+            parentpath = b''
     if parentpath:
         # Try to make the full path relative so we get a nice, short URL.
         # In particular, we don't want temp dir names in test outputs.
         cwd = encoding.getcwd()
         if parentpath == cwd:
-            parentpath = ''
+            parentpath = b''
         else:
             cwd = pathutil.normasprefix(cwd)
             if parentpath.startswith(cwd):
                 parentpath = parentpath[len(cwd) :]
-    if path.startswith('union:'):
-        s = path.split(":", 1)[1].split("+", 1)
+    if path.startswith(b'union:'):
+        s = path.split(b":", 1)[1].split(b"+", 1)
         if len(s) == 1:
             repopath, repopath2 = parentpath, s[0]
         else:
@@ -270,7 +270,7 @@ def makeunionrepository(ui, repopath1, repopath2):
     repo1 = localrepo.instance(ui, repopath1, create=False)
     repo2 = localrepo.instance(ui, repopath2, create=False)
 
-    url = 'union:%s+%s' % (
+    url = b'union:%s+%s' % (
         util.expandpath(repopath1),
         util.expandpath(repopath2),
     )

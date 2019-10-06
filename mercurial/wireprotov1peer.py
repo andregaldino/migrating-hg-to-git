@@ -73,8 +73,8 @@ class future(object):
     '''placeholder for a value to be set later'''
 
     def set(self, value):
-        if util.safehasattr(self, 'value'):
-            raise error.RepoError("future is already set")
+        if util.safehasattr(self, b'value'):
+            raise error.RepoError(b"future is already set")
         self.value = value
 
 
@@ -89,13 +89,13 @@ def encodebatchcmds(req):
         # servers.
         assert all(escapearg(k) == k for k in argsdict)
 
-        args = ','.join(
-            '%s=%s' % (escapearg(k), escapearg(v))
+        args = b','.join(
+            b'%s=%s' % (escapearg(k), escapearg(v))
             for k, v in argsdict.iteritems()
         )
-        cmds.append('%s %s' % (op, args))
+        cmds.append(b'%s %s' % (op, args))
 
-    return ';'.join(cmds)
+    return b';'.join(cmds)
 
 
 class unsentfuture(pycompat.futures.Future):
@@ -139,12 +139,12 @@ class peerexecutor(object):
     def callcommand(self, command, args):
         if self._sent:
             raise error.ProgrammingError(
-                'callcommand() cannot be used ' 'after commands are sent'
+                b'callcommand() cannot be used ' b'after commands are sent'
             )
 
         if self._closed:
             raise error.ProgrammingError(
-                'callcommand() cannot be used ' 'after close()'
+                b'callcommand() cannot be used ' b'after close()'
             )
 
         # Commands are dispatched through methods on the peer.
@@ -152,8 +152,8 @@ class peerexecutor(object):
 
         if not fn:
             raise error.ProgrammingError(
-                'cannot call command %s: method of same name not available '
-                'on peer' % command
+                b'cannot call command %s: method of same name not available '
+                b'on peer' % command
             )
 
         # Commands are either batchable or they aren't. If a command
@@ -179,8 +179,8 @@ class peerexecutor(object):
         else:
             if self._calls:
                 raise error.ProgrammingError(
-                    '%s is not batchable and cannot be called on a command '
-                    'executor along with other commands' % command
+                    b'%s is not batchable and cannot be called on a command '
+                    b'executor along with other commands' % command
                 )
 
             f = addcall()
@@ -306,7 +306,7 @@ class peerexecutor(object):
                 if not f.done():
                     f.set_exception(
                         error.ResponseError(
-                            _('unfulfilled batch command response')
+                            _(b'unfulfilled batch command response')
                         )
                     )
 
@@ -348,16 +348,16 @@ class wirepeer(repository.peer):
     # Begin of ipeercommands interface.
 
     def clonebundles(self):
-        self.requirecap('clonebundles', _('clone bundles'))
-        return self._call('clonebundles')
+        self.requirecap(b'clonebundles', _(b'clone bundles'))
+        return self._call(b'clonebundles')
 
     @batchable
     def lookup(self, key):
-        self.requirecap('lookup', _('look up remote revision'))
+        self.requirecap(b'lookup', _(b'look up remote revision'))
         f = future()
-        yield {'key': encoding.fromlocal(key)}, f
+        yield {b'key': encoding.fromlocal(key)}, f
         d = f.value
-        success, data = d[:-1].split(" ", 1)
+        success, data = d[:-1].split(b" ", 1)
         if int(success):
             yield bin(data)
         else:
@@ -371,17 +371,17 @@ class wirepeer(repository.peer):
         try:
             yield wireprototypes.decodelist(d[:-1])
         except ValueError:
-            self._abort(error.ResponseError(_("unexpected response:"), d))
+            self._abort(error.ResponseError(_(b"unexpected response:"), d))
 
     @batchable
     def known(self, nodes):
         f = future()
-        yield {'nodes': wireprototypes.encodelist(nodes)}, f
+        yield {b'nodes': wireprototypes.encodelist(nodes)}, f
         d = f.value
         try:
             yield [bool(int(b)) for b in pycompat.iterbytestr(d)]
         except ValueError:
-            self._abort(error.ResponseError(_("unexpected response:"), d))
+            self._abort(error.ResponseError(_(b"unexpected response:"), d))
 
     @batchable
     def branchmap(self):
@@ -391,83 +391,83 @@ class wirepeer(repository.peer):
         try:
             branchmap = {}
             for branchpart in d.splitlines():
-                branchname, branchheads = branchpart.split(' ', 1)
+                branchname, branchheads = branchpart.split(b' ', 1)
                 branchname = encoding.tolocal(urlreq.unquote(branchname))
                 branchheads = wireprototypes.decodelist(branchheads)
                 branchmap[branchname] = branchheads
             yield branchmap
         except TypeError:
-            self._abort(error.ResponseError(_("unexpected response:"), d))
+            self._abort(error.ResponseError(_(b"unexpected response:"), d))
 
     @batchable
     def listkeys(self, namespace):
-        if not self.capable('pushkey'):
+        if not self.capable(b'pushkey'):
             yield {}, None
         f = future()
-        self.ui.debug('preparing listkeys for "%s"\n' % namespace)
-        yield {'namespace': encoding.fromlocal(namespace)}, f
+        self.ui.debug(b'preparing listkeys for "%s"\n' % namespace)
+        yield {b'namespace': encoding.fromlocal(namespace)}, f
         d = f.value
         self.ui.debug(
-            'received listkey for "%s": %i bytes\n' % (namespace, len(d))
+            b'received listkey for "%s": %i bytes\n' % (namespace, len(d))
         )
         yield pushkeymod.decodekeys(d)
 
     @batchable
     def pushkey(self, namespace, key, old, new):
-        if not self.capable('pushkey'):
+        if not self.capable(b'pushkey'):
             yield False, None
         f = future()
-        self.ui.debug('preparing pushkey for "%s:%s"\n' % (namespace, key))
+        self.ui.debug(b'preparing pushkey for "%s:%s"\n' % (namespace, key))
         yield {
-            'namespace': encoding.fromlocal(namespace),
-            'key': encoding.fromlocal(key),
-            'old': encoding.fromlocal(old),
-            'new': encoding.fromlocal(new),
+            b'namespace': encoding.fromlocal(namespace),
+            b'key': encoding.fromlocal(key),
+            b'old': encoding.fromlocal(old),
+            b'new': encoding.fromlocal(new),
         }, f
         d = f.value
-        d, output = d.split('\n', 1)
+        d, output = d.split(b'\n', 1)
         try:
             d = bool(int(d))
         except ValueError:
             raise error.ResponseError(
-                _('push failed (unexpected response):'), d
+                _(b'push failed (unexpected response):'), d
             )
         for l in output.splitlines(True):
-            self.ui.status(_('remote: '), l)
+            self.ui.status(_(b'remote: '), l)
         yield d
 
     def stream_out(self):
-        return self._callstream('stream_out')
+        return self._callstream(b'stream_out')
 
     def getbundle(self, source, **kwargs):
         kwargs = pycompat.byteskwargs(kwargs)
-        self.requirecap('getbundle', _('look up remote changes'))
+        self.requirecap(b'getbundle', _(b'look up remote changes'))
         opts = {}
-        bundlecaps = kwargs.get('bundlecaps') or set()
+        bundlecaps = kwargs.get(b'bundlecaps') or set()
         for key, value in kwargs.iteritems():
             if value is None:
                 continue
             keytype = wireprototypes.GETBUNDLE_ARGUMENTS.get(key)
             if keytype is None:
                 raise error.ProgrammingError(
-                    'Unexpectedly None keytype for key %s' % key
+                    b'Unexpectedly None keytype for key %s' % key
                 )
-            elif keytype == 'nodes':
+            elif keytype == b'nodes':
                 value = wireprototypes.encodelist(value)
-            elif keytype == 'csv':
-                value = ','.join(value)
-            elif keytype == 'scsv':
-                value = ','.join(sorted(value))
-            elif keytype == 'boolean':
-                value = '%i' % bool(value)
-            elif keytype != 'plain':
-                raise KeyError('unknown getbundle option type %s' % keytype)
+            elif keytype == b'csv':
+                value = b','.join(value)
+            elif keytype == b'scsv':
+                value = b','.join(sorted(value))
+            elif keytype == b'boolean':
+                value = b'%i' % bool(value)
+            elif keytype != b'plain':
+                raise KeyError(b'unknown getbundle option type %s' % keytype)
             opts[key] = value
-        f = self._callcompressable("getbundle", **pycompat.strkwargs(opts))
-        if any((cap.startswith('HG2') for cap in bundlecaps)):
+        f = self._callcompressable(b"getbundle", **pycompat.strkwargs(opts))
+        if any((cap.startswith(b'HG2') for cap in bundlecaps)):
             return bundle2.getunbundler(self.ui, f)
         else:
-            return changegroupmod.cg1unpacker(f, 'UN')
+            return changegroupmod.cg1unpacker(f, b'UN')
 
     def unbundle(self, bundle, heads, url):
         '''Send cg (a readable file-like object representing the
@@ -483,30 +483,30 @@ class wirepeer(repository.peer):
         visible to hooks.
         '''
 
-        if heads != ['force'] and self.capable('unbundlehash'):
+        if heads != [b'force'] and self.capable(b'unbundlehash'):
             heads = wireprototypes.encodelist(
-                ['hashed', hashlib.sha1(''.join(sorted(heads))).digest()]
+                [b'hashed', hashlib.sha1(b''.join(sorted(heads))).digest()]
             )
         else:
             heads = wireprototypes.encodelist(heads)
 
-        if util.safehasattr(bundle, 'deltaheader'):
+        if util.safehasattr(bundle, b'deltaheader'):
             # this a bundle10, do the old style call sequence
-            ret, output = self._callpush("unbundle", bundle, heads=heads)
-            if ret == "":
-                raise error.ResponseError(_('push failed:'), output)
+            ret, output = self._callpush(b"unbundle", bundle, heads=heads)
+            if ret == b"":
+                raise error.ResponseError(_(b'push failed:'), output)
             try:
                 ret = int(ret)
             except ValueError:
                 raise error.ResponseError(
-                    _('push failed (unexpected response):'), ret
+                    _(b'push failed (unexpected response):'), ret
                 )
 
             for l in output.splitlines(True):
-                self.ui.status(_('remote: '), l)
+                self.ui.status(_(b'remote: '), l)
         else:
             # bundle2 push. Send a stream, fetch a stream.
-            stream = self._calltwowaystream('unbundle', bundle, heads=heads)
+            stream = self._calltwowaystream(b'unbundle', bundle, heads=heads)
             ret = bundle2.getunbundler(self.ui, stream)
         return ret
 
@@ -516,46 +516,46 @@ class wirepeer(repository.peer):
 
     def branches(self, nodes):
         n = wireprototypes.encodelist(nodes)
-        d = self._call("branches", nodes=n)
+        d = self._call(b"branches", nodes=n)
         try:
             br = [tuple(wireprototypes.decodelist(b)) for b in d.splitlines()]
             return br
         except ValueError:
-            self._abort(error.ResponseError(_("unexpected response:"), d))
+            self._abort(error.ResponseError(_(b"unexpected response:"), d))
 
     def between(self, pairs):
         batch = 8  # avoid giant requests
         r = []
         for i in pycompat.xrange(0, len(pairs), batch):
-            n = " ".join(
+            n = b" ".join(
                 [
-                    wireprototypes.encodelist(p, '-')
+                    wireprototypes.encodelist(p, b'-')
                     for p in pairs[i : i + batch]
                 ]
             )
-            d = self._call("between", pairs=n)
+            d = self._call(b"between", pairs=n)
             try:
                 r.extend(
                     l and wireprototypes.decodelist(l) or []
                     for l in d.splitlines()
                 )
             except ValueError:
-                self._abort(error.ResponseError(_("unexpected response:"), d))
+                self._abort(error.ResponseError(_(b"unexpected response:"), d))
         return r
 
     def changegroup(self, nodes, source):
         n = wireprototypes.encodelist(nodes)
-        f = self._callcompressable("changegroup", roots=n)
-        return changegroupmod.cg1unpacker(f, 'UN')
+        f = self._callcompressable(b"changegroup", roots=n)
+        return changegroupmod.cg1unpacker(f, b'UN')
 
     def changegroupsubset(self, bases, heads, source):
-        self.requirecap('changegroupsubset', _('look up remote changes'))
+        self.requirecap(b'changegroupsubset', _(b'look up remote changes'))
         bases = wireprototypes.encodelist(bases)
         heads = wireprototypes.encodelist(heads)
         f = self._callcompressable(
-            "changegroupsubset", bases=bases, heads=heads
+            b"changegroupsubset", bases=bases, heads=heads
         )
-        return changegroupmod.cg1unpacker(f, 'UN')
+        return changegroupmod.cg1unpacker(f, b'UN')
 
     # End of ipeerlegacycommands interface.
 
@@ -565,28 +565,28 @@ class wirepeer(repository.peer):
         Returns an iterator of the raw responses from the server.
         """
         ui = self.ui
-        if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
-            ui.debug('devel-peer-request: batched-content\n')
+        if ui.debugflag and ui.configbool(b'devel', b'debug.peer-request'):
+            ui.debug(b'devel-peer-request: batched-content\n')
             for op, args in req:
-                msg = 'devel-peer-request:    - %s (%d arguments)\n'
+                msg = b'devel-peer-request:    - %s (%d arguments)\n'
                 ui.debug(msg % (op, len(args)))
 
         unescapearg = wireprototypes.unescapebatcharg
 
-        rsp = self._callstream("batch", cmds=encodebatchcmds(req))
+        rsp = self._callstream(b"batch", cmds=encodebatchcmds(req))
         chunk = rsp.read(1024)
         work = [chunk]
         while chunk:
-            while ';' not in chunk and chunk:
+            while b';' not in chunk and chunk:
                 chunk = rsp.read(1024)
                 work.append(chunk)
-            merged = ''.join(work)
-            while ';' in merged:
-                one, merged = merged.split(';', 1)
+            merged = b''.join(work)
+            while b';' in merged:
+                one, merged = merged.split(b';', 1)
                 yield unescapearg(one)
             chunk = rsp.read(1024)
             work = [merged, chunk]
-        yield unescapearg(''.join(work))
+        yield unescapearg(b''.join(work))
 
     def _submitone(self, op, args):
         return self._call(op, **pycompat.strkwargs(args))
@@ -598,7 +598,7 @@ class wirepeer(repository.peer):
             opts[r'three'] = three
         if four is not None:
             opts[r'four'] = four
-        return self._call('debugwireargs', one=one, two=two, **opts)
+        return self._call(b'debugwireargs', one=one, two=two, **opts)
 
     def _call(self, cmd, **args):
         """execute <cmd> on the server

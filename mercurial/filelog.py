@@ -27,7 +27,7 @@ from .utils import storageutil
 class filelog(object):
     def __init__(self, opener, path):
         self._revlog = revlog.revlog(
-            opener, '/'.join(('data', path + '.i')), censorable=True
+            opener, b'/'.join((b'data', path + b'.i')), censorable=True
         )
         # Full name of the user visible file, relative to the repository root.
         # Used by LFS.
@@ -144,8 +144,8 @@ class filelog(object):
         if maybemissingparents:
             raise error.Abort(
                 _(
-                    'revlog storage does not support missing '
-                    'parents write mode'
+                    b'revlog storage does not support missing '
+                    b'parents write mode'
                 )
             )
 
@@ -169,7 +169,7 @@ class filelog(object):
         return storageutil.filtermetadata(self.revision(node))
 
     def add(self, text, meta, transaction, link, p1=None, p2=None):
-        if meta or text.startswith('\1\n'):
+        if meta or text.startswith(b'\1\n'):
             text = storageutil.packmeta(meta, text)
         return self.addrevision(text, transaction, link, p1, p2)
 
@@ -230,7 +230,7 @@ class filelog(object):
     # Used by repo upgrade.
     def clone(self, tr, destrevlog, **kwargs):
         if not isinstance(destrevlog, filelog):
-            raise error.ProgrammingError('expected filelog to clone()')
+            raise error.ProgrammingError(b'expected filelog to clone()')
 
         return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
 

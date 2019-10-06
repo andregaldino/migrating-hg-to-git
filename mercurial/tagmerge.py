@@ -86,7 +86,7 @@ from . import (
 hexnullid = hex(nullid)
 
 
-def readtagsformerge(ui, repo, lines, fn='', keeplinenums=False):
+def readtagsformerge(ui, repo, lines, fn=b'', keeplinenums=False):
     '''read the .hgtags file into a structure that is suitable for merging
 
     Depending on the keeplinenums flag, clear the line numbers associated
@@ -154,7 +154,7 @@ def writemergedtags(fcd, mergedtags):
     # convert the grouped merged tags dict into a format that resembles the
     # final .hgtags file (i.e. a list of blocks of 'node tag' pairs)
     def taglist2string(tlist, tname):
-        return '\n'.join(['%s %s' % (hexnode, tname) for hexnode in tlist])
+        return b'\n'.join([b'%s %s' % (hexnode, tname) for hexnode in tlist])
 
     finaltags = []
     for tname, tags in mergedtags.items():
@@ -170,8 +170,8 @@ def writemergedtags(fcd, mergedtags):
 
     # finally we can join the sorted groups to get the final contents of the
     # merged .hgtags file, and then write it to disk
-    mergedtagstring = '\n'.join([tags for rank, tags in finaltags if tags])
-    fcd.write(mergedtagstring + '\n', fcd.flags())
+    mergedtagstring = b'\n'.join([tags for rank, tags in finaltags if tags])
+    fcd.write(mergedtagstring + b'\n', fcd.flags())
 
 
 def singletagmerge(p1nodes, p2nodes):
@@ -229,13 +229,13 @@ def merge(repo, fcd, fco, fca):
     # read the p1, p2 and base tags
     # only keep the line numbers for the p1 tags
     p1tags = readtagsformerge(
-        ui, repo, fcd.data().splitlines(), fn="p1 tags", keeplinenums=True
+        ui, repo, fcd.data().splitlines(), fn=b"p1 tags", keeplinenums=True
     )
     p2tags = readtagsformerge(
-        ui, repo, fco.data().splitlines(), fn="p2 tags", keeplinenums=False
+        ui, repo, fco.data().splitlines(), fn=b"p2 tags", keeplinenums=False
     )
     basetags = readtagsformerge(
-        ui, repo, fca.data().splitlines(), fn="base tags", keeplinenums=False
+        ui, repo, fca.data().splitlines(), fn=b"base tags", keeplinenums=False
     )
 
     # recover the list of "lost tags" (i.e. those that were found on the base
@@ -267,13 +267,13 @@ def merge(repo, fcd, fco, fca):
         numconflicts = len(conflictedtags)
         ui.warn(
             _(
-                'automatic .hgtags merge failed\n'
-                'the following %d tags are in conflict: %s\n'
+                b'automatic .hgtags merge failed\n'
+                b'the following %d tags are in conflict: %s\n'
             )
-            % (numconflicts, ', '.join(sorted(conflictedtags)))
+            % (numconflicts, b', '.join(sorted(conflictedtags)))
         )
         return True, 1
 
     writemergedtags(fcd, mergedtags)
-    ui.note(_('.hgtags merged successfully\n'))
+    ui.note(_(b'.hgtags merged successfully\n'))
     return False, 0

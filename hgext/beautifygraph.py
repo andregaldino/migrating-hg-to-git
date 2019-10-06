@@ -26,33 +26,33 @@ from mercurial import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 
 def prettyedge(before, edge, after):
-    if edge == '~':
-        return '\xE2\x95\xA7'  # U+2567 ╧
-    if edge == '/':
-        return '\xE2\x95\xB1'  # U+2571 ╱
-    if edge == '-':
-        return '\xE2\x94\x80'  # U+2500 ─
-    if edge == '|':
-        return '\xE2\x94\x82'  # U+2502 │
-    if edge == ':':
-        return '\xE2\x94\x86'  # U+2506 ┆
-    if edge == '\\':
-        return '\xE2\x95\xB2'  # U+2572 ╲
-    if edge == '+':
-        if before == ' ' and not after == ' ':
-            return '\xE2\x94\x9C'  # U+251C ├
-        if after == ' ' and not before == ' ':
-            return '\xE2\x94\xA4'  # U+2524 ┤
-        return '\xE2\x94\xBC'  # U+253C ┼
+    if edge == b'~':
+        return b'\xE2\x95\xA7'  # U+2567 ╧
+    if edge == b'/':
+        return b'\xE2\x95\xB1'  # U+2571 ╱
+    if edge == b'-':
+        return b'\xE2\x94\x80'  # U+2500 ─
+    if edge == b'|':
+        return b'\xE2\x94\x82'  # U+2502 │
+    if edge == b':':
+        return b'\xE2\x94\x86'  # U+2506 ┆
+    if edge == b'\\':
+        return b'\xE2\x95\xB2'  # U+2572 ╲
+    if edge == b'+':
+        if before == b' ' and not after == b' ':
+            return b'\xE2\x94\x9C'  # U+251C ├
+        if after == b' ' and not before == b' ':
+            return b'\xE2\x94\xA4'  # U+2524 ┤
+        return b'\xE2\x94\xBC'  # U+253C ┼
     return edge
 
 
 def convertedges(line):
-    line = ' %s ' % line
+    line = b' %s ' % line
     pretty = []
     for idx in pycompat.xrange(len(line) - 2):
         pretty.append(
@@ -62,21 +62,21 @@ def convertedges(line):
                 line[idx + 2 : idx + 3],
             )
         )
-    return ''.join(pretty)
+    return b''.join(pretty)
 
 
 def getprettygraphnode(orig, *args, **kwargs):
     node = orig(*args, **kwargs)
-    if node == 'o':
-        return '\xE2\x97\x8B'  # U+25CB ○
-    if node == '@':
-        return '\xE2\x97\x8D'  # U+25CD ◍
-    if node == '*':
-        return '\xE2\x88\x97'  # U+2217 ∗
-    if node == 'x':
-        return '\xE2\x97\x8C'  # U+25CC ◌
-    if node == '_':
-        return '\xE2\x95\xA4'  # U+2564 ╤
+    if node == b'o':
+        return b'\xE2\x97\x8B'  # U+25CB ○
+    if node == b'@':
+        return b'\xE2\x97\x8D'  # U+25CD ◍
+    if node == b'*':
+        return b'\xE2\x88\x97'  # U+2217 ∗
+    if node == b'x':
+        return b'\xE2\x97\x8C'  # U+25CC ◌
+    if node == b'_':
+        return b'\xE2\x95\xA4'  # U+2564 ╤
     return node
 
 
@@ -87,21 +87,21 @@ def outputprettygraph(orig, ui, graph, *args, **kwargs):
 
 
 def extsetup(ui):
-    if ui.plain('graph'):
+    if ui.plain(b'graph'):
         return
 
-    if encoding.encoding != 'UTF-8':
-        ui.warn(_('beautifygraph: unsupported encoding, UTF-8 required\n'))
+    if encoding.encoding != b'UTF-8':
+        ui.warn(_(b'beautifygraph: unsupported encoding, UTF-8 required\n'))
         return
 
     if r'A' in encoding._wide:
         ui.warn(
             _(
-                'beautifygraph: unsupported terminal settings, '
-                'monospace narrow text required\n'
+                b'beautifygraph: unsupported terminal settings, '
+                b'monospace narrow text required\n'
             )
         )
         return
 
-    extensions.wrapfunction(graphmod, 'outputgraph', outputprettygraph)
-    extensions.wrapfunction(templatekw, 'getgraphnode', getprettygraphnode)
+    extensions.wrapfunction(graphmod, b'outputgraph', outputprettygraph)
+    extensions.wrapfunction(templatekw, b'getgraphnode', getprettygraphnode)

@@ -62,10 +62,10 @@ class _funcregistrarbase(object):
         name = self._getname(decl)
 
         if name in self._table:
-            msg = 'duplicate registration for name: "%s"' % name
+            msg = b'duplicate registration for name: "%s"' % name
             raise error.ProgrammingError(msg)
 
-        if func.__doc__ and not util.safehasattr(func, '_origdoc'):
+        if func.__doc__ and not util.safehasattr(func, b'_origdoc'):
             func._origdoc = func.__doc__.strip()
             doc = pycompat.sysbytes(func._origdoc)
             func.__doc__ = pycompat.sysstr(self._formatdoc(decl, doc))
@@ -83,13 +83,13 @@ class _funcregistrarbase(object):
         of the two registrars must match.
         """
         if not isinstance(registrarbase, type(self)):
-            msg = "cannot merge different types of registrar"
+            msg = b"cannot merge different types of registrar"
             raise error.ProgrammingError(msg)
 
         dups = set(registrarbase._table).intersection(self._table)
 
         if dups:
-            msg = 'duplicate registration for names: "%s"' % '", "'.join(dups)
+            msg = b'duplicate registration for names: "%s"' % b'", "'.join(dups)
             raise error.ProgrammingError(msg)
 
         self._table.update(registrarbase._table)
@@ -97,7 +97,7 @@ class _funcregistrarbase(object):
     def _parsefuncdecl(self, decl):
         """Parse function declaration and return the name of function in it
         """
-        i = decl.find('(')
+        i = decl.find(b'(')
         if i >= 0:
             return decl[:i]
         else:
@@ -195,19 +195,19 @@ class command(_funcregistrarbase):
     # [alias]
     # myalias = something
     # myalias:category = repo
-    CATEGORY_REPO_CREATION = 'repo'
-    CATEGORY_REMOTE_REPO_MANAGEMENT = 'remote'
-    CATEGORY_COMMITTING = 'commit'
-    CATEGORY_CHANGE_MANAGEMENT = 'management'
-    CATEGORY_CHANGE_ORGANIZATION = 'organization'
-    CATEGORY_FILE_CONTENTS = 'files'
-    CATEGORY_CHANGE_NAVIGATION = 'navigation'
-    CATEGORY_WORKING_DIRECTORY = 'wdir'
-    CATEGORY_IMPORT_EXPORT = 'import'
-    CATEGORY_MAINTENANCE = 'maintenance'
-    CATEGORY_HELP = 'help'
-    CATEGORY_MISC = 'misc'
-    CATEGORY_NONE = 'none'
+    CATEGORY_REPO_CREATION = b'repo'
+    CATEGORY_REMOTE_REPO_MANAGEMENT = b'remote'
+    CATEGORY_COMMITTING = b'commit'
+    CATEGORY_CHANGE_MANAGEMENT = b'management'
+    CATEGORY_CHANGE_ORGANIZATION = b'organization'
+    CATEGORY_FILE_CONTENTS = b'files'
+    CATEGORY_CHANGE_NAVIGATION = b'navigation'
+    CATEGORY_WORKING_DIRECTORY = b'wdir'
+    CATEGORY_IMPORT_EXPORT = b'import'
+    CATEGORY_MAINTENANCE = b'maintenance'
+    CATEGORY_HELP = b'help'
+    CATEGORY_MISC = b'misc'
+    CATEGORY_NONE = b'none'
 
     def _doregister(
         self,
@@ -280,7 +280,7 @@ class revsetpredicate(_funcregistrarbase):
     """
 
     _getname = _funcregistrarbase._parsefuncdecl
-    _docformat = "``%s``\n    %s"
+    _docformat = b"``%s``\n    %s"
 
     def _extrasetup(self, name, func, safe=False, takeorder=False, weight=1):
         func._safe = safe
@@ -331,7 +331,7 @@ class filesetpredicate(_funcregistrarbase):
     """
 
     _getname = _funcregistrarbase._parsefuncdecl
-    _docformat = "``%s``\n    %s"
+    _docformat = b"``%s``\n    %s"
 
     def _extrasetup(self, name, func, callstatus=False, weight=1):
         func._callstatus = callstatus
@@ -342,7 +342,7 @@ class _templateregistrarbase(_funcregistrarbase):
     """Base of decorator to register functions as template specific one
     """
 
-    _docformat = ":%s: %s"
+    _docformat = b":%s: %s"
 
 
 class templatekeyword(_templateregistrarbase):
@@ -506,12 +506,12 @@ class internalmerge(_funcregistrarbase):
     Otherwise, explicit 'filemerge.loadinternalmerge()' is needed.
     """
 
-    _docformat = "``:%s``\n    %s"
+    _docformat = b"``:%s``\n    %s"
 
     # merge type definitions:
     nomerge = None
-    mergeonly = 'mergeonly'  # just the full merge, no premerge
-    fullmerge = 'fullmerge'  # both premerge and merge
+    mergeonly = b'mergeonly'  # just the full merge, no premerge
+    fullmerge = b'fullmerge'  # both premerge and merge
 
     def _extrasetup(
         self,
@@ -531,4 +531,4 @@ class internalmerge(_funcregistrarbase):
         symlinkcap = symlink or mergetype == self.nomerge
 
         # actual capabilities, which this internal merge tool has
-        func.capabilities = {"binary": binarycap, "symlink": symlinkcap}
+        func.capabilities = {b"binary": binarycap, b"symlink": symlinkcap}

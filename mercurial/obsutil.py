@@ -323,7 +323,7 @@ def foreground(repo, nodes):
     Beware that possible obsolescence cycle may result if complex situation.
     """
     repo = repo.unfiltered()
-    foreground = set(repo.set('%ln::', nodes))
+    foreground = set(repo.set(b'%ln::', nodes))
     if repo.obsstore:
         # We only need this complicated logic if there is obsolescence
         # XXX will probably deserve an optimised revset.
@@ -336,7 +336,7 @@ def foreground(repo, nodes):
             mutable = [c.node() for c in foreground if c.mutable()]
             succs.update(allsuccessors(repo.obsstore, mutable))
             known = (n for n in succs if n in nm)
-            foreground = set(repo.set('%ln::', known))
+            foreground = set(repo.set(b'%ln::', known))
     return set(c.node() for c in foreground)
 
 
@@ -355,7 +355,7 @@ def foreground(repo, nodes):
 # `effect-flags` set to off by default.
 #
 
-EFFECTFLAGFIELD = "ef1"
+EFFECTFLAGFIELD = b"ef1"
 
 DESCCHANGED = 1 << 0  # action changed the description
 METACHANGED = 1 << 1  # action change the meta
@@ -366,10 +366,10 @@ DATECHANGED = 1 << 5  # the date changed
 BRANCHCHANGED = 1 << 6  # the branch changed
 
 METABLACKLIST = [
-    re.compile('^branch$'),
-    re.compile('^.*-source$'),
-    re.compile('^.*_source$'),
-    re.compile('^source$'),
+    re.compile(b'^branch$'),
+    re.compile(b'^.*-source$'),
+    re.compile(b'^.*_source$'),
+    re.compile(b'^source$'),
 ]
 
 
@@ -408,7 +408,7 @@ def _cmpdiff(leftctx, rightctx):
 
     This is a first and basic implementation, with many shortcoming.
     """
-    diffopts = diffutil.diffallopts(leftctx.repo().ui, {'git': True})
+    diffopts = diffutil.diffallopts(leftctx.repo().ui, {b'git': True})
 
     # Leftctx or right ctx might be filtered, so we need to use the contexts
     # with an unfiltered repository to safely compute the diff
@@ -481,8 +481,8 @@ def getobsoleted(repo, tr):
     phase = repo._phasecache.phase
     succsmarkers = repo.obsstore.successors.get
     public = phases.public
-    addedmarkers = tr.changes['obsmarkers']
-    origrepolen = tr.changes['origrepolen']
+    addedmarkers = tr.changes[b'obsmarkers']
+    origrepolen = tr.changes[b'origrepolen']
     seenrevs = set()
     obsoleted = set()
     for mark in addedmarkers:
@@ -794,7 +794,7 @@ def successorsandmarkers(repo, ctx):
 
     values = []
     for sset in fullsuccessorsets:
-        values.append({'successors': sset, 'markers': sset.markers})
+        values.append({b'successors': sset, b'markers': sset.markers})
 
     return values
 
@@ -813,17 +813,17 @@ def _getobsfate(successorssets):
 
     if len(successorssets) == 0:
         # The commit has been pruned
-        return 'pruned'
+        return b'pruned'
     elif len(successorssets) > 1:
-        return 'diverged'
+        return b'diverged'
     else:
         # No divergence, only one set of successors
         successors = successorssets[0]
 
         if len(successors) == 1:
-            return 'superseded'
+            return b'superseded'
         else:
-            return 'superseded_split'
+            return b'superseded_split'
 
 
 def obsfateverb(successorset, markers):
@@ -831,11 +831,11 @@ def obsfateverb(successorset, markers):
     information from the markers
     """
     if not successorset:
-        verb = 'pruned'
+        verb = b'pruned'
     elif len(successorset) == 1:
-        verb = 'rewritten'
+        verb = b'rewritten'
     else:
-        verb = 'split'
+        verb = b'split'
     return verb
 
 
@@ -850,9 +850,9 @@ def markersusers(markers):
     """
     markersmeta = [dict(m[3]) for m in markers]
     users = set(
-        encoding.tolocal(meta['user'])
+        encoding.tolocal(meta[b'user'])
         for meta in markersmeta
-        if meta.get('user')
+        if meta.get(b'user')
     )
 
     return sorted(users)
@@ -863,7 +863,7 @@ def markersoperations(markers):
     """
     markersmeta = [dict(m[3]) for m in markers]
     operations = set(
-        meta.get('operation') for meta in markersmeta if meta.get('operation')
+        meta.get(b'operation') for meta in markersmeta if meta.get(b'operation')
     )
 
     return sorted(operations)
@@ -885,12 +885,12 @@ def obsfateprinter(ui, repo, successors, markers, formatctx):
     # Operations
     operations = markersoperations(markers)
     if operations:
-        line.append(" using %s" % ", ".join(operations))
+        line.append(b" using %s" % b", ".join(operations))
 
     # Successors
     if successors:
         fmtsuccessors = [formatctx(repo[succ]) for succ in successors]
-        line.append(" as %s" % ", ".join(fmtsuccessors))
+        line.append(b" as %s" % b", ".join(fmtsuccessors))
 
     # Users
     users = markersusers(markers)
@@ -902,7 +902,7 @@ def obsfateprinter(ui, repo, successors, markers, formatctx):
             users = None
 
     if (verbose or normal) and users:
-        line.append(" by %s" % ", ".join(users))
+        line.append(b" by %s" % b", ".join(users))
 
     # Date
     dates = markersdates(markers)
@@ -912,23 +912,23 @@ def obsfateprinter(ui, repo, successors, markers, formatctx):
         max_date = max(dates)
 
         if min_date == max_date:
-            fmtmin_date = dateutil.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
-            line.append(" (at %s)" % fmtmin_date)
+            fmtmin_date = dateutil.datestr(min_date, b'%Y-%m-%d %H:%M %1%2')
+            line.append(b" (at %s)" % fmtmin_date)
         else:
-            fmtmin_date = dateutil.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
-            fmtmax_date = dateutil.datestr(max_date, '%Y-%m-%d %H:%M %1%2')
-            line.append(" (between %s and %s)" % (fmtmin_date, fmtmax_date))
+            fmtmin_date = dateutil.datestr(min_date, b'%Y-%m-%d %H:%M %1%2')
+            fmtmax_date = dateutil.datestr(max_date, b'%Y-%m-%d %H:%M %1%2')
+            line.append(b" (between %s and %s)" % (fmtmin_date, fmtmax_date))
 
-    return "".join(line)
+    return b"".join(line)
 
 
 filteredmsgtable = {
-    "pruned": _("hidden revision '%s' is pruned"),
-    "diverged": _("hidden revision '%s' has diverged"),
-    "superseded": _("hidden revision '%s' was rewritten as: %s"),
-    "superseded_split": _("hidden revision '%s' was split as: %s"),
-    "superseded_split_several": _(
-        "hidden revision '%s' was split as: %s and " "%d more"
+    b"pruned": _(b"hidden revision '%s' is pruned"),
+    b"diverged": _(b"hidden revision '%s' has diverged"),
+    b"superseded": _(b"hidden revision '%s' was rewritten as: %s"),
+    b"superseded_split": _(b"hidden revision '%s' was split as: %s"),
+    b"superseded_split_several": _(
+        b"hidden revision '%s' was split as: %s and " b"%d more"
     ),
 }
 
@@ -940,28 +940,28 @@ def _getfilteredreason(repo, changeid, ctx):
     fate = _getobsfate(successors)
 
     # Be more precise in case the revision is superseded
-    if fate == 'pruned':
-        return filteredmsgtable['pruned'] % changeid
-    elif fate == 'diverged':
-        return filteredmsgtable['diverged'] % changeid
-    elif fate == 'superseded':
+    if fate == b'pruned':
+        return filteredmsgtable[b'pruned'] % changeid
+    elif fate == b'diverged':
+        return filteredmsgtable[b'diverged'] % changeid
+    elif fate == b'superseded':
         single_successor = nodemod.short(successors[0][0])
-        return filteredmsgtable['superseded'] % (changeid, single_successor)
-    elif fate == 'superseded_split':
+        return filteredmsgtable[b'superseded'] % (changeid, single_successor)
+    elif fate == b'superseded_split':
 
         succs = []
         for node_id in successors[0]:
             succs.append(nodemod.short(node_id))
 
         if len(succs) <= 2:
-            fmtsuccs = ', '.join(succs)
-            return filteredmsgtable['superseded_split'] % (changeid, fmtsuccs)
+            fmtsuccs = b', '.join(succs)
+            return filteredmsgtable[b'superseded_split'] % (changeid, fmtsuccs)
         else:
-            firstsuccessors = ', '.join(succs[:2])
+            firstsuccessors = b', '.join(succs[:2])
             remainingnumber = len(succs) - 2
 
             args = (changeid, firstsuccessors, remainingnumber)
-            return filteredmsgtable['superseded_split_several'] % args
+            return filteredmsgtable[b'superseded_split_several'] % args
 
 
 def divergentsets(repo, ctx):
@@ -982,7 +982,7 @@ def divergentsets(repo, ctx):
                 continue
             base[tuple(nsuccset)] = n
     return [
-        {'divergentnodes': divset, 'commonpredecessor': b}
+        {b'divergentnodes': divset, b'commonpredecessor': b}
         for divset, b in base.iteritems()
     ]
 
@@ -993,15 +993,15 @@ def whyunstable(repo, ctx):
         for parent in ctx.parents():
             kind = None
             if parent.orphan():
-                kind = 'orphan'
+                kind = b'orphan'
             elif parent.obsolete():
-                kind = 'obsolete'
+                kind = b'obsolete'
             if kind is not None:
                 result.append(
                     {
-                        'instability': 'orphan',
-                        'reason': '%s parent' % kind,
-                        'node': parent.hex(),
+                        b'instability': b'orphan',
+                        b'reason': b'%s parent' % kind,
+                        b'node': parent.hex(),
                     }
                 )
     if ctx.phasedivergent():
@@ -1014,21 +1014,21 @@ def whyunstable(repo, ctx):
         for predecessor in immutable:
             result.append(
                 {
-                    'instability': 'phase-divergent',
-                    'reason': 'immutable predecessor',
-                    'node': predecessor.hex(),
+                    b'instability': b'phase-divergent',
+                    b'reason': b'immutable predecessor',
+                    b'node': predecessor.hex(),
                 }
             )
     if ctx.contentdivergent():
         dsets = divergentsets(repo, ctx)
         for dset in dsets:
-            divnodes = [repo[n] for n in dset['divergentnodes']]
+            divnodes = [repo[n] for n in dset[b'divergentnodes']]
             result.append(
                 {
-                    'instability': 'content-divergent',
-                    'divergentnodes': divnodes,
-                    'reason': 'predecessor',
-                    'node': nodemod.hex(dset['commonpredecessor']),
+                    b'instability': b'content-divergent',
+                    b'divergentnodes': divnodes,
+                    b'reason': b'predecessor',
+                    b'node': nodemod.hex(dset[b'commonpredecessor']),
                 }
             )
     return result

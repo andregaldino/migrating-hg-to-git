@@ -68,10 +68,10 @@ class filebundlestore(object):
     def __init__(self, ui, repo):
         self.ui = ui
         self.repo = repo
-        self.storepath = ui.configpath('scratchbranch', 'storepath')
+        self.storepath = ui.configpath(b'scratchbranch', b'storepath')
         if not self.storepath:
             self.storepath = self.repo.vfs.join(
-                "scratchbranches", "filebundlestore"
+                b"scratchbranches", b"filebundlestore"
             )
         if not os.path.exists(self.storepath):
             os.makedirs(self.storepath)
@@ -92,14 +92,14 @@ class filebundlestore(object):
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
 
-        with open(self._filepath(filename), 'wb') as f:
+        with open(self._filepath(filename), b'wb') as f:
             f.write(data)
 
         return filename
 
     def read(self, key):
         try:
-            with open(self._filepath(key), 'rb') as f:
+            with open(self._filepath(key), b'rb') as f:
                 return f.read()
         except IOError:
             return None
@@ -152,14 +152,14 @@ class externalbundlestore(abstractbundlestore):
 
             if returncode != 0:
                 raise BundleWriteException(
-                    'Failed to upload to external store: %s' % stderr
+                    b'Failed to upload to external store: %s' % stderr
                 )
             stdout_lines = stdout.splitlines()
             if len(stdout_lines) == 1:
                 return stdout_lines[0]
             else:
                 raise BundleWriteException(
-                    'Bad output from %s: %s' % (self.put_binary, stdout)
+                    b'Bad output from %s: %s' % (self.put_binary, stdout)
                 )
 
     def read(self, handle):
@@ -178,6 +178,6 @@ class externalbundlestore(abstractbundlestore):
 
             if returncode != 0:
                 raise BundleReadException(
-                    'Failed to download from external store: %s' % stderr
+                    b'Failed to download from external store: %s' % stderr
                 )
             return temp.read()

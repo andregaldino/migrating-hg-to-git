@@ -17,29 +17,29 @@ from . import (
 )
 
 
-def precheck(repo, revs, action='rewrite'):
+def precheck(repo, revs, action=b'rewrite'):
     """check if revs can be rewritten
     action is used to control the error message.
 
     Make sure this function is called after taking the lock.
     """
     if node.nullrev in revs:
-        msg = _("cannot %s null changeset") % action
-        hint = _("no changeset checked out")
+        msg = _(b"cannot %s null changeset") % action
+        hint = _(b"no changeset checked out")
         raise error.Abort(msg, hint=hint)
 
     if len(repo[None].parents()) > 1:
-        raise error.Abort(_("cannot %s while merging") % action)
+        raise error.Abort(_(b"cannot %s while merging") % action)
 
-    publicrevs = repo.revs('%ld and public()', revs)
+    publicrevs = repo.revs(b'%ld and public()', revs)
     if publicrevs:
-        msg = _("cannot %s public changesets") % action
-        hint = _("see 'hg help phases' for details")
+        msg = _(b"cannot %s public changesets") % action
+        hint = _(b"see 'hg help phases' for details")
         raise error.Abort(msg, hint=hint)
 
     newunstable = disallowednewunstable(repo, revs)
     if newunstable:
-        raise error.Abort(_("cannot %s changeset with children") % action)
+        raise error.Abort(_(b"cannot %s changeset with children") % action)
 
 
 def disallowednewunstable(repo, revs):
@@ -52,4 +52,4 @@ def disallowednewunstable(repo, revs):
     allowunstable = obsolete.isenabled(repo, obsolete.allowunstableopt)
     if allowunstable:
         return revset.baseset()
-    return repo.revs("(%ld::) - %ld", revs, revs)
+    return repo.revs(b"(%ld::) - %ld", revs, revs)

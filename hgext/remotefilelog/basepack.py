@@ -56,9 +56,9 @@ if pycompat.isposix and not pycompat.ispy3:
     # With glibc 2.7+ the 'e' flag uses O_CLOEXEC when opening.
     # The 'e' flag will be ignored on older versions of glibc.
     # Python 3 can't handle the 'e' flag.
-    PACKOPENMODE = 'rbe'
+    PACKOPENMODE = b'rbe'
 else:
-    PACKOPENMODE = 'rb'
+    PACKOPENMODE = b'rb'
 
 
 class _cachebackedpacks(object):
@@ -132,7 +132,7 @@ class basepackstore(object):
                 # Someone could have removed the file since we retrieved the
                 # list of paths.
                 if getattr(ex, 'errno', None) != errno.ENOENT:
-                    ui.warn(_('unable to load pack %s: %s\n') % (filepath, ex))
+                    ui.warn(_(b'unable to load pack %s: %s\n') % (filepath, ex))
                 continue
             packs.append(pack)
 
@@ -210,8 +210,8 @@ class basepackstore(object):
         """Returns metrics on the state of this store."""
         size, count = self.gettotalsizeandcount()
         return {
-            'numpacks': count,
-            'totalpacksize': size,
+            b'numpacks': count,
+            b'totalpacksize': size,
         }
 
     def getpack(self, path):
@@ -276,9 +276,9 @@ class versionmixin(object):
                 # only affect this instance
                 self.VERSION = version
             elif self.VERSION != version:
-                raise RuntimeError('inconsistent version: %d' % version)
+                raise RuntimeError(b'inconsistent version: %d' % version)
         else:
-            raise RuntimeError('unsupported version: %d' % version)
+            raise RuntimeError(b'unsupported version: %d' % version)
 
 
 class basepack(versionmixin):
@@ -300,10 +300,10 @@ class basepack(versionmixin):
         self._data = None
         self.freememory()  # initialize the mmap
 
-        version = struct.unpack('!B', self._data[:PACKVERSIONSIZE])[0]
+        version = struct.unpack(b'!B', self._data[:PACKVERSIONSIZE])[0]
         self._checkversion(version)
 
-        version, config = struct.unpack('!BB', self._index[:INDEXVERSIONSIZE])
+        version, config = struct.unpack(b'!BB', self._index[:INDEXVERSIONSIZE])
         self._checkversion(version)
 
         if 0b10000000 & config:
@@ -318,14 +318,14 @@ class basepack(versionmixin):
         fanouttable = []
         for i in pycompat.xrange(0, params.fanoutcount):
             loc = i * 4
-            fanoutentry = struct.unpack('!I', rawfanout[loc : loc + 4])[0]
+            fanoutentry = struct.unpack(b'!I', rawfanout[loc : loc + 4])[0]
             fanouttable.append(fanoutentry)
         return fanouttable
 
     @util.propertycache
     def _indexend(self):
         nodecount = struct.unpack_from(
-            '!Q', self._index, self.params.indexstart - 8
+            b'!Q', self._index, self.params.indexstart - 8
         )[0]
         return self.params.indexstart + nodecount * self.INDEXENTRYLENGTH
 
@@ -372,7 +372,7 @@ class mutablebasepack(versionmixin):
     def __init__(self, ui, packdir, version=2):
         self._checkversion(version)
         # TODO(augie): make this configurable
-        self._compressor = 'GZ'
+        self._compressor = b'GZ'
         opener = vfsmod.vfs(packdir)
         opener.createmode = 0o444
         self.opener = opener
@@ -381,10 +381,10 @@ class mutablebasepack(versionmixin):
 
         shallowutil.mkstickygroupdir(ui, packdir)
         self.packfp, self.packpath = opener.mkstemp(
-            suffix=self.PACKSUFFIX + '-tmp'
+            suffix=self.PACKSUFFIX + b'-tmp'
         )
         self.idxfp, self.idxpath = opener.mkstemp(
-            suffix=self.INDEXSUFFIX + '-tmp'
+            suffix=self.INDEXSUFFIX + b'-tmp'
         )
         self.packfp = os.fdopen(self.packfp, r'wb+')
         self.idxfp = os.fdopen(self.idxfp, r'wb+')
@@ -400,7 +400,7 @@ class mutablebasepack(versionmixin):
         # Write header
         # TODO: make it extensible (ex: allow specifying compression algorithm,
         # a flexible key/value header, delta algorithm, fanout size, etc)
-        versionbuf = struct.pack('!B', self.VERSION)  # unsigned 1 byte int
+        versionbuf = struct.pack(b'!B', self.VERSION)  # unsigned 1 byte int
         self.writeraw(versionbuf)
 
     def __enter__(self):
@@ -491,14 +491,14 @@ class mutablebasepack(versionmixin):
             if fanouttable[fanoutkey] == EMPTYFANOUT:
                 fanouttable[fanoutkey] = location
 
-        rawfanouttable = ''
+        rawfanouttable = b''
         last = 0
         for offset in fanouttable:
             offset = offset if offset != EMPTYFANOUT else last
             last = offset
-            rawfanouttable += struct.pack('!I', offset)
+            rawfanouttable += struct.pack(b'!I', offset)
 
-        rawentrieslength = struct.pack('!Q', len(self.entries))
+        rawentrieslength = struct.pack(b'!Q', len(self.entries))
 
         # The index offset is the it's location in the file. So after the 2 byte
         # header and the fanouttable.
@@ -521,7 +521,7 @@ class mutablebasepack(versionmixin):
         config = 0
         if indexparams.fanoutprefix == LARGEFANOUTPREFIX:
             config = 0b10000000
-        self.idxfp.write(struct.pack('!BB', self.VERSION, config))
+        self.idxfp.write(struct.pack(b'!BB', self.VERSION, config))
 
 
 class indexparams(object):
@@ -540,11 +540,11 @@ class indexparams(object):
         # converts the node prefix into an integer location in the fanout
         # table).
         if prefixsize == SMALLFANOUTPREFIX:
-            self.fanoutstruct = '!B'
+            self.fanoutstruct = b'!B'
         elif prefixsize == LARGEFANOUTPREFIX:
-            self.fanoutstruct = '!H'
+            self.fanoutstruct = b'!H'
         else:
-            raise ValueError("invalid fanout prefix size: %s" % prefixsize)
+            raise ValueError(b"invalid fanout prefix size: %s" % prefixsize)
 
         # The number of fanout table entries
         self.fanoutcount = 2 ** (prefixsize * 8)

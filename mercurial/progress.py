@@ -16,12 +16,12 @@ from . import encoding
 
 
 def spacejoin(*args):
-    return ' '.join(s for s in args if s)
+    return b' '.join(s for s in args if s)
 
 
 def shouldprint(ui):
-    return not (ui.quiet or ui.plain('progress')) and (
-        ui._isatty(ui.ferr) or ui.configbool('progress', 'assume-tty')
+    return not (ui.quiet or ui.plain(b'progress')) and (
+        ui._isatty(ui.ferr) or ui.configbool(b'progress', b'assume-tty')
     )
 
 
@@ -31,39 +31,39 @@ def fmtremaining(seconds):
     This will properly display seconds, minutes, hours, days if needed"""
     if seconds < 60:
         # i18n: format XX seconds as "XXs"
-        return _("%02ds") % seconds
+        return _(b"%02ds") % seconds
     minutes = seconds // 60
     if minutes < 60:
         seconds -= minutes * 60
         # i18n: format X minutes and YY seconds as "XmYYs"
-        return _("%dm%02ds") % (minutes, seconds)
+        return _(b"%dm%02ds") % (minutes, seconds)
     # we're going to ignore seconds in this case
     minutes += 1
     hours = minutes // 60
     minutes -= hours * 60
     if hours < 30:
         # i18n: format X hours and YY minutes as "XhYYm"
-        return _("%dh%02dm") % (hours, minutes)
+        return _(b"%dh%02dm") % (hours, minutes)
     # we're going to ignore minutes in this case
     hours += 1
     days = hours // 24
     hours -= days * 24
     if days < 15:
         # i18n: format X days and YY hours as "XdYYh"
-        return _("%dd%02dh") % (days, hours)
+        return _(b"%dd%02dh") % (days, hours)
     # we're going to ignore hours in this case
     days += 1
     weeks = days // 7
     days -= weeks * 7
     if weeks < 55:
         # i18n: format X weeks and YY days as "XwYYd"
-        return _("%dw%02dd") % (weeks, days)
+        return _(b"%dw%02dd") % (weeks, days)
     # we're going to ignore days and treat a year as 52 weeks
     weeks += 1
     years = weeks // 52
     weeks -= years * 52
     # i18n: format X years and YY weeks as "XyYYw"
-    return _("%dy%02dw") % (years, weeks)
+    return _(b"%dy%02dw") % (years, weeks)
 
 
 # file_write() and file_flush() of Python 2 do not restart on EINTR if
@@ -98,18 +98,18 @@ class progbar(object):
         self.startvals = {}
         self.printed = False
         self.lastprint = time.time() + float(
-            self.ui.config('progress', 'delay')
+            self.ui.config(b'progress', b'delay')
         )
         self.curtopic = None
         self.lasttopic = None
         self.indetcount = 0
-        self.refresh = float(self.ui.config('progress', 'refresh'))
+        self.refresh = float(self.ui.config(b'progress', b'refresh'))
         self.changedelay = max(
-            3 * self.refresh, float(self.ui.config('progress', 'changedelay'))
+            3 * self.refresh, float(self.ui.config(b'progress', b'changedelay'))
         )
-        self.order = self.ui.configlist('progress', 'format')
+        self.order = self.ui.configlist(b'progress', b'format')
         self.estimateinterval = self.ui.configwith(
-            float, 'progress', 'estimateinterval'
+            float, b'progress', b'estimateinterval'
         )
 
     def show(self, now, topic, pos, item, unit, total):
@@ -117,40 +117,40 @@ class progbar(object):
             return
         termwidth = self.width()
         self.printed = True
-        head = ''
+        head = b''
         needprogress = False
-        tail = ''
+        tail = b''
         for indicator in self.order:
-            add = ''
-            if indicator == 'topic':
+            add = b''
+            if indicator == b'topic':
                 add = topic
-            elif indicator == 'number':
+            elif indicator == b'number':
                 if total:
                     add = b'%*d/%d' % (len(str(total)), pos, total)
                 else:
                     add = b'%d' % pos
-            elif indicator.startswith('item') and item:
-                slice = 'end'
-                if '-' in indicator:
-                    wid = int(indicator.split('-')[1])
-                elif '+' in indicator:
-                    slice = 'beginning'
-                    wid = int(indicator.split('+')[1])
+            elif indicator.startswith(b'item') and item:
+                slice = b'end'
+                if b'-' in indicator:
+                    wid = int(indicator.split(b'-')[1])
+                elif b'+' in indicator:
+                    slice = b'beginning'
+                    wid = int(indicator.split(b'+')[1])
                 else:
                     wid = 20
-                if slice == 'end':
+                if slice == b'end':
                     add = encoding.trim(item, wid, leftside=True)
                 else:
                     add = encoding.trim(item, wid)
-                add += (wid - encoding.colwidth(add)) * ' '
-            elif indicator == 'bar':
-                add = ''
+                add += (wid - encoding.colwidth(add)) * b' '
+            elif indicator == b'bar':
+                add = b''
                 needprogress = True
-            elif indicator == 'unit' and unit:
+            elif indicator == b'unit' and unit:
                 add = unit
-            elif indicator == 'estimate':
+            elif indicator == b'estimate':
                 add = self.estimate(topic, pos, total, now)
-            elif indicator == 'speed':
+            elif indicator == b'speed':
                 add = self.speed(topic, pos, unit, now)
             if not needprogress:
                 head = spacejoin(head, add)
@@ -165,10 +165,10 @@ class progbar(object):
             progwidth = termwidth - used - 3
             if total and pos <= total:
                 amt = pos * progwidth // total
-                bar = '=' * (amt - 1)
+                bar = b'=' * (amt - 1)
                 if amt > 0:
-                    bar += '>'
-                bar += ' ' * (progwidth - amt)
+                    bar += b'>'
+                bar += b' ' * (progwidth - amt)
             else:
                 progwidth -= 3
                 self.indetcount += 1
@@ -177,22 +177,22 @@ class progbar(object):
                 amt = self.indetcount % (2 * progwidth)
                 amt -= progwidth
                 bar = (
-                    ' ' * int(progwidth - abs(amt))
-                    + '<=>'
-                    + ' ' * int(abs(amt))
+                    b' ' * int(progwidth - abs(amt))
+                    + b'<=>'
+                    + b' ' * int(abs(amt))
                 )
-            prog = ''.join(('[', bar, ']'))
+            prog = b''.join((b'[', bar, b']'))
             out = spacejoin(head, prog, tail)
         else:
             out = spacejoin(head, tail)
-        self._writeerr('\r' + encoding.trim(out, termwidth))
+        self._writeerr(b'\r' + encoding.trim(out, termwidth))
         self.lasttopic = topic
         self._flusherr()
 
     def clear(self):
         if not self.printed or not self.lastprint or not shouldprint(self.ui):
             return
-        self._writeerr('\r%s\r' % (' ' * self.width()))
+        self._writeerr(b'\r%s\r' % (b' ' * self.width()))
         if self.printed:
             # force immediate re-paint of progress bar
             self.lastprint = 0
@@ -200,10 +200,10 @@ class progbar(object):
     def complete(self):
         if not shouldprint(self.ui):
             return
-        if self.ui.configbool('progress', 'clear-complete'):
+        if self.ui.configbool(b'progress', b'clear-complete'):
             self.clear()
         else:
-            self._writeerr('\n')
+            self._writeerr(b'\n')
         self._flusherr()
 
     def _flusherr(self):
@@ -214,11 +214,11 @@ class progbar(object):
 
     def width(self):
         tw = self.ui.termwidth()
-        return min(int(self.ui.config('progress', 'width', default=tw)), tw)
+        return min(int(self.ui.config(b'progress', b'width', default=tw)), tw)
 
     def estimate(self, topic, pos, total, now):
         if total is None:
-            return ''
+            return b''
         initialpos = self.startvals[topic]
         target = total - initialpos
         delta = pos - initialpos
@@ -226,15 +226,15 @@ class progbar(object):
             elapsed = now - self.starttimes[topic]
             seconds = (elapsed * (target - delta)) // delta + 1
             return fmtremaining(seconds)
-        return ''
+        return b''
 
     def speed(self, topic, pos, unit, now):
         initialpos = self.startvals[topic]
         delta = pos - initialpos
         elapsed = now - self.starttimes[topic]
         if elapsed > 0:
-            return _('%d %s/sec') % (delta / elapsed, unit)
-        return ''
+            return _(b'%d %s/sec') % (delta / elapsed, unit)
+        return b''
 
     def _oktoprint(self, now):
         '''Check if conditions are met to print - e.g. changedelay elapsed'''
@@ -275,7 +275,7 @@ class progbar(object):
             self.startvals[topic] = pos - newdelta
             self.starttimes[topic] = now - interval
 
-    def progress(self, topic, pos, item='', unit='', total=None):
+    def progress(self, topic, pos, item=b'', unit=b'', total=None):
         if pos is None:
             self.closetopic(topic)
             return

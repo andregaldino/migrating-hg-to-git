@@ -27,7 +27,7 @@ from .utils import (
     stringutil,
 )
 
-_defaultextra = {'branch': 'default'}
+_defaultextra = {b'branch': b'default'}
 
 
 def _string_escape(text):
@@ -42,16 +42,20 @@ def _string_escape(text):
     True
     """
     # subset of the string_escape codec
-    text = text.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
-    return text.replace('\0', '\\0')
+    text = (
+        text.replace(b'\\', b'\\\\')
+        .replace(b'\n', b'\\n')
+        .replace(b'\r', b'\\r')
+    )
+    return text.replace(b'\0', b'\\0')
 
 
 def _string_unescape(text):
-    if '\\0' in text:
+    if b'\\0' in text:
         # fix up \0 without getting into trouble with \\0
-        text = text.replace('\\\\', '\\\\\n')
-        text = text.replace('\\0', '\0')
-        text = text.replace('\n', '')
+        text = text.replace(b'\\\\', b'\\\\\n')
+        text = text.replace(b'\\0', b'\0')
+        text = text.replace(b'\n', b'')
     return stringutil.unescapestr(text)
 
 
@@ -67,9 +71,9 @@ def decodeextra(text):
     [('baz', '\\\\\\x002'), ('branch', 'default'), ('foo', 'bar')]
     """
     extra = _defaultextra.copy()
-    for l in text.split('\0'):
+    for l in text.split(b'\0'):
         if l:
-            k, v = _string_unescape(l).split(':', 1)
+            k, v = _string_unescape(l).split(b':', 1)
             extra[k] = v
     return extra
 
@@ -77,19 +81,22 @@ def decodeextra(text):
 def encodeextra(d):
     # keys must be sorted to produce a deterministic changelog entry
     items = [
-        _string_escape('%s:%s' % (k, pycompat.bytestr(d[k]))) for k in sorted(d)
+        _string_escape(b'%s:%s' % (k, pycompat.bytestr(d[k])))
+        for k in sorted(d)
     ]
-    return "\0".join(items)
+    return b"\0".join(items)
 
 
 def encodecopies(files, copies):
     items = []
     for i, dst in enumerate(files):
         if dst in copies:
-            items.append('%d\0%s' % (i, copies[dst]))
+            items.append(b'%d\0%s' % (i, copies[dst]))
     if len(items) != len(copies):
-        raise error.ProgrammingError('some copy targets missing from file list')
-    return "\n".join(items)
+        raise error.ProgrammingError(
+            b'some copy targets missing from file list'
+        )
+    return b"\n".join(items)
 
 
 def decodecopies(files, data):
@@ -97,8 +104,8 @@ def decodecopies(files, data):
         copies = {}
         if not data:
             return copies
-        for l in data.split('\n'):
-            strindex, src = l.split('\0')
+        for l in data.split(b'\n'):
+            strindex, src = l.split(b'\0')
             i = int(strindex)
             dst = files[i]
             copies[dst] = src
@@ -114,8 +121,8 @@ def encodefileindices(files, subset):
     indices = []
     for i, f in enumerate(files):
         if f in subset:
-            indices.append('%d' % i)
-    return '\n'.join(indices)
+            indices.append(b'%d' % i)
+    return b'\n'.join(indices)
 
 
 def decodefileindices(files, data):
@@ -123,7 +130,7 @@ def decodefileindices(files, data):
         subset = []
         if not data:
             return subset
-        for strindex in data.split('\n'):
+        for strindex in data.split(b'\n'):
             i = int(strindex)
             if i < 0 or i >= len(files):
                 return None
@@ -137,7 +144,7 @@ def decodefileindices(files, data):
 
 def stripdesc(desc):
     """strip trailing whitespace and leading and trailing empty lines"""
-    return '\n'.join([l.rstrip() for l in desc.splitlines()]).strip('\n')
+    return b'\n'.join([l.rstrip() for l in desc.splitlines()]).strip(b'\n')
 
 
 class appender(object):
@@ -181,7 +188,7 @@ class appender(object):
 
     def read(self, count=-1):
         '''only trick here is reads that span real file and data'''
-        ret = ""
+        ret = b""
         if self.offset < self.size:
             s = self.fp.read(count)
             ret = s
@@ -190,7 +197,7 @@ class appender(object):
                 count -= len(s)
         if count != 0:
             doff = self.offset - self.size
-            self.data.insert(0, "".join(self.data))
+            self.data.insert(0, b"".join(self.data))
             del self.data[1:]
             s = self.data[0][doff : doff + count]
             self.offset += len(s)
@@ -213,10 +220,10 @@ class appender(object):
 def _divertopener(opener, target):
     """build an opener that writes in 'target.a' instead of 'target'"""
 
-    def _divert(name, mode='r', checkambig=False):
+    def _divert(name, mode=b'r', checkambig=False):
         if name != target:
             return opener(name, mode)
-        return opener(name + ".a", mode)
+        return opener(name + b".a", mode)
 
     return _divert
 
@@ -224,7 +231,7 @@ def _divertopener(opener, target):
 def _delayopener(opener, target, buf):
     """build an opener that stores chunks in 'buf' instead of 'target'"""
 
-    def _delay(name, mode='r', checkambig=False):
+    def _delay(name, mode=b'r', checkambig=False):
         if name != target:
             return opener(name, mode)
         return appender(opener, name, mode, buf)
@@ -238,14 +245,14 @@ class _changelogrevision(object):
     # it in
     extra = attr.ib()
     manifest = attr.ib(default=nullid)
-    user = attr.ib(default='')
+    user = attr.ib(default=b'')
     date = attr.ib(default=(0, 0))
     files = attr.ib(default=attr.Factory(list))
     filesadded = attr.ib(default=None)
     filesremoved = attr.ib(default=None)
     p1copies = attr.ib(default=None)
     p2copies = attr.ib(default=None)
-    description = attr.ib(default='')
+    description = attr.ib(default=b'')
 
 
 class changelogrevision(object):
@@ -280,16 +287,16 @@ class changelogrevision(object):
         #
         # changelog v0 doesn't use extra
 
-        nl1 = text.index('\n')
-        nl2 = text.index('\n', nl1 + 1)
-        nl3 = text.index('\n', nl2 + 1)
+        nl1 = text.index(b'\n')
+        nl2 = text.index(b'\n', nl1 + 1)
+        nl3 = text.index(b'\n', nl2 + 1)
 
         # The list of files may be empty. Which means nl3 is the first of the
         # double newline that precedes the description.
-        if text[nl3 + 1 : nl3 + 2] == '\n':
+        if text[nl3 + 1 : nl3 + 2] == b'\n':
             doublenl = nl3
         else:
-            doublenl = text.index('\n\n', nl3 + 1)
+            doublenl = text.index(b'\n\n', nl3 + 1)
 
         self._offsets = (nl1, nl2, nl3, doublenl)
         self._text = text
@@ -309,13 +316,13 @@ class changelogrevision(object):
     def _rawdate(self):
         off = self._offsets
         dateextra = self._text[off[1] + 1 : off[2]]
-        return dateextra.split(' ', 2)[0:2]
+        return dateextra.split(b' ', 2)[0:2]
 
     @property
     def _rawextra(self):
         off = self._offsets
         dateextra = self._text[off[1] + 1 : off[2]]
-        fields = dateextra.split(' ', 2)
+        fields = dateextra.split(b' ', 2)
         if len(fields) != 3:
             return None
 
@@ -347,26 +354,26 @@ class changelogrevision(object):
         if off[2] == off[3]:
             return []
 
-        return self._text[off[2] + 1 : off[3]].split('\n')
+        return self._text[off[2] + 1 : off[3]].split(b'\n')
 
     @property
     def filesadded(self):
-        rawindices = self.extra.get('filesadded')
+        rawindices = self.extra.get(b'filesadded')
         return rawindices and decodefileindices(self.files, rawindices)
 
     @property
     def filesremoved(self):
-        rawindices = self.extra.get('filesremoved')
+        rawindices = self.extra.get(b'filesremoved')
         return rawindices and decodefileindices(self.files, rawindices)
 
     @property
     def p1copies(self):
-        rawcopies = self.extra.get('p1copies')
+        rawcopies = self.extra.get(b'p1copies')
         return rawcopies and decodecopies(self.files, rawcopies)
 
     @property
     def p2copies(self):
-        rawcopies = self.extra.get('p2copies')
+        rawcopies = self.extra.get(b'p2copies')
         return rawcopies and decodecopies(self.files, rawcopies)
 
     @property
@@ -385,12 +392,12 @@ class changelog(revlog.revlog):
         It exists in a separate file to facilitate readers (such as
         hooks processes) accessing data before a transaction is finalized.
         """
-        if trypending and opener.exists('00changelog.i.a'):
-            indexfile = '00changelog.i.a'
+        if trypending and opener.exists(b'00changelog.i.a'):
+            indexfile = b'00changelog.i.a'
         else:
-            indexfile = '00changelog.i'
+            indexfile = b'00changelog.i'
 
-        datafile = '00changelog.d'
+        datafile = b'00changelog.d'
         revlog.revlog.__init__(
             self,
             opener,
@@ -416,7 +423,7 @@ class changelog(revlog.revlog):
         self._delaybuf = None
         self._divert = False
         self.filteredrevs = frozenset()
-        self._copiesstorage = opener.options.get('copies-storage')
+        self._copiesstorage = opener.options.get(b'copies-storage')
 
     def tiprev(self):
         for i in pycompat.xrange(len(self) - 1, -2, -1):
@@ -494,7 +501,7 @@ class changelog(revlog.revlog):
         r = super(changelog, self).rev(node)
         if r in self.filteredrevs:
             raise error.FilteredLookupError(
-                hex(node), self.indexfile, _('filtered node')
+                hex(node), self.indexfile, _(b'filtered node')
             )
         return r
 
@@ -523,13 +530,13 @@ class changelog(revlog.revlog):
         return super(changelog, self).flags(rev)
 
     def delayupdate(self, tr):
-        "delay visibility of index updates to other readers"
+        b"delay visibility of index updates to other readers"
 
         if not self._delayed:
             if len(self) == 0:
                 self._divert = True
-                if self._realopener.exists(self.indexfile + '.a'):
-                    self._realopener.unlink(self.indexfile + '.a')
+                if self._realopener.exists(self.indexfile + b'.a'):
+                    self._realopener.unlink(self.indexfile + b'.a')
                 self.opener = _divertopener(self._realopener, self.indexfile)
             else:
                 self._delaybuf = []
@@ -537,23 +544,23 @@ class changelog(revlog.revlog):
                     self._realopener, self.indexfile, self._delaybuf
                 )
         self._delayed = True
-        tr.addpending('cl-%i' % id(self), self._writepending)
-        tr.addfinalize('cl-%i' % id(self), self._finalize)
+        tr.addpending(b'cl-%i' % id(self), self._writepending)
+        tr.addfinalize(b'cl-%i' % id(self), self._finalize)
 
     def _finalize(self, tr):
-        "finalize index updates"
+        b"finalize index updates"
         self._delayed = False
         self.opener = self._realopener
         # move redirected index data back into place
         if self._divert:
             assert not self._delaybuf
-            tmpname = self.indexfile + ".a"
+            tmpname = self.indexfile + b".a"
             nfile = self.opener.open(tmpname)
             nfile.close()
             self.opener.rename(tmpname, self.indexfile, checkambig=True)
         elif self._delaybuf:
-            fp = self.opener(self.indexfile, 'a', checkambig=True)
-            fp.write("".join(self._delaybuf))
+            fp = self.opener(self.indexfile, b'a', checkambig=True)
+            fp.write(b"".join(self._delaybuf))
             fp.close()
             self._delaybuf = None
         self._divert = False
@@ -561,18 +568,18 @@ class changelog(revlog.revlog):
         self._enforceinlinesize(tr)
 
     def _writepending(self, tr):
-        "create a file containing the unfinalized state for pretxnchangegroup"
+        b"create a file containing the unfinalized state for pretxnchangegroup"
         if self._delaybuf:
             # make a temporary copy of the index
             fp1 = self._realopener(self.indexfile)
-            pendingfilename = self.indexfile + ".a"
+            pendingfilename = self.indexfile + b".a"
             # register as a temp file to ensure cleanup on failure
             tr.registertmp(pendingfilename)
             # write existing data
-            fp2 = self._realopener(pendingfilename, "w")
+            fp2 = self._realopener(pendingfilename, b"w")
             fp2.write(fp1.read())
             # add pending data
-            fp2.write("".join(self._delaybuf))
+            fp2.write(b"".join(self._delaybuf))
             fp2.close()
             # switch modes so finalize can simply rename
             self._delaybuf = None
@@ -618,8 +625,8 @@ class changelog(revlog.revlog):
         text = self.revision(node)
         if not text:
             return []
-        last = text.index("\n\n")
-        l = text[:last].split('\n')
+        last = text.index(b"\n\n")
+        l = text[:last].split(b'\n')
         return l[3:]
 
     def add(
@@ -648,29 +655,34 @@ class changelog(revlog.revlog):
         # revision text contain two "\n\n" sequences -> corrupt
         # repository since read cannot unpack the revision.
         if not user:
-            raise error.StorageError(_("empty username"))
-        if "\n" in user:
+            raise error.StorageError(_(b"empty username"))
+        if b"\n" in user:
             raise error.StorageError(
-                _("username %r contains a newline") % pycompat.bytestr(user)
+                _(b"username %r contains a newline") % pycompat.bytestr(user)
             )
 
         desc = stripdesc(desc)
 
         if date:
-            parseddate = "%d %d" % dateutil.parsedate(date)
+            parseddate = b"%d %d" % dateutil.parsedate(date)
         else:
-            parseddate = "%d %d" % dateutil.makedate()
+            parseddate = b"%d %d" % dateutil.makedate()
         if extra:
-            branch = extra.get("branch")
-            if branch in ("default", ""):
-                del extra["branch"]
-            elif branch in (".", "null", "tip"):
+            branch = extra.get(b"branch")
+            if branch in (b"default", b""):
+                del extra[b"branch"]
+            elif branch in (b".", b"null", b"tip"):
                 raise error.StorageError(
-                    _('the name \'%s\' is reserved') % branch
+                    _(b'the name \'%s\' is reserved') % branch
                 )
         sortedfiles = sorted(files)
         if extra is not None:
-            for name in ('p1copies', 'p2copies', 'filesadded', 'filesremoved'):
+            for name in (
+                b'p1copies',
+                b'p2copies',
+                b'filesadded',
+                b'filesremoved',
+            ):
                 extra.pop(name, None)
         if p1copies is not None:
             p1copies = encodecopies(sortedfiles, p1copies)
@@ -680,24 +692,24 @@ class changelog(revlog.revlog):
             filesadded = encodefileindices(sortedfiles, filesadded)
         if filesremoved is not None:
             filesremoved = encodefileindices(sortedfiles, filesremoved)
-        if self._copiesstorage == 'extra':
+        if self._copiesstorage == b'extra':
             extrasentries = p1copies, p2copies, filesadded, filesremoved
             if extra is None and any(x is not None for x in extrasentries):
                 extra = {}
             if p1copies is not None:
-                extra['p1copies'] = p1copies
+                extra[b'p1copies'] = p1copies
             if p2copies is not None:
-                extra['p2copies'] = p2copies
+                extra[b'p2copies'] = p2copies
             if filesadded is not None:
-                extra['filesadded'] = filesadded
+                extra[b'filesadded'] = filesadded
             if filesremoved is not None:
-                extra['filesremoved'] = filesremoved
+                extra[b'filesremoved'] = filesremoved
 
         if extra:
             extra = encodeextra(extra)
-            parseddate = "%s %s" % (parseddate, extra)
-        l = [hex(manifest), user, parseddate] + sortedfiles + ["", desc]
-        text = "\n".join(l)
+            parseddate = b"%s %s" % (parseddate, extra)
+        l = [hex(manifest), user, parseddate] + sortedfiles + [b"", desc]
+        text = b"\n".join(l)
         return self.addrevision(text, transaction, len(self), p1, p2)
 
     def branchinfo(self, rev):
@@ -706,11 +718,11 @@ class changelog(revlog.revlog):
         This function exists because creating a changectx object
         just to access this is costly."""
         extra = self.read(rev)[5]
-        return encoding.tolocal(extra.get("branch")), 'close' in extra
+        return encoding.tolocal(extra.get(b"branch")), b'close' in extra
 
     def _nodeduplicatecallback(self, transaction, node):
         # keep track of revisions that got "re-added", eg: unbunde of know rev.
         #
         # We track them in a list to preserve their order from the source bundle
-        duplicates = transaction.changes.setdefault('revduplicates', [])
+        duplicates = transaction.changes.setdefault(b'revduplicates', [])
         duplicates.append(self.rev(node))

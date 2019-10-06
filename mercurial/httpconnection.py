@@ -44,7 +44,7 @@ class httpsendfile(object):
         # once whether authentication will be required, just lie to
         # the user and maybe the push succeeds suddenly at 50%.
         self._progress = ui.makeprogress(
-            _('sending'), unit=_('kb'), total=(self.length // 1024 * 2)
+            _(b'sending'), unit=_(b'kb'), total=(self.length // 1024 * 2)
         )
 
     def read(self, *args, **kwargs):
@@ -68,30 +68,30 @@ def readauthforuri(ui, uri, user):
     uri = pycompat.bytesurl(uri)
     # Read configuration
     groups = {}
-    for key, val in ui.configitems('auth'):
-        if key in ('cookiefile',):
+    for key, val in ui.configitems(b'auth'):
+        if key in (b'cookiefile',):
             continue
 
-        if '.' not in key:
-            ui.warn(_("ignoring invalid [auth] key '%s'\n") % key)
+        if b'.' not in key:
+            ui.warn(_(b"ignoring invalid [auth] key '%s'\n") % key)
             continue
-        group, setting = key.rsplit('.', 1)
+        group, setting = key.rsplit(b'.', 1)
         gdict = groups.setdefault(group, {})
-        if setting in ('username', 'cert', 'key'):
+        if setting in (b'username', b'cert', b'key'):
             val = util.expandpath(val)
         gdict[setting] = val
 
     # Find the best match
-    scheme, hostpath = uri.split('://', 1)
+    scheme, hostpath = uri.split(b'://', 1)
     bestuser = None
     bestlen = 0
     bestauth = None
     for group, auth in groups.iteritems():
-        if user and user != auth.get('username', user):
+        if user and user != auth.get(b'username', user):
             # If a username was set in the URI, the entry username
             # must either match it or be unset
             continue
-        prefix = auth.get('prefix')
+        prefix = auth.get(b'prefix')
         if not prefix:
             continue
 
@@ -106,26 +106,26 @@ def readauthforuri(ui, uri, user):
         prefixurl.user = None
         prefix = bytes(prefixurl)
 
-        p = prefix.split('://', 1)
+        p = prefix.split(b'://', 1)
         if len(p) > 1:
             schemes, prefix = [p[0]], p[1]
         else:
-            schemes = (auth.get('schemes') or 'https').split()
+            schemes = (auth.get(b'schemes') or b'https').split()
         if (
-            (prefix == '*' or hostpath.startswith(prefix))
+            (prefix == b'*' or hostpath.startswith(prefix))
             and (
                 len(prefix) > bestlen
                 or (
                     len(prefix) == bestlen
                     and not bestuser
-                    and 'username' in auth
+                    and b'username' in auth
                 )
             )
             and scheme in schemes
         ):
             bestlen = len(prefix)
             bestauth = group, auth
-            bestuser = auth.get('username')
+            bestuser = auth.get(b'username')
             if user and not bestuser:
-                auth['username'] = user
+                auth[b'username'] = user
     return bestauth

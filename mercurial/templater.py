@@ -85,22 +85,22 @@ from .utils import stringutil
 
 elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
-    "(": (20, None, ("group", 1, ")"), ("func", 1, ")"), None),
-    ".": (18, None, None, (".", 18), None),
-    "%": (15, None, None, ("%", 15), None),
-    "|": (15, None, None, ("|", 15), None),
-    "*": (5, None, None, ("*", 5), None),
-    "/": (5, None, None, ("/", 5), None),
-    "+": (4, None, None, ("+", 4), None),
-    "-": (4, None, ("negate", 19), ("-", 4), None),
-    "=": (3, None, None, ("keyvalue", 3), None),
-    ",": (2, None, None, ("list", 2), None),
-    ")": (0, None, None, None, None),
-    "integer": (0, "integer", None, None, None),
-    "symbol": (0, "symbol", None, None, None),
-    "string": (0, "string", None, None, None),
-    "template": (0, "template", None, None, None),
-    "end": (0, None, None, None, None),
+    b"(": (20, None, (b"group", 1, b")"), (b"func", 1, b")"), None),
+    b".": (18, None, None, (b".", 18), None),
+    b"%": (15, None, None, (b"%", 15), None),
+    b"|": (15, None, None, (b"|", 15), None),
+    b"*": (5, None, None, (b"*", 5), None),
+    b"/": (5, None, None, (b"/", 5), None),
+    b"+": (4, None, None, (b"+", 4), None),
+    b"-": (4, None, (b"negate", 19), (b"-", 4), None),
+    b"=": (3, None, None, (b"keyvalue", 3), None),
+    b",": (2, None, None, (b"list", 2), None),
+    b")": (0, None, None, None, None),
+    b"integer": (0, b"integer", None, None, None),
+    b"symbol": (0, b"symbol", None, None, None),
+    b"string": (0, b"string", None, None, None),
+    b"template": (0, b"template", None, None, None),
+    b"end": (0, None, None, None, None),
 }
 
 
@@ -113,28 +113,28 @@ def tokenize(program, start, end, term=None):
         c = program[pos]
         if c.isspace():  # skip inter-token whitespace
             pass
-        elif c in "(=,).%|+-*/":  # handle simple operators
+        elif c in b"(=,).%|+-*/":  # handle simple operators
             yield (c, None, pos)
-        elif c in '"\'':  # handle quoted templates
+        elif c in b'"\'':  # handle quoted templates
             s = pos + 1
             data, pos = _parsetemplate(program, s, end, c)
-            yield ('template', data, s)
+            yield (b'template', data, s)
             pos -= 1
-        elif c == 'r' and program[pos : pos + 2] in ("r'", 'r"'):
+        elif c == b'r' and program[pos : pos + 2] in (b"r'", b'r"'):
             # handle quoted strings
             c = program[pos + 1]
             s = pos = pos + 2
             while pos < end:  # find closing quote
                 d = program[pos]
-                if d == '\\':  # skip over escaped characters
+                if d == b'\\':  # skip over escaped characters
                     pos += 2
                     continue
                 if d == c:
-                    yield ('string', program[s:pos], s)
+                    yield (b'string', program[s:pos], s)
                     break
                 pos += 1
             else:
-                raise error.ParseError(_("unterminated string"), s)
+                raise error.ParseError(_(b"unterminated string"), s)
         elif c.isdigit():
             s = pos
             while pos < end:
@@ -142,12 +142,12 @@ def tokenize(program, start, end, term=None):
                 if not d.isdigit():
                     break
                 pos += 1
-            yield ('integer', program[s:pos], s)
+            yield (b'integer', program[s:pos], s)
             pos -= 1
         elif (
-            c == '\\'
+            c == b'\\'
             and program[pos : pos + 2] in (br"\'", br'\"')
-            or c == 'r'
+            or c == b'r'
             and program[pos : pos + 3] in (br"r\'", br'r\"')
         ):
             # handle escaped quoted strings for compatibility with 2.9.2-3.4,
@@ -160,51 +160,51 @@ def tokenize(program, start, end, term=None):
             # {f("\\\\ {g(\"\\\"\")}"}    \\ {g("\"")}    [r'\\', {g("\"")}]
             #             ~~~~~~~~
             #             escaped quoted string
-            if c == 'r':
+            if c == b'r':
                 pos += 1
-                token = 'string'
+                token = b'string'
             else:
-                token = 'template'
+                token = b'template'
             quote = program[pos : pos + 2]
             s = pos = pos + 2
             while pos < end:  # find closing escaped quote
-                if program.startswith('\\\\\\', pos, end):
+                if program.startswith(b'\\\\\\', pos, end):
                     pos += 4  # skip over double escaped characters
                     continue
                 if program.startswith(quote, pos, end):
                     # interpret as if it were a part of an outer string
                     data = parser.unescapestr(program[s:pos])
-                    if token == 'template':
+                    if token == b'template':
                         data = _parsetemplate(data, 0, len(data))[0]
                     yield (token, data, s)
                     pos += 1
                     break
                 pos += 1
             else:
-                raise error.ParseError(_("unterminated string"), s)
-        elif c.isalnum() or c in '_':
+                raise error.ParseError(_(b"unterminated string"), s)
+        elif c.isalnum() or c in b'_':
             s = pos
             pos += 1
             while pos < end:  # find end of symbol
                 d = program[pos]
-                if not (d.isalnum() or d == "_"):
+                if not (d.isalnum() or d == b"_"):
                     break
                 pos += 1
             sym = program[s:pos]
-            yield ('symbol', sym, s)
+            yield (b'symbol', sym, s)
             pos -= 1
         elif c == term:
-            yield ('end', None, pos)
+            yield (b'end', None, pos)
             return
         else:
-            raise error.ParseError(_("syntax error"), pos)
+            raise error.ParseError(_(b"syntax error"), pos)
         pos += 1
     if term:
-        raise error.ParseError(_("unterminated template expansion"), start)
-    yield ('end', None, pos)
+        raise error.ParseError(_(b"unterminated template expansion"), start)
+    yield (b'end', None, pos)
 
 
-def _parsetemplate(tmpl, start, stop, quote=''):
+def _parsetemplate(tmpl, start, stop, quote=b''):
     r"""
     >>> _parsetemplate(b'foo{bar}"baz', 0, 12)
     ([('string', 'foo'), ('symbol', 'bar'), ('string', '"baz')], 12)
@@ -219,15 +219,15 @@ def _parsetemplate(tmpl, start, stop, quote=''):
     """
     parsed = []
     for typ, val, pos in _scantemplate(tmpl, start, stop, quote):
-        if typ == 'string':
+        if typ == b'string':
             parsed.append((typ, val))
-        elif typ == 'template':
+        elif typ == b'template':
             parsed.append(val)
-        elif typ == 'end':
+        elif typ == b'end':
             return parsed, pos
         else:
-            raise error.ProgrammingError('unexpected type: %s' % typ)
-    raise error.ProgrammingError('unterminated scanning of template')
+            raise error.ProgrammingError(b'unexpected type: %s' % typ)
+    raise error.ProgrammingError(b'unterminated scanning of template')
 
 
 def scantemplate(tmpl, raw=False):
@@ -252,16 +252,16 @@ def scantemplate(tmpl, raw=False):
     for typ, val, pos in _scantemplate(tmpl, 0, len(tmpl), raw=raw):
         if last:
             yield last + (pos,)
-        if typ == 'end':
+        if typ == b'end':
             return
         else:
             last = (typ, pos)
-    raise error.ProgrammingError('unterminated scanning of template')
+    raise error.ProgrammingError(b'unterminated scanning of template')
 
 
-def _scantemplate(tmpl, start, stop, quote='', raw=False):
+def _scantemplate(tmpl, start, stop, quote=b'', raw=False):
     """Parse template string into chunks of strings and template expressions"""
-    sepchars = '{' + quote
+    sepchars = b'{' + quote
     unescape = [parser.unescapestr, pycompat.identity][raw]
     pos = start
     p = parser.parser(elements)
@@ -272,49 +272,49 @@ def _scantemplate(tmpl, start, stop, quote='', raw=False):
                 key=lambda n: (n < 0, n),
             )
             if n < 0:
-                yield ('string', unescape(tmpl[pos:stop]), pos)
+                yield (b'string', unescape(tmpl[pos:stop]), pos)
                 pos = stop
                 break
             c = tmpl[n : n + 1]
             bs = 0  # count leading backslashes
             if not raw:
-                bs = (n - pos) - len(tmpl[pos:n].rstrip('\\'))
+                bs = (n - pos) - len(tmpl[pos:n].rstrip(b'\\'))
             if bs % 2 == 1:
                 # escaped (e.g. '\{', '\\\{', but not '\\{')
-                yield ('string', unescape(tmpl[pos : n - 1]) + c, pos)
+                yield (b'string', unescape(tmpl[pos : n - 1]) + c, pos)
                 pos = n + 1
                 continue
             if n > pos:
-                yield ('string', unescape(tmpl[pos:n]), pos)
+                yield (b'string', unescape(tmpl[pos:n]), pos)
             if c == quote:
-                yield ('end', None, n + 1)
+                yield (b'end', None, n + 1)
                 return
 
-            parseres, pos = p.parse(tokenize(tmpl, n + 1, stop, '}'))
-            if not tmpl.startswith('}', pos):
-                raise error.ParseError(_("invalid token"), pos)
-            yield ('template', parseres, n)
+            parseres, pos = p.parse(tokenize(tmpl, n + 1, stop, b'}'))
+            if not tmpl.startswith(b'}', pos):
+                raise error.ParseError(_(b"invalid token"), pos)
+            yield (b'template', parseres, n)
             pos += 1
 
         if quote:
-            raise error.ParseError(_("unterminated string"), start)
+            raise error.ParseError(_(b"unterminated string"), start)
     except error.ParseError as inst:
         if len(inst.args) > 1:  # has location
             loc = inst.args[1]
             # Offset the caret location by the number of newlines before the
             # location of the error, since we will replace one-char newlines
             # with the two-char literal r'\n'.
-            offset = tmpl[:loc].count('\n')
-            tmpl = tmpl.replace('\n', br'\n')
+            offset = tmpl[:loc].count(b'\n')
+            tmpl = tmpl.replace(b'\n', br'\n')
             # We want the caret to point to the place in the template that
             # failed to parse, but in a hint we get a open paren at the
             # start. Therefore, we print "loc + 1" spaces (instead of "loc")
             # to line up the caret with the location of the error.
             inst.hint = (
-                tmpl + '\n' + ' ' * (loc + 1 + offset) + '^ ' + _('here')
+                tmpl + b'\n' + b' ' * (loc + 1 + offset) + b'^ ' + _(b'here')
             )
         raise
-    yield ('end', None, pos)
+    yield (b'end', None, pos)
 
 
 def _unnesttemplatelist(tree):
@@ -339,14 +339,14 @@ def _unnesttemplatelist(tree):
     if not isinstance(tree, tuple):
         return tree
     op = tree[0]
-    if op != 'template':
+    if op != b'template':
         return (op,) + tuple(_unnesttemplatelist(x) for x in tree[1:])
 
     assert len(tree) == 2
     xs = tuple(_unnesttemplatelist(x) for x in tree[1])
     if not xs:
-        return ('string', '')  # empty template ""
-    elif len(xs) == 1 and xs[0][0] == 'string':
+        return (b'string', b'')  # empty template ""
+    elif len(xs) == 1 and xs[0][0] == b'string':
         return xs[0]  # fast path for string with no template fragment "x"
     else:
         return (op,) + xs
@@ -355,8 +355,8 @@ def _unnesttemplatelist(tree):
 def parse(tmpl):
     """Parse template string into tree"""
     parsed, pos = _parsetemplate(tmpl, 0, len(tmpl))
-    assert pos == len(tmpl), 'unquoted template should be consumed'
-    return _unnesttemplatelist(('template', parsed))
+    assert pos == len(tmpl), b'unquoted template should be consumed'
+    return _unnesttemplatelist((b'template', parsed))
 
 
 def _parseexpr(expr):
@@ -378,18 +378,18 @@ def _parseexpr(expr):
     p = parser.parser(elements)
     tree, pos = p.parse(tokenize(expr, 0, len(expr)))
     if pos != len(expr):
-        raise error.ParseError(_('invalid token'), pos)
+        raise error.ParseError(_(b'invalid token'), pos)
     return _unnesttemplatelist(tree)
 
 
 def prettyformat(tree):
-    return parser.prettyformat(tree, ('integer', 'string', 'symbol'))
+    return parser.prettyformat(tree, (b'integer', b'string', b'symbol'))
 
 
 def compileexp(exp, context, curmethods):
     """Compile parsed template tree to (func, data) pair"""
     if not exp:
-        raise error.ParseError(_("missing argument"))
+        raise error.ParseError(_(b"missing argument"))
     t = exp[0]
     return curmethods[t](exp, context)
 
@@ -398,15 +398,15 @@ def compileexp(exp, context, curmethods):
 
 
 def getsymbol(exp):
-    if exp[0] == 'symbol':
+    if exp[0] == b'symbol':
         return exp[1]
-    raise error.ParseError(_("expected a symbol, got '%s'") % exp[0])
+    raise error.ParseError(_(b"expected a symbol, got '%s'") % exp[0])
 
 
 def getlist(x):
     if not x:
         return []
-    if x[0] == 'list':
+    if x[0] == b'list':
         return getlist(x[1]) + [x[2]]
     return [x]
 
@@ -414,18 +414,18 @@ def getlist(x):
 def gettemplate(exp, context):
     """Compile given template tree or load named template from map file;
     returns (func, data) pair"""
-    if exp[0] in ('template', 'string'):
+    if exp[0] in (b'template', b'string'):
         return compileexp(exp, context, methods)
-    if exp[0] == 'symbol':
+    if exp[0] == b'symbol':
         # unlike runsymbol(), here 'symbol' is always taken as template name
         # even if it exists in mapping. this allows us to override mapping
         # by web templates, e.g. 'changelogtag' is redefined in map file.
         return context._load(exp[1])
-    raise error.ParseError(_("expected template specifier"))
+    raise error.ParseError(_(b"expected template specifier"))
 
 
 def _runrecursivesymbol(context, mapping, key):
-    raise error.Abort(_("recursive reference '%s' in template") % key)
+    raise error.Abort(_(b"recursive reference '%s' in template") % key)
 
 
 def buildtemplate(exp, context):
@@ -443,7 +443,7 @@ def buildfilter(exp, context):
         f = context._funcs[n]
         args = _buildfuncargs(exp[1], context, methods, n, f._argspec)
         return (f, args)
-    raise error.ParseError(_("unknown function '%s'") % n)
+    raise error.ParseError(_(b"unknown function '%s'") % n)
 
 
 def buildmap(exp, context):
@@ -478,10 +478,10 @@ def buildfunc(exp, context):
     if n in context._filters:
         args = _buildfuncargs(exp[2], context, exprmethods, n, argspec=None)
         if len(args) != 1:
-            raise error.ParseError(_("filter %s expects one argument") % n)
+            raise error.ParseError(_(b"filter %s expects one argument") % n)
         f = context._filters[n]
         return (templateutil.runfilter, (args[0], f))
-    raise error.ParseError(_("unknown function '%s'") % n)
+    raise error.ParseError(_(b"unknown function '%s'") % n)
 
 
 def _buildfuncargs(exp, context, curmethods, funcname, argspec):
@@ -518,8 +518,8 @@ def _buildfuncargs(exp, context, curmethods, funcname, argspec):
         getlist(exp),
         funcname,
         argspec,
-        keyvaluenode='keyvalue',
-        keynode='symbol',
+        keyvaluenode=b'keyvalue',
+        keynode=b'symbol',
     )
     compargs = util.sortdict()
     if varkey:
@@ -531,54 +531,54 @@ def _buildfuncargs(exp, context, curmethods, funcname, argspec):
 
 
 def buildkeyvaluepair(exp, content):
-    raise error.ParseError(_("can't use a key-value pair in this context"))
+    raise error.ParseError(_(b"can't use a key-value pair in this context"))
 
 
 def buildlist(exp, context):
     raise error.ParseError(
-        _("can't use a list in this context"),
-        hint=_('check place of comma and parens'),
+        _(b"can't use a list in this context"),
+        hint=_(b'check place of comma and parens'),
     )
 
 
 # methods to interpret function arguments or inner expressions (e.g. {_(x)})
 exprmethods = {
-    "integer": lambda e, c: (templateutil.runinteger, e[1]),
-    "string": lambda e, c: (templateutil.runstring, e[1]),
-    "symbol": lambda e, c: (templateutil.runsymbol, e[1]),
-    "template": buildtemplate,
-    "group": lambda e, c: compileexp(e[1], c, exprmethods),
-    ".": buildmember,
-    "|": buildfilter,
-    "%": buildmap,
-    "func": buildfunc,
-    "keyvalue": buildkeyvaluepair,
-    "list": buildlist,
-    "+": lambda e, c: buildarithmetic(e, c, lambda a, b: a + b),
-    "-": lambda e, c: buildarithmetic(e, c, lambda a, b: a - b),
-    "negate": buildnegate,
-    "*": lambda e, c: buildarithmetic(e, c, lambda a, b: a * b),
-    "/": lambda e, c: buildarithmetic(e, c, lambda a, b: a // b),
+    b"integer": lambda e, c: (templateutil.runinteger, e[1]),
+    b"string": lambda e, c: (templateutil.runstring, e[1]),
+    b"symbol": lambda e, c: (templateutil.runsymbol, e[1]),
+    b"template": buildtemplate,
+    b"group": lambda e, c: compileexp(e[1], c, exprmethods),
+    b".": buildmember,
+    b"|": buildfilter,
+    b"%": buildmap,
+    b"func": buildfunc,
+    b"keyvalue": buildkeyvaluepair,
+    b"list": buildlist,
+    b"+": lambda e, c: buildarithmetic(e, c, lambda a, b: a + b),
+    b"-": lambda e, c: buildarithmetic(e, c, lambda a, b: a - b),
+    b"negate": buildnegate,
+    b"*": lambda e, c: buildarithmetic(e, c, lambda a, b: a * b),
+    b"/": lambda e, c: buildarithmetic(e, c, lambda a, b: a // b),
 }
 
 # methods to interpret top-level template (e.g. {x}, {x|_}, {x % "y"})
 methods = exprmethods.copy()
-methods["integer"] = exprmethods["symbol"]  # '{1}' as variable
+methods[b"integer"] = exprmethods[b"symbol"]  # '{1}' as variable
 
 
 class _aliasrules(parser.basealiasrules):
     """Parsing and expansion rule set of template aliases"""
 
-    _section = _('template alias')
+    _section = _(b'template alias')
     _parse = staticmethod(_parseexpr)
 
     @staticmethod
     def _trygetfunc(tree):
         """Return (name, args) if tree is func(...) or ...|filter; otherwise
         None"""
-        if tree[0] == 'func' and tree[1][0] == 'symbol':
+        if tree[0] == b'func' and tree[1][0] == b'symbol':
             return tree[1][1], getlist(tree[2])
-        if tree[0] == '|' and tree[2][0] == 'symbol':
+        if tree[0] == b'|' and tree[2][0] == b'symbol':
             return tree[2][1], [tree[1]]
 
 
@@ -593,7 +593,7 @@ def expandaliases(tree, aliases):
 
 def unquotestring(s):
     '''unwrap quotes if any; otherwise returns unmodified string'''
-    if len(s) < 2 or s[0] not in "'\"" or s[0] != s[-1]:
+    if len(s) < 2 or s[0] not in b"'\"" or s[0] != s[-1]:
         return s
     return s[1:-1]
 
@@ -721,7 +721,7 @@ class engine(object):
         v = self._resources.lookup(mapping, key)
         if v is None:
             raise templateutil.ResourceUnavailable(
-                _('template resource not available: %s') % key
+                _(b'template resource not available: %s') % key
             )
         return v
 
@@ -783,36 +783,36 @@ class engine(object):
 def stylelist():
     paths = templatepaths()
     if not paths:
-        return _('no templates found, try `hg debuginstall` for more info')
+        return _(b'no templates found, try `hg debuginstall` for more info')
     dirlist = os.listdir(paths[0])
     stylelist = []
     for file in dirlist:
-        split = file.split(".")
-        if split[-1] in ('orig', 'rej'):
+        split = file.split(b".")
+        if split[-1] in (b'orig', b'rej'):
             continue
-        if split[0] == "map-cmdline":
+        if split[0] == b"map-cmdline":
             stylelist.append(split[1])
-    return ", ".join(sorted(stylelist))
+    return b", ".join(sorted(stylelist))
 
 
 def _readmapfile(mapfile):
     """Load template elements from the given map file"""
     if not os.path.exists(mapfile):
         raise error.Abort(
-            _("style '%s' not found") % mapfile,
-            hint=_("available styles: %s") % stylelist(),
+            _(b"style '%s' not found") % mapfile,
+            hint=_(b"available styles: %s") % stylelist(),
         )
 
     base = os.path.dirname(mapfile)
     conf = config.config(includepaths=templatepaths())
-    conf.read(mapfile, remap={'': 'templates'})
+    conf.read(mapfile, remap={b'': b'templates'})
 
     cache = {}
     tmap = {}
     aliases = []
 
-    val = conf.get('templates', '__base__')
-    if val and val[0] not in "'\"":
+    val = conf.get(b'templates', b'__base__')
+    if val and val[0] not in b"'\"":
         # treat as a pointer to a base class for this style
         path = util.normpath(os.path.join(base, val))
 
@@ -823,27 +823,27 @@ def _readmapfile(mapfile):
                 if os.path.isfile(p2):
                     path = p2
                     break
-                p3 = util.normpath(os.path.join(p2, "map"))
+                p3 = util.normpath(os.path.join(p2, b"map"))
                 if os.path.isfile(p3):
                     path = p3
                     break
 
         cache, tmap, aliases = _readmapfile(path)
 
-    for key, val in conf['templates'].items():
+    for key, val in conf[b'templates'].items():
         if not val:
             raise error.ParseError(
-                _('missing value'), conf.source('templates', key)
+                _(b'missing value'), conf.source(b'templates', key)
             )
-        if val[0] in "'\"":
+        if val[0] in b"'\"":
             if val[0] != val[-1]:
                 raise error.ParseError(
-                    _('unmatched quotes'), conf.source('templates', key)
+                    _(b'unmatched quotes'), conf.source(b'templates', key)
                 )
             cache[key] = unquotestring(val)
-        elif key != '__base__':
+        elif key != b'__base__':
             tmap[key] = os.path.join(base, val)
-    aliases.extend(conf['templatealias'].items())
+    aliases.extend(conf[b'templatealias'].items())
     return cache, tmap, aliases
 
 
@@ -867,10 +867,10 @@ class loader(object):
                 self.cache[t] = util.readfile(self._map[t])
             except KeyError as inst:
                 raise templateutil.TemplateNotFound(
-                    _('"%s" not in template map') % inst.args[0]
+                    _(b'"%s" not in template map') % inst.args[0]
                 )
             except IOError as inst:
-                reason = _('template file %s: %s') % (
+                reason = _(b'template file %s: %s') % (
                     self._map[t],
                     stringutil.forcebytestr(inst.args[1]),
                 )
@@ -887,7 +887,7 @@ class loader(object):
         if not tree:
             return
         op = tree[0]
-        if op == 'symbol':
+        if op == b'symbol':
             s = tree[1]
             if s in syms[0]:
                 return  # avoid recursion: s -> cache[s] -> s
@@ -896,14 +896,14 @@ class loader(object):
                 # s may be a reference for named template
                 self._findsymbolsused(self.load(s), syms)
             return
-        if op in {'integer', 'string'}:
+        if op in {b'integer', b'string'}:
             return
         # '{arg|func}' == '{func(arg)}'
-        if op == '|':
+        if op == b'|':
             syms[1].add(getsymbol(tree[2]))
             self._findsymbolsused(tree[1], syms)
             return
-        if op == 'func':
+        if op == b'func':
             syms[1].add(getsymbol(tree[1]))
             self._findsymbolsused(tree[2], syms)
             return
@@ -997,7 +997,7 @@ class templater(object):
 
         This may load additional templates from the map file.
         """
-        return self.symbolsused('')
+        return self.symbolsused(b'')
 
     def symbolsused(self, t):
         """Look up (keywords, filters/functions) referenced from the name
@@ -1009,7 +1009,7 @@ class templater(object):
 
     def renderdefault(self, mapping):
         """Render the default unnamed template and return result as string"""
-        return self.render('', mapping)
+        return self.render(b'', mapping)
 
     def render(self, t, mapping):
         """Render the specified named template and return result as string"""
@@ -1028,7 +1028,7 @@ class templater(object):
 
 def templatepaths():
     '''return locations used for template files.'''
-    pathsrel = ['templates']
+    pathsrel = [b'templates']
     paths = [os.path.normpath(os.path.join(util.datapath, f)) for f in pathsrel]
     return [p for p in paths if os.path.isdir(p)]
 
@@ -1069,8 +1069,8 @@ def stylemap(styles, paths=None):
             and pycompat.osaltsep in style
         ):
             continue
-        locations = [os.path.join(style, 'map'), 'map-' + style]
-        locations.append('map')
+        locations = [os.path.join(style, b'map'), b'map-' + style]
+        locations.append(b'map')
 
         for path in paths:
             for location in locations:
@@ -1078,4 +1078,4 @@ def stylemap(styles, paths=None):
                 if os.path.isfile(mapfile):
                     return style, mapfile
 
-    raise RuntimeError("No hgweb templates found in %r" % paths)
+    raise RuntimeError(b"No hgweb templates found in %r" % paths)

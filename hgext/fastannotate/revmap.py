@@ -70,7 +70,7 @@ class revmap(object):
         # since rename does not happen frequently, do not store path for every
         # revision. self._renamerevs can be used for bisecting.
         self._renamerevs = [0]
-        self._renamepaths = ['']
+        self._renamepaths = [b'']
         self._lastmaxrev = -1
         if path:
             if os.path.exists(path):
@@ -98,9 +98,13 @@ class revmap(object):
         if flush is True, incrementally update the file.
         """
         if hsh in self._hsh2rev:
-            raise error.CorruptedFileError('%r is in revmap already' % hex(hsh))
+            raise error.CorruptedFileError(
+                b'%r is in revmap already' % hex(hsh)
+            )
         if len(hsh) != _hshlen:
-            raise hgerror.ProgrammingError('hsh must be %d-char long' % _hshlen)
+            raise hgerror.ProgrammingError(
+                b'hsh must be %d-char long' % _hshlen
+            )
         idx = len(self._rev2hsh)
         flag = 0
         if sidebranch:
@@ -149,7 +153,7 @@ class revmap(object):
         self._rev2hsh = [None]
         self._rev2flag = [None]
         self._hsh2rev = {}
-        self._rev2path = ['']
+        self._rev2path = [b'']
         self._lastmaxrev = -1
         if flush:
             self.flush()
@@ -159,12 +163,12 @@ class revmap(object):
         if not self.path:
             return
         if self._lastmaxrev == -1:  # write the entire file
-            with open(self.path, 'wb') as f:
+            with open(self.path, b'wb') as f:
                 f.write(self.HEADER)
                 for i in pycompat.xrange(1, len(self._rev2hsh)):
                     self._writerev(i, f)
         else:  # append incrementally
-            with open(self.path, 'ab') as f:
+            with open(self.path, b'ab') as f:
                 for i in pycompat.xrange(
                     self._lastmaxrev + 1, len(self._rev2hsh)
                 ):
@@ -179,7 +183,7 @@ class revmap(object):
         # which is faster than both LOAD_CONST and LOAD_GLOBAL.
         flaglen = 1
         hshlen = _hshlen
-        with open(self.path, 'rb') as f:
+        with open(self.path, b'rb') as f:
             if f.read(len(self.HEADER)) != self.HEADER:
                 raise error.CorruptedFileError()
             self.clear(flush=False)
@@ -205,23 +209,23 @@ class revmap(object):
         """append a revision data to file"""
         flag = self._rev2flag[rev]
         hsh = self._rev2hsh[rev]
-        f.write(struct.pack('B', flag))
+        f.write(struct.pack(b'B', flag))
         if flag & renameflag:
             path = self.rev2path(rev)
             if path is None:
-                raise error.CorruptedFileError('cannot find path for %s' % rev)
+                raise error.CorruptedFileError(b'cannot find path for %s' % rev)
             f.write(path + b'\0')
         f.write(hsh)
 
     @staticmethod
     def _readcstr(f):
         """read a C-language-like '\0'-terminated string"""
-        buf = ''
+        buf = b''
         while True:
             ch = f.read(1)
             if not ch:  # unexpected eof
                 raise error.CorruptedFileError()
-            if ch == '\0':
+            if ch == b'\0':
                 break
             buf += ch
         return buf
@@ -249,7 +253,7 @@ def getlastnode(path):
     """
     hsh = None
     try:
-        with open(path, 'rb') as f:
+        with open(path, b'rb') as f:
             f.seek(-_hshlen, io.SEEK_END)
             if f.tell() > len(revmap.HEADER):
                 hsh = f.read(_hshlen)

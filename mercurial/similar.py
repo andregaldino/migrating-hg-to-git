@@ -21,9 +21,9 @@ def _findexactmatches(repo, added, removed):
     # We use hash() to discard fctx.data() from memory.
     hashes = {}
     progress = repo.ui.makeprogress(
-        _('searching for exact renames'),
+        _(b'searching for exact renames'),
         total=(len(added) + len(removed)),
-        unit=_('files'),
+        unit=_(b'files'),
     )
     for fctx in removed:
         progress.increment()
@@ -81,7 +81,7 @@ def _findsimilarmatches(repo, added, removed, threshold):
     '''
     copies = {}
     progress = repo.ui.makeprogress(
-        _('searching for similar files'), unit=_('files'), total=len(removed)
+        _(b'searching for similar files'), unit=_(b'files'), total=len(removed)
     )
     for r in removed:
         progress.increment()

@@ -37,7 +37,7 @@ from . import (
 # them.
 def makelocalstores(repo):
     """In-repo stores, like .hg/store/data; can not be discarded."""
-    localpath = os.path.join(repo.svfs.vfs.base, 'data')
+    localpath = os.path.join(repo.svfs.vfs.base, b'data')
     if not os.path.exists(localpath):
         os.makedirs(localpath)
 
@@ -92,7 +92,7 @@ def makepackstores(repo):
     repo.shareddatastores.append(packcontentstore)
     repo.sharedhistorystores.append(packmetadatastore)
     shallowutil.reportpackmetrics(
-        repo.ui, 'filestore', packcontentstore, packmetadatastore
+        repo.ui, b'filestore', packcontentstore, packmetadatastore
     )
     return packcontentstore, packmetadatastore
 
@@ -134,7 +134,7 @@ def makeunionstores(repo):
         fileservicehistorywrite,
     )
     shallowutil.reportpackmetrics(
-        repo.ui, 'filestore', packcontentstore, packmetadatastore
+        repo.ui, b'filestore', packcontentstore, packmetadatastore
     )
 
 
@@ -142,19 +142,19 @@ def wraprepo(repo):
     class shallowrepository(repo.__class__):
         @util.propertycache
         def name(self):
-            return self.ui.config('remotefilelog', 'reponame')
+            return self.ui.config(b'remotefilelog', b'reponame')
 
         @util.propertycache
         def fallbackpath(self):
             path = repo.ui.config(
-                "remotefilelog",
-                "fallbackpath",
-                repo.ui.config('paths', 'default'),
+                b"remotefilelog",
+                b"fallbackpath",
+                repo.ui.config(b'paths', b'default'),
             )
             if not path:
                 raise error.Abort(
-                    "no remotefilelog server "
-                    "configured - is your .hg/hgrc trusted?"
+                    b"no remotefilelog server "
+                    b"configured - is your .hg/hgrc trusted?"
                 )
 
             return path
@@ -175,7 +175,7 @@ def wraprepo(repo):
             return ret
 
         def file(self, f):
-            if f[0] == '/':
+            if f[0] == b'/':
                 f = f[1:]
 
             if self.shallowmatch(f):
@@ -224,11 +224,11 @@ def wraprepo(repo):
         ):
             """Runs prefetch in background with optional repack
             """
-            cmd = [procutil.hgexecutable(), '-R', repo.origroot, 'prefetch']
+            cmd = [procutil.hgexecutable(), b'-R', repo.origroot, b'prefetch']
             if repack:
-                cmd.append('--repack')
+                cmd.append(b'--repack')
             if revs:
-                cmd += ['-r', revs]
+                cmd += [b'-r', revs]
             # We know this command will find a binary, so don't block
             # on it starting.
             procutil.runbgcommand(
@@ -241,11 +241,11 @@ def wraprepo(repo):
             """
             with repo._lock(
                 repo.svfs,
-                'prefetchlock',
+                b'prefetchlock',
                 True,
                 None,
                 None,
-                _('prefetching in %s') % repo.origroot,
+                _(b'prefetching in %s') % repo.origroot,
             ):
                 self._prefetch(revs, base, pats, opts)
 
@@ -255,10 +255,12 @@ def wraprepo(repo):
                 # If we know a rev is on the server, we should fetch the server
                 # version of those files, since our local file versions might
                 # become obsolete if the local commits are stripped.
-                localrevs = repo.revs('outgoing(%s)', fallbackpath)
+                localrevs = repo.revs(b'outgoing(%s)', fallbackpath)
                 if base is not None and base != nullrev:
                     serverbase = list(
-                        repo.revs('first(reverse(::%s) - %ld)', base, localrevs)
+                        repo.revs(
+                            b'first(reverse(::%s) - %ld)', base, localrevs
+                        )
                     )
                     if serverbase:
                         base = serverbase[0]
@@ -266,7 +268,7 @@ def wraprepo(repo):
                 localrevs = repo
 
             mfl = repo.manifestlog
-            mfrevlog = mfl.getstorage('')
+            mfrevlog = mfl.getstorage(b'')
             if base is not None:
                 mfdict = mfl[repo[base].manifestnode()].read()
                 skip = set(mfdict.iteritems())
@@ -280,7 +282,7 @@ def wraprepo(repo):
             visited = set()
             visited.add(nullrev)
             revcount = len(revs)
-            progress = self.ui.makeprogress(_('prefetching'), total=revcount)
+            progress = self.ui.makeprogress(_(b'prefetching'), total=revcount)
             progress.update(0)
             for rev in sorted(revs):
                 ctx = repo[rev]
@@ -337,15 +339,15 @@ def wraprepo(repo):
     makeunionstores(repo)
 
     repo.includepattern = repo.ui.configlist(
-        "remotefilelog", "includepattern", None
+        b"remotefilelog", b"includepattern", None
     )
     repo.excludepattern = repo.ui.configlist(
-        "remotefilelog", "excludepattern", None
+        b"remotefilelog", b"excludepattern", None
     )
-    if not util.safehasattr(repo, 'connectionpool'):
+    if not util.safehasattr(repo, b'connectionpool'):
         repo.connectionpool = connectionpool.connectionpool(repo)
 
     if repo.includepattern or repo.excludepattern:
         repo.shallowmatch = match.match(
-            repo.root, '', None, repo.includepattern, repo.excludepattern
+            repo.root, b'', None, repo.includepattern, repo.excludepattern
         )

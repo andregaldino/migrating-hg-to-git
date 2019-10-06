@@ -50,7 +50,7 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
     extensions a good hook into outgoing.
     """
 
-    if not remote.capable('getbundle'):
+    if not remote.capable(b'getbundle'):
         return treediscovery.findcommonincoming(repo, remote, heads, force)
 
     if heads:
@@ -162,8 +162,8 @@ def findcommonoutgoing(
         og.missingheads = onlyheads or repo.heads()
     elif onlyheads is None:
         # use visible heads as it should be cached
-        og.missingheads = repo.filtered("served").heads()
-        og.excluded = [ctx.node() for ctx in repo.set('secret() or extinct()')]
+        og.missingheads = repo.filtered(b"served").heads()
+        og.excluded = [ctx.node() for ctx in repo.set(b'secret() or extinct()')]
     else:
         # compute common, missing and exclude secret stuff
         sets = repo.changelog.findcommonmissing(og.commonheads, onlyheads)
@@ -222,7 +222,7 @@ def _headssummary(pushop):
         branches.add(ctx.branch())
 
     with remote.commandexecutor() as e:
-        remotemap = e.callcommand('branchmap', {}).result()
+        remotemap = e.callcommand(b'branchmap', {}).result()
 
     knownnode = cl.hasnode  # do not use nodemap until it is filtered
     # A. register remote heads of branches which are in outgoing set
@@ -291,7 +291,7 @@ def _oldheadssummary(repo, remoteheads, outgoing, inc=False):
     # - another element of outgoing.missing
     # - nullrev
     # This explains why the new head are very simple to compute.
-    r = repo.set('heads(%ln + %ln)', oldheads, outgoing.missing)
+    r = repo.set(b'heads(%ln + %ln)', oldheads, outgoing.missing)
     newheads = sorted(c.node() for c in r)
     # set some unsynced head to issue the "unsynced changes" warning
     if inc:
@@ -309,7 +309,7 @@ def _nowarnheads(pushop):
 
     with remote.commandexecutor() as e:
         remotebookmarks = e.callcommand(
-            'listkeys', {'namespace': 'bookmarks',}
+            b'listkeys', {b'namespace': b'bookmarks',}
         ).result()
 
     bookmarkedheads = set()
@@ -317,7 +317,7 @@ def _nowarnheads(pushop):
     # internal config: bookmarks.pushing
     newbookmarks = [
         localbookmarks.expandname(b)
-        for b in pushop.ui.configlist('bookmarks', 'pushing')
+        for b in pushop.ui.configlist(b'bookmarks', b'pushing')
     ]
 
     for bm in localbookmarks:
@@ -356,7 +356,7 @@ def checkheads(pushop):
         # remote is empty, nothing to check.
         return
 
-    if remote.capable('branchmap'):
+    if remote.capable(b'branchmap'):
         headssum = _headssummary(pushop)
     else:
         headssum = _oldheadssummary(repo, remoteheads, outgoing, inc)
@@ -366,7 +366,7 @@ def checkheads(pushop):
     ]
     # 1. Check for new branches on the remote.
     if newbranches and not newbranch:  # new branch requires --new-branch
-        branchnames = ', '.join(sorted(newbranches))
+        branchnames = b', '.join(sorted(newbranches))
         # Calculate how many of the new branches are closed branches
         closedbranches = set()
         for tag, heads, tip, isclosed in repo.branchmap().iterbranches():
@@ -374,13 +374,13 @@ def checkheads(pushop):
                 closedbranches.add(tag)
         closedbranches = closedbranches & set(newbranches)
         if closedbranches:
-            errmsg = _("push creates new remote branches: %s (%d closed)!") % (
+            errmsg = _(b"push creates new remote branches: %s (%d closed)!") % (
                 branchnames,
                 len(closedbranches),
             )
         else:
-            errmsg = _("push creates new remote branches: %s!") % branchnames
-        hint = _("use 'hg push --new-branch' to create new remote branches")
+            errmsg = _(b"push creates new remote branches: %s!") % branchnames
+        hint = _(b"use 'hg push --new-branch' to create new remote branches")
         raise error.Abort(errmsg, hint=hint)
 
     # 2. Find heads that we need not warn about
@@ -409,18 +409,18 @@ def checkheads(pushop):
                 heads = scmutil.nodesummaries(repo, unsyncedheads)
             if heads is None:
                 repo.ui.status(
-                    _("remote has heads that are " "not known locally\n")
+                    _(b"remote has heads that are " b"not known locally\n")
                 )
             elif branch is None:
                 repo.ui.status(
-                    _("remote has heads that are " "not known locally: %s\n")
+                    _(b"remote has heads that are " b"not known locally: %s\n")
                     % heads
                 )
             else:
                 repo.ui.status(
                     _(
-                        "remote has heads on branch '%s' that are "
-                        "not known locally: %s\n"
+                        b"remote has heads on branch '%s' that are "
+                        b"not known locally: %s\n"
                     )
                     % (branch, heads)
                 )
@@ -429,49 +429,50 @@ def checkheads(pushop):
                 dhs = list(newhs)
                 if errormsg is None:
                     errormsg = (
-                        _("push creates new branch '%s' with multiple heads")
+                        _(b"push creates new branch '%s' with multiple heads")
                         % branch
                     )
                     hint = _(
-                        "merge or"
-                        " see 'hg help push' for details about"
-                        " pushing new heads"
+                        b"merge or"
+                        b" see 'hg help push' for details about"
+                        b" pushing new heads"
                     )
         elif len(newhs) > len(oldhs):
             # remove bookmarked or existing remote heads from the new heads list
             dhs = sorted(newhs - nowarnheads - oldhs)
         if dhs:
             if errormsg is None:
-                if branch not in ('default', None):
+                if branch not in (b'default', None):
                     errormsg = _(
-                        "push creates new remote head %s " "on branch '%s'!"
+                        b"push creates new remote head %s " b"on branch '%s'!"
                     ) % (short(dhs[0]), branch)
                 elif repo[dhs[0]].bookmarks():
                     errormsg = _(
-                        "push creates new remote head %s " "with bookmark '%s'!"
+                        b"push creates new remote head %s "
+                        b"with bookmark '%s'!"
                     ) % (short(dhs[0]), repo[dhs[0]].bookmarks()[0])
                 else:
-                    errormsg = _("push creates new remote head %s!") % short(
+                    errormsg = _(b"push creates new remote head %s!") % short(
                         dhs[0]
                     )
                 if unsyncedheads:
                     hint = _(
-                        "pull and merge or"
-                        " see 'hg help push' for details about"
-                        " pushing new heads"
+                        b"pull and merge or"
+                        b" see 'hg help push' for details about"
+                        b" pushing new heads"
                     )
                 else:
                     hint = _(
-                        "merge or"
-                        " see 'hg help push' for details about"
-                        " pushing new heads"
+                        b"merge or"
+                        b" see 'hg help push' for details about"
+                        b" pushing new heads"
                     )
             if branch is None:
-                repo.ui.note(_("new remote heads:\n"))
+                repo.ui.note(_(b"new remote heads:\n"))
             else:
-                repo.ui.note(_("new remote heads on branch '%s':\n") % branch)
+                repo.ui.note(_(b"new remote heads on branch '%s':\n") % branch)
             for h in dhs:
-                repo.ui.note(" %s\n" % short(h))
+                repo.ui.note(b" %s\n" % short(h))
     if errormsg:
         raise error.Abort(errormsg, hint=hint)
 
@@ -513,8 +514,8 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
         else:
             if successorsmarkers.get(h) is not None:
                 msg = (
-                    'checkheads: remote head unknown locally has'
-                    ' local marker: %s\n'
+                    b'checkheads: remote head unknown locally has'
+                    b' local marker: %s\n'
                 )
                 repo.ui.debug(msg % hex(h))
             unknownheads.add(h)
@@ -533,7 +534,9 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
 
         # Get all revs/nodes on the branch exclusive to this head
         # (already filtered heads are "ignored"))
-        branchrevs = unfi.revs('only(%n, (%ln+%ln))', nh, localcandidate, newhs)
+        branchrevs = unfi.revs(
+            b'only(%n, (%ln+%ln))', nh, localcandidate, newhs
+        )
         branchnodes = [tonode(r) for r in branchrevs]
 
         # The branch won't be hidden on the remote if

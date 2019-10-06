@@ -21,8 +21,8 @@ def wrapdirstate(repo, dirstate):
                 if f is not None and not narrowmatch(f) and f not in self:
                     raise error.Abort(
                         _(
-                            "cannot track '%s' - it is outside "
-                            + "the narrow clone"
+                            b"cannot track '%s' - it is outside "
+                            + b"the narrow clone"
                         )
                         % f
                     )

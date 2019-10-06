@@ -45,18 +45,18 @@ def _parse(data):
     # class exactly matches its C counterpart to try and help
     # prevent surprise breakage for anyone that develops against
     # the pure version.
-    if data and data[-1:] != '\n':
-        raise ValueError('Manifest did not end in a newline.')
+    if data and data[-1:] != b'\n':
+        raise ValueError(b'Manifest did not end in a newline.')
     prev = None
     for l in data.splitlines():
         if prev is not None and prev > l:
-            raise ValueError('Manifest lines not in sorted order.')
+            raise ValueError(b'Manifest lines not in sorted order.')
         prev = l
-        f, n = l.split('\0')
+        f, n = l.split(b'\0')
         if len(n) > 40:
             yield f, bin(n[:40]), n[40:]
         else:
-            yield f, bin(n), ''
+            yield f, bin(n), b''
 
 
 def _text(it):
@@ -66,10 +66,10 @@ def _text(it):
         files.append(f)
         # if this is changed to support newlines in filenames,
         # be sure to check the templates/ dir again (especially *-raw.tmpl)
-        lines.append("%s\0%s%s\n" % (f, hex(n), fl))
+        lines.append(b"%s\0%s%s\n" % (f, hex(n), fl))
 
     _checkforbidden(files)
-    return ''.join(lines)
+    return b''.join(lines)
 
 
 class lazymanifestiter(object):
@@ -89,7 +89,7 @@ class lazymanifestiter(object):
             self.pos += 1
             return data[0]
         self.pos += 1
-        zeropos = data.find('\x00', pos)
+        zeropos = data.find(b'\x00', pos)
         return data[pos:zeropos]
 
     __next__ = next
@@ -111,7 +111,7 @@ class lazymanifestiterentries(object):
         if pos == -1:
             self.pos += 1
             return data
-        zeropos = data.find('\x00', pos)
+        zeropos = data.find(b'\x00', pos)
         hashval = unhexlify(data, self.lm.extrainfo[self.pos], zeropos + 1, 40)
         flags = self.lm._getflags(data, self.pos, zeropos)
         self.pos += 1
@@ -173,18 +173,18 @@ class _lazymanifest(object):
     def findlines(self, data):
         if not data:
             return []
-        pos = data.find("\n")
-        if pos == -1 or data[-1:] != '\n':
-            raise ValueError("Manifest did not end in a newline.")
+        pos = data.find(b"\n")
+        if pos == -1 or data[-1:] != b'\n':
+            raise ValueError(b"Manifest did not end in a newline.")
         positions = [0]
-        prev = data[: data.find('\x00')]
+        prev = data[: data.find(b'\x00')]
         while pos < len(data) - 1 and pos != -1:
             positions.append(pos + 1)
-            nexts = data[pos + 1 : data.find('\x00', pos + 1)]
+            nexts = data[pos + 1 : data.find(b'\x00', pos + 1)]
             if nexts < prev:
-                raise ValueError("Manifest lines not in sorted order.")
+                raise ValueError(b"Manifest lines not in sorted order.")
             prev = nexts
-            pos = data.find("\n", pos + 1)
+            pos = data.find(b"\n", pos + 1)
         return positions
 
     def _get(self, index):
@@ -198,7 +198,7 @@ class _lazymanifest(object):
 
     def _getkey(self, pos):
         if pos >= 0:
-            return self.data[pos : self.data.find('\x00', pos + 1)]
+            return self.data[pos : self.data.find(b'\x00', pos + 1)]
         return self.extradata[-pos - 1][0]
 
     def bsearch(self, key):
@@ -244,23 +244,23 @@ class _lazymanifest(object):
 
     def _getflags(self, data, needle, pos):
         start = pos + 41
-        end = data.find("\n", start)
+        end = data.find(b"\n", start)
         if end == -1:
             end = len(data) - 1
         if start == end:
-            return ''
+            return b''
         return self.data[start:end]
 
     def __getitem__(self, key):
         if not isinstance(key, bytes):
-            raise TypeError("getitem: manifest keys must be a bytes.")
+            raise TypeError(b"getitem: manifest keys must be a bytes.")
         needle = self.bsearch(key)
         if needle == -1:
             raise KeyError
         data, pos = self._get(needle)
         if pos == -1:
             return (data[1], data[2])
-        zeropos = data.find('\x00', pos)
+        zeropos = data.find(b'\x00', pos)
         assert 0 <= needle <= len(self.positions)
         assert len(self.extrainfo) == len(self.positions)
         hashval = unhexlify(data, self.extrainfo[needle], zeropos + 1, 40)
@@ -277,22 +277,24 @@ class _lazymanifest(object):
         if cur >= 0:
             # This does NOT unsort the list as far as the search functions are
             # concerned, as they only examine lines mapped by self.positions.
-            self.data = self.data[:cur] + '\x00' + self.data[cur + 1 :]
+            self.data = self.data[:cur] + b'\x00' + self.data[cur + 1 :]
             self.hasremovals = True
 
     def __setitem__(self, key, value):
         if not isinstance(key, bytes):
-            raise TypeError("setitem: manifest keys must be a byte string.")
+            raise TypeError(b"setitem: manifest keys must be a byte string.")
         if not isinstance(value, tuple) or len(value) != 2:
-            raise TypeError("Manifest values must be a tuple of (node, flags).")
+            raise TypeError(
+                b"Manifest values must be a tuple of (node, flags)."
+            )
         hashval = value[0]
         if not isinstance(hashval, bytes) or not 20 <= len(hashval) <= 22:
-            raise TypeError("node must be a 20-byte byte string")
+            raise TypeError(b"node must be a 20-byte byte string")
         flags = value[1]
         if len(hashval) == 22:
             hashval = hashval[:-1]
         if not isinstance(flags, bytes) or len(flags) > 1:
-            raise TypeError("flags must a 0 or 1 byte string, got %r", flags)
+            raise TypeError(b"flags must a 0 or 1 byte string, got %r", flags)
         needle, found = self.bsearch2(key)
         if found:
             # put the item
@@ -353,14 +355,14 @@ class _lazymanifest(object):
                     # before the next position.
                     if (
                         self.hasremovals
-                        and self.data.find('\n\x00', cur, self.positions[i])
+                        and self.data.find(b'\n\x00', cur, self.positions[i])
                         != -1
                     ):
                         break
 
                     offset += self.positions[i] - cur
                     cur = self.positions[i]
-                end_cut = self.data.find('\n', cur)
+                end_cut = self.data.find(b'\n', cur)
                 if end_cut != -1:
                     end_cut += 1
                 offset += end_cut - cur
@@ -375,12 +377,12 @@ class _lazymanifest(object):
                         self.extrainfo[i] = ord(t[1][21])
                     offset += len(l[-1])
                     i += 1
-        self.data = ''.join(l)
+        self.data = b''.join(l)
         self.hasremovals = False
         self.extradata = []
 
     def _pack(self, d):
-        return d[0] + '\x00' + hex(d[1][:20]) + d[2] + '\n'
+        return d[0] + b'\x00' + hex(d[1][:20]) + d[2] + b'\n'
 
     def text(self):
         self._compact()
@@ -393,7 +395,7 @@ class _lazymanifest(object):
 
         for fn, e1, flags in self.iterentries():
             if fn not in m2:
-                diff[fn] = (e1, flags), (None, '')
+                diff[fn] = (e1, flags), (None, b'')
             else:
                 e2 = m2[fn]
                 if (e1, flags) != e2:
@@ -403,7 +405,7 @@ class _lazymanifest(object):
 
         for fn, e2, flags in m2.iterentries():
             if fn not in self:
-                diff[fn] = (None, ''), (e2, flags)
+                diff[fn] = (None, b''), (e2, flags)
 
         return diff
 
@@ -421,7 +423,7 @@ class _lazymanifest(object):
 
     def filtercopy(self, filterfn):
         # XXX should be optimized
-        c = _lazymanifest('')
+        c = _lazymanifest(b'')
         for f, n, fl in self.iterentries():
             if filterfn(f):
                 c[f] = n, fl
@@ -436,7 +438,7 @@ except AttributeError:
 
 @interfaceutil.implementer(repository.imanifestdict)
 class manifestdict(object):
-    def __init__(self, data=''):
+    def __init__(self, data=b''):
         self._lm = _lazymanifest(data)
 
     def __getitem__(self, key):
@@ -456,7 +458,7 @@ class manifestdict(object):
     __bool__ = __nonzero__
 
     def __setitem__(self, key, node):
-        self._lm[key] = node, self.flags(key, '')
+        self._lm[key] = node, self.flags(key, b'')
 
     def __contains__(self, key):
         if key is None:
@@ -538,7 +540,7 @@ class manifestdict(object):
 
         # for dirstate.walk, files=[''] means "walk the whole tree".
         # follow that here, too
-        fset.discard('')
+        fset.discard(b'')
 
         for fn in sorted(fset):
             if not self.hasdir(fn):
@@ -591,7 +593,7 @@ class manifestdict(object):
         except KeyError:
             return default
 
-    def flags(self, key, default=''):
+    def flags(self, key, default=b''):
         try:
             return self._lm[key][1]
         except KeyError:
@@ -622,7 +624,7 @@ class manifestdict(object):
         delta = []
         dstart = None
         dend = None
-        dline = [""]
+        dline = [b""]
         start = 0
         # zero copy representation of base as a buffer
         addbuf = util.buffer(base)
@@ -636,14 +638,14 @@ class manifestdict(object):
                 start, end = _msearch(addbuf, f, start)
                 if not todelete:
                     h, fl = self._lm[f]
-                    l = "%s\0%s%s\n" % (f, hex(h), fl)
+                    l = b"%s\0%s%s\n" % (f, hex(h), fl)
                 else:
                     if start == end:
                         # item we want to delete was not found, error out
                         raise AssertionError(
-                            _("failed to remove %s from manifest") % f
+                            _(b"failed to remove %s from manifest") % f
                         )
-                    l = ""
+                    l = b""
                 if dstart is not None and dstart <= start and dend >= start:
                     if dend < end:
                         dend = end
@@ -651,13 +653,13 @@ class manifestdict(object):
                         dline.append(l)
                 else:
                     if dstart is not None:
-                        delta.append([dstart, dend, "".join(dline)])
+                        delta.append([dstart, dend, b"".join(dline)])
                     dstart = start
                     dend = end
                     dline = [l]
 
             if dstart is not None:
-                delta.append([dstart, dend, "".join(dline)])
+                delta.append([dstart, dend, b"".join(dline)])
             # apply the delta to the base, and get a delta for addrevision
             deltatext, arraytext = _addlistdelta(base, delta)
         else:
@@ -694,21 +696,21 @@ def _msearch(m, s, lo=0, hi=None):
     while lo < hi:
         mid = (lo + hi) // 2
         start = mid
-        while start > 0 and m[start - 1 : start] != '\n':
+        while start > 0 and m[start - 1 : start] != b'\n':
             start -= 1
-        end = advance(start, '\0')
+        end = advance(start, b'\0')
         if bytes(m[start:end]) < s:
             # we know that after the null there are 40 bytes of sha1
             # this translates to the bisect lo = mid + 1
-            lo = advance(end + 40, '\n') + 1
+            lo = advance(end + 40, b'\n') + 1
         else:
             # this translates to the bisect hi = mid
             hi = start
-    end = advance(lo, '\0')
+    end = advance(lo, b'\0')
     found = m[lo:end]
     if s == found:
         # we know that after the null there are 40 bytes of sha1
-        end = advance(end + 40, '\n')
+        end = advance(end + 40, b'\n')
         return (lo, end + 1)
     else:
         return (lo, lo)
@@ -717,9 +719,9 @@ def _msearch(m, s, lo=0, hi=None):
 def _checkforbidden(l):
     """Check filenames for illegal characters."""
     for f in l:
-        if '\n' in f or '\r' in f:
+        if b'\n' in f or b'\r' in f:
             raise error.StorageError(
-                _("'\\n' and '\\r' disallowed in filenames: %r")
+                _(b"'\\n' and '\\r' disallowed in filenames: %r")
                 % pycompat.bytestr(f)
             )
 
@@ -741,26 +743,26 @@ def _addlistdelta(addlist, x):
 
     newaddlist += addlist[currentposition:]
 
-    deltatext = "".join(
-        struct.pack(">lll", start, end, len(content)) + content
+    deltatext = b"".join(
+        struct.pack(b">lll", start, end, len(content)) + content
         for start, end, content in x
     )
     return deltatext, newaddlist
 
 
 def _splittopdir(f):
-    if '/' in f:
-        dir, subpath = f.split('/', 1)
-        return dir + '/', subpath
+    if b'/' in f:
+        dir, subpath = f.split(b'/', 1)
+        return dir + b'/', subpath
     else:
-        return '', f
+        return b'', f
 
 
 _noop = lambda s: None
 
 
 class treemanifest(object):
-    def __init__(self, dir='', text=''):
+    def __init__(self, dir=b'', text=b''):
         self._dir = dir
         self._node = nullid
         self._loadfunc = _noop
@@ -775,7 +777,7 @@ class treemanifest(object):
 
             def readsubtree(subdir, subm):
                 raise AssertionError(
-                    'treemanifest constructor only accepts ' 'flat manifests'
+                    b'treemanifest constructor only accepts ' b'flat manifests'
                 )
 
             self.parse(text, readsubtree)
@@ -806,13 +808,13 @@ class treemanifest(object):
     def _loadchildrensetlazy(self, visit):
         if not visit:
             return None
-        if visit == 'all' or visit == 'this':
+        if visit == b'all' or visit == b'this':
             self._loadalllazy()
             return None
 
         loadlazy = self._loadlazy
         for k in visit:
-            loadlazy(k + '/')
+            loadlazy(k + b'/')
         return visit
 
     def _loaddifflazy(self, t1, t2):
@@ -862,7 +864,7 @@ class treemanifest(object):
         return not self._dirs or all(m._isempty() for m in self._dirs.values())
 
     def __repr__(self):
-        return '<treemanifest dir=%s, node=%s, loaded=%s, dirty=%s at 0x%x>' % (
+        return b'<treemanifest dir=%s, node=%s, loaded=%s, dirty=%s at 0x%x>' % (
             self._dir,
             hex(self._node),
             bool(self._loadfunc is _noop),
@@ -893,7 +895,7 @@ class treemanifest(object):
             itertools.chain(self._dirs.items(), self._files.items())
         ):
             if p in self._files:
-                yield self._subpath(p), n, self._flags.get(p, '')
+                yield self._subpath(p), n, self._flags.get(p, b'')
             else:
                 for x in n.iterentries():
                     yield x
@@ -972,12 +974,12 @@ class treemanifest(object):
             self._loadlazy(dir)
 
             if dir not in self._dirs:
-                return ''
+                return b''
             return self._dirs[dir].flags(subpath)
         else:
             if f in self._lazydirs or f in self._dirs:
-                return ''
-            return self._flags.get(f, '')
+                return b''
+            return self._flags.get(f, b'')
 
     def find(self, f):
         self._load()
@@ -987,7 +989,7 @@ class treemanifest(object):
 
             return self._dirs[dir].find(subpath)
         else:
-            return self._files[f], self._flags.get(f, '')
+            return self._files[f], self._flags.get(f, b'')
 
     def __delitem__(self, f):
         self._load()
@@ -1109,7 +1111,7 @@ class treemanifest(object):
             if topdir in self._dirs:
                 return self._dirs[topdir].hasdir(subdir)
             return False
-        dirslash = dir + '/'
+        dirslash = dir + b'/'
         return dirslash in self._dirs or dirslash in self._lazydirs
 
     def walk(self, match):
@@ -1135,7 +1137,7 @@ class treemanifest(object):
 
         # for dirstate.walk, files=[''] means "walk the whole tree".
         # follow that here, too
-        fset.discard('')
+        fset.discard(b'')
 
         for fn in sorted(fset):
             if not self.hasdir(fn):
@@ -1172,7 +1174,7 @@ class treemanifest(object):
         '''
 
         visit = match.visitchildrenset(self._dir[:-1])
-        if visit == 'all':
+        if visit == b'all':
             return self.copy()
         ret = treemanifest(self._dir)
         if not visit:
@@ -1185,7 +1187,7 @@ class treemanifest(object):
             # If visit == 'this', we should obviously look at the files in this
             # directory; if visit is a set, and fn is in it, we should inspect
             # fn (but no need to inspect things not in the set).
-            if visit != 'this' and fn not in visit:
+            if visit != b'this' and fn not in visit:
                 continue
             fullp = self._subpath(fn)
             # visitchildrenset isn't perfect, we still need to call the regular
@@ -1248,9 +1250,9 @@ class treemanifest(object):
                     stack.append((emptytree, m2))
 
             for fn, n1 in t1._files.iteritems():
-                fl1 = t1._flags.get(fn, '')
+                fl1 = t1._flags.get(fn, b'')
                 n2 = t2._files.get(fn, None)
-                fl2 = t2._flags.get(fn, '')
+                fl2 = t2._flags.get(fn, b'')
                 if n1 != n2 or fl1 != fl2:
                     result[t1._subpath(fn)] = ((n1, fl1), (n2, fl2))
                 elif clean:
@@ -1258,8 +1260,8 @@ class treemanifest(object):
 
             for fn, n2 in t2._files.iteritems():
                 if fn not in t1._files:
-                    fl2 = t2._flags.get(fn, '')
-                    result[t2._subpath(fn)] = ((None, ''), (n2, fl2))
+                    fl2 = t2._flags.get(fn, b'')
+                    result[t2._subpath(fn)] = ((None, b''), (n2, fl2))
 
         stackls = []
         _iterativediff(self, m2, stackls)
@@ -1276,12 +1278,12 @@ class treemanifest(object):
         selflazy = self._lazydirs
         subpath = self._subpath
         for f, n, fl in _parse(text):
-            if fl == 't':
-                f = f + '/'
+            if fl == b't':
+                f = f + b'/'
                 # False below means "doesn't need to be copied" and can use the
                 # cached value from readsubtree directly.
                 selflazy[f] = (subpath(f), n, readsubtree, False)
-            elif '/' in f:
+            elif b'/' in f:
                 # This is a flat manifest, so use __setitem__ and setflag rather
                 # than assigning directly to _files and _flags, so we can
                 # assign a path in a subdirectory, and to mark dirty (compared
@@ -1307,8 +1309,8 @@ class treemanifest(object):
         """
         self._load()
         flags = self.flags
-        lazydirs = [(d[:-1], v[1], 't') for d, v in self._lazydirs.iteritems()]
-        dirs = [(d[:-1], self._dirs[d]._node, 't') for d in self._dirs]
+        lazydirs = [(d[:-1], v[1], b't') for d, v in self._lazydirs.iteritems()]
+        dirs = [(d[:-1], self._dirs[d]._node, b't') for d in self._dirs]
         files = [(f, self._files[f], flags(f)) for f in self._files]
         return _text(sorted(dirs + files + lazydirs))
 
@@ -1334,7 +1336,7 @@ class treemanifest(object):
         # let's skip investigating things that `match` says we do not need.
         visit = match.visitchildrenset(self._dir[:-1])
         visit = self._loadchildrensetlazy(visit)
-        if visit == 'this' or visit == 'all':
+        if visit == b'this' or visit == b'all':
             visit = None
         for d, subm in self._dirs.iteritems():
             if visit and d[:-1] not in visit:
@@ -1375,7 +1377,7 @@ class manifestfulltextcache(util.lrucachedict):
 
     """
 
-    _file = 'manifestfulltextcache'
+    _file = b'manifestfulltextcache'
 
     def __init__(self, max):
         super(manifestfulltextcache, self).__init__(max)
@@ -1396,7 +1398,7 @@ class manifestfulltextcache(util.lrucachedict):
                     if len(node) < 20:
                         break
                     try:
-                        size = struct.unpack('>L', fp.read(4))[0]
+                        size = struct.unpack(b'>L', fp.read(4))[0]
                     except struct.error:
                         break
                     value = bytearray(fp.read(size))
@@ -1415,13 +1417,13 @@ class manifestfulltextcache(util.lrucachedict):
             return
         # rotate backwards to the first used node
         with self._opener(
-            self._file, 'w', atomictemp=True, checkambig=True
+            self._file, b'w', atomictemp=True, checkambig=True
         ) as fp:
             node = self._head.prev
             while True:
                 if node.key in self._cache:
                     fp.write(node.key)
-                    fp.write(struct.pack('>L', len(node.value)))
+                    fp.write(struct.pack(b'>L', len(node.value)))
                     fp.write(node.value)
                 if node is self._head:
                     break
@@ -1491,7 +1493,7 @@ class manifestrevlog(object):
     def __init__(
         self,
         opener,
-        tree='',
+        tree=b'',
         dirlogcache=None,
         indexfile=None,
         treemanifest=False,
@@ -1513,20 +1515,20 @@ class manifestrevlog(object):
         optiontreemanifest = False
         opts = getattr(opener, 'options', None)
         if opts is not None:
-            cachesize = opts.get('manifestcachesize', cachesize)
-            optiontreemanifest = opts.get('treemanifest', False)
+            cachesize = opts.get(b'manifestcachesize', cachesize)
+            optiontreemanifest = opts.get(b'treemanifest', False)
 
         self._treeondisk = optiontreemanifest or treemanifest
 
         self._fulltextcache = manifestfulltextcache(cachesize)
 
         if tree:
-            assert self._treeondisk, 'opts is %r' % opts
+            assert self._treeondisk, b'opts is %r' % opts
 
         if indexfile is None:
-            indexfile = '00manifest.i'
+            indexfile = b'00manifest.i'
             if tree:
-                indexfile = "meta/" + tree + indexfile
+                indexfile = b"meta/" + tree + indexfile
 
         self.tree = tree
 
@@ -1534,7 +1536,7 @@ class manifestrevlog(object):
         if tree:
             self._dirlogcache = dirlogcache
         else:
-            self._dirlogcache = {'': self}
+            self._dirlogcache = {b'': self}
 
         self._revlog = revlog.revlog(
             opener,
@@ -1551,7 +1553,7 @@ class manifestrevlog(object):
 
     def _setupmanifestcachehooks(self, repo):
         """Persist the manifestfulltextcache on lock release"""
-        if not util.safehasattr(repo, '_wlockref'):
+        if not util.safehasattr(repo, b'_wlockref'):
             return
 
         self._fulltextcache._opener = repo.wcachevfs
@@ -1604,7 +1606,7 @@ class manifestrevlog(object):
         readtree=None,
         match=None,
     ):
-        if p1 in self.fulltextcache and util.safehasattr(m, 'fastdelta'):
+        if p1 in self.fulltextcache and util.safehasattr(m, b'fastdelta'):
             # If our first parent is in the manifest cache, we can
             # compute a delta here using properties we know about the
             # manifest up-front, which may save time later for the
@@ -1629,8 +1631,8 @@ class manifestrevlog(object):
             # through to the revlog layer, and let it handle the delta
             # process.
             if self._treeondisk:
-                assert readtree, "readtree must be set for treemanifest writes"
-                assert match, "match must be specified for treemanifest writes"
+                assert readtree, b"readtree must be set for treemanifest writes"
+                assert match, b"match must be specified for treemanifest writes"
                 m1 = readtree(self.tree, p1)
                 m2 = readtree(self.tree, p2)
                 n = self._addtree(
@@ -1650,7 +1652,9 @@ class manifestrevlog(object):
     def _addtree(self, m, transaction, link, m1, m2, readtree, match):
         # If the manifest is unchanged compared to one parent,
         # don't write a new revision
-        if self.tree != '' and (m.unmodifiedsince(m1) or m.unmodifiedsince(m2)):
+        if self.tree != b'' and (
+            m.unmodifiedsince(m1) or m.unmodifiedsince(m2)
+        ):
             return m.node()
 
         def writesubtree(subm, subp1, subp2, match):
@@ -1670,7 +1674,7 @@ class manifestrevlog(object):
         m.writesubtrees(m1, m2, writesubtree, match)
         text = m.dirtext()
         n = None
-        if self.tree != '':
+        if self.tree != b'':
             # Double-check whether contents are unchanged to one parent
             if text == m1.dirtext():
                 n = m1.node()
@@ -1763,7 +1767,7 @@ class manifestrevlog(object):
 
     def clone(self, tr, destrevlog, **kwargs):
         if not isinstance(destrevlog, manifestrevlog):
-            raise error.ProgrammingError('expected manifestrevlog to clone()')
+            raise error.ProgrammingError(b'expected manifestrevlog to clone()')
 
         return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
 
@@ -1816,8 +1820,8 @@ class manifestlog(object):
 
         opts = getattr(opener, 'options', None)
         if opts is not None:
-            usetreemanifest = opts.get('treemanifest', usetreemanifest)
-            cachesize = opts.get('manifestcachesize', cachesize)
+            usetreemanifest = opts.get(b'treemanifest', usetreemanifest)
+            cachesize = opts.get(b'manifestcachesize', cachesize)
 
         self._treemanifests = usetreemanifest
 
@@ -1827,7 +1831,7 @@ class manifestlog(object):
 
         # A cache of the manifestctx or treemanifestctx for each directory
         self._dirmancache = {}
-        self._dirmancache[''] = util.lrucachedict(cachesize)
+        self._dirmancache[b''] = util.lrucachedict(cachesize)
 
         self._cachesize = cachesize
 
@@ -1835,7 +1839,7 @@ class manifestlog(object):
         """Retrieves the manifest instance for the given node. Throws a
         LookupError if not found.
         """
-        return self.get('', node)
+        return self.get(b'', node)
 
     def get(self, tree, node, verify=True):
         """Retrieves the manifest instance for the given node. Throws a
@@ -1861,8 +1865,8 @@ class manifestlog(object):
             else:
                 raise error.Abort(
                     _(
-                        "cannot ask for manifest directory '%s' in a flat "
-                        "manifest"
+                        b"cannot ask for manifest directory '%s' in a flat "
+                        b"manifest"
                     )
                     % tree
                 )
@@ -1872,7 +1876,7 @@ class manifestlog(object):
                 self._rootstore.rev(node)
 
             if self._treemanifests:
-                m = treemanifestctx(self, '', node)
+                m = treemanifestctx(self, b'', node)
             else:
                 m = manifestctx(self, node)
 
@@ -2012,7 +2016,7 @@ class manifestctx(object):
 
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memtreemanifestctx(object):
-    def __init__(self, manifestlog, dir=''):
+    def __init__(self, manifestlog, dir=b''):
         self._manifestlog = manifestlog
         self._dir = dir
         self._treemanifest = treemanifest()
@@ -2020,7 +2024,7 @@ class memtreemanifestctx(object):
     def _storage(self):
         return self._manifestlog.getstorage(b'')
 
-    def new(self, dir=''):
+    def new(self, dir=b''):
         return memtreemanifestctx(self._manifestlog, dir=dir)
 
     def copy(self):
@@ -2105,7 +2109,7 @@ class treemanifestctx(object):
     def node(self):
         return self._node
 
-    def new(self, dir=''):
+    def new(self, dir=b''):
         return memtreemanifestctx(self._manifestlog, dir=dir)
 
     def copy(self):
@@ -2186,8 +2190,8 @@ class excludeddir(treemanifest):
         self._node = node
         # Add an empty file, which will be included by iterators and such,
         # appearing as the directory itself (i.e. something like "dir/")
-        self._files[''] = node
-        self._flags[''] = 't'
+        self._files[b''] = node
+        self._flags[b''] = b't'
 
     # Manifests outside the narrowspec should never be modified, so avoid
     # copying. This makes a noticeable difference when there are very many
@@ -2210,7 +2214,7 @@ class excludeddirmanifestctx(treemanifestctx):
 
     def write(self, *args):
         raise error.ProgrammingError(
-            'attempt to write manifest from excluded dir %s' % self._dir
+            b'attempt to write manifest from excluded dir %s' % self._dir
         )
 
 
@@ -2229,22 +2233,22 @@ class excludedmanifestrevlog(manifestrevlog):
 
     def __len__(self):
         raise error.ProgrammingError(
-            'attempt to get length of excluded dir %s' % self._dir
+            b'attempt to get length of excluded dir %s' % self._dir
         )
 
     def rev(self, node):
         raise error.ProgrammingError(
-            'attempt to get rev from excluded dir %s' % self._dir
+            b'attempt to get rev from excluded dir %s' % self._dir
         )
 
     def linkrev(self, node):
         raise error.ProgrammingError(
-            'attempt to get linkrev from excluded dir %s' % self._dir
+            b'attempt to get linkrev from excluded dir %s' % self._dir
         )
 
     def node(self, rev):
         raise error.ProgrammingError(
-            'attempt to get node from excluded dir %s' % self._dir
+            b'attempt to get node from excluded dir %s' % self._dir
         )
 
     def add(self, *args, **kwargs):

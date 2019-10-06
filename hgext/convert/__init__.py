@@ -24,60 +24,72 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 # Commands definition was moved elsewhere to ease demandload job.
 
 
 @command(
-    'convert',
+    b'convert',
     [
         (
-            '',
-            'authors',
-            '',
+            b'',
+            b'authors',
+            b'',
             _(
-                'username mapping filename (DEPRECATED) (use --authormap instead)'
+                b'username mapping filename (DEPRECATED) (use --authormap instead)'
             ),
-            _('FILE'),
+            _(b'FILE'),
         ),
-        ('s', 'source-type', '', _('source repository type'), _('TYPE')),
-        ('d', 'dest-type', '', _('destination repository type'), _('TYPE')),
-        ('r', 'rev', [], _('import up to source revision REV'), _('REV')),
-        ('A', 'authormap', '', _('remap usernames using this file'), _('FILE')),
+        (b's', b'source-type', b'', _(b'source repository type'), _(b'TYPE')),
         (
-            '',
-            'filemap',
-            '',
-            _('remap file names using contents of file'),
-            _('FILE'),
+            b'd',
+            b'dest-type',
+            b'',
+            _(b'destination repository type'),
+            _(b'TYPE'),
+        ),
+        (b'r', b'rev', [], _(b'import up to source revision REV'), _(b'REV')),
+        (
+            b'A',
+            b'authormap',
+            b'',
+            _(b'remap usernames using this file'),
+            _(b'FILE'),
         ),
         (
-            '',
-            'full',
+            b'',
+            b'filemap',
+            b'',
+            _(b'remap file names using contents of file'),
+            _(b'FILE'),
+        ),
+        (
+            b'',
+            b'full',
             None,
-            _('apply filemap changes by converting all files again'),
+            _(b'apply filemap changes by converting all files again'),
         ),
         (
-            '',
-            'splicemap',
-            '',
-            _('splice synthesized history into place'),
-            _('FILE'),
+            b'',
+            b'splicemap',
+            b'',
+            _(b'splice synthesized history into place'),
+            _(b'FILE'),
         ),
         (
-            '',
-            'branchmap',
-            '',
-            _('change branch names while converting'),
-            _('FILE'),
+            b'',
+            b'branchmap',
+            b'',
+            _(b'change branch names while converting'),
+            _(b'FILE'),
         ),
-        ('', 'branchsort', None, _('try to sort changesets by branches')),
-        ('', 'datesort', None, _('try to sort changesets by date')),
-        ('', 'sourcesort', None, _('preserve source changesets order')),
-        ('', 'closesort', None, _('try to reorder closed revisions')),
+        (b'', b'branchsort', None, _(b'try to sort changesets by branches')),
+        (b'', b'datesort', None, _(b'try to sort changesets by date')),
+        (b'', b'sourcesort', None, _(b'preserve source changesets order')),
+        (b'', b'closesort', None, _(b'try to reorder closed revisions')),
     ],
-    _('hg convert [OPTION]... SOURCE [DEST [REVMAP]]'),
+    _(b'hg convert [OPTION]... SOURCE [DEST [REVMAP]]'),
     norepo=True,
 )
 def convert(ui, src, dest=None, revmapfile=None, **opts):
@@ -483,34 +495,44 @@ def convert(ui, src, dest=None, revmapfile=None, **opts):
     return convcmd.convert(ui, src, dest, revmapfile, **opts)
 
 
-@command('debugsvnlog', [], 'hg debugsvnlog', norepo=True)
+@command(b'debugsvnlog', [], b'hg debugsvnlog', norepo=True)
 def debugsvnlog(ui, **opts):
     return subversion.debugsvnlog(ui, **opts)
 
 
 @command(
-    'debugcvsps',
+    b'debugcvsps',
     [
         # Main options shared with cvsps-2.1
-        ('b', 'branches', [], _('only return changes on specified branches')),
-        ('p', 'prefix', '', _('prefix to remove from file names')),
         (
-            'r',
-            'revisions',
+            b'b',
+            b'branches',
             [],
-            _('only return changes after or between specified tags'),
+            _(b'only return changes on specified branches'),
         ),
-        ('u', 'update-cache', None, _("update cvs log cache")),
-        ('x', 'new-cache', None, _("create new cvs log cache")),
-        ('z', 'fuzz', 60, _('set commit time fuzz in seconds')),
-        ('', 'root', '', _('specify cvsroot')),
+        (b'p', b'prefix', b'', _(b'prefix to remove from file names')),
+        (
+            b'r',
+            b'revisions',
+            [],
+            _(b'only return changes after or between specified tags'),
+        ),
+        (b'u', b'update-cache', None, _(b"update cvs log cache")),
+        (b'x', b'new-cache', None, _(b"create new cvs log cache")),
+        (b'z', b'fuzz', 60, _(b'set commit time fuzz in seconds')),
+        (b'', b'root', b'', _(b'specify cvsroot')),
         # Options specific to builtin cvsps
-        ('', 'parents', '', _('show parent changesets')),
-        ('', 'ancestors', '', _('show current changeset in ancestor branches')),
+        (b'', b'parents', b'', _(b'show parent changesets')),
+        (
+            b'',
+            b'ancestors',
+            b'',
+            _(b'show current changeset in ancestor branches'),
+        ),
         # Options that are ignored for compatibility with cvsps-2.1
-        ('A', 'cvs-direct', None, _('ignored for compatibility')),
+        (b'A', b'cvs-direct', None, _(b'ignored for compatibility')),
     ],
-    _('hg debugcvsps [OPTION]... [PATH]...'),
+    _(b'hg debugcvsps [OPTION]... [PATH]...'),
     norepo=True,
 )
 def debugcvsps(ui, *args, **opts):
@@ -528,14 +550,14 @@ def debugcvsps(ui, *args, **opts):
 
 
 def kwconverted(context, mapping, name):
-    ctx = context.resource(mapping, 'ctx')
-    rev = ctx.extra().get('convert_revision', '')
-    if rev.startswith('svn:'):
-        if name == 'svnrev':
+    ctx = context.resource(mapping, b'ctx')
+    rev = ctx.extra().get(b'convert_revision', b'')
+    if rev.startswith(b'svn:'):
+        if name == b'svnrev':
             return b"%d" % subversion.revsplit(rev)[2]
-        elif name == 'svnpath':
+        elif name == b'svnpath':
             return subversion.revsplit(rev)[1]
-        elif name == 'svnuuid':
+        elif name == b'svnuuid':
             return subversion.revsplit(rev)[0]
     return rev
 
@@ -543,22 +565,22 @@ def kwconverted(context, mapping, name):
 templatekeyword = registrar.templatekeyword()
 
 
-@templatekeyword('svnrev', requires={'ctx'})
+@templatekeyword(b'svnrev', requires={b'ctx'})
 def kwsvnrev(context, mapping):
     """String. Converted subversion revision number."""
-    return kwconverted(context, mapping, 'svnrev')
+    return kwconverted(context, mapping, b'svnrev')
 
 
-@templatekeyword('svnpath', requires={'ctx'})
+@templatekeyword(b'svnpath', requires={b'ctx'})
 def kwsvnpath(context, mapping):
     """String. Converted subversion revision project path."""
-    return kwconverted(context, mapping, 'svnpath')
+    return kwconverted(context, mapping, b'svnpath')
 
 
-@templatekeyword('svnuuid', requires={'ctx'})
+@templatekeyword(b'svnuuid', requires={b'ctx'})
 def kwsvnuuid(context, mapping):
     """String. Converted subversion revision repository identifier."""
-    return kwconverted(context, mapping, 'svnuuid')
+    return kwconverted(context, mapping, b'svnuuid')
 
 
 # tell hggettext to extract docstrings from these functions:

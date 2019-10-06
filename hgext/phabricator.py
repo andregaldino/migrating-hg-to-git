@@ -79,7 +79,7 @@ from mercurial.utils import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 eh = exthelper.exthelper()
 
@@ -747,7 +747,7 @@ def phabsend(ui, repo, *revs, **opts):
                 if old.description() != newdesc:
                     if old.phase() == phases.public:
                         ui.warn(
-                            _("warning: not updating public commit %s\n")
+                            _(b"warning: not updating public commit %s\n")
                             % scmutil.formatchangeid(old)
                         )
                         continue
