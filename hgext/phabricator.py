@@ -481,6 +481,47 @@ class phabhunk(dict):
     delLines = attr.ib(default=0)  # camelcase-required
 
 
+@attr.s
+class phabchange(object):
+    """Represents a Differential change, owns Differential hunks and owned by a
+    Differential diff.  Each one represents one file in a diff.
+    """
+
+    currentPath = attr.ib(default=None)  # camelcase-required
+    oldPath = attr.ib(default=None)  # camelcase-required
+    awayPaths = attr.ib(default=attr.Factory(list))  # camelcase-required
+    metadata = attr.ib(default=attr.Factory(dict))
+    oldProperties = attr.ib(default=attr.Factory(dict))  # camelcase-required
+    newProperties = attr.ib(default=attr.Factory(dict))  # camelcase-required
+    type = attr.ib(default=DiffChangeType.CHANGE)
+    fileType = attr.ib(default=DiffFileType.TEXT)  # camelcase-required
+    commitHash = attr.ib(default=None)  # camelcase-required
+    addLines = attr.ib(default=0)  # camelcase-required
+    delLines = attr.ib(default=0)  # camelcase-required
+    hunks = attr.ib(default=attr.Factory(list))
+
+    def copynewmetadatatoold(self):
+        for key in list(self.metadata.keys()):
+            newkey = key.replace(b'new:', b'old:')
+            self.metadata[newkey] = self.metadata[key]
+
+    def addoldmode(self, value):
+        self.oldProperties[b'unix:filemode'] = value
+
+    def addnewmode(self, value):
+        self.newProperties[b'unix:filemode'] = value
+
+    def addhunk(self, hunk):
+        if not isinstance(hunk, phabhunk):
+            raise error.Abort(b'phabchange.addhunk only takes phabhunks')
+        self.hunks.append(hunk)
+        # It's useful to include these stats since the Phab web UI shows them,
+        # and uses them to estimate how large a change a Revision is. Also used
+        # in email subjects for the [+++--] bit.
+        self.addLines += hunk.addLines
+        self.delLines += hunk.delLines
+
+
 def creatediff(ctx):
     """create a Differential Diff"""
     repo = ctx.repo()
