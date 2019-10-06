@@ -50,6 +50,7 @@ import re
 from mercurial.node import bin, nullid
 from mercurial.i18n import _
 from mercurial.pycompat import getattr
+from mercurial.thirdparty import attr
 from mercurial import (
     cmdutil,
     context,
@@ -463,6 +464,21 @@ class DiffFileType(object):
     TEXT = 1
     IMAGE = 2
     BINARY = 3
+
+
+@attr.s
+class phabhunk(dict):
+    """Represents a Differential hunk, which is owned by a Differential change
+    """
+
+    oldOffset = attr.ib(default=0)  # camelcase-required
+    oldLength = attr.ib(default=0)  # camelcase-required
+    newOffset = attr.ib(default=0)  # camelcase-required
+    newLength = attr.ib(default=0)  # camelcase-required
+    corpus = attr.ib(default='')
+    # These get added to the phabchange's equivalents
+    addLines = attr.ib(default=0)  # camelcase-required
+    delLines = attr.ib(default=0)  # camelcase-required
 
 
 def creatediff(ctx):
