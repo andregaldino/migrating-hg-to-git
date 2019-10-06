@@ -617,9 +617,6 @@ def _lookuptemplate(ui, tmpl, style):
                 mapfile = mapname
         return templatespec(None, mapfile)
 
-    if not tmpl:
-        return templatespec(None, None)
-
     return formatter.lookuptemplate(ui, b'changeset', tmpl)
 
 
@@ -642,11 +639,14 @@ def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
     regular display via changesetprinter() is done.
     """
     postargs = (differ, opts, buffered)
-    if opts.get(b'template') in {b'cbor', b'json'}:
+    spec = _lookuptemplate(ui, opts.get(b'template'), opts.get(b'style'))
+
+    # machine-readable formats have slightly different keyword set than
+    # plain templates, which are handled by changesetformatter.
+    # note that {b'pickle', b'debug'} can also be added to the list if needed.
+    if spec.ref in {b'cbor', b'json'}:
         fm = ui.formatter(b'log', opts)
         return changesetformatter(ui, repo, fm, *postargs)
-
-    spec = _lookuptemplate(ui, opts.get(b'template'), opts.get(b'style'))
 
     if not spec.ref and not spec.tmpl and not spec.mapfile:
         return changesetprinter(ui, repo, *postargs)

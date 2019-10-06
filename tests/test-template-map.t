@@ -1101,6 +1101,15 @@ honor --git but not format-breaking diffopts
    }
   ]
 
+Other unsupported formatter styles:
+
+  $ hg log -qr . -Tpickle
+  abort: "pickle" not in template map
+  [255]
+  $ hg log -qr . -Tdebug
+  abort: "debug" not in template map
+  [255]
+
 Error if style not readable:
 
 #if unix-permissions no-root

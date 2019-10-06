@@ -531,6 +531,7 @@ def lookuptemplate(ui, topic, tmpl):
     'tmpl' can be any of the following:
 
      - a literal template (e.g. '{rev}')
+     - a reference to built-in template (i.e. formatter)
      - a map-file name or path (e.g. 'changelog')
      - a reference to [templates] in config file
      - a path to raw template file
@@ -544,9 +545,16 @@ def lookuptemplate(ui, topic, tmpl):
     available as well as aliases in [templatealias].
     """
 
+    if not tmpl:
+        return templatespec(None, None, None)
+
     # looks like a literal template?
     if b'{' in tmpl:
         return templatespec(b'', tmpl, None)
+
+    # a reference to built-in (formatter) template
+    if tmpl in {b'cbor', b'json', b'pickle', b'debug'}:
+        return templatespec(tmpl, None, None)
 
     # perhaps a stock style?
     if not os.path.split(tmpl)[0]:
@@ -712,17 +720,16 @@ class templateresources(templater.resourcemapper):
 
 
 def formatter(ui, out, topic, opts):
-    template = opts.get(b"template", b"")
-    if template == b"cbor":
+    spec = lookuptemplate(ui, topic, opts.get(b'template', b''))
+    if spec.ref == b"cbor":
         return cborformatter(ui, out, topic, opts)
-    elif template == b"json":
+    elif spec.ref == b"json":
         return jsonformatter(ui, out, topic, opts)
-    elif template == b"pickle":
+    elif spec.ref == b"pickle":
         return pickleformatter(ui, out, topic, opts)
-    elif template == b"debug":
+    elif spec.ref == b"debug":
         return debugformatter(ui, out, topic, opts)
-    elif template != b"":
-        spec = lookuptemplate(ui, topic, opts.get(b'template', b''))
+    elif spec.ref or spec.tmpl or spec.mapfile:
         return templateformatter(ui, out, topic, opts, spec)
     # developer config: ui.formatdebug
     elif ui.configbool(b'ui', b'formatdebug'):
