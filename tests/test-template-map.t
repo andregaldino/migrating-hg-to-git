@@ -736,6 +736,18 @@ test CBOR style:
    }
   ]
 
+  $ hg log -r . -T'cbor(rev, node|short)' | "$PYTHON" "$TESTTMP/decodecborarray.py"
+  [
+   {
+    'node': '95c24699272e',
+    'rev': 8
+   }
+  ]
+
+  $ hg log -r . -T'cbor()' | "$PYTHON" "$TESTTMP/decodecborarray.py"
+  [
+   {}
+  ]
 
 Test JSON style:
 
@@ -1101,6 +1113,17 @@ honor --git but not format-breaking diffopts
    }
   ]
 
+  $ hg log -l2 -T'json(rev, parents)'
+  [
+   {"parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"], "rev": 8},
+   {"parents": ["0000000000000000000000000000000000000000"], "rev": 7}
+  ]
+
+  $ hg log -r. -T'json()'
+  [
+   {}
+  ]
+
 Other unsupported formatter styles:
 
   $ hg log -qr . -Tpickle
@@ -1109,6 +1132,24 @@ Other unsupported formatter styles:
   $ hg log -qr . -Tdebug
   abort: "debug" not in template map
   [255]
+
+Unparsable function-style references:
+
+  $ hg log -qr . -T'json(-)'
+  hg: parse error at 6: not a prefix: )
+  (json(-)
+         ^ here)
+  [255]
+
+For backward compatibility, the following examples are not parsed as
+function-style references:
+
+  $ hg log -qr . -T'cbor(rev'
+  cbor(rev (no-eol)
+  $ hg log -qr . -T'json (rev)'
+  json (rev) (no-eol)
+  $ hg log -qr . -T'json(x="{rev}")'
+  json(x="8") (no-eol)
 
 Error if style not readable:
 

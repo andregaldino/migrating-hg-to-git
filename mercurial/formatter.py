@@ -475,7 +475,7 @@ class _templateconverter(object):
 
 
 class templateformatter(baseformatter):
-    def __init__(self, ui, out, topic, opts, spec):
+    def __init__(self, ui, out, topic, opts, spec, overridetemplates=None):
         baseformatter.__init__(self, ui, topic, opts, _templateconverter)
         self._out = out
         self._tref = spec.ref
@@ -486,6 +486,8 @@ class templateformatter(baseformatter):
             resources=templateresources(ui),
             cache=templatekw.defaulttempl,
         )
+        if overridetemplates:
+            self._t.cache.update(overridetemplates)
         self._parts = templatepartsmap(
             spec, self._t, [b'docheader', b'docfooter', b'separator']
         )
@@ -523,6 +525,7 @@ class templatespec(object):
     ref = attr.ib()
     tmpl = attr.ib()
     mapfile = attr.ib()
+    refargs = attr.ib(default=None)
 
 
 def lookuptemplate(ui, topic, tmpl):
@@ -555,6 +558,12 @@ def lookuptemplate(ui, topic, tmpl):
     # a reference to built-in (formatter) template
     if tmpl in {b'cbor', b'json', b'pickle', b'debug'}:
         return templatespec(tmpl, None, None)
+
+    # a function-style reference to built-in template
+    func, fsep, ftail = tmpl.partition(b'(')
+    if func in {b'cbor', b'json'} and fsep and ftail.endswith(b')'):
+        templater.parseexpr(tmpl)  # make sure syntax errors are confined
+        return templatespec(func, None, None, refargs=ftail[:-1])
 
     # perhaps a stock style?
     if not os.path.split(tmpl)[0]:
@@ -719,17 +728,68 @@ class templateresources(templater.resourcemapper):
     }
 
 
+def _internaltemplateformatter(
+    ui,
+    out,
+    topic,
+    opts,
+    spec,
+    tmpl,
+    docheader=b'',
+    docfooter=b'',
+    separator=b'',
+):
+    """Build template formatter that handles customizable built-in templates
+    such as -Tjson(...)"""
+    templates = {spec.ref: tmpl}
+    if docheader:
+        templates[b'%s:docheader' % spec.ref] = docheader
+    if docfooter:
+        templates[b'%s:docfooter' % spec.ref] = docfooter
+    if separator:
+        templates[b'%s:separator' % spec.ref] = separator
+    return templateformatter(
+        ui, out, topic, opts, spec, overridetemplates=templates
+    )
+
+
 def formatter(ui, out, topic, opts):
     spec = lookuptemplate(ui, topic, opts.get(b'template', b''))
-    if spec.ref == b"cbor":
+    if spec.ref == b"cbor" and spec.refargs is not None:
+        return _internaltemplateformatter(
+            ui,
+            out,
+            topic,
+            opts,
+            spec,
+            tmpl=b'{dict(%s)|cbor}' % spec.refargs,
+            docheader=cborutil.BEGIN_INDEFINITE_ARRAY,
+            docfooter=cborutil.BREAK,
+        )
+    elif spec.ref == b"cbor":
         return cborformatter(ui, out, topic, opts)
+    elif spec.ref == b"json" and spec.refargs is not None:
+        return _internaltemplateformatter(
+            ui,
+            out,
+            topic,
+            opts,
+            spec,
+            tmpl=b'{dict(%s)|json}' % spec.refargs,
+            docheader=b'[\n ',
+            docfooter=b'\n]\n',
+            separator=b',\n ',
+        )
     elif spec.ref == b"json":
         return jsonformatter(ui, out, topic, opts)
     elif spec.ref == b"pickle":
+        assert spec.refargs is None, r'function-style not supported'
         return pickleformatter(ui, out, topic, opts)
     elif spec.ref == b"debug":
+        assert spec.refargs is None, r'function-style not supported'
         return debugformatter(ui, out, topic, opts)
     elif spec.ref or spec.tmpl or spec.mapfile:
+        assert spec.refargs is None, r'function-style not supported'
         return templateformatter(ui, out, topic, opts, spec)
     # developer config: ui.formatdebug
     elif ui.configbool(b'ui', b'formatdebug'):
