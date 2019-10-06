@@ -76,6 +76,7 @@ from mercurial.node import (
     nullrev,
     short,
 )
+from mercurial.pycompat import open
 from mercurial import (
     cmdutil,
     commands,

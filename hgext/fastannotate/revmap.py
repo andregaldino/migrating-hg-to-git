@@ -13,6 +13,7 @@ import os
 import struct
 
 from mercurial.node import hex
+from mercurial.pycompat import open
 from mercurial import (
     error as hgerror,
     pycompat,

@@ -18,6 +18,7 @@ from .node import (
     nullid,
     short,
 )
+from .pycompat import open
 
 from . import (
     encoding,

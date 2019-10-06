@@ -17,6 +17,7 @@ import zlib
 
 from .i18n import _
 from .node import nullrev
+from .pycompat import open
 
 from . import (
     error,

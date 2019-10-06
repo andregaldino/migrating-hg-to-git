@@ -12,6 +12,7 @@ import os
 import struct
 
 from .i18n import _
+from .pycompat import open
 from .interfaces import repository
 from . import (
     cacheutil,

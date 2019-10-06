@@ -15,6 +15,7 @@ import shlex
 import subprocess
 
 from mercurial.i18n import _
+from mercurial.pycompat import open
 from mercurial import (
     encoding,
     error,

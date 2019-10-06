@@ -14,6 +14,7 @@ import zlib
 
 from mercurial.i18n import _
 from mercurial.node import bin, hex, nullid
+from mercurial.pycompat import open
 from mercurial import (
     changegroup,
     changelog,

@@ -22,6 +22,7 @@ import traceback
 
 from .i18n import _
 from .node import hex
+from .pycompat import open
 
 from . import (
     color,

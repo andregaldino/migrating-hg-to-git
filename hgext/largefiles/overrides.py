@@ -14,6 +14,8 @@ import os
 
 from mercurial.i18n import _
 
+from mercurial.pycompat import open
+
 from mercurial.hgweb import webcommands
 
 from mercurial import (

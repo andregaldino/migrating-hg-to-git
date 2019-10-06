@@ -19,6 +19,7 @@ from .node import (
     nullrev,
     short,
 )
+from .pycompat import open
 
 from . import (
     bookmarks,

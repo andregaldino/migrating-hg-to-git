@@ -23,6 +23,7 @@ from .node import (
     wdirfilenodeids,
     wdirhex,
 )
+from .pycompat import open
 from . import (
     copies,
     dagop,

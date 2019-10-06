@@ -117,7 +117,7 @@ import weakref
 
 from mercurial.i18n import _
 from mercurial.node import hex
-
+from mercurial.pycompat import open
 from mercurial import (
     context,
     encoding,

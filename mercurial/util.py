@@ -35,6 +35,7 @@ import traceback
 import warnings
 
 from .thirdparty import attr
+from .pycompat import open
 from hgdemandimport import tracing
 from . import (
     encoding,

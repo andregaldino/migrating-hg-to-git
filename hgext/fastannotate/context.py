@@ -13,6 +13,7 @@ import hashlib
 import os
 
 from mercurial.i18n import _
+from mercurial.pycompat import open
 from mercurial import (
     error,
     linelog as linelogmod,

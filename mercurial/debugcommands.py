@@ -32,6 +32,7 @@ from .node import (
     nullrev,
     short,
 )
+from .pycompat import open
 from . import (
     bundle2,
     changegroup,

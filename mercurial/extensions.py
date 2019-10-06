@@ -18,6 +18,7 @@ from .i18n import (
     _,
     gettext,
 )
+from .pycompat import open
 
 from . import (
     cmdutil,

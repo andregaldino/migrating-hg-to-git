@@ -103,6 +103,8 @@ from mercurial.node import (
 
 from mercurial.i18n import _
 
+from mercurial.pycompat import open
+
 from mercurial.utils import (
     procutil,
     stringutil,

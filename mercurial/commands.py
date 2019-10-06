@@ -22,6 +22,7 @@ from .node import (
     wdirhex,
     wdirrev,
 )
+from .pycompat import open
 from . import (
     archival,
     bookmarks,

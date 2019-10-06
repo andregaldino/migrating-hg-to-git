@@ -16,6 +16,7 @@ import re
 import signal
 
 from .i18n import _
+from .pycompat import open
 from . import (
     encoding,
     error,

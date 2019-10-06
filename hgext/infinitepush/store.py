@@ -11,6 +11,7 @@ import os
 import subprocess
 import tempfile
 
+from mercurial.pycompat import open
 from mercurial import (
     node,
     pycompat,

@@ -13,6 +13,7 @@ from __future__ import absolute_import
 import os
 
 from .i18n import _
+from .pycompat import open
 from . import (
     pycompat,
     util,

@@ -14,6 +14,7 @@ import mimetypes
 import os
 import stat
 
+from ..pycompat import open
 from .. import (
     encoding,
     pycompat,

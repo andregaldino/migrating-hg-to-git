@@ -23,6 +23,7 @@ import re
 import time
 
 from mercurial.i18n import _
+from mercurial.pycompat import open
 from mercurial import (
     bookmarks,
     context,

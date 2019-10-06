@@ -15,6 +15,7 @@ import struct
 import tempfile
 
 from mercurial.i18n import _
+from mercurial.pycompat import open
 from mercurial import (
     error,
     node,

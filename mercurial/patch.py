@@ -24,6 +24,7 @@ from .node import (
     hex,
     short,
 )
+from .pycompat import open
 from . import (
     copies,
     diffhelper,

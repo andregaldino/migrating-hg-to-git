@@ -114,6 +114,7 @@ import sys
 import threading
 import time
 
+from .pycompat import open
 from . import (
     encoding,
     pycompat,

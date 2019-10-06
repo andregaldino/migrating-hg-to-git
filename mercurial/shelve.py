@@ -28,6 +28,7 @@ import itertools
 import stat
 
 from .i18n import _
+from .pycompat import open
 from . import (
     bookmarks,
     bundle2,

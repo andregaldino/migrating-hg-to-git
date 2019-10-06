@@ -19,6 +19,7 @@ import tarfile
 import xml.dom.minidom
 
 from .i18n import _
+from .pycompat import open
 from . import (
     cmdutil,
     encoding,

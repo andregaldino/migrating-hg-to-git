@@ -354,6 +354,7 @@ else:
     sysstr = identity
     strurl = identity
     bytesurl = identity
+    open = open
 
     # this can't be parsed on Python 3
     exec(b'def raisewithtb(exc, tb):\n' b'    raise exc, None, tb\n')

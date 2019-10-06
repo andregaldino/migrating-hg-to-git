@@ -10,6 +10,7 @@ from __future__ import absolute_import, print_function
 import contextlib
 
 from .i18n import _
+from .pycompat import open
 from . import (
     encoding,
     error,
