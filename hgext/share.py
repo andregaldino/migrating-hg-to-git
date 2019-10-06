@@ -66,12 +66,7 @@ testedwith = b'ships-with-hg-core'
     [
         (b'U', b'noupdate', None, _(b'do not create a working directory')),
         (b'B', b'bookmarks', None, _(b'also share bookmarks')),
-        (
-            b'',
-            b'relative',
-            None,
-            _(b'point to source using a relative path (EXPERIMENTAL)'),
-        ),
+        (b'', b'relative', None, _(b'point to source using a relative path'),),
     ],
     _(b'[-U] [-B] SOURCE [DEST]'),
     helpcategory=command.CATEGORY_REPO_CREATION,
