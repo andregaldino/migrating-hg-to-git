@@ -237,7 +237,6 @@ import of malformed plain diff should fail
   [255]
   $ rm -r b
 
-
 hg -R repo import
 put the clone in a subdir - having a directory named "a"
 used to hide a bug.
@@ -394,6 +393,48 @@ hg export in email, should use patch header
   applying patch from stdin
   $ hg --cwd b tip | grep second
   summary:     second change
+  $ rm -r b
+
+hg email --plain, should read X-Mercurial-Node header
+
+  $ cat >> a/.hg/hgrc << EOF
+  > [extensions]
+  > patchbomb =
+  > [email]
+  > from = foo
+  > cc = foo
+  > to = bar
+  > EOF
+  $ hg --cwd a email -m ../tip-plain.mbox --plain --date '1970-1-1 0:1' tip
+  this patch series consists of 1 patches.
+  
+  
+  sending [PATCH] second change ...
+
+  $ hg clone -r0 a b -q
+  $ hg --cwd b import --debug ../tip-plain.mbox
+  applying ../tip-plain.mbox
+  Node ID: 1d4bd90af0e43687763d158dfa83ff2a4b6c0c32
+  Subject: second change
+  From: foo
+  Content-Type: text/plain
+  found patch at byte 0
+  message:
+  second change
+  patching file a
+  committing files:
+  a
+  committing manifest
+  committing changelog
+  created de620f6fe949
+  updating the branch cache
+  $ hg --cwd b tip
+  changeset:   1:de620f6fe949
+  tag:         tip
+  user:        foo
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     second change
+  
   $ rm -r b
 
 

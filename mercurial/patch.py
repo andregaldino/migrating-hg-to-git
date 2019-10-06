@@ -256,6 +256,11 @@ def _extract(ui, fileobj, tmpname, tmpfp):
     # should try to parse msg['Date']
     parents = []
 
+    nodeid = msg[r'X-Mercurial-Node']
+    if nodeid:
+        data[b'nodeid'] = nodeid = mail.headdecode(nodeid)
+        ui.debug(b'Node ID: %s\n' % nodeid)
+
     if subject:
         if subject.startswith(b'[PATCH'):
             pend = subject.find(b']')
