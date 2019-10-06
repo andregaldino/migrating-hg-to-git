@@ -14,6 +14,7 @@ import re
 
 from ..i18n import _
 from ..node import hex, short
+from ..pycompat import getattr
 
 from .common import (
     ErrorResponse,

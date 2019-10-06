@@ -15,6 +15,7 @@ from .node import (
     hex,
     nullid,
 )
+from .pycompat import getattr
 
 from . import (
     bundle2,

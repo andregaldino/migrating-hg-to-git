@@ -20,6 +20,7 @@ import traceback
 
 
 from .i18n import _
+from .pycompat import getattr
 
 from hgdemandimport import tracing
 

@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import re
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     dagop,
     destutil,

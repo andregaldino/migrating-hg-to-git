@@ -25,6 +25,7 @@ import svn.ra
 Pool = svn.core.Pool
 SubversionException = svn.core.SubversionException
 
+from mercurial.pycompat import getattr
 from mercurial import util
 
 # Some older versions of the Python bindings need to be

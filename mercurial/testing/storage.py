@@ -14,6 +14,7 @@ from ..node import (
     nullid,
     nullrev,
 )
+from ..pycompat import getattr
 from .. import (
     error,
     mdiff,

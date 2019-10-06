@@ -13,7 +13,10 @@ import weakref
 
 from .i18n import _
 from .node import bin
-from .pycompat import setattr
+from .pycompat import (
+    getattr,
+    setattr,
+)
 from . import (
     bundle2,
     changegroup as changegroupmod,

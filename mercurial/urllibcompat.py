@@ -6,6 +6,7 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
+from .pycompat import getattr
 from . import pycompat
 
 _sysstr = pycompat.sysstr

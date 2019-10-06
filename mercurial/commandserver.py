@@ -24,6 +24,7 @@ except ImportError:
     from .thirdparty import selectors2 as selectors
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     encoding,
     error,

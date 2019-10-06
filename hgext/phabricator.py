@@ -49,6 +49,7 @@ import re
 
 from mercurial.node import bin, nullid
 from mercurial.i18n import _
+from mercurial.pycompat import getattr
 from mercurial import (
     cmdutil,
     context,

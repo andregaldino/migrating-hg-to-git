@@ -16,6 +16,7 @@ import stat
 
 from .i18n import _
 from .node import nullid
+from .pycompat import getattr
 
 from . import (
     bookmarks,

@@ -26,6 +26,7 @@ from .node import (
     wdirid,
     wdirrev,
 )
+from .pycompat import getattr
 
 from . import (
     copies as copiesmod,

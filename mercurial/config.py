@@ -11,6 +11,7 @@ import errno
 import os
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     error,
     pycompat,

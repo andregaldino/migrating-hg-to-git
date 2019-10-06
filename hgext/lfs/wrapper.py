@@ -11,7 +11,10 @@ import hashlib
 
 from mercurial.i18n import _
 from mercurial.node import bin, hex, nullid, short
-from mercurial.pycompat import setattr
+from mercurial.pycompat import (
+    getattr,
+    setattr,
+)
 
 from mercurial import (
     bundle2,

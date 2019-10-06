@@ -68,6 +68,7 @@ import abc
 import os
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     config,
     encoding,

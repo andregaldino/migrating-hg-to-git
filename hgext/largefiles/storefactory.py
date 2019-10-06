@@ -6,7 +6,7 @@ from __future__ import absolute_import
 import re
 
 from mercurial.i18n import _
-
+from mercurial.pycompat import getattr
 from mercurial import (
     error,
     hg,

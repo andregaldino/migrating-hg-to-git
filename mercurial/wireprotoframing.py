@@ -15,6 +15,7 @@ import collections
 import struct
 
 from .i18n import _
+from .pycompat import getattr
 from .thirdparty import attr
 from . import (
     encoding,

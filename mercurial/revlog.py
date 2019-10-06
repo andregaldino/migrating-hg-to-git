@@ -35,6 +35,7 @@ from .node import (
     wdirrev,
 )
 from .i18n import _
+from .pycompat import getattr
 from .revlogutils.constants import (
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,

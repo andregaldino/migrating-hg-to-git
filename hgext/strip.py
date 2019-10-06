@@ -6,6 +6,7 @@ repository. See the command help for details.
 from __future__ import absolute_import
 
 from mercurial.i18n import _
+from mercurial.pycompat import getattr
 from mercurial import (
     bookmarks as bookmarksmod,
     cmdutil,

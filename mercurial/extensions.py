@@ -19,6 +19,7 @@ from .i18n import (
     gettext,
 )
 from .pycompat import (
+    getattr,
     open,
     setattr,
 )

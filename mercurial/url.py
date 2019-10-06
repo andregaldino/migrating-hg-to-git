@@ -15,6 +15,7 @@ import socket
 import sys
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     encoding,
     error,

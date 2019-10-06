@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import threading
 
 from mercurial.node import hex, nullid
+from mercurial.pycompat import getattr
 from mercurial import (
     mdiff,
     pycompat,

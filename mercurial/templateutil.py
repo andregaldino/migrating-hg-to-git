@@ -11,6 +11,7 @@ import abc
 import types
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     error,
     pycompat,

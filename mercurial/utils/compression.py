@@ -10,6 +10,7 @@ import bz2
 import collections
 import zlib
 
+from ..pycompat import getattr
 from .. import (
     error,
     i18n,

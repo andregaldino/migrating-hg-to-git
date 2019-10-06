@@ -13,6 +13,7 @@ import os
 import socket
 import stat as statmod
 
+from ..pycompat import getattr
 from .. import (
     encoding,
     pycompat,

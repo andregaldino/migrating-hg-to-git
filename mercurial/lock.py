@@ -16,6 +16,7 @@ import time
 import warnings
 
 from .i18n import _
+from .pycompat import getattr
 
 from . import (
     encoding,

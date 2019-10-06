@@ -92,6 +92,7 @@ import sys
 import threading
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     node,
     pycompat,

@@ -12,6 +12,7 @@ from __future__ import absolute_import
 
 import os
 
+from ..pycompat import getattr
 from .. import pycompat
 
 from ..utils import procutil

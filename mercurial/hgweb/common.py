@@ -14,7 +14,10 @@ import mimetypes
 import os
 import stat
 
-from ..pycompat import open
+from ..pycompat import (
+    getattr,
+    open,
+)
 from .. import (
     encoding,
     pycompat,

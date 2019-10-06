@@ -20,7 +20,10 @@ import sys
 import time
 
 from ..i18n import _
-from ..pycompat import open
+from ..pycompat import (
+    getattr,
+    open,
+)
 
 from .. import (
     encoding,

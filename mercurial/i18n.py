@@ -12,6 +12,7 @@ import locale
 import os
 import sys
 
+from .pycompat import getattr
 from . import (
     encoding,
     pycompat,

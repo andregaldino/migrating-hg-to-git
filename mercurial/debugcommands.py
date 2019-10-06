@@ -32,7 +32,10 @@ from .node import (
     nullrev,
     short,
 )
-from .pycompat import open
+from .pycompat import (
+    getattr,
+    open,
+)
 from . import (
     bundle2,
     changegroup,

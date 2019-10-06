@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+from .pycompat import getattr
 from . import (
     encoding,
     error,

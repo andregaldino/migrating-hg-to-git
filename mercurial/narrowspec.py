@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 from .i18n import _
+from .pycompat import getattr
 from .interfaces import repository
 from . import (
     error,

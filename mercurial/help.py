@@ -16,6 +16,7 @@ from .i18n import (
     _,
     gettext,
 )
+from .pycompat import getattr
 from . import (
     cmdutil,
     encoding,

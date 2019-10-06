@@ -11,6 +11,7 @@ import locale
 import os
 import unicodedata
 
+from .pycompat import getattr
 from . import (
     error,
     policy,

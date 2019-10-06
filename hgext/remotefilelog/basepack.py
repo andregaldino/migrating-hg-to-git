@@ -9,7 +9,10 @@ import struct
 import time
 
 from mercurial.i18n import _
-from mercurial.pycompat import open
+from mercurial.pycompat import (
+    getattr,
+    open,
+)
 from mercurial import (
     node as nodemod,
     policy,

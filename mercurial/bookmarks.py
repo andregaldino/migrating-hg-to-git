@@ -17,6 +17,7 @@ from .node import (
     short,
     wdirid,
 )
+from .pycompat import getattr
 from . import (
     encoding,
     error,
