@@ -4,3 +4,7 @@ clang-format:pattern = (**.c or **.cc or **.h) and not "listfile:contrib/clang-f
 
 rustfmt:command = rustfmt {rootpath}
 rustfmt:pattern = set:**.rs
+
+# We use black, but currently with https://github.com/psf/black/pull/826 applied.
+# black:command = black --skip-string-normalization
+# black:pattern = set:**.py - hgext/fsmonitor/pywatchman/** - mercurial/thirdparty/** - "contrib/python-zstandard/**"
