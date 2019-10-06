@@ -475,7 +475,7 @@ class SiteStats(object):
                 if i == 0:
                     sitestat.addself()
 
-        return [s for s in stats.itervalues()]
+        return [s for s in pycompat.itervalues(stats)]
 
 
 class DisplayFormats:
@@ -744,7 +744,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
         site = node.site
         visiblechildren = [
             c
-            for c in node.children.itervalues()
+            for c in pycompat.itervalues(node.children)
             if c.count >= (limit * root.count)
         ]
         if site:
@@ -752,7 +752,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
             filename = b''
             function = b''
             if len(node.children) > 0:
-                childsite = list(node.children.itervalues())[0].site
+                childsite = list(pycompat.itervalues(node.children))[0].site
                 filename = (childsite.filename() + b':').ljust(15)
                 function = childsite.function
 
@@ -777,7 +777,9 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
             )
 
             finalstring = liststring + codestring
-            childrensamples = sum([c.count for c in node.children.itervalues()])
+            childrensamples = sum(
+                [c.count for c in pycompat.itervalues(node.children)]
+            )
             # Make frames that performed more than 10% of the operation red
             if node.count - childrensamples > (0.1 * root.count):
                 finalstring = b'\033[91m' + finalstring + b'\033[0m'

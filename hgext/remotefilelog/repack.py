@@ -598,7 +598,7 @@ class repacker(object):
         maxchainlen = ui.configint(b'packs', b'maxchainlen', 1000)
 
         byfile = {}
-        for entry in ledger.entries.itervalues():
+        for entry in pycompat.itervalues(ledger.entries):
             if entry.datasource:
                 byfile.setdefault(entry.filename, {})[entry.node] = entry
 
@@ -753,7 +753,7 @@ class repacker(object):
         ui = self.repo.ui
 
         byfile = {}
-        for entry in ledger.entries.itervalues():
+        for entry in pycompat.itervalues(ledger.entries):
             if entry.historysource:
                 byfile.setdefault(entry.filename, {})[entry.node] = entry
 

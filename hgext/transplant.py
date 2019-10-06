@@ -100,7 +100,7 @@ class transplants(object):
             if not os.path.isdir(self.path):
                 os.mkdir(self.path)
             fp = self.opener(self.transplantfile, b'w')
-            for list in self.transplants.itervalues():
+            for list in pycompat.itervalues(self.transplants):
                 for t in list:
                     l, r = map(nodemod.hex, (t.lnode, t.rnode))
                     fp.write(l + b':' + r + b'\n')

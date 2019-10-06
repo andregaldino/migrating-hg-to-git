@@ -10,6 +10,7 @@ from __future__ import absolute_import
 from mercurial import (
     extensions,
     hg,
+    pycompat,
     sshpeer,
     util,
 )
@@ -59,7 +60,7 @@ class connectionpool(object):
         return conn
 
     def close(self):
-        for pathpool in self._pool.itervalues():
+        for pathpool in pycompat.itervalues(self._pool):
             for conn in pathpool:
                 conn.close()
             del pathpool[:]

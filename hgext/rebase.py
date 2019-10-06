@@ -2288,7 +2288,7 @@ def summaryhook(ui, repo):
         msg = _(b'rebase: (use "hg rebase --abort" to clear broken state)\n')
         ui.write(msg)
         return
-    numrebased = len([i for i in state.itervalues() if i >= 0])
+    numrebased = len([i for i in pycompat.itervalues(state) if i >= 0])
     # i18n: column positioning for "hg summary"
     ui.write(
         _(b'rebase: %s, %s (rebase --continue)\n')

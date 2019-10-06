@@ -702,7 +702,7 @@ class mergestate(object):
         """return counts for updated, merged and removed files in this
         session"""
         updated, merged, removed = 0, 0, 0
-        for r, action in self._results.itervalues():
+        for r, action in pycompat.itervalues(self._results):
             if r is None:
                 updated += 1
             elif r == 0:

@@ -1966,7 +1966,7 @@ class ui(object):
         if not self._loggers:
             return
         activeloggers = [
-            l for l in self._loggers.itervalues() if l.tracked(event)
+            l for l in pycompat.itervalues(self._loggers) if l.tracked(event)
         ]
         if not activeloggers:
             return

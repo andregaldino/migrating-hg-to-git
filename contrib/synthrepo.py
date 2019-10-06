@@ -213,7 +213,7 @@ def analyze(ui, repo, *revs, **opts):
             for filename, mar, lineadd, lineremove, isbin in parsegitdiff(diff):
                 if isbin:
                     continue
-                added = sum(lineadd.itervalues(), 0)
+                added = sum(pycompat.itervalues(lineadd), 0)
                 if mar == 'm':
                     if added and lineremove:
                         lineschanged[

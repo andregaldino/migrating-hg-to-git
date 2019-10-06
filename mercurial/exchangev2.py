@@ -607,7 +607,7 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
     progress = repo.ui.makeprogress(
         _(b'files'),
         unit=_(b'chunks'),
-        total=sum(len(v) for v in fnodes.itervalues()),
+        total=sum(len(v) for v in pycompat.itervalues(fnodes)),
     )
 
     # TODO make batch size configurable
@@ -706,7 +706,7 @@ def _fetchfilesfromcsets(
     progress = repo.ui.makeprogress(
         _(b'files'),
         unit=_(b'chunks'),
-        total=sum(len(v) for v in fnodes.itervalues()),
+        total=sum(len(v) for v in pycompat.itervalues(fnodes)),
     )
 
     commandmeta = remote.apidescriptor[b'commands'][b'filesdata']

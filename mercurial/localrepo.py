@@ -1763,7 +1763,7 @@ class localrepository(object):
             nodetagscache = {}
             for t, n in self._tagscache.tags.iteritems():
                 nodetagscache.setdefault(n, []).append(t)
-            for tags in nodetagscache.itervalues():
+            for tags in pycompat.itervalues(nodetagscache):
                 tags.sort()
             self._tagscache.nodetagscache = nodetagscache
         return self._tagscache.nodetagscache.get(node, [])
