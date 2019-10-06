@@ -267,8 +267,15 @@ def callconduit(ui, name, params):
     url, authinfo = util.url(b'/'.join([host, b'api', name])).authinfo()
     ui.debug(b'Conduit Call: %s %s\n' % (url, pycompat.byterepr(params)))
     params = params.copy()
-    params[b'api.token'] = token
-    data = urlencodenested(params)
+    params[b'__conduit__'] = {
+        b'token': token,
+    }
+    rawdata = {
+        b'params': templatefilters.json(params),
+        b'output': b'json',
+        b'__conduit__': 1,
+    }
+    data = urlencodenested(rawdata)
     curlcmd = ui.config(b'phabricator', b'curlcmd')
     if curlcmd:
         sin, sout = procutil.popen2(
