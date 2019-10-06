@@ -684,6 +684,44 @@ def makebinary(pchange, fctx):
             pchange.fileType = DiffFileType.IMAGE
 
 
+# Copied from mercurial/patch.py
+gitmode = {b'l': b'120000', b'x': b'100755', b'': b'100644'}
+
+
+def addremoved(pdiff, ctx, removed):
+    """add removed files to the phabdiff. Shouldn't include moves"""
+    for fname in removed:
+        pchange = phabchange(
+            currentPath=fname, oldPath=fname, type=DiffChangeType.DELETE
+        )
+        pchange.addoldmode(gitmode[ctx.p1()[fname].flags()])
+        fctx = ctx.p1()[fname]
+        if not fctx.isbinary():
+            maketext(pchange, ctx, fname)
+
+        pdiff.addchange(pchange)
+
+
+def addmodified(pdiff, ctx, modified):
+    """add modified files to the phabdiff"""
+    for fname in modified:
+        fctx = ctx[fname]
+        pchange = phabchange(currentPath=fname, oldPath=fname)
+        filemode = gitmode[ctx[fname].flags()]
+        originalmode = gitmode[ctx.p1()[fname].flags()]
+        if filemode != originalmode:
+            pchange.addoldmode(originalmode)
+            pchange.addnewmode(filemode)
+
+        if fctx.isbinary():
+            makebinary(pchange, fctx)
+            addoldbinary(pchange, fctx, fname)
+        else:
+            maketext(pchange, ctx, fname)
+
+        pdiff.addchange(pchange)
+
+
 def creatediff(ctx):
     """create a Differential Diff"""
     repo = ctx.repo()
