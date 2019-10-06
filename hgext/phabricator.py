@@ -800,11 +800,24 @@ def creatediff(ctx):
     """create a Differential Diff"""
     repo = ctx.repo()
     repophid = getrepophid(repo)
-    # Create a "Differential Diff" via "differential.createrawdiff" API
-    params = {b'diff': getdiff(ctx, mdiff.diffopts(git=True, context=32767))}
+    # Create a "Differential Diff" via "differential.creatediff" API
+    pdiff = phabdiff(
+        sourceControlBaseRevision=b'%s' % ctx.p1().hex(),
+        branch=b'%s' % ctx.branch(),
+    )
+    modified, added, removed, _d, _u, _i, _c = ctx.p1().status(ctx)
+    # addadded will remove moved files from removed, so addremoved won't get
+    # them
+    addadded(pdiff, ctx, added, removed)
+    addmodified(pdiff, ctx, modified)
+    addremoved(pdiff, ctx, removed)
     if repophid:
-        params[b'repositoryPHID'] = repophid
-    diff = callconduit(repo.ui, b'differential.createrawdiff', params)
+        pdiff.repositoryPHID = repophid
+    diff = callconduit(
+        repo.ui,
+        b'differential.creatediff',
+        pycompat.byteskwargs(attr.asdict(pdiff)),
+    )
     if not diff:
         raise error.Abort(_(b'cannot create diff for %s') % ctx)
     return diff
@@ -812,8 +825,10 @@ def creatediff(ctx):
 
 def writediffproperties(ctx, diff):
     """write metadata to diff so patches could be applied losslessly"""
+    # creatediff returns with a diffid but query returns with an id
+    diffid = diff.get(b'diffid', diff.get(b'id'))
     params = {
-        b'diff_id': diff[b'id'],
+        b'diff_id': diffid,
         b'name': b'hg:meta',
         b'data': templatefilters.json(
             {
@@ -828,7 +843,7 @@ def writediffproperties(ctx, diff):
     callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
 
     params = {
-        b'diff_id': diff[b'id'],
+        b'diff_id': diffid,
         b'name': b'local:commits',
         b'data': templatefilters.json(
             {
