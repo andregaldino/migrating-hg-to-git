@@ -722,6 +722,71 @@ def addmodified(pdiff, ctx, modified):
         pdiff.addchange(pchange)
 
 
+def addadded(pdiff, ctx, added, removed):
+    """add file adds to the phabdiff, both new files and copies/moves"""
+    # Keep track of files that've been recorded as moved/copied, so if there are
+    # additional copies we can mark them (moves get removed from removed)
+    copiedchanges = {}
+    movedchanges = {}
+    for fname in added:
+        fctx = ctx[fname]
+        pchange = phabchange(currentPath=fname)
+
+        filemode = gitmode[ctx[fname].flags()]
+        renamed = fctx.renamed()
+
+        if renamed:
+            originalfname = renamed[0]
+            originalmode = gitmode[ctx.p1()[originalfname].flags()]
+            pchange.oldPath = originalfname
+
+            if originalfname in removed:
+                origpchange = phabchange(
+                    currentPath=originalfname,
+                    oldPath=originalfname,
+                    type=DiffChangeType.MOVE_AWAY,
+                    awayPaths=[fname],
+                )
+                movedchanges[originalfname] = origpchange
+                removed.remove(originalfname)
+                pchange.type = DiffChangeType.MOVE_HERE
+            elif originalfname in movedchanges:
+                movedchanges[originalfname].type = DiffChangeType.MULTICOPY
+                movedchanges[originalfname].awayPaths.append(fname)
+                pchange.type = DiffChangeType.COPY_HERE
+            else:  # pure copy
+                if originalfname not in copiedchanges:
+                    origpchange = phabchange(
+                        currentPath=originalfname, type=DiffChangeType.COPY_AWAY
+                    )
+                    copiedchanges[originalfname] = origpchange
+                else:
+                    origpchange = copiedchanges[originalfname]
+                origpchange.awayPaths.append(fname)
+                pchange.type = DiffChangeType.COPY_HERE
+
+            if filemode != originalmode:
+                pchange.addoldmode(originalmode)
+                pchange.addnewmode(filemode)
+        else:  # Brand-new file
+            pchange.addnewmode(gitmode[fctx.flags()])
+            pchange.type = DiffChangeType.ADD
+
+        if fctx.isbinary():
+            makebinary(pchange, fctx)
+            if renamed:
+                addoldbinary(pchange, fctx, originalfname)
+        else:
+            maketext(pchange, ctx, fname)
+
+        pdiff.addchange(pchange)
+
+    for _path, copiedchange in copiedchanges.items():
+        pdiff.addchange(copiedchange)
+    for _path, movedchange in movedchanges.items():
+        pdiff.addchange(movedchange)
+
+
 def creatediff(ctx):
     """create a Differential Diff"""
     repo = ctx.repo()
