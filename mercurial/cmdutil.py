@@ -19,7 +19,10 @@ from .node import (
     nullrev,
     short,
 )
-from .pycompat import open
+from .pycompat import (
+    open,
+    setattr,
+)
 
 from . import (
     bookmarks,

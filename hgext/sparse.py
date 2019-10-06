@@ -74,6 +74,7 @@ certain files::
 from __future__ import absolute_import
 
 from mercurial.i18n import _
+from mercurial.pycompat import setattr
 from mercurial import (
     commands,
     dirstate,

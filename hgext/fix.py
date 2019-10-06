@@ -132,6 +132,7 @@ import subprocess
 from mercurial.i18n import _
 from mercurial.node import nullrev
 from mercurial.node import wdirrev
+from mercurial.pycompat import setattr
 
 from mercurial.utils import (
     procutil,

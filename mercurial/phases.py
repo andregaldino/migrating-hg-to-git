@@ -113,6 +113,7 @@ from .node import (
     nullrev,
     short,
 )
+from .pycompat import setattr
 from . import (
     error,
     pycompat,

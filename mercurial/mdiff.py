@@ -12,6 +12,7 @@ import struct
 import zlib
 
 from .i18n import _
+from .pycompat import setattr
 from . import (
     encoding,
     error,

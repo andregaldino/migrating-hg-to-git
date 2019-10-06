@@ -15,6 +15,7 @@ import re
 
 from ..i18n import _
 from ..node import hex, nullid, short
+from ..pycompat import setattr
 
 from .common import (
     ErrorResponse,

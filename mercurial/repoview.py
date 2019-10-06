@@ -12,6 +12,7 @@ import copy
 import weakref
 
 from .node import nullrev
+from .pycompat import setattr
 from . import (
     obsolete,
     phases,

@@ -51,6 +51,7 @@ import struct
 import time
 
 from .i18n import _
+from .pycompat import setattr
 
 from . import (
     commandserver,
