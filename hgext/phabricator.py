@@ -522,6 +522,32 @@ class phabchange(object):
         self.delLines += hunk.delLines
 
 
+@attr.s
+class phabdiff(object):
+    """Represents a Differential diff, owns Differential changes.  Corresponds
+    to a commit.
+    """
+
+    # Doesn't seem to be any reason to send this (output of uname -n)
+    sourceMachine = attr.ib(default=b'')  # camelcase-required
+    sourcePath = attr.ib(default=b'/')  # camelcase-required
+    sourceControlBaseRevision = attr.ib(default=b'0' * 40)  # camelcase-required
+    sourceControlPath = attr.ib(default=b'/')  # camelcase-required
+    sourceControlSystem = attr.ib(default=b'hg')  # camelcase-required
+    branch = attr.ib(default=b'default')
+    bookmark = attr.ib(default=None)
+    creationMethod = attr.ib(default=b'phabsend')  # camelcase-required
+    lintStatus = attr.ib(default=b'none')  # camelcase-required
+    unitStatus = attr.ib(default=b'none')  # camelcase-required
+    changes = attr.ib(default=attr.Factory(dict))
+    repositoryPHID = attr.ib(default=None)  # camelcase-required
+
+    def addchange(self, change):
+        if not isinstance(change, phabchange):
+            raise error.Abort(b'phabdiff.addchange only takes phabchanges')
+        self.changes[change.currentPath] = change
+
+
 def creatediff(ctx):
     """create a Differential Diff"""
     repo = ctx.repo()
