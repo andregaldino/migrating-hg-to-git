@@ -508,7 +508,7 @@ pypats = [
          [ \t\n#]*
          (?# any strings/comments might precede a string, which
            # contains translatable message)
-         ((['"]|\'\'\'|""")[ \npq%bAPMxno]*(['"]|\'\'\'|""")[ \t\n#]+)*
+         b?((['"]|\'\'\'|""")[ \npq%bAPMxno]*(['"]|\'\'\'|""")[ \t\n#]+)*
          (?# sequence consisting of below might precede translatable message
            # - formatting string: "% 10s", "%05d", "% -3.2f", "%*s", "%%" ...
            # - escaped character: "\\", "\n", "\0" ...
