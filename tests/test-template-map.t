@@ -1119,6 +1119,60 @@ honor --git but not format-breaking diffopts
    {"parents": ["0000000000000000000000000000000000000000"], "rev": 7}
   ]
 
+  $ hg log -qr. -T'json(rev, parents)'
+  [
+   {"parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"], "rev": 8}
+  ]
+
+  $ hg log -r. -T'json(diff)'
+  [
+   {"diff": "diff -r 29114dbae42b -r 95c24699272e fourth\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/fourth\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+second\ndiff -r 29114dbae42b -r 95c24699272e second\n--- a/second\tMon Jan 12 13:46:40 1970 +0000\n+++ /dev/null\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +0,0 @@\n-second\ndiff -r 29114dbae42b -r 95c24699272e third\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/third\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+third\n"}
+  ]
+
+  $ hg log -r. -T'json(diffstat)'
+  [
+   {"diffstat": " fourth |  1 +\n second |  1 -\n third  |  1 +\n 3 files changed, 2 insertions(+), 1 deletions(-)\n"}
+  ]
+
+  $ hg log -r. -T'json(manifest)'
+  [
+   {"manifest": "94961b75a2da554b4df6fb599e5bfc7d48de0c64"}
+  ]
+
+  $ hg log -r. -T'json(extra)'
+  [
+   {"extra": {"branch": "default"}}
+  ]
+
+  $ hg log -r3 -T'json(modified)'
+  [
+   {"modified": ["c"]}
+  ]
+
+  $ hg log -r. -T'json(added)'
+  [
+   {"added": ["fourth", "third"]}
+  ]
+
+  $ hg log -r. -T'json(removed)'
+  [
+   {"removed": ["second"]}
+  ]
+
+  $ hg log -r. -T'json(files)'
+  [
+   {"files": ["fourth", "second", "third"]}
+  ]
+
+ --copies is the exception. copies dict is built only when --copies switch
+ is on:
+
+  $ hg log -r'.^:' -T'json(copies)' --copies
+  [
+   {"copies": {}},
+   {"copies": {"fourth": "second"}}
+  ]
+
   $ hg log -r. -T'json()'
   [
    {}

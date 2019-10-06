@@ -440,7 +440,8 @@ class changesetformatter(changesetprinter):
         fm.context(ctx=ctx)
         fm.data(rev=scmutil.intrev(ctx), node=fm.hexfunc(scmutil.binnode(ctx)))
 
-        if self.ui.quiet:
+        datahint = fm.datahint()
+        if self.ui.quiet and not datahint:
             return
 
         fm.data(
@@ -456,12 +457,17 @@ class changesetformatter(changesetprinter):
             ),
         )
 
-        if self.ui.debugflag:
-            fm.data(
-                manifest=fm.hexfunc(ctx.manifestnode() or wdirid),
-                extra=fm.formatdict(ctx.extra()),
-            )
+        if self.ui.debugflag or b'manifest' in datahint:
+            fm.data(manifest=fm.hexfunc(ctx.manifestnode() or wdirid))
+        if self.ui.debugflag or b'extra' in datahint:
+            fm.data(extra=fm.formatdict(ctx.extra()))
 
+        if (
+            self.ui.debugflag
+            or b'modified' in datahint
+            or b'added' in datahint
+            or b'removed' in datahint
+        ):
             files = ctx.p1().status(ctx)
             fm.data(
                 modified=fm.formatlist(files[0], name=b'file'),
@@ -469,18 +475,19 @@ class changesetformatter(changesetprinter):
                 removed=fm.formatlist(files[2], name=b'file'),
             )
 
-        elif self.ui.verbose:
+        verbose = not self.ui.debugflag and self.ui.verbose
+        if verbose or b'files' in datahint:
             fm.data(files=fm.formatlist(ctx.files(), name=b'file'))
-            if copies:
-                fm.data(
-                    copies=fm.formatdict(copies, key=b'name', value=b'source')
-                )
+        if verbose and copies or b'copies' in datahint:
+            fm.data(
+                copies=fm.formatdict(copies or {}, key=b'name', value=b'source')
+            )
 
-        if self._includestat:
+        if self._includestat or b'diffstat' in datahint:
             self.ui.pushbuffer()
             self._differ.showdiff(self.ui, ctx, self._diffopts, stat=True)
             fm.data(diffstat=self.ui.popbuffer())
-        if self._includediff:
+        if self._includediff or b'diff' in datahint:
             self.ui.pushbuffer()
             self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
             fm.data(diff=self.ui.popbuffer())
