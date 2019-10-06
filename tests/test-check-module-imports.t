@@ -20,6 +20,7 @@ outputs, which should be fixed later.
   > -X setup.py \
   > -X contrib/automation/ \
   > -X contrib/debugshell.py \
+  > -X contrib/grey.py \
   > -X contrib/hgweb.fcgi \
   > -X contrib/packaging/hg-docker \
   > -X contrib/packaging/hgpackaging/ \
