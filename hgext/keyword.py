@@ -507,7 +507,7 @@ def demo(ui, repo, *args, **opts):
         kwmaps = _defaultkwmaps(ui)
         if uikwmaps:
             ui.status(_(b'\tdisabling current template maps\n'))
-            for k, v in kwmaps.iteritems():
+            for k, v in pycompat.iteritems(kwmaps):
                 ui.setconfig(b'keywordmaps', k, v, b'keyword')
     else:
         ui.status(_(b'\n\tconfiguration using current keyword template maps\n'))
@@ -521,7 +521,7 @@ def demo(ui, repo, *args, **opts):
     ui.writenoi18n(b'[extensions]\nkeyword =\n')
     demoitems(b'keyword', ui.configitems(b'keyword'))
     demoitems(b'keywordset', ui.configitems(b'keywordset'))
-    demoitems(b'keywordmaps', kwmaps.iteritems())
+    demoitems(b'keywordmaps', pycompat.iteritems(kwmaps))
     keywords = b'$' + b'$\n$'.join(sorted(kwmaps.keys())) + b'$\n'
     repo.wvfs.write(fn, keywords)
     repo[None].add([fn])

@@ -148,7 +148,7 @@ class basestore(object):
 
         filenamemap = self._resolvefilenames(existing.keys())
 
-        for filename, sha in filenamemap.iteritems():
+        for filename, sha in pycompat.iteritems(filenamemap):
             yield (filename, existing[sha])
 
     def _resolvefilenames(self, hashes):

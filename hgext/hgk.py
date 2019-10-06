@@ -376,7 +376,9 @@ def view(ui, repo, *etc, **opts):
     b"start interactive history viewer"
     opts = pycompat.byteskwargs(opts)
     os.chdir(repo.root)
-    optstr = b' '.join([b'--%s %s' % (k, v) for k, v in opts.iteritems() if v])
+    optstr = b' '.join(
+        [b'--%s %s' % (k, v) for k, v in pycompat.iteritems(opts) if v]
+    )
     if repo.filtername is None:
         optstr += b'--hidden'
 

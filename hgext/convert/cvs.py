@@ -19,6 +19,7 @@ from mercurial.pycompat import (
 from mercurial import (
     encoding,
     error,
+    pycompat,
     util,
 )
 from mercurial.utils import (
@@ -319,7 +320,7 @@ class convert_cvs(converter_source):
         if full:
             raise error.Abort(_(b"convert from cvs does not support --full"))
         self._parse()
-        return sorted(self.files[rev].iteritems()), {}, set()
+        return sorted(pycompat.iteritems(self.files[rev])), {}, set()
 
     def getcommit(self, rev):
         self._parse()

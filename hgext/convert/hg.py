@@ -34,6 +34,7 @@ from mercurial import (
     merge as mergemod,
     node as nodemod,
     phases,
+    pycompat,
     scmutil,
     util,
 )
@@ -133,7 +134,7 @@ class mercurial_sink(common.converter_sink):
 
         if missings:
             self.after()
-            for pbranch, heads in sorted(missings.iteritems()):
+            for pbranch, heads in sorted(pycompat.iteritems(missings)):
                 pbranchpath = os.path.join(self.path, pbranch)
                 prepo = hg.peer(self.ui, {}, pbranchpath)
                 self.ui.note(
@@ -227,7 +228,7 @@ class mercurial_sink(common.converter_sink):
             followcopies=False,
         )
 
-        for file, (action, info, msg) in actions.iteritems():
+        for file, (action, info, msg) in pycompat.iteritems(actions):
             if source.targetfilebelongstosource(file):
                 # If the file belongs to the source repo, ignore the p2
                 # since it will be covered by the existing fileset.
@@ -417,7 +418,7 @@ class mercurial_sink(common.converter_sink):
         tagparent = tagparent or nodemod.nullid
 
         oldlines = set()
-        for branch, heads in self.repo.branchmap().iteritems():
+        for branch, heads in pycompat.iteritems(self.repo.branchmap()):
             for h in heads:
                 if b'.hgtags' in self.repo[h]:
                     oldlines.update(
@@ -589,7 +590,7 @@ class mercurial_source(common.converter_source):
         maappend = ma.append
         rappend = r.append
         d = ctx1.manifest().diff(ctx2.manifest())
-        for f, ((node1, flag1), (node2, flag2)) in d.iteritems():
+        for f, ((node1, flag1), (node2, flag2)) in pycompat.iteritems(d):
             if node2 is None:
                 rappend(f)
             else:
@@ -615,7 +616,7 @@ class mercurial_source(common.converter_source):
         cleanp2 = set()
         if len(parents) == 2:
             d = parents[1].manifest().diff(ctx.manifest(), clean=True)
-            for f, value in d.iteritems():
+            for f, value in pycompat.iteritems(d):
                 if value is None:
                     cleanp2.add(f)
         changes = [(f, rev) for f in files if f not in self.ignored]

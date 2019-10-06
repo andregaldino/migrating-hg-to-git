@@ -15,6 +15,7 @@ from mercurial import (
     error,
     extensions,
     hg,
+    pycompat,
     util,
     wireprotov1peer,
     wireprotov1server,
@@ -188,7 +189,7 @@ def clientfetch(repo, paths, lastnodemap=None, peer=None):
         for result in results:
             r = result.result()
             # TODO: pconvert these paths on the server?
-            r = {util.pconvert(p): v for p, v in r.iteritems()}
+            r = {util.pconvert(p): v for p, v in pycompat.iteritems(r)}
             for path in sorted(r):
                 # ignore malicious paths
                 if not path.startswith(b'fastannotate/') or b'/../' in (

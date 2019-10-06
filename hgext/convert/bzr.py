@@ -12,7 +12,11 @@ from __future__ import absolute_import
 import os
 
 from mercurial.i18n import _
-from mercurial import demandimport, error
+from mercurial import (
+    demandimport,
+    error,
+    pycompat,
+)
 from . import common
 
 # these do not work with demandimport, blacklist
@@ -195,7 +199,7 @@ class bzr_source(common.converter_source):
             if not branch.supports_tags():
                 return {}
             tagdict = branch.tags.get_tag_dict()
-            for name, rev in tagdict.iteritems():
+            for name, rev in pycompat.iteritems(tagdict):
                 bytetags[self.recode(name)] = rev
         return bytetags
 

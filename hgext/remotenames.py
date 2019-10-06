@@ -165,7 +165,7 @@ class lazyremotenamedict(mutablemapping):
         if not self.loaded:
             self._load()
 
-        for k, vtup in self.potentialentries.iteritems():
+        for k, vtup in pycompat.iteritems(self.potentialentries):
             yield (k, [bin(vtup[0])])
 
     items = iteritems
@@ -202,7 +202,7 @@ class remotenames(object):
         if not self._nodetobmarks:
             bmarktonodes = self.bmarktonodes()
             self._nodetobmarks = {}
-            for name, node in bmarktonodes.iteritems():
+            for name, node in pycompat.iteritems(bmarktonodes):
                 self._nodetobmarks.setdefault(node[0], []).append(name)
         return self._nodetobmarks
 
@@ -213,7 +213,7 @@ class remotenames(object):
         if not self._nodetobranch:
             branchtonodes = self.branchtonodes()
             self._nodetobranch = {}
-            for name, nodes in branchtonodes.iteritems():
+            for name, nodes in pycompat.iteritems(branchtonodes):
                 for node in nodes:
                     self._nodetobranch.setdefault(node, []).append(name)
         return self._nodetobranch
@@ -223,7 +223,7 @@ class remotenames(object):
             marktonodes = self.bmarktonodes()
             self._hoisttonodes = {}
             hoist += b'/'
-            for name, node in marktonodes.iteritems():
+            for name, node in pycompat.iteritems(marktonodes):
                 if name.startswith(hoist):
                     name = name[len(hoist) :]
                     self._hoisttonodes[name] = node
@@ -234,7 +234,7 @@ class remotenames(object):
             marktonodes = self.bmarktonodes()
             self._nodetohoists = {}
             hoist += b'/'
-            for name, node in marktonodes.iteritems():
+            for name, node in pycompat.iteritems(marktonodes):
                 if name.startswith(hoist):
                     name = name[len(hoist) :]
                     self._nodetohoists.setdefault(node[0], []).append(name)

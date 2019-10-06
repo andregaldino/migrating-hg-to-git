@@ -688,7 +688,7 @@ def copiespathcopies(orig, ctx1, ctx2, match=None):
     copies = orig(ctx1, ctx2, match=match)
     updated = {}
 
-    for k, v in copies.iteritems():
+    for k, v in pycompat.iteritems(copies):
         updated[lfutil.splitstandin(k) or k] = lfutil.splitstandin(v) or v
 
     return updated

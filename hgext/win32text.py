@@ -209,7 +209,7 @@ def forbidcr(ui, repo, hooktype, node, **kwargs):
 def reposetup(ui, repo):
     if not repo.local():
         return
-    for name, fn in _filters.iteritems():
+    for name, fn in pycompat.iteritems(_filters):
         repo.adddatafilter(name, fn)
 
 

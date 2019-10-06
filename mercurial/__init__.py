@@ -31,7 +31,7 @@ if sys.version_info[0] >= 3:
 
         def find_spec(self, fullname, path, target=None):
             # Only handle Mercurial-related modules.
-            if not fullname.startswith(('mercurial.', 'hgext.')):
+            if not fullname.startswith('mercurial.'):
                 return None
             # don't try to parse binary
             if fullname.startswith('mercurial.cext.'):
@@ -45,9 +45,6 @@ if sys.version_info[0] >= 3:
             # rustext is built for the right python version,
             # don't try and mangle it
             if fullname.startswith('mercurial.rustext'):
-                return None
-            # pywatchman is already dual-version clean, don't try and mangle it
-            if fullname.startswith('hgext.fsmonitor.pywatchman'):
                 return None
 
             # Try to find the module using other registered finders.
@@ -131,7 +128,7 @@ if sys.version_info[0] >= 3:
     # ``replacetoken`` or any mechanism that changes semantics of module
     # loading is changed. Otherwise cached bytecode may get loaded without
     # the new transformation mechanisms applied.
-    BYTECODEHEADER = b'HG\x00\x15'
+    BYTECODEHEADER = b'HG\x00\x16'
 
     class hgloader(importlib.machinery.SourceFileLoader):
         """Custom module loader that transforms source code.

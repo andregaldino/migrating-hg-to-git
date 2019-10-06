@@ -25,6 +25,7 @@ from mercurial import (
     exchange,
     exthelper,
     localrepo,
+    pycompat,
     revlog,
     scmutil,
     upgrade,
@@ -138,7 +139,7 @@ def writetostore(self, text, sidedata):
 
     # translate hg filelog metadata to lfs metadata with "x-hg-" prefix
     if hgmeta is not None:
-        for k, v in hgmeta.iteritems():
+        for k, v in pycompat.iteritems(hgmeta):
             metadata[b'x-hg-%s' % k] = v
 
     rawtext = metadata.serialize()

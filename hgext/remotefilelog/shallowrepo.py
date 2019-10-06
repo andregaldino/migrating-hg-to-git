@@ -15,6 +15,7 @@ from mercurial import (
     error,
     localrepo,
     match,
+    pycompat,
     scmutil,
     sparse,
     util,
@@ -271,7 +272,7 @@ def wraprepo(repo):
             mfrevlog = mfl.getstorage(b'')
             if base is not None:
                 mfdict = mfl[repo[base].manifestnode()].read()
-                skip = set(mfdict.iteritems())
+                skip = set(pycompat.iteritems(mfdict))
             else:
                 skip = set()
 
@@ -301,7 +302,7 @@ def wraprepo(repo):
                 else:
                     mfdict = mfl[mfnode].read()
 
-                diff = mfdict.iteritems()
+                diff = pycompat.iteritems(mfdict)
                 if pats:
                     diff = (pf for pf in diff if m(pf[0]))
                 if sparsematch:

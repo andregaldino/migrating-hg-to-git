@@ -151,7 +151,7 @@ def _ctxdesc(ctx):
     )
     repo = ctx.repo()
     names = []
-    for nsname, ns in repo.names.iteritems():
+    for nsname, ns in pycompat.iteritems(repo.names):
         if nsname == b'branches':
             continue
         names.extend(ns.names(repo, ctx.node()))
@@ -239,7 +239,7 @@ class rebaseruntime(object):
         f.write(b'%d\n' % int(self.keepbranchesf))
         f.write(b'%s\n' % (self.activebookmark or b''))
         destmap = self.destmap
-        for d, v in self.state.iteritems():
+        for d, v in pycompat.iteritems(self.state):
             oldrev = repo[d].hex()
             if v >= 0:
                 newrev = repo[v].hex()
@@ -489,7 +489,7 @@ class rebaseruntime(object):
             # commits.
             self.storestatus(tr)
 
-        cands = [k for k, v in self.state.iteritems() if v == revtodo]
+        cands = [k for k, v in pycompat.iteritems(self.state) if v == revtodo]
         p = repo.ui.makeprogress(
             _(b"rebasing"), unit=_(b'changesets'), total=len(cands)
         )
@@ -1326,7 +1326,7 @@ def _definedestmap(
             # emulate the old behavior, showing "nothing to rebase" (a better
             # behavior may be abort with "cannot find branching point" error)
             bpbase.clear()
-        for bp, bs in bpbase.iteritems():  # calculate roots
+        for bp, bs in pycompat.iteritems(bpbase):  # calculate roots
             roots += list(repo.revs(b'children(%d) & ancestors(%ld)', bp, bs))
 
         rebaseset = repo.revs(b'%ld::', roots)
@@ -1970,7 +1970,7 @@ def needupdate(repo, state):
 
     # We should be standing on the first as-of-yet unrebased commit.
     firstunrebased = min(
-        [old for old, new in state.iteritems() if new == nullrev]
+        [old for old, new in pycompat.iteritems(state) if new == nullrev]
     )
     if firstunrebased in parents:
         return True
@@ -2121,7 +2121,7 @@ def clearrebased(
         fl = fm.formatlist
         fd = fm.formatdict
         changes = {}
-        for oldns, newn in replacements.iteritems():
+        for oldns, newn in pycompat.iteritems(replacements):
             for oldn in oldns:
                 changes[hf(oldn)] = fl([hf(n) for n in newn], name=b'node')
         nodechanges = fd(changes, key=b"oldnode", value=b"newnodes")

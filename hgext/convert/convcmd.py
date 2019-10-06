@@ -581,7 +581,7 @@ class converter(object):
                         # previous one so we don't end up with extra tag heads
                         tagsparents = [
                             e
-                            for e in self.map.iteritems()
+                            for e in pycompat.iteritems(self.map)
                             if e[1] == tagsparent
                         ]
                         if tagsparents:

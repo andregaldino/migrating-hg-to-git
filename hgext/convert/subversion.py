@@ -151,7 +151,7 @@ def get_log_child(
     def receiver(orig_paths, revnum, author, date, message, pool):
         paths = {}
         if orig_paths is not None:
-            for k, v in orig_paths.iteritems():
+            for k, v in pycompat.iteritems(orig_paths):
                 paths[k] = changedpath(v)
         pickle.dump((paths, revnum, author, date, message), fp, protocol)
 
@@ -245,7 +245,7 @@ class directlogstream(list):
         def receiver(orig_paths, revnum, author, date, message, pool):
             paths = {}
             if orig_paths is not None:
-                for k, v in orig_paths.iteritems():
+                for k, v in pycompat.iteritems(orig_paths):
                     paths[k] = changedpath(v)
             self.append((paths, revnum, author, date, message))
 
@@ -591,7 +591,7 @@ class svn_source(converter_source):
             )
             files = [
                 n
-                for n, e in entries.iteritems()
+                for n, e in pycompat.iteritems(entries)
                 if e.kind == svn.core.svn_node_file
             ]
             self.removed = set()
@@ -681,7 +681,7 @@ class svn_source(converter_source):
                     origpaths = []
                 copies = [
                     (e.copyfrom_path, e.copyfrom_rev, p)
-                    for p, e in origpaths.iteritems()
+                    for p, e in pycompat.iteritems(origpaths)
                     if e.copyfrom_path
                 ]
                 # Apply moves/copies from more specific to general
@@ -712,7 +712,7 @@ class svn_source(converter_source):
                 # be represented in mercurial.
                 addeds = dict(
                     (p, e.copyfrom_path)
-                    for p, e in origpaths.iteritems()
+                    for p, e in pycompat.iteritems(origpaths)
                     if e.action == b'A' and e.copyfrom_path
                 )
                 badroots = set()
@@ -1001,7 +1001,7 @@ class svn_source(converter_source):
             parents = []
             # check whether this revision is the start of a branch or part
             # of a branch renaming
-            orig_paths = sorted(orig_paths.iteritems())
+            orig_paths = sorted(pycompat.iteritems(orig_paths))
             root_paths = [
                 (p, e) for p, e in orig_paths if self.module.startswith(p)
             ]
@@ -1168,7 +1168,7 @@ class svn_source(converter_source):
             path += b'/'
         return (
             (path + p)
-            for p, e in entries.iteritems()
+            for p, e in pycompat.iteritems(entries)
             if e.kind == svn.core.svn_node_file
         )
 

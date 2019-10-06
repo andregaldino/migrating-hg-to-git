@@ -41,7 +41,7 @@ class gitlfspointer(dict):
 
     def serialize(self):
         sortkeyfunc = lambda x: (x[0] != b'version', x)
-        items = sorted(self.validate().iteritems(), key=sortkeyfunc)
+        items = sorted(pycompat.iteritems(self.validate()), key=sortkeyfunc)
         return b''.join(b'%s %s\n' % (k, v) for k, v in items)
 
     def oid(self):
@@ -63,7 +63,7 @@ class gitlfspointer(dict):
     def validate(self):
         """raise InvalidPointer on error. return self if there is no error"""
         requiredcount = 0
-        for k, v in self.iteritems():
+        for k, v in pycompat.iteritems(self):
             if k in self._requiredre:
                 if not self._requiredre[k].match(v):
                     raise InvalidPointer(

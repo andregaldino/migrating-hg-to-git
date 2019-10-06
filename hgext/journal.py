@@ -126,7 +126,7 @@ def recordbookmarks(orig, store, fp):
     repo = store._repo
     if util.safehasattr(repo, b'journal'):
         oldmarks = bookmarks.bmstore(repo)
-        for mark, value in store.iteritems():
+        for mark, value in pycompat.iteritems(store):
             oldvalue = oldmarks.get(mark, node.nullid)
             if value != oldvalue:
                 repo.journal.record(bookmarktype, mark, oldvalue, value)

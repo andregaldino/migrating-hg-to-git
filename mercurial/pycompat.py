@@ -337,6 +337,7 @@ if ispy3:
         ret = shlex.split(s.decode('latin-1'), comments, posix)
         return [a.encode('latin-1') for a in ret]
 
+    iteritems = lambda x: x.items()
     itervalues = lambda x: x.values()
 
 else:
@@ -414,6 +415,7 @@ else:
     ziplist = zip
     rawinput = raw_input
     getargspec = inspect.getargspec
+    iteritems = lambda x: x.iteritems()
     itervalues = lambda x: x.itervalues()
 
 isjython = sysplatform.startswith(b'java')

@@ -206,7 +206,7 @@ def stripcmd(ui, repo, *revs, **opts):
             # a revision we have to only delete the bookmark and not strip
             # anything. revsets cannot detect that case.
             nodetobookmarks = {}
-            for mark, node in repomarks.iteritems():
+            for mark, node in pycompat.iteritems(repomarks):
                 nodetobookmarks.setdefault(node, []).append(mark)
             for marks in nodetobookmarks.values():
                 if bookmarks.issuperset(marks):

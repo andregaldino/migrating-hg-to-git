@@ -103,7 +103,7 @@ def sumdicts(*dicts):
     """
     result = collections.defaultdict(lambda: 0)
     for dict in dicts:
-        for k, v in dict.iteritems():
+        for k, v in pycompat.iteritems(dict):
             result[k] += v
     return result
 
@@ -111,7 +111,7 @@ def sumdicts(*dicts):
 def prefixkeys(dict, prefix):
     """Returns ``dict`` with ``prefix`` prepended to all its keys."""
     result = {}
-    for k, v in dict.iteritems():
+    for k, v in pycompat.iteritems(dict):
         result[prefix + k] = v
     return result
 
@@ -160,7 +160,7 @@ def _buildpackmeta(metadict):
     length limit is exceeded
     """
     metabuf = b''
-    for k, v in sorted((metadict or {}).iteritems()):
+    for k, v in sorted(pycompat.iteritems((metadict or {}))):
         if len(k) != 1:
             raise error.ProgrammingError(b'packmeta: illegal key: %s' % k)
         if len(v) > 0xFFFE:
@@ -188,7 +188,7 @@ def buildpackmeta(metadict):
     and METAKEYFLAG will be dropped if its value is 0.
     """
     newmeta = {}
-    for k, v in (metadict or {}).iteritems():
+    for k, v in pycompat.iteritems(metadict or {}):
         expectedtype = _metaitemtypes.get(k, (bytes,))
         if not isinstance(v, expectedtype):
             raise error.ProgrammingError(b'packmeta: wrong type of key %s' % k)
@@ -209,7 +209,7 @@ def parsepackmeta(metabuf):
     integers.
     """
     metadict = _parsepackmeta(metabuf)
-    for k, v in metadict.iteritems():
+    for k, v in pycompat.iteritems(metadict):
         if k in _metaitemtypes and int in _metaitemtypes[k]:
             metadict[k] = bin2int(v)
     return metadict

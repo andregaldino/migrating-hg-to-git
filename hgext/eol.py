@@ -367,7 +367,7 @@ def reposetup(ui, repo):
 
     if not repo.local():
         return
-    for name, fn in filters.iteritems():
+    for name, fn in pycompat.iteritems(filters):
         repo.adddatafilter(name, fn)
 
     ui.setconfig(b'patch', b'eol', b'auto', b'eol')
