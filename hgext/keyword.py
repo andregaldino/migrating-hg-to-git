@@ -517,7 +517,7 @@ def demo(ui, repo, *args, **opts):
 
     uisetup(ui)
     reposetup(ui, repo)
-    ui.write(b'[extensions]\nkeyword =\n')
+    ui.writenoi18n(b'[extensions]\nkeyword =\n')
     demoitems(b'keyword', ui.configitems(b'keyword'))
     demoitems(b'keywordset', ui.configitems(b'keywordset'))
     demoitems(b'keywordmaps', kwmaps.iteritems())

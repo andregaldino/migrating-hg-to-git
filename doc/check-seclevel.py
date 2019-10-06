@@ -47,7 +47,7 @@ def showavailables(ui, initlevel):
 
 
 def checkseclevel(ui, doc, name, initlevel):
-    ui.note('checking "%s"\n' % name)
+    ui.notenoi18n('checking "%s"\n' % name)
     if not isinstance(doc, bytes):
         doc = doc.encode('utf-8')
     blocks, pruned = minirst.parse(doc, 0, ['verbose'])
@@ -70,11 +70,11 @@ def checkseclevel(ui, doc, name, initlevel):
             continue
         nextlevel = mark2level[mark]
         if curlevel < nextlevel and curlevel + 1 != nextlevel:
-            ui.warn('gap of section level at "%s" of %s\n' % (title, name))
+            ui.warnnoi18n('gap of section level at "%s" of %s\n' % (title, name))
             showavailables(ui, initlevel)
             errorcnt += 1
             continue
-        ui.note(
+        ui.notenoi18n(
             'appropriate section level for "%s %s"\n'
             % (mark * (nextlevel * 2), title)
         )
@@ -88,7 +88,7 @@ def checkcmdtable(ui, cmdtable, namefmt, initlevel):
     for k, entry in cmdtable.items():
         name = k.split(b"|")[0].lstrip(b"^")
         if not entry[0].__doc__:
-            ui.note('skip checking %s: no help document\n' % (namefmt % name))
+            ui.notenoi18n('skip checking %s: no help document\n' % (namefmt % name))
             continue
         errorcnt += checkseclevel(
             ui, entry[0].__doc__, namefmt % name, initlevel
@@ -113,7 +113,7 @@ def checkhghelps(ui):
     ):
         mod = extensions.load(ui, name, None)
         if not mod.__doc__:
-            ui.note('skip checking %s extension: no help document\n' % name)
+            ui.notenoi18n('skip checking %s extension: no help document\n' % name)
             continue
         errorcnt += checkseclevel(
             ui, mod.__doc__, '%s extension' % name, initlevel_ext
@@ -138,7 +138,7 @@ def checkfile(ui, filename, initlevel):
         with open(filename) as fp:
             doc = fp.read()
 
-    ui.note(
+    ui.notenoi18n(
         'checking input from %s with initlevel %d\n' % (filename, initlevel)
     )
     return checkseclevel(ui, doc, 'input from %s' % filename, initlevel)

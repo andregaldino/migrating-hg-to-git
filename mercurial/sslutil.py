@@ -383,11 +383,11 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             sslkeylog.set_keylog(
                 pycompat.fsdecode(encoding.environ[b'SSLKEYLOGFILE'])
             )
-            ui.warn(
+            ui.warnnoi18n(
                 b'sslkeylog enabled by SSLKEYLOGFILE environment variable\n'
             )
         except ImportError:
-            ui.warn(
+            ui.warnnoi18n(
                 b'sslkeylog module missing, '
                 b'but SSLKEYLOGFILE set in environment\n'
             )

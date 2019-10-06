@@ -1307,7 +1307,7 @@ def perfphasesremote(ui, repo, dest=None, **opts):
             hint=b"see 'hg help config.paths'",
         )
     dest = path.pushloc or path.loc
-    ui.status(b'analysing phase of %s\n' % util.hidepassword(dest))
+    ui.statusnoi18n(b'analysing phase of %s\n' % util.hidepassword(dest))
     other = hg.peer(repo, opts, dest)
 
     # easier to perform discovery through the operation
@@ -1323,9 +1323,9 @@ def perfphasesremote(ui, repo, dest=None, **opts):
     del other
     publishing = remotephases.get(b'publishing', False)
     if publishing:
-        ui.status(b'publishing: yes\n')
+        ui.statusnoi18n(b'publishing: yes\n')
     else:
-        ui.status(b'publishing: no\n')
+        ui.statusnoi18n(b'publishing: no\n')
 
     nodemap = repo.changelog.nodemap
     nonpublishroots = 0
@@ -1335,8 +1335,8 @@ def perfphasesremote(ui, repo, dest=None, **opts):
         node = bin(nhex)
         if node in nodemap and int(phase):
             nonpublishroots += 1
-    ui.status(b'number of roots: %d\n' % len(remotephases))
-    ui.status(b'number of known non public roots: %d\n' % nonpublishroots)
+    ui.statusnoi18n(b'number of roots: %d\n' % len(remotephases))
+    ui.statusnoi18n(b'number of known non public roots: %d\n' % nonpublishroots)
 
     def d():
         phases.remotephasessummary(repo, remotesubset, remotephases)
@@ -3694,7 +3694,7 @@ def perfwrite(ui, repo, **opts):
 
     def write():
         for i in range(100000):
-            ui.write(b'Testing write performance\n')
+            ui.writenoi18n(b'Testing write performance\n')
 
     timer(write)
     fm.end()

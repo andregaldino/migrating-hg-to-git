@@ -2388,7 +2388,7 @@ def handleobsmarker(op, inpart):
     tr = op.gettransaction()
     markerdata = inpart.read()
     if op.ui.config(b'experimental', b'obsmarkers-exchange-debug'):
-        op.ui.write(
+        op.ui.writenoi18n(
             b'obsmarker-exchange: %i bytes received\n' % len(markerdata)
         )
     # The mergemarkers call will crash if marker creation is not enabled.

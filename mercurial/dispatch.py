@@ -93,7 +93,7 @@ class request(object):
                 except:  # re-raises below
                     if exc is None:
                         exc = sys.exc_info()[1]
-                    self.ui.warn(b'error in exit handlers:\n')
+                    self.ui.warnnoi18n(b'error in exit handlers:\n')
                     self.ui.traceback(force=True)
         finally:
             if exc is not None:

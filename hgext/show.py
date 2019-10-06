@@ -316,7 +316,7 @@ def showstack(ui, repo, displayer):
             else:
                 ui.write(b'  ')
 
-            ui.write(b'o  ')
+            ui.writenoi18n(b'o  ')
             displayer.show(ctx, nodelen=nodelen)
             displayer.flush(ctx)
             ui.write(b'\n')
@@ -378,7 +378,7 @@ def showstack(ui, repo, displayer):
             ui.write(b' /   ')
 
         ui.write(_(b'(stack base)'), b'\n', label=b'stack.label')
-        ui.write(b'o  ')
+        ui.writenoi18n(b'o  ')
 
         displayer.show(basectx, nodelen=nodelen)
         displayer.flush(basectx)

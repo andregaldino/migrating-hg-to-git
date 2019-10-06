@@ -187,7 +187,7 @@ def debugindexdot(orig, ui, repo, file_):
 
     r = buildtemprevlog(repo, os.path.basename(file_)[:-2])
 
-    ui.write(b"digraph G {\n")
+    ui.writenoi18n(b"digraph G {\n")
     for i in r:
         node = r.node(i)
         pp = r.parents(node)
@@ -289,7 +289,7 @@ def debugdatapack(ui, *paths, **opts):
                 (b"smaller" if difference > 0 else b"bigger"),
             )
 
-            ui.write(
+            ui.writenoi18n(
                 b"Total:%s%s  %s (%s)\n"
                 % (
                     b"".ljust(2 * hashlen - len(b"Total:")),

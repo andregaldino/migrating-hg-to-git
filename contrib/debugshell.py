@@ -56,7 +56,7 @@ def debugshell(ui, repo, **opts):
         with demandimport.deactivated():
             __import__(pdbmap[debugger])
     except ImportError:
-        ui.warn(
+        ui.warnnoi18n(
             b"%s debugger specified but %s module was not found\n"
             % (debugger, pdbmap[debugger])
         )

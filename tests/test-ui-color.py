@@ -10,8 +10,8 @@ from mercurial.utils import stringutil
 # ensure errors aren't buffered
 testui = uimod.ui()
 testui.pushbuffer()
-testui.write(b'buffered\n')
-testui.warn(b'warning\n')
+testui.writenoi18n(b'buffered\n')
+testui.warnnoi18n(b'warning\n')
 testui.write_err(b'error\n')
 print(stringutil.pprint(testui.popbuffer(), bprefix=True).decode('ascii'))
 

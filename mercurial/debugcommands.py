@@ -304,7 +304,7 @@ def debugbuilddag(
 def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
     indent_string = b' ' * indent
     if all:
-        ui.write(
+        ui.writenoi18n(
             b"%sformat: id, p1, p2, cset, delta base, len(delta)\n"
             % indent_string
         )
@@ -438,12 +438,12 @@ def debugcapabilities(ui, path, **opts):
     opts = pycompat.byteskwargs(opts)
     peer = hg.peer(ui, opts, path)
     caps = peer.capabilities()
-    ui.write(b'Main capabilities:\n')
+    ui.writenoi18n(b'Main capabilities:\n')
     for c in sorted(caps):
         ui.write(b'  %s\n' % c)
     b2caps = bundle2.bundle2caps(peer)
     if b2caps:
-        ui.write(b'Bundle2 capabilities:\n')
+        ui.writenoi18n(b'Bundle2 capabilities:\n')
         for key, values in sorted(b2caps.iteritems()):
             ui.write(b'  %s\n' % key)
             for v in values:
@@ -487,7 +487,7 @@ def debugcheckstate(ui, repo):
 )
 def debugcolor(ui, repo, **opts):
     """show available color, effects or style"""
-    ui.write(b'color mode: %s\n' % stringutil.pprint(ui._colormode))
+    ui.writenoi18n(b'color mode: %s\n' % stringutil.pprint(ui._colormode))
     if opts.get(r'style'):
         return _debugdisplaystyle(ui)
     else:
@@ -651,11 +651,11 @@ def debugdate(ui, date, range=None, **opts):
         d = dateutil.parsedate(date, util.extendeddateformats)
     else:
         d = dateutil.parsedate(date)
-    ui.write(b"internal: %d %d\n" % d)
-    ui.write(b"standard: %s\n" % dateutil.datestr(d))
+    ui.writenoi18n(b"internal: %d %d\n" % d)
+    ui.writenoi18n(b"standard: %s\n" % dateutil.datestr(d))
     if range:
         m = dateutil.matchdate(range)
-        ui.write(b"match: %s\n" % m(d[0]))
+        ui.writenoi18n(b"match: %s\n" % m(d[0]))
 
 
 @command(
@@ -922,7 +922,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
             )
             common = set(common)
             if not opts.get(b'nonheads'):
-                ui.write(
+                ui.writenoi18n(
                     b"unpruned common: %s\n"
                     % b" ".join(sorted(short(n) for n in common))
                 )
@@ -969,24 +969,24 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     data[b'nb-revs-missing'] = data[b'nb-revs'] - data[b'nb-revs-common']
 
     # display discovery summary
-    ui.write(b"elapsed time:  %(elapsed)f seconds\n" % data)
-    ui.write(b"heads summary:\n")
-    ui.write(b"  total common heads:  %(nb-common)9d\n" % data)
-    ui.write(b"    also local heads:  %(nb-common-local)9d\n" % data)
-    ui.write(b"    also remote heads: %(nb-common-remote)9d\n" % data)
-    ui.write(b"    both:              %(nb-common-both)9d\n" % data)
-    ui.write(b"  local heads:         %(nb-local)9d\n" % data)
-    ui.write(b"    common:            %(nb-common-local)9d\n" % data)
-    ui.write(b"    missing:           %(nb-local-missing)9d\n" % data)
-    ui.write(b"  remote heads:        %(nb-remote)9d\n" % data)
-    ui.write(b"    common:            %(nb-common-remote)9d\n" % data)
-    ui.write(b"    unknown:           %(nb-remote-unknown)9d\n" % data)
-    ui.write(b"local changesets:      %(nb-revs)9d\n" % data)
-    ui.write(b"  common:              %(nb-revs-common)9d\n" % data)
-    ui.write(b"  missing:             %(nb-revs-missing)9d\n" % data)
+    ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
+    ui.writenoi18n(b"heads summary:\n")
+    ui.writenoi18n(b"  total common heads:  %(nb-common)9d\n" % data)
+    ui.writenoi18n(b"    also local heads:  %(nb-common-local)9d\n" % data)
+    ui.writenoi18n(b"    also remote heads: %(nb-common-remote)9d\n" % data)
+    ui.writenoi18n(b"    both:              %(nb-common-both)9d\n" % data)
+    ui.writenoi18n(b"  local heads:         %(nb-local)9d\n" % data)
+    ui.writenoi18n(b"    common:            %(nb-common-local)9d\n" % data)
+    ui.writenoi18n(b"    missing:           %(nb-local-missing)9d\n" % data)
+    ui.writenoi18n(b"  remote heads:        %(nb-remote)9d\n" % data)
+    ui.writenoi18n(b"    common:            %(nb-common-remote)9d\n" % data)
+    ui.writenoi18n(b"    unknown:           %(nb-remote-unknown)9d\n" % data)
+    ui.writenoi18n(b"local changesets:      %(nb-revs)9d\n" % data)
+    ui.writenoi18n(b"  common:              %(nb-revs-common)9d\n" % data)
+    ui.writenoi18n(b"  missing:             %(nb-revs-missing)9d\n" % data)
 
     if ui.verbose:
-        ui.write(
+        ui.writenoi18n(
             b"common heads: %s\n" % b" ".join(sorted(short(n) for n in common))
         )
 
@@ -1163,7 +1163,7 @@ def debugfileset(ui, repo, expr, **opts):
 
     m = ctx.matchfileset(expr)
     if opts[b'show_matcher'] or (opts[b'show_matcher'] is None and ui.verbose):
-        ui.write(b'* matcher:\n', stringutil.prettyrepr(m), b'\n')
+        ui.writenoi18n(b'* matcher:\n', stringutil.prettyrepr(m), b'\n')
     for f in sorted(files):
         if not m(f):
             continue
@@ -1245,19 +1245,19 @@ def debugformat(ui, repo, **opts):
 @command(b'debugfsinfo', [], _(b'[PATH]'), norepo=True)
 def debugfsinfo(ui, path=b"."):
     """show information detected about current filesystem"""
-    ui.write(b'path: %s\n' % path)
-    ui.write(b'mounted on: %s\n' % (util.getfsmountpoint(path) or b'(unknown)'))
-    ui.write(b'exec: %s\n' % (util.checkexec(path) and b'yes' or b'no'))
-    ui.write(b'fstype: %s\n' % (util.getfstype(path) or b'(unknown)'))
-    ui.write(b'symlink: %s\n' % (util.checklink(path) and b'yes' or b'no'))
-    ui.write(b'hardlink: %s\n' % (util.checknlink(path) and b'yes' or b'no'))
+    ui.writenoi18n(b'path: %s\n' % path)
+    ui.writenoi18n(b'mounted on: %s\n' % (util.getfsmountpoint(path) or b'(unknown)'))
+    ui.writenoi18n(b'exec: %s\n' % (util.checkexec(path) and b'yes' or b'no'))
+    ui.writenoi18n(b'fstype: %s\n' % (util.getfstype(path) or b'(unknown)'))
+    ui.writenoi18n(b'symlink: %s\n' % (util.checklink(path) and b'yes' or b'no'))
+    ui.writenoi18n(b'hardlink: %s\n' % (util.checknlink(path) and b'yes' or b'no'))
     casesensitive = b'(unknown)'
     try:
         with pycompat.namedtempfile(prefix=b'.debugfsinfo', dir=path) as f:
             casesensitive = util.fscasesensitive(f.name) and b'yes' or b'no'
     except OSError:
         pass
-    ui.write(b'case-sensitive: %s\n' % casesensitive)
+    ui.writenoi18n(b'case-sensitive: %s\n' % casesensitive)
 
 
 @command(
@@ -1409,7 +1409,7 @@ def debugindexdot(ui, repo, file_=None, **opts):
     """dump an index DAG as a graphviz dot file"""
     opts = pycompat.byteskwargs(opts)
     r = cmdutil.openstorage(repo, b'debugindexdot', file_, opts)
-    ui.write(b"digraph G {\n")
+    ui.writenoi18n(b"digraph G {\n")
     for i in r:
         node = r.node(i)
         pp = r.parents(node)
@@ -1818,13 +1818,13 @@ def debuglocks(ui, repo, **opts):
                             pid,
                             host,
                         )
-                ui.write(b"%-6s %s (%ds)\n" % (name + b":", locker, age))
+                ui.writenoi18n(b"%-6s %s (%ds)\n" % (name + b":", locker, age))
                 return 1
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     raise
 
-        ui.write(b"%-6s free\n" % (name + b":"))
+        ui.writenoi18n(b"%-6s free\n" % (name + b":"))
         return 0
 
     held += report(repo.svfs, b"lock", repo.lock)
@@ -1920,7 +1920,7 @@ def debugmergestate(ui, repo, *args):
             return h
 
     def printrecords(version):
-        ui.write(b'* version %d records\n' % version)
+        ui.writenoi18n(b'* version %d records\n' % version)
         if version == 1:
             records = v1records
         else:
@@ -1929,12 +1929,12 @@ def debugmergestate(ui, repo, *args):
         for rtype, record in records:
             # pretty print some record types
             if rtype == b'L':
-                ui.write(b'local: %s\n' % record)
+                ui.writenoi18n(b'local: %s\n' % record)
             elif rtype == b'O':
-                ui.write(b'other: %s\n' % record)
+                ui.writenoi18n(b'other: %s\n' % record)
             elif rtype == b'm':
                 driver, mdstate = record.split(b'\0', 1)
-                ui.write(b'merge driver: %s (state "%s")\n' % (driver, mdstate))
+                ui.writenoi18n(b'merge driver: %s (state "%s")\n' % (driver, mdstate))
             elif rtype in b'FDC':
                 r = record.split(b'\0')
                 f, state, hash, lfile, afile, anode, ofile = r[0:7]
@@ -1943,16 +1943,16 @@ def debugmergestate(ui, repo, *args):
                     flags = r[7]
                 else:
                     onode, flags = r[7:9]
-                ui.write(
+                ui.writenoi18n(
                     b'file: %s (record type "%s", state "%s", hash %s)\n'
                     % (f, rtype, state, _hashornull(hash))
                 )
-                ui.write(b'  local path: %s (flags "%s")\n' % (lfile, flags))
-                ui.write(
+                ui.writenoi18n(b'  local path: %s (flags "%s")\n' % (lfile, flags))
+                ui.writenoi18n(
                     b'  ancestor path: %s (node %s)\n'
                     % (afile, _hashornull(anode))
                 )
-                ui.write(
+                ui.writenoi18n(
                     b'  other path: %s (node %s)\n'
                     % (ofile, _hashornull(onode))
                 )
@@ -1965,20 +1965,20 @@ def debugmergestate(ui, repo, *args):
                     extrastrings.append(b'%s = %s' % (extras[i], extras[i + 1]))
                     i += 2
 
-                ui.write(
+                ui.writenoi18n(
                     b'file extras: %s (%s)\n'
                     % (filename, b', '.join(extrastrings))
                 )
             elif rtype == b'l':
                 labels = record.split(b'\0', 2)
                 labels = [l for l in labels if len(l) > 0]
-                ui.write(b'labels:\n')
+                ui.writenoi18n(b'labels:\n')
                 ui.write((b'  local: %s\n' % labels[0]))
                 ui.write((b'  other: %s\n' % labels[1]))
                 if len(labels) > 2:
                     ui.write((b'  base:  %s\n' % labels[2]))
             else:
-                ui.write(
+                ui.writenoi18n(
                     b'unrecognized entry: %s\t%s\n'
                     % (rtype, record.replace(b'\0', b'\t'))
                 )
@@ -2004,15 +2004,15 @@ def debugmergestate(ui, repo, *args):
     v2records.sort(key=key)
 
     if not v1records and not v2records:
-        ui.write(b'no merge state found\n')
+        ui.writenoi18n(b'no merge state found\n')
     elif not v2records:
-        ui.note(b'no version 2 merge state\n')
+        ui.notenoi18n(b'no version 2 merge state\n')
         printrecords(1)
     elif ms._v1v2match(v1records, v2records):
-        ui.note(b'v1 and v2 states match: using v2\n')
+        ui.notenoi18n(b'v1 and v2 states match: using v2\n')
         printrecords(2)
     else:
-        ui.note(b'v1 and v2 states mismatch: using v1\n')
+        ui.notenoi18n(b'v1 and v2 states mismatch: using v1\n')
         printrecords(1)
         if ui.verbose:
             printrecords(2)
@@ -2381,15 +2381,15 @@ def debugpickmergetool(ui, repo, *pats, **opts):
     overrides = {}
     if opts[b'tool']:
         overrides[(b'ui', b'forcemerge')] = opts[b'tool']
-        ui.note(b'with --tool %r\n' % (pycompat.bytestr(opts[b'tool'])))
+        ui.notenoi18n(b'with --tool %r\n' % (pycompat.bytestr(opts[b'tool'])))
 
     with ui.configoverride(overrides, b'debugmergepatterns'):
         hgmerge = encoding.environ.get(b"HGMERGE")
         if hgmerge is not None:
-            ui.note(b'with HGMERGE=%r\n' % (pycompat.bytestr(hgmerge)))
+            ui.notenoi18n(b'with HGMERGE=%r\n' % (pycompat.bytestr(hgmerge)))
         uimerge = ui.config(b"ui", b"merge")
         if uimerge:
-            ui.note(b'with ui.merge=%r\n' % (pycompat.bytestr(uimerge)))
+            ui.notenoi18n(b'with ui.merge=%r\n' % (pycompat.bytestr(uimerge)))
 
         ctx = scmutil.revsingle(repo, opts.get(b'rev'))
         m = scmutil.match(ctx, pats, opts)
@@ -2785,34 +2785,34 @@ def debugrevlog(ui, repo, file_=None, **opts):
         else:
             return value, 100.0
 
-    ui.write(b'format : %d\n' % format)
-    ui.write(b'flags  : %s\n' % b', '.join(flags))
+    ui.writenoi18n(b'format : %d\n' % format)
+    ui.writenoi18n(b'flags  : %s\n' % b', '.join(flags))
 
     ui.write(b'\n')
     fmt = pcfmtstr(totalsize)
     fmt2 = dfmtstr(totalsize)
-    ui.write(b'revisions     : ' + fmt2 % numrevs)
-    ui.write(b'    merges    : ' + fmt % pcfmt(nummerges, numrevs))
-    ui.write(b'    normal    : ' + fmt % pcfmt(numrevs - nummerges, numrevs))
-    ui.write(b'revisions     : ' + fmt2 % numrevs)
-    ui.write(b'    empty     : ' + fmt % pcfmt(numempty, numrevs))
-    ui.write(
+    ui.writenoi18n(b'revisions     : ' + fmt2 % numrevs)
+    ui.writenoi18n(b'    merges    : ' + fmt % pcfmt(nummerges, numrevs))
+    ui.writenoi18n(b'    normal    : ' + fmt % pcfmt(numrevs - nummerges, numrevs))
+    ui.writenoi18n(b'revisions     : ' + fmt2 % numrevs)
+    ui.writenoi18n(b'    empty     : ' + fmt % pcfmt(numempty, numrevs))
+    ui.writenoi18n(
         b'                   text  : '
         + fmt % pcfmt(numemptytext, numemptytext + numemptydelta)
     )
-    ui.write(
+    ui.writenoi18n(
         b'                   delta : '
         + fmt % pcfmt(numemptydelta, numemptytext + numemptydelta)
     )
-    ui.write(b'    snapshot  : ' + fmt % pcfmt(numfull + numsemi, numrevs))
+    ui.writenoi18n(b'    snapshot  : ' + fmt % pcfmt(numfull + numsemi, numrevs))
     for depth in sorted(numsnapdepth):
         ui.write(
             (b'      lvl-%-3d :       ' % depth)
             + fmt % pcfmt(numsnapdepth[depth], numrevs)
         )
-    ui.write(b'    deltas    : ' + fmt % pcfmt(numdeltas, numrevs))
-    ui.write(b'revision size : ' + fmt2 % totalsize)
-    ui.write(
+    ui.writenoi18n(b'    deltas    : ' + fmt % pcfmt(numdeltas, numrevs))
+    ui.writenoi18n(b'revision size : ' + fmt2 % totalsize)
+    ui.writenoi18n(
         b'    snapshot  : ' + fmt % pcfmt(fulltotal + semitotal, totalsize)
     )
     for depth in sorted(numsnapdepth):
@@ -2820,7 +2820,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
             (b'      lvl-%-3d :       ' % depth)
             + fmt % pcfmt(snaptotal[depth], totalsize)
         )
-    ui.write(b'    deltas    : ' + fmt % pcfmt(deltatotal, totalsize))
+    ui.writenoi18n(b'    deltas    : ' + fmt % pcfmt(deltatotal, totalsize))
 
     def fmtchunktype(chunktype):
         if chunktype == b'empty':
@@ -2831,44 +2831,44 @@ def debugrevlog(ui, repo, file_=None, **opts):
             return b'    0x%s      : ' % hex(chunktype)
 
     ui.write(b'\n')
-    ui.write(b'chunks        : ' + fmt2 % numrevs)
+    ui.writenoi18n(b'chunks        : ' + fmt2 % numrevs)
     for chunktype in sorted(chunktypecounts):
         ui.write(fmtchunktype(chunktype))
         ui.write(fmt % pcfmt(chunktypecounts[chunktype], numrevs))
-    ui.write(b'chunks size   : ' + fmt2 % totalsize)
+    ui.writenoi18n(b'chunks size   : ' + fmt2 % totalsize)
     for chunktype in sorted(chunktypecounts):
         ui.write(fmtchunktype(chunktype))
         ui.write(fmt % pcfmt(chunktypesizes[chunktype], totalsize))
 
     ui.write(b'\n')
     fmt = dfmtstr(max(avgchainlen, maxchainlen, maxchainspan, compratio))
-    ui.write(b'avg chain length  : ' + fmt % avgchainlen)
-    ui.write(b'max chain length  : ' + fmt % maxchainlen)
-    ui.write(b'max chain reach   : ' + fmt % maxchainspan)
-    ui.write(b'compression ratio : ' + fmt % compratio)
+    ui.writenoi18n(b'avg chain length  : ' + fmt % avgchainlen)
+    ui.writenoi18n(b'max chain length  : ' + fmt % maxchainlen)
+    ui.writenoi18n(b'max chain reach   : ' + fmt % maxchainspan)
+    ui.writenoi18n(b'compression ratio : ' + fmt % compratio)
 
     if format > 0:
         ui.write(b'\n')
-        ui.write(
+        ui.writenoi18n(
             b'uncompressed data size (min/max/avg) : %d / %d / %d\n'
             % tuple(datasize)
         )
-    ui.write(
+    ui.writenoi18n(
         b'full revision size (min/max/avg)     : %d / %d / %d\n'
         % tuple(fullsize)
     )
-    ui.write(
+    ui.writenoi18n(
         b'inter-snapshot size (min/max/avg)    : %d / %d / %d\n'
         % tuple(semisize)
     )
     for depth in sorted(snapsizedepth):
         if depth == 0:
             continue
-        ui.write(
+        ui.writenoi18n(
             b'    level-%-3d (min/max/avg)          : %d / %d / %d\n'
             % ((depth,) + tuple(snapsizedepth[depth]))
         )
-    ui.write(
+    ui.writenoi18n(
         b'delta size (min/max/avg)             : %d / %d / %d\n'
         % tuple(deltasize)
     )
@@ -2877,21 +2877,21 @@ def debugrevlog(ui, repo, file_=None, **opts):
         ui.write(b'\n')
         fmt = pcfmtstr(numdeltas)
         fmt2 = pcfmtstr(numdeltas, 4)
-        ui.write(b'deltas against prev  : ' + fmt % pcfmt(numprev, numdeltas))
+        ui.writenoi18n(b'deltas against prev  : ' + fmt % pcfmt(numprev, numdeltas))
         if numprev > 0:
-            ui.write(
+            ui.writenoi18n(
                 b'    where prev = p1  : ' + fmt2 % pcfmt(nump1prev, numprev)
             )
-            ui.write(
+            ui.writenoi18n(
                 b'    where prev = p2  : ' + fmt2 % pcfmt(nump2prev, numprev)
             )
-            ui.write(
+            ui.writenoi18n(
                 b'    other            : ' + fmt2 % pcfmt(numoprev, numprev)
             )
         if gdelta:
-            ui.write(b'deltas against p1    : ' + fmt % pcfmt(nump1, numdeltas))
-            ui.write(b'deltas against p2    : ' + fmt % pcfmt(nump2, numdeltas))
-            ui.write(
+            ui.writenoi18n(b'deltas against p1    : ' + fmt % pcfmt(nump1, numdeltas))
+            ui.writenoi18n(b'deltas against p2    : ' + fmt % pcfmt(nump2, numdeltas))
+            ui.writenoi18n(
                 b'deltas against other : ' + fmt % pcfmt(numother, numdeltas)
             )
 
@@ -2929,7 +2929,7 @@ def debugrevlogindex(ui, repo, file_=None, **opts):
                 % (b"nodeid".ljust(idlen), b"p1".ljust(idlen))
             )
         else:
-            ui.write(
+            ui.writenoi18n(
                 b"   rev linkrev %s %s p2\n"
                 % (b"nodeid".ljust(idlen), b"p1".ljust(idlen))
             )
@@ -2943,7 +2943,7 @@ def debugrevlogindex(ui, repo, file_=None, **opts):
                 % b"nodeid".rjust(idlen)
             )
         else:
-            ui.write(
+            ui.writenoi18n(
                 b"   rev flag     size   link     p1     p2 %s\n"
                 % b"nodeid".rjust(idlen)
             )
@@ -3109,14 +3109,14 @@ def debugrevspec(ui, repo, expr, **opts):
         arevs = revset.makematcher(treebystage[b'analyzed'])(repo)
         brevs = revset.makematcher(treebystage[b'optimized'])(repo)
         if opts[b'show_set'] or (opts[b'show_set'] is None and ui.verbose):
-            ui.write(b"* analyzed set:\n", stringutil.prettyrepr(arevs), b"\n")
-            ui.write(b"* optimized set:\n", stringutil.prettyrepr(brevs), b"\n")
+            ui.writenoi18n(b"* analyzed set:\n", stringutil.prettyrepr(arevs), b"\n")
+            ui.writenoi18n(b"* optimized set:\n", stringutil.prettyrepr(brevs), b"\n")
         arevs = list(arevs)
         brevs = list(brevs)
         if arevs == brevs:
             return 0
-        ui.write(b'--- analyzed\n', label=b'diff.file_a')
-        ui.write(b'+++ optimized\n', label=b'diff.file_b')
+        ui.writenoi18n(b'--- analyzed\n', label=b'diff.file_a')
+        ui.writenoi18n(b'+++ optimized\n', label=b'diff.file_b')
         sm = difflib.SequenceMatcher(None, arevs, brevs)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
             if tag in (r'delete', r'replace'):
@@ -3133,7 +3133,7 @@ def debugrevspec(ui, repo, expr, **opts):
     func = revset.makematcher(tree)
     revs = func(repo)
     if opts[b'show_set'] or (opts[b'show_set'] is None and ui.verbose):
-        ui.write(b"* set:\n", stringutil.prettyrepr(revs), b"\n")
+        ui.writenoi18n(b"* set:\n", stringutil.prettyrepr(revs), b"\n")
     if not opts[b'show_revs']:
         return
     for c in revs:
@@ -3311,9 +3311,9 @@ def debugssl(ui, repo, source=None, **opts):
 def debugsub(ui, repo, rev=None):
     ctx = scmutil.revsingle(repo, rev, None)
     for k, v in sorted(ctx.substate.items()):
-        ui.write(b'path %s\n' % k)
-        ui.write(b' source   %s\n' % v[0])
-        ui.write(b' revision %s\n' % v[1])
+        ui.writenoi18n(b'path %s\n' % k)
+        ui.writenoi18n(b' source   %s\n' % v[0])
+        ui.writenoi18n(b' revision %s\n' % v[1])
 
 
 @command(
@@ -3414,22 +3414,22 @@ def debugtemplate(ui, repo, tmpl, **opts):
         ui.note(templater.prettyformat(tree), b'\n')
         newtree = templater.expandaliases(tree, aliases)
         if newtree != tree:
-            ui.note(b"* expanded:\n", templater.prettyformat(newtree), b'\n')
+            ui.notenoi18n(b"* expanded:\n", templater.prettyformat(newtree), b'\n')
 
     if revs is None:
         tres = formatter.templateresources(ui, repo)
         t = formatter.maketemplater(ui, tmpl, resources=tres)
         if ui.verbose:
             kwds, funcs = t.symbolsuseddefault()
-            ui.write(b"* keywords: %s\n" % b', '.join(sorted(kwds)))
-            ui.write(b"* functions: %s\n" % b', '.join(sorted(funcs)))
+            ui.writenoi18n(b"* keywords: %s\n" % b', '.join(sorted(kwds)))
+            ui.writenoi18n(b"* functions: %s\n" % b', '.join(sorted(funcs)))
         ui.write(t.renderdefault(props))
     else:
         displayer = logcmdutil.maketemplater(ui, repo, tmpl)
         if ui.verbose:
             kwds, funcs = displayer.t.symbolsuseddefault()
-            ui.write(b"* keywords: %s\n" % b', '.join(sorted(kwds)))
-            ui.write(b"* functions: %s\n" % b', '.join(sorted(funcs)))
+            ui.writenoi18n(b"* keywords: %s\n" % b', '.join(sorted(kwds)))
+            ui.writenoi18n(b"* functions: %s\n" % b', '.join(sorted(funcs)))
         for r in revs:
             displayer.show(repo[r], **pycompat.strkwargs(props))
         displayer.close()
@@ -3444,7 +3444,7 @@ def debugtemplate(ui, repo, tmpl, **opts):
 def debuguigetpass(ui, prompt=b''):
     """show prompt to type password"""
     r = ui.getpass(prompt)
-    ui.write(b'respose: %s\n' % r)
+    ui.writenoi18n(b'respose: %s\n' % r)
 
 
 @command(
@@ -3456,7 +3456,7 @@ def debuguigetpass(ui, prompt=b''):
 def debuguiprompt(ui, prompt=b''):
     """show plain prompt"""
     r = ui.prompt(prompt)
-    ui.write(b'response: %s\n' % r)
+    ui.writenoi18n(b'response: %s\n' % r)
 
 
 @command(b'debugupdatecaches', [])
@@ -3522,7 +3522,7 @@ def debugwalk(ui, repo, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     m = scmutil.match(repo[None], pats, opts)
     if ui.verbose:
-        ui.write(b'* matcher:\n', stringutil.prettyrepr(m), b'\n')
+        ui.writenoi18n(b'* matcher:\n', stringutil.prettyrepr(m), b'\n')
     items = list(repo[None].walk(m))
     if not items:
         return

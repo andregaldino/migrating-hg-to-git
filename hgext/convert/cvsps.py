@@ -1021,7 +1021,7 @@ def debugcvsps(ui, *args, **opts):
                 )
             )
             if cs.branchpoints:
-                ui.write(
+                ui.writenoi18n(
                     b'Branchpoints: %s \n' % b', '.join(sorted(cs.branchpoints))
                 )
             if opts[b"parents"] and cs.parents:
@@ -1044,9 +1044,9 @@ def debugcvsps(ui, *args, **opts):
                 if r:
                     ui.write((b'Ancestors: %s\n' % (b','.join(r))))
 
-            ui.write(b'Log:\n')
+            ui.writenoi18n(b'Log:\n')
             ui.write(b'%s\n\n' % cs.comment)
-            ui.write(b'Members: \n')
+            ui.writenoi18n(b'Members: \n')
             for f in cs.entries:
                 fn = f.file
                 if fn.startswith(opts[b"prefix"]):

@@ -97,17 +97,17 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
 
         for f in modified:
             # TODO get file permissions
-            ui.write(
+            ui.writenoi18n(
                 b":100664 100664 %s %s M\t%s\t%s\n"
                 % (short(mmap[f]), short(mmap2[f]), f, f)
             )
         for f in added:
-            ui.write(
+            ui.writenoi18n(
                 b":000000 100664 %s %s N\t%s\t%s\n"
                 % (empty, short(mmap2[f]), f, f)
             )
         for f in removed:
-            ui.write(
+            ui.writenoi18n(
                 b":100664 000000 %s %s D\t%s\t%s\n"
                 % (short(mmap[f]), empty, f, f)
             )
@@ -166,7 +166,7 @@ def catcommit(ui, repo, n, prefix, ctx=None):
     ui.write((b"branch %s\n" % ctx.branch()))
     if obsolete.isenabled(repo, obsolete.createmarkersopt):
         if ctx.obsolete():
-            ui.write(b"obsolete\n")
+            ui.writenoi18n(b"obsolete\n")
     ui.write((b"phase %s\n\n" % ctx.phasestr()))
 
     if prefix != b"":
