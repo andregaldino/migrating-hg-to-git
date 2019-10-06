@@ -15,12 +15,8 @@ import re
 import subprocess
 import tempfile
 
-from .pypi import (
-    upload as pypi_upload,
-)
-from .winrm import (
-    run_powershell,
-)
+from .pypi import upload as pypi_upload
+from .winrm import run_powershell
 
 
 # PowerShell commands to activate a Visual Studio 2008 environment.
@@ -117,14 +113,21 @@ MERCURIAL_SCM_BASE_URL = 'https://mercurial-scm.org/release/windows'
 X86_USER_AGENT_PATTERN = '.*Windows.*'
 X64_USER_AGENT_PATTERN = '.*Windows.*(WOW|x)64.*'
 
-X86_EXE_DESCRIPTION = ('Mercurial {version} Inno Setup installer - x86 Windows '
-                       '- does not require admin rights')
-X64_EXE_DESCRIPTION = ('Mercurial {version} Inno Setup installer - x64 Windows '
-                       '- does not require admin rights')
-X86_MSI_DESCRIPTION = ('Mercurial {version} MSI installer - x86 Windows '
-                       '- requires admin rights')
-X64_MSI_DESCRIPTION = ('Mercurial {version} MSI installer - x64 Windows '
-                       '- requires admin rights')
+X86_EXE_DESCRIPTION = (
+    'Mercurial {version} Inno Setup installer - x86 Windows '
+    '- does not require admin rights'
+)
+X64_EXE_DESCRIPTION = (
+    'Mercurial {version} Inno Setup installer - x64 Windows '
+    '- does not require admin rights'
+)
+X86_MSI_DESCRIPTION = (
+    'Mercurial {version} MSI installer - x86 Windows ' '- requires admin rights'
+)
+X64_MSI_DESCRIPTION = (
+    'Mercurial {version} MSI installer - x64 Windows ' '- requires admin rights'
+)
+
 
 def get_vc_prefix(arch):
     if arch == 'x86':
@@ -158,10 +161,21 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
         ssh_dir.chmod(0o0700)
 
         # Generate SSH key to use for communication.
-        subprocess.run([
-            'ssh-keygen', '-t', 'rsa', '-b', '4096', '-N', '',
-            '-f', str(ssh_dir / 'id_rsa')],
-            check=True, capture_output=True)
+        subprocess.run(
+            [
+                'ssh-keygen',
+                '-t',
+                'rsa',
+                '-b',
+                '4096',
+                '-N',
+                '',
+                '-f',
+                str(ssh_dir / 'id_rsa'),
+            ],
+            check=True,
+            capture_output=True,
+        )
 
         # Add it to ~/.ssh/authorized_keys on remote.
         # This assumes the file doesn't already exist.
@@ -182,8 +196,10 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
             fh.write('  IdentityFile %s\n' % (ssh_dir / 'id_rsa'))
 
         if not (hg_repo / '.hg').is_dir():
-            raise Exception('%s is not a Mercurial repository; '
-                            'synchronization not yet supported' % hg_repo)
+            raise Exception(
+                '%s is not a Mercurial repository; '
+                'synchronization not yet supported' % hg_repo
+            )
 
         env = dict(os.environ)
         env['HGPLAIN'] = '1'
@@ -193,17 +209,29 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
 
         res = subprocess.run(
             ['python2.7', str(hg_bin), 'log', '-r', revision, '-T', '{node}'],
-            cwd=str(hg_repo), env=env, check=True, capture_output=True)
+            cwd=str(hg_repo),
+            env=env,
+            check=True,
+            capture_output=True,
+        )
 
         full_revision = res.stdout.decode('ascii')
 
         args = [
-            'python2.7', hg_bin,
-            '--config', 'ui.ssh=ssh -F %s' % ssh_config,
-            '--config', 'ui.remotecmd=c:/hgdev/venv-bootstrap/Scripts/hg.exe',
+            'python2.7',
+            hg_bin,
+            '--config',
+            'ui.ssh=ssh -F %s' % ssh_config,
+            '--config',
+            'ui.remotecmd=c:/hgdev/venv-bootstrap/Scripts/hg.exe',
             # Also ensure .hgtags changes are present so auto version
             # calculation works.
-            'push', '-f', '-r', full_revision, '-r', 'file(.hgtags)',
+            'push',
+            '-f',
+            '-r',
+            full_revision,
+            '-r',
+            'file(.hgtags)',
             'ssh://%s/c:/hgdev/src' % public_ip,
         ]
 
@@ -213,8 +241,9 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
         if res.returncode not in (0, 1):
             res.check_returncode()
 
-        run_powershell(winrm_client,
-                       HG_UPDATE_CLEAN.format(revision=full_revision))
+        run_powershell(
+            winrm_client, HG_UPDATE_CLEAN.format(revision=full_revision)
+        )
 
         # TODO detect dirty local working directory and synchronize accordingly.
 
@@ -250,8 +279,9 @@ def copy_latest_dist(winrm_client, pattern, dest_path):
     winrm_client.fetch(source, str(dest))
 
 
-def build_inno_installer(winrm_client, arch: str, dest_path: pathlib.Path,
-                         version=None):
+def build_inno_installer(
+    winrm_client, arch: str, dest_path: pathlib.Path, version=None
+):
     """Build the Inno Setup installer on a remote machine.
 
     Using a WinRM client, remote commands are executed to build
@@ -263,8 +293,9 @@ def build_inno_installer(winrm_client, arch: str, dest_path: pathlib.Path,
     if version:
         extra_args.extend(['--version', version])
 
-    ps = get_vc_prefix(arch) + BUILD_INNO.format(arch=arch,
-                                                 extra_args=' '.join(extra_args))
+    ps = get_vc_prefix(arch) + BUILD_INNO.format(
+        arch=arch, extra_args=' '.join(extra_args)
+    )
     run_powershell(winrm_client, ps)
     copy_latest_dist(winrm_client, '*.exe', dest_path)
 
@@ -281,8 +312,9 @@ def build_wheel(winrm_client, arch: str, dest_path: pathlib.Path):
     copy_latest_dist(winrm_client, '*.whl', dest_path)
 
 
-def build_wix_installer(winrm_client, arch: str, dest_path: pathlib.Path,
-                        version=None):
+def build_wix_installer(
+    winrm_client, arch: str, dest_path: pathlib.Path, version=None
+):
     """Build the WiX installer on a remote machine.
 
     Using a WinRM client, remote commands are executed to build a WiX installer.
@@ -292,8 +324,9 @@ def build_wix_installer(winrm_client, arch: str, dest_path: pathlib.Path,
     if version:
         extra_args.extend(['--version', version])
 
-    ps = get_vc_prefix(arch) + BUILD_WIX.format(arch=arch,
-                                                extra_args=' '.join(extra_args))
+    ps = get_vc_prefix(arch) + BUILD_WIX.format(
+        arch=arch, extra_args=' '.join(extra_args)
+    )
     run_powershell(winrm_client, ps)
     copy_latest_dist(winrm_client, '*.msi', dest_path)
 
@@ -307,18 +340,16 @@ def run_tests(winrm_client, python_version, arch, test_flags=''):
     ``run-tests.py``.
     """
     if not re.match(r'\d\.\d', python_version):
-        raise ValueError(r'python_version must be \d.\d; got %s' %
-                         python_version)
+        raise ValueError(
+            r'python_version must be \d.\d; got %s' % python_version
+        )
 
     if arch not in ('x86', 'x64'):
         raise ValueError('arch must be x86 or x64; got %s' % arch)
 
     python_path = 'python%s-%s' % (python_version.replace('.', ''), arch)
 
-    ps = RUN_TESTS.format(
-        python_path=python_path,
-        test_flags=test_flags or '',
-    )
+    ps = RUN_TESTS.format(python_path=python_path, test_flags=test_flags or '',)
 
     run_powershell(winrm_client, ps)
 
@@ -374,8 +405,8 @@ def generate_latest_dat(version: str):
             version,
             X64_USER_AGENT_PATTERN,
             '%s/%s' % (MERCURIAL_SCM_BASE_URL, x64_msi_filename),
-            X64_MSI_DESCRIPTION.format(version=version)
-        )
+            X64_MSI_DESCRIPTION.format(version=version),
+        ),
     )
 
     lines = ['\t'.join(e) for e in entries]
@@ -396,8 +427,9 @@ def publish_artifacts_pypi(dist_path: pathlib.Path, version: str):
     pypi_upload(wheel_paths)
 
 
-def publish_artifacts_mercurial_scm_org(dist_path: pathlib.Path, version: str,
-                                        ssh_username=None):
+def publish_artifacts_mercurial_scm_org(
+    dist_path: pathlib.Path, version: str, ssh_username=None
+):
     """Publish Windows release artifacts to mercurial-scm.org."""
     all_paths = resolve_all_artifacts(dist_path, version)
 
@@ -436,7 +468,8 @@ def publish_artifacts_mercurial_scm_org(dist_path: pathlib.Path, version: str,
 
     now = datetime.datetime.utcnow()
     backup_path = dist_path / (
-        'latest-windows-%s.dat' % now.strftime('%Y%m%dT%H%M%S'))
+        'latest-windows-%s.dat' % now.strftime('%Y%m%dT%H%M%S')
+    )
     print('backing up %s to %s' % (latest_dat_path, backup_path))
 
     with sftp.open(latest_dat_path, 'rb') as fh:
@@ -453,9 +486,13 @@ def publish_artifacts_mercurial_scm_org(dist_path: pathlib.Path, version: str,
         fh.write(latest_dat_content.encode('ascii'))
 
 
-def publish_artifacts(dist_path: pathlib.Path, version: str,
-                      pypi=True, mercurial_scm_org=True,
-                      ssh_username=None):
+def publish_artifacts(
+    dist_path: pathlib.Path,
+    version: str,
+    pypi=True,
+    mercurial_scm_org=True,
+    ssh_username=None,
+):
     """Publish Windows release artifacts.
 
     Files are found in `dist_path`. We will look for files with version string
@@ -468,5 +505,6 @@ def publish_artifacts(dist_path: pathlib.Path, version: str,
         publish_artifacts_pypi(dist_path, version)
 
     if mercurial_scm_org:
-        publish_artifacts_mercurial_scm_org(dist_path, version,
-                                            ssh_username=ssh_username)
+        publish_artifacts_mercurial_scm_org(
+            dist_path, version, ssh_username=ssh_username
+        )

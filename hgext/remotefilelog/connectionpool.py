@@ -16,6 +16,7 @@ from mercurial import (
 
 _sshv1peer = sshpeer.sshv1peer
 
+
 class connectionpool(object):
     def __init__(self, repo):
         self._repo = repo
@@ -40,6 +41,7 @@ class connectionpool(object):
                 pass
 
         if conn is None:
+
             def _cleanup(orig):
                 # close pipee first so peer.cleanup reading it won't deadlock,
                 # if there are other processes with pipeo open (i.e. us).
@@ -61,6 +63,7 @@ class connectionpool(object):
             for conn in pathpool:
                 conn.close()
             del pathpool[:]
+
 
 class connection(object):
     def __init__(self, pool, peer):

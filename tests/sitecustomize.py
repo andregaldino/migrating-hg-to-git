@@ -6,8 +6,9 @@ if os.environ.get('COVERAGE_PROCESS_START'):
         import coverage
         import uuid
 
-        covpath = os.path.join(os.environ['COVERAGE_DIR'],
-                               'cov.%s' % uuid.uuid1())
+        covpath = os.path.join(
+            os.environ['COVERAGE_DIR'], 'cov.%s' % uuid.uuid1()
+        )
         cov = coverage.coverage(data_file=covpath, auto_data=True)
         cov._warn_no_data = False
         cov._warn_unimported_source = False

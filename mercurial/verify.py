@@ -25,10 +25,12 @@ from . import (
 VERIFY_DEFAULT = 0
 VERIFY_FULL = 1
 
+
 def verify(repo, level=None):
     with repo.lock():
         v = verifier(repo, level)
         return v.verify()
+
 
 def _normpath(f):
     # under hg < 2.4, convert didn't sanitize paths properly, so a
@@ -36,6 +38,7 @@ def _normpath(f):
     while '//' in f:
         f = f.replace('//', '/')
     return f
+
 
 class verifier(object):
     def __init__(self, repo, level=None):
@@ -138,22 +141,33 @@ class verifier(object):
                 if f and len(linkrevs) > 1:
                     try:
                         # attempt to filter down to real linkrevs
-                        linkrevs = [l for l in linkrevs
-                                    if self.lrugetctx(l)[f].filenode() == node]
+                        linkrevs = [
+                            l
+                            for l in linkrevs
+                            if self.lrugetctx(l)[f].filenode() == node
+                        ]
                     except Exception:
                         pass
-                self._warn(_(" (expected %s)") % " ".join
-                           (map(pycompat.bytestr, linkrevs)))
-            lr = None # can't be trusted
+                self._warn(
+                    _(" (expected %s)")
+                    % " ".join(map(pycompat.bytestr, linkrevs))
+                )
+            lr = None  # can't be trusted
 
         try:
             p1, p2 = obj.parents(node)
             if p1 not in seen and p1 != nullid:
-                self._err(lr, _("unknown parent 1 %s of %s") %
-                    (short(p1), short(node)), f)
+                self._err(
+                    lr,
+                    _("unknown parent 1 %s of %s") % (short(p1), short(node)),
+                    f,
+                )
             if p2 not in seen and p2 != nullid:
-                self._err(lr, _("unknown parent 2 %s of %s") %
-                    (short(p2), short(node)), f)
+                self._err(
+                    lr,
+                    _("unknown parent 2 %s of %s") % (short(p2), short(node)),
+                    f,
+                )
         except Exception as inst:
             self._exc(lr, _("checking parents of %s") % short(node), inst, f)
 
@@ -178,8 +192,10 @@ class verifier(object):
             ui.warn(_("abandoned transaction found - run hg recover\n"))
 
         if ui.verbose or not self.revlogv1:
-            ui.status(_("repository uses revlog format %d\n") %
-                           (self.revlogv1 and 1 or 0))
+            ui.status(
+                _("repository uses revlog format %d\n")
+                % (self.revlogv1 and 1 or 0)
+            )
 
         # data verification
         mflinkrevs, filelinkrevs = self._verifychangelog()
@@ -189,18 +205,26 @@ class verifier(object):
         totalfiles, filerevisions = self._verifyfiles(filenodes, filelinkrevs)
 
         # final report
-        ui.status(_("checked %d changesets with %d changes to %d files\n") %
-                       (len(repo.changelog), filerevisions, totalfiles))
+        ui.status(
+            _("checked %d changesets with %d changes to %d files\n")
+            % (len(repo.changelog), filerevisions, totalfiles)
+        )
         if self.warnings:
             ui.warn(_("%d warnings encountered!\n") % self.warnings)
         if self.fncachewarned:
-            ui.warn(_('hint: run "hg debugrebuildfncache" to recover from '
-                      'corrupt fncache\n'))
+            ui.warn(
+                _(
+                    'hint: run "hg debugrebuildfncache" to recover from '
+                    'corrupt fncache\n'
+                )
+            )
         if self.errors:
             ui.warn(_("%d integrity errors encountered!\n") % self.errors)
             if self.badrevs:
-                ui.warn(_("(first damaged changeset appears to be %d)\n")
-                        % min(self.badrevs))
+                ui.warn(
+                    _("(first damaged changeset appears to be %d)\n")
+                    % min(self.badrevs)
+                )
             return 1
         return 0
 
@@ -230,8 +254,9 @@ class verifier(object):
         filelinkrevs = {}
         seen = {}
         self._checkrevlog(cl, "changelog", 0)
-        progress = ui.makeprogress(_('checking'), unit=_('changesets'),
-                                   total=len(repo))
+        progress = ui.makeprogress(
+            _('checking'), unit=_('changesets'), total=len(repo)
+        )
         for i in repo:
             progress.update(i)
             n = cl.node(i)
@@ -251,8 +276,9 @@ class verifier(object):
         progress.complete()
         return mflinkrevs, filelinkrevs
 
-    def _verifymanifest(self, mflinkrevs, dir="", storefiles=None,
-                        subdirprogress=None):
+    def _verifymanifest(
+        self, mflinkrevs, dir="", storefiles=None, subdirprogress=None
+    ):
         """verify the manifestlog content
 
         Inputs:
@@ -297,14 +323,15 @@ class verifier(object):
             label = dir
             revlogfiles = mf.files()
             storefiles.difference_update(revlogfiles)
-            if subdirprogress: # should be true since we're in a subdirectory
+            if subdirprogress:  # should be true since we're in a subdirectory
                 subdirprogress.increment()
         if self.refersmf:
             # Do not check manifest if there are only changelog entries with
             # null manifests.
             self._checkrevlog(mf, label, 0)
-        progress = ui.makeprogress(_('checking'), unit=_('manifests'),
-                                   total=len(mf))
+        progress = ui.makeprogress(
+            _('checking'), unit=_('manifests'), total=len(mf)
+        )
         for i in mf:
             if not dir:
                 progress.update(i)
@@ -313,8 +340,11 @@ class verifier(object):
             if n in mflinkrevs:
                 del mflinkrevs[n]
             elif dir:
-                self._err(lr, _("%s not in parent-directory manifest") %
-                         short(n), label)
+                self._err(
+                    lr,
+                    _("%s not in parent-directory manifest") % short(n),
+                    label,
+                )
             else:
                 self._err(lr, _("%s not in changesets") % short(n), label)
 
@@ -330,7 +360,8 @@ class verifier(object):
                         if not match.visitdir(fullpath):
                             continue
                         subdirnodes.setdefault(fullpath + '/', {}).setdefault(
-                            fn, []).append(lr)
+                            fn, []
+                        ).append(lr)
                     else:
                         if not match(fullpath):
                             continue
@@ -344,8 +375,12 @@ class verifier(object):
                     # code (eg: hash verification, filename are ordered, etc.)
                     mfdelta = mfl.get(dir, n).read()
                 except Exception as inst:
-                    self._exc(lr, _("reading full manifest %s") % short(n),
-                              inst, label)
+                    self._exc(
+                        lr,
+                        _("reading full manifest %s") % short(n),
+                        inst,
+                        label,
+                    )
 
         if not dir:
             progress.complete()
@@ -356,11 +391,21 @@ class verifier(object):
             changesetpairs = [(c, m) for m in mflinkrevs for c in mflinkrevs[m]]
             for c, m in sorted(changesetpairs):
                 if dir:
-                    self._err(c, _("parent-directory manifest refers to unknown"
-                                   " revision %s") % short(m), label)
+                    self._err(
+                        c,
+                        _(
+                            "parent-directory manifest refers to unknown"
+                            " revision %s"
+                        )
+                        % short(m),
+                        label,
+                    )
                 else:
-                    self._err(c, _("changeset refers to unknown revision %s") %
-                              short(m), label)
+                    self._err(
+                        c,
+                        _("changeset refers to unknown revision %s") % short(m),
+                        label,
+                    )
 
         if not dir and subdirnodes:
             self.ui.status(_("checking directory manifests\n"))
@@ -373,12 +418,14 @@ class verifier(object):
                 elif (size > 0 or not revlogv1) and f.startswith('meta/'):
                     storefiles.add(_normpath(f))
                     subdirs.add(os.path.dirname(f))
-            subdirprogress = ui.makeprogress(_('checking'), unit=_('manifests'),
-                                             total=len(subdirs))
+            subdirprogress = ui.makeprogress(
+                _('checking'), unit=_('manifests'), total=len(subdirs)
+            )
 
         for subdir, linkrevs in subdirnodes.iteritems():
-            subdirfilenodes = self._verifymanifest(linkrevs, subdir, storefiles,
-                                                   subdirprogress)
+            subdirfilenodes = self._verifymanifest(
+                linkrevs, subdir, storefiles, subdirprogress
+            )
             for f, onefilenodes in subdirfilenodes.iteritems():
                 filenodes.setdefault(f, {}).update(onefilenodes)
 
@@ -396,8 +443,9 @@ class verifier(object):
         ui.status(_("crosschecking files in changesets and manifests\n"))
 
         total = len(filelinkrevs) + len(filenodes)
-        progress = ui.makeprogress(_('crosschecking'), unit=_('files'),
-                                   total=total)
+        progress = ui.makeprogress(
+            _('crosschecking'), unit=_('files'), total=total
+        )
         if self.havemf:
             for f in sorted(filelinkrevs):
                 progress.increment()
@@ -443,8 +491,9 @@ class verifier(object):
 
         files = sorted(set(filenodes) | set(filelinkrevs))
         revisions = 0
-        progress = ui.makeprogress(_('checking'), unit=_('files'),
-                                   total=len(files))
+        progress = ui.makeprogress(
+            _('checking'), unit=_('files'), total=len(files)
+        )
         for i, f in enumerate(files):
             progress.update(i, item=f)
             try:
@@ -469,8 +518,9 @@ class verifier(object):
                     storefiles.remove(ff)
                 except KeyError:
                     if self.warnorphanstorefiles:
-                        self._warn(_(" warning: revlog '%s' not in fncache!") %
-                                  ff)
+                        self._warn(
+                            _(" warning: revlog '%s' not in fncache!") % ff
+                        )
                         self.fncachewarned = True
 
             if not len(fl) and (self.havecl or self.havemf):
@@ -487,12 +537,16 @@ class verifier(object):
                     if problem.warning:
                         self._warn(problem.warning)
                     elif problem.error:
-                        self._err(linkrev if linkrev is not None else lr,
-                                  problem.error, f)
+                        self._err(
+                            linkrev if linkrev is not None else lr,
+                            problem.error,
+                            f,
+                        )
                     else:
                         raise error.ProgrammingError(
                             'problem instance does not set warning or error '
-                            'attribute: %s' % problem.msg)
+                            'attribute: %s' % problem.msg
+                        )
 
             seen = {}
             for i in fl:
@@ -518,31 +572,49 @@ class verifier(object):
                         if lr is not None and ui.verbose:
                             ctx = lrugetctx(lr)
                             if not any(rp[0] in pctx for pctx in ctx.parents()):
-                                self._warn(_("warning: copy source of '%s' not"
-                                            " in parents of %s") % (f, ctx))
+                                self._warn(
+                                    _(
+                                        "warning: copy source of '%s' not"
+                                        " in parents of %s"
+                                    )
+                                    % (f, ctx)
+                                )
                         fl2 = repo.file(rp[0])
                         if not len(fl2):
-                            self._err(lr,
-                                      _("empty or missing copy source revlog "
-                                        "%s:%s") % (rp[0],
-                                      short(rp[1])),
-                                      f)
+                            self._err(
+                                lr,
+                                _(
+                                    "empty or missing copy source revlog "
+                                    "%s:%s"
+                                )
+                                % (rp[0], short(rp[1])),
+                                f,
+                            )
                         elif rp[1] == nullid:
-                            ui.note(_("warning: %s@%s: copy source"
-                                      " revision is nullid %s:%s\n")
-                                % (f, lr, rp[0], short(rp[1])))
+                            ui.note(
+                                _(
+                                    "warning: %s@%s: copy source"
+                                    " revision is nullid %s:%s\n"
+                                )
+                                % (f, lr, rp[0], short(rp[1]))
+                            )
                         else:
                             fl2.rev(rp[1])
                 except Exception as inst:
-                    self._exc(lr, _("checking rename of %s") % short(n),
-                              inst, f)
+                    self._exc(
+                        lr, _("checking rename of %s") % short(n), inst, f
+                    )
 
             # cross-check
             if f in filenodes:
                 fns = [(v, k) for k, v in filenodes[f].iteritems()]
                 for lr, node in sorted(fns):
-                    self._err(lr, _("manifest refers to unknown revision %s") %
-                              short(node), f)
+                    self._err(
+                        lr,
+                        _("manifest refers to unknown revision %s")
+                        % short(node),
+                        f,
+                    )
         progress.complete()
 
         if self.warnorphanstorefiles:

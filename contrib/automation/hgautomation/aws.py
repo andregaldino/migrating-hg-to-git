@@ -19,9 +19,7 @@ import time
 import boto3
 import botocore.exceptions
 
-from .linux import (
-    BOOTSTRAP_DEBIAN,
-)
+from .linux import BOOTSTRAP_DEBIAN
 from .ssh import (
     exec_command as ssh_exec_command,
     wait_for_ssh,
@@ -32,10 +30,13 @@ from .winrm import (
 )
 
 
-SOURCE_ROOT = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent.parent
+SOURCE_ROOT = pathlib.Path(
+    os.path.abspath(__file__)
+).parent.parent.parent.parent
 
-INSTALL_WINDOWS_DEPENDENCIES = (SOURCE_ROOT / 'contrib' /
-                                'install-windows-dependencies.ps1')
+INSTALL_WINDOWS_DEPENDENCIES = (
+    SOURCE_ROOT / 'contrib' / 'install-windows-dependencies.ps1'
+)
 
 
 INSTANCE_TYPES_WITH_STORAGE = {
@@ -107,7 +108,6 @@ SECURITY_GROUPS = {
                         'Description': 'RDP from entire Internet',
                     },
                 ],
-
             },
             {
                 'FromPort': 5985,
@@ -119,7 +119,7 @@ SECURITY_GROUPS = {
                         'Description': 'PowerShell Remoting (Windows Remote Management)',
                     },
                 ],
-            }
+            },
         ],
     },
 }
@@ -152,11 +152,7 @@ ASSUME_ROLE_POLICY_DOCUMENT = '''
 
 
 IAM_INSTANCE_PROFILES = {
-    'ephemeral-ec2-1': {
-        'roles': [
-            'ephemeral-ec2-role-1',
-        ],
-    }
+    'ephemeral-ec2-1': {'roles': ['ephemeral-ec2-role-1',],}
 }
 
 
@@ -226,7 +222,7 @@ Install-WindowsFeature -Name Net-Framework-Core
 class AWSConnection:
     """Manages the state of a connection with AWS."""
 
-    def __init__(self, automation, region: str, ensure_ec2_state: bool=True):
+    def __init__(self, automation, region: str, ensure_ec2_state: bool = True):
         self.automation = automation
         self.local_state_path = automation.state_path
 
@@ -257,10 +253,19 @@ def rsa_key_fingerprint(p: pathlib.Path):
 
     # TODO use rsa package.
     res = subprocess.run(
-        ['openssl', 'pkcs8', '-in', str(p), '-nocrypt', '-topk8',
-         '-outform', 'DER'],
+        [
+            'openssl',
+            'pkcs8',
+            '-in',
+            str(p),
+            '-nocrypt',
+            '-topk8',
+            '-outform',
+            'DER',
+        ],
         capture_output=True,
-        check=True)
+        check=True,
+    )
 
     sha1 = hashlib.sha1(res.stdout).hexdigest()
     return ':'.join(a + b for a, b in zip(sha1[::2], sha1[1::2]))
@@ -271,7 +276,7 @@ def ensure_key_pairs(state_path: pathlib.Path, ec2resource, prefix='hg-'):
 
     for kpi in ec2resource.key_pairs.all():
         if kpi.name.startswith(prefix):
-            remote_existing[kpi.name[len(prefix):]] = kpi.key_fingerprint
+            remote_existing[kpi.name[len(prefix) :]] = kpi.key_fingerprint
 
     # Validate that we have these keys locally.
     key_path = state_path / 'keys'
@@ -297,7 +302,7 @@ def ensure_key_pairs(state_path: pathlib.Path, ec2resource, prefix='hg-'):
         if not f.startswith('keypair-') or not f.endswith('.pub'):
             continue
 
-        name = f[len('keypair-'):-len('.pub')]
+        name = f[len('keypair-') : -len('.pub')]
 
         pub_full = key_path / f
         priv_full = key_path / ('keypair-%s' % name)
@@ -306,8 +311,9 @@ def ensure_key_pairs(state_path: pathlib.Path, ec2resource, prefix='hg-'):
             data = fh.read()
 
         if not data.startswith('ssh-rsa '):
-            print('unexpected format for key pair file: %s; removing' %
-                  pub_full)
+            print(
+                'unexpected format for key pair file: %s; removing' % pub_full
+            )
             pub_full.unlink()
             priv_full.unlink()
             continue
@@ -327,8 +333,10 @@ def ensure_key_pairs(state_path: pathlib.Path, ec2resource, prefix='hg-'):
             del local_existing[name]
 
         elif remote_existing[name] != local_existing[name]:
-            print('key fingerprint mismatch for %s; '
-                  'removing from local and remote' % name)
+            print(
+                'key fingerprint mismatch for %s; '
+                'removing from local and remote' % name
+            )
             remove_local(name)
             remove_remote('%s%s' % (prefix, name))
             del local_existing[name]
@@ -356,15 +364,18 @@ def ensure_key_pairs(state_path: pathlib.Path, ec2resource, prefix='hg-'):
             subprocess.run(
                 ['ssh-keygen', '-y', '-f', str(priv_full)],
                 stdout=fh,
-                check=True)
+                check=True,
+            )
 
         pub_full.chmod(0o0600)
 
 
 def delete_instance_profile(profile):
     for role in profile.roles:
-        print('removing role %s from instance profile %s' % (role.name,
-                                                             profile.name))
+        print(
+            'removing role %s from instance profile %s'
+            % (role.name, profile.name)
+        )
         profile.remove_role(RoleName=role.name)
 
     print('deleting instance profile %s' % profile.name)
@@ -378,7 +389,7 @@ def ensure_iam_state(iamclient, iamresource, prefix='hg-'):
 
     for profile in iamresource.instance_profiles.all():
         if profile.name.startswith(prefix):
-            remote_profiles[profile.name[len(prefix):]] = profile
+            remote_profiles[profile.name[len(prefix) :]] = profile
 
     for name in sorted(set(remote_profiles) - set(IAM_INSTANCE_PROFILES)):
         delete_instance_profile(remote_profiles[name])
@@ -388,7 +399,7 @@ def ensure_iam_state(iamclient, iamresource, prefix='hg-'):
 
     for role in iamresource.roles.all():
         if role.name.startswith(prefix):
-            remote_roles[role.name[len(prefix):]] = role
+            remote_roles[role.name[len(prefix) :]] = role
 
     for name in sorted(set(remote_roles) - set(IAM_ROLES)):
         role = remote_roles[name]
@@ -404,7 +415,8 @@ def ensure_iam_state(iamclient, iamresource, prefix='hg-'):
         print('creating IAM instance profile %s' % actual)
 
         profile = iamresource.create_instance_profile(
-            InstanceProfileName=actual)
+            InstanceProfileName=actual
+        )
         remote_profiles[name] = profile
 
         waiter = iamclient.get_waiter('instance_profile_exists')
@@ -453,23 +465,12 @@ def find_image(ec2resource, owner_id, name):
 
     images = ec2resource.images.filter(
         Filters=[
-            {
-                'Name': 'owner-id',
-                'Values': [owner_id],
-            },
-            {
-                'Name': 'state',
-                'Values': ['available'],
-            },
-            {
-                'Name': 'image-type',
-                'Values': ['machine'],
-            },
-            {
-                'Name': 'name',
-                'Values': [name],
-            },
-        ])
+            {'Name': 'owner-id', 'Values': [owner_id],},
+            {'Name': 'state', 'Values': ['available'],},
+            {'Name': 'image-type', 'Values': ['machine'],},
+            {'Name': 'name', 'Values': [name],},
+        ]
+    )
 
     for image in images:
         return image
@@ -487,7 +488,7 @@ def ensure_security_groups(ec2resource, prefix='hg-'):
 
     for group in ec2resource.security_groups.all():
         if group.group_name.startswith(prefix):
-            existing[group.group_name[len(prefix):]] = group
+            existing[group.group_name[len(prefix) :]] = group
 
     purge = set(existing) - set(SECURITY_GROUPS)
 
@@ -507,13 +508,10 @@ def ensure_security_groups(ec2resource, prefix='hg-'):
         print('adding security group %s' % actual)
 
         group_res = ec2resource.create_security_group(
-            Description=group['description'],
-            GroupName=actual,
+            Description=group['description'], GroupName=actual,
         )
 
-        group_res.authorize_ingress(
-            IpPermissions=group['ingress'],
-        )
+        group_res.authorize_ingress(IpPermissions=group['ingress'],)
 
         security_groups[name] = group_res
 
@@ -577,8 +575,10 @@ def wait_for_ip_addresses(instances):
                 instance.reload()
                 continue
 
-            print('public IP address for %s: %s' % (
-                instance.id, instance.public_ip_address))
+            print(
+                'public IP address for %s: %s'
+                % (instance.id, instance.public_ip_address)
+            )
             break
 
 
@@ -603,10 +603,7 @@ def wait_for_ssm(ssmclient, instances):
     while True:
         res = ssmclient.describe_instance_information(
             Filters=[
-                {
-                    'Key': 'InstanceIds',
-                    'Values': [i.id for i in instances],
-                },
+                {'Key': 'InstanceIds', 'Values': [i.id for i in instances],},
             ],
         )
 
@@ -628,9 +625,7 @@ def run_ssm_command(ssmclient, instances, document_name, parameters):
         InstanceIds=[i.id for i in instances],
         DocumentName=document_name,
         Parameters=parameters,
-        CloudWatchOutputConfig={
-            'CloudWatchOutputEnabled': True,
-        },
+        CloudWatchOutputConfig={'CloudWatchOutputEnabled': True,},
     )
 
     command_id = res['Command']['CommandId']
@@ -639,8 +634,7 @@ def run_ssm_command(ssmclient, instances, document_name, parameters):
         while True:
             try:
                 res = ssmclient.get_command_invocation(
-                    CommandId=command_id,
-                    InstanceId=instance.id,
+                    CommandId=command_id, InstanceId=instance.id,
                 )
             except botocore.exceptions.ClientError as e:
                 if e.response['Error']['Code'] == 'InvocationDoesNotExist':
@@ -655,8 +649,9 @@ def run_ssm_command(ssmclient, instances, document_name, parameters):
             elif res['Status'] in ('Pending', 'InProgress', 'Delayed'):
                 time.sleep(2)
             else:
-                raise Exception('command failed on %s: %s' % (
-                    instance.id, res['Status']))
+                raise Exception(
+                    'command failed on %s: %s' % (instance.id, res['Status'])
+                )
 
 
 @contextlib.contextmanager
@@ -711,10 +706,12 @@ def create_temp_windows_ec2_instances(c: AWSConnection, config):
     config['IamInstanceProfile'] = {
         'Name': 'hg-ephemeral-ec2-1',
     }
-    config.setdefault('TagSpecifications', []).append({
-        'ResourceType': 'instance',
-        'Tags': [{'Key': 'Name', 'Value': 'hg-temp-windows'}],
-    })
+    config.setdefault('TagSpecifications', []).append(
+        {
+            'ResourceType': 'instance',
+            'Tags': [{'Key': 'Name', 'Value': 'hg-temp-windows'}],
+        }
+    )
     config['UserData'] = WINDOWS_USER_DATA % password
 
     with temporary_ec2_instances(c.ec2resource, config) as instances:
@@ -723,7 +720,9 @@ def create_temp_windows_ec2_instances(c: AWSConnection, config):
         print('waiting for Windows Remote Management service...')
 
         for instance in instances:
-            client = wait_for_winrm(instance.public_ip_address, 'Administrator', password)
+            client = wait_for_winrm(
+                instance.public_ip_address, 'Administrator', password
+            )
             print('established WinRM connection to %s' % instance.id)
             instance.winrm_client = client
 
@@ -748,14 +747,17 @@ def find_and_reconcile_image(ec2resource, name, fingerprint):
     # Store a reference to a good image so it can be returned one the
     # image state is reconciled.
     images = ec2resource.images.filter(
-        Filters=[{'Name': 'name', 'Values': [name]}])
+        Filters=[{'Name': 'name', 'Values': [name]}]
+    )
 
     existing_image = None
 
     for image in images:
         if image.tags is None:
-            print('image %s for %s lacks required tags; removing' % (
-                image.id, image.name))
+            print(
+                'image %s for %s lacks required tags; removing'
+                % (image.id, image.name)
+            )
             remove_ami(ec2resource, image)
         else:
             tags = {t['Key']: t['Value'] for t in image.tags}
@@ -763,15 +765,18 @@ def find_and_reconcile_image(ec2resource, name, fingerprint):
             if tags.get('HGIMAGEFINGERPRINT') == fingerprint:
                 existing_image = image
             else:
-                print('image %s for %s has wrong fingerprint; removing' % (
-                      image.id, image.name))
+                print(
+                    'image %s for %s has wrong fingerprint; removing'
+                    % (image.id, image.name)
+                )
                 remove_ami(ec2resource, image)
 
     return existing_image
 
 
-def create_ami_from_instance(ec2client, instance, name, description,
-                             fingerprint):
+def create_ami_from_instance(
+    ec2client, instance, name, description, fingerprint
+):
     """Create an AMI from a running instance.
 
     Returns the ``ec2resource.Image`` representing the created AMI.
@@ -779,29 +784,19 @@ def create_ami_from_instance(ec2client, instance, name, description,
     instance.stop()
 
     ec2client.get_waiter('instance_stopped').wait(
-        InstanceIds=[instance.id],
-        WaiterConfig={
-            'Delay': 5,
-        })
+        InstanceIds=[instance.id], WaiterConfig={'Delay': 5,}
+    )
     print('%s is stopped' % instance.id)
 
-    image = instance.create_image(
-        Name=name,
-        Description=description,
-    )
+    image = instance.create_image(Name=name, Description=description,)
 
-    image.create_tags(Tags=[
-        {
-            'Key': 'HGIMAGEFINGERPRINT',
-            'Value': fingerprint,
-        },
-    ])
+    image.create_tags(
+        Tags=[{'Key': 'HGIMAGEFINGERPRINT', 'Value': fingerprint,},]
+    )
 
     print('waiting for image %s' % image.id)
 
-    ec2client.get_waiter('image_available').wait(
-        ImageIds=[image.id],
-    )
+    ec2client.get_waiter('image_available').wait(ImageIds=[image.id],)
 
     print('image %s available as %s' % (image.id, image.name))
 
@@ -827,9 +822,7 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
         ssh_username = 'admin'
     elif distro == 'debian10':
         image = find_image(
-            ec2resource,
-            DEBIAN_ACCOUNT_ID_2,
-            'debian-10-amd64-20190909-10',
+            ec2resource, DEBIAN_ACCOUNT_ID_2, 'debian-10-amd64-20190909-10',
         )
         ssh_username = 'admin'
     elif distro == 'ubuntu18.04':
@@ -871,10 +864,12 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
         'SecurityGroupIds': [c.security_groups['linux-dev-1'].id],
     }
 
-    requirements2_path = (pathlib.Path(__file__).parent.parent /
-                          'linux-requirements-py2.txt')
-    requirements3_path = (pathlib.Path(__file__).parent.parent /
-                          'linux-requirements-py3.txt')
+    requirements2_path = (
+        pathlib.Path(__file__).parent.parent / 'linux-requirements-py2.txt'
+    )
+    requirements3_path = (
+        pathlib.Path(__file__).parent.parent / 'linux-requirements-py3.txt'
+    )
     with requirements2_path.open('r', encoding='utf-8') as fh:
         requirements2 = fh.read()
     with requirements3_path.open('r', encoding='utf-8') as fh:
@@ -882,12 +877,14 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
 
     # Compute a deterministic fingerprint to determine whether image needs to
     # be regenerated.
-    fingerprint = resolve_fingerprint({
-        'instance_config': config,
-        'bootstrap_script': BOOTSTRAP_DEBIAN,
-        'requirements_py2': requirements2,
-        'requirements_py3': requirements3,
-    })
+    fingerprint = resolve_fingerprint(
+        {
+            'instance_config': config,
+            'bootstrap_script': BOOTSTRAP_DEBIAN,
+            'requirements_py2': requirements2,
+            'requirements_py3': requirements3,
+        }
+    )
 
     existing_image = find_and_reconcile_image(ec2resource, name, fingerprint)
 
@@ -902,9 +899,11 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
         instance = instances[0]
 
         client = wait_for_ssh(
-            instance.public_ip_address, 22,
+            instance.public_ip_address,
+            22,
             username=ssh_username,
-            key_filename=str(c.key_pair_path_private('automation')))
+            key_filename=str(c.key_pair_path_private('automation')),
+        )
 
         home = '/home/%s' % ssh_username
 
@@ -926,8 +925,9 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
                 fh.chmod(0o0700)
 
             print('executing bootstrap')
-            chan, stdin, stdout = ssh_exec_command(client,
-                                                   '%s/bootstrap' % home)
+            chan, stdin, stdout = ssh_exec_command(
+                client, '%s/bootstrap' % home
+            )
             stdin.close()
 
             for line in stdout:
@@ -937,17 +937,28 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
             if res:
                 raise Exception('non-0 exit from bootstrap: %d' % res)
 
-            print('bootstrap completed; stopping %s to create %s' % (
-                  instance.id, name))
+            print(
+                'bootstrap completed; stopping %s to create %s'
+                % (instance.id, name)
+            )
 
-        return create_ami_from_instance(ec2client, instance, name,
-                                        'Mercurial Linux development environment',
-                                        fingerprint)
+        return create_ami_from_instance(
+            ec2client,
+            instance,
+            name,
+            'Mercurial Linux development environment',
+            fingerprint,
+        )
 
 
 @contextlib.contextmanager
-def temporary_linux_dev_instances(c: AWSConnection, image, instance_type,
-                                  prefix='hg-', ensure_extra_volume=False):
+def temporary_linux_dev_instances(
+    c: AWSConnection,
+    image,
+    instance_type,
+    prefix='hg-',
+    ensure_extra_volume=False,
+):
     """Create temporary Linux development EC2 instances.
 
     Context manager resolves to a list of ``ec2.Instance`` that were created
@@ -979,8 +990,9 @@ def temporary_linux_dev_instances(c: AWSConnection, image, instance_type,
 
     # This is not an exhaustive list of instance types having instance storage.
     # But
-    if (ensure_extra_volume
-        and not instance_type.startswith(tuple(INSTANCE_TYPES_WITH_STORAGE))):
+    if ensure_extra_volume and not instance_type.startswith(
+        tuple(INSTANCE_TYPES_WITH_STORAGE)
+    ):
         main_device = block_device_mappings[0]['DeviceName']
 
         if main_device == 'xvda':
@@ -988,17 +1000,20 @@ def temporary_linux_dev_instances(c: AWSConnection, image, instance_type,
         elif main_device == '/dev/sda1':
             second_device = '/dev/sdb'
         else:
-            raise ValueError('unhandled primary EBS device name: %s' %
-                             main_device)
+            raise ValueError(
+                'unhandled primary EBS device name: %s' % main_device
+            )
 
-        block_device_mappings.append({
-            'DeviceName': second_device,
-            'Ebs': {
-                'DeleteOnTermination': True,
-                'VolumeSize': 8,
-                'VolumeType': 'gp2',
+        block_device_mappings.append(
+            {
+                'DeviceName': second_device,
+                'Ebs': {
+                    'DeleteOnTermination': True,
+                    'VolumeSize': 8,
+                    'VolumeType': 'gp2',
+                },
             }
-        })
+        )
 
     config = {
         'BlockDeviceMappings': block_device_mappings,
@@ -1019,9 +1034,11 @@ def temporary_linux_dev_instances(c: AWSConnection, image, instance_type,
 
         for instance in instances:
             client = wait_for_ssh(
-                instance.public_ip_address, 22,
+                instance.public_ip_address,
+                22,
                 username='hg',
-                key_filename=ssh_private_key_path)
+                key_filename=ssh_private_key_path,
+            )
 
             instance.ssh_client = client
             instance.ssh_private_key_path = ssh_private_key_path
@@ -1033,8 +1050,9 @@ def temporary_linux_dev_instances(c: AWSConnection, image, instance_type,
                 instance.ssh_client.close()
 
 
-def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-',
-                           base_image_name=WINDOWS_BASE_IMAGE_NAME):
+def ensure_windows_dev_ami(
+    c: AWSConnection, prefix='hg-', base_image_name=WINDOWS_BASE_IMAGE_NAME
+):
     """Ensure Windows Development AMI is available and up-to-date.
 
     If necessary, a modern AMI will be built by starting a temporary EC2
@@ -1100,13 +1118,15 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-',
 
     # Compute a deterministic fingerprint to determine whether image needs
     # to be regenerated.
-    fingerprint = resolve_fingerprint({
-        'instance_config': config,
-        'user_data': WINDOWS_USER_DATA,
-        'initial_bootstrap': WINDOWS_BOOTSTRAP_POWERSHELL,
-        'bootstrap_commands': commands,
-        'base_image_name': base_image_name,
-    })
+    fingerprint = resolve_fingerprint(
+        {
+            'instance_config': config,
+            'user_data': WINDOWS_USER_DATA,
+            'initial_bootstrap': WINDOWS_BOOTSTRAP_POWERSHELL,
+            'bootstrap_commands': commands,
+            'base_image_name': base_image_name,
+        }
+    )
 
     existing_image = find_and_reconcile_image(ec2resource, name, fingerprint)
 
@@ -1131,9 +1151,7 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-',
             ssmclient,
             [instance],
             'AWS-RunPowerShellScript',
-            {
-                'commands': WINDOWS_BOOTSTRAP_POWERSHELL.split('\n'),
-            },
+            {'commands': WINDOWS_BOOTSTRAP_POWERSHELL.split('\n'),},
         )
 
         # Reboot so all updates are fully applied.
@@ -1145,10 +1163,8 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-',
         print('rebooting instance %s' % instance.id)
         instance.stop()
         ec2client.get_waiter('instance_stopped').wait(
-            InstanceIds=[instance.id],
-            WaiterConfig={
-                'Delay': 5,
-            })
+            InstanceIds=[instance.id], WaiterConfig={'Delay': 5,}
+        )
 
         instance.start()
         wait_for_ip_addresses([instance])
@@ -1159,8 +1175,11 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-',
         # TODO figure out a workaround.
 
         print('waiting for Windows Remote Management to come back...')
-        client = wait_for_winrm(instance.public_ip_address, 'Administrator',
-                                c.automation.default_password())
+        client = wait_for_winrm(
+            instance.public_ip_address,
+            'Administrator',
+            c.automation.default_password(),
+        )
         print('established WinRM connection to %s' % instance.id)
         instance.winrm_client = client
 
@@ -1168,14 +1187,23 @@ def ensure_windows_dev_ami(c: AWSConnection, prefix='hg-',
         run_powershell(instance.winrm_client, '\n'.join(commands))
 
         print('bootstrap completed; stopping %s to create image' % instance.id)
-        return create_ami_from_instance(ec2client, instance, name,
-                                        'Mercurial Windows development environment',
-                                        fingerprint)
+        return create_ami_from_instance(
+            ec2client,
+            instance,
+            name,
+            'Mercurial Windows development environment',
+            fingerprint,
+        )
 
 
 @contextlib.contextmanager
-def temporary_windows_dev_instances(c: AWSConnection, image, instance_type,
-                                    prefix='hg-', disable_antivirus=False):
+def temporary_windows_dev_instances(
+    c: AWSConnection,
+    image,
+    instance_type,
+    prefix='hg-',
+    disable_antivirus=False,
+):
     """Create a temporary Windows development EC2 instance.
 
     Context manager resolves to the list of ``EC2.Instance`` that were created.
@@ -1205,6 +1233,7 @@ def temporary_windows_dev_instances(c: AWSConnection, image, instance_type,
             for instance in instances:
                 run_powershell(
                     instance.winrm_client,
-                    'Set-MpPreference -DisableRealtimeMonitoring $true')
+                    'Set-MpPreference -DisableRealtimeMonitoring $true',
+                )
 
         yield instances

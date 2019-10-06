@@ -2,16 +2,12 @@ from __future__ import absolute_import, print_function
 
 import contextlib
 
-from .. import (
-    node as nodemod,
-)
+from .. import node as nodemod
 
-from . import (
-    util as interfaceutil,
-)
+from . import util as interfaceutil
+
 
 class idirstate(interfaceutil.Interface):
-
     def __init__(opener, ui, root, validate, sparsematchfn):
         '''Create a new dirstate object.
 

@@ -33,29 +33,27 @@ from __future__ import absolute_import
 
 import socket
 
-from mercurial import(
+from mercurial import (
     pycompat,
     registrar,
 )
 
-from mercurial.hgweb import (
-    server,
-)
+from mercurial.hgweb import server
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem(b'badserver', b'closeafteraccept',
-    default=False,
+configitem(
+    b'badserver', b'closeafteraccept', default=False,
 )
-configitem(b'badserver', b'closeafterrecvbytes',
-    default=b'0',
+configitem(
+    b'badserver', b'closeafterrecvbytes', default=b'0',
 )
-configitem(b'badserver', b'closeaftersendbytes',
-    default=b'0',
+configitem(
+    b'badserver', b'closeaftersendbytes', default=b'0',
 )
-configitem(b'badserver', b'closebeforeaccept',
-    default=False,
+configitem(
+    b'badserver', b'closebeforeaccept', default=False,
 )
 
 # We can't adjust __class__ on a socket instance. So we define a proxy type.
@@ -67,8 +65,9 @@ class socketproxy(object):
         '_closeaftersendbytes',
     )
 
-    def __init__(self, obj, logfp, closeafterrecvbytes=0,
-                 closeaftersendbytes=0):
+    def __init__(
+        self, obj, logfp, closeafterrecvbytes=0, closeaftersendbytes=0
+    ):
         object.__setattr__(self, '_orig', obj)
         object.__setattr__(self, '_logfp', logfp)
         object.__setattr__(self, '_closeafterrecvbytes', closeafterrecvbytes)
@@ -97,14 +96,19 @@ class socketproxy(object):
         f = object.__getattribute__(self, '_orig').makefile(mode, bufsize)
 
         logfp = object.__getattribute__(self, '_logfp')
-        closeafterrecvbytes = object.__getattribute__(self,
-                                                      '_closeafterrecvbytes')
-        closeaftersendbytes = object.__getattribute__(self,
-                                                      '_closeaftersendbytes')
+        closeafterrecvbytes = object.__getattribute__(
+            self, '_closeafterrecvbytes'
+        )
+        closeaftersendbytes = object.__getattribute__(
+            self, '_closeaftersendbytes'
+        )
 
-        return fileobjectproxy(f, logfp,
-                               closeafterrecvbytes=closeafterrecvbytes,
-                               closeaftersendbytes=closeaftersendbytes)
+        return fileobjectproxy(
+            f,
+            logfp,
+            closeafterrecvbytes=closeafterrecvbytes,
+            closeaftersendbytes=closeaftersendbytes,
+        )
 
     def sendall(self, data, flags=0):
         remaining = object.__getattribute__(self, '_closeaftersendbytes')
@@ -124,8 +128,10 @@ class socketproxy(object):
 
         result = object.__getattribute__(self, '_orig').sendall(newdata, flags)
 
-        self._writelog(b'sendall(%d from %d) -> (%d) %s' % (
-            len(newdata), len(data), remaining, newdata))
+        self._writelog(
+            b'sendall(%d from %d) -> (%d) %s'
+            % (len(newdata), len(data), remaining, newdata)
+        )
 
         object.__setattr__(self, '_closeaftersendbytes', remaining)
 
@@ -147,8 +153,9 @@ class fileobjectproxy(object):
         '_closeaftersendbytes',
     )
 
-    def __init__(self, obj, logfp, closeafterrecvbytes=0,
-                 closeaftersendbytes=0):
+    def __init__(
+        self, obj, logfp, closeafterrecvbytes=0, closeaftersendbytes=0
+    ):
         object.__setattr__(self, '_orig', obj)
         object.__setattr__(self, '_logfp', logfp)
         object.__setattr__(self, '_closeafterrecvbytes', closeafterrecvbytes)
@@ -192,9 +199,9 @@ class fileobjectproxy(object):
         # No read limit. Call original function.
         if not remaining:
             result = object.__getattribute__(self, '_orig').read(size)
-            self._writelog(b'read(%d) -> (%d) (%s) %s' % (size,
-                                                          len(result),
-                                                          result))
+            self._writelog(
+                b'read(%d) -> (%d) (%s) %s' % (size, len(result), result)
+            )
             return result
 
         origsize = size
@@ -207,8 +214,10 @@ class fileobjectproxy(object):
         result = object.__getattribute__(self, '_orig').read(size)
         remaining -= len(result)
 
-        self._writelog(b'read(%d from %d) -> (%d) %s' % (
-            size, origsize, len(result), result))
+        self._writelog(
+            b'read(%d from %d) -> (%d) %s'
+            % (size, origsize, len(result), result)
+        )
 
         object.__setattr__(self, '_closeafterrecvbytes', remaining)
 
@@ -227,8 +236,9 @@ class fileobjectproxy(object):
         # No read limit. Call original function.
         if not remaining:
             result = object.__getattribute__(self, '_orig').readline(size)
-            self._writelog(b'readline(%d) -> (%d) %s' % (
-                size, len(result), result))
+            self._writelog(
+                b'readline(%d) -> (%d) %s' % (size, len(result), result)
+            )
             return result
 
         origsize = size
@@ -241,8 +251,10 @@ class fileobjectproxy(object):
         result = object.__getattribute__(self, '_orig').readline(size)
         remaining -= len(result)
 
-        self._writelog(b'readline(%d from %d) -> (%d) %s' % (
-            size, origsize, len(result), result))
+        self._writelog(
+            b'readline(%d from %d) -> (%d) %s'
+            % (size, origsize, len(result), result)
+        )
 
         object.__setattr__(self, '_closeafterrecvbytes', remaining)
 
@@ -271,8 +283,10 @@ class fileobjectproxy(object):
 
         remaining -= len(newdata)
 
-        self._writelog(b'write(%d from %d) -> (%d) %s' % (
-            len(newdata), len(data), remaining, newdata))
+        self._writelog(
+            b'write(%d from %d) -> (%d) %s'
+            % (len(newdata), len(data), remaining, newdata)
+        )
 
         result = object.__getattribute__(self, '_orig').write(newdata)
 
@@ -285,6 +299,7 @@ class fileobjectproxy(object):
             raise Exception('connection closed after sending N bytes')
 
         return result
+
 
 def extsetup(ui):
     # Change the base HTTP server class so various events can be performed.
@@ -310,8 +325,9 @@ def extsetup(ui):
                     elif name.lower() == 'server':
                         value = 'badhttpserver'
 
-                    return super(badrequesthandler, self).send_header(name,
-                                                                      value)
+                    return super(badrequesthandler, self).send_header(
+                        name, value
+                    )
 
             self.RequestHandlerClass = badrequesthandler
 
@@ -348,9 +364,12 @@ def extsetup(ui):
                 closeaftersendbytes = 0
 
             if closeafterrecvbytes or closeaftersendbytes:
-                socket = socketproxy(socket, self.errorlog,
-                                     closeafterrecvbytes=closeafterrecvbytes,
-                                     closeaftersendbytes=closeaftersendbytes)
+                socket = socketproxy(
+                    socket,
+                    self.errorlog,
+                    closeafterrecvbytes=closeafterrecvbytes,
+                    closeaftersendbytes=closeaftersendbytes,
+                )
 
             return super(badserver, self).process_request(socket, address)
 

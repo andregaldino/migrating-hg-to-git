@@ -25,6 +25,7 @@ from .utils import (
     stringutil,
 )
 
+
 def _serverquote(s):
     """quote a string for the remote shell ... which we assume is sh"""
     if not s:
@@ -32,6 +33,7 @@ def _serverquote(s):
     if re.match('[a-zA-Z0-9@%_+=:,./-]*$', s):
         return s
     return "'%s'" % s.replace("'", "'\\''")
+
 
 def _forwardoutput(ui, pipe):
     """display all data currently available on pipe as remote output.
@@ -42,6 +44,7 @@ def _forwardoutput(ui, pipe):
         if s:
             for l in s.splitlines():
                 ui.status(_("remote: "), l, '\n')
+
 
 class doublepipe(object):
     """Operate a side-channel pipe in addition of a main one
@@ -72,8 +75,10 @@ class doublepipe(object):
 
         (This will only wait for data if the setup is supported by `util.poll`)
         """
-        if (isinstance(self._main, util.bufferedinputpipe) and
-            self._main.hasbuffer):
+        if (
+            isinstance(self._main, util.bufferedinputpipe)
+            and self._main.hasbuffer
+        ):
             # Main has data. Assume side is worth poking at.
             return True, True
 
@@ -137,6 +142,7 @@ class doublepipe(object):
     def flush(self):
         return self._main.flush()
 
+
 def _cleanuppipes(ui, pipei, pipeo, pipee):
     """Clean up pipes used by an SSH connection."""
     if pipeo:
@@ -154,6 +160,7 @@ def _cleanuppipes(ui, pipei, pipeo, pipee):
 
         pipee.close()
 
+
 def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
     """Create an SSH connection to a server.
 
@@ -163,8 +170,11 @@ def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
     cmd = '%s %s %s' % (
         sshcmd,
         args,
-        procutil.shellquote('%s -R %s serve --stdio' % (
-            _serverquote(remotecmd), _serverquote(path))))
+        procutil.shellquote(
+            '%s -R %s serve --stdio'
+            % (_serverquote(remotecmd), _serverquote(path))
+        ),
+    )
 
     ui.debug('running %s\n' % cmd)
     cmd = procutil.quotecommand(cmd)
@@ -176,16 +186,20 @@ def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
 
     return proc, stdin, stdout, stderr
 
+
 def _clientcapabilities():
     """Return list of capabilities of this client.
 
     Returns a list of capabilities that are supported by this client.
     """
     protoparams = {'partial-pull'}
-    comps = [e.wireprotosupport().name for e in
-             util.compengines.supportedwireengines(util.CLIENTROLE)]
+    comps = [
+        e.wireprotosupport().name
+        for e in util.compengines.supportedwireengines(util.CLIENTROLE)
+    ]
     protoparams.add('comp=%s' % ','.join(comps))
     return protoparams
+
 
 def _performhandshake(ui, stdin, stdout, stderr):
     def badresponse():
@@ -363,9 +377,11 @@ def _performhandshake(ui, stdin, stdout, stderr):
 
     return protoname, caps
 
+
 class sshv1peer(wireprotov1peer.wirepeer):
-    def __init__(self, ui, url, proc, stdin, stdout, stderr, caps,
-                 autoreadstderr=True):
+    def __init__(
+        self, ui, url, proc, stdin, stdout, stderr, caps, autoreadstderr=True
+    ):
         """Create a peer from an existing SSH connection.
 
         ``proc`` is a handle on the underlying SSH process.
@@ -438,8 +454,9 @@ class sshv1peer(wireprotov1peer.wirepeer):
     __del__ = _cleanup
 
     def _sendrequest(self, cmd, args, framed=False):
-        if (self.ui.debugflag
-            and self.ui.configbool('devel', 'debug.peer-request')):
+        if self.ui.debugflag and self.ui.configbool(
+            'devel', 'debug.peer-request'
+        ):
             dbg = self.ui.debug
             line = 'devel-peer-request: %s\n'
             dbg(line % cmd)
@@ -560,11 +577,14 @@ class sshv1peer(wireprotov1peer.wirepeer):
         if self._autoreadstderr:
             self._readerr()
 
+
 class sshv2peer(sshv1peer):
     """A peer that speakers version 2 of the transport protocol."""
+
     # Currently version 2 is identical to version 1 post handshake.
     # And handshake is performed before the peer is instantiated. So
     # we need no custom code.
+
 
 def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
     """Make a peer instance from existing pipes.
@@ -587,15 +607,33 @@ def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
         raise
 
     if protoname == wireprototypes.SSHV1:
-        return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps,
-                         autoreadstderr=autoreadstderr)
+        return sshv1peer(
+            ui,
+            path,
+            proc,
+            stdin,
+            stdout,
+            stderr,
+            caps,
+            autoreadstderr=autoreadstderr,
+        )
     elif protoname == wireprototypes.SSHV2:
-        return sshv2peer(ui, path, proc, stdin, stdout, stderr, caps,
-                         autoreadstderr=autoreadstderr)
+        return sshv2peer(
+            ui,
+            path,
+            proc,
+            stdin,
+            stdout,
+            stderr,
+            caps,
+            autoreadstderr=autoreadstderr,
+        )
     else:
         _cleanuppipes(ui, stdout, stdin, stderr)
-        raise error.RepoError(_('unknown version of SSH protocol: %s') %
-                              protoname)
+        raise error.RepoError(
+            _('unknown version of SSH protocol: %s') % protoname
+        )
+
 
 def instance(ui, path, create, intents=None, createopts=None):
     """Create an SSH peer.
@@ -625,19 +663,26 @@ def instance(ui, path, create, intents=None, createopts=None):
         # querying the remote, there's no way of knowing if the remote even
         # supports said requested feature.
         if createopts:
-            raise error.RepoError(_('cannot create remote SSH repositories '
-                                    'with extra options'))
+            raise error.RepoError(
+                _('cannot create remote SSH repositories ' 'with extra options')
+            )
 
-        cmd = '%s %s %s' % (sshcmd, args,
-            procutil.shellquote('%s init %s' %
-                (_serverquote(remotecmd), _serverquote(remotepath))))
+        cmd = '%s %s %s' % (
+            sshcmd,
+            args,
+            procutil.shellquote(
+                '%s init %s'
+                % (_serverquote(remotecmd), _serverquote(remotepath))
+            ),
+        )
         ui.debug('running %s\n' % cmd)
         res = ui.system(cmd, blockedtag='sshpeer', environ=sshenv)
         if res != 0:
             raise error.RepoError(_('could not create remote repo'))
 
-    proc, stdin, stdout, stderr = _makeconnection(ui, sshcmd, args, remotecmd,
-                                                  remotepath, sshenv)
+    proc, stdin, stdout, stderr = _makeconnection(
+        ui, sshcmd, args, remotecmd, remotepath, sshenv
+    )
 
     peer = makepeer(ui, path, proc, stdin, stdout, stderr)
 
@@ -645,8 +690,9 @@ def instance(ui, path, create, intents=None, createopts=None):
     # capabilities.
     if 'protocaps' in peer.capabilities():
         try:
-            peer._call("protocaps",
-                       caps=' '.join(sorted(_clientcapabilities())))
+            peer._call(
+                "protocaps", caps=' '.join(sorted(_clientcapabilities()))
+            )
         except IOError:
             peer._cleanup()
             raise error.RepoError(_('capability exchange failed'))

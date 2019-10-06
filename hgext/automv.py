@@ -35,22 +35,23 @@ from mercurial import (
     pycompat,
     registrar,
     scmutil,
-    similar
+    similar,
 )
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('automv', 'similarity',
-    default=95,
+configitem(
+    'automv', 'similarity', default=95,
 )
 
+
 def extsetup(ui):
-    entry = extensions.wrapcommand(
-        commands.table, 'commit', mvcheck)
+    entry = extensions.wrapcommand(commands.table, 'commit', mvcheck)
     entry[1].append(
-        ('', 'no-automv', None,
-         _('disable automatic file move detection')))
+        ('', 'no-automv', None, _('disable automatic file move detection'))
+    )
+
 
 def mvcheck(orig, ui, repo, *pats, **opts):
     """Hook to check for moves at commit time"""
@@ -65,13 +66,15 @@ def mvcheck(orig, ui, repo, *pats, **opts):
             match = scmutil.match(repo[None], pats, opts)
             added, removed = _interestingfiles(repo, match)
             uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
-            renames = _findrenames(repo, uipathfn, added, removed,
-                                   threshold / 100.0)
+            renames = _findrenames(
+                repo, uipathfn, added, removed, threshold / 100.0
+            )
 
     with repo.wlock():
         if renames is not None:
             scmutil._markchanges(repo, (), (), renames)
         return orig(ui, repo, *pats, **pycompat.strkwargs(opts))
+
 
 def _interestingfiles(repo, matcher):
     """Find what files were added or removed in this commit.
@@ -90,6 +93,7 @@ def _interestingfiles(repo, matcher):
 
     return added, removed
 
+
 def _findrenames(repo, uipathfn, added, removed, similarity):
     """Find what files in added are really moved files.
 
@@ -100,11 +104,13 @@ def _findrenames(repo, uipathfn, added, removed, similarity):
     renames = {}
     if similarity > 0:
         for src, dst, score in similar.findrenames(
-                repo, added, removed, similarity):
+            repo, added, removed, similarity
+        ):
             if repo.ui.verbose:
                 repo.ui.status(
-                    _('detected move of %s as %s (%d%% similar)\n') % (
-                        uipathfn(src), uipathfn(dst), score * 100))
+                    _('detected move of %s as %s (%d%% similar)\n')
+                    % (uipathfn(src), uipathfn(dst), score * 100)
+                )
             renames[dst] = src
     if renames:
         repo.ui.status(_('detected move of %d files\n') % len(renames))

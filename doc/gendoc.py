@@ -12,6 +12,7 @@ import textwrap
 
 try:
     import msvcrt
+
     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
     msvcrt.setmode(sys.stderr.fileno(), os.O_BINARY)
 except ImportError:
@@ -22,10 +23,13 @@ except ImportError:
 os.environ[r'HGMODULEPOLICY'] = r'allow'
 # import from the live mercurial repo
 sys.path.insert(0, r"..")
-from mercurial import demandimport; demandimport.enable()
+from mercurial import demandimport
+
+demandimport.enable()
 # Load util so that the locale path is set by i18n.setdatapath() before
 # calling _().
 from mercurial import util
+
 util.datapath
 from mercurial import (
     commands,
@@ -46,6 +50,7 @@ globalopts = commands.globalopts
 helptable = help.helptable
 loaddoc = help.loaddoc
 
+
 def get_desc(docstr):
     if not docstr:
         return b"", b""
@@ -56,13 +61,14 @@ def get_desc(docstr):
 
     i = docstr.find(b"\n")
     if i != -1:
-        desc = docstr[i + 2:]
+        desc = docstr[i + 2 :]
     else:
         desc = shortdesc
 
     desc = textwrap.dedent(desc.decode('latin1')).encode('latin1')
 
     return (shortdesc, desc)
+
 
 def get_opts(opts):
     for opt in opts:
@@ -86,6 +92,7 @@ def get_opts(opts):
         desc += default and _(b" (default: %s)") % bytes(default) or b""
         yield (b", ".join(allopts), desc)
 
+
 def get_cmd(cmd, cmdtable):
     d = {}
     attr = cmdtable[cmd]
@@ -105,6 +112,7 @@ def get_cmd(cmd, cmdtable):
     d[b'synopsis'] = s.strip()
 
     return d
+
 
 def showdoc(ui):
     # print options
@@ -127,14 +135,22 @@ def showdoc(ui):
     helpprinter(ui, helptable, minirst.section, exclude=[b'config'])
 
     ui.write(minirst.section(_(b"Extensions")))
-    ui.write(_(b"This section contains help for extensions that are "
-               b"distributed together with Mercurial. Help for other "
-               b"extensions is available in the help system."))
-    ui.write((b"\n\n"
-              b".. contents::\n"
-              b"   :class: htmlonly\n"
-              b"   :local:\n"
-              b"   :depth: 1\n\n"))
+    ui.write(
+        _(
+            b"This section contains help for extensions that are "
+            b"distributed together with Mercurial. Help for other "
+            b"extensions is available in the help system."
+        )
+    )
+    ui.write(
+        (
+            b"\n\n"
+            b".. contents::\n"
+            b"   :class: htmlonly\n"
+            b"   :local:\n"
+            b"   :depth: 1\n\n"
+        )
+    )
 
     for extensionname in sorted(allextensionnames()):
         mod = extensions.load(ui, extensionname, None)
@@ -143,23 +159,41 @@ def showdoc(ui):
         cmdtable = getattr(mod, 'cmdtable', None)
         if cmdtable:
             ui.write(minirst.subsubsection(_(b'Commands')))
-            commandprinter(ui, cmdtable, minirst.subsubsubsection,
-                    minirst.subsubsubsubsection)
+            commandprinter(
+                ui,
+                cmdtable,
+                minirst.subsubsubsection,
+                minirst.subsubsubsubsection,
+            )
+
 
 def showtopic(ui, topic):
     extrahelptable = [
         ([b"common"], b'', loaddoc(b'common'), help.TOPIC_CATEGORY_MISC),
         ([b"hg.1"], b'', loaddoc(b'hg.1'), help.TOPIC_CATEGORY_CONFIG),
         ([b"hg-ssh.8"], b'', loaddoc(b'hg-ssh.8'), help.TOPIC_CATEGORY_CONFIG),
-        ([b"hgignore.5"], b'', loaddoc(b'hgignore.5'),
-         help.TOPIC_CATEGORY_CONFIG),
+        (
+            [b"hgignore.5"],
+            b'',
+            loaddoc(b'hgignore.5'),
+            help.TOPIC_CATEGORY_CONFIG,
+        ),
         ([b"hgrc.5"], b'', loaddoc(b'hgrc.5'), help.TOPIC_CATEGORY_CONFIG),
-        ([b"hgignore.5.gendoc"], b'', loaddoc(b'hgignore'),
-         help.TOPIC_CATEGORY_CONFIG),
-        ([b"hgrc.5.gendoc"], b'', loaddoc(b'config'),
-         help.TOPIC_CATEGORY_CONFIG),
+        (
+            [b"hgignore.5.gendoc"],
+            b'',
+            loaddoc(b'hgignore'),
+            help.TOPIC_CATEGORY_CONFIG,
+        ),
+        (
+            [b"hgrc.5.gendoc"],
+            b'',
+            loaddoc(b'config'),
+            help.TOPIC_CATEGORY_CONFIG,
+        ),
     ]
     helpprinter(ui, helptable + extrahelptable, None, include=[topic])
+
 
 def helpprinter(ui, helptable, sectionfunc, include=[], exclude=[]):
     for h in helptable:
@@ -177,6 +211,7 @@ def helpprinter(ui, helptable, sectionfunc, include=[], exclude=[]):
             doc = doc(ui)
         ui.write(doc)
         ui.write(b"\n")
+
 
 def commandprinter(ui, cmdtable, sectionfunc, subsectionfunc):
     """Render restructuredtext describing a list of commands and their
@@ -222,7 +257,8 @@ def commandprinter(ui, cmdtable, sectionfunc, subsectionfunc):
         if helpcategory(cmd) not in cmdsbycategory:
             raise AssertionError(
                 "The following command did not register its (category) in "
-                "help.CATEGORY_ORDER: %s (%s)" % (cmd, helpcategory(cmd)))
+                "help.CATEGORY_ORDER: %s (%s)" % (cmd, helpcategory(cmd))
+            )
         cmdsbycategory[helpcategory(cmd)].append(cmd)
 
     # Print the help for each command. We present the commands grouped by
@@ -270,15 +306,21 @@ def commandprinter(ui, cmdtable, sectionfunc, subsectionfunc):
                     if optstr.endswith(b"[+]>"):
                         multioccur = True
                 if multioccur:
-                    ui.write(_(b"\n[+] marked option can be specified"
-                               b" multiple times\n"))
+                    ui.write(
+                        _(
+                            b"\n[+] marked option can be specified"
+                            b" multiple times\n"
+                        )
+                    )
                 ui.write(b"\n")
             # aliases
             if d[b'aliases']:
                 ui.write(_(b"    aliases: %s\n\n") % b" ".join(d[b'aliases']))
 
+
 def allextensionnames():
     return set(extensions.enabled().keys()) | set(extensions.disabled().keys())
+
 
 if __name__ == "__main__":
     doc = b'hg.1.gendoc'

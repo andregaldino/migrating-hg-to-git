@@ -27,6 +27,7 @@ from . import (
     util,
 )
 
+
 def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
     """Return a tuple (common, anyincoming, heads) used to identify the common
     subset of nodes between repo and remote.
@@ -53,15 +54,20 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
         return treediscovery.findcommonincoming(repo, remote, heads, force)
 
     if heads:
-        knownnode = repo.changelog.hasnode # no nodemap until it is filtered
+        knownnode = repo.changelog.hasnode  # no nodemap until it is filtered
         if all(knownnode(h) for h in heads):
             return (heads, False, heads)
 
-    res = setdiscovery.findcommonheads(repo.ui, repo, remote,
-                                       abortwhenunrelated=not force,
-                                       ancestorsof=ancestorsof)
+    res = setdiscovery.findcommonheads(
+        repo.ui,
+        repo,
+        remote,
+        abortwhenunrelated=not force,
+        ancestorsof=ancestorsof,
+    )
     common, anyinc, srvheads = res
     return (list(common), anyinc, heads or list(srvheads))
+
 
 class outgoing(object):
     '''Represents the set of nodes present in a local repo but not in a
@@ -78,8 +84,9 @@ class outgoing(object):
     The sets are computed on demand from the heads, unless provided upfront
     by discovery.'''
 
-    def __init__(self, repo, commonheads=None, missingheads=None,
-                 missingroots=None):
+    def __init__(
+        self, repo, commonheads=None, missingheads=None, missingroots=None
+    ):
         # at least one of them must not be set
         assert None in (commonheads, missingroots)
         cl = repo.changelog
@@ -106,8 +113,9 @@ class outgoing(object):
         self.excluded = []
 
     def _computecommonmissing(self):
-        sets = self._revlog.findcommonmissing(self.commonheads,
-                                              self.missingheads)
+        sets = self._revlog.findcommonmissing(
+            self.commonheads, self.missingheads
+        )
         self._common, self._missing = sets
 
     @util.propertycache
@@ -122,8 +130,10 @@ class outgoing(object):
             self._computecommonmissing()
         return self._missing
 
-def findcommonoutgoing(repo, other, onlyheads=None, force=False,
-                       commoninc=None, portable=False):
+
+def findcommonoutgoing(
+    repo, other, onlyheads=None, force=False, commoninc=None, portable=False
+):
     '''Return an outgoing instance to identify the nodes present in repo but
     not in other.
 
@@ -141,12 +151,13 @@ def findcommonoutgoing(repo, other, onlyheads=None, force=False,
 
     # get common set if not provided
     if commoninc is None:
-        commoninc = findcommonincoming(repo, other, force=force,
-                                       ancestorsof=onlyheads)
+        commoninc = findcommonincoming(
+            repo, other, force=force, ancestorsof=onlyheads
+        )
     og.commonheads, _any, _hds = commoninc
 
     # compute outgoing
-    mayexclude = (repo._phasecache.phaseroots[phases.secret] or repo.obsstore)
+    mayexclude = repo._phasecache.phaseroots[phases.secret] or repo.obsstore
     if not mayexclude:
         og.missingheads = onlyheads or repo.heads()
     elif onlyheads is None:
@@ -167,7 +178,7 @@ def findcommonoutgoing(repo, other, onlyheads=None, force=False,
                 missing.append(node)
         if len(missing) == len(allmissing):
             missingheads = onlyheads
-        else: # update missing heads
+        else:  # update missing heads
             missingheads = phases.newheads(repo, onlyheads, excluded)
         og.missingheads = missingheads
     if portable:
@@ -182,6 +193,7 @@ def findcommonoutgoing(repo, other, onlyheads=None, force=False,
         og.missingheads = [h for h in og.missingheads if h not in commonheads]
 
     return og
+
 
 def _headssummary(pushop):
     """compute a summary of branch and heads status before and after push
@@ -212,7 +224,7 @@ def _headssummary(pushop):
     with remote.commandexecutor() as e:
         remotemap = e.callcommand('branchmap', {}).result()
 
-    knownnode = cl.hasnode # do not use nodemap until it is filtered
+    knownnode = cl.hasnode  # do not use nodemap until it is filtered
     # A. register remote heads of branches which are in outgoing set
     for branch, heads in remotemap.iteritems():
         # don't add head info about branches which we don't have locally
@@ -234,9 +246,11 @@ def _headssummary(pushop):
 
     # C. Update newmap with outgoing changes.
     # This will possibly add new heads and remove existing ones.
-    newmap = branchmap.remotebranchcache((branch, heads[1])
-                                 for branch, heads in headssum.iteritems()
-                                 if heads[0] is not None)
+    newmap = branchmap.remotebranchcache(
+        (branch, heads[1])
+        for branch, heads in headssum.iteritems()
+        if heads[0] is not None
+    )
     newmap.update(repo, (ctx.rev() for ctx in missingctx))
     for branch, newheads in newmap.iteritems():
         headssum[branch][1][:] = newheads
@@ -255,9 +269,14 @@ def _headssummary(pushop):
         for branch, heads in sorted(headssum.iteritems()):
             remoteheads, newheads, unsyncedheads, placeholder = heads
             result = _postprocessobsolete(pushop, allfuturecommon, newheads)
-            headssum[branch] = (remoteheads, sorted(result[0]), unsyncedheads,
-                                sorted(result[1]))
+            headssum[branch] = (
+                remoteheads,
+                sorted(result[0]),
+                unsyncedheads,
+                sorted(result[1]),
+            )
     return headssum
+
 
 def _oldheadssummary(repo, remoteheads, outgoing, inc=False):
     """Compute branchmapsummary for repo without branchmap support"""
@@ -265,7 +284,7 @@ def _oldheadssummary(repo, remoteheads, outgoing, inc=False):
     # 1-4b. old servers: Check for new topological heads.
     # Construct {old,new}map with branch = None (topological branch).
     # (code based on update)
-    knownnode = repo.changelog.hasnode # no nodemap until it is filtered
+    knownnode = repo.changelog.hasnode  # no nodemap until it is filtered
     oldheads = sorted(h for h in remoteheads if knownnode(h))
     # all nodes in outgoing.missing are children of either:
     # - an element of oldheads
@@ -281,6 +300,7 @@ def _oldheadssummary(repo, remoteheads, outgoing, inc=False):
         unsynced = []
     return {None: (oldheads, newheads, unsynced, [])}
 
+
 def _nowarnheads(pushop):
     # Compute newly pushed bookmarks. We don't warn about bookmarked heads.
     repo = pushop.repo.unfiltered()
@@ -288,15 +308,17 @@ def _nowarnheads(pushop):
     localbookmarks = repo._bookmarks
 
     with remote.commandexecutor() as e:
-        remotebookmarks = e.callcommand('listkeys', {
-            'namespace': 'bookmarks',
-        }).result()
+        remotebookmarks = e.callcommand(
+            'listkeys', {'namespace': 'bookmarks',}
+        ).result()
 
     bookmarkedheads = set()
 
     # internal config: bookmarks.pushing
-    newbookmarks = [localbookmarks.expandname(b)
-                    for b in pushop.ui.configlist('bookmarks', 'pushing')]
+    newbookmarks = [
+        localbookmarks.expandname(b)
+        for b in pushop.ui.configlist('bookmarks', 'pushing')
+    ]
 
     for bm in localbookmarks:
         rnode = remotebookmarks.get(bm)
@@ -309,6 +331,7 @@ def _nowarnheads(pushop):
                 bookmarkedheads.add(localbookmarks[bm])
 
     return bookmarkedheads
+
 
 def checkheads(pushop):
     """Check that a push won't add any outgoing head
@@ -338,8 +361,9 @@ def checkheads(pushop):
     else:
         headssum = _oldheadssummary(repo, remoteheads, outgoing, inc)
     pushop.pushbranchmap = headssum
-    newbranches = [branch for branch, heads in headssum.iteritems()
-                   if heads[0] is None]
+    newbranches = [
+        branch for branch, heads in headssum.iteritems() if heads[0] is None
+    ]
     # 1. Check for new branches on the remote.
     if newbranches and not newbranch:  # new branch requires --new-branch
         branchnames = ', '.join(sorted(newbranches))
@@ -348,13 +372,15 @@ def checkheads(pushop):
         for tag, heads, tip, isclosed in repo.branchmap().iterbranches():
             if isclosed:
                 closedbranches.add(tag)
-        closedbranches = (closedbranches & set(newbranches))
+        closedbranches = closedbranches & set(newbranches)
         if closedbranches:
-            errmsg = (_("push creates new remote branches: %s (%d closed)!")
-                        % (branchnames, len(closedbranches)))
+            errmsg = _("push creates new remote branches: %s (%d closed)!") % (
+                branchnames,
+                len(closedbranches),
+            )
         else:
-            errmsg = (_("push creates new remote branches: %s!")% branchnames)
-        hint=_("use 'hg push --new-branch' to create new remote branches")
+            errmsg = _("push creates new remote branches: %s!") % branchnames
+        hint = _("use 'hg push --new-branch' to create new remote branches")
         raise error.Abort(errmsg, hint=hint)
 
     # 2. Find heads that we need not warn about
@@ -372,7 +398,7 @@ def checkheads(pushop):
         else:
             oldhs = set(remoteheads)
         oldhs.update(unsyncedheads)
-        dhs = None # delta heads, the new heads on branch
+        dhs = None  # delta heads, the new heads on branch
         newhs = set(newheads)
         newhs.update(unsyncedheads)
         if unsyncedheads:
@@ -382,56 +408,73 @@ def checkheads(pushop):
             else:
                 heads = scmutil.nodesummaries(repo, unsyncedheads)
             if heads is None:
-                repo.ui.status(_("remote has heads that are "
-                                 "not known locally\n"))
+                repo.ui.status(
+                    _("remote has heads that are " "not known locally\n")
+                )
             elif branch is None:
-                repo.ui.status(_("remote has heads that are "
-                                 "not known locally: %s\n") % heads)
+                repo.ui.status(
+                    _("remote has heads that are " "not known locally: %s\n")
+                    % heads
+                )
             else:
-                repo.ui.status(_("remote has heads on branch '%s' that are "
-                                 "not known locally: %s\n") % (branch, heads))
+                repo.ui.status(
+                    _(
+                        "remote has heads on branch '%s' that are "
+                        "not known locally: %s\n"
+                    )
+                    % (branch, heads)
+                )
         if remoteheads is None:
             if len(newhs) > 1:
                 dhs = list(newhs)
                 if errormsg is None:
                     errormsg = (
-                        _("push creates new branch '%s' with multiple heads") %
-                        branch
+                        _("push creates new branch '%s' with multiple heads")
+                        % branch
                     )
-                    hint = _("merge or"
-                             " see 'hg help push' for details about"
-                             " pushing new heads")
+                    hint = _(
+                        "merge or"
+                        " see 'hg help push' for details about"
+                        " pushing new heads"
+                    )
         elif len(newhs) > len(oldhs):
             # remove bookmarked or existing remote heads from the new heads list
             dhs = sorted(newhs - nowarnheads - oldhs)
         if dhs:
             if errormsg is None:
                 if branch not in ('default', None):
-                    errormsg = _("push creates new remote head %s "
-                                 "on branch '%s'!") % (short(dhs[0]), branch)
+                    errormsg = _(
+                        "push creates new remote head %s " "on branch '%s'!"
+                    ) % (short(dhs[0]), branch)
                 elif repo[dhs[0]].bookmarks():
-                    errormsg = _("push creates new remote head %s "
-                                 "with bookmark '%s'!") % (
-                                 short(dhs[0]), repo[dhs[0]].bookmarks()[0])
+                    errormsg = _(
+                        "push creates new remote head %s " "with bookmark '%s'!"
+                    ) % (short(dhs[0]), repo[dhs[0]].bookmarks()[0])
                 else:
-                    errormsg = _("push creates new remote head %s!"
-                                 ) % short(dhs[0])
+                    errormsg = _("push creates new remote head %s!") % short(
+                        dhs[0]
+                    )
                 if unsyncedheads:
-                    hint = _("pull and merge or"
-                             " see 'hg help push' for details about"
-                             " pushing new heads")
+                    hint = _(
+                        "pull and merge or"
+                        " see 'hg help push' for details about"
+                        " pushing new heads"
+                    )
                 else:
-                    hint = _("merge or"
-                             " see 'hg help push' for details about"
-                             " pushing new heads")
+                    hint = _(
+                        "merge or"
+                        " see 'hg help push' for details about"
+                        " pushing new heads"
+                    )
             if branch is None:
                 repo.ui.note(_("new remote heads:\n"))
             else:
                 repo.ui.note(_("new remote heads on branch '%s':\n") % branch)
             for h in dhs:
-                repo.ui.note((" %s\n") % short(h))
+                repo.ui.note(" %s\n" % short(h))
     if errormsg:
         raise error.Abort(errormsg, hint=hint)
+
 
 def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     """post process the list of new heads with obsolescence information
@@ -455,22 +498,24 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     torev = unfi.changelog.nodemap.get
     public = phases.public
     getphase = unfi._phasecache.phase
-    ispublic = (lambda r: getphase(unfi, r) == public)
-    ispushed = (lambda n: torev(n) in futurecommon)
+    ispublic = lambda r: getphase(unfi, r) == public
+    ispushed = lambda n: torev(n) in futurecommon
     hasoutmarker = functools.partial(pushingmarkerfor, unfi.obsstore, ispushed)
     successorsmarkers = unfi.obsstore.successors
-    newhs = set() # final set of new heads
-    discarded = set() # new head of fully replaced branch
+    newhs = set()  # final set of new heads
+    discarded = set()  # new head of fully replaced branch
 
-    localcandidate = set() # candidate heads known locally
-    unknownheads = set() # candidate heads unknown locally
+    localcandidate = set()  # candidate heads known locally
+    unknownheads = set()  # candidate heads unknown locally
     for h in candidate_newhs:
         if h in unfi:
             localcandidate.add(h)
         else:
             if successorsmarkers.get(h) is not None:
-                msg = ('checkheads: remote head unknown locally has'
-                       ' local marker: %s\n')
+                msg = (
+                    'checkheads: remote head unknown locally has'
+                    ' local marker: %s\n'
+                )
                 repo.ui.debug(msg % hex(h))
             unknownheads.add(h)
 
@@ -482,23 +527,24 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     while localcandidate:
         nh = localcandidate.pop()
         # run this check early to skip the evaluation of the whole branch
-        if (torev(nh) in futurecommon or ispublic(torev(nh))):
+        if torev(nh) in futurecommon or ispublic(torev(nh)):
             newhs.add(nh)
             continue
 
         # Get all revs/nodes on the branch exclusive to this head
         # (already filtered heads are "ignored"))
-        branchrevs = unfi.revs('only(%n, (%ln+%ln))',
-                               nh, localcandidate, newhs)
+        branchrevs = unfi.revs('only(%n, (%ln+%ln))', nh, localcandidate, newhs)
         branchnodes = [tonode(r) for r in branchrevs]
 
         # The branch won't be hidden on the remote if
         # * any part of it is public,
         # * any part of it is considered part of the result by previous logic,
         # * if we have no markers to push to obsolete it.
-        if (any(ispublic(r) for r in branchrevs)
-                or any(torev(n) in futurecommon for n in branchnodes)
-                or any(not hasoutmarker(n) for n in branchnodes)):
+        if (
+            any(ispublic(r) for r in branchrevs)
+            or any(torev(n) in futurecommon for n in branchnodes)
+            or any(not hasoutmarker(n) for n in branchnodes)
+        ):
             newhs.add(nh)
         else:
             # note: there is a corner case if there is a merge in the branch.
@@ -508,6 +554,7 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
             discarded.add(nh)
     newhs |= unknownheads
     return newhs, discarded
+
 
 def pushingmarkerfor(obsstore, ispushed, node):
     """true if some markers are to be pushed for node
@@ -530,9 +577,9 @@ def pushingmarkerfor(obsstore, ispushed, node):
         markers = successorsmarkers.get(current, ())
         # markers fields = ('prec', 'succs', 'flag', 'meta', 'date', 'parents')
         for m in markers:
-            nexts = m[1] # successors
-            if not nexts: # this is a prune marker
-                nexts = m[5] or () # parents
+            nexts = m[1]  # successors
+            if not nexts:  # this is a prune marker
+                nexts = m[5] or ()  # parents
             for n in nexts:
                 if n not in seen:
                     seen.add(n)

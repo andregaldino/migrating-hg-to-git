@@ -46,17 +46,19 @@ symbols = {}
 
 globchars = ".*{}[]?/\\_"
 
+
 def tokenize(program):
     pos, l = 0, len(program)
     program = pycompat.bytestr(program)
     while pos < l:
         c = program[pos]
-        if c.isspace(): # skip inter-token whitespace
+        if c.isspace():  # skip inter-token whitespace
             pass
-        elif c in "(),-:|&+!": # handle simple operators
+        elif c in "(),-:|&+!":  # handle simple operators
             yield (c, None, pos)
-        elif (c in '"\'' or c == 'r' and
-              program[pos:pos + 2] in ("r'", 'r"')): # handle quoted strings
+        elif (
+            c in '"\'' or c == 'r' and program[pos : pos + 2] in ("r'", 'r"')
+        ):  # handle quoted strings
             if c == 'r':
                 pos += 1
                 c = program[pos]
@@ -65,9 +67,9 @@ def tokenize(program):
                 decode = parser.unescapestr
             pos += 1
             s = pos
-            while pos < l: # find closing quote
+            while pos < l:  # find closing quote
                 d = program[pos]
-                if d == '\\': # skip over escaped characters
+                if d == '\\':  # skip over escaped characters
                     pos += 2
                     continue
                 if d == c:
@@ -80,13 +82,13 @@ def tokenize(program):
             # gather up a symbol/keyword
             s = pos
             pos += 1
-            while pos < l: # find end of symbol
+            while pos < l:  # find end of symbol
                 d = program[pos]
                 if not (d.isalnum() or d in globchars or ord(d) > 127):
                     break
                 pos += 1
             sym = program[s:pos]
-            if sym in keywords: # operator keywords
+            if sym in keywords:  # operator keywords
                 yield (sym, None, s)
             else:
                 yield ('symbol', sym, s)
@@ -96,6 +98,7 @@ def tokenize(program):
         pos += 1
     yield ('end', None, pos)
 
+
 def parse(expr):
     p = parser.parser(elements)
     tree, pos = p.parse(tokenize(expr))
@@ -103,15 +106,18 @@ def parse(expr):
         raise error.ParseError(_("invalid token"), pos)
     return parser.simplifyinfixops(tree, {'list', 'or'})
 
+
 def getsymbol(x):
     if x and x[0] == 'symbol':
         return x[1]
     raise error.ParseError(_('not a symbol'))
 
+
 def getstring(x, err):
     if x and (x[0] == 'string' or x[0] == 'symbol'):
         return x[1]
     raise error.ParseError(err)
+
 
 def getkindpat(x, y, allkinds, err):
     kind = getsymbol(x)
@@ -120,10 +126,12 @@ def getkindpat(x, y, allkinds, err):
         raise error.ParseError(_("invalid pattern kind: %s") % kind)
     return '%s:%s' % (kind, pat)
 
+
 def getpattern(x, allkinds, err):
     if x and x[0] == 'kindpat':
         return getkindpat(x[1], x[2], allkinds, err)
     return getstring(x, err)
+
 
 def getlist(x):
     if not x:
@@ -132,11 +140,13 @@ def getlist(x):
         return list(x[1:])
     return [x]
 
+
 def getargs(x, min, max, err):
     l = getlist(x)
     if len(l) < min or len(l) > max:
         raise error.ParseError(err)
     return l
+
 
 def _analyze(x):
     if x is None:
@@ -170,6 +180,7 @@ def _analyze(x):
         ta = _analyze(x[2])
         return (op, x[1], ta)
     raise error.ProgrammingError('invalid operator %r' % op)
+
 
 def _insertstatushints(x):
     """Insert hint nodes where status should be calculated (first path)
@@ -214,6 +225,7 @@ def _insertstatushints(x):
         return (), (op, x[1], ta)
     raise error.ProgrammingError('invalid operator %r' % op)
 
+
 def _mergestatushints(x, instatus):
     """Remove redundant status hint nodes (second path)
 
@@ -247,6 +259,7 @@ def _mergestatushints(x, instatus):
         return (op, x[1], ta)
     raise error.ProgrammingError('invalid operator %r' % op)
 
+
 def analyze(x):
     """Transform raw parsed tree to evaluatable tree which can be fed to
     optimize() or getmatch()
@@ -258,10 +271,12 @@ def analyze(x):
     _h, t = _insertstatushints(t)
     return _mergestatushints(t, instatus=False)
 
+
 def _optimizeandops(op, ta, tb):
     if tb is not None and tb[0] == 'not':
         return ('minus', ta, tb[1])
     return (op, ta, tb)
+
 
 def _optimizeunion(xs):
     # collect string patterns so they can be compiled into a single regexp
@@ -277,6 +292,7 @@ def _optimizeunion(xs):
         ws.append(WEIGHT_CHECK_FILENAME)
         ts.append(('patterns',) + tuple(ss))
     return ws, ts
+
 
 def _optimize(x):
     if x is None:
@@ -304,9 +320,10 @@ def _optimize(x):
     if op == 'or':
         ws, ts = _optimizeunion(x[1:])
         if len(ts) == 1:
-            return ws[0], ts[0] # 'or' operation is fully optimized out
-        ts = tuple(it[1] for it in sorted(enumerate(ts),
-                                          key=lambda it: ws[it[0]]))
+            return ws[0], ts[0]  # 'or' operation is fully optimized out
+        ts = tuple(
+            it[1] for it in sorted(enumerate(ts), key=lambda it: ws[it[0]])
+        )
         return max(ws), (op,) + ts
     if op == 'list':
         ws, ts = zip(*(_optimize(y) for y in x[1:]))
@@ -318,6 +335,7 @@ def _optimize(x):
         return w + wa, (op, x[1], ta)
     raise error.ProgrammingError('invalid operator %r' % op)
 
+
 def optimize(x):
     """Reorder/rewrite evaluatable tree for optimization
 
@@ -325,6 +343,7 @@ def optimize(x):
     """
     _w, t = _optimize(x)
     return t
+
 
 def prettyformat(tree):
     return parser.prettyformat(tree, ('string', 'symbol'))

@@ -34,6 +34,7 @@ converter_source = common.converter_source
 makedatetimestamp = common.makedatetimestamp
 NoRepo = common.NoRepo
 
+
 class convert_cvs(converter_source):
     def __init__(self, ui, repotype, path, revs=None):
         super(convert_cvs, self).__init__(ui, repotype, path, revs=revs)
@@ -63,15 +64,17 @@ class convert_cvs(converter_source):
         maxrev = 0
         if self.revs:
             if len(self.revs) > 1:
-                raise error.Abort(_('cvs source does not support specifying '
-                                   'multiple revs'))
+                raise error.Abort(
+                    _('cvs source does not support specifying ' 'multiple revs')
+                )
             # TODO: handle tags
             try:
                 # patchset number?
                 maxrev = int(self.revs[0])
             except ValueError:
-                raise error.Abort(_('revision %s is not a patchset number')
-                                 % self.revs[0])
+                raise error.Abort(
+                    _('revision %s is not a patchset number') % self.revs[0]
+                )
 
         d = encoding.getcwd()
         try:
@@ -81,15 +84,18 @@ class convert_cvs(converter_source):
             if not self.ui.configbool('convert', 'cvsps.cache'):
                 cache = None
             db = cvsps.createlog(self.ui, cache=cache)
-            db = cvsps.createchangeset(self.ui, db,
+            db = cvsps.createchangeset(
+                self.ui,
+                db,
                 fuzz=int(self.ui.config('convert', 'cvsps.fuzz')),
                 mergeto=self.ui.config('convert', 'cvsps.mergeto'),
-                mergefrom=self.ui.config('convert', 'cvsps.mergefrom'))
+                mergefrom=self.ui.config('convert', 'cvsps.mergefrom'),
+            )
 
             for cs in db:
                 if maxrev and cs.id > maxrev:
                     break
-                id = (b"%d" % cs.id)
+                id = b"%d" % cs.id
                 cs.author = self.recode(cs.author)
                 self.lastbranch[cs.branch] = id
                 cs.comment = self.recode(cs.comment)
@@ -100,14 +106,19 @@ class convert_cvs(converter_source):
 
                 files = {}
                 for f in cs.entries:
-                    files[f.file] = "%s%s" % ('.'.join([(b"%d" % x)
-                                                        for x in f.revision]),
-                                              ['', '(DEAD)'][f.dead])
+                    files[f.file] = "%s%s" % (
+                        '.'.join([(b"%d" % x) for x in f.revision]),
+                        ['', '(DEAD)'][f.dead],
+                    )
 
                 # add current commit to set
-                c = commit(author=cs.author, date=date,
-                           parents=[(b"%d" % p.id) for p in cs.parents],
-                           desc=cs.comment, branch=cs.branch or '')
+                c = commit(
+                    author=cs.author,
+                    date=date,
+                    parents=[(b"%d" % p.id) for p in cs.parents],
+                    desc=cs.comment,
+                    branch=cs.branch or '',
+                )
                 self.changeset[id] = c
                 self.files[id] = files
 
@@ -125,8 +136,9 @@ class convert_cvs(converter_source):
 
         if root.startswith(":pserver:"):
             root = root[9:]
-            m = re.match(r'(?:(.*?)(?::(.*?))?@)?([^:\/]*)(?::(\d*))?(.*)',
-                         root)
+            m = re.match(
+                r'(?:(.*?)(?::(.*?))?@)?([^:\/]*)(?::(\d*))?(.*)', root
+            )
             if m:
                 conntype = "pserver"
                 user, passw, serv, port, root = m.groups()
@@ -166,8 +178,18 @@ class convert_cvs(converter_source):
 
                 sck = socket.socket()
                 sck.connect((serv, port))
-                sck.send("\n".join(["BEGIN AUTH REQUEST", root, user, passw,
-                                    "END AUTH REQUEST", ""]))
+                sck.send(
+                    "\n".join(
+                        [
+                            "BEGIN AUTH REQUEST",
+                            root,
+                            user,
+                            passw,
+                            "END AUTH REQUEST",
+                            "",
+                        ]
+                    )
+                )
                 if sck.recv(128) != "I LOVE YOU\n":
                     raise error.Abort(_("CVS pserver authentication failed"))
 
@@ -205,16 +227,22 @@ class convert_cvs(converter_source):
         self.realroot = root
 
         self.writep.write("Root %s\n" % root)
-        self.writep.write("Valid-responses ok error Valid-requests Mode"
-                          " M Mbinary E Checked-in Created Updated"
-                          " Merged Removed\n")
+        self.writep.write(
+            "Valid-responses ok error Valid-requests Mode"
+            " M Mbinary E Checked-in Created Updated"
+            " Merged Removed\n"
+        )
         self.writep.write("valid-requests\n")
         self.writep.flush()
         r = self.readp.readline()
         if not r.startswith("Valid-requests"):
-            raise error.Abort(_('unexpected response from CVS server '
-                               '(expected "Valid-requests", but got %r)')
-                             % r)
+            raise error.Abort(
+                _(
+                    'unexpected response from CVS server '
+                    '(expected "Valid-requests", but got %r)'
+                )
+                % r
+            )
         if "UseUnchanged" in r:
             self.writep.write("UseUnchanged\n")
             self.writep.flush()
@@ -225,7 +253,6 @@ class convert_cvs(converter_source):
         return self.heads
 
     def getfile(self, name, rev):
-
         def chunkedread(fp, count):
             # file-objects returned by socket.makefile() do not handle
             # large read() requests very well.
@@ -234,8 +261,9 @@ class convert_cvs(converter_source):
             while count > 0:
                 data = fp.read(min(count, chunksize))
                 if not data:
-                    raise error.Abort(_("%d bytes missing from remote file")
-                                     % count)
+                    raise error.Abort(
+                        _("%d bytes missing from remote file") % count
+                    )
                 count -= len(data)
                 output.write(data)
             return output.getvalue()
@@ -256,8 +284,8 @@ class convert_cvs(converter_source):
         while True:
             line = self.readp.readline()
             if line.startswith("Created ") or line.startswith("Updated "):
-                self.readp.readline() # path
-                self.readp.readline() # entries
+                self.readp.readline()  # path
+                self.readp.readline()  # entries
                 mode = self.readp.readline()[:-1]
                 count = int(self.readp.readline()[:-1])
                 data = chunkedread(self.readp, count)

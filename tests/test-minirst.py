@@ -1,10 +1,7 @@
 from __future__ import absolute_import, print_function
-from mercurial import (
-    minirst,
-)
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial import minirst
+from mercurial.utils import stringutil
+
 
 def debugformat(text, form, **kwargs):
     blocks, pruned = minirst.parse(text, **kwargs)
@@ -23,11 +20,13 @@ def debugformat(text, form, **kwargs):
     print("-" * 70)
     print()
 
+
 def debugformats(title, text, **kwargs):
     print("== %s ==" % title)
     debugformat(text, 60, **kwargs)
     debugformat(text, 30, **kwargs)
     debugformat(text, b'html', **kwargs)
+
 
 paragraphs = b"""
 This is some text in the first paragraph.
@@ -188,8 +187,9 @@ Normal output.
 debugformats('containers (normal)', containers)
 debugformats('containers (verbose)', containers, keep=[b'verbose'])
 debugformats('containers (debug)', containers, keep=[b'debug'])
-debugformats('containers (verbose debug)', containers,
-            keep=[b'verbose', b'debug'])
+debugformats(
+    'containers (verbose debug)', containers, keep=[b'verbose', b'debug']
+)
 
 roles = b"""Please see :hg:`add`."""
 debugformats('roles', roles)
@@ -245,9 +245,11 @@ Empty comment above
 debugformats('comments', comments)
 
 
-data = [[b'a', b'b', b'c'],
-         [b'1', b'2', b'3'],
-         [b'foo', b'bar', b'baz this list is very very very long man']]
+data = [
+    [b'a', b'b', b'c'],
+    [b'1', b'2', b'3'],
+    [b'foo', b'bar', b'baz this list is very very very long man'],
+]
 
 rst = minirst.maketable(data, 2, True)
 table = b''.join(rst)
@@ -256,8 +258,10 @@ print(table.decode('utf8'))
 
 debugformats('table', table)
 
-data = [[b's', b'long', b'line\ngoes on here'],
-        [b'', b'xy', b'tried to fix here\n        by indenting']]
+data = [
+    [b's', b'long', b'line\ngoes on here'],
+    [b'', b'xy', b'tried to fix here\n        by indenting'],
+]
 
 rst = minirst.maketable(data, 1, False)
 table = b''.join(rst)

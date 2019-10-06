@@ -13,6 +13,8 @@ from mercurial import (
 )
 
 print_ = print
+
+
 def print(*args, **kwargs):
     """print() wrapper that flushes stdout buffers to avoid py3 buffer issues
 
@@ -22,10 +24,12 @@ def print(*args, **kwargs):
     print_(*args, **kwargs)
     sys.stdout.flush()
 
+
 def printb(data, end=b'\n'):
     out = getattr(sys.stdout, 'buffer', sys.stdout)
     out.write(data + end)
     out.flush()
+
 
 ui = uimod.ui.load()
 
@@ -49,12 +53,18 @@ print("workingfilectx.date = (%d, %d)" % d)
 
 # test memctx with non-ASCII commit message
 
+
 def filectxfn(repo, memctx, path):
     return context.memfilectx(repo, memctx, b"foo", b"")
 
-ctx = context.memctx(repo, [b'tip', None],
-                     encoding.tolocal(b"Gr\xc3\xbcezi!"),
-                     [b"foo"], filectxfn)
+
+ctx = context.memctx(
+    repo,
+    [b'tip', None],
+    encoding.tolocal(b"Gr\xc3\xbcezi!"),
+    [b"foo"],
+    filectxfn,
+)
 ctx.commit()
 for enc in "ASCII", "Latin-1", "UTF-8":
     encoding.encoding = enc
@@ -62,17 +72,27 @@ for enc in "ASCII", "Latin-1", "UTF-8":
 
 # test performing a status
 
+
 def getfilectx(repo, memctx, f):
     fctx = memctx.p1()[f]
     data, flags = fctx.data(), fctx.flags()
     if f == b'foo':
         data += b'bar\n'
     return context.memfilectx(
-        repo, memctx, f, data, b'l' in flags, b'x' in flags)
+        repo, memctx, f, data, b'l' in flags, b'x' in flags
+    )
+
 
 ctxa = repo[0]
-ctxb = context.memctx(repo, [ctxa.node(), None], b"test diff", [b"foo"],
-                      getfilectx, ctxa.user(), ctxa.date())
+ctxb = context.memctx(
+    repo,
+    [ctxa.node(), None],
+    b"test diff",
+    [b"foo"],
+    getfilectx,
+    ctxa.user(),
+    ctxa.date(),
+)
 
 print(ctxb.status(ctxa))
 
@@ -114,11 +134,13 @@ wctx = repo[None]
 print('wctx._status=%s' % (str(wctx._status)))
 
 print('=== with "pattern match":')
-print(actx1.status(other=wctx,
-                   match=scmutil.matchfiles(repo, [b'bar-m', b'foo'])))
+print(
+    actx1.status(other=wctx, match=scmutil.matchfiles(repo, [b'bar-m', b'foo']))
+)
 print('wctx._status=%s' % (str(wctx._status)))
-print(actx2.status(other=wctx,
-                   match=scmutil.matchfiles(repo, [b'bar-m', b'foo'])))
+print(
+    actx2.status(other=wctx, match=scmutil.matchfiles(repo, [b'bar-m', b'foo']))
+)
 print('wctx._status=%s' % (str(wctx._status)))
 
 print('=== with "always match" and "listclean=True":')
@@ -129,12 +151,12 @@ print('wctx._status=%s' % (str(wctx._status)))
 
 print("== checking workingcommitctx.status:")
 
-wcctx = context.workingcommitctx(repo,
-                                 scmutil.status([b'bar-m'],
-                                                [b'bar-a'],
-                                                [],
-                                                [], [], [], []),
-                                 text=b'', date=b'0 0')
+wcctx = context.workingcommitctx(
+    repo,
+    scmutil.status([b'bar-m'], [b'bar-a'], [], [], [], [], []),
+    text=b'',
+    date=b'0 0',
+)
 print('wcctx._status=%s' % (str(wcctx._status)))
 
 print('=== with "always match":')
@@ -150,21 +172,35 @@ print(actx2.status(other=wcctx, listclean=True))
 print('wcctx._status=%s' % (str(wcctx._status)))
 
 print('=== with "pattern match":')
-print(actx1.status(other=wcctx,
-                   match=scmutil.matchfiles(repo, [b'bar-m', b'foo'])))
+print(
+    actx1.status(
+        other=wcctx, match=scmutil.matchfiles(repo, [b'bar-m', b'foo'])
+    )
+)
 print('wcctx._status=%s' % (str(wcctx._status)))
-print(actx2.status(other=wcctx,
-                   match=scmutil.matchfiles(repo, [b'bar-m', b'foo'])))
+print(
+    actx2.status(
+        other=wcctx, match=scmutil.matchfiles(repo, [b'bar-m', b'foo'])
+    )
+)
 print('wcctx._status=%s' % (str(wcctx._status)))
 
 print('=== with "pattern match" and "listclean=True":')
-print(actx1.status(other=wcctx,
-                   match=scmutil.matchfiles(repo, [b'bar-r', b'foo']),
-                   listclean=True))
+print(
+    actx1.status(
+        other=wcctx,
+        match=scmutil.matchfiles(repo, [b'bar-r', b'foo']),
+        listclean=True,
+    )
+)
 print('wcctx._status=%s' % (str(wcctx._status)))
-print(actx2.status(other=wcctx,
-                   match=scmutil.matchfiles(repo, [b'bar-r', b'foo']),
-                   listclean=True))
+print(
+    actx2.status(
+        other=wcctx,
+        match=scmutil.matchfiles(repo, [b'bar-r', b'foo']),
+        listclean=True,
+    )
+)
 print('wcctx._status=%s' % (str(wcctx._status)))
 
 os.chdir('..')
@@ -180,17 +216,19 @@ for i in [b'1', b'2', b'3']:
     with open(i, 'wb') as f:
         f.write(i)
     status = scmutil.status([], [i], [], [], [], [], [])
-    ctx = context.workingcommitctx(repo, status, text=i, user=b'test@test.com',
-                                   date=(0, 0))
-    ctx.p1().manifest() # side effect: cache manifestctx
+    ctx = context.workingcommitctx(
+        repo, status, text=i, user=b'test@test.com', date=(0, 0)
+    )
+    ctx.p1().manifest()  # side effect: cache manifestctx
     n = repo.commitctx(ctx)
     printb(b'commit %s: %s' % (i, hex(n)))
 
     # touch 00manifest.i mtime so storecache could expire.
     # repo.__dict__['manifestlog'] is deleted by transaction releasefn.
     st = repo.svfs.stat(b'00manifest.i')
-    repo.svfs.utime(b'00manifest.i',
-                    (st[stat.ST_MTIME] + 1, st[stat.ST_MTIME] + 1))
+    repo.svfs.utime(
+        b'00manifest.i', (st[stat.ST_MTIME] + 1, st[stat.ST_MTIME] + 1)
+    )
 
     # read the file just committed
     try:

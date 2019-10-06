@@ -21,6 +21,7 @@ from . import (
 
 from hgdemandimport import tracing
 
+
 class exthelper(object):
     """Helper for modular extension setup
 
@@ -281,9 +282,11 @@ class exthelper(object):
             if extension is None:
                 self._commandwrappers.append((command, wrapper, opts))
             else:
-                self._extcommandwrappers.append((extension, command, wrapper,
-                                                 opts))
+                self._extcommandwrappers.append(
+                    (extension, command, wrapper, opts)
+                )
             return wrapper
+
         return dec
 
     def wrapfunction(self, container, funcname):
@@ -300,7 +303,9 @@ class exthelper(object):
                 ui.note('His head smashed in and his heart cut out')
                 return orig(*args, **kwargs)
         """
+
         def dec(wrapper):
             self._functionwrappers.append((container, funcname, wrapper))
             return wrapper
+
         return dec

@@ -26,8 +26,8 @@ from mercurial.utils import (
 )
 from . import common
 
-class gnuarch_source(common.converter_source, common.commandline):
 
+class gnuarch_source(common.converter_source, common.commandline):
     class gnuarch_rev(object):
         def __init__(self, rev):
             self.rev = rev
@@ -45,8 +45,9 @@ class gnuarch_source(common.converter_source, common.commandline):
         super(gnuarch_source, self).__init__(ui, repotype, path, revs=revs)
 
         if not os.path.exists(os.path.join(path, '{arch}')):
-            raise common.NoRepo(_("%s does not look like a GNU Arch repository")
-                         % path)
+            raise common.NoRepo(
+                _("%s does not look like a GNU Arch repository") % path
+            )
 
         # Could use checktool, but we want to check for baz or tla.
         self.execmd = None
@@ -74,8 +75,9 @@ class gnuarch_source(common.converter_source, common.commandline):
 
     def before(self):
         # Get registered archives
-        self.archives = [i.rstrip('\n')
-                         for i in self.runlines0('archives', '-n')]
+        self.archives = [
+            i.rstrip('\n') for i in self.runlines0('archives', '-n')
+        ]
 
         if self.execmd == 'tla':
             output = self.run0('tree-version', self.path)
@@ -85,8 +87,9 @@ class gnuarch_source(common.converter_source, common.commandline):
 
         # Get name of temporary directory
         version = self.treeversion.split('/')
-        self.tmppath = os.path.join(pycompat.fsencode(tempfile.gettempdir()),
-                                    'hg-%s' % version[1])
+        self.tmppath = os.path.join(
+            pycompat.fsencode(tempfile.gettempdir()), 'hg-%s' % version[1]
+        )
 
         # Generate parents dictionary
         self.parents[None] = []
@@ -97,14 +100,20 @@ class gnuarch_source(common.converter_source, common.commandline):
 
             archive = treeversion.split('/')[0]
             if archive not in self.archives:
-                self.ui.status(_('tree analysis stopped because it points to '
-                                 'an unregistered archive %s...\n') % archive)
+                self.ui.status(
+                    _(
+                        'tree analysis stopped because it points to '
+                        'an unregistered archive %s...\n'
+                    )
+                    % archive
+                )
                 break
 
             # Get the complete list of revisions for that tree version
             output, status = self.runlines('revisions', '-r', '-f', treeversion)
-            self.checkexit(status, 'failed retrieving revisions for %s'
-                           % treeversion)
+            self.checkexit(
+                status, 'failed retrieving revisions for %s' % treeversion
+            )
 
             # No new iteration unless a revision has a continuation-of header
             treeversion = None
@@ -117,7 +126,7 @@ class gnuarch_source(common.converter_source, common.commandline):
                 # Read author, date and summary
                 catlog, status = self.run('cat-log', '-d', self.path, rev)
                 if status:
-                    catlog  = self.run0('cat-archive-log', rev)
+                    catlog = self.run0('cat-archive-log', rev)
                 self._parsecatlog(catlog, rev)
 
                 # Populate the parents map
@@ -132,7 +141,8 @@ class gnuarch_source(common.converter_source, common.commandline):
                 # by the continuation-of header.
                 if self.changes[rev].continuationof:
                     treeversion = '--'.join(
-                        self.changes[rev].continuationof.split('--')[:-1])
+                        self.changes[rev].continuationof.split('--')[:-1]
+                    )
                     break
 
                 # If we reached a base-0 revision w/o any continuation-of
@@ -189,9 +199,13 @@ class gnuarch_source(common.converter_source, common.commandline):
 
     def getcommit(self, rev):
         changes = self.changes[rev]
-        return common.commit(author=changes.author, date=changes.date,
-                             desc=changes.summary, parents=self.parents[rev],
-                             rev=rev)
+        return common.commit(
+            author=changes.author,
+            date=changes.date,
+            desc=changes.summary,
+            parents=self.parents[rev],
+            rev=rev,
+        )
 
     def gettags(self):
         return self.tags
@@ -207,8 +221,7 @@ class gnuarch_source(common.converter_source, common.commandline):
 
     def _update(self, rev):
         self.ui.debug('applying revision %s...\n' % rev)
-        changeset, status = self.runlines('replay', '-d', self.tmppath,
-                                              rev)
+        changeset, status = self.runlines('replay', '-d', self.tmppath, rev)
         if status:
             # Something went wrong while merging (baz or tla
             # issue?), get latest revision and try from there
@@ -216,8 +229,9 @@ class gnuarch_source(common.converter_source, common.commandline):
             self._obtainrevision(rev)
         else:
             old_rev = self.parents[rev][0]
-            self.ui.debug('computing changeset between %s and %s...\n'
-                          % (old_rev, rev))
+            self.ui.debug(
+                'computing changeset between %s and %s...\n' % (old_rev, rev)
+            )
             self._parsechangeset(changeset, rev)
 
     def _getfile(self, name, rev):
@@ -286,21 +300,23 @@ class gnuarch_source(common.converter_source, common.commandline):
 
             # Commit date
             self.changes[rev].date = dateutil.datestr(
-                dateutil.strdate(catlog['Standard-date'],
-                             '%Y-%m-%d %H:%M:%S'))
+                dateutil.strdate(catlog['Standard-date'], '%Y-%m-%d %H:%M:%S')
+            )
 
             # Commit author
             self.changes[rev].author = self.recode(catlog['Creator'])
 
             # Commit description
-            self.changes[rev].summary = '\n\n'.join((catlog['Summary'],
-                                                    catlog.get_payload()))
+            self.changes[rev].summary = '\n\n'.join(
+                (catlog['Summary'], catlog.get_payload())
+            )
             self.changes[rev].summary = self.recode(self.changes[rev].summary)
 
             # Commit revision origin when dealing with a branch or tag
             if 'Continuation-of' in catlog:
                 self.changes[rev].continuationof = self.recode(
-                    catlog['Continuation-of'])
+                    catlog['Continuation-of']
+                )
         except Exception:
             raise error.Abort(_('could not parse cat-log of %s') % rev)
 

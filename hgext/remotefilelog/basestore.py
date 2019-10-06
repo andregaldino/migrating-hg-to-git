@@ -19,6 +19,7 @@ from . import (
     shallowutil,
 )
 
+
 class basestore(object):
     def __init__(self, repo, path, reponame, shared=False):
         """Creates a remotefilelog store object for the given repo name.
@@ -37,10 +38,12 @@ class basestore(object):
         self._shared = shared
         self._uid = os.getuid() if not pycompat.iswindows else None
 
-        self._validatecachelog = self.ui.config("remotefilelog",
-                                                "validatecachelog")
-        self._validatecache = self.ui.config("remotefilelog", "validatecache",
-                                             'on')
+        self._validatecachelog = self.ui.config(
+            "remotefilelog", "validatecachelog"
+        )
+        self._validatecache = self.ui.config(
+            "remotefilelog", "validatecache", 'on'
+        )
         if self._validatecache not in ('on', 'strict', 'off'):
             self._validatecache = 'on'
         if self._validatecache == 'off':
@@ -54,8 +57,11 @@ class basestore(object):
         for name, node in keys:
             filepath = self._getfilepath(name, node)
             exists = os.path.exists(filepath)
-            if (exists and self._validatecache == 'strict' and
-                not self._validatekey(filepath, 'contains')):
+            if (
+                exists
+                and self._validatecache == 'strict'
+                and not self._validatekey(filepath, 'contains')
+            ):
                 exists = False
             if not exists:
                 missing.append((name, node))
@@ -77,8 +83,9 @@ class basestore(object):
         ui = self.ui
         entries = ledger.sources.get(self, [])
         count = 0
-        progress = ui.makeprogress(_("cleaning up"), unit="files",
-                                   total=len(entries))
+        progress = ui.makeprogress(
+            _("cleaning up"), unit="files", total=len(entries)
+        )
         for entry in entries:
             if entry.gced or (entry.datarepacked and entry.historyrepacked):
                 progress.update(count)
@@ -178,8 +185,11 @@ class basestore(object):
         return filenames
 
     def _getrepocachepath(self):
-        return os.path.join(
-            self._path, self._reponame) if self._shared else self._path
+        return (
+            os.path.join(self._path, self._reponame)
+            if self._shared
+            else self._path
+        )
 
     def _listkeys(self):
         """List all the remotefilelog keys that exist in the store.
@@ -219,8 +229,9 @@ class basestore(object):
                 os.rename(filepath, filepath + ".corrupt")
                 raise KeyError("corrupt local cache file %s" % filepath)
         except IOError:
-            raise KeyError("no file found at %s for %s:%s" % (filepath, name,
-                                                              hex(node)))
+            raise KeyError(
+                "no file found at %s for %s:%s" % (filepath, name, hex(node))
+            )
 
         return data
 
@@ -244,8 +255,9 @@ class basestore(object):
 
             if self._validatecache:
                 if not self._validatekey(filepath, 'write'):
-                    raise error.Abort(_("local cache write was corrupted %s") %
-                                      filepath)
+                    raise error.Abort(
+                        _("local cache write was corrupted %s") % filepath
+                    )
         finally:
             os.umask(oldumask)
 
@@ -288,7 +300,7 @@ class basestore(object):
 
                 # extract the node from the metadata
                 offset += size
-                datanode = data[offset:offset + 20]
+                datanode = data[offset : offset + 20]
 
                 # and compare against the path
                 if os.path.basename(path) == hex(datanode):
@@ -314,8 +326,9 @@ class basestore(object):
         # keep files newer than a day even if they aren't needed
         limit = time.time() - (60 * 60 * 24)
 
-        progress = ui.makeprogress(_("removing unnecessary files"),
-                                   unit="files")
+        progress = ui.makeprogress(
+            _("removing unnecessary files"), unit="files"
+        )
         progress.update(0)
         for root, dirs, files in os.walk(cachepath):
             for file in files:
@@ -352,8 +365,10 @@ class basestore(object):
                         # errno.ENOENT = no such file or directory
                         if e.errno != errno.ENOENT:
                             raise
-                        msg = _("warning: file %s was removed by another "
-                                "process\n")
+                        msg = _(
+                            "warning: file %s was removed by another "
+                            "process\n"
+                        )
                         ui.warn(msg % path)
                         continue
                     removed += 1
@@ -363,8 +378,9 @@ class basestore(object):
         limit = ui.configbytes("remotefilelog", "cachelimit")
         if size > limit:
             excess = size - limit
-            progress = ui.makeprogress(_("enforcing cache limit"), unit="bytes",
-                                       total=excess)
+            progress = ui.makeprogress(
+                _("enforcing cache limit"), unit="bytes", total=excess
+            )
             removedexcess = 0
             while queue and size > limit and size > 0:
                 progress.update(removedexcess)
@@ -382,10 +398,16 @@ class basestore(object):
                 removedexcess += oldpathstat.st_size
             progress.complete()
 
-        ui.status(_("finished: removed %d of %d files (%0.2f GB to %0.2f GB)\n")
-                  % (removed, count,
-                     float(originalsize) / 1024.0 / 1024.0 / 1024.0,
-                     float(size) / 1024.0 / 1024.0 / 1024.0))
+        ui.status(
+            _("finished: removed %d of %d files (%0.2f GB to %0.2f GB)\n")
+            % (
+                removed,
+                count,
+                float(originalsize) / 1024.0 / 1024.0 / 1024.0,
+                float(size) / 1024.0 / 1024.0 / 1024.0,
+            )
+        )
+
 
 class baseunionstore(object):
     def __init__(self, *args, **kwargs):
@@ -407,6 +429,7 @@ class baseunionstore(object):
     def retriable(fn):
         def noop(*args):
             pass
+
         def wrapped(self, *args, **kwargs):
             retrylog = self.retrylog or noop
             funcname = fn.__name__
@@ -421,7 +444,10 @@ class baseunionstore(object):
                 except KeyError:
                     if i == self.numattempts:
                         # retries exhausted
-                        retrylog('retries exhausted in %s, raising KeyError\n' %
-                                 pycompat.sysbytes(funcname))
+                        retrylog(
+                            'retries exhausted in %s, raising KeyError\n'
+                            % pycompat.sysbytes(funcname)
+                        )
                         raise
+
         return wrapped

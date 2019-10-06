@@ -18,6 +18,7 @@ from . import (
 
 parsers = policy.importmod(r'parsers')
 
+
 def commonancestorsheads(pfunc, *nodes):
     """Returns a set with the heads of all common ancestors of all nodes,
     heads(::nodes[0] and ::nodes[1] and ...) .
@@ -74,6 +75,7 @@ def commonancestorsheads(pfunc, *nodes):
                 seen[p] = sv
     return gca
 
+
 def ancestors(pfunc, *orignodes):
     """
     Returns the common ancestors of a and b that are furthest from a
@@ -81,6 +83,7 @@ def ancestors(pfunc, *orignodes):
 
     pfunc must return a list of parent vertices for a given vertex.
     """
+
     def deepest(nodes):
         interesting = {}
         count = max(nodes) + 1
@@ -143,12 +146,14 @@ def ancestors(pfunc, *orignodes):
         return gca
     return deepest(gca)
 
+
 class incrementalmissingancestors(object):
     '''persistent state used to calculate missing ancestors incrementally
 
     Although similar in spirit to lazyancestors below, this is a separate class
     because trying to support contains and missingancestors operations with the
     same internal data structures adds needless complexity.'''
+
     def __init__(self, pfunc, bases):
         self.bases = set(bases)
         if not self.bases:
@@ -266,6 +271,7 @@ class incrementalmissingancestors(object):
         missing.reverse()
         return missing
 
+
 # Extracted from lazyancestors.__iter__ to avoid a reference cycle
 def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
     seen = {nullrev}
@@ -310,6 +316,7 @@ def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
             heappush(visit, -p2)
             see(p2)
 
+
 class lazyancestors(object):
     def __init__(self, pfunc, revs, stoprev=0, inclusive=False):
         """Create a new object generating ancestors for the given revs. Does
@@ -329,10 +336,9 @@ class lazyancestors(object):
         self._inclusive = inclusive
 
         self._containsseen = set()
-        self._containsiter = _lazyancestorsiter(self._parentrevs,
-                                                self._initrevs,
-                                                self._stoprev,
-                                                self._inclusive)
+        self._containsiter = _lazyancestorsiter(
+            self._parentrevs, self._initrevs, self._stoprev, self._inclusive
+        )
 
     def __nonzero__(self):
         """False if the set is empty, True otherwise."""
@@ -355,8 +361,9 @@ class lazyancestors(object):
 
         If inclusive is True, the source revisions are also yielded. The
         reverse revision number order is still enforced."""
-        return _lazyancestorsiter(self._parentrevs, self._initrevs,
-                                  self._stoprev, self._inclusive)
+        return _lazyancestorsiter(
+            self._parentrevs, self._initrevs, self._stoprev, self._inclusive
+        )
 
     def __contains__(self, target):
         """Test whether target is an ancestor of self._initrevs."""
@@ -387,8 +394,8 @@ class lazyancestors(object):
             self._containsiter = None
             return False
 
-class rustlazyancestors(object):
 
+class rustlazyancestors(object):
     def __init__(self, index, revs, stoprev=0, inclusive=False):
         self._index = index
         self._stoprev = stoprev
@@ -400,7 +407,8 @@ class rustlazyancestors(object):
         self._initrevs = initrevs = list(revs)
 
         self._containsiter = parsers.rustlazyancestors(
-            index, initrevs, stoprev, inclusive)
+            index, initrevs, stoprev, inclusive
+        )
 
     def __nonzero__(self):
         """False if the set is empty, True otherwise.
@@ -415,10 +423,9 @@ class rustlazyancestors(object):
             return False
 
     def __iter__(self):
-        return parsers.rustlazyancestors(self._index,
-                                         self._initrevs,
-                                         self._stoprev,
-                                         self._inclusive)
+        return parsers.rustlazyancestors(
+            self._index, self._initrevs, self._stoprev, self._inclusive
+        )
 
     def __contains__(self, target):
         return target in self._containsiter

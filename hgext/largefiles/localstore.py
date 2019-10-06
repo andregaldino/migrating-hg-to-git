@@ -17,6 +17,7 @@ from . import (
     lfutil,
 )
 
+
 class localstore(basestore.basestore):
     '''localstore first attempts to grab files out of the store in the remote
     Mercurial repository.  Failing that, it attempts to grab the files from
@@ -40,11 +41,11 @@ class localstore(basestore.basestore):
     def _getfile(self, tmpfile, filename, hash):
         path = lfutil.findfile(self.remote, hash)
         if not path:
-            raise basestore.StoreError(filename, hash, self.url,
-                _("can't get file locally"))
+            raise basestore.StoreError(
+                filename, hash, self.url, _("can't get file locally")
+            )
         with open(path, 'rb') as fd:
-            return lfutil.copyandhash(
-                util.filechunkiter(fd), tmpfile)
+            return lfutil.copyandhash(util.filechunkiter(fd), tmpfile)
 
     def _verifyfiles(self, contents, filestocheck):
         failed = False
@@ -52,17 +53,20 @@ class localstore(basestore.basestore):
             storepath, exists = lfutil.findstorepath(self.repo, expectedhash)
             if not exists:
                 storepath, exists = lfutil.findstorepath(
-                    self.remote, expectedhash)
+                    self.remote, expectedhash
+                )
             if not exists:
                 self.ui.warn(
                     _('changeset %s: %s references missing %s\n')
-                    % (cset, filename, storepath))
+                    % (cset, filename, storepath)
+                )
                 failed = True
             elif contents:
                 actualhash = lfutil.hashfile(storepath)
                 if actualhash != expectedhash:
                     self.ui.warn(
                         _('changeset %s: %s references corrupted %s\n')
-                        % (cset, filename, storepath))
+                        % (cset, filename, storepath)
+                    )
                     failed = True
         return failed

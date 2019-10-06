@@ -19,6 +19,7 @@ from . import (
     pycompat,
 )
 
+
 def findcommonincoming(repo, remote, heads=None, force=False):
     """Return a tuple (common, fetch, heads) used to identify the common
     subset of nodes between repo and remote.
@@ -79,27 +80,27 @@ def findcommonincoming(repo, remote, heads=None, force=False):
             if n[0] in seen:
                 continue
 
-            repo.ui.debug("examining %s:%s\n"
-                          % (short(n[0]), short(n[1])))
-            if n[0] == nullid: # found the end of the branch
+            repo.ui.debug("examining %s:%s\n" % (short(n[0]), short(n[1])))
+            if n[0] == nullid:  # found the end of the branch
                 pass
             elif n in seenbranch:
                 repo.ui.debug("branch already found\n")
                 continue
-            elif n[1] and knownnode(n[1]): # do we know the base?
-                repo.ui.debug("found incomplete branch %s:%s\n"
-                              % (short(n[0]), short(n[1])))
-                search.append(n[0:2]) # schedule branch range for scanning
+            elif n[1] and knownnode(n[1]):  # do we know the base?
+                repo.ui.debug(
+                    "found incomplete branch %s:%s\n"
+                    % (short(n[0]), short(n[1]))
+                )
+                search.append(n[0:2])  # schedule branch range for scanning
                 seenbranch.add(n)
             else:
                 if n[1] not in seen and n[1] not in fetch:
                     if knownnode(n[2]) and knownnode(n[3]):
-                        repo.ui.debug("found new changeset %s\n" %
-                                      short(n[1]))
-                        fetch.add(n[1]) # earliest unknown
+                        repo.ui.debug("found new changeset %s\n" % short(n[1]))
+                        fetch.add(n[1])  # earliest unknown
                     for p in n[2:4]:
                         if knownnode(p):
-                            base.add(p) # latest known
+                            base.add(p)  # latest known
 
                 for p in n[2:4]:
                     if p not in req and not knownnode(p):
@@ -110,17 +111,19 @@ def findcommonincoming(repo, remote, heads=None, force=False):
         if r:
             reqcnt += 1
             progress.increment()
-            repo.ui.debug("request %d: %s\n" %
-                        (reqcnt, " ".join(map(short, r))))
+            repo.ui.debug(
+                "request %d: %s\n" % (reqcnt, " ".join(map(short, r)))
+            )
             for p in pycompat.xrange(0, len(r), 10):
                 with remote.commandexecutor() as e:
-                    branches = e.callcommand('branches', {
-                        'nodes': r[p:p + 10],
-                    }).result()
+                    branches = e.callcommand(
+                        'branches', {'nodes': r[p : p + 10],}
+                    ).result()
 
                 for b in branches:
-                    repo.ui.debug("received %s:%s\n" %
-                                  (short(b[0]), short(b[1])))
+                    repo.ui.debug(
+                        "received %s:%s\n" % (short(b[0]), short(b[1]))
+                    )
                     unknown.append(b)
 
     # do binary search on the branches we found
@@ -140,13 +143,16 @@ def findcommonincoming(repo, remote, heads=None, force=False):
                 repo.ui.debug("narrowing %d:%d %s\n" % (f, len(l), short(i)))
                 if knownnode(i):
                     if f <= 2:
-                        repo.ui.debug("found new branch changeset %s\n" %
-                                          short(p))
+                        repo.ui.debug(
+                            "found new branch changeset %s\n" % short(p)
+                        )
                         fetch.add(p)
                         base.add(i)
                     else:
-                        repo.ui.debug("narrowed branch search to %s:%s\n"
-                                      % (short(p), short(i)))
+                        repo.ui.debug(
+                            "narrowed branch search to %s:%s\n"
+                            % (short(p), short(i))
+                        )
                         newsearch.append((p, i))
                     break
                 p, f = i, f * 2
@@ -155,8 +161,7 @@ def findcommonincoming(repo, remote, heads=None, force=False):
     # sanity check our fetch list
     for f in fetch:
         if knownnode(f):
-            raise error.RepoError(_("already have changeset ")
-                                  + short(f[:4]))
+            raise error.RepoError(_("already have changeset ") + short(f[:4]))
 
     base = list(base)
     if base == [nullid]:
@@ -165,8 +170,11 @@ def findcommonincoming(repo, remote, heads=None, force=False):
         else:
             raise error.Abort(_("repository is unrelated"))
 
-    repo.ui.debug("found new changesets starting at " +
-                 " ".join([short(f) for f in fetch]) + "\n")
+    repo.ui.debug(
+        "found new changesets starting at "
+        + " ".join([short(f) for f in fetch])
+        + "\n"
+    )
 
     progress.complete()
     repo.ui.debug("%d total queries\n" % reqcnt)

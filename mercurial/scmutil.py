@@ -60,6 +60,7 @@ parsers = policy.importmod(r'parsers')
 
 termsize = scmplatform.termsize
 
+
 class status(tuple):
     '''Named tuple with a list of files per status. The 'deleted', 'unknown'
        and 'ignored' properties are only relevant to the working copy.
@@ -67,10 +68,12 @@ class status(tuple):
 
     __slots__ = ()
 
-    def __new__(cls, modified, added, removed, deleted, unknown, ignored,
-                clean):
-        return tuple.__new__(cls, (modified, added, removed, deleted, unknown,
-                                   ignored, clean))
+    def __new__(
+        cls, modified, added, removed, deleted, unknown, ignored, clean
+    ):
+        return tuple.__new__(
+            cls, (modified, added, removed, deleted, unknown, ignored, clean)
+        )
 
     @property
     def modified(self):
@@ -110,9 +113,11 @@ class status(tuple):
         return self[6]
 
     def __repr__(self, *args, **kwargs):
-        return ((r'<status modified=%s, added=%s, removed=%s, deleted=%s, '
-                 r'unknown=%s, ignored=%s, clean=%s>') %
-                tuple(pycompat.sysstr(stringutil.pprint(v)) for v in self))
+        return (
+            r'<status modified=%s, added=%s, removed=%s, deleted=%s, '
+            r'unknown=%s, ignored=%s, clean=%s>'
+        ) % tuple(pycompat.sysstr(stringutil.pprint(v)) for v in self)
+
 
 def itersubrepos(ctx1, ctx2):
     """find subrepos in ctx1 or ctx2"""
@@ -139,6 +144,7 @@ def itersubrepos(ctx1, ctx2):
     for subpath in missing:
         yield subpath, ctx2.nullsub(subpath, ctx1)
 
+
 def nochangesfound(ui, repo, excluded=None):
     '''Report no changes for push/pull, excluded is None or a list of
     nodes excluded from the push/pull.
@@ -151,10 +157,13 @@ def nochangesfound(ui, repo, excluded=None):
                 secretlist.append(n)
 
     if secretlist:
-        ui.status(_("no changes found (ignored %d secret changesets)\n")
-                  % len(secretlist))
+        ui.status(
+            _("no changes found (ignored %d secret changesets)\n")
+            % len(secretlist)
+        )
     else:
         ui.status(_("no changes found\n"))
+
 
 def callcatch(ui, func):
     """call func() with global exception handling
@@ -165,7 +174,7 @@ def callcatch(ui, func):
     try:
         try:
             return func()
-        except: # re-raises
+        except:  # re-raises
             ui.traceback()
             raise
     # Global exception handling, alphabetically
@@ -173,17 +182,24 @@ def callcatch(ui, func):
     except error.LockHeld as inst:
         if inst.errno == errno.ETIMEDOUT:
             reason = _('timed out waiting for lock held by %r') % (
-                pycompat.bytestr(inst.locker))
+                pycompat.bytestr(inst.locker)
+            )
         else:
             reason = _('lock held by %r') % inst.locker
-        ui.error(_("abort: %s: %s\n") % (
-            inst.desc or stringutil.forcebytestr(inst.filename), reason))
+        ui.error(
+            _("abort: %s: %s\n")
+            % (inst.desc or stringutil.forcebytestr(inst.filename), reason)
+        )
         if not inst.locker:
             ui.error(_("(lock might be very busy)\n"))
     except error.LockUnavailable as inst:
-        ui.error(_("abort: could not lock %s: %s\n") %
-                 (inst.desc or stringutil.forcebytestr(inst.filename),
-                  encoding.strtolocal(inst.strerror)))
+        ui.error(
+            _("abort: could not lock %s: %s\n")
+            % (
+                inst.desc or stringutil.forcebytestr(inst.filename),
+                encoding.strtolocal(inst.strerror),
+            )
+        )
     except error.OutOfBandError as inst:
         if inst.args:
             msg = _("abort: remote error:\n")
@@ -234,10 +250,10 @@ def callcatch(ui, func):
         elif m in "zlib".split():
             ui.error(_("(is your Python install correct?)\n"))
     except (IOError, OSError) as inst:
-        if util.safehasattr(inst, "code"): # HTTPError
+        if util.safehasattr(inst, "code"):  # HTTPError
             ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst))
-        elif util.safehasattr(inst, "reason"): # URLError or SSLError
-            try: # usually it is in the form (errno, strerror)
+        elif util.safehasattr(inst, "reason"):  # URLError or SSLError
+            try:  # usually it is in the form (errno, strerror)
                 reason = inst.reason.args[1]
             except (AttributeError, IndexError):
                 # it might be anything, for example a string
@@ -246,17 +262,24 @@ def callcatch(ui, func):
                 # SSLError of Python 2.7.9 contains a unicode
                 reason = encoding.unitolocal(reason)
             ui.error(_("abort: error: %s\n") % reason)
-        elif (util.safehasattr(inst, "args")
-              and inst.args and inst.args[0] == errno.EPIPE):
+        elif (
+            util.safehasattr(inst, "args")
+            and inst.args
+            and inst.args[0] == errno.EPIPE
+        ):
             pass
-        elif getattr(inst, "strerror", None): # common IOError or OSError
+        elif getattr(inst, "strerror", None):  # common IOError or OSError
             if getattr(inst, "filename", None) is not None:
-                ui.error(_("abort: %s: '%s'\n") % (
-                    encoding.strtolocal(inst.strerror),
-                    stringutil.forcebytestr(inst.filename)))
+                ui.error(
+                    _("abort: %s: '%s'\n")
+                    % (
+                        encoding.strtolocal(inst.strerror),
+                        stringutil.forcebytestr(inst.filename),
+                    )
+                )
             else:
                 ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
-        else: # suspicious IOError
+        else:  # suspicious IOError
             raise
     except MemoryError:
         ui.error(_("abort: out of memory\n"))
@@ -267,6 +290,7 @@ def callcatch(ui, func):
 
     return -1
 
+
 def checknewlabel(repo, lbl, kind):
     # Do not use the "kind" parameter in ui output.
     # It makes strings difficult to translate.
@@ -275,7 +299,8 @@ def checknewlabel(repo, lbl, kind):
     for c in (':', '\0', '\n', '\r'):
         if c in lbl:
             raise error.Abort(
-                _("%r cannot be used in a name") % pycompat.bytestr(c))
+                _("%r cannot be used in a name") % pycompat.bytestr(c)
+            )
     try:
         int(lbl)
         raise error.Abort(_("cannot use an integer as a name"))
@@ -284,11 +309,15 @@ def checknewlabel(repo, lbl, kind):
     if lbl.strip() != lbl:
         raise error.Abort(_("leading or trailing whitespace in name %r") % lbl)
 
+
 def checkfilename(f):
     '''Check that the filename f is an acceptable filename for a tracked file'''
     if '\r' in f or '\n' in f:
-        raise error.Abort(_("'\\n' and '\\r' disallowed in filenames: %r")
-                          % pycompat.bytestr(f))
+        raise error.Abort(
+            _("'\\n' and '\\r' disallowed in filenames: %r")
+            % pycompat.bytestr(f)
+        )
+
 
 def checkportable(ui, f):
     '''Check if filename f is portable and warn or abort depending on config'''
@@ -302,6 +331,7 @@ def checkportable(ui, f):
                 raise error.Abort(msg)
             ui.warn(_("warning: %s\n") % msg)
 
+
 def checkportabilityalert(ui):
     '''check if the user's config requests nothing, a warning, or abort for
     non-portable filenames'''
@@ -312,8 +342,10 @@ def checkportabilityalert(ui):
     warn = bval or lval == 'warn'
     if bval is None and not (warn or abort or lval == 'ignore'):
         raise error.ConfigError(
-            _("ui.portablefilenames value is invalid ('%s')") % val)
+            _("ui.portablefilenames value is invalid ('%s')") % val
+        )
     return abort, warn
+
 
 class casecollisionauditor(object):
     def __init__(self, ui, abort, dirstate):
@@ -339,6 +371,7 @@ class casecollisionauditor(object):
         self._loweredfiles.add(fl)
         self._newfiles.add(f)
 
+
 def filteredhash(repo, maxrev):
     """build hash of filtered revisions in the current repoview.
 
@@ -363,20 +396,25 @@ def filteredhash(repo, maxrev):
         key = s.digest()
     return key
 
+
 def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
     '''yield every hg repository under path, always recursively.
     The recurse flag will only control recursion into repo working dirs'''
+
     def errhandler(err):
         if err.filename == path:
             raise err
+
     samestat = getattr(os.path, 'samestat', None)
     if followsym and samestat is not None:
+
         def adddir(dirlst, dirname):
             dirstat = os.stat(dirname)
             match = any(samestat(dirstat, lstdirstat) for lstdirstat in dirlst)
             if not match:
                 dirlst.append(dirstat)
             return not match
+
     else:
         followsym = False
 
@@ -386,15 +424,15 @@ def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
     for root, dirs, files in os.walk(path, topdown=True, onerror=errhandler):
         dirs.sort()
         if '.hg' in dirs:
-            yield root # found a repository
+            yield root  # found a repository
             qroot = os.path.join(root, '.hg', 'patches')
             if os.path.isdir(os.path.join(qroot, '.hg')):
-                yield qroot # we have a patch queue repo here
+                yield qroot  # we have a patch queue repo here
             if recurse:
                 # avoid recursing inside the .hg directory
                 dirs.remove('.hg')
             else:
-                dirs[:] = [] # don't descend further
+                dirs[:] = []  # don't descend further
         elif followsym:
             newdirs = []
             for d in dirs:
@@ -407,12 +445,14 @@ def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
                         newdirs.append(d)
             dirs[:] = newdirs
 
+
 def binnode(ctx):
     """Return binary node id for a given basectx"""
     node = ctx.node()
     if node is None:
         return wdirid
     return node
+
 
 def intrev(ctx):
     """Return integer for a given basectx that can be used in comparison or
@@ -422,11 +462,13 @@ def intrev(ctx):
         return wdirrev
     return rev
 
+
 def formatchangeid(ctx):
     """Format changectx as '{rev}:{node|formatnode}', which is the default
     template provided by logcmdutil.changesettemplater"""
     repo = ctx.repo()
     return formatrevnode(repo.ui, intrev(ctx), binnode(ctx))
+
 
 def formatrevnode(ui, rev, node):
     """Format given revision and node depending on the current verbosity"""
@@ -436,9 +478,11 @@ def formatrevnode(ui, rev, node):
         hexfunc = short
     return '%d:%s' % (rev, hexfunc(node))
 
+
 def resolvehexnodeidprefix(repo, prefix):
-    if (prefix.startswith('x') and
-        repo.ui.configbool('experimental', 'revisions.prefixhexnode')):
+    if prefix.startswith('x') and repo.ui.configbool(
+        'experimental', 'revisions.prefixhexnode'
+    ):
         prefix = prefix[1:]
     try:
         # Uses unfiltered repo because it's faster when prefix is ambiguous/
@@ -448,8 +492,9 @@ def resolvehexnodeidprefix(repo, prefix):
         revset = repo.ui.config('experimental', 'revisions.disambiguatewithin')
         if revset:
             # Clear config to avoid infinite recursion
-            configoverrides = {('experimental',
-                                'revisions.disambiguatewithin'): None}
+            configoverrides = {
+                ('experimental', 'revisions.disambiguatewithin'): None
+            }
             with repo.ui.configoverride(configoverrides):
                 revs = repo.anyrevs([revset], user=True)
                 matches = []
@@ -465,6 +510,7 @@ def resolvehexnodeidprefix(repo, prefix):
     repo.changelog.rev(node)  # make sure node isn't filtered
     return node
 
+
 def mayberevnum(repo, prefix):
     """Checks if the given prefix may be mistaken for a revision number"""
     try:
@@ -479,6 +525,7 @@ def mayberevnum(repo, prefix):
     except ValueError:
         return False
 
+
 def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
     """Find the shortest unambiguous prefix that matches hexnode.
 
@@ -489,7 +536,7 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
 
-    minlength=max(minlength, 1)
+    minlength = max(minlength, 1)
 
     def disambiguate(prefix):
         """Disambiguate against revnums."""
@@ -550,6 +597,7 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
     except error.LookupError:
         raise error.RepoLookupError()
 
+
 def isrevsymbol(repo, symbol):
     """Checks if a symbol exists in the repo.
 
@@ -562,6 +610,7 @@ def isrevsymbol(repo, symbol):
     except error.RepoLookupError:
         return False
 
+
 def revsymbol(repo, symbol):
     """Returns a context given a single revision symbol (as string).
 
@@ -570,8 +619,10 @@ def revsymbol(repo, symbol):
     not "max(public())".
     """
     if not isinstance(symbol, bytes):
-        msg = ("symbol (%s of type %s) was not a string, did you mean "
-               "repo[symbol]?" % (symbol, type(symbol)))
+        msg = (
+            "symbol (%s of type %s) was not a string, did you mean "
+            "repo[symbol]?" % (symbol, type(symbol))
+        )
         raise error.ProgrammingError(msg)
     try:
         if symbol in ('.', 'tip', 'null'):
@@ -619,9 +670,13 @@ def revsymbol(repo, symbol):
 
     except error.WdirUnsupported:
         return repo[None]
-    except (error.FilteredIndexError, error.FilteredLookupError,
-            error.FilteredRepoLookupError):
+    except (
+        error.FilteredIndexError,
+        error.FilteredLookupError,
+        error.FilteredRepoLookupError,
+    ):
         raise _filterederror(repo, symbol)
+
 
 def _filterederror(repo, changeid):
     """build an exception to be raised about a filtered changeid
@@ -648,6 +703,7 @@ def _filterederror(repo, changeid):
     msg %= (changeid, repo.filtername)
     return error.FilteredRepoLookupError(msg)
 
+
 def revsingle(repo, revspec, default='.', localalias=None):
     if not revspec and revspec != 0:
         return repo[default]
@@ -657,9 +713,11 @@ def revsingle(repo, revspec, default='.', localalias=None):
         raise error.Abort(_('empty revision set'))
     return repo[l.last()]
 
+
 def _pairspec(revspec):
     tree = revsetlang.parse(revspec)
     return tree and tree[0] in ('range', 'rangepre', 'rangepost', 'rangeall')
+
 
 def revpair(repo, revs):
     if not revs:
@@ -673,8 +731,11 @@ def revpair(repo, revs):
     first = l.first()
     second = l.last()
 
-    if (first == second and len(revs) >= 2
-        and not all(revrange(repo, [r]) for r in revs)):
+    if (
+        first == second
+        and len(revs) >= 2
+        and not all(revrange(repo, [r]) for r in revs)
+    ):
         raise error.Abort(_('empty revision on one side of range'))
 
     # if top-level is range expression, the result must always be a pair
@@ -682,6 +743,7 @@ def revpair(repo, revs):
         return repo[first], repo[None]
 
     return repo[first], repo[second]
+
 
 def revrange(repo, specs, localalias=None):
     """Execute 1 to many revsets and return the union.
@@ -711,6 +773,7 @@ def revrange(repo, specs, localalias=None):
         allspecs.append(spec)
     return repo.anyrevs(allspecs, user=True, localalias=localalias)
 
+
 def meaningfulparents(repo, ctx):
     """Return list of meaningful (or all if debug) parentrevs for rev.
 
@@ -726,6 +789,7 @@ def meaningfulparents(repo, ctx):
     if parents[0].rev() >= intrev(ctx) - 1:
         return []
     return parents
+
 
 def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
     """Return a function that produced paths for presenting to the user.
@@ -751,7 +815,8 @@ def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
             relative = stringutil.parsebool(config)
             if relative is None:
                 raise error.ConfigError(
-                    _("ui.relative-paths is not a boolean ('%s')") % config)
+                    _("ui.relative-paths is not a boolean ('%s')") % config
+                )
 
     if relative:
         cwd = repo.getcwd()
@@ -762,9 +827,11 @@ def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
     else:
         return util.localpath
 
+
 def subdiruipathfn(subpath, uipathfn):
     '''Create a new uipathfn that treats the file as relative to subpath.'''
     return lambda f: uipathfn(posixpath.join(subpath, f))
+
 
 def anypats(pats, opts):
     '''Checks if any patterns, including --include and --exclude were given.
@@ -773,6 +840,7 @@ def anypats(pats, opts):
     print absolute or relative paths.
     '''
     return bool(pats or opts.get('include') or opts.get('exclude'))
+
 
 def expandpats(pats):
     '''Expand bare globs when running on windows.
@@ -793,8 +861,10 @@ def expandpats(pats):
         ret.append(kindpat)
     return ret
 
-def matchandpats(ctx, pats=(), opts=None, globbed=False, default='relpath',
-                 badfn=None):
+
+def matchandpats(
+    ctx, pats=(), opts=None, globbed=False, default='relpath', badfn=None
+):
     '''Return a matcher and the patterns that were used.
     The matcher will warn about bad matches, unless an alternate badfn callback
     is provided.'''
@@ -804,31 +874,43 @@ def matchandpats(ctx, pats=(), opts=None, globbed=False, default='relpath',
         pats = expandpats(pats or [])
 
     uipathfn = getuipathfn(ctx.repo(), legacyrelativevalue=True)
+
     def bad(f, msg):
         ctx.repo().ui.warn("%s: %s\n" % (uipathfn(f), msg))
 
     if badfn is None:
         badfn = bad
 
-    m = ctx.match(pats, opts.get('include'), opts.get('exclude'),
-                  default, listsubrepos=opts.get('subrepos'), badfn=badfn)
+    m = ctx.match(
+        pats,
+        opts.get('include'),
+        opts.get('exclude'),
+        default,
+        listsubrepos=opts.get('subrepos'),
+        badfn=badfn,
+    )
 
     if m.always():
         pats = []
     return m, pats
 
-def match(ctx, pats=(), opts=None, globbed=False, default='relpath',
-          badfn=None):
+
+def match(
+    ctx, pats=(), opts=None, globbed=False, default='relpath', badfn=None
+):
     '''Return a matcher that will warn about bad matches.'''
     return matchandpats(ctx, pats, opts, globbed, default, badfn=badfn)[0]
+
 
 def matchall(repo):
     '''Return a matcher that will efficiently match everything.'''
     return matchmod.always()
 
+
 def matchfiles(repo, files, badfn=None):
     '''Return a matcher that will efficiently match exactly these files.'''
     return matchmod.exact(files, badfn=badfn)
+
 
 def parsefollowlinespattern(repo, rev, pat, msg):
     """Return a file name from `pat` pattern suitable for usage in followlines
@@ -844,6 +926,7 @@ def parsefollowlinespattern(repo, rev, pat, msg):
             raise error.ParseError(msg)
         return files[0]
 
+
 def getorigvfs(ui, repo):
     """return a vfs suitable to save 'orig' file
 
@@ -852,6 +935,7 @@ def getorigvfs(ui, repo):
     if not origbackuppath:
         return None
     return vfs.vfs(repo.wvfs.join(origbackuppath))
+
 
 def backuppath(ui, repo, filepath):
     '''customize where working copy backup files (.orig files) are created
@@ -874,19 +958,20 @@ def backuppath(ui, repo, filepath):
         # Remove any files that conflict with the backup file's path
         for f in reversed(list(util.finddirs(filepath))):
             if origvfs.isfileorlink(f):
-                ui.note(_('removing conflicting file: %s\n')
-                        % origvfs.join(f))
+                ui.note(_('removing conflicting file: %s\n') % origvfs.join(f))
                 origvfs.unlink(f)
                 break
 
         origvfs.makedirs(origbackupdir)
 
     if origvfs.isdir(filepath) and not origvfs.islink(filepath):
-        ui.note(_('removing conflicting directory: %s\n')
-                % origvfs.join(filepath))
+        ui.note(
+            _('removing conflicting directory: %s\n') % origvfs.join(filepath)
+        )
         origvfs.rmtree(filepath, forcibly=True)
 
     return origvfs.join(filepath)
+
 
 class _containsnode(object):
     """proxy __contains__(node) to container.__contains__ which accepts revs"""
@@ -898,8 +983,17 @@ class _containsnode(object):
     def __contains__(self, node):
         return self._revcontains(self._torev(node))
 
-def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
-                 fixphase=False, targetphase=None, backup=True):
+
+def cleanupnodes(
+    repo,
+    replacements,
+    operation,
+    moves=None,
+    metadata=None,
+    fixphase=False,
+    targetphase=None,
+    backup=True,
+):
     """do common cleanups when old nodes are replaced by new nodes
 
     That includes writing obsmarkers or stripping nodes, and moving bookmarks.
@@ -949,8 +1043,9 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
                     allreplaced = []
                     for rep in replacements:
                         allreplaced.extend(rep)
-                    roots = list(unfi.set('max((::%n) - %ln)', oldnode,
-                                          allreplaced))
+                    roots = list(
+                        unfi.set('max((::%n) - %ln)', oldnode, allreplaced)
+                    )
                     if roots:
                         newnode = roots[0].node()
                     else:
@@ -971,14 +1066,17 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
 
         allnewnodes.sort(key=lambda n: unfi[n].rev())
         newphases = {}
+
         def phase(ctx):
             return newphases.get(ctx.node(), ctx.phase())
+
         for newnode in allnewnodes:
             ctx = unfi[newnode]
             parentphase = max(phase(p) for p in ctx.parents())
             if targetphase is None:
-                oldphase = max(unfi[oldnode].phase()
-                               for oldnode in precursors[newnode])
+                oldphase = max(
+                    unfi[oldnode].phase() for oldnode in precursors[newnode]
+                )
                 newphase = max(oldphase, parentphase)
             else:
                 newphase = max(targetphase, parentphase)
@@ -996,13 +1094,23 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             oldbmarks = repo.nodebookmarks(oldnode)
             if not oldbmarks:
                 continue
-            from . import bookmarks # avoid import cycle
-            repo.ui.debug('moving bookmarks %r from %s to %s\n' %
-                          (pycompat.rapply(pycompat.maybebytestr, oldbmarks),
-                           hex(oldnode), hex(newnode)))
+            from . import bookmarks  # avoid import cycle
+
+            repo.ui.debug(
+                'moving bookmarks %r from %s to %s\n'
+                % (
+                    pycompat.rapply(pycompat.maybebytestr, oldbmarks),
+                    hex(oldnode),
+                    hex(newnode),
+                )
+            )
             # Delete divergent bookmarks being parents of related newnodes
-            deleterevs = repo.revs('parents(roots(%ln & (::%n))) - parents(%n)',
-                                   allnewnodes, newnode, oldnode)
+            deleterevs = repo.revs(
+                'parents(roots(%ln & (::%n))) - parents(%n)',
+                allnewnodes,
+                newnode,
+                oldnode,
+            )
             deletenodes = _containsnode(repo, deleterevs)
             for name in oldbmarks:
                 bmarkchanges.append((name, newnode))
@@ -1033,25 +1141,31 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
                 rel = (tuple(unfi[n] for n in ns), tuple(unfi[m] for m in s))
                 rels.append(rel)
             if rels:
-                obsolete.createmarkers(repo, rels, operation=operation,
-                                       metadata=metadata)
+                obsolete.createmarkers(
+                    repo, rels, operation=operation, metadata=metadata
+                )
         elif phases.supportinternal(repo) and mayusearchived:
             # this assume we do not have "unstable" nodes above the cleaned ones
             allreplaced = set()
             for ns in replacements.keys():
                 allreplaced.update(ns)
             if backup:
-                from . import repair # avoid import cycle
+                from . import repair  # avoid import cycle
+
                 node = min(allreplaced, key=repo.changelog.rev)
-                repair.backupbundle(repo, allreplaced, allreplaced, node,
-                                    operation)
+                repair.backupbundle(
+                    repo, allreplaced, allreplaced, node, operation
+                )
             phases.retractboundary(repo, tr, phases.archived, allreplaced)
         else:
-            from . import repair # avoid import cycle
+            from . import repair  # avoid import cycle
+
             tostrip = list(n for ns in replacements for n in ns)
             if tostrip:
-                repair.delayedstrip(repo.ui, repo, tostrip, operation,
-                                    backup=backup)
+                repair.delayedstrip(
+                    repo.ui, repo, tostrip, operation, backup=backup
+                )
+
 
 def addremove(repo, matcher, prefix, uipathfn, opts=None):
     if opts is None:
@@ -1079,18 +1193,22 @@ def addremove(repo, matcher, prefix, uipathfn, opts=None):
                 if sub.addremove(submatch, subprefix, subuipathfn, opts):
                     ret = 1
             except error.LookupError:
-                repo.ui.status(_("skipping missing subrepository: %s\n")
-                                 % uipathfn(subpath))
+                repo.ui.status(
+                    _("skipping missing subrepository: %s\n")
+                    % uipathfn(subpath)
+                )
 
     rejected = []
+
     def badfn(f, msg):
         if f in m.files():
             m.bad(f, msg)
         rejected.append(f)
 
     badmatch = matchmod.badmatch(m, badfn)
-    added, unknown, deleted, removed, forgotten = _interestingfiles(repo,
-                                                                    badmatch)
+    added, unknown, deleted, removed, forgotten = _interestingfiles(
+        repo, badmatch
+    )
 
     unknownset = set(unknown + forgotten)
     toprint = unknownset.copy()
@@ -1105,8 +1223,9 @@ def addremove(repo, matcher, prefix, uipathfn, opts=None):
                 label = 'ui.addremove.removed'
             repo.ui.status(status, label=label)
 
-    renames = _findrenames(repo, m, added + unknown, removed + deleted,
-                           similarity, uipathfn)
+    renames = _findrenames(
+        repo, m, added + unknown, removed + deleted, similarity, uipathfn
+    )
 
     if not dry_run:
         _markchanges(repo, unknown + forgotten, deleted, renames)
@@ -1115,6 +1234,7 @@ def addremove(repo, matcher, prefix, uipathfn, opts=None):
         if f in m.files():
             return 1
     return ret
+
 
 def marktouched(repo, files, similarity=0.0):
     '''Assert that files have somehow been operated upon. files are relative to
@@ -1139,8 +1259,9 @@ def marktouched(repo, files, similarity=0.0):
     # the messages above too. legacyrelativevalue=True is consistent with how
     # it used to work.
     uipathfn = getuipathfn(repo, legacyrelativevalue=True)
-    renames = _findrenames(repo, m, added + unknown, removed + deleted,
-                           similarity, uipathfn)
+    renames = _findrenames(
+        repo, m, added + unknown, removed + deleted, similarity, uipathfn
+    )
 
     _markchanges(repo, unknown + forgotten, deleted, renames)
 
@@ -1148,6 +1269,7 @@ def marktouched(repo, files, similarity=0.0):
         if f in m.files():
             return 1
     return 0
+
 
 def _interestingfiles(repo, matcher):
     '''Walk dirstate with matcher, looking for files that addremove would care
@@ -1161,8 +1283,13 @@ def _interestingfiles(repo, matcher):
     ctx = repo[None]
     dirstate = repo.dirstate
     matcher = repo.narrowmatch(matcher, includeexact=True)
-    walkresults = dirstate.walk(matcher, subrepos=sorted(ctx.substate),
-                                unknown=True, ignored=False, full=False)
+    walkresults = dirstate.walk(
+        matcher,
+        subrepos=sorted(ctx.substate),
+        unknown=True,
+        ignored=False,
+        full=False,
+    )
     for abs, st in walkresults.iteritems():
         dstate = dirstate[abs]
         if dstate == '?' and audit_path.check(abs):
@@ -1179,20 +1306,29 @@ def _interestingfiles(repo, matcher):
 
     return added, unknown, deleted, removed, forgotten
 
+
 def _findrenames(repo, matcher, added, removed, similarity, uipathfn):
     '''Find renames from removed files to added ones.'''
     renames = {}
     if similarity > 0:
-        for old, new, score in similar.findrenames(repo, added, removed,
-                                                   similarity):
-            if (repo.ui.verbose or not matcher.exact(old)
-                or not matcher.exact(new)):
-                repo.ui.status(_('recording removal of %s as rename to %s '
-                                 '(%d%% similar)\n') %
-                               (uipathfn(old), uipathfn(new),
-                                score * 100))
+        for old, new, score in similar.findrenames(
+            repo, added, removed, similarity
+        ):
+            if (
+                repo.ui.verbose
+                or not matcher.exact(old)
+                or not matcher.exact(new)
+            ):
+                repo.ui.status(
+                    _(
+                        'recording removal of %s as rename to %s '
+                        '(%d%% similar)\n'
+                    )
+                    % (uipathfn(old), uipathfn(new), score * 100)
+                )
             renames[new] = old
     return renames
+
 
 def _markchanges(repo, unknown, deleted, renames):
     '''Marks the files in unknown as added, the files in deleted as removed,
@@ -1204,8 +1340,10 @@ def _markchanges(repo, unknown, deleted, renames):
         for new, old in renames.iteritems():
             wctx.copy(old, new)
 
+
 def getrenamedfn(repo, endrev=None):
     if copiesmod.usechangesetcentricalgo(repo):
+
         def getrenamed(fn, rev):
             ctx = repo[rev]
             p1copies = ctx.p1copies()
@@ -1215,6 +1353,7 @@ def getrenamedfn(repo, endrev=None):
             if fn in p2copies:
                 return p2copies[fn]
             return None
+
         return getrenamed
 
     rcache = {}
@@ -1247,8 +1386,10 @@ def getrenamedfn(repo, endrev=None):
 
     return getrenamed
 
+
 def getcopiesfn(repo, endrev=None):
     if copiesmod.usechangesetcentricalgo(repo):
+
         def copiesfn(ctx):
             if ctx.p2copies():
                 allcopies = ctx.p1copies().copy()
@@ -1257,8 +1398,10 @@ def getcopiesfn(repo, endrev=None):
                 return sorted(allcopies.items())
             else:
                 return sorted(ctx.p1copies().items())
+
     else:
         getrenamed = getrenamedfn(repo, endrev)
+
         def copiesfn(ctx):
             copies = []
             for fn in ctx.files():
@@ -1269,24 +1412,30 @@ def getcopiesfn(repo, endrev=None):
 
     return copiesfn
 
+
 def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
     """Update the dirstate to reflect the intent of copying src to dst. For
     different reasons it might not end with dst being marked as copied from src.
     """
     origsrc = repo.dirstate.copied(src) or src
-    if dst == origsrc: # copying back a copy?
+    if dst == origsrc:  # copying back a copy?
         if repo.dirstate[dst] not in 'mn' and not dryrun:
             repo.dirstate.normallookup(dst)
     else:
         if repo.dirstate[origsrc] == 'a' and origsrc == src:
             if not ui.quiet:
-                ui.warn(_("%s has not been committed yet, so no copy "
-                          "data will be stored for %s.\n")
-                        % (repo.pathto(origsrc, cwd), repo.pathto(dst, cwd)))
+                ui.warn(
+                    _(
+                        "%s has not been committed yet, so no copy "
+                        "data will be stored for %s.\n"
+                    )
+                    % (repo.pathto(origsrc, cwd), repo.pathto(dst, cwd))
+                )
             if repo.dirstate[dst] in '?r' and not dryrun:
                 wctx.add([dst])
         elif not dryrun:
             wctx.copy(origsrc, dst)
+
 
 def movedirstate(repo, newctx, match=None):
     """Move the dirstate to newctx and adjust it as necessary.
@@ -1323,18 +1472,21 @@ def movedirstate(repo, newctx, match=None):
     # Merge old parent and old working dir copies
     oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
     oldcopies.update(copies)
-    copies = dict((dst, oldcopies.get(src, src))
-                  for dst, src in oldcopies.iteritems())
+    copies = dict(
+        (dst, oldcopies.get(src, src)) for dst, src in oldcopies.iteritems()
+    )
     # Adjust the dirstate copies
     for dst, src in copies.iteritems():
-        if (src not in newctx or dst in newctx or ds[dst] != 'a'):
+        if src not in newctx or dst in newctx or ds[dst] != 'a':
             src = None
         ds.copy(src, dst)
+
 
 def writerequires(opener, requirements):
     with opener('requires', 'w', atomictemp=True) as fp:
         for r in sorted(requirements):
             fp.write("%s\n" % r)
+
 
 class filecachesubentry(object):
     def __init__(self, path, stat):
@@ -1391,6 +1543,7 @@ class filecachesubentry(object):
             if e.errno != errno.ENOENT:
                 raise
 
+
 class filecacheentry(object):
     def __init__(self, paths, stat=True):
         self._entries = []
@@ -1407,6 +1560,7 @@ class filecacheentry(object):
     def refresh(self):
         for entry in self._entries:
             entry.refresh()
+
 
 class filecache(object):
     """A property like decorator that tracks files under .hg/ for updates.
@@ -1490,8 +1644,9 @@ class filecache(object):
         else:
             ce = obj._filecache[self.name]
 
-        ce.obj = value # update cached copy
-        obj.__dict__[self.sname] = value # update copy returned by obj.x
+        ce.obj = value  # update cached copy
+        obj.__dict__[self.sname] = value  # update copy returned by obj.x
+
 
 def extdatasource(repo, source):
     """Gather a map of rev -> value dict from the specified source
@@ -1519,11 +1674,14 @@ def extdatasource(repo, source):
         if spec.startswith("shell:"):
             # external commands should be run relative to the repo root
             cmd = spec[6:]
-            proc = subprocess.Popen(procutil.tonativestr(cmd),
-                                    shell=True, bufsize=-1,
-                                    close_fds=procutil.closefds,
-                                    stdout=subprocess.PIPE,
-                                    cwd=procutil.tonativestr(repo.root))
+            proc = subprocess.Popen(
+                procutil.tonativestr(cmd),
+                shell=True,
+                bufsize=-1,
+                close_fds=procutil.closefds,
+                stdout=subprocess.PIPE,
+                cwd=procutil.tonativestr(repo.root),
+            )
             src = proc.stdout
         else:
             # treat as a URL or file
@@ -1538,7 +1696,7 @@ def extdatasource(repo, source):
             try:
                 data[revsingle(repo, k).rev()] = encoding.tolocal(v)
             except (error.LookupError, error.RepoLookupError):
-                pass # we ignore data for nodes that don't exist locally
+                pass  # we ignore data for nodes that don't exist locally
     finally:
         if proc:
             try:
@@ -1550,20 +1708,25 @@ def extdatasource(repo, source):
         if src:
             src.close()
     if proc and proc.returncode != 0:
-        raise error.Abort(_("extdata command '%s' failed: %s")
-                          % (cmd, procutil.explainexit(proc.returncode)))
+        raise error.Abort(
+            _("extdata command '%s' failed: %s")
+            % (cmd, procutil.explainexit(proc.returncode))
+        )
 
     return data
+
 
 def _locksub(repo, lock, envvar, cmd, environ=None, *args, **kwargs):
     if lock is None:
         raise error.LockInheritanceContractViolation(
-            'lock can only be inherited while held')
+            'lock can only be inherited while held'
+        )
     if environ is None:
         environ = {}
     with lock.inherit() as locker:
         environ[envvar] = locker
         return repo.ui.system(cmd, environ=environ, *args, **kwargs)
+
 
 def wlocksub(repo, cmd, *args, **kwargs):
     """run cmd as a subprocess that allows inheriting repo's wlock
@@ -1571,8 +1734,10 @@ def wlocksub(repo, cmd, *args, **kwargs):
     This can only be called while the wlock is held. This takes all the
     arguments that ui.system does, and returns the exit code of the
     subprocess."""
-    return _locksub(repo, repo.currentwlock(), 'HG_WLOCK_LOCKER', cmd, *args,
-                    **kwargs)
+    return _locksub(
+        repo, repo.currentwlock(), 'HG_WLOCK_LOCKER', cmd, *args, **kwargs
+    )
+
 
 class progress(object):
     def __init__(self, ui, updatebar, topic, unit="", total=None):
@@ -1616,17 +1781,22 @@ class progress(object):
 
         if self.total:
             pct = 100.0 * self.pos / self.total
-            self.ui.debug('%s:%s %d/%d%s (%4.2f%%)\n'
-                       % (self.topic, item, self.pos, self.total, unit, pct))
+            self.ui.debug(
+                '%s:%s %d/%d%s (%4.2f%%)\n'
+                % (self.topic, item, self.pos, self.total, unit, pct)
+            )
         else:
             self.ui.debug('%s:%s %d%s\n' % (self.topic, item, self.pos, unit))
+
 
 def gdinitconfig(ui):
     """helper function to know if a repo should be created as general delta
     """
     # experimental config: format.generaldelta
-    return (ui.configbool('format', 'generaldelta')
-            or ui.configbool('format', 'usegeneraldelta'))
+    return ui.configbool('format', 'generaldelta') or ui.configbool(
+        'format', 'usegeneraldelta'
+    )
+
 
 def gddeltaconfig(ui):
     """helper function to know if incoming delta should be optimised
@@ -1634,11 +1804,13 @@ def gddeltaconfig(ui):
     # experimental config: format.generaldelta
     return ui.configbool('format', 'generaldelta')
 
+
 class simplekeyvaluefile(object):
     """A simple file with key=value lines
 
     Keys must be alphanumerics and start with a letter, values must not
     contain '\n' characters"""
+
     firstlinekey = '__firstline'
 
     def __init__(self, vfs, path, keys=None):
@@ -1665,8 +1837,9 @@ class simplekeyvaluefile(object):
             # the 'if line.strip()' part prevents us from failing on empty
             # lines which only contain '\n' therefore are not skipped
             # by 'if line'
-            updatedict = dict(line[:-1].split('=', 1) for line in lines
-                                                      if line.strip())
+            updatedict = dict(
+                line[:-1].split('=', 1) for line in lines if line.strip()
+            )
             if self.firstlinekey in updatedict:
                 e = _("%r can't be used as a key")
                 raise error.CorruptedState(e % self.firstlinekey)
@@ -1703,6 +1876,7 @@ class simplekeyvaluefile(object):
         with self.vfs(self.path, mode='wb', atomictemp=True) as fp:
             fp.write(''.join(lines))
 
+
 _reportobsoletedsource = [
     'debugobsolete',
     'pull',
@@ -1715,6 +1889,7 @@ _reportnewcssource = [
     'pull',
     'unbundle',
 ]
+
 
 def prefetchfiles(repo, revs, match):
     """Invokes the registered file prefetch functions, allowing extensions to
@@ -1729,15 +1904,18 @@ def prefetchfiles(repo, revs, match):
 
     fileprefetchhooks(repo, revs, match)
 
+
 # a list of (repo, revs, match) prefetch functions
 fileprefetchhooks = util.hooks()
 
 # A marker that tells the evolve extension to suppress its own reporting
 _reportstroubledchangesets = True
 
+
 def registersummarycallback(repo, otr, txnname=''):
     """register a callback to issue a summary after the transaction is closed
     """
+
     def txmatch(sources):
         return any(txnname.startswith(source) for source in sources)
 
@@ -1752,16 +1930,17 @@ def registersummarycallback(repo, otr, txnname=''):
         # repository through the weakref.
         filtername = repo.filtername
         reporef = weakref.ref(repo.unfiltered())
+
         def wrapped(tr):
             repo = reporef()
             if filtername:
                 repo = repo.filtered(filtername)
             func(repo, tr)
+
         newcat = '%02i-txnreport' % len(categories)
         otr.addpostclose(newcat, wrapped)
         categories.append(newcat)
         return wrapped
-
 
     @reportsummary
     def reportchangegroup(repo, tr):
@@ -1777,6 +1956,7 @@ def registersummarycallback(repo, otr, txnname=''):
             repo.ui.status(msg % (cgchangesets, cgrevisions, cgfiles, htext))
 
     if txmatch(_reportobsoletedsource):
+
         @reportsummary
         def reportobsoleted(repo, tr):
             obsoleted = obsutil.getobsoleted(repo, tr)
@@ -1784,11 +1964,11 @@ def registersummarycallback(repo, otr, txnname=''):
             if newmarkers:
                 repo.ui.status(_('%i new obsolescence markers\n') % newmarkers)
             if obsoleted:
-                repo.ui.status(_('obsoleted %i changesets\n')
-                               % len(obsoleted))
+                repo.ui.status(_('obsoleted %i changesets\n') % len(obsoleted))
 
-    if (obsolete.isenabled(repo, obsolete.createmarkersopt) and
-        repo.ui.configbool('experimental', 'evolution.report-instabilities')):
+    if obsolete.isenabled(
+        repo, obsolete.createmarkersopt
+    ) and repo.ui.configbool('experimental', 'evolution.report-instabilities'):
         instabilitytypes = [
             ('orphan', 'orphan'),
             ('phase-divergent', 'phasedivergent'),
@@ -1799,22 +1979,27 @@ def registersummarycallback(repo, otr, txnname=''):
             filtered = repo.changelog.filteredrevs
             counts = {}
             for instability, revset in instabilitytypes:
-                counts[instability] = len(set(obsolete.getrevs(repo, revset)) -
-                                          filtered)
+                counts[instability] = len(
+                    set(obsolete.getrevs(repo, revset)) - filtered
+                )
             return counts
 
         oldinstabilitycounts = getinstabilitycounts(repo)
+
         @reportsummary
         def reportnewinstabilities(repo, tr):
             newinstabilitycounts = getinstabilitycounts(repo)
             for instability, revset in instabilitytypes:
-                delta = (newinstabilitycounts[instability] -
-                         oldinstabilitycounts[instability])
+                delta = (
+                    newinstabilitycounts[instability]
+                    - oldinstabilitycounts[instability]
+                )
                 msg = getinstabilitymessage(delta, instability)
                 if msg:
                     repo.ui.warn(msg)
 
     if txmatch(_reportnewcssource):
+
         @reportsummary
         def reportnewcs(repo, tr):
             """Report the range of new revisions pulled/unbundled."""
@@ -1852,8 +2037,9 @@ def registersummarycallback(repo, otr, txnname=''):
 
             # search new changesets directly pulled as obsolete
             duplicates = tr.changes.get('revduplicates', ())
-            obsadded = unfi.revs('(%d: + %ld) and obsolete()',
-                                 origrepolen, duplicates)
+            obsadded = unfi.revs(
+                '(%d: + %ld) and obsolete()', origrepolen, duplicates
+            )
             cl = repo.changelog
             extinctadded = [r for r in obsadded if r not in cl]
             if extinctadded:
@@ -1873,13 +2059,16 @@ def registersummarycallback(repo, otr, txnname=''):
             if not phasetracking:
                 return
             published = [
-                rev for rev, (old, new) in phasetracking.iteritems()
+                rev
+                for rev, (old, new) in phasetracking.iteritems()
                 if new == phases.public and rev < origrepolen
             ]
             if not published:
                 return
-            repo.ui.status(_('%d local changesets published\n')
-                           % len(published))
+            repo.ui.status(
+                _('%d local changesets published\n') % len(published)
+            )
+
 
 def getinstabilitymessage(delta, instability):
     """function to return the message to show warning about new instabilities
@@ -1889,11 +2078,13 @@ def getinstabilitymessage(delta, instability):
     if delta > 0:
         return _('%i new %s changesets\n') % (delta, instability)
 
+
 def nodesummaries(repo, nodes, maxnumnodes=4):
     if len(nodes) <= maxnumnodes or repo.ui.verbose:
         return ' '.join(short(h) for h in nodes)
     first = ' '.join(short(h) for h in nodes[:maxnumnodes])
     return _("%s and %d others") % (first, len(nodes) - maxnumnodes)
+
 
 def enforcesinglehead(repo, tr, desc, accountclosed=False):
     """check that no named branch has multiple heads"""
@@ -1912,11 +2103,13 @@ def enforcesinglehead(repo, tr, desc, accountclosed=False):
             hint %= (len(heads), nodesummaries(repo, heads))
             raise error.Abort(msg, hint=hint)
 
+
 def wrapconvertsink(sink):
     """Allow extensions to wrap the sink returned by convcmd.convertsink()
     before it is used, whether or not the convert extension was formally loaded.
     """
     return sink
+
 
 def unhidehashlikerevs(repo, specs, hiddentype):
     """parse the user specs and unhide changesets whose hash or revision number
@@ -1927,8 +2120,9 @@ def unhidehashlikerevs(repo, specs, hiddentype):
 
     returns a repo object with the required changesets unhidden
     """
-    if not repo.filtername or not repo.ui.configbool('experimental',
-                                                     'directaccess'):
+    if not repo.filtername or not repo.ui.configbool(
+        'experimental', 'directaccess'
+    ):
         return repo
 
     if repo.filtername not in ('visible', 'visible-hidden'):
@@ -1938,7 +2132,7 @@ def unhidehashlikerevs(repo, specs, hiddentype):
     for spec in specs:
         try:
             tree = revsetlang.parse(spec)
-        except error.ParseError: # will be reported by scmutil.revrange()
+        except error.ParseError:  # will be reported by scmutil.revrange()
             continue
 
         symbols.update(revsetlang.gethashlikesymbols(tree))
@@ -1954,12 +2148,18 @@ def unhidehashlikerevs(repo, specs, hiddentype):
     if hiddentype == 'warn':
         unfi = repo.unfiltered()
         revstr = ", ".join([pycompat.bytestr(unfi[l]) for l in revs])
-        repo.ui.warn(_("warning: accessing hidden changesets for write "
-                       "operation: %s\n") % revstr)
+        repo.ui.warn(
+            _(
+                "warning: accessing hidden changesets for write "
+                "operation: %s\n"
+            )
+            % revstr
+        )
 
     # we have to use new filtername to separate branch/tags cache until we can
     # disbale these cache when revisions are dynamically pinned.
     return repo.filtered('visible-hidden', revs)
+
 
 def _getrevsfromsymbols(repo, symbols):
     """parse the list of symbols and returns a set of revision numbers of hidden
@@ -1995,14 +2195,20 @@ def _getrevsfromsymbols(repo, symbols):
 
     return revs
 
+
 def bookmarkrevs(repo, mark):
     """
     Select revisions reachable by a given bookmark
     """
-    return repo.revs("ancestors(bookmark(%s)) - "
-                     "ancestors(head() and not bookmark(%s)) - "
-                     "ancestors(bookmark() and not bookmark(%s))",
-                     mark, mark, mark)
+    return repo.revs(
+        "ancestors(bookmark(%s)) - "
+        "ancestors(head() and not bookmark(%s)) - "
+        "ancestors(bookmark() and not bookmark(%s))",
+        mark,
+        mark,
+        mark,
+    )
+
 
 def computechangesetfilesadded(ctx):
     """return the list of files added in a changeset
@@ -2012,6 +2218,7 @@ def computechangesetfilesadded(ctx):
         if not any(f in p for p in ctx.parents()):
             added.append(f)
     return added
+
 
 def computechangesetfilesremoved(ctx):
     """return the list of files removed in a changeset

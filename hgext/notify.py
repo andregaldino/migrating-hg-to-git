@@ -178,62 +178,62 @@ testedwith = 'ships-with-hg-core'
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('notify', 'changegroup',
-    default=None,
+configitem(
+    'notify', 'changegroup', default=None,
 )
-configitem('notify', 'config',
-    default=None,
+configitem(
+    'notify', 'config', default=None,
 )
-configitem('notify', 'diffstat',
-    default=True,
+configitem(
+    'notify', 'diffstat', default=True,
 )
-configitem('notify', 'domain',
-    default=None,
+configitem(
+    'notify', 'domain', default=None,
 )
-configitem('notify', 'messageidseed',
-    default=None,
+configitem(
+    'notify', 'messageidseed', default=None,
 )
-configitem('notify', 'fromauthor',
-    default=None,
+configitem(
+    'notify', 'fromauthor', default=None,
 )
-configitem('notify', 'incoming',
-    default=None,
+configitem(
+    'notify', 'incoming', default=None,
 )
-configitem('notify', 'maxdiff',
-    default=300,
+configitem(
+    'notify', 'maxdiff', default=300,
 )
-configitem('notify', 'maxdiffstat',
-    default=-1,
+configitem(
+    'notify', 'maxdiffstat', default=-1,
 )
-configitem('notify', 'maxsubject',
-    default=67,
+configitem(
+    'notify', 'maxsubject', default=67,
 )
-configitem('notify', 'mbox',
-    default=None,
+configitem(
+    'notify', 'mbox', default=None,
 )
-configitem('notify', 'merge',
-    default=True,
+configitem(
+    'notify', 'merge', default=True,
 )
-configitem('notify', 'outgoing',
-    default=None,
+configitem(
+    'notify', 'outgoing', default=None,
 )
-configitem('notify', 'sources',
-    default='serve',
+configitem(
+    'notify', 'sources', default='serve',
 )
-configitem('notify', 'showfunc',
-    default=None,
+configitem(
+    'notify', 'showfunc', default=None,
 )
-configitem('notify', 'strip',
-    default=0,
+configitem(
+    'notify', 'strip', default=0,
 )
-configitem('notify', 'style',
-    default=None,
+configitem(
+    'notify', 'style', default=None,
 )
-configitem('notify', 'template',
-    default=None,
+configitem(
+    'notify', 'template', default=None,
 )
-configitem('notify', 'test',
-    default=True,
+configitem(
+    'notify', 'test', default=True,
 )
 
 # template for single changeset can include email headers.
@@ -260,6 +260,7 @@ deftemplates = {
     'changegroup': multiple_template,
 }
 
+
 class notifier(object):
     '''email notification class.'''
 
@@ -283,8 +284,9 @@ class notifier(object):
             self.showfunc = self.ui.configbool('diff', 'showfunc')
 
         mapfile = None
-        template = (self.ui.config('notify', hooktype) or
-                    self.ui.config('notify', 'template'))
+        template = self.ui.config('notify', hooktype) or self.ui.config(
+            'notify', 'template'
+        )
         if not template:
             mapfile = self.ui.config('notify', 'style')
         if not mapfile and not template:
@@ -301,7 +303,7 @@ class notifier(object):
             c = path.find('/')
             if c == -1:
                 break
-            path = path[c + 1:]
+            path = path[c + 1 :]
             count -= 1
         return path
 
@@ -336,16 +338,23 @@ class notifier(object):
             if fnmatch.fnmatch(self.repo.root, pat):
                 for user in users.split(','):
                     subs.add((self.fixmail(user), revs))
-        return [(mail.addressencode(self.ui, s, self.charsets, self.test), r)
-                for s, r in sorted(subs)]
+        return [
+            (mail.addressencode(self.ui, s, self.charsets, self.test), r)
+            for s, r in sorted(subs)
+        ]
 
     def node(self, ctx, **props):
         '''format one changeset, unless it is a suppressed merge.'''
         if not self.merge and len(ctx.parents()) > 1:
             return False
-        self.t.show(ctx, changes=ctx.changeset(),
-                    baseurl=self.ui.config('web', 'baseurl'),
-                    root=self.repo.root, webroot=self.root, **props)
+        self.t.show(
+            ctx,
+            changes=ctx.changeset(),
+            baseurl=self.ui.config('web', 'baseurl'),
+            root=self.repo.root,
+            webroot=self.root,
+            **props
+        )
         return True
 
     def skipsource(self, source):
@@ -367,8 +376,9 @@ class notifier(object):
                 subs.add(sub)
                 continue
         if len(subs) == 0:
-            self.ui.debug('notify: no subscribers to selected repo '
-                          'and revset\n')
+            self.ui.debug(
+                'notify: no subscribers to selected repo ' 'and revset\n'
+            )
             return
 
         p = emailparser.Parser()
@@ -398,7 +408,8 @@ class notifier(object):
                 msg[k] = v
 
         msg[r'Date'] = encoding.strfromlocal(
-            dateutil.datestr(format="%a, %d %b %Y %H:%M:%S %1%2"))
+            dateutil.datestr(format="%a, %d %b %Y %H:%M:%S %1%2")
+        )
 
         # try to make subject line exist and be useful
         if not subject:
@@ -411,7 +422,8 @@ class notifier(object):
         if maxsubject:
             subject = stringutil.ellipsis(subject, maxsubject)
         msg[r'Subject'] = encoding.strfromlocal(
-            mail.headencode(self.ui, subject, self.charsets, self.test))
+            mail.headencode(self.ui, subject, self.charsets, self.test)
+        )
 
         # try to make message have proper sender
         if not sender:
@@ -419,7 +431,8 @@ class notifier(object):
         if '@' not in sender or '@localhost' in sender:
             sender = self.fixmail(sender)
         msg[r'From'] = encoding.strfromlocal(
-            mail.addressencode(self.ui, sender, self.charsets, self.test))
+            mail.addressencode(self.ui, sender, self.charsets, self.test)
+        )
 
         msg[r'X-Hg-Notification'] = r'changeset %s' % ctx
         if not msg[r'Message-Id']:
@@ -432,10 +445,17 @@ class notifier(object):
             if not msgtext.endswith('\n'):
                 self.ui.write('\n')
         else:
-            self.ui.status(_('notify: sending %d subscribers %d changes\n') %
-                           (len(subs), count))
-            mail.sendmail(self.ui, stringutil.email(msg[r'From']),
-                          subs, msgtext, mbox=self.mbox)
+            self.ui.status(
+                _('notify: sending %d subscribers %d changes\n')
+                % (len(subs), count)
+            )
+            mail.sendmail(
+                self.ui,
+                stringutil.email(msg[r'From']),
+                subs,
+                msgtext,
+                mbox=self.mbox,
+            )
 
     def diff(self, ctx, ref=None):
 
@@ -474,6 +494,7 @@ class notifier(object):
 
         self.ui.write("\n".join(difflines))
 
+
 def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
     '''send email notifications to interested subscribers.
 
@@ -502,16 +523,20 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
                     author = repo[rev].user()
             else:
                 data += ui.popbuffer()
-                ui.note(_('notify: suppressing notification for merge %d:%s\n')
-                        % (rev, repo[rev].hex()[:12]))
+                ui.note(
+                    _('notify: suppressing notification for merge %d:%s\n')
+                    % (rev, repo[rev].hex()[:12])
+                )
                 ui.pushbuffer()
         if count:
             n.diff(ctx, repo['tip'])
     elif ctx.rev() in repo:
         if not n.node(ctx):
             ui.popbuffer()
-            ui.note(_('notify: suppressing notification for merge %d:%s\n') %
-                    (ctx.rev(), ctx.hex()[:12]))
+            ui.note(
+                _('notify: suppressing notification for merge %d:%s\n')
+                % (ctx.rev(), ctx.hex()[:12])
+            )
             return
         count += 1
         n.diff(ctx)
@@ -526,6 +551,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
     if count:
         n.send(ctx, count, data)
 
+
 def messageid(ctx, domain, messageidseed):
     if domain and messageidseed:
         host = domain
@@ -535,6 +561,10 @@ def messageid(ctx, domain, messageidseed):
         messagehash = hashlib.sha512(ctx.hex() + messageidseed)
         messageid = '<hg.%s@%s>' % (messagehash.hexdigest()[:64], host)
     else:
-        messageid = '<hg.%s.%d.%d@%s>' % (ctx, int(time.time()),
-                                          hash(ctx.repo().root), host)
+        messageid = '<hg.%s.%d.%d@%s>' % (
+            ctx,
+            int(time.time()),
+            hash(ctx.repo().root),
+            host,
+        )
     return encoding.strfromlocal(messageid)

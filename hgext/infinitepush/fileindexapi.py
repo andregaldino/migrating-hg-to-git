@@ -21,6 +21,7 @@ from mercurial.utils import stringutil
 
 from . import indexapi
 
+
 class fileindexapi(indexapi.indexapi):
     def __init__(self, repo):
         super(fileindexapi, self).__init__()

@@ -26,12 +26,8 @@ from mercurial import (
     util,
     wireprototypes,
 )
-from mercurial.interfaces import (
-    repository,
-)
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.interfaces import repository
+from mercurial.utils import stringutil
 
 _NARROWACL_SECTION = 'narrowacl'
 _CHANGESPECPART = 'narrow:changespec'
@@ -41,20 +37,30 @@ _SPECPART_INCLUDE = 'include'
 _SPECPART_EXCLUDE = 'exclude'
 _KILLNODESIGNAL = 'KILL'
 _DONESIGNAL = 'DONE'
-_ELIDEDCSHEADER = '>20s20s20sl' # cset id, p1, p2, len(text)
-_ELIDEDMFHEADER = '>20s20s20s20sl' # manifest id, p1, p2, link id, len(text)
+_ELIDEDCSHEADER = '>20s20s20sl'  # cset id, p1, p2, len(text)
+_ELIDEDMFHEADER = '>20s20s20s20sl'  # manifest id, p1, p2, link id, len(text)
 _CSHEADERSIZE = struct.calcsize(_ELIDEDCSHEADER)
 _MFHEADERSIZE = struct.calcsize(_ELIDEDMFHEADER)
 
 # Serve a changegroup for a client with a narrow clone.
-def getbundlechangegrouppart_narrow(bundler, repo, source,
-                                    bundlecaps=None, b2caps=None, heads=None,
-                                    common=None, **kwargs):
+def getbundlechangegrouppart_narrow(
+    bundler,
+    repo,
+    source,
+    bundlecaps=None,
+    b2caps=None,
+    heads=None,
+    common=None,
+    **kwargs
+):
     assert repo.ui.configbool('experimental', 'narrowservebrokenellipses')
 
     cgversions = b2caps.get('changegroup')
-    cgversions = [v for v in cgversions
-                  if v in changegroup.supportedoutgoingversions(repo)]
+    cgversions = [
+        v
+        for v in cgversions
+        if v in changegroup.supportedoutgoingversions(repo)
+    ]
     if not cgversions:
         raise ValueError(_('no common changegroup version'))
     version = max(cgversions)
@@ -64,14 +70,37 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
     newinclude = sorted(filter(bool, kwargs.get(r'includepats', [])))
     newexclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
     known = {bin(n) for n in kwargs.get(r'known', [])}
-    generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
-                            newexclude, version, common, heads, known,
-                            kwargs.get(r'depth', None))
+    generateellipsesbundle2(
+        bundler,
+        repo,
+        oldinclude,
+        oldexclude,
+        newinclude,
+        newexclude,
+        version,
+        common,
+        heads,
+        known,
+        kwargs.get(r'depth', None),
+    )
 
-def generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
-                            newexclude, version, common, heads, known, depth):
-    newmatch = narrowspec.match(repo.root, include=newinclude,
-                                exclude=newexclude)
+
+def generateellipsesbundle2(
+    bundler,
+    repo,
+    oldinclude,
+    oldexclude,
+    newinclude,
+    newexclude,
+    version,
+    common,
+    heads,
+    known,
+    depth,
+):
+    newmatch = narrowspec.match(
+        repo.root, include=newinclude, exclude=newexclude
+    )
     if depth is not None:
         depth = int(depth)
         if depth < 1:
@@ -104,21 +133,27 @@ def generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
         # what to strip, instead of us explicitly sending every
         # single node.
         deadrevs = known
+
         def genkills():
             for r in deadrevs:
                 yield _KILLNODESIGNAL
                 yield repo.changelog.node(r)
             yield _DONESIGNAL
+
         bundler.newpart(_CHANGESPECPART, data=genkills())
         newvisit, newfull, newellipsis = exchange._computeellipsis(
-            repo, set(), common, known, newmatch)
+            repo, set(), common, known, newmatch
+        )
         if newvisit:
-            packer = changegroup.getbundler(version, repo,
-                                            matcher=newmatch,
-                                            ellipses=True,
-                                            shallow=depth is not None,
-                                            ellipsisroots=newellipsis,
-                                            fullnodes=newfull)
+            packer = changegroup.getbundler(
+                version,
+                repo,
+                matcher=newmatch,
+                ellipses=True,
+                shallow=depth is not None,
+                ellipsisroots=newellipsis,
+                fullnodes=newfull,
+            )
             cgdata = packer.generate(common, newvisit, False, 'narrow_widen')
 
             part = bundler.newpart('changegroup', data=cgdata)
@@ -127,22 +162,27 @@ def generateellipsesbundle2(bundler, repo, oldinclude, oldexclude, newinclude,
                 part.addparam('treemanifest', '1')
 
     visitnodes, relevant_nodes, ellipsisroots = exchange._computeellipsis(
-        repo, common, heads, set(), newmatch, depth=depth)
+        repo, common, heads, set(), newmatch, depth=depth
+    )
 
     repo.ui.debug('Found %d relevant revs\n' % len(relevant_nodes))
     if visitnodes:
-        packer = changegroup.getbundler(version, repo,
-                                        matcher=newmatch,
-                                        ellipses=True,
-                                        shallow=depth is not None,
-                                        ellipsisroots=ellipsisroots,
-                                        fullnodes=relevant_nodes)
+        packer = changegroup.getbundler(
+            version,
+            repo,
+            matcher=newmatch,
+            ellipses=True,
+            shallow=depth is not None,
+            ellipsisroots=ellipsisroots,
+            fullnodes=relevant_nodes,
+        )
         cgdata = packer.generate(common, visitnodes, False, 'narrow_widen')
 
         part = bundler.newpart('changegroup', data=cgdata)
         part.addparam('version', version)
         if 'treemanifest' in repo.requirements:
             part.addparam('treemanifest', '1')
+
 
 @bundle2.parthandler(_SPECPART, (_SPECPART_INCLUDE, _SPECPART_EXCLUDE))
 def _handlechangespec_2(op, inpart):
@@ -161,6 +201,7 @@ def _handlechangespec_2(op, inpart):
     op.repo.setnarrowpats(includepats, excludepats)
     narrowspec.copytoworkingcopy(op.repo)
 
+
 @bundle2.parthandler(_RESSPECS)
 def _handlenarrowspecs(op, inpart):
     data = inpart.read()
@@ -175,6 +216,7 @@ def _handlenarrowspecs(op, inpart):
         op.repo._writerequirements()
     op.repo.setnarrowpats(includepats, excludepats)
     narrowspec.copytoworkingcopy(op.repo)
+
 
 @bundle2.parthandler(_CHANGESPECPART)
 def _handlechangespec(op, inpart):
@@ -199,18 +241,22 @@ def _handlechangespec(op, inpart):
                 clkills.add(ck)
         else:
             raise error.Abort(
-                _('unexpected changespec node chunk type: %s') % chunksignal)
+                _('unexpected changespec node chunk type: %s') % chunksignal
+            )
         chunksignal = changegroup.readexactly(inpart, 4)
 
     if clkills:
         # preserve bookmarks that repair.strip() would otherwise strip
         op._bookmarksbackup = repo._bookmarks
+
         class dummybmstore(dict):
             def applychanges(self, repo, tr, changes):
                 pass
+
         localrepo.localrepository._bookmarks.set(repo, dummybmstore())
-        chgrpfile = repair.strip(op.ui, repo, list(clkills), backup=True,
-                                 topic='widen')
+        chgrpfile = repair.strip(
+            op.ui, repo, list(clkills), backup=True, topic='widen'
+        )
         if chgrpfile:
             op._widen_uninterr = repo.ui.uninterruptible()
             op._widen_uninterr.__enter__()
@@ -222,6 +268,7 @@ def _handlechangespec(op, inpart):
     # because we're deepening a shallow repo).
     if util.safehasattr(repo, 'setnewnarrowpats'):
         repo.setnewnarrowpats()
+
 
 def handlechangegroup_widen(op, inpart):
     """Changegroup exchange handler which restores temporarily-stripped nodes"""
@@ -257,12 +304,15 @@ def handlechangegroup_widen(op, inpart):
             undovfs.unlink(undofile)
         except OSError as e:
             if e.errno != errno.ENOENT:
-                ui.warn(_('error removing %s: %s\n') %
-                        (undovfs.join(undofile), stringutil.forcebytestr(e)))
+                ui.warn(
+                    _('error removing %s: %s\n')
+                    % (undovfs.join(undofile), stringutil.forcebytestr(e))
+                )
 
     # Remove partial backup only if there were no exceptions
     op._widen_uninterr.__exit__(None, None, None)
     vfs.unlink(chgrpfile)
+
 
 def setup():
     """Enable narrow repo support in bundle2-related extension points."""
@@ -276,27 +326,32 @@ def setup():
 
     # Extend changegroup serving to handle requests from narrow clients.
     origcgfn = exchange.getbundle2partsmapping['changegroup']
+
     def wrappedcgfn(*args, **kwargs):
         repo = args[1]
         if repo.ui.has_section(_NARROWACL_SECTION):
             kwargs = exchange.applynarrowacl(repo, kwargs)
 
-        if (kwargs.get(r'narrow', False) and
-            repo.ui.configbool('experimental', 'narrowservebrokenellipses')):
+        if kwargs.get(r'narrow', False) and repo.ui.configbool(
+            'experimental', 'narrowservebrokenellipses'
+        ):
             getbundlechangegrouppart_narrow(*args, **kwargs)
         else:
             origcgfn(*args, **kwargs)
+
     exchange.getbundle2partsmapping['changegroup'] = wrappedcgfn
 
     # Extend changegroup receiver so client can fixup after widen requests.
     origcghandler = bundle2.parthandlermapping['changegroup']
+
     def wrappedcghandler(op, inpart):
         origcghandler(op, inpart)
         if util.safehasattr(op, '_widen_bundle'):
             handlechangegroup_widen(op, inpart)
         if util.safehasattr(op, '_bookmarksbackup'):
-            localrepo.localrepository._bookmarks.set(op.repo,
-                                                     op._bookmarksbackup)
+            localrepo.localrepository._bookmarks.set(
+                op.repo, op._bookmarksbackup
+            )
             del op._bookmarksbackup
 
     wrappedcghandler.params = origcghandler.params

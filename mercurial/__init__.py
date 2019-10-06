@@ -11,6 +11,7 @@ import sys
 
 # Allow 'from mercurial import demandimport' to keep working.
 import hgdemandimport
+
 demandimport = hgdemandimport
 
 __all__ = []
@@ -27,6 +28,7 @@ if sys.version_info[0] >= 3:
 
     class hgpathentryfinder(importlib.abc.MetaPathFinder):
         """A sys.meta_path finder that uses a custom module loader."""
+
         def find_spec(self, fullname, path, target=None):
             # Only handle Mercurial-related modules.
             if not fullname.startswith(('mercurial.', 'hgext.')):
@@ -78,7 +80,7 @@ if sys.version_info[0] >= 3:
             loader = hgloader(spec.name, spec.origin)
             # Can't use util.safehasattr here because that would require
             # importing util, and we're in import code.
-            if hasattr(spec.loader, 'loader'): # hasattr-py3-only
+            if hasattr(spec.loader, 'loader'):  # hasattr-py3-only
                 # This is a nested loader (maybe a lazy loader?)
                 spec.loader.loader = loader
             else:
@@ -184,9 +186,13 @@ if sys.version_info[0] >= 3:
 
             # Insert compatibility imports at "from __future__ import" line.
             # No '\n' should be added to preserve line numbers.
-            if (t.type == token.NAME and t.string == 'import' and
-                all(u.type == token.NAME for u in tokens[i - 2:i]) and
-                [u.string for u in tokens[i - 2:i]] == ['from', '__future__']):
+            if (
+                t.type == token.NAME
+                and t.string == 'import'
+                and all(u.type == token.NAME for u in tokens[i - 2 : i])
+                and [u.string for u in tokens[i - 2 : i]]
+                == ['from', '__future__']
+            ):
                 futureimpline = True
             if t.type == token.NEWLINE and futureimpline:
                 futureimpline = False
@@ -194,14 +200,17 @@ if sys.version_info[0] >= 3:
                     yield t
                     continue
                 r, c = t.start
-                l = (b'; from mercurial.pycompat import '
-                     b'delattr, getattr, hasattr, setattr, '
-                     b'open, unicode\n')
+                l = (
+                    b'; from mercurial.pycompat import '
+                    b'delattr, getattr, hasattr, setattr, '
+                    b'open, unicode\n'
+                )
                 for u in tokenize.tokenize(io.BytesIO(l).readline):
                     if u.type in (tokenize.ENCODING, token.ENDMARKER):
                         continue
                     yield u._replace(
-                        start=(r, c + u.start[1]), end=(r, c + u.end[1]))
+                        start=(r, c + u.start[1]), end=(r, c + u.end[1])
+                    )
                 continue
 
             # This looks like a function call.
@@ -209,8 +218,12 @@ if sys.version_info[0] >= 3:
                 fn = t.string
 
                 # *attr() builtins don't accept byte strings to 2nd argument.
-                if (fn in ('getattr', 'setattr', 'hasattr', 'safehasattr') and
-                        not _isop(i - 1, '.')):
+                if fn in (
+                    'getattr',
+                    'setattr',
+                    'hasattr',
+                    'safehasattr',
+                ) and not _isop(i - 1, '.'):
                     arg1idx = _findargnofcall(1)
                     if arg1idx is not None:
                         _ensureunicode(arg1idx)
@@ -225,9 +238,10 @@ if sys.version_info[0] >= 3:
 
                 # It changes iteritems/values to items/values as they are not
                 # present in Python 3 world.
-                elif (fn in ('iteritems', 'itervalues') and
-                      not (tokens[i - 1].type == token.NAME and
-                           tokens[i - 1].string == 'def')):
+                elif fn in ('iteritems', 'itervalues') and not (
+                    tokens[i - 1].type == token.NAME
+                    and tokens[i - 1].string == 'def'
+                ):
                     yield t._replace(string=fn[4:])
                     continue
 
@@ -269,6 +283,7 @@ if sys.version_info[0] >= 3:
         The added header has the form ``HG<VERSION>``. That is a literal
         ``HG`` with 2 binary bytes indicating the transformation version.
         """
+
         def get_data(self, path):
             data = super(hgloader, self).get_data(path)
 

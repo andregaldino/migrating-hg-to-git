@@ -23,6 +23,7 @@ isremotebooksenabled = common.isremotebooksenabled
 
 scratchbranchparttype = 'b2x:infinitepush'
 
+
 def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
     if not outgoing.missing:
         raise error.Abort(_('no commits to push'))
@@ -30,8 +31,9 @@ def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
     if scratchbranchparttype not in bundle2.bundle2caps(peer):
         raise error.Abort(_('no server support for %r') % scratchbranchparttype)
 
-    _validaterevset(repo, revsetlang.formatspec('%ln', outgoing.missing),
-                    bookmark)
+    _validaterevset(
+        repo, revsetlang.formatspec('%ln', outgoing.missing), bookmark
+    )
 
     supportedversions = changegroup.supportedoutgoingversions(repo)
     # Explicitly avoid using '01' changegroup version in infinitepush to
@@ -60,12 +62,16 @@ def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
 
     # .upper() marks this as a mandatory part: server will abort if there's no
     #  handler
-    parts.append(bundle2.bundlepart(
-        scratchbranchparttype.upper(),
-        advisoryparams=params.iteritems(),
-        data=cg))
+    parts.append(
+        bundle2.bundlepart(
+            scratchbranchparttype.upper(),
+            advisoryparams=params.iteritems(),
+            data=cg,
+        )
+    )
 
     return parts
+
 
 def _validaterevset(repo, revset, bookmark):
     """Abort if the revs to be pushed aren't valid for a scratch branch."""
@@ -76,7 +82,9 @@ def _validaterevset(repo, revset, bookmark):
         heads = repo.revs('heads(%r)', revset)
         if len(heads) > 1:
             raise error.Abort(
-                _('cannot push more than one head to a scratch branch'))
+                _('cannot push more than one head to a scratch branch')
+            )
+
 
 def _handlelfs(repo, missing):
     '''Special case if lfs is enabled
@@ -90,6 +98,7 @@ def _handlelfs(repo, missing):
     except KeyError:
         # Ignore if lfs extension is not enabled
         return
+
 
 class copiedpart(object):
     """a copy of unbundlepart content that can be consumed later"""

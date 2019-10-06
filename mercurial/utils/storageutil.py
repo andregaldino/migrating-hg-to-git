@@ -27,6 +27,7 @@ from ..interfaces import repository
 
 _nullhash = hashlib.sha1(nullid)
 
+
 def hashrevisionsha1(text, p1, p2):
     """Compute the SHA-1 for revision data and its parents.
 
@@ -52,7 +53,9 @@ def hashrevisionsha1(text, p1, p2):
     s.update(text)
     return s.digest()
 
+
 METADATA_RE = re.compile(b'\x01\n')
+
 
 def parsemeta(text):
     """Parse metadata header from revision data.
@@ -71,15 +74,18 @@ def parsemeta(text):
         meta[k] = v
     return meta, s + 2
 
+
 def packmeta(meta, text):
     """Add metadata to fulltext to produce revision text."""
     keys = sorted(meta)
     metatext = b''.join(b'%s: %s\n' % (k, meta[k]) for k in keys)
     return b'\x01\n%s\x01\n%s' % (metatext, text)
 
+
 def iscensoredtext(text):
     meta = parsemeta(text)[0]
     return meta and b'censored' in meta
+
 
 def filtermetadata(text):
     """Extract just the revision data from source text.
@@ -91,7 +97,8 @@ def filtermetadata(text):
         return text
 
     offset = text.index(b'\x01\n', 2)
-    return text[offset + 2:]
+    return text[offset + 2 :]
+
 
 def filerevisioncopied(store, node):
     """Resolve file revision copy metadata.
@@ -111,6 +118,7 @@ def filerevisioncopied(store, node):
         return meta[b'copy'], bin(meta[b'copyrev'])
 
     return False
+
 
 def filedataequivalent(store, node, filedata):
     """Determines whether file data is equivalent to a stored node.
@@ -148,6 +156,7 @@ def filedataequivalent(store, node, filedata):
 
     return False
 
+
 def iterrevs(storelen, start=0, stop=None):
     """Iterate over revision numbers in a store."""
     step = 1
@@ -162,6 +171,7 @@ def iterrevs(storelen, start=0, stop=None):
         stop = storelen
 
     return pycompat.xrange(start, stop, step)
+
 
 def fileidlookup(store, fileid, identifier):
     """Resolve the file node for a value.
@@ -184,8 +194,9 @@ def fileidlookup(store, fileid, identifier):
         try:
             return store.node(fileid)
         except IndexError:
-            raise error.LookupError('%d' % fileid, identifier,
-                                    _('no match found'))
+            raise error.LookupError(
+                '%d' % fileid, identifier, _('no match found')
+            )
 
     if len(fileid) == 20:
         try:
@@ -216,6 +227,7 @@ def fileidlookup(store, fileid, identifier):
         pass
 
     raise error.LookupError(fileid, identifier, _('no match found'))
+
 
 def resolvestripinfo(minlinkrev, tiprev, headrevs, linkrevfn, parentrevsfn):
     """Resolve information needed to strip revisions.
@@ -268,10 +280,21 @@ def resolvestripinfo(minlinkrev, tiprev, headrevs, linkrevfn, parentrevsfn):
 
     return strippoint, brokenrevs
 
-def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
-                  candeltafn=None, rawsizefn=None, revdifffn=None, flagsfn=None,
-                  deltamode=repository.CG_DELTAMODE_STD,
-                  revisiondata=False, assumehaveparentrevisions=False):
+
+def emitrevisions(
+    store,
+    nodes,
+    nodesorder,
+    resultcls,
+    deltaparentfn=None,
+    candeltafn=None,
+    rawsizefn=None,
+    revdifffn=None,
+    flagsfn=None,
+    deltamode=repository.CG_DELTAMODE_STD,
+    revisiondata=False,
+    assumehaveparentrevisions=False,
+):
     """Generic implementation of ifiledata.emitrevisions().
 
     Emitting revision data is subtly complex. This function attempts to
@@ -343,7 +366,7 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
     elif nodesorder == 'linear':
         revs = set(frev(n) for n in nodes)
         revs = dagop.linearize(revs, store.parentrevs)
-    else: # storage and default
+    else:  # storage and default
         revs = sorted(frev(n) for n in nodes)
 
     prevrev = None
@@ -388,8 +411,7 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
 
             # Base revision is a parent that hasn't been emitted already.
             # Use it if we can assume the receiver has the parent revision.
-            elif (assumehaveparentrevisions
-                  and deltaparentrev in (p1rev, p2rev)):
+            elif assumehaveparentrevisions and deltaparentrev in (p1rev, p2rev):
                 baserev = deltaparentrev
 
             # No guarantee the receiver has the delta parent. Send delta
@@ -432,16 +454,18 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
                     else:
                         baserevisionsize = len(store.rawdata(baserev))
 
-            elif (baserev == nullrev
-                    and deltamode != repository.CG_DELTAMODE_PREV):
+            elif (
+                baserev == nullrev and deltamode != repository.CG_DELTAMODE_PREV
+            ):
                 revision = store.rawdata(node)
                 available.add(rev)
             else:
                 if revdifffn:
                     delta = revdifffn(baserev, rev)
                 else:
-                    delta = mdiff.textdiff(store.rawdata(baserev),
-                                           store.rawdata(rev))
+                    delta = mdiff.textdiff(
+                        store.rawdata(baserev), store.rawdata(rev)
+                    )
 
                 available.add(rev)
 
@@ -453,9 +477,11 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
             flags=flagsfn(rev) if flagsfn else 0,
             baserevisionsize=baserevisionsize,
             revision=revision,
-            delta=delta)
+            delta=delta,
+        )
 
         prevrev = rev
+
 
 def deltaiscensored(delta, baserev, baselenfn):
     """Determine if a delta represents censored revision data.
@@ -483,4 +509,4 @@ def deltaiscensored(delta, baserev, baselenfn):
 
     add = "\1\ncensored:"
     addlen = len(add)
-    return newlen >= addlen and delta[hlen:hlen + addlen] == add
+    return newlen >= addlen and delta[hlen : hlen + addlen] == add

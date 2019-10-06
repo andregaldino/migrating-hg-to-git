@@ -14,9 +14,11 @@ from . import (
     shallowutil,
 )
 
+
 class ChainIndicies(object):
     """A static class for easy reference to the delta chain indicies.
     """
+
     # The filename of this revision delta
     NAME = 0
     # The mercurial file node for this revision delta
@@ -30,6 +32,7 @@ class ChainIndicies(object):
     BASENODE = 3
     # The actual delta or full text data.
     DATA = 4
+
 
 class unioncontentstore(basestore.baseunionstore):
     def __init__(self, *args, **kwargs):
@@ -132,8 +135,9 @@ class unioncontentstore(basestore.baseunionstore):
         raise KeyError((name, hex(node)))
 
     def add(self, name, node, data):
-        raise RuntimeError("cannot add content only to remotefilelog "
-                           "contentstore")
+        raise RuntimeError(
+            "cannot add content only to remotefilelog " "contentstore"
+        )
 
     def getmissing(self, keys):
         missing = keys
@@ -152,6 +156,7 @@ class unioncontentstore(basestore.baseunionstore):
         for store in self.stores:
             store.markledger(ledger, options)
 
+
 class remotefilelogcontentstore(basestore.basestore):
     def __init__(self, *args, **kwargs):
         super(remotefilelogcontentstore, self).__init__(*args, **kwargs)
@@ -162,7 +167,7 @@ class remotefilelogcontentstore(basestore.basestore):
         data = self._getdata(name, node)
 
         offset, size, flags = shallowutil.parsesizeflags(data)
-        content = data[offset:offset + size]
+        content = data[offset : offset + size]
 
         ancestormap = shallowutil.ancestormap(data)
         p1, p2, linknode, copyfrom = ancestormap[node]
@@ -202,21 +207,22 @@ class remotefilelogcontentstore(basestore.basestore):
         return self._threaddata.metacache[1]
 
     def add(self, name, node, data):
-        raise RuntimeError("cannot add content only to remotefilelog "
-                           "contentstore")
+        raise RuntimeError(
+            "cannot add content only to remotefilelog " "contentstore"
+        )
 
     def _sanitizemetacache(self):
         metacache = getattr(self._threaddata, 'metacache', None)
         if metacache is None:
-            self._threaddata.metacache = (None, None) # (node, meta)
+            self._threaddata.metacache = (None, None)  # (node, meta)
 
     def _updatemetacache(self, node, size, flags):
         self._sanitizemetacache()
         if node == self._threaddata.metacache[0]:
             return
-        meta = {constants.METAKEYFLAG: flags,
-                constants.METAKEYSIZE: size}
+        meta = {constants.METAKEYFLAG: flags, constants.METAKEYSIZE: size}
         self._threaddata.metacache = (node, meta)
+
 
 class remotecontentstore(object):
     def __init__(self, ui, fileservice, shared):
@@ -225,8 +231,9 @@ class remotecontentstore(object):
         self._shared = shared
 
     def get(self, name, node):
-        self._fileservice.prefetch([(name, hex(node))], force=True,
-                                   fetchdata=True)
+        self._fileservice.prefetch(
+            [(name, hex(node))], force=True, fetchdata=True
+        )
         return self._shared.get(name, node)
 
     def getdelta(self, name, node):
@@ -242,8 +249,9 @@ class remotecontentstore(object):
         return [(name, node, None, nullid, revision)]
 
     def getmeta(self, name, node):
-        self._fileservice.prefetch([(name, hex(node))], force=True,
-                                   fetchdata=True)
+        self._fileservice.prefetch(
+            [(name, hex(node))], force=True, fetchdata=True
+        )
         return self._shared.getmeta(name, node)
 
     def add(self, name, node, data):
@@ -254,6 +262,7 @@ class remotecontentstore(object):
 
     def markledger(self, ledger, options=None):
         pass
+
 
 class manifestrevlogstore(object):
     def __init__(self, repo):
@@ -277,8 +286,10 @@ class manifestrevlogstore(object):
     def getmeta(self, name, node):
         rl = self._revlog(name)
         rev = rl.rev(node)
-        return {constants.METAKEYFLAG: rl.flags(rev),
-                constants.METAKEYSIZE: rl.rawsize(rev)}
+        return {
+            constants.METAKEYFLAG: rl.flags(rev),
+            constants.METAKEYSIZE: rl.rawsize(rev),
+        }
 
     def getancestors(self, name, node, known=None):
         if known is None:
@@ -359,7 +370,7 @@ class manifestrevlogstore(object):
             if path[:5] != 'meta/' or path[-2:] != '.i':
                 continue
 
-            treename = path[5:-len('/00manifest.i')]
+            treename = path[5 : -len('/00manifest.i')]
 
             rl = revlog.revlog(self._svfs, path)
             for rev in pycompat.xrange(len(rl) - 1, -1, -1):

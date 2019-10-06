@@ -116,9 +116,7 @@ import tempfile
 import weakref
 
 from mercurial.i18n import _
-from mercurial.node import (
-    hex,
-)
+from mercurial.node import hex
 
 from mercurial import (
     context,
@@ -150,49 +148,59 @@ testedwith = 'ships-with-hg-core'
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('fsmonitor', 'mode',
-    default='on',
+configitem(
+    'fsmonitor', 'mode', default='on',
 )
-configitem('fsmonitor', 'walk_on_invalidate',
-    default=False,
+configitem(
+    'fsmonitor', 'walk_on_invalidate', default=False,
 )
-configitem('fsmonitor', 'timeout',
-    default='2',
+configitem(
+    'fsmonitor', 'timeout', default='2',
 )
-configitem('fsmonitor', 'blacklistusers',
-    default=list,
+configitem(
+    'fsmonitor', 'blacklistusers', default=list,
 )
-configitem('fsmonitor', 'watchman_exe',
-    default='watchman',
+configitem(
+    'fsmonitor', 'watchman_exe', default='watchman',
 )
-configitem('fsmonitor', 'verbose',
-    default=True,
-    experimental=True,
+configitem(
+    'fsmonitor', 'verbose', default=True, experimental=True,
 )
-configitem('experimental', 'fsmonitor.transaction_notify',
-    default=False,
+configitem(
+    'experimental', 'fsmonitor.transaction_notify', default=False,
 )
 
 # This extension is incompatible with the following blacklisted extensions
 # and will disable itself when encountering one of these:
 _blacklist = ['largefiles', 'eol']
 
+
 def debuginstall(ui, fm):
-    fm.write("fsmonitor-watchman",
-             _("fsmonitor checking for watchman binary... (%s)\n"),
-               ui.configpath("fsmonitor", "watchman_exe"))
+    fm.write(
+        "fsmonitor-watchman",
+        _("fsmonitor checking for watchman binary... (%s)\n"),
+        ui.configpath("fsmonitor", "watchman_exe"),
+    )
     root = tempfile.mkdtemp()
     c = watchmanclient.client(ui, root)
     err = None
     try:
         v = c.command("version")
-        fm.write("fsmonitor-watchman-version",
-                 _(" watchman binary version %s\n"), v["version"])
+        fm.write(
+            "fsmonitor-watchman-version",
+            _(" watchman binary version %s\n"),
+            v["version"],
+        )
     except watchmanclient.Unavailable as e:
         err = str(e)
-    fm.condwrite(err, "fsmonitor-watchman-error",
-                 _(" watchman binary missing or broken: %s\n"), err)
+    fm.condwrite(
+        err,
+        "fsmonitor-watchman-error",
+        _(" watchman binary missing or broken: %s\n"),
+        err,
+    )
     return 1 if err else 0
+
 
 def _handleunavailable(ui, state, ex):
     """Exception handler for Watchman interaction exceptions"""
@@ -209,6 +217,7 @@ def _handleunavailable(ui, state, ex):
     else:
         ui.log('fsmonitor', 'Watchman exception: %s\n', ex)
 
+
 def _hashignore(ignore):
     """Calculate hash for ignore patterns and filenames
 
@@ -221,9 +230,11 @@ def _hashignore(ignore):
     sha1.update(repr(ignore))
     return sha1.hexdigest()
 
+
 _watchmanencoding = pywatchman.encoding.get_local_encoding()
 _fsencoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
 _fixencoding = codecs.lookup(_watchmanencoding) != codecs.lookup(_fsencoding)
+
 
 def _watchmantofsencoding(path):
     """Fix path to match watchman and local filesystem encoding
@@ -243,12 +254,14 @@ def _watchmantofsencoding(path):
 
     return encoded
 
+
 def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     '''Replacement for dirstate.walk, hooking into Watchman.
 
     Whenever full is False, ignored is False, and the Watchman client is
     available, use Watchman combined with saved state to possibly return only a
     subset of files.'''
+
     def bail(reason):
         self._ui.debug('fsmonitor: fallback to core status, %s\n' % reason)
         return orig(match, subrepos, unknown, ignored, full=True)
@@ -335,18 +348,19 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
         # Add a little slack over the top of the user query to allow for
         # overheads while transferring the data
         self._watchmanclient.settimeout(state.timeout + 0.1)
-        result = self._watchmanclient.command('query', {
-            'fields': ['mode', 'mtime', 'size', 'exists', 'name'],
-            'since': clock,
-            'expression': [
-                'not', [
-                    'anyof', ['dirname', '.hg'],
-                    ['name', '.hg', 'wholename']
-                ]
-            ],
-            'sync_timeout': int(state.timeout * 1000),
-            'empty_on_fresh_instance': state.walk_on_invalidate,
-        })
+        result = self._watchmanclient.command(
+            'query',
+            {
+                'fields': ['mode', 'mtime', 'size', 'exists', 'name'],
+                'since': clock,
+                'expression': [
+                    'not',
+                    ['anyof', ['dirname', '.hg'], ['name', '.hg', 'wholename']],
+                ],
+                'sync_timeout': int(state.timeout * 1000),
+                'empty_on_fresh_instance': state.walk_on_invalidate,
+            },
+        )
     except Exception as ex:
         _handleunavailable(self._ui, state, ex)
         self._watchmanclient.clearconnection()
@@ -398,8 +412,11 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
             # record, mark it as deleted.  If we already have an entry
             # for fname then it was either part of walkexplicit or was
             # an earlier result that was a case change
-            if fname not in results and fname in dmap and (
-                    matchalways or matchfn(fname)):
+            if (
+                fname not in results
+                and fname in dmap
+                and (matchalways or matchfn(fname))
+            ):
                 results[fname] = None
         elif kind == dirkind:
             if fname in dmap and (matchalways or matchfn(fname)):
@@ -418,29 +435,43 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     if normalize:
         # any notable files that have changed case will already be handled
         # above, so just check membership in the foldmap
-        notefiles = set((normalize(f, True, True) for f in notefiles
-                         if normcase(f) not in foldmap))
-    visit = set((f for f in notefiles if (f not in results and matchfn(f)
-                                          and (f in dmap or not ignore(f)))))
+        notefiles = set(
+            (
+                normalize(f, True, True)
+                for f in notefiles
+                if normcase(f) not in foldmap
+            )
+        )
+    visit = set(
+        (
+            f
+            for f in notefiles
+            if (
+                f not in results and matchfn(f) and (f in dmap or not ignore(f))
+            )
+        )
+    )
 
     if not fresh_instance:
         if matchalways:
             visit.update(f for f in nonnormalset if f not in results)
             visit.update(f for f in copymap if f not in results)
         else:
-            visit.update(f for f in nonnormalset
-                         if f not in results and matchfn(f))
-            visit.update(f for f in copymap
-                         if f not in results and matchfn(f))
+            visit.update(
+                f for f in nonnormalset if f not in results and matchfn(f)
+            )
+            visit.update(f for f in copymap if f not in results and matchfn(f))
     else:
         if matchalways:
             visit.update(f for f, st in dmap.iteritems() if f not in results)
             visit.update(f for f in copymap if f not in results)
         else:
-            visit.update(f for f, st in dmap.iteritems()
-                         if f not in results and matchfn(f))
-            visit.update(f for f in copymap
-                         if f not in results and matchfn(f))
+            visit.update(
+                f
+                for f, st in dmap.iteritems()
+                if f not in results and matchfn(f)
+            )
+            visit.update(f for f in copymap if f not in results and matchfn(f))
 
     audit = pathutil.pathauditor(self._root, cached=True).check
     auditpass = [f for f in visit if audit(f)]
@@ -460,9 +491,18 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     del results['.hg']
     return results
 
+
 def overridestatus(
-        orig, self, node1='.', node2=None, match=None, ignored=False,
-        clean=False, unknown=False, listsubrepos=False):
+    orig,
+    self,
+    node1='.',
+    node2=None,
+    match=None,
+    ignored=False,
+    clean=False,
+    unknown=False,
+    listsubrepos=False,
+):
     listignored = ignored
     listclean = clean
     listunknown = unknown
@@ -508,10 +548,12 @@ def overridestatus(
     # HG_PENDING is set in the environment when the dirstate is being updated
     # in the middle of a transaction; we must not update our state in that
     # case, or we risk forgetting about changes in the working copy.
-    updatestate = (parentworking and match.always() and
-                   not isinstance(ctx2, (context.workingcommitctx,
-                                         context.memctx)) and
-                   'HG_PENDING' not in encoding.environ)
+    updatestate = (
+        parentworking
+        and match.always()
+        and not isinstance(ctx2, (context.workingcommitctx, context.memctx))
+        and 'HG_PENDING' not in encoding.environ
+    )
 
     try:
         if self._fsmonitorstate.walk_on_invalidate:
@@ -528,15 +570,21 @@ def overridestatus(
             # and return the initial clock.  In this mode we assume that
             # the filesystem will be slower than parsing a potentially
             # very large Watchman result set.
-            self._watchmanclient.settimeout(
-                self._fsmonitorstate.timeout + 0.1)
+            self._watchmanclient.settimeout(self._fsmonitorstate.timeout + 0.1)
         startclock = self._watchmanclient.getcurrentclock()
     except Exception as ex:
         self._watchmanclient.clearconnection()
         _handleunavailable(self.ui, self._fsmonitorstate, ex)
         # boo, Watchman failed. bail
-        return orig(node1, node2, match, listignored, listclean,
-                    listunknown, listsubrepos)
+        return orig(
+            node1,
+            node2,
+            match,
+            listignored,
+            listclean,
+            listunknown,
+            listsubrepos,
+        )
 
     if updatestate:
         # We need info about unknown files. This may make things slower the
@@ -549,8 +597,9 @@ def overridestatus(
         ps = poststatus(startclock)
         self.addpostdsstatus(ps)
 
-    r = orig(node1, node2, match, listignored, listclean, stateunknown,
-             listsubrepos)
+    r = orig(
+        node1, node2, match, listignored, listclean, stateunknown, listsubrepos
+    )
     modified, added, removed, deleted, unknown, ignored, clean = r
 
     if not listunknown:
@@ -570,8 +619,14 @@ def overridestatus(
 
         try:
             rv2 = orig(
-                node1, node2, match, listignored, listclean, listunknown,
-                listsubrepos)
+                node1,
+                node2,
+                match,
+                listignored,
+                listclean,
+                listunknown,
+                listsubrepos,
+            )
         finally:
             self.dirstate._fsmonitordisable = False
             self.ui.quiet = quiet
@@ -581,11 +636,14 @@ def overridestatus(
         with self.wlock():
             _cmpsets(
                 [modified, added, removed, deleted, unknown, ignored, clean],
-                rv2)
+                rv2,
+            )
         modified, added, removed, deleted, unknown, ignored, clean = rv2
 
     return scmutil.status(
-        modified, added, removed, deleted, unknown, ignored, clean)
+        modified, added, removed, deleted, unknown, ignored, clean
+    )
+
 
 class poststatus(object):
     def __init__(self, startclock):
@@ -594,9 +652,15 @@ class poststatus(object):
     def __call__(self, wctx, status):
         clock = wctx.repo()._fsmonitorstate.getlastclock() or self._startclock
         hashignore = _hashignore(wctx.repo().dirstate._ignore)
-        notefiles = (status.modified + status.added + status.removed +
-                     status.deleted + status.unknown)
+        notefiles = (
+            status.modified
+            + status.added
+            + status.removed
+            + status.deleted
+            + status.unknown
+        )
         wctx.repo()._fsmonitorstate.set(clock, hashignore, notefiles)
+
 
 def makedirstate(repo, dirstate):
     class fsmonitordirstate(dirstate.__class__):
@@ -624,6 +688,7 @@ def makedirstate(repo, dirstate):
     dirstate.__class__ = fsmonitordirstate
     dirstate._fsmonitorinit(repo)
 
+
 def wrapdirstate(orig, self):
     ds = orig(self)
     # only override the dirstate when Watchman is available for the repo
@@ -631,14 +696,17 @@ def wrapdirstate(orig, self):
         makedirstate(self, ds)
     return ds
 
+
 def extsetup(ui):
     extensions.wrapfilecache(
-        localrepo.localrepository, 'dirstate', wrapdirstate)
+        localrepo.localrepository, 'dirstate', wrapdirstate
+    )
     if pycompat.isdarwin:
         # An assist for avoiding the dangling-symlink fsevents bug
         extensions.wrapfunction(os, 'symlink', wrapsymlink)
 
     extensions.wrapfunction(merge, 'update', wrapupdate)
+
 
 def wrapsymlink(orig, source, link_name):
     ''' if we create a dangling symlink, also touch the parent dir
@@ -651,6 +719,7 @@ def wrapsymlink(orig, source, link_name):
         except OSError:
             pass
 
+
 class state_update(object):
     ''' This context manager is responsible for dispatching the state-enter
         and state-leave signals to the watchman service. The enter and leave
@@ -660,8 +729,15 @@ class state_update(object):
         leave, respectively. Similarly, if the distance is none, it will be
         calculated based on the oldnode and newnode in the leave method.'''
 
-    def __init__(self, repo, name, oldnode=None, newnode=None, distance=None,
-                 partial=False):
+    def __init__(
+        self,
+        repo,
+        name,
+        oldnode=None,
+        newnode=None,
+        distance=None,
+        partial=False,
+    ):
         self.repo = repo.unfiltered()
         self.name = name
         self.oldnode = oldnode
@@ -687,9 +763,7 @@ class state_update(object):
                 self._lock = self.repo.wlocknostateupdate()
             else:
                 self._lock = self.repo.wlock()
-        self.need_leave = self._state(
-            'state-enter',
-            hex(self.oldnode))
+        self.need_leave = self._state('state-enter', hex(self.oldnode))
         return self
 
     def __exit__(self, type_, value, tb):
@@ -704,11 +778,9 @@ class state_update(object):
                     self.newnode = self.repo['.'].node()
                 if self.distance is None:
                     self.distance = calcdistance(
-                        self.repo, self.oldnode, self.newnode)
-                self._state(
-                    'state-leave',
-                    hex(self.newnode),
-                    status=status)
+                        self.repo, self.oldnode, self.newnode
+                    )
+                self._state('state-leave', hex(self.newnode), status=status)
         finally:
             self.need_leave = False
             if self._lock:
@@ -718,39 +790,57 @@ class state_update(object):
         if not util.safehasattr(self.repo, '_watchmanclient'):
             return False
         try:
-            self.repo._watchmanclient.command(cmd, {
-                'name': self.name,
-                'metadata': {
-                    # the target revision
-                    'rev': commithash,
-                    # approximate number of commits between current and target
-                    'distance': self.distance if self.distance else 0,
-                    # success/failure (only really meaningful for state-leave)
-                    'status': status,
-                    # whether the working copy parent is changing
-                    'partial': self.partial,
-            }})
+            self.repo._watchmanclient.command(
+                cmd,
+                {
+                    'name': self.name,
+                    'metadata': {
+                        # the target revision
+                        'rev': commithash,
+                        # approximate number of commits between current and target
+                        'distance': self.distance if self.distance else 0,
+                        # success/failure (only really meaningful for state-leave)
+                        'status': status,
+                        # whether the working copy parent is changing
+                        'partial': self.partial,
+                    },
+                },
+            )
             return True
         except Exception as e:
             # Swallow any errors; fire and forget
             self.repo.ui.log(
-                'watchman', 'Exception %s while running %s\n', e, cmd)
+                'watchman', 'Exception %s while running %s\n', e, cmd
+            )
             return False
+
 
 # Estimate the distance between two nodes
 def calcdistance(repo, oldnode, newnode):
     anc = repo.changelog.ancestor(oldnode, newnode)
     ancrev = repo[anc].rev()
-    distance = (abs(repo[oldnode].rev() - ancrev)
-        + abs(repo[newnode].rev() - ancrev))
+    distance = abs(repo[oldnode].rev() - ancrev) + abs(
+        repo[newnode].rev() - ancrev
+    )
     return distance
+
 
 # Bracket working copy updates with calls to the watchman state-enter
 # and state-leave commands.  This allows clients to perform more intelligent
 # settling during bulk file change scenarios
 # https://facebook.github.io/watchman/docs/cmd/subscribe.html#advanced-settling
-def wrapupdate(orig, repo, node, branchmerge, force, ancestor=None,
-               mergeancestor=False, labels=None, matcher=None, **kwargs):
+def wrapupdate(
+    orig,
+    repo,
+    node,
+    branchmerge,
+    force,
+    ancestor=None,
+    mergeancestor=False,
+    labels=None,
+    matcher=None,
+    **kwargs
+):
 
     distance = 0
     partial = True
@@ -760,11 +850,26 @@ def wrapupdate(orig, repo, node, branchmerge, force, ancestor=None,
         partial = False
         distance = calcdistance(repo.unfiltered(), oldnode, newnode)
 
-    with state_update(repo, name="hg.update", oldnode=oldnode, newnode=newnode,
-                      distance=distance, partial=partial):
+    with state_update(
+        repo,
+        name="hg.update",
+        oldnode=oldnode,
+        newnode=newnode,
+        distance=distance,
+        partial=partial,
+    ):
         return orig(
-            repo, node, branchmerge, force, ancestor, mergeancestor,
-            labels, matcher, **kwargs)
+            repo,
+            node,
+            branchmerge,
+            force,
+            ancestor,
+            mergeancestor,
+            labels,
+            matcher,
+            **kwargs
+        )
+
 
 def repo_has_depth_one_nested_repo(repo):
     for f in repo.wvfs.listdir():
@@ -774,13 +879,19 @@ def repo_has_depth_one_nested_repo(repo):
             return True
     return False
 
+
 def reposetup(ui, repo):
     # We don't work with largefiles or inotify
     exts = extensions.enabled()
     for ext in _blacklist:
         if ext in exts:
-            ui.warn(_('The fsmonitor extension is incompatible with the %s '
-                      'extension and has been disabled.\n') % ext)
+            ui.warn(
+                _(
+                    'The fsmonitor extension is incompatible with the %s '
+                    'extension and has been disabled.\n'
+                )
+                % ext
+            )
             return
 
     if repo.local():
@@ -824,7 +935,8 @@ def reposetup(ui, repo):
             def wlock(self, *args, **kwargs):
                 l = super(fsmonitorrepo, self).wlock(*args, **kwargs)
                 if not ui.configbool(
-                    "experimental", "fsmonitor.transaction_notify"):
+                    "experimental", "fsmonitor.transaction_notify"
+                ):
                     return l
                 if l.held != 1:
                     return l
@@ -844,8 +956,7 @@ def reposetup(ui, repo):
                     l.releasefn = staterelease
                 except Exception as e:
                     # Swallow any errors; fire and forget
-                    self.ui.log(
-                        'watchman', 'Exception in state update %s\n', e)
+                    self.ui.log('watchman', 'Exception in state update %s\n', e)
                 return l
 
         repo.__class__ = fsmonitorrepo

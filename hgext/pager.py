@@ -29,7 +29,7 @@ from mercurial import (
     dispatch,
     extensions,
     registrar,
-    )
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -40,12 +40,12 @@ testedwith = 'ships-with-hg-core'
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('pager', 'attend',
-        default=lambda: attended,
+configitem(
+    'pager', 'attend', default=lambda: attended,
 )
 
-def uisetup(ui):
 
+def uisetup(ui):
     def pagecmd(orig, ui, options, cmd, cmdfunc):
         auto = options['pager'] == 'auto'
         if auto and not ui.pageractive:
@@ -59,8 +59,7 @@ def uisetup(ui):
                 if ui.config('pager', var, None):
                     usepager = ui.configbool('pager', var, True)
                     break
-                if (cmd in attend or
-                     (cmd not in ignore and not attend)):
+                if cmd in attend or (cmd not in ignore and not attend):
                     usepager = True
                     break
 
@@ -77,5 +76,6 @@ def uisetup(ui):
         return orig(ui, options, cmd, cmdfunc)
 
     extensions.wrapfunction(dispatch, '_runcommand', pagecmd)
+
 
 attended = ['annotate', 'cat', 'diff', 'export', 'glog', 'log', 'qdiff']

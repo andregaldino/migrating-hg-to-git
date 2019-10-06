@@ -16,12 +16,12 @@ from mercurial import (
     revlog,
 )
 
-from mercurial.revlogutils import (
-    sidedata,
-)
+from mercurial.revlogutils import sidedata
 
-def wrapaddrevision(orig, self, text, transaction, link, p1, p2, *args,
-                    **kwargs):
+
+def wrapaddrevision(
+    orig, self, text, transaction, link, p1, p2, *args, **kwargs
+):
     if kwargs.get('sidedata') is None:
         kwargs['sidedata'] = {}
     sd = kwargs['sidedata']
@@ -32,6 +32,7 @@ def wrapaddrevision(orig, self, text, transaction, link, p1, p2, *args,
     sha256 = hashlib.sha256(text).digest()
     sd[sidedata.SD_TEST2] = struct.pack('>32s', sha256)
     return orig(self, text, transaction, link, p1, p2, *args, **kwargs)
+
 
 def wraprevision(orig, self, nodeorrev, *args, **kwargs):
     text = orig(self, nodeorrev, *args, **kwargs)
@@ -44,6 +45,7 @@ def wraprevision(orig, self, nodeorrev, *args, **kwargs):
         if got != expected:
             raise RuntimeError('sha256 mismatch')
     return text
+
 
 def extsetup(ui):
     extensions.wrapfunction(revlog.revlog, 'addrevision', wrapaddrevision)

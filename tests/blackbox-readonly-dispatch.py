@@ -6,6 +6,7 @@ from mercurial import (
     ui as uimod,
 )
 
+
 def testdispatch(cmd):
     """Simple wrapper around dispatch.dispatch()
 
@@ -17,6 +18,7 @@ def testdispatch(cmd):
     req = dispatch.request(cmd.split(), ui)
     result = dispatch.dispatch(req)
     ui.status(b"result: %r\n" % result)
+
 
 # create file 'foo', add and commit
 f = open(b'foo', 'wb')

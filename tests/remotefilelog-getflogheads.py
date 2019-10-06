@@ -9,9 +9,8 @@ from mercurial import (
 cmdtable = {}
 command = registrar.command(cmdtable)
 
-@command(b'getflogheads',
-         [],
-         b'path')
+
+@command(b'getflogheads', [], b'path')
 def getflogheads(ui, repo, path):
     """
     Extension printing a remotefilelog's heads

@@ -23,17 +23,22 @@ from mercurial.revlogutils import (
 tvfs = vfs.vfs(encoding.environ.get(b'TESTTMP', b'/tmp'))
 
 # Enable generaldelta otherwise revlog won't use delta as expected by the test
-tvfs.options = {b'generaldelta': True, b'revlogv1': True,
-                b'sparse-revlog': True}
+tvfs.options = {
+    b'generaldelta': True,
+    b'revlogv1': True,
+    b'sparse-revlog': True,
+}
 
 # The test wants to control whether to use delta explicitly, based on
 # "storedeltachains".
 revlog.revlog._isgooddeltainfo = lambda self, d, textlen: self._storedeltachains
 
+
 def abort(msg):
     print('abort: %s' % msg)
     # Return 0 so run-tests.py could compare the output.
     sys.exit()
+
 
 # Register a revlog processor for flag EXTSTORED.
 #
@@ -42,36 +47,44 @@ def abort(msg):
 # deltas.
 _extheader = b'E\n'
 
+
 def readprocessor(self, rawtext):
     # True: the returned text could be used to verify hash
-    text = rawtext[len(_extheader):].replace(b'i', b'1')
+    text = rawtext[len(_extheader) :].replace(b'i', b'1')
     return text, True, {}
+
 
 def writeprocessor(self, text, sidedata):
     # False: the returned rawtext shouldn't be used to verify hash
     rawtext = _extheader + text.replace(b'1', b'i')
     return rawtext, False
 
+
 def rawprocessor(self, rawtext):
     # False: do not verify hash. Only the content returned by "readprocessor"
     # can be used to verify hash.
     return False
 
-flagutil.addflagprocessor(revlog.REVIDX_EXTSTORED,
-                        (readprocessor, writeprocessor, rawprocessor))
+
+flagutil.addflagprocessor(
+    revlog.REVIDX_EXTSTORED, (readprocessor, writeprocessor, rawprocessor)
+)
 
 # Utilities about reading and appending revlog
+
 
 def newtransaction():
     # A transaction is required to write revlogs
     report = lambda msg: None
     return transaction.transaction(report, tvfs, {'plain': tvfs}, b'journal')
 
+
 def newrevlog(name=b'_testrevlog.i', recreate=False):
     if recreate:
         tvfs.tryunlink(name)
     rlog = revlog.revlog(tvfs, name)
     return rlog
+
 
 def appendrev(rlog, text, tr, isext=False, isdelta=True):
     '''Append a revision. If isext is True, set the EXTSTORED flag so flag
@@ -96,6 +109,7 @@ def appendrev(rlog, text, tr, isext=False, isdelta=True):
         # Restore storedeltachains. It is always True, see revlog.__init__
         rlog._storedeltachains = True
 
+
 def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
     '''Copy revlog to destname using revlog.addgroup. Return the copied revlog.
 
@@ -109,6 +123,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
     This exercises some revlog.addgroup (and revlog._addrevision(text=None))
     code path, which is not covered by "appendrev" alone.
     '''
+
     class dummychangegroup(object):
         @staticmethod
         def deltachunk(pnode):
@@ -124,10 +139,15 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
                 deltaparent = min(0, parentrev)
             if not rlog.candelta(deltaparent, r):
                 deltaparent = -1
-            return {b'node': rlog.node(r), b'p1': pnode, b'p2': node.nullid,
-                    b'cs': rlog.node(rlog.linkrev(r)), b'flags': rlog.flags(r),
-                    b'deltabase': rlog.node(deltaparent),
-                    b'delta': rlog.revdiff(deltaparent, r)}
+            return {
+                b'node': rlog.node(r),
+                b'p1': pnode,
+                b'p2': node.nullid,
+                b'cs': rlog.node(rlog.linkrev(r)),
+                b'flags': rlog.flags(r),
+                b'deltabase': rlog.node(deltaparent),
+                b'delta': rlog.revdiff(deltaparent, r),
+            }
 
         def deltaiter(self):
             chain = None
@@ -152,6 +172,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
     dlog.addgroup(dummydeltas, linkmap, tr)
     return dlog
 
+
 def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
     '''Like addgroupcopy, but use the low level revlog._addrevision directly.
 
@@ -166,9 +187,14 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
             cachedelta = None
         else:
             # deltaparent cannot have EXTSTORED flag.
-            deltaparent = max([-1] +
-                              [p for p in range(r)
-                               if rlog.flags(p) & revlog.REVIDX_EXTSTORED == 0])
+            deltaparent = max(
+                [-1]
+                + [
+                    p
+                    for p in range(r)
+                    if rlog.flags(p) & revlog.REVIDX_EXTSTORED == 0
+                ]
+            )
             text = None
             cachedelta = (deltaparent, rlog.revdiff(deltaparent, r))
         flags = rlog.flags(r)
@@ -177,8 +203,9 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
             ifh = dlog.opener(dlog.indexfile, b'a+')
             if not dlog._inline:
                 dfh = dlog.opener(dlog.datafile, b'a+')
-            dlog._addrevision(rlog.node(r), text, tr, r, p1, p2, flags,
-                              cachedelta, ifh, dfh)
+            dlog._addrevision(
+                rlog.node(r), text, tr, r, p1, p2, flags, cachedelta, ifh, dfh
+            )
         finally:
             if dfh is not None:
                 dfh.close()
@@ -186,7 +213,9 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
                 ifh.close()
     return dlog
 
+
 # Utilities to generate revisions for testing
+
 
 def genbits(n):
     '''Given a number n, generate (2 ** (n * 2) + 1) numbers in range(2 ** n).
@@ -219,9 +248,11 @@ def genbits(n):
         x = y
         yield x
 
+
 def gentext(rev):
     '''Given a revision number, generate dummy text'''
     return b''.join(b'%d\n' % j for j in range(-1, rev % 5))
+
 
 def writecases(rlog, tr):
     '''Write some revisions interested to the test.
@@ -281,7 +312,9 @@ def writecases(rlog, tr):
             abort('rev %d: isext is ineffective' % rev)
     return result
 
+
 # Main test and checking
+
 
 def checkrevlog(rlog, expected):
     '''Check if revlog has expected contents. expected is [(text, rawtext)]'''
@@ -299,20 +332,22 @@ def checkrevlog(rlog, expected):
                         else:
                             t = nlog.revision(rev)
                         if t != expected[rev][int(raw)]:
-                            abort('rev %d: corrupted %stext'
-                                  % (rev, raw and 'raw' or ''))
+                            abort(
+                                'rev %d: corrupted %stext'
+                                % (rev, raw and 'raw' or '')
+                            )
+
 
 slicingdata = [
-    ([0, 1, 2, 3, 55, 56, 58, 59, 60],
-     [[0, 1], [2], [58], [59, 60]],
-     10),
-    ([0, 1, 2, 3, 55, 56, 58, 59, 60],
-     [[0, 1], [2], [58], [59, 60]],
-     10),
-    ([-1, 0, 1, 2, 3, 55, 56, 58, 59, 60],
-     [[-1, 0, 1], [2], [58], [59, 60]],
-     10),
+    ([0, 1, 2, 3, 55, 56, 58, 59, 60], [[0, 1], [2], [58], [59, 60]], 10),
+    ([0, 1, 2, 3, 55, 56, 58, 59, 60], [[0, 1], [2], [58], [59, 60]], 10),
+    (
+        [-1, 0, 1, 2, 3, 55, 56, 58, 59, 60],
+        [[-1, 0, 1], [2], [58], [59, 60]],
+        10,
+    ),
 ]
+
 
 def slicingtest(rlog):
     oldmin = rlog._srmingapsize
@@ -333,8 +368,10 @@ def slicingtest(rlog):
     finally:
         rlog._srmingapsize = oldmin
 
+
 def md5sum(s):
     return hashlib.md5(s).digest()
+
 
 def _maketext(*coord):
     """create piece of text according to range of integers
@@ -347,6 +384,7 @@ def _maketext(*coord):
         p = [md5sum(b'%d' % r) for r in num]
         pieces.append(b'\n'.join(p))
     return b'\n'.join(pieces) + b'\n'
+
 
 data = [
     _maketext((0, 120), (456, 60)),
@@ -383,13 +421,17 @@ data = [
     _maketext((0, 120), (60, 60), (618, 30), (398, 40), (158, 10)),
 ]
 
+
 def makesnapshot(tr):
     rl = newrevlog(name=b'_snaprevlog3.i', recreate=True)
     for i in data:
         appendrev(rl, i, tr)
     return rl
 
+
 snapshots = [-1, 0, 6, 8, 11, 17, 19, 21, 25, 30]
+
+
 def issnapshottest(rlog):
     result = []
     if rlog.issnapshot(-1):
@@ -402,8 +444,11 @@ def issnapshottest(rlog):
         print('  expected: %s' % snapshots)
         print('  got:      %s' % result)
 
+
 snapshotmapall = {0: [6, 8, 11, 17, 19, 25], 8: [21], -1: [0, 30]}
 snapshotmap15 = {0: [17, 19, 25], 8: [21], -1: [30]}
+
+
 def findsnapshottest(rlog):
     resultall = collections.defaultdict(list)
     deltas._findsnapshots(rlog, resultall, 0)
@@ -419,6 +464,7 @@ def findsnapshottest(rlog):
         print('snapshot map  differ:')
         print('  expected: %s' % snapshotmap15)
         print('  got:      %s' % result15)
+
 
 def maintest():
     with newtransaction() as tr:
@@ -448,6 +494,7 @@ def maintest():
         print('issnapshot test passed')
         findsnapshottest(rl5)
         print('findsnapshot test passed')
+
 
 try:
     maintest()

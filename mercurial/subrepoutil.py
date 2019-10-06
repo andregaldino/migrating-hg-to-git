@@ -21,11 +21,10 @@ from . import (
     phases,
     util,
 )
-from .utils import (
-    stringutil,
-)
+from .utils import stringutil
 
 nullstate = ('', '', 'empty')
+
 
 def state(ctx, ui):
     """return a state dict, mapping subrepo paths configured in .hgsub
@@ -34,6 +33,7 @@ def state(ctx, ui):
     """
     p = config.config()
     repo = ctx.repo()
+
     def read(f, sections=None, remap=None):
         if f in ctx:
             try:
@@ -42,13 +42,17 @@ def state(ctx, ui):
                 if err.errno != errno.ENOENT:
                     raise
                 # handle missing subrepo spec files as removed
-                ui.warn(_("warning: subrepo spec file \'%s\' not found\n") %
-                        repo.pathto(f))
+                ui.warn(
+                    _("warning: subrepo spec file \'%s\' not found\n")
+                    % repo.pathto(f)
+                )
                 return
             p.parse(f, data, sections, remap, read)
         else:
-            raise error.Abort(_("subrepo spec file \'%s\' not found") %
-                             repo.pathto(f))
+            raise error.Abort(
+                _("subrepo spec file \'%s\' not found") % repo.pathto(f)
+            )
+
     if '.hgsub' in ctx:
         read('.hgsub')
 
@@ -65,9 +69,13 @@ def state(ctx, ui):
                 try:
                     revision, path = l.split(" ", 1)
                 except ValueError:
-                    raise error.Abort(_("invalid subrepository revision "
-                                       "specifier in \'%s\' line %d")
-                                     % (repo.pathto('.hgsubstate'), (i + 1)))
+                    raise error.Abort(
+                        _(
+                            "invalid subrepository revision "
+                            "specifier in \'%s\' line %d"
+                        )
+                        % (repo.pathto('.hgsubstate'), (i + 1))
+                    )
                 rev[path] = revision
         except IOError as err:
             if err.errno != errno.ENOENT:
@@ -85,9 +93,13 @@ def state(ctx, ui):
             try:
                 src = re.sub(pattern, repl, src, 1)
             except re.error as e:
-                raise error.Abort(_("bad subrepository pattern in %s: %s")
-                                 % (p.source('subpaths', pattern),
-                                    stringutil.forcebytestr(e)))
+                raise error.Abort(
+                    _("bad subrepository pattern in %s: %s")
+                    % (
+                        p.source('subpaths', pattern),
+                        stringutil.forcebytestr(e),
+                    )
+                )
         return src
 
     state = {}
@@ -98,7 +110,7 @@ def state(ctx, ui):
                 raise error.Abort(_('missing ] in subrepository source'))
             kind, src = src.split(']', 1)
             kind = kind[1:]
-            src = src.lstrip() # strip any extra whitespace after ']'
+            src = src.lstrip()  # strip any extra whitespace after ']'
 
         if not util.url(src).isabs():
             parent = _abssource(repo, abort=False)
@@ -120,16 +132,21 @@ def state(ctx, ui):
 
     return state
 
+
 def writestate(repo, state):
     """rewrite .hgsubstate in (outer) repo with these subrepo states"""
-    lines = ['%s %s\n' % (state[s][1], s) for s in sorted(state)
-                                                if state[s][1] != nullstate[1]]
+    lines = [
+        '%s %s\n' % (state[s][1], s)
+        for s in sorted(state)
+        if state[s][1] != nullstate[1]
+    ]
     repo.wwrite('.hgsubstate', ''.join(lines), '')
+
 
 def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
     """delegated from merge.applyupdates: merging of .hgsubstate file
     in working context, merging context and ancestor context"""
-    if mctx == actx: # backwards?
+    if mctx == actx:  # backwards?
         actx = wctx.p1()
     s1 = wctx.substate
     s2 = mctx.substate
@@ -146,36 +163,41 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
     promptssrc = filemerge.partextras(labels)
     for s, l in sorted(s1.iteritems()):
         a = sa.get(s, nullstate)
-        ld = l # local state with possible dirty flag for compares
+        ld = l  # local state with possible dirty flag for compares
         if wctx.sub(s).dirty():
             ld = (l[0], l[1] + "+")
-        if wctx == actx: # overwrite
+        if wctx == actx:  # overwrite
             a = ld
 
         prompts = promptssrc.copy()
         prompts['s'] = s
         if s in s2:
             r = s2[s]
-            if ld == r or r == a: # no change or local is newer
+            if ld == r or r == a:  # no change or local is newer
                 sm[s] = l
                 continue
-            elif ld == a: # other side changed
+            elif ld == a:  # other side changed
                 debug(s, "other changed, get", r)
                 wctx.sub(s).get(r, overwrite)
                 sm[s] = r
-            elif ld[0] != r[0]: # sources differ
+            elif ld[0] != r[0]:  # sources differ
                 prompts['lo'] = l[0]
                 prompts['ro'] = r[0]
                 if repo.ui.promptchoice(
-                    _(' subrepository sources for %(s)s differ\n'
-                      'you can use (l)ocal%(l)s source (%(lo)s)'
-                      ' or (r)emote%(o)s source (%(ro)s).\n'
-                      'what do you want to do?'
-                      '$$ &Local $$ &Remote') % prompts, 0):
+                    _(
+                        ' subrepository sources for %(s)s differ\n'
+                        'you can use (l)ocal%(l)s source (%(lo)s)'
+                        ' or (r)emote%(o)s source (%(ro)s).\n'
+                        'what do you want to do?'
+                        '$$ &Local $$ &Remote'
+                    )
+                    % prompts,
+                    0,
+                ):
                     debug(s, "prompt changed, get", r)
                     wctx.sub(s).get(r, overwrite)
                     sm[s] = r
-            elif ld[1] == a[1]: # local side is unchanged
+            elif ld[1] == a[1]:  # local side is unchanged
                 debug(s, "other side changed, get", r)
                 wctx.sub(s).get(r, overwrite)
                 sm[s] = r
@@ -185,13 +207,17 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
                 prompts['sl'] = srepo.shortid(l[1])
                 prompts['sr'] = srepo.shortid(r[1])
                 option = repo.ui.promptchoice(
-                    _(' subrepository %(s)s diverged (local revision: %(sl)s, '
-                      'remote revision: %(sr)s)\n'
-                      'you can (m)erge, keep (l)ocal%(l)s or keep '
-                      '(r)emote%(o)s.\n'
-                      'what do you want to do?'
-                      '$$ &Merge $$ &Local $$ &Remote')
-                    % prompts, 0)
+                    _(
+                        ' subrepository %(s)s diverged (local revision: %(sl)s, '
+                        'remote revision: %(sr)s)\n'
+                        'you can (m)erge, keep (l)ocal%(l)s or keep '
+                        '(r)emote%(o)s.\n'
+                        'what do you want to do?'
+                        '$$ &Merge $$ &Local $$ &Remote'
+                    )
+                    % prompts,
+                    0,
+                )
                 if option == 0:
                     wctx.sub(s).merge(r)
                     sm[s] = l
@@ -203,19 +229,24 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
                     wctx.sub(s).get(r, overwrite)
                     sm[s] = r
                     debug(s, "get remote subrepo revision", r)
-        elif ld == a: # remote removed, local unchanged
+        elif ld == a:  # remote removed, local unchanged
             debug(s, "remote removed, remove")
             wctx.sub(s).remove()
-        elif a == nullstate: # not present in remote or ancestor
+        elif a == nullstate:  # not present in remote or ancestor
             debug(s, "local added, keep")
             sm[s] = l
             continue
         else:
             if repo.ui.promptchoice(
-                _(' local%(l)s changed subrepository %(s)s'
-                  ' which remote%(o)s removed\n'
-                  'use (c)hanged version or (d)elete?'
-                  '$$ &Changed $$ &Delete') % prompts, 0):
+                _(
+                    ' local%(l)s changed subrepository %(s)s'
+                    ' which remote%(o)s removed\n'
+                    'use (c)hanged version or (d)elete?'
+                    '$$ &Changed $$ &Delete'
+                )
+                % prompts,
+                0,
+            ):
                 debug(s, "prompt remove")
                 wctx.sub(s).remove()
 
@@ -229,11 +260,19 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
         elif r != sa[s]:
             prompts = promptssrc.copy()
             prompts['s'] = s
-            if repo.ui.promptchoice(
-                _(' remote%(o)s changed subrepository %(s)s'
-                  ' which local%(l)s removed\n'
-                  'use (c)hanged version or (d)elete?'
-                  '$$ &Changed $$ &Delete') % prompts, 0) == 0:
+            if (
+                repo.ui.promptchoice(
+                    _(
+                        ' remote%(o)s changed subrepository %(s)s'
+                        ' which local%(l)s removed\n'
+                        'use (c)hanged version or (d)elete?'
+                        '$$ &Changed $$ &Delete'
+                    )
+                    % prompts,
+                    0,
+                )
+                == 0
+            ):
                 debug(s, "prompt recreate", r)
                 mctx.sub(s).get(r)
                 sm[s] = r
@@ -241,6 +280,7 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
     # record merged .hgsubstate
     writestate(repo, sm)
     return sm
+
 
 def precommit(ui, wctx, status, match, force=False):
     """Calculate .hgsubstate changes that should be applied before committing
@@ -274,12 +314,15 @@ def precommit(ui, wctx, status, match, force=False):
                     continue
                 if not force:
                     raise error.Abort(
-                        _("commit with new subrepo %s excluded") % s)
+                        _("commit with new subrepo %s excluded") % s
+                    )
             dirtyreason = wctx.sub(s).dirtyreason(True)
             if dirtyreason:
                 if not ui.configbool('ui', 'commitsubrepos'):
-                    raise error.Abort(dirtyreason,
-                        hint=_("use --subrepos for recursive commit"))
+                    raise error.Abort(
+                        dirtyreason,
+                        hint=_("use --subrepos for recursive commit"),
+                    )
                 subs.append(s)
                 commitsubs.add(s)
             else:
@@ -293,30 +336,34 @@ def precommit(ui, wctx, status, match, force=False):
             r = [s for s in p.substate if s not in newstate]
             subs += [s for s in r if match(s)]
         if subs:
-            if (not match('.hgsub') and
-                '.hgsub' in (wctx.modified() + wctx.added())):
+            if not match('.hgsub') and '.hgsub' in (
+                wctx.modified() + wctx.added()
+            ):
                 raise error.Abort(_("can't commit subrepos without .hgsub"))
             status.modified.insert(0, '.hgsubstate')
 
     elif '.hgsub' in status.removed:
         # clean up .hgsubstate when .hgsub is removed
-        if ('.hgsubstate' in wctx and
-            '.hgsubstate' not in (status.modified + status.added +
-                                  status.removed)):
+        if '.hgsubstate' in wctx and '.hgsubstate' not in (
+            status.modified + status.added + status.removed
+        ):
             status.removed.insert(0, '.hgsubstate')
 
     return subs, commitsubs, newstate
+
 
 def reporelpath(repo):
     """return path to this (sub)repo as seen from outermost repo"""
     parent = repo
     while util.safehasattr(parent, '_subparent'):
         parent = parent._subparent
-    return repo.root[len(pathutil.normasprefix(parent.root)):]
+    return repo.root[len(pathutil.normasprefix(parent.root)) :]
+
 
 def subrelpath(sub):
     """return path to this subrepo as seen from outermost repo"""
     return sub._relpath
+
 
 def _abssource(repo, push=False, abort=True):
     """return pull/push path of repo - either based on parent repo .hgsub info
@@ -332,7 +379,7 @@ def _abssource(repo, push=False, abort=True):
             parent.path = posixpath.join(parent.path or '', source.path)
             parent.path = posixpath.normpath(parent.path)
             return bytes(parent)
-    else: # recursion reached top repo
+    else:  # recursion reached top repo
         path = None
         if util.safehasattr(repo, '_subtoppath'):
             path = repo._subtoppath
@@ -365,6 +412,7 @@ def _abssource(repo, push=False, abort=True):
     if abort:
         raise error.Abort(_("default path for subrepository not found"))
 
+
 def newcommitphase(ui, ctx):
     commitphase = phases.newcommitphase(ui)
     substate = getattr(ctx, "substate", None)
@@ -372,8 +420,9 @@ def newcommitphase(ui, ctx):
         return commitphase
     check = ui.config('phases', 'checksubrepos')
     if check not in ('ignore', 'follow', 'abort'):
-        raise error.Abort(_('invalid phases.checksubrepos configuration: %s')
-                         % (check))
+        raise error.Abort(
+            _('invalid phases.checksubrepos configuration: %s') % check
+        )
     if check == 'ignore':
         return commitphase
     maxphase = phases.public
@@ -386,12 +435,23 @@ def newcommitphase(ui, ctx):
             maxsub = s
     if commitphase < maxphase:
         if check == 'abort':
-            raise error.Abort(_("can't commit in %s phase"
-                               " conflicting %s from subrepository %s") %
-                             (phases.phasenames[commitphase],
-                              phases.phasenames[maxphase], maxsub))
-        ui.warn(_("warning: changes are committed in"
-                  " %s phase from subrepository %s\n") %
-                (phases.phasenames[maxphase], maxsub))
+            raise error.Abort(
+                _(
+                    "can't commit in %s phase"
+                    " conflicting %s from subrepository %s"
+                )
+                % (
+                    phases.phasenames[commitphase],
+                    phases.phasenames[maxphase],
+                    maxsub,
+                )
+            )
+        ui.warn(
+            _(
+                "warning: changes are committed in"
+                " %s phase from subrepository %s\n"
+            )
+            % (phases.phasenames[maxphase], maxsub)
+        )
         return maxphase
     return commitphase

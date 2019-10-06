@@ -18,6 +18,7 @@ from . import (
     util,
 )
 
+
 def _loadprofiler(ui, profiler):
     """load profiler extension. return profile method, or None on failure"""
     extname = profiler
@@ -29,6 +30,7 @@ def _loadprofiler(ui, profiler):
     else:
         return getattr(mod, 'profile', None)
 
+
 @contextlib.contextmanager
 def lsprofile(ui, fp):
     format = ui.config('profiling', 'format')
@@ -37,16 +39,18 @@ def lsprofile(ui, fp):
     climit = ui.configint('profiling', 'nested')
 
     if format not in ['text', 'kcachegrind']:
-        ui.warn(_("unrecognized profiling format '%s'"
-                    " - Ignored\n") % format)
+        ui.warn(_("unrecognized profiling format '%s'" " - Ignored\n") % format)
         format = 'text'
 
     try:
         from . import lsprof
     except ImportError:
-        raise error.Abort(_(
-            'lsprof not available - install from '
-            'http://codespeak.net/svn/user/arigo/hack/misc/lsprof/'))
+        raise error.Abort(
+            _(
+                'lsprof not available - install from '
+                'http://codespeak.net/svn/user/arigo/hack/misc/lsprof/'
+            )
+        )
     p = lsprof.Profiler()
     p.enable(subcalls=True)
     try:
@@ -56,6 +60,7 @@ def lsprofile(ui, fp):
 
         if format == 'kcachegrind':
             from . import lsprofcalltree
+
             calltree = lsprofcalltree.KCacheGrind(p)
             calltree.output(fp)
         else:
@@ -64,20 +69,25 @@ def lsprofile(ui, fp):
             stats.sort(pycompat.sysstr(field))
             stats.pprint(limit=limit, file=fp, climit=climit)
 
+
 @contextlib.contextmanager
 def flameprofile(ui, fp):
     try:
         from flamegraph import flamegraph
     except ImportError:
-        raise error.Abort(_(
-            'flamegraph not available - install from '
-            'https://github.com/evanhempel/python-flamegraph'))
+        raise error.Abort(
+            _(
+                'flamegraph not available - install from '
+                'https://github.com/evanhempel/python-flamegraph'
+            )
+        )
     # developer config: profiling.freq
     freq = ui.configint('profiling', 'freq')
     filter_ = None
     collapse_recursion = True
-    thread = flamegraph.ProfileThread(fp, 1.0 / freq,
-                                      filter_, collapse_recursion)
+    thread = flamegraph.ProfileThread(
+        fp, 1.0 / freq, filter_, collapse_recursion
+    )
     start_time = util.timer()
     try:
         thread.start()
@@ -85,9 +95,15 @@ def flameprofile(ui, fp):
     finally:
         thread.stop()
         thread.join()
-        print('Collected %d stack frames (%d unique) in %2.2f seconds.' % (
-            util.timer() - start_time, thread.num_frames(),
-            thread.num_frames(unique=True)))
+        print(
+            'Collected %d stack frames (%d unique) in %2.2f seconds.'
+            % (
+                util.timer() - start_time,
+                thread.num_frames(),
+                thread.num_frames(unique=True),
+            )
+        )
+
 
 @contextlib.contextmanager
 def statprofile(ui, fp):
@@ -101,8 +117,9 @@ def statprofile(ui, fp):
     else:
         ui.warn(_("invalid sampling frequency '%s' - ignoring\n") % freq)
 
-    track = ui.config('profiling', 'time-track',
-                      pycompat.iswindows and 'cpu' or 'real')
+    track = ui.config(
+        'profiling', 'time-track', pycompat.iswindows and 'cpu' or 'real'
+    )
     statprof.start(mechanism='thread', track=track)
 
     try:
@@ -152,12 +169,14 @@ def statprofile(ui, fp):
 
         statprof.display(fp, data=data, format=displayformat, **kwargs)
 
+
 class profile(object):
     """Start profiling.
 
     Profiling is active when the context manager is active. When the context
     manager exits, profiling results will be written to the configured output.
     """
+
     def __init__(self, ui, enabled=True):
         self._ui = ui
         self._output = None
@@ -193,8 +212,9 @@ class profile(object):
             # try load profiler from extension with the same name
             proffn = _loadprofiler(self._ui, profiler)
             if proffn is None:
-                self._ui.warn(_("unrecognized profiler '%s' - ignored\n")
-                              % profiler)
+                self._ui.warn(
+                    _("unrecognized profiler '%s' - ignored\n") % profiler
+                )
                 profiler = 'stat'
 
         self._output = self._ui.config('profiling', 'output')
@@ -210,10 +230,13 @@ class profile(object):
                 class uifp(object):
                     def __init__(self, ui):
                         self._ui = ui
+
                     def write(self, data):
                         self._ui.write_err(data)
+
                     def flush(self):
                         self._ui.flush()
+
                 self._fpdoclose = False
                 self._fp = uifp(self._ui)
             else:
@@ -231,15 +254,16 @@ class profile(object):
 
             self._profiler = proffn(self._ui, self._fp)
             self._profiler.__enter__()
-        except: # re-raises
+        except:  # re-raises
             self._closefp()
             raise
 
     def __exit__(self, exception_type, exception_value, traceback):
         propagate = None
         if self._profiler is not None:
-            propagate = self._profiler.__exit__(exception_type, exception_value,
-                                                traceback)
+            propagate = self._profiler.__exit__(
+                exception_type, exception_value, traceback
+            )
             if self._output == 'blackbox':
                 val = 'Profile:\n%s' % self._fp.getvalue()
                 # ui.log treats the input as a format string,

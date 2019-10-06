@@ -34,9 +34,7 @@ import time
 import traceback
 import warnings
 
-from .thirdparty import (
-    attr,
-)
+from .thirdparty import attr
 from hgdemandimport import tracing
 from . import (
     encoding,
@@ -142,11 +140,13 @@ except AttributeError:
 
 _notset = object()
 
+
 def bitsfrom(container):
     bits = 0
     for bit in container:
         bits |= bit
     return bits
+
 
 # python 2.6 still have deprecation warning enabled by default. We do not want
 # to display anything to standard user so detect if we are running test and
@@ -164,13 +164,20 @@ if _dowarn:
     warnings.filterwarnings(r'default', r'', DeprecationWarning, r'hgext3rd')
 if _dowarn and pycompat.ispy3:
     # silence warning emitted by passing user string to re.sub()
-    warnings.filterwarnings(r'ignore', r'bad escape', DeprecationWarning,
-                            r'mercurial')
-    warnings.filterwarnings(r'ignore', r'invalid escape sequence',
-                            DeprecationWarning, r'mercurial')
+    warnings.filterwarnings(
+        r'ignore', r'bad escape', DeprecationWarning, r'mercurial'
+    )
+    warnings.filterwarnings(
+        r'ignore', r'invalid escape sequence', DeprecationWarning, r'mercurial'
+    )
     # TODO: reinvent imp.is_frozen()
-    warnings.filterwarnings(r'ignore', r'the imp module is deprecated',
-                            DeprecationWarning, r'mercurial')
+    warnings.filterwarnings(
+        r'ignore',
+        r'the imp module is deprecated',
+        DeprecationWarning,
+        r'mercurial',
+    )
+
 
 def nouideprecwarn(msg, version, stacklevel=1):
     """Issue an python native deprecation warning
@@ -178,9 +185,12 @@ def nouideprecwarn(msg, version, stacklevel=1):
     This is a noop outside of tests, use 'ui.deprecwarn' when possible.
     """
     if _dowarn:
-        msg += ("\n(compatibility will be dropped after Mercurial-%s,"
-                " update your code.)") % version
+        msg += (
+            "\n(compatibility will be dropped after Mercurial-%s,"
+            " update your code.)"
+        ) % version
         warnings.warn(pycompat.sysstr(msg), DeprecationWarning, stacklevel + 1)
+
 
 DIGESTS = {
     'md5': hashlib.md5,
@@ -192,6 +202,7 @@ DIGESTS_BY_STRENGTH = ['sha512', 'sha1', 'md5']
 
 for k in DIGESTS_BY_STRENGTH:
     assert k in DIGESTS
+
 
 class digester(object):
     """helper to compute digests.
@@ -240,6 +251,7 @@ class digester(object):
                 return k
         return None
 
+
 class digestchecker(object):
     """file handle wrapper that additionally checks content against a given
     size and digests.
@@ -264,23 +276,31 @@ class digestchecker(object):
 
     def validate(self):
         if self._size != self._got:
-            raise error.Abort(_('size mismatch: expected %d, got %d') %
-                              (self._size, self._got))
+            raise error.Abort(
+                _('size mismatch: expected %d, got %d')
+                % (self._size, self._got)
+            )
         for k, v in self._digests.items():
             if v != self._digester[k]:
                 # i18n: first parameter is a digest name
-                raise error.Abort(_('%s mismatch: expected %s, got %s') %
-                                  (k, v, self._digester[k]))
+                raise error.Abort(
+                    _('%s mismatch: expected %s, got %s')
+                    % (k, v, self._digester[k])
+                )
+
 
 try:
     buffer = buffer
 except NameError:
+
     def buffer(sliceable, offset=0, length=None):
         if length is not None:
-            return memoryview(sliceable)[offset:offset + length]
+            return memoryview(sliceable)[offset : offset + length]
         return memoryview(sliceable)[offset:]
 
+
 _chunksize = 4096
+
 
 class bufferedinputpipe(object):
     """a manually buffered input pipe
@@ -296,6 +316,7 @@ class bufferedinputpipe(object):
     This class lives in the 'util' module because it makes use of the 'os'
     module from the python stdlib.
     """
+
     def __new__(cls, fh):
         # If we receive a fileobjectproxy, we need to use a variation of this
         # class that notifies observers about activity.
@@ -352,7 +373,7 @@ class bufferedinputpipe(object):
             if self._buffer:
                 lfi = self._buffer[-1].find('\n')
         size = lfi + 1
-        if lfi < 0: # end of file
+        if lfi < 0:  # end of file
             size = self._lenbuf
         elif len(self._buffer) > 1:
             # we need to take previous chunks into account
@@ -370,7 +391,7 @@ class bufferedinputpipe(object):
             buf = ''.join(self._buffer)
 
         data = buf[:size]
-        buf = buf[len(data):]
+        buf = buf[len(data) :]
         if buf:
             self._buffer = [buf]
             self._lenbuf = len(buf)
@@ -390,6 +411,7 @@ class bufferedinputpipe(object):
 
         return data
 
+
 def mmapread(fp):
     try:
         fd = getattr(fp, 'fileno', lambda: fp)()
@@ -401,12 +423,14 @@ def mmapread(fp):
             return ''
         raise
 
+
 class fileobjectproxy(object):
     """A proxy around file objects that tells a watcher when events occur.
 
     This type is intended to only be used for testing purposes. Think hard
     before using it in important code.
     """
+
     __slots__ = (
         r'_orig',
         r'_observer',
@@ -419,7 +443,6 @@ class fileobjectproxy(object):
     def __getattribute__(self, name):
         ours = {
             r'_observer',
-
             # IOBase
             r'close',
             # closed if a property
@@ -485,79 +508,99 @@ class fileobjectproxy(object):
 
     def close(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'close', *args, **kwargs)
+            r'close', *args, **kwargs
+        )
 
     def fileno(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'fileno', *args, **kwargs)
+            r'fileno', *args, **kwargs
+        )
 
     def flush(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'flush', *args, **kwargs)
+            r'flush', *args, **kwargs
+        )
 
     def isatty(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'isatty', *args, **kwargs)
+            r'isatty', *args, **kwargs
+        )
 
     def readable(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'readable', *args, **kwargs)
+            r'readable', *args, **kwargs
+        )
 
     def readline(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'readline', *args, **kwargs)
+            r'readline', *args, **kwargs
+        )
 
     def readlines(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'readlines', *args, **kwargs)
+            r'readlines', *args, **kwargs
+        )
 
     def seek(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'seek', *args, **kwargs)
+            r'seek', *args, **kwargs
+        )
 
     def seekable(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'seekable', *args, **kwargs)
+            r'seekable', *args, **kwargs
+        )
 
     def tell(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'tell', *args, **kwargs)
+            r'tell', *args, **kwargs
+        )
 
     def truncate(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'truncate', *args, **kwargs)
+            r'truncate', *args, **kwargs
+        )
 
     def writable(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'writable', *args, **kwargs)
+            r'writable', *args, **kwargs
+        )
 
     def writelines(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'writelines', *args, **kwargs)
+            r'writelines', *args, **kwargs
+        )
 
     def read(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'read', *args, **kwargs)
+            r'read', *args, **kwargs
+        )
 
     def readall(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'readall', *args, **kwargs)
+            r'readall', *args, **kwargs
+        )
 
     def readinto(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'readinto', *args, **kwargs)
+            r'readinto', *args, **kwargs
+        )
 
     def write(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'write', *args, **kwargs)
+            r'write', *args, **kwargs
+        )
 
     def detach(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'detach', *args, **kwargs)
+            r'detach', *args, **kwargs
+        )
 
     def read1(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'read1', *args, **kwargs)
+            r'read1', *args, **kwargs
+        )
+
 
 class observedbufferedinputpipe(bufferedinputpipe):
     """A variation of bufferedinputpipe that is aware of fileobjectproxy.
@@ -570,6 +613,7 @@ class observedbufferedinputpipe(bufferedinputpipe):
     ``os.read()`` events. It also re-publishes other events, such as
     ``read()`` and ``readline()``.
     """
+
     def _fillbuffer(self):
         res = super(observedbufferedinputpipe, self)._fillbuffer()
 
@@ -599,6 +643,7 @@ class observedbufferedinputpipe(bufferedinputpipe):
 
         return res
 
+
 PROXIED_SOCKET_METHODS = {
     r'makefile',
     r'recv',
@@ -614,6 +659,7 @@ PROXIED_SOCKET_METHODS = {
     r'setsockopt',
 }
 
+
 class socketproxy(object):
     """A proxy around a socket that tells a watcher when events occur.
 
@@ -622,6 +668,7 @@ class socketproxy(object):
     This type is intended to only be used for testing purposes. Think hard
     before using it in important code.
     """
+
     __slots__ = (
         r'_orig',
         r'_observer',
@@ -664,60 +711,77 @@ class socketproxy(object):
 
     def makefile(self, *args, **kwargs):
         res = object.__getattribute__(self, r'_observedcall')(
-            r'makefile', *args, **kwargs)
+            r'makefile', *args, **kwargs
+        )
 
         # The file object may be used for I/O. So we turn it into a
         # proxy using our observer.
         observer = object.__getattribute__(self, r'_observer')
-        return makeloggingfileobject(observer.fh, res, observer.name,
-                                     reads=observer.reads,
-                                     writes=observer.writes,
-                                     logdata=observer.logdata,
-                                     logdataapis=observer.logdataapis)
+        return makeloggingfileobject(
+            observer.fh,
+            res,
+            observer.name,
+            reads=observer.reads,
+            writes=observer.writes,
+            logdata=observer.logdata,
+            logdataapis=observer.logdataapis,
+        )
 
     def recv(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'recv', *args, **kwargs)
+            r'recv', *args, **kwargs
+        )
 
     def recvfrom(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'recvfrom', *args, **kwargs)
+            r'recvfrom', *args, **kwargs
+        )
 
     def recvfrom_into(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'recvfrom_into', *args, **kwargs)
+            r'recvfrom_into', *args, **kwargs
+        )
 
     def recv_into(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'recv_info', *args, **kwargs)
+            r'recv_info', *args, **kwargs
+        )
 
     def send(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'send', *args, **kwargs)
+            r'send', *args, **kwargs
+        )
 
     def sendall(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'sendall', *args, **kwargs)
+            r'sendall', *args, **kwargs
+        )
 
     def sendto(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'sendto', *args, **kwargs)
+            r'sendto', *args, **kwargs
+        )
 
     def setblocking(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'setblocking', *args, **kwargs)
+            r'setblocking', *args, **kwargs
+        )
 
     def settimeout(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'settimeout', *args, **kwargs)
+            r'settimeout', *args, **kwargs
+        )
 
     def gettimeout(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'gettimeout', *args, **kwargs)
+            r'gettimeout', *args, **kwargs
+        )
 
     def setsockopt(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
-            r'setsockopt', *args, **kwargs)
+            r'setsockopt', *args, **kwargs
+        )
+
 
 class baseproxyobserver(object):
     def _writedata(self, data):
@@ -732,8 +796,9 @@ class baseproxyobserver(object):
             if self.logdataapis:
                 self.fh.write(': %s\n' % stringutil.escapestr(data))
             else:
-                self.fh.write('%s>     %s\n'
-                              % (self.name, stringutil.escapestr(data)))
+                self.fh.write(
+                    '%s>     %s\n' % (self.name, stringutil.escapestr(data))
+                )
             self.fh.flush()
             return
 
@@ -743,14 +808,18 @@ class baseproxyobserver(object):
 
         lines = data.splitlines(True)
         for line in lines:
-            self.fh.write('%s>     %s\n'
-                          % (self.name, stringutil.escapestr(line)))
+            self.fh.write(
+                '%s>     %s\n' % (self.name, stringutil.escapestr(line))
+            )
         self.fh.flush()
+
 
 class fileobjectobserver(baseproxyobserver):
     """Logs file object activity."""
-    def __init__(self, fh, name, reads=True, writes=True, logdata=False,
-                 logdataapis=True):
+
+    def __init__(
+        self, fh, name, reads=True, writes=True, logdata=False, logdataapis=True
+    ):
         self.fh = fh
         self.name = name
         self.logdata = logdata
@@ -791,8 +860,9 @@ class fileobjectobserver(baseproxyobserver):
             return
 
         if self.logdataapis:
-            self.fh.write('%s> readinto(%d) -> %r' % (self.name, len(dest),
-                                                      res))
+            self.fh.write(
+                '%s> readinto(%d) -> %r' % (self.name, len(dest), res)
+            )
 
         data = dest[0:res] if res is not None else b''
 
@@ -829,8 +899,9 @@ class fileobjectobserver(baseproxyobserver):
             return
 
         if self.logdataapis:
-            self.fh.write('%s> bufferedread(%d) -> %d' % (
-                self.name, size, len(res)))
+            self.fh.write(
+                '%s> bufferedread(%d) -> %d' % (self.name, size, len(res))
+            )
 
         self._writedata(res)
 
@@ -839,23 +910,42 @@ class fileobjectobserver(baseproxyobserver):
             return
 
         if self.logdataapis:
-            self.fh.write('%s> bufferedreadline() -> %d' % (
-                self.name, len(res)))
+            self.fh.write(
+                '%s> bufferedreadline() -> %d' % (self.name, len(res))
+            )
 
         self._writedata(res)
 
-def makeloggingfileobject(logh, fh, name, reads=True, writes=True,
-                          logdata=False, logdataapis=True):
+
+def makeloggingfileobject(
+    logh, fh, name, reads=True, writes=True, logdata=False, logdataapis=True
+):
     """Turn a file object into a logging file object."""
 
-    observer = fileobjectobserver(logh, name, reads=reads, writes=writes,
-                                  logdata=logdata, logdataapis=logdataapis)
+    observer = fileobjectobserver(
+        logh,
+        name,
+        reads=reads,
+        writes=writes,
+        logdata=logdata,
+        logdataapis=logdataapis,
+    )
     return fileobjectproxy(fh, observer)
+
 
 class socketobserver(baseproxyobserver):
     """Logs socket activity."""
-    def __init__(self, fh, name, reads=True, writes=True, states=True,
-                 logdata=False, logdataapis=True):
+
+    def __init__(
+        self,
+        fh,
+        name,
+        reads=True,
+        writes=True,
+        states=True,
+        logdata=False,
+        logdataapis=True,
+    ):
         self.fh = fh
         self.name = name
         self.reads = reads
@@ -868,16 +958,16 @@ class socketobserver(baseproxyobserver):
         if not self.states:
             return
 
-        self.fh.write('%s> makefile(%r, %r)\n' % (
-            self.name, mode, bufsize))
+        self.fh.write('%s> makefile(%r, %r)\n' % (self.name, mode, bufsize))
 
     def recv(self, res, size, flags=0):
         if not self.reads:
             return
 
         if self.logdataapis:
-            self.fh.write('%s> recv(%d, %d) -> %d' % (
-                self.name, size, flags, len(res)))
+            self.fh.write(
+                '%s> recv(%d, %d) -> %d' % (self.name, size, flags, len(res))
+            )
         self._writedata(res)
 
     def recvfrom(self, res, size, flags=0):
@@ -885,8 +975,10 @@ class socketobserver(baseproxyobserver):
             return
 
         if self.logdataapis:
-            self.fh.write('%s> recvfrom(%d, %d) -> %d' % (
-                self.name, size, flags, len(res[0])))
+            self.fh.write(
+                '%s> recvfrom(%d, %d) -> %d'
+                % (self.name, size, flags, len(res[0]))
+            )
 
         self._writedata(res[0])
 
@@ -895,18 +987,21 @@ class socketobserver(baseproxyobserver):
             return
 
         if self.logdataapis:
-            self.fh.write('%s> recvfrom_into(%d, %d) -> %d' % (
-                self.name, size, flags, res[0]))
+            self.fh.write(
+                '%s> recvfrom_into(%d, %d) -> %d'
+                % (self.name, size, flags, res[0])
+            )
 
-        self._writedata(buf[0:res[0]])
+        self._writedata(buf[0 : res[0]])
 
     def recv_into(self, res, buf, size=0, flags=0):
         if not self.reads:
             return
 
         if self.logdataapis:
-            self.fh.write('%s> recv_into(%d, %d) -> %d' % (
-                self.name, size, flags, res))
+            self.fh.write(
+                '%s> recv_into(%d, %d) -> %d' % (self.name, size, flags, res)
+            )
 
         self._writedata(buf[0:res])
 
@@ -914,8 +1009,9 @@ class socketobserver(baseproxyobserver):
         if not self.writes:
             return
 
-        self.fh.write('%s> send(%d, %d) -> %d' % (
-            self.name, len(data), flags, len(res)))
+        self.fh.write(
+            '%s> send(%d, %d) -> %d' % (self.name, len(data), flags, len(res))
+        )
         self._writedata(data)
 
     def sendall(self, res, data, flags=0):
@@ -924,8 +1020,7 @@ class socketobserver(baseproxyobserver):
 
         if self.logdataapis:
             # Returns None on success. So don't bother reporting return value.
-            self.fh.write('%s> sendall(%d, %d)' % (
-                self.name, len(data), flags))
+            self.fh.write('%s> sendall(%d, %d)' % (self.name, len(data), flags))
 
         self._writedata(data)
 
@@ -939,8 +1034,10 @@ class socketobserver(baseproxyobserver):
             flags = 0
 
         if self.logdataapis:
-            self.fh.write('%s> sendto(%d, %d, %r) -> %d' % (
-                self.name, len(data), flags, address, res))
+            self.fh.write(
+                '%s> sendto(%d, %d, %r) -> %d'
+                % (self.name, len(data), flags, address, res)
+            )
 
         self._writedata(data)
 
@@ -966,25 +1063,45 @@ class socketobserver(baseproxyobserver):
         if not self.states:
             return
 
-        self.fh.write('%s> setsockopt(%r, %r, %r) -> %r\n' % (
-            self.name, level, optname, value, res))
+        self.fh.write(
+            '%s> setsockopt(%r, %r, %r) -> %r\n'
+            % (self.name, level, optname, value, res)
+        )
 
-def makeloggingsocket(logh, fh, name, reads=True, writes=True, states=True,
-                      logdata=False, logdataapis=True):
+
+def makeloggingsocket(
+    logh,
+    fh,
+    name,
+    reads=True,
+    writes=True,
+    states=True,
+    logdata=False,
+    logdataapis=True,
+):
     """Turn a socket into a logging socket."""
 
-    observer = socketobserver(logh, name, reads=reads, writes=writes,
-                              states=states, logdata=logdata,
-                              logdataapis=logdataapis)
+    observer = socketobserver(
+        logh,
+        name,
+        reads=reads,
+        writes=writes,
+        states=states,
+        logdata=logdata,
+        logdataapis=logdataapis,
+    )
     return socketproxy(fh, observer)
+
 
 def version():
     """Return version information if available."""
     try:
         from . import __version__
+
         return __version__.version
     except ImportError:
         return 'unknown'
+
 
 def versiontuple(v=None, n=4):
     """Parses a Mercurial version string into an N-tuple.
@@ -1068,15 +1185,18 @@ def versiontuple(v=None, n=4):
     if n == 4:
         return (vints[0], vints[1], vints[2], extra)
 
+
 def cachefunc(func):
     '''cache the result of function calls'''
     # XXX doesn't handle keywords args
     if func.__code__.co_argcount == 0:
         cache = []
+
         def f():
             if len(cache) == 0:
                 cache.append(func())
             return cache[0]
+
         return f
     cache = {}
     if func.__code__.co_argcount == 1:
@@ -1086,13 +1206,16 @@ def cachefunc(func):
             if arg not in cache:
                 cache[arg] = func(arg)
             return cache[arg]
+
     else:
+
         def f(*args):
             if args not in cache:
                 cache[args] = func(*args)
             return cache[args]
 
     return f
+
 
 class cow(object):
     """helper class to make copy-on-write easier
@@ -1111,6 +1234,7 @@ class cow(object):
         """always do a cheap copy"""
         self._copied = getattr(self, '_copied', 0) + 1
         return self
+
 
 class sortdict(collections.OrderedDict):
     '''a simple sorted dictionary
@@ -1136,6 +1260,7 @@ class sortdict(collections.OrderedDict):
                 src = src.iteritems()
             for k, v in src:
                 self[k] = v
+
 
 class cowdict(cow, dict):
     """copy-on-write dict
@@ -1163,14 +1288,17 @@ class cowdict(cow, dict):
     True
     """
 
+
 class cowsortdict(cow, sortdict):
     """copy-on-write sortdict
 
     Be sure to call d = d.preparewrite() before writing to d.
     """
 
+
 class transactional(object):
     """Base class for making a transactional type into a context manager."""
+
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -1194,6 +1322,7 @@ class transactional(object):
         finally:
             self.release()
 
+
 @contextlib.contextmanager
 def acceptintervention(tr=None):
     """A context manager that closes the transaction on InterventionRequired
@@ -1212,9 +1341,11 @@ def acceptintervention(tr=None):
     finally:
         tr.release()
 
+
 @contextlib.contextmanager
 def nullcontextmanager():
     yield
+
 
 class _lrucachenode(object):
     """A node in a doubly linked list.
@@ -1222,6 +1353,7 @@ class _lrucachenode(object):
     Holds a reference to nodes on either side as well as a key-value
     pair for the dictionary entry.
     """
+
     __slots__ = (r'next', r'prev', r'key', r'value', r'cost')
 
     def __init__(self):
@@ -1237,6 +1369,7 @@ class _lrucachenode(object):
         self.key = _notset
         self.value = None
         self.cost = 0
+
 
 class lrucachedict(object):
     """Dict that caches most recent accesses and sets.
@@ -1260,6 +1393,7 @@ class lrucachedict(object):
     to e.g. set a max memory limit and associate an estimated bytes size
     cost to each item in the cache. By default, no maximum cost is enforced.
     """
+
     def __init__(self, max, maxcost=0):
         self._cache = {}
 
@@ -1530,11 +1664,13 @@ class lrucachedict(object):
             n.markempty()
             n = n.prev
 
+
 def lrucachefunc(func):
     '''cache most recent results of function calls'''
     cache = {}
     order = collections.deque()
     if func.__code__.co_argcount == 1:
+
         def f(arg):
             if arg not in cache:
                 if len(cache) > 20:
@@ -1544,7 +1680,9 @@ def lrucachefunc(func):
                 order.remove(arg)
             order.append(arg)
             return cache[arg]
+
     else:
+
         def f(*args):
             if args not in cache:
                 if len(cache) > 20:
@@ -1557,10 +1695,12 @@ def lrucachefunc(func):
 
     return f
 
+
 class propertycache(object):
     def __init__(self, func):
         self.func = func
         self.name = func.__name__
+
     def __get__(self, obj, type=None):
         result = self.func(obj)
         self.cachevalue(obj, result)
@@ -1570,15 +1710,18 @@ class propertycache(object):
         # __dict__ assignment required to bypass __setattr__ (eg: repoview)
         obj.__dict__[self.name] = value
 
+
 def clearcachedproperty(obj, prop):
     '''clear a cached property value, if one has been set'''
     prop = pycompat.sysstr(prop)
     if prop in obj.__dict__:
         del obj.__dict__[prop]
 
+
 def increasingchunks(source, min=1024, max=65536):
     '''return no less than min bytes per chunk while data remains,
     doubling min after each chunk until it reaches max'''
+
     def log2(x):
         if not x:
             return 0
@@ -1607,11 +1750,14 @@ def increasingchunks(source, min=1024, max=65536):
     if buf:
         yield ''.join(buf)
 
+
 def always(fn):
     return True
 
+
 def never(fn):
     return False
+
 
 def nogc(func):
     """disable garbage collector
@@ -1626,6 +1772,7 @@ def nogc(func):
     This garbage collector issue have been fixed in 2.7. But it still affect
     CPython's performance.
     """
+
     def wrapper(*args, **kwargs):
         gcenabled = gc.isenabled()
         gc.disable()
@@ -1634,11 +1781,14 @@ def nogc(func):
         finally:
             if gcenabled:
                 gc.enable()
+
     return wrapper
+
 
 if pycompat.ispypy:
     # PyPy runs slower with gc disabled
     nogc = lambda x: x
+
 
 def pathto(root, n1, n2):
     '''return the relative path from one place to another.
@@ -1666,6 +1816,7 @@ def pathto(root, n1, n2):
     b.reverse()
     return pycompat.ossep.join((['..'] * len(a)) + b) or '.'
 
+
 # the location of data files matching the source code
 if procutil.mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
     # executable version (py2exe) doesn't support __file__
@@ -1675,8 +1826,10 @@ else:
 
 i18n.setdatapath(datapath)
 
+
 def checksignature(func):
     '''wrap a function with code to check for calling errors'''
+
     def check(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -1686,6 +1839,7 @@ def checksignature(func):
             raise
 
     return check
+
 
 # a whilelist of known filesystems where hardlink works reliably
 _hardlinkfswhitelist = {
@@ -1703,6 +1857,7 @@ _hardlinkfswhitelist = {
     'xfs',
     'zfs',
 }
+
 
 def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
     '''copy a file, preserving mode and optionally other stat info like
@@ -1734,7 +1889,7 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
             oslink(src, dest)
             return
         except (IOError, OSError):
-            pass # fall back to normal copy
+            pass  # fall back to normal copy
     if os.path.islink(src):
         os.symlink(os.readlink(src), dest)
         # copytime is ignored for symlinks, but in general copytime isn't needed
@@ -1752,10 +1907,12 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
                     if newstat.isambig(oldstat):
                         # stat of copied file is ambiguous to original one
                         advanced = (
-                            oldstat.stat[stat.ST_MTIME] + 1) & 0x7fffffff
+                            oldstat.stat[stat.ST_MTIME] + 1
+                        ) & 0x7FFFFFFF
                         os.utime(dest, (advanced, advanced))
         except shutil.Error as inst:
             raise error.Abort(str(inst))
+
 
 def copyfiles(src, dst, hardlink=None, progress=None):
     """Copy a directory tree using hardlinks if possible."""
@@ -1767,8 +1924,9 @@ def copyfiles(src, dst, hardlink=None, progress=None):
 
     if os.path.isdir(src):
         if hardlink is None:
-            hardlink = (os.stat(src).st_dev ==
-                        os.stat(os.path.dirname(dst)).st_dev)
+            hardlink = (
+                os.stat(src).st_dev == os.stat(os.path.dirname(dst)).st_dev
+            )
         settopic()
         os.mkdir(dst)
         for name, kind in listdir(src):
@@ -1778,8 +1936,10 @@ def copyfiles(src, dst, hardlink=None, progress=None):
             num += n
     else:
         if hardlink is None:
-            hardlink = (os.stat(os.path.dirname(src)).st_dev ==
-                        os.stat(os.path.dirname(dst)).st_dev)
+            hardlink = (
+                os.stat(os.path.dirname(src)).st_dev
+                == os.stat(os.path.dirname(dst)).st_dev
+            )
         settopic()
 
         if hardlink:
@@ -1796,12 +1956,34 @@ def copyfiles(src, dst, hardlink=None, progress=None):
 
     return hardlink, num
 
+
 _winreservednames = {
-    'con', 'prn', 'aux', 'nul',
-    'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9',
-    'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9',
+    'con',
+    'prn',
+    'aux',
+    'nul',
+    'com1',
+    'com2',
+    'com3',
+    'com4',
+    'com5',
+    'com6',
+    'com7',
+    'com8',
+    'com9',
+    'lpt1',
+    'lpt2',
+    'lpt3',
+    'lpt4',
+    'lpt5',
+    'lpt6',
+    'lpt7',
+    'lpt8',
+    'lpt9',
 }
 _winreservedchars = ':*?"<>|'
+
+
 def checkwinfilename(path):
     r'''Check that the base-relative path is a valid filename on Windows.
     Returns None if the path is ok, or a UI string describing the problem.
@@ -1835,19 +2017,27 @@ def checkwinfilename(path):
             continue
         for c in _filenamebytestr(n):
             if c in _winreservedchars:
-                return _("filename contains '%s', which is reserved "
-                         "on Windows") % c
+                return (
+                    _("filename contains '%s', which is reserved " "on Windows")
+                    % c
+                )
             if ord(c) <= 31:
-                return _("filename contains '%s', which is invalid "
-                         "on Windows") % stringutil.escapestr(c)
+                return _(
+                    "filename contains '%s', which is invalid " "on Windows"
+                ) % stringutil.escapestr(c)
         base = n.split('.')[0]
         if base and base.lower() in _winreservednames:
-            return _("filename contains '%s', which is reserved "
-                     "on Windows") % base
+            return (
+                _("filename contains '%s', which is reserved " "on Windows")
+                % base
+            )
         t = n[-1:]
         if t in '. ' and n not in '..':
-            return _("filename ends with '%s', which is not allowed "
-                     "on Windows") % t
+            return (
+                _("filename ends with '%s', which is not allowed " "on Windows")
+                % t
+            )
+
 
 if pycompat.iswindows:
     checkosfilename = checkwinfilename
@@ -1858,6 +2048,7 @@ else:
 
 if safehasattr(time, "perf_counter"):
     timer = time.perf_counter
+
 
 def makelock(info, pathname):
     """Create a lock file atomically if possible
@@ -1870,7 +2061,7 @@ def makelock(info, pathname):
     except OSError as why:
         if why.errno == errno.EEXIST:
             raise
-    except AttributeError: # no symlink in os
+    except AttributeError:  # no symlink in os
         pass
 
     flags = os.O_CREAT | os.O_WRONLY | os.O_EXCL | getattr(os, 'O_BINARY', 0)
@@ -1878,16 +2069,18 @@ def makelock(info, pathname):
     os.write(ld, info)
     os.close(ld)
 
+
 def readlock(pathname):
     try:
         return readlink(pathname)
     except OSError as why:
         if why.errno not in (errno.EINVAL, errno.ENOSYS):
             raise
-    except AttributeError: # no symlink in os
+    except AttributeError:  # no symlink in os
         pass
     with posixfile(pathname, 'rb') as fp:
         return fp.read()
+
 
 def fstat(fp):
     '''stat file object that may not have fileno method.'''
@@ -1896,7 +2089,9 @@ def fstat(fp):
     except AttributeError:
         return os.stat(fp.name)
 
+
 # File system features
+
 
 def fscasesensitive(path):
     """
@@ -1911,7 +2106,7 @@ def fscasesensitive(path):
     if b == b2:
         b2 = b.lower()
         if b == b2:
-            return True # no evidence against case sensitivity
+            return True  # no evidence against case sensitivity
     p2 = os.path.join(d, b2)
     try:
         s2 = os.lstat(p2)
@@ -1921,11 +2116,14 @@ def fscasesensitive(path):
     except OSError:
         return True
 
+
 try:
     import re2
+
     _re2 = None
 except ImportError:
     _re2 = False
+
 
 class _re(object):
     def _checkre2(self):
@@ -1970,9 +2168,12 @@ class _re(object):
         else:
             return remod.escape
 
+
 re = _re()
 
 _fspathcache = {}
+
+
 def fspath(name, root):
     '''Get name in the case stored in the filesystem
 
@@ -1983,6 +2184,7 @@ def fspath(name, root):
 
     The root should be normcase-ed, too.
     '''
+
     def _makefspathcacheentry(dir):
         return dict((normcase(n), n) for n in os.listdir(dir))
 
@@ -1990,7 +2192,7 @@ def fspath(name, root):
     if pycompat.osaltsep:
         seps = seps + pycompat.osaltsep
     # Protect backslashes. This gets silly very quickly.
-    seps.replace('\\','\\\\')
+    seps.replace('\\', '\\\\')
     pattern = remod.compile(br'([^%s]+)|([%s]+)' % (seps, seps))
     dir = os.path.normpath(root)
     result = []
@@ -2015,6 +2217,7 @@ def fspath(name, root):
 
     return ''.join(result)
 
+
 def checknlink(testfile):
     '''check whether hardlink count reporting works properly'''
 
@@ -2022,8 +2225,11 @@ def checknlink(testfile):
     # work around issue2543 (or testfile may get lost on Samba shares)
     f1, f2, fp = None, None, None
     try:
-        fd, f1 = pycompat.mkstemp(prefix='.%s-' % os.path.basename(testfile),
-                                  suffix='1~', dir=os.path.dirname(testfile))
+        fd, f1 = pycompat.mkstemp(
+            prefix='.%s-' % os.path.basename(testfile),
+            suffix='1~',
+            dir=os.path.dirname(testfile),
+        )
         os.close(fd)
         f2 = '%s2~' % f1[:-2]
 
@@ -2044,10 +2250,15 @@ def checknlink(testfile):
             except OSError:
                 pass
 
+
 def endswithsep(path):
     '''Check path ends with os.sep or os.altsep.'''
-    return (path.endswith(pycompat.ossep)
-            or pycompat.osaltsep and path.endswith(pycompat.osaltsep))
+    return (
+        path.endswith(pycompat.ossep)
+        or pycompat.osaltsep
+        and path.endswith(pycompat.osaltsep)
+    )
+
 
 def splitpath(path):
     '''Split path by os.sep.
@@ -2056,6 +2267,7 @@ def splitpath(path):
     It is recommended to use os.path.normpath() before using this
     function if need.'''
     return path.split(pycompat.ossep)
+
 
 def mktempcopy(name, emptyok=False, createmode=None, enforcewritable=False):
     """Create a temporary file with the same contents from name
@@ -2091,13 +2303,14 @@ def mktempcopy(name, emptyok=False, createmode=None, enforcewritable=False):
             ofp.write(chunk)
         ifp.close()
         ofp.close()
-    except: # re-raises
+    except:  # re-raises
         try:
             os.unlink(temp)
         except OSError:
             pass
         raise
     return temp
+
 
 class filestat(object):
     """help to exactly detect change of a file
@@ -2106,6 +2319,7 @@ class filestat(object):
     exists. Otherwise, it is None. This can avoid preparative
     'exists()' examination on client side of this class.
     """
+
     def __init__(self, stat):
         self.stat = stat
 
@@ -2131,9 +2345,11 @@ class filestat(object):
             # if ambiguity between stat of new and old file is
             # avoided, comparison of size, ctime and mtime is enough
             # to exactly detect change of a file regardless of platform
-            return (self.stat.st_size == old.stat.st_size and
-                    self.stat[stat.ST_CTIME] == old.stat[stat.ST_CTIME] and
-                    self.stat[stat.ST_MTIME] == old.stat[stat.ST_MTIME])
+            return (
+                self.stat.st_size == old.stat.st_size
+                and self.stat[stat.ST_CTIME] == old.stat[stat.ST_CTIME]
+                and self.stat[stat.ST_MTIME] == old.stat[stat.ST_MTIME]
+            )
         except AttributeError:
             pass
         try:
@@ -2172,7 +2388,7 @@ class filestat(object):
         S[n].mtime", even if size of a file isn't changed.
         """
         try:
-            return (self.stat[stat.ST_CTIME] == old.stat[stat.ST_CTIME])
+            return self.stat[stat.ST_CTIME] == old.stat[stat.ST_CTIME]
         except AttributeError:
             return False
 
@@ -2187,7 +2403,7 @@ class filestat(object):
 
         Otherwise, this returns True, as "ambiguity is avoided".
         """
-        advanced = (old.stat[stat.ST_MTIME] + 1) & 0x7fffffff
+        advanced = (old.stat[stat.ST_MTIME] + 1) & 0x7FFFFFFF
         try:
             os.utime(path, (advanced, advanced))
         except OSError as inst:
@@ -2200,6 +2416,7 @@ class filestat(object):
 
     def __ne__(self, other):
         return not self == other
+
 
 class atomictempfile(object):
     '''writable file object that atomically updates a file
@@ -2214,11 +2431,15 @@ class atomictempfile(object):
     useful only if target file is guarded by any lock (e.g. repo.lock
     or repo.wlock).
     '''
+
     def __init__(self, name, mode='w+b', createmode=None, checkambig=False):
-        self.__name = name      # permanent name
-        self._tempname = mktempcopy(name, emptyok=('w' in mode),
-                                    createmode=createmode,
-                                    enforcewritable=('w' in mode))
+        self.__name = name  # permanent name
+        self._tempname = mktempcopy(
+            name,
+            emptyok=('w' in mode),
+            createmode=createmode,
+            enforcewritable=('w' in mode),
+        )
 
         self._fp = posixfile(self._tempname, mode)
         self._checkambig = checkambig
@@ -2240,7 +2461,7 @@ class atomictempfile(object):
                 newstat = filestat.frompath(filename)
                 if newstat.isambig(oldstat):
                     # stat of changed file is ambiguous to original one
-                    advanced = (oldstat.stat[stat.ST_MTIME] + 1) & 0x7fffffff
+                    advanced = (oldstat.stat[stat.ST_MTIME] + 1) & 0x7FFFFFFF
                     os.utime(filename, (advanced, advanced))
             else:
                 rename(self._tempname, filename)
@@ -2254,7 +2475,7 @@ class atomictempfile(object):
             self._fp.close()
 
     def __del__(self):
-        if safehasattr(self, '_fp'): # constructor actually did something
+        if safehasattr(self, '_fp'):  # constructor actually did something
             self.discard()
 
     def __enter__(self):
@@ -2265,6 +2486,7 @@ class atomictempfile(object):
             self.discard()
         else:
             self.close()
+
 
 def unlinkpath(f, ignoremissing=False, rmdir=True):
     """unlink and remove the directory if it is empty"""
@@ -2279,6 +2501,7 @@ def unlinkpath(f, ignoremissing=False, rmdir=True):
         except OSError:
             pass
 
+
 def tryunlink(f):
     """Attempt to remove a file, ignoring ENOENT errors."""
     try:
@@ -2286,6 +2509,7 @@ def tryunlink(f):
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
+
 
 def makedirs(name, mode=None, notindexed=False):
     """recursive directory creation with parent mode inheritance
@@ -2315,17 +2539,21 @@ def makedirs(name, mode=None, notindexed=False):
     if mode is not None:
         os.chmod(name, mode)
 
+
 def readfile(path):
     with open(path, 'rb') as fp:
         return fp.read()
+
 
 def writefile(path, text):
     with open(path, 'wb') as fp:
         fp.write(text)
 
+
 def appendfile(path, text):
     with open(path, 'ab') as fp:
         fp.write(text)
+
 
 class chunkbuffer(object):
     """Allow arbitrary sized chunks of data to be efficiently read from an
@@ -2333,9 +2561,10 @@ class chunkbuffer(object):
 
     def __init__(self, in_iter):
         """in_iter is the iterator that's iterating over the input chunks."""
+
         def splitbig(chunks):
             for chunk in chunks:
-                if len(chunk) > 2**20:
+                if len(chunk) > 2 ** 20:
                     pos = 0
                     while pos < len(chunk):
                         end = pos + 2 ** 18
@@ -2343,6 +2572,7 @@ class chunkbuffer(object):
                         pos = end
                 else:
                     yield chunk
+
         self.iter = splitbig(in_iter)
         self._queue = collections.deque()
         self._chunkoffset = 0
@@ -2361,7 +2591,7 @@ class chunkbuffer(object):
         while left > 0:
             # refill the queue
             if not queue:
-                target = 2**18
+                target = 2 ** 18
                 for chunk in self.iter:
                     queue.append(chunk)
                     target -= len(chunk)
@@ -2401,11 +2631,12 @@ class chunkbuffer(object):
 
             # Partial chunk needed.
             else:
-                buf.append(chunk[offset:offset + left])
+                buf.append(chunk[offset : offset + left])
                 self._chunkoffset += left
                 left -= chunkremaining
 
         return ''.join(buf)
+
 
 def filechunkiter(f, size=131072, limit=None):
     """Create a generator that produces the data in the file size
@@ -2428,6 +2659,7 @@ def filechunkiter(f, size=131072, limit=None):
             limit -= len(s)
         yield s
 
+
 class cappedreader(object):
     """A file object proxy that allows reading up to N bytes.
 
@@ -2439,6 +2671,7 @@ class cappedreader(object):
     in addition to I/O that is performed by this instance. If there is,
     state tracking will get out of sync and unexpected results will ensue.
     """
+
     def __init__(self, fh, limit):
         """Allow reading up to <limit> bytes from <fh>."""
         self._fh = fh
@@ -2462,8 +2695,9 @@ class cappedreader(object):
         if res is None:
             return None
 
-        b[0:len(res)] = res
+        b[0 : len(res)] = res
         return len(res)
+
 
 def unitcountfn(*unittable):
     '''return a function that renders a readable count of some quantity'''
@@ -2475,6 +2709,7 @@ def unitcountfn(*unittable):
         return unittable[-1][2] % count
 
     return go
+
 
 def processlinerange(fromline, toline):
     """Check that linerange <fromline>:<toline> makes sense and return a
@@ -2497,6 +2732,7 @@ def processlinerange(fromline, toline):
         raise error.ParseError(_("fromline must be strictly positive"))
     return fromline - 1, toline
 
+
 bytecount = unitcountfn(
     (100, 1 << 30, _('%.0f GB')),
     (10, 1 << 30, _('%.1f GB')),
@@ -2508,7 +2744,8 @@ bytecount = unitcountfn(
     (10, 1 << 10, _('%.1f KB')),
     (1, 1 << 10, _('%.2f KB')),
     (1, 1, _('%.0f bytes')),
-    )
+)
+
 
 class transformingwriter(object):
     """Writable file wrapper to transform data by function"""
@@ -2526,19 +2763,24 @@ class transformingwriter(object):
     def write(self, data):
         return self._fp.write(self._encode(data))
 
+
 # Matches a single EOL which can either be a CRLF where repeated CR
 # are removed or a LF. We do not care about old Macintosh files, so a
 # stray CR is an error.
 _eolre = remod.compile(br'\r*\n')
 
+
 def tolf(s):
     return _eolre.sub('\n', s)
+
 
 def tocrlf(s):
     return _eolre.sub('\r\n', s)
 
+
 def _crlfwriter(fp):
     return transformingwriter(fp, tocrlf)
+
 
 if pycompat.oslinesep == '\r\n':
     tonativeeol = tocrlf
@@ -2549,8 +2791,10 @@ else:
     fromnativeeol = pycompat.identity
     nativeeolwriter = pycompat.identity
 
-if (pyplatform.python_implementation() == 'CPython' and
-    sys.version_info < (3, 0)):
+if pyplatform.python_implementation() == 'CPython' and sys.version_info < (
+    3,
+    0,
+):
     # There is an issue in CPython that some IO methods do not handle EINTR
     # correctly. The following table shows what CPython version (and functions)
     # are affected (buggy: has the EINTR bug, okay: otherwise):
@@ -2579,6 +2823,7 @@ if (pyplatform.python_implementation() == 'CPython' and
         # fp.readline deals with EINTR correctly, use it as a workaround.
         def _safeiterfile(fp):
             return iter(fp.readline, '')
+
     else:
         # fp.read* are broken too, manually deal with EINTR in a stupid way.
         # note: this may block longer than necessary because of bufsize.
@@ -2616,18 +2861,23 @@ if (pyplatform.python_implementation() == 'CPython' and
             return fp
         else:
             return _safeiterfile(fp)
+
+
 else:
     # PyPy and CPython 3 do not have the EINTR issue thus no workaround needed.
     def iterfile(fp):
         return fp
+
 
 def iterlines(iterator):
     for chunk in iterator:
         for line in chunk.splitlines():
             yield line
 
+
 def expandpath(path):
     return os.path.expanduser(os.path.expandvars(path))
+
 
 def interpolate(prefix, mapping, s, fn=None, escape_prefix=False):
     """Return the result of interpolating items in the mapping into string s.
@@ -2654,6 +2904,7 @@ def interpolate(prefix, mapping, s, fn=None, escape_prefix=False):
     r = remod.compile(br'%s(%s)' % (prefix, patterns))
     return r.sub(lambda x: fn(mapping[x.group()[1:]]), s)
 
+
 def getport(port):
     """Return the port for a given network service.
 
@@ -2669,8 +2920,10 @@ def getport(port):
     try:
         return socket.getservbyname(pycompat.sysstr(port))
     except socket.error:
-        raise error.Abort(_("no port number associated with service '%s'")
-                          % port)
+        raise error.Abort(
+            _("no port number associated with service '%s'") % port
+        )
+
 
 class url(object):
     r"""Reliable URL parser.
@@ -2822,22 +3075,27 @@ class url(object):
                     self.host = None
 
             # Don't split on colons in IPv6 addresses without ports
-            if (self.host and ':' in self.host and
-                not (self.host.startswith('[') and self.host.endswith(']'))):
+            if (
+                self.host
+                and ':' in self.host
+                and not (self.host.startswith('[') and self.host.endswith(']'))
+            ):
                 self._hostport = self.host
                 self.host, self.port = self.host.rsplit(':', 1)
                 if not self.host:
                     self.host = None
 
-            if (self.host and self.scheme == 'file' and
-                self.host not in ('localhost', '127.0.0.1', '[::1]')):
+            if (
+                self.host
+                and self.scheme == 'file'
+                and self.host not in ('localhost', '127.0.0.1', '[::1]')
+            ):
                 raise error.Abort(_('file:// URLs can only refer to localhost'))
 
         self.path = path
 
         # leave the query string escaped
-        for a in ('user', 'passwd', 'host', 'port',
-                  'path', 'fragment'):
+        for a in ('user', 'passwd', 'host', 'port', 'path', 'fragment'):
             v = getattr(self, a)
             if v is not None:
                 setattr(self, a, urlreq.unquote(v))
@@ -2845,8 +3103,16 @@ class url(object):
     @encoding.strmethod
     def __repr__(self):
         attrs = []
-        for a in ('scheme', 'user', 'passwd', 'host', 'port', 'path',
-                  'query', 'fragment'):
+        for a in (
+            'scheme',
+            'user',
+            'passwd',
+            'host',
+            'port',
+            'path',
+            'query',
+            'fragment',
+        ):
             v = getattr(self, a)
             if v is not None:
                 attrs.append('%s: %r' % (a, pycompat.bytestr(v)))
@@ -2897,8 +3163,11 @@ class url(object):
         s = self.scheme + ':'
         if self.user or self.passwd or self.host:
             s += '//'
-        elif self.scheme and (not self.path or self.path.startswith('/')
-                              or hasdriveletter(self.path)):
+        elif self.scheme and (
+            not self.path
+            or self.path.startswith('/')
+            or hasdriveletter(self.path)
+        ):
             s += '//'
             if hasdriveletter(self.path):
                 s += '/'
@@ -2944,18 +3213,17 @@ class url(object):
         # URIs must not contain credentials. The host is passed in the
         # URIs list because Python < 2.4.3 uses only that to search for
         # a password.
-        return (s, (None, (s, self.host),
-                    self.user, self.passwd or ''))
+        return (s, (None, (s, self.host), self.user, self.passwd or ''))
 
     def isabs(self):
         if self.scheme and self.scheme != 'file':
-            return True # remote URL
+            return True  # remote URL
         if hasdriveletter(self.path):
-            return True # absolute for our purposes - can't be joined()
+            return True  # absolute for our purposes - can't be joined()
         if self.path.startswith(br'\\'):
-            return True # Windows UNC path
+            return True  # Windows UNC path
         if self.path.startswith('/'):
-            return True # POSIX-style
+            return True  # POSIX-style
         return False
 
     def localpath(self):
@@ -2965,25 +3233,31 @@ class url(object):
             # letters to paths with drive letters.
             if hasdriveletter(self._hostport):
                 path = self._hostport + '/' + self.path
-            elif (self.host is not None and self.path
-                  and not hasdriveletter(path)):
+            elif (
+                self.host is not None and self.path and not hasdriveletter(path)
+            ):
                 path = '/' + path
             return path
         return self._origpath
 
     def islocal(self):
         '''whether localpath will return something that posixfile can open'''
-        return (not self.scheme or self.scheme == 'file'
-                or self.scheme == 'bundle')
+        return (
+            not self.scheme or self.scheme == 'file' or self.scheme == 'bundle'
+        )
+
 
 def hasscheme(path):
     return bool(url(path).scheme)
 
+
 def hasdriveletter(path):
     return path and path[1:2] == ':' and path[0:1].isalpha()
 
+
 def urllocalpath(path):
     return url(path, parsequery=False, parsefragment=False).localpath()
+
 
 def checksafessh(path):
     """check if a path / url is a potentially unsafe ssh exploit (SEC)
@@ -2997,8 +3271,10 @@ def checksafessh(path):
     """
     path = urlreq.unquote(path)
     if path.startswith('ssh://-') or path.startswith('svn+ssh://-'):
-        raise error.Abort(_('potentially unsafe url: %r') %
-                          (pycompat.bytestr(path),))
+        raise error.Abort(
+            _('potentially unsafe url: %r') % (pycompat.bytestr(path),)
+        )
+
 
 def hidepassword(u):
     '''hide user credential in a url string'''
@@ -3007,11 +3283,13 @@ def hidepassword(u):
         u.passwd = '***'
     return bytes(u)
 
+
 def removeauth(u):
     '''remove all authentication information from a url string'''
     u = url(u)
     u.user = u.passwd = None
     return bytes(u)
+
 
 timecount = unitcountfn(
     (1, 1e3, _('%.0f s')),
@@ -3027,7 +3305,8 @@ timecount = unitcountfn(
     (100, 0.000000001, _('%.1f ns')),
     (10, 0.000000001, _('%.2f ns')),
     (1, 0.000000001, _('%.3f ns')),
-    )
+)
+
 
 @attr.s
 class timedcmstats(object):
@@ -3046,6 +3325,7 @@ class timedcmstats(object):
         return timecount(self.elapsed) if self.elapsed else '<unknown>'
 
     __str__ = encoding.strmethod(__bytes__)
+
 
 @contextlib.contextmanager
 def timedcm(whencefmt, *whenceargs):
@@ -3066,7 +3346,9 @@ def timedcm(whencefmt, *whenceargs):
         timing_stats.elapsed = timer() - timing_stats.start
         timedcm._nested -= 1
 
+
 timedcm._nested = 0
+
 
 def timed(func):
     '''Report the execution time of a function call to stderr.
@@ -3083,14 +3365,29 @@ def timed(func):
         with timedcm(pycompat.bytestr(func.__name__)) as time_stats:
             result = func(*args, **kwargs)
         stderr = procutil.stderr
-        stderr.write('%s%s: %s\n' % (
-            ' ' * time_stats.level * 2, pycompat.bytestr(func.__name__),
-            time_stats))
+        stderr.write(
+            '%s%s: %s\n'
+            % (
+                ' ' * time_stats.level * 2,
+                pycompat.bytestr(func.__name__),
+                time_stats,
+            )
+        )
         return result
+
     return wrapper
 
-_sizeunits = (('m', 2**20), ('k', 2**10), ('g', 2**30),
-              ('kb', 2**10), ('mb', 2**20), ('gb', 2**30), ('b', 1))
+
+_sizeunits = (
+    ('m', 2 ** 20),
+    ('k', 2 ** 10),
+    ('g', 2 ** 30),
+    ('kb', 2 ** 10),
+    ('mb', 2 ** 20),
+    ('gb', 2 ** 30),
+    ('b', 1),
+)
+
 
 def sizetoint(s):
     '''Convert a space specifier to a byte count.
@@ -3106,10 +3403,11 @@ def sizetoint(s):
     try:
         for k, u in _sizeunits:
             if t.endswith(k):
-                return int(float(t[:-len(k)]) * u)
+                return int(float(t[: -len(k)]) * u)
         return int(t)
     except ValueError:
         raise error.ParseError(_("couldn't parse size: %s") % s)
+
 
 class hooks(object):
     '''A collection of hook functions that can be used to extend a
@@ -3129,6 +3427,7 @@ class hooks(object):
             results.append(hook(*args))
         return results
 
+
 def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%d', depth=0):
     '''Yields lines for a nicely formatted stacktrace.
     Skips the 'skip' last entries, then return the last 'depth' entries.
@@ -3141,9 +3440,10 @@ def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%d', depth=0):
 
     Not be used in production code but very convenient while developing.
     '''
-    entries = [(fileline % (pycompat.sysbytes(fn), ln), pycompat.sysbytes(func))
-        for fn, ln, func, _text in traceback.extract_stack()[:-skip - 1]
-        ][-depth:]
+    entries = [
+        (fileline % (pycompat.sysbytes(fn), ln), pycompat.sysbytes(func))
+        for fn, ln, func, _text in traceback.extract_stack()[: -skip - 1]
+    ][-depth:]
     if entries:
         fnmax = max(len(entry[0]) for entry in entries)
         for fnln, func in entries:
@@ -3152,8 +3452,10 @@ def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%d', depth=0):
             else:
                 yield line % (fnmax, fnln, func)
 
-def debugstacktrace(msg='stacktrace', skip=0,
-                    f=procutil.stderr, otherf=procutil.stdout, depth=0):
+
+def debugstacktrace(
+    msg='stacktrace', skip=0, f=procutil.stderr, otherf=procutil.stdout, depth=0
+):
     '''Writes a message to f (stderr) with a nicely formatted stacktrace.
     Skips the 'skip' entries closest to the call, then show 'depth' entries.
     By default it will flush stdout first.
@@ -3167,6 +3469,7 @@ def debugstacktrace(msg='stacktrace', skip=0,
         f.write(line)
     f.flush()
 
+
 class dirs(object):
     '''a multiset of directory names from a dirstate or manifest'''
 
@@ -3178,8 +3481,9 @@ class dirs(object):
                 if s[0] != skip:
                     addpath(f)
         elif skip is not None:
-            raise error.ProgrammingError("skip character is only supported "
-                                         "with a dict source")
+            raise error.ProgrammingError(
+                "skip character is only supported " "with a dict source"
+            )
         else:
             for f in map:
                 addpath(f)
@@ -3206,11 +3510,13 @@ class dirs(object):
     def __contains__(self, d):
         return d in self._dirs
 
+
 if safehasattr(parsers, 'dirs'):
     dirs = parsers.dirs
 
 if rustdirs is not None:
     dirs = rustdirs
+
 
 def finddirs(path):
     pos = path.rfind('/')
@@ -3222,6 +3528,7 @@ def finddirs(path):
 
 # convenient shortcut
 dst = debugstacktrace
+
 
 def safename(f, tag, ctx, others=None):
     """
@@ -3246,14 +3553,17 @@ def safename(f, tag, ctx, others=None):
         if fn not in ctx and fn not in others:
             return fn
 
+
 def readexactly(stream, n):
     '''read n bytes from stream.read and abort if less was available'''
     s = stream.read(n)
     if len(s) < n:
-        raise error.Abort(_("stream ended unexpectedly"
-                           " (got %d bytes, expected %d)")
-                          % (len(s), n))
+        raise error.Abort(
+            _("stream ended unexpectedly" " (got %d bytes, expected %d)")
+            % (len(s), n)
+        )
     return s
+
 
 def uvarintencode(value):
     """Encode an unsigned integer value to a varint.
@@ -3279,18 +3589,18 @@ def uvarintencode(value):
     ProgrammingError: negative value for uvarint: -1
     """
     if value < 0:
-        raise error.ProgrammingError('negative value for uvarint: %d'
-                                     % value)
-    bits = value & 0x7f
+        raise error.ProgrammingError('negative value for uvarint: %d' % value)
+    bits = value & 0x7F
     value >>= 7
     bytes = []
     while value:
         bytes.append(pycompat.bytechr(0x80 | bits))
-        bits = value & 0x7f
+        bits = value & 0x7F
         value >>= 7
     bytes.append(pycompat.bytechr(bits))
 
     return ''.join(bytes)
+
 
 def uvarintdecodestream(fh):
     """Decode an unsigned variable length integer from a stream.
@@ -3320,7 +3630,7 @@ def uvarintdecodestream(fh):
     shift = 0
     while True:
         byte = ord(readexactly(fh, 1))
-        result |= ((byte & 0x7f) << shift)
+        result |= (byte & 0x7F) << shift
         if not (byte & 0x80):
             return result
         shift += 7

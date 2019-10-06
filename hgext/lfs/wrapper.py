@@ -29,9 +29,7 @@ from mercurial import (
     wireprotov1server,
 )
 
-from mercurial.interfaces import (
-    repository,
-)
+from mercurial.interfaces import repository
 
 from mercurial.utils import (
     storageutil,
@@ -47,6 +45,7 @@ from . import (
 
 eh = exthelper.exthelper()
 
+
 @eh.wrapfunction(localrepo, 'makefilestorage')
 def localrepomakefilestorage(orig, requirements, features, **kwargs):
     if b'lfs' in requirements:
@@ -54,11 +53,13 @@ def localrepomakefilestorage(orig, requirements, features, **kwargs):
 
     return orig(requirements=requirements, features=features, **kwargs)
 
+
 @eh.wrapfunction(changegroup, 'allsupportedversions')
 def allsupportedversions(orig, ui):
     versions = orig(ui)
     versions.add('03')
     return versions
+
 
 @eh.wrapfunction(wireprotov1server, '_capabilities')
 def _capabilities(orig, repo, proto):
@@ -75,8 +76,10 @@ def _capabilities(orig, repo, proto):
         caps.append('lfs')
     return caps
 
+
 def bypasscheckhash(self, text):
     return False
+
 
 def readfromstore(self, text):
     """Read filelog content from local blobstore transform for flagprocessor.
@@ -99,12 +102,13 @@ def readfromstore(self, text):
     hgmeta = {}
     for k in p.keys():
         if k.startswith('x-hg-'):
-            name = k[len('x-hg-'):]
+            name = k[len('x-hg-') :]
             hgmeta[name] = p[k]
     if hgmeta or text.startswith('\1\n'):
         text = storageutil.packmeta(hgmeta, text)
 
     return (text, True, {})
+
 
 def writetostore(self, text, sidedata):
     # hg filelog metadata (includes rename, etc)
@@ -136,6 +140,7 @@ def writetostore(self, text, sidedata):
     rawtext = metadata.serialize()
     return (rawtext, False)
 
+
 def _islfs(rlog, node=None, rev=None):
     if rev is None:
         if node is None:
@@ -149,10 +154,21 @@ def _islfs(rlog, node=None, rev=None):
     flags = rlog._revlog.flags(rev)
     return bool(flags & revlog.REVIDX_EXTSTORED)
 
+
 # Wrapping may also be applied by remotefilelog
-def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
-                       cachedelta=None, node=None,
-                       flags=revlog.REVIDX_DEFAULT_FLAGS, **kwds):
+def filelogaddrevision(
+    orig,
+    self,
+    text,
+    transaction,
+    link,
+    p1,
+    p2,
+    cachedelta=None,
+    node=None,
+    flags=revlog.REVIDX_DEFAULT_FLAGS,
+    **kwds
+):
     # The matcher isn't available if reposetup() wasn't called.
     lfstrack = self._revlog.opener.options.get('lfstrack')
 
@@ -166,8 +182,19 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
         if lfstrack(self._revlog.filename, textlen):
             flags |= revlog.REVIDX_EXTSTORED
 
-    return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
-                node=node, flags=flags, **kwds)
+    return orig(
+        self,
+        text,
+        transaction,
+        link,
+        p1,
+        p2,
+        cachedelta=cachedelta,
+        node=node,
+        flags=flags,
+        **kwds
+    )
+
 
 # Wrapping may also be applied by remotefilelog
 def filelogrenamed(orig, self, node):
@@ -182,6 +209,7 @@ def filelogrenamed(orig, self, node):
             return False
     return orig(self, node)
 
+
 # Wrapping may also be applied by remotefilelog
 def filelogsize(orig, self, rev):
     if _islfs(self, rev=rev):
@@ -190,6 +218,7 @@ def filelogsize(orig, self, rev):
         metadata = pointer.deserialize(rawtext)
         return int(metadata['size'])
     return orig(self, rev)
+
 
 @eh.wrapfunction(context.basefilectx, 'cmp')
 def filectxcmp(orig, self, fctx):
@@ -202,6 +231,7 @@ def filectxcmp(orig, self, fctx):
         return p1.oid() != p2.oid()
     return orig(self, fctx)
 
+
 @eh.wrapfunction(context.basefilectx, 'isbinary')
 def filectxisbinary(orig, self):
     if self.islfs():
@@ -211,24 +241,45 @@ def filectxisbinary(orig, self):
         return bool(int(metadata.get('x-is-binary', 1)))
     return orig(self)
 
+
 def filectxislfs(self):
     return _islfs(self.filelog(), self.filenode())
+
 
 @eh.wrapfunction(cmdutil, '_updatecatformatter')
 def _updatecatformatter(orig, fm, ctx, matcher, path, decode):
     orig(fm, ctx, matcher, path, decode)
     fm.data(rawdata=ctx[path].rawdata())
 
+
 @eh.wrapfunction(scmutil, 'wrapconvertsink')
 def convertsink(orig, sink):
     sink = orig(sink)
     if sink.repotype == 'hg':
+
         class lfssink(sink.__class__):
-            def putcommit(self, files, copies, parents, commit, source, revmap,
-                          full, cleanp2):
+            def putcommit(
+                self,
+                files,
+                copies,
+                parents,
+                commit,
+                source,
+                revmap,
+                full,
+                cleanp2,
+            ):
                 pc = super(lfssink, self).putcommit
-                node = pc(files, copies, parents, commit, source, revmap, full,
-                          cleanp2)
+                node = pc(
+                    files,
+                    copies,
+                    parents,
+                    commit,
+                    source,
+                    revmap,
+                    full,
+                    cleanp2,
+                )
 
                 if 'lfs' not in self.repo.requirements:
                     ctx = self.repo[node]
@@ -245,6 +296,7 @@ def convertsink(orig, sink):
 
     return sink
 
+
 # bundlerepo uses "vfsmod.readonlyvfs(othervfs)", we need to make sure lfs
 # options and blob stores are passed from othervfs to the new readonlyvfs.
 @eh.wrapfunction(vfsmod.readonlyvfs, '__init__')
@@ -259,6 +311,7 @@ def vfsinit(orig, self, othervfs):
     for name in ['lfslocalblobstore', 'lfsremoteblobstore']:
         if util.safehasattr(othervfs, name):
             setattr(self, name, getattr(othervfs, name))
+
 
 def _prefetchfiles(repo, revs, match):
     """Ensure that required LFS blobs are present, fetching them as a group if
@@ -284,6 +337,7 @@ def _prefetchfiles(repo, revs, match):
         # on the repo by a clone command to be used for the update.
         blobstore.remote(repo).readbatch(pointers, localstore)
 
+
 def _canskipupload(repo):
     # Skip if this hasn't been passed to reposetup()
     if not util.safehasattr(repo.svfs, 'lfsremoteblobstore'):
@@ -292,6 +346,7 @@ def _canskipupload(repo):
     # if remotestore is a null store, upload is a no-op and can be skipped
     return isinstance(repo.svfs.lfsremoteblobstore, blobstore._nullremote)
 
+
 def candownload(repo):
     # Skip if this hasn't been passed to reposetup()
     if not util.safehasattr(repo.svfs, 'lfsremoteblobstore'):
@@ -299,6 +354,7 @@ def candownload(repo):
 
     # if remotestore is a null store, downloads will lead to nothing
     return not isinstance(repo.svfs.lfsremoteblobstore, blobstore._nullremote)
+
 
 def uploadblobsfromrevs(repo, revs):
     '''upload lfs blobs introduced by revs
@@ -310,6 +366,7 @@ def uploadblobsfromrevs(repo, revs):
     pointers = extractpointers(repo, revs)
     uploadblobs(repo, pointers)
 
+
 def prepush(pushop):
     """Prepush hook.
 
@@ -318,6 +375,7 @@ def prepush(pushop):
     the remote blobstore.
     """
     return uploadblobsfromrevs(pushop.repo, pushop.outgoing.missing)
+
 
 @eh.wrapfunction(exchange, 'push')
 def push(orig, repo, remote, *args, **kwargs):
@@ -331,8 +389,9 @@ def push(orig, repo, remote, *args, **kwargs):
             # This is a copy of the message in exchange.push() when requirements
             # are missing between local repos.
             m = _("required features are not supported in the destination: %s")
-            raise error.Abort(m % 'lfs',
-                              hint=_('enable the lfs extension on the server'))
+            raise error.Abort(
+                m % 'lfs', hint=_('enable the lfs extension on the server')
+            )
 
         # Repositories where this extension is disabled won't have the field.
         # But if there's a requirement, then the extension must be loaded AND
@@ -346,14 +405,18 @@ def push(orig, repo, remote, *args, **kwargs):
     else:
         return orig(repo, remote, *args, **kwargs)
 
+
 # when writing a bundle via "hg bundle" command, upload related LFS blobs
 @eh.wrapfunction(bundle2, 'writenewbundle')
-def writenewbundle(orig, ui, repo, source, filename, bundletype, outgoing,
-                   *args, **kwargs):
+def writenewbundle(
+    orig, ui, repo, source, filename, bundletype, outgoing, *args, **kwargs
+):
     """upload LFS blobs added by outgoing revisions on 'hg bundle'"""
     uploadblobsfromrevs(repo, outgoing.missing)
-    return orig(ui, repo, source, filename, bundletype, outgoing, *args,
-                **kwargs)
+    return orig(
+        ui, repo, source, filename, bundletype, outgoing, *args, **kwargs
+    )
+
 
 def extractpointers(repo, revs):
     """return a list of lfs pointers added by given revs"""
@@ -368,6 +431,7 @@ def extractpointers(repo, revs):
                 pointers[p.oid()] = p
             progress.increment()
         return sorted(pointers.values(), key=lambda p: p.oid())
+
 
 def pointerfromctx(ctx, f, removed=False):
     """return a pointer for the named file from the given changectx, or None if
@@ -396,8 +460,11 @@ def pointerfromctx(ctx, f, removed=False):
             return p
         return {}
     except pointer.InvalidPointer as ex:
-        raise error.Abort(_('lfs: corrupted pointer (%s@%s): %s\n')
-                          % (f, short(_ctx.node()), ex))
+        raise error.Abort(
+            _('lfs: corrupted pointer (%s@%s): %s\n')
+            % (f, short(_ctx.node()), ex)
+        )
+
 
 def pointersfromctx(ctx, removed=False):
     """return a dict {path: pointer} for given single changectx.
@@ -417,6 +484,7 @@ def pointersfromctx(ctx, removed=False):
             result[f] = p
     return result
 
+
 def uploadblobs(repo, pointers):
     """upload given pointers from local blobstore"""
     if not pointers:
@@ -425,13 +493,15 @@ def uploadblobs(repo, pointers):
     remoteblob = repo.svfs.lfsremoteblobstore
     remoteblob.writebatch(pointers, repo.svfs.lfslocalblobstore)
 
+
 @eh.wrapfunction(upgrade, '_finishdatamigration')
 def upgradefinishdatamigration(orig, ui, srcrepo, dstrepo, requirements):
     orig(ui, srcrepo, dstrepo, requirements)
 
     # Skip if this hasn't been passed to reposetup()
-    if (util.safehasattr(srcrepo.svfs, 'lfslocalblobstore') and
-        util.safehasattr(dstrepo.svfs, 'lfslocalblobstore')):
+    if util.safehasattr(srcrepo.svfs, 'lfslocalblobstore') and util.safehasattr(
+        dstrepo.svfs, 'lfslocalblobstore'
+    ):
         srclfsvfs = srcrepo.svfs.lfslocalblobstore.vfs
         dstlfsvfs = dstrepo.svfs.lfslocalblobstore.vfs
 
@@ -439,6 +509,7 @@ def upgradefinishdatamigration(orig, ui, srcrepo, dstrepo, requirements):
             for oid in files:
                 ui.write(_('copying lfs blob %s\n') % oid)
                 lfutil.link(srclfsvfs.join(oid), dstlfsvfs.join(oid))
+
 
 @eh.wrapfunction(upgrade, 'preservedrequirements')
 @eh.wrapfunction(upgrade, 'supporteddestrequirements')

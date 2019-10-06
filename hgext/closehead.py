@@ -28,13 +28,16 @@ testedwith = 'ships-with-hg-core'
 
 commitopts = cmdutil.commitopts
 commitopts2 = cmdutil.commitopts2
-commitopts3 = [('r', 'rev', [],
-               _('revision to check'), _('REV'))]
+commitopts3 = [('r', 'rev', [], _('revision to check'), _('REV'))]
 
-@command('close-head|close-heads', commitopts + commitopts2 + commitopts3,
+
+@command(
+    'close-head|close-heads',
+    commitopts + commitopts2 + commitopts3,
     _('[OPTION]... [REV]...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
-    inferrepo=True)
+    inferrepo=True,
+)
 def close_branch(ui, repo, *revs, **opts):
     """close the given head revisions
 
@@ -44,10 +47,18 @@ def close_branch(ui, repo, *revs, **opts):
 
     The commit message must be specified with -l or -m.
     """
+
     def docommit(rev):
-        cctx = context.memctx(repo, parents=[rev, None], text=message,
-                              files=[], filectxfn=None, user=opts.get('user'),
-                              date=opts.get('date'), extra=extra)
+        cctx = context.memctx(
+            repo,
+            parents=[rev, None],
+            text=message,
+            files=[],
+            filectxfn=None,
+            user=opts.get('user'),
+            date=opts.get('date'),
+            extra=extra,
+        )
         tr = repo.transaction('commit')
         ret = repo.commitctx(cctx, True)
         bookmarks.update(repo, [rev, None], ret)
@@ -73,7 +84,7 @@ def close_branch(ui, repo, *revs, **opts):
     message = cmdutil.logmessage(ui, opts)
     if not message:
         raise error.Abort(_("no commit message specified with -l or -m"))
-    extra = { 'close': '1' }
+    extra = {'close': '1'}
 
     with repo.wlock(), repo.lock():
         for rev in revs:

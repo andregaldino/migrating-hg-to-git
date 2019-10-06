@@ -34,12 +34,13 @@ if os.environ.get('HGIPV6', '0') == '1':
 else:
     family = socket.AF_INET
 
-class ProxyHandler (httpserver.basehttprequesthandler):
+
+class ProxyHandler(httpserver.basehttprequesthandler):
     __base = httpserver.basehttprequesthandler
     __base_handle = __base.handle
 
     server_version = "TinyHTTPProxy/" + __version__
-    rbufsize = 0                        # self.rfile Be unbuffered
+    rbufsize = 0  # self.rfile Be unbuffered
 
     def handle(self):
         (ip, port) = self.client_address
@@ -53,9 +54,13 @@ class ProxyHandler (httpserver.basehttprequesthandler):
 
     def log_request(self, code='-', size='-'):
         xheaders = [h for h in self.headers.items() if h[0].startswith('x-')]
-        self.log_message('"%s" %s %s%s',
-                         self.requestline, str(code), str(size),
-                         ''.join([' %s:%s' % h for h in sorted(xheaders)]))
+        self.log_message(
+            '"%s" %s %s%s',
+            self.requestline,
+            str(code),
+            str(size),
+            ''.join([' %s:%s' % h for h in sorted(xheaders)]),
+        )
         # Flush for Windows, so output isn't lost on TerminateProcess()
         sys.stdout.flush()
         sys.stderr.flush()
@@ -63,14 +68,17 @@ class ProxyHandler (httpserver.basehttprequesthandler):
     def _connect_to(self, netloc, soc):
         i = netloc.find(':')
         if i >= 0:
-            host_port = netloc[:i], int(netloc[i + 1:])
+            host_port = netloc[:i], int(netloc[i + 1 :])
         else:
             host_port = netloc, 80
         print("\t" "connect to %s:%d" % host_port)
-        try: soc.connect(host_port)
+        try:
+            soc.connect(host_port)
         except socket.error as arg:
-            try: msg = arg[1]
-            except (IndexError, TypeError): msg = arg
+            try:
+                msg = arg[1]
+            except (IndexError, TypeError):
+                msg = arg
             self.send_error(404, msg)
             return 0
         return 1
@@ -80,10 +88,14 @@ class ProxyHandler (httpserver.basehttprequesthandler):
         try:
             if self._connect_to(self.path, soc):
                 self.log_request(200)
-                self.wfile.write(pycompat.bytestr(self.protocol_version) +
-                                 b" 200 Connection established\r\n")
-                self.wfile.write(b"Proxy-agent: %s\r\n" %
-                                 pycompat.bytestr(self.version_string()))
+                self.wfile.write(
+                    pycompat.bytestr(self.protocol_version)
+                    + b" 200 Connection established\r\n"
+                )
+                self.wfile.write(
+                    b"Proxy-agent: %s\r\n"
+                    % pycompat.bytestr(self.version_string())
+                )
                 self.wfile.write(b"\r\n")
                 self._read_write(soc, 300)
         finally:
@@ -93,7 +105,8 @@ class ProxyHandler (httpserver.basehttprequesthandler):
 
     def do_GET(self):
         (scm, netloc, path, params, query, fragment) = urlreq.urlparse(
-            self.path, 'http')
+            self.path, 'http'
+        )
         if scm != 'http' or fragment or not netloc:
             self.send_error(400, "bad url %s" % self.path)
             return
@@ -102,15 +115,21 @@ class ProxyHandler (httpserver.basehttprequesthandler):
             if self._connect_to(netloc, soc):
                 self.log_request()
                 url = urlreq.urlunparse(('', '', path, params, query, ''))
-                soc.send(b"%s %s %s\r\n" % (
-                    pycompat.bytestr(self.command),
-                    pycompat.bytestr(url),
-                    pycompat.bytestr(self.request_version)))
+                soc.send(
+                    b"%s %s %s\r\n"
+                    % (
+                        pycompat.bytestr(self.command),
+                        pycompat.bytestr(url),
+                        pycompat.bytestr(self.request_version),
+                    )
+                )
                 self.headers['Connection'] = 'close'
                 del self.headers['Proxy-Connection']
                 for key, val in self.headers.items():
-                    soc.send(b"%s: %s\r\n" % (pycompat.bytestr(key),
-                                              pycompat.bytestr(val)))
+                    soc.send(
+                        b"%s: %s\r\n"
+                        % (pycompat.bytestr(key), pycompat.bytestr(val))
+                    )
                 soc.send(b"\r\n")
                 self._read_write(soc)
         finally:
@@ -147,16 +166,17 @@ class ProxyHandler (httpserver.basehttprequesthandler):
 
     do_HEAD = do_GET
     do_POST = do_GET
-    do_PUT  = do_GET
+    do_PUT = do_GET
     do_DELETE = do_GET
 
-class ThreadingHTTPServer (socketserver.ThreadingMixIn,
-                           httpserver.httpserver):
+
+class ThreadingHTTPServer(socketserver.ThreadingMixIn, httpserver.httpserver):
     def __init__(self, *args, **kwargs):
         httpserver.httpserver.__init__(self, *args, **kwargs)
         a = open("proxy.pid", "w")
         a.write(str(os.getpid()) + "\n")
         a.close()
+
 
 def runserver(port=8000, bind=""):
     server_address = (bind, port)
@@ -170,6 +190,7 @@ def runserver(port=8000, bind=""):
         print("\nKeyboard interrupt received, exiting.")
         httpd.server_close()
         sys.exit(0)
+
 
 if __name__ == '__main__':
     argv = sys.argv
@@ -188,9 +209,13 @@ if __name__ == '__main__':
             print("Any clients will be served...")
 
         parser = optparse.OptionParser()
-        parser.add_option('-b', '--bind', metavar='ADDRESS',
-                          help='Specify alternate bind address '
-                               '[default: all interfaces]', default='')
+        parser.add_option(
+            '-b',
+            '--bind',
+            metavar='ADDRESS',
+            help='Specify alternate bind address ' '[default: all interfaces]',
+            default='',
+        )
         (options, args) = parser.parse_args()
         port = 8000
         if len(args) == 1:

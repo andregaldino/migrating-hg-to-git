@@ -19,6 +19,7 @@ from mercurial import (
 )
 from mercurial.utils import dateutil
 from . import common
+
 NoRepo = common.NoRepo
 
 # The naming drift of ElementTree is fun!
@@ -37,9 +38,10 @@ except ImportError:
         except ImportError:
             try:
                 import elementtree.ElementTree.ElementTree as ElementTree
-                import elementtree.ElementTree.XMLParser  as XMLParser
+                import elementtree.ElementTree.XMLParser as XMLParser
             except ImportError:
                 pass
+
 
 class darcs_source(common.converter_source, common.commandline):
     def __init__(self, ui, repotype, path, revs=None):
@@ -54,8 +56,9 @@ class darcs_source(common.converter_source, common.commandline):
         common.checktool('darcs')
         version = self.run0('--version').splitlines()[0].strip()
         if version < '2.1':
-            raise error.Abort(_('darcs version 2.1 or newer needed (found %r)')
-                              % version)
+            raise error.Abort(
+                _('darcs version 2.1 or newer needed (found %r)') % version
+            )
 
         if "ElementTree" not in globals():
             raise error.Abort(_("Python ElementTree module is not available"))
@@ -71,19 +74,23 @@ class darcs_source(common.converter_source, common.commandline):
         format = self.format()
         if format:
             if format in ('darcs-1.0', 'hashed'):
-                raise NoRepo(_("%s repository format is unsupported, "
-                               "please upgrade") % format)
+                raise NoRepo(
+                    _("%s repository format is unsupported, " "please upgrade")
+                    % format
+                )
         else:
             self.ui.warn(_('failed to detect repository format!'))
 
     def before(self):
         self.tmppath = pycompat.mkdtemp(
-            prefix='convert-' + os.path.basename(self.path) + '-')
+            prefix='convert-' + os.path.basename(self.path) + '-'
+        )
         output, status = self.run('init', repodir=self.tmppath)
         self.checkexit(status)
 
-        tree = self.xml('changes', xml_output=True, summary=True,
-                        repodir=self.path)
+        tree = self.xml(
+            'changes', xml_output=True, summary=True, repodir=self.path
+        )
         tagname = None
         child = None
         for elt in tree.findall('patch'):
@@ -135,8 +142,9 @@ class darcs_source(common.converter_source, common.commandline):
 
     def manifest(self):
         man = []
-        output, status = self.run('show', 'files', no_directories=True,
-                                  repodir=self.tmppath)
+        output, status = self.run(
+            'show', 'files', no_directories=True, repodir=self.tmppath
+        )
         self.checkexit(status)
         for line in output.split('\n'):
             path = line[2:]
@@ -155,17 +163,24 @@ class darcs_source(common.converter_source, common.commandline):
         # etree can return unicode objects for name, comment, and author,
         # so recode() is used to ensure str objects are emitted.
         newdateformat = '%Y-%m-%d %H:%M:%S %1%2'
-        return common.commit(author=self.recode(elt.get('author')),
-                             date=dateutil.datestr(date, newdateformat),
-                             desc=self.recode(desc).strip(),
-                             parents=self.parents[rev])
+        return common.commit(
+            author=self.recode(elt.get('author')),
+            date=dateutil.datestr(date, newdateformat),
+            desc=self.recode(desc).strip(),
+            parents=self.parents[rev],
+        )
 
     def pull(self, rev):
-        output, status = self.run('pull', self.path, all=True,
-                                  match='hash %s' % rev,
-                                  no_test=True, no_posthook=True,
-                                  external_merge='/bin/false',
-                                  repodir=self.tmppath)
+        output, status = self.run(
+            'pull',
+            self.path,
+            all=True,
+            match='hash %s' % rev,
+            no_test=True,
+            no_posthook=True,
+            external_merge='/bin/false',
+            repodir=self.tmppath,
+        )
         if status:
             if output.find('We have conflicts in') == -1:
                 self.checkexit(status, output)
@@ -196,7 +211,7 @@ class darcs_source(common.converter_source, common.commandline):
                     for f in man:
                         if not f.startswith(source):
                             continue
-                        fdest = dest + '/' + f[len(source):]
+                        fdest = dest + '/' + f[len(source) :]
                         changes.append((f, rev))
                         changes.append((fdest, rev))
                         copies[fdest] = f

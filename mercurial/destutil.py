@@ -8,13 +8,8 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from . import (
-    bookmarks,
-    error,
-    obsutil,
-    scmutil,
-    stack
-)
+from . import bookmarks, error, obsutil, scmutil, stack
+
 
 def orphanpossibledestination(repo, rev):
     """Return all changesets that may be a new parent for orphan `rev`.
@@ -48,6 +43,7 @@ def orphanpossibledestination(repo, rev):
                     if dr != -1:
                         dest.add(dr)
     return dest
+
 
 def _destupdateobs(repo, clean):
     """decide of an update destination from obsolescence markers"""
@@ -85,6 +81,7 @@ def _destupdateobs(repo, clean):
                 movemark = repo['.'].node()
     return node, movemark, None
 
+
 def _destupdatebook(repo, clean):
     """decide on an update destination from active bookmark"""
     # we also move the active bookmark, if any
@@ -93,6 +90,7 @@ def _destupdatebook(repo, clean):
     if activemark is not None:
         node = repo._bookmarks[activemark]
     return node, movemark, activemark
+
 
 def _destupdatebranch(repo, clean):
     """decide on an update destination from current branch
@@ -120,6 +118,7 @@ def _destupdatebranch(repo, clean):
         node = repo['.'].node()
     return node, movemark, None
 
+
 def _destupdatebranchfallback(repo, clean):
     """decide on an update destination from closed heads in current branch"""
     wc = repo[None]
@@ -130,8 +129,9 @@ def _destupdatebranchfallback(repo, clean):
         heads = repo.branchheads(currentbranch, closed=True)
         assert heads, "any branch has at least one head"
         node = repo.revs('max(.::(%ln))', heads).first()
-        assert node is not None, ("any revision has at least "
-                                  "one descendant branch head")
+        assert node is not None, (
+            "any revision has at least " "one descendant branch head"
+        )
         if bookmarks.isactivewdirparent(repo):
             movemark = repo['.'].node()
     else:
@@ -140,15 +140,18 @@ def _destupdatebranchfallback(repo, clean):
         assert node is not None, "'tip' exists even in empty repository"
     return node, movemark, None
 
+
 # order in which each step should be evaluated
 # steps are run until one finds a destination
 destupdatesteps = ['evolution', 'bookmark', 'branch', 'branchfallback']
 # mapping to ease extension overriding steps.
-destupdatestepmap = {'evolution': _destupdateobs,
-                     'bookmark': _destupdatebook,
-                     'branch': _destupdatebranch,
-                     'branchfallback': _destupdatebranchfallback,
-                     }
+destupdatestepmap = {
+    'evolution': _destupdateobs,
+    'bookmark': _destupdatebook,
+    'branch': _destupdatebranch,
+    'branchfallback': _destupdatebranchfallback,
+}
+
 
 def destupdate(repo, clean=False):
     """destination for bare update operation
@@ -170,100 +173,109 @@ def destupdate(repo, clean=False):
 
     return rev, movemark, activemark
 
+
 msgdestmerge = {
     # too many matching divergent bookmark
-    'toomanybookmarks':
-        {'merge':
-            (_("multiple matching bookmarks to merge -"
-               " please merge with an explicit rev or bookmark"),
-             _("run 'hg heads' to see all heads")),
-         'rebase':
-            (_("multiple matching bookmarks to rebase -"
-               " please rebase to an explicit rev or bookmark"),
-             _("run 'hg heads' to see all heads")),
-        },
+    'toomanybookmarks': {
+        'merge': (
+            _(
+                "multiple matching bookmarks to merge -"
+                " please merge with an explicit rev or bookmark"
+            ),
+            _("run 'hg heads' to see all heads"),
+        ),
+        'rebase': (
+            _(
+                "multiple matching bookmarks to rebase -"
+                " please rebase to an explicit rev or bookmark"
+            ),
+            _("run 'hg heads' to see all heads"),
+        ),
+    },
     # no other matching divergent bookmark
-    'nootherbookmarks':
-        {'merge':
-            (_("no matching bookmark to merge - "
-               "please merge with an explicit rev or bookmark"),
-             _("run 'hg heads' to see all heads")),
-         'rebase':
-            (_("no matching bookmark to rebase - "
-               "please rebase to an explicit rev or bookmark"),
-             _("run 'hg heads' to see all heads")),
-        },
+    'nootherbookmarks': {
+        'merge': (
+            _(
+                "no matching bookmark to merge - "
+                "please merge with an explicit rev or bookmark"
+            ),
+            _("run 'hg heads' to see all heads"),
+        ),
+        'rebase': (
+            _(
+                "no matching bookmark to rebase - "
+                "please rebase to an explicit rev or bookmark"
+            ),
+            _("run 'hg heads' to see all heads"),
+        ),
+    },
     # branch have too many unbookmarked heads, no obvious destination
-    'toomanyheads':
-        {'merge':
-            (_("branch '%s' has %d heads - please merge with an explicit rev"),
-             _("run 'hg heads .' to see heads")),
-         'rebase':
-            (_("branch '%s' has %d heads - please rebase to an explicit rev"),
-             _("run 'hg heads .' to see heads")),
-        },
+    'toomanyheads': {
+        'merge': (
+            _("branch '%s' has %d heads - please merge with an explicit rev"),
+            _("run 'hg heads .' to see heads"),
+        ),
+        'rebase': (
+            _("branch '%s' has %d heads - please rebase to an explicit rev"),
+            _("run 'hg heads .' to see heads"),
+        ),
+    },
     # branch have no other unbookmarked heads
-    'bookmarkedheads':
-        {'merge':
-            (_("heads are bookmarked - please merge with an explicit rev"),
-             _("run 'hg heads' to see all heads")),
-         'rebase':
-            (_("heads are bookmarked - please rebase to an explicit rev"),
-             _("run 'hg heads' to see all heads")),
-        },
+    'bookmarkedheads': {
+        'merge': (
+            _("heads are bookmarked - please merge with an explicit rev"),
+            _("run 'hg heads' to see all heads"),
+        ),
+        'rebase': (
+            _("heads are bookmarked - please rebase to an explicit rev"),
+            _("run 'hg heads' to see all heads"),
+        ),
+    },
     # branch have just a single heads, but there is other branches
-    'nootherbranchheads':
-        {'merge':
-            (_("branch '%s' has one head - please merge with an explicit rev"),
-             _("run 'hg heads' to see all heads")),
-         'rebase':
-            (_("branch '%s' has one head - please rebase to an explicit rev"),
-             _("run 'hg heads' to see all heads")),
-        },
+    'nootherbranchheads': {
+        'merge': (
+            _("branch '%s' has one head - please merge with an explicit rev"),
+            _("run 'hg heads' to see all heads"),
+        ),
+        'rebase': (
+            _("branch '%s' has one head - please rebase to an explicit rev"),
+            _("run 'hg heads' to see all heads"),
+        ),
+    },
     # repository have a single head
-    'nootherheads':
-        {'merge':
-            (_('nothing to merge'),
-            None),
-         'rebase':
-            (_('nothing to rebase'),
-            None),
-        },
+    'nootherheads': {
+        'merge': (_('nothing to merge'), None),
+        'rebase': (_('nothing to rebase'), None),
+    },
     # repository have a single head and we are not on it
-    'nootherheadsbehind':
-        {'merge':
-            (_('nothing to merge'),
-             _("use 'hg update' instead")),
-         'rebase':
-            (_('nothing to rebase'),
-             _("use 'hg update' instead")),
-        },
+    'nootherheadsbehind': {
+        'merge': (_('nothing to merge'), _("use 'hg update' instead")),
+        'rebase': (_('nothing to rebase'), _("use 'hg update' instead")),
+    },
     # We are not on a head
-    'notatheads':
-        {'merge':
-            (_('working directory not at a head revision'),
-             _("use 'hg update' or merge with an explicit revision")),
-         'rebase':
-            (_('working directory not at a head revision'),
-             _("use 'hg update' or rebase to an explicit revision"))
-        },
-    'emptysourceset':
-        {'merge':
-            (_('source set is empty'),
-             None),
-         'rebase':
-            (_('source set is empty'),
-             None),
-        },
-    'multiplebranchessourceset':
-        {'merge':
-            (_('source set is rooted in multiple branches'),
-             None),
-         'rebase':
-            (_('rebaseset is rooted in multiple named branches'),
-             _('specify an explicit destination with --dest')),
-        },
-    }
+    'notatheads': {
+        'merge': (
+            _('working directory not at a head revision'),
+            _("use 'hg update' or merge with an explicit revision"),
+        ),
+        'rebase': (
+            _('working directory not at a head revision'),
+            _("use 'hg update' or rebase to an explicit revision"),
+        ),
+    },
+    'emptysourceset': {
+        'merge': (_('source set is empty'), None),
+        'rebase': (_('source set is empty'), None),
+    },
+    'multiplebranchessourceset': {
+        'merge': (_('source set is rooted in multiple branches'), None),
+        'rebase': (
+            _('rebaseset is rooted in multiple named branches'),
+            _('specify an explicit destination with --dest'),
+        ),
+    },
+}
+
 
 def _destmergebook(repo, action='merge', sourceset=None, destspace=None):
     """find merge destination in the active bookmark case"""
@@ -284,8 +296,10 @@ def _destmergebook(repo, action='merge', sourceset=None, destspace=None):
     assert node is not None
     return node
 
-def _destmergebranch(repo, action='merge', sourceset=None, onheadcheck=True,
-                     destspace=None):
+
+def _destmergebranch(
+    repo, action='merge', sourceset=None, onheadcheck=True, destspace=None
+):
     """find merge destination based on branch heads"""
     node = None
 
@@ -355,8 +369,10 @@ def _destmergebranch(repo, action='merge', sourceset=None, onheadcheck=True,
     assert node is not None
     return node
 
-def destmerge(repo, action='merge', sourceset=None, onheadcheck=True,
-              destspace=None):
+
+def destmerge(
+    repo, action='merge', sourceset=None, onheadcheck=True, destspace=None
+):
     """return the default destination for a merge
 
     (or raise exception about why it can't pick one)
@@ -366,12 +382,19 @@ def destmerge(repo, action='merge', sourceset=None, onheadcheck=True,
     # destspace is here to work around issues with `hg pull --rebase` see
     # issue5214 for details
     if repo._activebookmark:
-        node = _destmergebook(repo, action=action, sourceset=sourceset,
-                              destspace=destspace)
+        node = _destmergebook(
+            repo, action=action, sourceset=sourceset, destspace=destspace
+        )
     else:
-        node = _destmergebranch(repo, action=action, sourceset=sourceset,
-                                onheadcheck=onheadcheck, destspace=destspace)
+        node = _destmergebranch(
+            repo,
+            action=action,
+            sourceset=sourceset,
+            onheadcheck=onheadcheck,
+            destspace=destspace,
+        )
     return repo[node].rev()
+
 
 def desthistedit(ui, repo):
     """Default base revision to edit for `hg histedit`."""
@@ -390,9 +413,11 @@ def desthistedit(ui, repo):
 
     return None
 
+
 def stackbase(ui, repo):
     revs = stack.getstack(repo)
     return revs.first() if revs else None
+
 
 def _statusotherbook(ui, repo):
     bmheads = bookmarks.headsforactive(repo)
@@ -403,6 +428,7 @@ def _statusotherbook(ui, repo):
         if bmheads:
             msg = _('%i other divergent bookmarks for "%s"\n')
             ui.status(msg % (len(bmheads), repo._activebookmark))
+
 
 def _statusotherbranchheads(ui, repo):
     currentbranch = repo.dirstate.branch()
@@ -420,22 +446,36 @@ def _statusotherbranchheads(ui, repo):
         #  ========= ==========
         otherheads = repo.revs('%ln - parents()', heads)
         if repo['.'].closesbranch():
-            ui.warn(_('no open descendant heads on branch "%s", '
-                        'updating to a closed head\n') %
-                      (currentbranch))
+            ui.warn(
+                _(
+                    'no open descendant heads on branch "%s", '
+                    'updating to a closed head\n'
+                )
+                % currentbranch
+            )
             if otherheads:
-                ui.warn(_("(committing will reopen the head, "
-                            "use 'hg heads .' to see %i other heads)\n") %
-                          (len(otherheads)))
+                ui.warn(
+                    _(
+                        "(committing will reopen the head, "
+                        "use 'hg heads .' to see %i other heads)\n"
+                    )
+                    % (len(otherheads))
+                )
             else:
-                ui.warn(_('(committing will reopen branch "%s")\n') %
-                          (currentbranch))
+                ui.warn(
+                    _('(committing will reopen branch "%s")\n') % currentbranch
+                )
         elif otherheads:
             curhead = repo['.']
-            ui.status(_('updated to "%s: %s"\n') % (curhead,
-                                    curhead.description().split('\n')[0]))
-            ui.status(_('%i other heads for branch "%s"\n') %
-                      (len(otherheads), currentbranch))
+            ui.status(
+                _('updated to "%s: %s"\n')
+                % (curhead, curhead.description().split('\n')[0])
+            )
+            ui.status(
+                _('%i other heads for branch "%s"\n')
+                % (len(otherheads), currentbranch)
+            )
+
 
 def statusotherdests(ui, repo):
     """Print message about other head"""

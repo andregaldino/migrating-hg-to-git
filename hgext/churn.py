@@ -34,6 +34,7 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
+
 def changedlines(ui, repo, ctx1, ctx2, fns):
     added, removed = 0, 0
     fmatch = scmutil.matchfiles(repo, fns)
@@ -45,38 +46,45 @@ def changedlines(ui, repo, ctx1, ctx2, fns):
             removed += 1
     return (added, removed)
 
+
 def countrate(ui, repo, amap, *pats, **opts):
     """Calculate stats"""
     opts = pycompat.byteskwargs(opts)
     if opts.get('dateformat'):
+
         def getkey(ctx):
             t, tz = ctx.date()
             date = datetime.datetime(*time.gmtime(float(t) - tz)[:6])
             return encoding.strtolocal(
-                date.strftime(encoding.strfromlocal(opts['dateformat'])))
+                date.strftime(encoding.strfromlocal(opts['dateformat']))
+            )
+
     else:
         tmpl = opts.get('oldtemplate') or opts.get('template')
         tmpl = logcmdutil.maketemplater(ui, repo, tmpl)
+
         def getkey(ctx):
             ui.pushbuffer()
             tmpl.show(ctx)
             return ui.popbuffer()
 
-    progress = ui.makeprogress(_('analyzing'), unit=_('revisions'),
-                               total=len(repo))
+    progress = ui.makeprogress(
+        _('analyzing'), unit=_('revisions'), total=len(repo)
+    )
     rate = {}
     df = False
     if opts.get('date'):
         df = dateutil.matchdate(opts['date'])
 
     m = scmutil.match(repo[None], pats, opts)
+
     def prep(ctx, fns):
         rev = ctx.rev()
-        if df and not df(ctx.date()[0]): # doesn't match date format
+        if df and not df(ctx.date()[0]):  # doesn't match date format
             return
 
         key = getkey(ctx).strip()
-        key = amap.get(key, key) # alias remap
+        key = amap.get(key, key)  # alias remap
         if opts.get('changesets'):
             rate[key] = (rate.get(key, (0,))[0] + 1, 0)
         else:
@@ -99,25 +107,54 @@ def countrate(ui, repo, amap, *pats, **opts):
     return rate
 
 
-@command('churn',
-    [('r', 'rev', [],
-     _('count rate for the specified revision or revset'), _('REV')),
-    ('d', 'date', '',
-     _('count rate for revisions matching date spec'), _('DATE')),
-    ('t', 'oldtemplate', '',
-     _('template to group changesets (DEPRECATED)'), _('TEMPLATE')),
-    ('T', 'template', '{author|email}',
-     _('template to group changesets'), _('TEMPLATE')),
-    ('f', 'dateformat', '',
-     _('strftime-compatible format for grouping by date'), _('FORMAT')),
-    ('c', 'changesets', False, _('count rate by number of changesets')),
-    ('s', 'sort', False, _('sort by key (default: sort by count)')),
-    ('', 'diffstat', False, _('display added/removed lines separately')),
-    ('', 'aliases', '', _('file with email aliases'), _('FILE')),
-    ] + cmdutil.walkopts,
+@command(
+    'churn',
+    [
+        (
+            'r',
+            'rev',
+            [],
+            _('count rate for the specified revision or revset'),
+            _('REV'),
+        ),
+        (
+            'd',
+            'date',
+            '',
+            _('count rate for revisions matching date spec'),
+            _('DATE'),
+        ),
+        (
+            't',
+            'oldtemplate',
+            '',
+            _('template to group changesets (DEPRECATED)'),
+            _('TEMPLATE'),
+        ),
+        (
+            'T',
+            'template',
+            '{author|email}',
+            _('template to group changesets'),
+            _('TEMPLATE'),
+        ),
+        (
+            'f',
+            'dateformat',
+            '',
+            _('strftime-compatible format for grouping by date'),
+            _('FORMAT'),
+        ),
+        ('c', 'changesets', False, _('count rate by number of changesets')),
+        ('s', 'sort', False, _('sort by key (default: sort by count)')),
+        ('', 'diffstat', False, _('display added/removed lines separately')),
+        ('', 'aliases', '', _('file with email aliases'), _('FILE')),
+    ]
+    + cmdutil.walkopts,
     _("hg churn [-d DATE] [-r REV] [--aliases FILE] [FILE]"),
     helpcategory=command.CATEGORY_MAINTENANCE,
-    inferrepo=True)
+    inferrepo=True,
+)
 def churn(ui, repo, *pats, **opts):
     '''histogram of changes to the repository
 
@@ -154,6 +191,7 @@ def churn(ui, repo, *pats, **opts):
     a .hgchurn file will be looked for in the working directory root.
     Aliases will be split from the rightmost "=".
     '''
+
     def pad(s, l):
         return s + " " * (l - encoding.colwidth(s))
 
@@ -191,19 +229,25 @@ def churn(ui, repo, *pats, **opts):
 
     if opts.get(r'diffstat'):
         width -= 15
+
         def format(name, diffstat):
             added, removed = diffstat
-            return "%s %15s %s%s\n" % (pad(name, maxname),
-                                       '+%d/-%d' % (added, removed),
-                                       ui.label('+' * charnum(added),
-                                                'diffstat.inserted'),
-                                       ui.label('-' * charnum(removed),
-                                                'diffstat.deleted'))
+            return "%s %15s %s%s\n" % (
+                pad(name, maxname),
+                '+%d/-%d' % (added, removed),
+                ui.label('+' * charnum(added), 'diffstat.inserted'),
+                ui.label('-' * charnum(removed), 'diffstat.deleted'),
+            )
+
     else:
         width -= 6
+
         def format(name, count):
-            return "%s %6d %s\n" % (pad(name, maxname), sum(count),
-                                    '*' * charnum(sum(count)))
+            return "%s %6d %s\n" % (
+                pad(name, maxname),
+                sum(count),
+                '*' * charnum(sum(count)),
+            )
 
     def charnum(count):
         return int(count * width // maxcount)

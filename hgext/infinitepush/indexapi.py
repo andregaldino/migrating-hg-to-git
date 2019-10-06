@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+
 class indexapi(object):
     """Class that manages access to infinitepush index.
 
@@ -65,6 +66,7 @@ class indexapi(object):
     def saveoptionaljsonmetadata(self, node, jsonmetadata):
         """Saves optional metadata for a given node"""
         raise NotImplementedError()
+
 
 class indexexception(Exception):
     pass

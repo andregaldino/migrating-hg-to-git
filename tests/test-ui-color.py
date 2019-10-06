@@ -5,15 +5,13 @@ from mercurial import (
     dispatch,
     ui as uimod,
 )
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
 
 # ensure errors aren't buffered
 testui = uimod.ui()
 testui.pushbuffer()
-testui.write((b'buffered\n'))
-testui.warn((b'warning\n'))
+testui.write(b'buffered\n')
+testui.warn(b'warning\n')
 testui.write_err(b'error\n')
 print(stringutil.pprint(testui.popbuffer(), bprefix=True).decode('ascii'))
 
@@ -33,6 +31,7 @@ ui_.fout = open(os.devnull, 'wb')
 # color's wrapped _runcommand twice.
 def runcmd():
     dispatch.dispatch(dispatch.request([b'version', b'-q'], ui_))
+
 
 runcmd()
 print("colored? %s" % (ui_._colormode is not None))

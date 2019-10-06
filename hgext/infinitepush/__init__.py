@@ -143,38 +143,38 @@ testedwith = 'ships-with-hg-core'
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('infinitepush', 'server',
-    default=False,
+configitem(
+    'infinitepush', 'server', default=False,
 )
-configitem('infinitepush', 'storetype',
-    default='',
+configitem(
+    'infinitepush', 'storetype', default='',
 )
-configitem('infinitepush', 'indextype',
-    default='',
+configitem(
+    'infinitepush', 'indextype', default='',
 )
-configitem('infinitepush', 'indexpath',
-    default='',
+configitem(
+    'infinitepush', 'indexpath', default='',
 )
-configitem('infinitepush', 'storeallparts',
-    default=False,
+configitem(
+    'infinitepush', 'storeallparts', default=False,
 )
-configitem('infinitepush', 'reponame',
-    default='',
+configitem(
+    'infinitepush', 'reponame', default='',
 )
-configitem('scratchbranch', 'storepath',
-    default='',
+configitem(
+    'scratchbranch', 'storepath', default='',
 )
-configitem('infinitepush', 'branchpattern',
-    default='',
+configitem(
+    'infinitepush', 'branchpattern', default='',
 )
-configitem('infinitepush', 'pushtobundlestore',
-    default=False,
+configitem(
+    'infinitepush', 'pushtobundlestore', default=False,
 )
-configitem('experimental', 'server-bundlestore-bookmark',
-    default='',
+configitem(
+    'experimental', 'server-bundlestore-bookmark', default='',
 )
-configitem('experimental', 'infinitepush-scratchpush',
-    default=False,
+configitem(
+    'experimental', 'infinitepush-scratchpush', default=False,
 )
 
 experimental = 'experimental'
@@ -187,6 +187,7 @@ templatekeyword = registrar.templatekeyword()
 _scratchbranchmatcher = lambda x: False
 _maybehash = re.compile(r'^[a-f0-9]+$').search
 
+
 def _buildexternalbundlestore(ui):
     put_args = ui.configlist('infinitepush', 'put_args', [])
     put_binary = ui.config('infinitepush', 'put_binary')
@@ -197,7 +198,9 @@ def _buildexternalbundlestore(ui):
     if not get_binary:
         raise error.Abort('get binary is not specified')
     from . import store
+
     return store.externalbundlestore(put_binary, put_args, get_binary, get_args)
+
 
 def _buildsqlindex(ui):
     sqlhost = ui.config('infinitepush', 'sqlhost')
@@ -212,10 +215,20 @@ def _buildsqlindex(ui):
     waittimeout = ui.configint('infinitepush', 'waittimeout', 300)
     locktimeout = ui.configint('infinitepush', 'locktimeout', 120)
     from . import sqlindexapi
+
     return sqlindexapi.sqlindexapi(
-        reponame, host, port, db, user, password,
-        logfile, _getloglevel(ui), waittimeout=waittimeout,
-        locktimeout=locktimeout)
+        reponame,
+        host,
+        port,
+        db,
+        user,
+        password,
+        logfile,
+        _getloglevel(ui),
+        waittimeout=waittimeout,
+        locktimeout=locktimeout,
+    )
+
 
 def _getloglevel(ui):
     loglevel = ui.config('infinitepush', 'loglevel', 'DEBUG')
@@ -223,6 +236,7 @@ def _getloglevel(ui):
     if not isinstance(numeric_loglevel, int):
         raise error.Abort(_('invalid log level %s') % loglevel)
     return numeric_loglevel
+
 
 def _tryhoist(ui, remotebookmark):
     '''returns a bookmarks with hoisted part removed
@@ -236,8 +250,9 @@ def _tryhoist(ui, remotebookmark):
     if common.isremotebooksenabled(ui):
         hoist = ui.config('remotenames', 'hoistedpeer') + '/'
         if remotebookmark.startswith(hoist):
-            return remotebookmark[len(hoist):]
+            return remotebookmark[len(hoist) :]
     return remotebookmark
+
 
 class bundlestore(object):
     def __init__(self, repo):
@@ -245,29 +260,36 @@ class bundlestore(object):
         storetype = self._repo.ui.config('infinitepush', 'storetype')
         if storetype == 'disk':
             from . import store
+
             self.store = store.filebundlestore(self._repo.ui, self._repo)
         elif storetype == 'external':
             self.store = _buildexternalbundlestore(self._repo.ui)
         else:
             raise error.Abort(
-                _('unknown infinitepush store type specified %s') % storetype)
+                _('unknown infinitepush store type specified %s') % storetype
+            )
 
         indextype = self._repo.ui.config('infinitepush', 'indextype')
         if indextype == 'disk':
             from . import fileindexapi
+
             self.index = fileindexapi.fileindexapi(self._repo)
         elif indextype == 'sql':
             self.index = _buildsqlindex(self._repo.ui)
         else:
             raise error.Abort(
-                _('unknown infinitepush index type specified %s') % indextype)
+                _('unknown infinitepush index type specified %s') % indextype
+            )
+
 
 def _isserver(ui):
     return ui.configbool('infinitepush', 'server')
 
+
 def reposetup(ui, repo):
     if _isserver(ui) and repo.local():
         repo.bundlestore = bundlestore(repo)
+
 
 def extsetup(ui):
     commonsetup(ui)
@@ -276,43 +298,59 @@ def extsetup(ui):
     else:
         clientextsetup(ui)
 
+
 def commonsetup(ui):
     wireprotov1server.commands['listkeyspatterns'] = (
-        wireprotolistkeyspatterns, 'namespace patterns')
+        wireprotolistkeyspatterns,
+        'namespace patterns',
+    )
     scratchbranchpat = ui.config('infinitepush', 'branchpattern')
     if scratchbranchpat:
         global _scratchbranchmatcher
-        kind, pat, _scratchbranchmatcher = (
-                stringutil.stringmatcher(scratchbranchpat))
+        kind, pat, _scratchbranchmatcher = stringutil.stringmatcher(
+            scratchbranchpat
+        )
+
 
 def serverextsetup(ui):
     origpushkeyhandler = bundle2.parthandlermapping['pushkey']
 
     def newpushkeyhandler(*args, **kwargs):
         bundle2pushkey(origpushkeyhandler, *args, **kwargs)
+
     newpushkeyhandler.params = origpushkeyhandler.params
     bundle2.parthandlermapping['pushkey'] = newpushkeyhandler
 
     orighandlephasehandler = bundle2.parthandlermapping['phase-heads']
     newphaseheadshandler = lambda *args, **kwargs: bundle2handlephases(
-        orighandlephasehandler, *args, **kwargs)
+        orighandlephasehandler, *args, **kwargs
+    )
     newphaseheadshandler.params = orighandlephasehandler.params
     bundle2.parthandlermapping['phase-heads'] = newphaseheadshandler
 
-    extensions.wrapfunction(localrepo.localrepository, 'listkeys',
-                            localrepolistkeys)
+    extensions.wrapfunction(
+        localrepo.localrepository, 'listkeys', localrepolistkeys
+    )
     wireprotov1server.commands['lookup'] = (
-        _lookupwrap(wireprotov1server.commands['lookup'][0]), 'key')
+        _lookupwrap(wireprotov1server.commands['lookup'][0]),
+        'key',
+    )
     extensions.wrapfunction(exchange, 'getbundlechunks', getbundlechunks)
 
     extensions.wrapfunction(bundle2, 'processparts', processparts)
+
 
 def clientextsetup(ui):
     entry = extensions.wrapcommand(commands.table, 'push', _push)
 
     entry[1].append(
-        ('', 'bundle-store', None,
-         _('force push to go to bundle store (EXPERIMENTAL)')))
+        (
+            '',
+            'bundle-store',
+            None,
+            _('force push to go to bundle store (EXPERIMENTAL)'),
+        )
+    )
 
     extensions.wrapcommand(commands.table, 'pull', _pull)
 
@@ -323,17 +361,21 @@ def clientextsetup(ui):
     partorder = exchange.b2partsgenorder
     index = partorder.index('changeset')
     partorder.insert(
-        index, partorder.pop(partorder.index(scratchbranchparttype)))
+        index, partorder.pop(partorder.index(scratchbranchparttype))
+    )
+
 
 def _checkheads(orig, pushop):
     if pushop.ui.configbool(experimental, configscratchpush, False):
         return
     return orig(pushop)
 
+
 def wireprotolistkeyspatterns(repo, proto, namespace, patterns):
     patterns = wireprototypes.decodelist(patterns)
     d = repo.listkeys(encoding.tolocal(namespace), patterns).iteritems()
     return pushkey.encodekeys(d)
+
 
 def localrepolistkeys(orig, self, namespace, patterns=None):
     if namespace == 'bookmarks' and patterns:
@@ -352,6 +394,7 @@ def localrepolistkeys(orig, self, namespace, patterns=None):
     else:
         return orig(self, namespace)
 
+
 @wireprotov1peer.batchable
 def listkeyspatterns(self, namespace, patterns):
     if not self.capable('pushkey'):
@@ -360,15 +403,16 @@ def listkeyspatterns(self, namespace, patterns):
     self.ui.debug('preparing listkeys for "%s"\n' % namespace)
     yield {
         'namespace': encoding.fromlocal(namespace),
-        'patterns': wireprototypes.encodelist(patterns)
+        'patterns': wireprototypes.encodelist(patterns),
     }, f
     d = f.value
-    self.ui.debug('received listkey for "%s": %i bytes\n'
-                  % (namespace, len(d)))
+    self.ui.debug('received listkey for "%s": %i bytes\n' % (namespace, len(d)))
     yield pushkey.decodekeys(d)
+
 
 def _readbundlerevs(bundlerepo):
     return list(bundlerepo.revs('bundle()'))
+
 
 def _includefilelogstobundle(bundlecaps, bundlerepo, bundlerevs, ui):
     '''Tells remotefilelog to include all changed files to the changegroup
@@ -387,7 +431,7 @@ def _includefilelogstobundle(bundlecaps, bundlerepo, bundlerevs, ui):
     changedfiles = '\0'.join(changedfiles)
     newcaps = []
     appended = False
-    for cap in (bundlecaps or []):
+    for cap in bundlecaps or []:
         if cap.startswith('excludepattern='):
             newcaps.append('\0'.join((cap, changedfiles)))
             appended = True
@@ -399,6 +443,7 @@ def _includefilelogstobundle(bundlecaps, bundlerepo, bundlerevs, ui):
 
     return newcaps
 
+
 def _rebundle(bundlerepo, bundleroots, unknownhead):
     '''
     Bundle may include more revision then user requested. For example,
@@ -408,8 +453,9 @@ def _rebundle(bundlerepo, bundleroots, unknownhead):
     parts = []
 
     version = '02'
-    outgoing = discovery.outgoing(bundlerepo, commonheads=bundleroots,
-                                  missingheads=[unknownhead])
+    outgoing = discovery.outgoing(
+        bundlerepo, commonheads=bundleroots, missingheads=[unknownhead]
+    )
     cgstream = changegroup.makestream(bundlerepo, outgoing, version, 'pull')
     cgstream = util.chunkbuffer(cgstream).read()
     cgpart = bundle2.bundlepart('changegroup', data=cgstream)
@@ -417,6 +463,7 @@ def _rebundle(bundlerepo, bundleroots, unknownhead):
     parts.append(cgpart)
 
     return parts
+
 
 def _getbundleroots(oldrepo, bundlerepo, bundlerevs):
     cl = bundlerepo.changelog
@@ -431,10 +478,13 @@ def _getbundleroots(oldrepo, bundlerepo, bundlerevs):
                 bundleroots.append(parent)
     return bundleroots
 
+
 def _needsrebundling(head, bundlerepo):
     bundleheads = list(bundlerepo.revs('heads(bundle())'))
-    return not (len(bundleheads) == 1 and
-                bundlerepo[bundleheads[0]].node() == head)
+    return not (
+        len(bundleheads) == 1 and bundlerepo[bundleheads[0]].node() == head
+    )
+
 
 def _generateoutputparts(head, bundlerepo, bundleroots, bundlefile):
     '''generates bundle that will be send to the user
@@ -446,8 +496,9 @@ def _generateoutputparts(head, bundlerepo, bundleroots, bundlefile):
         with util.posixfile(bundlefile, "rb") as f:
             unbundler = exchange.readbundle(bundlerepo.ui, f, bundlefile)
             if isinstance(unbundler, changegroup.cg1unpacker):
-                part = bundle2.bundlepart('changegroup',
-                                          data=unbundler._stream.read())
+                part = bundle2.bundlepart(
+                    'changegroup', data=unbundler._stream.read()
+                )
                 part.addparam('version', '01')
                 parts.append(part)
             elif isinstance(unbundler, bundle2.unbundle20):
@@ -462,15 +513,17 @@ def _generateoutputparts(head, bundlerepo, bundleroots, bundlefile):
 
                 if not haschangegroup:
                     raise error.Abort(
-                        'unexpected bundle without changegroup part, ' +
-                        'head: %s' % hex(head),
-                        hint='report to administrator')
+                        'unexpected bundle without changegroup part, '
+                        + 'head: %s' % hex(head),
+                        hint='report to administrator',
+                    )
             else:
                 raise error.Abort('unknown bundle type')
     else:
         parts = _rebundle(bundlerepo, bundleroots, head)
 
     return parts
+
 
 def getbundlechunks(orig, repo, source, heads=None, bundlecaps=None, **kwargs):
     heads = heads or []
@@ -492,17 +545,22 @@ def getbundlechunks(orig, repo, source, heads=None, bundlecaps=None, **kwargs):
                     allbundlestocleanup.append((bundlerepo, newbundlefile))
                     bundlerevs = set(_readbundlerevs(bundlerepo))
                     bundlecaps = _includefilelogstobundle(
-                        bundlecaps, bundlerepo, bundlerevs, repo.ui)
+                        bundlecaps, bundlerepo, bundlerevs, repo.ui
+                    )
                     cl = bundlerepo.changelog
                     bundleroots = _getbundleroots(repo, bundlerepo, bundlerevs)
                     for rev in bundlerevs:
                         node = cl.node(rev)
                         newphases[hex(node)] = str(phases.draft)
-                        nodestobundle[node] = (bundlerepo, bundleroots,
-                                               newbundlefile)
+                        nodestobundle[node] = (
+                            bundlerepo,
+                            bundleroots,
+                            newbundlefile,
+                        )
 
                 scratchbundles.append(
-                    _generateoutputparts(head, *nodestobundle[head]))
+                    _generateoutputparts(head, *nodestobundle[head])
+                )
                 newheads.extend(bundleroots)
                 scratchheads.append(head)
     finally:
@@ -520,6 +578,7 @@ def getbundlechunks(orig, repo, source, heads=None, bundlecaps=None, **kwargs):
     wrappedlistkeys = False
     oldchangegrouppart = exchange.getbundle2partsmapping['changegroup']
     try:
+
         def _changegrouppart(bundler, *args, **kwargs):
             # Order is important here. First add non-scratch part
             # and only then add parts with scratch bundles because
@@ -542,19 +601,23 @@ def getbundlechunks(orig, repo, source, heads=None, bundlecaps=None, **kwargs):
                 origvalues.update(newphases)
             return origvalues
 
-        extensions.wrapfunction(localrepo.localrepository, 'listkeys',
-                                _listkeys)
+        extensions.wrapfunction(
+            localrepo.localrepository, 'listkeys', _listkeys
+        )
         wrappedlistkeys = True
         heads = list((set(newheads) | set(heads)) - set(scratchheads))
-        result = orig(repo, source, heads=heads,
-                      bundlecaps=bundlecaps, **kwargs)
+        result = orig(
+            repo, source, heads=heads, bundlecaps=bundlecaps, **kwargs
+        )
     finally:
         if wrappedchangegrouppart:
             exchange.getbundle2partsmapping['changegroup'] = oldchangegrouppart
         if wrappedlistkeys:
-            extensions.unwrapfunction(localrepo.localrepository, 'listkeys',
-                                      _listkeys)
+            extensions.unwrapfunction(
+                localrepo.localrepository, 'listkeys', _listkeys
+            )
     return result
+
 
 def _lookupwrap(orig):
     def _lookup(repo, proto, key):
@@ -576,7 +639,9 @@ def _lookupwrap(orig):
                 else:
                     r = stringutil.forcebytestr(inst)
                     return "%d %s\n" % (0, r)
+
     return _lookup
+
 
 def _pull(orig, ui, repo, source="default", **opts):
     opts = pycompat.byteskwargs(opts)
@@ -603,11 +668,13 @@ def _pull(orig, ui, repo, source="default", **opts):
         if scratchbookmarks:
             other = hg.peer(repo, opts, source)
             fetchedbookmarks = other.listkeyspatterns(
-                'bookmarks', patterns=scratchbookmarks)
+                'bookmarks', patterns=scratchbookmarks
+            )
             for bookmark in scratchbookmarks:
                 if bookmark not in fetchedbookmarks:
-                    raise error.Abort('remote bookmark %s not found!' %
-                                      bookmark)
+                    raise error.Abort(
+                        'remote bookmark %s not found!' % bookmark
+                    )
                 scratchbookmarks[bookmark] = fetchedbookmarks[bookmark]
                 revs.append(fetchedbookmarks[bookmark])
         opts['bookmark'] = bookmarks
@@ -615,8 +682,9 @@ def _pull(orig, ui, repo, source="default", **opts):
 
     if scratchbookmarks or unknownnodes:
         # Set anyincoming to True
-        extensions.wrapfunction(discovery, 'findcommonincoming',
-                                _findcommonincoming)
+        extensions.wrapfunction(
+            discovery, 'findcommonincoming', _findcommonincoming
+        )
     try:
         # Remote scratch bookmarks will be deleted because remotenames doesn't
         # know about them. Let's save it before pull and restore after
@@ -635,6 +703,7 @@ def _pull(orig, ui, repo, source="default", **opts):
         if scratchbookmarks:
             extensions.unwrapfunction(discovery, 'findcommonincoming')
 
+
 def _readscratchremotebookmarks(ui, repo, other):
     if common.isremotebooksenabled(ui):
         remotenamesext = extensions.find('remotenames')
@@ -648,13 +717,15 @@ def _readscratchremotebookmarks(ui, repo, other):
         for remotebookmark in repo.names['remotebookmarks'].listnames(repo):
             path, bookname = remotenamesext.splitremotename(remotebookmark)
             if path == remotepath and _scratchbranchmatcher(bookname):
-                nodes = repo.names['remotebookmarks'].nodes(repo,
-                                                            remotebookmark)
+                nodes = repo.names['remotebookmarks'].nodes(
+                    repo, remotebookmark
+                )
                 if nodes:
                     result[bookname] = hex(nodes[0])
         return result
     else:
         return {}
+
 
 def _saveremotebookmarks(repo, newbookmarks, remote):
     remotenamesext = extensions.find('remotenames')
@@ -680,6 +751,7 @@ def _saveremotebookmarks(repo, newbookmarks, remote):
         bookmarks[bookmark] = hexnode
     remotenamesext.saveremotenames(repo, remotepath, branches, bookmarks)
 
+
 def _savelocalbookmarks(repo, bookmarks):
     if not bookmarks:
         return
@@ -690,9 +762,11 @@ def _savelocalbookmarks(repo, bookmarks):
             changes.append((scratchbook, changectx.node()))
         repo._bookmarks.applychanges(repo, tr, changes)
 
+
 def _findcommonincoming(orig, *args, **kwargs):
     common, inc, remoteheads = orig(*args, **kwargs)
     return common, True, remoteheads
+
 
 def _push(orig, ui, repo, dest=None, *args, **opts):
     opts = pycompat.byteskwargs(opts)
@@ -719,14 +793,16 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
             # rather that should be stored in the bundlestore
             opts['bookmark'] = []
             ui.setconfig(experimental, configscratchpush, True)
-            oldphasemove = extensions.wrapfunction(exchange,
-                                                   '_localphasemove',
-                                                   _phasemove)
+            oldphasemove = extensions.wrapfunction(
+                exchange, '_localphasemove', _phasemove
+            )
         # Copy-paste from `push` command
         path = ui.paths.getpath(dest, default=('default-push', 'default'))
         if not path:
-            raise error.Abort(_('default repository not configured!'),
-                             hint=_("see 'hg help config.paths'"))
+            raise error.Abort(
+                _('default repository not configured!'),
+                hint=_("see 'hg help config.paths'"),
+            )
         destpath = path.pushloc or path.loc
         # Remote scratch bookmarks will be deleted because remotenames doesn't
         # know about them. Let's save it before push and restore after
@@ -735,13 +811,15 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
         if common.isremotebooksenabled(ui):
             if bookmark and scratchpush:
                 other = hg.peer(repo, opts, destpath)
-                fetchedbookmarks = other.listkeyspatterns('bookmarks',
-                                                          patterns=[bookmark])
+                fetchedbookmarks = other.listkeyspatterns(
+                    'bookmarks', patterns=[bookmark]
+                )
                 remotescratchbookmarks.update(fetchedbookmarks)
             _saveremotebookmarks(repo, remotescratchbookmarks, destpath)
     if oldphasemove:
         exchange._localphasemove = oldphasemove
     return result
+
 
 def _deleteinfinitepushbookmarks(ui, repo, path, names):
     """Prune remote names by removing the bookmarks we don't want anymore,
@@ -754,16 +832,24 @@ def _deleteinfinitepushbookmarks(ui, repo, path, names):
     nametype_idx = 1
     remote_idx = 2
     name_idx = 3
-    remotenames = [remotename for remotename in
-                   remotenamesext.readremotenames(repo)
-                   if remotename[remote_idx] == path]
-    remote_bm_names = [remotename[name_idx] for remotename in
-                       remotenames if remotename[nametype_idx] == "bookmarks"]
+    remotenames = [
+        remotename
+        for remotename in remotenamesext.readremotenames(repo)
+        if remotename[remote_idx] == path
+    ]
+    remote_bm_names = [
+        remotename[name_idx]
+        for remotename in remotenames
+        if remotename[nametype_idx] == "bookmarks"
+    ]
 
     for name in names:
         if name not in remote_bm_names:
-            raise error.Abort(_("infinitepush bookmark '{}' does not exist "
-                                "in path '{}'").format(name, path))
+            raise error.Abort(
+                _(
+                    "infinitepush bookmark '{}' does not exist " "in path '{}'"
+                ).format(name, path)
+            )
 
     bookmarks = {}
     branches = collections.defaultdict(list)
@@ -776,6 +862,7 @@ def _deleteinfinitepushbookmarks(ui, repo, path, names):
 
     remotenamesext.saveremotenames(repo, path, branches, bookmarks)
 
+
 def _phasemove(orig, pushop, nodes, phase=phases.public):
     """prevent commits from being marked public
 
@@ -784,6 +871,7 @@ def _phasemove(orig, pushop, nodes, phase=phases.public):
 
     if phase != phases.public:
         orig(pushop, nodes, phase)
+
 
 @exchange.b2partsgenerator(scratchbranchparttype)
 def partgen(pushop, bundler):
@@ -806,11 +894,9 @@ def partgen(pushop, bundler):
     # code path.
     bundler.addparam("infinitepush", "True")
 
-    scratchparts = bundleparts.getscratchbranchparts(pushop.repo,
-                                                     pushop.remote,
-                                                     pushop.outgoing,
-                                                     pushop.ui,
-                                                     bookmark)
+    scratchparts = bundleparts.getscratchbranchparts(
+        pushop.repo, pushop.remote, pushop.outgoing, pushop.ui, bookmark
+    )
 
     for scratchpart in scratchparts:
         bundler.addpart(scratchpart)
@@ -821,7 +907,9 @@ def partgen(pushop, bundler):
 
     return handlereply
 
+
 bundle2.capabilities[bundleparts.scratchbranchparttype] = ()
+
 
 def _getrevs(bundle, oldnode, force, bookmark):
     'extracts and validates the revs to be imported'
@@ -837,19 +925,29 @@ def _getrevs(bundle, oldnode, force, bookmark):
 
     return revs
 
+
 @contextlib.contextmanager
 def logservicecall(logger, service, **kwargs):
     start = time.time()
     logger(service, eventtype='start', **kwargs)
     try:
         yield
-        logger(service, eventtype='success',
-               elapsedms=(time.time() - start) * 1000, **kwargs)
+        logger(
+            service,
+            eventtype='success',
+            elapsedms=(time.time() - start) * 1000,
+            **kwargs
+        )
     except Exception as e:
-        logger(service, eventtype='failure',
-               elapsedms=(time.time() - start) * 1000, errormsg=str(e),
-               **kwargs)
+        logger(
+            service,
+            eventtype='failure',
+            elapsedms=(time.time() - start) * 1000,
+            errormsg=str(e),
+            **kwargs
+        )
         raise
+
 
 def _getorcreateinfinitepushlogger(op):
     logger = op.records['infinitepushlogger']
@@ -866,14 +964,19 @@ def _getorcreateinfinitepushlogger(op):
         random.seed()
         requestid = random.randint(0, 2000000000)
         hostname = socket.gethostname()
-        logger = functools.partial(ui.log, 'infinitepush', user=username,
-                                   requestid=requestid, hostname=hostname,
-                                   reponame=ui.config('infinitepush',
-                                                      'reponame'))
+        logger = functools.partial(
+            ui.log,
+            'infinitepush',
+            user=username,
+            requestid=requestid,
+            hostname=hostname,
+            reponame=ui.config('infinitepush', 'reponame'),
+        )
         op.records.add('infinitepushlogger', logger)
     else:
         logger = logger[0]
     return logger
+
 
 def storetobundlestore(orig, repo, op, unbundler):
     """stores the incoming bundle coming from push command to the bundlestore
@@ -898,13 +1001,12 @@ def storetobundlestore(orig, repo, op, unbundler):
                 if part.type in ('pushkey', 'changegroup'):
                     if op.reply is not None:
                         rpart = op.reply.newpart('reply:%s' % part.type)
-                        rpart.addparam('in-reply-to', b'%d' % part.id,
-                                       mandatory=False)
+                        rpart.addparam(
+                            'in-reply-to', b'%d' % part.id, mandatory=False
+                        )
                         rpart.addparam('return', '1', mandatory=False)
 
-            op.records.add(part.type, {
-                'return': 1,
-            })
+            op.records.add(part.type, {'return': 1,})
             if bundlepart:
                 bundler.addpart(bundlepart)
 
@@ -924,6 +1026,7 @@ def storetobundlestore(orig, repo, op, unbundler):
         except Exception:
             # we would rather see the original exception
             pass
+
 
 def processparts(orig, repo, op, unbundler):
 
@@ -964,8 +1067,9 @@ def processparts(orig, repo, op, unbundler):
                 # the part.
                 if not handleallparts:
                     op.records.add(scratchbranchparttype + '_skippushkey', True)
-                    op.records.add(scratchbranchparttype + '_skipphaseheads',
-                                   True)
+                    op.records.add(
+                        scratchbranchparttype + '_skipphaseheads', True
+                    )
             else:
                 if handleallparts:
                     # Ideally we would not process any parts, and instead just
@@ -980,16 +1084,15 @@ def processparts(orig, repo, op, unbundler):
                     if part.type == 'pushkey':
                         if op.reply is not None:
                             rpart = op.reply.newpart('reply:pushkey')
-                            rpart.addparam('in-reply-to', str(part.id),
-                                           mandatory=False)
+                            rpart.addparam(
+                                'in-reply-to', str(part.id), mandatory=False
+                            )
                             rpart.addparam('return', '1', mandatory=False)
                 else:
                     bundle2._processpart(op, part)
 
             if handleallparts:
-                op.records.add(part.type, {
-                    'return': 1,
-                })
+                op.records.add(part.type, {'return': 1,})
             if bundlepart:
                 bundler.addpart(bundlepart)
 
@@ -1010,6 +1113,7 @@ def processparts(orig, repo, op, unbundler):
             except Exception:
                 # we would rather see the original exception
                 pass
+
 
 def storebundle(op, params, bundlefile):
     log = _getorcreateinfinitepushlogger(op)
@@ -1035,7 +1139,8 @@ def storebundle(op, params, bundlefile):
         bundleheads = bundle.revs('heads(bundle())')
         if bookmark and len(bundleheads) > 1:
             raise error.Abort(
-                _('cannot push more than one head to a scratch branch'))
+                _('cannot push more than one head to a scratch branch')
+            )
 
         revs = _getrevs(bundle, oldnode, force, bookmark)
 
@@ -1045,12 +1150,12 @@ def storebundle(op, params, bundlefile):
         maxoutput = 10
         for i in range(0, min(len(revs), maxoutput)):
             firstline = bundle[revs[i]].description().split('\n')[0][:50]
-            op.repo.ui.warn(("    %s  %s\n") % (revs[i], firstline))
+            op.repo.ui.warn("    %s  %s\n" % (revs[i], firstline))
 
         if len(revs) > maxoutput + 1:
-            op.repo.ui.warn(("    ...\n"))
+            op.repo.ui.warn("    ...\n")
             firstline = bundle[revs[-1]].description().split('\n')[0][:50]
-            op.repo.ui.warn(("    %s  %s\n") % (revs[-1], firstline))
+            op.repo.ui.warn("    %s  %s\n" % (revs[-1], firstline))
 
         nodesctx = [bundle[rev] for rev in revs]
         inindex = lambda rev: bool(index.getbundle(bundle[rev].hex()))
@@ -1067,12 +1172,15 @@ def storebundle(op, params, bundlefile):
         if newheadscount:
             with open(bundlefile, 'rb') as f:
                 bundledata = f.read()
-                with logservicecall(log, 'bundlestore',
-                                    bundlesize=len(bundledata)):
+                with logservicecall(
+                    log, 'bundlestore', bundlesize=len(bundledata)
+                ):
                     bundlesizelimit = 100 * 1024 * 1024  # 100 MB
                     if len(bundledata) > bundlesizelimit:
-                        error_msg = ('bundle is too big: %d bytes. ' +
-                                     'max allowed size is 100 MB')
+                        error_msg = (
+                            'bundle is too big: %d bytes. '
+                            + 'max allowed size is 100 MB'
+                        )
                         raise error.Abort(error_msg % (len(bundledata),))
                     key = store.write(bundledata)
 
@@ -1081,23 +1189,32 @@ def storebundle(op, params, bundlefile):
                 index.addbundle(key, nodesctx)
             if bookmark:
                 index.addbookmark(bookmark, bookmarknode)
-                _maybeaddpushbackpart(op, bookmark, bookmarknode,
-                                      bookprevnode, params)
-        log(scratchbranchparttype, eventtype='success',
-            elapsedms=(time.time() - parthandlerstart) * 1000)
+                _maybeaddpushbackpart(
+                    op, bookmark, bookmarknode, bookprevnode, params
+                )
+        log(
+            scratchbranchparttype,
+            eventtype='success',
+            elapsedms=(time.time() - parthandlerstart) * 1000,
+        )
 
     except Exception as e:
-        log(scratchbranchparttype, eventtype='failure',
+        log(
+            scratchbranchparttype,
+            eventtype='failure',
             elapsedms=(time.time() - parthandlerstart) * 1000,
-            errormsg=str(e))
+            errormsg=str(e),
+        )
         raise
     finally:
         if bundle:
             bundle.close()
 
-@bundle2.parthandler(scratchbranchparttype,
-                     ('bookmark', 'bookprevnode', 'force',
-                      'pushbackbookmarks', 'cgversion'))
+
+@bundle2.parthandler(
+    scratchbranchparttype,
+    ('bookmark', 'bookprevnode', 'force', 'pushbackbookmarks', 'cgversion'),
+)
 def bundle2scratchbranch(op, part):
     '''unbundle a bundle2 part containing a changegroup to store'''
 
@@ -1125,6 +1242,7 @@ def bundle2scratchbranch(op, part):
 
     return 1
 
+
 def _maybeaddpushbackpart(op, bookmark, newnode, oldnode, params):
     if params.get('pushbackbookmarks'):
         if op.reply and 'pushback' in op.reply.capabilities:
@@ -1135,6 +1253,7 @@ def _maybeaddpushbackpart(op, bookmark, newnode, oldnode, params):
                 'old': oldnode,
             }
             op.reply.newpart('pushkey', mandatoryparams=params.iteritems())
+
 
 def bundle2pushkey(orig, op, part):
     '''Wrapper of bundle2.handlepushkey()
@@ -1151,6 +1270,7 @@ def bundle2pushkey(orig, op, part):
 
     return orig(op, part)
 
+
 def bundle2handlephases(orig, op, part):
     '''Wrapper of bundle2.handlephases()
 
@@ -1162,6 +1282,7 @@ def bundle2handlephases(orig, op, part):
         return
 
     return orig(op, part)
+
 
 def _asyncsavemetadata(root, nodes):
     '''starts a separate process that fills metadata for the nodes
@@ -1178,9 +1299,18 @@ def _asyncsavemetadata(root, nodes):
         nodesargs.append('--node')
         nodesargs.append(node)
     with open(os.devnull, 'w+b') as devnull:
-        cmdline = [util.hgexecutable(), 'debugfillinfinitepushmetadata',
-                   '-R', root] + nodesargs
+        cmdline = [
+            util.hgexecutable(),
+            'debugfillinfinitepushmetadata',
+            '-R',
+            root,
+        ] + nodesargs
         # Process will run in background. We don't care about the return code
-        subprocess.Popen(pycompat.rapply(procutil.tonativestr, cmdline),
-                         close_fds=True, shell=False,
-                         stdin=devnull, stdout=devnull, stderr=devnull)
+        subprocess.Popen(
+            pycompat.rapply(procutil.tonativestr, cmdline),
+            close_fds=True,
+            shell=False,
+            stdin=devnull,
+            stdout=devnull,
+            stderr=devnull,
+        )

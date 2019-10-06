@@ -11,10 +11,12 @@ from mercurial import (
     pycompat,
     util,
 )
+
 atomictempfile = util.atomictempfile
 
 if pycompat.ispy3:
     xrange = range
+
 
 class testatomictempfile(unittest.TestCase):
     def setUp(self):
@@ -28,15 +30,19 @@ class testatomictempfile(unittest.TestCase):
         file = atomictempfile(self._filename)
         self.assertFalse(os.path.isfile(self._filename))
         tempfilename = file._tempname
-        self.assertTrue(tempfilename in glob.glob(
-            os.path.join(self._testdir, b'.testfilename-*')))
+        self.assertTrue(
+            tempfilename
+            in glob.glob(os.path.join(self._testdir, b'.testfilename-*'))
+        )
 
         file.write(b'argh\n')
         file.close()
 
         self.assertTrue(os.path.isfile(self._filename))
-        self.assertTrue(tempfilename not in glob.glob(
-            os.path.join(self._testdir, b'.testfilename-*')))
+        self.assertTrue(
+            tempfilename
+            not in glob.glob(os.path.join(self._testdir, b'.testfilename-*'))
+        )
 
     # discard() removes the temp file without making the write permanent
     def testdiscard(self):
@@ -84,7 +90,7 @@ class testatomictempfile(unittest.TestCase):
 
             # st_mtime should be advanced "repetition" times, because
             # all atomicwrite() occurred at same time (in sec)
-            oldtime = (oldstat[stat.ST_MTIME] + repetition) & 0x7fffffff
+            oldtime = (oldstat[stat.ST_MTIME] + repetition) & 0x7FFFFFFF
             self.assertTrue(newstat[stat.ST_MTIME] == oldtime)
             # no more examination is needed, if assumption above is true
             break
@@ -120,6 +126,8 @@ class testatomictempfile(unittest.TestCase):
             pass
         self.assertFalse(os.path.isfile(b'foo'))
 
+
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

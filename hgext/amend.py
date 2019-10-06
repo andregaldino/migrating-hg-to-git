@@ -29,20 +29,35 @@ testedwith = 'ships-with-hg-core'
 cmdtable = {}
 command = registrar.command(cmdtable)
 
-@command('amend',
-    [('A', 'addremove', None,
-      _('mark new/missing files as added/removed before committing')),
-     ('e', 'edit', None, _('invoke editor on commit messages')),
-     ('i', 'interactive', None, _('use interactive mode')),
-     (b'', b'close-branch', None,
-      _(b'mark a branch as closed, hiding it from the branch list')),
-     (b's', b'secret', None, _(b'use the secret phase for committing')),
-     ('n', 'note', '', _('store a note on the amend')),
-    ] + cmdutil.walkopts + cmdutil.commitopts + cmdutil.commitopts2
-      + cmdutil.commitopts3,
+
+@command(
+    'amend',
+    [
+        (
+            'A',
+            'addremove',
+            None,
+            _('mark new/missing files as added/removed before committing'),
+        ),
+        ('e', 'edit', None, _('invoke editor on commit messages')),
+        ('i', 'interactive', None, _('use interactive mode')),
+        (
+            b'',
+            b'close-branch',
+            None,
+            _(b'mark a branch as closed, hiding it from the branch list'),
+        ),
+        (b's', b'secret', None, _(b'use the secret phase for committing')),
+        ('n', 'note', '', _('store a note on the amend')),
+    ]
+    + cmdutil.walkopts
+    + cmdutil.commitopts
+    + cmdutil.commitopts2
+    + cmdutil.commitopts3,
     _('[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_COMMITTING,
-    inferrepo=True)
+    inferrepo=True,
+)
 def amend(ui, repo, *pats, **opts):
     """amend the working copy parent with all or specified outstanding changes
 

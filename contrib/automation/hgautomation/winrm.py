@@ -11,9 +11,7 @@ import logging
 import pprint
 import time
 
-from pypsrp.client import (
-    Client,
-)
+from pypsrp.client import Client
 from pypsrp.powershell import (
     PowerShell,
     PSInvocationState,
@@ -35,8 +33,13 @@ def wait_for_winrm(host, username, password, timeout=180, ssl=False):
 
     while True:
         try:
-            client = Client(host, username=username, password=password,
-                            ssl=ssl, connection_timeout=5)
+            client = Client(
+                host,
+                username=username,
+                password=password,
+                ssl=ssl,
+                connection_timeout=5,
+            )
             client.execute_ps("Write-Host 'Hello, World!'")
             return client
         except requests.exceptions.ConnectionError:
@@ -78,5 +81,7 @@ def run_powershell(client, script):
             print(format_object(o))
 
         if ps.state == PSInvocationState.FAILED:
-            raise Exception('PowerShell execution failed: %s' %
-                            ' '.join(map(format_object, ps.streams.error)))
+            raise Exception(
+                'PowerShell execution failed: %s'
+                % ' '.join(map(format_object, ps.streams.error))
+            )

@@ -32,30 +32,67 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-@command('glog',
-    [('f', 'follow', None,
-     _('follow changeset history, or file history across copies and renames')),
-    ('', 'follow-first', None,
-     _('only follow the first parent of merge changesets (DEPRECATED)')),
-    ('d', 'date', '', _('show revisions matching date spec'), _('DATE')),
-    ('C', 'copies', None, _('show copied files')),
-    ('k', 'keyword', [],
-     _('do case-insensitive search for a given text'), _('TEXT')),
-    ('r', 'rev', [], _('show the specified revision or revset'), _('REV')),
-    ('', 'removed', None, _('include revisions where files were removed')),
-    ('m', 'only-merges', None, _('show only merges (DEPRECATED)')),
-    ('u', 'user', [], _('revisions committed by user'), _('USER')),
-    ('', 'only-branch', [],
-     _('show only changesets within the given named branch (DEPRECATED)'),
-     _('BRANCH')),
-    ('b', 'branch', [],
-     _('show changesets within the given named branch'), _('BRANCH')),
-    ('P', 'prune', [],
-     _('do not display revision or any of its ancestors'), _('REV')),
-    ] + cmdutil.logopts + cmdutil.walkopts,
+
+@command(
+    'glog',
+    [
+        (
+            'f',
+            'follow',
+            None,
+            _(
+                'follow changeset history, or file history across copies and renames'
+            ),
+        ),
+        (
+            '',
+            'follow-first',
+            None,
+            _('only follow the first parent of merge changesets (DEPRECATED)'),
+        ),
+        ('d', 'date', '', _('show revisions matching date spec'), _('DATE')),
+        ('C', 'copies', None, _('show copied files')),
+        (
+            'k',
+            'keyword',
+            [],
+            _('do case-insensitive search for a given text'),
+            _('TEXT'),
+        ),
+        ('r', 'rev', [], _('show the specified revision or revset'), _('REV')),
+        ('', 'removed', None, _('include revisions where files were removed')),
+        ('m', 'only-merges', None, _('show only merges (DEPRECATED)')),
+        ('u', 'user', [], _('revisions committed by user'), _('USER')),
+        (
+            '',
+            'only-branch',
+            [],
+            _(
+                'show only changesets within the given named branch (DEPRECATED)'
+            ),
+            _('BRANCH'),
+        ),
+        (
+            'b',
+            'branch',
+            [],
+            _('show changesets within the given named branch'),
+            _('BRANCH'),
+        ),
+        (
+            'P',
+            'prune',
+            [],
+            _('do not display revision or any of its ancestors'),
+            _('REV'),
+        ),
+    ]
+    + cmdutil.logopts
+    + cmdutil.walkopts,
     _('[OPTION]... [FILE]'),
     helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
-    inferrepo=True)
+    inferrepo=True,
+)
 def glog(ui, repo, *pats, **opts):
     """show revision history alongside an ASCII revision graph
 

@@ -15,12 +15,12 @@ from mercurial import (
     error,
     pycompat,
 )
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
+
 
 class InvalidPointer(error.StorageError):
     pass
+
 
 class gitlfspointer(dict):
     VERSION = 'https://git-lfs.github.com/spec/v1'
@@ -34,9 +34,10 @@ class gitlfspointer(dict):
     def deserialize(cls, text):
         try:
             return cls(l.split(' ', 1) for l in text.splitlines()).validate()
-        except ValueError: # l.split returns 1 item instead of 2
-            raise InvalidPointer(_('cannot parse git-lfs text: %s')
-                                 % stringutil.pprint(text))
+        except ValueError:  # l.split returns 1 item instead of 2
+            raise InvalidPointer(
+                _('cannot parse git-lfs text: %s') % stringutil.pprint(text)
+            )
 
     def serialize(self):
         sortkeyfunc = lambda x: (x[0] != 'version', x)
@@ -67,17 +68,22 @@ class gitlfspointer(dict):
                 if not self._requiredre[k].match(v):
                     raise InvalidPointer(
                         _('unexpected lfs pointer value: %s=%s')
-                        % (k, stringutil.pprint(v)))
+                        % (k, stringutil.pprint(v))
+                    )
                 requiredcount += 1
             elif not self._keyre.match(k):
                 raise InvalidPointer(_('unexpected lfs pointer key: %s') % k)
             if not self._valuere.match(v):
-                raise InvalidPointer(_('unexpected lfs pointer value: %s=%s')
-                                     % (k, stringutil.pprint(v)))
+                raise InvalidPointer(
+                    _('unexpected lfs pointer value: %s=%s')
+                    % (k, stringutil.pprint(v))
+                )
         if len(self._requiredre) != requiredcount:
             miss = sorted(set(self._requiredre.keys()).difference(self.keys()))
-            raise InvalidPointer(_('missing lfs pointer keys: %s')
-                                 % ', '.join(miss))
+            raise InvalidPointer(
+                _('missing lfs pointer keys: %s') % ', '.join(miss)
+            )
         return self
+
 
 deserialize = gitlfspointer.deserialize

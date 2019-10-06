@@ -27,7 +27,7 @@ from .utils import (
     stringutil,
 )
 
-subsettable = repoviewutil. subsettable
+subsettable = repoviewutil.subsettable
 
 calcsize = struct.calcsize
 pack_into = struct.pack_into
@@ -36,6 +36,7 @@ unpack_from = struct.unpack_from
 
 class BranchMapCache(object):
     """mapping of filtered views of repo with their branchcache"""
+
     def __init__(self):
         self._per_filter = {}
 
@@ -101,8 +102,11 @@ class BranchMapCache(object):
         if rbheads:
             rtiprev = max((int(clrev(node)) for node in rbheads))
             cache = branchcache(
-                remotebranchmap, repo[rtiprev].node(), rtiprev,
-                closednodes=closed)
+                remotebranchmap,
+                repo[rtiprev].node(),
+                rtiprev,
+                closednodes=closed,
+            )
 
             # Try to stick it as low as possible
             # filter above served are unlikely to be fetch from a clone
@@ -116,16 +120,19 @@ class BranchMapCache(object):
     def clear(self):
         self._per_filter.clear()
 
+
 def _unknownnode(node):
     """ raises ValueError when branchcache found a node which does not exists
     """
     raise ValueError(r'node %s does not exist' % pycompat.sysstr(hex(node)))
+
 
 def _branchcachedesc(repo):
     if repo.filtername is not None:
         return 'branch cache (%s)' % repo.filtername
     else:
         return 'branch cache'
+
 
 class branchcache(object):
     """A dict like object that hold branches heads cache.
@@ -149,8 +156,15 @@ class branchcache(object):
     branch head closes a branch or not.
     """
 
-    def __init__(self, entries=(), tipnode=nullid, tiprev=nullrev,
-                 filteredhash=None, closednodes=None, hasnode=None):
+    def __init__(
+        self,
+        entries=(),
+        tipnode=nullid,
+        tiprev=nullrev,
+        filteredhash=None,
+        closednodes=None,
+        hasnode=None,
+    ):
         """ hasnode is a function which can be used to verify whether changelog
         has a given node or not. If it's not provided, we assume that every node
         we have exists in changelog """
@@ -238,8 +252,12 @@ class branchcache(object):
             hasnode = repo.changelog.hasnode
             if len(cachekey) > 2:
                 filteredhash = bin(cachekey[2])
-            bcache = cls(tipnode=last, tiprev=lrev, filteredhash=filteredhash,
-                         hasnode=hasnode)
+            bcache = cls(
+                tipnode=last,
+                tiprev=lrev,
+                filteredhash=filteredhash,
+                hasnode=hasnode,
+            )
             if not bcache.validfor(repo):
                 # invalidate the cache
                 raise ValueError(r'tip differs')
@@ -250,8 +268,9 @@ class branchcache(object):
         except Exception as inst:
             if repo.ui.debugflag:
                 msg = 'invalid %s: %s\n'
-                repo.ui.debug(msg % (_branchcachedesc(repo),
-                                     pycompat.bytestr(inst)))
+                repo.ui.debug(
+                    msg % (_branchcachedesc(repo), pycompat.bytestr(inst))
+                )
             bcache = None
 
         finally:
@@ -290,9 +309,9 @@ class branchcache(object):
         - False when cached tipnode is unknown or if we detect a strip.
         - True when cache is up to date or a subset of current repo."""
         try:
-            return ((self.tipnode == repo.changelog.node(self.tiprev))
-                    and (self.filteredhash ==
-                         scmutil.filteredhash(repo, self.tiprev)))
+            return (self.tipnode == repo.changelog.node(self.tiprev)) and (
+                self.filteredhash == scmutil.filteredhash(repo, self.tiprev)
+            )
         except IndexError:
             return False
 
@@ -336,8 +355,12 @@ class branchcache(object):
     def copy(self):
         """return an deep copy of the branchcache object"""
         return type(self)(
-            self._entries, self.tipnode, self.tiprev, self.filteredhash,
-            self._closednodes)
+            self._entries,
+            self.tipnode,
+            self.tiprev,
+            self.filteredhash,
+            self._closednodes,
+        )
 
     def write(self, repo):
         try:
@@ -357,12 +380,19 @@ class branchcache(object):
                         state = 'o'
                     f.write("%s %s %s\n" % (hex(node), state, label))
             f.close()
-            repo.ui.log('branchcache', 'wrote %s with %d labels and %d nodes\n',
-                        _branchcachedesc(repo), len(self._entries), nodecount)
+            repo.ui.log(
+                'branchcache',
+                'wrote %s with %d labels and %d nodes\n',
+                _branchcachedesc(repo),
+                len(self._entries),
+                nodecount,
+            )
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
-            repo.ui.debug("couldn't write branch cache: %s\n" %
-                          stringutil.forcebytestr(inst))
+            repo.ui.debug(
+                "couldn't write branch cache: %s\n"
+                % stringutil.forcebytestr(inst)
+            )
 
     def update(self, repo, revgen):
         """Given a branchhead cache, self, that may have extra nodes or be
@@ -429,14 +459,19 @@ class branchcache(object):
         self.filteredhash = scmutil.filteredhash(repo, self.tiprev)
 
         duration = util.timer() - starttime
-        repo.ui.log('branchcache', 'updated %s in %.4f seconds\n',
-                    _branchcachedesc(repo), duration)
+        repo.ui.log(
+            'branchcache',
+            'updated %s in %.4f seconds\n',
+            _branchcachedesc(repo),
+            duration,
+        )
 
         self.write(repo)
 
 
 class remotebranchcache(branchcache):
     """Branchmap info for a remote connection, should not write locally"""
+
     def write(self, repo):
         pass
 
@@ -450,8 +485,9 @@ _rbcrevs = 'rbc-revs' + _rbcversion
 _rbcrecfmt = '>4sI'
 _rbcrecsize = calcsize(_rbcrecfmt)
 _rbcnodelen = 4
-_rbcbranchidxmask = 0x7fffffff
+_rbcbranchidxmask = 0x7FFFFFFF
 _rbccloseflag = 0x80000000
+
 
 class revbranchcache(object):
     """Persistent cache, mapping from revision number to branch name and close.
@@ -479,15 +515,16 @@ class revbranchcache(object):
     def __init__(self, repo, readonly=True):
         assert repo.filtername is None
         self._repo = repo
-        self._names = [] # branch names in local encoding with static index
+        self._names = []  # branch names in local encoding with static index
         self._rbcrevs = bytearray()
-        self._rbcsnameslen = 0 # length of names read at _rbcsnameslen
+        self._rbcsnameslen = 0  # length of names read at _rbcsnameslen
         try:
             bndata = repo.cachevfs.read(_rbcnames)
-            self._rbcsnameslen = len(bndata) # for verification before writing
+            self._rbcsnameslen = len(bndata)  # for verification before writing
             if bndata:
-                self._names = [encoding.tolocal(bn)
-                               for bn in bndata.split('\0')]
+                self._names = [
+                    encoding.tolocal(bn) for bn in bndata.split('\0')
+                ]
         except (IOError, OSError):
             if readonly:
                 # don't try to use cache - fall back to the slow path
@@ -498,15 +535,18 @@ class revbranchcache(object):
                 data = repo.cachevfs.read(_rbcrevs)
                 self._rbcrevs[:] = data
             except (IOError, OSError) as inst:
-                repo.ui.debug("couldn't read revision branch cache: %s\n" %
-                              stringutil.forcebytestr(inst))
+                repo.ui.debug(
+                    "couldn't read revision branch cache: %s\n"
+                    % stringutil.forcebytestr(inst)
+                )
         # remember number of good records on disk
-        self._rbcrevslen = min(len(self._rbcrevs) // _rbcrecsize,
-                               len(repo.changelog))
+        self._rbcrevslen = min(
+            len(self._rbcrevs) // _rbcrecsize, len(repo.changelog)
+        )
         if self._rbcrevslen == 0:
             self._names = []
-        self._rbcnamescount = len(self._names) # number of names read at
-                                               # _rbcsnameslen
+        self._rbcnamescount = len(self._names)  # number of names read at
+        # _rbcsnameslen
 
     def _clear(self):
         self._rbcsnameslen = 0
@@ -537,7 +577,8 @@ class revbranchcache(object):
         # fast path: extract data from cache, use it if node is matching
         reponode = changelog.node(rev)[:_rbcnodelen]
         cachenode, branchidx = unpack_from(
-            _rbcrecfmt, util.buffer(self._rbcrevs), rbcrevidx)
+            _rbcrecfmt, util.buffer(self._rbcrevs), rbcrevidx
+        )
         close = bool(branchidx & _rbccloseflag)
         if close:
             branchidx &= _rbcbranchidxmask
@@ -548,13 +589,17 @@ class revbranchcache(object):
                 return self._names[branchidx], close
             except IndexError:
                 # recover from invalid reference to unknown branch
-                self._repo.ui.debug("referenced branch names not found"
-                    " - rebuilding revision branch cache from scratch\n")
+                self._repo.ui.debug(
+                    "referenced branch names not found"
+                    " - rebuilding revision branch cache from scratch\n"
+                )
                 self._clear()
         else:
             # rev/node map has changed, invalidate the cache from here up
-            self._repo.ui.debug("history modification detected - truncating "
-                "revision branch cache to revision %d\n" % rev)
+            self._repo.ui.debug(
+                "history modification detected - truncating "
+                "revision branch cache to revision %d\n" % rev
+            )
             truncate = rbcrevidx + _rbcrecsize
             del self._rbcrevs[truncate:]
             self._rbcrevslen = min(self._rbcrevslen, truncate)
@@ -604,9 +649,10 @@ class revbranchcache(object):
             return
         rbcrevidx = rev * _rbcrecsize
         if len(self._rbcrevs) < rbcrevidx + _rbcrecsize:
-            self._rbcrevs.extend('\0' *
-                                 (len(self._repo.changelog) * _rbcrecsize -
-                                  len(self._rbcrevs)))
+            self._rbcrevs.extend(
+                '\0'
+                * (len(self._repo.changelog) * _rbcrecsize - len(self._rbcrevs))
+            )
         pack_into(_rbcrecfmt, self._rbcrevs, rbcrevidx, node, branchidx)
         self._rbcrevslen = min(self._rbcrevslen, rev)
 
@@ -635,8 +681,10 @@ class revbranchcache(object):
                 self._writerevs(repo, start)
 
         except (IOError, OSError, error.Abort, error.LockError) as inst:
-            repo.ui.debug("couldn't write revision branch cache%s: %s\n"
-                          % (step, stringutil.forcebytestr(inst)))
+            repo.ui.debug(
+                "couldn't write revision branch cache%s: %s\n"
+                % (step, stringutil.forcebytestr(inst))
+            )
         finally:
             if wlock is not None:
                 wlock.release()
@@ -656,8 +704,12 @@ class revbranchcache(object):
             # before rewriting names, make sure references are removed
             repo.cachevfs.unlinkpath(_rbcrevs, ignoremissing=True)
             f = repo.cachevfs.open(_rbcnames, 'wb')
-        f.write('\0'.join(encoding.fromlocal(b)
-                          for b in self._names[self._rbcnamescount:]))
+        f.write(
+            '\0'.join(
+                encoding.fromlocal(b)
+                for b in self._names[self._rbcnamescount :]
+            )
+        )
         self._rbcsnameslen = f.tell()
         f.close()
         self._rbcnamescount = len(self._names)

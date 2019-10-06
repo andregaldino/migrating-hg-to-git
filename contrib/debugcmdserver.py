@@ -23,6 +23,7 @@ if sys.argv[1] == '-':
 else:
     log = open(sys.argv[1], 'a')
 
+
 def read(size):
     data = sys.stdin.read(size)
     if not data:
@@ -30,6 +31,7 @@ def read(size):
     sys.stdout.write(data)
     sys.stdout.flush()
     return data
+
 
 try:
     while True:

@@ -57,9 +57,7 @@ from mercurial.node import (
     nullrev,
     short,
 )
-from mercurial.thirdparty import (
-    attr,
-)
+from mercurial.thirdparty import attr
 from mercurial import (
     ancestor,
     dagop,
@@ -77,12 +75,11 @@ from mercurial.interfaces import (
     repository,
     util as interfaceutil,
 )
-from mercurial.utils import (
-    storageutil,
-)
+from mercurial.utils import storageutil
 
 try:
     from mercurial import zstd
+
     zstd.__version__
 except ImportError:
     zstd = None
@@ -91,9 +88,12 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 # experimental config: storage.sqlite.compression
-configitem('storage', 'sqlite.compression',
-           default='zstd' if zstd else 'zlib',
-           experimental=True)
+configitem(
+    'storage',
+    'sqlite.compression',
+    default='zstd' if zstd else 'zlib',
+    experimental=True,
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -121,24 +121,19 @@ CREATE_SCHEMA = [
     # Deltas are stored as content-indexed blobs.
     # compression column holds COMPRESSION_* constant for how the
     # delta is encoded.
-
     r'CREATE TABLE delta ('
     r'    id INTEGER PRIMARY KEY, '
     r'    compression INTEGER NOT NULL, '
     r'    hash BLOB UNIQUE ON CONFLICT ABORT, '
     r'    delta BLOB NOT NULL '
     r')',
-
     # Tracked paths are denormalized to integers to avoid redundant
     # storage of the path name.
     r'CREATE TABLE filepath ('
     r'    id INTEGER PRIMARY KEY, '
     r'    path BLOB NOT NULL '
     r')',
-
-    r'CREATE UNIQUE INDEX filepath_path '
-    r'    ON filepath (path)',
-
+    r'CREATE UNIQUE INDEX filepath_path ' r'    ON filepath (path)',
     # We have a single table for all file revision data.
     # Each file revision is uniquely described by a (path, rev) and
     # (path, node).
@@ -162,13 +157,10 @@ CREATE_SCHEMA = [
     r'    deltabaseid INTEGER REFERENCES fileindex(id), '
     r'    node BLOB NOT NULL '
     r')',
-
     r'CREATE UNIQUE INDEX fileindex_pathrevnum '
     r'    ON fileindex (pathid, revnum)',
-
     r'CREATE UNIQUE INDEX fileindex_pathnode '
     r'    ON fileindex (pathid, node)',
-
     # Provide a view over all file data for convenience.
     r'CREATE VIEW filedata AS '
     r'SELECT '
@@ -185,12 +177,11 @@ CREATE_SCHEMA = [
     r'    fileindex.deltabaseid AS deltabaseid '
     r'FROM filepath, fileindex '
     r'WHERE fileindex.pathid=filepath.id',
-
     r'PRAGMA user_version=%d' % CURRENT_SCHEMA_VERSION,
 ]
 
-def resolvedeltachain(db, pathid, node, revisioncache,
-                      stoprids, zstddctx=None):
+
+def resolvedeltachain(db, pathid, node, revisioncache, stoprids, zstddctx=None):
     """Resolve a delta chain for a file node."""
 
     # TODO the "not in ({stops})" here is possibly slowing down the query
@@ -214,8 +205,10 @@ def resolvedeltachain(db, pathid, node, revisioncache,
         r'SELECT deltachain.baseid, compression, delta '
         r'FROM deltachain, delta '
         r'WHERE delta.id=deltachain.deltaid'.format(
-            stops=r','.join([r'?'] * len(stoprids))),
-        tuple([pathid, node] + list(stoprids.keys())))
+            stops=r','.join([r'?'] * len(stoprids))
+        ),
+        tuple([pathid, node] + list(stoprids.keys())),
+    )
 
     deltas = []
     lastdeltabaseid = None
@@ -230,8 +223,9 @@ def resolvedeltachain(db, pathid, node, revisioncache,
         elif compression == COMPRESSION_ZLIB:
             delta = zlib.decompress(delta)
         else:
-            raise SQLiteStoreError('unhandled compression type: %d' %
-                                   compression)
+            raise SQLiteStoreError(
+                'unhandled compression type: %d' % compression
+            )
 
         deltas.append(delta)
 
@@ -251,19 +245,23 @@ def resolvedeltachain(db, pathid, node, revisioncache,
 
     return fulltext
 
+
 def insertdelta(db, compression, hash, delta):
     try:
         return db.execute(
             r'INSERT INTO delta (compression, hash, delta) '
             r'VALUES (?, ?, ?)',
-            (compression, hash, delta)).lastrowid
+            (compression, hash, delta),
+        ).lastrowid
     except sqlite3.IntegrityError:
         return db.execute(
-            r'SELECT id FROM delta WHERE hash=?',
-            (hash,)).fetchone()[0]
+            r'SELECT id FROM delta WHERE hash=?', (hash,)
+        ).fetchone()[0]
+
 
 class SQLiteStoreError(error.StorageError):
     pass
+
 
 @attr.s
 class revisionentry(object):
@@ -276,6 +274,7 @@ class revisionentry(object):
     p2node = attr.ib()
     linkrev = attr.ib()
     flags = attr.ib()
+
 
 @interfaceutil.implementer(repository.irevisiondelta)
 @attr.s(slots=True)
@@ -290,12 +289,14 @@ class sqliterevisiondelta(object):
     delta = attr.ib()
     linknode = attr.ib(default=None)
 
+
 @interfaceutil.implementer(repository.iverifyproblem)
 @attr.s(frozen=True)
 class sqliteproblem(object):
     warning = attr.ib(default=None)
     error = attr.ib(default=None)
     node = attr.ib(default=None)
+
 
 @interfaceutil.implementer(repository.ifilestorage)
 class sqlitefilestore(object):
@@ -332,8 +333,11 @@ class sqlitefilestore(object):
         self._nodetorev = {}
         self._revisions = {}
 
-        res = list(self._db.execute(
-            r'SELECT id FROM filepath WHERE path=?', (self._path,)))
+        res = list(
+            self._db.execute(
+                r'SELECT id FROM filepath WHERE path=?', (self._path,)
+            )
+        )
 
         if not res:
             self._pathid = None
@@ -346,14 +350,16 @@ class sqlitefilestore(object):
             r'FROM fileindex '
             r'WHERE pathid=? '
             r'ORDER BY revnum ASC',
-            (self._pathid,))
+            (self._pathid,),
+        )
 
         for i, row in enumerate(res):
             rid, rev, node, p1rev, p2rev, linkrev, flags = row
 
             if i != rev:
-                raise SQLiteStoreError(_('sqlite database has inconsistent '
-                                         'revision numbers'))
+                raise SQLiteStoreError(
+                    _('sqlite database has inconsistent ' 'revision numbers')
+                )
 
             if p1rev == nullrev:
                 p1node = nullid
@@ -374,7 +380,8 @@ class sqlitefilestore(object):
                 p1node=p1node,
                 p2node=p2node,
                 linkrev=linkrev,
-                flags=flags)
+                flags=flags,
+            )
 
             self._revtonode[rev] = node
             self._nodetorev[node] = rev
@@ -395,8 +402,9 @@ class sqlitefilestore(object):
         return node in self._nodetorev
 
     def revs(self, start=0, stop=None):
-        return storageutil.iterrevs(len(self._revisions), start=start,
-                                    stop=stop)
+        return storageutil.iterrevs(
+            len(self._revisions), start=start, stop=stop
+        )
 
     def parents(self, node):
         if node == nullid:
@@ -478,8 +486,9 @@ class sqlitefilestore(object):
         startrev = self.rev(start) if start is not None else nullrev
         stoprevs = {self.rev(n) for n in stop or []}
 
-        revs = dagop.headrevssubset(self.revs, self.parentrevs,
-                                    startrev=startrev, stoprevs=stoprevs)
+        revs = dagop.headrevssubset(
+            self.revs, self.parentrevs, startrev=startrev, stoprevs=stoprevs
+        )
 
         return [self.node(rev) for rev in revs]
 
@@ -492,7 +501,8 @@ class sqlitefilestore(object):
             r'  FROM filedata '
             r'  WHERE path=? AND (p1rev=? OR p2rev=?) '
             r'  ORDER BY revnum ASC',
-            (self._path, rev, rev))
+            (self._path, rev, rev),
+        )
 
         return [row[0] for row in res]
 
@@ -531,15 +541,19 @@ class sqlitefilestore(object):
         # short-circuit delta chain traversal and decompression as soon as
         # we encounter a revision in the cache.
 
-        stoprids = {self._revisions[n].rid: n
-                    for n in self._revisioncache}
+        stoprids = {self._revisions[n].rid: n for n in self._revisioncache}
 
         if not stoprids:
             stoprids[-1] = None
 
-        fulltext = resolvedeltachain(self._db, self._pathid, node,
-                                     self._revisioncache, stoprids,
-                                     zstddctx=self._dctx)
+        fulltext = resolvedeltachain(
+            self._db,
+            self._pathid,
+            node,
+            self._revisioncache,
+            stoprids,
+            zstddctx=self._dctx,
+        )
 
         # Don't verify hashes if parent nodes were rewritten, as the hash
         # wouldn't verify.
@@ -564,12 +578,18 @@ class sqlitefilestore(object):
     def cmp(self, node, fulltext):
         return not storageutil.filedataequivalent(self, node, fulltext)
 
-    def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
-                      assumehaveparentrevisions=False,
-                      deltamode=repository.CG_DELTAMODE_STD):
+    def emitrevisions(
+        self,
+        nodes,
+        nodesorder=None,
+        revisiondata=False,
+        assumehaveparentrevisions=False,
+        deltamode=repository.CG_DELTAMODE_STD,
+    ):
         if nodesorder not in ('nodes', 'storage', 'linear', None):
-            raise error.ProgrammingError('unhandled value for nodesorder: %s' %
-                                         nodesorder)
+            raise error.ProgrammingError(
+                'unhandled value for nodesorder: %s' % nodesorder
+            )
 
         nodes = [n for n in nodes if n != nullid]
 
@@ -581,23 +601,29 @@ class sqlitefilestore(object):
             r'SELECT revnum, deltaid FROM fileindex '
             r'WHERE pathid=? '
             r'    AND node in (%s)' % (r','.join([r'?'] * len(nodes))),
-            tuple([self._pathid] + nodes))
+            tuple([self._pathid] + nodes),
+        )
 
         deltabases = {}
 
         for rev, deltaid in res:
             res = self._db.execute(
                 r'SELECT revnum from fileindex WHERE pathid=? AND deltaid=?',
-                (self._pathid, deltaid))
+                (self._pathid, deltaid),
+            )
             deltabases[rev] = res.fetchone()[0]
 
         # TODO define revdifffn so we can use delta from storage.
         for delta in storageutil.emitrevisions(
-            self, nodes, nodesorder, sqliterevisiondelta,
+            self,
+            nodes,
+            nodesorder,
+            sqliterevisiondelta,
             deltaparentfn=deltabases.__getitem__,
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
-            deltamode=deltamode):
+            deltamode=deltamode,
+        ):
 
             yield delta
 
@@ -611,8 +637,17 @@ class sqlitefilestore(object):
 
         return self.addrevision(filedata, transaction, linkrev, p1, p2)
 
-    def addrevision(self, revisiondata, transaction, linkrev, p1, p2, node=None,
-                    flags=0, cachedelta=None):
+    def addrevision(
+        self,
+        revisiondata,
+        transaction,
+        linkrev,
+        p1,
+        p2,
+        node=None,
+        flags=0,
+        cachedelta=None,
+    ):
         if flags:
             raise SQLiteStoreError(_('flags not supported on revisions'))
 
@@ -625,14 +660,21 @@ class sqlitefilestore(object):
         if node in self._nodetorev:
             return node
 
-        node = self._addrawrevision(node, revisiondata, transaction, linkrev,
-                                    p1, p2)
+        node = self._addrawrevision(
+            node, revisiondata, transaction, linkrev, p1, p2
+        )
 
         self._revisioncache[node] = revisiondata
         return node
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
-                 maybemissingparents=False):
+    def addgroup(
+        self,
+        deltas,
+        linkmapper,
+        transaction,
+        addrevisioncb=None,
+        maybemissingparents=False,
+    ):
         nodes = []
 
         for node, p1, p2, linknode, deltabase, delta, wireflags in deltas:
@@ -663,12 +705,11 @@ class sqlitefilestore(object):
                 newlen = len(delta) - hlen
 
                 if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
-                    raise error.CensoredBaseError(self._path,
-                                                  deltabase)
+                    raise error.CensoredBaseError(self._path, deltabase)
 
-            if (not (storeflags & FLAG_CENSORED)
-                and storageutil.deltaiscensored(
-                    delta, baserev, lambda x: len(self.rawdata(x)))):
+            if not (storeflags & FLAG_CENSORED) and storageutil.deltaiscensored(
+                delta, baserev, lambda x: len(self.rawdata(x))
+            ):
                 storeflags |= FLAG_CENSORED
 
             linkrev = linkmapper(linknode)
@@ -685,9 +726,9 @@ class sqlitefilestore(object):
                     entry.flags &= ~FLAG_MISSING_P1
 
                     self._db.execute(
-                        r'UPDATE fileindex SET p1rev=?, flags=? '
-                        r'WHERE id=?',
-                        (self._nodetorev[p1], entry.flags, entry.rid))
+                        r'UPDATE fileindex SET p1rev=?, flags=? ' r'WHERE id=?',
+                        (self._nodetorev[p1], entry.flags, entry.rid),
+                    )
 
                 if entry.flags & FLAG_MISSING_P2 and p2 != nullid:
                     entry.p2node = p2
@@ -695,9 +736,9 @@ class sqlitefilestore(object):
                     entry.flags &= ~FLAG_MISSING_P2
 
                     self._db.execute(
-                        r'UPDATE fileindex SET p2rev=?, flags=? '
-                        r'WHERE id=?',
-                        (self._nodetorev[p1], entry.flags, entry.rid))
+                        r'UPDATE fileindex SET p2rev=?, flags=? ' r'WHERE id=?',
+                        (self._nodetorev[p1], entry.flags, entry.rid),
+                    )
 
                 continue
 
@@ -708,8 +749,16 @@ class sqlitefilestore(object):
                 text = None
                 storedelta = (deltabase, delta)
 
-            self._addrawrevision(node, text, transaction, linkrev, p1, p2,
-                                 storedelta=storedelta, flags=storeflags)
+            self._addrawrevision(
+                node,
+                text,
+                transaction,
+                linkrev,
+                p1,
+                p2,
+                storedelta=storedelta,
+                flags=storeflags,
+            )
 
             if addrevisioncb:
                 addrevisioncb(self, node)
@@ -722,8 +771,9 @@ class sqlitefilestore(object):
         # This restriction is cargo culted from revlogs and makes no sense for
         # SQLite, since columns can be resized at will.
         if len(tombstone) > len(self.rawdata(censornode)):
-            raise error.Abort(_('censor tombstone must be no longer than '
-                                'censored data'))
+            raise error.Abort(
+                _('censor tombstone must be no longer than ' 'censored data')
+            )
 
         # We need to replace the censored revision's data with the tombstone.
         # But replacing that data will have implications for delta chains that
@@ -738,21 +788,26 @@ class sqlitefilestore(object):
         # Find the delta to be censored.
         censoreddeltaid = self._db.execute(
             r'SELECT deltaid FROM fileindex WHERE id=?',
-            (self._revisions[censornode].rid,)).fetchone()[0]
+            (self._revisions[censornode].rid,),
+        ).fetchone()[0]
 
         # Find all its delta chain children.
         # TODO once we support storing deltas for !files, we'll need to look
         # for those delta chains too.
-        rows = list(self._db.execute(
-            r'SELECT id, pathid, node FROM fileindex '
-            r'WHERE deltabaseid=? OR deltaid=?',
-            (censoreddeltaid, censoreddeltaid)))
+        rows = list(
+            self._db.execute(
+                r'SELECT id, pathid, node FROM fileindex '
+                r'WHERE deltabaseid=? OR deltaid=?',
+                (censoreddeltaid, censoreddeltaid),
+            )
+        )
 
         for row in rows:
             rid, pathid, node = row
 
-            fulltext = resolvedeltachain(self._db, pathid, node, {}, {-1: None},
-                                         zstddctx=self._dctx)
+            fulltext = resolvedeltachain(
+                self._db, pathid, node, {}, {-1: None}, zstddctx=self._dctx
+            )
 
             deltahash = hashlib.sha1(fulltext).digest()
 
@@ -766,8 +821,9 @@ class sqlitefilestore(object):
                 deltablob = fulltext
                 compression = COMPRESSION_NONE
             else:
-                raise error.ProgrammingError('unhandled compression engine: %s'
-                                             % self._compengine)
+                raise error.ProgrammingError(
+                    'unhandled compression engine: %s' % self._compengine
+                )
 
             if len(deltablob) >= len(fulltext):
                 deltablob = fulltext
@@ -777,13 +833,16 @@ class sqlitefilestore(object):
 
             self._db.execute(
                 r'UPDATE fileindex SET deltaid=?, deltabaseid=NULL '
-                r'WHERE id=?', (deltaid, rid))
+                r'WHERE id=?',
+                (deltaid, rid),
+            )
 
         # Now create the tombstone delta and replace the delta on the censored
         # node.
         deltahash = hashlib.sha1(tombstone).digest()
-        tombstonedeltaid = insertdelta(self._db, COMPRESSION_NONE,
-                                       deltahash, tombstone)
+        tombstonedeltaid = insertdelta(
+            self._db, COMPRESSION_NONE, deltahash, tombstone
+        )
 
         flags = self._revisions[censornode].flags
         flags |= FLAG_CENSORED
@@ -791,19 +850,22 @@ class sqlitefilestore(object):
         self._db.execute(
             r'UPDATE fileindex SET flags=?, deltaid=?, deltabaseid=NULL '
             r'WHERE pathid=? AND node=?',
-            (flags, tombstonedeltaid, self._pathid, censornode))
+            (flags, tombstonedeltaid, self._pathid, censornode),
+        )
 
-        self._db.execute(
-            r'DELETE FROM delta WHERE id=?', (censoreddeltaid,))
+        self._db.execute(r'DELETE FROM delta WHERE id=?', (censoreddeltaid,))
 
         self._refreshindex()
         self._revisioncache.clear()
 
     def getstrippoint(self, minlink):
-        return storageutil.resolvestripinfo(minlink, len(self) - 1,
-                                            [self.rev(n) for n in self.heads()],
-                                            self.linkrev,
-                                            self.parentrevs)
+        return storageutil.resolvestripinfo(
+            minlink,
+            len(self) - 1,
+            [self.rev(n) for n in self.heads()],
+            self.linkrev,
+            self.parentrevs,
+        )
 
     def strip(self, minlink, transaction):
         if not len(self):
@@ -817,7 +879,8 @@ class sqlitefilestore(object):
         for rev in self.revs(rev):
             self._db.execute(
                 r'DELETE FROM fileindex WHERE pathid=? AND node=?',
-                (self._pathid, self.node(rev)))
+                (self._pathid, self.node(rev)),
+            )
 
         # TODO how should we garbage collect data in delta table?
 
@@ -830,9 +893,14 @@ class sqlitefilestore(object):
     def files(self):
         return []
 
-    def storageinfo(self, exclusivefiles=False, sharedfiles=False,
-                    revisionscount=False, trackedsize=False,
-                    storedsize=False):
+    def storageinfo(
+        self,
+        exclusivefiles=False,
+        sharedfiles=False,
+        revisionscount=False,
+        trackedsize=False,
+        storedsize=False,
+    ):
         d = {}
 
         if exclusivefiles:
@@ -846,8 +914,9 @@ class sqlitefilestore(object):
             d['revisionscount'] = len(self)
 
         if trackedsize:
-            d['trackedsize'] = sum(len(self.revision(node))
-                                       for node in self._nodetorev)
+            d['trackedsize'] = sum(
+                len(self.revision(node)) for node in self._nodetorev
+            )
 
         if storedsize:
             # TODO implement this?
@@ -865,8 +934,8 @@ class sqlitefilestore(object):
                 self.revision(node)
             except Exception as e:
                 yield sqliteproblem(
-                    error=_('unpacking %s: %s') % (short(node), e),
-                    node=node)
+                    error=_('unpacking %s: %s') % (short(node), e), node=node
+                )
 
                 state['skipread'].add(node)
 
@@ -887,14 +956,23 @@ class sqlitefilestore(object):
         if storageutil.iscensoredtext(fulltext):
             raise error.CensoredNodeError(self._path, node, fulltext)
 
-        raise SQLiteStoreError(_('integrity check failed on %s') %
-                               self._path)
+        raise SQLiteStoreError(_('integrity check failed on %s') % self._path)
 
-    def _addrawrevision(self, node, revisiondata, transaction, linkrev,
-                        p1, p2, storedelta=None, flags=0):
+    def _addrawrevision(
+        self,
+        node,
+        revisiondata,
+        transaction,
+        linkrev,
+        p1,
+        p2,
+        storedelta=None,
+        flags=0,
+    ):
         if self._pathid is None:
             res = self._db.execute(
-                r'INSERT INTO filepath (path) VALUES (?)', (self._path,))
+                r'INSERT INTO filepath (path) VALUES (?)', (self._path,)
+            )
             self._pathid = res.lastrowid
 
         # For simplicity, always store a delta against p1.
@@ -913,8 +991,9 @@ class sqlitefilestore(object):
             if deltabase == nullid:
                 delta = revisiondata
             else:
-                delta = mdiff.textdiff(self.revision(self.rev(deltabase)),
-                                       revisiondata)
+                delta = mdiff.textdiff(
+                    self.revision(self.rev(deltabase)), revisiondata
+                )
 
         # File index stores a pointer to its delta and the parent delta.
         # The parent delta is stored via a pointer to the fileindex PK.
@@ -939,8 +1018,9 @@ class sqlitefilestore(object):
             deltablob = delta
             compression = COMPRESSION_NONE
         else:
-            raise error.ProgrammingError('unhandled compression engine: %s' %
-                                         self._compengine)
+            raise error.ProgrammingError(
+                'unhandled compression engine: %s' % self._compengine
+            )
 
         # Don't store compressed data if it isn't practical.
         if len(deltablob) >= len(delta):
@@ -966,8 +1046,17 @@ class sqlitefilestore(object):
             r'    pathid, revnum, node, p1rev, p2rev, linkrev, flags, '
             r'    deltaid, deltabaseid) '
             r'    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (self._pathid, rev, node, p1rev, p2rev, linkrev, flags,
-             deltaid, baseid)
+            (
+                self._pathid,
+                rev,
+                node,
+                p1rev,
+                p2rev,
+                linkrev,
+                flags,
+                deltaid,
+                baseid,
+            ),
         ).lastrowid
 
         entry = revisionentry(
@@ -979,13 +1068,15 @@ class sqlitefilestore(object):
             p1node=p1,
             p2node=p2,
             linkrev=linkrev,
-            flags=flags)
+            flags=flags,
+        )
 
         self._nodetorev[node] = rev
         self._revtonode[rev] = node
         self._revisions[node] = entry
 
         return node
+
 
 class sqliterepository(localrepo.localrepository):
     def cancopy(self):
@@ -1024,6 +1115,7 @@ class sqliterepository(localrepo.localrepository):
 
         return db
 
+
 def makedb(path):
     """Construct a database handle for a database at path."""
 
@@ -1049,6 +1141,7 @@ def makedb(path):
 
     return db
 
+
 def featuresetup(ui, supported):
     supported.add(REQUIREMENT)
 
@@ -1060,14 +1153,16 @@ def featuresetup(ui, supported):
     supported.add(REQUIREMENT_SHALLOW_FILES)
     supported.add(repository.NARROW_REQUIREMENT)
 
+
 def newreporequirements(orig, ui, createopts):
     if createopts['backend'] != 'sqlite':
         return orig(ui, createopts)
 
     # This restriction can be lifted once we have more confidence.
     if 'sharedrepo' in createopts:
-        raise error.Abort(_('shared repositories not supported with SQLite '
-                            'store'))
+        raise error.Abort(
+            _('shared repositories not supported with SQLite ' 'store')
+        )
 
     # This filtering is out of an abundance of caution: we want to ensure
     # we honor creation options and we do that by annotating exactly the
@@ -1080,8 +1175,10 @@ def newreporequirements(orig, ui, createopts):
 
     unsupported = set(createopts) - known
     if unsupported:
-        raise error.Abort(_('SQLite store does not support repo creation '
-                            'option: %s') % ', '.join(sorted(unsupported)))
+        raise error.Abort(
+            _('SQLite store does not support repo creation ' 'option: %s')
+            % ', '.join(sorted(unsupported))
+        )
 
     # Since we're a hybrid store that still relies on revlogs, we fall back
     # to using the revlogv1 backend's storage requirements then adding our
@@ -1093,9 +1190,13 @@ def newreporequirements(orig, ui, createopts):
     compression = ui.config('storage', 'sqlite.compression')
 
     if compression == 'zstd' and not zstd:
-        raise error.Abort(_('storage.sqlite.compression set to "zstd" but '
-                            'zstandard compression not available to this '
-                            'Mercurial install'))
+        raise error.Abort(
+            _(
+                'storage.sqlite.compression set to "zstd" but '
+                'zstandard compression not available to this '
+                'Mercurial install'
+            )
+        )
 
     if compression == 'zstd':
         requirements.add(REQUIREMENT_ZSTD)
@@ -1104,17 +1205,24 @@ def newreporequirements(orig, ui, createopts):
     elif compression == 'none':
         requirements.add(REQUIREMENT_NONE)
     else:
-        raise error.Abort(_('unknown compression engine defined in '
-                            'storage.sqlite.compression: %s') % compression)
+        raise error.Abort(
+            _(
+                'unknown compression engine defined in '
+                'storage.sqlite.compression: %s'
+            )
+            % compression
+        )
 
     if createopts.get('shallowfilestore'):
         requirements.add(REQUIREMENT_SHALLOW_FILES)
 
     return requirements
 
+
 @interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
 class sqlitefilestorage(object):
     """Repository file storage backed by SQLite."""
+
     def file(self, path):
         if path[0] == b'/':
             path = path[1:]
@@ -1126,10 +1234,15 @@ class sqlitefilestorage(object):
         elif REQUIREMENT_NONE in self.requirements:
             compression = 'none'
         else:
-            raise error.Abort(_('unable to determine what compression engine '
-                                'to use for SQLite storage'))
+            raise error.Abort(
+                _(
+                    'unable to determine what compression engine '
+                    'to use for SQLite storage'
+                )
+            )
 
         return sqlitefilestore(self._dbconn, path, compression)
+
 
 def makefilestorage(orig, requirements, features, **kwargs):
     """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
@@ -1141,15 +1254,21 @@ def makefilestorage(orig, requirements, features, **kwargs):
     else:
         return orig(requirements=requirements, features=features, **kwargs)
 
+
 def makemain(orig, ui, requirements, **kwargs):
     if REQUIREMENT in requirements:
         if REQUIREMENT_ZSTD in requirements and not zstd:
-            raise error.Abort(_('repository uses zstandard compression, which '
-                                'is not available to this Mercurial install'))
+            raise error.Abort(
+                _(
+                    'repository uses zstandard compression, which '
+                    'is not available to this Mercurial install'
+                )
+            )
 
         return sqliterepository
 
     return orig(requirements=requirements, **kwargs)
+
 
 def verifierinit(orig, self, *args, **kwargs):
     orig(self, *args, **kwargs)
@@ -1158,16 +1277,16 @@ def verifierinit(orig, self, *args, **kwargs):
     # advertised. So suppress these warnings.
     self.warnorphanstorefiles = False
 
+
 def extsetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
-    extensions.wrapfunction(localrepo, 'newreporequirements',
-                            newreporequirements)
-    extensions.wrapfunction(localrepo, 'makefilestorage',
-                            makefilestorage)
-    extensions.wrapfunction(localrepo, 'makemain',
-                            makemain)
-    extensions.wrapfunction(verify.verifier, '__init__',
-                            verifierinit)
+    extensions.wrapfunction(
+        localrepo, 'newreporequirements', newreporequirements
+    )
+    extensions.wrapfunction(localrepo, 'makefilestorage', makefilestorage)
+    extensions.wrapfunction(localrepo, 'makemain', makemain)
+    extensions.wrapfunction(verify.verifier, '__init__', verifierinit)
+
 
 def reposetup(ui, repo):
     if isinstance(repo, sqliterepository):

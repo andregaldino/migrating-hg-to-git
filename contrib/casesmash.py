@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 import __builtin__
 import os
-from mercurial import (
-    util,
-)
+from mercurial import util
+
 
 def lowerwrap(scope, funcname):
     f = getattr(scope, funcname)
+
     def wrap(fname, *args, **kwargs):
         d, base = os.path.split(fname)
         try:
@@ -19,10 +19,13 @@ def lowerwrap(scope, funcname):
             if fn.lower() == base.lower():
                 return f(os.path.join(d, fn), *args, **kwargs)
         return f(fname, *args, **kwargs)
+
     scope.__dict__[funcname] = wrap
+
 
 def normcase(path):
     return path.lower()
+
 
 os.path.normcase = normcase
 

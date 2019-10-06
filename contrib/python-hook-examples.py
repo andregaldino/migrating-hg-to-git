@@ -7,6 +7,7 @@ from mercurial import (
     util,
 )
 
+
 def diffstat(ui, repo, **kwargs):
     '''Example usage:
 

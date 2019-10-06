@@ -34,12 +34,8 @@ from . import (
     ui as uimod,
     util,
 )
-from .hgweb import (
-    webcommands,
-)
-from .utils import (
-    compression,
-)
+from .hgweb import webcommands
+from .utils import compression
 
 _exclkeywords = {
     "(ADVANCED)",
@@ -64,7 +60,7 @@ CATEGORY_ORDER = [
     registrar.command.CATEGORY_CHANGE_MANAGEMENT,
     registrar.command.CATEGORY_CHANGE_ORGANIZATION,
     registrar.command.CATEGORY_FILE_CONTENTS,
-    registrar.command.CATEGORY_CHANGE_NAVIGATION ,
+    registrar.command.CATEGORY_CHANGE_NAVIGATION,
     registrar.command.CATEGORY_WORKING_DIRECTORY,
     registrar.command.CATEGORY_IMPORT_EXPORT,
     registrar.command.CATEGORY_MAINTENANCE,
@@ -77,14 +73,12 @@ CATEGORY_ORDER = [
 # Extensions with custom categories should add their names here.
 CATEGORY_NAMES = {
     registrar.command.CATEGORY_REPO_CREATION: 'Repository creation',
-    registrar.command.CATEGORY_REMOTE_REPO_MANAGEMENT:
-        'Remote repository management',
+    registrar.command.CATEGORY_REMOTE_REPO_MANAGEMENT: 'Remote repository management',
     registrar.command.CATEGORY_COMMITTING: 'Change creation',
     registrar.command.CATEGORY_CHANGE_NAVIGATION: 'Change navigation',
     registrar.command.CATEGORY_CHANGE_MANAGEMENT: 'Change manipulation',
     registrar.command.CATEGORY_CHANGE_ORGANIZATION: 'Change organization',
-    registrar.command.CATEGORY_WORKING_DIRECTORY:
-        'Working directory management',
+    registrar.command.CATEGORY_WORKING_DIRECTORY: 'Working directory management',
     registrar.command.CATEGORY_FILE_CONTENTS: 'File content management',
     registrar.command.CATEGORY_IMPORT_EXPORT: 'Change import/export',
     registrar.command.CATEGORY_MAINTENANCE: 'Repository maintenance',
@@ -124,6 +118,7 @@ TOPIC_CATEGORY_NAMES = {
     TOPIC_CATEGORY_NONE: 'Uncategorized topics',
 }
 
+
 def listexts(header, exts, indent=1, showdeprecated=False):
     '''return a text listing of the given extensions'''
     rst = []
@@ -136,14 +131,24 @@ def listexts(header, exts, indent=1, showdeprecated=False):
         rst.insert(0, '\n%s\n\n' % header)
     return rst
 
+
 def extshelp(ui):
     rst = loaddoc('extensions')(ui).splitlines(True)
-    rst.extend(listexts(
-        _('enabled extensions:'), extensions.enabled(), showdeprecated=True))
-    rst.extend(listexts(_('disabled extensions:'), extensions.disabled(),
-                        showdeprecated=ui.verbose))
+    rst.extend(
+        listexts(
+            _('enabled extensions:'), extensions.enabled(), showdeprecated=True
+        )
+    )
+    rst.extend(
+        listexts(
+            _('disabled extensions:'),
+            extensions.disabled(),
+            showdeprecated=ui.verbose,
+        )
+    )
     doc = ''.join(rst)
     return doc
+
 
 def optrst(header, options, verbose):
     data = []
@@ -153,7 +158,7 @@ def optrst(header, options, verbose):
             shortopt, longopt, default, desc, optlabel = option
         else:
             shortopt, longopt, default, desc = option
-            optlabel = _("VALUE") # default label
+            optlabel = _("VALUE")  # default label
 
         if not verbose and any(w in desc for w in _exclkeywords):
             continue
@@ -186,17 +191,19 @@ def optrst(header, options, verbose):
         data.append((so, lo, desc))
 
     if multioccur:
-        header += (_(" ([+] can be repeated)"))
+        header += _(" ([+] can be repeated)")
 
     rst = ['\n%s:\n\n' % header]
     rst.extend(minirst.maketable(data, 1))
 
     return ''.join(rst)
 
+
 def indicateomitted(rst, omitted, notomitted=None):
     rst.append('\n\n.. container:: omitted\n\n    %s\n\n' % omitted)
     if notomitted:
         rst.append('\n\n.. container:: notomitted\n\n    %s\n\n' % notomitted)
+
 
 def filtercmd(ui, cmd, func, kw, doc):
     if not ui.debugflag and cmd.startswith("debug") and kw != "debug":
@@ -220,8 +227,10 @@ def filtercmd(ui, cmd, func, kw, doc):
         return True
     return False
 
+
 def filtertopic(ui, topic):
     return ui.configbool('help', 'hidden-topic.%s' % topic, False)
+
 
 def topicmatch(ui, commands, kw):
     """Return help topics matching kw.
@@ -230,19 +239,24 @@ def topicmatch(ui, commands, kw):
     one of topics, commands, extensions, or extensioncommands.
     """
     kw = encoding.lower(kw)
+
     def lowercontains(container):
         return kw in encoding.lower(container)  # translated in helptable
-    results = {'topics': [],
-               'commands': [],
-               'extensions': [],
-               'extensioncommands': [],
-               }
+
+    results = {
+        'topics': [],
+        'commands': [],
+        'extensions': [],
+        'extensioncommands': [],
+    }
     for topic in helptable:
         names, header, doc = topic[0:3]
         # Old extensions may use a str as doc.
-        if (sum(map(lowercontains, names))
+        if (
+            sum(map(lowercontains, names))
             or lowercontains(header)
-            or (callable(doc) and lowercontains(doc(ui)))):
+            or (callable(doc) and lowercontains(doc(ui)))
+        ):
             name = names[0]
             if not filtertopic(ui, name):
                 results['topics'].append((names[0], header))
@@ -263,8 +277,8 @@ def topicmatch(ui, commands, kw):
                 continue
             results['commands'].append((cmdname, summary))
     for name, docs in itertools.chain(
-        extensions.enabled(False).iteritems(),
-        extensions.disabled().iteritems()):
+        extensions.enabled(False).iteritems(), extensions.disabled().iteritems()
+    ):
         if not docs:
             continue
         name = name.rpartition('.')[-1]
@@ -290,6 +304,7 @@ def topicmatch(ui, commands, kw):
                 results['extensioncommands'].append((cmdname, cmddoc))
     return results
 
+
 def loaddoc(topic, subdir=None):
     """Return a delayed loader for help/topic.txt."""
 
@@ -305,87 +320,201 @@ def loaddoc(topic, subdir=None):
 
     return loader
 
-internalstable = sorted([
-    (['bundle2'], _('Bundle2'),
-     loaddoc('bundle2', subdir='internals')),
-    (['bundles'], _('Bundles'),
-     loaddoc('bundles', subdir='internals')),
-    (['cbor'], _('CBOR'),
-     loaddoc('cbor', subdir='internals')),
-    (['censor'], _('Censor'),
-     loaddoc('censor', subdir='internals')),
-    (['changegroups'], _('Changegroups'),
-     loaddoc('changegroups', subdir='internals')),
-    (['config'], _('Config Registrar'),
-     loaddoc('config', subdir='internals')),
-    (['extensions', 'extension'], _('Extension API'),
-     loaddoc('extensions', subdir='internals')),
-    (['mergestate'], _('Mergestate'),
-     loaddoc('mergestate', subdir='internals')),
-    (['requirements'], _('Repository Requirements'),
-     loaddoc('requirements', subdir='internals')),
-    (['revlogs'], _('Revision Logs'),
-     loaddoc('revlogs', subdir='internals')),
-    (['wireprotocol'], _('Wire Protocol'),
-     loaddoc('wireprotocol', subdir='internals')),
-    (['wireprotocolrpc'], _('Wire Protocol RPC'),
-     loaddoc('wireprotocolrpc', subdir='internals')),
-    (['wireprotocolv2'], _('Wire Protocol Version 2'),
-     loaddoc('wireprotocolv2', subdir='internals')),
-])
+
+internalstable = sorted(
+    [
+        (['bundle2'], _('Bundle2'), loaddoc('bundle2', subdir='internals')),
+        (['bundles'], _('Bundles'), loaddoc('bundles', subdir='internals')),
+        (['cbor'], _('CBOR'), loaddoc('cbor', subdir='internals')),
+        (['censor'], _('Censor'), loaddoc('censor', subdir='internals')),
+        (
+            ['changegroups'],
+            _('Changegroups'),
+            loaddoc('changegroups', subdir='internals'),
+        ),
+        (
+            ['config'],
+            _('Config Registrar'),
+            loaddoc('config', subdir='internals'),
+        ),
+        (
+            ['extensions', 'extension'],
+            _('Extension API'),
+            loaddoc('extensions', subdir='internals'),
+        ),
+        (
+            ['mergestate'],
+            _('Mergestate'),
+            loaddoc('mergestate', subdir='internals'),
+        ),
+        (
+            ['requirements'],
+            _('Repository Requirements'),
+            loaddoc('requirements', subdir='internals'),
+        ),
+        (
+            ['revlogs'],
+            _('Revision Logs'),
+            loaddoc('revlogs', subdir='internals'),
+        ),
+        (
+            ['wireprotocol'],
+            _('Wire Protocol'),
+            loaddoc('wireprotocol', subdir='internals'),
+        ),
+        (
+            ['wireprotocolrpc'],
+            _('Wire Protocol RPC'),
+            loaddoc('wireprotocolrpc', subdir='internals'),
+        ),
+        (
+            ['wireprotocolv2'],
+            _('Wire Protocol Version 2'),
+            loaddoc('wireprotocolv2', subdir='internals'),
+        ),
+    ]
+)
+
 
 def internalshelp(ui):
     """Generate the index for the "internals" topic."""
-    lines = ['To access a subtopic, use "hg help internals.{subtopic-name}"\n',
-             '\n']
+    lines = [
+        'To access a subtopic, use "hg help internals.{subtopic-name}"\n',
+        '\n',
+    ]
     for names, header, doc in internalstable:
         lines.append(' :%s: %s\n' % (names[0], header))
 
     return ''.join(lines)
 
-helptable = sorted([
-    (['bundlespec'], _("Bundle File Formats"), loaddoc('bundlespec'),
-     TOPIC_CATEGORY_CONCEPTS),
-    (['color'], _("Colorizing Outputs"), loaddoc('color'),
-     TOPIC_CATEGORY_OUTPUT),
-    (["config", "hgrc"], _("Configuration Files"), loaddoc('config'),
-     TOPIC_CATEGORY_CONFIG),
-    (['deprecated'], _("Deprecated Features"), loaddoc('deprecated'),
-     TOPIC_CATEGORY_MISC),
-    (["dates"], _("Date Formats"), loaddoc('dates'), TOPIC_CATEGORY_OUTPUT),
-    (["flags"], _("Command-line flags"), loaddoc('flags'),
-     TOPIC_CATEGORY_CONFIG),
-    (["patterns"], _("File Name Patterns"), loaddoc('patterns'),
-     TOPIC_CATEGORY_IDS),
-    (['environment', 'env'], _('Environment Variables'),
-     loaddoc('environment'), TOPIC_CATEGORY_CONFIG),
-    (['revisions', 'revs', 'revsets', 'revset', 'multirevs', 'mrevs'],
-      _('Specifying Revisions'), loaddoc('revisions'), TOPIC_CATEGORY_IDS),
-    (['filesets', 'fileset'], _("Specifying File Sets"), loaddoc('filesets'),
-     TOPIC_CATEGORY_IDS),
-    (['diffs'], _('Diff Formats'), loaddoc('diffs'), TOPIC_CATEGORY_OUTPUT),
-    (['merge-tools', 'mergetools', 'mergetool'], _('Merge Tools'),
-     loaddoc('merge-tools'), TOPIC_CATEGORY_CONFIG),
-    (['templating', 'templates', 'template', 'style'], _('Template Usage'),
-     loaddoc('templates'), TOPIC_CATEGORY_OUTPUT),
-    (['urls'], _('URL Paths'), loaddoc('urls'), TOPIC_CATEGORY_IDS),
-    (["extensions"], _("Using Additional Features"), extshelp,
-     TOPIC_CATEGORY_CONFIG),
-    (["subrepos", "subrepo"], _("Subrepositories"), loaddoc('subrepos'),
-     TOPIC_CATEGORY_CONCEPTS),
-    (["hgweb"], _("Configuring hgweb"), loaddoc('hgweb'),
-     TOPIC_CATEGORY_CONFIG),
-    (["glossary"], _("Glossary"), loaddoc('glossary'), TOPIC_CATEGORY_CONCEPTS),
-    (["hgignore", "ignore"], _("Syntax for Mercurial Ignore Files"),
-     loaddoc('hgignore'), TOPIC_CATEGORY_IDS),
-    (["phases"], _("Working with Phases"), loaddoc('phases'),
-     TOPIC_CATEGORY_CONCEPTS),
-    (['scripting'], _('Using Mercurial from scripts and automation'),
-     loaddoc('scripting'), TOPIC_CATEGORY_MISC),
-    (['internals'], _("Technical implementation topics"), internalshelp,
-     TOPIC_CATEGORY_MISC),
-    (['pager'], _("Pager Support"), loaddoc('pager'), TOPIC_CATEGORY_CONFIG),
-])
+
+helptable = sorted(
+    [
+        (
+            ['bundlespec'],
+            _("Bundle File Formats"),
+            loaddoc('bundlespec'),
+            TOPIC_CATEGORY_CONCEPTS,
+        ),
+        (
+            ['color'],
+            _("Colorizing Outputs"),
+            loaddoc('color'),
+            TOPIC_CATEGORY_OUTPUT,
+        ),
+        (
+            ["config", "hgrc"],
+            _("Configuration Files"),
+            loaddoc('config'),
+            TOPIC_CATEGORY_CONFIG,
+        ),
+        (
+            ['deprecated'],
+            _("Deprecated Features"),
+            loaddoc('deprecated'),
+            TOPIC_CATEGORY_MISC,
+        ),
+        (["dates"], _("Date Formats"), loaddoc('dates'), TOPIC_CATEGORY_OUTPUT),
+        (
+            ["flags"],
+            _("Command-line flags"),
+            loaddoc('flags'),
+            TOPIC_CATEGORY_CONFIG,
+        ),
+        (
+            ["patterns"],
+            _("File Name Patterns"),
+            loaddoc('patterns'),
+            TOPIC_CATEGORY_IDS,
+        ),
+        (
+            ['environment', 'env'],
+            _('Environment Variables'),
+            loaddoc('environment'),
+            TOPIC_CATEGORY_CONFIG,
+        ),
+        (
+            ['revisions', 'revs', 'revsets', 'revset', 'multirevs', 'mrevs'],
+            _('Specifying Revisions'),
+            loaddoc('revisions'),
+            TOPIC_CATEGORY_IDS,
+        ),
+        (
+            ['filesets', 'fileset'],
+            _("Specifying File Sets"),
+            loaddoc('filesets'),
+            TOPIC_CATEGORY_IDS,
+        ),
+        (['diffs'], _('Diff Formats'), loaddoc('diffs'), TOPIC_CATEGORY_OUTPUT),
+        (
+            ['merge-tools', 'mergetools', 'mergetool'],
+            _('Merge Tools'),
+            loaddoc('merge-tools'),
+            TOPIC_CATEGORY_CONFIG,
+        ),
+        (
+            ['templating', 'templates', 'template', 'style'],
+            _('Template Usage'),
+            loaddoc('templates'),
+            TOPIC_CATEGORY_OUTPUT,
+        ),
+        (['urls'], _('URL Paths'), loaddoc('urls'), TOPIC_CATEGORY_IDS),
+        (
+            ["extensions"],
+            _("Using Additional Features"),
+            extshelp,
+            TOPIC_CATEGORY_CONFIG,
+        ),
+        (
+            ["subrepos", "subrepo"],
+            _("Subrepositories"),
+            loaddoc('subrepos'),
+            TOPIC_CATEGORY_CONCEPTS,
+        ),
+        (
+            ["hgweb"],
+            _("Configuring hgweb"),
+            loaddoc('hgweb'),
+            TOPIC_CATEGORY_CONFIG,
+        ),
+        (
+            ["glossary"],
+            _("Glossary"),
+            loaddoc('glossary'),
+            TOPIC_CATEGORY_CONCEPTS,
+        ),
+        (
+            ["hgignore", "ignore"],
+            _("Syntax for Mercurial Ignore Files"),
+            loaddoc('hgignore'),
+            TOPIC_CATEGORY_IDS,
+        ),
+        (
+            ["phases"],
+            _("Working with Phases"),
+            loaddoc('phases'),
+            TOPIC_CATEGORY_CONCEPTS,
+        ),
+        (
+            ['scripting'],
+            _('Using Mercurial from scripts and automation'),
+            loaddoc('scripting'),
+            TOPIC_CATEGORY_MISC,
+        ),
+        (
+            ['internals'],
+            _("Technical implementation topics"),
+            internalshelp,
+            TOPIC_CATEGORY_MISC,
+        ),
+        (
+            ['pager'],
+            _("Pager Support"),
+            loaddoc('pager'),
+            TOPIC_CATEGORY_CONFIG,
+        ),
+    ]
+)
 
 # Maps topics with sub-topics to a list of their sub-topics.
 subtopics = {
@@ -396,8 +525,10 @@ subtopics = {
 # returning the updated version
 helphooks = {}
 
+
 def addtopichook(topic, rewriter):
     helphooks.setdefault(topic, []).append(rewriter)
+
 
 def makeitemsdoc(ui, topic, doc, marker, items, dedent=False):
     """Extract docstring from the items key to function mapping, build a
@@ -406,8 +537,7 @@ def makeitemsdoc(ui, topic, doc, marker, items, dedent=False):
     entries = []
     for name in sorted(items):
         text = (pycompat.getdoc(items[name]) or '').rstrip()
-        if (not text
-            or not ui.verbose and any(w in text for w in _exclkeywords)):
+        if not text or not ui.verbose and any(w in text for w in _exclkeywords):
             continue
         text = gettext(text)
         if dedent:
@@ -427,35 +557,54 @@ def makeitemsdoc(ui, topic, doc, marker, items, dedent=False):
     entries = '\n\n'.join(entries)
     return doc.replace(marker, entries)
 
+
 def addtopicsymbols(topic, marker, symbols, dedent=False):
     def add(ui, topic, doc):
         return makeitemsdoc(ui, topic, doc, marker, symbols, dedent=dedent)
+
     addtopichook(topic, add)
 
-addtopicsymbols('bundlespec', '.. bundlecompressionmarker',
-                compression.bundlecompressiontopics())
+
+addtopicsymbols(
+    'bundlespec',
+    '.. bundlecompressionmarker',
+    compression.bundlecompressiontopics(),
+)
 addtopicsymbols('filesets', '.. predicatesmarker', fileset.symbols)
-addtopicsymbols('merge-tools', '.. internaltoolsmarker',
-                filemerge.internalsdoc)
+addtopicsymbols('merge-tools', '.. internaltoolsmarker', filemerge.internalsdoc)
 addtopicsymbols('revisions', '.. predicatesmarker', revset.symbols)
 addtopicsymbols('templates', '.. keywordsmarker', templatekw.keywords)
 addtopicsymbols('templates', '.. filtersmarker', templatefilters.filters)
 addtopicsymbols('templates', '.. functionsmarker', templatefuncs.funcs)
-addtopicsymbols('hgweb', '.. webcommandsmarker', webcommands.commands,
-                dedent=True)
+addtopicsymbols(
+    'hgweb', '.. webcommandsmarker', webcommands.commands, dedent=True
+)
+
 
 def inserttweakrc(ui, topic, doc):
     marker = '.. tweakdefaultsmarker'
     repl = uimod.tweakrc
+
     def sub(m):
         lines = [m.group(1) + s for s in repl.splitlines()]
         return '\n'.join(lines)
+
     return re.sub(br'( *)%s' % re.escape(marker), sub, doc)
+
 
 addtopichook('config', inserttweakrc)
 
-def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
-          fullname=None, **opts):
+
+def help_(
+    ui,
+    commands,
+    name,
+    unknowncmd=False,
+    full=True,
+    subtopic=None,
+    fullname=None,
+    **opts
+):
     '''
     Generate the help for 'name' as unformatted restructured text. If
     'name' is None, describe the commands available.
@@ -465,8 +614,9 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
 
     def helpcmd(name, subtopic=None):
         try:
-            aliases, entry = cmdutil.findcmd(name, commands.table,
-                                             strict=unknowncmd)
+            aliases, entry = cmdutil.findcmd(
+                name, commands.table, strict=unknowncmd
+            )
         except error.AmbiguousCommand as inst:
             # py3 fix: except vars can't be used outside the scope of the
             # except block, nor can be used inside a lambda. python issue4617
@@ -507,11 +657,17 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
         if util.safehasattr(entry[0], 'definition'):  # aliased command
             source = entry[0].source
             if entry[0].definition.startswith('!'):  # shell alias
-                doc = (_('shell alias for: %s\n\n%s\n\ndefined by: %s\n') %
-                       (entry[0].definition[1:], doc, source))
+                doc = _('shell alias for: %s\n\n%s\n\ndefined by: %s\n') % (
+                    entry[0].definition[1:],
+                    doc,
+                    source,
+                )
             else:
-                doc = (_('alias for: hg %s\n\n%s\n\ndefined by: %s\n') %
-                       (entry[0].definition, doc, source))
+                doc = _('alias for: hg %s\n\n%s\n\ndefined by: %s\n') % (
+                    entry[0].definition,
+                    doc,
+                    source,
+                )
         doc = doc.splitlines(True)
         if ui.quiet or not full:
             rst.append(doc[0])
@@ -525,8 +681,9 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             mod = extensions.find(name)
             doc = gettext(pycompat.getdoc(mod)) or ''
             if '\n' in doc.strip():
-                msg = _("(use 'hg help -e %s' to show help for "
-                        "the %s extension)") % (name, name)
+                msg = _(
+                    "(use 'hg help -e %s' to show help for " "the %s extension)"
+                ) % (name, name)
                 rst.append('\n%s\n' % msg)
         except KeyError:
             pass
@@ -536,16 +693,20 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             rst.append(optrst(_("options"), entry[1], ui.verbose))
 
         if ui.verbose:
-            rst.append(optrst(_("global options"),
-                              commands.globalopts, ui.verbose))
+            rst.append(
+                optrst(_("global options"), commands.globalopts, ui.verbose)
+            )
 
         if not ui.verbose:
             if not full:
-                rst.append(_("\n(use 'hg %s -h' to show more help)\n")
-                           % name)
+                rst.append(_("\n(use 'hg %s -h' to show more help)\n") % name)
             elif not ui.quiet:
-                rst.append(_('\n(some details hidden, use --verbose '
-                               'to show complete help)'))
+                rst.append(
+                    _(
+                        '\n(some details hidden, use --verbose '
+                        'to show complete help)'
+                    )
+                )
 
         return rst
 
@@ -572,7 +733,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             h[f] = doc.splitlines()[0].rstrip()
 
             cat = getattr(func, 'helpcategory', None) or (
-                registrar.command.CATEGORY_NONE)
+                registrar.command.CATEGORY_NONE
+            )
             cats.setdefault(cat, []).append(f)
 
         rst = []
@@ -605,8 +767,10 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             # Check that all categories have an order.
             missing_order = set(cats.keys()) - set(CATEGORY_ORDER)
             if missing_order:
-                ui.develwarn('help categories missing from CATEGORY_ORDER: %s' %
-                             missing_order)
+                ui.develwarn(
+                    'help categories missing from CATEGORY_ORDER: %s'
+                    % missing_order
+                )
 
             # List per category.
             for cat in CATEGORY_ORDER:
@@ -619,10 +783,13 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
                     appendcmds(catfns)
 
         ex = opts.get
-        anyopts = (ex(r'keyword') or not (ex(r'command') or ex(r'extension')))
+        anyopts = ex(r'keyword') or not (ex(r'command') or ex(r'extension'))
         if not name and anyopts:
-            exts = listexts(_('enabled extensions:'), extensions.enabled(),
-                            showdeprecated=ui.verbose)
+            exts = listexts(
+                _('enabled extensions:'),
+                extensions.enabled(),
+                showdeprecated=ui.verbose,
+            )
             if exts:
                 rst.append('\n')
                 rst.extend(exts)
@@ -640,14 +807,16 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
                 topicname = names[0]
                 if not filtertopic(ui, topicname):
                     topiccats.setdefault(category, []).append(
-                        (topicname, header))
+                        (topicname, header)
+                    )
 
             # Check that all categories have an order.
             missing_order = set(topiccats.keys()) - set(TOPIC_CATEGORY_ORDER)
             if missing_order:
                 ui.develwarn(
-                    'help categories missing from TOPIC_CATEGORY_ORDER: %s' %
-                    missing_order)
+                    'help categories missing from TOPIC_CATEGORY_ORDER: %s'
+                    % missing_order
+                )
 
             # Output topics per category.
             for cat in TOPIC_CATEGORY_ORDER:
@@ -663,25 +832,43 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
         if ui.quiet:
             pass
         elif ui.verbose:
-            rst.append('\n%s\n' % optrst(_("global options"),
-                                         commands.globalopts, ui.verbose))
+            rst.append(
+                '\n%s\n'
+                % optrst(_("global options"), commands.globalopts, ui.verbose)
+            )
             if name == 'shortlist':
-                rst.append(_("\n(use 'hg help' for the full list "
-                             "of commands)\n"))
+                rst.append(
+                    _("\n(use 'hg help' for the full list " "of commands)\n")
+                )
         else:
             if name == 'shortlist':
-                rst.append(_("\n(use 'hg help' for the full list of commands "
-                             "or 'hg -v' for details)\n"))
+                rst.append(
+                    _(
+                        "\n(use 'hg help' for the full list of commands "
+                        "or 'hg -v' for details)\n"
+                    )
+                )
             elif name and not full:
-                rst.append(_("\n(use 'hg help %s' to show the full help "
-                             "text)\n") % name)
+                rst.append(
+                    _("\n(use 'hg help %s' to show the full help " "text)\n")
+                    % name
+                )
             elif name and syns and name in syns.keys():
-                rst.append(_("\n(use 'hg help -v -e %s' to show built-in "
-                             "aliases and global options)\n") % name)
+                rst.append(
+                    _(
+                        "\n(use 'hg help -v -e %s' to show built-in "
+                        "aliases and global options)\n"
+                    )
+                    % name
+                )
             else:
-                rst.append(_("\n(use 'hg help -v%s' to show built-in aliases "
-                             "and global options)\n")
-                           % (name and " " + name or ""))
+                rst.append(
+                    _(
+                        "\n(use 'hg help -v%s' to show built-in aliases "
+                        "and global options)\n"
+                    )
+                    % (name and " " + name or "")
+                )
         return rst
 
     def helptopic(name, subtopic=None):
@@ -711,14 +898,17 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             rst += ["    %s\n" % l for l in doc(ui).splitlines()]
 
         if not ui.verbose:
-            omitted = _('(some details hidden, use --verbose'
-                         ' to show complete help)')
+            omitted = _(
+                '(some details hidden, use --verbose' ' to show complete help)'
+            )
             indicateomitted(rst, omitted)
 
         try:
             cmdutil.findcmd(name, commands.table)
-            rst.append(_("\nuse 'hg help -c %s' to see help for "
-                       "the %s command\n") % (name, name))
+            rst.append(
+                _("\nuse 'hg help -c %s' to see help for " "the %s command\n")
+                % (name, name)
+            )
         except error.UnknownCommand:
             pass
         return rst
@@ -743,8 +933,9 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             rst.append('\n')
 
         if not ui.verbose:
-            omitted = _('(some details hidden, use --verbose'
-                         ' to show complete help)')
+            omitted = _(
+                '(some details hidden, use --verbose' ' to show complete help)'
+            )
             indicateomitted(rst, omitted)
 
         if mod:
@@ -755,23 +946,34 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             modcmds = {c.partition('|')[0] for c in ct}
             rst.extend(helplist(modcmds.__contains__))
         else:
-            rst.append(_("(use 'hg help extensions' for information on enabling"
-                       " extensions)\n"))
+            rst.append(
+                _(
+                    "(use 'hg help extensions' for information on enabling"
+                    " extensions)\n"
+                )
+            )
         return rst
 
     def helpextcmd(name, subtopic=None):
-        cmd, ext, doc = extensions.disabledcmd(ui, name,
-                                               ui.configbool('ui', 'strict'))
+        cmd, ext, doc = extensions.disabledcmd(
+            ui, name, ui.configbool('ui', 'strict')
+        )
         doc = doc.splitlines()[0]
 
-        rst = listexts(_("'%s' is provided by the following "
-                              "extension:") % cmd, {ext: doc}, indent=4,
-                       showdeprecated=True)
+        rst = listexts(
+            _("'%s' is provided by the following " "extension:") % cmd,
+            {ext: doc},
+            indent=4,
+            showdeprecated=True,
+        )
         rst.append('\n')
-        rst.append(_("(use 'hg help extensions' for information on enabling "
-                   "extensions)\n"))
+        rst.append(
+            _(
+                "(use 'hg help extensions' for information on enabling "
+                "extensions)\n"
+            )
+        )
         return rst
-
 
     rst = []
     kw = opts.get('keyword')
@@ -783,10 +985,12 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
         if opts.get('command'):
             helpareas += [('commands', _('Commands'))]
         if not helpareas:
-            helpareas = [('topics', _('Topics')),
-                         ('commands', _('Commands')),
-                         ('extensions', _('Extensions')),
-                         ('extensioncommands', _('Extension Commands'))]
+            helpareas = [
+                ('topics', _('Topics')),
+                ('commands', _('Commands')),
+                ('extensions', _('Extensions')),
+                ('extensioncommands', _('Extension Commands')),
+            ]
         for t, title in helpareas:
             if matches[t]:
                 rst.append('%s:\n\n' % title)
@@ -835,8 +1039,10 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
 
     return ''.join(rst)
 
-def formattedhelp(ui, commands, fullname, keep=None, unknowncmd=False,
-                  full=True, **opts):
+
+def formattedhelp(
+    ui, commands, fullname, keep=None, unknowncmd=False, full=True, **opts
+):
     """get help for a given topic (as a dotted name) as rendered rst
 
     Either returns the rendered help text or raises an exception.
@@ -844,7 +1050,7 @@ def formattedhelp(ui, commands, fullname, keep=None, unknowncmd=False,
     if keep is None:
         keep = []
     else:
-        keep = list(keep) # make a copy so we can mutate this later
+        keep = list(keep)  # make a copy so we can mutate this later
 
     # <fullname> := <name>[.<subtopic][.<section>]
     name = subtopic = section = None
@@ -860,8 +1066,16 @@ def formattedhelp(ui, commands, fullname, keep=None, unknowncmd=False,
     termwidth = ui.termwidth() - 2
     if textwidth <= 0 or termwidth < textwidth:
         textwidth = termwidth
-    text = help_(ui, commands, name, fullname=fullname,
-                 subtopic=subtopic, unknowncmd=unknowncmd, full=full, **opts)
+    text = help_(
+        ui,
+        commands,
+        name,
+        fullname=fullname,
+        subtopic=subtopic,
+        unknowncmd=unknowncmd,
+        full=full,
+        **opts
+    )
 
     blocks, pruned = minirst.parse(text, keep=keep)
     if 'verbose' in pruned:

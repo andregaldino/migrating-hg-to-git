@@ -12,9 +12,7 @@ import errno
 import json
 import traceback
 
-from mercurial.hgweb import (
-    common as hgwebcommon,
-)
+from mercurial.hgweb import common as hgwebcommon
 
 from mercurial import (
     exthelper,
@@ -34,6 +32,7 @@ HTTP_NOT_ACCEPTABLE = hgwebcommon.HTTP_NOT_ACCEPTABLE
 HTTP_UNSUPPORTED_MEDIA_TYPE = hgwebcommon.HTTP_UNSUPPORTED_MEDIA_TYPE
 
 eh = exthelper.exthelper()
+
 
 @eh.wrapfunction(wireprotoserver, 'handlewsgirequest')
 def handlewsgirequest(orig, rctx, req, res, checkperm):
@@ -59,9 +58,9 @@ def handlewsgirequest(orig, rctx, req, res, checkperm):
         # TODO: reserve and use a path in the proposed http wireprotocol /api/
         #       namespace?
         elif req.dispatchpath.startswith(b'.hg/lfs/objects'):
-            return _processbasictransfer(rctx.repo, req, res,
-                                         lambda perm:
-                                                checkperm(rctx, req, perm))
+            return _processbasictransfer(
+                rctx.repo, req, res, lambda perm: checkperm(rctx, req, perm)
+            )
         return False
     except hgwebcommon.ErrorResponse as e:
         # XXX: copied from the handler surrounding wireprotoserver._callhttp()
@@ -73,10 +72,12 @@ def handlewsgirequest(orig, rctx, req, res, checkperm):
         res.setbodybytes(b'0\n%s\n' % pycompat.bytestr(e))
         return True
 
+
 def _sethttperror(res, code, message=None):
     res.status = hgwebcommon.statusmessage(code, message=message)
     res.headers[b'Content-Type'] = b'text/plain; charset=utf-8'
     res.setbodybytes(b'')
+
 
 def _logexception(req):
     """Write information about the current exception to wsgi.errors."""
@@ -88,8 +89,10 @@ def _logexception(req):
         uri += req.apppath
     uri += b'/' + req.dispatchpath
 
-    errorlog.write(b"Exception happened while processing request '%s':\n%s" %
-                   (uri, tb))
+    errorlog.write(
+        b"Exception happened while processing request '%s':\n%s" % (uri, tb)
+    )
+
 
 def _processbatchrequest(repo, req, res):
     """Handle a request for the Batch API, which is the gateway to granting file
@@ -134,22 +137,32 @@ def _processbatchrequest(repo, req, res):
 
     # If no transfer handlers are explicitly requested, 'basic' is assumed.
     if r'basic' not in lfsreq.get(r'transfers', [r'basic']):
-        _sethttperror(res, HTTP_BAD_REQUEST,
-                      b'Only the basic LFS transfer handler is supported')
+        _sethttperror(
+            res,
+            HTTP_BAD_REQUEST,
+            b'Only the basic LFS transfer handler is supported',
+        )
         return True
 
     operation = lfsreq.get(r'operation')
     operation = pycompat.bytestr(operation)
 
     if operation not in (b'upload', b'download'):
-        _sethttperror(res, HTTP_BAD_REQUEST,
-                      b'Unsupported LFS transfer operation: %s' % operation)
+        _sethttperror(
+            res,
+            HTTP_BAD_REQUEST,
+            b'Unsupported LFS transfer operation: %s' % operation,
+        )
         return True
 
     localstore = repo.svfs.lfslocalblobstore
 
-    objects = [p for p in _batchresponseobjects(req, lfsreq.get(r'objects', []),
-                                                operation, localstore)]
+    objects = [
+        p
+        for p in _batchresponseobjects(
+            req, lfsreq.get(r'objects', []), operation, localstore
+        )
+    ]
 
     rsp = {
         r'transfer': r'basic',
@@ -161,6 +174,7 @@ def _processbatchrequest(repo, req, res):
     res.setbodybytes(pycompat.bytestr(json.dumps(rsp)))
 
     return True
+
 
 def _batchresponseobjects(req, objects, action, store):
     """Yield one dictionary of attributes for the Batch API response for each
@@ -197,7 +211,7 @@ def _batchresponseobjects(req, objects, action, store):
         rsp = {
             r'oid': soid,
             r'size': obj.get(r'size'),  # XXX: should this check the local size?
-            #r'authenticated': True,
+            # r'authenticated': True,
         }
 
         exists = True
@@ -222,7 +236,7 @@ def _batchresponseobjects(req, objects, action, store):
 
                 rsp[r'error'] = {
                     r'code': 500,
-                    r'message': inst.strerror or r'Internal Server Server'
+                    r'message': inst.strerror or r'Internal Server Server',
                 }
                 yield rsp
                 continue
@@ -235,15 +249,15 @@ def _batchresponseobjects(req, objects, action, store):
             if not exists:
                 rsp[r'error'] = {
                     r'code': 404,
-                    r'message': r"The object does not exist"
+                    r'message': r"The object does not exist",
                 }
                 yield rsp
                 continue
 
             elif not verifies:
                 rsp[r'error'] = {
-                    r'code': 422,   # XXX: is this the right code?
-                    r'message': r"The object is corrupt"
+                    r'code': 422,  # XXX: is this the right code?
+                    r'message': r"The object is corrupt",
                 }
                 yield rsp
                 continue
@@ -258,9 +272,7 @@ def _batchresponseobjects(req, objects, action, store):
             # The spec doesn't mention the Accept header here, but avoid
             # a gratuitous deviation from lfs-test-server in the test
             # output.
-            hdr = {
-                r'Accept': r'application/vnd.git-lfs'
-            }
+            hdr = {r'Accept': r'application/vnd.git-lfs'}
 
             auth = req.headers.get(b'Authorization', b'')
             if auth.startswith(b'Basic '):
@@ -269,9 +281,11 @@ def _batchresponseobjects(req, objects, action, store):
             return hdr
 
         rsp[r'actions'] = {
-            r'%s' % pycompat.strurl(action): {
-                r'href': pycompat.strurl(b'%s%s/.hg/lfs/objects/%s'
-                    % (req.baseurl, req.apppath, oid)),
+            r'%s'
+            % pycompat.strurl(action): {
+                r'href': pycompat.strurl(
+                    b'%s%s/.hg/lfs/objects/%s' % (req.baseurl, req.apppath, oid)
+                ),
                 # datetime.isoformat() doesn't include the 'Z' suffix
                 r"expires_at": expiresat.strftime(r'%Y-%m-%dT%H:%M:%SZ'),
                 r'header': _buildheader(),
@@ -279,6 +293,7 @@ def _batchresponseobjects(req, objects, action, store):
         }
 
         yield rsp
+
 
 def _processbasictransfer(repo, req, res, checkperm):
     """Handle a single file upload (PUT) or download (GET) action for the Basic
@@ -347,6 +362,9 @@ def _processbasictransfer(repo, req, res, checkperm):
 
         return True
     else:
-        _sethttperror(res, HTTP_METHOD_NOT_ALLOWED,
-                      message=b'Unsupported LFS transfer method: %s' % method)
+        _sethttperror(
+            res,
+            HTTP_METHOD_NOT_ALLOWED,
+            message=b'Unsupported LFS transfer method: %s' % method,
+        )
         return True

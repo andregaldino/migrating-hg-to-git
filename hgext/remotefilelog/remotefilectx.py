@@ -22,15 +22,25 @@ from . import shallowutil
 propertycache = util.propertycache
 FASTLOG_TIMEOUT_IN_SECS = 0.5
 
+
 class remotefilectx(context.filectx):
-    def __init__(self, repo, path, changeid=None, fileid=None,
-                 filelog=None, changectx=None, ancestormap=None):
+    def __init__(
+        self,
+        repo,
+        path,
+        changeid=None,
+        fileid=None,
+        filelog=None,
+        changectx=None,
+        ancestormap=None,
+    ):
         if fileid == nullrev:
             fileid = nullid
         if fileid and len(fileid) == 40:
             fileid = bin(fileid)
-        super(remotefilectx, self).__init__(repo, path, changeid,
-            fileid, filelog, changectx)
+        super(remotefilectx, self).__init__(
+            repo, path, changeid, fileid, filelog, changectx
+        )
         self._ancestormap = ancestormap
 
     def size(self):
@@ -45,8 +55,9 @@ class remotefilectx(context.filectx):
         elif r'_descendantrev' in self.__dict__:
             # this file context was created from a revision with a known
             # descendant, we can (lazily) correct for linkrev aliases
-            linknode = self._adjustlinknode(self._path, self._filelog,
-                                            self._filenode, self._descendantrev)
+            linknode = self._adjustlinknode(
+                self._path, self._filelog, self._filenode, self._descendantrev
+            )
             return self._repo.unfiltered().changelog.rev(linknode)
         else:
             return self.linkrev()
@@ -54,8 +65,13 @@ class remotefilectx(context.filectx):
     def filectx(self, fileid, changeid=None):
         '''opens an arbitrary revision of the file without
         opening a new filelog'''
-        return remotefilectx(self._repo, self._path, fileid=fileid,
-                             filelog=self._filelog, changeid=changeid)
+        return remotefilectx(
+            self._repo,
+            self._path,
+            fileid=fileid,
+            filelog=self._filelog,
+            changeid=changeid,
+        )
 
     def linkrev(self):
         return self._linkrev
@@ -79,8 +95,10 @@ class remotefilectx(context.filectx):
 
         for rev in range(len(cl) - 1, 0, -1):
             node = cl.node(rev)
-            data = cl.read(node) # get changeset data (we avoid object creation)
-            if path in data[3]: # checking the 'files' field.
+            data = cl.read(
+                node
+            )  # get changeset data (we avoid object creation)
+            if path in data[3]:  # checking the 'files' field.
                 # The file has been touched, check if the hash is what we're
                 # looking for.
                 if fileid == mfl[data[0]].readfast().get(path):
@@ -104,9 +122,13 @@ class remotefilectx(context.filectx):
         noctx = not (r'_changeid' in attrs or r'_changectx' in attrs)
         if noctx or self.rev() == lkr:
             return lkr
-        linknode = self._adjustlinknode(self._path, self._filelog,
-                                        self._filenode, self.rev(),
-                                        inclusive=True)
+        linknode = self._adjustlinknode(
+            self._path,
+            self._filelog,
+            self._filenode,
+            self.rev(),
+            inclusive=True,
+        )
         return self._repo.changelog.rev(linknode)
 
     def renamed(self):
@@ -155,16 +177,18 @@ class remotefilectx(context.filectx):
         if p1 != nullid:
             path = copyfrom or self._path
             flog = repo.file(path)
-            p1ctx = remotefilectx(repo, path, fileid=p1, filelog=flog,
-                                  ancestormap=ancestormap)
+            p1ctx = remotefilectx(
+                repo, path, fileid=p1, filelog=flog, ancestormap=ancestormap
+            )
             p1ctx._descendantrev = self.rev()
             results.append(p1ctx)
 
         if p2 != nullid:
             path = self._path
             flog = repo.file(path)
-            p2ctx = remotefilectx(repo, path, fileid=p2, filelog=flog,
-                                  ancestormap=ancestormap)
+            p2ctx = remotefilectx(
+                repo, path, fileid=p2, filelog=flog, ancestormap=ancestormap
+            )
             p2ctx._descendantrev = self.rev()
             results.append(p2ctx)
 
@@ -172,7 +196,7 @@ class remotefilectx(context.filectx):
 
     def _nodefromancrev(self, ancrev, cl, mfl, path, fnode):
         """returns the node for <path> in <ancrev> if content matches <fnode>"""
-        ancctx = cl.read(ancrev) # This avoids object creation.
+        ancctx = cl.read(ancrev)  # This avoids object creation.
         manifestnode, files = ancctx[0], ancctx[3]
         # If the file was touched in this ancestor, and the content is similar
         # to the one we are searching for.
@@ -214,7 +238,7 @@ class remotefilectx(context.filectx):
         if srcrev is None:
             # wctx case, used by workingfilectx during mergecopy
             revs = [p.rev() for p in self._repo[None].parents()]
-            inclusive = True # we skipped the real (revless) source
+            inclusive = True  # we skipped the real (revless) source
         else:
             revs = [srcrev]
 
@@ -247,16 +271,16 @@ class remotefilectx(context.filectx):
                 # TODO: there used to be a codepath to fetch linknodes
                 # from a server as a fast path, but it appeared to
                 # depend on an API FB added to their phabricator.
-                lnode = self._forceprefetch(repo, path, fnode, revs,
-                                            commonlogkwargs)
+                lnode = self._forceprefetch(
+                    repo, path, fnode, revs, commonlogkwargs
+                )
                 if lnode:
                     return lnode
                 seenpublic = True
 
         return linknode
 
-    def _forceprefetch(self, repo, path, fnode, revs,
-                       commonlogkwargs):
+    def _forceprefetch(self, repo, path, fnode, revs, commonlogkwargs):
         # This next part is super non-obvious, so big comment block time!
         #
         # It is possible to get extremely bad performance here when a fairly
@@ -307,7 +331,7 @@ class remotefilectx(context.filectx):
             # we need to rebuild the ancestor map to recompute the
             # linknodes.
             self._ancestormap = None
-            linknode = self.ancestormap()[fnode][2] # 2 is linknode
+            linknode = self.ancestormap()[fnode][2]  # 2 is linknode
             if self._verifylinknode(revs, linknode):
                 logmsg = 'remotefilelog prefetching succeeded'
                 return linknode
@@ -318,8 +342,12 @@ class remotefilectx(context.filectx):
             return None
         finally:
             elapsed = time.time() - start
-            repo.ui.log('linkrevfixup', logmsg + '\n', elapsed=elapsed * 1000,
-                        **commonlogkwargs)
+            repo.ui.log(
+                'linkrevfixup',
+                logmsg + '\n',
+                elapsed=elapsed * 1000,
+                **commonlogkwargs
+            )
 
     def _verifylinknode(self, revs, linknode):
         """
@@ -370,7 +398,7 @@ class remotefilectx(context.filectx):
 
         # Sort by linkrev
         # The copy tracing algorithm depends on these coming out in order
-        ancestors = sorted(ancestors, reverse=True, key=lambda x:x.linkrev())
+        ancestors = sorted(ancestors, reverse=True, key=lambda x: x.linkrev())
 
         for ancestor in ancestors:
             yield ancestor
@@ -404,8 +432,7 @@ class remotefilectx(context.filectx):
         result = ancestor.genericancestor(a, b, parents)
         if result:
             f, n = result
-            r = remotefilectx(self._repo, f, fileid=n,
-                                 ancestormap=amap)
+            r = remotefilectx(self._repo, f, fileid=n, ancestormap=amap)
             return r
 
         return None
@@ -417,11 +444,14 @@ class remotefilectx(context.filectx):
             # use introrev so prefetchskip can be accurately tested
             introrev = self.introrev()
             if self.rev() != introrev:
-                introctx = remotefilectx(self._repo, self._path,
-                                         changeid=introrev,
-                                         fileid=self._filenode,
-                                         filelog=self._filelog,
-                                         ancestormap=self._ancestormap)
+                introctx = remotefilectx(
+                    self._repo,
+                    self._path,
+                    changeid=introrev,
+                    fileid=self._filenode,
+                    filelog=self._filelog,
+                    ancestormap=self._ancestormap,
+                )
 
         # like self.ancestors, but append to "fetch" and skip visiting parents
         # of nodes in "prefetchskip".
@@ -442,8 +472,9 @@ class remotefilectx(context.filectx):
                     seen.add(parent.node())
                     queue.append(parent)
 
-        self._repo.ui.debug('remotefilelog: prefetching %d files '
-                            'for annotate\n' % len(fetch))
+        self._repo.ui.debug(
+            'remotefilelog: prefetching %d files ' 'for annotate\n' % len(fetch)
+        )
         if fetch:
             self._repo.fileservice.prefetch(fetch)
         return super(remotefilectx, self).annotate(*args, **kwargs)
@@ -452,11 +483,13 @@ class remotefilectx(context.filectx):
     def children(self):
         return []
 
+
 class remoteworkingfilectx(context.workingfilectx, remotefilectx):
     def __init__(self, repo, path, filelog=None, workingctx=None):
         self._ancestormap = None
-        super(remoteworkingfilectx, self).__init__(repo, path, filelog,
-                                                   workingctx)
+        super(remoteworkingfilectx, self).__init__(
+            repo, path, filelog, workingctx
+        )
 
     def parents(self):
         return remotefilectx.parents(self)

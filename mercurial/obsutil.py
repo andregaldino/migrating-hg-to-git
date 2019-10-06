@@ -17,9 +17,7 @@ from . import (
     phases,
     util,
 )
-from .utils import (
-    dateutil,
-)
+from .utils import dateutil
 
 ### obsolescence marker flag
 
@@ -53,6 +51,7 @@ from .utils import (
 # "bumped" here.
 bumpedfix = 1
 usingsha256 = 2
+
 
 class marker(object):
     """Wrap obsolete marker raw data"""
@@ -95,6 +94,7 @@ class marker(object):
         """The flags field of the marker"""
         return self._data[2]
 
+
 def getmarkers(repo, nodes=None, exclusive=False):
     """returns markers known in a repository
 
@@ -109,6 +109,7 @@ def getmarkers(repo, nodes=None, exclusive=False):
 
     for markerdata in rawmarkers:
         yield marker(repo, markerdata)
+
 
 def closestpredecessors(repo, nodeid):
     """yield the list of next predecessors pointing on visible changectx nodes
@@ -138,6 +139,7 @@ def closestpredecessors(repo, nodeid):
             else:
                 stack.append(precnodeid)
 
+
 def allpredecessors(obsstore, nodes, ignoreflags=0):
     """Yield node for every precursors of <nodes>.
 
@@ -161,6 +163,7 @@ def allpredecessors(obsstore, nodes, ignoreflags=0):
                 seen.add(suc)
                 remaining.add(suc)
 
+
 def allsuccessors(obsstore, nodes, ignoreflags=0):
     """Yield node for every successor of <nodes>.
 
@@ -182,9 +185,11 @@ def allsuccessors(obsstore, nodes, ignoreflags=0):
                     seen.add(suc)
                     remaining.add(suc)
 
+
 def _filterprunes(markers):
     """return a set with no prune markers"""
     return set(m for m in markers if m[1])
+
 
 def exclusivemarkers(repo, nodes):
     """set of markers relevant to "nodes" but no other locally-known nodes
@@ -307,6 +312,7 @@ def exclusivemarkers(repo, nodes):
 
     return exclmarkers
 
+
 def foreground(repo, nodes):
     """return all nodes in the "foreground" of other node
 
@@ -333,6 +339,7 @@ def foreground(repo, nodes):
             foreground = set(repo.set('%ln::', known))
     return set(c.node() for c in foreground)
 
+
 # effectflag field
 #
 # Effect-flag is a 1-byte bit field used to store what changed between a
@@ -350,13 +357,13 @@ def foreground(repo, nodes):
 
 EFFECTFLAGFIELD = "ef1"
 
-DESCCHANGED = 1 << 0 # action changed the description
-METACHANGED = 1 << 1 # action change the meta
-DIFFCHANGED = 1 << 3 # action change diff introduced by the changeset
-PARENTCHANGED = 1 << 2 # action change the parent
-USERCHANGED = 1 << 4 # the user changed
-DATECHANGED = 1 << 5 # the date changed
-BRANCHCHANGED = 1 << 6 # the branch changed
+DESCCHANGED = 1 << 0  # action changed the description
+METACHANGED = 1 << 1  # action change the meta
+DIFFCHANGED = 1 << 3  # action change diff introduced by the changeset
+PARENTCHANGED = 1 << 2  # action change the parent
+USERCHANGED = 1 << 4  # the user changed
+DATECHANGED = 1 << 5  # the date changed
+BRANCHCHANGED = 1 << 6  # the branch changed
 
 METABLACKLIST = [
     re.compile('^branch$'),
@@ -365,6 +372,7 @@ METABLACKLIST = [
     re.compile('^source$'),
 ]
 
+
 def metanotblacklisted(metaitem):
     """ Check that the key of a meta item (extrakey, extravalue) does not
     match at least one of the blacklist pattern
@@ -372,6 +380,7 @@ def metanotblacklisted(metaitem):
     metakey = metaitem[0]
 
     return not any(pattern.match(metakey) for pattern in METABLACKLIST)
+
 
 def _prepare_hunk(hunk):
     """Drop all information but the username and patch"""
@@ -383,6 +392,7 @@ def _prepare_hunk(hunk):
             cleanhunk.append(line)
     return cleanhunk
 
+
 def _getdifflines(iterdiff):
     """return a cleaned up lines"""
     lines = next(iterdiff, None)
@@ -391,6 +401,7 @@ def _getdifflines(iterdiff):
         return lines
 
     return _prepare_hunk(lines)
+
 
 def _cmpdiff(leftctx, rightctx):
     """return True if both ctx introduce the "same diff"
@@ -418,6 +429,7 @@ def _cmpdiff(leftctx, rightctx):
         if left != right:
             return False
     return True
+
 
 def geteffectflag(source, successors):
     """ From an obs-marker relation, compute what changed between the
@@ -462,6 +474,7 @@ def geteffectflag(source, successors):
 
     return effects
 
+
 def getobsoleted(repo, tr):
     """return the set of pre-existing revisions obsoleted by a transaction"""
     torev = repo.unfiltered().changelog.nodemap.get
@@ -484,6 +497,7 @@ def getobsoleted(repo, tr):
             obsoleted.add(rev)
     return obsoleted
 
+
 class _succs(list):
     """small class to represent a successors with some metadata about it"""
 
@@ -503,6 +517,7 @@ class _succs(list):
 
     def canmerge(self, other):
         return self._set.issubset(other._set)
+
 
 def successorssets(repo, initialnode, closest=False, cache=None):
     """Return set of all latest successors of initial nodes
@@ -611,9 +626,9 @@ def successorssets(repo, initialnode, closest=False, cache=None):
 
         # case 2 condition is a bit hairy because of closest,
         # we compute it on its own
-        case2condition =  ((current not in succmarkers)
-                           or (closest and current != initialnode
-                               and current in repo))
+        case2condition = (current not in succmarkers) or (
+            closest and current != initialnode and current in repo
+        )
 
         if current in cache:
             # case (1): We already know the successors sets
@@ -720,8 +735,9 @@ def successorssets(repo, initialnode, closest=False, cache=None):
                 # remove duplicated and subset
                 seen = []
                 final = []
-                candidates = sorted((s for s in succssets if s),
-                                    key=len, reverse=True)
+                candidates = sorted(
+                    (s for s in succssets if s), key=len, reverse=True
+                )
                 for cand in candidates:
                     for seensuccs in seen:
                         if cand.canmerge(seensuccs):
@@ -730,9 +746,10 @@ def successorssets(repo, initialnode, closest=False, cache=None):
                     else:
                         final.append(cand)
                         seen.append(cand)
-                final.reverse() # put small successors set first
+                final.reverse()  # put small successors set first
                 cache[current] = final
     return cache[initialnode]
+
 
 def successorsandmarkers(repo, ctx):
     """compute the raw data needed for computing obsfate
@@ -750,7 +767,7 @@ def successorsandmarkers(repo, ctx):
 
     # Try to recover pruned markers
     succsmap = repo.obsstore.successors
-    fullsuccessorsets = [] # successor set + markers
+    fullsuccessorsets = []  # successor set + markers
     for sset in ssets:
         if sset:
             fullsuccessorsets.append(sset)
@@ -781,6 +798,7 @@ def successorsandmarkers(repo, ctx):
 
     return values
 
+
 def _getobsfate(successorssets):
     """ Compute a changeset obsolescence fate based on its successorssets.
     Successors can be the tipmost ones or the immediate ones. This function
@@ -807,6 +825,7 @@ def _getobsfate(successorssets):
         else:
             return 'superseded_split'
 
+
 def obsfateverb(successorset, markers):
     """ Return the verb summarizing the successorset and potentially using
     information from the markers
@@ -819,28 +838,36 @@ def obsfateverb(successorset, markers):
         verb = 'split'
     return verb
 
+
 def markersdates(markers):
     """returns the list of dates for a list of markers
     """
     return [m[4] for m in markers]
 
+
 def markersusers(markers):
     """ Returns a sorted list of markers users without duplicates
     """
     markersmeta = [dict(m[3]) for m in markers]
-    users = set(encoding.tolocal(meta['user']) for meta in markersmeta
-                if meta.get('user'))
+    users = set(
+        encoding.tolocal(meta['user'])
+        for meta in markersmeta
+        if meta.get('user')
+    )
 
     return sorted(users)
+
 
 def markersoperations(markers):
     """ Returns a sorted list of markers operations without duplicates
     """
     markersmeta = [dict(m[3]) for m in markers]
-    operations = set(meta.get('operation') for meta in markersmeta
-                     if meta.get('operation'))
+    operations = set(
+        meta.get('operation') for meta in markersmeta if meta.get('operation')
+    )
 
     return sorted(operations)
+
 
 def obsfateprinter(ui, repo, successors, markers, formatctx):
     """ Build a obsfate string for a single successorset using all obsfate
@@ -900,9 +927,11 @@ filteredmsgtable = {
     "diverged": _("hidden revision '%s' has diverged"),
     "superseded": _("hidden revision '%s' was rewritten as: %s"),
     "superseded_split": _("hidden revision '%s' was split as: %s"),
-    "superseded_split_several": _("hidden revision '%s' was split as: %s and "
-                                  "%d more"),
+    "superseded_split_several": _(
+        "hidden revision '%s' was split as: %s and " "%d more"
+    ),
 }
+
 
 def _getfilteredreason(repo, changeid, ctx):
     """return a human-friendly string on why a obsolete changeset is hidden
@@ -934,6 +963,7 @@ def _getfilteredreason(repo, changeid, ctx):
             args = (changeid, firstsuccessors, remainingnumber)
             return filteredmsgtable['superseded_split_several'] % args
 
+
 def divergentsets(repo, ctx):
     """Compute sets of commits divergent with a given one"""
     cache = {}
@@ -951,8 +981,11 @@ def divergentsets(repo, ctx):
                 # we already know the latest base for this divergency
                 continue
             base[tuple(nsuccset)] = n
-    return [{'divergentnodes': divset, 'commonpredecessor': b}
-            for divset, b in base.iteritems()]
+    return [
+        {'divergentnodes': divset, 'commonpredecessor': b}
+        for divset, b in base.iteritems()
+    ]
+
 
 def whyunstable(repo, ctx):
     result = []
@@ -964,24 +997,38 @@ def whyunstable(repo, ctx):
             elif parent.obsolete():
                 kind = 'obsolete'
             if kind is not None:
-                result.append({'instability': 'orphan',
-                               'reason': '%s parent' % kind,
-                               'node': parent.hex()})
+                result.append(
+                    {
+                        'instability': 'orphan',
+                        'reason': '%s parent' % kind,
+                        'node': parent.hex(),
+                    }
+                )
     if ctx.phasedivergent():
-        predecessors = allpredecessors(repo.obsstore, [ctx.node()],
-                                       ignoreflags=bumpedfix)
-        immutable = [repo[p] for p in predecessors
-                     if p in repo and not repo[p].mutable()]
+        predecessors = allpredecessors(
+            repo.obsstore, [ctx.node()], ignoreflags=bumpedfix
+        )
+        immutable = [
+            repo[p] for p in predecessors if p in repo and not repo[p].mutable()
+        ]
         for predecessor in immutable:
-            result.append({'instability': 'phase-divergent',
-                           'reason': 'immutable predecessor',
-                           'node': predecessor.hex()})
+            result.append(
+                {
+                    'instability': 'phase-divergent',
+                    'reason': 'immutable predecessor',
+                    'node': predecessor.hex(),
+                }
+            )
     if ctx.contentdivergent():
         dsets = divergentsets(repo, ctx)
         for dset in dsets:
             divnodes = [repo[n] for n in dset['divergentnodes']]
-            result.append({'instability': 'content-divergent',
-                           'divergentnodes': divnodes,
-                           'reason': 'predecessor',
-                           'node': nodemod.hex(dset['commonpredecessor'])})
+            result.append(
+                {
+                    'instability': 'content-divergent',
+                    'divergentnodes': divnodes,
+                    'reason': 'predecessor',
+                    'node': nodemod.hex(dset['commonpredecessor']),
+                }
+            )
     return result

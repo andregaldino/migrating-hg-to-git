@@ -44,14 +44,20 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-@command('censor',
-    [('r', 'rev', '', _('censor file from specified revision'), _('REV')),
-     ('t', 'tombstone', '', _('replacement tombstone data'), _('TEXT'))],
+
+@command(
+    'censor',
+    [
+        ('r', 'rev', '', _('censor file from specified revision'), _('REV')),
+        ('t', 'tombstone', '', _('replacement tombstone data'), _('TEXT')),
+    ],
     _('-r REV [-t TEXT] [FILE]'),
-    helpcategory=command.CATEGORY_MAINTENANCE)
+    helpcategory=command.CATEGORY_MAINTENANCE,
+)
 def censor(ui, repo, path, rev='', tombstone='', **opts):
     with repo.wlock(), repo.lock():
         return _docensor(ui, repo, path, rev, tombstone, **opts)
+
 
 def _docensor(ui, repo, path, rev='', tombstone='', **opts):
     if not path:
@@ -88,13 +94,17 @@ def _docensor(ui, repo, path, rev='', tombstone='', **opts):
             heads.append(hc)
     if heads:
         headlist = ', '.join([short(c.node()) for c in heads])
-        raise error.Abort(_('cannot censor file in heads (%s)') % headlist,
-            hint=_('clean/delete and commit first'))
+        raise error.Abort(
+            _('cannot censor file in heads (%s)') % headlist,
+            hint=_('clean/delete and commit first'),
+        )
 
     wp = wctx.parents()
     if ctx.node() in [p.node() for p in wp]:
-        raise error.Abort(_('cannot censor working directory'),
-            hint=_('clean/delete/update first'))
+        raise error.Abort(
+            _('cannot censor working directory'),
+            hint=_('clean/delete/update first'),
+        )
 
     with repo.transaction(b'censor') as tr:
         flog.censorrevision(tr, fnode, tombstone=tombstone)

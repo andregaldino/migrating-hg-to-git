@@ -37,9 +37,7 @@ from mercurial import (
     pycompat,
     ui as uimod,
 )
-from mercurial.hgweb import (
-    server as servermod
-)
+from mercurial.hgweb import server as servermod
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -51,6 +49,7 @@ testedwith = 'ships-with-hg-core'
 
 server = None
 localip = None
+
 
 def getip():
     # finds external-facing interface without sending any packets (Linux)
@@ -83,6 +82,7 @@ def getip():
 
     return dumbip
 
+
 def publish(name, desc, path, port):
     global server, localip
     if not server:
@@ -98,24 +98,31 @@ def publish(name, desc, path, port):
     name = r"%s-%s" % (hostname, name)
 
     # advertise to browsers
-    svc = Zeroconf.ServiceInfo('_http._tcp.local.',
-                               pycompat.bytestr(name + r'._http._tcp.local.'),
-                               server = host,
-                               port = port,
-                               properties = {'description': desc,
-                                             'path': "/" + path},
-                               address = localip, weight = 0, priority = 0)
+    svc = Zeroconf.ServiceInfo(
+        '_http._tcp.local.',
+        pycompat.bytestr(name + r'._http._tcp.local.'),
+        server=host,
+        port=port,
+        properties={'description': desc, 'path': "/" + path},
+        address=localip,
+        weight=0,
+        priority=0,
+    )
     server.registerService(svc)
 
     # advertise to Mercurial clients
-    svc = Zeroconf.ServiceInfo('_hg._tcp.local.',
-                               pycompat.bytestr(name + r'._hg._tcp.local.'),
-                               server = host,
-                               port = port,
-                               properties = {'description': desc,
-                                             'path': "/" + path},
-                               address = localip, weight = 0, priority = 0)
+    svc = Zeroconf.ServiceInfo(
+        '_hg._tcp.local.',
+        pycompat.bytestr(name + r'._hg._tcp.local.'),
+        server=host,
+        port=port,
+        properties={'description': desc, 'path': "/" + path},
+        address=localip,
+        weight=0,
+        priority=0,
+    )
     server.registerService(svc)
+
 
 def zc_create_server(create_server, ui, app):
     httpd = create_server(ui, app)
@@ -146,16 +153,21 @@ def zc_create_server(create_server, ui, app):
             publish(name, desc, path, port)
     return httpd
 
+
 # listen
+
 
 class listener(object):
     def __init__(self):
         self.found = {}
+
     def removeService(self, server, type, name):
         if repr(name) in self.found:
             del self.found[repr(name)]
+
     def addService(self, server, type, name):
         self.found[repr(name)] = server.getServiceInfo(type, name)
+
 
 def getzcpaths():
     ip = getip()
@@ -167,10 +179,14 @@ def getzcpaths():
     time.sleep(1)
     server.close()
     for value in l.found.values():
-        name = value.name[:value.name.index(b'.')]
-        url = r"http://%s:%s%s" % (socket.inet_ntoa(value.address), value.port,
-                                   value.properties.get(r"path", r"/"))
+        name = value.name[: value.name.index(b'.')]
+        url = r"http://%s:%s%s" % (
+            socket.inet_ntoa(value.address),
+            value.port,
+            value.properties.get(r"path", r"/"),
+        )
         yield b"zc-" + name, pycompat.bytestr(url)
+
 
 def config(orig, self, section, key, *args, **kwargs):
     if section == "paths" and key.startswith("zc-"):
@@ -179,11 +195,13 @@ def config(orig, self, section, key, *args, **kwargs):
                 return path
     return orig(self, section, key, *args, **kwargs)
 
+
 def configitems(orig, self, section, *args, **kwargs):
     repos = orig(self, section, *args, **kwargs)
     if section == "paths":
         repos += getzcpaths()
     return repos
+
 
 def configsuboptions(orig, self, section, name, *args, **kwargs):
     opt, sub = orig(self, section, name, *args, **kwargs)
@@ -195,11 +213,13 @@ def configsuboptions(orig, self, section, name, *args, **kwargs):
                 return zcurl, sub
     return opt, sub
 
+
 def defaultdest(orig, source):
     for name, path in getzcpaths():
         if path == source:
             return name.encode(encoding.encoding)
     return orig(source)
+
 
 def cleanupafterdispatch(orig, ui, options, cmd, cmdfunc):
     try:
@@ -210,6 +230,7 @@ def cleanupafterdispatch(orig, ui, options, cmd, cmdfunc):
         global server
         if server:
             server.close()
+
 
 extensions.wrapfunction(dispatch, '_runcommand', cleanupafterdispatch)
 

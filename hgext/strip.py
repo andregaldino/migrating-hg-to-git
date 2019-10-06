@@ -20,6 +20,7 @@ from mercurial import (
     scmutil,
     util,
 )
+
 nullid = nodemod.nullid
 release = lockmod.release
 
@@ -31,6 +32,7 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
+
 def checklocalchanges(repo, force=False):
     s = repo.status()
     if not force:
@@ -40,26 +42,40 @@ def checklocalchanges(repo, force=False):
         cmdutil.checkunfinished(repo, skipmerge=True)
     return s
 
+
 def _findupdatetarget(repo, nodes):
     unode, p2 = repo.changelog.parents(nodes[0])
     currentbranch = repo[None].branch()
 
-    if (util.safehasattr(repo, 'mq') and p2 != nullid
-        and p2 in [x.node for x in repo.mq.applied]):
+    if (
+        util.safehasattr(repo, 'mq')
+        and p2 != nullid
+        and p2 in [x.node for x in repo.mq.applied]
+    ):
         unode = p2
     elif currentbranch != repo[unode].branch():
         pwdir = 'parents(wdir())'
         revset = 'max(((parents(%ln::%r) + %r) - %ln::%r) and branch(%s))'
-        branchtarget = repo.revs(revset, nodes, pwdir, pwdir, nodes, pwdir,
-                                 currentbranch)
+        branchtarget = repo.revs(
+            revset, nodes, pwdir, pwdir, nodes, pwdir, currentbranch
+        )
         if branchtarget:
             cl = repo.changelog
             unode = cl.node(branchtarget.first())
 
     return unode
 
-def strip(ui, repo, revs, update=True, backup=True, force=None, bookmarks=None,
-          soft=False):
+
+def strip(
+    ui,
+    repo,
+    revs,
+    update=True,
+    backup=True,
+    force=None,
+    bookmarks=None,
+    soft=False,
+):
     with repo.wlock(), repo.lock():
 
         if update:
@@ -82,26 +98,56 @@ def strip(ui, repo, revs, update=True, backup=True, force=None, bookmarks=None,
             for bookmark in sorted(bookmarks):
                 ui.write(_("bookmark '%s' deleted\n") % bookmark)
 
-@command("strip",
-         [
-          ('r', 'rev', [], _('strip specified revision (optional, '
-                               'can specify revisions without this '
-                               'option)'), _('REV')),
-          ('f', 'force', None, _('force removal of changesets, discard '
-                                 'uncommitted changes (no backup)')),
-          ('', 'no-backup', None, _('do not save backup bundle')),
-          ('', 'nobackup', None, _('do not save backup bundle '
-                                   '(DEPRECATED)')),
-          ('n', '', None, _('ignored  (DEPRECATED)')),
-          ('k', 'keep', None, _("do not modify working directory during "
-                                "strip")),
-          ('B', 'bookmark', [], _("remove revs only reachable from given"
-                                  " bookmark"), _('BOOKMARK')),
-          ('', 'soft', None,
-          _("simply drop changesets from visible history (EXPERIMENTAL)")),
-         ],
-          _('hg strip [-k] [-f] [-B bookmark] [-r] REV...'),
-          helpcategory=command.CATEGORY_MAINTENANCE)
+
+@command(
+    "strip",
+    [
+        (
+            'r',
+            'rev',
+            [],
+            _(
+                'strip specified revision (optional, '
+                'can specify revisions without this '
+                'option)'
+            ),
+            _('REV'),
+        ),
+        (
+            'f',
+            'force',
+            None,
+            _(
+                'force removal of changesets, discard '
+                'uncommitted changes (no backup)'
+            ),
+        ),
+        ('', 'no-backup', None, _('do not save backup bundle')),
+        ('', 'nobackup', None, _('do not save backup bundle ' '(DEPRECATED)')),
+        ('n', '', None, _('ignored  (DEPRECATED)')),
+        (
+            'k',
+            'keep',
+            None,
+            _("do not modify working directory during " "strip"),
+        ),
+        (
+            'B',
+            'bookmark',
+            [],
+            _("remove revs only reachable from given" " bookmark"),
+            _('BOOKMARK'),
+        ),
+        (
+            '',
+            'soft',
+            None,
+            _("simply drop changesets from visible history (EXPERIMENTAL)"),
+        ),
+    ],
+    _('hg strip [-k] [-f] [-B bookmark] [-r] REV...'),
+    helpcategory=command.CATEGORY_MAINTENANCE,
+)
 def stripcmd(ui, repo, *revs, **opts):
     """strip changesets and all their descendants from the repository
 
@@ -145,8 +191,10 @@ def stripcmd(ui, repo, *revs, **opts):
         if bookmarks:
             repomarks = repo._bookmarks
             if not bookmarks.issubset(repomarks):
-                raise error.Abort(_("bookmark '%s' not found") %
-                    ','.join(sorted(bookmarks - set(repomarks.keys()))))
+                raise error.Abort(
+                    _("bookmark '%s' not found")
+                    % ','.join(sorted(bookmarks - set(repomarks.keys())))
+                )
 
             # If the requested bookmark is not the only one pointing to a
             # a revision we have to only delete the bookmark and not strip
@@ -174,8 +222,10 @@ def stripcmd(ui, repo, *revs, **opts):
 
         # if one of the wdir parent is stripped we'll need
         # to update away to an earlier revision
-        update = any(p != nullid and cl.rev(p) in strippedrevs
-                     for p in repo.dirstate.parents())
+        update = any(
+            p != nullid and cl.rev(p) in strippedrevs
+            for p in repo.dirstate.parents()
+        )
 
         rootnodes = set(cl.node(r) for r in roots)
 
@@ -222,9 +272,15 @@ def stripcmd(ui, repo, *revs, **opts):
 
             update = False
 
-
-        strip(ui, repo, revs, backup=backup, update=update,
-              force=opts.get('force'), bookmarks=bookmarks,
-              soft=opts['soft'])
+        strip(
+            ui,
+            repo,
+            revs,
+            backup=backup,
+            update=update,
+            force=opts.get('force'),
+            bookmarks=bookmarks,
+            soft=opts['soft'],
+        )
 
     return 0

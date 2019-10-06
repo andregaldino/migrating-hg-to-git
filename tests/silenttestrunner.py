@@ -3,6 +3,7 @@ import os
 import sys
 import unittest
 
+
 def main(modulename):
     '''run the tests found in module, printing nothing when all tests pass'''
     module = sys.modules[modulename]
@@ -19,6 +20,7 @@ def main(modulename):
             print()
             sys.stdout.write(exc)
         sys.exit(1)
+
 
 if os.environ.get('SILENT_BE_NOISY'):
     main = unittest.main

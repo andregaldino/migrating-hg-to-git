@@ -14,12 +14,16 @@ import time
 from .i18n import _
 from . import encoding
 
+
 def spacejoin(*args):
     return ' '.join(s for s in args if s)
 
+
 def shouldprint(ui):
     return not (ui.quiet or ui.plain('progress')) and (
-        ui._isatty(ui.ferr) or ui.configbool('progress', 'assume-tty'))
+        ui._isatty(ui.ferr) or ui.configbool('progress', 'assume-tty')
+    )
+
 
 def fmtremaining(seconds):
     """format a number of remaining seconds in human readable way
@@ -27,7 +31,7 @@ def fmtremaining(seconds):
     This will properly display seconds, minutes, hours, days if needed"""
     if seconds < 60:
         # i18n: format XX seconds as "XXs"
-        return _("%02ds") % (seconds)
+        return _("%02ds") % seconds
     minutes = seconds // 60
     if minutes < 60:
         seconds -= minutes * 60
@@ -61,6 +65,7 @@ def fmtremaining(seconds):
     # i18n: format X years and YY weeks as "XyYYw"
     return _("%dy%02dw") % (years, weeks)
 
+
 # file_write() and file_flush() of Python 2 do not restart on EINTR if
 # the file is attached to a "slow" device (e.g. a terminal) and raise
 # IOError. We cannot know how many bytes would be written by file_write(),
@@ -79,6 +84,7 @@ def _eintrretry(func, *args):
                 continue
             raise
 
+
 class progbar(object):
     def __init__(self, ui):
         self.ui = ui
@@ -91,19 +97,20 @@ class progbar(object):
         self.starttimes = {}
         self.startvals = {}
         self.printed = False
-        self.lastprint = time.time() + float(self.ui.config(
-            'progress', 'delay'))
+        self.lastprint = time.time() + float(
+            self.ui.config('progress', 'delay')
+        )
         self.curtopic = None
         self.lasttopic = None
         self.indetcount = 0
-        self.refresh = float(self.ui.config(
-            'progress', 'refresh'))
-        self.changedelay = max(3 * self.refresh,
-                               float(self.ui.config(
-                                   'progress', 'changedelay')))
+        self.refresh = float(self.ui.config('progress', 'refresh'))
+        self.changedelay = max(
+            3 * self.refresh, float(self.ui.config('progress', 'changedelay'))
+        )
         self.order = self.ui.configlist('progress', 'format')
         self.estimateinterval = self.ui.configwith(
-            float, 'progress', 'estimateinterval')
+            float, 'progress', 'estimateinterval'
+        )
 
     def show(self, now, topic, pos, item, unit, total):
         if not shouldprint(self.ui):
@@ -169,8 +176,11 @@ class progbar(object):
                 # cursor bounce between the right and left sides
                 amt = self.indetcount % (2 * progwidth)
                 amt -= progwidth
-                bar = (' ' * int(progwidth - abs(amt)) + '<=>' +
-                       ' ' * int(abs(amt)))
+                bar = (
+                    ' ' * int(progwidth - abs(amt))
+                    + '<=>'
+                    + ' ' * int(abs(amt))
+                )
             prog = ''.join(('[', bar, ']'))
             out = spacejoin(head, prog, tail)
         else:
@@ -228,11 +238,13 @@ class progbar(object):
 
     def _oktoprint(self, now):
         '''Check if conditions are met to print - e.g. changedelay elapsed'''
-        if (self.lasttopic is None # first time we printed
+        if (
+            self.lasttopic is None  # first time we printed
             # not a topic change
             or self.curtopic == self.lasttopic
             # it's been long enough we should print anyway
-            or now - self.lastprint >= self.changedelay):
+            or now - self.lastprint >= self.changedelay
+        ):
             return True
         else:
             return False
@@ -293,7 +305,7 @@ class progbar(object):
             # truncate the list of topics assuming all topics within
             # this one are also closed
             if topic in self.topics:
-                self.topics = self.topics[:self.topics.index(topic)]
+                self.topics = self.topics[: self.topics.index(topic)]
                 # reset the last topic to the one we just unwound to,
                 # so that higher-level topics will be stickier than
                 # lower-level topics

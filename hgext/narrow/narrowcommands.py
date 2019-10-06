@@ -30,36 +30,44 @@ from mercurial import (
     util,
     wireprototypes,
 )
-from mercurial.interfaces import (
-    repository,
-)
+from mercurial.interfaces import repository
 
 table = {}
 command = registrar.command(table)
+
 
 def setup():
     """Wraps user-facing mercurial commands with narrow-aware versions."""
 
     entry = extensions.wrapcommand(commands.table, 'clone', clonenarrowcmd)
-    entry[1].append(('', 'narrow', None,
-                     _("create a narrow clone of select files")))
-    entry[1].append(('', 'depth', '',
-                     _("limit the history fetched by distance from heads")))
-    entry[1].append(('', 'narrowspec', '',
-                     _("read narrowspecs from file")))
+    entry[1].append(
+        ('', 'narrow', None, _("create a narrow clone of select files"))
+    )
+    entry[1].append(
+        ('', 'depth', '', _("limit the history fetched by distance from heads"))
+    )
+    entry[1].append(('', 'narrowspec', '', _("read narrowspecs from file")))
     # TODO(durin42): unify sparse/narrow --include/--exclude logic a bit
     if 'sparse' not in extensions.enabled():
-        entry[1].append(('', 'include', [],
-                         _("specifically fetch this file/directory")))
         entry[1].append(
-            ('', 'exclude', [],
-             _("do not fetch this file/directory, even if included")))
+            ('', 'include', [], _("specifically fetch this file/directory"))
+        )
+        entry[1].append(
+            (
+                '',
+                'exclude',
+                [],
+                _("do not fetch this file/directory, even if included"),
+            )
+        )
 
     entry = extensions.wrapcommand(commands.table, 'pull', pullnarrowcmd)
-    entry[1].append(('', 'depth', '',
-                     _("limit the history fetched by distance from heads")))
+    entry[1].append(
+        ('', 'depth', '', _("limit the history fetched by distance from heads"))
+    )
 
     extensions.wrapcommand(commands.table, 'archive', archivenarrowcmd)
+
 
 def clonenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps clone command, so 'hg clone' first wraps localrepo.clone()."""
@@ -73,13 +81,19 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
         try:
             fdata = util.readfile(filepath)
         except IOError as inst:
-            raise error.Abort(_("cannot read narrowspecs from '%s': %s") %
-                              (filepath, encoding.strtolocal(inst.strerror)))
+            raise error.Abort(
+                _("cannot read narrowspecs from '%s': %s")
+                % (filepath, encoding.strtolocal(inst.strerror))
+            )
 
         includes, excludes, profiles = sparse.parseconfig(ui, fdata, 'narrow')
         if profiles:
-            raise error.Abort(_("cannot specify other files using '%include' in"
-                                " narrowspec"))
+            raise error.Abort(
+                _(
+                    "cannot specify other files using '%include' in"
+                    " narrowspec"
+                )
+            )
 
         narrowspec.validatepatterns(includes)
         narrowspec.validatepatterns(excludes)
@@ -90,16 +104,20 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
         opts['exclude'].extend(excludes)
 
     if opts['narrow']:
+
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             orig(pullop, kwargs)
 
             if opts.get('depth'):
                 kwargs['depth'] = opts['depth']
-        wrappedextraprepare = extensions.wrappedfunction(exchange,
-            '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
+
+        wrappedextraprepare = extensions.wrappedfunction(
+            exchange, '_pullbundle2extraprepare', pullbundle2extraprepare_widen
+        )
 
     with wrappedextraprepare:
         return orig(ui, repo, *args, **pycompat.strkwargs(opts))
+
 
 def pullnarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps pull command to allow modifying narrow spec."""
@@ -110,11 +128,14 @@ def pullnarrowcmd(orig, ui, repo, *args, **opts):
             orig(pullop, kwargs)
             if opts.get(r'depth'):
                 kwargs['depth'] = opts[r'depth']
-        wrappedextraprepare = extensions.wrappedfunction(exchange,
-            '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
+
+        wrappedextraprepare = extensions.wrappedfunction(
+            exchange, '_pullbundle2extraprepare', pullbundle2extraprepare_widen
+        )
 
     with wrappedextraprepare:
         return orig(ui, repo, *args, **opts)
+
 
 def archivenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps archive command to narrow the default includes."""
@@ -123,12 +144,14 @@ def archivenarrowcmd(orig, ui, repo, *args, **opts):
         includes = set(opts.get(r'include', []))
         excludes = set(opts.get(r'exclude', []))
         includes, excludes, unused_invalid = narrowspec.restrictpatterns(
-            includes, excludes, repo_includes, repo_excludes)
+            includes, excludes, repo_includes, repo_excludes
+        )
         if includes:
             opts[r'include'] = includes
         if excludes:
             opts[r'exclude'] = excludes
     return orig(ui, repo, *args, **opts)
+
 
 def pullbundle2extraprepare(orig, pullop, kwargs):
     repo = pullop.repo
@@ -149,20 +172,34 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     # calculate known nodes only in ellipses cases because in non-ellipses cases
     # we have all the nodes
     if wireprototypes.ELLIPSESCAP1 in pullop.remote.capabilities():
-        kwargs['known'] = [node.hex(ctx.node()) for ctx in
-                           repo.set('::%ln', pullop.common)
-                           if ctx.node() != node.nullid]
+        kwargs['known'] = [
+            node.hex(ctx.node())
+            for ctx in repo.set('::%ln', pullop.common)
+            if ctx.node() != node.nullid
+        ]
         if not kwargs['known']:
             # Mercurial serializes an empty list as '' and deserializes it as
             # [''], so delete it instead to avoid handling the empty string on
             # the server.
             del kwargs['known']
 
-extensions.wrapfunction(exchange,'_pullbundle2extraprepare',
-                        pullbundle2extraprepare)
 
-def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
-            newincludes, newexcludes, force):
+extensions.wrapfunction(
+    exchange, '_pullbundle2extraprepare', pullbundle2extraprepare
+)
+
+
+def _narrow(
+    ui,
+    repo,
+    remote,
+    commoninc,
+    oldincludes,
+    oldexcludes,
+    newincludes,
+    newexcludes,
+    force,
+):
     oldmatch = narrowspec.match(repo.root, oldincludes, oldexcludes)
     newmatch = narrowspec.match(repo.root, newincludes, newexcludes)
 
@@ -170,8 +207,7 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
     # commits. We will then check that the local-only commits don't
     # have any changes to files that will be untracked.
     unfi = repo.unfiltered()
-    outgoing = discovery.findcommonoutgoing(unfi, remote,
-                                            commoninc=commoninc)
+    outgoing = discovery.findcommonoutgoing(unfi, remote, commoninc=commoninc)
     ui.status(_('looking for local changes to affected paths\n'))
     localnodes = []
     for n in itertools.chain(outgoing.missing, outgoing.excluded):
@@ -179,11 +215,16 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
             localnodes.append(n)
     revstostrip = unfi.revs('descendants(%ln)', localnodes)
     hiddenrevs = repoview.filterrevs(repo, 'visible')
-    visibletostrip = list(repo.changelog.node(r)
-                          for r in (revstostrip - hiddenrevs))
+    visibletostrip = list(
+        repo.changelog.node(r) for r in (revstostrip - hiddenrevs)
+    )
     if visibletostrip:
-        ui.status(_('The following changeset(s) or their ancestors have '
-                    'local changes not on the remote:\n'))
+        ui.status(
+            _(
+                'The following changeset(s) or their ancestors have '
+                'local changes not on the remote:\n'
+            )
+        )
         maxnodes = 10
         if ui.verbose or len(visibletostrip) <= maxnodes:
             for n in visibletostrip:
@@ -191,20 +232,26 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
         else:
             for n in visibletostrip[:maxnodes]:
                 ui.status('%s\n' % node.short(n))
-            ui.status(_('...and %d more, use --verbose to list all\n') %
-                      (len(visibletostrip) - maxnodes))
+            ui.status(
+                _('...and %d more, use --verbose to list all\n')
+                % (len(visibletostrip) - maxnodes)
+            )
         if not force:
-            raise error.Abort(_('local changes found'),
-                              hint=_('use --force-delete-local-changes to '
-                                     'ignore'))
+            raise error.Abort(
+                _('local changes found'),
+                hint=_('use --force-delete-local-changes to ' 'ignore'),
+            )
 
     with ui.uninterruptible():
         if revstostrip:
             tostrip = [unfi.changelog.node(r) for r in revstostrip]
             if repo['.'].node() in tostrip:
                 # stripping working copy, so move to a different commit first
-                urev = max(repo.revs('(::%n) - %ln + null',
-                                     repo['.'].node(), visibletostrip))
+                urev = max(
+                    repo.revs(
+                        '(::%n) - %ln + null', repo['.'].node(), visibletostrip
+                    )
+                )
                 hg.clean(repo, urev)
             overrides = {('devel', 'strip-obsmarkers'): False}
             with ui.configoverride(overrides, 'narrow'):
@@ -247,8 +294,17 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
 
         repo.destroyed()
 
-def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
-           newincludes, newexcludes):
+
+def _widen(
+    ui,
+    repo,
+    remote,
+    commoninc,
+    oldincludes,
+    oldexcludes,
+    newincludes,
+    newexcludes,
+):
     # for now we assume that if a server has ellipses enabled, we will be
     # exchanging ellipses nodes. In future we should add ellipses as a client
     # side requirement (maybe) to distinguish a client is shallow or not and
@@ -256,26 +312,33 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
     # Theoretically a non-ellipses repo should be able to use narrow
     # functionality from an ellipses enabled server
     remotecap = remote.capabilities()
-    ellipsesremote = any(cap in remotecap
-                         for cap in wireprototypes.SUPPORTED_ELLIPSESCAP)
+    ellipsesremote = any(
+        cap in remotecap for cap in wireprototypes.SUPPORTED_ELLIPSESCAP
+    )
 
     # check whether we are talking to a server which supports old version of
     # ellipses capabilities
-    isoldellipses = (ellipsesremote and wireprototypes.ELLIPSESCAP1 in
-                     remotecap and wireprototypes.ELLIPSESCAP not in remotecap)
+    isoldellipses = (
+        ellipsesremote
+        and wireprototypes.ELLIPSESCAP1 in remotecap
+        and wireprototypes.ELLIPSESCAP not in remotecap
+    )
 
     def pullbundle2extraprepare_widen(orig, pullop, kwargs):
         orig(pullop, kwargs)
         # The old{in,ex}cludepats have already been set by orig()
         kwargs['includepats'] = newincludes
         kwargs['excludepats'] = newexcludes
-    wrappedextraprepare = extensions.wrappedfunction(exchange,
-        '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
+
+    wrappedextraprepare = extensions.wrappedfunction(
+        exchange, '_pullbundle2extraprepare', pullbundle2extraprepare_widen
+    )
 
     # define a function that narrowbundle2 can call after creating the
     # backup bundle, but before applying the bundle from the server
     def setnewnarrowpats():
         repo.setnarrowpats(newincludes, newexcludes)
+
     repo.setnewnarrowpats = setnewnarrowpats
     # silence the devel-warning of applying an empty changegroup
     overrides = {('devel', 'all-warnings'): False}
@@ -293,25 +356,31 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
         else:
             known = []
             if ellipsesremote:
-                known = [ctx.node() for ctx in
-                         repo.set('::%ln', common)
-                         if ctx.node() != node.nullid]
+                known = [
+                    ctx.node()
+                    for ctx in repo.set('::%ln', common)
+                    if ctx.node() != node.nullid
+                ]
             with remote.commandexecutor() as e:
-                bundle = e.callcommand('narrow_widen', {
-                    'oldincludes': oldincludes,
-                    'oldexcludes': oldexcludes,
-                    'newincludes': newincludes,
-                    'newexcludes': newexcludes,
-                    'cgversion': '03',
-                    'commonheads': common,
-                    'known': known,
-                    'ellipses': ellipsesremote,
-                }).result()
+                bundle = e.callcommand(
+                    'narrow_widen',
+                    {
+                        'oldincludes': oldincludes,
+                        'oldexcludes': oldexcludes,
+                        'newincludes': newincludes,
+                        'newexcludes': newexcludes,
+                        'cgversion': '03',
+                        'commonheads': common,
+                        'known': known,
+                        'ellipses': ellipsesremote,
+                    },
+                ).result()
 
             trmanager = exchange.transactionmanager(repo, 'widen', remote.url())
             with trmanager, repo.ui.configoverride(overrides, 'widen'):
-                op = bundle2.bundleoperation(repo, trmanager.transaction,
-                                             source='widen')
+                op = bundle2.bundleoperation(
+                    repo, trmanager.transaction, source='widen'
+                )
                 # TODO: we should catch error.Abort here
                 bundle2.processbundle(repo, bundle, op=op)
 
@@ -324,23 +393,40 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
             narrowspec.updateworkingcopy(repo)
             narrowspec.copytoworkingcopy(repo)
 
+
 # TODO(rdamazio): Make new matcher format and update description
-@command('tracked',
-    [('', 'addinclude', [], _('new paths to include')),
-     ('', 'removeinclude', [], _('old paths to no longer include')),
-     ('', 'auto-remove-includes', False,
-      _('automatically choose unused includes to remove')),
-     ('', 'addexclude', [], _('new paths to exclude')),
-     ('', 'import-rules', '', _('import narrowspecs from a file')),
-     ('', 'removeexclude', [], _('old paths to no longer exclude')),
-     ('', 'clear', False, _('whether to replace the existing narrowspec')),
-     ('', 'force-delete-local-changes', False,
-       _('forces deletion of local changes when narrowing')),
-     ('', 'update-working-copy', False,
-      _('update working copy when the store has changed')),
-    ] + commands.remoteopts,
+@command(
+    'tracked',
+    [
+        ('', 'addinclude', [], _('new paths to include')),
+        ('', 'removeinclude', [], _('old paths to no longer include')),
+        (
+            '',
+            'auto-remove-includes',
+            False,
+            _('automatically choose unused includes to remove'),
+        ),
+        ('', 'addexclude', [], _('new paths to exclude')),
+        ('', 'import-rules', '', _('import narrowspecs from a file')),
+        ('', 'removeexclude', [], _('old paths to no longer exclude')),
+        ('', 'clear', False, _('whether to replace the existing narrowspec')),
+        (
+            '',
+            'force-delete-local-changes',
+            False,
+            _('forces deletion of local changes when narrowing'),
+        ),
+        (
+            '',
+            'update-working-copy',
+            False,
+            _('update working copy when the store has changed'),
+        ),
+    ]
+    + commands.remoteopts,
     _('[OPTIONS]... [REMOTE]'),
-    inferrepo=True)
+    inferrepo=True,
+)
 def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     """show or change the current narrowspec
 
@@ -376,8 +462,12 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     if repository.NARROW_REQUIREMENT not in repo.requirements:
-        raise error.Abort(_('the tracked command is only supported on '
-                            'repositories cloned with --narrow'))
+        raise error.Abort(
+            _(
+                'the tracked command is only supported on '
+                'repositories cloned with --narrow'
+            )
+        )
 
     # Before supporting, decide whether it "hg tracked --clear" should mean
     # tracking no paths or all paths.
@@ -391,13 +481,20 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
             filepath = os.path.join(encoding.getcwd(), newrules)
             fdata = util.readfile(filepath)
         except IOError as inst:
-            raise error.Abort(_("cannot read narrowspecs from '%s': %s") %
-                              (filepath, encoding.strtolocal(inst.strerror)))
-        includepats, excludepats, profiles = sparse.parseconfig(ui, fdata,
-                                                                'narrow')
+            raise error.Abort(
+                _("cannot read narrowspecs from '%s': %s")
+                % (filepath, encoding.strtolocal(inst.strerror))
+            )
+        includepats, excludepats, profiles = sparse.parseconfig(
+            ui, fdata, 'narrow'
+        )
         if profiles:
-            raise error.Abort(_("including other spec files using '%include' "
-                                "is not supported in narrowspec"))
+            raise error.Abort(
+                _(
+                    "including other spec files using '%include' "
+                    "is not supported in narrowspec"
+                )
+            )
         opts['addinclude'].extend(includepats)
         opts['addexclude'].extend(excludepats)
 
@@ -408,9 +505,15 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     autoremoveincludes = opts['auto_remove_includes']
 
     update_working_copy = opts['update_working_copy']
-    only_show = not (addedincludes or removedincludes or addedexcludes or
-                     removedexcludes or newrules or autoremoveincludes or
-                     update_working_copy)
+    only_show = not (
+        addedincludes
+        or removedincludes
+        or addedexcludes
+        or removedexcludes
+        or newrules
+        or autoremoveincludes
+        or update_working_copy
+    )
 
     oldincludes, oldexcludes = repo.narrowpats
 
@@ -469,8 +572,9 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         commoninc = discovery.findcommonincoming(repo, remote)
 
         if autoremoveincludes:
-            outgoing = discovery.findcommonoutgoing(repo, remote,
-                                                    commoninc=commoninc)
+            outgoing = discovery.findcommonoutgoing(
+                repo, remote, commoninc=commoninc
+            )
             ui.status(_('looking for unused includes to remove\n'))
             localfiles = set()
             for n in itertools.chain(outgoing.missing, outgoing.excluded):
@@ -483,8 +587,12 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
             if suggestedremovals:
                 for s in suggestedremovals:
                     ui.status('%s\n' % s)
-                if (ui.promptchoice(_('remove these unused includes (yn)?'
-                                      '$$ &Yes $$ &No')) == 0):
+                if (
+                    ui.promptchoice(
+                        _('remove these unused includes (yn)?' '$$ &Yes $$ &No')
+                    )
+                    == 0
+                ):
                     removedincludes.update(suggestedremovals)
                     narrowing = True
             else:
@@ -493,9 +601,17 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         if narrowing:
             newincludes = oldincludes - removedincludes
             newexcludes = oldexcludes | addedexcludes
-            _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
-                    newincludes, newexcludes,
-                    opts['force_delete_local_changes'])
+            _narrow(
+                ui,
+                repo,
+                remote,
+                commoninc,
+                oldincludes,
+                oldexcludes,
+                newincludes,
+                newexcludes,
+                opts['force_delete_local_changes'],
+            )
             # _narrow() updated the narrowspec and _widen() below needs to
             # use the updated values as its base (otherwise removed includes
             # and addedexcludes will be lost in the resulting narrowspec)
@@ -505,7 +621,15 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         if widening:
             newincludes = oldincludes | addedincludes
             newexcludes = oldexcludes - removedexcludes
-            _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
-                    newincludes, newexcludes)
+            _widen(
+                ui,
+                repo,
+                remote,
+                commoninc,
+                oldincludes,
+                oldexcludes,
+                newincludes,
+                newexcludes,
+            )
 
     return 0

@@ -11,15 +11,14 @@ from mercurial import (
     util,
 )
 
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 
 testtmp = encoding.environ[b'TESTTMP']
 
 # prepare hgrc files
 def join(name):
     return os.path.join(testtmp, name)
+
 
 with open(join(b'sysrc'), 'wb') as f:
     f.write(b'[ui]\neditor=e0\n[pager]\npager=p0\n')
@@ -31,23 +30,27 @@ with open(join(b'userrc'), 'wb') as f:
 def systemrcpath():
     return [join(b'sysrc')]
 
+
 def userrcpath():
     return [join(b'userrc')]
 
+
 rcutil.systemrcpath = systemrcpath
 rcutil.userrcpath = userrcpath
-os.path.isdir = lambda x: False # hack: do not load default.d/*.rc
+os.path.isdir = lambda x: False  # hack: do not load default.d/*.rc
 
 # utility to print configs
 def printconfigs(env):
     encoding.environ = env
-    rcutil._rccomponents = None # reset cache
+    rcutil._rccomponents = None  # reset cache
     ui = uimod.ui.load()
     for section, name, value in ui.walkconfig():
         source = ui.configsource(section, name)
-        procutil.stdout.write(b'%s.%s=%s # %s\n'
-                              % (section, name, value, util.pconvert(source)))
+        procutil.stdout.write(
+            b'%s.%s=%s # %s\n' % (section, name, value, util.pconvert(source))
+        )
     procutil.stdout.write(b'\n')
+
 
 # environment variable overrides
 printconfigs({})

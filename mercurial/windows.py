@@ -26,6 +26,7 @@ from . import (
 
 try:
     import _winreg as winreg
+
     winreg.CloseKey
 except ImportError:
     import winreg
@@ -49,6 +50,7 @@ unlink = win32.unlink
 
 umask = 0o022
 
+
 class mixedfilemodewrapper(object):
     """Wraps a file handle when it is opened in read/write mode.
 
@@ -61,6 +63,7 @@ class mixedfilemodewrapper(object):
     mode and automatically adds checks or inserts appropriate file positioning
     calls when necessary.
     """
+
     OPNONE = 0
     OPREAD = 1
     OPWRITE = 2
@@ -124,10 +127,12 @@ class mixedfilemodewrapper(object):
         object.__setattr__(self, r'_lastop', self.OPREAD)
         return self._fp.readlines(*args, **kwargs)
 
+
 class fdproxy(object):
     """Wraps osutil.posixfile() to override the name attribute to reflect the
     underlying file name.
     """
+
     def __init__(self, name, fp):
         self.name = name
         self._fp = fp
@@ -147,10 +152,11 @@ class fdproxy(object):
     def __getattr__(self, name):
         return getattr(self._fp, name)
 
+
 def posixfile(name, mode='r', buffering=-1):
     '''Open a file with even more POSIX-like semantics'''
     try:
-        fp = osutil.posixfile(name, mode, buffering) # may raise WindowsError
+        fp = osutil.posixfile(name, mode, buffering)  # may raise WindowsError
 
         # PyFile_FromFd() ignores the name, and seems to report fp.name as the
         # underlying file descriptor.
@@ -168,11 +174,14 @@ def posixfile(name, mode='r', buffering=-1):
         return fp
     except WindowsError as err:
         # convert to a friendlier exception
-        raise IOError(err.errno, r'%s: %s' % (
-            encoding.strfromlocal(name), err.strerror))
+        raise IOError(
+            err.errno, r'%s: %s' % (encoding.strfromlocal(name), err.strerror)
+        )
+
 
 # may be wrapped by win32mbcs extension
 listdir = osutil.listdir
+
 
 class winstdout(object):
     '''stdout on windows misbehaves if sent through a pipe'''
@@ -215,6 +224,7 @@ class winstdout(object):
                 raise
             raise IOError(errno.EPIPE, r'Broken pipe')
 
+
 def _is_win_9x():
     '''return true if run on windows 95, 98 or me.'''
     try:
@@ -222,15 +232,18 @@ def _is_win_9x():
     except AttributeError:
         return 'command' in encoding.environ.get('comspec', '')
 
+
 def openhardlinks():
     return not _is_win_9x()
+
 
 def parsepatchoutput(output_line):
     """parses the output produced by patch and returns the filename"""
     pf = output_line[14:]
     if pf[0] == '`':
-        pf = pf[1:-1] # Remove the quotes
+        pf = pf[1:-1]  # Remove the quotes
     return pf
+
 
 def sshargs(sshcmd, host, user, port):
     '''Build argument list for ssh or Plink'''
@@ -238,24 +251,30 @@ def sshargs(sshcmd, host, user, port):
     args = user and ("%s@%s" % (user, host)) or host
     if args.startswith('-') or args.startswith('/'):
         raise error.Abort(
-            _('illegal ssh hostname or username starting with - or /: %s') %
-            args)
+            _('illegal ssh hostname or username starting with - or /: %s')
+            % args
+        )
     args = shellquote(args)
     if port:
         args = '%s %s %s' % (pflag, shellquote(port), args)
     return args
 
+
 def setflags(f, l, x):
     pass
+
 
 def copymode(src, dst, mode=None, enforcewritable=False):
     pass
 
+
 def checkexec(path):
     return False
 
+
 def checklink(path):
     return False
+
 
 def setbinary(fd):
     # When run without console, pipes may expose invalid
@@ -264,24 +283,31 @@ def setbinary(fd):
     if fno is not None and fno() >= 0:
         msvcrt.setmode(fno(), os.O_BINARY)
 
+
 def pconvert(path):
     return path.replace(pycompat.ossep, '/')
+
 
 def localpath(path):
     return path.replace('/', '\\')
 
+
 def normpath(path):
     return pconvert(os.path.normpath(path))
 
+
 def normcase(path):
-    return encoding.upper(path) # NTFS compares via upper()
+    return encoding.upper(path)  # NTFS compares via upper()
+
 
 # see posix.py for definitions
 normcasespec = encoding.normcasespecs.upper
 normcasefallback = encoding.upperfallback
 
+
 def samestat(s1, s2):
     return False
+
 
 def shelltocmdexe(path, env):
     r"""Convert shell variables in the form $var and ${var} inside ``path``
@@ -318,9 +344,9 @@ def shelltocmdexe(path, env):
     index = 0
     pathlen = len(path)
     while index < pathlen:
-        c = path[index:index + 1]
-        if c == b'\'':   # no expansion within single quotes
-            path = path[index + 1:]
+        c = path[index : index + 1]
+        if c == b'\'':  # no expansion within single quotes
+            path = path[index + 1 :]
             pathlen = len(path)
             try:
                 index = path.index(b'\'')
@@ -329,7 +355,7 @@ def shelltocmdexe(path, env):
                 res += c + path
                 index = pathlen - 1
         elif c == b'%':  # variable
-            path = path[index + 1:]
+            path = path[index + 1 :]
             pathlen = len(path)
             try:
                 index = path.index(b'%')
@@ -340,8 +366,8 @@ def shelltocmdexe(path, env):
                 var = path[:index]
                 res += b'%' + var + b'%'
         elif c == b'$':  # variable
-            if path[index + 1:index + 2] == b'{':
-                path = path[index + 2:]
+            if path[index + 1 : index + 2] == b'{':
+                path = path[index + 2 :]
                 pathlen = len(path)
                 try:
                     index = path.index(b'}')
@@ -358,11 +384,11 @@ def shelltocmdexe(path, env):
             else:
                 var = b''
                 index += 1
-                c = path[index:index + 1]
+                c = path[index : index + 1]
                 while c != b'' and c in varchars:
                     var += c
                     index += 1
-                    c = path[index:index + 1]
+                    c = path[index : index + 1]
                 # Some variables (like HG_OLDNODE) may be defined, but have an
                 # empty value.  Those need to be skipped because when spawning
                 # cmd.exe to run the hook, it doesn't replace %VAR% for an empty
@@ -376,19 +402,26 @@ def shelltocmdexe(path, env):
 
                 if c != b'':
                     index -= 1
-        elif (c == b'~' and index + 1 < pathlen
-              and path[index + 1:index + 2] in (b'\\', b'/')):
+        elif (
+            c == b'~'
+            and index + 1 < pathlen
+            and path[index + 1 : index + 2] in (b'\\', b'/')
+        ):
             res += "%USERPROFILE%"
-        elif (c == b'\\' and index + 1 < pathlen
-              and path[index + 1:index + 2] in (b'$', b'~')):
+        elif (
+            c == b'\\'
+            and index + 1 < pathlen
+            and path[index + 1 : index + 2] in (b'$', b'~')
+        ):
             # Skip '\', but only if it is escaping $ or ~
-            res += path[index + 1:index + 2]
+            res += path[index + 1 : index + 2]
             index += 1
         else:
             res += c
 
         index += 1
     return res
+
 
 # A sequence of backslashes is special iff it precedes a double quote:
 # - if there's an even number of backslashes, the double quote is not
@@ -403,6 +436,8 @@ def shelltocmdexe(path, env):
 # quote we've appended to the end)
 _quotere = None
 _needsshellquote = None
+
+
 def shellquote(s):
     r"""
     >>> shellquote(br'C:\Users\xyz')
@@ -432,14 +467,17 @@ def shellquote(s):
         return s
     return b'"%s"' % _quotere.sub(br'\1\1\\\2', s)
 
+
 def _unquote(s):
     if s.startswith(b'"') and s.endswith(b'"'):
         return s[1:-1]
     return s
 
+
 def shellsplit(s):
     """Parse a command string in cmd.exe way (best-effort)"""
     return pycompat.maplist(_unquote, pycompat.shlexsplit(s, posix=False))
+
 
 def quotecommand(cmd):
     """Build a command string suitable for os.popen* calls."""
@@ -448,10 +486,12 @@ def quotecommand(cmd):
         return '"' + cmd + '"'
     return cmd
 
+
 # if you change this stub into a real check, please try to implement the
 # username and groupname functions above, too.
 def isowner(st):
     return True
+
 
 def findexe(command):
     '''Find executable for command searching like cmd.exe does.
@@ -481,35 +521,41 @@ def findexe(command):
             return executable
     return findexisting(os.path.expanduser(os.path.expandvars(command)))
 
+
 _wantedkinds = {stat.S_IFREG, stat.S_IFLNK}
+
 
 def statfiles(files):
     '''Stat each file in files. Yield each stat, or None if a file
     does not exist or has a type we don't care about.
 
     Cluster and cache stat per directory to minimize number of OS stat calls.'''
-    dircache = {} # dirname -> filename -> status | None if file does not exist
+    dircache = {}  # dirname -> filename -> status | None if file does not exist
     getkind = stat.S_IFMT
     for nf in files:
-        nf  = normcase(nf)
+        nf = normcase(nf)
         dir, base = os.path.split(nf)
         if not dir:
             dir = '.'
         cache = dircache.get(dir, None)
         if cache is None:
             try:
-                dmap = dict([(normcase(n), s)
-                             for n, k, s in listdir(dir, True)
-                             if getkind(s.st_mode) in _wantedkinds])
+                dmap = dict(
+                    [
+                        (normcase(n), s)
+                        for n, k, s in listdir(dir, True)
+                        if getkind(s.st_mode) in _wantedkinds
+                    ]
+                )
             except OSError as err:
                 # Python >= 2.5 returns ENOENT and adds winerror field
                 # EINVAL is raised if dir is not a directory.
-                if err.errno not in (errno.ENOENT, errno.EINVAL,
-                                     errno.ENOTDIR):
+                if err.errno not in (errno.ENOENT, errno.EINVAL, errno.ENOTDIR):
                     raise
                 dmap = {}
             cache = dircache.setdefault(dir, dmap)
         yield cache.get(base, None)
+
 
 def username(uid=None):
     """Return the name of the user with the given uid.
@@ -517,14 +563,17 @@ def username(uid=None):
     If uid is None, return the name of the current user."""
     return None
 
+
 def groupname(gid=None):
     """Return the name of the group with the given gid.
 
     If gid is None, return the name of the current group."""
     return None
 
+
 def readlink(pathname):
     return pycompat.fsencode(os.readlink(pycompat.fsdecode(pathname)))
+
 
 def removedirs(name):
     """special version of os.removedirs that does not remove symlinked
@@ -544,6 +593,7 @@ def removedirs(name):
             break
         head, tail = os.path.split(head)
 
+
 def rename(src, dst):
     '''atomically rename file src to dst, replacing dst if it exists'''
     try:
@@ -554,15 +604,19 @@ def rename(src, dst):
         unlink(dst)
         os.rename(src, dst)
 
+
 def gethgcmd():
     return [encoding.strtolocal(arg) for arg in [sys.executable] + sys.argv[:1]]
+
 
 def groupmembers(name):
     # Don't support groups on Windows for now
     raise KeyError
 
+
 def isexec(f):
     return False
+
 
 class cachestat(object):
     def __init__(self, path):
@@ -570,6 +624,7 @@ class cachestat(object):
 
     def cacheable(self):
         return False
+
 
 def lookupreg(key, valname=None, scope=None):
     ''' Look up a key/value name in the Windows registry.
@@ -594,19 +649,24 @@ def lookupreg(key, valname=None, scope=None):
         except EnvironmentError:
             pass
 
+
 expandglobs = True
+
 
 def statislink(st):
     '''check whether a stat result is a symlink'''
     return False
 
+
 def statisexec(st):
     '''check whether a stat result is an executable file'''
     return False
 
+
 def poll(fds):
     # see posix.py for description
     raise NotImplementedError()
+
 
 def readpipe(pipe):
     """Read all available data from a pipe."""
@@ -622,6 +682,7 @@ def readpipe(pipe):
         chunks.append(s)
 
     return ''.join(chunks)
+
 
 def bindunixsocket(sock, path):
     raise NotImplementedError(r'unsupported platform')

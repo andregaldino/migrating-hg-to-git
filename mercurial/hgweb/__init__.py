@@ -17,15 +17,14 @@ from .. import (
     pycompat,
 )
 
-from ..utils import (
-    procutil,
-)
+from ..utils import procutil
 
 from . import (
     hgweb_mod,
     hgwebdir_mod,
     server,
 )
+
 
 def hgweb(config, name=None, baseui=None):
     '''create an hgweb wsgi object
@@ -40,15 +39,21 @@ def hgweb(config, name=None, baseui=None):
 
     if isinstance(config, pycompat.unicode):
         raise error.ProgrammingError(
-            'Mercurial only supports encoded strings: %r' % config)
-    if ((isinstance(config, bytes) and not os.path.isdir(config)) or
-        isinstance(config, dict) or isinstance(config, list)):
+            'Mercurial only supports encoded strings: %r' % config
+        )
+    if (
+        (isinstance(config, bytes) and not os.path.isdir(config))
+        or isinstance(config, dict)
+        or isinstance(config, list)
+    ):
         # create a multi-dir interface
         return hgwebdir_mod.hgwebdir(config, baseui=baseui)
     return hgweb_mod.hgweb(config, name=name, baseui=baseui)
 
+
 def hgwebdir(config, baseui=None):
     return hgwebdir_mod.hgwebdir(config, baseui=baseui)
+
 
 class httpservice(object):
     def __init__(self, ui, app, opts):
@@ -60,9 +65,11 @@ class httpservice(object):
         procutil.setsignalhandler()
         self.httpd = server.create_server(self.ui, self.app)
 
-        if (self.opts['port'] and
-            not self.ui.verbose and
-            not self.opts['print_url']):
+        if (
+            self.opts['port']
+            and not self.ui.verbose
+            and not self.opts['print_url']
+        ):
             return
 
         if self.httpd.prefix:
@@ -77,7 +84,7 @@ class httpservice(object):
         bindaddr = self.httpd.addr
         if bindaddr == r'0.0.0.0':
             bindaddr = r'*'
-        elif r':' in bindaddr: # IPv6
+        elif r':' in bindaddr:  # IPv6
             bindaddr = r'[%s]' % bindaddr
 
         fqaddr = self.httpd.fqaddr
@@ -85,7 +92,10 @@ class httpservice(object):
             fqaddr = r'[%s]' % fqaddr
 
         url = 'http://%s%s/%s' % (
-            pycompat.sysbytes(fqaddr), pycompat.sysbytes(port), prefix)
+            pycompat.sysbytes(fqaddr),
+            pycompat.sysbytes(port),
+            prefix,
+        )
         if self.opts['print_url']:
             self.ui.write('%s\n' % url)
         else:
@@ -93,18 +103,22 @@ class httpservice(object):
                 write = self.ui.status
             else:
                 write = self.ui.write
-            write(_('listening at %s (bound to %s:%d)\n') %
-                  (url, pycompat.sysbytes(bindaddr), self.httpd.port))
+            write(
+                _('listening at %s (bound to %s:%d)\n')
+                % (url, pycompat.sysbytes(bindaddr), self.httpd.port)
+            )
         self.ui.flush()  # avoid buffering of status message
 
     def run(self):
         self.httpd.serve_forever()
+
 
 def createapp(baseui, repo, webconf):
     if webconf:
         return hgwebdir_mod.hgwebdir(webconf, baseui=baseui)
     else:
         if not repo:
-            raise error.RepoError(_("there is no Mercurial repository"
-                                    " here (.hg not found)"))
+            raise error.RepoError(
+                _("there is no Mercurial repository" " here (.hg not found)")
+            )
         return hgweb_mod.hgweb(repo, baseui=baseui)

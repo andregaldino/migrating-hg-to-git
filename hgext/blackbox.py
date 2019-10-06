@@ -71,29 +71,32 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('blackbox', 'dirty',
-    default=False,
+configitem(
+    'blackbox', 'dirty', default=False,
 )
-configitem('blackbox', 'maxsize',
-    default='1 MB',
+configitem(
+    'blackbox', 'maxsize', default='1 MB',
 )
-configitem('blackbox', 'logsource',
-    default=False,
+configitem(
+    'blackbox', 'logsource', default=False,
 )
-configitem('blackbox', 'maxfiles',
-    default=7,
+configitem(
+    'blackbox', 'maxfiles', default=7,
 )
-configitem('blackbox', 'track',
-    default=lambda: ['*'],
+configitem(
+    'blackbox', 'track', default=lambda: ['*'],
 )
-configitem('blackbox', 'ignore',
+configitem(
+    'blackbox',
+    'ignore',
     default=lambda: ['chgserver', 'cmdserver', 'extension'],
 )
-configitem('blackbox', 'date-format',
-    default='%Y/%m/%d %H:%M:%S',
+configitem(
+    'blackbox', 'date-format', default='%Y/%m/%d %H:%M:%S',
 )
 
 _lastlogger = loggingutil.proxylogger()
+
 
 class blackboxlogger(object):
     def __init__(self, ui, repo):
@@ -105,9 +108,9 @@ class blackboxlogger(object):
         self._inlog = False
 
     def tracked(self, event):
-        return ((b'*' in self._trackedevents
-                 and event not in self._ignoredevents)
-                or event in self._trackedevents)
+        return (
+            b'*' in self._trackedevents and event not in self._ignoredevents
+        ) or event in self._trackedevents
 
     def log(self, ui, event, msg, opts):
         # self._log() -> ctx.dirty() may create new subrepo instance, which
@@ -129,9 +132,10 @@ class blackboxlogger(object):
         changed = ''
         ctx = self._repo[None]
         parents = ctx.parents()
-        rev = ('+'.join([hex(p.node()) for p in parents]))
-        if (ui.configbool('blackbox', 'dirty') and
-            ctx.dirty(missing=True, merge=False, branch=False)):
+        rev = '+'.join([hex(p.node()) for p in parents])
+        if ui.configbool('blackbox', 'dirty') and ctx.dirty(
+            missing=True, merge=False, branch=False
+        ):
             changed = '+'
         if ui.configbool('blackbox', 'logsource'):
             src = ' [%s]' % event
@@ -141,19 +145,27 @@ class blackboxlogger(object):
             fmt = '%s %s @%s%s (%s)%s> %s'
             args = (date, user, rev, changed, pid, src, msg)
             with loggingutil.openlogfile(
-                    ui, self._repo.vfs, name='blackbox.log',
-                    maxfiles=self._maxfiles, maxsize=self._maxsize) as fp:
+                ui,
+                self._repo.vfs,
+                name='blackbox.log',
+                maxfiles=self._maxfiles,
+                maxsize=self._maxsize,
+            ) as fp:
                 fp.write(fmt % args)
         except (IOError, OSError) as err:
             # deactivate this to avoid failed logging again
             self._trackedevents.clear()
-            ui.debug('warning: cannot write to blackbox.log: %s\n' %
-                     encoding.strtolocal(err.strerror))
+            ui.debug(
+                'warning: cannot write to blackbox.log: %s\n'
+                % encoding.strtolocal(err.strerror)
+            )
             return
         _lastlogger.logger = self
 
+
 def uipopulate(ui):
     ui.setlogger(b'blackbox', _lastlogger)
+
 
 def reposetup(ui, repo):
     # During 'hg pull' a httppeer repo is created to represent the remote repo.
@@ -174,12 +186,14 @@ def reposetup(ui, repo):
 
     repo._wlockfreeprefix.add('blackbox.log')
 
-@command('blackbox',
-    [('l', 'limit', 10, _('the number of events to show')),
-    ],
+
+@command(
+    'blackbox',
+    [('l', 'limit', 10, _('the number of events to show')),],
     _('hg blackbox [OPTION]...'),
     helpcategory=command.CATEGORY_MAINTENANCE,
-    helpbasic=True)
+    helpbasic=True,
+)
 def blackbox(ui, repo, *revs, **opts):
     '''view the recent repository events
     '''

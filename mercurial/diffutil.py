@@ -16,15 +16,33 @@ from . import (
     pycompat,
 )
 
-def diffallopts(ui, opts=None, untrusted=False, section='diff',
-                configprefix=''):
-    '''return diffopts with all features supported and parsed'''
-    return difffeatureopts(ui, opts=opts, untrusted=untrusted, section=section,
-                           git=True, whitespace=True, formatchanging=True,
-                           configprefix=configprefix)
 
-def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
-                    whitespace=False, formatchanging=False, configprefix=''):
+def diffallopts(
+    ui, opts=None, untrusted=False, section='diff', configprefix=''
+):
+    '''return diffopts with all features supported and parsed'''
+    return difffeatureopts(
+        ui,
+        opts=opts,
+        untrusted=untrusted,
+        section=section,
+        git=True,
+        whitespace=True,
+        formatchanging=True,
+        configprefix=configprefix,
+    )
+
+
+def difffeatureopts(
+    ui,
+    opts=None,
+    untrusted=False,
+    section='diff',
+    git=False,
+    whitespace=False,
+    formatchanging=False,
+    configprefix='',
+):
     '''return diffopts with only opted-in features parsed
 
     Features:
@@ -33,6 +51,7 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
     - formatchanging: options that will likely break or cause correctness issues
       with most diff parsers
     '''
+
     def get(key, name=None, getter=ui.configbool, forceplain=None):
         if opts:
             v = opts.get(key)
@@ -47,8 +66,9 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
                 return v
         if forceplain is not None and ui.plain():
             return forceplain
-        return getter(section, configprefix + (name or key),
-                      untrusted=untrusted)
+        return getter(
+            section, configprefix + (name or key), untrusted=untrusted
+        )
 
     # core options, expected to be understood by every diff parser
     buildopts = {
@@ -63,8 +83,9 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
 
         # since this is in the experimental section, we need to call
         # ui.configbool directory
-        buildopts['showsimilarity'] = ui.configbool('experimental',
-                                                    'extendedheader.similarity')
+        buildopts['showsimilarity'] = ui.configbool(
+            'experimental', 'extendedheader.similarity'
+        )
 
         # need to inspect the ui object instead of using get() since we want to
         # test for an int
@@ -92,16 +113,21 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
 
     if whitespace:
         buildopts['ignorews'] = get('ignore_all_space', 'ignorews')
-        buildopts['ignorewsamount'] = get('ignore_space_change',
-                                          'ignorewsamount')
-        buildopts['ignoreblanklines'] = get('ignore_blank_lines',
-                                            'ignoreblanklines')
+        buildopts['ignorewsamount'] = get(
+            'ignore_space_change', 'ignorewsamount'
+        )
+        buildopts['ignoreblanklines'] = get(
+            'ignore_blank_lines', 'ignoreblanklines'
+        )
         buildopts['ignorewseol'] = get('ignore_space_at_eol', 'ignorewseol')
     if formatchanging:
         buildopts['text'] = opts and opts.get('text')
         binary = None if opts is None else opts.get('binary')
-        buildopts['nobinary'] = (not binary if binary is not None
-                                 else get('nobinary', forceplain=False))
+        buildopts['nobinary'] = (
+            not binary
+            if binary is not None
+            else get('nobinary', forceplain=False)
+        )
         buildopts['noprefix'] = get('noprefix', forceplain=False)
         buildopts['worddiff'] = get('word_diff', 'word-diff', forceplain=False)
 

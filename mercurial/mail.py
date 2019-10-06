@@ -31,11 +31,13 @@ from .utils import (
     stringutil,
 )
 
+
 class STARTTLS(smtplib.SMTP):
     '''Derived class to verify the peer certificate for STARTTLS.
 
     This class allows to pass any keyword arguments to SSL socket creation.
     '''
+
     def __init__(self, ui, host=None, **kwargs):
         smtplib.SMTP.__init__(self, **kwargs)
         self._ui = ui
@@ -47,9 +49,13 @@ class STARTTLS(smtplib.SMTP):
             raise smtplib.SMTPException(msg)
         (resp, reply) = self.docmd("STARTTLS")
         if resp == 220:
-            self.sock = sslutil.wrapsocket(self.sock, keyfile, certfile,
-                                           ui=self._ui,
-                                           serverhostname=self._host)
+            self.sock = sslutil.wrapsocket(
+                self.sock,
+                keyfile,
+                certfile,
+                ui=self._ui,
+                serverhostname=self._host,
+            )
             self.file = smtplib.SSLFakeFile(self.sock)
             self.helo_resp = None
             self.ehlo_resp = None
@@ -57,13 +63,14 @@ class STARTTLS(smtplib.SMTP):
             self.does_esmtp = 0
         return (resp, reply)
 
+
 class SMTPS(smtplib.SMTP):
     '''Derived class to verify the peer certificate for SMTPS.
 
     This class allows to pass any keyword arguments to SSL socket creation.
     '''
-    def __init__(self, ui, keyfile=None, certfile=None, host=None,
-                 **kwargs):
+
+    def __init__(self, ui, keyfile=None, certfile=None, host=None, **kwargs):
         self.keyfile = keyfile
         self.certfile = certfile
         smtplib.SMTP.__init__(self, **kwargs)
@@ -75,21 +82,27 @@ class SMTPS(smtplib.SMTP):
         if self.debuglevel > 0:
             self._ui.debug('connect: %r\n' % ((host, port),))
         new_socket = socket.create_connection((host, port), timeout)
-        new_socket = sslutil.wrapsocket(new_socket,
-                                        self.keyfile, self.certfile,
-                                        ui=self._ui,
-                                        serverhostname=self._host)
+        new_socket = sslutil.wrapsocket(
+            new_socket,
+            self.keyfile,
+            self.certfile,
+            ui=self._ui,
+            serverhostname=self._host,
+        )
         self.file = new_socket.makefile(r'rb')
         return new_socket
+
 
 def _pyhastls():
     """Returns true iff Python has TLS support, false otherwise."""
     try:
         import ssl
+
         getattr(ssl, 'HAS_TLS', False)
         return True
     except ImportError:
         return False
+
 
 def _smtp(ui):
     '''build an smtp connection and return a function to send mail'''
@@ -115,8 +128,7 @@ def _smtp(ui):
     else:
         defaultport = 25
     mailport = util.getport(ui.config('smtp', 'port', defaultport))
-    ui.note(_('sending mail: smtp host %s, port %d\n') %
-            (mailhost, mailport))
+    ui.note(_('sending mail: smtp host %s, port %d\n') % (mailhost, mailport))
     s.connect(host=mailhost, port=mailport)
     if starttls:
         ui.note(_('(using starttls)\n'))
@@ -131,8 +143,7 @@ def _smtp(ui):
     if username and not password:
         password = ui.getpass()
     if username and password:
-        ui.note(_('(authenticating to mail server as %s)\n') %
-                  (username))
+        ui.note(_('(authenticating to mail server as %s)\n') % username)
         try:
             s.login(username, password)
         except smtplib.SMTPException as inst:
@@ -149,21 +160,31 @@ def _smtp(ui):
 
     return send
 
+
 def _sendmail(ui, sender, recipients, msg):
     '''send mail using sendmail.'''
     program = ui.config('email', 'method')
     stremail = lambda x: (
-        procutil.quote(stringutil.email(encoding.strtolocal(x))))
-    cmdline = '%s -f %s %s' % (program, stremail(sender),
-                               ' '.join(map(stremail, recipients)))
+        procutil.quote(stringutil.email(encoding.strtolocal(x)))
+    )
+    cmdline = '%s -f %s %s' % (
+        program,
+        stremail(sender),
+        ' '.join(map(stremail, recipients)),
+    )
     ui.note(_('sending mail: %s\n') % cmdline)
     fp = procutil.popen(cmdline, 'wb')
     fp.write(util.tonativeeol(msg))
     ret = fp.close()
     if ret:
-        raise error.Abort('%s %s' % (
-            os.path.basename(program.split(None, 1)[0]),
-            procutil.explainexit(ret)))
+        raise error.Abort(
+            '%s %s'
+            % (
+                os.path.basename(program.split(None, 1)[0]),
+                procutil.explainexit(ret),
+            )
+        )
+
 
 def _mbox(mbox, sender, recipients, msg):
     '''write mails to mbox'''
@@ -171,11 +192,14 @@ def _mbox(mbox, sender, recipients, msg):
     # Should be time.asctime(), but Windows prints 2-characters day
     # of month instead of one. Make them print the same thing.
     date = time.strftime(r'%a %b %d %H:%M:%S %Y', time.localtime())
-    fp.write('From %s %s\n' % (encoding.strtolocal(sender),
-                               encoding.strtolocal(date)))
+    fp.write(
+        'From %s %s\n'
+        % (encoding.strtolocal(sender), encoding.strtolocal(date))
+    )
     fp.write(msg)
     fp.write('\n\n')
     fp.close()
+
 
 def connect(ui, mbox=None):
     '''make a mail connection. return a function to send mail.
@@ -187,21 +211,30 @@ def connect(ui, mbox=None):
         return _smtp(ui)
     return lambda s, r, m: _sendmail(ui, s, r, m)
 
+
 def sendmail(ui, sender, recipients, msg, mbox=None):
     send = connect(ui, mbox=mbox)
     return send(sender, recipients, msg)
+
 
 def validateconfig(ui):
     '''determine if we have enough config data to try sending email.'''
     method = ui.config('email', 'method')
     if method == 'smtp':
         if not ui.config('smtp', 'host'):
-            raise error.Abort(_('smtp specified as email transport, '
-                               'but no smtp host configured'))
+            raise error.Abort(
+                _(
+                    'smtp specified as email transport, '
+                    'but no smtp host configured'
+                )
+            )
     else:
         if not procutil.findexe(method):
-            raise error.Abort(_('%r specified as email transport, '
-                               'but not in PATH') % method)
+            raise error.Abort(
+                _('%r specified as email transport, ' 'but not in PATH')
+                % method
+            )
+
 
 def codec2iana(cs):
     ''''''
@@ -211,6 +244,7 @@ def codec2iana(cs):
     if cs.startswith("iso") and not cs.startswith("iso-"):
         return "iso-" + cs[3:]
     return cs
+
 
 def mimetextpatch(s, subtype='plain', display=False):
     '''Return MIME message suitable for a patch.
@@ -230,6 +264,7 @@ def mimetextpatch(s, subtype='plain', display=False):
             pass
 
     return mimetextqp(s, subtype, "iso-8859-1")
+
 
 def mimetextqp(body, subtype, charset):
     '''Return MIME message.
@@ -255,15 +290,20 @@ def mimetextqp(body, subtype, charset):
 
     return msg
 
+
 def _charsets(ui):
     '''Obtains charsets to send mail parts not containing patches.'''
     charsets = [cs.lower() for cs in ui.configlist('email', 'charsets')]
-    fallbacks = [encoding.fallbackencoding.lower(),
-                 encoding.encoding.lower(), 'utf-8']
-    for cs in fallbacks: # find unique charsets while keeping order
+    fallbacks = [
+        encoding.fallbackencoding.lower(),
+        encoding.encoding.lower(),
+        'utf-8',
+    ]
+    for cs in fallbacks:  # find unique charsets while keeping order
         if cs not in charsets:
             charsets.append(cs)
     return [cs for cs in charsets if not cs.endswith('ascii')]
+
 
 def _encode(ui, s, charsets):
     '''Returns (converted) string, charset tuple.
@@ -307,6 +347,7 @@ def _encode(ui, s, charsets):
     # if ascii, or all conversion attempts fail, send (broken) ascii
     return s, 'us-ascii'
 
+
 def headencode(ui, s, charsets=None, display=False):
     '''Returns RFC-2047 compliant header from given string.'''
     if not display:
@@ -314,6 +355,7 @@ def headencode(ui, s, charsets=None, display=False):
         s, cs = _encode(ui, s, charsets)
         return str(email.header.Header(s, cs))
     return s
+
 
 def _addressencode(ui, name, addr, charsets=None):
     assert isinstance(addr, bytes)
@@ -332,7 +374,9 @@ def _addressencode(ui, name, addr, charsets=None):
         except UnicodeDecodeError:
             raise error.Abort(_('invalid local address: %s') % addr)
     return pycompat.bytesurl(
-        email.utils.formataddr((name, encoding.strfromlocal(addr))))
+        email.utils.formataddr((name, encoding.strfromlocal(addr)))
+    )
+
 
 def addressencode(ui, address, charsets=None, display=False):
     '''Turns address into RFC-2047 compliant header.'''
@@ -341,22 +385,25 @@ def addressencode(ui, address, charsets=None, display=False):
     name, addr = email.utils.parseaddr(encoding.strfromlocal(address))
     return _addressencode(ui, name, encoding.strtolocal(addr), charsets)
 
+
 def addrlistencode(ui, addrs, charsets=None, display=False):
     '''Turns a list of addresses into a list of RFC-2047 compliant headers.
     A single element of input list may contain multiple addresses, but output
     always has one address per item'''
     for a in addrs:
-        assert isinstance(a, bytes), (r'%r unexpectedly not a bytestr' % a)
+        assert isinstance(a, bytes), r'%r unexpectedly not a bytestr' % a
     if display:
         return [a.strip() for a in addrs if a.strip()]
 
     result = []
     for name, addr in email.utils.getaddresses(
-            [encoding.strfromlocal(a) for a in addrs]):
+        [encoding.strfromlocal(a) for a in addrs]
+    ):
         if name or addr:
             r = _addressencode(ui, name, encoding.strtolocal(addr), charsets)
             result.append(r)
     return result
+
 
 def mimeencode(ui, s, charsets=None, display=False):
     '''creates mime text object, encodes it if needed, and sets
@@ -366,22 +413,29 @@ def mimeencode(ui, s, charsets=None, display=False):
         s, cs = _encode(ui, s, charsets)
     return mimetextqp(s, 'plain', cs)
 
+
 if pycompat.ispy3:
+
     def parse(fp):
         ep = email.parser.Parser()
         # disable the "universal newlines" mode, which isn't binary safe.
         # I have no idea if ascii/surrogateescape is correct, but that's
         # what the standard Python email parser does.
-        fp = io.TextIOWrapper(fp, encoding=r'ascii',
-                              errors=r'surrogateescape', newline=chr(10))
+        fp = io.TextIOWrapper(
+            fp, encoding=r'ascii', errors=r'surrogateescape', newline=chr(10)
+        )
         try:
             return ep.parse(fp)
         finally:
             fp.detach()
+
+
 else:
+
     def parse(fp):
         ep = email.parser.Parser()
         return ep.parse(fp)
+
 
 def headdecode(s):
     '''Decodes RFC-2047 header'''

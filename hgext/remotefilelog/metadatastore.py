@@ -6,6 +6,7 @@ from . import (
     shallowutil,
 )
 
+
 class unionmetadatastore(basestore.baseunionstore):
     def __init__(self, *args, **kwargs):
         super(unionmetadatastore, self).__init__(*args, **kwargs)
@@ -32,6 +33,7 @@ class unionmetadatastore(basestore.baseunionstore):
             return []
 
         ancestors = {}
+
         def traverse(curname, curnode):
             # TODO: this algorithm has the potential to traverse parts of
             # history twice. Ex: with A->B->C->F and A->B->D->F, both D and C
@@ -59,8 +61,9 @@ class unionmetadatastore(basestore.baseunionstore):
         while missing:
             curname, curnode = missing.pop()
             try:
-                ancestors.update(self._getpartialancestors(curname, curnode,
-                                                           known=known))
+                ancestors.update(
+                    self._getpartialancestors(curname, curnode, known=known)
+                )
                 newmissing = traverse(curname, curnode)
                 missing.extend(newmissing)
             except KeyError:
@@ -95,8 +98,9 @@ class unionmetadatastore(basestore.baseunionstore):
         raise KeyError((name, hex(node)))
 
     def add(self, name, node, data):
-        raise RuntimeError("cannot add content only to remotefilelog "
-                           "contentstore")
+        raise RuntimeError(
+            "cannot add content only to remotefilelog " "contentstore"
+        )
 
     def getmissing(self, keys):
         missing = keys
@@ -112,6 +116,7 @@ class unionmetadatastore(basestore.baseunionstore):
     def getmetrics(self):
         metrics = [s.getmetrics() for s in self.stores]
         return shallowutil.sumdicts(*metrics)
+
 
 class remotefilelogmetadatastore(basestore.basestore):
     def getancestors(self, name, node, known=None):
@@ -130,8 +135,10 @@ class remotefilelogmetadatastore(basestore.basestore):
         return self.getancestors(name, node)[node]
 
     def add(self, name, node, parents, linknode):
-        raise RuntimeError("cannot add metadata only to remotefilelog "
-                           "metadatastore")
+        raise RuntimeError(
+            "cannot add metadata only to remotefilelog " "metadatastore"
+        )
+
 
 class remotemetadatastore(object):
     def __init__(self, ui, fileservice, shared):
@@ -139,8 +146,9 @@ class remotemetadatastore(object):
         self._shared = shared
 
     def getancestors(self, name, node, known=None):
-        self._fileservice.prefetch([(name, hex(node))], force=True,
-                                   fetchdata=False, fetchhistory=True)
+        self._fileservice.prefetch(
+            [(name, hex(node))], force=True, fetchdata=False, fetchhistory=True
+        )
         return self._shared.getancestors(name, node, known=known)
 
     def getnodeinfo(self, name, node):

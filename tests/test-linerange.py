@@ -17,7 +17,9 @@ text1 = b'''
            09 at OLD
            10 at OLD
            11 at OLD
-'''[1:] # strip initial LF
+'''[
+    1:
+]  # strip initial LF
 
 text2 = b'''
 00 at NEW
@@ -32,7 +34,10 @@ text2 = b'''
 09 at NEW
 10 at NEW
 11 at NEW
-'''[1:] # strip initial LF
+'''[
+    1:
+]  # strip initial LF
+
 
 def filteredblocks(blocks, rangeb):
     """return `rangea` extracted from `blocks` coming from
@@ -42,8 +47,8 @@ def filteredblocks(blocks, rangeb):
     skipped = [b not in filtered for b in blocks]
     return rangea, skipped
 
-class blocksinrangetests(unittest.TestCase):
 
+class blocksinrangetests(unittest.TestCase):
     def setUp(self):
         self.blocks = list(mdiff.allblocks(text1, text2))
         assert self.blocks == [
@@ -227,6 +232,8 @@ class blocksinrangetests(unittest.TestCase):
             else:
                 self.fail('%s not raised' % exctype.__name__)
 
+
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

@@ -16,16 +16,21 @@ if sys.version_info[0] >= 3:
     stdout = sys.stdout.buffer
     stderr = sys.stderr.buffer
     stringio = io.BytesIO
+
     def bprint(*args):
         # remove b'' as well for ease of test migration
         pargs = [re.sub(br'''\bb(['"])''', br'\1', b'%s' % a) for a in args]
         stdout.write(b' '.join(pargs) + b'\n')
+
+
 else:
     import cStringIO
+
     stdout = sys.stdout
     stderr = sys.stderr
     stringio = cStringIO.StringIO
     bprint = print
+
 
 def connectpipe(path=None, extraargs=()):
     cmdline = [b'hg', b'serve', b'--cmdserver', b'pipe']
@@ -38,10 +43,12 @@ def connectpipe(path=None, extraargs=()):
             return cmdline
         return [arg.decode("utf-8") for arg in cmdline]
 
-    server = subprocess.Popen(tonative(cmdline), stdin=subprocess.PIPE,
-                              stdout=subprocess.PIPE)
+    server = subprocess.Popen(
+        tonative(cmdline), stdin=subprocess.PIPE, stdout=subprocess.PIPE
+    )
 
     return server
+
 
 class unixconnection(object):
     def __init__(self, sockpath):
@@ -54,6 +61,7 @@ class unixconnection(object):
         self.stdin.close()
         self.stdout.close()
         self.sock.close()
+
 
 class unixserver(object):
     def __init__(self, sockpath, logpath=None, repopath=None):
@@ -80,10 +88,12 @@ class unixserver(object):
         os.kill(self.server.pid, signal.SIGTERM)
         self.server.wait()
 
+
 def writeblock(server, data):
     server.stdin.write(struct.pack(b'>I', len(data)))
     server.stdin.write(data)
     server.stdin.flush()
+
 
 def readchannel(server):
     data = server.stdout.read(5)
@@ -95,11 +105,14 @@ def readchannel(server):
     else:
         return channel, server.stdout.read(length)
 
+
 def sep(text):
     return text.replace(b'\\', b'/')
 
-def runcommand(server, args, output=stdout, error=stderr, input=None,
-               outfilter=lambda x: x):
+
+def runcommand(
+    server, args, output=stdout, error=stderr, input=None, outfilter=lambda x: x
+):
     bprint(b'*** runcommand', b' '.join(args))
     stdout.flush()
     server.stdin.write(b'runcommand\n')
@@ -123,7 +136,7 @@ def runcommand(server, args, output=stdout, error=stderr, input=None,
         elif ch == b'm':
             bprint(b"message: %r" % data)
         elif ch == b'r':
-            ret, = struct.unpack('>i', data)
+            (ret,) = struct.unpack('>i', data)
             if ret != 0:
                 bprint(b' [%d]' % ret)
             return ret
@@ -131,6 +144,7 @@ def runcommand(server, args, output=stdout, error=stderr, input=None,
             bprint(b"unexpected channel %c: %r" % (ch, data))
             if ch.isupper():
                 return
+
 
 def check(func, connect=connectpipe):
     stdout.flush()
@@ -141,7 +155,9 @@ def check(func, connect=connectpipe):
         server.stdin.close()
         server.wait()
 
+
 def checkwith(connect=connectpipe, **kwargs):
     def wrap(func):
         return check(func, lambda: connect(**kwargs))
+
     return wrap

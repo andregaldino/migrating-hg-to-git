@@ -29,9 +29,7 @@ from . import (
     templateutil,
     util,
 )
-from .utils import (
-    stringutil,
-)
+from .utils import stringutil
 
 _hybrid = templateutil.hybrid
 hybriddict = templateutil.hybriddict
@@ -39,6 +37,7 @@ hybridlist = templateutil.hybridlist
 compatdict = templateutil.compatdict
 compatlist = templateutil.compatlist
 _showcompatlist = templateutil._showcompatlist
+
 
 def getlatesttags(context, mapping, pattern=None):
     '''return date, distance and name for the latest tag of rev'''
@@ -66,9 +65,11 @@ def getlatesttags(context, mapping, pattern=None):
         if rev in latesttags:
             continue
         ctx = repo[rev]
-        tags = [t for t in ctx.tags()
-                if (repo.tagtype(t) and repo.tagtype(t) != 'local'
-                    and match(t))]
+        tags = [
+            t
+            for t in ctx.tags()
+            if (repo.tagtype(t) and repo.tagtype(t) != 'local' and match(t))
+        ]
         if tags:
             latesttags[rev] = ctx.date()[0], 0, [t for t in sorted(tags)]
             continue
@@ -80,6 +81,7 @@ def getlatesttags(context, mapping, pattern=None):
                     # comparison in this case.
                     pdate, pdist, ptag = max(ptags)
                 else:
+
                     def key(x):
                         tag = x[2][0]
                         if ctx.rev() is None:
@@ -93,6 +95,7 @@ def getlatesttags(context, mapping, pattern=None):
                         # Smallest number of changes since tag wins. Date is
                         # used as tiebreaker.
                         return [-changessincetag, x[0]]
+
                     pdate, pdist, ptag = max(ptags, key=key)
             else:
                 pdate, pdist, ptag = ptags[0]
@@ -104,29 +107,37 @@ def getlatesttags(context, mapping, pattern=None):
         latesttags[rev] = pdate, pdist + 1, ptag
     return latesttags[rev]
 
+
 def getlogcolumns():
     """Return a dict of log column labels"""
     _ = pycompat.identity  # temporarily disable gettext
     # i18n: column positioning for "hg log"
-    columns = _('bookmark:    %s\n'
-                'branch:      %s\n'
-                'changeset:   %s\n'
-                'copies:      %s\n'
-                'date:        %s\n'
-                'extra:       %s=%s\n'
-                'files+:      %s\n'
-                'files-:      %s\n'
-                'files:       %s\n'
-                'instability: %s\n'
-                'manifest:    %s\n'
-                'obsolete:    %s\n'
-                'parent:      %s\n'
-                'phase:       %s\n'
-                'summary:     %s\n'
-                'tag:         %s\n'
-                'user:        %s\n')
-    return dict(zip([s.split(':', 1)[0] for s in columns.splitlines()],
-                    i18n._(columns).splitlines(True)))
+    columns = _(
+        'bookmark:    %s\n'
+        'branch:      %s\n'
+        'changeset:   %s\n'
+        'copies:      %s\n'
+        'date:        %s\n'
+        'extra:       %s=%s\n'
+        'files+:      %s\n'
+        'files-:      %s\n'
+        'files:       %s\n'
+        'instability: %s\n'
+        'manifest:    %s\n'
+        'obsolete:    %s\n'
+        'parent:      %s\n'
+        'phase:       %s\n'
+        'summary:     %s\n'
+        'tag:         %s\n'
+        'user:        %s\n'
+    )
+    return dict(
+        zip(
+            [s.split(':', 1)[0] for s in columns.splitlines()],
+            i18n._(columns).splitlines(True),
+        )
+    )
+
 
 # basic internal templates
 _changeidtmpl = '{rev}:{node|formatnode}'
@@ -137,7 +148,7 @@ defaulttempl = {
     'manifest': _changeidtmpl,
     'file_copy': '{name} ({source})',
     'envvar': '{key}={value}',
-    'extra': '{key}={value|stringescape}'
+    'extra': '{key}={value|stringescape}',
 }
 # filecopy is preserved for compatibility reasons
 defaulttempl['filecopy'] = defaulttempl['file_copy']
@@ -146,10 +157,12 @@ defaulttempl['filecopy'] = defaulttempl['file_copy']
 keywords = {}
 templatekeyword = registrar.templatekeyword(keywords)
 
+
 @templatekeyword('author', requires={'ctx'})
 def showauthor(context, mapping):
     """Alias for ``{user}``"""
     return showuser(context, mapping)
+
 
 @templatekeyword('bisect', requires={'repo', 'ctx'})
 def showbisect(context, mapping):
@@ -158,6 +171,7 @@ def showbisect(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return hbisect.label(repo, ctx.node())
 
+
 @templatekeyword('branch', requires={'ctx'})
 def showbranch(context, mapping):
     """String. The name of the branch on which the changeset was
@@ -165,6 +179,7 @@ def showbranch(context, mapping):
     """
     ctx = context.resource(mapping, 'ctx')
     return ctx.branch()
+
 
 @templatekeyword('branches', requires={'ctx'})
 def showbranches(context, mapping):
@@ -175,9 +190,11 @@ def showbranches(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     branch = ctx.branch()
     if branch != 'default':
-        return compatlist(context, mapping, 'branch', [branch],
-                          plural='branches')
+        return compatlist(
+            context, mapping, 'branch', [branch], plural='branches'
+        )
     return compatlist(context, mapping, 'branch', [], plural='branches')
+
 
 @templatekeyword('bookmarks', requires={'repo', 'ctx'})
 def showbookmarks(context, mapping):
@@ -192,6 +209,7 @@ def showbookmarks(context, mapping):
     f = _showcompatlist(context, mapping, 'bookmark', bookmarks)
     return _hybrid(f, bookmarks, makemap, pycompat.identity)
 
+
 @templatekeyword('children', requires={'ctx'})
 def showchildren(context, mapping):
     """List of strings. The children of the changeset."""
@@ -199,12 +217,14 @@ def showchildren(context, mapping):
     childrevs = ['%d:%s' % (cctx.rev(), cctx) for cctx in ctx.children()]
     return compatlist(context, mapping, 'children', childrevs, element='child')
 
+
 # Deprecated, but kept alive for help generation a purpose.
 @templatekeyword('currentbookmark', requires={'repo', 'ctx'})
 def showcurrentbookmark(context, mapping):
     """String. The active bookmark, if it is associated with the changeset.
     (DEPRECATED)"""
     return showactivebookmark(context, mapping)
+
 
 @templatekeyword('activebookmark', requires={'repo', 'ctx'})
 def showactivebookmark(context, mapping):
@@ -216,6 +236,7 @@ def showactivebookmark(context, mapping):
         return active
     return ''
 
+
 @templatekeyword('date', requires={'ctx'})
 def showdate(context, mapping):
     """Date information. The date when the changeset was committed."""
@@ -223,6 +244,7 @@ def showdate(context, mapping):
     # the default string format is '<float(unixtime)><tzoffset>' because
     # python-hglib splits date at decimal separator.
     return templateutil.date(ctx.date(), showfmt='%d.0%d')
+
 
 @templatekeyword('desc', requires={'ctx'})
 def showdescription(context, mapping):
@@ -237,6 +259,7 @@ def showdescription(context, mapping):
     else:
         return s.strip()
 
+
 @templatekeyword('diffstat', requires={'ui', 'ctx'})
 def showdiffstat(context, mapping):
     """String. Statistics of changes with the following format:
@@ -250,6 +273,7 @@ def showdiffstat(context, mapping):
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
     return '%d: +%d/-%d' % (len(stats), adds, removes)
 
+
 @templatekeyword('envvars', requires={'ui'})
 def showenvvars(context, mapping):
     """A dictionary of environment variables. (EXPERIMENTAL)"""
@@ -257,6 +281,7 @@ def showenvvars(context, mapping):
     env = ui.exportableenviron()
     env = util.sortdict((k, env[k]) for k in sorted(env))
     return compatdict(context, mapping, 'envvar', env, plural='envvars')
+
 
 @templatekeyword('extras', requires={'ctx'})
 def showextras(context, mapping):
@@ -268,18 +293,25 @@ def showextras(context, mapping):
     makemap = lambda k: {'key': k, 'value': extras[k]}
     c = [makemap(k) for k in extras]
     f = _showcompatlist(context, mapping, 'extra', c, plural='extras')
-    return _hybrid(f, extras, makemap,
-                   lambda k: '%s=%s' % (k, stringutil.escapestr(extras[k])))
+    return _hybrid(
+        f,
+        extras,
+        makemap,
+        lambda k: '%s=%s' % (k, stringutil.escapestr(extras[k])),
+    )
+
 
 def _getfilestatus(context, mapping, listall=False):
     ctx = context.resource(mapping, 'ctx')
     revcache = context.resource(mapping, 'revcache')
     if 'filestatus' not in revcache or revcache['filestatusall'] < listall:
-        stat = ctx.p1().status(ctx, listignored=listall, listclean=listall,
-                               listunknown=listall)
+        stat = ctx.p1().status(
+            ctx, listignored=listall, listclean=listall, listunknown=listall
+        )
         revcache['filestatus'] = stat
         revcache['filestatusall'] = listall
     return revcache['filestatus']
+
 
 def _getfilestatusmap(context, mapping, listall=False):
     revcache = context.resource(mapping, 'revcache')
@@ -290,8 +322,8 @@ def _getfilestatusmap(context, mapping, listall=False):
             statmap.update((f, char) for f in files)
     return revcache['filestatusmap']  # {path: statchar}
 
-@templatekeyword('file_copies',
-                 requires={'repo', 'ctx', 'cache', 'revcache'})
+
+@templatekeyword('file_copies', requires={'repo', 'ctx', 'cache', 'revcache'})
 def showfilecopies(context, mapping):
     """List of strings. Files copied in this changeset with
     their sources.
@@ -305,8 +337,10 @@ def showfilecopies(context, mapping):
             cache['getcopies'] = scmutil.getcopiesfn(repo)
         getcopies = cache['getcopies']
         copies = getcopies(ctx)
-    return templateutil.compatfilecopiesdict(context, mapping, 'file_copy',
-                                             copies)
+    return templateutil.compatfilecopiesdict(
+        context, mapping, 'file_copy', copies
+    )
+
 
 # showfilecopiesswitch() displays file copies only if copy records are
 # provided before calling the templater, usually with a --copies
@@ -317,29 +351,37 @@ def showfilecopiesswitch(context, mapping):
     only if the --copied switch is set.
     """
     copies = context.resource(mapping, 'revcache').get('copies') or []
-    return templateutil.compatfilecopiesdict(context, mapping, 'file_copy',
-                                             copies)
+    return templateutil.compatfilecopiesdict(
+        context, mapping, 'file_copy', copies
+    )
+
 
 @templatekeyword('file_adds', requires={'ctx', 'revcache'})
 def showfileadds(context, mapping):
     """List of strings. Files added by this changeset."""
     ctx = context.resource(mapping, 'ctx')
-    return templateutil.compatfileslist(context, mapping, 'file_add',
-                                        ctx.filesadded())
+    return templateutil.compatfileslist(
+        context, mapping, 'file_add', ctx.filesadded()
+    )
+
 
 @templatekeyword('file_dels', requires={'ctx', 'revcache'})
 def showfiledels(context, mapping):
     """List of strings. Files removed by this changeset."""
     ctx = context.resource(mapping, 'ctx')
-    return templateutil.compatfileslist(context, mapping, 'file_del',
-                                        ctx.filesremoved())
+    return templateutil.compatfileslist(
+        context, mapping, 'file_del', ctx.filesremoved()
+    )
+
 
 @templatekeyword('file_mods', requires={'ctx', 'revcache'})
 def showfilemods(context, mapping):
     """List of strings. Files modified by this changeset."""
     ctx = context.resource(mapping, 'ctx')
-    return templateutil.compatfileslist(context, mapping, 'file_mod',
-                                        ctx.filesmodified())
+    return templateutil.compatfileslist(
+        context, mapping, 'file_mod', ctx.filesmodified()
+    )
+
 
 @templatekeyword('files', requires={'ctx'})
 def showfiles(context, mapping):
@@ -349,6 +391,7 @@ def showfiles(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return templateutil.compatfileslist(context, mapping, 'file', ctx.files())
 
+
 @templatekeyword('graphnode', requires={'repo', 'ctx'})
 def showgraphnode(context, mapping):
     """String. The character representing the changeset node in an ASCII
@@ -357,8 +400,10 @@ def showgraphnode(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return getgraphnode(repo, ctx)
 
+
 def getgraphnode(repo, ctx):
     return getgraphnodecurrent(repo, ctx) or getgraphnodesymbol(ctx)
+
 
 def getgraphnodecurrent(repo, ctx):
     wpnodes = repo.dirstate.parents()
@@ -368,6 +413,7 @@ def getgraphnodecurrent(repo, ctx):
         return '@'
     else:
         return ''
+
 
 def getgraphnodesymbol(ctx):
     if ctx.obsolete():
@@ -379,17 +425,20 @@ def getgraphnodesymbol(ctx):
     else:
         return 'o'
 
+
 @templatekeyword('graphwidth', requires=())
 def showgraphwidth(context, mapping):
     """Integer. The width of the graph drawn by 'log --graph' or zero."""
     # just hosts documentation; should be overridden by template mapping
     return 0
 
+
 @templatekeyword('index', requires=())
 def showindex(context, mapping):
     """Integer. The current iteration of the loop. (0 indexed)"""
     # just hosts documentation; should be overridden by template mapping
     raise error.Abort(_("can't use index in this context"))
+
 
 @templatekeyword('latesttag', requires={'repo', 'ctx', 'cache'})
 def showlatesttag(context, mapping):
@@ -398,6 +447,7 @@ def showlatesttag(context, mapping):
     consists of the single string "null".
     """
     return showlatesttags(context, mapping, None)
+
 
 def showlatesttags(context, mapping, pattern):
     """helper method for the latesttag keyword and function"""
@@ -409,18 +459,20 @@ def showlatesttags(context, mapping, pattern):
     makemap = lambda v: {
         'changes': _showchangessincetag,
         'distance': latesttags[1],
-        'latesttag': v,   # BC with {latesttag % '{latesttag}'}
-        'tag': v
+        'latesttag': v,  # BC with {latesttag % '{latesttag}'}
+        'tag': v,
     }
 
     tags = latesttags[2]
     f = _showcompatlist(context, mapping, 'latesttag', tags, separator=':')
     return _hybrid(f, tags, makemap, pycompat.identity)
 
+
 @templatekeyword('latesttagdistance', requires={'repo', 'ctx', 'cache'})
 def showlatesttagdistance(context, mapping):
     """Integer. Longest path to the latest tag."""
     return getlatesttags(context, mapping)[1]
+
 
 @templatekeyword('changessincelatesttag', requires={'repo', 'ctx', 'cache'})
 def showchangessincelatesttag(context, mapping):
@@ -428,6 +480,7 @@ def showchangessincelatesttag(context, mapping):
     tag = getlatesttags(context, mapping)[2][0]
     mapping = context.overlaymap(mapping, {'tag': tag})
     return _showchangessincetag(context, mapping)
+
 
 def _showchangessincetag(context, mapping):
     repo = context.resource(mapping, 'repo')
@@ -443,8 +496,10 @@ def _showchangessincetag(context, mapping):
 
     return len(repo.revs('only(%ld, %s)', revs, tag)) + offset
 
+
 # teach templater latesttags.changes is switched to (context, mapping) API
 _showchangessincetag._requires = {'repo', 'ctx'}
+
 
 @templatekeyword('manifest', requires={'repo', 'ctx'})
 def showmanifest(context, mapping):
@@ -459,8 +514,10 @@ def showmanifest(context, mapping):
     mhex = hex(mnode)
     mapping = context.overlaymap(mapping, {'rev': mrev, 'node': mhex})
     f = context.process('manifest', mapping)
-    return templateutil.hybriditem(f, None, f,
-                                   lambda x: {'rev': mrev, 'node': mhex})
+    return templateutil.hybriditem(
+        f, None, f, lambda x: {'rev': mrev, 'node': mhex}
+    )
+
 
 @templatekeyword('obsfate', requires={'ui', 'repo', 'ctx'})
 def showobsfate(context, mapping):
@@ -475,11 +532,13 @@ def showobsfate(context, mapping):
     values = []
 
     for x in succsandmarkers.tovalue(context, mapping):
-        v = obsutil.obsfateprinter(ui, repo, x['successors'], x['markers'],
-                                   scmutil.formatchangeid)
+        v = obsutil.obsfateprinter(
+            ui, repo, x['successors'], x['markers'], scmutil.formatchangeid
+        )
         values.append(v)
 
     return compatlist(context, mapping, "fate", values)
+
 
 def shownames(context, mapping, namespace):
     """helper method to generate a template keyword for a namespace"""
@@ -487,8 +546,10 @@ def shownames(context, mapping, namespace):
     ctx = context.resource(mapping, 'ctx')
     ns = repo.names[namespace]
     names = ns.names(repo, ctx.node())
-    return compatlist(context, mapping, ns.templatename, names,
-                      plural=namespace)
+    return compatlist(
+        context, mapping, ns.templatename, names, plural=namespace
+    )
+
 
 @templatekeyword('namespaces', requires={'repo', 'ctx'})
 def shownamespaces(context, mapping):
@@ -498,6 +559,7 @@ def shownamespaces(context, mapping):
     ctx = context.resource(mapping, 'ctx')
 
     namespaces = util.sortdict()
+
     def makensmapfn(ns):
         # 'name' for iterating over namespaces, templatename for local reference
         return lambda v: {'name': v, ns.templatename: v}
@@ -519,6 +581,7 @@ def shownamespaces(context, mapping):
 
     return _hybrid(f, namespaces, makemap, pycompat.identity)
 
+
 @templatekeyword('negrev', requires={'repo', 'ctx'})
 def shownegrev(context, mapping):
     """Integer. The repository-local changeset negative revision number,
@@ -530,6 +593,7 @@ def shownegrev(context, mapping):
     repo = context.resource(mapping, 'repo')
     return rev - len(repo)
 
+
 @templatekeyword('node', requires={'ctx'})
 def shownode(context, mapping):
     """String. The changeset identification hash, as a 40 hexadecimal
@@ -537,6 +601,7 @@ def shownode(context, mapping):
     """
     ctx = context.resource(mapping, 'ctx')
     return ctx.hex()
+
 
 @templatekeyword('obsolete', requires={'ctx'})
 def showobsolete(context, mapping):
@@ -546,11 +611,13 @@ def showobsolete(context, mapping):
         return 'obsolete'
     return ''
 
+
 @templatekeyword('path', requires={'fctx'})
 def showpath(context, mapping):
     """String. Repository-absolute path of the current file. (EXPERIMENTAL)"""
     fctx = context.resource(mapping, 'fctx')
     return fctx.path()
+
 
 @templatekeyword('peerurls', requires={'repo'})
 def showpeerurls(context, mapping):
@@ -560,12 +627,15 @@ def showpeerurls(context, mapping):
     # see commands.paths() for naming of dictionary keys
     paths = repo.ui.paths
     urls = util.sortdict((k, p.rawloc) for k, p in sorted(paths.iteritems()))
+
     def makemap(k):
         p = paths[k]
         d = {'name': k, 'url': p.rawloc}
         d.update((o, v) for o, v in sorted(p.suboptions.iteritems()))
         return d
+
     return _hybrid(None, urls, makemap, lambda k: '%s=%s' % (k, urls[k]))
+
 
 @templatekeyword("predecessors", requires={'repo', 'ctx'})
 def showpredecessors(context, mapping):
@@ -575,9 +645,13 @@ def showpredecessors(context, mapping):
     predecessors = sorted(obsutil.closestpredecessors(repo, ctx.node()))
     predecessors = pycompat.maplist(hex, predecessors)
 
-    return _hybrid(None, predecessors,
-                   lambda x: {'ctx': repo[x]},
-                   lambda x: scmutil.formatchangeid(repo[x]))
+    return _hybrid(
+        None,
+        predecessors,
+        lambda x: {'ctx': repo[x]},
+        lambda x: scmutil.formatchangeid(repo[x]),
+    )
+
 
 @templatekeyword('reporoot', requires={'repo'})
 def showreporoot(context, mapping):
@@ -585,11 +659,13 @@ def showreporoot(context, mapping):
     repo = context.resource(mapping, 'repo')
     return repo.root
 
+
 @templatekeyword('size', requires={'fctx'})
 def showsize(context, mapping):
     """Integer. Size of the current file in bytes. (EXPERIMENTAL)"""
     fctx = context.resource(mapping, 'fctx')
     return fctx.size()
+
 
 # requires 'fctx' to denote {status} depends on (ctx, path) pair
 @templatekeyword('status', requires={'ctx', 'fctx', 'revcache'})
@@ -603,6 +679,7 @@ def showstatus(context, mapping):
     if path not in statmap:
         statmap = _getfilestatusmap(context, mapping, listall=True)
     return statmap.get(path)
+
 
 @templatekeyword("successorssets", requires={'repo', 'ctx'})
 def showsuccessorssets(context, mapping):
@@ -619,8 +696,12 @@ def showsuccessorssets(context, mapping):
 
     data = []
     for ss in ssets:
-        h = _hybrid(None, ss, lambda x: {'ctx': repo[x]},
-                    lambda x: scmutil.formatchangeid(repo[x]))
+        h = _hybrid(
+            None,
+            ss,
+            lambda x: {'ctx': repo[x]},
+            lambda x: scmutil.formatchangeid(repo[x]),
+        )
         data.append(h)
 
     # Format the successorssets
@@ -630,8 +711,10 @@ def showsuccessorssets(context, mapping):
     def gen(data):
         yield "; ".join(render(d) for d in data)
 
-    return _hybrid(gen(data), data, lambda x: {'successorset': x},
-                   pycompat.identity)
+    return _hybrid(
+        gen(data), data, lambda x: {'successorset': x}, pycompat.identity
+    )
+
 
 @templatekeyword("succsandmarkers", requires={'repo', 'ctx'})
 def showsuccsandmarkers(context, mapping):
@@ -655,9 +738,12 @@ def showsuccsandmarkers(context, mapping):
         successors = i['successors']
 
         successors = [hex(n) for n in successors]
-        successors = _hybrid(None, successors,
-                             lambda x: {'ctx': repo[x]},
-                             lambda x: scmutil.formatchangeid(repo[x]))
+        successors = _hybrid(
+            None,
+            successors,
+            lambda x: {'ctx': repo[x]},
+            lambda x: scmutil.formatchangeid(repo[x]),
+        )
 
         # Format markers
         finalmarkers = []
@@ -674,12 +760,14 @@ def showsuccsandmarkers(context, mapping):
 
     return templateutil.mappinglist(data)
 
+
 @templatekeyword('p1', requires={'ctx'})
 def showp1(context, mapping):
     """Changeset. The changeset's first parent. ``{p1.rev}`` for the revision
     number, and ``{p1.node}`` for the identification hash."""
     ctx = context.resource(mapping, 'ctx')
     return templateutil.mappingdict({'ctx': ctx.p1()}, tmpl=_changeidtmpl)
+
 
 @templatekeyword('p2', requires={'ctx'})
 def showp2(context, mapping):
@@ -688,6 +776,7 @@ def showp2(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return templateutil.mappingdict({'ctx': ctx.p2()}, tmpl=_changeidtmpl)
 
+
 @templatekeyword('p1rev', requires={'ctx'})
 def showp1rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's
@@ -695,12 +784,14 @@ def showp1rev(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.p1().rev()
 
+
 @templatekeyword('p2rev', requires={'ctx'})
 def showp2rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's
     second parent, or -1 if the changeset has no second parent. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p2().rev()
+
 
 @templatekeyword('p1node', requires={'ctx'})
 def showp1node(context, mapping):
@@ -710,6 +801,7 @@ def showp1node(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.p1().hex()
 
+
 @templatekeyword('p2node', requires={'ctx'})
 def showp2node(context, mapping):
     """String. The identification hash of the changeset's second
@@ -717,6 +809,7 @@ def showp2node(context, mapping):
     parent, all digits are 0. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p2().hex()
+
 
 @templatekeyword('parents', requires={'repo', 'ctx'})
 def showparents(context, mapping):
@@ -727,13 +820,19 @@ def showparents(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     pctxs = scmutil.meaningfulparents(repo, ctx)
     prevs = [p.rev() for p in pctxs]
-    parents = [[('rev', p.rev()),
-                ('node', p.hex()),
-                ('phase', p.phasestr())]
-               for p in pctxs]
+    parents = [
+        [('rev', p.rev()), ('node', p.hex()), ('phase', p.phasestr())]
+        for p in pctxs
+    ]
     f = _showcompatlist(context, mapping, 'parent', parents)
-    return _hybrid(f, prevs, lambda x: {'ctx': repo[x]},
-                   lambda x: scmutil.formatchangeid(repo[x]), keytype=int)
+    return _hybrid(
+        f,
+        prevs,
+        lambda x: {'ctx': repo[x]},
+        lambda x: scmutil.formatchangeid(repo[x]),
+        keytype=int,
+    )
+
 
 @templatekeyword('phase', requires={'ctx'})
 def showphase(context, mapping):
@@ -741,17 +840,20 @@ def showphase(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.phasestr()
 
+
 @templatekeyword('phaseidx', requires={'ctx'})
 def showphaseidx(context, mapping):
     """Integer. The changeset phase index. (ADVANCED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.phase()
 
+
 @templatekeyword('rev', requires={'ctx'})
 def showrev(context, mapping):
     """Integer. The repository-local changeset revision number."""
     ctx = context.resource(mapping, 'ctx')
     return scmutil.intrev(ctx)
+
 
 def showrevslist(context, mapping, name, revs):
     """helper to generate a list of revisions in which a mapped template will
@@ -761,9 +863,15 @@ def showrevslist(context, mapping, name, revs):
     def f():
         srevs = ['%d' % r for r in revs]
         return _showcompatlist(context, mapping, name, srevs)
-    return _hybrid(f, revs,
-                   lambda x: {name: x, 'ctx': repo[x]},
-                   pycompat.identity, keytype=int)
+
+    return _hybrid(
+        f,
+        revs,
+        lambda x: {name: x, 'ctx': repo[x]},
+        pycompat.identity,
+        keytype=int,
+    )
+
 
 @templatekeyword('subrepos', requires={'ctx'})
 def showsubrepos(context, mapping):
@@ -776,11 +884,12 @@ def showsubrepos(context, mapping):
     subrepos = []
     for sub in substate:
         if sub not in psubstate or substate[sub] != psubstate[sub]:
-            subrepos.append(sub) # modified or newly added in ctx
+            subrepos.append(sub)  # modified or newly added in ctx
     for sub in psubstate:
         if sub not in substate:
-            subrepos.append(sub) # removed in ctx
+            subrepos.append(sub)  # removed in ctx
     return compatlist(context, mapping, 'subrepo', sorted(subrepos))
+
 
 # don't remove "showtags" definition, even though namespaces will put
 # a helper function for "tags" keyword into "keywords" map automatically,
@@ -790,11 +899,13 @@ def showtags(context, mapping):
     """List of strings. Any tags associated with the changeset."""
     return shownames(context, mapping, 'tags')
 
+
 @templatekeyword('termwidth', requires={'ui'})
 def showtermwidth(context, mapping):
     """Integer. The width of the current terminal."""
     ui = context.resource(mapping, 'ui')
     return ui.termwidth()
+
 
 @templatekeyword('user', requires={'ctx'})
 def showuser(context, mapping):
@@ -802,14 +913,21 @@ def showuser(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.user()
 
+
 @templatekeyword('instabilities', requires={'ctx'})
 def showinstabilities(context, mapping):
     """List of strings. Evolution instabilities affecting the changeset.
     (EXPERIMENTAL)
     """
     ctx = context.resource(mapping, 'ctx')
-    return compatlist(context, mapping, 'instability', ctx.instabilities(),
-                      plural='instabilities')
+    return compatlist(
+        context,
+        mapping,
+        'instability',
+        ctx.instabilities(),
+        plural='instabilities',
+    )
+
 
 @templatekeyword('verbosity', requires={'ui'})
 def showverbosity(context, mapping):
@@ -824,6 +942,7 @@ def showverbosity(context, mapping):
     elif ui.verbose:
         return 'verbose'
     return ''
+
 
 @templatekeyword('whyunstable', requires={'repo', 'ctx'})
 def showwhyunstable(context, mapping):
@@ -841,20 +960,27 @@ def showwhyunstable(context, mapping):
     for entry in entries:
         if entry.get('divergentnodes'):
             dnodes = entry['divergentnodes']
-            dnhybrid = _hybrid(None, [dnode.hex() for dnode in dnodes],
-                               lambda x: {'ctx': repo[x]},
-                               lambda x: formatnode(repo[x]))
+            dnhybrid = _hybrid(
+                None,
+                [dnode.hex() for dnode in dnodes],
+                lambda x: {'ctx': repo[x]},
+                lambda x: formatnode(repo[x]),
+            )
             entry['divergentnodes'] = dnhybrid
 
-    tmpl = ('{instability}:{if(divergentnodes, " ")}{divergentnodes} '
-            '{reason} {node|short}')
+    tmpl = (
+        '{instability}:{if(divergentnodes, " ")}{divergentnodes} '
+        '{reason} {node|short}'
+    )
     return templateutil.mappinglist(entries, tmpl=tmpl, sep='\n')
+
 
 def loadkeyword(ui, extname, registrarobj):
     """Load template keyword from specified registrarobj
     """
     for name, func in registrarobj._table.iteritems():
         keywords[name] = func
+
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = keywords.values()

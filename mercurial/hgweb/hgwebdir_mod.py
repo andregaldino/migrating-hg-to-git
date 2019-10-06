@@ -50,8 +50,10 @@ from . import (
 )
 from ..utils import dateutil
 
+
 def cleannames(items):
     return [(util.pconvert(name).strip('/'), path) for name, path in items]
+
 
 def findrepos(paths):
     repos = []
@@ -71,6 +73,7 @@ def findrepos(paths):
         repos.extend(urlrepos(prefix, roothead, paths))
     return repos
 
+
 def urlrepos(prefix, roothead, paths):
     """yield url paths and filesystem paths from a list of repo paths
 
@@ -82,8 +85,10 @@ def urlrepos(prefix, roothead, paths):
     """
     for path in paths:
         path = os.path.normpath(path)
-        yield (prefix + '/' +
-               util.pconvert(path[len(roothead):]).lstrip('/')).strip('/'), path
+        yield (
+            prefix + '/' + util.pconvert(path[len(roothead) :]).lstrip('/')
+        ).strip('/'), path
+
 
 def readallowed(ui, req):
     """Check allow_read and deny_read config options of a repo's ui object
@@ -107,6 +112,7 @@ def readallowed(ui, req):
 
     return False
 
+
 def rawindexentries(ui, repos, req, subdir=''):
     descend = ui.configbool('web', 'descend')
     collapse = ui.configbool('web', 'collapse')
@@ -116,7 +122,7 @@ def rawindexentries(ui, repos, req, subdir=''):
 
         if not name.startswith(subdir):
             continue
-        name = name[len(subdir):]
+        name = name[len(subdir) :]
         directory = False
 
         if '/' in name:
@@ -140,7 +146,7 @@ def rawindexentries(ui, repos, req, subdir=''):
                 discarded = '/'.join(nameparts[1:])
 
                 # remove name parts plus accompanying slash
-                path = path[:-len(discarded) - 1]
+                path = path[: -len(discarded) - 1]
 
                 try:
                     hg.repository(ui, path)
@@ -165,19 +171,20 @@ def rawindexentries(ui, repos, req, subdir=''):
 
             # add '/' to the name to make it obvious that
             # the entry is a directory, not a regular repository
-            row = {'contact': "",
-                   'contact_sort': "",
-                   'name': name + '/',
-                   'name_sort': name,
-                   'url': url,
-                   'description': "",
-                   'description_sort': "",
-                   'lastchange': d,
-                   'lastchange_sort': d[1] - d[0],
-                   'archives': templateutil.mappinglist([]),
-                   'isdirectory': True,
-                   'labels': templateutil.hybridlist([], name='label'),
-                   }
+            row = {
+                'contact': "",
+                'contact_sort': "",
+                'name': name + '/',
+                'name_sort': name,
+                'url': url,
+                'description': "",
+                'description_sort': "",
+                'lastchange': d,
+                'lastchange_sort': d[1] - d[0],
+                'archives': templateutil.mappinglist([]),
+                'isdirectory': True,
+                'labels': templateutil.hybridlist([], name='label'),
+            }
 
             seendirs.add(name)
             yield row
@@ -218,41 +225,46 @@ def rawindexentries(ui, repos, req, subdir=''):
         seenrepos.add(name)
         name = get("web", "name", name)
         labels = u.configlist('web', 'labels', untrusted=True)
-        row = {'contact': contact or "unknown",
-               'contact_sort': contact.upper() or "unknown",
-               'name': name,
-               'name_sort': name,
-               'url': url,
-               'description': description or "unknown",
-               'description_sort': description.upper() or "unknown",
-               'lastchange': d,
-               'lastchange_sort': d[1] - d[0],
-               'archives': webutil.archivelist(u, "tip", url),
-               'isdirectory': None,
-               'labels': templateutil.hybridlist(labels, name='label'),
-               }
+        row = {
+            'contact': contact or "unknown",
+            'contact_sort': contact.upper() or "unknown",
+            'name': name,
+            'name_sort': name,
+            'url': url,
+            'description': description or "unknown",
+            'description_sort': description.upper() or "unknown",
+            'lastchange': d,
+            'lastchange_sort': d[1] - d[0],
+            'archives': webutil.archivelist(u, "tip", url),
+            'isdirectory': None,
+            'labels': templateutil.hybridlist(labels, name='label'),
+        }
 
         yield row
 
-def _indexentriesgen(context, ui, repos, req, stripecount, sortcolumn,
-                     descending, subdir):
+
+def _indexentriesgen(
+    context, ui, repos, req, stripecount, sortcolumn, descending, subdir
+):
     rows = rawindexentries(ui, repos, req, subdir=subdir)
 
     sortdefault = None, False
 
     if sortcolumn and sortdefault != (sortcolumn, descending):
         sortkey = '%s_sort' % sortcolumn
-        rows = sorted(rows, key=lambda x: x[sortkey],
-                      reverse=descending)
+        rows = sorted(rows, key=lambda x: x[sortkey], reverse=descending)
 
     for row, parity in zip(rows, paritygen(stripecount)):
         row['parity'] = parity
         yield row
 
-def indexentries(ui, repos, req, stripecount, sortcolumn='',
-                 descending=False, subdir=''):
+
+def indexentries(
+    ui, repos, req, stripecount, sortcolumn='', descending=False, subdir=''
+):
     args = (ui, repos, req, stripecount, sortcolumn, descending, subdir)
     return templateutil.mappinggenerator(_indexentriesgen, args=args)
+
 
 class hgwebdir(object):
     """HTTP server for multiple repositories.
@@ -262,6 +274,7 @@ class hgwebdir(object):
 
     Instances are typically used as WSGI applications.
     """
+
     def __init__(self, conf, baseui=None):
         self.conf = conf
         self.baseui = baseui
@@ -282,8 +295,10 @@ class hgwebdir(object):
             refreshinterval = item.default
 
         # refreshinterval <= 0 means to always refresh.
-        if (refreshinterval > 0 and
-            self.lastrefresh + refreshinterval > time.time()):
+        if (
+            refreshinterval > 0
+            and self.lastrefresh + refreshinterval > time.time()
+        ):
             return
 
         if self.baseui:
@@ -318,7 +333,7 @@ class hgwebdir(object):
                 repo = os.path.normpath(path)
                 name = util.pconvert(repo)
                 if name.startswith(prefix):
-                    name = name[len(prefix):]
+                    name = name[len(prefix) :]
                 repos.append((name.lstrip('/'), repo))
 
         self.repos = repos
@@ -338,10 +353,13 @@ class hgwebdir(object):
         self.lastrefresh = time.time()
 
     def run(self):
-        if not encoding.environ.get('GATEWAY_INTERFACE',
-                                    '').startswith("CGI/1."):
-            raise RuntimeError("This function is only intended to be "
-                               "called while running as a CGI script.")
+        if not encoding.environ.get('GATEWAY_INTERFACE', '').startswith(
+            "CGI/1."
+        ):
+            raise RuntimeError(
+                "This function is only intended to be "
+                "called while running as a CGI script."
+            )
         wsgicgi.launch(self)
 
     def __call__(self, env, respond):
@@ -409,7 +427,7 @@ class hgwebdir(object):
             # nested indexes and hgwebs
 
             if virtual.endswith('/index') and virtual not in repos:
-                subdir = virtual[:-len('index')]
+                subdir = virtual[: -len('index')]
                 if any(r.startswith(subdir) for r in repos):
                     return self.makeindex(req, res, tmpl, subdir)
 
@@ -426,14 +444,17 @@ class hgwebdir(object):
                     # repository path component.
                     uenv = req.rawenv
                     if pycompat.ispy3:
-                        uenv = {k.decode('latin1'): v for k, v in
-                                uenv.iteritems()}
+                        uenv = {
+                            k.decode('latin1'): v for k, v in uenv.iteritems()
+                        }
                     req = requestmod.parserequestfromenv(
-                        uenv, reponame=virtualrepo,
+                        uenv,
+                        reponame=virtualrepo,
                         altbaseurl=self.ui.config('web', 'baseurl'),
                         # Reuse wrapped body file object otherwise state
                         # tracking can get confused.
-                        bodyfh=req.bodyfh)
+                        bodyfh=req.bodyfh,
+                    )
                     try:
                         # ensure caller gets private copy of ui
                         repo = hg.repository(self.ui.copy(), real)
@@ -473,16 +494,29 @@ class hgwebdir(object):
             if sortcolumn not in sortable:
                 sortcolumn = ""
 
-        sort = [("sort_%s" % column,
-                 "%s%s" % ((not descending and column == sortcolumn)
-                            and "-" or "", column))
-                for column in sortable]
+        sort = [
+            (
+                "sort_%s" % column,
+                "%s%s"
+                % (
+                    (not descending and column == sortcolumn) and "-" or "",
+                    column,
+                ),
+            )
+            for column in sortable
+        ]
 
         self.refresh()
 
-        entries = indexentries(self.ui, self.repos, req,
-                               self.stripecount, sortcolumn=sortcolumn,
-                               descending=descending, subdir=subdir)
+        entries = indexentries(
+            self.ui,
+            self.repos,
+            req,
+            self.stripecount,
+            sortcolumn=sortcolumn,
+            descending=descending,
+            subdir=subdir,
+        )
 
         mapping = {
             'entries': entries,
@@ -496,21 +530,22 @@ class hgwebdir(object):
         return res.sendresponse()
 
     def templater(self, req, nonce):
-
         def config(section, name, default=uimod._unset, untrusted=True):
             return self.ui.config(section, name, default, untrusted)
 
         vars = {}
-        styles, (style, mapfile) = hgweb_mod.getstyle(req, config,
-                                                      self.templatepath)
+        styles, (style, mapfile) = hgweb_mod.getstyle(
+            req, config, self.templatepath
+        )
         if style == styles[0]:
             vars['style'] = style
 
         sessionvars = webutil.sessionvars(vars, '?')
         logourl = config('web', 'logourl')
         logoimg = config('web', 'logoimg')
-        staticurl = (config('web', 'staticurl')
-                     or req.apppath.rstrip('/') + '/static/')
+        staticurl = (
+            config('web', 'staticurl') or req.apppath.rstrip('/') + '/static/'
+        )
         if not staticurl.endswith('/'):
             staticurl += '/'
 
@@ -525,6 +560,7 @@ class hgwebdir(object):
             "nonce": nonce,
         }
         templatekeyword = registrar.templatekeyword(defaults)
+
         @templatekeyword('motd', requires=())
         def motd(context, mapping):
             if self.motd is not None:

@@ -49,9 +49,7 @@ from __future__ import absolute_import
 
 import os
 from mercurial.i18n import _
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 from mercurial import (
     error,
     httpconnection,
@@ -70,15 +68,16 @@ _executable = _mountpoint = _service = None
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('factotum', 'executable',
-    default='/bin/auth/factotum',
+configitem(
+    'factotum', 'executable', default='/bin/auth/factotum',
 )
-configitem('factotum', 'mountpoint',
-    default='/mnt/factotum',
+configitem(
+    'factotum', 'mountpoint', default='/mnt/factotum',
 )
-configitem('factotum', 'service',
-    default='hg',
+configitem(
+    'factotum', 'service', default='hg',
 )
+
 
 def auth_getkey(self, params):
     if not self.ui.interactive():
@@ -87,6 +86,7 @@ def auth_getkey(self, params):
         params = '%s user?' % params
     params = '%s !password?' % params
     os.system(procutil.tonativestr("%s -g '%s'" % (_executable, params)))
+
 
 def auth_getuserpasswd(self, getkey, params):
     params = 'proto=pass %s' % params
@@ -111,11 +111,14 @@ def auth_getuserpasswd(self, getkey, params):
             os.close(fd)
         getkey(self, params)
 
+
 def monkeypatch_method(cls):
     def decorator(func):
         setattr(cls, func.__name__, func)
         return func
+
     return decorator
+
 
 @monkeypatch_method(passwordmgr)
 def find_user_password(self, realm, authuri):
@@ -141,6 +144,7 @@ def find_user_password(self, realm, authuri):
     self.add_password(realm, authuri, user, passwd)
     self._writedebug(user, passwd)
     return (user, passwd)
+
 
 def uisetup(ui):
     global _executable

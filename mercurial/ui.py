@@ -46,8 +46,9 @@ from .utils import (
 urlreq = util.urlreq
 
 # for use with str.translate(None, _keepalnum), to keep just alphanumerics
-_keepalnum = ''.join(c for c in map(pycompat.bytechr, range(256))
-                     if not c.isalnum())
+_keepalnum = ''.join(
+    c for c in map(pycompat.bytechr, range(256)) if not c.isalnum()
+)
 
 # The config knobs that will be altered (if unset) by ui.tweakdefaults.
 tweakrc = b"""
@@ -78,8 +79,7 @@ word-diff = 1
 """
 
 samplehgrcs = {
-    'user':
-b"""# example user config (see 'hg help config' for more info)
+    'user': b"""# example user config (see 'hg help config' for more info)
 [ui]
 # name and email, e.g.
 # username = Jane Doe <jdoe@example.com>
@@ -106,9 +106,7 @@ username =
 # rebase =
 # uncommit =
 """,
-
-    'cloned':
-b"""# example repository config (see 'hg help config' for more info)
+    'cloned': b"""# example repository config (see 'hg help config' for more info)
 [paths]
 default = %s
 
@@ -123,9 +121,7 @@ default = %s
 # name and email (local to this repository, optional), e.g.
 # username = Jane Doe <jdoe@example.com>
 """,
-
-    'local':
-b"""# example repository config (see 'hg help config' for more info)
+    'local': b"""# example repository config (see 'hg help config' for more info)
 [paths]
 # path aliases to other clones of this repo in URLs or filesystem paths
 # (see 'hg help config.paths' for more info)
@@ -139,9 +135,7 @@ b"""# example repository config (see 'hg help config' for more info)
 # name and email (local to this repository, optional), e.g.
 # username = Jane Doe <jdoe@example.com>
 """,
-
-    'global':
-b"""# example system-wide hg config (see 'hg help config' for more info)
+    'global': b"""# example system-wide hg config (see 'hg help config' for more info)
 
 [ui]
 # uncomment to disable color in command output
@@ -161,14 +155,18 @@ b"""# example system-wide hg config (see 'hg help config' for more info)
 """,
 }
 
+
 def _maybestrurl(maybebytes):
     return pycompat.rapply(pycompat.strurl, maybebytes)
+
 
 def _maybebytesurl(maybestr):
     return pycompat.rapply(pycompat.bytesurl, maybestr)
 
+
 class httppasswordmgrdbproxy(object):
     """Delays loading urllib2 until it's needed."""
+
     def __init__(self):
         self._mgr = None
 
@@ -179,16 +177,22 @@ class httppasswordmgrdbproxy(object):
 
     def add_password(self, realm, uris, user, passwd):
         return self._get_mgr().add_password(
-            _maybestrurl(realm), _maybestrurl(uris),
-            _maybestrurl(user), _maybestrurl(passwd))
+            _maybestrurl(realm),
+            _maybestrurl(uris),
+            _maybestrurl(user),
+            _maybestrurl(passwd),
+        )
 
     def find_user_password(self, realm, uri):
         mgr = self._get_mgr()
-        return _maybebytesurl(mgr.find_user_password(_maybestrurl(realm),
-                                                     _maybestrurl(uri)))
+        return _maybebytesurl(
+            mgr.find_user_password(_maybestrurl(realm), _maybestrurl(uri))
+        )
+
 
 def _catchterm(*args):
     raise error.SignalInterrupt
+
 
 # unique object used to detect no default value has been provided when
 # retrieving configuration value.
@@ -196,6 +200,7 @@ _unset = object()
 
 # _reqexithandlers: callbacks run at the end of a request
 _reqexithandlers = []
+
 
 class ui(object):
     def __init__(self, src=None):
@@ -216,9 +221,9 @@ class ui(object):
         self.quiet = self.verbose = self.debugflag = self.tracebackflag = False
         self._reportuntrusted = True
         self._knownconfig = configitems.coreitems
-        self._ocfg = config.config() # overlay
-        self._tcfg = config.config() # trusted
-        self._ucfg = config.config() # untrusted
+        self._ocfg = config.config()  # overlay
+        self._tcfg = config.config()  # trusted
+        self._ucfg = config.config()  # untrusted
         self._trustusers = set()
         self._trustgroups = set()
         self.callhooks = True
@@ -349,7 +354,8 @@ class ui(object):
             yield
         finally:
             self._blockedtimes[key + '_blocked'] += (
-                (util.timer() - starttime) * 1000)
+                util.timer() - starttime
+            ) * 1000
 
     @contextlib.contextmanager
     def uninterruptible(self):
@@ -361,8 +367,9 @@ class ui(object):
         that control-C etc can be blocked if desired.
         """
         enabled = self.configbool('experimental', 'nointerrupt')
-        if (enabled and
-            self.configbool('experimental', 'nointerrupt-interactiveonly')):
+        if enabled and self.configbool(
+            'experimental', 'nointerrupt-interactiveonly'
+        ):
             enabled = self.interactive()
         if self._uninterruptible or not enabled:
             # if nointerrupt support is turned off, the process isn't
@@ -370,11 +377,14 @@ class ui(object):
             # block, do nothing.
             yield
             return
+
         def warn():
             self.warn(_("shutting down cleanly\n"))
             self.warn(
-                _("press ^C again to terminate immediately (dangerous)\n"))
+                _("press ^C again to terminate immediately (dangerous)\n")
+            )
             return True
+
         with procutil.uninterruptible(warn):
             try:
                 self._uninterruptible = True
@@ -400,16 +410,19 @@ class ui(object):
             return True
 
         if self._reportuntrusted:
-            self.warn(_('not trusting file %s from untrusted '
-                        'user %s, group %s\n') % (f, user, group))
+            self.warn(
+                _('not trusting file %s from untrusted ' 'user %s, group %s\n')
+                % (f, user, group)
+            )
         return False
 
-    def readconfig(self, filename, root=None, trust=False,
-                   sections=None, remap=None):
+    def readconfig(
+        self, filename, root=None, trust=False, sections=None, remap=None
+    ):
         try:
             fp = open(filename, r'rb')
         except IOError:
-            if not sections: # ignore unless we were looking for something
+            if not sections:  # ignore unless we were looking for something
                 return
             raise
 
@@ -425,9 +438,18 @@ class ui(object):
             self.warn(_("ignored: %s\n") % stringutil.forcebytestr(inst))
 
         if self.plain():
-            for k in ('debug', 'fallbackencoding', 'quiet', 'slash',
-                      'logtemplate', 'message-output', 'statuscopies', 'style',
-                      'traceback', 'verbose'):
+            for k in (
+                'debug',
+                'fallbackencoding',
+                'quiet',
+                'slash',
+                'logtemplate',
+                'message-output',
+                'statuscopies',
+                'style',
+                'traceback',
+                'verbose',
+            ):
                 if k in cfg['ui']:
                     del cfg['ui'][k]
             for k, v in cfg.items('defaults'):
@@ -469,8 +491,10 @@ class ui(object):
                         continue
                     if '%%' in p:
                         s = self.configsource('paths', n) or 'none'
-                        self.warn(_("(deprecated '%%' in path %s=%s from %s)\n")
-                                  % (n, p, s))
+                        self.warn(
+                            _("(deprecated '%%' in path %s=%s from %s)\n")
+                            % (n, p, s)
+                        )
                         p = p.replace('%%', '%')
                     p = util.expandpath(p)
                     if not util.hasscheme(p) and not os.path.isabs(p):
@@ -485,8 +509,9 @@ class ui(object):
             self.quiet = not self.debugflag and self.configbool('ui', 'quiet')
             if self.verbose and self.quiet:
                 self.quiet = self.verbose = False
-            self._reportuntrusted = self.debugflag or self.configbool("ui",
-                "report_untrusted")
+            self._reportuntrusted = self.debugflag or self.configbool(
+                "ui", "report_untrusted"
+            )
             self.tracebackflag = self.configbool('ui', 'traceback')
             self.logblockedtimes = self.configbool('ui', 'logblockedtimes')
 
@@ -504,9 +529,12 @@ class ui(object):
                 self.setlogger(b'debug', logger)
 
     def backupconfig(self, section, item):
-        return (self._ocfg.backup(section, item),
-                self._tcfg.backup(section, item),
-                self._ucfg.backup(section, item),)
+        return (
+            self._ocfg.backup(section, item),
+            self._tcfg.backup(section, item),
+            self._ucfg.backup(section, item),
+        )
+
     def restoreconfig(self, data):
         self._ocfg.restore(data[0])
         self._tcfg.restore(data[1])
@@ -526,8 +554,9 @@ class ui(object):
 
     def config(self, section, name, default=_unset, untrusted=False):
         """return the plain string version of a config"""
-        value = self._config(section, name, default=default,
-                             untrusted=untrusted)
+        value = self._config(
+            section, name, default=default, untrusted=untrusted
+        )
         if value is _unset:
             return None
         return value
@@ -544,7 +573,7 @@ class ui(object):
             else:
                 itemdefault = item.default
         else:
-            msg = ("accessing unregistered config item: '%s.%s'")
+            msg = "accessing unregistered config item: '%s.%s'"
             msg %= (section, name)
             self.develwarn(msg, 2, 'warn-config-unknown')
 
@@ -558,11 +587,15 @@ class ui(object):
                 self.develwarn(msg, 2, 'warn-config-default')
             else:
                 value = itemdefault
-        elif (item is not None
-              and item.default is not configitems.dynamicdefault
-              and default != itemdefault):
-            msg = ("specifying a mismatched default value for a registered "
-                   "config item: '%s.%s' '%s'")
+        elif (
+            item is not None
+            and item.default is not configitems.dynamicdefault
+            and default != itemdefault
+        ):
+            msg = (
+                "specifying a mismatched default value for a registered "
+                "config item: '%s.%s' '%s'"
+            )
             msg %= (section, name, pycompat.bytestr(default))
             self.develwarn(msg, 2, 'warn-config-default')
 
@@ -576,8 +609,10 @@ class ui(object):
             for s, n in alternates:
                 uvalue = self._ucfg.get(s, n)
                 if uvalue is not None and uvalue != value:
-                    self.debug("ignoring untrusted configuration option "
-                               "%s.%s = %s\n" % (s, n, uvalue))
+                    self.debug(
+                        "ignoring untrusted configuration option "
+                        "%s.%s = %s\n" % (s, n, uvalue)
+                    )
         return value
 
     def configsuboptions(self, section, name, default=_unset, untrusted=False):
@@ -596,14 +631,16 @@ class ui(object):
         prefix = '%s:' % name
         for k, v in data.items(section):
             if k.startswith(prefix):
-                sub[k[len(prefix):]] = v
+                sub[k[len(prefix) :]] = v
 
         if self.debugflag and not untrusted and self._reportuntrusted:
             for k, v in sub.items():
                 uvalue = self._ucfg.get(section, '%s:%s' % (name, k))
                 if uvalue is not None and uvalue != v:
-                    self.debug('ignoring untrusted configuration option '
-                               '%s:%s.%s = %s\n' % (section, name, k, uvalue))
+                    self.debug(
+                        'ignoring untrusted configuration option '
+                        '%s:%s.%s = %s\n' % (section, name, k, uvalue)
+                    )
 
         return main, sub
 
@@ -651,12 +688,14 @@ class ui(object):
             return v
         b = stringutil.parsebool(v)
         if b is None:
-            raise error.ConfigError(_("%s.%s is not a boolean ('%s')")
-                                    % (section, name, v))
+            raise error.ConfigError(
+                _("%s.%s is not a boolean ('%s')") % (section, name, v)
+            )
         return b
 
-    def configwith(self, convert, section, name, default=_unset,
-                   desc=None, untrusted=False):
+    def configwith(
+        self, convert, section, name, default=_unset, desc=None, untrusted=False
+    ):
         """parse a configuration element with a conversion function
 
         >>> u = ui(); s = b'foo'
@@ -681,14 +720,15 @@ class ui(object):
 
         v = self.config(section, name, default, untrusted)
         if v is None:
-            return v # do not attempt to convert None
+            return v  # do not attempt to convert None
         try:
             return convert(v)
         except (ValueError, error.ParseError):
             if desc is None:
                 desc = pycompat.sysbytes(convert.__name__)
-            raise error.ConfigError(_("%s.%s is not a valid %s ('%s')")
-                                    % (section, name, desc, v))
+            raise error.ConfigError(
+                _("%s.%s is not a valid %s ('%s')") % (section, name, desc, v)
+            )
 
     def configint(self, section, name, default=_unset, untrusted=False):
         """parse a configuration element as an integer
@@ -709,8 +749,9 @@ class ui(object):
         ConfigError: foo.invalid is not a valid integer ('somevalue')
         """
 
-        return self.configwith(int, section, name, default, 'integer',
-                               untrusted)
+        return self.configwith(
+            int, section, name, default, 'integer', untrusted
+        )
 
     def configbytes(self, section, name, default=_unset, untrusted=False):
         """parse a configuration element as a quantity in bytes
@@ -744,8 +785,10 @@ class ui(object):
         try:
             return util.sizetoint(value)
         except error.ParseError:
-            raise error.ConfigError(_("%s.%s is not a byte quantity ('%s')")
-                                    % (section, name, value))
+            raise error.ConfigError(
+                _("%s.%s is not a byte quantity ('%s')")
+                % (section, name, value)
+            )
 
     def configlist(self, section, name, default=_unset, untrusted=False):
         """parse a configuration element as a list of comma/space separated
@@ -760,8 +803,9 @@ class ui(object):
         ['this', 'is', 'a small', 'test']
         """
         # default is not always a list
-        v = self.configwith(config.parselist, section, name, default,
-                               'list', untrusted)
+        v = self.configwith(
+            config.parselist, section, name, default, 'list', untrusted
+        )
         if isinstance(v, bytes):
             return config.parselist(v)
         elif v is None:
@@ -777,8 +821,9 @@ class ui(object):
         (0, 0)
         """
         if self.config(section, name, default, untrusted):
-            return self.configwith(dateutil.parsedate, section, name, default,
-                                   'date', untrusted)
+            return self.configwith(
+                dateutil.parsedate, section, name, default, 'date', untrusted
+            )
         if default is _unset:
             return None
         return default
@@ -808,8 +853,10 @@ class ui(object):
         if self.debugflag and not untrusted and self._reportuntrusted:
             for k, v in self._ucfg.items(section):
                 if self._tcfg.get(section, k) != v:
-                    self.debug("ignoring untrusted configuration option "
-                               "%s.%s = %s\n" % (section, k, v))
+                    self.debug(
+                        "ignoring untrusted configuration option "
+                        "%s.%s = %s\n" % (section, k, v)
+                    )
         return items
 
     def walkconfig(self, untrusted=False):
@@ -834,11 +881,14 @@ class ui(object):
         - False if feature is disabled by default and not included in HGPLAIN
         - True otherwise
         '''
-        if ('HGPLAIN' not in encoding.environ and
-                'HGPLAINEXCEPT' not in encoding.environ):
+        if (
+            'HGPLAIN' not in encoding.environ
+            and 'HGPLAINEXCEPT' not in encoding.environ
+        ):
             return False
-        exceptions = encoding.environ.get('HGPLAINEXCEPT',
-                '').strip().split(',')
+        exceptions = (
+            encoding.environ.get('HGPLAINEXCEPT', '').strip().split(',')
+        )
         # TODO: add support for HGPLAIN=+feature,-feature syntax
         if '+strictflags' not in encoding.environ.get('HGPLAIN', '').split(','):
             exceptions.append('strictflags')
@@ -869,18 +919,22 @@ class ui(object):
             user = self.prompt(_("enter a commit username:"), default=None)
         if user is None and not self.interactive():
             try:
-                user = '%s@%s' % (procutil.getuser(),
-                                  encoding.strtolocal(socket.getfqdn()))
+                user = '%s@%s' % (
+                    procutil.getuser(),
+                    encoding.strtolocal(socket.getfqdn()),
+                )
                 self.warn(_("no username found, using '%s' instead\n") % user)
             except KeyError:
                 pass
         if not user:
-            raise error.Abort(_('no username supplied'),
-                             hint=_("use 'hg config --edit' "
-                                    'to set your username'))
+            raise error.Abort(
+                _('no username supplied'),
+                hint=_("use 'hg config --edit' " 'to set your username'),
+            )
         if "\n" in user:
-            raise error.Abort(_("username %r contains a newline\n")
-                              % pycompat.bytestr(user))
+            raise error.Abort(
+                _("username %r contains a newline\n") % pycompat.bytestr(user)
+            )
         return user
 
     def shortuser(self, user):
@@ -1043,7 +1097,8 @@ class ui(object):
             raise error.StdioError(err)
         finally:
             self._blockedtimes['stdio_blocked'] += (
-                (util.timer() - starttime) * 1000)
+                util.timer() - starttime
+            ) * 1000
 
     def write_err(self, *args, **opts):
         self._write(self._ferr, *args, **opts)
@@ -1087,14 +1142,18 @@ class ui(object):
             if dest is self._ferr and not getattr(self._ferr, 'closed', False):
                 dest.flush()
         except IOError as err:
-            if (dest is self._ferr
-                and err.errno in (errno.EPIPE, errno.EIO, errno.EBADF)):
+            if dest is self._ferr and err.errno in (
+                errno.EPIPE,
+                errno.EIO,
+                errno.EBADF,
+            ):
                 # no way to report the error, so ignore it
                 return
             raise error.StdioError(err)
         finally:
             self._blockedtimes['stdio_blocked'] += (
-                (util.timer() - starttime) * 1000)
+                util.timer() - starttime
+            ) * 1000
 
     def _writemsg(self, dest, *args, **opts):
         _writemsgwith(self._write, dest, *args, **opts)
@@ -1119,7 +1178,8 @@ class ui(object):
                         raise error.StdioError(err)
         finally:
             self._blockedtimes['stdio_blocked'] += (
-                (util.timer() - starttime) * 1000)
+                util.timer() - starttime
+            ) * 1000
 
     def _isatty(self, fh):
         if self.configbool('ui', 'nontty'):
@@ -1175,8 +1235,7 @@ class ui(object):
           command: The full, non-aliased name of the command. That is, "log"
                    not "history, "summary" not "summ", etc.
         """
-        if (self._disablepager
-            or self.pageractive):
+        if self._disablepager or self.pageractive:
             # how pager should do is already determined
             return
 
@@ -1193,7 +1252,8 @@ class ui(object):
             or self.plain()
             or self._buffers
             # TODO: expose debugger-enabled on the UI object
-            or '--debugger' in pycompat.sysargv):
+            or '--debugger' in pycompat.sysargv
+        ):
             # We only want to paginate if the ui appears to be
             # interactive, the user didn't say HGPLAIN or
             # HGPLAINEXCEPT=pager, and the user didn't specify --debug.
@@ -1208,8 +1268,9 @@ class ui(object):
             if name not in encoding.environ:
                 pagerenv[name] = value
 
-        self.debug('starting pager for command %s\n' %
-                   stringutil.pprint(command))
+        self.debug(
+            'starting pager for command %s\n' % stringutil.pprint(command)
+        )
         self.flush()
 
         wasformatted = self.formatted()
@@ -1257,22 +1318,29 @@ class ui(object):
             # determine which one to use.
             fullcmd = procutil.findexe(command)
             if not fullcmd:
-                self.warn(_("missing pager command '%s', skipping pager\n")
-                          % command)
+                self.warn(
+                    _("missing pager command '%s', skipping pager\n") % command
+                )
                 return False
 
             command = fullcmd
 
         try:
             pager = subprocess.Popen(
-                procutil.tonativestr(command), shell=shell, bufsize=-1,
-                close_fds=procutil.closefds, stdin=subprocess.PIPE,
-                stdout=procutil.stdout, stderr=procutil.stderr,
-                env=procutil.tonativeenv(procutil.shellenviron(env)))
+                procutil.tonativestr(command),
+                shell=shell,
+                bufsize=-1,
+                close_fds=procutil.closefds,
+                stdin=subprocess.PIPE,
+                stdout=procutil.stdout,
+                stderr=procutil.stderr,
+                env=procutil.tonativeenv(procutil.shellenviron(env)),
+            )
         except OSError as e:
             if e.errno == errno.ENOENT and not shell:
-                self.warn(_("missing pager command '%s', skipping pager\n")
-                          % command)
+                self.warn(
+                    _("missing pager command '%s', skipping pager\n") % command
+                )
                 return False
             raise
 
@@ -1332,14 +1400,8 @@ class ui(object):
         alldefaults = frozenset(["text", "curses"])
 
         featureinterfaces = {
-            "chunkselector": [
-                "text",
-                "curses",
-            ],
-            "histedit": [
-                "text",
-                "curses",
-            ],
+            "chunkselector": ["text", "curses",],
+            "histedit": ["text", "curses",],
         }
 
         # Feature-specific interface
@@ -1352,8 +1414,8 @@ class ui(object):
             # Programming error, not user error. We need a use case to
             # define the right thing to do here.
             raise ValueError(
-                "Feature %s does not handle all default interfaces" %
-                feature)
+                "Feature %s does not handle all default interfaces" % feature
+            )
 
         if self.plain() or encoding.environ.get('TERM') == 'dumb':
             return "text"
@@ -1371,14 +1433,17 @@ class ui(object):
 
         if i is not None and defaultinterface != i:
             if f is not None:
-                self.warn(_("invalid value for ui.interface: %s\n") %
-                          (i,))
+                self.warn(_("invalid value for ui.interface: %s\n") % (i,))
             else:
-                self.warn(_("invalid value for ui.interface: %s (using %s)\n") %
-                         (i, choseninterface))
+                self.warn(
+                    _("invalid value for ui.interface: %s (using %s)\n")
+                    % (i, choseninterface)
+                )
         if f is not None and choseninterface != f:
-            self.warn(_("invalid value for ui.interface.%s: %s (using %s)\n") %
-                      (feature, f, choseninterface))
+            self.warn(
+                _("invalid value for ui.interface.%s: %s (using %s)\n")
+                % (feature, f, choseninterface)
+            )
 
         return choseninterface
 
@@ -1447,14 +1512,18 @@ class ui(object):
         # because they have to be text streams with *no buffering*. Instead,
         # we use rawinput() only if call_readline() will be invoked by
         # PyOS_Readline(), so no I/O will be made at Python layer.
-        usereadline = (self._isatty(self._fin) and self._isatty(self._fout)
-                       and procutil.isstdin(self._fin)
-                       and procutil.isstdout(self._fout))
+        usereadline = (
+            self._isatty(self._fin)
+            and self._isatty(self._fout)
+            and procutil.isstdin(self._fin)
+            and procutil.isstdout(self._fout)
+        )
         if usereadline:
             try:
                 # magically add command line editing support, where
                 # available
                 import readline
+
                 # force demandimport to really load the module
                 readline.read_history_file
                 # windows sometimes raises something other than ImportError
@@ -1464,8 +1533,9 @@ class ui(object):
         if self._colormode == 'win32' or not usereadline:
             if not promptopts:
                 promptopts = {}
-            self._writemsgnobuf(self._fmsgout, prompt, type='prompt',
-                                **promptopts)
+            self._writemsgnobuf(
+                self._fmsgout, prompt, type='prompt', **promptopts
+            )
             self.flush()
             prompt = ' '
         else:
@@ -1500,8 +1570,9 @@ class ui(object):
         default = opts[r'default']
         if not self.interactive():
             self._writemsg(self._fmsgout, msg, ' ', type='prompt', **opts)
-            self._writemsg(self._fmsgout, default or '', "\n",
-                           type='promptecho')
+            self._writemsg(
+                self._fmsgout, default or '', "\n", type='promptecho'
+            )
             return default
         try:
             r = self._readline(prompt=msg, promptopts=opts)
@@ -1536,9 +1607,11 @@ class ui(object):
         m = re.match(br'(?s)(.+?)\$\$([^\$]*&[^ \$].*)', prompt)
         msg = m.group(1)
         choices = [p.strip(' ') for p in m.group(2).split('$$')]
+
         def choicetuple(s):
             ampidx = s.index('&')
-            return s[ampidx + 1:ampidx + 2].lower(), s.replace('&', '', 1)
+            return s[ampidx + 1 : ampidx + 2].lower(), s.replace('&', '', 1)
+
         return (msg, [choicetuple(s) for s in choices])
 
     def promptchoice(self, prompt, default=0):
@@ -1565,8 +1638,12 @@ class ui(object):
         if not self.interactive():
             return default
         try:
-            self._writemsg(self._fmsgerr, prompt or _('password: '),
-                           type='prompt', password=True)
+            self._writemsg(
+                self._fmsgerr,
+                prompt or _('password: '),
+                type='prompt',
+                password=True,
+            )
             # disable getpass() only if explicitly specified. it's still valid
             # to interact with tty even if fin is not a tty.
             with self.timeblockedsection('stdio'):
@@ -1619,19 +1696,31 @@ class ui(object):
             self._writemsg(self._fmsgout, type='debug', *msg, **opts)
             self.log(b'debug', b'%s', b''.join(msg))
 
-    def edit(self, text, user, extra=None, editform=None, pending=None,
-             repopath=None, action=None):
+    def edit(
+        self,
+        text,
+        user,
+        extra=None,
+        editform=None,
+        pending=None,
+        repopath=None,
+        action=None,
+    ):
         if action is None:
-            self.develwarn('action is None but will soon be a required '
-                           'parameter to ui.edit()')
+            self.develwarn(
+                'action is None but will soon be a required '
+                'parameter to ui.edit()'
+            )
         extra_defaults = {
             'prefix': 'editor',
             'suffix': '.txt',
         }
         if extra is not None:
             if extra.get('suffix') is not None:
-                self.develwarn('extra.suffix is not None but will soon be '
-                               'ignored by ui.edit()')
+                self.develwarn(
+                    'extra.suffix is not None but will soon be '
+                    'ignored by ui.edit()'
+                )
             extra_defaults.update(extra)
         extra = extra_defaults
 
@@ -1645,9 +1734,9 @@ class ui(object):
         rdir = None
         if self.configbool('experimental', 'editortmpinhg'):
             rdir = repopath
-        (fd, name) = pycompat.mkstemp(prefix='hg-' + extra['prefix'] + '-',
-                                      suffix=suffix,
-                                      dir=rdir)
+        (fd, name) = pycompat.mkstemp(
+            prefix='hg-' + extra['prefix'] + '-', suffix=suffix, dir=rdir
+        )
         try:
             f = os.fdopen(fd, r'wb')
             f.write(util.tonativeeol(text))
@@ -1667,10 +1756,13 @@ class ui(object):
 
             editor = self.geteditor()
 
-            self.system("%s \"%s\"" % (editor, name),
-                        environ=environ,
-                        onerr=error.Abort, errprefix=_("edit failed"),
-                        blockedtag='editor')
+            self.system(
+                "%s \"%s\"" % (editor, name),
+                environ=environ,
+                onerr=error.Abort,
+                errprefix=_("edit failed"),
+                blockedtag='editor',
+            )
 
             f = open(name, r'rb')
             t = util.fromnativeeol(f.read())
@@ -1680,8 +1772,15 @@ class ui(object):
 
         return t
 
-    def system(self, cmd, environ=None, cwd=None, onerr=None, errprefix=None,
-               blockedtag=None):
+    def system(
+        self,
+        cmd,
+        environ=None,
+        cwd=None,
+        onerr=None,
+        errprefix=None,
+        blockedtag=None,
+    ):
         '''execute shell command with appropriate output stream. command
         output will be redirected if fout is not stdout.
 
@@ -1699,8 +1798,10 @@ class ui(object):
         with self.timeblockedsection(blockedtag):
             rc = self._runsystem(cmd, environ=environ, cwd=cwd, out=out)
         if rc and onerr:
-            errmsg = '%s %s' % (os.path.basename(cmd.split(None, 1)[0]),
-                                procutil.explainexit(rc))
+            errmsg = '%s %s' % (
+                os.path.basename(cmd.split(None, 1)[0]),
+                procutil.explainexit(rc),
+            )
             if errprefix:
                 errmsg = '%s: %s' % (errprefix, errmsg)
             raise onerr(errmsg)
@@ -1726,10 +1827,12 @@ class ui(object):
                 exconly = traceback.format_exception_only(cause[0], cause[1])
 
                 # exclude frame where 'exc' was chained and rethrown from exctb
-                self.write_err('Traceback (most recent call last):\n',
-                               ''.join(exctb[:-1]),
-                               ''.join(causetb),
-                               ''.join(exconly))
+                self.write_err(
+                    'Traceback (most recent call last):\n',
+                    ''.join(exctb[:-1]),
+                    ''.join(causetb),
+                    ''.join(exconly),
+                )
             else:
                 output = traceback.format_exception(exc[0], exc[1], exc[2])
                 self.write_err(encoding.strtolocal(r''.join(output)))
@@ -1744,21 +1847,25 @@ class ui(object):
             editor = 'E'
         else:
             editor = 'vi'
-        return (encoding.environ.get("HGEDITOR") or
-                self.config("ui", "editor", editor))
+        return encoding.environ.get("HGEDITOR") or self.config(
+            "ui", "editor", editor
+        )
 
     @util.propertycache
     def _progbar(self):
         """setup the progbar singleton to the ui object"""
-        if (self.quiet or self.debugflag
-                or self.configbool('progress', 'disable')
-                or not progress.shouldprint(self)):
+        if (
+            self.quiet
+            or self.debugflag
+            or self.configbool('progress', 'disable')
+            or not progress.shouldprint(self)
+        ):
             return None
         return getprogbar(self)
 
     def _progclear(self):
         """clear progress bar output if any. use it before any output"""
-        if not haveprogbar(): # nothing loaded yet
+        if not haveprogbar():  # nothing loaded yet
             return
         if self._progbar is not None and self._progbar.printed:
             self._progbar.clear()
@@ -1778,8 +1885,7 @@ class ui(object):
         All topics should be marked closed by setting pos to None at
         termination.
         '''
-        self.deprecwarn("use ui.makeprogress() instead of ui.progress()",
-                        "5.1")
+        self.deprecwarn("use ui.makeprogress() instead of ui.progress()", "5.1")
         progress = self.makeprogress(topic, unit, total)
         if pos is not None:
             progress.update(pos, item=item)
@@ -1795,13 +1901,23 @@ class ui(object):
             # time) from progbar. we might want to support update delay to
             # reduce the cost of transferring progress messages.
             def updatebar(topic, pos, item, unit, total):
-                self._fmsgerr.write(None, type=b'progress', topic=topic,
-                                    pos=pos, item=item, unit=unit, total=total)
+                self._fmsgerr.write(
+                    None,
+                    type=b'progress',
+                    topic=topic,
+                    pos=pos,
+                    item=item,
+                    unit=unit,
+                    total=total,
+                )
+
         elif self._progbar is not None:
             updatebar = self._progbar.progress
         else:
+
             def updatebar(topic, pos, item, unit, total):
                 pass
+
         return scmutil.progress(self, updatebar, topic, unit, total)
 
     def getlogger(self, name):
@@ -1829,8 +1945,9 @@ class ui(object):
         '''
         if not self._loggers:
             return
-        activeloggers = [l for l in self._loggers.itervalues()
-                         if l.tracked(event)]
+        activeloggers = [
+            l for l in self._loggers.itervalues() if l.tracked(event)
+        ]
         if not activeloggers:
             return
         msg = msgfmt % msgargs
@@ -1868,20 +1985,22 @@ class ui(object):
             if config is None or not self.configbool('devel', config):
                 return
         msg = 'devel-warn: ' + msg
-        stacklevel += 1 # get in develwarn
+        stacklevel += 1  # get in develwarn
         if self.tracebackflag:
             util.debugstacktrace(msg, stacklevel, self._ferr, self._fout)
-            self.log('develwarn', '%s at:\n%s' %
-                     (msg, ''.join(util.getstackframes(stacklevel))))
+            self.log(
+                'develwarn',
+                '%s at:\n%s' % (msg, ''.join(util.getstackframes(stacklevel))),
+            )
         else:
             curframe = inspect.currentframe()
             calframe = inspect.getouterframes(curframe, 2)
             fname, lineno, fmsg = calframe[stacklevel][1:4]
             fname, fmsg = pycompat.sysbytes(fname), pycompat.sysbytes(fmsg)
-            self.write_err('%s at: %s:%d (%s)\n'
-                           % (msg, fname, lineno, fmsg))
-            self.log('develwarn', '%s at: %s:%d (%s)\n',
-                     msg, fname, lineno, fmsg)
+            self.write_err('%s at: %s:%d (%s)\n' % (msg, fname, lineno, fmsg))
+            self.log(
+                'develwarn', '%s at: %s:%d (%s)\n', msg, fname, lineno, fmsg
+            )
             curframe = calframe = None  # avoid cycles
 
     def deprecwarn(self, msg, version, stacklevel=2):
@@ -1890,11 +2009,15 @@ class ui(object):
         - msg: message explaining what is deprecated and how to upgrade,
         - version: last version where the API will be supported,
         """
-        if not (self.configbool('devel', 'all-warnings')
-                or self.configbool('devel', 'deprec-warn')):
+        if not (
+            self.configbool('devel', 'all-warnings')
+            or self.configbool('devel', 'deprec-warn')
+        ):
             return
-        msg += ("\n(compatibility will be dropped after Mercurial-%s,"
-                " update your code.)") % version
+        msg += (
+            "\n(compatibility will be dropped after Mercurial-%s,"
+            " update your code.)"
+        ) % version
         self.develwarn(msg, stacklevel=stacklevel, config='deprec-warn')
 
     def exportableenviron(self):
@@ -1922,12 +2045,14 @@ class ui(object):
             if ('ui', 'quiet') in overrides:
                 self.fixconfig(section='ui')
 
+
 class paths(dict):
     """Represents a collection of paths and their configs.
 
     Data is initially derived from ui instances and the config files they have
     loaded.
     """
+
     def __init__(self, ui):
         dict.__init__(self)
 
@@ -1973,10 +2098,11 @@ class paths(dict):
                 # We don't pass sub-options in, so no need to pass ui instance.
                 return path(None, None, rawloc=name)
             except ValueError:
-                raise error.RepoError(_('repository %s does not exist') %
-                                        name)
+                raise error.RepoError(_('repository %s does not exist') % name)
+
 
 _pathsuboptions = {}
+
 
 def pathsuboption(option, attr):
     """Decorator used to declare a path sub-option.
@@ -1992,10 +2118,13 @@ def pathsuboption(option, attr):
     This decorator can be used to perform additional verification of
     sub-options and to change the type of sub-options.
     """
+
     def register(func):
         _pathsuboptions[option] = (attr, func)
         return func
+
     return register
+
 
 @pathsuboption('pushurl', 'pushloc')
 def pushurlpathoption(ui, path, value):
@@ -2008,15 +2137,19 @@ def pushurlpathoption(ui, path, value):
     # Don't support the #foo syntax in the push URL to declare branch to
     # push.
     if u.fragment:
-        ui.warn(_('("#fragment" in paths.%s:pushurl not supported; '
-                  'ignoring)\n') % path.name)
+        ui.warn(
+            _('("#fragment" in paths.%s:pushurl not supported; ' 'ignoring)\n')
+            % path.name
+        )
         u.fragment = None
 
     return bytes(u)
 
+
 @pathsuboption('pushrev', 'pushrev')
 def pushrevpathoption(ui, path, value):
     return value
+
 
 class path(object):
     """Represents an individual path and its configuration."""
@@ -2053,8 +2186,9 @@ class path(object):
         # When given a raw location but not a symbolic name, validate the
         # location is valid.
         if not name and not u.scheme and not self._isvalidlocalpath(self.loc):
-            raise ValueError('location is not a URL or path to a local '
-                             'repo: %s' % rawloc)
+            raise ValueError(
+                'location is not a URL or path to a local ' 'repo: %s' % rawloc
+            )
 
         suboptions = suboptions or {}
 
@@ -2093,9 +2227,11 @@ class path(object):
                 d[subopt] = value
         return d
 
+
 # we instantiate one globally shared progress bar to avoid
 # competing progress bars when multiple UI objects get created
 _progresssingleton = None
+
 
 def getprogbar(ui):
     global _progresssingleton
@@ -2105,8 +2241,10 @@ def getprogbar(ui):
         _progresssingleton = progress.progbar(ui)
     return _progresssingleton
 
+
 def haveprogbar():
     return _progresssingleton is not None
+
 
 def _selectmsgdests(ui):
     name = ui.config(b'ui', b'message-output')
@@ -2122,6 +2260,7 @@ def _selectmsgdests(ui):
     if name == b'stderr':
         return ui.ferr, ui.ferr
     raise error.Abort(b'invalid ui.message-output destination: %s' % name)
+
 
 def _writemsgwith(write, dest, *args, **opts):
     """Write ui message with the given ui._write*() function

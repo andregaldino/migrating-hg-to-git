@@ -15,9 +15,8 @@ from . import (
     error,
     pycompat,
 )
-from .utils import (
-    stringutil,
-)
+from .utils import stringutil
+
 
 def parsedag(desc):
     '''parses a DAG from a concise textual description; generates events
@@ -267,7 +266,7 @@ def parsedag(desc):
             p1 = -1
             c = nextch()
         elif c == '\0':
-            return # in case it was preceded by whitespace
+            return  # in case it was preceded by whitespace
         else:
             s = ''
             i = 0
@@ -275,17 +274,21 @@ def parsedag(desc):
                 s += c
                 i += 1
                 c = nextch()
-            raise error.Abort(_('invalid character in dag description: '
-                               '%s...') % s)
+            raise error.Abort(
+                _('invalid character in dag description: ' '%s...') % s
+            )
 
-def dagtextlines(events,
-                 addspaces=True,
-                 wraplabels=False,
-                 wrapannotations=False,
-                 wrapcommands=False,
-                 wrapnonlinear=False,
-                 usedots=False,
-                 maxlinewidth=70):
+
+def dagtextlines(
+    events,
+    addspaces=True,
+    wraplabels=False,
+    wrapannotations=False,
+    wrapcommands=False,
+    wrapnonlinear=False,
+    usedots=False,
+    maxlinewidth=70,
+):
     '''generates single lines for dagtext()'''
 
     def wrapstring(text):
@@ -310,8 +313,13 @@ def dagtextlines(events,
                 else:
                     for p in ps:
                         if p >= r:
-                            raise error.Abort(_("parent id %i is larger than "
-                                               "current id %i") % (p, r))
+                            raise error.Abort(
+                                _(
+                                    "parent id %i is larger than "
+                                    "current id %i"
+                                )
+                                % (p, r)
+                            )
                 wantr += 1
 
                 # new root?
@@ -372,10 +380,13 @@ def dagtextlines(events,
                     yield '#' + data
                     yield '\n'
                 else:
-                    raise error.Abort(_("invalid event type in dag: "
-                                        "('%s', '%s')")
-                                      % (stringutil.escapestr(kind),
-                                         stringutil.escapestr(data)))
+                    raise error.Abort(
+                        _("invalid event type in dag: " "('%s', '%s')")
+                        % (
+                            stringutil.escapestr(kind),
+                            stringutil.escapestr(data),
+                        )
+                    )
         if run:
             yield '+%d' % run
 
@@ -395,14 +406,17 @@ def dagtextlines(events,
     if line:
         yield line
 
-def dagtext(dag,
-            addspaces=True,
-            wraplabels=False,
-            wrapannotations=False,
-            wrapcommands=False,
-            wrapnonlinear=False,
-            usedots=False,
-            maxlinewidth=70):
+
+def dagtext(
+    dag,
+    addspaces=True,
+    wraplabels=False,
+    wrapannotations=False,
+    wrapcommands=False,
+    wrapnonlinear=False,
+    usedots=False,
+    maxlinewidth=70,
+):
     '''generates lines of a textual representation for a dag event stream
 
     events should generate what parsedag() does, so:
@@ -480,11 +494,15 @@ def dagtext(dag,
         '+1 :f +1 :p2 *f */p2'
 
     '''
-    return "\n".join(dagtextlines(dag,
-                                  addspaces,
-                                  wraplabels,
-                                  wrapannotations,
-                                  wrapcommands,
-                                  wrapnonlinear,
-                                  usedots,
-                                  maxlinewidth))
+    return "\n".join(
+        dagtextlines(
+            dag,
+            addspaces,
+            wraplabels,
+            wrapannotations,
+            wrapcommands,
+            wrapnonlinear,
+            usedots,
+            maxlinewidth,
+        )
+    )

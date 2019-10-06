@@ -7,20 +7,24 @@ import subprocess
 import sys
 
 # Always load hg libraries from the hg we can find on $PATH.
-hglib = subprocess.check_output(
-    ['hg', 'debuginstall', '-T', '{hgmodules}'])
+hglib = subprocess.check_output(['hg', 'debuginstall', '-T', '{hgmodules}'])
 sys.path.insert(0, os.path.dirname(hglib))
 
 from mercurial import util
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--paranoid',
-                action='store_true',
-                help=("Be paranoid about how version numbers compare and "
-                      "produce something that's more likely to sort "
-                      "reasonably."))
+ap.add_argument(
+    '--paranoid',
+    action='store_true',
+    help=(
+        "Be paranoid about how version numbers compare and "
+        "produce something that's more likely to sort "
+        "reasonably."
+    ),
+)
 ap.add_argument('--selftest', action='store_true', help='Run self-tests.')
 ap.add_argument('versionfile', help='Path to a valid mercurial __version__.py')
+
 
 def paranoidver(ver):
     """Given an hg version produce something that distutils can sort.
@@ -108,22 +112,25 @@ def paranoidver(ver):
         extra = ''
     return '%d.%d.%d%s' % (major, minor, micro, extra)
 
+
 def main(argv):
     opts = ap.parse_args(argv[1:])
     if opts.selftest:
         import doctest
+
         doctest.testmod()
         return
     with open(opts.versionfile) as f:
         for l in f:
             if l.startswith('version = b'):
                 # version number is entire line minus the quotes
-                ver = l[len('version = b') + 1:-2]
+                ver = l[len('version = b') + 1 : -2]
                 break
     if opts.paranoid:
         print(paranoidver(ver))
     else:
         print(ver)
+
 
 if __name__ == '__main__':
     main(sys.argv)

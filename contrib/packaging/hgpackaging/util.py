@@ -32,8 +32,11 @@ def find_vc_runtime_files(x64=False):
 
     prefix = 'amd64' if x64 else 'x86'
 
-    candidates = sorted(p for p in os.listdir(winsxs)
-                  if p.lower().startswith('%s_microsoft.vc90.crt_' % prefix))
+    candidates = sorted(
+        p
+        for p in os.listdir(winsxs)
+        if p.lower().startswith('%s_microsoft.vc90.crt_' % prefix)
+    )
 
     for p in candidates:
         print('found candidate VC runtime: %s' % p)
@@ -72,7 +75,7 @@ def windows_10_sdk_info():
         'version': version,
         'bin_root': bin_version,
         'bin_x86': bin_version / 'x86',
-        'bin_x64': bin_version / 'x64'
+        'bin_x64': bin_version / 'x64',
     }
 
 
@@ -89,9 +92,14 @@ def find_signtool():
     raise Exception('could not find signtool.exe in Windows 10 SDK')
 
 
-def sign_with_signtool(file_path, description, subject_name=None,
-                       cert_path=None, cert_password=None,
-                       timestamp_url=None):
+def sign_with_signtool(
+    file_path,
+    description,
+    subject_name=None,
+    cert_path=None,
+    cert_password=None,
+    timestamp_url=None,
+):
     """Digitally sign a file with signtool.exe.
 
     ``file_path`` is file to sign.
@@ -114,10 +122,13 @@ def sign_with_signtool(file_path, description, subject_name=None,
         cert_password = getpass.getpass('password for %s: ' % cert_path)
 
     args = [
-        str(find_signtool()), 'sign',
+        str(find_signtool()),
+        'sign',
         '/v',
-        '/fd', 'sha256',
-        '/d', description,
+        '/fd',
+        'sha256',
+        '/d',
+        description,
     ]
 
     if cert_path:

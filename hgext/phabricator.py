@@ -89,24 +89,24 @@ configtable = eh.configtable
 templatekeyword = eh.templatekeyword
 
 # developer config: phabricator.batchsize
-eh.configitem(b'phabricator', b'batchsize',
-    default=12,
+eh.configitem(
+    b'phabricator', b'batchsize', default=12,
 )
-eh.configitem(b'phabricator', b'callsign',
-    default=None,
+eh.configitem(
+    b'phabricator', b'callsign', default=None,
 )
-eh.configitem(b'phabricator', b'curlcmd',
-    default=None,
+eh.configitem(
+    b'phabricator', b'curlcmd', default=None,
 )
 # developer config: phabricator.repophid
-eh.configitem(b'phabricator', b'repophid',
-    default=None,
+eh.configitem(
+    b'phabricator', b'repophid', default=None,
 )
-eh.configitem(b'phabricator', b'url',
-    default=None,
+eh.configitem(
+    b'phabricator', b'url', default=None,
 )
-eh.configitem(b'phabsend', b'confirm',
-    default=False,
+eh.configitem(
+    b'phabsend', b'confirm', default=False,
 )
 
 colortable = {
@@ -119,15 +119,22 @@ colortable = {
 }
 
 _VCR_FLAGS = [
-    (b'', b'test-vcr', b'',
-     _(b'Path to a vcr file. If nonexistent, will record a new vcr transcript'
-       b', otherwise will mock all http requests using the specified vcr file.'
-       b' (ADVANCED)'
-     )),
+    (
+        b'',
+        b'test-vcr',
+        b'',
+        _(
+            b'Path to a vcr file. If nonexistent, will record a new vcr transcript'
+            b', otherwise will mock all http requests using the specified vcr file.'
+            b' (ADVANCED)'
+        ),
+    ),
 ]
+
 
 def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
     fullflags = flags + _VCR_FLAGS
+
     def hgmatcher(r1, r2):
         if r1.uri != r2.uri or r1.method != r2.method:
             return False
@@ -137,9 +144,7 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
 
     def sanitiserequest(request):
         request.body = re.sub(
-            br'cli-[a-z0-9]+',
-            br'cli-hahayouwish',
-            request.body
+            br'cli-[a-z0-9]+', br'cli-hahayouwish', request.body
         )
         return request
 
@@ -153,28 +158,45 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
             cassette = pycompat.fsdecode(kwargs.pop(r'test_vcr', None))
             if cassette:
                 import hgdemandimport
+
                 with hgdemandimport.deactivated():
                     import vcr as vcrmod
                     import vcr.stubs as stubs
+
                     vcr = vcrmod.VCR(
                         serializer=r'json',
                         before_record_request=sanitiserequest,
                         before_record_response=sanitiseresponse,
                         custom_patches=[
-                            (urlmod, r'httpconnection',
-                             stubs.VCRHTTPConnection),
-                            (urlmod, r'httpsconnection',
-                             stubs.VCRHTTPSConnection),
-                        ])
+                            (
+                                urlmod,
+                                r'httpconnection',
+                                stubs.VCRHTTPConnection,
+                            ),
+                            (
+                                urlmod,
+                                r'httpsconnection',
+                                stubs.VCRHTTPSConnection,
+                            ),
+                        ],
+                    )
                     vcr.register_matcher(r'hgmatcher', hgmatcher)
                     with vcr.use_cassette(cassette, match_on=[r'hgmatcher']):
                         return fn(*args, **kwargs)
             return fn(*args, **kwargs)
+
         inner.__name__ = fn.__name__
         inner.__doc__ = fn.__doc__
-        return command(name, fullflags, spec, helpcategory=helpcategory,
-                       optionalrepo=optionalrepo)(inner)
+        return command(
+            name,
+            fullflags,
+            spec,
+            helpcategory=helpcategory,
+            optionalrepo=optionalrepo,
+        )(inner)
+
     return decorate
+
 
 def urlencodenested(params):
     """like urlencode, but works with nested parameters.
@@ -184,6 +206,7 @@ def urlencodenested(params):
     urlencode. Note: the encoding is consistent with PHP's http_build_query.
     """
     flatparams = util.sortdict()
+
     def process(prefix, obj):
         if isinstance(obj, bool):
             obj = {True: b'true', False: b'false'}[obj]  # Python -> PHP form
@@ -197,8 +220,10 @@ def urlencodenested(params):
                     process(b'%s[%s]' % (prefix, k), v)
                 else:
                     process(k, v)
+
     process(b'', params)
     return util.urlreq.urlencode(flatparams)
+
 
 def readurltoken(ui):
     """return conduit url, token and make sure they exist
@@ -208,8 +233,9 @@ def readurltoken(ui):
     """
     url = ui.config(b'phabricator', b'url')
     if not url:
-        raise error.Abort(_(b'config %s.%s is required')
-                          % (b'phabricator', b'url'))
+        raise error.Abort(
+            _(b'config %s.%s is required') % (b'phabricator', b'url')
+        )
 
     res = httpconnectionmod.readauthforuri(ui, url, util.url(url).user)
     token = None
@@ -222,10 +248,12 @@ def readurltoken(ui):
         token = auth.get(b'phabtoken')
 
     if not token:
-        raise error.Abort(_(b'Can\'t find conduit token associated to %s')
-                            % (url,))
+        raise error.Abort(
+            _(b'Can\'t find conduit token associated to %s') % (url,)
+        )
 
     return url, token
+
 
 def callconduit(ui, name, params):
     """call Conduit API, params is a dict. return json.loads result, or None"""
@@ -237,8 +265,9 @@ def callconduit(ui, name, params):
     data = urlencodenested(params)
     curlcmd = ui.config(b'phabricator', b'curlcmd')
     if curlcmd:
-        sin, sout = procutil.popen2(b'%s -d @- %s'
-                                    % (curlcmd, procutil.shellquote(url)))
+        sin, sout = procutil.popen2(
+            b'%s -d @- %s' % (curlcmd, procutil.shellquote(url))
+        )
         sin.write(data)
         sin.close()
         body = sout.read()
@@ -249,16 +278,20 @@ def callconduit(ui, name, params):
             body = rsp.read()
     ui.debug(b'Conduit Response: %s\n' % body)
     parsed = pycompat.rapply(
-        lambda x: encoding.unitolocal(x) if isinstance(x, pycompat.unicode)
+        lambda x: encoding.unitolocal(x)
+        if isinstance(x, pycompat.unicode)
         else x,
         # json.loads only accepts bytes from py3.6+
-        json.loads(encoding.unifromlocal(body))
+        json.loads(encoding.unifromlocal(body)),
     )
     if parsed.get(b'error_code'):
-        msg = (_(b'Conduit Error (%s): %s')
-               % (parsed[b'error_code'], parsed[b'error_info']))
+        msg = _(b'Conduit Error (%s): %s') % (
+            parsed[b'error_code'],
+            parsed[b'error_info'],
+        )
         raise error.Abort(msg)
     return parsed[b'result']
+
 
 @vcrcommand(b'debugcallconduit', [], _(b'METHOD'), optionalrepo=True)
 def debugcallconduit(ui, repo, name):
@@ -270,17 +303,20 @@ def debugcallconduit(ui, repo, name):
     # json.loads only accepts bytes from 3.6+
     rawparams = encoding.unifromlocal(ui.fin.read())
     # json.loads only returns unicode strings
-    params = pycompat.rapply(lambda x:
-        encoding.unitolocal(x) if isinstance(x, pycompat.unicode) else x,
-        json.loads(rawparams)
+    params = pycompat.rapply(
+        lambda x: encoding.unitolocal(x)
+        if isinstance(x, pycompat.unicode)
+        else x,
+        json.loads(rawparams),
     )
     # json.dumps only accepts unicode strings
-    result = pycompat.rapply(lambda x:
-        encoding.unifromlocal(x) if isinstance(x, bytes) else x,
-        callconduit(ui, name, params)
+    result = pycompat.rapply(
+        lambda x: encoding.unifromlocal(x) if isinstance(x, bytes) else x,
+        callconduit(ui, name, params),
     )
     s = json.dumps(result, sort_keys=True, indent=2, separators=(u',', u': '))
     ui.write(b'%s\n' % encoding.unitolocal(s))
+
 
 def getrepophid(repo):
     """given callsign, return repository PHID or None"""
@@ -291,17 +327,23 @@ def getrepophid(repo):
     callsign = repo.ui.config(b'phabricator', b'callsign')
     if not callsign:
         return None
-    query = callconduit(repo.ui, b'diffusion.repository.search',
-                        {b'constraints': {b'callsigns': [callsign]}})
+    query = callconduit(
+        repo.ui,
+        b'diffusion.repository.search',
+        {b'constraints': {b'callsigns': [callsign]}},
+    )
     if len(query[b'data']) == 0:
         return None
     repophid = query[b'data'][0][b'phid']
     repo.ui.setconfig(b'phabricator', b'repophid', repophid)
     return repophid
 
+
 _differentialrevisiontagre = re.compile(br'\AD([1-9][0-9]*)\Z')
 _differentialrevisiondescre = re.compile(
-    br'^Differential Revision:\s*(?P<url>(?:.*)D(?P<id>[1-9][0-9]*))$', re.M)
+    br'^Differential Revision:\s*(?P<url>(?:.*)D(?P<id>[1-9][0-9]*))$', re.M
+)
+
 
 def getoldnodedrevmap(repo, nodelist):
     """find previous nodes that has been sent to Phabricator
@@ -324,8 +366,8 @@ def getoldnodedrevmap(repo, nodelist):
     unfi = repo.unfiltered()
     nodemap = unfi.changelog.nodemap
 
-    result = {} # {node: (oldnode?, lastdiff?, drev)}
-    toconfirm = {} # {node: (force, {precnode}, drev)}
+    result = {}  # {node: (oldnode?, lastdiff?, drev)}
+    toconfirm = {}  # {node: (force, {precnode}, drev)}
     for node in nodelist:
         ctx = unfi[node]
         # For tags like "D123", put them into "toconfirm" to verify later
@@ -347,13 +389,14 @@ def getoldnodedrevmap(repo, nodelist):
     # Phabricator, and expect precursors overlap with it.
     if toconfirm:
         drevs = [drev for force, precs, drev in toconfirm.values()]
-        alldiffs = callconduit(unfi.ui, b'differential.querydiffs',
-                               {b'revisionIDs': drevs})
-        getnode = lambda d: bin(
-            getdiffmeta(d).get(b'node', b'')) or None
+        alldiffs = callconduit(
+            unfi.ui, b'differential.querydiffs', {b'revisionIDs': drevs}
+        )
+        getnode = lambda d: bin(getdiffmeta(d).get(b'node', b'')) or None
         for newnode, (force, precset, drev) in toconfirm.items():
-            diffs = [d for d in alldiffs.values()
-                     if int(d[b'revisionID']) == drev]
+            diffs = [
+                d for d in alldiffs.values() if int(d[b'revisionID']) == drev
+            ]
 
             # "precursors" as known by Phabricator
             phprecset = set(getnode(d) for d in diffs)
@@ -362,10 +405,22 @@ def getoldnodedrevmap(repo, nodelist):
             # and force is not set (when commit message says nothing)
             if not force and not bool(phprecset & precset):
                 tagname = b'D%d' % drev
-                tags.tag(repo, tagname, nullid, message=None, user=None,
-                         date=None, local=True)
-                unfi.ui.warn(_(b'D%s: local tag removed - does not match '
-                               b'Differential history\n') % drev)
+                tags.tag(
+                    repo,
+                    tagname,
+                    nullid,
+                    message=None,
+                    user=None,
+                    date=None,
+                    local=True,
+                )
+                unfi.ui.warn(
+                    _(
+                        b'D%s: local tag removed - does not match '
+                        b'Differential history\n'
+                    )
+                    % drev
+                )
                 continue
 
             # Find the last node using Phabricator metadata, and make sure it
@@ -381,13 +436,16 @@ def getoldnodedrevmap(repo, nodelist):
 
     return result
 
+
 def getdiff(ctx, diffopts):
     """plain-text diff without header (user, commit message, etc)"""
     output = util.stringio()
-    for chunk, _label in patch.diffui(ctx.repo(), ctx.p1().node(), ctx.node(),
-                                      None, opts=diffopts):
+    for chunk, _label in patch.diffui(
+        ctx.repo(), ctx.p1().node(), ctx.node(), None, opts=diffopts
+    ):
         output.write(chunk)
     return output.getvalue()
+
 
 def creatediff(ctx):
     """create a Differential Diff"""
@@ -402,40 +460,52 @@ def creatediff(ctx):
         raise error.Abort(_(b'cannot create diff for %s') % ctx)
     return diff
 
+
 def writediffproperties(ctx, diff):
     """write metadata to diff so patches could be applied losslessly"""
     params = {
         b'diff_id': diff[b'id'],
         b'name': b'hg:meta',
-        b'data': templatefilters.json({
-            b'user': ctx.user(),
-            b'date': b'%d %d' % ctx.date(),
-            b'branch': ctx.branch(),
-            b'node': ctx.hex(),
-            b'parent': ctx.p1().hex(),
-        }),
+        b'data': templatefilters.json(
+            {
+                b'user': ctx.user(),
+                b'date': b'%d %d' % ctx.date(),
+                b'branch': ctx.branch(),
+                b'node': ctx.hex(),
+                b'parent': ctx.p1().hex(),
+            }
+        ),
     }
     callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
 
     params = {
         b'diff_id': diff[b'id'],
         b'name': b'local:commits',
-        b'data': templatefilters.json({
-            ctx.hex(): {
-                b'author': stringutil.person(ctx.user()),
-                b'authorEmail': stringutil.email(ctx.user()),
-                b'time': int(ctx.date()[0]),
-                b'commit': ctx.hex(),
-                b'parents': [ctx.p1().hex()],
-                b'branch': ctx.branch(),
-            },
-        }),
+        b'data': templatefilters.json(
+            {
+                ctx.hex(): {
+                    b'author': stringutil.person(ctx.user()),
+                    b'authorEmail': stringutil.email(ctx.user()),
+                    b'time': int(ctx.date()[0]),
+                    b'commit': ctx.hex(),
+                    b'parents': [ctx.p1().hex()],
+                    b'branch': ctx.branch(),
+                },
+            }
+        ),
     }
     callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
 
-def createdifferentialrevision(ctx, revid=None, parentrevphid=None,
-                               oldnode=None, olddiff=None, actions=None,
-                               comment=None):
+
+def createdifferentialrevision(
+    ctx,
+    revid=None,
+    parentrevphid=None,
+    oldnode=None,
+    olddiff=None,
+    actions=None,
+    comment=None,
+):
     """create or update a Differential Revision
 
     If revid is None, create a new Differential Revision, otherwise update
@@ -450,7 +520,7 @@ def createdifferentialrevision(ctx, revid=None, parentrevphid=None,
     if oldnode:
         diffopts = mdiff.diffopts(git=True, context=32767)
         oldctx = repo.unfiltered()[oldnode]
-        neednewdiff = (getdiff(ctx, diffopts) != getdiff(oldctx, diffopts))
+        neednewdiff = getdiff(ctx, diffopts) != getdiff(oldctx, diffopts)
     else:
         neednewdiff = True
 
@@ -470,16 +540,18 @@ def createdifferentialrevision(ctx, revid=None, parentrevphid=None,
 
     # Set the parent Revision every time, so commit re-ordering is picked-up
     if parentrevphid:
-        transactions.append({b'type': b'parents.set',
-                             b'value': [parentrevphid]})
+        transactions.append(
+            {b'type': b'parents.set', b'value': [parentrevphid]}
+        )
 
     if actions:
         transactions += actions
 
     # Parse commit message and update related fields.
     desc = ctx.description()
-    info = callconduit(repo.ui, b'differential.parsecommitmessage',
-                       {b'corpus': desc})
+    info = callconduit(
+        repo.ui, b'differential.parsecommitmessage', {b'corpus': desc}
+    )
     for k, v in info[b'fields'].items():
         if k in [b'title', b'summary', b'testPlan']:
             transactions.append({b'type': k, b'value': v})
@@ -495,6 +567,7 @@ def createdifferentialrevision(ctx, revid=None, parentrevphid=None,
 
     return revision, diff
 
+
 def userphids(repo, names):
     """convert user names to PHIDs"""
     names = [name.lower() for name in names]
@@ -506,20 +579,30 @@ def userphids(repo, names):
     resolved = set(entry[b'fields'][b'username'].lower() for entry in data)
     unresolved = set(names) - resolved
     if unresolved:
-        raise error.Abort(_(b'unknown username: %s')
-                          % b' '.join(sorted(unresolved)))
+        raise error.Abort(
+            _(b'unknown username: %s') % b' '.join(sorted(unresolved))
+        )
     return [entry[b'phid'] for entry in data]
 
-@vcrcommand(b'phabsend',
-         [(b'r', b'rev', [], _(b'revisions to send'), _(b'REV')),
-          (b'', b'amend', True, _(b'update commit messages')),
-          (b'', b'reviewer', [], _(b'specify reviewers')),
-          (b'', b'blocker', [], _(b'specify blocking reviewers')),
-          (b'm', b'comment', b'',
-           _(b'add a comment to Revisions with new/updated Diffs')),
-          (b'', b'confirm', None, _(b'ask for confirmation before sending'))],
-         _(b'REV [OPTIONS]'),
-         helpcategory=command.CATEGORY_IMPORT_EXPORT)
+
+@vcrcommand(
+    b'phabsend',
+    [
+        (b'r', b'rev', [], _(b'revisions to send'), _(b'REV')),
+        (b'', b'amend', True, _(b'update commit messages')),
+        (b'', b'reviewer', [], _(b'specify reviewers')),
+        (b'', b'blocker', [], _(b'specify blocking reviewers')),
+        (
+            b'm',
+            b'comment',
+            b'',
+            _(b'add a comment to Revisions with new/updated Diffs'),
+        ),
+        (b'', b'confirm', None, _(b'ask for confirmation before sending')),
+    ],
+    _(b'REV [OPTIONS]'),
+    helpcategory=command.CATEGORY_IMPORT_EXPORT,
+)
 def phabsend(ui, repo, *revs, **opts):
     """upload changesets to Phabricator
 
@@ -573,14 +656,14 @@ def phabsend(ui, repo, *revs, **opts):
     if reviewers:
         phids.extend(userphids(repo, reviewers))
     if blockers:
-        phids.extend(map(
-            lambda phid: b'blocking(%s)' % phid, userphids(repo, blockers)
-        ))
+        phids.extend(
+            map(lambda phid: b'blocking(%s)' % phid, userphids(repo, blockers))
+        )
     if phids:
         actions.append({b'type': b'reviewers.add', b'value': phids})
 
-    drevids = [] # [int]
-    diffmap = {} # {newnode: diff}
+    drevids = []  # [int]
+    diffmap = {}  # {newnode: diff}
 
     # Send patches one by one so we know their Differential Revision PHIDs and
     # can provide dependency relationship
@@ -594,8 +677,14 @@ def phabsend(ui, repo, *revs, **opts):
         if oldnode != ctx.node() or opts.get(b'amend'):
             # Create or update Differential Revision
             revision, diff = createdifferentialrevision(
-                ctx, revid, lastrevphid, oldnode, olddiff, actions,
-                opts.get(b'comment'))
+                ctx,
+                revid,
+                lastrevphid,
+                oldnode,
+                olddiff,
+                actions,
+                opts.get(b'comment'),
+            )
             diffmap[ctx.node()] = diff
             newrevid = int(revision[b'object'][b'id'])
             newrevphid = revision[b'object'][b'phid']
@@ -609,8 +698,15 @@ def phabsend(ui, repo, *revs, **opts):
             m = _differentialrevisiondescre.search(ctx.description())
             if not m or int(m.group(r'id')) != newrevid:
                 tagname = b'D%d' % newrevid
-                tags.tag(repo, tagname, ctx.node(), message=None, user=None,
-                         date=None, local=True)
+                tags.tag(
+                    repo,
+                    tagname,
+                    ctx.node(),
+                    message=None,
+                    user=None,
+                    date=None,
+                    local=True,
+                )
         else:
             # Nothing changed. But still set "newrevphid" so the next revision
             # could depend on this one and "newrevid" for the summary line.
@@ -619,15 +715,19 @@ def phabsend(ui, repo, *revs, **opts):
             action = b'skipped'
 
         actiondesc = ui.label(
-            {b'created': _(b'created'),
-             b'skipped': _(b'skipped'),
-             b'updated': _(b'updated')}[action],
-            b'phabricator.action.%s' % action)
+            {
+                b'created': _(b'created'),
+                b'skipped': _(b'skipped'),
+                b'updated': _(b'updated'),
+            }[action],
+            b'phabricator.action.%s' % action,
+        )
         drevdesc = ui.label(b'D%d' % newrevid, b'phabricator.drev')
         nodedesc = ui.label(bytes(ctx), b'phabricator.node')
         desc = ui.label(ctx.description().split(b'\n')[0], b'phabricator.desc')
-        ui.write(_(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc,
-                                             desc))
+        ui.write(
+            _(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc, desc)
+        )
         drevids.append(newrevid)
         lastrevphid = newrevphid
 
@@ -637,7 +737,7 @@ def phabsend(ui, repo, *revs, **opts):
         drevs = callconduit(ui, b'differential.query', {b'ids': drevids})
         with repo.wlock(), repo.lock(), repo.transaction(b'phabsend'):
             wnode = unfi[b'.'].node()
-            mapping = {} # {oldnode: [newnode]}
+            mapping = {}  # {oldnode: [newnode]}
             for i, rev in enumerate(revs):
                 old = unfi[rev]
                 drevid = drevids[i]
@@ -646,16 +746,24 @@ def phabsend(ui, repo, *revs, **opts):
                 # Make sure commit message contain "Differential Revision"
                 if old.description() != newdesc:
                     if old.phase() == phases.public:
-                        ui.warn(_("warning: not updating public commit %s\n")
-                                % scmutil.formatchangeid(old))
+                        ui.warn(
+                            _("warning: not updating public commit %s\n")
+                            % scmutil.formatchangeid(old)
+                        )
                         continue
                     parents = [
                         mapping.get(old.p1().node(), (old.p1(),))[0],
                         mapping.get(old.p2().node(), (old.p2(),))[0],
                     ]
                     new = context.metadataonlyctx(
-                        repo, old, parents=parents, text=newdesc,
-                        user=old.user(), date=old.date(), extra=old.extra())
+                        repo,
+                        old,
+                        parents=parents,
+                        text=newdesc,
+                        user=old.user(),
+                        date=old.date(),
+                        extra=old.extra(),
+                    )
 
                     newnode = new.commit()
 
@@ -670,17 +778,32 @@ def phabsend(ui, repo, *revs, **opts):
                 # Remove local tags since it's no longer necessary
                 tagname = b'D%d' % drevid
                 if tagname in repo.tags():
-                    tags.tag(repo, tagname, nullid, message=None, user=None,
-                             date=None, local=True)
+                    tags.tag(
+                        repo,
+                        tagname,
+                        nullid,
+                        message=None,
+                        user=None,
+                        date=None,
+                        local=True,
+                    )
             scmutil.cleanupnodes(repo, mapping, b'phabsend', fixphase=True)
             if wnode in mapping:
                 unfi.setparents(mapping[wnode][0])
 
+
 # Map from "hg:meta" keys to header understood by "hg import". The order is
 # consistent with "hg export" output.
-_metanamemap = util.sortdict([(b'user', b'User'), (b'date', b'Date'),
-                              (b'branch', b'Branch'), (b'node', b'Node ID'),
-                              (b'parent', b'Parent ')])
+_metanamemap = util.sortdict(
+    [
+        (b'user', b'User'),
+        (b'date', b'Date'),
+        (b'branch', b'Branch'),
+        (b'node', b'Node ID'),
+        (b'parent', b'Parent '),
+    ]
+)
+
 
 def _confirmbeforesend(repo, revs, oldmap):
     url, token = readurltoken(repo.ui)
@@ -694,55 +817,73 @@ def _confirmbeforesend(repo, revs, oldmap):
         else:
             drevdesc = ui.label(_(b'NEW'), b'phabricator.drev')
 
-        ui.write(_(b'%s - %s: %s\n')
-                 % (drevdesc,
-                    ui.label(bytes(ctx), b'phabricator.node'),
-                    ui.label(desc, b'phabricator.desc')))
+        ui.write(
+            _(b'%s - %s: %s\n')
+            % (
+                drevdesc,
+                ui.label(bytes(ctx), b'phabricator.node'),
+                ui.label(desc, b'phabricator.desc'),
+            )
+        )
 
-    if ui.promptchoice(_(b'Send the above changes to %s (yn)?'
-                         b'$$ &Yes $$ &No') % url):
+    if ui.promptchoice(
+        _(b'Send the above changes to %s (yn)?' b'$$ &Yes $$ &No') % url
+    ):
         return False
 
     return True
 
-_knownstatusnames = {b'accepted', b'needsreview', b'needsrevision', b'closed',
-                     b'abandoned'}
+
+_knownstatusnames = {
+    b'accepted',
+    b'needsreview',
+    b'needsrevision',
+    b'closed',
+    b'abandoned',
+}
+
 
 def _getstatusname(drev):
     """get normalized status name from a Differential Revision"""
     return drev[b'statusName'].replace(b' ', b'').lower()
+
 
 # Small language to specify differential revisions. Support symbols: (), :X,
 # +, and -.
 
 _elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
-    b'(':      (12, None, (b'group', 1, b')'), None, None),
-    b':':      (8, None, (b'ancestors', 8), None, None),
-    b'&':      (5,  None, None, (b'and_', 5), None),
-    b'+':      (4,  None, None, (b'add', 4), None),
-    b'-':      (4,  None, None, (b'sub', 4), None),
-    b')':      (0,  None, None, None, None),
+    b'(': (12, None, (b'group', 1, b')'), None, None),
+    b':': (8, None, (b'ancestors', 8), None, None),
+    b'&': (5, None, None, (b'and_', 5), None),
+    b'+': (4, None, None, (b'add', 4), None),
+    b'-': (4, None, None, (b'sub', 4), None),
+    b')': (0, None, None, None, None),
     b'symbol': (0, b'symbol', None, None, None),
-    b'end':    (0, None, None, None, None),
+    b'end': (0, None, None, None, None),
 }
 
+
 def _tokenize(text):
-    view = memoryview(text) # zero-copy slice
+    view = memoryview(text)  # zero-copy slice
     special = b'():+-& '
     pos = 0
     length = len(text)
     while pos < length:
-        symbol = b''.join(itertools.takewhile(lambda ch: ch not in special,
-                                              pycompat.iterbytestr(view[pos:])))
+        symbol = b''.join(
+            itertools.takewhile(
+                lambda ch: ch not in special, pycompat.iterbytestr(view[pos:])
+            )
+        )
         if symbol:
             yield (b'symbol', symbol, pos)
             pos += len(symbol)
-        else: # special char, ignore space
+        else:  # special char, ignore space
             if text[pos] != b' ':
                 yield (text[pos], None, pos)
             pos += 1
     yield (b'end', None, pos)
+
 
 def _parse(text):
     tree, pos = parser.parser(_elements).parse(_tokenize(text))
@@ -750,12 +891,14 @@ def _parse(text):
         raise error.ParseError(b'invalid token', pos)
     return tree
 
+
 def _parsedrev(symbol):
     """str -> int or None, ex. 'D45' -> 45; '12' -> 12; 'x' -> None"""
     if symbol.startswith(b'D') and symbol[1:].isdigit():
         return int(symbol[1:])
     if symbol.isdigit():
         return int(symbol)
+
 
 def _prefetchdrevs(tree):
     """return ({single-drev-id}, {ancestor-drev-id}) to prefetch"""
@@ -777,6 +920,7 @@ def _prefetchdrevs(tree):
             drevs.update(r)
             ancestordrevs.update(a)
     return drevs, ancestordrevs
+
 
 def querydrev(repo, spec):
     """return a list of "Differential Revision" dicts
@@ -820,6 +964,7 @@ def querydrev(repo, spec):
             "sourcePath": null
         }
     """
+
     def fetch(params):
         """params -> single drev or None"""
         key = (params.get(b'ids') or params.get(b'phids') or [None])[0]
@@ -831,8 +976,9 @@ def querydrev(repo, spec):
             prefetched[drev[b'phid']] = drev
             prefetched[int(drev[b'id'])] = drev
         if key not in prefetched:
-            raise error.Abort(_(b'cannot get Differential Revision %r')
-                              % params)
+            raise error.Abort(
+                _(b'cannot get Differential Revision %r') % params
+            )
         return prefetched[key]
 
     def getstack(topdrevids):
@@ -855,7 +1001,7 @@ def querydrev(repo, spec):
         return smartset.baseset(result)
 
     # Initialize prefetch cache
-    prefetched = {} # {id or phid: drev}
+    prefetched = {}  # {id or phid: drev}
 
     tree = _parse(spec)
     drevs, ancestordrevs = _prefetchdrevs(tree)
@@ -879,8 +1025,11 @@ def querydrev(repo, spec):
             if drev:
                 return smartset.baseset([drev])
             elif tree[1] in _knownstatusnames:
-                drevs = [r for r in validids
-                         if _getstatusname(prefetched[r]) == tree[1]]
+                drevs = [
+                    r
+                    for r in validids
+                    if _getstatusname(prefetched[r]) == tree[1]
+                ]
                 return smartset.baseset(drevs)
             else:
                 raise error.Abort(_(b'unknown symbol: %s') % tree[1])
@@ -896,6 +1045,7 @@ def querydrev(repo, spec):
 
     return [prefetched[r] for r in walk(tree)]
 
+
 def getdescfromdrev(drev):
     """get description (commit message) from "Differential Revision"
 
@@ -909,6 +1059,7 @@ def getdescfromdrev(drev):
         testplan = b'Test Plan:\n%s' % testplan
     uri = b'Differential Revision: %s' % drev[b'uri']
     return b'\n\n'.join(filter(None, [title, summary, testplan, uri]))
+
 
 def getdiffmeta(diff):
     """get commit metadata (date, node, user, p1) from a diff object
@@ -954,8 +1105,10 @@ def getdiffmeta(diff):
             commit = sorted(props[b'local:commits'].values())[0]
             meta = {}
             if b'author' in commit and b'authorEmail' in commit:
-                meta[b'user'] = b'%s <%s>' % (commit[b'author'],
-                                              commit[b'authorEmail'])
+                meta[b'user'] = b'%s <%s>' % (
+                    commit[b'author'],
+                    commit[b'authorEmail'],
+                )
             if b'time' in commit:
                 meta[b'date'] = b'%d 0' % int(commit[b'time'])
             if b'branch' in commit:
@@ -975,6 +1128,7 @@ def getdiffmeta(diff):
         meta[b'parent'] = diff[b'sourceControlBaseRevision']
     return meta
 
+
 def readpatch(repo, drevs, write):
     """generate plain-text patch readable by 'hg import'
 
@@ -990,8 +1144,9 @@ def readpatch(repo, drevs, write):
         repo.ui.note(_(b'reading D%s\n') % drev[b'id'])
 
         diffid = max(int(v) for v in drev[b'diffs'])
-        body = callconduit(repo.ui, b'differential.getrawdiff',
-                           {b'diffID': diffid})
+        body = callconduit(
+            repo.ui, b'differential.getrawdiff', {b'diffID': diffid}
+        )
         desc = getdescfromdrev(drev)
         header = b'# HG changeset patch\n'
 
@@ -1006,10 +1161,13 @@ def readpatch(repo, drevs, write):
         content = b'%s%s\n%s' % (header, desc, body)
         write(content)
 
-@vcrcommand(b'phabread',
-         [(b'', b'stack', False, _(b'read dependencies'))],
-         _(b'DREVSPEC [OPTIONS]'),
-         helpcategory=command.CATEGORY_IMPORT_EXPORT)
+
+@vcrcommand(
+    b'phabread',
+    [(b'', b'stack', False, _(b'read dependencies'))],
+    _(b'DREVSPEC [OPTIONS]'),
+    helpcategory=command.CATEGORY_IMPORT_EXPORT,
+)
 def phabread(ui, repo, spec, **opts):
     """print patches from Phabricator suitable for importing
 
@@ -1035,14 +1193,19 @@ def phabread(ui, repo, spec, **opts):
     drevs = querydrev(repo, spec)
     readpatch(repo, drevs, ui.write)
 
-@vcrcommand(b'phabupdate',
-         [(b'', b'accept', False, _(b'accept revisions')),
-          (b'', b'reject', False, _(b'reject revisions')),
-          (b'', b'abandon', False, _(b'abandon revisions')),
-          (b'', b'reclaim', False, _(b'reclaim revisions')),
-          (b'm', b'comment', b'', _(b'comment on the last revision')),
-          ], _(b'DREVSPEC [OPTIONS]'),
-          helpcategory=command.CATEGORY_IMPORT_EXPORT)
+
+@vcrcommand(
+    b'phabupdate',
+    [
+        (b'', b'accept', False, _(b'accept revisions')),
+        (b'', b'reject', False, _(b'reject revisions')),
+        (b'', b'abandon', False, _(b'abandon revisions')),
+        (b'', b'reclaim', False, _(b'reclaim revisions')),
+        (b'm', b'comment', b'', _(b'comment on the last revision')),
+    ],
+    _(b'DREVSPEC [OPTIONS]'),
+    helpcategory=command.CATEGORY_IMPORT_EXPORT,
+)
 def phabupdate(ui, repo, spec, **opts):
     """update Differential Revision in batch
 
@@ -1062,9 +1225,12 @@ def phabupdate(ui, repo, spec, **opts):
         if i + 1 == len(drevs) and opts.get(b'comment'):
             actions.append({b'type': b'comment', b'value': opts[b'comment']})
         if actions:
-            params = {b'objectIdentifier': drev[b'phid'],
-                      b'transactions': actions}
+            params = {
+                b'objectIdentifier': drev[b'phid'],
+                b'transactions': actions,
+            }
             callconduit(ui, b'differential.revision.edit', params)
+
 
 @eh.templatekeyword(b'phabreview', requires={b'ctx'})
 def template_review(context, mapping):
@@ -1074,10 +1240,9 @@ def template_review(context, mapping):
     ctx = context.resource(mapping, b'ctx')
     m = _differentialrevisiondescre.search(ctx.description())
     if m:
-        return templateutil.hybriddict({
-            b'url': m.group(r'url'),
-            b'id': b"D%s" % m.group(r'id'),
-        })
+        return templateutil.hybriddict(
+            {b'url': m.group(r'url'), b'id': b"D%s" % m.group(r'id'),}
+        )
     else:
         tags = ctx.repo().nodetags(ctx.node())
         for t in tags:
@@ -1087,8 +1252,5 @@ def template_review(context, mapping):
                     url += b'/'
                 url += t
 
-                return templateutil.hybriddict({
-                    b'url': url,
-                    b'id': t,
-                })
+                return templateutil.hybriddict({b'url': url, b'id': t,})
     return None

@@ -26,12 +26,15 @@ parsers = policy.importmod(r'parsers')
 def gettype(q):
     return int(q & 0xFFFF)
 
+
 def offset_type(offset, type):
     return int(int(offset) << 16 | type)
 
+
 indexformatng = ">Qiiiiii20s12x"
 
-def py_parseindex(data, inline) :
+
+def py_parseindex(data, inline):
     s = 64
     cache = None
     index = []
@@ -43,7 +46,7 @@ def py_parseindex(data, inline) :
     if inline:
         cache = (0, data)
         while off <= l:
-            e = struct.unpack(indexformatng, data[off:off + s])
+            e = struct.unpack(indexformatng, data[off : off + s])
             nodemap[e[7]] = n
             append(e)
             n += 1
@@ -52,7 +55,7 @@ def py_parseindex(data, inline) :
             off += e[1] + s
     else:
         while off <= l:
-            e = struct.unpack(indexformatng, data[off:off + s])
+            e = struct.unpack(indexformatng, data[off : off + s])
             nodemap[e[7]] = n
             append(e)
             n += 1
@@ -64,6 +67,7 @@ def py_parseindex(data, inline) :
     index[0] = tuple(e)
 
     return index, cache
+
 
 data_inlined = (
     b'\x00\x01\x00\x01\x00\x00\x00\x00\x00\x00\x01\x8c'
@@ -89,7 +93,7 @@ data_inlined = (
     b'\x83\x00\x9f$z\xb8#\xa5\xb1\xdf\x98\xd9\xec\x1b\x89O\xe3Ts\x9a4'
     b'\x17m\x8b\xfc\x8f\xa5\x95\x9a\xfc\xfa\xed,\xe5|\xa1\xfe\x15\xb9'
     b'\xbc\xb2\x93\x1f\xf2\x95\xff\xdf,\x1a\xc5\xe7\x17*\x93Oz:>\x0e'
-    )
+)
 
 data_non_inlined = (
     b'\x00\x00\x00\x01\x00\x00\x00\x00\x00\x01D\x19'
@@ -108,57 +112,81 @@ data_non_inlined = (
     b'\x00\x00\x00\x03\x00\x00\x00\x02\xff\xff\xff\xff\x12\xcb\xeby1'
     b'\xb6\r\x98B\xcb\x07\xbd`\x8f\x92\xd9\xc4\x84\xbdK\x00\x00\x00'
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    )
+)
+
 
 def parse_index2(data, inline):
     index, chunkcache = parsers.parse_index2(data, inline)
     return list(index), chunkcache
+
 
 def importparsers(hexversion):
     """Import mercurial.parsers with the given sys.hexversion."""
     # The file parsers.c inspects sys.hexversion to determine the version
     # of the currently-running Python interpreter, so we monkey-patch
     # sys.hexversion to simulate using different versions.
-    code = ("import sys; sys.hexversion=%s; "
-            "import mercurial.cext.parsers" % hexversion)
+    code = (
+        "import sys; sys.hexversion=%s; "
+        "import mercurial.cext.parsers" % hexversion
+    )
     cmd = "python -c \"%s\"" % code
     # We need to do these tests inside a subprocess because parser.c's
     # version-checking code happens inside the module init function, and
     # when using reload() to reimport an extension module, "The init function
     # of extension modules is not called a second time"
     # (from http://docs.python.org/2/library/functions.html?#reload).
-    p = subprocess.Popen(cmd, shell=True,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     return p.communicate()  # returns stdout, stderr
+
 
 def hexfailmsg(testnumber, hexversion, stdout, expected):
     try:
         hexstring = hex(hexversion)
     except TypeError:
         hexstring = None
-    return ("FAILED: version test #%s with Python %s and patched "
-            "sys.hexversion %r (%r):\n Expected %s but got:\n-->'%s'\n" %
-            (testnumber, sys.version_info, hexversion, hexstring, expected,
-             stdout))
+    return (
+        "FAILED: version test #%s with Python %s and patched "
+        "sys.hexversion %r (%r):\n Expected %s but got:\n-->'%s'\n"
+        % (
+            testnumber,
+            sys.version_info,
+            hexversion,
+            hexstring,
+            expected,
+            stdout,
+        )
+    )
+
 
 def makehex(major, minor, micro):
     return int("%x%02x%02x00" % (major, minor, micro), 16)
 
-class parseindex2tests(unittest.TestCase):
 
+class parseindex2tests(unittest.TestCase):
     def assertversionokay(self, testnumber, hexversion):
         stdout, stderr = importparsers(hexversion)
         self.assertFalse(
-            stdout, hexfailmsg(testnumber, hexversion, stdout, 'no stdout'))
+            stdout, hexfailmsg(testnumber, hexversion, stdout, 'no stdout')
+        )
 
     def assertversionfail(self, testnumber, hexversion):
         stdout, stderr = importparsers(hexversion)
         # We include versionerrortext to distinguish from other ImportErrors.
         errtext = b"ImportError: %s" % pycompat.sysbytes(
-            parsers.versionerrortext)
-        self.assertIn(errtext, stdout,
-                      hexfailmsg(testnumber, hexversion, stdout,
-                                 expected="stdout to contain %r" % errtext))
+            parsers.versionerrortext
+        )
+        self.assertIn(
+            errtext,
+            stdout,
+            hexfailmsg(
+                testnumber,
+                hexversion,
+                stdout,
+                expected="stdout to contain %r" % errtext,
+            ),
+        )
 
     def testversiondetection(self):
         """Check the version-detection logic when importing parsers."""
@@ -189,11 +217,11 @@ class parseindex2tests(unittest.TestCase):
 
         want = py_parseindex(data_inlined, True)
         got = parse_index2(data_inlined, True)
-        self.assertEqual(want, got) # inline data
+        self.assertEqual(want, got)  # inline data
 
         want = py_parseindex(data_non_inlined, False)
         got = parse_index2(data_non_inlined, False)
-        self.assertEqual(want, got) # no inline data
+        self.assertEqual(want, got)  # no inline data
 
         ix = parsers.parse_index2(data_inlined, True)[0]
         for i, r in enumerate(ix):
@@ -201,8 +229,10 @@ class parseindex2tests(unittest.TestCase):
                 i = -1
             try:
                 self.assertEqual(
-                    ix[r[7]], i,
-                    'Reverse lookup inconsistent for %r' % nodemod.hex(r[7]))
+                    ix[r[7]],
+                    i,
+                    'Reverse lookup inconsistent for %r' % nodemod.hex(r[7]),
+                )
             except TypeError:
                 # pure version doesn't support this
                 break
@@ -211,12 +241,14 @@ class parseindex2tests(unittest.TestCase):
         want = (0, 0, 0, -1, -1, -1, -1, nullid)
         index, junk = parsers.parse_index2(data_inlined, True)
         got = index[-1]
-        self.assertEqual(want, got) # inline data
+        self.assertEqual(want, got)  # inline data
 
         index, junk = parsers.parse_index2(data_non_inlined, False)
         got = index[-1]
-        self.assertEqual(want, got) # no inline data
+        self.assertEqual(want, got)  # no inline data
+
 
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

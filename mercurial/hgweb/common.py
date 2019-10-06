@@ -44,6 +44,7 @@ def ismember(ui, username, userlist):
     """
     return userlist == ['*'] or username in userlist
 
+
 def checkauthz(hgweb, req, op):
     '''Check permission for operation based on request data (including
     authentication info). Return if op allowed, else raise an ErrorResponse
@@ -61,7 +62,7 @@ def checkauthz(hgweb, req, op):
 
     if op == 'pull' and not hgweb.allowpull:
         raise ErrorResponse(HTTP_UNAUTHORIZED, 'pull not authorized')
-    elif op == 'pull' or op is None: # op is None for interface requests
+    elif op == 'pull' or op is None:  # op is None for interface requests
         return
 
     # Allow LFS uploading via PUT requests
@@ -87,6 +88,7 @@ def checkauthz(hgweb, req, op):
     if not (allow and ismember(hgweb.repo.ui, user, allow)):
         raise ErrorResponse(HTTP_UNAUTHORIZED, 'push not authorized')
 
+
 # Hooks for hgweb permission checks; extensions can add hooks here.
 # Each hook is invoked like this: hook(hgweb, request, operation),
 # where operation is either read, pull, push or upload. Hooks should either
@@ -108,6 +110,7 @@ class ErrorResponse(Exception):
         self.headers = headers
         self.message = message
 
+
 class continuereader(object):
     """File object wrapper to handle HTTP 100-continue.
 
@@ -116,6 +119,7 @@ class continuereader(object):
     response is sent. This should trigger the client into actually sending
     the request body.
     """
+
     def __init__(self, f, write):
         self.f = f
         self._write = write
@@ -132,13 +136,17 @@ class continuereader(object):
             return getattr(self.f, attr)
         raise AttributeError
 
+
 def _statusmessage(code):
     responses = httpserver.basehttprequesthandler.responses
     return pycompat.bytesurl(
-        responses.get(code, (r'Error', r'Unknown error'))[0])
+        responses.get(code, (r'Error', r'Unknown error'))[0]
+    )
+
 
 def statusmessage(code, message=None):
     return '%d %s' % (code, message or _statusmessage(code))
+
 
 def get_stat(spath, fn):
     """stat fn if it exists, spath otherwise"""
@@ -148,19 +156,25 @@ def get_stat(spath, fn):
     else:
         return os.stat(spath)
 
+
 def get_mtime(spath):
     return get_stat(spath, "00changelog.i")[stat.ST_MTIME]
+
 
 def ispathsafe(path):
     """Determine if a path is safe to use for filesystem access."""
     parts = path.split('/')
     for part in parts:
-        if (part in ('', pycompat.oscurdir, pycompat.ospardir) or
-            pycompat.ossep in part or
-            pycompat.osaltsep is not None and pycompat.osaltsep in part):
+        if (
+            part in ('', pycompat.oscurdir, pycompat.ospardir)
+            or pycompat.ossep in part
+            or pycompat.osaltsep is not None
+            and pycompat.osaltsep in part
+        ):
             return False
 
     return True
+
 
 def staticfile(directory, fname, res):
     """return a file inside directory with guessed Content-Type header
@@ -184,7 +198,8 @@ def staticfile(directory, fname, res):
     try:
         os.stat(path)
         ct = pycompat.sysbytes(
-            mimetypes.guess_type(pycompat.fsdecode(path))[0] or r"text/plain")
+            mimetypes.guess_type(pycompat.fsdecode(path))[0] or r"text/plain"
+        )
         with open(path, 'rb') as fh:
             data = fh.read()
 
@@ -197,8 +212,10 @@ def staticfile(directory, fname, res):
         if err.errno == errno.ENOENT:
             raise ErrorResponse(HTTP_NOT_FOUND)
         else:
-            raise ErrorResponse(HTTP_SERVER_ERROR,
-                                encoding.strtolocal(err.strerror))
+            raise ErrorResponse(
+                HTTP_SERVER_ERROR, encoding.strtolocal(err.strerror)
+            )
+
 
 def paritygen(stripecount, offset=0):
     """count parity of horizontal stripes for easier reading"""
@@ -216,15 +233,20 @@ def paritygen(stripecount, offset=0):
             parity = 1 - parity
             count = 0
 
+
 def get_contact(config):
     """Return repo contact information or empty string.
 
     web.contact is the primary source, but if that is not set, try
     ui.username or $EMAIL as a fallback to display something useful.
     """
-    return (config("web", "contact") or
-            config("ui", "username") or
-            encoding.environ.get("EMAIL") or "")
+    return (
+        config("web", "contact")
+        or config("ui", "username")
+        or encoding.environ.get("EMAIL")
+        or ""
+    )
+
 
 def cspvalues(ui):
     """Obtain the Content-Security-Policy header and nonce value.

@@ -24,6 +24,7 @@ NOBASEINDEXMARK = -2
 INDEXSUFFIX = '.dataidx'
 PACKSUFFIX = '.datapack'
 
+
 class datapackstore(basepack.basepackstore):
     INDEXSUFFIX = INDEXSUFFIX
     PACKSUFFIX = PACKSUFFIX
@@ -85,6 +86,7 @@ class datapackstore(basepack.basepackstore):
     def add(self, name, node, data):
         raise RuntimeError("cannot add to datapackstore")
 
+
 class datapack(basepack.basepack):
     INDEXSUFFIX = INDEXSUFFIX
     PACKSUFFIX = PACKSUFFIX
@@ -106,8 +108,9 @@ class datapack(basepack.basepack):
         return missing
 
     def get(self, name, node):
-        raise RuntimeError("must use getdeltachain with datapack (%s:%s)"
-                           % (name, hex(node)))
+        raise RuntimeError(
+            "must use getdeltachain with datapack (%s:%s)" % (name, hex(node))
+        )
 
     def getmeta(self, name, node):
         value = self._find(node)
@@ -115,18 +118,18 @@ class datapack(basepack.basepack):
             raise KeyError((name, hex(node)))
 
         node, deltabaseoffset, offset, size = value
-        rawentry = self._data[offset:offset + size]
+        rawentry = self._data[offset : offset + size]
 
         # see docstring of mutabledatapack for the format
         offset = 0
-        offset += struct.unpack_from('!H', rawentry, offset)[0] + 2 # filename
-        offset += 40 # node, deltabase node
-        offset += struct.unpack_from('!Q', rawentry, offset)[0] + 8 # delta
+        offset += struct.unpack_from('!H', rawentry, offset)[0] + 2  # filename
+        offset += 40  # node, deltabase node
+        offset += struct.unpack_from('!Q', rawentry, offset)[0] + 8  # delta
 
         metalen = struct.unpack_from('!I', rawentry, offset)[0]
         offset += 4
 
-        meta = shallowutil.parsepackmeta(rawentry[offset:offset + metalen])
+        meta = shallowutil.parsepackmeta(rawentry[offset : offset + metalen])
 
         return meta
 
@@ -155,11 +158,14 @@ class datapack(basepack.basepack):
         chain = [value]
         deltabaseoffset = value[1]
         entrylen = self.INDEXENTRYLENGTH
-        while (deltabaseoffset != FULLTEXTINDEXMARK
-               and deltabaseoffset != NOBASEINDEXMARK):
+        while (
+            deltabaseoffset != FULLTEXTINDEXMARK
+            and deltabaseoffset != NOBASEINDEXMARK
+        ):
             loc = params.indexstart + deltabaseoffset
-            value = struct.unpack(self.INDEXFORMAT,
-                                  self._index[loc:loc + entrylen])
+            value = struct.unpack(
+                self.INDEXFORMAT, self._index[loc : loc + entrylen]
+            )
             deltabaseoffset = value[1]
             chain.append(value)
 
@@ -175,33 +181,33 @@ class datapack(basepack.basepack):
         return deltachain
 
     def _readentry(self, offset, size, getmeta=False):
-        rawentry = self._data[offset:offset + size]
+        rawentry = self._data[offset : offset + size]
         self._pagedin += len(rawentry)
 
         # <2 byte len> + <filename>
         lengthsize = 2
         filenamelen = struct.unpack('!H', rawentry[:2])[0]
-        filename = rawentry[lengthsize:lengthsize + filenamelen]
+        filename = rawentry[lengthsize : lengthsize + filenamelen]
 
         # <20 byte node> + <20 byte deltabase>
         nodestart = lengthsize + filenamelen
         deltabasestart = nodestart + NODELENGTH
         node = rawentry[nodestart:deltabasestart]
-        deltabasenode = rawentry[deltabasestart:deltabasestart + NODELENGTH]
+        deltabasenode = rawentry[deltabasestart : deltabasestart + NODELENGTH]
 
         # <8 byte len> + <delta>
         deltastart = deltabasestart + NODELENGTH
-        rawdeltalen = rawentry[deltastart:deltastart + 8]
+        rawdeltalen = rawentry[deltastart : deltastart + 8]
         deltalen = struct.unpack('!Q', rawdeltalen)[0]
 
-        delta = rawentry[deltastart + 8:deltastart + 8 + deltalen]
+        delta = rawentry[deltastart + 8 : deltastart + 8 + deltalen]
         delta = self._decompress(delta)
 
         if getmeta:
             metastart = deltastart + 8 + deltalen
             metalen = struct.unpack_from('!I', rawentry, metastart)[0]
 
-            rawmeta = rawentry[metastart + 4:metastart + 4 + metalen]
+            rawmeta = rawentry[metastart + 4 : metastart + 4 + metalen]
             meta = shallowutil.parsepackmeta(rawmeta)
             return filename, node, deltabasenode, delta, meta
         else:
@@ -215,8 +221,9 @@ class datapack(basepack.basepack):
 
     def _find(self, node):
         params = self.params
-        fanoutkey = struct.unpack(params.fanoutstruct,
-                                  node[:params.fanoutprefix])[0]
+        fanoutkey = struct.unpack(
+            params.fanoutstruct, node[: params.fanoutprefix]
+        )[0]
         fanout = self._fanouttable
 
         start = fanout[fanoutkey] + params.indexstart
@@ -233,20 +240,20 @@ class datapack(basepack.basepack):
 
         # Bisect between start and end to find node
         index = self._index
-        startnode = index[start:start + NODELENGTH]
-        endnode = index[end:end + NODELENGTH]
+        startnode = index[start : start + NODELENGTH]
+        endnode = index[end : end + NODELENGTH]
         entrylen = self.INDEXENTRYLENGTH
         if startnode == node:
-            entry = index[start:start + entrylen]
+            entry = index[start : start + entrylen]
         elif endnode == node:
-            entry = index[end:end + entrylen]
+            entry = index[end : end + entrylen]
         else:
             while start < end - entrylen:
                 mid = start + (end - start) // 2
                 mid = mid - ((mid - params.indexstart) % entrylen)
-                midnode = index[mid:mid + NODELENGTH]
+                midnode = index[mid : mid + NODELENGTH]
                 if midnode == node:
-                    entry = index[mid:mid + entrylen]
+                    entry = index[mid : mid + entrylen]
                     break
                 if node > midnode:
                     start = mid
@@ -264,8 +271,9 @@ class datapack(basepack.basepack):
     def cleanup(self, ledger):
         entries = ledger.sources.get(self, [])
         allkeys = set(self)
-        repackedkeys = set((e.filename, e.node) for e in entries if
-                           e.datarepacked or e.gced)
+        repackedkeys = set(
+            (e.filename, e.node) for e in entries if e.datarepacked or e.gced
+        )
 
         if len(allkeys - repackedkeys) == 0:
             if self.path not in ledger.created:
@@ -284,27 +292,28 @@ class datapack(basepack.basepack):
             oldoffset = offset
 
             # <2 byte len> + <filename>
-            filenamelen = struct.unpack('!H', data[offset:offset + 2])[0]
+            filenamelen = struct.unpack('!H', data[offset : offset + 2])[0]
             offset += 2
-            filename = data[offset:offset + filenamelen]
+            filename = data[offset : offset + filenamelen]
             offset += filenamelen
 
             # <20 byte node>
-            node = data[offset:offset + constants.NODESIZE]
+            node = data[offset : offset + constants.NODESIZE]
             offset += constants.NODESIZE
             # <20 byte deltabase>
-            deltabase = data[offset:offset + constants.NODESIZE]
+            deltabase = data[offset : offset + constants.NODESIZE]
             offset += constants.NODESIZE
 
             # <8 byte len> + <delta>
-            rawdeltalen = data[offset:offset + 8]
+            rawdeltalen = data[offset : offset + 8]
             deltalen = struct.unpack('!Q', rawdeltalen)[0]
             offset += 8
 
             # TODO(augie): we should store a header that is the
             # uncompressed size.
-            uncompressedlen = len(self._decompress(
-                data[offset:offset + deltalen]))
+            uncompressedlen = len(
+                self._decompress(data[offset : offset + deltalen])
+            )
             offset += deltalen
 
             # <4 byte len> + <metadata-list>
@@ -317,6 +326,7 @@ class datapack(basepack.basepack):
             self._pagedin += offset - oldoffset
             if self.freememory():
                 data = self._data
+
 
 class mutabledatapack(basepack.mutablebasepack):
     """A class for constructing and serializing a datapack file and index.
@@ -388,6 +398,7 @@ class mutabledatapack(basepack.mutablebasepack):
 
     [1]: new in version 1.
     """
+
     INDEXSUFFIX = INDEXSUFFIX
     PACKSUFFIX = PACKSUFFIX
 
@@ -403,7 +414,7 @@ class mutabledatapack(basepack.mutablebasepack):
 
     def add(self, name, node, deltabasenode, delta, metadata=None):
         # metadata is a dict, ex. {METAKEYFLAG: flag}
-        if len(name) > 2**16:
+        if len(name) > 2 ** 16:
             raise RuntimeError(_("name too long %s") % name)
         if len(node) != 20:
             raise RuntimeError(_("node should be 20 bytes %s") % node)
@@ -415,18 +426,20 @@ class mutabledatapack(basepack.mutablebasepack):
         # TODO: allow configurable compression
         delta = self._compress(delta)
 
-        rawdata = ''.join((
-            struct.pack('!H', len(name)), # unsigned 2 byte int
-            name,
-            node,
-            deltabasenode,
-            struct.pack('!Q', len(delta)), # unsigned 8 byte int
-            delta,
-        ))
+        rawdata = ''.join(
+            (
+                struct.pack('!H', len(name)),  # unsigned 2 byte int
+                name,
+                node,
+                deltabasenode,
+                struct.pack('!Q', len(delta)),  # unsigned 8 byte int
+                delta,
+            )
+        )
 
         # v1 support metadata
         rawmeta = shallowutil.buildpackmeta(metadata)
-        rawdata += struct.pack('!I', len(rawmeta)) # unsigned 4 byte
+        rawdata += struct.pack('!I', len(rawmeta))  # unsigned 4 byte
         rawdata += rawmeta
 
         offset = self.packfp.tell()
@@ -438,8 +451,9 @@ class mutabledatapack(basepack.mutablebasepack):
         self.writeraw(rawdata)
 
     def createindex(self, nodelocations, indexoffset):
-        entries = sorted((n, db, o, s) for n, (db, o, s)
-                         in self.entries.iteritems())
+        entries = sorted(
+            (n, db, o, s) for n, (db, o, s) in self.entries.iteritems()
+        )
 
         rawindex = ''
         fmt = self.INDEXFORMAT
@@ -449,8 +463,9 @@ class mutabledatapack(basepack.mutablebasepack):
             else:
                 # Instead of storing the deltabase node in the index, let's
                 # store a pointer directly to the index entry for the deltabase.
-                deltabaselocation = nodelocations.get(deltabase,
-                                                      NOBASEINDEXMARK)
+                deltabaselocation = nodelocations.get(
+                    deltabase, NOBASEINDEXMARK
+                )
 
             entry = struct.pack(fmt, node, deltabaselocation, offset, size)
             rawindex += entry

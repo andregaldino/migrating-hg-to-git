@@ -10,6 +10,7 @@ profiler_entry = getattr(_lsprof, 'profiler_entry', None)
 
 __all__ = ['profile', 'Stats']
 
+
 def profile(f, *args, **kwds):
     """XXX docstring"""
     p = Profiler()
@@ -50,21 +51,44 @@ class Stats(object):
             d = d[:top]
         cols = "% 12d %12d %11.4f %11.4f   %s\n"
         hcols = "% 12s %12s %12s %12s %s\n"
-        file.write(hcols % ("CallCount", "Recursive", "Total(s)",
-                            "Inline(s)", "module:lineno(function)"))
+        file.write(
+            hcols
+            % (
+                "CallCount",
+                "Recursive",
+                "Total(s)",
+                "Inline(s)",
+                "module:lineno(function)",
+            )
+        )
         count = 0
         for e in d:
-            file.write(cols % (e.callcount, e.reccallcount, e.totaltime,
-                               e.inlinetime, label(e.code)))
+            file.write(
+                cols
+                % (
+                    e.callcount,
+                    e.reccallcount,
+                    e.totaltime,
+                    e.inlinetime,
+                    label(e.code),
+                )
+            )
             count += 1
             if limit is not None and count == limit:
                 return
             ccount = 0
             if climit and e.calls:
                 for se in e.calls:
-                    file.write(cols % (se.callcount, se.reccallcount,
-                                       se.totaltime, se.inlinetime,
-                                       "    %s" % label(se.code)))
+                    file.write(
+                        cols
+                        % (
+                            se.callcount,
+                            se.reccallcount,
+                            se.totaltime,
+                            se.inlinetime,
+                            "    %s" % label(se.code),
+                        )
+                    )
                     count += 1
                     ccount += 1
                     if limit is not None and count == limit:
@@ -87,7 +111,9 @@ class Stats(object):
                     if not isinstance(se.code, str):
                         e.calls[j] = type(se)((label(se.code),) + se[1:])
 
+
 _fn2mod = {}
+
 
 def label(code):
     if isinstance(code, str):
@@ -115,8 +141,10 @@ def label(code):
 
     return res
 
+
 if __name__ == '__main__':
     import os
+
     sys.argv = sys.argv[1:]
     if not sys.argv:
         print("usage: lsprof.py <script> <arguments...>", file=sys.stderr)

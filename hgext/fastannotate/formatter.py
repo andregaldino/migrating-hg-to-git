@@ -13,9 +13,7 @@ from mercurial import (
     templatefilters,
     util,
 )
-from mercurial.utils import (
-        dateutil,
-)
+from mercurial.utils import dateutil
 
 # imitating mercurial.commands.annotate, not using the vanilla formatter since
 # the data structures are a bit different, and we have some fast paths.
@@ -41,28 +39,34 @@ class defaultformatter(object):
             wnode = hexfunc(repo['.'].node()) + '+'
             wrev = '%d' % repo['.'].rev()
             wrevpad = ''
-            if not opts.get('changeset'): # only show + if changeset is hidden
+            if not opts.get('changeset'):  # only show + if changeset is hidden
                 wrev += '+'
                 wrevpad = ' '
             revenc = lambda x: wrev if x is None else ('%d' % x) + wrevpad
+
             def csetenc(x):
                 if x is None:
                     return wnode
                 return pycompat.bytestr(x) + ' '
+
         else:
             revenc = csetenc = pycompat.bytestr
 
         # opt name, separator, raw value (for json/plain), encoder (for plain)
-        opmap = [('user', ' ', lambda x: getctx(x).user(), ui.shortuser),
-                 ('number', ' ', lambda x: getctx(x).rev(), revenc),
-                 ('changeset', ' ', lambda x: hexfunc(x[0]), csetenc),
-                 ('date', ' ', lambda x: getctx(x).date(), datefunc),
-                 ('file', ' ', lambda x: x[2], pycompat.bytestr),
-                 ('line_number', ':', lambda x: x[1] + 1, pycompat.bytestr)]
+        opmap = [
+            ('user', ' ', lambda x: getctx(x).user(), ui.shortuser),
+            ('number', ' ', lambda x: getctx(x).rev(), revenc),
+            ('changeset', ' ', lambda x: hexfunc(x[0]), csetenc),
+            ('date', ' ', lambda x: getctx(x).date(), datefunc),
+            ('file', ' ', lambda x: x[2], pycompat.bytestr),
+            ('line_number', ':', lambda x: x[1] + 1, pycompat.bytestr),
+        ]
         fieldnamemap = {'number': 'rev', 'changeset': 'node'}
-        funcmap = [(get, sep, fieldnamemap.get(op, op), enc)
-                   for op, sep, get, enc in opmap
-                   if opts.get(op)]
+        funcmap = [
+            (get, sep, fieldnamemap.get(op, op), enc)
+            for op, sep, get, enc in opmap
+            if opts.get(op)
+        ]
         # no separator for first column
         funcmap[0] = list(funcmap[0])
         funcmap[0][1] = ''
@@ -72,17 +76,17 @@ class defaultformatter(object):
         """(annotateresult, [str], set([rev, linenum])) -> None. write output.
         annotateresult can be [(node, linenum, path)], or [(node, linenum)]
         """
-        pieces = [] # [[str]]
-        maxwidths = [] # [int]
+        pieces = []  # [[str]]
+        maxwidths = []  # [int]
 
         # calculate padding
         for f, sep, name, enc in self.funcmap:
             l = [enc(f(x)) for x in annotatedresult]
             pieces.append(l)
-            if name in ['node', 'date']: # node and date has fixed size
+            if name in ['node', 'date']:  # node and date has fixed size
                 l = l[:1]
             widths = pycompat.maplist(encoding.colwidth, set(l))
-            maxwidth = (max(widths) if widths else 0)
+            maxwidth = max(widths) if widths else 0
             maxwidths.append(maxwidth)
 
         # buffered output
@@ -95,13 +99,14 @@ class defaultformatter(object):
             if lines:
                 if existinglines is None:
                     result += ': ' + lines[i]
-                else: # extra formatting showing whether a line exists
+                else:  # extra formatting showing whether a line exists
                     key = (annotatedresult[i][0], annotatedresult[i][1])
                     if key in existinglines:
                         result += ':  ' + lines[i]
                     else:
-                        result += ': ' + self.ui.label('-' + lines[i],
-                                                       'diff.deleted')
+                        result += ': ' + self.ui.label(
+                            '-' + lines[i], 'diff.deleted'
+                        )
 
             if result[-1:] != '\n':
                 result += '\n'
@@ -118,6 +123,7 @@ class defaultformatter(object):
     def end(self):
         pass
 
+
 class jsonformatter(defaultformatter):
     def __init__(self, ui, repo, opts):
         super(jsonformatter, self).__init__(ui, repo, opts)
@@ -128,8 +134,10 @@ class jsonformatter(defaultformatter):
         if annotatedresult:
             self._writecomma()
 
-        pieces = [(name, pycompat.maplist(f, annotatedresult))
-                  for f, sep, name, enc in self.funcmap]
+        pieces = [
+            (name, pycompat.maplist(f, annotatedresult))
+            for f, sep, name, enc in self.funcmap
+        ]
         if lines is not None:
             pieces.append(('line', lines))
         pieces.sort()
@@ -142,9 +150,11 @@ class jsonformatter(defaultformatter):
             result += '\n {\n'
             for j, p in enumerate(pieces):
                 k, vs = p
-                result += ('  "%s": %s%s\n'
-                           % (k, templatefilters.json(vs[i], paranoid=False),
-                              seps[j]))
+                result += '  "%s": %s%s\n' % (
+                    k,
+                    templatefilters.json(vs[i], paranoid=False),
+                    seps[j],
+                )
             result += ' }%s' % ('' if i == lasti else ',')
         if lasti >= 0:
             self.needcomma = True

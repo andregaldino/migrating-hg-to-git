@@ -28,9 +28,7 @@ from . import (
     util,
 )
 
-from .interfaces import (
-    repository,
-)
+from .interfaces import repository
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct("20s20s20s20s")
 _CHANGEGROUPV2_DELTA_HEADER = struct.Struct("20s20s20s20s20s")
@@ -39,6 +37,7 @@ _CHANGEGROUPV3_DELTA_HEADER = struct.Struct(">20s20s20s20s20sH")
 LFS_REQUIREMENT = 'lfs'
 
 readexactly = util.readexactly
+
 
 def getchunk(stream):
     """return the next chunk from stream as a string"""
@@ -50,17 +49,21 @@ def getchunk(stream):
         return ""
     return readexactly(stream, l - 4)
 
+
 def chunkheader(length):
     """return a changegroup chunk header (string)"""
     return struct.pack(">l", length + 4)
+
 
 def closechunk():
     """return a changegroup chunk header (string) for a zero-length chunk"""
     return struct.pack(">l", 0)
 
+
 def _fileheader(path):
     """Obtain a changegroup chunk header for a named path."""
     return chunkheader(len(path)) + path
+
 
 def writechunks(ui, chunks, filename, vfs=None):
     """Write chunks to a file and return its filename.
@@ -96,6 +99,7 @@ def writechunks(ui, chunks, filename, vfs=None):
             else:
                 os.unlink(cleanup)
 
+
 class cg1unpacker(object):
     """Unpacker for cg1 changegroup streams.
 
@@ -114,17 +118,17 @@ class cg1unpacker(object):
     A few other public methods exist. Those are used only for
     bundlerepo and some debug commands - their use is discouraged.
     """
+
     deltaheader = _CHANGEGROUPV1_DELTA_HEADER
     deltaheadersize = deltaheader.size
     version = '01'
-    _grouplistcount = 1 # One list of files after the manifests
+    _grouplistcount = 1  # One list of files after the manifests
 
     def __init__(self, fh, alg, extras=None):
         if alg is None:
             alg = 'UN'
         if alg not in util.compengines.supportedbundletypes:
-            raise error.Abort(_('unknown stream compression type: %s')
-                             % alg)
+            raise error.Abort(_('unknown stream compression type: %s') % alg)
         if alg == 'BZ':
             alg = '_truncatedBZ'
 
@@ -138,12 +142,16 @@ class cg1unpacker(object):
     # be used by bundlerepo, but it's a little hard to tell.
     def compressed(self):
         return self._type is not None and self._type != 'UN'
+
     def read(self, l):
         return self._stream.read(l)
+
     def seek(self, pos):
         return self._stream.seek(pos)
+
     def tell(self):
         return self._stream.tell()
+
     def close(self):
         return self._stream.close()
 
@@ -233,7 +241,7 @@ class cg1unpacker(object):
                 yield chunkheader(len(chunk))
                 pos = 0
                 while pos < len(chunk):
-                    next = pos + 2**20
+                    next = pos + 2 ** 20
                     yield chunk[pos:next]
                     pos = next
             yield closechunk()
@@ -250,8 +258,15 @@ class cg1unpacker(object):
         prog.complete()
         self.callback = None
 
-    def apply(self, repo, tr, srctype, url, targetphase=phases.draft,
-              expectedtotal=None):
+    def apply(
+        self,
+        repo,
+        tr,
+        srctype,
+        url,
+        targetphase=phases.draft,
+        expectedtotal=None,
+    ):
         """Add the changegroup returned by source.read() to this repo.
         srctype is a string like 'push', 'pull', or 'unbundle'.  url is
         the URL of the repo where this changegroup is coming from.
@@ -263,6 +278,7 @@ class cg1unpacker(object):
         - number of heads stays the same: 1
         """
         repo = repo.unfiltered()
+
         def csmap(x):
             repo.ui.debug("add changeset %s\n" % short(x))
             return len(cl)
@@ -279,8 +295,9 @@ class cg1unpacker(object):
             # in this function.
             srctype = tr.hookargs.setdefault('source', srctype)
             tr.hookargs.setdefault('url', url)
-            repo.hook('prechangegroup',
-                      throw=True, **pycompat.strkwargs(tr.hookargs))
+            repo.hook(
+                'prechangegroup', throw=True, **pycompat.strkwargs(tr.hookargs)
+            )
 
             # write changelog data to temp files so concurrent readers
             # will not see an inconsistent view
@@ -292,11 +309,13 @@ class cg1unpacker(object):
             # pull off the changeset group
             repo.ui.status(_("adding changesets\n"))
             clstart = len(cl)
-            progress = repo.ui.makeprogress(_('changesets'), unit=_('chunks'),
-                                            total=expectedtotal)
+            progress = repo.ui.makeprogress(
+                _('changesets'), unit=_('chunks'), total=expectedtotal
+            )
             self.callback = progress.increment
 
             efiles = set()
+
             def onchangelog(cl, node):
                 efiles.update(cl.readfiles(node))
 
@@ -306,8 +325,10 @@ class cg1unpacker(object):
             efiles = len(efiles)
 
             if not cgnodes:
-                repo.ui.develwarn('applied empty changelog from changegroup',
-                                  config='warn-empty-changegroup')
+                repo.ui.develwarn(
+                    'applied empty changelog from changegroup',
+                    config='warn-empty-changegroup',
+                )
             clend = len(cl)
             changesets = clend - clstart
             progress.complete()
@@ -317,8 +338,9 @@ class cg1unpacker(object):
             repo.ui.status(_("adding manifests\n"))
             # We know that we'll never have more manifests than we had
             # changesets.
-            progress = repo.ui.makeprogress(_('manifests'), unit=_('chunks'),
-                                            total=changesets)
+            progress = repo.ui.makeprogress(
+                _('manifests'), unit=_('chunks'), total=changesets
+            )
             self._unpackmanifests(repo, revmap, trp, progress)
 
             needfiles = {}
@@ -336,7 +358,8 @@ class cg1unpacker(object):
             # process the files
             repo.ui.status(_("adding file changes\n"))
             newrevs, newfiles = _addchangegroupfiles(
-                repo, self, revmap, trp, efiles, needfiles)
+                repo, self, revmap, trp, efiles, needfiles
+            )
 
             # making sure the value exists
             tr.changes.setdefault('changegroup-count-changesets', 0)
@@ -380,8 +403,11 @@ class cg1unpacker(object):
                     hookargs = dict(tr.hookargs)
                     hookargs['node'] = hex(cl.node(clstart))
                     hookargs['node_last'] = hex(cl.node(clend - 1))
-                repo.hook('pretxnchangegroup',
-                          throw=True, **pycompat.strkwargs(hookargs))
+                repo.hook(
+                    'pretxnchangegroup',
+                    throw=True,
+                    **pycompat.strkwargs(hookargs)
+                )
 
             added = [cl.node(r) for r in pycompat.xrange(clstart, clend)]
             phaseall = None
@@ -424,15 +450,18 @@ class cg1unpacker(object):
                         del args['node_last']
                         repo.hook("incoming", **pycompat.strkwargs(args))
 
-                    newheads = [h for h in repo.heads()
-                                if h not in oldheads]
-                    repo.ui.log("incoming",
-                                "%d incoming changes - new heads: %s\n",
-                                len(added),
-                                ', '.join([hex(c[:6]) for c in newheads]))
+                    newheads = [h for h in repo.heads() if h not in oldheads]
+                    repo.ui.log(
+                        "incoming",
+                        "%d incoming changes - new heads: %s\n",
+                        len(added),
+                        ', '.join([hex(c[:6]) for c in newheads]),
+                    )
 
-                tr.addpostclose('changegroup-runhooks-%020i' % clstart,
-                                lambda tr: repo._afterlock(runhooks))
+                tr.addpostclose(
+                    'changegroup-runhooks-%020i' % clstart,
+                    lambda tr: repo._afterlock(runhooks),
+                )
         finally:
             repo.ui.flush()
         # never return 0 here:
@@ -454,6 +483,7 @@ class cg1unpacker(object):
             yield chunkdata
             chain = chunkdata[0]
 
+
 class cg2unpacker(cg1unpacker):
     """Unpacker for cg2 streams.
 
@@ -461,6 +491,7 @@ class cg2unpacker(cg1unpacker):
     format is slightly different. All other features about the data
     remain the same.
     """
+
     deltaheader = _CHANGEGROUPV2_DELTA_HEADER
     deltaheadersize = deltaheader.size
     version = '02'
@@ -470,6 +501,7 @@ class cg2unpacker(cg1unpacker):
         flags = 0
         return node, p1, p2, deltabase, cs, flags
 
+
 class cg3unpacker(cg2unpacker):
     """Unpacker for cg3 streams.
 
@@ -477,10 +509,11 @@ class cg3unpacker(cg2unpacker):
     flags. It adds the revlog flags to the delta header and an empty chunk
     separating manifests and files.
     """
+
     deltaheader = _CHANGEGROUPV3_DELTA_HEADER
     deltaheadersize = deltaheader.size
     version = '03'
-    _grouplistcount = 2 # One list of manifests and one list of files
+    _grouplistcount = 2  # One list of manifests and one list of files
 
     def _deltaheader(self, headertuple, prevnode):
         node, p1, p2, deltabase, cs, flags = headertuple
@@ -496,10 +529,12 @@ class cg3unpacker(cg2unpacker):
             if not repo.manifestlog.getstorage(d).addgroup(deltas, revmap, trp):
                 raise error.Abort(_("received dir revlog group is empty"))
 
+
 class headerlessfixup(object):
     def __init__(self, fh, h):
         self._h = h
         self._fh = fh
+
     def read(self, n):
         if self._h:
             d, self._h = self._h[:n], self._h[n:]
@@ -507,6 +542,7 @@ class headerlessfixup(object):
                 d += readexactly(self._fh, n - len(d))
             return d
         return readexactly(self._fh, n)
+
 
 def _revisiondeltatochunks(delta, headerfn):
     """Serialize a revisiondelta to changegroup chunks."""
@@ -524,8 +560,7 @@ def _revisiondeltatochunks(delta, headerfn):
         prefix = mdiff.trivialdiffheader(len(data))
     else:
         data = delta.revision
-        prefix = mdiff.replacediffheader(delta.baserevisionsize,
-                                         len(data))
+        prefix = mdiff.replacediffheader(delta.baserevisionsize, len(data))
 
     meta = headerfn(delta)
 
@@ -534,6 +569,7 @@ def _revisiondeltatochunks(delta, headerfn):
     if prefix:
         yield prefix
     yield data
+
 
 def _sortnodesellipsis(store, nodes, cl, lookup):
     """Sort nodes for changegroup generation."""
@@ -556,10 +592,20 @@ def _sortnodesellipsis(store, nodes, cl, lookup):
     key = lambda n: cl.rev(lookup(n))
     return sorted(nodes, key=key)
 
-def _resolvenarrowrevisioninfo(cl, store, ischangelog, rev, linkrev,
-                               linknode, clrevtolocalrev, fullclnodes,
-                               precomputedellipsis):
+
+def _resolvenarrowrevisioninfo(
+    cl,
+    store,
+    ischangelog,
+    rev,
+    linkrev,
+    linknode,
+    clrevtolocalrev,
+    fullclnodes,
+    precomputedellipsis,
+):
     linkparents = precomputedellipsis[linkrev]
+
     def local(clrev):
         """Turn a changelog revnum into a local revnum.
 
@@ -593,11 +639,11 @@ def _resolvenarrowrevisioninfo(cl, store, ischangelog, rev, linkrev,
             if p in clrevtolocalrev:
                 return clrevtolocalrev[p]
             elif p in fullclnodes:
-                walk.extend([pp for pp in cl.parentrevs(p)
-                                if pp != nullrev])
+                walk.extend([pp for pp in cl.parentrevs(p) if pp != nullrev])
             elif p in precomputedellipsis:
-                walk.extend([pp for pp in precomputedellipsis[p]
-                                if pp != nullrev])
+                walk.extend(
+                    [pp for pp in precomputedellipsis[p] if pp != nullrev]
+                )
             else:
                 # In this case, we've got an ellipsis with parents
                 # outside the current bundle (likely an
@@ -618,15 +664,15 @@ def _resolvenarrowrevisioninfo(cl, store, ischangelog, rev, linkrev,
                 # we crash the changegroup construction.
                 raise error.Abort(
                     'unable to resolve parent while packing %r %r'
-                    ' for changeset %r' % (store.indexfile, rev, clrev))
+                    ' for changeset %r' % (store.indexfile, rev, clrev)
+                )
 
         return nullrev
 
-    if not linkparents or (
-        store.parentrevs(rev) == (nullrev, nullrev)):
+    if not linkparents or (store.parentrevs(rev) == (nullrev, nullrev)):
         p1, p2 = nullrev, nullrev
     elif len(linkparents) == 1:
-        p1, = sorted(local(p) for p in linkparents)
+        (p1,) = sorted(local(p) for p in linkparents)
         p2 = nullrev
     else:
         p1, p2 = sorted(local(p) for p in linkparents)
@@ -635,10 +681,20 @@ def _resolvenarrowrevisioninfo(cl, store, ischangelog, rev, linkrev,
 
     return p1node, p2node, linknode
 
-def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
-               topic=None,
-               ellipses=False, clrevtolocalrev=None, fullclnodes=None,
-               precomputedellipsis=None):
+
+def deltagroup(
+    repo,
+    store,
+    nodes,
+    ischangelog,
+    lookup,
+    forcedeltaparentprev,
+    topic=None,
+    ellipses=False,
+    clrevtolocalrev=None,
+    fullclnodes=None,
+    precomputedellipsis=None,
+):
     """Calculate deltas for a set of revisions.
 
     Is a generator of ``revisiondelta`` instances.
@@ -698,8 +754,16 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
                 # We could probably do this later and avoid the dict
                 # holding state. But it likely doesn't matter.
                 p1node, p2node, linknode = _resolvenarrowrevisioninfo(
-                    cl, store, ischangelog, rev, linkrev, linknode,
-                    clrevtolocalrev, fullclnodes, precomputedellipsis)
+                    cl,
+                    store,
+                    ischangelog,
+                    rev,
+                    linkrev,
+                    linknode,
+                    clrevtolocalrev,
+                    fullclnodes,
+                    precomputedellipsis,
+                )
 
                 adjustedparents[node] = (p1node, p2node)
                 linknodes[node] = linknode
@@ -712,8 +776,9 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
     # meter for constructing the revision deltas.
     progress = None
     if topic is not None:
-        progress = repo.ui.makeprogress(topic, unit=_('chunks'),
-                                        total=len(nodes))
+        progress = repo.ui.makeprogress(
+            topic, unit=_('chunks'), total=len(nodes)
+        )
 
     configtarget = repo.ui.config('devel', 'bundle.delta')
     if configtarget not in ('', 'p1', 'full'):
@@ -733,7 +798,8 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
         nodesorder=nodesorder,
         revisiondata=True,
         assumehaveparentrevisions=not ellipses,
-        deltamode=deltamode)
+        deltamode=deltamode,
+    )
 
     for i, revision in enumerate(revisions):
         if progress:
@@ -757,12 +823,23 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
     if progress:
         progress.complete()
 
+
 class cgpacker(object):
-    def __init__(self, repo, oldmatcher, matcher, version,
-                 builddeltaheader, manifestsend,
-                 forcedeltaparentprev=False,
-                 bundlecaps=None, ellipses=False,
-                 shallow=False, ellipsisroots=None, fullnodes=None):
+    def __init__(
+        self,
+        repo,
+        oldmatcher,
+        matcher,
+        version,
+        builddeltaheader,
+        manifestsend,
+        forcedeltaparentprev=False,
+        bundlecaps=None,
+        ellipses=False,
+        shallow=False,
+        ellipsisroots=None,
+        fullnodes=None,
+    ):
         """Given a source repo, construct a bundler.
 
         oldmatcher is a matcher that matches on files the client already has.
@@ -823,8 +900,9 @@ class cgpacker(object):
         else:
             self._verbosenote = lambda s: None
 
-    def generate(self, commonrevs, clnodes, fastpathlinkrev, source,
-                 changelog=True):
+    def generate(
+        self, commonrevs, clnodes, fastpathlinkrev, source, changelog=True
+    ):
         """Yield a sequence of changegroup byte chunks.
         If changelog is False, changelog data won't be added to changegroup
         """
@@ -835,11 +913,11 @@ class cgpacker(object):
         self._verbosenote(_('uncompressed size of bundle content:\n'))
         size = 0
 
-        clstate, deltas = self._generatechangelog(cl, clnodes,
-                                                  generate=changelog)
+        clstate, deltas = self._generatechangelog(
+            cl, clnodes, generate=changelog
+        )
         for delta in deltas:
-            for chunk in _revisiondeltatochunks(delta,
-                                                self._builddeltaheader):
+            for chunk in _revisiondeltatochunks(delta, self._builddeltaheader):
                 size += len(chunk)
                 yield chunk
 
@@ -872,14 +950,21 @@ class cgpacker(object):
         # either, because we don't discover which directory nodes to
         # send along with files. This could probably be fixed.
         fastpathlinkrev = fastpathlinkrev and (
-            'treemanifest' not in repo.requirements)
+            'treemanifest' not in repo.requirements
+        )
 
         fnodes = {}  # needed file nodes
 
         size = 0
         it = self.generatemanifests(
-            commonrevs, clrevorder, fastpathlinkrev, manifests, fnodes, source,
-            clstate['clrevtomanifestrev'])
+            commonrevs,
+            clrevorder,
+            fastpathlinkrev,
+            manifests,
+            fnodes,
+            source,
+            clstate['clrevtomanifestrev'],
+        )
 
         for tree, deltas in it:
             if tree:
@@ -903,15 +988,23 @@ class cgpacker(object):
 
         mfdicts = None
         if self._ellipses and self._isshallow:
-            mfdicts = [(self._repo.manifestlog[n].read(), lr)
-                       for (n, lr) in manifests.iteritems()]
+            mfdicts = [
+                (self._repo.manifestlog[n].read(), lr)
+                for (n, lr) in manifests.iteritems()
+            ]
 
         manifests.clear()
         clrevs = set(cl.rev(x) for x in clnodes)
 
-        it = self.generatefiles(changedfiles, commonrevs,
-                                source, mfdicts, fastpathlinkrev,
-                                fnodes, clrevs)
+        it = self.generatefiles(
+            changedfiles,
+            commonrevs,
+            source,
+            mfdicts,
+            fastpathlinkrev,
+            fnodes,
+            clrevs,
+        )
 
         for path, deltas in it:
             h = _fileheader(path)
@@ -984,8 +1077,10 @@ class cgpacker(object):
                 # end up with bogus linkrevs specified for manifests and
                 # we skip some manifest nodes that we should otherwise
                 # have sent.
-                if (x in self._fullclnodes
-                    or cl.rev(x) in self._precomputedellipsis):
+                if (
+                    x in self._fullclnodes
+                    or cl.rev(x) in self._precomputedellipsis
+                ):
 
                     manifestnode = c.manifest
                     # Record the first changeset introducing this manifest
@@ -996,7 +1091,8 @@ class cgpacker(object):
                     # mapping changelog ellipsis parents to manifest ellipsis
                     # parents)
                     clrevtomanifestrev.setdefault(
-                        cl.rev(x), mfl.rev(manifestnode))
+                        cl.rev(x), mfl.rev(manifestnode)
+                    )
                 # We can't trust the changed files list in the changeset if the
                 # client requested a shallow clone.
                 if self._isshallow:
@@ -1013,18 +1109,31 @@ class cgpacker(object):
             return x
 
         gen = deltagroup(
-            self._repo, cl, nodes, True, lookupcl,
+            self._repo,
+            cl,
+            nodes,
+            True,
+            lookupcl,
             self._forcedeltaparentprev,
             ellipses=self._ellipses,
             topic=_('changesets'),
             clrevtolocalrev={},
             fullclnodes=self._fullclnodes,
-            precomputedellipsis=self._precomputedellipsis)
+            precomputedellipsis=self._precomputedellipsis,
+        )
 
         return state, gen
 
-    def generatemanifests(self, commonrevs, clrevorder, fastpathlinkrev,
-                          manifests, fnodes, source, clrevtolocalrev):
+    def generatemanifests(
+        self,
+        commonrevs,
+        clrevorder,
+        fastpathlinkrev,
+        manifests,
+        fnodes,
+        source,
+        clrevtolocalrev,
+    ):
         """Returns an iterator of changegroup chunks containing manifests.
 
         `source` is unused here, but is used by extensions like remotefilelog to
@@ -1061,7 +1170,7 @@ class cgpacker(object):
                 clnode = nodes[x]
                 mdata = mfl.get(tree, x).readfast(shallow=True)
                 for p, n, fl in mdata.iterentries():
-                    if fl == 't': # subdirectory manifest
+                    if fl == 't':  # subdirectory manifest
                         subtree = tree + p + '/'
                         tmfclnodes = tmfnodes.setdefault(subtree, {})
                         tmfclnode = tmfclnodes.setdefault(n, clnode)
@@ -1074,6 +1183,7 @@ class cgpacker(object):
                         if clrevorder[clnode] < clrevorder[fclnode]:
                             fclnodes[n] = clnode
                 return clnode
+
             return lookupmflinknode
 
         while tmfnodes:
@@ -1103,13 +1213,18 @@ class cgpacker(object):
             lookupfn = makelookupmflinknode(tree, nodes)
 
             deltas = deltagroup(
-                self._repo, store, prunednodes, False, lookupfn,
+                self._repo,
+                store,
+                prunednodes,
+                False,
+                lookupfn,
                 self._forcedeltaparentprev,
                 ellipses=self._ellipses,
                 topic=_('manifests'),
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
-                precomputedellipsis=self._precomputedellipsis)
+                precomputedellipsis=self._precomputedellipsis,
+            )
 
             if not self._oldmatcher.visitdir(store.tree[:-1]):
                 yield tree, deltas
@@ -1138,14 +1253,27 @@ class cgpacker(object):
         return [n for n in nodes if flr(frev(n)) not in commonrevs]
 
     # The 'source' parameter is useful for extensions
-    def generatefiles(self, changedfiles, commonrevs, source,
-                      mfdicts, fastpathlinkrev, fnodes, clrevs):
-        changedfiles = [f for f in changedfiles
-                        if self._matcher(f) and not self._oldmatcher(f)]
+    def generatefiles(
+        self,
+        changedfiles,
+        commonrevs,
+        source,
+        mfdicts,
+        fastpathlinkrev,
+        fnodes,
+        clrevs,
+    ):
+        changedfiles = [
+            f
+            for f in changedfiles
+            if self._matcher(f) and not self._oldmatcher(f)
+        ]
 
         if not fastpathlinkrev:
+
             def normallinknodes(unused, fname):
                 return fnodes.get(fname, {})
+
         else:
             cln = self._repo.changelog.node
 
@@ -1153,8 +1281,9 @@ class cgpacker(object):
                 flinkrev = store.linkrev
                 fnode = store.node
                 revs = ((r, flinkrev(r)) for r in store)
-                return dict((fnode(r), cln(lr))
-                            for r, lr in revs if lr in clrevs)
+                return dict(
+                    (fnode(r), cln(lr)) for r, lr in revs if lr in clrevs
+                )
 
         clrevtolocalrev = {}
 
@@ -1181,17 +1310,20 @@ class cgpacker(object):
                         elif fnode:
                             links[fnode] = lr
                 return links
+
         else:
             linknodes = normallinknodes
 
         repo = self._repo
-        progress = repo.ui.makeprogress(_('files'), unit=_('files'),
-                                        total=len(changedfiles))
+        progress = repo.ui.makeprogress(
+            _('files'), unit=_('files'), total=len(changedfiles)
+        )
         for i, fname in enumerate(sorted(changedfiles)):
             filerevlog = repo.file(fname)
             if not filerevlog:
-                raise error.Abort(_("empty or missing file data for %s") %
-                                  fname)
+                raise error.Abort(
+                    _("empty or missing file data for %s") % fname
+                )
 
             clrevtolocalrev.clear()
 
@@ -1206,8 +1338,9 @@ class cgpacker(object):
             # has. This avoids over-sending files relatively
             # inexpensively, so it's not a problem if we under-filter
             # here.
-            filenodes = [n for n in linkrevnodes
-                         if flr(frev(n)) not in commonrevs]
+            filenodes = [
+                n for n in linkrevnodes if flr(frev(n)) not in commonrevs
+            ]
 
             if not filenodes:
                 continue
@@ -1215,76 +1348,128 @@ class cgpacker(object):
             progress.update(i + 1, item=fname)
 
             deltas = deltagroup(
-                self._repo, filerevlog, filenodes, False, lookupfilelog,
+                self._repo,
+                filerevlog,
+                filenodes,
+                False,
+                lookupfilelog,
                 self._forcedeltaparentprev,
                 ellipses=self._ellipses,
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
-                precomputedellipsis=self._precomputedellipsis)
+                precomputedellipsis=self._precomputedellipsis,
+            )
 
             yield fname, deltas
 
         progress.complete()
 
-def _makecg1packer(repo, oldmatcher, matcher, bundlecaps,
-                   ellipses=False, shallow=False, ellipsisroots=None,
-                   fullnodes=None):
+
+def _makecg1packer(
+    repo,
+    oldmatcher,
+    matcher,
+    bundlecaps,
+    ellipses=False,
+    shallow=False,
+    ellipsisroots=None,
+    fullnodes=None,
+):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
-        d.node, d.p1node, d.p2node, d.linknode)
+        d.node, d.p1node, d.p2node, d.linknode
+    )
 
-    return cgpacker(repo, oldmatcher, matcher, b'01',
-                    builddeltaheader=builddeltaheader,
-                    manifestsend=b'',
-                    forcedeltaparentprev=True,
-                    bundlecaps=bundlecaps,
-                    ellipses=ellipses,
-                    shallow=shallow,
-                    ellipsisroots=ellipsisroots,
-                    fullnodes=fullnodes)
+    return cgpacker(
+        repo,
+        oldmatcher,
+        matcher,
+        b'01',
+        builddeltaheader=builddeltaheader,
+        manifestsend=b'',
+        forcedeltaparentprev=True,
+        bundlecaps=bundlecaps,
+        ellipses=ellipses,
+        shallow=shallow,
+        ellipsisroots=ellipsisroots,
+        fullnodes=fullnodes,
+    )
 
-def _makecg2packer(repo, oldmatcher, matcher, bundlecaps,
-                   ellipses=False, shallow=False, ellipsisroots=None,
-                   fullnodes=None):
+
+def _makecg2packer(
+    repo,
+    oldmatcher,
+    matcher,
+    bundlecaps,
+    ellipses=False,
+    shallow=False,
+    ellipsisroots=None,
+    fullnodes=None,
+):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
-        d.node, d.p1node, d.p2node, d.basenode, d.linknode)
+        d.node, d.p1node, d.p2node, d.basenode, d.linknode
+    )
 
-    return cgpacker(repo, oldmatcher, matcher, b'02',
-                    builddeltaheader=builddeltaheader,
-                    manifestsend=b'',
-                    bundlecaps=bundlecaps,
-                    ellipses=ellipses,
-                    shallow=shallow,
-                    ellipsisroots=ellipsisroots,
-                    fullnodes=fullnodes)
+    return cgpacker(
+        repo,
+        oldmatcher,
+        matcher,
+        b'02',
+        builddeltaheader=builddeltaheader,
+        manifestsend=b'',
+        bundlecaps=bundlecaps,
+        ellipses=ellipses,
+        shallow=shallow,
+        ellipsisroots=ellipsisroots,
+        fullnodes=fullnodes,
+    )
 
-def _makecg3packer(repo, oldmatcher, matcher, bundlecaps,
-                   ellipses=False, shallow=False, ellipsisroots=None,
-                   fullnodes=None):
+
+def _makecg3packer(
+    repo,
+    oldmatcher,
+    matcher,
+    bundlecaps,
+    ellipses=False,
+    shallow=False,
+    ellipsisroots=None,
+    fullnodes=None,
+):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
-        d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
+        d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags
+    )
 
-    return cgpacker(repo, oldmatcher, matcher, b'03',
-                    builddeltaheader=builddeltaheader,
-                    manifestsend=closechunk(),
-                    bundlecaps=bundlecaps,
-                    ellipses=ellipses,
-                    shallow=shallow,
-                    ellipsisroots=ellipsisroots,
-                    fullnodes=fullnodes)
+    return cgpacker(
+        repo,
+        oldmatcher,
+        matcher,
+        b'03',
+        builddeltaheader=builddeltaheader,
+        manifestsend=closechunk(),
+        bundlecaps=bundlecaps,
+        ellipses=ellipses,
+        shallow=shallow,
+        ellipsisroots=ellipsisroots,
+        fullnodes=fullnodes,
+    )
 
-_packermap = {'01': (_makecg1packer, cg1unpacker),
-             # cg2 adds support for exchanging generaldelta
-             '02': (_makecg2packer, cg2unpacker),
-             # cg3 adds support for exchanging revlog flags and treemanifests
-             '03': (_makecg3packer, cg3unpacker),
+
+_packermap = {
+    '01': (_makecg1packer, cg1unpacker),
+    # cg2 adds support for exchanging generaldelta
+    '02': (_makecg2packer, cg2unpacker),
+    # cg3 adds support for exchanging revlog flags and treemanifests
+    '03': (_makecg3packer, cg3unpacker),
 }
+
 
 def allsupportedversions(repo):
     versions = set(_packermap.keys())
     needv03 = False
-    if (repo.ui.configbool('experimental', 'changegroup3') or
-        repo.ui.configbool('experimental', 'treemanifest') or
-        'treemanifest' in repo.requirements):
+    if (
+        repo.ui.configbool('experimental', 'changegroup3')
+        or repo.ui.configbool('experimental', 'treemanifest')
+        or 'treemanifest' in repo.requirements
+    ):
         # we keep version 03 because we need to to exchange treemanifest data
         #
         # we also keep vresion 01 and 02, because it is possible for repo to
@@ -1297,9 +1482,11 @@ def allsupportedversions(repo):
         versions.discard('03')
     return versions
 
+
 # Changegroup versions that can be applied to the repo
 def supportedincomingversions(repo):
     return allsupportedversions(repo)
+
 
 # Changegroup versions that can be created from the repo
 def supportedoutgoingversions(repo):
@@ -1325,10 +1512,12 @@ def supportedoutgoingversions(repo):
 
     return versions
 
+
 def localversion(repo):
     # Finds the best version to use for bundles that are meant to be used
     # locally, such as those from strip and shelve, and temporary bundles.
     return max(supportedoutgoingversions(repo))
+
 
 def safeversion(repo):
     # Finds the smallest version that it's safe to assume clients of the repo
@@ -1340,9 +1529,18 @@ def safeversion(repo):
     assert versions
     return min(versions)
 
-def getbundler(version, repo, bundlecaps=None, oldmatcher=None,
-               matcher=None, ellipses=False, shallow=False,
-               ellipsisroots=None, fullnodes=None):
+
+def getbundler(
+    version,
+    repo,
+    bundlecaps=None,
+    oldmatcher=None,
+    matcher=None,
+    ellipses=False,
+    shallow=False,
+    ellipsisroots=None,
+    fullnodes=None,
+):
     assert version in supportedoutgoingversions(repo)
 
     if matcher is None:
@@ -1351,25 +1549,39 @@ def getbundler(version, repo, bundlecaps=None, oldmatcher=None,
         oldmatcher = matchmod.never()
 
     if version == '01' and not matcher.always():
-        raise error.ProgrammingError('version 01 changegroups do not support '
-                                     'sparse file matchers')
+        raise error.ProgrammingError(
+            'version 01 changegroups do not support ' 'sparse file matchers'
+        )
 
     if ellipses and version in (b'01', b'02'):
         raise error.Abort(
-            _('ellipsis nodes require at least cg3 on client and server, '
-              'but negotiated version %s') % version)
+            _(
+                'ellipsis nodes require at least cg3 on client and server, '
+                'but negotiated version %s'
+            )
+            % version
+        )
 
     # Requested files could include files not in the local store. So
     # filter those out.
     matcher = repo.narrowmatch(matcher)
 
     fn = _packermap[version][0]
-    return fn(repo, oldmatcher, matcher, bundlecaps, ellipses=ellipses,
-              shallow=shallow, ellipsisroots=ellipsisroots,
-              fullnodes=fullnodes)
+    return fn(
+        repo,
+        oldmatcher,
+        matcher,
+        bundlecaps,
+        ellipses=ellipses,
+        shallow=shallow,
+        ellipsisroots=ellipsisroots,
+        fullnodes=fullnodes,
+    )
+
 
 def getunbundler(version, fh, alg, extras=None):
     return _packermap[version][1](fh, alg, extras=extras)
+
 
 def _changegroupinfo(repo, nodes, source):
     if repo.ui.verbose or source == 'bundle':
@@ -1379,17 +1591,36 @@ def _changegroupinfo(repo, nodes, source):
         for node in nodes:
             repo.ui.debug("%s\n" % hex(node))
 
-def makechangegroup(repo, outgoing, version, source, fastpath=False,
-                    bundlecaps=None):
-    cgstream = makestream(repo, outgoing, version, source,
-                          fastpath=fastpath, bundlecaps=bundlecaps)
-    return getunbundler(version, util.chunkbuffer(cgstream), None,
-                        {'clcount': len(outgoing.missing) })
 
-def makestream(repo, outgoing, version, source, fastpath=False,
-               bundlecaps=None, matcher=None):
-    bundler = getbundler(version, repo, bundlecaps=bundlecaps,
-                         matcher=matcher)
+def makechangegroup(
+    repo, outgoing, version, source, fastpath=False, bundlecaps=None
+):
+    cgstream = makestream(
+        repo,
+        outgoing,
+        version,
+        source,
+        fastpath=fastpath,
+        bundlecaps=bundlecaps,
+    )
+    return getunbundler(
+        version,
+        util.chunkbuffer(cgstream),
+        None,
+        {'clcount': len(outgoing.missing)},
+    )
+
+
+def makestream(
+    repo,
+    outgoing,
+    version,
+    source,
+    fastpath=False,
+    bundlecaps=None,
+    matcher=None,
+):
+    bundler = getbundler(version, repo, bundlecaps=bundlecaps, matcher=matcher)
 
     repo = repo.unfiltered()
     commonrevs = outgoing.common
@@ -1400,17 +1631,20 @@ def makestream(repo, outgoing, version, source, fastpath=False,
     # be pulled by the client).
     heads.sort()
     fastpathlinkrev = fastpath or (
-            repo.filtername is None and heads == sorted(repo.heads()))
+        repo.filtername is None and heads == sorted(repo.heads())
+    )
 
     repo.hook('preoutgoing', throw=True, source=source)
     _changegroupinfo(repo, csets, source)
     return bundler.generate(commonrevs, csets, fastpathlinkrev, source)
 
+
 def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
     revisions = 0
     files = 0
-    progress = repo.ui.makeprogress(_('files'), unit=_('files'),
-                                    total=expectedfiles)
+    progress = repo.ui.makeprogress(
+        _('files'), unit=_('files'), total=expectedfiles
+    )
     for chunkdata in iter(source.filelogheader, {}):
         files += 1
         f = chunkdata["filename"]
@@ -1432,8 +1666,7 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
                 if n in needs:
                     needs.remove(n)
                 else:
-                    raise error.Abort(
-                        _("received spurious file revlog entry"))
+                    raise error.Abort(_("received spurious file revlog entry"))
             if not needs:
                 del needfiles[f]
     progress.complete()
@@ -1445,7 +1678,8 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
                 fl.rev(n)
             except error.LookupError:
                 raise error.Abort(
-                    _('missing file data for %s:%s - run hg verify') %
-                    (f, hex(n)))
+                    _('missing file data for %s:%s - run hg verify')
+                    % (f, hex(n))
+                )
 
     return revisions, files

@@ -17,9 +17,8 @@ from .node import (
     hex,
     short,
 )
-from . import (
-    error,
-)
+from . import error
+
 
 def bisect(repo, state):
     """find the next node (if any) for testing during a bisect search.
@@ -48,16 +47,21 @@ def bisect(repo, state):
 
     good = False
     badrev, ancestors = buildancestors(state['bad'], state['good'])
-    if not ancestors: # looking for bad to good transition?
+    if not ancestors:  # looking for bad to good transition?
         good = True
         badrev, ancestors = buildancestors(state['good'], state['bad'])
     bad = changelog.node(badrev)
-    if not ancestors: # now we're confused
-        if (len(state['bad']) == 1 and len(state['good']) == 1 and
-            state['bad'] != state['good']):
+    if not ancestors:  # now we're confused
+        if (
+            len(state['bad']) == 1
+            and len(state['good']) == 1
+            and state['bad'] != state['good']
+        ):
             raise error.Abort(_("starting revisions are not directly related"))
-        raise error.Abort(_("inconsistent state, %d:%s is good and bad")
-                         % (badrev, short(bad)))
+        raise error.Abort(
+            _("inconsistent state, %d:%s is good and bad")
+            % (badrev, short(bad))
+        )
 
     # build children dict
     children = {}
@@ -97,16 +101,16 @@ def bisect(repo, state):
         a = ancestors[rev] or [rev]
         ancestors[rev] = None
 
-        x = len(a) # number of ancestors
-        y = tot - x # number of non-ancestors
-        value = min(x, y) # how good is this test?
+        x = len(a)  # number of ancestors
+        y = tot - x  # number of non-ancestors
+        value = min(x, y)  # how good is this test?
         if value > best_len and rev not in skip:
             best_len = value
             best_rev = rev
-            if value == perfect: # found a perfect candidate? quit early
+            if value == perfect:  # found a perfect candidate? quit early
                 break
 
-        if y < perfect and rev not in skip: # all downhill from here?
+        if y < perfect and rev not in skip:  # all downhill from here?
             # poison children
             poison.update(children.get(rev, []))
             continue
@@ -122,6 +126,7 @@ def bisect(repo, state):
 
     return ([best_node], tot, good)
 
+
 def extendrange(repo, state, nodes, good):
     # bisect is incomplete when it ends on a merge node and
     # one of the parent was not checked.
@@ -135,6 +140,7 @@ def extendrange(repo, state, nodes, good):
         if num == 1:
             return parents[0].ancestor(parents[1])
     return None
+
 
 def load_state(repo):
     state = {'current': [], 'good': [], 'bad': [], 'skip': []}
@@ -155,10 +161,12 @@ def save_state(repo, state):
                 f.write("%s %s\n" % (kind, hex(node)))
         f.close()
 
+
 def resetstate(repo):
     """remove any bisect state from the repository"""
     if repo.vfs.exists("bisect.state"):
         repo.vfs.unlink("bisect.state")
+
 
 def checkstate(state):
     """check we have both 'good' and 'bad' to define a range
@@ -170,6 +178,7 @@ def checkstate(state):
         raise error.Abort(_('cannot bisect (no known good revisions)'))
     else:
         raise error.Abort(_('cannot bisect (no known bad revisions)'))
+
 
 def get(repo, status):
     """
@@ -201,15 +210,15 @@ def get(repo, status):
         # The sets of topologically good or bad csets
         if len(_t) == 0:
             # Goods are topologically after bads
-            goods = 'bisect(good)::'    # Pruned good csets
-            bads  = '::bisect(bad)'     # Pruned bad csets
+            goods = 'bisect(good)::'  # Pruned good csets
+            bads = '::bisect(bad)'  # Pruned bad csets
         else:
             # Goods are topologically before bads
-            goods = '::bisect(good)'    # Pruned good csets
-            bads  = 'bisect(bad)::'     # Pruned bad csets
+            goods = '::bisect(good)'  # Pruned good csets
+            bads = 'bisect(bad)::'  # Pruned bad csets
 
         # 'pruned' is all csets whose fate is already known: good, bad, skip
-        skips = 'bisect(skip)'                 # Pruned skipped csets
+        skips = 'bisect(skip)'  # Pruned skipped csets
         pruned = '( (%s) | (%s) | (%s) )' % (goods, bads, skips)
 
         # 'untested' is all cset that are- in 'range', but not in 'pruned'
@@ -237,6 +246,7 @@ def get(repo, status):
             return repo.revs(bads)
         else:
             raise error.ParseError(_('invalid bisect state'))
+
 
 def label(repo, node):
     rev = repo.changelog.rev(node)
@@ -268,6 +278,7 @@ def label(repo, node):
 
     return None
 
+
 def printresult(ui, repo, state, displayer, nodes, good):
     repo = repo.unfiltered()
     if len(nodes) == 1:
@@ -279,18 +290,30 @@ def printresult(ui, repo, state, displayer, nodes, good):
         displayer.show(repo[nodes[0]])
         extendnode = extendrange(repo, state, nodes, good)
         if extendnode is not None:
-            ui.write(_('Not all ancestors of this changeset have been'
-                       ' checked.\nUse bisect --extend to continue the '
-                       'bisection from\nthe common ancestor, %s.\n')
-                     % extendnode)
+            ui.write(
+                _(
+                    'Not all ancestors of this changeset have been'
+                    ' checked.\nUse bisect --extend to continue the '
+                    'bisection from\nthe common ancestor, %s.\n'
+                )
+                % extendnode
+            )
     else:
         # multiple possible revisions
         if good:
-            ui.write(_("Due to skipped revisions, the first "
-                    "good revision could be any of:\n"))
+            ui.write(
+                _(
+                    "Due to skipped revisions, the first "
+                    "good revision could be any of:\n"
+                )
+            )
         else:
-            ui.write(_("Due to skipped revisions, the first "
-                    "bad revision could be any of:\n"))
+            ui.write(
+                _(
+                    "Due to skipped revisions, the first "
+                    "bad revision could be any of:\n"
+                )
+            )
         for n in nodes:
             displayer.show(repo[n])
     displayer.close()

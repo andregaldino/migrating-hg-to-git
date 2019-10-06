@@ -43,6 +43,7 @@ httplib = util.httplib
 urlerr = util.urlerr
 urlreq = util.urlreq
 
+
 def encodevalueinheaders(value, header, limit):
     """Encode a string value into multiple HTTP headers.
 
@@ -67,9 +68,10 @@ def encodevalueinheaders(value, header, limit):
     n = 0
     for i in pycompat.xrange(0, len(value), valuelen):
         n += 1
-        result.append((fmt % str(n), pycompat.strurl(value[i:i + valuelen])))
+        result.append((fmt % str(n), pycompat.strurl(value[i : i + valuelen])))
 
     return result
+
 
 class _multifile(object):
     def __init__(self, *fileobjs):
@@ -77,7 +79,10 @@ class _multifile(object):
             if not util.safehasattr(f, 'length'):
                 raise ValueError(
                     '_multifile only supports file objects that '
-                    'have a length but this one does not:', type(f), f)
+                    'have a length but this one does not:',
+                    type(f),
+                    f,
+                )
         self._fileobjs = fileobjs
         self._index = 0
 
@@ -101,17 +106,21 @@ class _multifile(object):
         if whence != os.SEEK_SET:
             raise NotImplementedError(
                 '_multifile does not support anything other'
-                ' than os.SEEK_SET for whence on seek()')
+                ' than os.SEEK_SET for whence on seek()'
+            )
         if offset != 0:
             raise NotImplementedError(
                 '_multifile only supports seeking to start, but that '
-                'could be fixed if you need it')
+                'could be fixed if you need it'
+            )
         for f in self._fileobjs:
             f.seek(0)
         self._index = 0
 
-def makev1commandrequest(ui, requestbuilder, caps, capablefn,
-                         repobaseurl, cmd, args):
+
+def makev1commandrequest(
+    ui, requestbuilder, caps, capablefn, repobaseurl, cmd, args
+):
     """Make an HTTP request to run a command for a version 1 client.
 
     ``caps`` is a set of known server capabilities. The value may be
@@ -162,8 +171,9 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
         if headersize > 0:
             # The headers can typically carry more data than the URL.
             encargs = urlreq.urlencode(sorted(args.items()))
-            for header, value in encodevalueinheaders(encargs, 'X-HgArg',
-                                                      headersize):
+            for header, value in encodevalueinheaders(
+                encargs, 'X-HgArg', headersize
+            ):
                 headers[header] = value
         # Send arguments via query string (Mercurial <1.9).
         else:
@@ -202,14 +212,16 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
         # We /could/ compare supported compression formats and prune
         # non-mutually supported or error if nothing is mutually supported.
         # For now, send the full list to the server and have it error.
-        comps = [e.wireprotosupport().name for e in
-                 util.compengines.supportedwireengines(util.CLIENTROLE)]
+        comps = [
+            e.wireprotosupport().name
+            for e in util.compengines.supportedwireengines(util.CLIENTROLE)
+        ]
         protoparams.add('comp=%s' % ','.join(comps))
 
     if protoparams:
-        protoheaders = encodevalueinheaders(' '.join(sorted(protoparams)),
-                                            'X-HgProto',
-                                            headersize or 1024)
+        protoheaders = encodevalueinheaders(
+            ' '.join(sorted(protoparams)), 'X-HgProto', headersize or 1024
+        )
         for header, value in protoheaders:
             headers[header] = value
 
@@ -229,6 +241,7 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
 
     return req, cu, qs
 
+
 def _reqdata(req):
     """Get request data, if any. If no data, returns None."""
     if pycompat.ispy3:
@@ -237,17 +250,23 @@ def _reqdata(req):
         return None
     return req.get_data()
 
+
 def sendrequest(ui, opener, req):
     """Send a prepared HTTP request.
 
     Returns the response object.
     """
     dbg = ui.debug
-    if (ui.debugflag
-        and ui.configbool('devel', 'debug.peer-request')):
+    if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
         line = 'devel-peer-request: %s\n'
-        dbg(line % '%s %s' % (pycompat.bytesurl(req.get_method()),
-                              pycompat.bytesurl(req.get_full_url())))
+        dbg(
+            line
+            % '%s %s'
+            % (
+                pycompat.bytesurl(req.get_method()),
+                pycompat.bytesurl(req.get_full_url()),
+            )
+        )
         hgargssize = None
 
         for header, value in sorted(req.header_items()):
@@ -261,8 +280,11 @@ def sendrequest(ui, opener, req):
                 dbg(line % '  %s %s' % (header, value))
 
         if hgargssize is not None:
-            dbg(line % '  %d bytes of commands arguments in headers'
-                % hgargssize)
+            dbg(
+                line
+                % '  %d bytes of commands arguments in headers'
+                % hgargssize
+            )
         data = _reqdata(req)
         if data is not None:
             length = getattr(data, 'length', None)
@@ -280,33 +302,40 @@ def sendrequest(ui, opener, req):
             raise error.Abort(_('authorization failed'))
         raise
     except httplib.HTTPException as inst:
-        ui.debug('http error requesting %s\n' %
-                 util.hidepassword(req.get_full_url()))
+        ui.debug(
+            'http error requesting %s\n' % util.hidepassword(req.get_full_url())
+        )
         ui.traceback()
         raise IOError(None, inst)
     finally:
         if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
             code = res.code if res else -1
-            dbg(line % '  finished in %.4f seconds (%d)'
-                % (util.timer() - start, code))
+            dbg(
+                line
+                % '  finished in %.4f seconds (%d)'
+                % (util.timer() - start, code)
+            )
 
     # Insert error handlers for common I/O failures.
     urlmod.wrapresponse(res)
 
     return res
 
+
 class RedirectedRepoError(error.RepoError):
     def __init__(self, msg, respurl):
         super(RedirectedRepoError, self).__init__(msg)
         self.respurl = respurl
 
-def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
-                           allowcbor=False):
+
+def parsev1commandresponse(
+    ui, baseurl, requrl, qs, resp, compressible, allowcbor=False
+):
     # record the url we got redirected to
     redirected = False
     respurl = pycompat.bytesurl(resp.geturl())
     if respurl.endswith(qs):
-        respurl = respurl[:-len(qs)]
+        respurl = respurl[: -len(qs)]
         qsdropped = False
     else:
         qsdropped = True
@@ -329,9 +358,10 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
     # application/hg-changegroup. We don't support such old servers.
     if not proto.startswith('application/mercurial-'):
         ui.debug("requested URL: '%s'\n" % util.hidepassword(requrl))
-        msg = _("'%s' does not appear to be an hg repository:\n"
-                "---%%<--- (%s)\n%s\n---%%<---\n") % (
-            safeurl, proto or 'no content-type', resp.read(1024))
+        msg = _(
+            "'%s' does not appear to be an hg repository:\n"
+            "---%%<--- (%s)\n%s\n---%%<---\n"
+        ) % (safeurl, proto or 'no content-type', resp.read(1024))
 
         # Some servers may strip the query string from the redirect. We
         # raise a special error type so callers can react to this specially.
@@ -350,13 +380,16 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
             if allowcbor:
                 return respurl, proto, resp
             else:
-                raise error.RepoError(_('unexpected CBOR response from '
-                                        'server'))
+                raise error.RepoError(
+                    _('unexpected CBOR response from ' 'server')
+                )
 
         version_info = tuple([int(n) for n in subtype.split('.')])
     except ValueError:
-        raise error.RepoError(_("'%s' sent a broken Content-Type "
-                                "header (%s)") % (safeurl, proto))
+        raise error.RepoError(
+            _("'%s' sent a broken Content-Type " "header (%s)")
+            % (safeurl, proto)
+        )
 
     # TODO consider switching to a decompression reader that uses
     # generators.
@@ -373,10 +406,12 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
 
         resp = engine.decompressorreader(resp)
     else:
-        raise error.RepoError(_("'%s' uses newer protocol %s") %
-                              (safeurl, subtype))
+        raise error.RepoError(
+            _("'%s' uses newer protocol %s") % (safeurl, subtype)
+        )
 
     return respurl, proto, resp
+
 
 class httppeer(wireprotov1peer.wirepeer):
     def __init__(self, ui, path, url, opener, requestbuilder, caps):
@@ -409,14 +444,20 @@ class httppeer(wireprotov1peer.wirepeer):
 
     def close(self):
         try:
-            reqs, sent, recv = (self._urlopener.requestscount,
-                                self._urlopener.sentbytescount,
-                                self._urlopener.receivedbytescount)
+            reqs, sent, recv = (
+                self._urlopener.requestscount,
+                self._urlopener.sentbytescount,
+                self._urlopener.receivedbytescount,
+            )
         except AttributeError:
             return
-        self.ui.note(_('(sent %d HTTP requests and %d bytes; '
-                       'received %d bytes in responses)\n') %
-                     (reqs, sent, recv))
+        self.ui.note(
+            _(
+                '(sent %d HTTP requests and %d bytes; '
+                'received %d bytes in responses)\n'
+            )
+            % (reqs, sent, recv)
+        )
 
     # End of ipeerconnection interface.
 
@@ -430,14 +471,21 @@ class httppeer(wireprotov1peer.wirepeer):
     def _callstream(self, cmd, _compressible=False, **args):
         args = pycompat.byteskwargs(args)
 
-        req, cu, qs = makev1commandrequest(self.ui, self._requestbuilder,
-                                           self._caps, self.capable,
-                                           self._url, cmd, args)
+        req, cu, qs = makev1commandrequest(
+            self.ui,
+            self._requestbuilder,
+            self._caps,
+            self.capable,
+            self._url,
+            cmd,
+            args,
+        )
 
         resp = sendrequest(self.ui, self._urlopener, req)
 
-        self._url, ct, resp = parsev1commandresponse(self.ui, self._url, cu, qs,
-                                                     resp, _compressible)
+        self._url, ct, resp = parsev1commandresponse(
+            self.ui, self._url, cu, qs, resp, _compressible
+        )
 
         return resp
 
@@ -513,8 +561,10 @@ class httppeer(wireprotov1peer.wirepeer):
     def _abort(self, exception):
         raise exception
 
-def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
-                  redirect):
+
+def sendv2request(
+    ui, opener, requestbuilder, apiurl, permission, requests, redirect
+):
     wireprotoframing.populatestreamencoders()
 
     uiencoders = ui.configlist(b'experimental', b'httppeer.v2-encoder-order')
@@ -524,22 +574,29 @@ def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
 
         for encoder in uiencoders:
             if encoder not in wireprotoframing.STREAM_ENCODERS:
-                ui.warn(_(b'wire protocol version 2 encoder referenced in '
-                          b'config (%s) is not known; ignoring\n') % encoder)
+                ui.warn(
+                    _(
+                        b'wire protocol version 2 encoder referenced in '
+                        b'config (%s) is not known; ignoring\n'
+                    )
+                    % encoder
+                )
             else:
                 encoders.append(encoder)
 
     else:
         encoders = wireprotoframing.STREAM_ENCODERS_ORDER
 
-    reactor = wireprotoframing.clientreactor(ui,
-                                             hasmultiplesend=False,
-                                             buffersends=True,
-                                             clientcontentencoders=encoders)
+    reactor = wireprotoframing.clientreactor(
+        ui,
+        hasmultiplesend=False,
+        buffersends=True,
+        clientcontentencoders=encoders,
+    )
 
-    handler = wireprotov2peer.clienthandler(ui, reactor,
-                                            opener=opener,
-                                            requestbuilder=requestbuilder)
+    handler = wireprotov2peer.clienthandler(
+        ui, reactor, opener=opener, requestbuilder=requestbuilder
+    )
 
     url = '%s/%s' % (apiurl, permission)
 
@@ -550,10 +607,13 @@ def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
 
     ui.debug('sending %d commands\n' % len(requests))
     for command, args, f in requests:
-        ui.debug('sending command %s: %s\n' % (
-            command, stringutil.pprint(args, indent=2)))
-        assert not list(handler.callcommand(command, args, f,
-                                            redirect=redirect))
+        ui.debug(
+            'sending command %s: %s\n'
+            % (command, stringutil.pprint(args, indent=2))
+        )
+        assert not list(
+            handler.callcommand(command, args, f, redirect=redirect)
+        )
 
     # TODO stream this.
     body = b''.join(map(bytes, handler.flushcommands()))
@@ -580,6 +640,7 @@ def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
 
     return handler, res
 
+
 class queuedcommandfuture(pycompat.futures.Future):
     """Wraps result() on command futures to trigger submission on call."""
 
@@ -593,10 +654,12 @@ class queuedcommandfuture(pycompat.futures.Future):
         # will resolve to Future.result.
         return self.result(timeout)
 
+
 @interfaceutil.implementer(repository.ipeercommandexecutor)
 class httpv2executor(object):
-    def __init__(self, ui, opener, requestbuilder, apiurl, descriptor,
-                 redirect):
+    def __init__(
+        self, ui, opener, requestbuilder, apiurl, descriptor, redirect
+    ):
         self._ui = ui
         self._opener = opener
         self._requestbuilder = requestbuilder
@@ -619,27 +682,31 @@ class httpv2executor(object):
 
     def callcommand(self, command, args):
         if self._sent:
-            raise error.ProgrammingError('callcommand() cannot be used after '
-                                         'commands are sent')
+            raise error.ProgrammingError(
+                'callcommand() cannot be used after ' 'commands are sent'
+            )
 
         if self._closed:
-            raise error.ProgrammingError('callcommand() cannot be used after '
-                                         'close()')
+            raise error.ProgrammingError(
+                'callcommand() cannot be used after ' 'close()'
+            )
 
         # The service advertises which commands are available. So if we attempt
         # to call an unknown command or pass an unknown argument, we can screen
         # for this.
         if command not in self._descriptor['commands']:
             raise error.ProgrammingError(
-                'wire protocol command %s is not available' % command)
+                'wire protocol command %s is not available' % command
+            )
 
         cmdinfo = self._descriptor['commands'][command]
         unknownargs = set(args.keys()) - set(cmdinfo.get('args', {}))
 
         if unknownargs:
             raise error.ProgrammingError(
-                'wire protocol command %s does not accept argument: %s' % (
-                    command, ', '.join(sorted(unknownargs))))
+                'wire protocol command %s does not accept argument: %s'
+                % (command, ', '.join(sorted(unknownargs)))
+            )
 
         self._neededpermissions |= set(cmdinfo['permissions'])
 
@@ -675,9 +742,11 @@ class httpv2executor(object):
                 f._peerexecutor = None
 
         # Mark the future as running and filter out cancelled futures.
-        calls = [(command, args, f)
-                 for command, args, f in self._calls
-                 if f.set_running_or_notify_cancel()]
+        calls = [
+            (command, args, f)
+            for command, args, f in self._calls
+            if f.set_running_or_notify_cancel()
+        ]
 
         # Clear out references, prevent improper object usage.
         self._calls = None
@@ -691,24 +760,29 @@ class httpv2executor(object):
             permissions.remove('pull')
 
         if len(permissions) > 1:
-            raise error.RepoError(_('cannot make request requiring multiple '
-                                    'permissions: %s') %
-                                  _(', ').join(sorted(permissions)))
+            raise error.RepoError(
+                _('cannot make request requiring multiple ' 'permissions: %s')
+                % _(', ').join(sorted(permissions))
+            )
 
-        permission = {
-            'push': 'rw',
-            'pull': 'ro',
-        }[permissions.pop()]
+        permission = {'push': 'rw', 'pull': 'ro',}[permissions.pop()]
 
         handler, resp = sendv2request(
-            self._ui, self._opener, self._requestbuilder, self._apiurl,
-            permission, calls, self._redirect)
+            self._ui,
+            self._opener,
+            self._requestbuilder,
+            self._apiurl,
+            permission,
+            calls,
+            self._redirect,
+        )
 
         # TODO we probably want to validate the HTTP code, media type, etc.
 
         self._responseexecutor = pycompat.futures.ThreadPoolExecutor(1)
-        self._responsef = self._responseexecutor.submit(self._handleresponse,
-                                                        handler, resp)
+        self._responsef = self._responseexecutor.submit(
+            self._handleresponse, handler, resp
+        )
 
     def close(self):
         if self._closed:
@@ -734,8 +808,9 @@ class httpv2executor(object):
             # errored, otherwise a result() could wait indefinitely.
             for f in self._futures:
                 if not f.done():
-                    f.set_exception(error.ResponseError(
-                        _('unfulfilled command response')))
+                    f.set_exception(
+                        error.ResponseError(_('unfulfilled command response'))
+                    )
 
             self._futures = None
 
@@ -745,13 +820,15 @@ class httpv2executor(object):
         while handler.readdata(resp):
             pass
 
+
 @interfaceutil.implementer(repository.ipeerv2)
 class httpv2peer(object):
 
     limitedarguments = False
 
-    def __init__(self, ui, repourl, apipath, opener, requestbuilder,
-                 apidescriptor):
+    def __init__(
+        self, ui, repourl, apipath, opener, requestbuilder, apidescriptor
+    ):
         self.ui = ui
         self.apidescriptor = apidescriptor
 
@@ -782,11 +859,17 @@ class httpv2peer(object):
         return False
 
     def close(self):
-        self.ui.note(_('(sent %d HTTP requests and %d bytes; '
-                       'received %d bytes in responses)\n') %
-                     (self._opener.requestscount,
-                      self._opener.sentbytescount,
-                      self._opener.receivedbytescount))
+        self.ui.note(
+            _(
+                '(sent %d HTTP requests and %d bytes; '
+                'received %d bytes in responses)\n'
+            )
+            % (
+                self._opener.requestscount,
+                self._opener.sentbytescount,
+                self._opener.receivedbytescount,
+            )
+        )
 
     # End of ipeerconnection.
 
@@ -802,12 +885,12 @@ class httpv2peer(object):
             return True
 
         # Other concepts.
-        if name in ('bundle2'):
+        if name in 'bundle2':
             return True
 
         # Alias command-* to presence of command of that name.
         if name.startswith('command-'):
-            return name[len('command-'):] in self.apidescriptor['commands']
+            return name[len('command-') :] in self.apidescriptor['commands']
 
         return False
 
@@ -816,8 +899,12 @@ class httpv2peer(object):
             return
 
         raise error.CapabilityError(
-            _('cannot %s; client or remote repository does not support the '
-              '\'%s\' capability') % (purpose, name))
+            _(
+                'cannot %s; client or remote repository does not support the '
+                '\'%s\' capability'
+            )
+            % (purpose, name)
+        )
 
     # End of ipeercapabilities.
 
@@ -826,8 +913,15 @@ class httpv2peer(object):
             return e.callcommand(name, args).result()
 
     def commandexecutor(self):
-        return httpv2executor(self.ui, self._opener, self._requestbuilder,
-                              self._apiurl, self.apidescriptor, self._redirect)
+        return httpv2executor(
+            self.ui,
+            self._opener,
+            self._requestbuilder,
+            self._apiurl,
+            self.apidescriptor,
+            self._redirect,
+        )
+
 
 # Registry of API service names to metadata about peers that handle it.
 #
@@ -841,16 +935,15 @@ class httpv2peer(object):
 #    Integer priority for the service. If we could choose from multiple
 #    services, we choose the one with the highest priority.
 API_PEERS = {
-    wireprototypes.HTTP_WIREPROTO_V2: {
-        'init': httpv2peer,
-        'priority': 50,
-    },
+    wireprototypes.HTTP_WIREPROTO_V2: {'init': httpv2peer, 'priority': 50,},
 }
+
 
 def performhandshake(ui, url, opener, requestbuilder):
     # The handshake is a request to the capabilities command.
 
     caps = None
+
     def capable(x):
         raise error.ProgrammingError('should not be called')
 
@@ -869,15 +962,18 @@ def performhandshake(ui, url, opener, requestbuilder):
         }
 
         args['headers'].update(
-            encodevalueinheaders(' '.join(sorted(API_PEERS)),
-                                 'X-HgUpgrade',
-                                 # We don't know the header limit this early.
-                                 # So make it small.
-                                 1024))
+            encodevalueinheaders(
+                ' '.join(sorted(API_PEERS)),
+                'X-HgUpgrade',
+                # We don't know the header limit this early.
+                # So make it small.
+                1024,
+            )
+        )
 
-    req, requrl, qs = makev1commandrequest(ui, requestbuilder, caps,
-                                           capable, url, 'capabilities',
-                                           args)
+    req, requrl, qs = makev1commandrequest(
+        ui, requestbuilder, caps, capable, url, 'capabilities', args
+    )
     resp = sendrequest(ui, opener, req)
 
     # The server may redirect us to the repo root, stripping the
@@ -893,17 +989,17 @@ def performhandshake(ui, url, opener, requestbuilder):
     # be a longstanding bug in some server implementations. So we allow a
     # redirect that drops the query string to "just work."
     try:
-        respurl, ct, resp = parsev1commandresponse(ui, url, requrl, qs, resp,
-                                                   compressible=False,
-                                                   allowcbor=advertisev2)
+        respurl, ct, resp = parsev1commandresponse(
+            ui, url, requrl, qs, resp, compressible=False, allowcbor=advertisev2
+        )
     except RedirectedRepoError as e:
-        req, requrl, qs = makev1commandrequest(ui, requestbuilder, caps,
-                                               capable, e.respurl,
-                                               'capabilities', args)
+        req, requrl, qs = makev1commandrequest(
+            ui, requestbuilder, caps, capable, e.respurl, 'capabilities', args
+        )
         resp = sendrequest(ui, opener, req)
-        respurl, ct, resp = parsev1commandresponse(ui, url, requrl, qs, resp,
-                                                   compressible=False,
-                                                   allowcbor=advertisev2)
+        respurl, ct, resp = parsev1commandresponse(
+            ui, url, requrl, qs, resp, compressible=False, allowcbor=advertisev2
+        )
 
     try:
         rawdata = resp.read()
@@ -918,25 +1014,27 @@ def performhandshake(ui, url, opener, requestbuilder):
             try:
                 info = cborutil.decodeall(rawdata)[0]
             except cborutil.CBORDecodeError:
-                raise error.Abort(_('error decoding CBOR from remote server'),
-                                  hint=_('try again and consider contacting '
-                                         'the server operator'))
+                raise error.Abort(
+                    _('error decoding CBOR from remote server'),
+                    hint=_(
+                        'try again and consider contacting '
+                        'the server operator'
+                    ),
+                )
 
         # We got a legacy response. That's fine.
         elif ct in ('application/mercurial-0.1', 'application/mercurial-0.2'):
-            info = {
-                'v1capabilities': set(rawdata.split())
-            }
+            info = {'v1capabilities': set(rawdata.split())}
 
         else:
             raise error.RepoError(
-                _('unexpected response type from server: %s') % ct)
+                _('unexpected response type from server: %s') % ct
+            )
     else:
-        info = {
-            'v1capabilities': set(rawdata.split())
-        }
+        info = {'v1capabilities': set(rawdata.split())}
 
     return respurl, info
+
 
 def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     """Construct an appropriate HTTP peer instance.
@@ -949,8 +1047,9 @@ def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     """
     u = util.url(path)
     if u.query or u.fragment:
-        raise error.Abort(_('unsupported URL component: "%s"') %
-                          (u.query or u.fragment))
+        raise error.Abort(
+            _('unsupported URL component: "%s"') % (u.query or u.fragment)
+        )
 
     # urllib cannot handle URLs with embedded user or passwd.
     url, authinfo = u.authinfo()
@@ -971,28 +1070,31 @@ def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     # peer type.
     apipeerchoices = set(info.get('apis', {}).keys()) & set(API_PEERS.keys())
 
-    preferredchoices = sorted(apipeerchoices,
-                              key=lambda x: API_PEERS[x]['priority'],
-                              reverse=True)
+    preferredchoices = sorted(
+        apipeerchoices, key=lambda x: API_PEERS[x]['priority'], reverse=True
+    )
 
     for service in preferredchoices:
         apipath = '%s/%s' % (info['apibase'].rstrip('/'), service)
 
-        return API_PEERS[service]['init'](ui, respurl, apipath, opener,
-                                          requestbuilder,
-                                          info['apis'][service])
+        return API_PEERS[service]['init'](
+            ui, respurl, apipath, opener, requestbuilder, info['apis'][service]
+        )
 
     # Failed to construct an API peer. Fall back to legacy.
-    return httppeer(ui, path, respurl, opener, requestbuilder,
-                    info['v1capabilities'])
+    return httppeer(
+        ui, path, respurl, opener, requestbuilder, info['v1capabilities']
+    )
+
 
 def instance(ui, path, create, intents=None, createopts=None):
     if create:
         raise error.Abort(_('cannot create new http repository'))
     try:
         if path.startswith('https:') and not urlmod.has_https:
-            raise error.Abort(_('Python support for SSL and HTTPS '
-                                'is not installed'))
+            raise error.Abort(
+                _('Python support for SSL and HTTPS ' 'is not installed')
+            )
 
         inst = makepeer(ui, path)
 
@@ -1003,4 +1105,4 @@ def instance(ui, path, create, intents=None, createopts=None):
             ui.note(_('(falling back to static-http)\n'))
             return r
         except error.RepoError:
-            raise httpexception # use the original http RepoError instead
+            raise httpexception  # use the original http RepoError instead

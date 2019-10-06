@@ -13,8 +13,10 @@ from . import (
     util,
 )
 
+
 def _lowerclean(s):
     return encoding.hfsignoreclean(s.lower())
+
 
 class pathauditor(object):
     '''ensure that a filesystem path contains no banned components.
@@ -63,25 +65,30 @@ class pathauditor(object):
         if util.endswithsep(path):
             raise error.Abort(_("path ends in directory separator: %s") % path)
         parts = util.splitpath(path)
-        if (os.path.splitdrive(path)[0]
+        if (
+            os.path.splitdrive(path)[0]
             or _lowerclean(parts[0]) in ('.hg', '.hg.', '')
-            or pycompat.ospardir in parts):
+            or pycompat.ospardir in parts
+        ):
             raise error.Abort(_("path contains illegal component: %s") % path)
         # Windows shortname aliases
         for p in parts:
             if "~" in p:
                 first, last = p.split("~", 1)
                 if last.isdigit() and first.upper() in ["HG", "HG8B6C"]:
-                    raise error.Abort(_("path contains illegal component: %s")
-                                     % path)
+                    raise error.Abort(
+                        _("path contains illegal component: %s") % path
+                    )
         if '.hg' in _lowerclean(path):
             lparts = [_lowerclean(p.lower()) for p in parts]
             for p in '.hg', '.hg.':
                 if p in lparts[1:]:
                     pos = lparts.index(p)
                     base = os.path.join(*parts[:pos])
-                    raise error.Abort(_("path '%s' is inside nested repo %r")
-                                      % (path, pycompat.bytestr(base)))
+                    raise error.Abort(
+                        _("path '%s' is inside nested repo %r")
+                        % (path, pycompat.bytestr(base))
+                    )
 
         normparts = util.splitpath(normpath)
         assert len(parts) == len(normparts)
@@ -93,8 +100,8 @@ class pathauditor(object):
         # This means we won't accidentally traverse a symlink into some other
         # filesystem (which is potentially expensive to access).
         for i in range(len(parts)):
-            prefix = pycompat.ossep.join(parts[:i + 1])
-            normprefix = pycompat.ossep.join(normparts[:i + 1])
+            prefix = pycompat.ossep.join(parts[: i + 1])
+            normprefix = pycompat.ossep.join(normparts[: i + 1])
             if normprefix in self.auditeddir:
                 continue
             if self._realfs:
@@ -119,11 +126,14 @@ class pathauditor(object):
                 raise
         else:
             if stat.S_ISLNK(st.st_mode):
-                msg = (_('path %r traverses symbolic link %r')
-                       % (pycompat.bytestr(path), pycompat.bytestr(prefix)))
+                msg = _('path %r traverses symbolic link %r') % (
+                    pycompat.bytestr(path),
+                    pycompat.bytestr(prefix),
+                )
                 raise error.Abort(msg)
-            elif (stat.S_ISDIR(st.st_mode) and
-                  os.path.isdir(os.path.join(curpath, '.hg'))):
+            elif stat.S_ISDIR(st.st_mode) and os.path.isdir(
+                os.path.join(curpath, '.hg')
+            ):
                 if not self.callback or not self.callback(curpath):
                     msg = _("path '%s' is inside nested repo %r")
                     raise error.Abort(msg % (path, pycompat.bytestr(prefix)))
@@ -134,6 +144,7 @@ class pathauditor(object):
             return True
         except (OSError, error.Abort):
             return False
+
 
 def canonpath(root, cwd, myname, auditor=None):
     '''return the canonical path of myname, given cwd and root
@@ -188,7 +199,7 @@ def canonpath(root, cwd, myname, auditor=None):
     if auditor is None:
         auditor = pathauditor(root)
     if name != rootsep and name.startswith(rootsep):
-        name = name[len(rootsep):]
+        name = name[len(rootsep) :]
         auditor(name)
         return util.pconvert(name)
     elif name == root:
@@ -228,12 +239,14 @@ def canonpath(root, cwd, myname, auditor=None):
                 relpath = util.pathto(root, cwd, '')
                 if relpath.endswith(pycompat.ossep):
                     relpath = relpath[:-1]
-                hint = (_("consider using '--cwd %s'") % relpath)
+                hint = _("consider using '--cwd %s'") % relpath
         except error.Abort:
             pass
 
-        raise error.Abort(_("%s not under root '%s'") % (myname, root),
-                         hint=hint)
+        raise error.Abort(
+            _("%s not under root '%s'") % (myname, root), hint=hint
+        )
+
 
 def normasprefix(path):
     '''normalize the specified path as path prefix
@@ -256,6 +269,7 @@ def normasprefix(path):
         return path + pycompat.ossep
     else:
         return path
+
 
 # forward two methods from posixpath that do what we need, but we'd
 # rather not let our internals know that we're thinking in posix terms

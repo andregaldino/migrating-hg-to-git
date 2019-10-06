@@ -8,16 +8,15 @@
 
 from __future__ import absolute_import
 
-#import wsgiref.validate
+# import wsgiref.validate
 
-from ..thirdparty import (
-    attr,
-)
+from ..thirdparty import attr
 from .. import (
     error,
     pycompat,
     util,
 )
+
 
 class multidict(object):
     """A dict like object that can store multiple values for a key.
@@ -26,6 +25,7 @@ class multidict(object):
 
     This is inspired by WebOb's class of the same name.
     """
+
     def __init__(self):
         self._items = {}
 
@@ -76,6 +76,7 @@ class multidict(object):
     def asdictoflists(self):
         return {k: list(v) for k, v in self._items.iteritems()}
 
+
 @attr.s(frozen=True)
 class parsedrequest(object):
     """Represents a parsed WSGI request.
@@ -124,6 +125,7 @@ class parsedrequest(object):
     # WSGI environment dict, unmodified.
     rawenv = attr.ib()
 
+
 def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     """Parse URL components from environment variables.
 
@@ -153,7 +155,7 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # We first validate that the incoming object conforms with the WSGI spec.
     # We only want to be dealing with spec-conforming WSGI implementations.
     # TODO enable this once we fix internal violations.
-    #wsgiref.validate.check_environ(env)
+    # wsgiref.validate.check_environ(env)
 
     # PEP-0333 states that environment keys and values are native strings
     # (bytes on Python 2 and str on Python 3). The code points for the Unicode
@@ -161,8 +163,10 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # in Mercurial, so mass convert string keys and values to bytes.
     if pycompat.ispy3:
         env = {k.encode('latin-1'): v for k, v in env.iteritems()}
-        env = {k: v.encode('latin-1') if isinstance(v, str) else v
-               for k, v in env.iteritems()}
+        env = {
+            k: v.encode('latin-1') if isinstance(v, str) else v
+            for k, v in env.iteritems()
+        }
 
     # Some hosting solutions are emulating hgwebdir, and dispatching directly
     # to an hgweb instance using this environment variable.  This was always
@@ -255,16 +259,19 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
             raise error.ProgrammingError('reponame requires PATH_INFO')
 
         if not env['PATH_INFO'].startswith(repoprefix):
-            raise error.ProgrammingError('PATH_INFO does not begin with repo '
-                                         'name: %s (%s)' % (env['PATH_INFO'],
-                                                            reponame))
+            raise error.ProgrammingError(
+                'PATH_INFO does not begin with repo '
+                'name: %s (%s)' % (env['PATH_INFO'], reponame)
+            )
 
-        dispatchpath = env['PATH_INFO'][len(repoprefix):]
+        dispatchpath = env['PATH_INFO'][len(repoprefix) :]
 
         if dispatchpath and not dispatchpath.startswith('/'):
-            raise error.ProgrammingError('reponame prefix of PATH_INFO does '
-                                         'not end at path delimiter: %s (%s)' %
-                                         (env['PATH_INFO'], reponame))
+            raise error.ProgrammingError(
+                'reponame prefix of PATH_INFO does '
+                'not end at path delimiter: %s (%s)'
+                % (env['PATH_INFO'], reponame)
+            )
 
         apppath = apppath.rstrip('/') + repoprefix
         dispatchparts = dispatchpath.strip('/').split('/')
@@ -295,9 +302,10 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     headers = []
     for k, v in env.iteritems():
         if k.startswith('HTTP_'):
-            headers.append((k[len('HTTP_'):].replace('_', '-'), v))
+            headers.append((k[len('HTTP_') :].replace('_', '-'), v))
 
-    from . import wsgiheaders # avoid cycle
+    from . import wsgiheaders  # avoid cycle
+
     headers = wsgiheaders.Headers(headers)
 
     # This is kind of a lie because the HTTP header wasn't explicitly
@@ -313,24 +321,30 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     if bodyfh is None:
         bodyfh = env['wsgi.input']
         if 'Content-Length' in headers:
-            bodyfh = util.cappedreader(bodyfh,
-                                       int(headers['Content-Length'] or '0'))
+            bodyfh = util.cappedreader(
+                bodyfh, int(headers['Content-Length'] or '0')
+            )
 
-    return parsedrequest(method=env['REQUEST_METHOD'],
-                         url=fullurl, baseurl=baseurl,
-                         advertisedurl=advertisedfullurl,
-                         advertisedbaseurl=advertisedbaseurl,
-                         urlscheme=env['wsgi.url_scheme'],
-                         remoteuser=env.get('REMOTE_USER'),
-                         remotehost=env.get('REMOTE_HOST'),
-                         apppath=apppath,
-                         dispatchparts=dispatchparts, dispatchpath=dispatchpath,
-                         reponame=reponame,
-                         querystring=querystring,
-                         qsparams=qsparams,
-                         headers=headers,
-                         bodyfh=bodyfh,
-                         rawenv=env)
+    return parsedrequest(
+        method=env['REQUEST_METHOD'],
+        url=fullurl,
+        baseurl=baseurl,
+        advertisedurl=advertisedfullurl,
+        advertisedbaseurl=advertisedbaseurl,
+        urlscheme=env['wsgi.url_scheme'],
+        remoteuser=env.get('REMOTE_USER'),
+        remotehost=env.get('REMOTE_HOST'),
+        apppath=apppath,
+        dispatchparts=dispatchparts,
+        dispatchpath=dispatchpath,
+        reponame=reponame,
+        querystring=querystring,
+        qsparams=qsparams,
+        headers=headers,
+        bodyfh=bodyfh,
+        rawenv=env,
+    )
+
 
 class offsettrackingwriter(object):
     """A file object like object that is append only and tracks write count.
@@ -345,6 +359,7 @@ class offsettrackingwriter(object):
     a WSGI ``start_response()`` function. Since ``write()`` is a callable and
     not a file object, it doesn't implement other file object methods.
     """
+
     def __init__(self, writefn):
         self._write = writefn
         self._offset = 0
@@ -362,6 +377,7 @@ class offsettrackingwriter(object):
 
     def tell(self):
         return self._offset
+
 
 class wsgiresponse(object):
     """Represents a response to a WSGI request.
@@ -389,7 +405,8 @@ class wsgiresponse(object):
         self._startresponse = startresponse
 
         self.status = None
-        from . import wsgiheaders # avoid cycle
+        from . import wsgiheaders  # avoid cycle
+
         self.headers = wsgiheaders.Headers([])
 
         self._bodybytes = None
@@ -399,8 +416,11 @@ class wsgiresponse(object):
         self._bodywritefn = None
 
     def _verifybody(self):
-        if (self._bodybytes is not None or self._bodygen is not None
-            or self._bodywillwrite):
+        if (
+            self._bodybytes is not None
+            or self._bodygen is not None
+            or self._bodywillwrite
+        ):
             raise error.ProgrammingError('cannot define body multiple times')
 
     def setbodybytes(self, b):
@@ -450,8 +470,11 @@ class wsgiresponse(object):
         if not self.status:
             raise error.ProgrammingError('status line not defined')
 
-        if (self._bodybytes is None and self._bodygen is None
-            and not self._bodywillwrite):
+        if (
+            self._bodybytes is None
+            and self._bodygen is None
+            and not self._bodywillwrite
+        ):
             raise error.ProgrammingError('response body not defined')
 
         # RFC 7232 Section 4.1 states that a 304 MUST generate one of
@@ -469,20 +492,30 @@ class wsgiresponse(object):
 
             # Strictly speaking, this is too strict. But until it causes
             # problems, let's be strict.
-            badheaders = {k for k in self.headers.keys()
-                          if k.lower() not in ('date', 'etag', 'expires',
-                                               'cache-control',
-                                               'content-location',
-                                               'content-security-policy',
-                                               'vary')}
+            badheaders = {
+                k
+                for k in self.headers.keys()
+                if k.lower()
+                not in (
+                    'date',
+                    'etag',
+                    'expires',
+                    'cache-control',
+                    'content-location',
+                    'content-security-policy',
+                    'vary',
+                )
+            }
             if badheaders:
                 raise error.ProgrammingError(
-                    'illegal header on 304 response: %s' %
-                    ', '.join(sorted(badheaders)))
+                    'illegal header on 304 response: %s'
+                    % ', '.join(sorted(badheaders))
+                )
 
             if self._bodygen is not None or self._bodywillwrite:
-                raise error.ProgrammingError("must use setbodybytes('') with "
-                                             "304 responses")
+                raise error.ProgrammingError(
+                    "must use setbodybytes('') with " "304 responses"
+                )
 
         # Various HTTP clients (notably httplib) won't read the HTTP response
         # until the HTTP request has been sent in full. If servers (us) send a
@@ -531,10 +564,11 @@ class wsgiresponse(object):
                 if not chunk:
                     break
 
-        strheaders = [(pycompat.strurl(k), pycompat.strurl(v)) for
-                      k, v in self.headers.items()]
-        write = self._startresponse(pycompat.sysstr(self.status),
-                                    strheaders)
+        strheaders = [
+            (pycompat.strurl(k), pycompat.strurl(v))
+            for k, v in self.headers.items()
+        ]
+        write = self._startresponse(pycompat.sysstr(self.status), strheaders)
 
         if self._bodybytes:
             yield self._bodybytes
@@ -566,17 +600,22 @@ class wsgiresponse(object):
             raise error.ProgrammingError('must call setbodywillwrite() first')
 
         if not self._started:
-            raise error.ProgrammingError('must call sendresponse() first; did '
-                                         'you remember to consume it since it '
-                                         'is a generator?')
+            raise error.ProgrammingError(
+                'must call sendresponse() first; did '
+                'you remember to consume it since it '
+                'is a generator?'
+            )
 
         assert self._bodywritefn
         return offsettrackingwriter(self._bodywritefn)
+
 
 def wsgiapplication(app_maker):
     '''For compatibility with old CGI scripts. A plain hgweb() or hgwebdir()
     can and should now be used as a WSGI application.'''
     application = app_maker()
+
     def run_wsgi(env, respond):
         return application(env, respond)
+
     return run_wsgi

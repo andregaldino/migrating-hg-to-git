@@ -97,6 +97,7 @@ testedwith = 'ships-with-hg-core'
 cmdtable = {}
 command = registrar.command(cmdtable)
 
+
 def extsetup(ui):
     sparse.enabled = True
 
@@ -104,6 +105,7 @@ def extsetup(ui):
     _setuplog(ui)
     _setupadd(ui)
     _setupdirstate(ui)
+
 
 def replacefilecache(cls, propname, replacement):
     """Replace a filecache property with a new class. This allows changing the
@@ -118,24 +120,36 @@ def replacefilecache(cls, propname, replacement):
         cls = cls.__bases__[0]
 
     if cls is object:
-        raise AttributeError(_("type '%s' has no property '%s'") % (origcls,
-                             propname))
+        raise AttributeError(
+            _("type '%s' has no property '%s'") % (origcls, propname)
+        )
+
 
 def _setuplog(ui):
     entry = commands.table['log|history']
-    entry[1].append(('', 'sparse', None,
-        "limit to changesets affecting the sparse checkout"))
+    entry[1].append(
+        (
+            '',
+            'sparse',
+            None,
+            "limit to changesets affecting the sparse checkout",
+        )
+    )
 
     def _initialrevs(orig, repo, opts):
         revs = orig(repo, opts)
         if opts.get('sparse'):
             sparsematch = sparse.matcher(repo)
+
             def ctxmatch(rev):
                 ctx = repo[rev]
                 return any(f for f in ctx.files() if sparsematch(f))
+
             revs = revs.filter(ctxmatch)
         return revs
+
     extensions.wrapfunction(logcmdutil, '_initialrevs', _initialrevs)
+
 
 def _clonesparsecmd(orig, ui, repo, *args, **opts):
     include_pat = opts.get(r'include')
@@ -157,28 +171,41 @@ def _clonesparsecmd(orig, ui, repo, *args, **opts):
     # if --narrow is passed, it means they are includes and excludes for narrow
     # clone
     if not narrow_pat and (include or exclude or enableprofile):
+
         def clonesparse(orig, self, node, overwrite, *args, **kwargs):
-            sparse.updateconfig(self.unfiltered(), pat, {}, include=include,
-                                exclude=exclude, enableprofile=enableprofile,
-                                usereporootpaths=True)
+            sparse.updateconfig(
+                self.unfiltered(),
+                pat,
+                {},
+                include=include,
+                exclude=exclude,
+                enableprofile=enableprofile,
+                usereporootpaths=True,
+            )
             return orig(self, node, overwrite, *args, **kwargs)
+
         extensions.wrapfunction(hg, 'updaterepo', clonesparse)
     return orig(ui, repo, *args, **opts)
 
+
 def _setupclone(ui):
     entry = commands.table['clone']
-    entry[1].append(('', 'enable-profile', [],
-                    'enable a sparse profile'))
-    entry[1].append(('', 'include', [],
-                    'include sparse pattern'))
-    entry[1].append(('', 'exclude', [],
-                    'exclude sparse pattern'))
+    entry[1].append(('', 'enable-profile', [], 'enable a sparse profile'))
+    entry[1].append(('', 'include', [], 'include sparse pattern'))
+    entry[1].append(('', 'exclude', [], 'exclude sparse pattern'))
     extensions.wrapcommand(commands.table, 'clone', _clonesparsecmd)
+
 
 def _setupadd(ui):
     entry = commands.table['add']
-    entry[1].append(('s', 'sparse', None,
-                    'also include directories of added files in sparse config'))
+    entry[1].append(
+        (
+            's',
+            'sparse',
+            None,
+            'also include directories of added files in sparse config',
+        )
+    )
 
     def _add(orig, ui, repo, *pats, **opts):
         if opts.get(r'sparse'):
@@ -190,6 +217,7 @@ def _setupadd(ui):
         return orig(ui, repo, *pats, **opts)
 
     extensions.wrapcommand(commands.table, 'add', _add)
+
 
 def _setupdirstate(ui):
     """Modify the dirstate to prevent stat'ing excluded files,
@@ -221,39 +249,63 @@ def _setupdirstate(ui):
                 changedfiles = dirstatefilestoremove.union(changedfiles)
 
         return orig(self, parent, allfiles, changedfiles)
+
     extensions.wrapfunction(dirstate.dirstate, 'rebuild', _rebuild)
 
     # Prevent adding files that are outside the sparse checkout
     editfuncs = ['normal', 'add', 'normallookup', 'copy', 'remove', 'merge']
-    hint = _('include file with `hg debugsparse --include <pattern>` or use ' +
-             '`hg add -s <file>` to include file directory while adding')
+    hint = _(
+        'include file with `hg debugsparse --include <pattern>` or use '
+        + '`hg add -s <file>` to include file directory while adding'
+    )
     for func in editfuncs:
+
         def _wrapper(orig, self, *args, **kwargs):
             sparsematch = self._sparsematcher
             if not sparsematch.always():
                 for f in args:
-                    if (f is not None and not sparsematch(f) and
-                        f not in self):
-                        raise error.Abort(_("cannot add '%s' - it is outside "
-                                            "the sparse checkout") % f,
-                                          hint=hint)
+                    if f is not None and not sparsematch(f) and f not in self:
+                        raise error.Abort(
+                            _(
+                                "cannot add '%s' - it is outside "
+                                "the sparse checkout"
+                            )
+                            % f,
+                            hint=hint,
+                        )
             return orig(self, *args, **kwargs)
+
         extensions.wrapfunction(dirstate.dirstate, func, _wrapper)
 
-@command('debugsparse', [
-    ('I', 'include', False, _('include files in the sparse checkout')),
-    ('X', 'exclude', False, _('exclude files in the sparse checkout')),
-    ('d', 'delete', False, _('delete an include/exclude rule')),
-    ('f', 'force', False, _('allow changing rules even with pending changes')),
-    ('', 'enable-profile', False, _('enables the specified profile')),
-    ('', 'disable-profile', False, _('disables the specified profile')),
-    ('', 'import-rules', False, _('imports rules from a file')),
-    ('', 'clear-rules', False, _('clears local include/exclude rules')),
-    ('', 'refresh', False, _('updates the working after sparseness changes')),
-    ('', 'reset', False, _('makes the repo full again')),
-    ] + commands.templateopts,
+
+@command(
+    'debugsparse',
+    [
+        ('I', 'include', False, _('include files in the sparse checkout')),
+        ('X', 'exclude', False, _('exclude files in the sparse checkout')),
+        ('d', 'delete', False, _('delete an include/exclude rule')),
+        (
+            'f',
+            'force',
+            False,
+            _('allow changing rules even with pending changes'),
+        ),
+        ('', 'enable-profile', False, _('enables the specified profile')),
+        ('', 'disable-profile', False, _('disables the specified profile')),
+        ('', 'import-rules', False, _('imports rules from a file')),
+        ('', 'clear-rules', False, _('clears local include/exclude rules')),
+        (
+            '',
+            'refresh',
+            False,
+            _('updates the working after sparseness changes'),
+        ),
+        ('', 'reset', False, _('makes the repo full again')),
+    ]
+    + commands.templateopts,
     _('[--OPTION] PATTERN...'),
-    helpbasic=True)
+    helpbasic=True,
+)
 def debugsparse(ui, repo, *pats, **opts):
     """make the current checkout sparse, or edit the existing checkout
 
@@ -306,8 +358,19 @@ def debugsparse(ui, repo, *pats, **opts):
     delete = opts.get('delete')
     refresh = opts.get('refresh')
     reset = opts.get('reset')
-    count = sum([include, exclude, enableprofile, disableprofile, delete,
-                 importrules, refresh, clearrules, reset])
+    count = sum(
+        [
+            include,
+            exclude,
+            enableprofile,
+            disableprofile,
+            delete,
+            importrules,
+            refresh,
+            clearrules,
+            reset,
+        ]
+    )
     if count > 1:
         raise error.Abort(_("too many flags specified"))
 
@@ -320,14 +383,26 @@ def debugsparse(ui, repo, *pats, **opts):
                 ui.status(("\n".join(temporaryincludes) + "\n"))
             return
         else:
-            raise error.Abort(_('the debugsparse command is only supported on'
-                                ' sparse repositories'))
+            raise error.Abort(
+                _(
+                    'the debugsparse command is only supported on'
+                    ' sparse repositories'
+                )
+            )
 
     if include or exclude or delete or reset or enableprofile or disableprofile:
-        sparse.updateconfig(repo, pats, opts, include=include, exclude=exclude,
-                            reset=reset, delete=delete,
-                            enableprofile=enableprofile,
-                            disableprofile=disableprofile, force=force)
+        sparse.updateconfig(
+            repo,
+            pats,
+            opts,
+            include=include,
+            exclude=exclude,
+            reset=reset,
+            delete=delete,
+            enableprofile=enableprofile,
+            disableprofile=disableprofile,
+            force=force,
+        )
 
     if importrules:
         sparse.importfromfiles(repo, opts, pats, force=force)
@@ -340,9 +415,16 @@ def debugsparse(ui, repo, *pats, **opts):
             wlock = repo.wlock()
             fcounts = map(
                 len,
-                sparse.refreshwdir(repo, repo.status(), sparse.matcher(repo),
-                                   force=force))
-            sparse.printchanges(ui, opts, added=fcounts[0], dropped=fcounts[1],
-                                conflicting=fcounts[2])
+                sparse.refreshwdir(
+                    repo, repo.status(), sparse.matcher(repo), force=force
+                ),
+            )
+            sparse.printchanges(
+                ui,
+                opts,
+                added=fcounts[0],
+                dropped=fcounts[1],
+                conflicting=fcounts[2],
+            )
         finally:
             wlock.release()

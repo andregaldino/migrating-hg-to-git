@@ -19,12 +19,17 @@ from mercurial.utils import dateutil
 
 from . import common
 
+
 class monotone_source(common.converter_source, common.commandline):
     def __init__(self, ui, repotype, path=None, revs=None):
         common.converter_source.__init__(self, ui, repotype, path, revs)
         if revs and len(revs) > 1:
-            raise error.Abort(_('monotone source does not support specifying '
-                               'multiple revs'))
+            raise error.Abort(
+                _(
+                    'monotone source does not support specifying '
+                    'multiple revs'
+                )
+            )
         common.commandline.__init__(self, ui, 'mtn')
 
         self.ui = ui
@@ -32,8 +37,9 @@ class monotone_source(common.converter_source, common.commandline):
         self.automatestdio = False
         self.revs = revs
 
-        norepo = common.NoRepo(_("%s does not look like a monotone repository")
-                             % path)
+        norepo = common.NoRepo(
+            _("%s does not look like a monotone repository") % path
+        )
         if not os.path.exists(os.path.join(path, '_MTN')):
             # Could be a monotone repository (SQLite db file)
             try:
@@ -46,35 +52,37 @@ class monotone_source(common.converter_source, common.commandline):
                 raise norepo
 
         # regular expressions for parsing monotone output
-        space    = br'\s*'
-        name     = br'\s+"((?:\\"|[^"])*)"\s*'
-        value    = name
+        space = br'\s*'
+        name = br'\s+"((?:\\"|[^"])*)"\s*'
+        value = name
         revision = br'\s+\[(\w+)\]\s*'
-        lines    = br'(?:.|\n)+'
+        lines = br'(?:.|\n)+'
 
-        self.dir_re      = re.compile(space + "dir" + name)
-        self.file_re     = re.compile(space + "file" + name +
-                                      "content" + revision)
-        self.add_file_re = re.compile(space + "add_file" + name +
-                                      "content" + revision)
-        self.patch_re    = re.compile(space + "patch" + name +
-                                      "from" + revision + "to" + revision)
-        self.rename_re   = re.compile(space + "rename" + name + "to" + name)
-        self.delete_re   = re.compile(space + "delete" + name)
-        self.tag_re      = re.compile(space + "tag" + name + "revision" +
-                                      revision)
-        self.cert_re     = re.compile(lines + space + "name" + name +
-                                      "value" + value)
+        self.dir_re = re.compile(space + "dir" + name)
+        self.file_re = re.compile(space + "file" + name + "content" + revision)
+        self.add_file_re = re.compile(
+            space + "add_file" + name + "content" + revision
+        )
+        self.patch_re = re.compile(
+            space + "patch" + name + "from" + revision + "to" + revision
+        )
+        self.rename_re = re.compile(space + "rename" + name + "to" + name)
+        self.delete_re = re.compile(space + "delete" + name)
+        self.tag_re = re.compile(space + "tag" + name + "revision" + revision)
+        self.cert_re = re.compile(
+            lines + space + "name" + name + "value" + value
+        )
 
         attr = space + "file" + lines + space + "attr" + space
-        self.attr_execute_re = re.compile(attr  + '"mtn:execute"' +
-                                          space + '"true"')
+        self.attr_execute_re = re.compile(
+            attr + '"mtn:execute"' + space + '"true"'
+        )
 
         # cached data
         self.manifest_rev = None
         self.manifest = None
         self.files = None
-        self.dirs  = None
+        self.dirs = None
 
         common.checktool('mtn', abort=False)
 
@@ -140,13 +148,19 @@ class monotone_source(common.converter_source, common.commandline):
         try:
             length = pycompat.long(lengthstr[:-1])
         except TypeError:
-            raise error.Abort(_('bad mtn packet - bad packet size %s')
-                % lengthstr)
+            raise error.Abort(
+                _('bad mtn packet - bad packet size %s') % lengthstr
+            )
 
         read = self.mtnreadfp.read(length)
         if len(read) != length:
-            raise error.Abort(_("bad mtn packet - unable to read full packet "
-                "read %s of %s") % (len(read), length))
+            raise error.Abort(
+                _(
+                    "bad mtn packet - unable to read full packet "
+                    "read %s of %s"
+                )
+                % (len(read), length)
+            )
 
         return (commandnbr, stream, length, read)
 
@@ -154,14 +168,16 @@ class monotone_source(common.converter_source, common.commandline):
         retval = []
         while True:
             commandnbr, stream, length, output = self.mtnstdioreadpacket()
-            self.ui.debug('mtn: read packet %s:%s:%d\n' %
-                (commandnbr, stream, length))
+            self.ui.debug(
+                'mtn: read packet %s:%s:%d\n' % (commandnbr, stream, length)
+            )
 
             if stream == 'l':
                 # End of command
                 if output != '0':
-                    raise error.Abort(_("mtn command '%s' returned %s") %
-                        (command, output))
+                    raise error.Abort(
+                        _("mtn command '%s' returned %s") % (command, output)
+                    )
                 break
             elif stream in 'ew':
                 # Error, warning output
@@ -207,8 +223,12 @@ class monotone_source(common.converter_source, common.commandline):
         return name in self.dirs
 
     def mtngetcerts(self, rev):
-        certs = {"author":"<missing>", "date":"<missing>",
-            "changelog":"<missing>", "branch":"<missing>"}
+        certs = {
+            "author": "<missing>",
+            "date": "<missing>",
+            "changelog": "<missing>",
+            "branch": "<missing>",
+        }
         certlist = self.mtnrun("certs", rev)
         # mtn < 0.45:
         #   key "test@selenic.com"
@@ -237,8 +257,9 @@ class monotone_source(common.converter_source, common.commandline):
 
     def getchanges(self, rev, full):
         if full:
-            raise error.Abort(_("convert from monotone does not support "
-                              "--full"))
+            raise error.Abort(
+                _("convert from monotone does not support " "--full")
+            )
         revision = self.mtnrun("get_revision", rev).split("\n\n")
         files = {}
         ignoremove = {}
@@ -278,7 +299,7 @@ class monotone_source(common.converter_source, common.commandline):
                 if tofile in ignoremove:
                     continue
                 if tofile.startswith(todir + '/'):
-                    renamed[tofile] = fromdir + tofile[len(todir):]
+                    renamed[tofile] = fromdir + tofile[len(todir) :]
                     # Avoid chained moves like:
                     # d1(/a) => d3/d1(/a)
                     # d2 => d3
@@ -286,7 +307,9 @@ class monotone_source(common.converter_source, common.commandline):
             for tofile, fromfile in renamed.items():
                 self.ui.debug(
                     "copying file in renamed directory from '%s' to '%s'"
-                    % (fromfile, tofile), '\n')
+                    % (fromfile, tofile),
+                    '\n',
+                )
                 files[tofile] = rev
                 copies[tofile] = fromfile
             for fromfile in renamed.values():
@@ -318,7 +341,8 @@ class monotone_source(common.converter_source, common.commandline):
             rev=rev,
             parents=self.mtnrun("parents", rev).splitlines(),
             branch=certs["branch"],
-            extra=extra)
+            extra=extra,
+        )
 
     def gettags(self):
         tags = {}
@@ -339,30 +363,40 @@ class monotone_source(common.converter_source, common.commandline):
             versionstr = self.mtnrunsingle("interface_version")
             version = float(versionstr)
         except Exception:
-            raise error.Abort(_("unable to determine mtn automate interface "
-                "version"))
+            raise error.Abort(
+                _("unable to determine mtn automate interface " "version")
+            )
 
         if version >= 12.0:
             self.automatestdio = True
-            self.ui.debug("mtn automate version %f - using automate stdio\n" %
-                version)
+            self.ui.debug(
+                "mtn automate version %f - using automate stdio\n" % version
+            )
 
             # launch the long-running automate stdio process
-            self.mtnwritefp, self.mtnreadfp = self._run2('automate', 'stdio',
-                '-d', self.path)
+            self.mtnwritefp, self.mtnreadfp = self._run2(
+                'automate', 'stdio', '-d', self.path
+            )
             # read the headers
             read = self.mtnreadfp.readline()
             if read != 'format-version: 2\n':
-                raise error.Abort(_('mtn automate stdio header unexpected: %s')
-                    % read)
+                raise error.Abort(
+                    _('mtn automate stdio header unexpected: %s') % read
+                )
             while read != '\n':
                 read = self.mtnreadfp.readline()
                 if not read:
-                    raise error.Abort(_("failed to reach end of mtn automate "
-                        "stdio headers"))
+                    raise error.Abort(
+                        _(
+                            "failed to reach end of mtn automate "
+                            "stdio headers"
+                        )
+                    )
         else:
-            self.ui.debug("mtn automate version %s - not using automate stdio "
-                "(automate >= 12.0 - mtn >= 0.46 is needed)\n" % version)
+            self.ui.debug(
+                "mtn automate version %s - not using automate stdio "
+                "(automate >= 12.0 - mtn >= 0.46 is needed)\n" % version
+            )
 
     def after(self):
         if self.automatestdio:

@@ -43,15 +43,26 @@ def generatestates(maxchangesets, parentcontents):
     depth = len(parentcontents)
     if depth == maxchangesets + 1:
         for tracked in (b'untracked', b'tracked'):
-            filename = b"_".join([(content is None and b'missing' or content)
-                                for content in parentcontents]) + b"-" + tracked
+            filename = (
+                b"_".join(
+                    [
+                        (content is None and b'missing' or content)
+                        for content in parentcontents
+                    ]
+                )
+                + b"-"
+                + tracked
+            )
             yield (filename, parentcontents)
     else:
-        for content in ({None, b'content' + (b"%d" % (depth + 1))} |
-                      set(parentcontents)):
-            for combination in generatestates(maxchangesets,
-                                              parentcontents + [content]):
+        for content in {None, b'content' + (b"%d" % (depth + 1))} | set(
+            parentcontents
+        ):
+            for combination in generatestates(
+                maxchangesets, parentcontents + [content]
+            ):
                 yield combination
+
 
 # retrieve the command line arguments
 target = sys.argv[1]

@@ -44,18 +44,12 @@ def plot(data, title=None):
     comb_plt = fig.add_subplot(211)
     other_plt = fig.add_subplot(212)
 
-    comb_plt.plot(ary[0],
-                  np.cumsum(ary[1]),
-                  color='red',
-                  linewidth=1,
-                  label='comb')
+    comb_plt.plot(
+        ary[0], np.cumsum(ary[1]), color='red', linewidth=1, label='comb'
+    )
 
     plots = []
-    p = other_plt.plot(ary[0],
-                       ary[1],
-                       color='red',
-                       linewidth=1,
-                       label='wall')
+    p = other_plt.plot(ary[0], ary[1], color='red', linewidth=1, label='wall')
     plots.append(p)
 
     colors = {
@@ -64,20 +58,24 @@ def plot(data, title=None):
         1000: ('purple', 'xkcd:dark pink'),
     }
     for n, color in colors.items():
-        avg_n = np.convolve(ary[1], np.full(n, 1. / n), 'valid')
-        p = other_plt.plot(ary[0][n - 1:],
-                           avg_n,
-                           color=color[0],
-                           linewidth=1,
-                           label='avg time last %d' % n)
+        avg_n = np.convolve(ary[1], np.full(n, 1.0 / n), 'valid')
+        p = other_plt.plot(
+            ary[0][n - 1 :],
+            avg_n,
+            color=color[0],
+            linewidth=1,
+            label='avg time last %d' % n,
+        )
         plots.append(p)
 
         med_n = scipy.signal.medfilt(ary[1], n + 1)
-        p = other_plt.plot(ary[0],
-                           med_n,
-                           color=color[1],
-                           linewidth=1,
-                           label='median time last %d' % n)
+        p = other_plt.plot(
+            ary[0],
+            med_n,
+            color=color[1],
+            linewidth=1,
+            label='median time last %d' % n,
+        )
         plots.append(p)
 
     formatter = mticker.ScalarFormatter()
@@ -108,6 +106,7 @@ def plot(data, title=None):
         else:
             legline.set_alpha(0.2)
         fig.canvas.draw()
+
     if title is not None:
         fig.canvas.set_window_title(title)
     fig.canvas.mpl_connect('pick_event', onpick)

@@ -1,14 +1,14 @@
 from __future__ import absolute_import, print_function
 import os
 import sys
-from mercurial import (
-    dispatch,
-)
+from mercurial import dispatch
+
 
 def printb(data, end=b'\n'):
     out = getattr(sys.stdout, 'buffer', sys.stdout)
     out.write(data + end)
     out.flush()
+
 
 def testdispatch(cmd):
     """Simple wrapper around dispatch.dispatch()
@@ -19,6 +19,7 @@ def testdispatch(cmd):
     req = dispatch.request(cmd.split())
     result = dispatch.dispatch(req)
     printb(b"result: %r" % (result,))
+
 
 testdispatch(b"init test1")
 os.chdir('test1')

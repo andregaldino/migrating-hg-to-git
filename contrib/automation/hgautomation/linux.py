@@ -13,9 +13,7 @@ import shlex
 import subprocess
 import tempfile
 
-from .ssh import (
-    exec_command,
-)
+from .ssh import exec_command
 
 
 # Linux distributions that are supported.
@@ -62,7 +60,9 @@ for v in ${PYENV3_VERSIONS}; do
 done
 
 pyenv global ${PYENV2_VERSIONS} ${PYENV3_VERSIONS} system
-'''.lstrip().replace('\r\n', '\n')
+'''.lstrip().replace(
+    '\r\n', '\n'
+)
 
 
 INSTALL_RUST = r'''
@@ -87,10 +87,13 @@ wget -O ${HG_TARBALL} --progress dot:mega https://www.mercurial-scm.org/release/
 echo "${HG_SHA256} ${HG_TARBALL}" | sha256sum --check -
 
 /hgdev/venv-bootstrap/bin/pip install ${HG_TARBALL}
-'''.lstrip().replace('\r\n', '\n')
+'''.lstrip().replace(
+    '\r\n', '\n'
+)
 
 
-BOOTSTRAP_DEBIAN = r'''
+BOOTSTRAP_DEBIAN = (
+    r'''
 #!/bin/bash
 
 set -ex
@@ -323,11 +326,14 @@ publish = false
 EOF
 
 sudo chown -R hg:hg /hgdev
-'''.lstrip().format(
-    install_rust=INSTALL_RUST,
-    install_pythons=INSTALL_PYTHONS,
-    bootstrap_virtualenv=BOOTSTRAP_VIRTUALENV
-).replace('\r\n', '\n')
+'''.lstrip()
+    .format(
+        install_rust=INSTALL_RUST,
+        install_pythons=INSTALL_PYTHONS,
+        bootstrap_virtualenv=BOOTSTRAP_VIRTUALENV,
+    )
+    .replace('\r\n', '\n')
+)
 
 
 # Prepares /hgdev for operations.
@@ -409,7 +415,9 @@ mkdir /hgwork/tmp
 chown hg:hg /hgwork/tmp
 
 rsync -a /hgdev/src /hgwork/
-'''.lstrip().replace('\r\n', '\n')
+'''.lstrip().replace(
+    '\r\n', '\n'
+)
 
 
 HG_UPDATE_CLEAN = '''
@@ -421,7 +429,9 @@ cd /hgwork/src
 ${HG} --config extensions.purge= purge --all
 ${HG} update -C $1
 ${HG} log -r .
-'''.lstrip().replace('\r\n', '\n')
+'''.lstrip().replace(
+    '\r\n', '\n'
+)
 
 
 def prepare_exec_environment(ssh_client, filesystem='default'):
@@ -456,11 +466,12 @@ def prepare_exec_environment(ssh_client, filesystem='default'):
     res = chan.recv_exit_status()
 
     if res:
-        raise Exception('non-0 exit code updating working directory; %d'
-                        % res)
+        raise Exception('non-0 exit code updating working directory; %d' % res)
 
 
-def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
+def synchronize_hg(
+    source_path: pathlib.Path, ec2_instance, revision: str = None
+):
     """Synchronize a local Mercurial source path to remote EC2 instance."""
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -482,8 +493,10 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
             fh.write('  IdentityFile %s\n' % ec2_instance.ssh_private_key_path)
 
         if not (source_path / '.hg').is_dir():
-            raise Exception('%s is not a Mercurial repository; synchronization '
-                            'not yet supported' % source_path)
+            raise Exception(
+                '%s is not a Mercurial repository; synchronization '
+                'not yet supported' % source_path
+            )
 
         env = dict(os.environ)
         env['HGPLAIN'] = '1'
@@ -493,17 +506,29 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
 
         res = subprocess.run(
             ['python2.7', str(hg_bin), 'log', '-r', revision, '-T', '{node}'],
-            cwd=str(source_path), env=env, check=True, capture_output=True)
+            cwd=str(source_path),
+            env=env,
+            check=True,
+            capture_output=True,
+        )
 
         full_revision = res.stdout.decode('ascii')
 
         args = [
-            'python2.7', str(hg_bin),
-            '--config', 'ui.ssh=ssh -F %s' % ssh_config,
-            '--config', 'ui.remotecmd=/hgdev/venv-bootstrap/bin/hg',
+            'python2.7',
+            str(hg_bin),
+            '--config',
+            'ui.ssh=ssh -F %s' % ssh_config,
+            '--config',
+            'ui.remotecmd=/hgdev/venv-bootstrap/bin/hg',
             # Also ensure .hgtags changes are present so auto version
             # calculation works.
-            'push', '-f', '-r', full_revision, '-r', 'file(.hgtags)',
+            'push',
+            '-f',
+            '-r',
+            full_revision,
+            '-r',
+            'file(.hgtags)',
             'ssh://%s//hgwork/src' % public_ip,
         ]
 
@@ -522,7 +547,8 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
             fh.chmod(0o0700)
 
         chan, stdin, stdout = exec_command(
-            ec2_instance.ssh_client, '/hgdev/hgup %s' % full_revision)
+            ec2_instance.ssh_client, '/hgdev/hgup %s' % full_revision
+        )
         stdin.close()
 
         for line in stdout:
@@ -531,8 +557,9 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
         res = chan.recv_exit_status()
 
         if res:
-            raise Exception('non-0 exit code updating working directory; %d'
-                            % res)
+            raise Exception(
+                'non-0 exit code updating working directory; %d' % res
+            )
 
 
 def run_tests(ssh_client, python_version, test_flags=None):
@@ -554,8 +581,8 @@ def run_tests(ssh_client, python_version, test_flags=None):
 
     command = (
         '/bin/sh -c "export TMPDIR=/hgwork/tmp; '
-        'cd /hgwork/src/tests && %s run-tests.py %s"' % (
-            python, test_flags))
+        'cd /hgwork/src/tests && %s run-tests.py %s"' % (python, test_flags)
+    )
 
     chan, stdin, stdout = exec_command(ssh_client, command)
 

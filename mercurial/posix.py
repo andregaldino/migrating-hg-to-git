@@ -40,8 +40,11 @@ except AttributeError:
     # poor souls, just say we tried and that it failed so we fall back
     # to copies.
     def oslink(src, dst):
-        raise OSError(errno.EINVAL,
-                      'hardlinks not supported: %s to %s' % (src, dst))
+        raise OSError(
+            errno.EINVAL, 'hardlinks not supported: %s to %s' % (src, dst)
+        )
+
+
 readlink = os.readlink
 unlink = os.unlink
 rename = os.rename
@@ -52,6 +55,7 @@ umask = os.umask(0)
 os.umask(umask)
 
 if not pycompat.ispy3:
+
     def posixfile(name, mode=r'r', buffering=-1):
         fp = open(name, mode=mode, buffering=buffering)
         # The position when opening in append mode is implementation defined, so
@@ -59,10 +63,13 @@ if not pycompat.ispy3:
         if r'a' in mode:
             fp.seek(0, os.SEEK_END)
         return fp
+
+
 else:
     # The underlying file object seeks as required in Python 3:
     # https://github.com/python/cpython/blob/v3.7.3/Modules/_io/fileio.c#L474
     posixfile = open
+
 
 def split(p):
     '''Same as posixpath.split, but faster
@@ -86,39 +93,46 @@ def split(p):
         return nh, ht[1]
     return ht[0] + '/', ht[1]
 
+
 def openhardlinks():
     '''return true if it is safe to hold open file handles to hardlinks'''
     return True
 
+
 def nlinks(name):
     '''return number of hardlinks for the given file'''
     return os.lstat(name).st_nlink
+
 
 def parsepatchoutput(output_line):
     """parses the output produced by patch and returns the filename"""
     pf = output_line[14:]
     if pycompat.sysplatform == 'OpenVMS':
         if pf[0] == '`':
-            pf = pf[1:-1] # Remove the quotes
+            pf = pf[1:-1]  # Remove the quotes
     else:
         if pf.startswith("'") and pf.endswith("'") and " " in pf:
-            pf = pf[1:-1] # Remove the quotes
+            pf = pf[1:-1]  # Remove the quotes
     return pf
+
 
 def sshargs(sshcmd, host, user, port):
     '''Build argument list for ssh'''
     args = user and ("%s@%s" % (user, host)) or host
     if '-' in args[:1]:
         raise error.Abort(
-            _('illegal ssh hostname or username starting with -: %s') % args)
+            _('illegal ssh hostname or username starting with -: %s') % args
+        )
     args = shellquote(args)
     if port:
         args = '-p %s %s' % (shellquote(port), args)
     return args
 
+
 def isexec(f):
     """check whether a file is executable"""
-    return (os.lstat(f).st_mode & 0o100 != 0)
+    return os.lstat(f).st_mode & 0o100 != 0
+
 
 def setflags(f, l, x):
     st = os.lstat(f)
@@ -146,7 +160,7 @@ def setflags(f, l, x):
         fp = open(f, "wb")
         fp.write(data)
         fp.close()
-        s = 0o666 & ~umask # avoid restatting for chmod
+        s = 0o666 & ~umask  # avoid restatting for chmod
 
     sx = s & 0o100
     if st.st_nlink > 1 and bool(x) != bool(sx):
@@ -164,6 +178,7 @@ def setflags(f, l, x):
     elif not x and sx:
         # Turn off all +x bits
         os.chmod(f, s & 0o666)
+
 
 def copymode(src, dst, mode=None, enforcewritable=False):
     '''Copy the file mode from the file at path src to dst.
@@ -185,6 +200,7 @@ def copymode(src, dst, mode=None, enforcewritable=False):
         new_mode |= stat.S_IWUSR
 
     os.chmod(dst, new_mode)
+
 
 def checkexec(path):
     """
@@ -234,7 +250,7 @@ def checkexec(path):
                     except OSError as e:
                         if e.errno != errno.ENOENT:
                             raise
-                        open(checknoexec, 'w').close() # might fail
+                        open(checknoexec, 'w').close()  # might fail
                         m = os.stat(checknoexec).st_mode
                     if m & EXECFLAGS == 0:
                         # check-exec is exec and check-no-exec is not exec
@@ -268,6 +284,7 @@ def checkexec(path):
         # we don't care, the user probably won't be able to commit anyway
         return False
 
+
 def checklink(path):
     """check whether the given path is on a symlink-capable filesystem"""
     # mktemp is not racy because symlink creation will fail if the
@@ -283,14 +300,16 @@ def checklink(path):
         else:
             checkdir = path
             cachedir = None
-        name = tempfile.mktemp(dir=pycompat.fsdecode(checkdir),
-                               prefix=r'checklink-')
+        name = tempfile.mktemp(
+            dir=pycompat.fsdecode(checkdir), prefix=r'checklink-'
+        )
         name = pycompat.fsencode(name)
         try:
             fd = None
             if cachedir is None:
-                fd = pycompat.namedtempfile(dir=checkdir,
-                                            prefix='hg-checklink-')
+                fd = pycompat.namedtempfile(
+                    dir=checkdir, prefix='hg-checklink-'
+                )
                 target = os.path.basename(fd.name)
             else:
                 # create a fixed file to link to; doesn't matter if it
@@ -334,10 +353,12 @@ def checklink(path):
                 unlink(name)
             return False
 
+
 def checkosfilename(path):
     '''Check that the base-relative path is a valid filename on this platform.
     Returns None if the path is ok, or a UI string describing the problem.'''
-    return None # on posix platforms, every path is ok
+    return None  # on posix platforms, every path is ok
+
 
 def getfsmountpoint(dirpath):
     '''Get the filesystem mount point from a directory (best-effort)
@@ -346,6 +367,7 @@ def getfsmountpoint(dirpath):
     '''
     return getattr(osutil, 'getfsmountpoint', lambda x: None)(dirpath)
 
+
 def getfstype(dirpath):
     '''Get the filesystem type name from a directory (best-effort)
 
@@ -353,19 +375,24 @@ def getfstype(dirpath):
     '''
     return getattr(osutil, 'getfstype', lambda x: None)(dirpath)
 
+
 def setbinary(fd):
     pass
+
 
 def pconvert(path):
     return path
 
+
 def localpath(path):
     return path
+
 
 def samefile(fpath1, fpath2):
     """Returns whether path1 and path2 refer to the same file. This is only
     guaranteed to work for files, not directories."""
     return os.path.samefile(fpath1, fpath2)
+
 
 def samedevice(fpath1, fpath2):
     """Returns whether fpath1 and fpath2 are on the same device. This is only
@@ -374,9 +401,11 @@ def samedevice(fpath1, fpath2):
     st2 = os.lstat(fpath2)
     return st1.st_dev == st2.st_dev
 
+
 # os.path.normcase is a no-op, which doesn't help us on non-native filesystems
 def normcase(path):
     return path.lower()
+
 
 # what normcase does to ASCII strings
 normcasespec = encoding.normcasespecs.lower
@@ -423,7 +452,7 @@ if pycompat.isdarwin:
                     c = encoding.getutf8char(path, pos)
                     pos += len(c)
                 except ValueError:
-                    c = '%%%02X' % ord(path[pos:pos + 1])
+                    c = '%%%02X' % ord(path[pos : pos + 1])
                     pos += 1
                 s += c
 
@@ -434,17 +463,16 @@ if pycompat.isdarwin:
         # drop HFS+ ignored characters
         return encoding.hfsignoreclean(enc)
 
+
 if pycompat.sysplatform == 'cygwin':
     # workaround for cygwin, in which mount point part of path is
     # treated as case sensitive, even though underlying NTFS is case
     # insensitive.
 
     # default mount points
-    cygwinmountpoints = sorted([
-            "/usr/bin",
-            "/usr/lib",
-            "/cygdrive",
-            ], reverse=True)
+    cygwinmountpoints = sorted(
+        ["/usr/bin", "/usr/lib", "/cygdrive",], reverse=True
+    )
 
     # use upper-ing as normcase as same as NTFS workaround
     def normcase(path):
@@ -459,7 +487,7 @@ if pycompat.sysplatform == 'cygwin':
                 continue
 
             mplen = len(mp)
-            if mplen == pathlen: # mount point itself
+            if mplen == pathlen:  # mount point itself
                 return mp
             if path[mplen] == pycompat.ossep:
                 return mp + encoding.upper(path[mplen:])
@@ -482,7 +510,10 @@ if pycompat.sysplatform == 'cygwin':
     def checklink(path):
         return False
 
+
 _needsshellquote = None
+
+
 def shellquote(s):
     if pycompat.sysplatform == 'OpenVMS':
         return '"%s"' % s
@@ -495,12 +526,15 @@ def shellquote(s):
     else:
         return "'%s'" % s.replace("'", "'\\''")
 
+
 def shellsplit(s):
     """Parse a command string in POSIX shell way (best-effort)"""
     return pycompat.shlexsplit(s, posix=True)
 
+
 def quotecommand(cmd):
     return cmd
+
 
 def testpid(pid):
     '''return False if pid dead, True if running or not sure'''
@@ -512,9 +546,11 @@ def testpid(pid):
     except OSError as inst:
         return inst.errno != errno.ESRCH
 
+
 def isowner(st):
     """Return True if the stat object st is from the current user."""
     return st.st_uid == os.getuid()
+
 
 def findexe(command):
     '''Find executable for command searching like which does.
@@ -542,10 +578,13 @@ def findexe(command):
             return executable
     return None
 
+
 def setsignalhandler():
     pass
 
+
 _wantedkinds = {stat.S_IFREG, stat.S_IFLNK}
+
 
 def statfiles(files):
     '''Stat each file in files. Yield each stat, or None if a file does not
@@ -563,9 +602,11 @@ def statfiles(files):
             st = None
         yield st
 
+
 def getuser():
     '''return name of current user'''
     return pycompat.fsencode(getpass.getuser())
+
 
 def username(uid=None):
     """Return the name of the user with the given uid.
@@ -579,6 +620,7 @@ def username(uid=None):
     except KeyError:
         return b'%d' % uid
 
+
 def groupname(gid=None):
     """Return the name of the group with the given gid.
 
@@ -591,6 +633,7 @@ def groupname(gid=None):
     except KeyError:
         return pycompat.bytestr(gid)
 
+
 def groupmembers(name):
     """Return the list of members of the group with the given
     name, KeyError if the group does not exist.
@@ -598,18 +641,22 @@ def groupmembers(name):
     name = pycompat.fsdecode(name)
     return pycompat.rapply(pycompat.fsencode, list(grp.getgrnam(name).gr_mem))
 
+
 def spawndetached(args):
-    return os.spawnvp(os.P_NOWAIT | getattr(os, 'P_DETACH', 0),
-                      args[0], args)
+    return os.spawnvp(os.P_NOWAIT | getattr(os, 'P_DETACH', 0), args[0], args)
+
 
 def gethgcmd():
     return sys.argv[:1]
 
+
 def makedir(path, notindexed):
     os.mkdir(path)
 
+
 def lookupreg(key, name=None, scope=None):
     return None
+
 
 def hidewindow():
     """Hide current shell window.
@@ -618,6 +665,7 @@ def hidewindow():
     child process under Windows, unneeded on other systems.
     """
     pass
+
 
 class cachestat(object):
     def __init__(self, path):
@@ -635,28 +683,33 @@ class cachestat(object):
             # rest. However, one of the other fields changing indicates
             # something fishy going on, so return False if anything but atime
             # changes.
-            return (self.stat.st_mode == other.stat.st_mode and
-                    self.stat.st_ino == other.stat.st_ino and
-                    self.stat.st_dev == other.stat.st_dev and
-                    self.stat.st_nlink == other.stat.st_nlink and
-                    self.stat.st_uid == other.stat.st_uid and
-                    self.stat.st_gid == other.stat.st_gid and
-                    self.stat.st_size == other.stat.st_size and
-                    self.stat[stat.ST_MTIME] == other.stat[stat.ST_MTIME] and
-                    self.stat[stat.ST_CTIME] == other.stat[stat.ST_CTIME])
+            return (
+                self.stat.st_mode == other.stat.st_mode
+                and self.stat.st_ino == other.stat.st_ino
+                and self.stat.st_dev == other.stat.st_dev
+                and self.stat.st_nlink == other.stat.st_nlink
+                and self.stat.st_uid == other.stat.st_uid
+                and self.stat.st_gid == other.stat.st_gid
+                and self.stat.st_size == other.stat.st_size
+                and self.stat[stat.ST_MTIME] == other.stat[stat.ST_MTIME]
+                and self.stat[stat.ST_CTIME] == other.stat[stat.ST_CTIME]
+            )
         except AttributeError:
             return False
 
     def __ne__(self, other):
         return not self == other
 
+
 def statislink(st):
     '''check whether a stat result is a symlink'''
     return st and stat.S_ISLNK(st.st_mode)
 
+
 def statisexec(st):
     '''check whether a stat result is an executable file'''
     return st and (st.st_mode & 0o100 != 0)
+
 
 def poll(fds):
     """block until something happens on any file descriptor
@@ -674,9 +727,10 @@ def poll(fds):
                 if inst.args[0] == errno.EINTR:
                     continue
                 raise
-    except ValueError: # out of range file descriptor
+    except ValueError:  # out of range file descriptor
         raise NotImplementedError()
     return sorted(list(set(sum(res, []))))
+
 
 def readpipe(pipe):
     """Read all available data from a pipe."""
@@ -701,6 +755,7 @@ def readpipe(pipe):
         return ''.join(chunks)
     finally:
         fcntl.fcntl(pipe, fcntl.F_SETFL, oldflags)
+
 
 def bindunixsocket(sock, path):
     """Bind the UNIX domain socket to the specified path"""

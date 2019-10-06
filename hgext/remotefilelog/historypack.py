@@ -37,6 +37,7 @@ ANC_P2NODE = 2
 ANC_LINKNODE = 3
 ANC_COPYFROM = 4
 
+
 class historypackstore(basepack.basepackstore):
     INDEXSUFFIX = INDEXSUFFIX
     PACKSUFFIX = PACKSUFFIX
@@ -75,8 +76,10 @@ class historypackstore(basepack.basepackstore):
         raise KeyError((name, node))
 
     def add(self, filename, node, p1, p2, linknode, copyfrom):
-        raise RuntimeError("cannot add to historypackstore (%s:%s)"
-                           % (filename, hex(node)))
+        raise RuntimeError(
+            "cannot add to historypackstore (%s:%s)" % (filename, hex(node))
+        )
+
 
 class historypack(basepack.basepack):
     INDEXSUFFIX = INDEXSUFFIX
@@ -153,17 +156,20 @@ class historypack(basepack.basepack):
 
     def _readentry(self, offset):
         data = self._data
-        entry = struct.unpack(PACKFORMAT, data[offset:offset + PACKENTRYLENGTH])
+        entry = struct.unpack(
+            PACKFORMAT, data[offset : offset + PACKENTRYLENGTH]
+        )
         copyfrom = None
         copyfromlen = entry[ANC_COPYFROM]
         if copyfromlen != 0:
             offset += PACKENTRYLENGTH
-            copyfrom = data[offset:offset + copyfromlen]
+            copyfrom = data[offset : offset + copyfromlen]
         return entry, copyfrom
 
     def add(self, filename, node, p1, p2, linknode, copyfrom):
-        raise RuntimeError("cannot add to historypack (%s:%s)" %
-                           (filename, hex(node)))
+        raise RuntimeError(
+            "cannot add to historypack (%s:%s)" % (filename, hex(node))
+        )
 
     def _findnode(self, name, node):
         if self.VERSION == 0:
@@ -174,9 +180,12 @@ class historypack(basepack.basepack):
         else:
             section = self._findsection(name)
             nodeindexoffset, nodeindexsize = section[3:]
-            entry = self._bisect(node, nodeindexoffset,
-                                 nodeindexoffset + nodeindexsize,
-                                 NODEINDEXENTRYLENGTH)
+            entry = self._bisect(
+                node,
+                nodeindexoffset,
+                nodeindexoffset + nodeindexsize,
+                NODEINDEXENTRYLENGTH,
+            )
             if entry is not None:
                 node, offset = struct.unpack(NODEINDEXFORMAT, entry)
                 entry, copyfrom = self._readentry(offset)
@@ -189,8 +198,9 @@ class historypack(basepack.basepack):
     def _findsection(self, name):
         params = self.params
         namehash = hashlib.sha1(name).digest()
-        fanoutkey = struct.unpack(params.fanoutstruct,
-                                  namehash[:params.fanoutprefix])[0]
+        fanoutkey = struct.unpack(
+            params.fanoutstruct, namehash[: params.fanoutprefix]
+        )[0]
         fanout = self._fanouttable
 
         start = fanout[fanoutkey] + params.indexstart
@@ -209,54 +219,65 @@ class historypack(basepack.basepack):
 
         rawentry = struct.unpack(self.INDEXFORMAT, entry)
         x, offset, size, nodeindexoffset, nodeindexsize = rawentry
-        rawnamelen = self._index[nodeindexoffset:nodeindexoffset +
-                                                 constants.FILENAMESIZE]
+        rawnamelen = self._index[
+            nodeindexoffset : nodeindexoffset + constants.FILENAMESIZE
+        ]
         actualnamelen = struct.unpack('!H', rawnamelen)[0]
         nodeindexoffset += constants.FILENAMESIZE
-        actualname = self._index[nodeindexoffset:nodeindexoffset +
-                                                 actualnamelen]
+        actualname = self._index[
+            nodeindexoffset : nodeindexoffset + actualnamelen
+        ]
         if actualname != name:
-            raise KeyError("found file name %s when looking for %s" %
-                           (actualname, name))
+            raise KeyError(
+                "found file name %s when looking for %s" % (actualname, name)
+            )
         nodeindexoffset += actualnamelen
 
-        filenamelength = struct.unpack('!H', self._data[offset:offset +
-                                                    constants.FILENAMESIZE])[0]
+        filenamelength = struct.unpack(
+            '!H', self._data[offset : offset + constants.FILENAMESIZE]
+        )[0]
         offset += constants.FILENAMESIZE
 
-        actualname = self._data[offset:offset + filenamelength]
+        actualname = self._data[offset : offset + filenamelength]
         offset += filenamelength
 
         if name != actualname:
-            raise KeyError("found file name %s when looking for %s" %
-                           (actualname, name))
+            raise KeyError(
+                "found file name %s when looking for %s" % (actualname, name)
+            )
 
         # Skip entry list size
         offset += ENTRYCOUNTSIZE
 
         nodelistoffset = offset
-        nodelistsize = (size - constants.FILENAMESIZE - filenamelength -
-                        ENTRYCOUNTSIZE)
-        return (name, nodelistoffset, nodelistsize,
-                nodeindexoffset, nodeindexsize)
+        nodelistsize = (
+            size - constants.FILENAMESIZE - filenamelength - ENTRYCOUNTSIZE
+        )
+        return (
+            name,
+            nodelistoffset,
+            nodelistsize,
+            nodeindexoffset,
+            nodeindexsize,
+        )
 
     def _bisect(self, node, start, end, entrylen):
         # Bisect between start and end to find node
         origstart = start
-        startnode = self._index[start:start + NODELENGTH]
-        endnode = self._index[end:end + NODELENGTH]
+        startnode = self._index[start : start + NODELENGTH]
+        endnode = self._index[end : end + NODELENGTH]
 
         if startnode == node:
-            return self._index[start:start + entrylen]
+            return self._index[start : start + entrylen]
         elif endnode == node:
-            return self._index[end:end + entrylen]
+            return self._index[end : end + entrylen]
         else:
             while start < end - entrylen:
                 mid = start + (end - start) // 2
                 mid = mid - ((mid - origstart) % entrylen)
-                midnode = self._index[mid:mid + NODELENGTH]
+                midnode = self._index[mid : mid + NODELENGTH]
                 if midnode == node:
-                    return self._index[mid:mid + entrylen]
+                    return self._index[mid : mid + entrylen]
                 if node > midnode:
                     start = mid
                 elif node < midnode:
@@ -270,8 +291,9 @@ class historypack(basepack.basepack):
     def cleanup(self, ledger):
         entries = ledger.sources.get(self, [])
         allkeys = set(self)
-        repackedkeys = set((e.filename, e.node) for e in entries if
-                           e.historyrepacked)
+        repackedkeys = set(
+            (e.filename, e.node) for e in entries if e.historyrepacked
+        )
 
         if len(allkeys - repackedkeys) == 0:
             if self.path not in ledger.created:
@@ -288,31 +310,41 @@ class historypack(basepack.basepack):
         while offset < self.datasize:
             data = self._data
             # <2 byte len> + <filename>
-            filenamelen = struct.unpack('!H', data[offset:offset +
-                                                   constants.FILENAMESIZE])[0]
+            filenamelen = struct.unpack(
+                '!H', data[offset : offset + constants.FILENAMESIZE]
+            )[0]
             offset += constants.FILENAMESIZE
-            filename = data[offset:offset + filenamelen]
+            filename = data[offset : offset + filenamelen]
             offset += filenamelen
 
-            revcount = struct.unpack('!I', data[offset:offset +
-                                                ENTRYCOUNTSIZE])[0]
+            revcount = struct.unpack(
+                '!I', data[offset : offset + ENTRYCOUNTSIZE]
+            )[0]
             offset += ENTRYCOUNTSIZE
 
             for i in pycompat.xrange(revcount):
-                entry = struct.unpack(PACKFORMAT, data[offset:offset +
-                                                              PACKENTRYLENGTH])
+                entry = struct.unpack(
+                    PACKFORMAT, data[offset : offset + PACKENTRYLENGTH]
+                )
                 offset += PACKENTRYLENGTH
 
-                copyfrom = data[offset:offset + entry[ANC_COPYFROM]]
+                copyfrom = data[offset : offset + entry[ANC_COPYFROM]]
                 offset += entry[ANC_COPYFROM]
 
-                yield (filename, entry[ANC_NODE], entry[ANC_P1NODE],
-                        entry[ANC_P2NODE], entry[ANC_LINKNODE], copyfrom)
+                yield (
+                    filename,
+                    entry[ANC_NODE],
+                    entry[ANC_P1NODE],
+                    entry[ANC_P2NODE],
+                    entry[ANC_LINKNODE],
+                    copyfrom,
+                )
 
                 self._pagedin += PACKENTRYLENGTH
 
             # If we've read a lot of data from the mmap, free some memory.
             self.freememory()
+
 
 class mutablehistorypack(basepack.mutablebasepack):
     """A class for constructing and serializing a histpack file and index.
@@ -389,6 +421,7 @@ class mutablehistorypack(basepack.mutablebasepack):
 
     [1]: new in version 1.
     """
+
     INDEXSUFFIX = INDEXSUFFIX
     PACKSUFFIX = PACKSUFFIX
 
@@ -409,10 +442,9 @@ class mutablehistorypack(basepack.mutablebasepack):
     def add(self, filename, node, p1, p2, linknode, copyfrom):
         copyfrom = copyfrom or ''
         copyfromlen = struct.pack('!H', len(copyfrom))
-        self.fileentries.setdefault(filename, []).append((node, p1, p2,
-                                                          linknode,
-                                                          copyfromlen,
-                                                          copyfrom))
+        self.fileentries.setdefault(filename, []).append(
+            (node, p1, p2, linknode, copyfromlen, copyfrom)
+        )
 
     def _write(self):
         for filename in sorted(self.fileentries):
@@ -421,6 +453,7 @@ class mutablehistorypack(basepack.mutablebasepack):
 
             # Write the file section content
             entrymap = dict((e[0], e) for e in entries)
+
             def parentfunc(node):
                 x, p1, p2, x, x, x = entrymap[node]
                 parents = []
@@ -430,16 +463,21 @@ class mutablehistorypack(basepack.mutablebasepack):
                     parents.append(p2)
                 return parents
 
-            sortednodes = list(reversed(shallowutil.sortnodes(
-                (e[0] for e in entries),
-                parentfunc)))
+            sortednodes = list(
+                reversed(
+                    shallowutil.sortnodes((e[0] for e in entries), parentfunc)
+                )
+            )
 
             # Write the file section header
-            self.writeraw("%s%s%s" % (
-                struct.pack('!H', len(filename)),
-                filename,
-                struct.pack('!I', len(sortednodes)),
-            ))
+            self.writeraw(
+                "%s%s%s"
+                % (
+                    struct.pack('!H', len(filename)),
+                    filename,
+                    struct.pack('!I', len(sortednodes)),
+                )
+            )
 
             sectionlen = constants.FILENAMESIZE + len(filename) + 4
 
@@ -478,14 +516,20 @@ class mutablehistorypack(basepack.mutablebasepack):
         nodeindexformat = self.NODEINDEXFORMAT
         nodeindexlength = self.NODEINDEXENTRYLENGTH
 
-        files = ((hashlib.sha1(filename).digest(), filename, offset, size)
-                for filename, (offset, size) in self.files.iteritems())
+        files = (
+            (hashlib.sha1(filename).digest(), filename, offset, size)
+            for filename, (offset, size) in self.files.iteritems()
+        )
         files = sorted(files)
 
         # node index is after file index size, file index, and node index size
         indexlensize = struct.calcsize('!Q')
-        nodeindexoffset = (indexoffset + indexlensize +
-                           (len(files) * fileindexlength) + indexlensize)
+        nodeindexoffset = (
+            indexoffset
+            + indexlensize
+            + (len(files) * fileindexlength)
+            + indexlensize
+        )
 
         fileindexentries = []
         nodeindexentries = []
@@ -496,16 +540,24 @@ class mutablehistorypack(basepack.mutablebasepack):
 
             nodeindexsize = len(nodelocations) * nodeindexlength
 
-            rawentry = struct.pack(fileindexformat, namehash, offset, size,
-                                   nodeindexoffset, nodeindexsize)
+            rawentry = struct.pack(
+                fileindexformat,
+                namehash,
+                offset,
+                size,
+                nodeindexoffset,
+                nodeindexsize,
+            )
             # Node index
-            nodeindexentries.append(struct.pack(constants.FILENAMESTRUCT,
-                                                len(filename)) + filename)
+            nodeindexentries.append(
+                struct.pack(constants.FILENAMESTRUCT, len(filename)) + filename
+            )
             nodeindexoffset += constants.FILENAMESIZE + len(filename)
 
             for node, location in sorted(nodelocations.iteritems()):
-                nodeindexentries.append(struct.pack(nodeindexformat, node,
-                                                    location))
+                nodeindexentries.append(
+                    struct.pack(nodeindexformat, node, location)
+                )
                 nodecount += 1
 
             nodeindexoffset += len(nodelocations) * nodeindexlength
@@ -513,5 +565,6 @@ class mutablehistorypack(basepack.mutablebasepack):
             fileindexentries.append(rawentry)
 
         nodecountraw = struct.pack('!Q', nodecount)
-        return (''.join(fileindexentries) + nodecountraw +
-                ''.join(nodeindexentries))
+        return (
+            ''.join(fileindexentries) + nodecountraw + ''.join(nodeindexentries)
+        )

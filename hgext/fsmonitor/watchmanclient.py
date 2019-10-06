@@ -13,6 +13,7 @@ from mercurial import util
 
 from . import pywatchman
 
+
 class Unavailable(Exception):
     def __init__(self, msg, warn=True, invalidate=False):
         self.msg = msg
@@ -27,10 +28,12 @@ class Unavailable(Exception):
         else:
             return 'Watchman unavailable: %s' % self.msg
 
+
 class WatchmanNoRoot(Unavailable):
     def __init__(self, root, msg):
         self.root = root
         super(WatchmanNoRoot, self).__init__(msg)
+
 
 class client(object):
     def __init__(self, ui, root, timeout=1.0):
@@ -59,8 +62,9 @@ class client(object):
     def getcurrentclock(self):
         result = self.command('clock')
         if not util.safehasattr(result, 'clock'):
-            raise Unavailable('clock result is missing clock value',
-                              invalidate=True)
+            raise Unavailable(
+                'clock result is missing clock value', invalidate=True
+            )
         return result.clock
 
     def clearconnection(self):
@@ -86,7 +90,8 @@ class client(object):
                 self._watchmanclient = pywatchman.client(
                     timeout=self._timeout,
                     useImmutableBser=True,
-                    watchman_exe=watchman_exe)
+                    watchman_exe=watchman_exe,
+                )
             return self._watchmanclient.query(*watchmanargs)
         except pywatchman.CommandError as ex:
             if 'unable to resolve root' in ex.msg:

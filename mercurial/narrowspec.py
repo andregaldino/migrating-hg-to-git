@@ -8,9 +8,7 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .interfaces import (
-    repository,
-)
+from .interfaces import repository
 from . import (
     error,
     match as matchmod,
@@ -36,6 +34,7 @@ VALID_PREFIXES = (
     b'rootfilesin:',
 )
 
+
 def normalizesplitpattern(kind, pat):
     """Returns the normalized version of a pattern and kind.
 
@@ -45,12 +44,14 @@ def normalizesplitpattern(kind, pat):
     _validatepattern(pat)
     return kind, pat
 
+
 def _numlines(s):
     """Returns the number of lines in s, including ending empty lines."""
     # We use splitlines because it is Unicode-friendly and thus Python 3
     # compatible. However, it does not count empty lines at the end, so trick
     # it by adding a character at the end.
     return len((s + 'x').splitlines())
+
 
 def _validatepattern(pat):
     """Validates the pattern and aborts if it is invalid.
@@ -68,6 +69,7 @@ def _validatepattern(pat):
     if '.' in components or '..' in components:
         raise error.Abort(_('"." and ".." are not allowed in narrowspec paths'))
 
+
 def normalizepattern(pattern, defaultkind='path'):
     """Returns the normalized version of a text-format pattern.
 
@@ -75,6 +77,7 @@ def normalizepattern(pattern, defaultkind='path'):
     """
     kind, pat = matchmod._patsplit(pattern, defaultkind)
     return '%s:%s' % normalizesplitpattern(kind, pat)
+
 
 def parsepatterns(pats):
     """Parses an iterable of patterns into a typed pattern set.
@@ -91,6 +94,7 @@ def parsepatterns(pats):
     validatepatterns(res)
     return res
 
+
 def validatepatterns(pats):
     """Validate that patterns are in the expected data structure and format.
 
@@ -102,17 +106,23 @@ def validatepatterns(pats):
     prefixed pattern representation (but can't necessarily be fully trusted).
     """
     if not isinstance(pats, set):
-        raise error.ProgrammingError('narrow patterns should be a set; '
-                                     'got %r' % pats)
+        raise error.ProgrammingError(
+            'narrow patterns should be a set; ' 'got %r' % pats
+        )
 
     for pat in pats:
         if not pat.startswith(VALID_PREFIXES):
             # Use a Mercurial exception because this can happen due to user
             # bugs (e.g. manually updating spec file).
-            raise error.Abort(_('invalid prefix on narrow pattern: %s') % pat,
-                              hint=_('narrow patterns must begin with one of '
-                                     'the following: %s') %
-                                   ', '.join(VALID_PREFIXES))
+            raise error.Abort(
+                _('invalid prefix on narrow pattern: %s') % pat,
+                hint=_(
+                    'narrow patterns must begin with one of '
+                    'the following: %s'
+                )
+                % ', '.join(VALID_PREFIXES),
+            )
+
 
 def format(includes, excludes):
     output = '[include]\n'
@@ -123,26 +133,34 @@ def format(includes, excludes):
         output += e + '\n'
     return output
 
+
 def match(root, include=None, exclude=None):
     if not include:
         # Passing empty include and empty exclude to matchmod.match()
         # gives a matcher that matches everything, so explicitly use
         # the nevermatcher.
         return matchmod.never()
-    return matchmod.match(root, '', [], include=include or [],
-                          exclude=exclude or [])
+    return matchmod.match(
+        root, '', [], include=include or [], exclude=exclude or []
+    )
+
 
 def parseconfig(ui, spec):
     # maybe we should care about the profiles returned too
     includepats, excludepats, profiles = sparse.parseconfig(ui, spec, 'narrow')
     if profiles:
-        raise error.Abort(_("including other spec files using '%include' is not"
-                            " supported in narrowspec"))
+        raise error.Abort(
+            _(
+                "including other spec files using '%include' is not"
+                " supported in narrowspec"
+            )
+        )
 
     validatepatterns(includepats)
     validatepatterns(excludepats)
 
     return includepats, excludepats
+
 
 def load(repo):
     # Treat "narrowspec does not exist" the same as "narrowspec file exists
@@ -150,15 +168,18 @@ def load(repo):
     spec = repo.svfs.tryread(FILENAME)
     return parseconfig(repo.ui, spec)
 
+
 def save(repo, includepats, excludepats):
     validatepatterns(includepats)
     validatepatterns(excludepats)
     spec = format(includepats, excludepats)
     repo.svfs.write(FILENAME, spec)
 
+
 def copytoworkingcopy(repo):
     spec = repo.svfs.read(FILENAME)
     repo.vfs.write(DIRSTATE_FILENAME, spec)
+
 
 def savebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
@@ -167,10 +188,12 @@ def savebackup(repo, backupname):
     svfs.tryunlink(backupname)
     util.copyfile(svfs.join(FILENAME), svfs.join(backupname), hardlink=True)
 
+
 def restorebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
     util.rename(repo.svfs.join(backupname), repo.svfs.join(FILENAME))
+
 
 def savewcbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
@@ -179,8 +202,10 @@ def savewcbackup(repo, backupname):
     vfs.tryunlink(backupname)
     # It may not exist in old repos
     if vfs.exists(DIRSTATE_FILENAME):
-        util.copyfile(vfs.join(DIRSTATE_FILENAME), vfs.join(backupname),
-                      hardlink=True)
+        util.copyfile(
+            vfs.join(DIRSTATE_FILENAME), vfs.join(backupname), hardlink=True
+        )
+
 
 def restorewcbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
@@ -189,10 +214,12 @@ def restorewcbackup(repo, backupname):
     if repo.vfs.exists(backupname):
         util.rename(repo.vfs.join(backupname), repo.vfs.join(DIRSTATE_FILENAME))
 
+
 def clearwcbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
     repo.vfs.tryunlink(backupname)
+
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     r""" Restricts the patterns according to repo settings,
@@ -247,11 +274,13 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
         res_includes = set(req_includes)
     return res_includes, res_excludes, invalid_includes
 
+
 # These two are extracted for extensions (specifically for Google's CitC file
 # system)
 def _deletecleanfiles(repo, files):
     for f in files:
         repo.wvfs.unlinkpath(f)
+
 
 def _writeaddedfiles(repo, pctx, files):
     actions = merge.emptyactions()
@@ -260,8 +289,15 @@ def _writeaddedfiles(repo, pctx, files):
     for f in files:
         if not repo.wvfs.exists(f):
             addgaction((f, (mf.flags(f), False), "narrowspec updated"))
-    merge.applyupdates(repo, actions, wctx=repo[None],
-                       mctx=repo['.'], overwrite=False, wantfiledata=False)
+    merge.applyupdates(
+        repo,
+        actions,
+        wctx=repo[None],
+        mctx=repo['.'],
+        overwrite=False,
+        wantfiledata=False,
+    )
+
 
 def checkworkingcopynarrowspec(repo):
     # Avoid infinite recursion when updating the working copy
@@ -270,8 +306,11 @@ def checkworkingcopynarrowspec(repo):
     storespec = repo.svfs.tryread(FILENAME)
     wcspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     if wcspec != storespec:
-        raise error.Abort(_("working copy's narrowspec is stale"),
-                          hint=_("run 'hg tracked --update-working-copy'"))
+        raise error.Abort(
+            _("working copy's narrowspec is stale"),
+            hint=_("run 'hg tracked --update-working-copy'"),
+        )
+
 
 def updateworkingcopy(repo, assumeclean=False):
     """updates the working copy and dirstate from the store narrowspec
@@ -291,8 +330,9 @@ def updateworkingcopy(repo, assumeclean=False):
     removedmatch = matchmod.differencematcher(oldmatch, newmatch)
 
     ds = repo.dirstate
-    lookup, status = ds.status(removedmatch, subrepos=[], ignored=True,
-                               clean=True, unknown=True)
+    lookup, status = ds.status(
+        removedmatch, subrepos=[], ignored=True, clean=True, unknown=True
+    )
     trackeddirty = status.modified + status.added
     clean = status.clean
     if assumeclean:

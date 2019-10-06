@@ -25,13 +25,16 @@ configitem = registrar.configitem(configtable)
 configitem(b'sshpeer', b'mode', default=None)
 configitem(b'sshpeer', b'handshake-mode', default=None)
 
+
 class bannerserver(wireprotoserver.sshserver):
     """Server that sends a banner to stdout."""
+
     def serve_forever(self):
         for i in range(10):
             self._fout.write(b'banner: line %d\n' % i)
 
         super(bannerserver, self).serve_forever()
+
 
 class prehelloserver(wireprotoserver.sshserver):
     """Tests behavior when connecting to <0.9.1 servers.
@@ -41,6 +44,7 @@ class prehelloserver(wireprotoserver.sshserver):
     to SSH servers. This mock server tests behavior of the handshake
     when ``hello`` is not supported.
     """
+
     def serve_forever(self):
         l = self._fin.readline()
         assert l == b'hello\n'
@@ -48,12 +52,14 @@ class prehelloserver(wireprotoserver.sshserver):
         wireprotoserver._sshv1respondbytes(self._fout, b'')
         l = self._fin.readline()
         assert l == b'between\n'
-        proto = wireprotoserver.sshv1protocolhandler(self._ui, self._fin,
-                                                     self._fout)
+        proto = wireprotoserver.sshv1protocolhandler(
+            self._ui, self._fin, self._fout
+        )
         rsp = wireprotov1server.dispatch(self._repo, proto, b'between')
         wireprotoserver._sshv1respondbytes(self._fout, rsp.data)
 
         super(prehelloserver, self).serve_forever()
+
 
 def performhandshake(orig, ui, stdin, stdout, stderr):
     """Wrapped version of sshpeer._performhandshake to send extra commands."""
@@ -73,8 +79,8 @@ def performhandshake(orig, ui, stdin, stdout, stderr):
         stdin.flush()
         return orig(ui, stdin, stdout, stderr)
     else:
-        raise error.ProgrammingError(b'unknown HANDSHAKECOMMANDMODE: %s' %
-                                     mode)
+        raise error.ProgrammingError(b'unknown HANDSHAKECOMMANDMODE: %s' % mode)
+
 
 def extsetup(ui):
     # It's easier for tests to define the server behavior via environment

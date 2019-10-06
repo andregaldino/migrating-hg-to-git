@@ -43,22 +43,25 @@ fetchmisses = 0
 
 _lfsmod = None
 
+
 def getcachekey(reponame, file, id):
     pathhash = node.hex(hashlib.sha1(file).digest())
     return os.path.join(reponame, pathhash[:2], pathhash[2:], id)
+
 
 def getlocalkey(file, id):
     pathhash = node.hex(hashlib.sha1(file).digest())
     return os.path.join(pathhash, id)
 
-def peersetup(ui, peer):
 
+def peersetup(ui, peer):
     class remotefilepeer(peer.__class__):
         @wireprotov1peer.batchable
         def x_rfl_getfile(self, file, node):
             if not self.capable('x_rfl_getfile'):
                 raise error.Abort(
-                    'configured remotefile server does not support getfile')
+                    'configured remotefile server does not support getfile'
+                )
             f = wireprotov1peer.future()
             yield {'file': file, 'node': node}, f
             code, data = f.value.split('\0', 1)
@@ -69,8 +72,10 @@ def peersetup(ui, peer):
         @wireprotov1peer.batchable
         def x_rfl_getflogheads(self, path):
             if not self.capable('x_rfl_getflogheads'):
-                raise error.Abort('configured remotefile server does not '
-                                  'support getflogheads')
+                raise error.Abort(
+                    'configured remotefile server does not '
+                    'support getflogheads'
+                )
             f = wireprotov1peer.future()
             yield {'path': path}, f
             heads = f.value.split('\n') if f.value else []
@@ -79,13 +84,17 @@ def peersetup(ui, peer):
         def _updatecallstreamopts(self, command, opts):
             if command != 'getbundle':
                 return
-            if (constants.NETWORK_CAP_LEGACY_SSH_GETFILES
-                not in self.capabilities()):
+            if (
+                constants.NETWORK_CAP_LEGACY_SSH_GETFILES
+                not in self.capabilities()
+            ):
                 return
             if not util.safehasattr(self, '_localrepo'):
                 return
-            if (constants.SHALLOWREPO_REQUIREMENT
-                not in self._localrepo.requirements):
+            if (
+                constants.SHALLOWREPO_REQUIREMENT
+                not in self._localrepo.requirements
+            ):
                 return
 
             bundlecaps = opts.get('bundlecaps')
@@ -114,8 +123,9 @@ def peersetup(ui, peer):
 
         def _sendrequest(self, command, args, **opts):
             self._updatecallstreamopts(command, args)
-            return super(remotefilepeer, self)._sendrequest(command, args,
-                                                            **opts)
+            return super(remotefilepeer, self)._sendrequest(
+                command, args, **opts
+            )
 
         def _callstream(self, command, **opts):
             supertype = super(remotefilepeer, self)
@@ -125,11 +135,13 @@ def peersetup(ui, peer):
 
     peer.__class__ = remotefilepeer
 
+
 class cacheconnection(object):
     """The connection for communicating with the remote cache. Performs
     gets and sets by communicating with an external process that has the
     cache-specific implementation.
     """
+
     def __init__(self):
         self.pipeo = self.pipei = self.pipee = None
         self.subprocess = None
@@ -138,8 +150,9 @@ class cacheconnection(object):
     def connect(self, cachecommand):
         if self.pipeo:
             raise error.Abort(_("cache connection already open"))
-        self.pipei, self.pipeo, self.pipee, self.subprocess = (
-            procutil.popen4(cachecommand))
+        self.pipei, self.pipeo, self.pipee, self.subprocess = procutil.popen4(
+            cachecommand
+        )
         self.connected = True
 
     def close(self):
@@ -148,6 +161,7 @@ class cacheconnection(object):
                 pipe.close()
             except Exception:
                 pass
+
         if self.connected:
             try:
                 self.pipei.write("exit\n")
@@ -190,8 +204,10 @@ class cacheconnection(object):
 
         return result
 
+
 def _getfilesbatch(
-        remote, receivemissing, progresstick, missed, idmap, batchsize):
+    remote, receivemissing, progresstick, missed, idmap, batchsize
+):
     # Over http(s), iterbatch is a streamy method and we can start
     # looking at results early. This means we send one (potentially
     # large) request, but then we show nice progress as we process
@@ -205,10 +221,11 @@ def _getfilesbatch(
     with remote.commandexecutor() as e:
         futures = []
         for m in missed:
-            futures.append(e.callcommand('x_rfl_getfile', {
-                'file': idmap[m],
-                'node': m[-40:]
-            }))
+            futures.append(
+                e.callcommand(
+                    'x_rfl_getfile', {'file': idmap[m], 'node': m[-40:]}
+                )
+            )
 
         for i, m in enumerate(missed):
             r = futures[i].result()
@@ -218,8 +235,10 @@ def _getfilesbatch(
             receivemissing(io.BytesIO('%d\n%s' % (len(r), r)), file_, node)
             progresstick()
 
+
 def _getfiles_optimistic(
-    remote, receivemissing, progresstick, missed, idmap, step):
+    remote, receivemissing, progresstick, missed, idmap, step
+):
     remote._callstream("x_rfl_getfiles")
     i = 0
     pipeo = remote._pipeo
@@ -248,8 +267,10 @@ def _getfiles_optimistic(
     pipeo.write('\n')
     pipeo.flush()
 
+
 def _getfiles_threaded(
-    remote, receivemissing, progresstick, missed, idmap, step):
+    remote, receivemissing, progresstick, missed, idmap, step
+):
     remote._callstream("getfiles")
     pipeo = remote._pipeo
     pipei = remote._pipei
@@ -261,6 +282,7 @@ def _getfiles_threaded(
             sshrequest = "%s%s\n" % (versionid, file)
             pipeo.write(sshrequest)
         pipeo.flush()
+
     writerthread = threading.Thread(target=writer)
     writerthread.daemon = True
     writerthread.start()
@@ -276,9 +298,11 @@ def _getfiles_threaded(
     pipeo.write('\n')
     pipeo.flush()
 
+
 class fileserverclient(object):
     """A client for requesting files from the remote file server.
     """
+
     def __init__(self, repo):
         ui = repo.ui
         self.repo = repo
@@ -290,7 +314,8 @@ class fileserverclient(object):
         # This option causes remotefilelog to pass the full file path to the
         # cacheprocess instead of a hashed key.
         self.cacheprocesspasspath = ui.configbool(
-            "remotefilelog", "cacheprocess.includepath")
+            "remotefilelog", "cacheprocess.includepath"
+        )
 
         self.debugoutput = ui.configbool("remotefilelog", "debug")
 
@@ -341,8 +366,12 @@ class fileserverclient(object):
                 for missingid in idmap:
                     if not missingid in missedset:
                         missed.append(missingid)
-                self.ui.warn(_("warning: cache connection closed early - " +
-                    "falling back to server\n"))
+                self.ui.warn(
+                    _(
+                        "warning: cache connection closed early - "
+                        + "falling back to server\n"
+                    )
+                )
                 break
             if missingid == "0":
                 break
@@ -359,8 +388,14 @@ class fileserverclient(object):
 
         fromcache = total - len(missed)
         progress.update(fromcache, total=total)
-        self.ui.log("remotefilelog", "remote cache hit rate is %r of %r\n",
-                    fromcache, total, hit=fromcache, total=total)
+        self.ui.log(
+            "remotefilelog",
+            "remote cache hit rate is %r of %r\n",
+            fromcache,
+            total,
+            hit=fromcache,
+            total=total,
+        )
 
         oldumask = os.umask(0o002)
         try:
@@ -375,46 +410,69 @@ class fileserverclient(object):
                     with self._connect() as conn:
                         remote = conn.peer
                         if remote.capable(
-                                constants.NETWORK_CAP_LEGACY_SSH_GETFILES):
+                            constants.NETWORK_CAP_LEGACY_SSH_GETFILES
+                        ):
                             if not isinstance(remote, _sshv1peer):
-                                raise error.Abort('remotefilelog requires ssh '
-                                                  'servers')
-                            step = self.ui.configint('remotefilelog',
-                                                     'getfilesstep')
-                            getfilestype = self.ui.config('remotefilelog',
-                                                          'getfilestype')
+                                raise error.Abort(
+                                    'remotefilelog requires ssh ' 'servers'
+                                )
+                            step = self.ui.configint(
+                                'remotefilelog', 'getfilesstep'
+                            )
+                            getfilestype = self.ui.config(
+                                'remotefilelog', 'getfilestype'
+                            )
                             if getfilestype == 'threaded':
                                 _getfiles = _getfiles_threaded
                             else:
                                 _getfiles = _getfiles_optimistic
-                            _getfiles(remote, self.receivemissing,
-                                      progress.increment, missed, idmap, step)
+                            _getfiles(
+                                remote,
+                                self.receivemissing,
+                                progress.increment,
+                                missed,
+                                idmap,
+                                step,
+                            )
                         elif remote.capable("x_rfl_getfile"):
                             if remote.capable('batch'):
                                 batchdefault = 100
                             else:
                                 batchdefault = 10
                             batchsize = self.ui.configint(
-                                'remotefilelog', 'batchsize', batchdefault)
+                                'remotefilelog', 'batchsize', batchdefault
+                            )
                             self.ui.debug(
                                 b'requesting %d files from '
-                                b'remotefilelog server...\n' % len(missed))
+                                b'remotefilelog server...\n' % len(missed)
+                            )
                             _getfilesbatch(
-                                remote, self.receivemissing, progress.increment,
-                                missed, idmap, batchsize)
+                                remote,
+                                self.receivemissing,
+                                progress.increment,
+                                missed,
+                                idmap,
+                                batchsize,
+                            )
                         else:
-                            raise error.Abort("configured remotefilelog server"
-                                             " does not support remotefilelog")
+                            raise error.Abort(
+                                "configured remotefilelog server"
+                                " does not support remotefilelog"
+                            )
 
-                    self.ui.log("remotefilefetchlog",
-                                "Success\n",
-                                fetched_files = progress.pos - fromcache,
-                                total_to_fetch = total - fromcache)
+                    self.ui.log(
+                        "remotefilefetchlog",
+                        "Success\n",
+                        fetched_files=progress.pos - fromcache,
+                        total_to_fetch=total - fromcache,
+                    )
                 except Exception:
-                    self.ui.log("remotefilefetchlog",
-                                "Fail\n",
-                                fetched_files = progress.pos - fromcache,
-                                total_to_fetch = total - fromcache)
+                    self.ui.log(
+                        "remotefilefetchlog",
+                        "Fail\n",
+                        fetched_files=progress.pos - fromcache,
+                        total_to_fetch=total - fromcache,
+                    )
                     raise
                 finally:
                     self.ui.verbose = verbose
@@ -432,17 +490,21 @@ class fileserverclient(object):
     def receivemissing(self, pipe, filename, node):
         line = pipe.readline()[:-1]
         if not line:
-            raise error.ResponseError(_("error downloading file contents:"),
-                                      _("connection closed early"))
+            raise error.ResponseError(
+                _("error downloading file contents:"),
+                _("connection closed early"),
+            )
         size = int(line)
         data = pipe.read(size)
         if len(data) != size:
-            raise error.ResponseError(_("error downloading file contents:"),
-                                      _("only received %s of %s bytes")
-                                      % (len(data), size))
+            raise error.ResponseError(
+                _("error downloading file contents:"),
+                _("only received %s of %s bytes") % (len(data), size),
+            )
 
-        self.writedata.addremotefilelognode(filename, bin(node),
-                                             zlib.decompress(data))
+        self.writedata.addremotefilelognode(
+            filename, bin(node), zlib.decompress(data)
+        )
 
     def connect(self):
         if self.cacheprocess:
@@ -477,26 +539,33 @@ class fileserverclient(object):
 
     def close(self):
         if fetches:
-            msg = ("%d files fetched over %d fetches - " +
-                   "(%d misses, %0.2f%% hit ratio) over %0.2fs\n") % (
-                       fetched,
-                       fetches,
-                       fetchmisses,
-                       float(fetched - fetchmisses) / float(fetched) * 100.0,
-                       fetchcost)
+            msg = (
+                "%d files fetched over %d fetches - "
+                + "(%d misses, %0.2f%% hit ratio) over %0.2fs\n"
+            ) % (
+                fetched,
+                fetches,
+                fetchmisses,
+                float(fetched - fetchmisses) / float(fetched) * 100.0,
+                fetchcost,
+            )
             if self.debugoutput:
                 self.ui.warn(msg)
-            self.ui.log("remotefilelog.prefetch", msg.replace("%", "%%"),
+            self.ui.log(
+                "remotefilelog.prefetch",
+                msg.replace("%", "%%"),
                 remotefilelogfetched=fetched,
                 remotefilelogfetches=fetches,
                 remotefilelogfetchmisses=fetchmisses,
-                remotefilelogfetchtime=fetchcost * 1000)
+                remotefilelogfetchtime=fetchcost * 1000,
+            )
 
         if self.remotecache.connected:
             self.remotecache.close()
 
-    def prefetch(self, fileids, force=False, fetchdata=True,
-                 fetchhistory=False):
+    def prefetch(
+        self, fileids, force=False, fetchdata=True, fetchhistory=False
+    ):
         """downloads the given file versions to the cache
         """
         repo = self.repo
@@ -506,8 +575,11 @@ class fileserverclient(object):
             # - we don't use .hgtags
             # - workingctx produces ids with length 42,
             #   which we skip since they aren't in any cache
-            if (file == '.hgtags' or len(id) == 42
-                or not repo.shallowmatch(file)):
+            if (
+                file == '.hgtags'
+                or len(id) == 42
+                or not repo.shallowmatch(file)
+            ):
                 continue
 
             idstocheck.append((file, bin(id)))
@@ -517,7 +589,8 @@ class fileserverclient(object):
         if force:
             datastore = contentstore.unioncontentstore(*repo.shareddatastores)
             historystore = metadatastore.unionmetadatastore(
-                *repo.sharedhistorystores)
+                *repo.sharedhistorystores
+            )
 
         missingids = set()
         if fetchdata:
@@ -531,9 +604,12 @@ class fileserverclient(object):
         if nullids:
             missingids = [(f, id) for f, id in missingids if id != nullid]
             repo.ui.develwarn(
-                ('remotefilelog not fetching %d null revs'
-                 ' - this is likely hiding bugs' % nullids),
-                config='remotefilelog-ext')
+                (
+                    'remotefilelog not fetching %d null revs'
+                    ' - this is likely hiding bugs' % nullids
+                ),
+                config='remotefilelog-ext',
+            )
         if missingids:
             global fetches, fetched, fetchcost
             fetches += 1
@@ -542,8 +618,9 @@ class fileserverclient(object):
             # let's log that information for debugging.
             if fetches >= 15 and fetches < 18:
                 if fetches == 15:
-                    fetchwarning = self.ui.config('remotefilelog',
-                                                  'fetchwarning')
+                    fetchwarning = self.ui.config(
+                        'remotefilelog', 'fetchwarning'
+                    )
                     if fetchwarning:
                         self.ui.warn(fetchwarning + '\n')
                 self.logstacktrace()
@@ -552,14 +629,16 @@ class fileserverclient(object):
             start = time.time()
             missingids = self.request(missingids)
             if missingids:
-                raise error.Abort(_("unable to download %d files") %
-                                  len(missingids))
+                raise error.Abort(
+                    _("unable to download %d files") % len(missingids)
+                )
             fetchcost += time.time() - start
             self._lfsprefetch(fileids)
 
     def _lfsprefetch(self, fileids):
         if not _lfsmod or not util.safehasattr(
-                self.repo.svfs, 'lfslocalblobstore'):
+            self.repo.svfs, 'lfslocalblobstore'
+        ):
             return
         if not _lfsmod.wrapper.candownload(self.repo):
             return
@@ -580,5 +659,9 @@ class fileserverclient(object):
 
     def logstacktrace(self):
         import traceback
-        self.ui.log('remotefilelog', 'excess remotefilelog fetching:\n%s\n',
-                    ''.join(traceback.format_stack()))
+
+        self.ui.log(
+            'remotefilelog',
+            'excess remotefilelog fetching:\n%s\n',
+            ''.join(traceback.format_stack()),
+        )

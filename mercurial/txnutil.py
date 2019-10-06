@@ -9,15 +9,15 @@ from __future__ import absolute_import
 
 import errno
 
-from . import (
-    encoding,
-)
+from . import encoding
+
 
 def mayhavepending(root):
     '''return whether 'root' may have pending changes, which are
     visible to this process.
     '''
     return root == encoding.environ.get('HG_PENDING')
+
 
 def trypending(root, vfs, filename, **kwargs):
     '''Open  file to be read according to HG_PENDING environment variable

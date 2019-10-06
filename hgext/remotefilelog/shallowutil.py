@@ -31,17 +31,21 @@ from . import constants
 if not pycompat.iswindows:
     import grp
 
+
 def isenabled(repo):
     """returns whether the repository is remotefilelog enabled or not"""
     return constants.SHALLOWREPO_REQUIREMENT in repo.requirements
+
 
 def getcachekey(reponame, file, id):
     pathhash = node.hex(hashlib.sha1(file).digest())
     return os.path.join(reponame, pathhash[:2], pathhash[2:], id)
 
+
 def getlocalkey(file, id):
     pathhash = node.hex(hashlib.sha1(file).digest())
     return os.path.join(pathhash, id)
+
 
 def getcachepath(ui, allowempty=False):
     cachepath = ui.config("remotefilelog", "cachepath")
@@ -49,9 +53,11 @@ def getcachepath(ui, allowempty=False):
         if allowempty:
             return None
         else:
-            raise error.Abort(_("could not find config option "
-                                "remotefilelog.cachepath"))
+            raise error.Abort(
+                _("could not find config option " "remotefilelog.cachepath")
+            )
     return util.expandpath(cachepath)
+
 
 def getcachepackpath(repo, category):
     cachepath = getcachepath(repo.ui)
@@ -60,8 +66,10 @@ def getcachepackpath(repo, category):
     else:
         return os.path.join(cachepath, repo.name, 'packs')
 
+
 def getlocalpackpath(base, category):
     return os.path.join(base, 'packs', category)
+
 
 def createrevlogtext(text, copyfrom=None, copyrev=None):
     """returns a string that matches the revlog contents in a
@@ -76,13 +84,15 @@ def createrevlogtext(text, copyfrom=None, copyrev=None):
 
     return text
 
+
 def parsemeta(text):
     """parse mercurial filelog metadata"""
     meta, size = storageutil.parsemeta(text)
     if text.startswith('\1\n'):
         s = text.index('\1\n', 2)
-        text = text[s + 2:]
+        text = text[s + 2 :]
     return meta or {}, text
+
 
 def sumdicts(*dicts):
     """Adds all the values of *dicts together into one dictionary. This assumes
@@ -96,6 +106,7 @@ def sumdicts(*dicts):
             result[k] += v
     return result
 
+
 def prefixkeys(dict, prefix):
     """Returns ``dict`` with ``prefix`` prepended to all its keys."""
     result = {}
@@ -103,10 +114,12 @@ def prefixkeys(dict, prefix):
         result[prefix + k] = v
     return result
 
+
 def reportpackmetrics(ui, prefix, *stores):
     dicts = [s.getmetrics() for s in stores]
     dict = prefixkeys(sumdicts(*dicts), prefix + '_')
     ui.log(prefix + "_packsizes", "\n", **pycompat.strkwargs(dict))
+
 
 def _parsepackmeta(metabuf):
     """parse datapack meta, bytes (<metadata-list>) -> dict
@@ -121,18 +134,19 @@ def _parsepackmeta(metabuf):
     offset = 0
     buflen = len(metabuf)
     while buflen - offset >= 3:
-        key = metabuf[offset:offset + 1]
+        key = metabuf[offset : offset + 1]
         offset += 1
         metalen = struct.unpack_from('!H', metabuf, offset)[0]
         offset += 2
         if offset + metalen > buflen:
             raise ValueError('corrupted metadata: incomplete buffer')
-        value = metabuf[offset:offset + metalen]
+        value = metabuf[offset : offset + metalen]
         metadict[key] = value
         offset += metalen
     if offset != buflen:
         raise ValueError('corrupted metadata: redundant data')
     return metadict
+
 
 def _buildpackmeta(metadict):
     """reverse of _parsepackmeta, dict -> bytes (<metadata-list>)
@@ -148,9 +162,10 @@ def _buildpackmeta(metadict):
     for k, v in sorted((metadict or {}).iteritems()):
         if len(k) != 1:
             raise error.ProgrammingError('packmeta: illegal key: %s' % k)
-        if len(v) > 0xfffe:
-            raise ValueError('metadata value is too long: 0x%x > 0xfffe'
-                             % len(v))
+        if len(v) > 0xFFFE:
+            raise ValueError(
+                'metadata value is too long: 0x%x > 0xfffe' % len(v)
+            )
         metabuf += k
         metabuf += struct.pack('!H', len(v))
         metabuf += v
@@ -158,10 +173,12 @@ def _buildpackmeta(metadict):
     # only 256 keys, and for each value, len(value) <= 0xfffe.
     return metabuf
 
+
 _metaitemtypes = {
     constants.METAKEYFLAG: (int, pycompat.long),
     constants.METAKEYSIZE: (int, pycompat.long),
 }
+
 
 def buildpackmeta(metadict):
     """like _buildpackmeta, but typechecks metadict and normalize it.
@@ -183,6 +200,7 @@ def buildpackmeta(metadict):
         newmeta[k] = v
     return _buildpackmeta(newmeta)
 
+
 def parsepackmeta(metabuf):
     """like _parsepackmeta, but convert fields to desired types automatically.
 
@@ -195,13 +213,15 @@ def parsepackmeta(metabuf):
             metadict[k] = bin2int(v)
     return metadict
 
+
 def int2bin(n):
     """convert a non-negative integer to raw binary buffer"""
     buf = bytearray()
     while n > 0:
-        buf.insert(0, n & 0xff)
+        buf.insert(0, n & 0xFF)
         n >>= 8
     return bytes(buf)
+
 
 def bin2int(buf):
     """the reverse of int2bin, convert a binary buffer to an integer"""
@@ -210,6 +230,7 @@ def bin2int(buf):
         x <<= 8
         x |= b
     return x
+
 
 def parsesizeflags(raw):
     """given a remotefilelog blob, return (headersize, rawtextsize, flags)
@@ -227,12 +248,13 @@ def parsesizeflags(raw):
             if header.startswith('v1\n'):
                 for s in header.split('\n'):
                     if s.startswith(constants.METAKEYSIZE):
-                        size = int(s[len(constants.METAKEYSIZE):])
+                        size = int(s[len(constants.METAKEYSIZE) :])
                     elif s.startswith(constants.METAKEYFLAG):
-                        flags = int(s[len(constants.METAKEYFLAG):])
+                        flags = int(s[len(constants.METAKEYFLAG) :])
             else:
-                raise RuntimeError('unsupported remotefilelog header: %s'
-                                   % header)
+                raise RuntimeError(
+                    'unsupported remotefilelog header: %s' % header
+                )
         else:
             # v0, str(int(size)) is the header
             size = int(header)
@@ -241,6 +263,7 @@ def parsesizeflags(raw):
     if size is None:
         raise RuntimeError(r"unexpected remotefilelog header: no size found")
     return index + 1, size, flags
+
 
 def buildfileblobheader(size, flags, version=None):
     """return the header of a remotefilelog blob.
@@ -254,9 +277,12 @@ def buildfileblobheader(size, flags, version=None):
     if version is None:
         version = int(bool(flags))
     if version == 1:
-        header = ('v1\n%s%d\n%s%d'
-                  % (constants.METAKEYSIZE, size,
-                     constants.METAKEYFLAG, flags))
+        header = 'v1\n%s%d\n%s%d' % (
+            constants.METAKEYSIZE,
+            size,
+            constants.METAKEYFLAG,
+            flags,
+        )
     elif version == 0:
         if flags:
             raise error.ProgrammingError('fileblob v0 does not support flag')
@@ -264,6 +290,7 @@ def buildfileblobheader(size, flags, version=None):
     else:
         raise error.ProgrammingError('unknown fileblob version %d' % version)
     return header
+
 
 def ancestormap(raw):
     offset, size, flags = parsesizeflags(raw)
@@ -273,16 +300,17 @@ def ancestormap(raw):
     while start < len(raw):
         divider = raw.index('\0', start + 80)
 
-        currentnode = raw[start:(start + 20)]
-        p1 = raw[(start + 20):(start + 40)]
-        p2 = raw[(start + 40):(start + 60)]
-        linknode = raw[(start + 60):(start + 80)]
-        copyfrom = raw[(start + 80):divider]
+        currentnode = raw[start : (start + 20)]
+        p1 = raw[(start + 20) : (start + 40)]
+        p2 = raw[(start + 40) : (start + 60)]
+        linknode = raw[(start + 60) : (start + 80)]
+        copyfrom = raw[(start + 80) : divider]
 
         mapping[currentnode] = (p1, p2, linknode, copyfrom)
         start = divider + 1
 
     return mapping
+
 
 def readfile(path):
     f = open(path, 'rb')
@@ -298,11 +326,13 @@ def readfile(path):
     finally:
         f.close()
 
+
 def unlinkfile(filepath):
     if pycompat.iswindows:
         # On Windows, os.unlink cannnot delete readonly files
         os.chmod(filepath, stat.S_IWUSR)
     os.unlink(filepath)
+
 
 def renamefile(source, destination):
     if pycompat.iswindows:
@@ -314,6 +344,7 @@ def renamefile(source, destination):
             os.unlink(destination)
 
     os.rename(source, destination)
+
 
 def writefile(path, content, readonly=False):
     dirname, filename = os.path.split(path)
@@ -352,6 +383,7 @@ def writefile(path, content, readonly=False):
             pass
         raise
 
+
 def sortnodes(nodes, parentfunc):
     """Topologically sorts the nodes, using the parentfunc to find
     the parents of nodes."""
@@ -388,23 +420,28 @@ def sortnodes(nodes, parentfunc):
 
     return results
 
+
 def readexactly(stream, n):
     '''read n bytes from stream.read and abort if less was available'''
     s = stream.read(n)
     if len(s) < n:
-        raise error.Abort(_("stream ended unexpectedly"
-                           " (got %d bytes, expected %d)")
-                          % (len(s), n))
+        raise error.Abort(
+            _("stream ended unexpectedly" " (got %d bytes, expected %d)")
+            % (len(s), n)
+        )
     return s
+
 
 def readunpack(stream, fmt):
     data = readexactly(stream, struct.calcsize(fmt))
     return struct.unpack(fmt, data)
 
+
 def readpath(stream):
     rawlen = readexactly(stream, constants.FILENAMESIZE)
     pathlen = struct.unpack(constants.FILENAMESTRUCT, rawlen)[0]
     return readexactly(stream, pathlen)
+
 
 def readnodelist(stream):
     rawlen = readexactly(stream, constants.NODECOUNTSIZE)
@@ -412,11 +449,13 @@ def readnodelist(stream):
     for i in pycompat.xrange(nodecount):
         yield readexactly(stream, constants.NODESIZE)
 
+
 def readpathlist(stream):
     rawlen = readexactly(stream, constants.PATHCOUNTSIZE)
     pathcount = struct.unpack(constants.PATHCOUNTSTRUCT, rawlen)[0]
     for i in pycompat.xrange(pathcount):
         yield readpath(stream)
+
 
 def getgid(groupname):
     try:
@@ -424,6 +463,7 @@ def getgid(groupname):
         return gid
     except KeyError:
         return None
+
 
 def setstickygroupdir(path, gid, warn=None):
     if gid is None:
@@ -434,6 +474,7 @@ def setstickygroupdir(path, gid, warn=None):
     except (IOError, OSError) as ex:
         if warn:
             warn(_('unable to chown/chmod on %s: %s\n') % (path, ex))
+
 
 def mkstickygroupdir(ui, path):
     """Creates the given directory (if it doesn't exist) and give it a
@@ -479,11 +520,13 @@ def mkstickygroupdir(ui, path):
     finally:
         os.umask(oldumask)
 
+
 def getusername(ui):
     try:
         return stringutil.shortuser(ui.username())
     except Exception:
         return 'unknown'
+
 
 def getreponame(ui):
     reponame = ui.config('paths', 'default')

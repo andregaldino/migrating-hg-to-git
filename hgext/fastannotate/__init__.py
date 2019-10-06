@@ -149,9 +149,11 @@ def uisetup(ui):
             commands.registercommand()
         elif name == 'hgweb':
             from . import support
+
             support.replacehgwebannotate()
         elif name == 'fctx':
             from . import support
+
             support.replacefctxannotate()
             commands.wrapdefault()
         else:
@@ -160,10 +162,12 @@ def uisetup(ui):
     if ui.configbool('fastannotate', 'server'):
         protocol.serveruisetup(ui)
 
+
 def extsetup(ui):
     # fastannotate has its own locking, without depending on repo lock
     # TODO: avoid mutating this unless the specific repo has it enabled
     localrepo.localrepository._wlockfreeprefix.add('fastannotate/')
+
 
 def reposetup(ui, repo):
     if ui.configbool('fastannotate', 'client'):

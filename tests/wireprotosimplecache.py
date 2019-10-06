@@ -19,21 +19,16 @@ from mercurial.interfaces import (
     repository,
     util as interfaceutil,
 )
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
 
 CACHE = None
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem(b'simplecache', b'cacheapi',
-           default=False)
-configitem(b'simplecache', b'cacheobjects',
-           default=False)
-configitem(b'simplecache', b'redirectsfile',
-           default=None)
+configitem(b'simplecache', b'cacheapi', default=False)
+configitem(b'simplecache', b'cacheobjects', default=False)
+configitem(b'simplecache', b'redirectsfile', default=None)
 
 # API handler that makes cached keys available.
 def handlecacherequest(rctx, req, res, checkperm, urlparts):
@@ -60,8 +55,10 @@ def handlecacherequest(rctx, req, res, checkperm, urlparts):
     res.headers[b'Content-Type'] = b'application/mercurial-cbor'
     res.setbodybytes(CACHE[key])
 
+
 def cachedescriptor(req, repo):
     return {}
+
 
 wireprotoserver.API_HANDLERS[b'simplecache'] = {
     b'config': (b'simplecache', b'cacheapi'),
@@ -69,10 +66,12 @@ wireprotoserver.API_HANDLERS[b'simplecache'] = {
     b'apidescriptor': cachedescriptor,
 }
 
+
 @interfaceutil.implementer(repository.iwireprotocolcommandcacher)
 class memorycacher(object):
-    def __init__(self, ui, command, encodefn, redirecttargets, redirecthashes,
-                 req):
+    def __init__(
+        self, ui, command, encodefn, redirecttargets, redirecthashes, req
+    ):
         self.ui = ui
         self.encodefn = encodefn
         self.redirecttargets = redirecttargets
@@ -131,12 +130,16 @@ class memorycacher(object):
 
             url = b'%s/%s' % (self.req.baseurl, b'/'.join(paths))
 
-            #url = b'http://example.com/%s' % self.key
-            self.ui.log(b'simplecache', b'sending content redirect for %s to '
-                                        b'%s\n', self.key, url)
+            # url = b'http://example.com/%s' % self.key
+            self.ui.log(
+                b'simplecache',
+                b'sending content redirect for %s to ' b'%s\n',
+                self.key,
+                url,
+            )
             response = wireprototypes.alternatelocationresponse(
-                url=url,
-                mediatype=b'application/mercurial-cbor')
+                url=url, mediatype=b'application/mercurial-cbor'
+            )
 
             return {b'objs': [response]}
 
@@ -166,10 +169,26 @@ class memorycacher(object):
 
         return []
 
-def makeresponsecacher(orig, repo, proto, command, args, objencoderfn,
-                       redirecttargets, redirecthashes):
-    return memorycacher(repo.ui, command, objencoderfn, redirecttargets,
-                        redirecthashes, proto._req)
+
+def makeresponsecacher(
+    orig,
+    repo,
+    proto,
+    command,
+    args,
+    objencoderfn,
+    redirecttargets,
+    redirecthashes,
+):
+    return memorycacher(
+        repo.ui,
+        command,
+        objencoderfn,
+        redirecttargets,
+        redirecthashes,
+        proto._req,
+    )
+
 
 def loadredirecttargets(ui):
     path = ui.config(b'simplecache', b'redirectsfile')
@@ -181,15 +200,21 @@ def loadredirecttargets(ui):
 
     return stringutil.evalpythonliteral(s)
 
+
 def getadvertisedredirecttargets(orig, repo, proto):
     return loadredirecttargets(repo.ui)
+
 
 def extsetup(ui):
     global CACHE
 
     CACHE = util.lrucachedict(10000)
 
-    extensions.wrapfunction(wireprotov2server, b'makeresponsecacher',
-                            makeresponsecacher)
-    extensions.wrapfunction(wireprotov2server, b'getadvertisedredirecttargets',
-                            getadvertisedredirecttargets)
+    extensions.wrapfunction(
+        wireprotov2server, b'makeresponsecacher', makeresponsecacher
+    )
+    extensions.wrapfunction(
+        wireprotov2server,
+        b'getadvertisedredirecttargets',
+        getadvertisedredirecttargets,
+    )

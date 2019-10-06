@@ -27,6 +27,7 @@ from hgext.remotefilelog import (
     datapack,
 )
 
+
 class datapacktestsbase(object):
     def __init__(self, datapackreader, paramsavailable):
         self.datapackreader = datapackreader
@@ -48,8 +49,9 @@ class datapacktestsbase(object):
         return hashlib.sha1(content).digest()
 
     def getFakeHash(self):
-        return b''.join(pycompat.bytechr(random.randint(0, 255))
-                        for _ in range(20))
+        return b''.join(
+            pycompat.bytechr(random.randint(0, 255)) for _ in range(20)
+        )
 
     def createPack(self, revisions=None, packdir=None):
         if revisions is None:
@@ -80,8 +82,9 @@ class datapacktestsbase(object):
         revisions = [(filename, node, nullid, content)]
         pack = self.createPack(revisions)
         if self.paramsavailable:
-            self.assertEqual(pack.params.fanoutprefix,
-                             basepack.SMALLFANOUTPREFIX)
+            self.assertEqual(
+                pack.params.fanoutprefix, basepack.SMALLFANOUTPREFIX
+            )
 
         chain = pack.getdeltachain(filename, node)
         self.assertEqual(content, chain[0][4])
@@ -171,10 +174,12 @@ class datapacktestsbase(object):
             filename = b'%d.txt' % i
             content = b'put-something-here \n' * i
             node = self.getHash(content)
-            meta = {constants.METAKEYFLAG: i ** 4,
-                    constants.METAKEYSIZE: len(content),
-                    b'Z': b'random_string',
-                    b'_': b'\0' * i}
+            meta = {
+                constants.METAKEYFLAG: i ** 4,
+                constants.METAKEYSIZE: len(content),
+                b'Z': b'random_string',
+                b'_': b'\0' * i,
+            }
             revisions.append((filename, node, nullid, content, meta))
         pack = self.createPack(revisions)
         for name, node, x, content, origmeta in revisions:
@@ -201,13 +206,15 @@ class datapacktestsbase(object):
         missing = pack.getmissing([(b"foo", revisions[0][1])])
         self.assertFalse(missing)
 
-        missing = pack.getmissing([(b"foo", revisions[0][1]),
-                                   (b"foo", revisions[1][1])])
+        missing = pack.getmissing(
+            [(b"foo", revisions[0][1]), (b"foo", revisions[1][1])]
+        )
         self.assertFalse(missing)
 
         fakenode = self.getFakeHash()
-        missing = pack.getmissing([(b"foo", revisions[0][1]),
-                                   (b"foo", fakenode)])
+        missing = pack.getmissing(
+            [(b"foo", revisions[0][1]), (b"foo", fakenode)]
+        )
         self.assertEqual(missing, [(b"foo", fakenode)])
 
     def testAddThrows(self):
@@ -257,8 +264,9 @@ class datapacktestsbase(object):
 
         pack = self.createPack(revisions)
         if self.paramsavailable:
-            self.assertEqual(pack.params.fanoutprefix,
-                             basepack.LARGEFANOUTPREFIX)
+            self.assertEqual(
+                pack.params.fanoutprefix, basepack.LARGEFANOUTPREFIX
+            )
 
         for (filename, node), content in blobs.items():
             actualcontent = pack.getdeltachain(filename, node)[0][4]
@@ -284,7 +292,7 @@ class datapacktestsbase(object):
                     b'%d' % i,
                     self.getFakeHash(),
                     revision[1],
-                    self.getFakeHash()
+                    self.getFakeHash(),
                 )
 
             self.createPack(chain, packdir)
@@ -303,8 +311,7 @@ class datapacktestsbase(object):
 
             mostrecentpack = next(iter(store.packs), None)
             self.assertEqual(
-                mostrecentpack.getdeltachain(revision[0], revision[1]),
-                chain
+                mostrecentpack.getdeltachain(revision[0], revision[1]), chain
             )
 
             self.assertEqual(randomchain.index(revision) + 1, len(chain))
@@ -341,6 +348,7 @@ class datapacktestsbase(object):
 
             # Perf of large multi-get
             import gc
+
             gc.disable()
             pack = self.datapackreader(path)
             for lookupsize in lookupsizes:
@@ -352,10 +360,14 @@ class datapacktestsbase(object):
                 start = time.time()
                 pack.getmissing(findnodes[:lookupsize])
                 elapsed = time.time() - start
-                print ("%s pack %d lookups = %0.04f" %
-                       (('%d' % packsize).rjust(7),
+                print(
+                    "%s pack %d lookups = %0.04f"
+                    % (
+                        ('%d' % packsize).rjust(7),
                         ('%d' % lookupsize).rjust(7),
-                        elapsed))
+                        elapsed,
+                    )
+                )
 
             print("")
             gc.enable()
@@ -364,10 +376,12 @@ class datapacktestsbase(object):
         # so the user sees the output.
         raise RuntimeError("perf test always fails")
 
+
 class datapacktests(datapacktestsbase, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         datapacktestsbase.__init__(self, datapack.datapack, True)
         unittest.TestCase.__init__(self, *args, **kwargs)
+
 
 # TODO:
 # datapack store:
@@ -376,5 +390,5 @@ class datapacktests(datapacktestsbase, unittest.TestCase):
 
 if __name__ == '__main__':
     if pycompat.iswindows:
-        sys.exit(80)    # Skip on Windows
+        sys.exit(80)  # Skip on Windows
     silenttestrunner.main(__name__)

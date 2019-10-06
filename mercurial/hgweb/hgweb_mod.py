@@ -45,6 +45,7 @@ from . import (
     wsgicgi,
 )
 
+
 def getstyle(req, configfn, templatepath):
     styles = (
         req.qsparams.get('style', None),
@@ -52,6 +53,7 @@ def getstyle(req, configfn, templatepath):
         'paper',
     )
     return styles, templater.stylemap(styles, templatepath)
+
 
 def makebreadcrumb(url, prefix=''):
     '''Return a 'URL breadcrumb' list
@@ -78,6 +80,7 @@ def makebreadcrumb(url, prefix=''):
         urlel = os.path.dirname(urlel)
     return templateutil.mappinglist(reversed(breadcrumb))
 
+
 class requestcontext(object):
     """Holds state/context for an individual request.
 
@@ -85,6 +88,7 @@ class requestcontext(object):
     is prone to race conditions. Instances of this class exist to hold
     mutable and race-free state for requests.
     """
+
     def __init__(self, app, repo, req, res):
         self.repo = repo
         self.reponame = app.reponame
@@ -113,20 +117,22 @@ class requestcontext(object):
 
     # Trust the settings from the .hg/hgrc files by default.
     def config(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.config(section, name, default,
-                                   untrusted=untrusted)
+        return self.repo.ui.config(section, name, default, untrusted=untrusted)
 
     def configbool(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configbool(section, name, default,
-                                       untrusted=untrusted)
+        return self.repo.ui.configbool(
+            section, name, default, untrusted=untrusted
+        )
 
     def configint(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configint(section, name, default,
-                                      untrusted=untrusted)
+        return self.repo.ui.configint(
+            section, name, default, untrusted=untrusted
+        )
 
     def configlist(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configlist(section, name, default,
-                                       untrusted=untrusted)
+        return self.repo.ui.configlist(
+            section, name, default, untrusted=untrusted
+        )
 
     def archivelist(self, nodeid):
         return webutil.archivelist(self.repo.ui, nodeid)
@@ -136,29 +142,33 @@ class requestcontext(object):
         # this is needed to create absolute urls
         logourl = self.config('web', 'logourl')
         logoimg = self.config('web', 'logoimg')
-        staticurl = (self.config('web', 'staticurl')
-                     or req.apppath.rstrip('/') + '/static/')
+        staticurl = (
+            self.config('web', 'staticurl')
+            or req.apppath.rstrip('/') + '/static/'
+        )
         if not staticurl.endswith('/'):
             staticurl += '/'
 
         # figure out which style to use
 
         vars = {}
-        styles, (style, mapfile) = getstyle(req, self.config,
-                                            self.templatepath)
+        styles, (style, mapfile) = getstyle(req, self.config, self.templatepath)
         if style == styles[0]:
             vars['style'] = style
 
         sessionvars = webutil.sessionvars(vars, '?')
 
         if not self.reponame:
-            self.reponame = (self.config('web', 'name', '')
-                             or req.reponame
-                             or req.apppath
-                             or self.repo.root)
+            self.reponame = (
+                self.config('web', 'name', '')
+                or req.reponame
+                or req.apppath
+                or self.repo.root
+            )
 
         filters = {}
         templatefilter = registrar.templatefilter(filters)
+
         @templatefilter('websub', intype=bytes)
         def websubfilter(text):
             return templatefilters.websub(text, self.websubtable)
@@ -179,15 +189,15 @@ class requestcontext(object):
             'nonce': self.nonce,
         }
         templatekeyword = registrar.templatekeyword(defaults)
+
         @templatekeyword('motd', requires=())
         def motd(context, mapping):
             yield self.config('web', 'motd')
 
         tres = formatter.templateresources(self.repo.ui, self.repo)
-        tmpl = templater.templater.frommapfile(mapfile,
-                                               filters=filters,
-                                               defaults=defaults,
-                                               resources=tres)
+        tmpl = templater.templater.frommapfile(
+            mapfile, filters=filters, defaults=defaults, resources=tres
+        )
         return tmpl
 
     def sendtemplate(self, name, **kwargs):
@@ -195,6 +205,7 @@ class requestcontext(object):
         kwargs = pycompat.byteskwargs(kwargs)
         self.res.setbodygen(self.tmpl.generate(name, kwargs))
         return self.res.sendresponse()
+
 
 class hgweb(object):
     """HTTP server for individual repositories.
@@ -207,6 +218,7 @@ class hgweb(object):
     Some servers are multi-threaded. On these servers, there may
     be multiple active threads inside __call__.
     """
+
     def __init__(self, repo, name=None, baseui=None):
         if isinstance(repo, bytes):
             if baseui:
@@ -282,10 +294,13 @@ class hgweb(object):
         Modern servers should be using WSGI and should avoid this
         method, if possible.
         """
-        if not encoding.environ.get('GATEWAY_INTERFACE',
-                                    '').startswith("CGI/1."):
-            raise RuntimeError("This function is only intended to be "
-                               "called while running as a CGI script.")
+        if not encoding.environ.get('GATEWAY_INTERFACE', '').startswith(
+            "CGI/1."
+        ):
+            raise RuntimeError(
+                "This function is only intended to be "
+                "called while running as a CGI script."
+            )
         wsgicgi.launch(self)
 
     def __call__(self, env, respond):
@@ -328,12 +343,14 @@ class hgweb(object):
         # expose the URLs if the feature is enabled.
         apienabled = rctx.repo.ui.configbool('experimental', 'web.apiserver')
         if apienabled and req.dispatchparts and req.dispatchparts[0] == b'api':
-            wireprotoserver.handlewsgiapirequest(rctx, req, res,
-                                                 self.check_perm)
+            wireprotoserver.handlewsgiapirequest(
+                rctx, req, res, self.check_perm
+            )
             return res.sendresponse()
 
         handled = wireprotoserver.handlewsgirequest(
-            rctx, req, res, self.check_perm)
+            rctx, req, res, self.check_perm
+        )
         if handled:
             return res.sendresponse()
 
@@ -354,7 +371,7 @@ class hgweb(object):
             style = cmd.rfind('-')
             if style != -1:
                 req.qsparams['style'] = cmd[:style]
-                cmd = cmd[style + 1:]
+                cmd = cmd[style + 1 :]
 
             # avoid accepting e.g. style parameter as command
             if util.safehasattr(webcommands, cmd):
@@ -381,7 +398,7 @@ class hgweb(object):
                 for type_, spec in webutil.archivespecs.iteritems():
                     ext = spec[2]
                     if fn.endswith(ext):
-                        req.qsparams['node'] = fn[:-len(ext)]
+                        req.qsparams['node'] = fn[: -len(ext)]
                         req.qsparams['type'] = type_
         else:
             cmd = req.qsparams.get('cmd', '')
@@ -390,8 +407,9 @@ class hgweb(object):
 
         try:
             rctx.tmpl = rctx.templater(req)
-            ctype = rctx.tmpl.render('mimetype',
-                                     {'encoding': encoding.encoding})
+            ctype = rctx.tmpl.render(
+                'mimetype', {'encoding': encoding.encoding}
+            )
 
             # check read permissions non-static content
             if cmd != 'static':
@@ -431,8 +449,9 @@ class hgweb(object):
 
         except (error.LookupError, error.RepoLookupError) as err:
             msg = pycompat.bytestr(err)
-            if (util.safehasattr(err, 'name') and
-                not isinstance(err,  error.ManifestLookupError)):
+            if util.safehasattr(err, 'name') and not isinstance(
+                err, error.ManifestLookupError
+            ):
                 msg = 'revision not found: %s' % err.name
 
             res.status = '404 Not Found'
@@ -456,6 +475,7 @@ class hgweb(object):
     def check_perm(self, rctx, req, op):
         for permhook in permhooks:
             permhook(rctx, req, op)
+
 
 def getwebview(repo):
     """The 'web.view' config controls changeset filter to hgweb. Possible

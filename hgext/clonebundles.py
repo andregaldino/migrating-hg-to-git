@@ -203,6 +203,7 @@ from mercurial import (
 
 testedwith = 'ships-with-hg-core'
 
+
 def capabilities(orig, repo, proto):
     caps = orig(repo, proto)
 
@@ -213,6 +214,7 @@ def capabilities(orig, repo, proto):
         caps.append('clonebundles')
 
     return caps
+
 
 def extsetup(ui):
     extensions.wrapfunction(wireprotov1server, '_capabilities', capabilities)

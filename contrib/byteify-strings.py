@@ -18,10 +18,13 @@ import tempfile
 import token
 import tokenize
 
+
 def adjusttokenpos(t, ofs):
     """Adjust start/end column of the given token"""
-    return t._replace(start=(t.start[0], t.start[1] + ofs),
-                      end=(t.end[0], t.end[1] + ofs))
+    return t._replace(
+        start=(t.start[0], t.start[1] + ofs), end=(t.end[0], t.end[1] + ofs)
+    )
+
 
 def replacetokens(tokens, opts):
     """Transform a stream of tokens from raw to Python 3.
@@ -82,9 +85,8 @@ def replacetokens(tokens, opts):
         currtoken = tokens[k]
         while currtoken.type in (token.STRING, token.NEWLINE, tokenize.NL):
             k += 1
-            if (
-                currtoken.type == token.STRING
-                and currtoken.string.startswith(("'", '"'))
+            if currtoken.type == token.STRING and currtoken.string.startswith(
+                ("'", '"')
             ):
                 sysstrtokens.add(currtoken)
             try:
@@ -126,7 +128,7 @@ def replacetokens(tokens, opts):
     coloffset = -1  # column offset for the current line (-1: TBD)
     parens = [(0, 0, 0, -1)]  # stack of (line, end-column, column-offset, type)
     ignorenextline = False  # don't transform the next line
-    insideignoreblock = False # don't transform until turned off
+    insideignoreblock = False  # don't transform until turned off
     for i, t in enumerate(tokens):
         # Compute the column offset for the current line, such that
         # the current line will be aligned to the last opening paren
@@ -135,9 +137,9 @@ def replacetokens(tokens, opts):
             lastparen = parens[-1]
             if t.start[1] == lastparen[1]:
                 coloffset = lastparen[2]
-            elif (
-                t.start[1] + 1 == lastparen[1]
-                and lastparen[3] not in (token.NEWLINE, tokenize.NL)
+            elif t.start[1] + 1 == lastparen[1] and lastparen[3] not in (
+                token.NEWLINE,
+                tokenize.NL,
             ):
                 # fix misaligned indent of s/util.Abort/error.Abort/
                 coloffset = lastparen[2] + (lastparen[1] - t.start[1])
@@ -202,8 +204,7 @@ def replacetokens(tokens, opts):
                 continue
 
             # String literal. Prefix to make a b'' string.
-            yield adjusttokenpos(t._replace(string='b%s' % t.string),
-                                 coloffset)
+            yield adjusttokenpos(t._replace(string='b%s' % t.string), coloffset)
             coldelta += 1
             continue
 
@@ -213,8 +214,13 @@ def replacetokens(tokens, opts):
 
             # *attr() builtins don't accept byte strings to 2nd argument.
             if fn in (
-                'getattr', 'setattr', 'hasattr', 'safehasattr', 'wrapfunction',
-                'wrapclass', 'addattr'
+                'getattr',
+                'setattr',
+                'hasattr',
+                'safehasattr',
+                'wrapfunction',
+                'wrapclass',
+                'addattr',
             ) and (opts['allow-attr-methods'] or not _isop(i - 1, '.')):
                 arg1idx = _findargnofcall(1)
                 if arg1idx is not None:
@@ -241,17 +247,22 @@ def replacetokens(tokens, opts):
                 _ensuresysstr(i + 4)
 
         # Looks like "if __name__ == '__main__'".
-        if (t.type == token.NAME and t.string == '__name__'
-            and _isop(i + 1, '==')):
+        if (
+            t.type == token.NAME
+            and t.string == '__name__'
+            and _isop(i + 1, '==')
+        ):
             _ensuresysstr(i + 2)
 
         # Emit unmodified token.
         yield adjusttokenpos(t, coloffset)
 
+
 def process(fin, fout, opts):
     tokens = tokenize.tokenize(fin.readline)
     tokens = replacetokens(list(tokens), opts)
     fout.write(tokenize.untokenize(tokens))
+
 
 def tryunlink(fname):
     try:
@@ -260,12 +271,14 @@ def tryunlink(fname):
         if err.errno != errno.ENOENT:
             raise
 
+
 @contextlib.contextmanager
 def editinplace(fname):
     n = os.path.basename(fname)
     d = os.path.dirname(fname)
-    fp = tempfile.NamedTemporaryFile(prefix='.%s-' % n, suffix='~', dir=d,
-                                     delete=False)
+    fp = tempfile.NamedTemporaryFile(
+        prefix='.%s-' % n, suffix='~', dir=d, delete=False
+    )
     try:
         yield fp
         fp.close()
@@ -276,19 +289,37 @@ def editinplace(fname):
         fp.close()
         tryunlink(fp.name)
 
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--version', action='version',
-                    version='Byteify strings 1.0')
-    ap.add_argument('-i', '--inplace', action='store_true', default=False,
-                    help='edit files in place')
-    ap.add_argument('--dictiter', action='store_true', default=False,
-                    help='rewrite iteritems() and itervalues()'),
-    ap.add_argument('--allow-attr-methods', action='store_true',
-                    default=False,
-                    help='also handle attr*() when they are methods'),
-    ap.add_argument('--treat-as-kwargs', nargs="+", default=[],
-                    help="ignore kwargs-like objects"),
+    ap.add_argument(
+        '--version', action='version', version='Byteify strings 1.0'
+    )
+    ap.add_argument(
+        '-i',
+        '--inplace',
+        action='store_true',
+        default=False,
+        help='edit files in place',
+    )
+    ap.add_argument(
+        '--dictiter',
+        action='store_true',
+        default=False,
+        help='rewrite iteritems() and itervalues()',
+    ),
+    ap.add_argument(
+        '--allow-attr-methods',
+        action='store_true',
+        default=False,
+        help='also handle attr*() when they are methods',
+    ),
+    ap.add_argument(
+        '--treat-as-kwargs',
+        nargs="+",
+        default=[],
+        help="ignore kwargs-like objects",
+    ),
     ap.add_argument('files', metavar='FILE', nargs='+', help='source file')
     args = ap.parse_args()
     opts = {
@@ -305,6 +336,7 @@ def main():
             with open(fname, 'rb') as fin:
                 fout = sys.stdout.buffer
                 process(fin, fout, opts)
+
 
 if __name__ == '__main__':
     if sys.version_info.major < 3:

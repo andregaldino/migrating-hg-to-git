@@ -16,10 +16,12 @@ keywords = {}
 templatekeyword = registrar.templatekeyword(keywords)
 revsetpredicate = registrar.revsetpredicate()
 
+
 def _isellipsis(repo, rev):
     if repo.changelog.flags(rev) & revlog.REVIDX_ELLIPSIS:
         return True
     return False
+
 
 @templatekeyword('ellipsis', requires={'repo', 'ctx'})
 def ellipsis(context, mapping):
@@ -29,6 +31,7 @@ def ellipsis(context, mapping):
     if _isellipsis(repo, ctx.rev()):
         return 'ellipsis'
     return ''
+
 
 @templatekeyword('outsidenarrow', requires={'repo', 'ctx'})
 def outsidenarrow(context, mapping):
@@ -41,6 +44,7 @@ def outsidenarrow(context, mapping):
         if not any(m(f) for f in ctx.files()):
             return 'outsidenarrow'
     return ''
+
 
 @revsetpredicate('ellipsis()')
 def ellipsisrevset(repo, subset, x):

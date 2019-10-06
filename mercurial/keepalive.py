@@ -98,9 +98,7 @@ from . import (
     urllibcompat,
     util,
 )
-from .utils import (
-    procutil,
-)
+from .utils import procutil
 
 httplib = util.httplib
 urlerr = util.urlerr
@@ -108,16 +106,18 @@ urlreq = util.urlreq
 
 DEBUG = None
 
+
 class ConnectionManager(object):
     """
     The connection manager must be able to:
       * keep track of all existing
       """
+
     def __init__(self):
         self._lock = threading.Lock()
-        self._hostmap = collections.defaultdict(list) # host -> [connection]
-        self._connmap = {} # map connections to host
-        self._readymap = {} # map connection to ready state
+        self._hostmap = collections.defaultdict(list)  # host -> [connection]
+        self._connmap = {}  # map connections to host
+        self._readymap = {}  # map connection to ready state
 
     def add(self, host, connection, ready):
         self._lock.acquire()
@@ -168,6 +168,7 @@ class ConnectionManager(object):
             return list(self._hostmap[host])
         else:
             return dict(self._hostmap)
+
 
 class KeepAliveHandler(object):
     def __init__(self, timeout=None):
@@ -235,8 +236,9 @@ class KeepAliveHandler(object):
                 # no (working) free connections were found.  Create a new one.
                 h = http_class(host, timeout=self._timeout)
                 if DEBUG:
-                    DEBUG.info("creating new connection to %s (%d)",
-                               host, id(h))
+                    DEBUG.info(
+                        "creating new connection to %s (%d)", host, id(h)
+                    )
                 self._cm.add(host, h, False)
                 self._start_transaction(h, req)
                 r = h.getresponse()
@@ -244,7 +246,8 @@ class KeepAliveHandler(object):
         # to make the error message slightly more useful.
         except httplib.BadStatusLine as err:
             raise urlerr.urlerror(
-                _('bad HTTP status line: %s') % pycompat.sysbytes(err.line))
+                _('bad HTTP status line: %s') % pycompat.sysbytes(err.line)
+            )
         except (socket.error, httplib.HTTPException) as err:
             raise urlerr.urlerror(err)
 
@@ -280,7 +283,7 @@ class KeepAliveHandler(object):
             # worked.  We'll check the version below, too.
         except (socket.error, httplib.HTTPException):
             r = None
-        except: # re-raises
+        except:  # re-raises
             # adding this block just in case we've missed
             # something we will still raise the exception, but
             # lets try and close the connection and remove it
@@ -291,8 +294,11 @@ class KeepAliveHandler(object):
             # that it's now possible this call will raise
             # a DIFFERENT exception
             if DEBUG:
-                DEBUG.error("unexpected exception - closing "
-                            "connection to %s (%d)", host, id(h))
+                DEBUG.error(
+                    "unexpected exception - closing " "connection to %s (%d)",
+                    host,
+                    id(h),
+                )
             self._cm.remove(h)
             h.close()
             raise
@@ -303,8 +309,9 @@ class KeepAliveHandler(object):
             # the socket has been closed by the server since we
             # last used the connection.
             if DEBUG:
-                DEBUG.info("failed to re-use connection to %s (%d)",
-                           host, id(h))
+                DEBUG.info(
+                    "failed to re-use connection to %s (%d)", host, id(h)
+                )
             r = None
         else:
             if DEBUG:
@@ -330,17 +337,22 @@ class KeepAliveHandler(object):
             if urllibcompat.hasdata(req):
                 data = urllibcompat.getdata(req)
                 h.putrequest(
-                    req.get_method(), urllibcompat.getselector(req),
-                    **skipheaders)
+                    req.get_method(),
+                    urllibcompat.getselector(req),
+                    **skipheaders
+                )
                 if r'content-type' not in headers:
-                    h.putheader(r'Content-type',
-                                r'application/x-www-form-urlencoded')
+                    h.putheader(
+                        r'Content-type', r'application/x-www-form-urlencoded'
+                    )
                 if r'content-length' not in headers:
                     h.putheader(r'Content-length', r'%d' % len(data))
             else:
                 h.putrequest(
-                    req.get_method(), urllibcompat.getselector(req),
-                    **skipheaders)
+                    req.get_method(),
+                    urllibcompat.getselector(req),
+                    **skipheaders
+                )
         except socket.error as err:
             raise urlerr.urlerror(err)
         for k, v in headers.items():
@@ -356,12 +368,15 @@ class KeepAliveHandler(object):
         try:
             self.parent.requestscount += 1
             self.parent.sentbytescount += (
-                getattr(h, 'sentbytescount', 0) - oldbytescount)
+                getattr(h, 'sentbytescount', 0) - oldbytescount
+            )
         except AttributeError:
             pass
 
+
 class HTTPHandler(KeepAliveHandler, urlreq.httphandler):
     pass
+
 
 class HTTPResponse(httplib.HTTPResponse):
     # we need to subclass HTTPResponse in order to
@@ -382,23 +397,23 @@ class HTTPResponse(httplib.HTTPResponse):
     # Both readline and readlines have been stolen with almost no
     # modification from socket.py
 
-
     def __init__(self, sock, debuglevel=0, strict=0, method=None):
         extrakw = {}
         if not pycompat.ispy3:
             extrakw[r'strict'] = True
             extrakw[r'buffering'] = True
-        httplib.HTTPResponse.__init__(self, sock, debuglevel=debuglevel,
-                                      method=method, **extrakw)
+        httplib.HTTPResponse.__init__(
+            self, sock, debuglevel=debuglevel, method=method, **extrakw
+        )
         self.fileno = sock.fileno
         self.code = None
         self.receivedbytescount = 0
         self._rbuf = ''
         self._rbufsize = 8096
-        self._handler = None # inserted by the handler later
-        self._host = None    # (same)
-        self._url = None     # (same)
-        self._connection = None # (same)
+        self._handler = None  # inserted by the handler later
+        self._host = None  # (same)
+        self._url = None  # (same)
+        self._connection = None  # (same)
 
     _raw_read = httplib.HTTPResponse.read
     _raw_readinto = getattr(httplib.HTTPResponse, 'readinto', None)
@@ -413,8 +428,9 @@ class HTTPResponse(httplib.HTTPResponse):
             self.fp.close()
             self.fp = None
             if self._handler:
-                self._handler._request_closed(self, self._host,
-                                              self._connection)
+                self._handler._request_closed(
+                    self, self._host, self._connection
+                )
 
     def _close_conn(self):
         self.close()
@@ -470,7 +486,7 @@ class HTTPResponse(httplib.HTTPResponse):
                 line = self.fp.readline()
                 i = line.find(';')
                 if i >= 0:
-                    line = line[:i] # strip chunk-extensions
+                    line = line[:i]  # strip chunk-extensions
                 try:
                     chunk_left = int(line, 16)
                 except ValueError:
@@ -496,7 +512,7 @@ class HTTPResponse(httplib.HTTPResponse):
                 amt -= chunk_left
 
             # we read the whole chunk, get another
-            self._safe_read(2)      # toss the CRLF at the end of the chunk
+            self._safe_read(2)  # toss the CRLF at the end of the chunk
             chunk_left = None
 
         # read and discard trailer up to the CRLF terminator
@@ -575,7 +591,7 @@ class HTTPResponse(httplib.HTTPResponse):
             res = self.read(len(dest))
             if not res:
                 return 0
-            dest[0:len(res)] = res
+            dest[0 : len(res)] = res
             return len(res)
         total = len(dest)
         have = len(self._rbuf)
@@ -597,6 +613,7 @@ class HTTPResponse(httplib.HTTPResponse):
         got += len(self._rbuf)
         self._rbuf = ''
         return got
+
 
 def safesend(self, str):
     """Send `str' to the server.
@@ -642,7 +659,7 @@ def safesend(self, str):
             self.sentbytescount += len(str)
     except socket.error as v:
         reraise = True
-        if v.args[0] == errno.EPIPE:      # Broken pipe
+        if v.args[0] == errno.EPIPE:  # Broken pipe
             if self._HTTPConnection__state == httplib._CS_REQ_SENT:
                 self._broken_pipe_resp = None
                 self._broken_pipe_resp = self.getresponse()
@@ -651,9 +668,11 @@ def safesend(self, str):
         if reraise:
             raise
 
+
 def wrapgetresponse(cls):
     """Wraps getresponse in cls with a broken-pipe sane version.
     """
+
     def safegetresponse(self):
         # In safesend() we might set the _broken_pipe_resp
         # attribute, in which case the socket has already
@@ -663,8 +682,10 @@ def wrapgetresponse(cls):
         if r is not None:
             return r
         return cls.getresponse(self)
+
     safegetresponse.__doc__ = cls.getresponse.__doc__
     return safegetresponse
+
 
 class HTTPConnection(httplib.HTTPConnection):
     # url.httpsconnection inherits from this. So when adding/removing
@@ -680,6 +701,7 @@ class HTTPConnection(httplib.HTTPConnection):
         httplib.HTTPConnection.__init__(self, *args, **kwargs)
         self.sentbytescount = 0
         self.receivedbytescount = 0
+
 
 #########################################################################
 #####   TEST FUNCTIONS
@@ -721,6 +743,7 @@ def continuity(url):
     m = md5(foo)
     print(format % ('keepalive readline', node.hex(m.digest())))
 
+
 def comp(N, url):
     print('  making %i connections to:\n  %s' % (N, url))
 
@@ -739,8 +762,10 @@ def comp(N, url):
     print('  TIME: %.3f s' % t2)
     print('  improvement factor: %.2f' % (t1 / t2))
 
+
 def fetch(N, url, delay=0):
     import time
+
     lens = []
     starttime = time.time()
     for i in range(N):
@@ -760,13 +785,17 @@ def fetch(N, url, delay=0):
 
     return diff
 
+
 def test_timeout(url):
     global DEBUG
     dbbackup = DEBUG
+
     class FakeLogger(object):
         def debug(self, msg, *args):
             print(msg % args)
+
         info = warning = error = debug
+
     DEBUG = FakeLogger()
     print("  fetching the file to establish a connection")
     fo = urlreq.urlopen(url)
@@ -805,8 +834,10 @@ def test(url, N=10):
     print("performing dropped-connection check")
     test_timeout(url)
 
+
 if __name__ == '__main__':
     import time
+
     try:
         N = int(sys.argv[1])
         url = sys.argv[2]

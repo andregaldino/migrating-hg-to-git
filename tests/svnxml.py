@@ -5,10 +5,10 @@ from __future__ import absolute_import
 import sys
 import xml.dom.minidom
 
+
 def xmltext(e):
-    return ''.join(c.data for c
-                   in e.childNodes
-                   if c.nodeType == c.TEXT_NODE)
+    return ''.join(c.data for c in e.childNodes if c.nodeType == c.TEXT_NODE)
+
 
 def parseentry(entry):
     e = {}
@@ -27,12 +27,14 @@ def parseentry(entry):
             e['paths'].append((path, action, frompath, fromrev))
     return e
 
+
 def parselog(data):
     entries = []
     doc = xml.dom.minidom.parseString(data)
     for e in doc.getElementsByTagName('logentry'):
         entries.append(parseentry(e))
     return entries
+
 
 def printentries(entries):
     try:
@@ -49,8 +51,8 @@ def printentries(entries):
             p = b' %s %s%s\n' % (action, path, frominfo)
             fp.write(p)
 
+
 if __name__ == '__main__':
     data = sys.stdin.read()
     entries = parselog(data)
     printentries(entries)
-

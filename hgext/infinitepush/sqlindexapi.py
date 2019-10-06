@@ -16,6 +16,7 @@ import mysql.connector
 
 from . import indexapi
 
+
 def _convertbookmarkpattern(pattern):
     pattern = pattern.replace('_', '\\_')
     pattern = pattern.replace('%', '\\%')
@@ -23,14 +24,25 @@ def _convertbookmarkpattern(pattern):
         pattern = pattern[:-1] + '%'
     return pattern
 
+
 class sqlindexapi(indexapi.indexapi):
     '''
     Sql backend for infinitepush index. See schema.sql
     '''
 
-    def __init__(self, reponame, host, port,
-                 database, user, password, logfile, loglevel,
-                 waittimeout=300, locktimeout=120):
+    def __init__(
+        self,
+        reponame,
+        host,
+        port,
+        database,
+        user,
+        password,
+        logfile,
+        loglevel,
+        waittimeout=300,
+        locktimeout=120,
+    ):
         super(sqlindexapi, self).__init__()
         self.reponame = reponame
         self.sqlargs = {
@@ -55,8 +67,9 @@ class sqlindexapi(indexapi.indexapi):
         if self.sqlconn:
             raise indexapi.indexexception("SQL connection already open")
         if self.sqlcursor:
-            raise indexapi.indexexception("SQL cursor already open without"
-                                          " connection")
+            raise indexapi.indexexception(
+                "SQL cursor already open without" " connection"
+            )
         retry = 3
         while True:
             try:
@@ -81,8 +94,9 @@ class sqlindexapi(indexapi.indexapi):
 
         self.sqlcursor = self.sqlconn.cursor()
         self.sqlcursor.execute("SET wait_timeout=%s" % waittimeout)
-        self.sqlcursor.execute("SET innodb_lock_wait_timeout=%s" %
-                               self._locktimeout)
+        self.sqlcursor.execute(
+            "SET innodb_lock_wait_timeout=%s" % self._locktimeout
+        )
         self._connected = True
 
     def close(self):
@@ -110,14 +124,16 @@ class sqlindexapi(indexapi.indexapi):
             self.sqlconnect()
         self.log.info("ADD BUNDLE %r %r" % (self.reponame, bundleid))
         self.sqlcursor.execute(
-            "INSERT INTO bundles(bundle, reponame) VALUES "
-            "(%s, %s)", params=(bundleid, self.reponame))
+            "INSERT INTO bundles(bundle, reponame) VALUES " "(%s, %s)",
+            params=(bundleid, self.reponame),
+        )
         for ctx in nodesctx:
             self.sqlcursor.execute(
                 "INSERT INTO nodestobundle(node, bundle, reponame) "
                 "VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE "
                 "bundle=VALUES(bundle)",
-                params=(ctx.hex(), bundleid, self.reponame))
+                params=(ctx.hex(), bundleid, self.reponame),
+            )
 
             extra = ctx.extra()
             author_name = ctx.user()
@@ -129,10 +145,17 @@ class sqlindexapi(indexapi.indexapi):
                 "author, committer, author_date, committer_date, "
                 "reponame) VALUES "
                 "(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                params=(ctx.hex(), ctx.description(),
-                        ctx.p1().hex(), ctx.p2().hex(), author_name,
-                        committer_name, author_date, committer_date,
-                        self.reponame)
+                params=(
+                    ctx.hex(),
+                    ctx.description(),
+                    ctx.p1().hex(),
+                    ctx.p2().hex(),
+                    author_name,
+                    committer_name,
+                    author_date,
+                    committer_date,
+                    self.reponame,
+                ),
             )
 
     def addbookmark(self, bookmark, node):
@@ -141,12 +164,14 @@ class sqlindexapi(indexapi.indexapi):
         if not self._connected:
             self.sqlconnect()
         self.log.info(
-            "ADD BOOKMARKS %r bookmark: %r node: %r" %
-            (self.reponame, bookmark, node))
+            "ADD BOOKMARKS %r bookmark: %r node: %r"
+            % (self.reponame, bookmark, node)
+        )
         self.sqlcursor.execute(
             "INSERT INTO bookmarkstonode(bookmark, node, reponame) "
             "VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE node=VALUES(node)",
-            params=(bookmark, node, self.reponame))
+            params=(bookmark, node, self.reponame),
+        )
 
     def addmanybookmarks(self, bookmarks):
         if not self._connected:
@@ -161,7 +186,8 @@ class sqlindexapi(indexapi.indexapi):
         self.sqlcursor.execute(
             "INSERT INTO bookmarkstonode(bookmark, node, reponame) "
             "VALUES %s ON DUPLICATE KEY UPDATE node=VALUES(node)" % args,
-            params=values)
+            params=values,
+        )
 
     def deletebookmarks(self, patterns):
         """Accepts list of bookmark patterns and deletes them.
@@ -176,7 +202,8 @@ class sqlindexapi(indexapi.indexapi):
             self.sqlcursor.execute(
                 "DELETE from bookmarkstonode WHERE bookmark LIKE (%s) "
                 "and reponame = %s",
-                params=(pattern, self.reponame))
+                params=(pattern, self.reponame),
+            )
 
     def getbundle(self, node):
         """Returns the bundleid for the bundle that contains the given node."""
@@ -185,7 +212,9 @@ class sqlindexapi(indexapi.indexapi):
         self.log.info("GET BUNDLE %r %r" % (self.reponame, node))
         self.sqlcursor.execute(
             "SELECT bundle from nodestobundle "
-            "WHERE node = %s AND reponame = %s", params=(node, self.reponame))
+            "WHERE node = %s AND reponame = %s",
+            params=(node, self.reponame),
+        )
         result = self.sqlcursor.fetchall()
         if len(result) != 1 or len(result[0]) != 1:
             self.log.info("No matching node")
@@ -199,10 +228,13 @@ class sqlindexapi(indexapi.indexapi):
         if not self._connected:
             self.sqlconnect()
         self.log.info(
-            "GET NODE reponame: %r bookmark: %r" % (self.reponame, bookmark))
+            "GET NODE reponame: %r bookmark: %r" % (self.reponame, bookmark)
+        )
         self.sqlcursor.execute(
             "SELECT node from bookmarkstonode WHERE "
-            "bookmark = %s AND reponame = %s", params=(bookmark, self.reponame))
+            "bookmark = %s AND reponame = %s",
+            params=(bookmark, self.reponame),
+        )
         result = self.sqlcursor.fetchall()
         if len(result) != 1 or len(result[0]) != 1:
             self.log.info("No matching bookmark")
@@ -215,12 +247,14 @@ class sqlindexapi(indexapi.indexapi):
         if not self._connected:
             self.sqlconnect()
         self.log.info(
-            "QUERY BOOKMARKS reponame: %r query: %r" % (self.reponame, query))
+            "QUERY BOOKMARKS reponame: %r query: %r" % (self.reponame, query)
+        )
         query = _convertbookmarkpattern(query)
         self.sqlcursor.execute(
             "SELECT bookmark, node from bookmarkstonode WHERE "
             "reponame = %s AND bookmark LIKE %s",
-            params=(self.reponame, query))
+            params=(self.reponame, query),
+        )
         result = self.sqlcursor.fetchall()
         bookmarks = {}
         for row in result:
@@ -234,18 +268,24 @@ class sqlindexapi(indexapi.indexapi):
         if not self._connected:
             self.sqlconnect()
         self.log.info(
-            ("INSERT METADATA, QUERY BOOKMARKS reponame: %r " +
-             "node: %r, jsonmetadata: %s") %
-            (self.reponame, node, jsonmetadata))
+            (
+                "INSERT METADATA, QUERY BOOKMARKS reponame: %r "
+                + "node: %r, jsonmetadata: %s"
+            )
+            % (self.reponame, node, jsonmetadata)
+        )
 
         self.sqlcursor.execute(
             "UPDATE nodesmetadata SET optional_json_metadata=%s WHERE "
             "reponame=%s AND node=%s",
-            params=(jsonmetadata, self.reponame, node))
+            params=(jsonmetadata, self.reponame, node),
+        )
+
 
 class CustomConverter(mysql.connector.conversion.MySQLConverter):
     """Ensure that all values being returned are returned as python string
     (versus the default byte arrays)."""
+
     def _STRING_to_python(self, value, dsc=None):
         return str(value)
 

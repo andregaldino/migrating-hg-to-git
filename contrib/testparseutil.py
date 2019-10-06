@@ -14,10 +14,12 @@ import sys
 ####################
 # for Python3 compatibility (almost comes from mercurial/pycompat.py)
 
-ispy3 = (sys.version_info[0] >= 3)
+ispy3 = sys.version_info[0] >= 3
+
 
 def identity(a):
     return a
+
 
 def _rapply(f, xs):
     if xs is None:
@@ -29,11 +31,13 @@ def _rapply(f, xs):
         return type(xs)((_rapply(f, k), _rapply(f, v)) for k, v in xs.items())
     return f(xs)
 
+
 def rapply(f, xs):
     if f is identity:
         # fast path mainly for py2
         return xs
     return _rapply(f, xs)
+
 
 if ispy3:
     import builtins
@@ -49,29 +53,37 @@ if ispy3:
 
     def opentext(f):
         return open(f, 'r')
+
+
 else:
     bytestr = str
     sysstr = identity
 
     opentext = open
 
+
 def b2s(x):
     # convert BYTES elements in "x" to SYSSTR recursively
     return rapply(sysstr, x)
+
 
 def writeout(data):
     # write "data" in BYTES into stdout
     sys.stdout.write(data)
 
+
 def writeerr(data):
     # write "data" in BYTES into stderr
     sys.stderr.write(data)
 
+
 ####################
+
 
 class embeddedmatcher(object):
     """Base class to detect embedded code fragments in *.t test script
     """
+
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, desc):
@@ -126,6 +138,7 @@ class embeddedmatcher(object):
     def codeinside(self, ctx, line):
         """Return actual code at line inside embedded code"""
 
+
 def embedded(basefile, lines, errors, matchers):
     """pick embedded code fragments up from given lines
 
@@ -168,12 +181,12 @@ def embedded(basefile, lines, errors, matchers):
 
     """
     matcher = None
-    ctx = filename = code = startline = None # for pyflakes
+    ctx = filename = code = startline = None  # for pyflakes
 
     for lineno, line in enumerate(lines, 1):
         if not line.endswith('\n'):
-            line += '\n' # to normalize EOF line
-        if matcher: # now, inside embedded code
+            line += '\n'  # to normalize EOF line
+        if matcher:  # now, inside embedded code
             if matcher.endsat(ctx, line):
                 codeatend = matcher.codeatend(ctx, line)
                 if codeatend is not None:
@@ -185,8 +198,10 @@ def embedded(basefile, lines, errors, matchers):
             elif not matcher.isinside(ctx, line):
                 # this is an error of basefile
                 # (if matchers are implemented correctly)
-                errors.append('%s:%d: unexpected line for "%s"'
-                              % (basefile, lineno, matcher.desc))
+                errors.append(
+                    '%s:%d: unexpected line for "%s"'
+                    % (basefile, lineno, matcher.desc)
+                )
                 # stop extracting embedded code by current 'matcher',
                 # because appearance of unexpected line might mean
                 # that expected end-of-embedded-code line might never
@@ -208,10 +223,14 @@ def embedded(basefile, lines, errors, matchers):
         if matched:
             if len(matched) > 1:
                 # this is an error of matchers, maybe
-                errors.append('%s:%d: ambiguous line for %s' %
-                              (basefile, lineno,
-                               ', '.join(['"%s"' % m.desc
-                                           for m, c in matched])))
+                errors.append(
+                    '%s:%d: ambiguous line for %s'
+                    % (
+                        basefile,
+                        lineno,
+                        ', '.join(['"%s"' % m.desc for m, c in matched]),
+                    )
+                )
                 # omit extracting embedded code, because choosing
                 # arbitrary matcher from matched ones might fail to
                 # detect the end of embedded code as expected.
@@ -238,8 +257,11 @@ def embedded(basefile, lines, errors, matchers):
         else:
             # this is an error of basefile
             # (if matchers are implemented correctly)
-            errors.append('%s:%d: unexpected end of file for "%s"'
-                          % (basefile, lineno, matcher.desc))
+            errors.append(
+                '%s:%d: unexpected end of file for "%s"'
+                % (basefile, lineno, matcher.desc)
+            )
+
 
 # heredoc limit mark to ignore embedded code at check-code.py or so
 heredocignorelimit = 'NO_CHECK_EOF'
@@ -251,6 +273,7 @@ heredocignorelimit = 'NO_CHECK_EOF'
 # - << "LIMITMARK"
 # - << 'LIMITMARK'
 heredoclimitpat = r'\s*<<\s*(?P<lquote>["\']?)(?P<limit>\w+)(?P=lquote)'
+
 
 class fileheredocmatcher(embeddedmatcher):
     """Detect "cat > FILE << LIMIT" style embedded code
@@ -290,6 +313,7 @@ class fileheredocmatcher(embeddedmatcher):
     >>> matcher.ignores(ctx)
     True
     """
+
     _prefix = '  > '
 
     def __init__(self, desc, namepat):
@@ -302,8 +326,9 @@ class fileheredocmatcher(embeddedmatcher):
         # - > NAMEPAT
         # - > "NAMEPAT"
         # - > 'NAMEPAT'
-        namepat = (r'\s*>>?\s*(?P<nquote>["\']?)(?P<name>%s)(?P=nquote)'
-                   % namepat)
+        namepat = (
+            r'\s*>>?\s*(?P<nquote>["\']?)(?P<name>%s)(?P=nquote)' % namepat
+        )
         self._fileres = [
             # "cat > NAME << LIMIT" case
             re.compile(r'  \$ \s*cat' + namepat + heredoclimitpat),
@@ -316,8 +341,10 @@ class fileheredocmatcher(embeddedmatcher):
         for filere in self._fileres:
             matched = filere.match(line)
             if matched:
-                return (matched.group('name'),
-                        '  > %s\n' % matched.group('limit'))
+                return (
+                    matched.group('name'),
+                    '  > %s\n' % matched.group('limit'),
+                )
 
     def endsat(self, ctx, line):
         return ctx[1] == line
@@ -332,16 +359,18 @@ class fileheredocmatcher(embeddedmatcher):
         return ctx[0]
 
     def codeatstart(self, ctx, line):
-        return None # no embedded code at start line
+        return None  # no embedded code at start line
 
     def codeatend(self, ctx, line):
-        return None # no embedded code at end line
+        return None  # no embedded code at end line
 
     def codeinside(self, ctx, line):
-        return line[len(self._prefix):] # strip prefix
+        return line[len(self._prefix) :]  # strip prefix
+
 
 ####
 # for embedded python script
+
 
 class pydoctestmatcher(embeddedmatcher):
     """Detect ">>> code" style embedded python code
@@ -395,6 +424,7 @@ class pydoctestmatcher(embeddedmatcher):
     True
     >>> matcher.codeatend(ctx, end)
     """
+
     _prefix = '  >>> '
     _prefixre = re.compile(r'  (>>>|\.\.\.) ')
 
@@ -419,24 +449,25 @@ class pydoctestmatcher(embeddedmatcher):
         return not (self._prefixre.match(line) or self._outputre.match(line))
 
     def isinside(self, ctx, line):
-        return True # always true, if not yet ended
+        return True  # always true, if not yet ended
 
     def ignores(self, ctx):
-        return False # should be checked always
+        return False  # should be checked always
 
     def filename(self, ctx):
-        return None # no filename
+        return None  # no filename
 
     def codeatstart(self, ctx, line):
-        return line[len(self._prefix):] # strip prefix '  >>> '/'  ... '
+        return line[len(self._prefix) :]  # strip prefix '  >>> '/'  ... '
 
     def codeatend(self, ctx, line):
-        return None # no embedded code at end line
+        return None  # no embedded code at end line
 
     def codeinside(self, ctx, line):
         if self._prefixre.match(line):
-            return line[len(self._prefix):] # strip prefix '  >>> '/'  ... '
-        return '\n' # an expected output line is treated as an empty line
+            return line[len(self._prefix) :]  # strip prefix '  >>> '/'  ... '
+        return '\n'  # an expected output line is treated as an empty line
+
 
 class pyheredocmatcher(embeddedmatcher):
     """Detect "python << LIMIT" style embedded python code
@@ -474,10 +505,12 @@ class pyheredocmatcher(embeddedmatcher):
     >>> matcher.ignores(ctx)
     True
     """
+
     _prefix = '  > '
 
-    _startre = re.compile(r'  \$ (\$PYTHON|"\$PYTHON"|python).*' +
-                          heredoclimitpat)
+    _startre = re.compile(
+        r'  \$ (\$PYTHON|"\$PYTHON"|python).*' + heredoclimitpat
+    )
 
     def __init__(self):
         super(pyheredocmatcher, self).__init__("heredoc python invocation")
@@ -498,16 +531,17 @@ class pyheredocmatcher(embeddedmatcher):
         return '  > %s\n' % heredocignorelimit == ctx
 
     def filename(self, ctx):
-        return None # no filename
+        return None  # no filename
 
     def codeatstart(self, ctx, line):
-        return None # no embedded code at start line
+        return None  # no embedded code at start line
 
     def codeatend(self, ctx, line):
-        return None # no embedded code at end line
+        return None  # no embedded code at end line
 
     def codeinside(self, ctx, line):
-        return line[len(self._prefix):] # strip prefix
+        return line[len(self._prefix) :]  # strip prefix
+
 
 _pymatchers = [
     pydoctestmatcher(),
@@ -517,8 +551,10 @@ _pymatchers = [
     fileheredocmatcher('heredoc .py file', r'[^<]+\.py'),
 ]
 
+
 def pyembedded(basefile, lines, errors):
     return embedded(basefile, lines, errors, _pymatchers)
+
 
 ####
 # for embedded shell script
@@ -529,8 +565,10 @@ _shmatchers = [
     fileheredocmatcher('heredoc .sh file', r'[^<]+\.sh'),
 ]
 
+
 def shembedded(basefile, lines, errors):
     return embedded(basefile, lines, errors, _shmatchers)
+
 
 ####
 # for embedded hgrc configuration
@@ -538,12 +576,15 @@ def shembedded(basefile, lines, errors):
 _hgrcmatchers = [
     # use '[^<]+' instead of '\S+', in order to match against
     # paths including whitespaces
-    fileheredocmatcher('heredoc hgrc file',
-                       r'(([^/<]+/)+hgrc|\$HGRCPATH|\${HGRCPATH})'),
+    fileheredocmatcher(
+        'heredoc hgrc file', r'(([^/<]+/)+hgrc|\$HGRCPATH|\${HGRCPATH})'
+    ),
 ]
+
 
 def hgrcembedded(basefile, lines, errors):
     return embedded(basefile, lines, errors, _hgrcmatchers)
+
 
 ####
 
@@ -558,8 +599,7 @@ if __name__ == "__main__":
                 name = '<anonymous>'
             writeout("%s:%d: %s starts\n" % (basefile, starts, name))
             if opts.verbose and code:
-                writeout("  |%s\n" %
-                         "\n  |".join(l for l in code.splitlines()))
+                writeout("  |%s\n" % "\n  |".join(l for l in code.splitlines()))
             writeout("%s:%d: %s ends\n" % (basefile, ends, name))
         for e in errors:
             writeerr("%s\n" % e)
@@ -579,9 +619,11 @@ if __name__ == "__main__":
         return ret
 
     commands = {}
+
     def command(name, desc):
         def wrap(func):
             commands[name] = (desc, func)
+
         return wrap
 
     @command("pyembedded", "detect embedded python script")
@@ -596,21 +638,29 @@ if __name__ == "__main__":
     def hgrcembeddedcmd(args, opts):
         return applyembedded(args, hgrcembedded, opts)
 
-    availablecommands = "\n".join(["  - %s: %s" % (key, value[0])
-                                   for key, value in commands.items()])
+    availablecommands = "\n".join(
+        ["  - %s: %s" % (key, value[0]) for key, value in commands.items()]
+    )
 
-    parser = optparse.OptionParser("""%prog COMMAND [file ...]
+    parser = optparse.OptionParser(
+        """%prog COMMAND [file ...]
 
 Pick up embedded code fragments from given file(s) or stdin, and list
 up start/end lines of them in standard compiler format
 ("FILENAME:LINENO:").
 
 Available commands are:
-""" + availablecommands + """
-""")
-    parser.add_option("-v", "--verbose",
-                      help="enable additional output (e.g. actual code)",
-                      action="store_true")
+"""
+        + availablecommands
+        + """
+"""
+    )
+    parser.add_option(
+        "-v",
+        "--verbose",
+        help="enable additional output (e.g. actual code)",
+        action="store_true",
+    )
     (opts, args) = parser.parse_args()
 
     if not args or args[0] not in commands:

@@ -2,8 +2,8 @@ from __future__ import absolute_import, print_function
 
 import unittest
 
-class TestResult(unittest._TextTestResult):
 
+class TestResult(unittest._TextTestResult):
     def __init__(self, options, *args, **kwargs):
         super(TestResult, self).__init__(*args, **kwargs)
         self._options = options

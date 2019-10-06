@@ -98,7 +98,10 @@ def secure_download_stream(url, size, sha256):
     length = 0
 
     with urllib.request.urlopen(url) as fh:
-        if not url.endswith('.gz') and fh.info().get('Content-Encoding') == 'gzip':
+        if (
+            not url.endswith('.gz')
+            and fh.info().get('Content-Encoding') == 'gzip'
+        ):
             fh = gzip.GzipFile(fileobj=fh)
 
         while True:
@@ -114,12 +117,14 @@ def secure_download_stream(url, size, sha256):
     digest = h.hexdigest()
 
     if length != size:
-        raise IntegrityError('size mismatch on %s: wanted %d; got %d' % (
-            url, size, length))
+        raise IntegrityError(
+            'size mismatch on %s: wanted %d; got %d' % (url, size, length)
+        )
 
     if digest != sha256:
-        raise IntegrityError('sha256 mismatch on %s: wanted %s; got %s' % (
-            url, sha256, digest))
+        raise IntegrityError(
+            'sha256 mismatch on %s: wanted %s; got %s' % (url, sha256, digest)
+        )
 
 
 def download_to_path(url: str, path: pathlib.Path, size: int, sha256: str):
@@ -162,12 +167,14 @@ def download_to_path(url: str, path: pathlib.Path, size: int, sha256: str):
     print('successfully downloaded %s' % url)
 
 
-def download_entry(name: dict, dest_path: pathlib.Path, local_name=None) -> pathlib.Path:
+def download_entry(
+    name: dict, dest_path: pathlib.Path, local_name=None
+) -> pathlib.Path:
     entry = DOWNLOADS[name]
 
     url = entry['url']
 
-    local_name = local_name or url[url.rindex('/') + 1:]
+    local_name = local_name or url[url.rindex('/') + 1 :]
 
     local_path = dest_path / local_name
     download_to_path(url, local_path, entry['size'], entry['sha256'])

@@ -28,24 +28,28 @@ from . import (
     pycompat,
     url,
 )
-from .utils import (
-    stringutil,
-)
+from .utils import stringutil
+
 
 def section(s):
     return "%s\n%s\n\n" % (s, "\"" * encoding.colwidth(s))
 
+
 def subsection(s):
     return "%s\n%s\n\n" % (s, '=' * encoding.colwidth(s))
+
 
 def subsubsection(s):
     return "%s\n%s\n\n" % (s, "-" * encoding.colwidth(s))
 
+
 def subsubsubsection(s):
     return "%s\n%s\n\n" % (s, "." * encoding.colwidth(s))
 
+
 def subsubsubsubsection(s):
     return "%s\n%s\n\n" % (s, "'" * encoding.colwidth(s))
+
 
 def replace(text, substs):
     '''
@@ -70,7 +74,9 @@ def replace(text, substs):
         utext = utext.replace(f.decode("ascii"), t.decode("ascii"))
     return utext.encode(pycompat.sysstr(encoding.encoding))
 
+
 _blockre = re.compile(br"\n(?:\s*\n)+")
+
 
 def findblocks(text):
     """Find continuous blocks of lines in text.
@@ -86,6 +92,7 @@ def findblocks(text):
             lines = [l[indent:] for l in lines]
             blocks.append({'indent': indent, 'lines': lines})
     return blocks
+
 
 def findliteralblocks(blocks):
     """Finds literal blocks and adds a 'type' field to the blocks.
@@ -117,9 +124,11 @@ def findliteralblocks(blocks):
                 # Partially minimized form: remove space and both
                 # colons.
                 blocks[i]['lines'][-1] = blocks[i]['lines'][-1][:-3]
-            elif (len(blocks[i]['lines']) == 1 and
-                  blocks[i]['lines'][0].lstrip(' ').startswith('.. ') and
-                  blocks[i]['lines'][0].find(' ', 3) == -1):
+            elif (
+                len(blocks[i]['lines']) == 1
+                and blocks[i]['lines'][0].lstrip(' ').startswith('.. ')
+                and blocks[i]['lines'][0].find(' ', 3) == -1
+            ):
                 # directive on its own line, not a literal block
                 i += 1
                 continue
@@ -144,22 +153,27 @@ def findliteralblocks(blocks):
         i += 1
     return blocks
 
+
 _bulletre = re.compile(br'(\*|-|[0-9A-Za-z]+\.|\(?[0-9A-Za-z]+\)|\|) ')
-_optionre = re.compile(br'^(-([a-zA-Z0-9]), )?(--[a-z0-9-]+)'
-                       br'((.*)  +)(.*)$')
+_optionre = re.compile(
+    br'^(-([a-zA-Z0-9]), )?(--[a-z0-9-]+)' br'((.*)  +)(.*)$'
+)
 _fieldre = re.compile(br':(?![: ])([^:]*)(?<! ):[ ]+(.*)')
 _definitionre = re.compile(br'[^ ]')
 _tablere = re.compile(br'(=+\s+)*=+')
+
 
 def splitparagraphs(blocks):
     """Split paragraphs into lists."""
     # Tuples with (list type, item regexp, single line items?). Order
     # matters: definition lists has the least specific regexp and must
     # come last.
-    listtypes = [('bullet', _bulletre, True),
-                 ('option', _optionre, True),
-                 ('field', _fieldre, True),
-                 ('definition', _definitionre, False)]
+    listtypes = [
+        ('bullet', _bulletre, True),
+        ('option', _optionre, True),
+        ('field', _fieldre, True),
+        ('definition', _definitionre, False),
+    ]
 
     def match(lines, i, itemre, singleline):
         """Does itemre match an item at line i?
@@ -185,15 +199,22 @@ def splitparagraphs(blocks):
                     items = []
                     for j, line in enumerate(lines):
                         if match(lines, j, itemre, singleline):
-                            items.append({'type': type, 'lines': [],
-                                          'indent': blocks[i]['indent']})
+                            items.append(
+                                {
+                                    'type': type,
+                                    'lines': [],
+                                    'indent': blocks[i]['indent'],
+                                }
+                            )
                         items[-1]['lines'].append(line)
-                    blocks[i:i + 1] = items
+                    blocks[i : i + 1] = items
                     break
         i += 1
     return blocks
 
+
 _fieldwidth = 14
+
 
 def updatefieldlists(blocks):
     """Find key for field lists."""
@@ -214,6 +235,7 @@ def updatefieldlists(blocks):
         i = j + 1
 
     return blocks
+
 
 def updateoptionlists(blocks):
     i = 0
@@ -238,9 +260,10 @@ def updateoptionlists(blocks):
             if not shortoption:
                 noshortop = '   '
 
-            opt = "%s%s" %   (shortoption and "-%s " % shortoption or '',
-                            ("%s--%s %s") % (noshortop, longoption,
-                                             longoptionarg))
+            opt = "%s%s" % (
+                shortoption and "-%s " % shortoption or '',
+                "%s--%s %s" % (noshortop, longoption, longoptionarg),
+            )
             opt = opt.rstrip()
             blocks[j]['optstr'] = opt
             optstrwidth = max(optstrwidth, encoding.colwidth(opt))
@@ -250,6 +273,7 @@ def updateoptionlists(blocks):
             block['optstrwidth'] = optstrwidth
         i = j + 1
     return blocks
+
 
 def prunecontainers(blocks, keep):
     """Prune unwanted containers.
@@ -267,8 +291,9 @@ def prunecontainers(blocks, keep):
         # +---+                               |
         #     | blocks                        |
         #     +-------------------------------+
-        if (blocks[i]['type'] == 'paragraph' and
-            blocks[i]['lines'][0].startswith('.. container::')):
+        if blocks[i]['type'] == 'paragraph' and blocks[i]['lines'][
+            0
+        ].startswith('.. container::'):
             indent = blocks[i]['indent']
             adjustment = blocks[i + 1]['indent'] - indent
             containertype = blocks[i]['lines'][0][15:]
@@ -292,7 +317,9 @@ def prunecontainers(blocks, keep):
         i += 1
     return blocks, pruned
 
+
 _sectionre = re.compile(br"""^([-=`:.'"~^_*+#])\1+$""")
+
 
 def findtables(blocks):
     '''Find simple tables
@@ -309,19 +336,23 @@ def findtables(blocks):
         #  1    2   3
         #  x    y   z
         # === ==== ===
-        if (block['type'] == 'paragraph' and
-            len(block['lines']) > 2 and
-            _tablere.match(block['lines'][0]) and
-            block['lines'][0] == block['lines'][-1]):
+        if (
+            block['type'] == 'paragraph'
+            and len(block['lines']) > 2
+            and _tablere.match(block['lines'][0])
+            and block['lines'][0] == block['lines'][-1]
+        ):
             block['type'] = 'table'
             block['header'] = False
             div = block['lines'][0]
 
             # column markers are ASCII so we can calculate column
             # position in bytes
-            columns = [x for x in pycompat.xrange(len(div))
-                       if div[x:x + 1] == '=' and (x == 0 or
-                                                   div[x - 1:x] == ' ')]
+            columns = [
+                x
+                for x in pycompat.xrange(len(div))
+                if div[x : x + 1] == '=' and (x == 0 or div[x - 1 : x] == ' ')
+            ]
             rows = []
             for l in block['lines'][1:-1]:
                 if l == div:
@@ -330,12 +361,12 @@ def findtables(blocks):
                 row = []
                 # we measure columns not in bytes or characters but in
                 # colwidth which makes things tricky
-                pos = columns[0] # leading whitespace is bytes
+                pos = columns[0]  # leading whitespace is bytes
                 for n, start in enumerate(columns):
                     if n + 1 < len(columns):
                         width = columns[n + 1] - start
-                        v = encoding.getcols(l, pos, width) # gather columns
-                        pos += len(v) # calculate byte position of end
+                        v = encoding.getcols(l, pos, width)  # gather columns
+                        pos += len(v)  # calculate byte position of end
                         row.append(v.strip())
                     else:
                         row.append(l[pos:].strip())
@@ -344,6 +375,7 @@ def findtables(blocks):
             block['table'] = rows
 
     return blocks
+
 
 def findsections(blocks):
     """Finds sections.
@@ -358,14 +390,17 @@ def findsections(blocks):
         # | Section title                |
         # | -------------                |
         # +------------------------------+
-        if (block['type'] == 'paragraph' and
-            len(block['lines']) == 2 and
-            encoding.colwidth(block['lines'][0]) == len(block['lines'][1]) and
-            _sectionre.match(block['lines'][1])):
+        if (
+            block['type'] == 'paragraph'
+            and len(block['lines']) == 2
+            and encoding.colwidth(block['lines'][0]) == len(block['lines'][1])
+            and _sectionre.match(block['lines'][1])
+        ):
             block['underline'] = block['lines'][1][0:1]
             block['type'] = 'section'
             del block['lines'][1]
     return blocks
+
 
 def inlineliterals(blocks):
     substs = [('``', '"')]
@@ -373,6 +408,7 @@ def inlineliterals(blocks):
         if b['type'] in ('paragraph', 'section'):
             b['lines'] = [replace(l, substs) for l in b['lines']]
     return blocks
+
 
 def hgrole(blocks):
     substs = [(':hg:`', "'hg "), ('`', "'")]
@@ -385,6 +421,7 @@ def hgrole(blocks):
             b['lines'] = [replace(l, substs) for l in b['lines']]
     return blocks
 
+
 def addmargins(blocks):
     """Adds empty blocks for vertical spacing.
 
@@ -393,8 +430,11 @@ def addmargins(blocks):
     """
     i = 1
     while i < len(blocks):
-        if (blocks[i]['type'] == blocks[i - 1]['type'] and
-            blocks[i]['type'] in ('bullet', 'option', 'field')):
+        if blocks[i]['type'] == blocks[i - 1]['type'] and blocks[i]['type'] in (
+            'bullet',
+            'option',
+            'field',
+        ):
             i += 1
         elif not blocks[i - 1]['lines']:
             # no lines in previous block, do not separate
@@ -404,13 +444,15 @@ def addmargins(blocks):
             i += 2
     return blocks
 
+
 def prunecomments(blocks):
     """Remove comments."""
     i = 0
     while i < len(blocks):
         b = blocks[i]
-        if b['type'] == 'paragraph' and (b['lines'][0].startswith('.. ') or
-                                         b['lines'] == ['..']):
+        if b['type'] == 'paragraph' and (
+            b['lines'][0].startswith('.. ') or b['lines'] == ['..']
+        ):
             del blocks[i]
             if i < len(blocks) and blocks[i]['type'] == 'margin':
                 del blocks[i]
@@ -426,17 +468,18 @@ def findadmonitions(blocks, admonitions=None):
     """
     admonitions = admonitions or _admonitiontitles.keys()
 
-    admonitionre = re.compile(br'\.\. (%s)::' % '|'.join(sorted(admonitions)),
-                              flags=re.IGNORECASE)
+    admonitionre = re.compile(
+        br'\.\. (%s)::' % '|'.join(sorted(admonitions)), flags=re.IGNORECASE
+    )
 
     i = 0
     while i < len(blocks):
         m = admonitionre.match(blocks[i]['lines'][0])
         if m:
             blocks[i]['type'] = 'admonition'
-            admonitiontitle = blocks[i]['lines'][0][3:m.end() - 2].lower()
+            admonitiontitle = blocks[i]['lines'][0][3 : m.end() - 2].lower()
 
-            firstline = blocks[i]['lines'][0][m.end() + 1:]
+            firstline = blocks[i]['lines'][0][m.end() + 1 :]
             if firstline:
                 blocks[i]['lines'].insert(1, '   ' + firstline)
 
@@ -444,6 +487,7 @@ def findadmonitions(blocks, admonitions=None):
             del blocks[i]['lines'][0]
         i = i + 1
     return blocks
+
 
 _admonitiontitles = {
     'attention': _('Attention:'),
@@ -457,6 +501,7 @@ _admonitiontitles = {
     'warning': _('Warning!'),
 }
 
+
 def formatoption(block, width):
     desc = ' '.join(map(bytes.strip, block['lines']))
     colwidth = encoding.colwidth(block['optstr'])
@@ -464,9 +509,12 @@ def formatoption(block, width):
     hanging = block['optstrwidth']
     initindent = '%s%s  ' % (block['optstr'], ' ' * ((hanging - colwidth)))
     hangindent = ' ' * (encoding.colwidth(initindent) + 1)
-    return ' %s\n' % (stringutil.wrap(desc, usablewidth,
-                                      initindent=initindent,
-                                      hangindent=hangindent))
+    return ' %s\n' % (
+        stringutil.wrap(
+            desc, usablewidth, initindent=initindent, hangindent=hangindent
+        )
+    )
+
 
 def formatblock(block, width):
     """Format a block according to width."""
@@ -481,10 +529,12 @@ def formatblock(block, width):
 
         defindent = indent + hang * ' '
         text = ' '.join(map(bytes.strip, block['lines']))
-        return '%s\n%s\n' % (indent + admonition,
-                             stringutil.wrap(text, width=width,
-                                             initindent=defindent,
-                                             hangindent=defindent))
+        return '%s\n%s\n' % (
+            indent + admonition,
+            stringutil.wrap(
+                text, width=width, initindent=defindent, hangindent=defindent
+            ),
+        )
     if block['type'] == 'margin':
         return '\n'
     if block['type'] == 'literal':
@@ -492,7 +542,7 @@ def formatblock(block, width):
         return indent + ('\n' + indent).join(block['lines']) + '\n'
     if block['type'] == 'section':
         underline = encoding.colwidth(block['lines'][0]) * block['underline']
-        return "%s%s\n%s%s\n" % (indent, block['lines'][0],indent, underline)
+        return "%s%s\n%s%s\n" % (indent, block['lines'][0], indent, underline)
     if block['type'] == 'table':
         table = block['table']
         # compute column widths
@@ -508,9 +558,9 @@ def formatblock(block, width):
                 pad = ' ' * (w - encoding.colwidth(v))
                 l.append(v + pad)
             l = ' '.join(l)
-            l = stringutil.wrap(l, width=width,
-                                initindent=indent,
-                                hangindent=hang)
+            l = stringutil.wrap(
+                l, width=width, initindent=indent, hangindent=hang
+            )
             if not text and block['header']:
                 text = l + '\n' + indent + '-' * (min(width, span)) + '\n'
             else:
@@ -521,9 +571,12 @@ def formatblock(block, width):
         hang = len(block['lines'][-1]) - len(block['lines'][-1].lstrip())
         defindent = indent + hang * ' '
         text = ' '.join(map(bytes.strip, block['lines'][1:]))
-        return '%s\n%s\n' % (term, stringutil.wrap(text, width=width,
-                                                   initindent=defindent,
-                                                   hangindent=defindent))
+        return '%s\n%s\n' % (
+            term,
+            stringutil.wrap(
+                text, width=width, initindent=defindent, hangindent=defindent
+            ),
+        )
     subindent = indent
     if block['type'] == 'bullet':
         if block['lines'][0].startswith('| '):
@@ -547,9 +600,13 @@ def formatblock(block, width):
         return formatoption(block, width)
 
     text = ' '.join(map(bytes.strip, block['lines']))
-    return stringutil.wrap(text, width=width,
-                           initindent=indent,
-                           hangindent=subindent) + '\n'
+    return (
+        stringutil.wrap(
+            text, width=width, initindent=indent, hangindent=subindent
+        )
+        + '\n'
+    )
+
 
 def formathtml(blocks):
     """Format RST blocks as HTML"""
@@ -634,13 +691,15 @@ def formathtml(blocks):
             else:
                 nb = blocks[pos + 1]
                 ni = nb['indent']
-                if (ni < level or
-                    (ni == level and
-                     nb['type'] not in 'definition bullet field option')):
+                if ni < level or (
+                    ni == level
+                    and nb['type'] not in 'definition bullet field option'
+                ):
                     out.append('</%s>\n' % start)
                     listnest.pop()
 
     return ''.join(out)
+
 
 def parse(text, indent=0, keep=None, admonitions=None):
     """Parse text into a list of blocks"""
@@ -661,13 +720,16 @@ def parse(text, indent=0, keep=None, admonitions=None):
     blocks = prunecomments(blocks)
     return blocks, pruned
 
+
 def formatblocks(blocks, width):
     text = ''.join(formatblock(b, width) for b in blocks)
     return text
 
+
 def formatplain(blocks, width):
     """Format parsed blocks as plain text"""
     return ''.join(formatblock(b, width) for b in blocks)
+
 
 def format(text, width=80, indent=0, keep=None, style='plain', section=None):
     """Parse and format the text according to width."""
@@ -678,6 +740,7 @@ def format(text, width=80, indent=0, keep=None, style='plain', section=None):
         return formathtml(blocks)
     else:
         return formatplain(blocks, width=width)
+
 
 def filtersections(blocks, section):
     """Select parsed blocks under the specified section
@@ -705,8 +768,7 @@ def filtersections(blocks, section):
                 s = []
                 for j in pycompat.xrange(3, plen - 1):
                     parent = parents[j]
-                    if (j >= llen or
-                        lastparents[j] != parent):
+                    if j >= llen or lastparents[j] != parent:
                         s.append(len(blocks))
                         sec = sections[parent][2]
                         blocks.append(sec[0])
@@ -728,11 +790,13 @@ def filtersections(blocks, section):
             path = [blocks[syn]['lines'][0] for syn in s]
             real = s[-1] + 2
             realline = blocks[real]['lines']
-            realline[0] = ('"%s"' %
-                           '.'.join(path + [realline[0]]).replace('"', ''))
-            del blocks[s[0]:real]
+            realline[0] = '"%s"' % '.'.join(path + [realline[0]]).replace(
+                '"', ''
+            )
+            del blocks[s[0] : real]
 
     return blocks
+
 
 def _getsections(blocks):
     '''return a list of (section path, nesting level, blocks) tuples'''
@@ -793,8 +857,9 @@ def _getsections(blocks):
                     if section['type'] != 'margin':
                         sindent = section['indent']
                         if len(section['lines']) > 1:
-                            sindent += (len(section['lines'][1]) -
-                                        len(section['lines'][1].lstrip(' ')))
+                            sindent += len(section['lines'][1]) - len(
+                                section['lines'][1].lstrip(' ')
+                            )
                         if bindent >= sindent:
                             break
                     pointer += 1
@@ -805,6 +870,7 @@ def _getsections(blocks):
                     secs.append(('', blevel, []))
             secs[-1][2].append(b)
     return secs
+
 
 def maketable(data, indent=0, header=False):
     '''Generate an RST table for the given table data as a list of lines'''

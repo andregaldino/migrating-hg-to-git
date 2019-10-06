@@ -18,9 +18,7 @@ from mercurial import (
     registrar,
     util,
 )
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -29,6 +27,7 @@ command = registrar.command(cmdtable)
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
+
 
 @command('relink', [], _('[ORIGIN]'), helpcategory=command.CATEGORY_MAINTENANCE)
 def relink(ui, repo, origin=None, **opts):
@@ -56,11 +55,14 @@ def relink(ui, repo, origin=None, **opts):
     command is running. (Both repositories will be locked against
     writes.)
     """
-    if (not util.safehasattr(util, 'samefile') or
-        not util.safehasattr(util, 'samedevice')):
+    if not util.safehasattr(util, 'samefile') or not util.safehasattr(
+        util, 'samedevice'
+    ):
         raise error.Abort(_('hardlinks are not supported on this system'))
-    src = hg.repository(repo.baseui, ui.expandpath(origin or 'default-relink',
-                                          origin or 'default'))
+    src = hg.repository(
+        repo.baseui,
+        ui.expandpath(origin or 'default-relink', origin or 'default'),
+    )
     ui.status(_('relinking %s to %s\n') % (src.store.path, repo.store.path))
     if repo.root == src.root:
         ui.status(_('there is nothing to relink\n'))
@@ -74,6 +76,7 @@ def relink(ui, repo, origin=None, **opts):
         candidates = sorted(collect(src, ui))
         targets = prune(candidates, src.store.path, repo.store.path, ui)
         do_relink(src.store.path, repo.store.path, targets, ui)
+
 
 def collect(src, ui):
     seplen = len(os.path.sep)
@@ -89,11 +92,13 @@ def collect(src, ui):
     src = src.store.path
     progress = ui.makeprogress(_('collecting'), unit=_('files'), total=total)
     pos = 0
-    ui.status(_("tip has %d files, estimated total number of files: %d\n")
-              % (live, total))
+    ui.status(
+        _("tip has %d files, estimated total number of files: %d\n")
+        % (live, total)
+    )
     for dirpath, dirnames, filenames in os.walk(src):
         dirnames.sort()
-        relpath = dirpath[len(src) + seplen:]
+        relpath = dirpath[len(src) + seplen :]
         for filename in sorted(filenames):
             if filename[-2:] not in ('.d', '.i'):
                 continue
@@ -108,6 +113,7 @@ def collect(src, ui):
     ui.status(_('collected %d candidate storage files\n') % len(candidates))
     return candidates
 
+
 def prune(candidates, src, dst, ui):
     def linkfilter(src, dst, st):
         try:
@@ -120,14 +126,16 @@ def prune(candidates, src, dst, ui):
         if not util.samedevice(src, dst):
             # No point in continuing
             raise error.Abort(
-                _('source and destination are on different devices'))
+                _('source and destination are on different devices')
+            )
         if st.st_size != ts.st_size:
             return False
         return st
 
     targets = []
-    progress = ui.makeprogress(_('pruning'), unit=_('files'),
-                               total=len(candidates))
+    progress = ui.makeprogress(
+        _('pruning'), unit=_('files'), total=len(candidates)
+    )
     pos = 0
     for fn, st in candidates:
         pos += 1
@@ -144,6 +152,7 @@ def prune(candidates, src, dst, ui):
     ui.status(_('pruned down to %d probably relinkable files\n') % len(targets))
     return targets
 
+
 def do_relink(src, dst, files, ui):
     def relinkfile(src, dst):
         bak = dst + '.bak'
@@ -159,8 +168,9 @@ def do_relink(src, dst, files, ui):
     relinked = 0
     savedbytes = 0
 
-    progress = ui.makeprogress(_('relinking'), unit=_('files'),
-                               total=len(files))
+    progress = ui.makeprogress(
+        _('relinking'), unit=_('files'), total=len(files)
+    )
     pos = 0
     for f, sz in files:
         pos += 1
@@ -190,5 +200,7 @@ def do_relink(src, dst, files, ui):
 
     progress.complete()
 
-    ui.status(_('relinked %d files (%s reclaimed)\n') %
-              (relinked, util.bytecount(savedbytes)))
+    ui.status(
+        _('relinked %d files (%s reclaimed)\n')
+        % (relinked, util.bytecount(savedbytes))
+    )

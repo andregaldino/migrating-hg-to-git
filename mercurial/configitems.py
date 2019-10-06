@@ -15,6 +15,7 @@ from . import (
     error,
 )
 
+
 def loadconfigtable(ui, extname, configtable):
     """update config item known to the ui with the extension ones"""
     for section, items in sorted(configtable.items()):
@@ -28,6 +29,7 @@ def loadconfigtable(ui, extname, configtable):
 
         knownitems.update(items)
 
+
 class configitem(object):
     """represent a known config item
 
@@ -38,8 +40,16 @@ class configitem(object):
     :generic: this is a generic definition, match name using regular expression.
     """
 
-    def __init__(self, section, name, default=None, alias=(),
-                 generic=False, priority=0, experimental=False):
+    def __init__(
+        self,
+        section,
+        name,
+        default=None,
+        alias=(),
+        generic=False,
+        priority=0,
+        experimental=False,
+    ):
         self.section = section
         self.name = name
         self.default = default
@@ -50,6 +60,7 @@ class configitem(object):
         self._re = None
         if generic:
             self._re = re.compile(self.name)
+
 
 class itemregister(dict):
     """A specialized dictionary that can handle wild-card selection"""
@@ -91,7 +102,9 @@ class itemregister(dict):
 
         return None
 
+
 coreitems = {}
+
 
 def _register(configtable, *args, **kwargs):
     item = configitem(*args, **kwargs)
@@ -101,10 +114,12 @@ def _register(configtable, *args, **kwargs):
         raise error.ProgrammingError(msg % (item.section, item.name))
     section[item.name] = item
 
+
 # special value for case where the default is derived from other values
 dynamicdefault = object()
 
 # Registering actual config items
+
 
 def getitemregister(configtable):
     f = functools.partial(_register, configtable)
@@ -112,1417 +127,1405 @@ def getitemregister(configtable):
     f.dynamicdefault = dynamicdefault
     return f
 
+
 coreconfigitem = getitemregister(coreitems)
 
+
 def _registerdiffopts(section, configprefix=''):
-    coreconfigitem(section, configprefix + 'nodates',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'nodates', default=False,
     )
-    coreconfigitem(section, configprefix + 'showfunc',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'showfunc', default=False,
     )
-    coreconfigitem(section, configprefix + 'unified',
-        default=None,
+    coreconfigitem(
+        section, configprefix + 'unified', default=None,
     )
-    coreconfigitem(section, configprefix + 'git',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'git', default=False,
     )
-    coreconfigitem(section, configprefix + 'ignorews',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'ignorews', default=False,
     )
-    coreconfigitem(section, configprefix + 'ignorewsamount',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'ignorewsamount', default=False,
     )
-    coreconfigitem(section, configprefix + 'ignoreblanklines',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'ignoreblanklines', default=False,
     )
-    coreconfigitem(section, configprefix + 'ignorewseol',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'ignorewseol', default=False,
     )
-    coreconfigitem(section, configprefix + 'nobinary',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'nobinary', default=False,
     )
-    coreconfigitem(section, configprefix + 'noprefix',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'noprefix', default=False,
     )
-    coreconfigitem(section, configprefix + 'word-diff',
-        default=False,
+    coreconfigitem(
+        section, configprefix + 'word-diff', default=False,
     )
 
-coreconfigitem('alias', '.*',
-    default=dynamicdefault,
-    generic=True,
+
+coreconfigitem(
+    'alias', '.*', default=dynamicdefault, generic=True,
 )
-coreconfigitem('auth', 'cookiefile',
-    default=None,
+coreconfigitem(
+    'auth', 'cookiefile', default=None,
 )
 _registerdiffopts(section='annotate')
 # bookmarks.pushing: internal hack for discovery
-coreconfigitem('bookmarks', 'pushing',
-    default=list,
+coreconfigitem(
+    'bookmarks', 'pushing', default=list,
 )
 # bundle.mainreporoot: internal hack for bundlerepo
-coreconfigitem('bundle', 'mainreporoot',
-    default='',
+coreconfigitem(
+    'bundle', 'mainreporoot', default='',
 )
-coreconfigitem('censor', 'policy',
-    default='abort',
-    experimental=True,
+coreconfigitem(
+    'censor', 'policy', default='abort', experimental=True,
 )
-coreconfigitem('chgserver', 'idletimeout',
-    default=3600,
+coreconfigitem(
+    'chgserver', 'idletimeout', default=3600,
 )
-coreconfigitem('chgserver', 'skiphash',
-    default=False,
+coreconfigitem(
+    'chgserver', 'skiphash', default=False,
 )
-coreconfigitem('cmdserver', 'log',
-    default=None,
+coreconfigitem(
+    'cmdserver', 'log', default=None,
 )
-coreconfigitem('cmdserver', 'max-log-files',
-    default=7,
+coreconfigitem(
+    'cmdserver', 'max-log-files', default=7,
 )
-coreconfigitem('cmdserver', 'max-log-size',
-    default='1 MB',
+coreconfigitem(
+    'cmdserver', 'max-log-size', default='1 MB',
 )
-coreconfigitem('cmdserver', 'max-repo-cache',
-    default=0,
-    experimental=True,
+coreconfigitem(
+    'cmdserver', 'max-repo-cache', default=0, experimental=True,
 )
-coreconfigitem('cmdserver', 'message-encodings',
-    default=list,
-    experimental=True,
+coreconfigitem(
+    'cmdserver', 'message-encodings', default=list, experimental=True,
 )
-coreconfigitem('cmdserver', 'track-log',
+coreconfigitem(
+    'cmdserver',
+    'track-log',
     default=lambda: ['chgserver', 'cmdserver', 'repocache'],
 )
-coreconfigitem('color', '.*',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'color', '.*', default=None, generic=True,
 )
-coreconfigitem('color', 'mode',
-    default='auto',
+coreconfigitem(
+    'color', 'mode', default='auto',
 )
-coreconfigitem('color', 'pagermode',
-    default=dynamicdefault,
+coreconfigitem(
+    'color', 'pagermode', default=dynamicdefault,
 )
 _registerdiffopts(section='commands', configprefix='commit.interactive.')
-coreconfigitem('commands', 'commit.post-status',
-    default=False,
+coreconfigitem(
+    'commands', 'commit.post-status', default=False,
 )
-coreconfigitem('commands', 'grep.all-files',
-    default=False,
-    experimental=True,
+coreconfigitem(
+    'commands', 'grep.all-files', default=False, experimental=True,
 )
-coreconfigitem('commands', 'resolve.confirm',
-    default=False,
+coreconfigitem(
+    'commands', 'resolve.confirm', default=False,
 )
-coreconfigitem('commands', 'resolve.explicit-re-merge',
-    default=False,
+coreconfigitem(
+    'commands', 'resolve.explicit-re-merge', default=False,
 )
-coreconfigitem('commands', 'resolve.mark-check',
-    default='none',
+coreconfigitem(
+    'commands', 'resolve.mark-check', default='none',
 )
 _registerdiffopts(section='commands', configprefix='revert.interactive.')
-coreconfigitem('commands', 'show.aliasprefix',
-    default=list,
+coreconfigitem(
+    'commands', 'show.aliasprefix', default=list,
 )
-coreconfigitem('commands', 'status.relative',
-    default=False,
+coreconfigitem(
+    'commands', 'status.relative', default=False,
 )
-coreconfigitem('commands', 'status.skipstates',
-    default=[],
-    experimental=True,
+coreconfigitem(
+    'commands', 'status.skipstates', default=[], experimental=True,
 )
-coreconfigitem('commands', 'status.terse',
-    default='',
+coreconfigitem(
+    'commands', 'status.terse', default='',
 )
-coreconfigitem('commands', 'status.verbose',
-    default=False,
+coreconfigitem(
+    'commands', 'status.verbose', default=False,
 )
-coreconfigitem('commands', 'update.check',
-    default=None,
+coreconfigitem(
+    'commands', 'update.check', default=None,
 )
-coreconfigitem('commands', 'update.requiredest',
-    default=False,
+coreconfigitem(
+    'commands', 'update.requiredest', default=False,
 )
-coreconfigitem('committemplate', '.*',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'committemplate', '.*', default=None, generic=True,
 )
-coreconfigitem('convert', 'bzr.saverev',
-    default=True,
+coreconfigitem(
+    'convert', 'bzr.saverev', default=True,
 )
-coreconfigitem('convert', 'cvsps.cache',
-    default=True,
+coreconfigitem(
+    'convert', 'cvsps.cache', default=True,
 )
-coreconfigitem('convert', 'cvsps.fuzz',
-    default=60,
+coreconfigitem(
+    'convert', 'cvsps.fuzz', default=60,
 )
-coreconfigitem('convert', 'cvsps.logencoding',
-    default=None,
+coreconfigitem(
+    'convert', 'cvsps.logencoding', default=None,
 )
-coreconfigitem('convert', 'cvsps.mergefrom',
-    default=None,
+coreconfigitem(
+    'convert', 'cvsps.mergefrom', default=None,
 )
-coreconfigitem('convert', 'cvsps.mergeto',
-    default=None,
+coreconfigitem(
+    'convert', 'cvsps.mergeto', default=None,
 )
-coreconfigitem('convert', 'git.committeractions',
-    default=lambda: ['messagedifferent'],
+coreconfigitem(
+    'convert', 'git.committeractions', default=lambda: ['messagedifferent'],
 )
-coreconfigitem('convert', 'git.extrakeys',
-    default=list,
+coreconfigitem(
+    'convert', 'git.extrakeys', default=list,
 )
-coreconfigitem('convert', 'git.findcopiesharder',
-    default=False,
+coreconfigitem(
+    'convert', 'git.findcopiesharder', default=False,
 )
-coreconfigitem('convert', 'git.remoteprefix',
-    default='remote',
+coreconfigitem(
+    'convert', 'git.remoteprefix', default='remote',
 )
-coreconfigitem('convert', 'git.renamelimit',
-    default=400,
+coreconfigitem(
+    'convert', 'git.renamelimit', default=400,
 )
-coreconfigitem('convert', 'git.saverev',
-    default=True,
+coreconfigitem(
+    'convert', 'git.saverev', default=True,
 )
-coreconfigitem('convert', 'git.similarity',
-    default=50,
+coreconfigitem(
+    'convert', 'git.similarity', default=50,
 )
-coreconfigitem('convert', 'git.skipsubmodules',
-    default=False,
+coreconfigitem(
+    'convert', 'git.skipsubmodules', default=False,
 )
-coreconfigitem('convert', 'hg.clonebranches',
-    default=False,
+coreconfigitem(
+    'convert', 'hg.clonebranches', default=False,
 )
-coreconfigitem('convert', 'hg.ignoreerrors',
-    default=False,
+coreconfigitem(
+    'convert', 'hg.ignoreerrors', default=False,
 )
-coreconfigitem('convert', 'hg.preserve-hash',
-    default=False,
+coreconfigitem(
+    'convert', 'hg.preserve-hash', default=False,
 )
-coreconfigitem('convert', 'hg.revs',
-    default=None,
+coreconfigitem(
+    'convert', 'hg.revs', default=None,
 )
-coreconfigitem('convert', 'hg.saverev',
-    default=False,
+coreconfigitem(
+    'convert', 'hg.saverev', default=False,
 )
-coreconfigitem('convert', 'hg.sourcename',
-    default=None,
+coreconfigitem(
+    'convert', 'hg.sourcename', default=None,
 )
-coreconfigitem('convert', 'hg.startrev',
-    default=None,
+coreconfigitem(
+    'convert', 'hg.startrev', default=None,
 )
-coreconfigitem('convert', 'hg.tagsbranch',
-    default='default',
+coreconfigitem(
+    'convert', 'hg.tagsbranch', default='default',
 )
-coreconfigitem('convert', 'hg.usebranchnames',
-    default=True,
+coreconfigitem(
+    'convert', 'hg.usebranchnames', default=True,
 )
-coreconfigitem('convert', 'ignoreancestorcheck',
-    default=False,
-    experimental=True,
+coreconfigitem(
+    'convert', 'ignoreancestorcheck', default=False, experimental=True,
 )
-coreconfigitem('convert', 'localtimezone',
-    default=False,
+coreconfigitem(
+    'convert', 'localtimezone', default=False,
 )
-coreconfigitem('convert', 'p4.encoding',
-    default=dynamicdefault,
+coreconfigitem(
+    'convert', 'p4.encoding', default=dynamicdefault,
 )
-coreconfigitem('convert', 'p4.startrev',
-    default=0,
+coreconfigitem(
+    'convert', 'p4.startrev', default=0,
 )
-coreconfigitem('convert', 'skiptags',
-    default=False,
+coreconfigitem(
+    'convert', 'skiptags', default=False,
 )
-coreconfigitem('convert', 'svn.debugsvnlog',
-    default=True,
+coreconfigitem(
+    'convert', 'svn.debugsvnlog', default=True,
 )
-coreconfigitem('convert', 'svn.trunk',
-    default=None,
+coreconfigitem(
+    'convert', 'svn.trunk', default=None,
 )
-coreconfigitem('convert', 'svn.tags',
-    default=None,
+coreconfigitem(
+    'convert', 'svn.tags', default=None,
 )
-coreconfigitem('convert', 'svn.branches',
-    default=None,
+coreconfigitem(
+    'convert', 'svn.branches', default=None,
 )
-coreconfigitem('convert', 'svn.startrev',
-    default=0,
+coreconfigitem(
+    'convert', 'svn.startrev', default=0,
 )
-coreconfigitem('debug', 'dirstate.delaywrite',
-    default=0,
+coreconfigitem(
+    'debug', 'dirstate.delaywrite', default=0,
 )
-coreconfigitem('defaults', '.*',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'defaults', '.*', default=None, generic=True,
 )
-coreconfigitem('devel', 'all-warnings',
-    default=False,
+coreconfigitem(
+    'devel', 'all-warnings', default=False,
 )
-coreconfigitem('devel', 'bundle2.debug',
-    default=False,
+coreconfigitem(
+    'devel', 'bundle2.debug', default=False,
 )
-coreconfigitem('devel', 'bundle.delta',
-    default='',
+coreconfigitem(
+    'devel', 'bundle.delta', default='',
 )
-coreconfigitem('devel', 'cache-vfs',
-    default=None,
+coreconfigitem(
+    'devel', 'cache-vfs', default=None,
 )
-coreconfigitem('devel', 'check-locks',
-    default=False,
+coreconfigitem(
+    'devel', 'check-locks', default=False,
 )
-coreconfigitem('devel', 'check-relroot',
-    default=False,
+coreconfigitem(
+    'devel', 'check-relroot', default=False,
 )
-coreconfigitem('devel', 'default-date',
-    default=None,
+coreconfigitem(
+    'devel', 'default-date', default=None,
 )
-coreconfigitem('devel', 'deprec-warn',
-    default=False,
+coreconfigitem(
+    'devel', 'deprec-warn', default=False,
 )
-coreconfigitem('devel', 'disableloaddefaultcerts',
-    default=False,
+coreconfigitem(
+    'devel', 'disableloaddefaultcerts', default=False,
 )
-coreconfigitem('devel', 'warn-empty-changegroup',
-    default=False,
+coreconfigitem(
+    'devel', 'warn-empty-changegroup', default=False,
 )
-coreconfigitem('devel', 'legacy.exchange',
-    default=list,
+coreconfigitem(
+    'devel', 'legacy.exchange', default=list,
 )
-coreconfigitem('devel', 'servercafile',
-    default='',
+coreconfigitem(
+    'devel', 'servercafile', default='',
 )
-coreconfigitem('devel', 'serverexactprotocol',
-    default='',
+coreconfigitem(
+    'devel', 'serverexactprotocol', default='',
 )
-coreconfigitem('devel', 'serverrequirecert',
-    default=False,
+coreconfigitem(
+    'devel', 'serverrequirecert', default=False,
 )
-coreconfigitem('devel', 'strip-obsmarkers',
-    default=True,
+coreconfigitem(
+    'devel', 'strip-obsmarkers', default=True,
 )
-coreconfigitem('devel', 'warn-config',
-    default=None,
+coreconfigitem(
+    'devel', 'warn-config', default=None,
 )
-coreconfigitem('devel', 'warn-config-default',
-    default=None,
+coreconfigitem(
+    'devel', 'warn-config-default', default=None,
 )
-coreconfigitem('devel', 'user.obsmarker',
-    default=None,
+coreconfigitem(
+    'devel', 'user.obsmarker', default=None,
 )
-coreconfigitem('devel', 'warn-config-unknown',
-    default=None,
+coreconfigitem(
+    'devel', 'warn-config-unknown', default=None,
 )
-coreconfigitem('devel', 'debug.copies',
-    default=False,
+coreconfigitem(
+    'devel', 'debug.copies', default=False,
 )
-coreconfigitem('devel', 'debug.extensions',
-    default=False,
+coreconfigitem(
+    'devel', 'debug.extensions', default=False,
 )
-coreconfigitem('devel', 'debug.peer-request',
-    default=False,
+coreconfigitem(
+    'devel', 'debug.peer-request', default=False,
 )
-coreconfigitem('devel', 'discovery.randomize',
-    default=True,
+coreconfigitem(
+    'devel', 'discovery.randomize', default=True,
 )
 _registerdiffopts(section='diff')
-coreconfigitem('email', 'bcc',
-    default=None,
+coreconfigitem(
+    'email', 'bcc', default=None,
 )
-coreconfigitem('email', 'cc',
-    default=None,
+coreconfigitem(
+    'email', 'cc', default=None,
 )
-coreconfigitem('email', 'charsets',
-    default=list,
+coreconfigitem(
+    'email', 'charsets', default=list,
 )
-coreconfigitem('email', 'from',
-    default=None,
+coreconfigitem(
+    'email', 'from', default=None,
 )
-coreconfigitem('email', 'method',
-    default='smtp',
+coreconfigitem(
+    'email', 'method', default='smtp',
 )
-coreconfigitem('email', 'reply-to',
-    default=None,
+coreconfigitem(
+    'email', 'reply-to', default=None,
 )
-coreconfigitem('email', 'to',
-    default=None,
+coreconfigitem(
+    'email', 'to', default=None,
 )
-coreconfigitem('experimental', 'archivemetatemplate',
-    default=dynamicdefault,
+coreconfigitem(
+    'experimental', 'archivemetatemplate', default=dynamicdefault,
 )
-coreconfigitem('experimental', 'auto-publish',
-    default='publish',
+coreconfigitem(
+    'experimental', 'auto-publish', default='publish',
 )
-coreconfigitem('experimental', 'bundle-phases',
+coreconfigitem(
+    'experimental', 'bundle-phases', default=False,
+)
+coreconfigitem(
+    'experimental', 'bundle2-advertise', default=True,
+)
+coreconfigitem(
+    'experimental', 'bundle2-output-capture', default=False,
+)
+coreconfigitem(
+    'experimental', 'bundle2.pushback', default=False,
+)
+coreconfigitem(
+    'experimental', 'bundle2lazylocking', default=False,
+)
+coreconfigitem(
+    'experimental', 'bundlecomplevel', default=None,
+)
+coreconfigitem(
+    'experimental', 'bundlecomplevel.bzip2', default=None,
+)
+coreconfigitem(
+    'experimental', 'bundlecomplevel.gzip', default=None,
+)
+coreconfigitem(
+    'experimental', 'bundlecomplevel.none', default=None,
+)
+coreconfigitem(
+    'experimental', 'bundlecomplevel.zstd', default=None,
+)
+coreconfigitem(
+    'experimental', 'changegroup3', default=False,
+)
+coreconfigitem(
+    'experimental', 'cleanup-as-archived', default=False,
+)
+coreconfigitem(
+    'experimental', 'clientcompressionengines', default=list,
+)
+coreconfigitem(
+    'experimental', 'copytrace', default='on',
+)
+coreconfigitem(
+    'experimental', 'copytrace.movecandidateslimit', default=100,
+)
+coreconfigitem(
+    'experimental', 'copytrace.sourcecommitlimit', default=100,
+)
+coreconfigitem(
+    'experimental', 'copies.read-from', default="filelog-only",
+)
+coreconfigitem(
+    'experimental', 'copies.write-to', default='filelog-only',
+)
+coreconfigitem(
+    'experimental', 'crecordtest', default=None,
+)
+coreconfigitem(
+    'experimental', 'directaccess', default=False,
+)
+coreconfigitem(
+    'experimental', 'directaccess.revnums', default=False,
+)
+coreconfigitem(
+    'experimental', 'editortmpinhg', default=False,
+)
+coreconfigitem(
+    'experimental', 'evolution', default=list,
+)
+coreconfigitem(
+    'experimental',
+    'evolution.allowdivergence',
     default=False,
+    alias=[('experimental', 'allowdivergence')],
 )
-coreconfigitem('experimental', 'bundle2-advertise',
+coreconfigitem(
+    'experimental', 'evolution.allowunstable', default=None,
+)
+coreconfigitem(
+    'experimental', 'evolution.createmarkers', default=None,
+)
+coreconfigitem(
+    'experimental',
+    'evolution.effect-flags',
     default=True,
+    alias=[('experimental', 'effect-flags')],
 )
-coreconfigitem('experimental', 'bundle2-output-capture',
-    default=False,
+coreconfigitem(
+    'experimental', 'evolution.exchange', default=None,
 )
-coreconfigitem('experimental', 'bundle2.pushback',
-    default=False,
+coreconfigitem(
+    'experimental', 'evolution.bundle-obsmarker', default=False,
 )
-coreconfigitem('experimental', 'bundle2lazylocking',
-    default=False,
+coreconfigitem(
+    'experimental', 'log.topo', default=False,
 )
-coreconfigitem('experimental', 'bundlecomplevel',
-    default=None,
+coreconfigitem(
+    'experimental', 'evolution.report-instabilities', default=True,
 )
-coreconfigitem('experimental', 'bundlecomplevel.bzip2',
-    default=None,
-)
-coreconfigitem('experimental', 'bundlecomplevel.gzip',
-    default=None,
-)
-coreconfigitem('experimental', 'bundlecomplevel.none',
-    default=None,
-)
-coreconfigitem('experimental', 'bundlecomplevel.zstd',
-    default=None,
-)
-coreconfigitem('experimental', 'changegroup3',
-    default=False,
-)
-coreconfigitem('experimental', 'cleanup-as-archived',
-    default=False,
-)
-coreconfigitem('experimental', 'clientcompressionengines',
-    default=list,
-)
-coreconfigitem('experimental', 'copytrace',
-    default='on',
-)
-coreconfigitem('experimental', 'copytrace.movecandidateslimit',
-    default=100,
-)
-coreconfigitem('experimental', 'copytrace.sourcecommitlimit',
-    default=100,
-)
-coreconfigitem('experimental', 'copies.read-from',
-    default="filelog-only",
-)
-coreconfigitem('experimental', 'copies.write-to',
-    default='filelog-only',
-)
-coreconfigitem('experimental', 'crecordtest',
-    default=None,
-)
-coreconfigitem('experimental', 'directaccess',
-    default=False,
-)
-coreconfigitem('experimental', 'directaccess.revnums',
-    default=False,
-)
-coreconfigitem('experimental', 'editortmpinhg',
-    default=False,
-)
-coreconfigitem('experimental', 'evolution',
-    default=list,
-)
-coreconfigitem('experimental', 'evolution.allowdivergence',
-    default=False,
-    alias=[('experimental', 'allowdivergence')]
-)
-coreconfigitem('experimental', 'evolution.allowunstable',
-    default=None,
-)
-coreconfigitem('experimental', 'evolution.createmarkers',
-    default=None,
-)
-coreconfigitem('experimental', 'evolution.effect-flags',
-    default=True,
-    alias=[('experimental', 'effect-flags')]
-)
-coreconfigitem('experimental', 'evolution.exchange',
-    default=None,
-)
-coreconfigitem('experimental', 'evolution.bundle-obsmarker',
-    default=False,
-)
-coreconfigitem('experimental', 'log.topo',
-    default=False,
-)
-coreconfigitem('experimental', 'evolution.report-instabilities',
-    default=True,
-)
-coreconfigitem('experimental', 'evolution.track-operation',
-    default=True,
+coreconfigitem(
+    'experimental', 'evolution.track-operation', default=True,
 )
 # repo-level config to exclude a revset visibility
 #
 # The target use case is to use `share` to expose different subset of the same
 # repository, especially server side. See also `server.view`.
-coreconfigitem('experimental', 'extra-filter-revs',
-    default=None,
+coreconfigitem(
+    'experimental', 'extra-filter-revs', default=None,
 )
-coreconfigitem('experimental', 'maxdeltachainspan',
-    default=-1,
+coreconfigitem(
+    'experimental', 'maxdeltachainspan', default=-1,
 )
-coreconfigitem('experimental', 'mergetempdirprefix',
-    default=None,
+coreconfigitem(
+    'experimental', 'mergetempdirprefix', default=None,
 )
-coreconfigitem('experimental', 'mmapindexthreshold',
-    default=None,
+coreconfigitem(
+    'experimental', 'mmapindexthreshold', default=None,
 )
-coreconfigitem('experimental', 'narrow',
-    default=False,
+coreconfigitem(
+    'experimental', 'narrow', default=False,
 )
-coreconfigitem('experimental', 'nonnormalparanoidcheck',
-    default=False,
+coreconfigitem(
+    'experimental', 'nonnormalparanoidcheck', default=False,
 )
-coreconfigitem('experimental', 'exportableenviron',
-    default=list,
+coreconfigitem(
+    'experimental', 'exportableenviron', default=list,
 )
-coreconfigitem('experimental', 'extendedheader.index',
-    default=None,
+coreconfigitem(
+    'experimental', 'extendedheader.index', default=None,
 )
-coreconfigitem('experimental', 'extendedheader.similarity',
-    default=False,
+coreconfigitem(
+    'experimental', 'extendedheader.similarity', default=False,
 )
-coreconfigitem('experimental', 'graphshorten',
-    default=False,
+coreconfigitem(
+    'experimental', 'graphshorten', default=False,
 )
-coreconfigitem('experimental', 'graphstyle.parent',
-    default=dynamicdefault,
+coreconfigitem(
+    'experimental', 'graphstyle.parent', default=dynamicdefault,
 )
-coreconfigitem('experimental', 'graphstyle.missing',
-    default=dynamicdefault,
+coreconfigitem(
+    'experimental', 'graphstyle.missing', default=dynamicdefault,
 )
-coreconfigitem('experimental', 'graphstyle.grandparent',
-    default=dynamicdefault,
+coreconfigitem(
+    'experimental', 'graphstyle.grandparent', default=dynamicdefault,
 )
-coreconfigitem('experimental', 'hook-track-tags',
-    default=False,
+coreconfigitem(
+    'experimental', 'hook-track-tags', default=False,
 )
-coreconfigitem('experimental', 'httppeer.advertise-v2',
-    default=False,
+coreconfigitem(
+    'experimental', 'httppeer.advertise-v2', default=False,
 )
-coreconfigitem('experimental', 'httppeer.v2-encoder-order',
-    default=None,
+coreconfigitem(
+    'experimental', 'httppeer.v2-encoder-order', default=None,
 )
-coreconfigitem('experimental', 'httppostargs',
-    default=False,
+coreconfigitem(
+    'experimental', 'httppostargs', default=False,
 )
-coreconfigitem('experimental', 'mergedriver',
-    default=None,
+coreconfigitem(
+    'experimental', 'mergedriver', default=None,
 )
 coreconfigitem('experimental', 'nointerrupt', default=False)
 coreconfigitem('experimental', 'nointerrupt-interactiveonly', default=True)
 
-coreconfigitem('experimental', 'obsmarkers-exchange-debug',
-    default=False,
+coreconfigitem(
+    'experimental', 'obsmarkers-exchange-debug', default=False,
 )
-coreconfigitem('experimental', 'remotenames',
-    default=False,
+coreconfigitem(
+    'experimental', 'remotenames', default=False,
 )
-coreconfigitem('experimental', 'removeemptydirs',
-    default=True,
+coreconfigitem(
+    'experimental', 'removeemptydirs', default=True,
 )
-coreconfigitem('experimental', 'revert.interactive.select-to-keep',
-    default=False,
+coreconfigitem(
+    'experimental', 'revert.interactive.select-to-keep', default=False,
 )
-coreconfigitem('experimental', 'revisions.prefixhexnode',
-    default=False,
+coreconfigitem(
+    'experimental', 'revisions.prefixhexnode', default=False,
 )
-coreconfigitem('experimental', 'revlogv2',
-    default=None,
+coreconfigitem(
+    'experimental', 'revlogv2', default=None,
 )
-coreconfigitem('experimental', 'revisions.disambiguatewithin',
-    default=None,
+coreconfigitem(
+    'experimental', 'revisions.disambiguatewithin', default=None,
 )
-coreconfigitem('experimental', 'server.filesdata.recommended-batch-size',
-    default=50000,
+coreconfigitem(
+    'experimental', 'server.filesdata.recommended-batch-size', default=50000,
 )
-coreconfigitem('experimental', 'server.manifestdata.recommended-batch-size',
+coreconfigitem(
+    'experimental',
+    'server.manifestdata.recommended-batch-size',
     default=100000,
 )
-coreconfigitem('experimental', 'server.stream-narrow-clones',
+coreconfigitem(
+    'experimental', 'server.stream-narrow-clones', default=False,
+)
+coreconfigitem(
+    'experimental', 'single-head-per-branch', default=False,
+)
+coreconfigitem(
+    'experimental',
+    'single-head-per-branch:account-closed-heads',
     default=False,
 )
-coreconfigitem('experimental', 'single-head-per-branch',
-    default=False,
+coreconfigitem(
+    'experimental', 'sshserver.support-v2', default=False,
 )
-coreconfigitem('experimental', 'single-head-per-branch:account-closed-heads',
-    default=False,
+coreconfigitem(
+    'experimental', 'sparse-read', default=False,
 )
-coreconfigitem('experimental', 'sshserver.support-v2',
-    default=False,
+coreconfigitem(
+    'experimental', 'sparse-read.density-threshold', default=0.50,
 )
-coreconfigitem('experimental', 'sparse-read',
-    default=False,
+coreconfigitem(
+    'experimental', 'sparse-read.min-gap-size', default='65K',
 )
-coreconfigitem('experimental', 'sparse-read.density-threshold',
-    default=0.50,
+coreconfigitem(
+    'experimental', 'treemanifest', default=False,
 )
-coreconfigitem('experimental', 'sparse-read.min-gap-size',
-    default='65K',
+coreconfigitem(
+    'experimental', 'update.atomic-file', default=False,
 )
-coreconfigitem('experimental', 'treemanifest',
-    default=False,
+coreconfigitem(
+    'experimental', 'sshpeer.advertise-v2', default=False,
 )
-coreconfigitem('experimental', 'update.atomic-file',
-    default=False,
+coreconfigitem(
+    'experimental', 'web.apiserver', default=False,
 )
-coreconfigitem('experimental', 'sshpeer.advertise-v2',
-    default=False,
+coreconfigitem(
+    'experimental', 'web.api.http-v2', default=False,
 )
-coreconfigitem('experimental', 'web.apiserver',
-    default=False,
+coreconfigitem(
+    'experimental', 'web.api.debugreflect', default=False,
 )
-coreconfigitem('experimental', 'web.api.http-v2',
-    default=False,
+coreconfigitem(
+    'experimental', 'worker.wdir-get-thread-safe', default=False,
 )
-coreconfigitem('experimental', 'web.api.debugreflect',
-    default=False,
+coreconfigitem(
+    'experimental', 'xdiff', default=False,
 )
-coreconfigitem('experimental', 'worker.wdir-get-thread-safe',
-    default=False,
+coreconfigitem(
+    'extensions', '.*', default=None, generic=True,
 )
-coreconfigitem('experimental', 'xdiff',
-    default=False,
+coreconfigitem(
+    'extdata', '.*', default=None, generic=True,
 )
-coreconfigitem('extensions', '.*',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'format', 'bookmarks-in-store', default=False,
 )
-coreconfigitem('extdata', '.*',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'format', 'chunkcachesize', default=None, experimental=True,
 )
-coreconfigitem('format', 'bookmarks-in-store',
-    default=False,
+coreconfigitem(
+    'format', 'dotencode', default=True,
 )
-coreconfigitem('format', 'chunkcachesize',
-    default=None,
-    experimental=True,
+coreconfigitem(
+    'format', 'generaldelta', default=False, experimental=True,
 )
-coreconfigitem('format', 'dotencode',
-    default=True,
+coreconfigitem(
+    'format', 'manifestcachesize', default=None, experimental=True,
 )
-coreconfigitem('format', 'generaldelta',
-    default=False,
-    experimental=True,
+coreconfigitem(
+    'format', 'maxchainlen', default=dynamicdefault, experimental=True,
 )
-coreconfigitem('format', 'manifestcachesize',
-    default=None,
-    experimental=True,
+coreconfigitem(
+    'format', 'obsstore-version', default=None,
 )
-coreconfigitem('format', 'maxchainlen',
-    default=dynamicdefault,
-    experimental=True,
+coreconfigitem(
+    'format', 'sparse-revlog', default=True,
 )
-coreconfigitem('format', 'obsstore-version',
-    default=None,
-)
-coreconfigitem('format', 'sparse-revlog',
-    default=True,
-)
-coreconfigitem('format', 'revlog-compression',
+coreconfigitem(
+    'format',
+    'revlog-compression',
     default='zlib',
-    alias=[('experimental', 'format.compression')]
+    alias=[('experimental', 'format.compression')],
 )
-coreconfigitem('format', 'usefncache',
-    default=True,
+coreconfigitem(
+    'format', 'usefncache', default=True,
 )
-coreconfigitem('format', 'usegeneraldelta',
-    default=True,
+coreconfigitem(
+    'format', 'usegeneraldelta', default=True,
 )
-coreconfigitem('format', 'usestore',
-    default=True,
+coreconfigitem(
+    'format', 'usestore', default=True,
 )
-coreconfigitem('format', 'use-side-data',
-    default=False,
-    experimental=True,
+coreconfigitem(
+    'format', 'use-side-data', default=False, experimental=True,
 )
-coreconfigitem('format', 'internal-phase',
-    default=False,
-    experimental=True,
+coreconfigitem(
+    'format', 'internal-phase', default=False, experimental=True,
 )
-coreconfigitem('fsmonitor', 'warn_when_unused',
-    default=True,
+coreconfigitem(
+    'fsmonitor', 'warn_when_unused', default=True,
 )
-coreconfigitem('fsmonitor', 'warn_update_file_count',
-    default=50000,
+coreconfigitem(
+    'fsmonitor', 'warn_update_file_count', default=50000,
 )
-coreconfigitem('help', br'hidden-command\..*',
-    default=False,
-    generic=True,
+coreconfigitem(
+    'help', br'hidden-command\..*', default=False, generic=True,
 )
-coreconfigitem('help', br'hidden-topic\..*',
-    default=False,
-    generic=True,
+coreconfigitem(
+    'help', br'hidden-topic\..*', default=False, generic=True,
 )
-coreconfigitem('hooks', '.*',
-    default=dynamicdefault,
-    generic=True,
+coreconfigitem(
+    'hooks', '.*', default=dynamicdefault, generic=True,
 )
-coreconfigitem('hgweb-paths', '.*',
-    default=list,
-    generic=True,
+coreconfigitem(
+    'hgweb-paths', '.*', default=list, generic=True,
 )
-coreconfigitem('hostfingerprints', '.*',
-    default=list,
-    generic=True,
+coreconfigitem(
+    'hostfingerprints', '.*', default=list, generic=True,
 )
-coreconfigitem('hostsecurity', 'ciphers',
-    default=None,
+coreconfigitem(
+    'hostsecurity', 'ciphers', default=None,
 )
-coreconfigitem('hostsecurity', 'disabletls10warning',
-    default=False,
+coreconfigitem(
+    'hostsecurity', 'disabletls10warning', default=False,
 )
-coreconfigitem('hostsecurity', 'minimumprotocol',
-    default=dynamicdefault,
+coreconfigitem(
+    'hostsecurity', 'minimumprotocol', default=dynamicdefault,
 )
-coreconfigitem('hostsecurity', '.*:minimumprotocol$',
-    default=dynamicdefault,
-    generic=True,
+coreconfigitem(
+    'hostsecurity', '.*:minimumprotocol$', default=dynamicdefault, generic=True,
 )
-coreconfigitem('hostsecurity', '.*:ciphers$',
-    default=dynamicdefault,
-    generic=True,
+coreconfigitem(
+    'hostsecurity', '.*:ciphers$', default=dynamicdefault, generic=True,
 )
-coreconfigitem('hostsecurity', '.*:fingerprints$',
-    default=list,
-    generic=True,
+coreconfigitem(
+    'hostsecurity', '.*:fingerprints$', default=list, generic=True,
 )
-coreconfigitem('hostsecurity', '.*:verifycertsfile$',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'hostsecurity', '.*:verifycertsfile$', default=None, generic=True,
 )
 
-coreconfigitem('http_proxy', 'always',
-    default=False,
+coreconfigitem(
+    'http_proxy', 'always', default=False,
 )
-coreconfigitem('http_proxy', 'host',
-    default=None,
+coreconfigitem(
+    'http_proxy', 'host', default=None,
 )
-coreconfigitem('http_proxy', 'no',
-    default=list,
+coreconfigitem(
+    'http_proxy', 'no', default=list,
 )
-coreconfigitem('http_proxy', 'passwd',
-    default=None,
+coreconfigitem(
+    'http_proxy', 'passwd', default=None,
 )
-coreconfigitem('http_proxy', 'user',
-    default=None,
-)
-
-coreconfigitem('http', 'timeout',
-    default=None,
+coreconfigitem(
+    'http_proxy', 'user', default=None,
 )
 
-coreconfigitem('logtoprocess', 'commandexception',
-    default=None,
+coreconfigitem(
+    'http', 'timeout', default=None,
 )
-coreconfigitem('logtoprocess', 'commandfinish',
-    default=None,
+
+coreconfigitem(
+    'logtoprocess', 'commandexception', default=None,
 )
-coreconfigitem('logtoprocess', 'command',
-    default=None,
+coreconfigitem(
+    'logtoprocess', 'commandfinish', default=None,
 )
-coreconfigitem('logtoprocess', 'develwarn',
-    default=None,
+coreconfigitem(
+    'logtoprocess', 'command', default=None,
 )
-coreconfigitem('logtoprocess', 'uiblocked',
-    default=None,
+coreconfigitem(
+    'logtoprocess', 'develwarn', default=None,
 )
-coreconfigitem('merge', 'checkunknown',
-    default='abort',
+coreconfigitem(
+    'logtoprocess', 'uiblocked', default=None,
 )
-coreconfigitem('merge', 'checkignored',
-    default='abort',
+coreconfigitem(
+    'merge', 'checkunknown', default='abort',
 )
-coreconfigitem('experimental', 'merge.checkpathconflicts',
-    default=False,
+coreconfigitem(
+    'merge', 'checkignored', default='abort',
 )
-coreconfigitem('merge', 'followcopies',
-    default=True,
+coreconfigitem(
+    'experimental', 'merge.checkpathconflicts', default=False,
 )
-coreconfigitem('merge', 'on-failure',
-    default='continue',
+coreconfigitem(
+    'merge', 'followcopies', default=True,
 )
-coreconfigitem('merge', 'preferancestor',
-        default=lambda: ['*'],
-        experimental=True,
+coreconfigitem(
+    'merge', 'on-failure', default='continue',
 )
-coreconfigitem('merge', 'strict-capability-check',
-    default=False,
+coreconfigitem(
+    'merge', 'preferancestor', default=lambda: ['*'], experimental=True,
 )
-coreconfigitem('merge-tools', '.*',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'merge', 'strict-capability-check', default=False,
 )
-coreconfigitem('merge-tools', br'.*\.args$',
+coreconfigitem(
+    'merge-tools', '.*', default=None, generic=True,
+)
+coreconfigitem(
+    'merge-tools',
+    br'.*\.args$',
     default="$local $base $other",
     generic=True,
     priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.binary$',
+coreconfigitem(
+    'merge-tools', br'.*\.binary$', default=False, generic=True, priority=-1,
+)
+coreconfigitem(
+    'merge-tools', br'.*\.check$', default=list, generic=True, priority=-1,
+)
+coreconfigitem(
+    'merge-tools',
+    br'.*\.checkchanged$',
     default=False,
     generic=True,
     priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.check$',
-    default=list,
-    generic=True,
-    priority=-1,
-)
-coreconfigitem('merge-tools', br'.*\.checkchanged$',
-    default=False,
-    generic=True,
-    priority=-1,
-)
-coreconfigitem('merge-tools', br'.*\.executable$',
+coreconfigitem(
+    'merge-tools',
+    br'.*\.executable$',
     default=dynamicdefault,
     generic=True,
     priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.fixeol$',
-    default=False,
-    generic=True,
-    priority=-1,
+coreconfigitem(
+    'merge-tools', br'.*\.fixeol$', default=False, generic=True, priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.gui$',
-    default=False,
-    generic=True,
-    priority=-1,
+coreconfigitem(
+    'merge-tools', br'.*\.gui$', default=False, generic=True, priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.mergemarkers$',
+coreconfigitem(
+    'merge-tools',
+    br'.*\.mergemarkers$',
     default='basic',
     generic=True,
     priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.mergemarkertemplate$',
+coreconfigitem(
+    'merge-tools',
+    br'.*\.mergemarkertemplate$',
     default=dynamicdefault,  # take from ui.mergemarkertemplate
     generic=True,
     priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.priority$',
-    default=0,
-    generic=True,
-    priority=-1,
+coreconfigitem(
+    'merge-tools', br'.*\.priority$', default=0, generic=True, priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.premerge$',
+coreconfigitem(
+    'merge-tools',
+    br'.*\.premerge$',
     default=dynamicdefault,
     generic=True,
     priority=-1,
 )
-coreconfigitem('merge-tools', br'.*\.symlink$',
-    default=False,
-    generic=True,
-    priority=-1,
+coreconfigitem(
+    'merge-tools', br'.*\.symlink$', default=False, generic=True, priority=-1,
 )
-coreconfigitem('pager', 'attend-.*',
-    default=dynamicdefault,
-    generic=True,
+coreconfigitem(
+    'pager', 'attend-.*', default=dynamicdefault, generic=True,
 )
-coreconfigitem('pager', 'ignore',
-    default=list,
+coreconfigitem(
+    'pager', 'ignore', default=list,
 )
-coreconfigitem('pager', 'pager',
-    default=dynamicdefault,
+coreconfigitem(
+    'pager', 'pager', default=dynamicdefault,
 )
-coreconfigitem('patch', 'eol',
-    default='strict',
+coreconfigitem(
+    'patch', 'eol', default='strict',
 )
-coreconfigitem('patch', 'fuzz',
-    default=2,
+coreconfigitem(
+    'patch', 'fuzz', default=2,
 )
-coreconfigitem('paths', 'default',
-    default=None,
+coreconfigitem(
+    'paths', 'default', default=None,
 )
-coreconfigitem('paths', 'default-push',
-    default=None,
+coreconfigitem(
+    'paths', 'default-push', default=None,
 )
-coreconfigitem('paths', '.*',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'paths', '.*', default=None, generic=True,
 )
-coreconfigitem('phases', 'checksubrepos',
-    default='follow',
+coreconfigitem(
+    'phases', 'checksubrepos', default='follow',
 )
-coreconfigitem('phases', 'new-commit',
-    default='draft',
+coreconfigitem(
+    'phases', 'new-commit', default='draft',
 )
-coreconfigitem('phases', 'publish',
-    default=True,
+coreconfigitem(
+    'phases', 'publish', default=True,
 )
-coreconfigitem('profiling', 'enabled',
-    default=False,
+coreconfigitem(
+    'profiling', 'enabled', default=False,
 )
-coreconfigitem('profiling', 'format',
-    default='text',
+coreconfigitem(
+    'profiling', 'format', default='text',
 )
-coreconfigitem('profiling', 'freq',
-    default=1000,
+coreconfigitem(
+    'profiling', 'freq', default=1000,
 )
-coreconfigitem('profiling', 'limit',
-    default=30,
+coreconfigitem(
+    'profiling', 'limit', default=30,
 )
-coreconfigitem('profiling', 'nested',
-    default=0,
+coreconfigitem(
+    'profiling', 'nested', default=0,
 )
-coreconfigitem('profiling', 'output',
-    default=None,
+coreconfigitem(
+    'profiling', 'output', default=None,
 )
-coreconfigitem('profiling', 'showmax',
-    default=0.999,
+coreconfigitem(
+    'profiling', 'showmax', default=0.999,
 )
-coreconfigitem('profiling', 'showmin',
-    default=dynamicdefault,
+coreconfigitem(
+    'profiling', 'showmin', default=dynamicdefault,
 )
-coreconfigitem('profiling', 'showtime',
-    default=True,
+coreconfigitem(
+    'profiling', 'showtime', default=True,
 )
-coreconfigitem('profiling', 'sort',
-    default='inlinetime',
+coreconfigitem(
+    'profiling', 'sort', default='inlinetime',
 )
-coreconfigitem('profiling', 'statformat',
-    default='hotpath',
+coreconfigitem(
+    'profiling', 'statformat', default='hotpath',
 )
-coreconfigitem('profiling', 'time-track',
-    default=dynamicdefault,
+coreconfigitem(
+    'profiling', 'time-track', default=dynamicdefault,
 )
-coreconfigitem('profiling', 'type',
-    default='stat',
+coreconfigitem(
+    'profiling', 'type', default='stat',
 )
-coreconfigitem('progress', 'assume-tty',
-    default=False,
+coreconfigitem(
+    'progress', 'assume-tty', default=False,
 )
-coreconfigitem('progress', 'changedelay',
-    default=1,
+coreconfigitem(
+    'progress', 'changedelay', default=1,
 )
-coreconfigitem('progress', 'clear-complete',
-    default=True,
+coreconfigitem(
+    'progress', 'clear-complete', default=True,
 )
-coreconfigitem('progress', 'debug',
-    default=False,
+coreconfigitem(
+    'progress', 'debug', default=False,
 )
-coreconfigitem('progress', 'delay',
-    default=3,
+coreconfigitem(
+    'progress', 'delay', default=3,
 )
-coreconfigitem('progress', 'disable',
-    default=False,
+coreconfigitem(
+    'progress', 'disable', default=False,
 )
-coreconfigitem('progress', 'estimateinterval',
-    default=60.0,
+coreconfigitem(
+    'progress', 'estimateinterval', default=60.0,
 )
-coreconfigitem('progress', 'format',
+coreconfigitem(
+    'progress',
+    'format',
     default=lambda: ['topic', 'bar', 'number', 'estimate'],
 )
-coreconfigitem('progress', 'refresh',
-    default=0.1,
+coreconfigitem(
+    'progress', 'refresh', default=0.1,
 )
-coreconfigitem('progress', 'width',
-    default=dynamicdefault,
+coreconfigitem(
+    'progress', 'width', default=dynamicdefault,
 )
-coreconfigitem('push', 'pushvars.server',
-    default=False,
+coreconfigitem(
+    'push', 'pushvars.server', default=False,
 )
-coreconfigitem('rewrite', 'backup-bundle',
+coreconfigitem(
+    'rewrite',
+    'backup-bundle',
     default=True,
     alias=[('ui', 'history-editing-backup')],
 )
-coreconfigitem('rewrite', 'update-timestamp',
-    default=False,
+coreconfigitem(
+    'rewrite', 'update-timestamp', default=False,
 )
-coreconfigitem('storage', 'new-repo-backend',
-    default='revlogv1',
-    experimental=True,
+coreconfigitem(
+    'storage', 'new-repo-backend', default='revlogv1', experimental=True,
 )
-coreconfigitem('storage', 'revlog.optimize-delta-parent-choice',
+coreconfigitem(
+    'storage',
+    'revlog.optimize-delta-parent-choice',
     default=True,
     alias=[('format', 'aggressivemergedeltas')],
 )
-coreconfigitem('storage', 'revlog.reuse-external-delta',
+coreconfigitem(
+    'storage', 'revlog.reuse-external-delta', default=True,
+)
+coreconfigitem(
+    'storage', 'revlog.reuse-external-delta-parent', default=None,
+)
+coreconfigitem(
+    'storage', 'revlog.zlib.level', default=None,
+)
+coreconfigitem(
+    'storage', 'revlog.zstd.level', default=None,
+)
+coreconfigitem(
+    'server', 'bookmarks-pushkey-compat', default=True,
+)
+coreconfigitem(
+    'server', 'bundle1', default=True,
+)
+coreconfigitem(
+    'server', 'bundle1gd', default=None,
+)
+coreconfigitem(
+    'server', 'bundle1.pull', default=None,
+)
+coreconfigitem(
+    'server', 'bundle1gd.pull', default=None,
+)
+coreconfigitem(
+    'server', 'bundle1.push', default=None,
+)
+coreconfigitem(
+    'server', 'bundle1gd.push', default=None,
+)
+coreconfigitem(
+    'server',
+    'bundle2.stream',
     default=True,
+    alias=[('experimental', 'bundle2.stream')],
 )
-coreconfigitem('storage', 'revlog.reuse-external-delta-parent',
-    default=None,
+coreconfigitem(
+    'server', 'compressionengines', default=list,
 )
-coreconfigitem('storage', 'revlog.zlib.level',
-    default=None,
+coreconfigitem(
+    'server', 'concurrent-push-mode', default='strict',
 )
-coreconfigitem('storage', 'revlog.zstd.level',
-    default=None,
+coreconfigitem(
+    'server', 'disablefullbundle', default=False,
 )
-coreconfigitem('server', 'bookmarks-pushkey-compat',
-    default=True,
+coreconfigitem(
+    'server', 'maxhttpheaderlen', default=1024,
 )
-coreconfigitem('server', 'bundle1',
-    default=True,
+coreconfigitem(
+    'server', 'pullbundle', default=False,
 )
-coreconfigitem('server', 'bundle1gd',
-    default=None,
+coreconfigitem(
+    'server', 'preferuncompressed', default=False,
 )
-coreconfigitem('server', 'bundle1.pull',
-    default=None,
+coreconfigitem(
+    'server', 'streamunbundle', default=False,
 )
-coreconfigitem('server', 'bundle1gd.pull',
-    default=None,
+coreconfigitem(
+    'server', 'uncompressed', default=True,
 )
-coreconfigitem('server', 'bundle1.push',
-    default=None,
+coreconfigitem(
+    'server', 'uncompressedallowsecret', default=False,
 )
-coreconfigitem('server', 'bundle1gd.push',
-    default=None,
+coreconfigitem(
+    'server', 'view', default='served',
 )
-coreconfigitem('server', 'bundle2.stream',
-    default=True,
-    alias=[('experimental', 'bundle2.stream')]
+coreconfigitem(
+    'server', 'validate', default=False,
 )
-coreconfigitem('server', 'compressionengines',
-    default=list,
+coreconfigitem(
+    'server', 'zliblevel', default=-1,
 )
-coreconfigitem('server', 'concurrent-push-mode',
-    default='strict',
+coreconfigitem(
+    'server', 'zstdlevel', default=3,
 )
-coreconfigitem('server', 'disablefullbundle',
-    default=False,
+coreconfigitem(
+    'share', 'pool', default=None,
 )
-coreconfigitem('server', 'maxhttpheaderlen',
-    default=1024,
+coreconfigitem(
+    'share', 'poolnaming', default='identity',
 )
-coreconfigitem('server', 'pullbundle',
-    default=False,
+coreconfigitem(
+    'shelve', 'maxbackups', default=10,
 )
-coreconfigitem('server', 'preferuncompressed',
-    default=False,
+coreconfigitem(
+    'smtp', 'host', default=None,
 )
-coreconfigitem('server', 'streamunbundle',
-    default=False,
+coreconfigitem(
+    'smtp', 'local_hostname', default=None,
 )
-coreconfigitem('server', 'uncompressed',
-    default=True,
+coreconfigitem(
+    'smtp', 'password', default=None,
 )
-coreconfigitem('server', 'uncompressedallowsecret',
-    default=False,
+coreconfigitem(
+    'smtp', 'port', default=dynamicdefault,
 )
-coreconfigitem('server', 'view',
-    default='served',
+coreconfigitem(
+    'smtp', 'tls', default='none',
 )
-coreconfigitem('server', 'validate',
-    default=False,
+coreconfigitem(
+    'smtp', 'username', default=None,
 )
-coreconfigitem('server', 'zliblevel',
-    default=-1,
+coreconfigitem(
+    'sparse', 'missingwarning', default=True, experimental=True,
 )
-coreconfigitem('server', 'zstdlevel',
-    default=3,
-)
-coreconfigitem('share', 'pool',
-    default=None,
-)
-coreconfigitem('share', 'poolnaming',
-    default='identity',
-)
-coreconfigitem('shelve','maxbackups',
-    default=10,
-)
-coreconfigitem('smtp', 'host',
-    default=None,
-)
-coreconfigitem('smtp', 'local_hostname',
-    default=None,
-)
-coreconfigitem('smtp', 'password',
-    default=None,
-)
-coreconfigitem('smtp', 'port',
-    default=dynamicdefault,
-)
-coreconfigitem('smtp', 'tls',
-    default='none',
-)
-coreconfigitem('smtp', 'username',
-    default=None,
-)
-coreconfigitem('sparse', 'missingwarning',
-    default=True,
-    experimental=True,
-)
-coreconfigitem('subrepos', 'allowed',
+coreconfigitem(
+    'subrepos',
+    'allowed',
     default=dynamicdefault,  # to make backporting simpler
 )
-coreconfigitem('subrepos', 'hg:allowed',
-    default=dynamicdefault,
+coreconfigitem(
+    'subrepos', 'hg:allowed', default=dynamicdefault,
 )
-coreconfigitem('subrepos', 'git:allowed',
-    default=dynamicdefault,
+coreconfigitem(
+    'subrepos', 'git:allowed', default=dynamicdefault,
 )
-coreconfigitem('subrepos', 'svn:allowed',
-    default=dynamicdefault,
+coreconfigitem(
+    'subrepos', 'svn:allowed', default=dynamicdefault,
 )
-coreconfigitem('templates', '.*',
-    default=None,
-    generic=True,
+coreconfigitem(
+    'templates', '.*', default=None, generic=True,
 )
-coreconfigitem('templateconfig', '.*',
-    default=dynamicdefault,
-    generic=True,
+coreconfigitem(
+    'templateconfig', '.*', default=dynamicdefault, generic=True,
 )
-coreconfigitem('trusted', 'groups',
-    default=list,
+coreconfigitem(
+    'trusted', 'groups', default=list,
 )
-coreconfigitem('trusted', 'users',
-    default=list,
+coreconfigitem(
+    'trusted', 'users', default=list,
 )
-coreconfigitem('ui', '_usedassubrepo',
-    default=False,
+coreconfigitem(
+    'ui', '_usedassubrepo', default=False,
 )
-coreconfigitem('ui', 'allowemptycommit',
-    default=False,
+coreconfigitem(
+    'ui', 'allowemptycommit', default=False,
 )
-coreconfigitem('ui', 'archivemeta',
-    default=True,
+coreconfigitem(
+    'ui', 'archivemeta', default=True,
 )
-coreconfigitem('ui', 'askusername',
-    default=False,
+coreconfigitem(
+    'ui', 'askusername', default=False,
 )
-coreconfigitem('ui', 'clonebundlefallback',
-    default=False,
+coreconfigitem(
+    'ui', 'clonebundlefallback', default=False,
 )
-coreconfigitem('ui', 'clonebundleprefers',
-    default=list,
+coreconfigitem(
+    'ui', 'clonebundleprefers', default=list,
 )
-coreconfigitem('ui', 'clonebundles',
-    default=True,
+coreconfigitem(
+    'ui', 'clonebundles', default=True,
 )
-coreconfigitem('ui', 'color',
-    default='auto',
+coreconfigitem(
+    'ui', 'color', default='auto',
 )
-coreconfigitem('ui', 'commitsubrepos',
-    default=False,
+coreconfigitem(
+    'ui', 'commitsubrepos', default=False,
 )
-coreconfigitem('ui', 'debug',
-    default=False,
+coreconfigitem(
+    'ui', 'debug', default=False,
 )
-coreconfigitem('ui', 'debugger',
-    default=None,
+coreconfigitem(
+    'ui', 'debugger', default=None,
 )
-coreconfigitem('ui', 'editor',
-    default=dynamicdefault,
+coreconfigitem(
+    'ui', 'editor', default=dynamicdefault,
 )
-coreconfigitem('ui', 'fallbackencoding',
-    default=None,
+coreconfigitem(
+    'ui', 'fallbackencoding', default=None,
 )
-coreconfigitem('ui', 'forcecwd',
-    default=None,
+coreconfigitem(
+    'ui', 'forcecwd', default=None,
 )
-coreconfigitem('ui', 'forcemerge',
-    default=None,
+coreconfigitem(
+    'ui', 'forcemerge', default=None,
 )
-coreconfigitem('ui', 'formatdebug',
-    default=False,
+coreconfigitem(
+    'ui', 'formatdebug', default=False,
 )
-coreconfigitem('ui', 'formatjson',
-    default=False,
+coreconfigitem(
+    'ui', 'formatjson', default=False,
 )
-coreconfigitem('ui', 'formatted',
-    default=None,
+coreconfigitem(
+    'ui', 'formatted', default=None,
 )
-coreconfigitem('ui', 'graphnodetemplate',
-    default=None,
+coreconfigitem(
+    'ui', 'graphnodetemplate', default=None,
 )
-coreconfigitem('ui', 'interactive',
-    default=None,
+coreconfigitem(
+    'ui', 'interactive', default=None,
 )
-coreconfigitem('ui', 'interface',
-    default=None,
+coreconfigitem(
+    'ui', 'interface', default=None,
 )
-coreconfigitem('ui', 'interface.chunkselector',
-    default=None,
+coreconfigitem(
+    'ui', 'interface.chunkselector', default=None,
 )
-coreconfigitem('ui', 'large-file-limit',
-    default=10000000,
+coreconfigitem(
+    'ui', 'large-file-limit', default=10000000,
 )
-coreconfigitem('ui', 'logblockedtimes',
-    default=False,
+coreconfigitem(
+    'ui', 'logblockedtimes', default=False,
 )
-coreconfigitem('ui', 'logtemplate',
-    default=None,
+coreconfigitem(
+    'ui', 'logtemplate', default=None,
 )
-coreconfigitem('ui', 'merge',
-    default=None,
+coreconfigitem(
+    'ui', 'merge', default=None,
 )
-coreconfigitem('ui', 'mergemarkers',
-    default='basic',
+coreconfigitem(
+    'ui', 'mergemarkers', default='basic',
 )
-coreconfigitem('ui', 'mergemarkertemplate',
-    default=('{node|short} '
-            '{ifeq(tags, "tip", "", '
-            'ifeq(tags, "", "", "{tags} "))}'
-            '{if(bookmarks, "{bookmarks} ")}'
-            '{ifeq(branch, "default", "", "{branch} ")}'
-            '- {author|user}: {desc|firstline}')
+coreconfigitem(
+    'ui',
+    'mergemarkertemplate',
+    default=(
+        '{node|short} '
+        '{ifeq(tags, "tip", "", '
+        'ifeq(tags, "", "", "{tags} "))}'
+        '{if(bookmarks, "{bookmarks} ")}'
+        '{ifeq(branch, "default", "", "{branch} ")}'
+        '- {author|user}: {desc|firstline}'
+    ),
 )
-coreconfigitem('ui', 'message-output',
-    default='stdio',
+coreconfigitem(
+    'ui', 'message-output', default='stdio',
 )
-coreconfigitem('ui', 'nontty',
-    default=False,
+coreconfigitem(
+    'ui', 'nontty', default=False,
 )
-coreconfigitem('ui', 'origbackuppath',
-    default=None,
+coreconfigitem(
+    'ui', 'origbackuppath', default=None,
 )
-coreconfigitem('ui', 'paginate',
-    default=True,
+coreconfigitem(
+    'ui', 'paginate', default=True,
 )
-coreconfigitem('ui', 'patch',
-    default=None,
+coreconfigitem(
+    'ui', 'patch', default=None,
 )
-coreconfigitem('ui', 'pre-merge-tool-output-template',
-    default=None,
+coreconfigitem(
+    'ui', 'pre-merge-tool-output-template', default=None,
 )
-coreconfigitem('ui', 'portablefilenames',
-    default='warn',
+coreconfigitem(
+    'ui', 'portablefilenames', default='warn',
 )
-coreconfigitem('ui', 'promptecho',
-    default=False,
+coreconfigitem(
+    'ui', 'promptecho', default=False,
 )
-coreconfigitem('ui', 'quiet',
-    default=False,
+coreconfigitem(
+    'ui', 'quiet', default=False,
 )
-coreconfigitem('ui', 'quietbookmarkmove',
-    default=False,
+coreconfigitem(
+    'ui', 'quietbookmarkmove', default=False,
 )
-coreconfigitem('ui', 'relative-paths',
-    default='legacy',
+coreconfigitem(
+    'ui', 'relative-paths', default='legacy',
 )
-coreconfigitem('ui', 'remotecmd',
-    default='hg',
+coreconfigitem(
+    'ui', 'remotecmd', default='hg',
 )
-coreconfigitem('ui', 'report_untrusted',
-    default=True,
+coreconfigitem(
+    'ui', 'report_untrusted', default=True,
 )
-coreconfigitem('ui', 'rollback',
-    default=True,
+coreconfigitem(
+    'ui', 'rollback', default=True,
 )
-coreconfigitem('ui', 'signal-safe-lock',
-    default=True,
+coreconfigitem(
+    'ui', 'signal-safe-lock', default=True,
 )
-coreconfigitem('ui', 'slash',
-    default=False,
+coreconfigitem(
+    'ui', 'slash', default=False,
 )
-coreconfigitem('ui', 'ssh',
-    default='ssh',
+coreconfigitem(
+    'ui', 'ssh', default='ssh',
 )
-coreconfigitem('ui', 'ssherrorhint',
-    default=None,
+coreconfigitem(
+    'ui', 'ssherrorhint', default=None,
 )
-coreconfigitem('ui', 'statuscopies',
-    default=False,
+coreconfigitem(
+    'ui', 'statuscopies', default=False,
 )
-coreconfigitem('ui', 'strict',
-    default=False,
+coreconfigitem(
+    'ui', 'strict', default=False,
 )
-coreconfigitem('ui', 'style',
-    default='',
+coreconfigitem(
+    'ui', 'style', default='',
 )
-coreconfigitem('ui', 'supportcontact',
-    default=None,
+coreconfigitem(
+    'ui', 'supportcontact', default=None,
 )
-coreconfigitem('ui', 'textwidth',
-    default=78,
+coreconfigitem(
+    'ui', 'textwidth', default=78,
 )
-coreconfigitem('ui', 'timeout',
-    default='600',
+coreconfigitem(
+    'ui', 'timeout', default='600',
 )
-coreconfigitem('ui', 'timeout.warn',
-    default=0,
+coreconfigitem(
+    'ui', 'timeout.warn', default=0,
 )
-coreconfigitem('ui', 'traceback',
-    default=False,
+coreconfigitem(
+    'ui', 'traceback', default=False,
 )
-coreconfigitem('ui', 'tweakdefaults',
-    default=False,
+coreconfigitem(
+    'ui', 'tweakdefaults', default=False,
 )
-coreconfigitem('ui', 'username',
-    alias=[('ui', 'user')]
+coreconfigitem('ui', 'username', alias=[('ui', 'user')])
+coreconfigitem(
+    'ui', 'verbose', default=False,
 )
-coreconfigitem('ui', 'verbose',
-    default=False,
+coreconfigitem(
+    'verify', 'skipflags', default=None,
 )
-coreconfigitem('verify', 'skipflags',
-    default=None,
+coreconfigitem(
+    'web', 'allowbz2', default=False,
 )
-coreconfigitem('web', 'allowbz2',
-    default=False,
+coreconfigitem(
+    'web', 'allowgz', default=False,
 )
-coreconfigitem('web', 'allowgz',
-    default=False,
+coreconfigitem(
+    'web', 'allow-pull', alias=[('web', 'allowpull')], default=True,
 )
-coreconfigitem('web', 'allow-pull',
-    alias=[('web', 'allowpull')],
-    default=True,
+coreconfigitem(
+    'web', 'allow-push', alias=[('web', 'allow_push')], default=list,
 )
-coreconfigitem('web', 'allow-push',
-    alias=[('web', 'allow_push')],
-    default=list,
+coreconfigitem(
+    'web', 'allowzip', default=False,
 )
-coreconfigitem('web', 'allowzip',
-    default=False,
+coreconfigitem(
+    'web', 'archivesubrepos', default=False,
 )
-coreconfigitem('web', 'archivesubrepos',
-    default=False,
+coreconfigitem(
+    'web', 'cache', default=True,
 )
-coreconfigitem('web', 'cache',
-    default=True,
+coreconfigitem(
+    'web', 'comparisoncontext', default=5,
 )
-coreconfigitem('web', 'comparisoncontext',
-    default=5,
+coreconfigitem(
+    'web', 'contact', default=None,
 )
-coreconfigitem('web', 'contact',
-    default=None,
+coreconfigitem(
+    'web', 'deny_push', default=list,
 )
-coreconfigitem('web', 'deny_push',
-    default=list,
+coreconfigitem(
+    'web', 'guessmime', default=False,
 )
-coreconfigitem('web', 'guessmime',
-    default=False,
+coreconfigitem(
+    'web', 'hidden', default=False,
 )
-coreconfigitem('web', 'hidden',
-    default=False,
+coreconfigitem(
+    'web', 'labels', default=list,
 )
-coreconfigitem('web', 'labels',
-    default=list,
+coreconfigitem(
+    'web', 'logoimg', default='hglogo.png',
 )
-coreconfigitem('web', 'logoimg',
-    default='hglogo.png',
+coreconfigitem(
+    'web', 'logourl', default='https://mercurial-scm.org/',
 )
-coreconfigitem('web', 'logourl',
-    default='https://mercurial-scm.org/',
+coreconfigitem(
+    'web', 'accesslog', default='-',
 )
-coreconfigitem('web', 'accesslog',
-    default='-',
+coreconfigitem(
+    'web', 'address', default='',
 )
-coreconfigitem('web', 'address',
-    default='',
+coreconfigitem(
+    'web', 'allow-archive', alias=[('web', 'allow_archive')], default=list,
 )
-coreconfigitem('web', 'allow-archive',
-    alias=[('web', 'allow_archive')],
-    default=list,
+coreconfigitem(
+    'web', 'allow_read', default=list,
 )
-coreconfigitem('web', 'allow_read',
-    default=list,
+coreconfigitem(
+    'web', 'baseurl', default=None,
 )
-coreconfigitem('web', 'baseurl',
-    default=None,
+coreconfigitem(
+    'web', 'cacerts', default=None,
 )
-coreconfigitem('web', 'cacerts',
-    default=None,
+coreconfigitem(
+    'web', 'certificate', default=None,
 )
-coreconfigitem('web', 'certificate',
-    default=None,
+coreconfigitem(
+    'web', 'collapse', default=False,
 )
-coreconfigitem('web', 'collapse',
-    default=False,
+coreconfigitem(
+    'web', 'csp', default=None,
 )
-coreconfigitem('web', 'csp',
-    default=None,
+coreconfigitem(
+    'web', 'deny_read', default=list,
 )
-coreconfigitem('web', 'deny_read',
-    default=list,
+coreconfigitem(
+    'web', 'descend', default=True,
 )
-coreconfigitem('web', 'descend',
-    default=True,
+coreconfigitem(
+    'web', 'description', default="",
 )
-coreconfigitem('web', 'description',
-    default="",
+coreconfigitem(
+    'web', 'encoding', default=lambda: encoding.encoding,
 )
-coreconfigitem('web', 'encoding',
-    default=lambda: encoding.encoding,
+coreconfigitem(
+    'web', 'errorlog', default='-',
 )
-coreconfigitem('web', 'errorlog',
-    default='-',
+coreconfigitem(
+    'web', 'ipv6', default=False,
 )
-coreconfigitem('web', 'ipv6',
-    default=False,
+coreconfigitem(
+    'web', 'maxchanges', default=10,
 )
-coreconfigitem('web', 'maxchanges',
-    default=10,
+coreconfigitem(
+    'web', 'maxfiles', default=10,
 )
-coreconfigitem('web', 'maxfiles',
-    default=10,
+coreconfigitem(
+    'web', 'maxshortchanges', default=60,
 )
-coreconfigitem('web', 'maxshortchanges',
-    default=60,
+coreconfigitem(
+    'web', 'motd', default='',
 )
-coreconfigitem('web', 'motd',
-    default='',
+coreconfigitem(
+    'web', 'name', default=dynamicdefault,
 )
-coreconfigitem('web', 'name',
-    default=dynamicdefault,
+coreconfigitem(
+    'web', 'port', default=8000,
 )
-coreconfigitem('web', 'port',
-    default=8000,
+coreconfigitem(
+    'web', 'prefix', default='',
 )
-coreconfigitem('web', 'prefix',
-    default='',
+coreconfigitem(
+    'web', 'push_ssl', default=True,
 )
-coreconfigitem('web', 'push_ssl',
-    default=True,
+coreconfigitem(
+    'web', 'refreshinterval', default=20,
 )
-coreconfigitem('web', 'refreshinterval',
-    default=20,
+coreconfigitem(
+    'web', 'server-header', default=None,
 )
-coreconfigitem('web', 'server-header',
-    default=None,
+coreconfigitem(
+    'web', 'static', default=None,
 )
-coreconfigitem('web', 'static',
-    default=None,
+coreconfigitem(
+    'web', 'staticurl', default=None,
 )
-coreconfigitem('web', 'staticurl',
-    default=None,
+coreconfigitem(
+    'web', 'stripes', default=1,
 )
-coreconfigitem('web', 'stripes',
-    default=1,
+coreconfigitem(
+    'web', 'style', default='paper',
 )
-coreconfigitem('web', 'style',
-    default='paper',
+coreconfigitem(
+    'web', 'templates', default=None,
 )
-coreconfigitem('web', 'templates',
-    default=None,
+coreconfigitem(
+    'web', 'view', default='served', experimental=True,
 )
-coreconfigitem('web', 'view',
-    default='served',
-    experimental=True,
-)
-coreconfigitem('worker', 'backgroundclose',
-    default=dynamicdefault,
+coreconfigitem(
+    'worker', 'backgroundclose', default=dynamicdefault,
 )
 # Windows defaults to a limit of 512 open files. A buffer of 128
 # should give us enough headway.
-coreconfigitem('worker', 'backgroundclosemaxqueue',
-    default=384,
+coreconfigitem(
+    'worker', 'backgroundclosemaxqueue', default=384,
 )
-coreconfigitem('worker', 'backgroundcloseminfilecount',
-    default=2048,
+coreconfigitem(
+    'worker', 'backgroundcloseminfilecount', default=2048,
 )
-coreconfigitem('worker', 'backgroundclosethreadcount',
-    default=4,
+coreconfigitem(
+    'worker', 'backgroundclosethreadcount', default=4,
 )
-coreconfigitem('worker', 'enabled',
-    default=True,
+coreconfigitem(
+    'worker', 'enabled', default=True,
 )
-coreconfigitem('worker', 'numcpus',
-    default=None,
+coreconfigitem(
+    'worker', 'numcpus', default=None,
 )
 
 # Rebase related configuration moved to core because other extension are doing
 # strange things. For example, shelve import the extensions to reuse some bit
 # without formally loading it.
-coreconfigitem('commands', 'rebase.requiredest',
-            default=False,
+coreconfigitem(
+    'commands', 'rebase.requiredest', default=False,
 )
-coreconfigitem('experimental', 'rebaseskipobsolete',
-    default=True,
+coreconfigitem(
+    'experimental', 'rebaseskipobsolete', default=True,
 )
-coreconfigitem('rebase', 'singletransaction',
-    default=False,
+coreconfigitem(
+    'rebase', 'singletransaction', default=False,
 )
-coreconfigitem('rebase', 'experimental.inmemory',
-    default=False,
+coreconfigitem(
+    'rebase', 'experimental.inmemory', default=False,
 )

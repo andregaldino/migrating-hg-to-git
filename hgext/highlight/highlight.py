@@ -11,6 +11,7 @@
 from __future__ import absolute_import
 
 from mercurial import demandimport
+
 demandimport.IGNORES.update(['pkgutil', 'pkg_resources', '__main__'])
 
 from mercurial import (
@@ -18,9 +19,7 @@ from mercurial import (
     pycompat,
 )
 
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
 
 with demandimport.deactivated():
     import pygments
@@ -39,8 +38,10 @@ guess_lexer_for_filename = pygments.lexers.guess_lexer_for_filename
 TextLexer = pygments.lexers.TextLexer
 HtmlFormatter = pygments.formatters.HtmlFormatter
 
-SYNTAX_CSS = ('\n<link rel="stylesheet" href="{url}highlightcss" '
-              'type="text/css" />')
+SYNTAX_CSS = (
+    '\n<link rel="stylesheet" href="{url}highlightcss" ' 'type="text/css" />'
+)
+
 
 def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
 
@@ -67,8 +68,7 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
     # To get multi-line strings right, we can't format line-by-line
     try:
         path = pycompat.sysstr(fctx.path())
-        lexer = guess_lexer_for_filename(path, text[:1024],
-                                         stripnl=False)
+        lexer = guess_lexer_for_filename(path, text[:1024], stripnl=False)
     except (ClassNotFound, ValueError):
         # guess_lexer will return a lexer if *any* lexer matches. There is
         # no way to specify a minimum match score. This can give a high rate of
@@ -89,8 +89,10 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
     formatter = HtmlFormatter(nowrap=True, style=pycompat.sysstr(style))
 
     colorized = highlight(text, lexer, formatter)
-    coloriter = (s.encode(pycompat.sysstr(encoding.encoding), 'replace')
-                 for s in colorized.splitlines())
+    coloriter = (
+        s.encode(pycompat.sysstr(encoding.encoding), 'replace')
+        for s in colorized.splitlines()
+    )
 
     tmpl._filters['colorize'] = lambda x: next(coloriter)
 

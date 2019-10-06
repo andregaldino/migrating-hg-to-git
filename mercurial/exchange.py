@@ -16,9 +16,7 @@ from .node import (
     nullid,
     nullrev,
 )
-from .thirdparty import (
-    attr,
-)
+from .thirdparty import attr
 from . import (
     bookmarks as bookmod,
     bundle2,
@@ -40,12 +38,8 @@ from . import (
     util,
     wireprototypes,
 )
-from .interfaces import (
-    repository,
-)
-from .utils import (
-    stringutil,
-)
+from .interfaces import repository
+from .utils import stringutil
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -53,11 +47,12 @@ urlreq = util.urlreq
 _NARROWACL_SECTION = 'narrowacl'
 
 # Maps bundle version human names to changegroup versions.
-_bundlespeccgversions = {'v1': '01',
-                         'v2': '02',
-                         'packed1': 's1',
-                         'bundle2': '02', #legacy
-                        }
+_bundlespeccgversions = {
+    'v1': '01',
+    'v2': '02',
+    'packed1': 's1',
+    'bundle2': '02',  # legacy
+}
 
 # Maps bundle version with content opts to choose which part to bundle
 _bundlespeccontentopts = {
@@ -67,7 +62,7 @@ _bundlespeccontentopts = {
         'obsolescence': False,
         'phases': False,
         'tagsfnodescache': False,
-        'revbranchcache': False
+        'revbranchcache': False,
     },
     'v2': {
         'changegroup': True,
@@ -75,20 +70,24 @@ _bundlespeccontentopts = {
         'obsolescence': False,
         'phases': False,
         'tagsfnodescache': True,
-        'revbranchcache': True
+        'revbranchcache': True,
     },
-    'packed1' : {
-        'cg.version': 's1'
-    }
+    'packed1': {'cg.version': 's1'},
 }
 _bundlespeccontentopts['bundle2'] = _bundlespeccontentopts['v2']
 
-_bundlespecvariants = {"streamv2": {"changegroup": False, "streamv2": True,
-                                    "tagsfnodescache": False,
-                                    "revbranchcache": False}}
+_bundlespecvariants = {
+    "streamv2": {
+        "changegroup": False,
+        "streamv2": True,
+        "tagsfnodescache": False,
+        "revbranchcache": False,
+    }
+}
 
 # Compression engines allowed in version 1. THIS SHOULD NEVER CHANGE.
 _bundlespecv1compengines = {'gzip', 'bzip2', 'none'}
+
 
 @attr.s
 class bundlespec(object):
@@ -98,6 +97,7 @@ class bundlespec(object):
     wireversion = attr.ib()
     params = attr.ib()
     contentopts = attr.ib()
+
 
 def parsebundlespec(repo, spec, strict=True):
     """Parse a bundle string specification into parts.
@@ -132,6 +132,7 @@ def parsebundlespec(repo, spec, strict=True):
     Note: this function will likely eventually return a more complex data
     structure, including bundle2 part information.
     """
+
     def parseparams(s):
         if ';' not in s:
             return s, {}
@@ -142,8 +143,12 @@ def parsebundlespec(repo, spec, strict=True):
         for p in paramstr.split(';'):
             if '=' not in p:
                 raise error.InvalidBundleSpecification(
-                    _('invalid bundle specification: '
-                      'missing "=" in parameter: %s') % p)
+                    _(
+                        'invalid bundle specification: '
+                        'missing "=" in parameter: %s'
+                    )
+                    % p
+                )
 
             key, value = p.split('=', 1)
             key = urlreq.unquote(key)
@@ -152,24 +157,29 @@ def parsebundlespec(repo, spec, strict=True):
 
         return version, params
 
-
     if strict and '-' not in spec:
         raise error.InvalidBundleSpecification(
-                _('invalid bundle specification; '
-                  'must be prefixed with compression: %s') % spec)
+            _(
+                'invalid bundle specification; '
+                'must be prefixed with compression: %s'
+            )
+            % spec
+        )
 
     if '-' in spec:
         compression, version = spec.split('-', 1)
 
         if compression not in util.compengines.supportedbundlenames:
             raise error.UnsupportedBundleSpecification(
-                    _('%s compression is not supported') % compression)
+                _('%s compression is not supported') % compression
+            )
 
         version, params = parseparams(version)
 
         if version not in _bundlespeccgversions:
             raise error.UnsupportedBundleSpecification(
-                    _('%s is not a recognized bundle version') % version)
+                _('%s is not a recognized bundle version') % version
+            )
     else:
         # Value could be just the compression or just the version, in which
         # case some defaults are assumed (but only when not in strict mode).
@@ -194,13 +204,15 @@ def parsebundlespec(repo, spec, strict=True):
             version = spec
         else:
             raise error.UnsupportedBundleSpecification(
-                    _('%s is not a recognized bundle specification') % spec)
+                _('%s is not a recognized bundle specification') % spec
+            )
 
     # Bundle version 1 only supports a known set of compression engines.
     if version == 'v1' and compression not in _bundlespecv1compengines:
         raise error.UnsupportedBundleSpecification(
-            _('compression engine %s is not supported on v1 bundles') %
-            compression)
+            _('compression engine %s is not supported on v1 bundles')
+            % compression
+        )
 
     # The specification for packed1 can optionally declare the data formats
     # required to apply it. If we see this metadata, compare against what the
@@ -210,8 +222,9 @@ def parsebundlespec(repo, spec, strict=True):
         missingreqs = requirements - repo.supportedformats
         if missingreqs:
             raise error.UnsupportedBundleSpecification(
-                    _('missing support for repository features: %s') %
-                      ', '.join(sorted(missingreqs)))
+                _('missing support for repository features: %s')
+                % ', '.join(sorted(missingreqs))
+            )
 
     # Compute contentopts based on the version
     contentopts = _bundlespeccontentopts.get(version, {}).copy()
@@ -225,8 +238,10 @@ def parsebundlespec(repo, spec, strict=True):
     compression, wirecompression = engine.bundletype()
     wireversion = _bundlespeccgversions[version]
 
-    return bundlespec(compression, wirecompression, version, wireversion,
-                      params, contentopts)
+    return bundlespec(
+        compression, wirecompression, version, wireversion, params, contentopts
+    )
+
 
 def readbundle(ui, fh, fname, vfs=None):
     header = changegroup.readexactly(fh, 4)
@@ -256,12 +271,14 @@ def readbundle(ui, fh, fname, vfs=None):
     else:
         raise error.Abort(_('%s: unknown bundle version %s') % (fname, version))
 
+
 def getbundlespec(ui, fh):
     """Infer the bundlespec from a bundle file handle.
 
     The input file handle is seeked and the original seek position is not
     restored.
     """
+
     def speccompression(alg):
         try:
             return util.compengines.forbundletype(alg).bundletype()[0]
@@ -292,10 +309,14 @@ def getbundlespec(ui, fh):
                 if version in ('01', '02'):
                     version = 'v2'
                 else:
-                    raise error.Abort(_('changegroup version %s does not have '
-                                        'a known bundlespec') % version,
-                                      hint=_('try upgrading your Mercurial '
-                                              'client'))
+                    raise error.Abort(
+                        _(
+                            'changegroup version %s does not have '
+                            'a known bundlespec'
+                        )
+                        % version,
+                        hint=_('try upgrading your Mercurial ' 'client'),
+                    )
             elif part.type == 'stream2' and version is None:
                 # A stream2 part requires to be part of a v2 bundle
                 requirements = urlreq.unquote(part.params['requirements'])
@@ -304,8 +325,9 @@ def getbundlespec(ui, fh):
                 return 'none-v2;stream=v2;%s' % params
 
         if not version:
-            raise error.Abort(_('could not identify changegroup version in '
-                                'bundle'))
+            raise error.Abort(
+                _('could not identify changegroup version in ' 'bundle')
+            )
 
         return '%s-%s' % (comp, version)
     elif isinstance(b, streamclone.streamcloneapplier):
@@ -314,6 +336,7 @@ def getbundlespec(ui, fh):
         return 'none-packed1;%s' % formatted
     else:
         raise error.Abort(_('unknown bundle type: %s') % b)
+
 
 def _computeoutgoing(repo, heads, common):
     """Computes which revs are outgoing given a set of common
@@ -334,6 +357,7 @@ def _computeoutgoing(repo, heads, common):
         heads = cl.heads()
     return discovery.outgoing(repo, common, heads)
 
+
 def _checkpublish(pushop):
     repo = pushop.repo
     ui = repo.ui
@@ -350,17 +374,20 @@ def _checkpublish(pushop):
         published = repo.revs('::%ln - public()', pushop.revs)
     if published:
         if behavior == 'warn':
-            ui.warn(_('%i changesets about to be published\n')
-                    % len(published))
+            ui.warn(_('%i changesets about to be published\n') % len(published))
         elif behavior == 'confirm':
-            if ui.promptchoice(_('push and publish %i changesets (yn)?'
-                                 '$$ &Yes $$ &No') % len(published)):
+            if ui.promptchoice(
+                _('push and publish %i changesets (yn)?' '$$ &Yes $$ &No')
+                % len(published)
+            ):
                 raise error.Abort(_('user quit'))
         elif behavior == 'abort':
             msg = _('push would publish %i changesets') % len(published)
-            hint = _("use --publish or adjust 'experimental.auto-publish'"
-                     " config")
+            hint = _(
+                "use --publish or adjust 'experimental.auto-publish'" " config"
+            )
             raise error.Abort(msg, hint=hint)
+
 
 def _forcebundle1(op):
     """return true if a pull/push must use bundle1
@@ -377,6 +404,7 @@ def _forcebundle1(op):
     forcebundle1 = 'bundle2' not in exchange and 'bundle1' in exchange
     return forcebundle1 or not op.remote.capable('bundle2')
 
+
 class pushoperation(object):
     """A object that represent a single push operation
 
@@ -386,8 +414,17 @@ class pushoperation(object):
     discarded afterward.
     """
 
-    def __init__(self, repo, remote, force=False, revs=None, newbranch=False,
-                 bookmarks=(), publish=False, pushvars=None):
+    def __init__(
+        self,
+        repo,
+        remote,
+        force=False,
+        revs=None,
+        newbranch=False,
+        bookmarks=(),
+        publish=False,
+        pushvars=None,
+    ):
         # repo we push from
         self.repo = repo
         self.ui = repo.ui
@@ -483,9 +520,11 @@ class pushoperation(object):
         cheads = [node for node in self.revs if nm[node] in common]
         # and
         # * commonheads parents on missing
-        revset = unfi.set('%ln and parents(roots(%ln))',
-                         self.outgoing.commonheads,
-                         self.outgoing.missing)
+        revset = unfi.set(
+            '%ln and parents(roots(%ln))',
+            self.outgoing.commonheads,
+            self.outgoing.missing,
+        )
         cheads.extend(c.node() for c in revset)
         return cheads
 
@@ -497,18 +536,34 @@ class pushoperation(object):
         else:
             return self.fallbackheads
 
+
 # mapping of message used when pushing bookmark
-bookmsgmap = {'update': (_("updating bookmark %s\n"),
-                         _('updating bookmark %s failed!\n')),
-              'export': (_("exporting bookmark %s\n"),
-                         _('exporting bookmark %s failed!\n')),
-              'delete': (_("deleting remote bookmark %s\n"),
-                         _('deleting remote bookmark %s failed!\n')),
-              }
+bookmsgmap = {
+    'update': (
+        _("updating bookmark %s\n"),
+        _('updating bookmark %s failed!\n'),
+    ),
+    'export': (
+        _("exporting bookmark %s\n"),
+        _('exporting bookmark %s failed!\n'),
+    ),
+    'delete': (
+        _("deleting remote bookmark %s\n"),
+        _('deleting remote bookmark %s failed!\n'),
+    ),
+}
 
 
-def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
-         publish=False, opargs=None):
+def push(
+    repo,
+    remote,
+    force=False,
+    revs=None,
+    newbranch=False,
+    bookmarks=(),
+    publish=False,
+    opargs=None,
+):
     '''Push outgoing changesets (limited by revs) from a local
     repository to remote. Return an integer:
       - None means nothing to push
@@ -519,23 +574,38 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
     '''
     if opargs is None:
         opargs = {}
-    pushop = pushoperation(repo, remote, force, revs, newbranch, bookmarks,
-                           publish, **pycompat.strkwargs(opargs))
+    pushop = pushoperation(
+        repo,
+        remote,
+        force,
+        revs,
+        newbranch,
+        bookmarks,
+        publish,
+        **pycompat.strkwargs(opargs)
+    )
     if pushop.remote.local():
-        missing = (set(pushop.repo.requirements)
-                   - pushop.remote.local().supported)
+        missing = (
+            set(pushop.repo.requirements) - pushop.remote.local().supported
+        )
         if missing:
-            msg = _("required features are not"
-                    " supported in the destination:"
-                    " %s") % (', '.join(sorted(missing)))
+            msg = _(
+                "required features are not"
+                " supported in the destination:"
+                " %s"
+            ) % (', '.join(sorted(missing)))
             raise error.Abort(msg)
 
     if not pushop.remote.canpush():
         raise error.Abort(_("destination does not support push"))
 
     if not pushop.remote.capable('unbundle'):
-        raise error.Abort(_('cannot push: destination does not support the '
-                            'unbundle wire protocol command'))
+        raise error.Abort(
+            _(
+                'cannot push: destination does not support the '
+                'unbundle wire protocol command'
+            )
+        )
 
     # get lock as we might write phase data
     wlock = lock = None
@@ -543,20 +613,23 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
         # bundle2 push may receive a reply bundle touching bookmarks
         # requiring the wlock. Take it now to ensure proper ordering.
         maypushback = pushop.ui.configbool('experimental', 'bundle2.pushback')
-        if ((not _forcebundle1(pushop)) and
-            maypushback and
-            not bookmod.bookmarksinstore(repo)):
+        if (
+            (not _forcebundle1(pushop))
+            and maypushback
+            and not bookmod.bookmarksinstore(repo)
+        ):
             wlock = pushop.repo.wlock()
         lock = pushop.repo.lock()
-        pushop.trmanager = transactionmanager(pushop.repo,
-                                              'push-response',
-                                              pushop.remote.url())
+        pushop.trmanager = transactionmanager(
+            pushop.repo, 'push-response', pushop.remote.url()
+        )
     except error.LockUnavailable as err:
         # source repo cannot be locked.
         # We do not abort the push, but just disable the local phase
         # synchronisation.
-        msg = ('cannot lock source repository: %s\n'
-               % stringutil.forcebytestr(err))
+        msg = 'cannot lock source repository: %s\n' % stringutil.forcebytestr(
+            err
+        )
         pushop.ui.debug(msg)
 
     with wlock or util.nullcontextmanager():
@@ -577,6 +650,7 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
 
     return pushop
 
+
 # list of steps to perform discovery before push
 pushdiscoveryorder = []
 
@@ -584,6 +658,7 @@ pushdiscoveryorder = []
 #
 # This exists to help extensions wrap steps if necessary
 pushdiscoverymapping = {}
+
 
 def pushdiscovery(stepname):
     """decorator for function performing discovery before push
@@ -594,12 +669,15 @@ def pushdiscovery(stepname):
 
     You can only use this decorator for a new step, if you want to wrap a step
     from an extension, change the pushdiscovery dictionary directly."""
+
     def dec(func):
         assert stepname not in pushdiscoverymapping
         pushdiscoverymapping[stepname] = func
         pushdiscoveryorder.append(stepname)
         return func
+
     return dec
+
 
 def _pushdiscovery(pushop):
     """Run all discovery steps"""
@@ -607,22 +685,33 @@ def _pushdiscovery(pushop):
         step = pushdiscoverymapping[stepname]
         step(pushop)
 
+
 @pushdiscovery('changeset')
 def _pushdiscoverychangeset(pushop):
     """discover the changeset that need to be pushed"""
     fci = discovery.findcommonincoming
     if pushop.revs:
-        commoninc = fci(pushop.repo, pushop.remote, force=pushop.force,
-                        ancestorsof=pushop.revs)
+        commoninc = fci(
+            pushop.repo,
+            pushop.remote,
+            force=pushop.force,
+            ancestorsof=pushop.revs,
+        )
     else:
         commoninc = fci(pushop.repo, pushop.remote, force=pushop.force)
     common, inc, remoteheads = commoninc
     fco = discovery.findcommonoutgoing
-    outgoing = fco(pushop.repo, pushop.remote, onlyheads=pushop.revs,
-                   commoninc=commoninc, force=pushop.force)
+    outgoing = fco(
+        pushop.repo,
+        pushop.remote,
+        onlyheads=pushop.revs,
+        commoninc=commoninc,
+        force=pushop.force,
+    )
     pushop.outgoing = outgoing
     pushop.remoteheads = remoteheads
     pushop.incoming = inc
+
 
 @pushdiscovery('phase')
 def _pushdiscoveryphase(pushop):
@@ -633,10 +722,12 @@ def _pushdiscoveryphase(pushop):
     unfi = pushop.repo.unfiltered()
     remotephases = listkeys(pushop.remote, 'phases')
 
-    if (pushop.ui.configbool('ui', '_usedassubrepo')
-        and remotephases    # server supports phases
-        and not pushop.outgoing.missing # no changesets to be pushed
-        and remotephases.get('publishing', False)):
+    if (
+        pushop.ui.configbool('ui', '_usedassubrepo')
+        and remotephases  # server supports phases
+        and not pushop.outgoing.missing  # no changesets to be pushed
+        and remotephases.get('publishing', False)
+    ):
         # When:
         # - this is a subrepo push
         # - and remote support phase
@@ -650,9 +741,9 @@ def _pushdiscoveryphase(pushop):
         pushop.fallbackoutdatedphases = []
         return
 
-    pushop.remotephases = phases.remotephasessummary(pushop.repo,
-                                                     pushop.fallbackheads,
-                                                     remotephases)
+    pushop.remotephases = phases.remotephasessummary(
+        pushop.repo, pushop.fallbackheads, remotephases
+    )
     droots = pushop.remotephases.draftroots
 
     extracond = ''
@@ -664,8 +755,11 @@ def _pushdiscoveryphase(pushop):
     # XXX root we may want to ensure it is but it is costly
     fallback = list(unfi.set(revset, droots, pushop.fallbackheads))
     if not pushop.remotephases.publishing and pushop.publish:
-        future = list(unfi.set('%ln and (not public() or %ln::)',
-                               pushop.futureheads, droots))
+        future = list(
+            unfi.set(
+                '%ln and (not public() or %ln::)', pushop.futureheads, droots
+            )
+        )
     elif not outgoing.missing:
         future = fallback
     else:
@@ -673,12 +767,14 @@ def _pushdiscoveryphase(pushop):
         #
         # should not be necessary for publishing server, but because of an
         # issue fixed in xxxxx we have to do it anyway.
-        fdroots = list(unfi.set('roots(%ln  + %ln::)',
-                       outgoing.missing, droots))
+        fdroots = list(
+            unfi.set('roots(%ln  + %ln::)', outgoing.missing, droots)
+        )
         fdroots = [f.node() for f in fdroots]
         future = list(unfi.set(revset, fdroots, pushop.futureheads))
     pushop.outdatedphases = future
     pushop.fallbackoutdatedphases = fallback
+
 
 @pushdiscovery('obsmarker')
 def _pushdiscoveryobsmarkers(pushop):
@@ -697,6 +793,7 @@ def _pushdiscoveryobsmarkers(pushop):
     nodes = (c.node() for c in repo.set('::%ln', pushop.futureheads))
     pushop.outobsmarkers = pushop.repo.obsstore.relevantmarkers(nodes)
 
+
 @pushdiscovery('bookmarks')
 def _pushdiscoverybookmarks(pushop):
     ui = pushop.ui
@@ -710,11 +807,13 @@ def _pushdiscoverybookmarks(pushop):
 
     remotebookmark = bookmod.unhexlifybookmarks(listkeys(remote, 'bookmarks'))
 
-    explicit = {repo._bookmarks.expandname(bookmark)
-                for bookmark in pushop.bookmarks}
+    explicit = {
+        repo._bookmarks.expandname(bookmark) for bookmark in pushop.bookmarks
+    }
 
     comp = bookmod.comparebookmarks(repo, repo._bookmarks, remotebookmark)
     return _processcompared(pushop, ancestors, explicit, remotebookmark, comp)
+
 
 def _processcompared(pushop, pushed, explicit, remotebms, comp):
     """take decision on bookmarks to push to the remote repo
@@ -754,11 +853,17 @@ def _processcompared(pushop, pushed, explicit, remotebms, comp):
     if explicit:
         explicit = sorted(explicit)
         # we should probably list all of them
-        pushop.ui.warn(_('bookmark %s does not exist on the local '
-                         'or remote repository!\n') % explicit[0])
+        pushop.ui.warn(
+            _(
+                'bookmark %s does not exist on the local '
+                'or remote repository!\n'
+            )
+            % explicit[0]
+        )
         pushop.bkresult = 2
 
     pushop.outbookmarks.sort()
+
 
 def _pushcheckoutgoing(pushop):
     outgoing = pushop.outgoing
@@ -776,9 +881,11 @@ def _pushcheckoutgoing(pushop):
             mso = _("push includes obsolete changeset: %s!")
             mspd = _("push includes phase-divergent changeset: %s!")
             mscd = _("push includes content-divergent changeset: %s!")
-            mst = {"orphan": _("push includes orphan changeset: %s!"),
-                   "phase-divergent": mspd,
-                   "content-divergent": mscd}
+            mst = {
+                "orphan": _("push includes orphan changeset: %s!"),
+                "phase-divergent": mspd,
+                "content-divergent": mscd,
+            }
             # If we are to push if there is at least one
             # obsolete or unstable changeset in missing, at
             # least one of the missinghead will be obsolete or
@@ -795,6 +902,7 @@ def _pushcheckoutgoing(pushop):
         discovery.checkheads(pushop)
     return True
 
+
 # List of names of steps to perform for an outgoing bundle2, order matters.
 b2partsgenorder = []
 
@@ -802,6 +910,7 @@ b2partsgenorder = []
 #
 # This exists to help extensions wrap steps if necessary
 b2partsgenmapping = {}
+
 
 def b2partsgenerator(stepname, idx=None):
     """decorator for function generating bundle2 part
@@ -812,6 +921,7 @@ def b2partsgenerator(stepname, idx=None):
 
     You can only use this decorator for new steps, if you want to wrap a step
     from an extension, attack the b2partsgenmapping dictionary directly."""
+
     def dec(func):
         assert stepname not in b2partsgenmapping
         b2partsgenmapping[stepname] = func
@@ -820,7 +930,9 @@ def b2partsgenerator(stepname, idx=None):
         else:
             b2partsgenorder.insert(idx, stepname)
         return func
+
     return dec
+
 
 def _pushb2ctxcheckheads(pushop, bundler):
     """Generate race condition checking parts
@@ -846,12 +958,16 @@ def _pushb2ctxcheckheads(pushop, bundler):
                 data = iter(sorted(affected))
                 bundler.newpart('check:updated-heads', data=data)
 
+
 def _pushing(pushop):
     """return True if we are pushing anything"""
-    return bool(pushop.outgoing.missing
-                or pushop.outdatedphases
-                or pushop.outobsmarkers
-                or pushop.outbookmarks)
+    return bool(
+        pushop.outgoing.missing
+        or pushop.outdatedphases
+        or pushop.outobsmarkers
+        or pushop.outbookmarks
+    )
+
 
 @b2partsgenerator('check-bookmarks')
 def _pushb2checkbookmarks(pushop, bundler):
@@ -867,6 +983,7 @@ def _pushb2checkbookmarks(pushop, bundler):
         data.append((book, old))
     checkdata = bookmod.binaryencode(data)
     bundler.newpart('check:bookmarks', data=checkdata)
+
 
 @b2partsgenerator('check-phases')
 def _pushb2checkphases(pushop, bundler):
@@ -885,6 +1002,7 @@ def _pushb2checkphases(pushop, bundler):
                 nodes.sort()
             checkdata = phases.binaryencode(checks)
             bundler.newpart('check:phases', data=checkdata)
+
 
 @b2partsgenerator('changeset')
 def _pushb2ctx(pushop, bundler):
@@ -906,25 +1024,31 @@ def _pushb2ctx(pushop, bundler):
     version = '01'
     cgversions = b2caps.get('changegroup')
     if cgversions:  # 3.1 and 3.2 ship with an empty value
-        cgversions = [v for v in cgversions
-                      if v in changegroup.supportedoutgoingversions(
-                          pushop.repo)]
+        cgversions = [
+            v
+            for v in cgversions
+            if v in changegroup.supportedoutgoingversions(pushop.repo)
+        ]
         if not cgversions:
             raise error.Abort(_('no common changegroup version'))
         version = max(cgversions)
-    cgstream = changegroup.makestream(pushop.repo, pushop.outgoing, version,
-                                      'push')
+    cgstream = changegroup.makestream(
+        pushop.repo, pushop.outgoing, version, 'push'
+    )
     cgpart = bundler.newpart('changegroup', data=cgstream)
     if cgversions:
         cgpart.addparam('version', version)
     if 'treemanifest' in pushop.repo.requirements:
         cgpart.addparam('treemanifest', '1')
+
     def handlereply(op):
         """extract addchangegroup returns from server reply"""
         cgreplies = op.records.getreplies(cgpart.id)
         assert len(cgreplies['changegroup']) == 1
         pushop.cgresult = cgreplies['changegroup'][0]['return']
+
     return handlereply
+
 
 @b2partsgenerator('phase')
 def _pushb2phases(pushop, bundler):
@@ -943,6 +1067,7 @@ def _pushb2phases(pushop, bundler):
     elif haspushkey:
         return _pushb2phasespushkey(pushop, bundler)
 
+
 def _pushb2phaseheads(pushop, bundler):
     """push phase information through a bundle2 - binary part"""
     pushop.stepsdone.add('phases')
@@ -951,6 +1076,7 @@ def _pushb2phaseheads(pushop, bundler):
         updates[0].extend(h.node() for h in pushop.outdatedphases)
         phasedata = phases.binaryencode(updates)
         bundler.newpart('phase-heads', data=phasedata)
+
 
 def _pushb2phasespushkey(pushop, bundler):
     """push phase information through a bundle2 - pushkey part"""
@@ -985,7 +1111,9 @@ def _pushb2phasespushkey(pushop, bundler):
                 msg = _('updating %s to public failed!\n') % node
             if msg is not None:
                 pushop.ui.warn(msg)
+
     return handlereply
+
 
 @b2partsgenerator('obsmarkers')
 def _pushb2obsmarkers(pushop, bundler):
@@ -998,6 +1126,7 @@ def _pushb2obsmarkers(pushop, bundler):
     if pushop.outobsmarkers:
         markers = sorted(pushop.outobsmarkers)
         bundle2.buildobsmarkerspart(bundler, markers)
+
 
 @b2partsgenerator('bookmarks')
 def _pushb2bookmarks(pushop, bundler):
@@ -1014,6 +1143,7 @@ def _pushb2bookmarks(pushop, bundler):
     elif 'pushkey' in b2caps:
         return _pushb2bookmarkspushkey(pushop, bundler)
 
+
 def _bmaction(old, new):
     """small utility for bookmark pushing"""
     if not old:
@@ -1022,11 +1152,15 @@ def _bmaction(old, new):
         return 'delete'
     return 'update'
 
+
 def _abortonsecretctx(pushop, node, b):
     """abort if a given bookmark points to a secret changeset"""
     if node and pushop.repo[node].phase() == phases.secret:
-        raise error.Abort(_('cannot push bookmark %s as it points to a secret'
-                            ' changeset') % b)
+        raise error.Abort(
+            _('cannot push bookmark %s as it points to a secret' ' changeset')
+            % b
+        )
+
 
 def _pushb2bookmarkspart(pushop, bundler):
     pushop.stepsdone.add('bookmarks')
@@ -1049,6 +1183,7 @@ def _pushb2bookmarkspart(pushop, bundler):
             ui.status(bookmsgmap[action][0] % book)
 
     return handlereply
+
 
 def _pushb2bookmarkspushkey(pushop, bundler):
     pushop.stepsdone.add('bookmarks')
@@ -1094,7 +1229,9 @@ def _pushb2bookmarkspushkey(pushop, bundler):
                     ui.warn(bookmsgmap[action][1] % book)
                     if pushop.bkresult is not None:
                         pushop.bkresult = 1
+
     return handlereply
+
 
 @b2partsgenerator('pushvars', idx=0)
 def _getbundlesendvars(pushop, bundler):
@@ -1104,8 +1241,10 @@ def _getbundlesendvars(pushop, bundler):
         shellvars = {}
         for raw in pushvars:
             if '=' not in raw:
-                msg = ("unable to parse variable '%s', should follow "
-                        "'KEY=VALUE' or 'KEY=' format")
+                msg = (
+                    "unable to parse variable '%s', should follow "
+                    "'KEY=VALUE' or 'KEY=' format"
+                )
                 raise error.Abort(msg % raw)
             k, v = raw.split('=', 1)
             shellvars[k] = v
@@ -1115,19 +1254,21 @@ def _getbundlesendvars(pushop, bundler):
         for key, value in shellvars.iteritems():
             part.addparam(key, value, mandatory=False)
 
+
 def _pushbundle2(pushop):
     """push data to the remote using bundle2
 
     The only currently supported type of data is changegroup but this will
     evolve in the future."""
     bundler = bundle2.bundle20(pushop.ui, bundle2.bundle2caps(pushop.remote))
-    pushback = (pushop.trmanager
-                and pushop.ui.configbool('experimental', 'bundle2.pushback'))
+    pushback = pushop.trmanager and pushop.ui.configbool(
+        'experimental', 'bundle2.pushback'
+    )
 
     # create reply capability
-    capsblob = bundle2.encodecaps(bundle2.getrepocaps(pushop.repo,
-                                                      allowpushback=pushback,
-                                                      role='client'))
+    capsblob = bundle2.encodecaps(
+        bundle2.getrepocaps(pushop.repo, allowpushback=pushback, role='client')
+    )
     bundler.newpart('replycaps', data=capsblob)
     replyhandlers = []
     for partgenname in b2partsgenorder:
@@ -1142,11 +1283,14 @@ def _pushbundle2(pushop):
     try:
         try:
             with pushop.remote.commandexecutor() as e:
-                reply = e.callcommand('unbundle', {
-                    'bundle': stream,
-                    'heads': ['force'],
-                    'url': pushop.remote.url(),
-                }).result()
+                reply = e.callcommand(
+                    'unbundle',
+                    {
+                        'bundle': stream,
+                        'heads': ['force'],
+                        'url': pushop.remote.url(),
+                    },
+                ).result()
         except error.BundleValueError as exc:
             raise error.Abort(_('missing support for %s') % exc)
         try:
@@ -1169,6 +1313,7 @@ def _pushbundle2(pushop):
     for rephand in replyhandlers:
         rephand(op)
 
+
 def _pushchangeset(pushop):
     """Make the actual push of changeset bundle to remote repo"""
     if 'changesets' in pushop.stepsdone:
@@ -1185,15 +1330,23 @@ def _pushchangeset(pushop):
     # TODO: get bundlecaps from remote
     bundlecaps = None
     # create a changegroup from local
-    if pushop.revs is None and not (outgoing.excluded
-                            or pushop.repo.changelog.filteredrevs):
+    if pushop.revs is None and not (
+        outgoing.excluded or pushop.repo.changelog.filteredrevs
+    ):
         # push everything,
         # use the fast path, no race possible on push
-        cg = changegroup.makechangegroup(pushop.repo, outgoing, '01', 'push',
-                fastpath=True, bundlecaps=bundlecaps)
+        cg = changegroup.makechangegroup(
+            pushop.repo,
+            outgoing,
+            '01',
+            'push',
+            fastpath=True,
+            bundlecaps=bundlecaps,
+        )
     else:
-        cg = changegroup.makechangegroup(pushop.repo, outgoing, '01',
-                                        'push', bundlecaps=bundlecaps)
+        cg = changegroup.makechangegroup(
+            pushop.repo, outgoing, '01', 'push', bundlecaps=bundlecaps
+        )
 
     # apply changegroup to remote
     # local repo finds heads on server, finds out what
@@ -1206,18 +1359,20 @@ def _pushchangeset(pushop):
         remoteheads = pushop.remoteheads
     # ssh: return remote's addchangegroup()
     # http: return remote's addchangegroup() or 0 for error
-    pushop.cgresult = pushop.remote.unbundle(cg, remoteheads,
-                                        pushop.repo.url())
+    pushop.cgresult = pushop.remote.unbundle(cg, remoteheads, pushop.repo.url())
+
 
 def _pushsyncphase(pushop):
     """synchronise phase information locally and remotely"""
     cheads = pushop.commonheads
     # even when we don't push, exchanging phase data is useful
     remotephases = listkeys(pushop.remote, 'phases')
-    if (pushop.ui.configbool('ui', '_usedassubrepo')
-        and remotephases    # server supports phases
-        and pushop.cgresult is None # nothing was pushed
-        and remotephases.get('publishing', False)):
+    if (
+        pushop.ui.configbool('ui', '_usedassubrepo')
+        and remotephases  # server supports phases
+        and pushop.cgresult is None  # nothing was pushed
+        and remotephases.get('publishing', False)
+    ):
         # When:
         # - this is a subrepo push
         # - and remote support phase
@@ -1228,17 +1383,16 @@ def _pushsyncphase(pushop):
         # courtesy to publish changesets possibly locally draft
         # on the remote.
         remotephases = {'publishing': 'True'}
-    if not remotephases: # old server or public only reply from non-publishing
+    if not remotephases:  # old server or public only reply from non-publishing
         _localphasemove(pushop, cheads)
         # don't push any phase data as there is nothing to push
     else:
-        ana = phases.analyzeremotephases(pushop.repo, cheads,
-                                         remotephases)
+        ana = phases.analyzeremotephases(pushop.repo, cheads, remotephases)
         pheads, droots = ana
         ### Apply remote phase on local
         if remotephases.get('publishing', False):
             _localphasemove(pushop, cheads)
-        else: # publish = False
+        else:  # publish = False
             _localphasemove(pushop, pheads)
             _localphasemove(pushop, cheads, phases.draft)
         ### Apply local phase on remote
@@ -1258,24 +1412,28 @@ def _pushsyncphase(pushop):
         # fallback to independent pushkey command
         for newremotehead in outdated:
             with pushop.remote.commandexecutor() as e:
-                r = e.callcommand('pushkey', {
-                    'namespace': 'phases',
-                    'key': newremotehead.hex(),
-                    'old': '%d' % phases.draft,
-                    'new': '%d' % phases.public
-                }).result()
+                r = e.callcommand(
+                    'pushkey',
+                    {
+                        'namespace': 'phases',
+                        'key': newremotehead.hex(),
+                        'old': '%d' % phases.draft,
+                        'new': '%d' % phases.public,
+                    },
+                ).result()
 
             if not r:
-                pushop.ui.warn(_('updating %s to public failed!\n')
-                               % newremotehead)
+                pushop.ui.warn(
+                    _('updating %s to public failed!\n') % newremotehead
+                )
+
 
 def _localphasemove(pushop, nodes, phase=phases.public):
     """move <nodes> to <phase> in the local source repo"""
     if pushop.trmanager:
-        phases.advanceboundary(pushop.repo,
-                               pushop.trmanager.transaction(),
-                               phase,
-                               nodes)
+        phases.advanceboundary(
+            pushop.repo, pushop.trmanager.transaction(), phase, nodes
+        )
     else:
         # repo is not locked, do not change any phases!
         # Informs the user that phases should have been moved when
@@ -1283,8 +1441,14 @@ def _localphasemove(pushop, nodes, phase=phases.public):
         actualmoves = [n for n in nodes if phase < pushop.repo[n].phase()]
         phasestr = phases.phasenames[phase]
         if actualmoves:
-            pushop.ui.status(_('cannot lock source repo, skipping '
-                               'local %s phase update\n') % phasestr)
+            pushop.ui.status(
+                _(
+                    'cannot lock source repo, skipping '
+                    'local %s phase update\n'
+                )
+                % phasestr
+            )
+
 
 def _pushobsolete(pushop):
     """utility function to push obsolete markers to a remote"""
@@ -1305,6 +1469,7 @@ def _pushobsolete(pushop):
             msg = _('failed to push some obsolete markers!\n')
             repo.ui.warn(msg)
 
+
 def _pushbookmark(pushop):
     """Update bookmark position on remote"""
     if pushop.cgresult == 0 or 'bookmarks' in pushop.stepsdone:
@@ -1321,12 +1486,15 @@ def _pushbookmark(pushop):
             action = 'delete'
 
         with remote.commandexecutor() as e:
-            r = e.callcommand('pushkey', {
-                'namespace': 'bookmarks',
-                'key': b,
-                'old': hex(old),
-                'new': hex(new),
-            }).result()
+            r = e.callcommand(
+                'pushkey',
+                {
+                    'namespace': 'bookmarks',
+                    'key': b,
+                    'old': hex(old),
+                    'new': hex(new),
+                },
+            ).result()
 
         if r:
             ui.status(bookmsgmap[action][0] % b)
@@ -1335,6 +1503,7 @@ def _pushbookmark(pushop):
             # discovery can have set the value form invalid entry
             if pushop.bkresult is not None:
                 pushop.bkresult = 1
+
 
 class pulloperation(object):
     """A object that represent a single pull operation
@@ -1345,9 +1514,19 @@ class pulloperation(object):
     afterward.
     """
 
-    def __init__(self, repo, remote, heads=None, force=False, bookmarks=(),
-                 remotebookmarks=None, streamclonerequested=None,
-                 includepats=None, excludepats=None, depth=None):
+    def __init__(
+        self,
+        repo,
+        remote,
+        heads=None,
+        force=False,
+        bookmarks=(),
+        remotebookmarks=None,
+        streamclonerequested=None,
+        includepats=None,
+        excludepats=None,
+        depth=None,
+    ):
         # repo we pull into
         self.repo = repo
         # repo we pull from
@@ -1355,8 +1534,9 @@ class pulloperation(object):
         # revision we try to pull (None is "all")
         self.heads = heads
         # bookmark pulled explicitly
-        self.explicitbookmarks = [repo._bookmarks.expandname(bookmark)
-                                  for bookmark in bookmarks]
+        self.explicitbookmarks = [
+            repo._bookmarks.expandname(bookmark) for bookmark in bookmarks
+        ]
         # do we force pull?
         self.force = force
         # whether a streaming clone was requested
@@ -1414,11 +1594,13 @@ class pulloperation(object):
         # deprecated; talk to trmanager directly
         return self.trmanager.transaction()
 
+
 class transactionmanager(util.transactional):
     """An object to manage the life cycle of a transaction
 
     It creates the transaction on demand and calls the appropriate hooks when
     closing the transaction."""
+
     def __init__(self, repo, source, url):
         self.repo = repo
         self.source = source
@@ -1444,9 +1626,11 @@ class transactionmanager(util.transactional):
         if self._tr is not None:
             self._tr.release()
 
+
 def listkeys(remote, namespace):
     with remote.commandexecutor() as e:
         return e.callcommand('listkeys', {'namespace': namespace}).result()
+
 
 def _fullpullbundle2(repo, pullop):
     # The server may send a partial reply, i.e. when inlining
@@ -1460,14 +1644,17 @@ def _fullpullbundle2(repo, pullop):
     # markers can hide heads.
     unfi = repo.unfiltered()
     unficl = unfi.changelog
+
     def headsofdiff(h1, h2):
         """Returns heads(h1 % h2)"""
         res = unfi.set('heads(%ln %% %ln)', h1, h2)
         return set(ctx.node() for ctx in res)
+
     def headsofunion(h1, h2):
         """Returns heads((h1 + h2) - null)"""
         res = unfi.set('heads((%ln + %ln - null))', h1, h2)
         return set(ctx.node() for ctx in res)
+
     while True:
         old_heads = unficl.heads()
         clstart = len(unficl)
@@ -1486,9 +1673,19 @@ def _fullpullbundle2(repo, pullop):
         pullop.common = headsofunion(new_heads, pullop.common)
         pullop.rheads = set(pullop.rheads) - pullop.common
 
-def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
-         streamclonerequested=None, includepats=None, excludepats=None,
-         depth=None):
+
+def pull(
+    repo,
+    remote,
+    heads=None,
+    force=False,
+    bookmarks=(),
+    opargs=None,
+    streamclonerequested=None,
+    includepats=None,
+    excludepats=None,
+    depth=None,
+):
     """Fetch repository data from a remote.
 
     This is the main function used to retrieve data from a remote repository.
@@ -1529,19 +1726,28 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
     narrowspec.validatepatterns(includepats)
     narrowspec.validatepatterns(excludepats)
 
-    pullop = pulloperation(repo, remote, heads, force, bookmarks=bookmarks,
-                           streamclonerequested=streamclonerequested,
-                           includepats=includepats, excludepats=excludepats,
-                           depth=depth,
-                           **pycompat.strkwargs(opargs))
+    pullop = pulloperation(
+        repo,
+        remote,
+        heads,
+        force,
+        bookmarks=bookmarks,
+        streamclonerequested=streamclonerequested,
+        includepats=includepats,
+        excludepats=excludepats,
+        depth=depth,
+        **pycompat.strkwargs(opargs)
+    )
 
     peerlocal = pullop.remote.local()
     if peerlocal:
         missing = set(peerlocal.requirements) - pullop.repo.supported
         if missing:
-            msg = _("required features are not"
-                    " supported in the destination:"
-                    " %s") % (', '.join(sorted(missing)))
+            msg = _(
+                "required features are not"
+                " supported in the destination:"
+                " %s"
+            ) % (', '.join(sorted(missing)))
             raise error.Abort(msg)
 
     pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
@@ -1571,6 +1777,7 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
 
     return pullop
 
+
 # list of steps to perform discovery before pull
 pulldiscoveryorder = []
 
@@ -1578,6 +1785,7 @@ pulldiscoveryorder = []
 #
 # This exists to help extensions wrap steps if necessary
 pulldiscoverymapping = {}
+
 
 def pulldiscovery(stepname):
     """decorator for function performing discovery before pull
@@ -1588,18 +1796,22 @@ def pulldiscovery(stepname):
 
     You can only use this decorator for a new step, if you want to wrap a step
     from an extension, change the pulldiscovery dictionary directly."""
+
     def dec(func):
         assert stepname not in pulldiscoverymapping
         pulldiscoverymapping[stepname] = func
         pulldiscoveryorder.append(stepname)
         return func
+
     return dec
+
 
 def _pulldiscovery(pullop):
     """Run all discovery steps"""
     for stepname in pulldiscoveryorder:
         step = pulldiscoverymapping[stepname]
         step(pullop)
+
 
 @pulldiscovery('b1:bookmarks')
 def _pullbookmarkbundle1(pullop):
@@ -1623,10 +1835,9 @@ def _pulldiscoverychangegroup(pullop):
 
     Current handle changeset discovery only, will change handle all discovery
     at some point."""
-    tmp = discovery.findcommonincoming(pullop.repo,
-                                       pullop.remote,
-                                       heads=pullop.heads,
-                                       force=pullop.force)
+    tmp = discovery.findcommonincoming(
+        pullop.repo, pullop.remote, heads=pullop.heads, force=pullop.force
+    )
     common, fetch, rheads = tmp
     nm = pullop.repo.unfiltered().changelog.nodemap
     if fetch and rheads:
@@ -1649,6 +1860,7 @@ def _pulldiscoverychangegroup(pullop):
     pullop.common = common
     pullop.fetch = fetch
     pullop.rheads = rheads
+
 
 def _pullbundle2(pullop):
     """pull data using bundle2
@@ -1688,7 +1900,7 @@ def _pullbundle2(pullop):
 
         legacyphase = 'phases' in ui.configlist('devel', 'legacy.exchange')
         hasbinaryphase = 'heads' in pullop.remotebundle2caps.get('phases', ())
-        if (not legacyphase and hasbinaryphase):
+        if not legacyphase and hasbinaryphase:
             kwargs['phases'] = True
             pullop.stepsdone.add('phases')
 
@@ -1703,9 +1915,12 @@ def _pullbundle2(pullop):
     if pullop.remotebookmarks is not None:
         pullop.stepsdone.add('request-bookmarks')
 
-    if ('request-bookmarks' not in pullop.stepsdone
+    if (
+        'request-bookmarks' not in pullop.stepsdone
         and pullop.remotebookmarks is None
-        and not legacybookmark and hasbinarybook):
+        and not legacybookmark
+        and hasbinarybook
+    ):
         kwargs['bookmarks'] = True
         bookmarksrequested = True
 
@@ -1721,8 +1936,11 @@ def _pullbundle2(pullop):
     # presence of this flag indicates the client supports clone bundles. This
     # will enable the server to treat clients that support clone bundles
     # differently from those that don't.
-    if (pullop.remote.capable('clonebundles')
-        and pullop.heads is None and list(pullop.common) == [nullid]):
+    if (
+        pullop.remote.capable('clonebundles')
+        and pullop.heads is None
+        and list(pullop.common) == [nullid]
+    ):
         kwargs['cbattempted'] = pullop.clonebundleattempted
 
     if streaming:
@@ -1746,8 +1964,9 @@ def _pullbundle2(pullop):
         bundle = e.callcommand('getbundle', args).result()
 
         try:
-            op = bundle2.bundleoperation(pullop.repo, pullop.gettransaction,
-                                         source='pull')
+            op = bundle2.bundleoperation(
+                pullop.repo, pullop.gettransaction, source='pull'
+            )
             op.modes['bookmarks'] = 'records'
             bundle2.processbundle(pullop.repo, bundle, op=op)
         except bundle2.AbortFromPart as exc:
@@ -1779,8 +1998,10 @@ def _pullbundle2(pullop):
     if pullop.remotebookmarks is not None:
         _pullbookmarks(pullop)
 
+
 def _pullbundle2extraprepare(pullop, kwargs):
     """hook function so that extensions can extend the getbundle call"""
+
 
 def _pullchangeset(pullop):
     """pull changeset from unbundle into the local repo"""
@@ -1803,30 +2024,39 @@ def _pullchangeset(pullop):
 
     if pullop.remote.capable('getbundle'):
         # TODO: get bundlecaps from remote
-        cg = pullop.remote.getbundle('pull', common=pullop.common,
-                                     heads=pullop.heads or pullop.rheads)
+        cg = pullop.remote.getbundle(
+            'pull', common=pullop.common, heads=pullop.heads or pullop.rheads
+        )
     elif pullop.heads is None:
         with pullop.remote.commandexecutor() as e:
-            cg = e.callcommand('changegroup', {
-                'nodes': pullop.fetch,
-                'source': 'pull',
-            }).result()
+            cg = e.callcommand(
+                'changegroup', {'nodes': pullop.fetch, 'source': 'pull',}
+            ).result()
 
     elif not pullop.remote.capable('changegroupsubset'):
-        raise error.Abort(_("partial pull cannot be done because "
-                           "other repository doesn't support "
-                           "changegroupsubset."))
+        raise error.Abort(
+            _(
+                "partial pull cannot be done because "
+                "other repository doesn't support "
+                "changegroupsubset."
+            )
+        )
     else:
         with pullop.remote.commandexecutor() as e:
-            cg = e.callcommand('changegroupsubset', {
-                'bases': pullop.fetch,
-                'heads': pullop.heads,
-                'source': 'pull',
-            }).result()
+            cg = e.callcommand(
+                'changegroupsubset',
+                {
+                    'bases': pullop.fetch,
+                    'heads': pullop.heads,
+                    'source': 'pull',
+                },
+            ).result()
 
-    bundleop = bundle2.applybundle(pullop.repo, cg, tr, 'pull',
-                                   pullop.remote.url())
+    bundleop = bundle2.applybundle(
+        pullop.repo, cg, tr, 'pull', pullop.remote.url()
+    )
     pullop.cgresult = bundle2.combinechangegroupresults(bundleop)
+
 
 def _pullphase(pullop):
     # Get remote phases data from remote
@@ -1834,6 +2064,7 @@ def _pullphase(pullop):
         return
     remotephases = listkeys(pullop.remote, 'phases')
     _pullapplyphases(pullop, remotephases)
+
 
 def _pullapplyphases(pullop, remotephases):
     """apply phase movement from observed remote state"""
@@ -1843,9 +2074,9 @@ def _pullapplyphases(pullop, remotephases):
     publishing = bool(remotephases.get('publishing', False))
     if remotephases and not publishing:
         # remote is new and non-publishing
-        pheads, _dr = phases.analyzeremotephases(pullop.repo,
-                                                 pullop.pulledsubset,
-                                                 remotephases)
+        pheads, _dr = phases.analyzeremotephases(
+            pullop.repo, pullop.pulledsubset, remotephases
+        )
         dheads = pullop.pulledsubset
     else:
         # Remote is old or publishing all common changesets
@@ -1870,6 +2101,7 @@ def _pullapplyphases(pullop, remotephases):
         tr = pullop.gettransaction()
         phases.advanceboundary(pullop.repo, tr, draft, dheads)
 
+
 def _pullbookmarks(pullop):
     """process the remote bookmark information to update the local one"""
     if 'bookmarks' in pullop.stepsdone:
@@ -1877,10 +2109,15 @@ def _pullbookmarks(pullop):
     pullop.stepsdone.add('bookmarks')
     repo = pullop.repo
     remotebookmarks = pullop.remotebookmarks
-    bookmod.updatefromremote(repo.ui, repo, remotebookmarks,
-                             pullop.remote.url(),
-                             pullop.gettransaction,
-                             explicit=pullop.explicitbookmarks)
+    bookmod.updatefromremote(
+        repo.ui,
+        repo,
+        remotebookmarks,
+        pullop.remote.url(),
+        pullop.gettransaction,
+        explicit=pullop.explicitbookmarks,
+    )
+
 
 def _pullobsolete(pullop):
     """utility function to pull obsolete markers from a remote
@@ -1910,6 +2147,7 @@ def _pullobsolete(pullop):
             pullop.repo.invalidatevolatilesets()
     return tr
 
+
 def applynarrowacl(repo, kwargs):
     """Apply narrow fetch access control.
 
@@ -1920,30 +2158,42 @@ def applynarrowacl(repo, kwargs):
     # TODO this assumes existence of HTTP and is a layering violation.
     username = ui.shortuser(ui.environ.get('REMOTE_USER') or ui.username())
     user_includes = ui.configlist(
-        _NARROWACL_SECTION, username + '.includes',
-        ui.configlist(_NARROWACL_SECTION, 'default.includes'))
+        _NARROWACL_SECTION,
+        username + '.includes',
+        ui.configlist(_NARROWACL_SECTION, 'default.includes'),
+    )
     user_excludes = ui.configlist(
-        _NARROWACL_SECTION, username + '.excludes',
-        ui.configlist(_NARROWACL_SECTION, 'default.excludes'))
+        _NARROWACL_SECTION,
+        username + '.excludes',
+        ui.configlist(_NARROWACL_SECTION, 'default.excludes'),
+    )
     if not user_includes:
-        raise error.Abort(_("{} configuration for user {} is empty")
-                          .format(_NARROWACL_SECTION, username))
+        raise error.Abort(
+            _("{} configuration for user {} is empty").format(
+                _NARROWACL_SECTION, username
+            )
+        )
 
     user_includes = [
-        'path:.' if p == '*' else 'path:' + p for p in user_includes]
+        'path:.' if p == '*' else 'path:' + p for p in user_includes
+    ]
     user_excludes = [
-        'path:.' if p == '*' else 'path:' + p for p in user_excludes]
+        'path:.' if p == '*' else 'path:' + p for p in user_excludes
+    ]
 
     req_includes = set(kwargs.get(r'includepats', []))
     req_excludes = set(kwargs.get(r'excludepats', []))
 
     req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
-        req_includes, req_excludes, user_includes, user_excludes)
+        req_includes, req_excludes, user_includes, user_excludes
+    )
 
     if invalid_includes:
         raise error.Abort(
-            _("The following includes are not accessible for {}: {}")
-            .format(username, invalid_includes))
+            _("The following includes are not accessible for {}: {}").format(
+                username, invalid_includes
+            )
+        )
 
     new_args = {}
     new_args.update(kwargs)
@@ -1954,6 +2204,7 @@ def applynarrowacl(repo, kwargs):
         new_args[r'excludepats'] = req_excludes
 
     return new_args
+
 
 def _computeellipsis(repo, common, heads, known, match, depth=None):
     """Compute the shape of a narrowed DAG.
@@ -2013,15 +2264,18 @@ def _computeellipsis(repo, common, heads, known, match, depth=None):
     def splithead(head):
         r1, r2, r3 = sorted(ellipsisroots[head])
         for nr1, nr2 in ((r2, r3), (r1, r3), (r1, r2)):
-            mid = repo.revs('sort(merge() & %d::%d & %d::%d, -rev)',
-                            nr1, head, nr2, head)
+            mid = repo.revs(
+                'sort(merge() & %d::%d & %d::%d, -rev)', nr1, head, nr2, head
+            )
             for j in mid:
                 if j == nr2:
                     return nr2, (nr1, nr2)
                 if j not in ellipsisroots or len(ellipsisroots[j]) < 2:
                     return j, (nr1, nr2)
-        raise error.Abort(_('Failed to split up ellipsis node! head: %d, '
-                            'roots: %d %d %d') % (head, r1, r2, r3))
+        raise error.Abort(
+            _('Failed to split up ellipsis node! head: %d, ' 'roots: %d %d %d')
+            % (head, r1, r2, r3)
+        )
 
     missing = list(cl.findmissingrevs(common=commonrevs, heads=headsrevs))
     visit = reversed(missing)
@@ -2081,12 +2335,14 @@ def _computeellipsis(repo, common, heads, known, match, depth=None):
             addroot(head, c)
     return visitnodes, relevant_nodes, ellipsisroots
 
+
 def caps20to10(repo, role):
     """return a set with appropriate options to use bundle20 during getbundle"""
     caps = {'HG20'}
     capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo, role=role))
     caps.add('bundle2=' + urlreq.quote(capsblob))
     return caps
+
 
 # List of names of steps to perform for a bundle2 for getbundle, order matters.
 getbundle2partsorder = []
@@ -2095,6 +2351,7 @@ getbundle2partsorder = []
 #
 # This exists to help extensions wrap steps if necessary
 getbundle2partsmapping = {}
+
 
 def getbundle2partsgenerator(stepname, idx=None):
     """decorator for function generating bundle2 part for getbundle
@@ -2105,6 +2362,7 @@ def getbundle2partsgenerator(stepname, idx=None):
 
     You can only use this decorator for new steps, if you want to wrap a step
     from an extension, attack the getbundle2partsmapping dictionary directly."""
+
     def dec(func):
         assert stepname not in getbundle2partsmapping
         getbundle2partsmapping[stepname] = func
@@ -2113,15 +2371,19 @@ def getbundle2partsgenerator(stepname, idx=None):
         else:
             getbundle2partsorder.insert(idx, stepname)
         return func
+
     return dec
+
 
 def bundle2requested(bundlecaps):
     if bundlecaps is not None:
         return any(cap.startswith('HG2') for cap in bundlecaps)
     return False
 
-def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
-                    **kwargs):
+
+def getbundlechunks(
+    repo, source, heads=None, common=None, bundlecaps=None, **kwargs
+):
     """Return chunks constituting a bundle's raw data.
 
     Could be a bundle HG10 or a bundle HG20 depending on bundlecaps
@@ -2139,19 +2401,25 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
             raise ValueError(_('request for bundle10 must include changegroup'))
 
         if kwargs:
-            raise ValueError(_('unsupported getbundle arguments: %s')
-                             % ', '.join(sorted(kwargs.keys())))
+            raise ValueError(
+                _('unsupported getbundle arguments: %s')
+                % ', '.join(sorted(kwargs.keys()))
+            )
         outgoing = _computeoutgoing(repo, heads, common)
         info['bundleversion'] = 1
-        return info, changegroup.makestream(repo, outgoing, '01', source,
-                                            bundlecaps=bundlecaps)
+        return (
+            info,
+            changegroup.makestream(
+                repo, outgoing, '01', source, bundlecaps=bundlecaps
+            ),
+        )
 
     # bundle20 case
     info['bundleversion'] = 2
     b2caps = {}
     for bcaps in bundlecaps:
         if bcaps.startswith('bundle2='):
-            blob = urlreq.unquote(bcaps[len('bundle2='):])
+            blob = urlreq.unquote(bcaps[len('bundle2=') :])
             b2caps.update(bundle2.decodecaps(blob))
     bundler = bundle2.bundle20(repo.ui, b2caps)
 
@@ -2160,20 +2428,36 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
 
     for name in getbundle2partsorder:
         func = getbundle2partsmapping[name]
-        func(bundler, repo, source, bundlecaps=bundlecaps, b2caps=b2caps,
-             **pycompat.strkwargs(kwargs))
+        func(
+            bundler,
+            repo,
+            source,
+            bundlecaps=bundlecaps,
+            b2caps=b2caps,
+            **pycompat.strkwargs(kwargs)
+        )
 
     info['prefercompressed'] = bundler.prefercompressed
 
     return info, bundler.getchunks()
 
+
 @getbundle2partsgenerator('stream2')
 def _getbundlestream2(bundler, repo, *args, **kwargs):
     return bundle2.addpartbundlestream2(bundler, repo, **kwargs)
 
+
 @getbundle2partsgenerator('changegroup')
-def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
-                              b2caps=None, heads=None, common=None, **kwargs):
+def _getbundlechangegrouppart(
+    bundler,
+    repo,
+    source,
+    bundlecaps=None,
+    b2caps=None,
+    heads=None,
+    common=None,
+    **kwargs
+):
     """add a changegroup part to the requested bundle"""
     if not kwargs.get(r'cg', True):
         return
@@ -2181,8 +2465,11 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
     version = '01'
     cgversions = b2caps.get('changegroup')
     if cgversions:  # 3.1 and 3.2 ship with an empty value
-        cgversions = [v for v in cgversions
-                      if v in changegroup.supportedoutgoingversions(repo)]
+        cgversions = [
+            v
+            for v in cgversions
+            if v in changegroup.supportedoutgoingversions(repo)
+        ]
         if not cgversions:
             raise error.Abort(_('no common changegroup version'))
         version = max(cgversions)
@@ -2198,42 +2485,51 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
     else:
         matcher = None
 
-    cgstream = changegroup.makestream(repo, outgoing, version, source,
-                                      bundlecaps=bundlecaps, matcher=matcher)
+    cgstream = changegroup.makestream(
+        repo, outgoing, version, source, bundlecaps=bundlecaps, matcher=matcher
+    )
 
     part = bundler.newpart('changegroup', data=cgstream)
     if cgversions:
         part.addparam('version', version)
 
-    part.addparam('nbchanges', '%d' % len(outgoing.missing),
-                  mandatory=False)
+    part.addparam('nbchanges', '%d' % len(outgoing.missing), mandatory=False)
 
     if 'treemanifest' in repo.requirements:
         part.addparam('treemanifest', '1')
 
-    if (kwargs.get(r'narrow', False) and kwargs.get(r'narrow_acl', False)
-        and (include or exclude)):
+    if (
+        kwargs.get(r'narrow', False)
+        and kwargs.get(r'narrow_acl', False)
+        and (include or exclude)
+    ):
         # this is mandatory because otherwise ACL clients won't work
         narrowspecpart = bundler.newpart('Narrow:responsespec')
-        narrowspecpart.data = '%s\0%s' % ('\n'.join(include),
-                                           '\n'.join(exclude))
+        narrowspecpart.data = '%s\0%s' % (
+            '\n'.join(include),
+            '\n'.join(exclude),
+        )
+
 
 @getbundle2partsgenerator('bookmarks')
-def _getbundlebookmarkpart(bundler, repo, source, bundlecaps=None,
-                              b2caps=None, **kwargs):
+def _getbundlebookmarkpart(
+    bundler, repo, source, bundlecaps=None, b2caps=None, **kwargs
+):
     """add a bookmark part to the requested bundle"""
     if not kwargs.get(r'bookmarks', False):
         return
     if 'bookmarks' not in b2caps:
         raise error.Abort(_('no common bookmarks exchange method'))
-    books  = bookmod.listbinbookmarks(repo)
+    books = bookmod.listbinbookmarks(repo)
     data = bookmod.binaryencode(books)
     if data:
         bundler.newpart('bookmarks', data=data)
 
+
 @getbundle2partsgenerator('listkeys')
-def _getbundlelistkeysparts(bundler, repo, source, bundlecaps=None,
-                            b2caps=None, **kwargs):
+def _getbundlelistkeysparts(
+    bundler, repo, source, bundlecaps=None, b2caps=None, **kwargs
+):
     """add parts containing listkeys namespaces to the requested bundle"""
     listkeys = kwargs.get(r'listkeys', ())
     for namespace in listkeys:
@@ -2242,9 +2538,11 @@ def _getbundlelistkeysparts(bundler, repo, source, bundlecaps=None,
         keys = repo.listkeys(namespace).items()
         part.data = pushkey.encodekeys(keys)
 
+
 @getbundle2partsgenerator('obsmarkers')
-def _getbundleobsmarkerpart(bundler, repo, source, bundlecaps=None,
-                            b2caps=None, heads=None, **kwargs):
+def _getbundleobsmarkerpart(
+    bundler, repo, source, bundlecaps=None, b2caps=None, heads=None, **kwargs
+):
     """add an obsolescence markers part to the requested bundle"""
     if kwargs.get(r'obsmarkers', False):
         if heads is None:
@@ -2254,9 +2552,11 @@ def _getbundleobsmarkerpart(bundler, repo, source, bundlecaps=None,
         markers = sorted(markers)
         bundle2.buildobsmarkerspart(bundler, markers)
 
+
 @getbundle2partsgenerator('phases')
-def _getbundlephasespart(bundler, repo, source, bundlecaps=None,
-                            b2caps=None, heads=None, **kwargs):
+def _getbundlephasespart(
+    bundler, repo, source, bundlecaps=None, b2caps=None, heads=None, **kwargs
+):
     """add phase heads part to the requested bundle"""
     if kwargs.get(r'phases', False):
         if not 'heads' in b2caps.get('phases'):
@@ -2301,10 +2601,18 @@ def _getbundlephasespart(bundler, repo, source, bundlecaps=None,
         phasedata = phases.binaryencode(phasemapping)
         bundler.newpart('phase-heads', data=phasedata)
 
+
 @getbundle2partsgenerator('hgtagsfnodes')
-def _getbundletagsfnodes(bundler, repo, source, bundlecaps=None,
-                         b2caps=None, heads=None, common=None,
-                         **kwargs):
+def _getbundletagsfnodes(
+    bundler,
+    repo,
+    source,
+    bundlecaps=None,
+    b2caps=None,
+    heads=None,
+    common=None,
+    **kwargs
+):
     """Transfer the .hgtags filenodes mapping.
 
     Only values for heads in this bundle will be transferred.
@@ -2321,10 +2629,18 @@ def _getbundletagsfnodes(bundler, repo, source, bundlecaps=None,
     outgoing = _computeoutgoing(repo, heads, common)
     bundle2.addparttagsfnodescache(repo, bundler, outgoing)
 
+
 @getbundle2partsgenerator('cache:rev-branch-cache')
-def _getbundlerevbranchcache(bundler, repo, source, bundlecaps=None,
-                             b2caps=None, heads=None, common=None,
-                             **kwargs):
+def _getbundlerevbranchcache(
+    bundler,
+    repo,
+    source,
+    bundlecaps=None,
+    b2caps=None,
+    heads=None,
+    common=None,
+    **kwargs
+):
     """Transfer the rev-branch-cache mapping
 
     The payload is a series of data related to each branch
@@ -2339,14 +2655,17 @@ def _getbundlerevbranchcache(bundler, repo, source, bundlecaps=None,
     # - changeset are being exchanged,
     # - the client supports it.
     # - narrow bundle isn't in play (not currently compatible).
-    if (not kwargs.get(r'cg', True)
+    if (
+        not kwargs.get(r'cg', True)
         or 'rev-branch-cache' not in b2caps
         or kwargs.get(r'narrow', False)
-        or repo.ui.has_section(_NARROWACL_SECTION)):
+        or repo.ui.has_section(_NARROWACL_SECTION)
+    ):
         return
 
     outgoing = _computeoutgoing(repo, heads, common)
     bundle2.addpartrevbranchcache(repo, bundler, outgoing)
+
 
 def check_heads(repo, their_heads, context):
     """check if the heads of a repo have been modified
@@ -2355,12 +2674,17 @@ def check_heads(repo, their_heads, context):
     """
     heads = repo.heads()
     heads_hash = hashlib.sha1(''.join(sorted(heads))).digest()
-    if not (their_heads == ['force'] or their_heads == heads or
-            their_heads == ['hashed', heads_hash]):
+    if not (
+        their_heads == ['force']
+        or their_heads == heads
+        or their_heads == ['hashed', heads_hash]
+    ):
         # someone else committed/pushed/unbundled while we
         # were transferring data
-        raise error.PushRaced('repository changed while %s - '
-                              'please try again' % context)
+        raise error.PushRaced(
+            'repository changed while %s - ' 'please try again' % context
+        )
+
 
 def unbundle(repo, cg, heads, source, url):
     """Apply a bundle to a repo.
@@ -2393,6 +2717,7 @@ def unbundle(repo, cg, heads, source, url):
         else:
             r = None
             try:
+
                 def gettransaction():
                     if not lockandtr[2]:
                         if not bookmod.bookmarksinstore(repo):
@@ -2409,33 +2734,42 @@ def unbundle(repo, cg, heads, source, url):
                 if not repo.ui.configbool('experimental', 'bundle2lazylocking'):
                     gettransaction()
 
-                op = bundle2.bundleoperation(repo, gettransaction,
-                                             captureoutput=captureoutput,
-                                             source='push')
+                op = bundle2.bundleoperation(
+                    repo,
+                    gettransaction,
+                    captureoutput=captureoutput,
+                    source='push',
+                )
                 try:
                     op = bundle2.processbundle(repo, cg, op=op)
                 finally:
                     r = op.reply
                     if captureoutput and r is not None:
                         repo.ui.pushbuffer(error=True, subproc=True)
+
                         def recordout(output):
                             r.newpart('output', data=output, mandatory=False)
+
                 if lockandtr[2] is not None:
                     lockandtr[2].close()
             except BaseException as exc:
                 exc.duringunbundle2 = True
                 if captureoutput and r is not None:
                     parts = exc._bundle2salvagedoutput = r.salvageoutput()
+
                     def recordout(output):
-                        part = bundle2.bundlepart('output', data=output,
-                                                  mandatory=False)
+                        part = bundle2.bundlepart(
+                            'output', data=output, mandatory=False
+                        )
                         parts.append(part)
+
                 raise
     finally:
         lockmod.release(lockandtr[2], lockandtr[1], lockandtr[0])
         if recordout is not None:
             recordout(repo.ui.popbuffer())
     return r
+
 
 def _maybeapplyclonebundle(pullop):
     """Apply a clone bundle from a remote, if possible."""
@@ -2465,12 +2799,17 @@ def _maybeapplyclonebundle(pullop):
 
     entries = parseclonebundlesmanifest(repo, res)
     if not entries:
-        repo.ui.note(_('no clone bundles available on remote; '
-                       'falling back to regular clone\n'))
+        repo.ui.note(
+            _(
+                'no clone bundles available on remote; '
+                'falling back to regular clone\n'
+            )
+        )
         return
 
     entries = filterclonebundleentries(
-        repo, entries, streamclonerequested=pullop.streamclonerequested)
+        repo, entries, streamclonerequested=pullop.streamclonerequested
+    )
 
     if not entries:
         # There is a thundering herd concern here. However, if a server
@@ -2478,10 +2817,15 @@ def _maybeapplyclonebundle(pullop):
         # they deserve what's coming. Furthermore, from a client's
         # perspective, no automatic fallback would mean not being able to
         # clone!
-        repo.ui.warn(_('no compatible clone bundles available on server; '
-                       'falling back to regular clone\n'))
-        repo.ui.warn(_('(you may want to report this to the server '
-                       'operator)\n'))
+        repo.ui.warn(
+            _(
+                'no compatible clone bundles available on server; '
+                'falling back to regular clone\n'
+            )
+        )
+        repo.ui.warn(
+            _('(you may want to report this to the server ' 'operator)\n')
+        )
         return
 
     entries = sortclonebundleentries(repo.ui, entries)
@@ -2498,11 +2842,16 @@ def _maybeapplyclonebundle(pullop):
     elif repo.ui.configbool('ui', 'clonebundlefallback'):
         repo.ui.warn(_('falling back to normal clone\n'))
     else:
-        raise error.Abort(_('error applying bundle'),
-                          hint=_('if this error persists, consider contacting '
-                                 'the server operator or disable clone '
-                                 'bundles via '
-                                 '"--config ui.clonebundles=false"'))
+        raise error.Abort(
+            _('error applying bundle'),
+            hint=_(
+                'if this error persists, consider contacting '
+                'the server operator or disable clone '
+                'bundles via '
+                '"--config ui.clonebundles=false"'
+            ),
+        )
+
 
 def parseclonebundlesmanifest(repo, s):
     """Parses the raw text of a clone bundles manifest.
@@ -2539,18 +2888,22 @@ def parseclonebundlesmanifest(repo, s):
 
     return m
 
+
 def isstreamclonespec(bundlespec):
     # Stream clone v1
-    if (bundlespec.wirecompression == 'UN' and bundlespec.wireversion == 's1'):
+    if bundlespec.wirecompression == 'UN' and bundlespec.wireversion == 's1':
         return True
 
     # Stream clone v2
-    if (bundlespec.wirecompression == 'UN' and
-        bundlespec.wireversion == '02' and
-        bundlespec.contentopts.get('streamv2')):
+    if (
+        bundlespec.wirecompression == 'UN'
+        and bundlespec.wireversion == '02'
+        and bundlespec.contentopts.get('streamv2')
+    ):
         return True
 
     return False
+
 
 def filterclonebundleentries(repo, entries, streamclonerequested=False):
     """Remove incompatible clone bundle manifest entries.
@@ -2572,33 +2925,40 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
                 # If a stream clone was requested, filter out non-streamclone
                 # entries.
                 if streamclonerequested and not isstreamclonespec(bundlespec):
-                    repo.ui.debug('filtering %s because not a stream clone\n' %
-                                  entry['URL'])
+                    repo.ui.debug(
+                        'filtering %s because not a stream clone\n'
+                        % entry['URL']
+                    )
                     continue
 
             except error.InvalidBundleSpecification as e:
                 repo.ui.debug(stringutil.forcebytestr(e) + '\n')
                 continue
             except error.UnsupportedBundleSpecification as e:
-                repo.ui.debug('filtering %s because unsupported bundle '
-                              'spec: %s\n' % (
-                                  entry['URL'], stringutil.forcebytestr(e)))
+                repo.ui.debug(
+                    'filtering %s because unsupported bundle '
+                    'spec: %s\n' % (entry['URL'], stringutil.forcebytestr(e))
+                )
                 continue
         # If we don't have a spec and requested a stream clone, we don't know
         # what the entry is so don't attempt to apply it.
         elif streamclonerequested:
-            repo.ui.debug('filtering %s because cannot determine if a stream '
-                          'clone bundle\n' % entry['URL'])
+            repo.ui.debug(
+                'filtering %s because cannot determine if a stream '
+                'clone bundle\n' % entry['URL']
+            )
             continue
 
         if 'REQUIRESNI' in entry and not sslutil.hassni:
-            repo.ui.debug('filtering %s because SNI not supported\n' %
-                          entry['URL'])
+            repo.ui.debug(
+                'filtering %s because SNI not supported\n' % entry['URL']
+            )
             continue
 
         newentries.append(entry)
 
     return newentries
+
 
 class clonebundleentry(object):
     """Represents an item in a clone bundles manifest.
@@ -2664,6 +3024,7 @@ class clonebundleentry(object):
     def __ne__(self, other):
         return self._cmp(other) != 0
 
+
 def sortclonebundleentries(ui, entries):
     prefers = ui.configlist('ui', 'clonebundleprefers')
     if not prefers:
@@ -2673,6 +3034,7 @@ def sortclonebundleentries(ui, entries):
 
     items = sorted(clonebundleentry(v, prefers) for v in entries)
     return [i.value for i in items]
+
 
 def trypullbundlefromurl(ui, repo, url):
     """Attempt to apply a bundle from a URL."""
@@ -2687,10 +3049,14 @@ def trypullbundlefromurl(ui, repo, url):
                 bundle2.applybundle(repo, cg, tr, 'clonebundles', url)
             return True
         except urlerr.httperror as e:
-            ui.warn(_('HTTP error fetching bundle: %s\n') %
-                    stringutil.forcebytestr(e))
+            ui.warn(
+                _('HTTP error fetching bundle: %s\n')
+                % stringutil.forcebytestr(e)
+            )
         except urlerr.urlerror as e:
-            ui.warn(_('error fetching bundle: %s\n') %
-                    stringutil.forcebytestr(e.reason))
+            ui.warn(
+                _('error fetching bundle: %s\n')
+                % stringutil.forcebytestr(e.reason)
+            )
 
         return False

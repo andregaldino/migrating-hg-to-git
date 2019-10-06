@@ -23,17 +23,15 @@ from __future__ import absolute_import, print_function
 import abc
 import struct
 
-from .thirdparty import (
-    attr,
-)
-from . import (
-    pycompat,
-)
+from .thirdparty import attr
+from . import pycompat
 
 _llentry = struct.Struct('>II')
 
+
 class LineLogError(Exception):
     """Error raised when something bad happens internally in linelog."""
+
 
 @attr.s
 class lineinfo(object):
@@ -44,6 +42,7 @@ class lineinfo(object):
     # Private. Offset in the linelog program of this line. Used internally.
     _offset = attr.ib()
 
+
 @attr.s
 class annotateresult(object):
     rev = attr.ib()
@@ -52,6 +51,7 @@ class annotateresult(object):
 
     def __iter__(self):
         return iter(self.lines)
+
 
 class _llinstruction(object):
 
@@ -90,6 +90,7 @@ class _llinstruction(object):
           (that is, we've found the end of the file.)
         """
 
+
 class _jge(_llinstruction):
     """If the current rev is greater than or equal to op1, jump to op2."""
 
@@ -101,9 +102,11 @@ class _jge(_llinstruction):
         return r'JGE %d %d' % (self._cmprev, self._target)
 
     def __eq__(self, other):
-        return (type(self) == type(other)
-                and self._cmprev == other._cmprev
-                and self._target == other._target)
+        return (
+            type(self) == type(other)
+            and self._cmprev == other._cmprev
+            and self._target == other._target
+        )
 
     def encode(self):
         return _llentry.pack(self._cmprev << 2, self._target)
@@ -112,6 +115,7 @@ class _jge(_llinstruction):
         if rev >= self._cmprev:
             return self._target
         return pc + 1
+
 
 class _jump(_llinstruction):
     """Unconditional jumps are expressed as a JGE with op1 set to 0."""
@@ -125,14 +129,14 @@ class _jump(_llinstruction):
         return r'JUMP %d' % (self._target)
 
     def __eq__(self, other):
-        return (type(self) == type(other)
-                and self._target == other._target)
+        return type(self) == type(other) and self._target == other._target
 
     def encode(self):
         return _llentry.pack(0, self._target)
 
     def execute(self, rev, pc, emit):
         return self._target
+
 
 class _eof(_llinstruction):
     """EOF is expressed as a JGE that always jumps to 0."""
@@ -155,6 +159,7 @@ class _eof(_llinstruction):
     def execute(self, rev, pc, emit):
         return None
 
+
 class _jl(_llinstruction):
     """If the current rev is less than op1, jump to op2."""
 
@@ -166,9 +171,11 @@ class _jl(_llinstruction):
         return r'JL %d %d' % (self._cmprev, self._target)
 
     def __eq__(self, other):
-        return (type(self) == type(other)
-                and self._cmprev == other._cmprev
-                and self._target == other._target)
+        return (
+            type(self) == type(other)
+            and self._cmprev == other._cmprev
+            and self._target == other._target
+        )
 
     def encode(self):
         return _llentry.pack(1 | (self._cmprev << 2), self._target)
@@ -177,6 +184,7 @@ class _jl(_llinstruction):
         if rev < self._cmprev:
             return self._target
         return pc + 1
+
 
 class _line(_llinstruction):
     """Emit a line."""
@@ -191,9 +199,11 @@ class _line(_llinstruction):
         return r'LINE %d %d' % (self._rev, self._origlineno)
 
     def __eq__(self, other):
-        return (type(self) == type(other)
-                and self._rev == other._rev
-                and self._origlineno == other._origlineno)
+        return (
+            type(self) == type(other)
+            and self._rev == other._rev
+            and self._origlineno == other._origlineno
+        )
 
     def encode(self):
         return _llentry.pack(2 | (self._rev << 2), self._origlineno)
@@ -201,6 +211,7 @@ class _line(_llinstruction):
     def execute(self, rev, pc, emit):
         emit(lineinfo(self._rev, self._origlineno, pc))
         return pc + 1
+
 
 def _decodeone(data, offset):
     """Decode a single linelog instruction from an offset in a buffer."""
@@ -222,6 +233,7 @@ def _decodeone(data, offset):
         return _line(op1, op2)
     raise NotImplementedError('Unimplemented opcode %r' % opcode)
 
+
 class linelog(object):
     """Efficient cache for per-line history information."""
 
@@ -236,25 +248,32 @@ class linelog(object):
         self._maxrev = maxrev
 
     def __eq__(self, other):
-        return (type(self) == type(other)
-                and self._program == other._program
-                and self._maxrev == other._maxrev)
+        return (
+            type(self) == type(other)
+            and self._program == other._program
+            and self._maxrev == other._maxrev
+        )
 
     def __repr__(self):
         return '<linelog at %s: maxrev=%d size=%d>' % (
-            hex(id(self)), self._maxrev, len(self._program))
+            hex(id(self)),
+            self._maxrev,
+            len(self._program),
+        )
 
     def debugstr(self):
         fmt = r'%%%dd %%s' % len(str(len(self._program)))
         return pycompat.sysstr('\n').join(
-            fmt % (idx, i) for idx, i in enumerate(self._program[1:], 1))
+            fmt % (idx, i) for idx, i in enumerate(self._program[1:], 1)
+        )
 
     @classmethod
     def fromdata(cls, buf):
         if len(buf) % _llentry.size != 0:
             raise LineLogError(
-                "invalid linelog buffer size %d (must be a multiple of %d)" % (
-                    len(buf), _llentry.size))
+                "invalid linelog buffer size %d (must be a multiple of %d)"
+                % (len(buf), _llentry.size)
+            )
         expected = len(buf) / _llentry.size
         fakejge = _decodeone(buf, 0)
         if isinstance(fakejge, _jump):
@@ -263,9 +282,11 @@ class linelog(object):
             maxrev = fakejge._cmprev
         numentries = fakejge._target
         if expected != numentries:
-            raise LineLogError("corrupt linelog data: claimed"
-                               " %d entries but given data for %d entries" % (
-                                   expected, numentries))
+            raise LineLogError(
+                "corrupt linelog data: claimed"
+                " %d entries but given data for %d entries"
+                % (expected, numentries)
+            )
         instructions = [_eof(0, 0)]
         for offset in pycompat.xrange(1, numentries):
             instructions.append(_decodeone(buf, offset * _llentry.size))
@@ -281,8 +302,9 @@ class linelog(object):
         self._lastannotate = None
 
     def replacelines_vec(self, rev, a1, a2, blines):
-        return self.replacelines(rev, a1, a2, 0, len(blines),
-                                 _internal_blines=blines)
+        return self.replacelines(
+            rev, a1, a2, 0, len(blines), _internal_blines=blines
+        )
 
     def replacelines(self, rev, a1, a2, b1, b2, _internal_blines=None):
         """Replace lines [a1, a2) with lines [b1, b2)."""
@@ -298,8 +320,9 @@ class linelog(object):
             #        ar = self.annotate(self._maxrev)
         if a1 > len(ar.lines):
             raise LineLogError(
-                '%d contains %d lines, tried to access line %d' % (
-                    rev, len(ar.lines), a1))
+                '%d contains %d lines, tried to access line %d'
+                % (rev, len(ar.lines), a1)
+            )
         elif a1 == len(ar.lines):
             # Simulated EOF instruction since we're at EOF, which
             # doesn't have a "real" line.
@@ -333,8 +356,9 @@ class linelog(object):
         if a1 < a2:
             if a2 > len(ar.lines):
                 raise LineLogError(
-                    '%d contains %d lines, tried to access line %d' % (
-                        rev, len(ar.lines), a2))
+                    '%d contains %d lines, tried to access line %d'
+                    % (rev, len(ar.lines), a2)
+                )
             elif a2 == len(ar.lines):
                 endaddr = ar._eof
             else:
@@ -384,8 +408,9 @@ class linelog(object):
             executed += 1
         if pc is not None:
             raise LineLogError(
-                r'Probably hit an infinite loop in linelog. Program:\n' +
-                self.debugstr())
+                r'Probably hit an infinite loop in linelog. Program:\n'
+                + self.debugstr()
+            )
         ar = annotateresult(rev, lines, lastpc)
         self._lastannotate = ar
         return ar

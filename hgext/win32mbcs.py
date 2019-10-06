@@ -68,11 +68,12 @@ configitem = registrar.configitem(configtable)
 
 # Encoding.encoding may be updated by --encoding option.
 # Use a lambda do delay the resolution.
-configitem('win32mbcs', 'encoding',
-    default=lambda: encoding.encoding,
+configitem(
+    'win32mbcs', 'encoding', default=lambda: encoding.encoding,
 )
 
-_encoding = None                                # see extsetup
+_encoding = None  # see extsetup
+
 
 def decode(arg):
     if isinstance(arg, str):
@@ -89,6 +90,7 @@ def decode(arg):
             arg[k] = decode(v)
     return arg
 
+
 def encode(arg):
     if isinstance(arg, pycompat.unicode):
         return arg.encode(_encoding)
@@ -100,6 +102,7 @@ def encode(arg):
         for k, v in arg.items():
             arg[k] = encode(v)
     return arg
+
 
 def appendsep(s):
     # ensure the path ends with os.sep, appending it if necessary.
@@ -123,8 +126,11 @@ def basewrapper(func, argtype, enc, dec, args, kwds):
         # return value.
         return enc(func(*dec(args), **dec(kwds)))
     except UnicodeError:
-        raise error.Abort(_("[win32mbcs] filename conversion failed with"
-                         " %s encoding\n") % (_encoding))
+        raise error.Abort(
+            _("[win32mbcs] filename conversion failed with" " %s encoding\n")
+            % _encoding
+        )
+
 
 def wrapper(func, args, kwds):
     return basewrapper(func, pycompat.unicode, encode, decode, args, kwds)
@@ -132,6 +138,7 @@ def wrapper(func, args, kwds):
 
 def reversewrapper(func, args, kwds):
     return basewrapper(func, str, decode, encode, args, kwds)
+
 
 def wrapperforlistdir(func, args, kwds):
     # Ensure 'path' argument ends with os.sep to avoids
@@ -143,14 +150,18 @@ def wrapperforlistdir(func, args, kwds):
         kwds['path'] = appendsep(kwds['path'])
     return func(*args, **kwds)
 
+
 def wrapname(name, wrapper):
     module, name = name.rsplit('.', 1)
     module = sys.modules[module]
     func = getattr(module, name)
+
     def f(*args, **kwds):
         return wrapper(func, args, kwds)
+
     f.__name__ = func.__name__
     setattr(module, name, f)
+
 
 # List of functions to be wrapped.
 # NOTE: os.path.dirname() and os.path.basename() are safe because
@@ -177,10 +188,12 @@ problematic_encodings = '''big5 big5-tw csbig5 big5hkscs big5-hkscs
  sjis s_jis shift_jis_2004 shiftjis2004 sjis_2004 sjis2004
  shift_jisx0213 shiftjisx0213 sjisx0213 s_jisx0213 950 cp950 ms950 '''
 
+
 def extsetup(ui):
     # TODO: decide use of config section for this extension
-    if ((not os.path.supports_unicode_filenames) and
-        (pycompat.sysplatform != 'cygwin')):
+    if (not os.path.supports_unicode_filenames) and (
+        pycompat.sysplatform != 'cygwin'
+    ):
         ui.warn(_("[win32mbcs] cannot activate on this platform.\n"))
         return
     # determine encoding for filename
@@ -202,5 +215,4 @@ def extsetup(ui):
         # command line options is not yet applied when
         # extensions.loadall() is called.
         if '--debug' in sys.argv:
-            ui.write(("[win32mbcs] activated with encoding: %s\n")
-                     % _encoding)
+            ui.write("[win32mbcs] activated with encoding: %s\n" % _encoding)

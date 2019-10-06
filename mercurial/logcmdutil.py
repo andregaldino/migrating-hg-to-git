@@ -41,6 +41,7 @@ from .utils import (
     stringutil,
 )
 
+
 def getlimit(opts):
     """get the log limit according to option -l/--limit"""
     limit = opts.get('limit')
@@ -55,9 +56,23 @@ def getlimit(opts):
         limit = None
     return limit
 
-def diffordiffstat(ui, repo, diffopts, node1, node2, match,
-                   changes=None, stat=False, fp=None, graphwidth=0,
-                   prefix='', root='', listsubrepos=False, hunksfilterfn=None):
+
+def diffordiffstat(
+    ui,
+    repo,
+    diffopts,
+    node1,
+    node2,
+    match,
+    changes=None,
+    stat=False,
+    fp=None,
+    graphwidth=0,
+    prefix='',
+    root='',
+    listsubrepos=False,
+    hunksfilterfn=None,
+):
     '''show diff or diffstat.'''
     ctx1 = repo[node1]
     ctx2 = repo[node2]
@@ -66,10 +81,13 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
     else:
         relroot = ''
     copysourcematch = None
+
     def compose(f, g):
         return lambda x: f(g(x))
+
     def pathfn(f):
         return posixpath.join(prefix, f)
+
     if relroot != '':
         # XXX relative roots currently don't work if the root is within a
         # subrepo
@@ -78,20 +96,26 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         relroot += '/'
         for matchroot in match.files():
             if not matchroot.startswith(relroot):
-                ui.warn(_('warning: %s not inside relative root %s\n') %
-                        (uipathfn(pathfn(matchroot)), uirelroot))
+                ui.warn(
+                    _('warning: %s not inside relative root %s\n')
+                    % (uipathfn(pathfn(matchroot)), uirelroot)
+                )
 
         relrootmatch = scmutil.match(ctx2, pats=[relroot], default='path')
         match = matchmod.intersectmatchers(match, relrootmatch)
         copysourcematch = relrootmatch
 
-        checkroot = (repo.ui.configbool('devel', 'all-warnings') or
-                     repo.ui.configbool('devel', 'check-relroot'))
+        checkroot = repo.ui.configbool(
+            'devel', 'all-warnings'
+        ) or repo.ui.configbool('devel', 'check-relroot')
+
         def relrootpathfn(f):
             if checkroot and not f.startswith(relroot):
                 raise AssertionError(
-                    "file %s doesn't start with relroot %s" % (f, relroot))
-            return f[len(relroot):]
+                    "file %s doesn't start with relroot %s" % (f, relroot)
+                )
+            return f[len(relroot) :]
+
         pathfn = compose(relrootpathfn, pathfn)
 
     if stat:
@@ -103,9 +127,15 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         if not relroot:
             pathfn = compose(scmutil.getuipathfn(repo), pathfn)
 
-    chunks = ctx2.diff(ctx1, match, changes, opts=diffopts, pathfn=pathfn,
-                       copysourcematch=copysourcematch,
-                       hunksfilterfn=hunksfilterfn)
+    chunks = ctx2.diff(
+        ctx1,
+        match,
+        changes,
+        opts=diffopts,
+        pathfn=pathfn,
+        copysourcematch=copysourcematch,
+        hunksfilterfn=hunksfilterfn,
+    )
 
     if fp is not None or ui.canwritewithoutlabels():
         out = fp or ui
@@ -117,12 +147,15 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         if stat:
             chunks = patch.diffstatui(util.iterlines(chunks), width=width)
         else:
-            chunks = patch.difflabel(lambda chunks, **kwargs: chunks, chunks,
-                                     opts=diffopts)
+            chunks = patch.difflabel(
+                lambda chunks, **kwargs: chunks, chunks, opts=diffopts
+            )
         if ui.canbatchlabeledwrites():
+
             def gen():
                 for chunk, label in chunks:
                     yield ui.label(chunk, label=label)
+
             for chunk in util.filechunkiter(util.chunkbuffer(gen())):
                 ui.write(chunk)
         else:
@@ -142,8 +175,17 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         submatch = matchmod.subdirmatcher(subpath, match)
         subprefix = repo.wvfs.reljoin(prefix, subpath)
         if listsubrepos or match.exact(subpath) or any(submatch.files()):
-            sub.diff(ui, diffopts, tempnode2, submatch, changes=changes,
-                     stat=stat, fp=fp, prefix=subprefix)
+            sub.diff(
+                ui,
+                diffopts,
+                tempnode2,
+                submatch,
+                changes=changes,
+                stat=stat,
+                fp=fp,
+                prefix=subprefix,
+            )
+
 
 class changesetdiffer(object):
     """Generate diff of changeset with pre-configured filtering functions"""
@@ -158,10 +200,18 @@ class changesetdiffer(object):
         repo = ctx.repo()
         node = ctx.node()
         prev = ctx.p1().node()
-        diffordiffstat(ui, repo, diffopts, prev, node,
-                       match=self._makefilematcher(ctx), stat=stat,
-                       graphwidth=graphwidth,
-                       hunksfilterfn=self._makehunksfilter(ctx))
+        diffordiffstat(
+            ui,
+            repo,
+            diffopts,
+            prev,
+            node,
+            match=self._makefilematcher(ctx),
+            stat=stat,
+            graphwidth=graphwidth,
+            hunksfilterfn=self._makehunksfilter(ctx),
+        )
+
 
 def changesetlabels(ctx):
     labels = ['log.changeset', 'changeset.%s' % ctx.phasestr()]
@@ -172,6 +222,7 @@ def changesetlabels(ctx):
         for instability in ctx.instabilities():
             labels.append('instability.%s' % instability)
     return ' '.join(labels)
+
 
 class changesetprinter(object):
     '''show changeset information when templating not requested.'''
@@ -221,13 +272,16 @@ class changesetprinter(object):
         graphwidth = props.get('graphwidth', 0)
 
         if self.ui.quiet:
-            self.ui.write("%s\n" % scmutil.formatchangeid(ctx),
-                          label='log.node')
+            self.ui.write(
+                "%s\n" % scmutil.formatchangeid(ctx), label='log.node'
+            )
             return
 
         columns = self._columns
-        self.ui.write(columns['changeset'] % scmutil.formatchangeid(ctx),
-                      label=changesetlabels(ctx))
+        self.ui.write(
+            columns['changeset'] % scmutil.formatchangeid(ctx),
+            label=changesetlabels(ctx),
+        )
 
         # branches are shown first before any other names due to backwards
         # compatibility
@@ -244,14 +298,14 @@ class changesetprinter(object):
             # we will use the templatename as the color name since those two
             # should be the same
             for name in ns.names(self.repo, changenode):
-                self.ui.write(ns.logfmt % name,
-                              label='log.%s' % ns.colorname)
+                self.ui.write(ns.logfmt % name, label='log.%s' % ns.colorname)
         if self.ui.debugflag:
             self.ui.write(columns['phase'] % ctx.phasestr(), label='log.phase')
         for pctx in scmutil.meaningfulparents(self.repo, ctx):
             label = 'log.parent changeset.%s' % pctx.phasestr()
-            self.ui.write(columns['parent'] % scmutil.formatchangeid(pctx),
-                          label=label)
+            self.ui.write(
+                columns['parent'] % scmutil.formatchangeid(pctx), label=label
+            )
 
         if self.ui.debugflag:
             mnode = ctx.manifestnode()
@@ -260,17 +314,22 @@ class changesetprinter(object):
                 mrev = wdirrev
             else:
                 mrev = self.repo.manifestlog.rev(mnode)
-            self.ui.write(columns['manifest']
-                          % scmutil.formatrevnode(self.ui, mrev, mnode),
-                          label='ui.debug log.manifest')
+            self.ui.write(
+                columns['manifest']
+                % scmutil.formatrevnode(self.ui, mrev, mnode),
+                label='ui.debug log.manifest',
+            )
         self.ui.write(columns['user'] % ctx.user(), label='log.user')
-        self.ui.write(columns['date'] % dateutil.datestr(ctx.date()),
-                      label='log.date')
+        self.ui.write(
+            columns['date'] % dateutil.datestr(ctx.date()), label='log.date'
+        )
 
         if ctx.isunstable():
             instabilities = ctx.instabilities()
-            self.ui.write(columns['instability'] % ', '.join(instabilities),
-                          label='log.instability')
+            self.ui.write(
+                columns['instability'] % ', '.join(instabilities),
+                label='log.instability',
+            )
 
         elif ctx.obsolete():
             self._showobsfate(ctx)
@@ -281,34 +340,42 @@ class changesetprinter(object):
             files = ctx.p1().status(ctx)[:3]
             for key, value in zip(['files', 'files+', 'files-'], files):
                 if value:
-                    self.ui.write(columns[key] % " ".join(value),
-                                  label='ui.debug log.files')
+                    self.ui.write(
+                        columns[key] % " ".join(value),
+                        label='ui.debug log.files',
+                    )
         elif ctx.files() and self.ui.verbose:
-            self.ui.write(columns['files'] % " ".join(ctx.files()),
-                          label='ui.note log.files')
+            self.ui.write(
+                columns['files'] % " ".join(ctx.files()),
+                label='ui.note log.files',
+            )
         if copies and self.ui.verbose:
             copies = ['%s (%s)' % c for c in copies]
-            self.ui.write(columns['copies'] % ' '.join(copies),
-                          label='ui.note log.copies')
+            self.ui.write(
+                columns['copies'] % ' '.join(copies), label='ui.note log.copies'
+            )
 
         extra = ctx.extra()
         if extra and self.ui.debugflag:
             for key, value in sorted(extra.items()):
-                self.ui.write(columns['extra']
-                              % (key, stringutil.escapestr(value)),
-                              label='ui.debug log.extra')
+                self.ui.write(
+                    columns['extra'] % (key, stringutil.escapestr(value)),
+                    label='ui.debug log.extra',
+                )
 
         description = ctx.description().strip()
         if description:
             if self.ui.verbose:
-                self.ui.write(_("description:\n"),
-                              label='ui.note log.description')
-                self.ui.write(description,
-                              label='ui.note log.description')
+                self.ui.write(
+                    _("description:\n"), label='ui.note log.description'
+                )
+                self.ui.write(description, label='ui.note log.description')
                 self.ui.write("\n\n")
             else:
-                self.ui.write(columns['summary'] % description.splitlines()[0],
-                              label='log.summary')
+                self.ui.write(
+                    columns['summary'] % description.splitlines()[0],
+                    label='log.summary',
+                )
         self.ui.write("\n")
 
         self._showpatch(ctx, graphwidth)
@@ -316,15 +383,19 @@ class changesetprinter(object):
     def _showobsfate(self, ctx):
         # TODO: do not depend on templater
         tres = formatter.templateresources(self.repo.ui, self.repo)
-        t = formatter.maketemplater(self.repo.ui, '{join(obsfate, "\n")}',
-                                    defaults=templatekw.keywords,
-                                    resources=tres)
+        t = formatter.maketemplater(
+            self.repo.ui,
+            '{join(obsfate, "\n")}',
+            defaults=templatekw.keywords,
+            resources=tres,
+        )
         obsfate = t.renderdefault({'ctx': ctx}).splitlines()
 
         if obsfate:
             for obsfateline in obsfate:
-                self.ui.write(self._columns['obsolete'] % obsfateline,
-                              label='log.obsfate')
+                self.ui.write(
+                    self._columns['obsolete'] % obsfateline, label='log.obsfate'
+                )
 
     def _exthook(self, ctx):
         '''empty method used by extension as a hook point
@@ -332,21 +403,25 @@ class changesetprinter(object):
 
     def _showpatch(self, ctx, graphwidth=0):
         if self._includestat:
-            self._differ.showdiff(self.ui, ctx, self._diffopts,
-                                  graphwidth, stat=True)
+            self._differ.showdiff(
+                self.ui, ctx, self._diffopts, graphwidth, stat=True
+            )
         if self._includestat and self._includediff:
             self.ui.write("\n")
         if self._includediff:
-            self._differ.showdiff(self.ui, ctx, self._diffopts,
-                                  graphwidth, stat=False)
+            self._differ.showdiff(
+                self.ui, ctx, self._diffopts, graphwidth, stat=False
+            )
         if self._includestat or self._includediff:
             self.ui.write("\n")
+
 
 class changesetformatter(changesetprinter):
     """Format changeset information by generic formatter"""
 
-    def __init__(self, ui, repo, fm, differ=None, diffopts=None,
-                 buffered=False):
+    def __init__(
+        self, ui, repo, fm, differ=None, diffopts=None, buffered=False
+    ):
         changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
         self._diffopts = patch.difffeatureopts(ui, diffopts, git=True)
         self._fm = fm
@@ -359,36 +434,43 @@ class changesetformatter(changesetprinter):
         fm = self._fm
         fm.startitem()
         fm.context(ctx=ctx)
-        fm.data(rev=scmutil.intrev(ctx),
-                node=fm.hexfunc(scmutil.binnode(ctx)))
+        fm.data(rev=scmutil.intrev(ctx), node=fm.hexfunc(scmutil.binnode(ctx)))
 
         if self.ui.quiet:
             return
 
-        fm.data(branch=ctx.branch(),
-                phase=ctx.phasestr(),
-                user=ctx.user(),
-                date=fm.formatdate(ctx.date()),
-                desc=ctx.description(),
-                bookmarks=fm.formatlist(ctx.bookmarks(), name='bookmark'),
-                tags=fm.formatlist(ctx.tags(), name='tag'),
-                parents=fm.formatlist([fm.hexfunc(c.node())
-                                       for c in ctx.parents()], name='node'))
+        fm.data(
+            branch=ctx.branch(),
+            phase=ctx.phasestr(),
+            user=ctx.user(),
+            date=fm.formatdate(ctx.date()),
+            desc=ctx.description(),
+            bookmarks=fm.formatlist(ctx.bookmarks(), name='bookmark'),
+            tags=fm.formatlist(ctx.tags(), name='tag'),
+            parents=fm.formatlist(
+                [fm.hexfunc(c.node()) for c in ctx.parents()], name='node'
+            ),
+        )
 
         if self.ui.debugflag:
-            fm.data(manifest=fm.hexfunc(ctx.manifestnode() or wdirid),
-                    extra=fm.formatdict(ctx.extra()))
+            fm.data(
+                manifest=fm.hexfunc(ctx.manifestnode() or wdirid),
+                extra=fm.formatdict(ctx.extra()),
+            )
 
             files = ctx.p1().status(ctx)
-            fm.data(modified=fm.formatlist(files[0], name='file'),
-                    added=fm.formatlist(files[1], name='file'),
-                    removed=fm.formatlist(files[2], name='file'))
+            fm.data(
+                modified=fm.formatlist(files[0], name='file'),
+                added=fm.formatlist(files[1], name='file'),
+                removed=fm.formatlist(files[2], name='file'),
+            )
 
         elif self.ui.verbose:
             fm.data(files=fm.formatlist(ctx.files(), name='file'))
             if copies:
-                fm.data(copies=fm.formatdict(copies,
-                                             key='name', value='source'))
+                fm.data(
+                    copies=fm.formatdict(copies, key='name', value='source')
+                )
 
         if self._includestat:
             self.ui.pushbuffer()
@@ -398,6 +480,7 @@ class changesetformatter(changesetprinter):
             self.ui.pushbuffer()
             self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
             fm.data(diff=self.ui.popbuffer())
+
 
 class changesettemplater(changesetprinter):
     '''format changeset information.
@@ -410,22 +493,30 @@ class changesettemplater(changesetprinter):
 
     # Arguments before "buffered" used to be positional. Consider not
     # adding/removing arguments before "buffered" to not break callers.
-    def __init__(self, ui, repo, tmplspec, differ=None, diffopts=None,
-                 buffered=False):
+    def __init__(
+        self, ui, repo, tmplspec, differ=None, diffopts=None, buffered=False
+    ):
         changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
         # tres is shared with _graphnodeformatter()
         self._tresources = tres = formatter.templateresources(ui, repo)
-        self.t = formatter.loadtemplater(ui, tmplspec,
-                                         defaults=templatekw.keywords,
-                                         resources=tres,
-                                         cache=templatekw.defaulttempl)
+        self.t = formatter.loadtemplater(
+            ui,
+            tmplspec,
+            defaults=templatekw.keywords,
+            resources=tres,
+            cache=templatekw.defaulttempl,
+        )
         self._counter = itertools.count()
 
         self._tref = tmplspec.ref
-        self._parts = {'header': '', 'footer': '',
-                       tmplspec.ref: tmplspec.ref,
-                       'docheader': '', 'docfooter': '',
-                       'separator': ''}
+        self._parts = {
+            'header': '',
+            'footer': '',
+            tmplspec.ref: tmplspec.ref,
+            'docheader': '',
+            'docfooter': '',
+            'separator': '',
+        }
         if tmplspec.mapfile:
             # find correct templates for current mode, for backward
             # compatibility with 'log -v/-q/--debug' using a mapfile
@@ -488,6 +579,7 @@ class changesettemplater(changesetprinter):
             if not self.footer:
                 self.footer = self.t.render(self._parts['footer'], props)
 
+
 def templatespec(tmpl, mapfile):
     if pycompat.ispy3:
         assert not isinstance(tmpl, str), 'tmpl must not be a str'
@@ -496,6 +588,7 @@ def templatespec(tmpl, mapfile):
     else:
         return formatter.templatespec('', tmpl, None)
 
+
 def _lookuptemplate(ui, tmpl, style):
     """Find the template matching the given template spec or style
 
@@ -503,7 +596,7 @@ def _lookuptemplate(ui, tmpl, style):
     """
 
     # ui settings
-    if not tmpl and not style: # template are stronger than style
+    if not tmpl and not style:  # template are stronger than style
         tmpl = ui.config('ui', 'logtemplate')
         if tmpl:
             return templatespec(templater.unquotestring(tmpl), None)
@@ -513,8 +606,9 @@ def _lookuptemplate(ui, tmpl, style):
     if not tmpl and style:
         mapfile = style
         if not os.path.split(mapfile)[0]:
-            mapname = (templater.templatepath('map-cmdline.' + mapfile)
-                       or templater.templatepath(mapfile))
+            mapname = templater.templatepath(
+                'map-cmdline.' + mapfile
+            ) or templater.templatepath(mapfile)
             if mapname:
                 mapfile = mapname
         return templatespec(None, mapfile)
@@ -524,11 +618,13 @@ def _lookuptemplate(ui, tmpl, style):
 
     return formatter.lookuptemplate(ui, 'changeset', tmpl)
 
+
 def maketemplater(ui, repo, tmpl, buffered=False):
     """Create a changesettemplater from a literal template 'tmpl'
     byte-string."""
     spec = templatespec(tmpl, None)
     return changesettemplater(ui, repo, spec, buffered=buffered)
+
 
 def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
     """show one changeset using template or regular display.
@@ -552,6 +648,7 @@ def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
         return changesetprinter(ui, repo, *postargs)
 
     return changesettemplater(ui, repo, spec, *postargs)
+
 
 def _makematcher(repo, revs, pats, opts):
     """Build matcher and expanded patterns from log options
@@ -589,15 +686,18 @@ def _makematcher(repo, revs, pats, opts):
                     slowpath = True
                     continue
                 else:
-                    raise error.Abort(_('cannot follow file not in parent '
-                                        'revision: "%s"') % f)
+                    raise error.Abort(
+                        _('cannot follow file not in parent ' 'revision: "%s"')
+                        % f
+                    )
             filelog = repo.file(f)
             if not filelog:
                 # A zero count may be a directory or deleted file, so
                 # try to find matching entries on the slow path.
                 if follow:
                     raise error.Abort(
-                        _('cannot follow nonexistent file: "%s"') % f)
+                        _('cannot follow nonexistent file: "%s"') % f
+                    )
                 slowpath = True
 
         # We decided to fall back to the slowpath because at least one
@@ -613,6 +713,7 @@ def _makematcher(repo, revs, pats, opts):
 
     return match, pats, slowpath
 
+
 def _fileancestors(repo, revs, match, followfirst):
     fctxs = []
     for r in revs:
@@ -625,6 +726,7 @@ def _fileancestors(repo, revs, match, followfirst):
     # revision, stored in "fcache". "fcache" is populated as a side effect
     # of the graph traversal.
     fcache = {}
+
     def filematcher(ctx):
         return scmutil.matchfiles(repo, fcache.get(ctx.rev(), []))
 
@@ -632,23 +734,27 @@ def _fileancestors(repo, revs, match, followfirst):
         for rev, cs in dagop.filectxancestors(fctxs, followfirst=followfirst):
             fcache[rev] = [c.path() for c in cs]
             yield rev
+
     return smartset.generatorset(revgen(), iterasc=False), filematcher
+
 
 def _makenofollowfilematcher(repo, pats, opts):
     '''hook for extensions to override the filematcher for non-follow cases'''
     return None
 
+
 _opt2logrevset = {
-    'no_merges':        ('not merge()', None),
-    'only_merges':      ('merge()', None),
-    '_matchfiles':      (None, '_matchfiles(%ps)'),
-    'date':             ('date(%s)', None),
-    'branch':           ('branch(%s)', '%lr'),
-    '_patslog':         ('filelog(%s)', '%lr'),
-    'keyword':          ('keyword(%s)', '%lr'),
-    'prune':            ('ancestors(%s)', 'not %lr'),
-    'user':             ('user(%s)', '%lr'),
+    'no_merges': ('not merge()', None),
+    'only_merges': ('merge()', None),
+    '_matchfiles': (None, '_matchfiles(%ps)'),
+    'date': ('date(%s)', None),
+    'branch': ('branch(%s)', '%lr'),
+    '_patslog': ('filelog(%s)', '%lr'),
+    'keyword': ('keyword(%s)', '%lr'),
+    'prune': ('ancestors(%s)', 'not %lr'),
+    'user': ('user(%s)', '%lr'),
 }
+
 
 def _makerevset(repo, match, pats, slowpath, opts):
     """Return a revset string built from log options and file patterns"""
@@ -703,6 +809,7 @@ def _makerevset(repo, match, pats, slowpath, opts):
         expr = None
     return expr
 
+
 def _initialrevs(repo, opts):
     """Return the initial set of revisions to be filtered or followed"""
     follow = opts.get('follow') or opts.get('follow_first')
@@ -716,6 +823,7 @@ def _initialrevs(repo, opts):
         revs = smartset.spanset(repo)
         revs.reverse()
     return revs
+
 
 def getrevs(repo, pats, opts):
     """Return (revs, differ) where revs is a smartset
@@ -739,6 +847,7 @@ def getrevs(repo, pats, opts):
     if filematcher is None:
         filematcher = _makenofollowfilematcher(repo, pats, opts)
     if filematcher is None:
+
         def filematcher(ctx):
             return match
 
@@ -763,6 +872,7 @@ def getrevs(repo, pats, opts):
     differ._makefilematcher = filematcher
     return revs, differ
 
+
 def _parselinerangeopt(repo, opts):
     """Parse --line-range log option and return a list of tuples (filename,
     (fromline, toline)).
@@ -780,8 +890,10 @@ def _parselinerangeopt(repo, opts):
         msg = _("line range pattern '%s' must match exactly one file") % pat
         fname = scmutil.parsefollowlinespattern(repo, None, pat, msg)
         linerangebyfname.append(
-            (fname, util.processlinerange(fromline, toline)))
+            (fname, util.processlinerange(fromline, toline))
+        )
     return linerangebyfname
+
 
 def getlinerangerevs(repo, userrevs, opts):
     """Return (revs, differ).
@@ -798,16 +910,17 @@ def getlinerangerevs(repo, userrevs, opts):
     linerangesbyrev = {}
     for fname, (fromline, toline) in _parselinerangeopt(repo, opts):
         if fname not in wctx:
-            raise error.Abort(_('cannot follow file not in parent '
-                                'revision: "%s"') % fname)
+            raise error.Abort(
+                _('cannot follow file not in parent ' 'revision: "%s"') % fname
+            )
         fctx = wctx.filectx(fname)
         for fctx, linerange in dagop.blockancestors(fctx, fromline, toline):
             rev = fctx.introrev()
             if rev not in userrevs:
                 continue
-            linerangesbyrev.setdefault(
-                rev, {}).setdefault(
-                    fctx.path(), []).append(linerange)
+            linerangesbyrev.setdefault(rev, {}).setdefault(
+                fctx.path(), []
+            ).append(linerange)
 
     def nofilterhunksfn(fctx, hunks):
         return hunks
@@ -821,11 +934,10 @@ def getlinerangerevs(repo, userrevs, opts):
             lineranges = fctxlineranges.get(fctx.path())
             if lineranges is not None:
                 for hr, lines in hunks:
-                    if hr is None: # binary
+                    if hr is None:  # binary
                         yield hr, lines
                         continue
-                    if any(mdiff.hunkinrange(hr[2:], lr)
-                           for lr in lineranges):
+                    if any(mdiff.hunkinrange(hr[2:], lr) for lr in lineranges):
                         yield hr, lines
             else:
                 for hunk in hunks:
@@ -844,6 +956,7 @@ def getlinerangerevs(repo, userrevs, opts):
     differ._makehunksfilter = hunksfilter
     return revs, differ
 
+
 def _graphnodeformatter(ui, displayer):
     spec = ui.config('ui', 'graphnodetemplate')
     if not spec:
@@ -855,12 +968,16 @@ def _graphnodeformatter(ui, displayer):
         tres = displayer._tresources
     else:
         tres = formatter.templateresources(ui)
-    templ = formatter.maketemplater(ui, spec, defaults=templatekw.keywords,
-                                    resources=tres)
+    templ = formatter.maketemplater(
+        ui, spec, defaults=templatekw.keywords, resources=tres
+    )
+
     def formatnode(repo, ctx):
         props = {'ctx': ctx, 'repo': repo}
         return templ.renderdefault(props)
+
     return formatnode
+
 
 def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
     props = props or {}
@@ -876,12 +993,13 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
         edgetypes = {
             'parent': graphmod.PARENT,
             'grandparent': graphmod.GRANDPARENT,
-            'missing': graphmod.MISSINGPARENT
+            'missing': graphmod.MISSINGPARENT,
         }
         for name, key in edgetypes.items():
             # experimental config: experimental.graphstyle.*
-            styles[key] = ui.config('experimental', 'graphstyle.%s' % name,
-                                    styles[key])
+            styles[key] = ui.config(
+                'experimental', 'graphstyle.%s' % name, styles[key]
+            )
             if not styles[key]:
                 styles[key] = None
 
@@ -894,8 +1012,9 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
         edges = edgefn(type, char, state, rev, parents)
         firstedge = next(edges)
         width = firstedge[2]
-        displayer.show(ctx, copies=copies,
-                       graphwidth=width, **pycompat.strkwargs(props))
+        displayer.show(
+            ctx, copies=copies, graphwidth=width, **pycompat.strkwargs(props)
+        )
         lines = displayer.hunk.pop(rev).split('\n')
         if not lines[-1]:
             del lines[-1]
@@ -905,9 +1024,11 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
             lines = []
     displayer.close()
 
+
 def displaygraphrevs(ui, repo, revs, displayer, getrenamed):
     revdag = graphmod.dagwalker(repo, revs)
     displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges, getrenamed)
+
 
 def displayrevs(ui, repo, revs, displayer, getcopies):
     for rev in revs:
@@ -917,11 +1038,15 @@ def displayrevs(ui, repo, revs, displayer, getcopies):
         displayer.flush(ctx)
     displayer.close()
 
+
 def checkunsupportedgraphflags(pats, opts):
     for op in ["newest_first"]:
         if op in opts and opts[op]:
-            raise error.Abort(_("-G/--graph option is incompatible with --%s")
-                             % op.replace("_", "-"))
+            raise error.Abort(
+                _("-G/--graph option is incompatible with --%s")
+                % op.replace("_", "-")
+            )
+
 
 def graphrevs(repo, nodes, opts):
     limit = getlimit(opts)

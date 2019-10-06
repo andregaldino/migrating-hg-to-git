@@ -11,6 +11,7 @@ from . import (
     remotestore,
 )
 
+
 class wirestore(remotestore.remotestore):
     def __init__(self, ui, repo, remote):
         cap = remote.capable('largefiles')
@@ -36,8 +37,6 @@ class wirestore(remotestore.remotestore):
         with self.remote.commandexecutor() as e:
             fs = []
             for hash in hashes:
-                fs.append((hash, e.callcommand('statlfile', {
-                    'sha': hash,
-                })))
+                fs.append((hash, e.callcommand('statlfile', {'sha': hash,})))
 
             return {hash: f.result() for hash, f in fs}

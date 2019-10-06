@@ -15,9 +15,11 @@ from mercurial import node, util
 
 from . import lfutil
 
+
 class StoreError(Exception):
     '''Raised when there is a problem getting files from or putting
     files to a central store.'''
+
     def __init__(self, filename, hash, url, detail):
         self.filename = filename
         self.hash = hash
@@ -25,12 +27,16 @@ class StoreError(Exception):
         self.detail = detail
 
     def longmessage(self):
-        return (_("error getting id %s from url %s for file %s: %s\n") %
-                 (self.hash, util.hidepassword(self.url), self.filename,
-                  self.detail))
+        return _("error getting id %s from url %s for file %s: %s\n") % (
+            self.hash,
+            util.hidepassword(self.url),
+            self.filename,
+            self.detail,
+        )
 
     def __str__(self):
         return "%s: %s" % (util.hidepassword(self.url), self.detail)
+
 
 class basestore(object):
     def __init__(self, ui, repo, url):
@@ -62,16 +68,19 @@ class basestore(object):
 
         at = 0
         available = self.exists(set(hash for (_filename, hash) in files))
-        with ui.makeprogress(_('getting largefiles'), unit=_('files'),
-                             total=len(files)) as progress:
+        with ui.makeprogress(
+            _('getting largefiles'), unit=_('files'), total=len(files)
+        ) as progress:
             for filename, hash in files:
                 progress.update(at)
                 at += 1
                 ui.note(_('getting %s:%s\n') % (filename, hash))
 
                 if not available.get(hash):
-                    ui.warn(_('%s: largefile %s not available from %s\n')
-                            % (filename, hash, util.hidepassword(self.url)))
+                    ui.warn(
+                        _('%s: largefile %s not available from %s\n')
+                        % (filename, hash, util.hidepassword(self.url))
+                    )
                     missing.append(filename)
                     continue
 
@@ -91,8 +100,9 @@ class basestore(object):
         storefilename = lfutil.storepath(self.repo, hash)
 
         tmpname = storefilename + '.tmp'
-        with util.atomictempfile(tmpname,
-                createmode=self.repo.store.createmode) as tmpfile:
+        with util.atomictempfile(
+            tmpname, createmode=self.repo.store.createmode
+        ) as tmpfile:
             try:
                 gothash = self._getfile(tmpfile, filename, hash)
             except StoreError as err:
@@ -101,8 +111,10 @@ class basestore(object):
 
         if gothash != hash:
             if gothash != "":
-                self.ui.warn(_('%s: data corruption (expected %s, got %s)\n')
-                             % (filename, hash, gothash))
+                self.ui.warn(
+                    _('%s: data corruption (expected %s, got %s)\n')
+                    % (filename, hash, gothash)
+                )
             util.unlink(tmpname)
             return False
 
@@ -115,10 +127,11 @@ class basestore(object):
         file revision referenced by every changeset in revs.
         Return 0 if all is well, non-zero on any errors.'''
 
-        self.ui.status(_('searching %d changesets for largefiles\n') %
-                       len(revs))
-        verified = set()                # set of (filename, filenode) tuples
-        filestocheck = []               # list of (cset, filename, expectedhash)
+        self.ui.status(
+            _('searching %d changesets for largefiles\n') % len(revs)
+        )
+        verified = set()  # set of (filename, filenode) tuples
+        filestocheck = []  # list of (cset, filename, expectedhash)
         for rev in revs:
             cctx = self.repo[rev]
             cset = "%d:%s" % (cctx.rev(), node.short(cctx.node()))
@@ -140,11 +153,13 @@ class basestore(object):
         if contents:
             self.ui.status(
                 _('verified contents of %d revisions of %d largefiles\n')
-                % (numrevs, numlfiles))
+                % (numrevs, numlfiles)
+            )
         else:
             self.ui.status(
                 _('verified existence of %d revisions of %d largefiles\n')
-                % (numrevs, numlfiles))
+                % (numrevs, numlfiles)
+            )
         return int(failed)
 
     def _getfile(self, tmpfile, filename, hash):

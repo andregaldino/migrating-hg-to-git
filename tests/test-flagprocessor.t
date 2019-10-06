@@ -204,7 +204,7 @@ Ensure the data got to the server OK
     File "*/mercurial/extensions.py", line *, in _runextsetup (glob)
       extsetup(ui)
     File "*/tests/flagprocessorext.py", line *, in extsetup (glob)
-      validatehash,
+      REVIDX_NOOP, (noopdonothingread, noopdonothing, validatehash,)
     File "*/mercurial/revlogutils/flagutil.py", line *, in addflagprocessor (glob)
       insertflagprocessor(flag, processor, flagprocessors)
     File "*/mercurial/revlogutils/flagutil.py", line *, in insertflagprocessor (glob)

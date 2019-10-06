@@ -20,13 +20,8 @@ BIN_HASH_2 = binascii.unhexlify(HASH_2)
 HASH_3 = b'1234567890abcdef0987654321deadbeef0fcafe'
 BIN_HASH_3 = binascii.unhexlify(HASH_3)
 A_SHORT_MANIFEST = (
-    b'bar/baz/qux.py\0%(hash2)s%(flag2)s\n'
-    b'foo\0%(hash1)s%(flag1)s\n'
-    ) % {b'hash1': HASH_1,
-         b'flag1': b'',
-         b'hash2': HASH_2,
-         b'flag2': b'l',
-         }
+    b'bar/baz/qux.py\0%(hash2)s%(flag2)s\n' b'foo\0%(hash1)s%(flag1)s\n'
+) % {b'hash1': HASH_1, b'flag1': b'', b'hash2': HASH_2, b'flag2': b'l',}
 
 A_DEEPER_MANIFEST = (
     b'a/b/c/bar.py\0%(hash3)s%(flag1)s\n'
@@ -47,12 +42,13 @@ A_DEEPER_MANIFEST = (
     b'a/purple.py\0%(hash2)s%(flag1)s\n'
     b'app.py\0%(hash3)s%(flag1)s\n'
     b'readme.txt\0%(hash2)s%(flag1)s\n'
-    ) % {b'hash1': HASH_1,
-         b'flag1': b'',
-         b'hash2': HASH_2,
-         b'flag2': b'l',
-         b'hash3': HASH_3,
-         }
+) % {
+    b'hash1': HASH_1,
+    b'flag1': b'',
+    b'hash2': HASH_2,
+    b'flag2': b'l',
+    b'hash3': HASH_3,
+}
 
 HUGE_MANIFEST_ENTRIES = 200001
 
@@ -60,11 +56,17 @@ izip = getattr(itertools, 'izip', zip)
 if 'xrange' not in globals():
     xrange = range
 
-A_HUGE_MANIFEST = b''.join(sorted(
-    b'file%d\0%s%s\n' % (i, h, f) for i, h, f in
-    izip(xrange(200001),
-         itertools.cycle((HASH_1, HASH_2)),
-         itertools.cycle((b'', b'x', b'l')))))
+A_HUGE_MANIFEST = b''.join(
+    sorted(
+        b'file%d\0%s%s\n' % (i, h, f)
+        for i, h, f in izip(
+            xrange(200001),
+            itertools.cycle((HASH_1, HASH_2)),
+            itertools.cycle((b'', b'x', b'l')),
+        )
+    )
+)
+
 
 class basemanifesttests(object):
     def parsemanifest(self, text):
@@ -97,8 +99,7 @@ class basemanifesttests(object):
         m = self.parsemanifest(A_SHORT_MANIFEST)
         m[b'a'] = want
         self.assertEqual(want, m[b'a'])
-        self.assertEqual(b'a\0' + HASH_1 + b'\n' + A_SHORT_MANIFEST,
-                         m.text())
+        self.assertEqual(b'a\0' + HASH_1 + b'\n' + A_SHORT_MANIFEST, m.text())
 
     def testSetFlag(self):
         want = b'x'
@@ -115,15 +116,16 @@ class basemanifesttests(object):
         m[b'a'] = BIN_HASH_1
         m.setflag(b'a', want)
         self.assertEqual(want, m.flags(b'a'))
-        self.assertEqual(b'a\0' + HASH_1 + want + b'\n' + A_SHORT_MANIFEST,
-                         m.text())
+        self.assertEqual(
+            b'a\0' + HASH_1 + want + b'\n' + A_SHORT_MANIFEST, m.text()
+        )
 
     def testCopy(self):
         m = self.parsemanifest(A_SHORT_MANIFEST)
         m[b'a'] = BIN_HASH_1
         m2 = m.copy()
         del m
-        del m2 # make sure we don't double free() anything
+        del m2  # make sure we don't double free() anything
 
     def testCompaction(self):
         unhex = binascii.unhexlify
@@ -133,7 +135,10 @@ class basemanifesttests(object):
         m[b'beta'] = h2
         del m[b'foo']
         want = b'alpha\0%s\nbar/baz/qux.py\0%sl\nbeta\0%s\n' % (
-            HASH_1, HASH_2, HASH_2)
+            HASH_1,
+            HASH_2,
+            HASH_2,
+        )
         self.assertEqual(want, m.text())
         self.assertEqual(3, len(m))
         self.assertEqual([b'alpha', b'bar/baz/qux.py', b'beta'], list(m))
@@ -155,9 +160,10 @@ class basemanifesttests(object):
         # Merge code wants to set 21-byte fake hashes at times
         m[b'foo'] = want
         self.assertEqual(want, m[b'foo'])
-        self.assertEqual([(b'bar/baz/qux.py', BIN_HASH_2),
-                          (b'foo', BIN_HASH_1 + b'a')],
-                         list(m.items()))
+        self.assertEqual(
+            [(b'bar/baz/qux.py', BIN_HASH_2), (b'foo', BIN_HASH_1 + b'a')],
+            list(m.items()),
+        )
         # Sometimes it even tries a 22-byte fake hash, but we can
         # return 21 and it'll work out
         m[b'foo'] = want + b'+'
@@ -170,9 +176,9 @@ class basemanifesttests(object):
         m2 = m.copy()
         self.assertEqual(want, m2[b'foo'])
         # suffix with iteration
-        self.assertEqual([(b'bar/baz/qux.py', BIN_HASH_2),
-                          (b'foo', want)],
-                         list(m.items()))
+        self.assertEqual(
+            [(b'bar/baz/qux.py', BIN_HASH_2), (b'foo', want)], list(m.items())
+        )
 
         # shows up in diff
         self.assertEqual({b'foo': ((want, f), (h, b''))}, m.diff(clean))
@@ -181,10 +187,12 @@ class basemanifesttests(object):
     def testMatchException(self):
         m = self.parsemanifest(A_SHORT_MANIFEST)
         match = matchmod.match(b'', b'', [b're:.*'])
+
         def filt(path):
             if path == b'foo':
                 assert False
             return True
+
         match.matchfn = filt
         with self.assertRaises(AssertionError):
             m.matches(match)
@@ -206,28 +214,28 @@ class basemanifesttests(object):
         addl = b'z-only-in-left\0' + HASH_1 + b'\n'
         addr = b'z-only-in-right\0' + HASH_2 + b'x\n'
         left = self.parsemanifest(
-            A_SHORT_MANIFEST.replace(HASH_1, HASH_3 + b'x') + addl)
+            A_SHORT_MANIFEST.replace(HASH_1, HASH_3 + b'x') + addl
+        )
         right = self.parsemanifest(A_SHORT_MANIFEST + addr)
         want = {
-            b'foo': ((BIN_HASH_3, b'x'),
-                     (BIN_HASH_1, b'')),
+            b'foo': ((BIN_HASH_3, b'x'), (BIN_HASH_1, b'')),
             b'z-only-in-left': ((BIN_HASH_1, b''), MISSING),
             b'z-only-in-right': (MISSING, (BIN_HASH_2, b'x')),
-            }
+        }
         self.assertEqual(want, left.diff(right))
 
         want = {
             b'bar/baz/qux.py': (MISSING, (BIN_HASH_2, b'l')),
             b'foo': (MISSING, (BIN_HASH_3, b'x')),
             b'z-only-in-left': (MISSING, (BIN_HASH_1, b'')),
-            }
+        }
         self.assertEqual(want, self.parsemanifest(EMTPY_MANIFEST).diff(left))
 
         want = {
             b'bar/baz/qux.py': ((BIN_HASH_2, b'l'), MISSING),
             b'foo': ((BIN_HASH_3, b'x'), MISSING),
             b'z-only-in-left': ((BIN_HASH_1, b''), MISSING),
-            }
+        }
         self.assertEqual(want, left.diff(self.parsemanifest(EMTPY_MANIFEST)))
         copy = right.copy()
         del copy[b'z-only-in-right']
@@ -235,7 +243,7 @@ class basemanifesttests(object):
         want = {
             b'foo': (MISSING, (BIN_HASH_1, b'')),
             b'z-only-in-right': ((BIN_HASH_2, b'x'), MISSING),
-            }
+        }
         self.assertEqual(want, right.diff(copy))
 
         short = self.parsemanifest(A_SHORT_MANIFEST)
@@ -243,21 +251,22 @@ class basemanifesttests(object):
         del pruned[b'foo']
         want = {
             b'foo': ((BIN_HASH_1, b''), MISSING),
-            }
+        }
         self.assertEqual(want, short.diff(pruned))
         want = {
             b'foo': (MISSING, (BIN_HASH_1, b'')),
-            }
+        }
         self.assertEqual(want, pruned.diff(short))
         want = {
             b'bar/baz/qux.py': None,
             b'foo': (MISSING, (BIN_HASH_1, b'')),
-            }
+        }
         self.assertEqual(want, pruned.diff(short, clean=True))
 
     def testReversedLines(self):
         backwards = b''.join(
-            l + b'\n' for l in reversed(A_SHORT_MANIFEST.split(b'\n')) if l)
+            l + b'\n' for l in reversed(A_SHORT_MANIFEST.split(b'\n')) if l
+        )
         try:
             self.parsemanifest(backwards)
             self.fail('Should have raised ValueError')
@@ -292,9 +301,11 @@ class basemanifesttests(object):
         match = matchmod.exact([b'file1', b'file200', b'file300'])
         m2 = m.matches(match)
 
-        w = (b'file1\0%sx\n'
-             b'file200\0%sl\n'
-             b'file300\0%s\n') % (HASH_2, HASH_1, HASH_1)
+        w = (b'file1\0%sx\n' b'file200\0%sl\n' b'file300\0%s\n') % (
+            HASH_2,
+            HASH_1,
+            HASH_1,
+        )
         self.assertEqual(w, m2.text())
 
     def testMatchesNonexistentFile(self):
@@ -303,13 +314,14 @@ class basemanifesttests(object):
         '''
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
-        match = matchmod.exact([b'a/b/c/bar.txt', b'a/b/d/qux.py',
-                                b'readme.txt', b'nonexistent'])
+        match = matchmod.exact(
+            [b'a/b/c/bar.txt', b'a/b/d/qux.py', b'readme.txt', b'nonexistent']
+        )
         m2 = m.matches(match)
 
         self.assertEqual(
-                [b'a/b/c/bar.txt', b'a/b/d/qux.py', b'readme.txt'],
-                m2.keys())
+            [b'a/b/c/bar.txt', b'a/b/d/qux.py', b'readme.txt'], m2.keys()
+        )
 
     def testMatchesNonexistentDirectory(self):
         '''Tests matches() for a relpath match on a directory that doesn't
@@ -349,11 +361,20 @@ class basemanifesttests(object):
         match = matchmod.match(b'/', b'', [b'a/b'], default=b'relpath')
         m2 = m.matches(match)
 
-        self.assertEqual([
-            b'a/b/c/bar.py', b'a/b/c/bar.txt', b'a/b/c/foo.py',
-            b'a/b/c/foo.txt',
-            b'a/b/d/baz.py', b'a/b/d/qux.py', b'a/b/d/ten.txt', b'a/b/dog.py',
-            b'a/b/fish.py'], m2.keys())
+        self.assertEqual(
+            [
+                b'a/b/c/bar.py',
+                b'a/b/c/bar.txt',
+                b'a/b/c/foo.py',
+                b'a/b/c/foo.txt',
+                b'a/b/d/baz.py',
+                b'a/b/d/qux.py',
+                b'a/b/d/ten.txt',
+                b'a/b/dog.py',
+                b'a/b/fish.py',
+            ],
+            m2.keys(),
+        )
 
     def testMatchesExactPath(self):
         '''Tests matches() on an exact match on a directory, which should
@@ -374,10 +395,20 @@ class basemanifesttests(object):
         match = matchmod.match(b'/', b'a/b', [b'.'], default=b'relpath')
         m2 = m.matches(match)
 
-        self.assertEqual([
-            b'a/b/c/bar.py', b'a/b/c/bar.txt', b'a/b/c/foo.py',
-            b'a/b/c/foo.txt', b'a/b/d/baz.py', b'a/b/d/qux.py',
-            b'a/b/d/ten.txt', b'a/b/dog.py', b'a/b/fish.py'], m2.keys())
+        self.assertEqual(
+            [
+                b'a/b/c/bar.py',
+                b'a/b/c/bar.txt',
+                b'a/b/c/foo.py',
+                b'a/b/c/foo.txt',
+                b'a/b/d/baz.py',
+                b'a/b/d/qux.py',
+                b'a/b/d/ten.txt',
+                b'a/b/dog.py',
+                b'a/b/fish.py',
+            ],
+            m2.keys(),
+        )
 
     def testMatchesWithPattern(self):
         '''Tests matches() for files matching a pattern that reside
@@ -388,8 +419,9 @@ class basemanifesttests(object):
         m2 = m.matches(match)
 
         self.assertEqual(
-                [b'a/b/c/bar.txt', b'a/b/c/foo.txt', b'a/b/d/ten.txt'],
-                m2.keys())
+            [b'a/b/c/bar.txt', b'a/b/c/foo.txt', b'a/b/d/ten.txt'], m2.keys()
+        )
+
 
 class testmanifestdict(unittest.TestCase, basemanifesttests):
     def parsemanifest(self, text):
@@ -414,9 +446,11 @@ class testmanifestdict(unittest.TestCase, basemanifesttests):
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
             b'\x00\x00\xc0\x8aey\x1d}\x01\xd8\xe0\xb9\xf3\xde\x1b\xcf\x17'
-            b'\xac\xbe')
+            b'\xac\xbe'
+        )
         with self.assertRaises(ValueError):
             self.parsemanifest(data)
+
 
 class testtreemanifest(unittest.TestCase, basemanifesttests):
     def parsemanifest(self, text):
@@ -427,17 +461,16 @@ class testtreemanifest(unittest.TestCase, basemanifesttests):
 
         dirs = [s._dir for s in m.walksubtrees()]
         self.assertEqual(
-            sorted([
-                b'', b'a/', b'a/c/', b'a/d/', b'a/b/', b'a/b/c/', b'a/b/d/']),
-            sorted(dirs)
+            sorted(
+                [b'', b'a/', b'a/c/', b'a/d/', b'a/b/', b'a/b/c/', b'a/b/d/']
+            ),
+            sorted(dirs),
         )
 
         match = matchmod.match(b'/', b'', [b'path:a/b/'])
         dirs = [s._dir for s in m.walksubtrees(matcher=match)]
-        self.assertEqual(
-            sorted([b'a/b/', b'a/b/c/', b'a/b/d/']),
-            sorted(dirs)
-        )
+        self.assertEqual(sorted([b'a/b/', b'a/b/c/', b'a/b/d/']), sorted(dirs))
+
 
 if __name__ == '__main__':
     silenttestrunner.main(__name__)

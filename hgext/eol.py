@@ -106,9 +106,7 @@ from mercurial import (
     scmutil,
     util,
 )
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -119,21 +117,23 @@ testedwith = 'ships-with-hg-core'
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('eol', 'fix-trailing-newline',
-    default=False,
+configitem(
+    'eol', 'fix-trailing-newline', default=False,
 )
-configitem('eol', 'native',
-    default=pycompat.oslinesep,
+configitem(
+    'eol', 'native', default=pycompat.oslinesep,
 )
-configitem('eol', 'only-consistent',
-    default=True,
+configitem(
+    'eol', 'only-consistent', default=True,
 )
 
 # Matches a lone LF, i.e., one that is not part of CRLF.
 singlelf = re.compile('(^|[^\r])\n')
 
+
 def inconsistenteol(data):
     return '\r\n' in data and singlelf.search(data)
+
 
 def tolf(s, params, ui, **kwargs):
     """Filter to convert to LF EOLs."""
@@ -141,10 +141,14 @@ def tolf(s, params, ui, **kwargs):
         return s
     if ui.configbool('eol', 'only-consistent') and inconsistenteol(s):
         return s
-    if (ui.configbool('eol', 'fix-trailing-newline')
-        and s and not s.endswith('\n')):
+    if (
+        ui.configbool('eol', 'fix-trailing-newline')
+        and s
+        and not s.endswith('\n')
+    ):
         s = s + '\n'
     return util.tolf(s)
+
 
 def tocrlf(s, params, ui, **kwargs):
     """Filter to convert to CRLF EOLs."""
@@ -152,14 +156,19 @@ def tocrlf(s, params, ui, **kwargs):
         return s
     if ui.configbool('eol', 'only-consistent') and inconsistenteol(s):
         return s
-    if (ui.configbool('eol', 'fix-trailing-newline')
-        and s and not s.endswith('\n')):
+    if (
+        ui.configbool('eol', 'fix-trailing-newline')
+        and s
+        and not s.endswith('\n')
+    ):
         s = s + '\n'
     return util.tocrlf(s)
+
 
 def isbinary(s, params):
     """Filter to do nothing with the file."""
     return s
+
 
 filters = {
     'to-lf': tolf,
@@ -167,8 +176,9 @@ filters = {
     'is-binary': isbinary,
     # The following provide backwards compatibility with win32text
     'cleverencode:': tolf,
-    'cleverdecode:': tocrlf
+    'cleverdecode:': tocrlf,
 }
+
 
 class eolfile(object):
     def __init__(self, ui, root, data):
@@ -208,15 +218,17 @@ class eolfile(object):
                 ui.setconfig('decode', pattern, self._decode[key], 'eol')
                 ui.setconfig('encode', pattern, self._encode[key], 'eol')
             except KeyError:
-                ui.warn(_("ignoring unknown EOL style '%s' from %s\n")
-                        % (key, self.cfg.source('patterns', pattern)))
+                ui.warn(
+                    _("ignoring unknown EOL style '%s' from %s\n")
+                    % (key, self.cfg.source('patterns', pattern))
+                )
         # eol.only-consistent can be specified in ~/.hgrc or .hgeol
         for k, v in self.cfg.items('eol'):
             ui.setconfig('eol', k, v, 'eol')
 
     def checkrev(self, repo, ctx, files):
         failed = []
-        for f in (files or ctx.files()):
+        for f in files or ctx.files():
             if f not in ctx:
                 continue
             for pattern, key, m in self.patterns:
@@ -224,11 +236,16 @@ class eolfile(object):
                     continue
                 target = self._encode[key]
                 data = ctx[f].data()
-                if (target == "to-lf" and "\r\n" in data
-                    or target == "to-crlf" and singlelf.search(data)):
+                if (
+                    target == "to-lf"
+                    and "\r\n" in data
+                    or target == "to-crlf"
+                    and singlelf.search(data)
+                ):
                     failed.append((f, target, bytes(ctx)))
                 break
         return failed
+
 
 def parseeol(ui, repo, nodes):
     try:
@@ -244,9 +261,12 @@ def parseeol(ui, repo, nodes):
             except (IOError, LookupError):
                 pass
     except errormod.ParseError as inst:
-        ui.warn(_("warning: ignoring .hgeol file due to parse error "
-                  "at %s: %s\n") % (inst.args[1], inst.args[0]))
+        ui.warn(
+            _("warning: ignoring .hgeol file due to parse error " "at %s: %s\n")
+            % (inst.args[1], inst.args[0])
+        )
     return None
+
 
 def ensureenabled(ui):
     """make sure the extension is enabled when used as hook
@@ -260,6 +280,7 @@ def ensureenabled(ui):
         return
     ui.setconfig('extensions', 'eol', '', source='internal')
     extensions.loadall(ui, ['eol'])
+
 
 def _checkhook(ui, repo, node, headsonly):
     # Get revisions to check and touched files at the same time
@@ -284,34 +305,46 @@ def _checkhook(ui, repo, node, headsonly):
         eols = {'to-lf': 'CRLF', 'to-crlf': 'LF'}
         msgs = []
         for f, target, node in sorted(failed):
-            msgs.append(_("  %s in %s should not have %s line endings") %
-                        (f, node, eols[target]))
+            msgs.append(
+                _("  %s in %s should not have %s line endings")
+                % (f, node, eols[target])
+            )
         raise errormod.Abort(_("end-of-line check failed:\n") + "\n".join(msgs))
+
 
 def checkallhook(ui, repo, node, hooktype, **kwargs):
     """verify that files have expected EOLs"""
     _checkhook(ui, repo, node, False)
 
+
 def checkheadshook(ui, repo, node, hooktype, **kwargs):
     """verify that files have expected EOLs"""
     _checkhook(ui, repo, node, True)
 
+
 # "checkheadshook" used to be called "hook"
 hook = checkheadshook
+
 
 def preupdate(ui, repo, hooktype, parent1, parent2):
     p1node = scmutil.resolvehexnodeidprefix(repo, parent1)
     repo.loadeol([p1node])
     return False
 
+
 def uisetup(ui):
     ui.setconfig('hooks', 'preupdate.eol', preupdate, 'eol')
+
 
 def extsetup(ui):
     try:
         extensions.find('win32text')
-        ui.warn(_("the eol extension is incompatible with the "
-                  "win32text extension\n"))
+        ui.warn(
+            _(
+                "the eol extension is incompatible with the "
+                "win32text extension\n"
+            )
+        )
     except KeyError:
         pass
 
@@ -327,7 +360,6 @@ def reposetup(ui, repo):
     ui.setconfig('patch', 'eol', 'auto', 'eol')
 
     class eolrepo(repo.__class__):
-
         def loadeol(self, nodes):
             eol = parseeol(self.ui, self, nodes)
             if eol is None:
@@ -414,8 +446,10 @@ def reposetup(ui, repo):
                     # have all non-binary files taken care of.
                     continue
                 if inconsistenteol(data):
-                    raise errormod.Abort(_("inconsistent newline style "
-                                           "in %s\n") % f)
+                    raise errormod.Abort(
+                        _("inconsistent newline style " "in %s\n") % f
+                    )
             return super(eolrepo, self).commitctx(ctx, error, origctx)
+
     repo.__class__ = eolrepo
     repo._hgcleardirstate()

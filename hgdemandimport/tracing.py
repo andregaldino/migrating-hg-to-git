@@ -14,6 +14,7 @@ _pipe = None
 _checked = False
 _session = 'none'
 
+
 def _isactive():
     global _pipe, _session, _checked
     if _pipe is None:
@@ -25,6 +26,7 @@ def _isactive():
         _pipe = open(os.environ['HGCATAPULTSERVERPIPE'], 'w', 1)
         _session = os.environ.get('HGCATAPULTSESSION', 'none')
     return True
+
 
 @contextlib.contextmanager
 def log(whencefmt, *whenceargs):
@@ -47,6 +49,7 @@ def log(whencefmt, *whenceargs):
             _pipe.write('END %s %s\n' % (_session, whence))
         except IOError:
             pass
+
 
 def counter(label, amount, *labelargs):
     if not _isactive():

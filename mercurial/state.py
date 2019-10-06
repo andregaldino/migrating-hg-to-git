@@ -25,9 +25,8 @@ from . import (
     error,
     util,
 )
-from .utils import (
-    cborutil,
-)
+from .utils import cborutil
+
 
 class cmdstate(object):
     """a wrapper class to store the state of commands like `rebase`, `graft`,
@@ -60,8 +59,9 @@ class cmdstate(object):
         we use third-party library cbor to serialize data to write in the file.
         """
         if not isinstance(version, int):
-            raise error.ProgrammingError("version of state file should be"
-                                         " an integer")
+            raise error.ProgrammingError(
+                "version of state file should be" " an integer"
+            )
 
         with self._repo.vfs(self.fname, 'wb', atomictemp=True) as fp:
             fp.write('%d\n' % version)
@@ -75,8 +75,9 @@ class cmdstate(object):
             try:
                 int(fp.readline())
             except ValueError:
-                raise error.CorruptedState("unknown version of state file"
-                                           " found")
+                raise error.CorruptedState(
+                    "unknown version of state file" " found"
+                )
 
             return cborutil.decodeall(fp.read())[0]
 
@@ -88,6 +89,7 @@ class cmdstate(object):
         """check whether the state file exists or not"""
         return self._repo.vfs.exists(self.fname)
 
+
 class _statecheck(object):
     """a utility class that deals with multistep operations like graft,
        histedit, bisect, update etc and check whether such commands
@@ -97,9 +99,21 @@ class _statecheck(object):
        multistep operation or multistep command extension.
     """
 
-    def __init__(self, opname, fname, clearable, allowcommit, reportonly,
-                 continueflag, stopflag, cmdmsg, cmdhint, statushint,
-                 abortfunc, continuefunc):
+    def __init__(
+        self,
+        opname,
+        fname,
+        clearable,
+        allowcommit,
+        reportonly,
+        continueflag,
+        stopflag,
+        cmdmsg,
+        cmdhint,
+        statushint,
+        abortfunc,
+        continuefunc,
+    ):
         self._opname = opname
         self._fname = fname
         self._clearable = clearable
@@ -118,12 +132,14 @@ class _statecheck(object):
         hg status --verbose
         """
         if not self._statushint:
-            hint = (_('To continue:    hg %s --continue\n'
-                      'To abort:       hg %s --abort') % (self._opname,
-                       self._opname))
+            hint = _(
+                'To continue:    hg %s --continue\n'
+                'To abort:       hg %s --abort'
+            ) % (self._opname, self._opname)
             if self._stopflag:
-                hint = hint + (_('\nTo stop:        hg %s --stop') %
-                            (self._opname))
+                hint = hint + (
+                    _('\nTo stop:        hg %s --stop') % (self._opname)
+                )
             return hint
         return self._statushint
 
@@ -132,8 +148,10 @@ class _statecheck(object):
         operation
         """
         if not self._cmdhint:
-                return (_("use 'hg %s --continue' or 'hg %s --abort'") %
-                        (self._opname, self._opname))
+            return _("use 'hg %s --continue' or 'hg %s --abort'") % (
+                self._opname,
+                self._opname,
+            )
         return self._cmdhint
 
     def msg(self):
@@ -155,13 +173,25 @@ class _statecheck(object):
         else:
             return repo.vfs.exists(self._fname)
 
+
 # A list of statecheck objects for multistep operations like graft.
 _unfinishedstates = []
 
-def addunfinished(opname, fname, clearable=False, allowcommit=False,
-                  reportonly=False, continueflag=False, stopflag=False,
-                  cmdmsg="", cmdhint="", statushint="", abortfunc=None,
-                  continuefunc=None):
+
+def addunfinished(
+    opname,
+    fname,
+    clearable=False,
+    allowcommit=False,
+    reportonly=False,
+    continueflag=False,
+    stopflag=False,
+    cmdmsg="",
+    cmdhint="",
+    statushint="",
+    abortfunc=None,
+    continuefunc=None,
+):
     """this registers a new command or operation to unfinishedstates
     opname is the name the command or operation
     fname is the file name in which data should be stored in .hg directory.
@@ -189,26 +219,46 @@ def addunfinished(opname, fname, clearable=False, allowcommit=False,
     continuefunc stores the function required to finish an interrupted
     operation.
     """
-    statecheckobj = _statecheck(opname, fname, clearable, allowcommit,
-                                reportonly, continueflag, stopflag, cmdmsg,
-                                cmdhint, statushint, abortfunc, continuefunc)
+    statecheckobj = _statecheck(
+        opname,
+        fname,
+        clearable,
+        allowcommit,
+        reportonly,
+        continueflag,
+        stopflag,
+        cmdmsg,
+        cmdhint,
+        statushint,
+        abortfunc,
+        continuefunc,
+    )
     if opname == 'merge':
         _unfinishedstates.append(statecheckobj)
     else:
         _unfinishedstates.insert(0, statecheckobj)
 
+
 addunfinished(
-    'update', fname='updatestate', clearable=True,
+    'update',
+    fname='updatestate',
+    clearable=True,
     cmdmsg=_('last update was interrupted'),
     cmdhint=_("use 'hg update' to get a consistent checkout"),
-    statushint=_("To continue:    hg update .")
+    statushint=_("To continue:    hg update ."),
 )
 addunfinished(
-    'bisect', fname='bisect.state', allowcommit=True, reportonly=True,
-    statushint=_('To mark the changeset good:    hg bisect --good\n'
-                 'To mark the changeset bad:     hg bisect --bad\n'
-                 'To abort:                      hg bisect --reset\n')
+    'bisect',
+    fname='bisect.state',
+    allowcommit=True,
+    reportonly=True,
+    statushint=_(
+        'To mark the changeset good:    hg bisect --good\n'
+        'To mark the changeset bad:     hg bisect --bad\n'
+        'To abort:                      hg bisect --reset\n'
+    ),
 )
+
 
 def getrepostate(repo):
     # experimental config: commands.status.skipstates

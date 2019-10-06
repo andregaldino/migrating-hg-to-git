@@ -16,12 +16,11 @@ from . import (
     pycompat,
 )
 
-from .utils import (
-    stringutil,
-)
+from .utils import stringutil
 
 try:
     import curses
+
     # Mapping from effect name to terminfo attribute name (or raw code) or
     # color number.  This will also force-load the curses module.
     _baseterminfoparams = {
@@ -72,7 +71,7 @@ _effects = {
     'purple_background': 45,
     'cyan_background': 46,
     'white_background': 47,
-    }
+}
 
 _defaultstyles = {
     'grep.match': 'red bold',
@@ -147,8 +146,10 @@ _defaultstyles = {
     'tags.local': 'black bold',
 }
 
+
 def loadcolortable(ui, extname, colortable):
     _defaultstyles.update(colortable)
+
 
 def _terminfosetup(ui, mode, formatted):
     '''Initialize terminfo data and the terminal if we're in terminfo mode.'''
@@ -186,9 +187,14 @@ def _terminfosetup(ui, mode, formatted):
         # Only warn about missing terminfo entries if we explicitly asked for
         # terminfo mode and we're in a formatted terminal.
         if mode == "terminfo" and formatted:
-            ui.warn(_("no terminfo entry for setab/setaf: reverting to "
-              "ECMA-48 color\n"))
+            ui.warn(
+                _(
+                    "no terminfo entry for setab/setaf: reverting to "
+                    "ECMA-48 color\n"
+                )
+            )
         ui._terminfoparams.clear()
+
 
 def setup(ui):
     """configure color on a ui
@@ -200,6 +206,7 @@ def setup(ui):
     if mode and mode != 'debug':
         configstyles(ui)
 
+
 def _modesetup(ui):
     if ui.plain('color'):
         return None
@@ -207,7 +214,7 @@ def _modesetup(ui):
     if config == 'debug':
         return 'debug'
 
-    auto = (config == 'auto')
+    auto = config == 'auto'
     always = False
     if not auto and stringutil.parsebool(config):
         # We want the config to behave like a boolean, "on" is actually auto,
@@ -220,8 +227,9 @@ def _modesetup(ui):
     if not always and not auto:
         return None
 
-    formatted = (always or (encoding.environ.get('TERM') != 'dumb'
-                 and ui.formatted()))
+    formatted = always or (
+        encoding.environ.get('TERM') != 'dumb' and ui.formatted()
+    )
 
     mode = ui.config('color', 'mode')
 
@@ -285,6 +293,7 @@ def _modesetup(ui):
         return realmode
     return None
 
+
 def configstyles(ui):
     ui._styles.update(_defaultstyles)
     for status, cfgeffects in ui.configitems('color'):
@@ -297,10 +306,15 @@ def configstyles(ui):
                 if valideffect(ui, e):
                     good.append(e)
                 else:
-                    ui.warn(_("ignoring unknown color/effect %s "
-                              "(configured in color.%s)\n")
-                            % (stringutil.pprint(e), status))
+                    ui.warn(
+                        _(
+                            "ignoring unknown color/effect %s "
+                            "(configured in color.%s)\n"
+                        )
+                        % (stringutil.pprint(e), status)
+                    )
             ui._styles[status] = ' '.join(good)
+
 
 def _activeeffects(ui):
     '''Return the effects map for the color mode set on the ui.'''
@@ -310,11 +324,13 @@ def _activeeffects(ui):
         return _effects
     return {}
 
+
 def valideffect(ui, effect):
     'Determine if the effect is valid or not.'
-    return ((not ui._terminfoparams and effect in _activeeffects(ui))
-             or (effect in ui._terminfoparams
-                 or effect[:-11] in ui._terminfoparams))
+    return (not ui._terminfoparams and effect in _activeeffects(ui)) or (
+        effect in ui._terminfoparams or effect[:-11] in ui._terminfoparams
+    )
+
 
 def _effect_str(ui, effect):
     '''Helper function for render_effects().'''
@@ -337,6 +353,7 @@ def _effect_str(ui, effect):
     else:
         return curses.tparm(curses.tigetstr(r'setaf'), val)
 
+
 def _mergeeffects(text, start, stop):
     """Insert start sequence at every occurrence of stop sequence
 
@@ -354,27 +371,34 @@ def _mergeeffects(text, start, stop):
         parts.extend([start, t, stop])
     return ''.join(parts)
 
+
 def _render_effects(ui, text, effects):
     'Wrap text in commands to turn on each effect.'
     if not text:
         return text
     if ui._terminfoparams:
-        start = ''.join(_effect_str(ui, effect)
-                        for effect in ['none'] + effects.split())
+        start = ''.join(
+            _effect_str(ui, effect) for effect in ['none'] + effects.split()
+        )
         stop = _effect_str(ui, 'none')
     else:
         activeeffects = _activeeffects(ui)
-        start = [pycompat.bytestr(activeeffects[e])
-                 for e in ['none'] + effects.split()]
+        start = [
+            pycompat.bytestr(activeeffects[e])
+            for e in ['none'] + effects.split()
+        ]
         start = '\033[' + ';'.join(start) + 'm'
         stop = '\033[' + pycompat.bytestr(activeeffects['none']) + 'm'
     return _mergeeffects(text, start, stop)
 
+
 _ansieffectre = re.compile(br'\x1b\[[0-9;]*m')
+
 
 def stripeffects(text):
     """Strip ANSI control codes which could be inserted by colorlabel()"""
     return _ansieffectre.sub('', text)
+
 
 def colorlabel(ui, msg, label):
     """add color control code according to the mode"""
@@ -394,9 +418,11 @@ def colorlabel(ui, msg, label):
                 effects.append(l)
         effects = ' '.join(effects)
         if effects:
-            msg = '\n'.join([_render_effects(ui, line, effects)
-                             for line in msg.split('\n')])
+            msg = '\n'.join(
+                [_render_effects(ui, line, effects) for line in msg.split('\n')]
+            )
     return msg
+
 
 w32effects = None
 if pycompat.iswindows:
@@ -409,24 +435,27 @@ if pycompat.iswindows:
     _INVALID_HANDLE_VALUE = -1
 
     class _COORD(ctypes.Structure):
-        _fields_ = [(r'X', ctypes.c_short),
-                    (r'Y', ctypes.c_short)]
+        _fields_ = [(r'X', ctypes.c_short), (r'Y', ctypes.c_short)]
 
     class _SMALL_RECT(ctypes.Structure):
-        _fields_ = [(r'Left', ctypes.c_short),
-                    (r'Top', ctypes.c_short),
-                    (r'Right', ctypes.c_short),
-                    (r'Bottom', ctypes.c_short)]
+        _fields_ = [
+            (r'Left', ctypes.c_short),
+            (r'Top', ctypes.c_short),
+            (r'Right', ctypes.c_short),
+            (r'Bottom', ctypes.c_short),
+        ]
 
     class _CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
-        _fields_ = [(r'dwSize', _COORD),
-                    (r'dwCursorPosition', _COORD),
-                    (r'wAttributes', _WORD),
-                    (r'srWindow', _SMALL_RECT),
-                    (r'dwMaximumWindowSize', _COORD)]
+        _fields_ = [
+            (r'dwSize', _COORD),
+            (r'dwCursorPosition', _COORD),
+            (r'wAttributes', _WORD),
+            (r'srWindow', _SMALL_RECT),
+            (r'dwMaximumWindowSize', _COORD),
+        ]
 
-    _STD_OUTPUT_HANDLE = 0xfffffff5 # (DWORD)-11
-    _STD_ERROR_HANDLE = 0xfffffff4  # (DWORD)-12
+    _STD_OUTPUT_HANDLE = 0xFFFFFFF5  # (DWORD)-11
+    _STD_ERROR_HANDLE = 0xFFFFFFF4  # (DWORD)-12
 
     _FOREGROUND_BLUE = 0x0001
     _FOREGROUND_GREEN = 0x0002
@@ -453,40 +482,44 @@ if pycompat.iswindows:
         'cyan': _FOREGROUND_BLUE | _FOREGROUND_GREEN,
         'white': _FOREGROUND_RED | _FOREGROUND_GREEN | _FOREGROUND_BLUE,
         'bold': _FOREGROUND_INTENSITY,
-        'black_background': 0x100,                  # unused value > 0x0f
+        'black_background': 0x100,  # unused value > 0x0f
         'red_background': _BACKGROUND_RED,
         'green_background': _BACKGROUND_GREEN,
         'yellow_background': _BACKGROUND_RED | _BACKGROUND_GREEN,
         'blue_background': _BACKGROUND_BLUE,
         'purple_background': _BACKGROUND_BLUE | _BACKGROUND_RED,
         'cyan_background': _BACKGROUND_BLUE | _BACKGROUND_GREEN,
-        'white_background': (_BACKGROUND_RED | _BACKGROUND_GREEN |
-                             _BACKGROUND_BLUE),
+        'white_background': (
+            _BACKGROUND_RED | _BACKGROUND_GREEN | _BACKGROUND_BLUE
+        ),
         'bold_background': _BACKGROUND_INTENSITY,
         'underline': _COMMON_LVB_UNDERSCORE,  # double-byte charsets only
-        'inverse': _COMMON_LVB_REVERSE_VIDEO, # double-byte charsets only
+        'inverse': _COMMON_LVB_REVERSE_VIDEO,  # double-byte charsets only
     }
 
-    passthrough = {_FOREGROUND_INTENSITY,
-                   _BACKGROUND_INTENSITY,
-                   _COMMON_LVB_UNDERSCORE,
-                   _COMMON_LVB_REVERSE_VIDEO}
+    passthrough = {
+        _FOREGROUND_INTENSITY,
+        _BACKGROUND_INTENSITY,
+        _COMMON_LVB_UNDERSCORE,
+        _COMMON_LVB_REVERSE_VIDEO,
+    }
 
     stdout = _kernel32.GetStdHandle(
-                  _STD_OUTPUT_HANDLE)  # don't close the handle returned
+        _STD_OUTPUT_HANDLE
+    )  # don't close the handle returned
     if stdout is None or stdout == _INVALID_HANDLE_VALUE:
         w32effects = None
     else:
         csbi = _CONSOLE_SCREEN_BUFFER_INFO()
-        if not _kernel32.GetConsoleScreenBufferInfo(
-                    stdout, ctypes.byref(csbi)):
+        if not _kernel32.GetConsoleScreenBufferInfo(stdout, ctypes.byref(csbi)):
             # stdout may not support GetConsoleScreenBufferInfo()
             # when called from subprocess or redirected
             w32effects = None
         else:
             origattr = csbi.wAttributes
-            ansire = re.compile(br'\033\[([^m]*)m([^\033]*)(.*)',
-                                re.MULTILINE | re.DOTALL)
+            ansire = re.compile(
+                br'\033\[([^m]*)m([^\033]*)(.*)', re.MULTILINE | re.DOTALL
+            )
 
     def win32print(ui, writefunc, text, **opts):
         label = opts.get(r'label', '')
@@ -497,10 +530,10 @@ if pycompat.iswindows:
                 return origattr
             elif val in passthrough:
                 return attr | val
-            elif val > 0x0f:
-                return (val & 0x70) | (attr & 0x8f)
+            elif val > 0x0F:
+                return (val & 0x70) | (attr & 0x8F)
             else:
-                return (val & 0x07) | (attr & 0xf8)
+                return (val & 0x07) | (attr & 0xF8)
 
         # determine console attributes based on labels
         for l in label.split():

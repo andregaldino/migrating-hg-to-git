@@ -12,7 +12,9 @@ written by Barry Warsaw.
 from __future__ import absolute_import, print_function
 
 import re
+
 tspecials = re.compile(br'[ \(\)<>@,;:\\"/\[\]\?=]')
+
 
 def _formatparam(param, value=None, quote=1):
     """Convenience function to format and return a key=value pair.
@@ -45,8 +47,10 @@ class Headers(object):
         """Convert/check value type."""
         if type(value) is bytes:
             return value
-        raise AssertionError(u"Header names/values must be"
-                             u" of type bytes (got %s)" % repr(value))
+        raise AssertionError(
+            u"Header names/values must be"
+            u" of type bytes (got %s)" % repr(value)
+        )
 
     def __len__(self):
         """Return the total number of headers, including duplicates."""
@@ -56,7 +60,8 @@ class Headers(object):
         """Set the value of a header."""
         del self[name]
         self._headers.append(
-            (self._convert_string_type(name), self._convert_string_type(val)))
+            (self._convert_string_type(name), self._convert_string_type(val))
+        )
 
     def __delitem__(self, name):
         """Delete all occurrences of a header, if present.
@@ -78,7 +83,6 @@ class Headers(object):
         """Return true if the message contains the header."""
         return self.get(name) is not None
 
-
     def get_all(self, name):
         """Return a list of all the values for the named field.
         These will be sorted in the order they appeared in the original header
@@ -87,17 +91,15 @@ class Headers(object):
         If no fields exist with the given name, returns an empty list.
         """
         name = self._convert_string_type(name.lower())
-        return [kv[1] for kv in self._headers if kv[0].lower()==name]
-
+        return [kv[1] for kv in self._headers if kv[0].lower() == name]
 
     def get(self, name, default=None):
         """Get the first header value for 'name', or return 'default'"""
         name = self._convert_string_type(name.lower())
         for k, v in self._headers:
-            if k.lower()==name:
+            if k.lower() == name:
                 return v
         return default
-
 
     def keys(self):
         """Return a list of all the header field names.
@@ -132,7 +134,7 @@ class Headers(object):
     def __str__(self):
         """str() returns the formatted headers, complete with end line,
         suitable for direct HTTP transmission."""
-        return '\r\n'.join(["%s: %s" % kv for kv in self._headers]+['',''])
+        return '\r\n'.join(["%s: %s" % kv for kv in self._headers] + ['', ''])
 
     def __bytes__(self):
         return str(self).encode('iso-8859-1')
@@ -143,8 +145,12 @@ class Headers(object):
         and value 'value'."""
         result = self.get(name)
         if result is None:
-            self._headers.append((self._convert_string_type(name),
-                self._convert_string_type(value)))
+            self._headers.append(
+                (
+                    self._convert_string_type(name),
+                    self._convert_string_type(value),
+                )
+            )
             return value
         else:
             return result
@@ -173,4 +179,5 @@ class Headers(object):
                 v = self._convert_string_type(v)
                 parts.append(_formatparam(k.replace('_', '-'), v))
         self._headers.append(
-            (self._convert_string_type(_name), "; ".join(parts)))
+            (self._convert_string_type(_name), "; ".join(parts))
+        )

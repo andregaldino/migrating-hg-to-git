@@ -24,12 +24,12 @@ from . import (
     mdiff,
     pycompat,
 )
-from .utils import (
-    stringutil,
-)
+from .utils import stringutil
+
 
 class CantReprocessAndShowBase(Exception):
     pass
+
 
 def intersect(ra, rb):
     """Given two ranges return the range where they intersect or None.
@@ -53,23 +53,27 @@ def intersect(ra, rb):
     else:
         return None
 
+
 def compare_range(a, astart, aend, b, bstart, bend):
     """Compare a[astart:aend] == b[bstart:bend], without slicing.
     """
     if (aend - astart) != (bend - bstart):
         return False
-    for ia, ib in zip(pycompat.xrange(astart, aend),
-                      pycompat.xrange(bstart, bend)):
+    for ia, ib in zip(
+        pycompat.xrange(astart, aend), pycompat.xrange(bstart, bend)
+    ):
         if a[ia] != b[ib]:
             return False
     else:
         return True
+
 
 class Merge3Text(object):
     """3-way merge of texts.
 
     Given strings BASE, OTHER, THIS, tries to produce a combined text
     incorporating the changes from both BASE->OTHER and BASE->THIS."""
+
     def __init__(self, basetext, atext, btext, base=None, a=None, b=None):
         self.basetext = basetext
         self.atext = atext
@@ -84,16 +88,18 @@ class Merge3Text(object):
         self.a = a
         self.b = b
 
-    def merge_lines(self,
-                    name_a=None,
-                    name_b=None,
-                    name_base=None,
-                    start_marker='<<<<<<<',
-                    mid_marker='=======',
-                    end_marker='>>>>>>>',
-                    base_marker=None,
-                    localorother=None,
-                    minimize=False):
+    def merge_lines(
+        self,
+        name_a=None,
+        name_b=None,
+        name_base=None,
+        start_marker='<<<<<<<',
+        mid_marker='=======',
+        end_marker='>>>>>>>',
+        base_marker=None,
+        localorother=None,
+        minimize=False,
+    ):
         """Return merge in cvs-like form.
         """
         self.conflicts = False
@@ -170,16 +176,18 @@ class Merge3Text(object):
         for t in self.merge_regions():
             what = t[0]
             if what == 'unchanged':
-                yield what, self.base[t[1]:t[2]]
+                yield what, self.base[t[1] : t[2]]
             elif what == 'a' or what == 'same':
-                yield what, self.a[t[1]:t[2]]
+                yield what, self.a[t[1] : t[2]]
             elif what == 'b':
-                yield what, self.b[t[1]:t[2]]
+                yield what, self.b[t[1] : t[2]]
             elif what == 'conflict':
-                yield (what,
-                       self.base[t[1]:t[2]],
-                       self.a[t[3]:t[4]],
-                       self.b[t[5]:t[6]])
+                yield (
+                    what,
+                    self.base[t[1] : t[2]],
+                    self.a[t[3] : t[4]],
+                    self.b[t[5] : t[6]],
+                )
             else:
                 raise ValueError(what)
 
@@ -218,7 +226,7 @@ class Merge3Text(object):
 
         for region in self.find_sync_regions():
             zmatch, zend, amatch, aend, bmatch, bend = region
-            #print 'match base [%d:%d]' % (zmatch, zend)
+            # print 'match base [%d:%d]' % (zmatch, zend)
 
             matchlen = zend - zmatch
             assert matchlen >= 0
@@ -232,16 +240,17 @@ class Merge3Text(object):
             assert len_b >= 0
             assert len_base >= 0
 
-            #print 'unmatched a=%d, b=%d' % (len_a, len_b)
+            # print 'unmatched a=%d, b=%d' % (len_a, len_b)
 
             if len_a or len_b:
                 # try to avoid actually slicing the lists
-                equal_a = compare_range(self.a, ia, amatch,
-                                        self.base, iz, zmatch)
-                equal_b = compare_range(self.b, ib, bmatch,
-                                        self.base, iz, zmatch)
-                same = compare_range(self.a, ia, amatch,
-                                     self.b, ib, bmatch)
+                equal_a = compare_range(
+                    self.a, ia, amatch, self.base, iz, zmatch
+                )
+                equal_b = compare_range(
+                    self.b, ib, bmatch, self.base, iz, zmatch
+                )
+                same = compare_range(self.a, ia, amatch, self.b, ib, bmatch)
 
                 if same:
                     yield 'same', ia, amatch
@@ -260,7 +269,6 @@ class Merge3Text(object):
 
             # if the same part of the base was deleted on both sides
             # that's OK, we can just skip it.
-
 
             if matchlen > 0:
                 assert ia == amatch
@@ -289,24 +297,34 @@ class Merge3Text(object):
 
             # find matches at the front
             ii = 0
-            while (ii < alen and ii < blen and
-                   self.a[a1 + ii] == self.b[b1 + ii]):
+            while (
+                ii < alen and ii < blen and self.a[a1 + ii] == self.b[b1 + ii]
+            ):
                 ii += 1
             startmatches = ii
 
             # find matches at the end
             ii = 0
-            while (ii < alen and ii < blen and
-                   self.a[a2 - ii - 1] == self.b[b2 - ii - 1]):
+            while (
+                ii < alen
+                and ii < blen
+                and self.a[a2 - ii - 1] == self.b[b2 - ii - 1]
+            ):
                 ii += 1
             endmatches = ii
 
             if startmatches > 0:
                 yield 'same', a1, a1 + startmatches
 
-            yield ('conflict', z1, z2,
-                    a1 + startmatches, a2 - endmatches,
-                    b1 + startmatches, b2 - endmatches)
+            yield (
+                'conflict',
+                z1,
+                z2,
+                a1 + startmatches,
+                a2 - endmatches,
+                b1 + startmatches,
+                b2 - endmatches,
+            )
 
             if endmatches > 0:
                 yield 'same', a2 - endmatches, a2
@@ -351,13 +369,13 @@ class Merge3Text(object):
                 bend = bsub + intlen
 
                 assert self.base[intbase:intend] == self.a[asub:aend], (
-                        (self.base[intbase:intend], self.a[asub:aend]))
+                    self.base[intbase:intend],
+                    self.a[asub:aend],
+                )
 
                 assert self.base[intbase:intend] == self.b[bsub:bend]
 
-                sl.append((intbase, intend,
-                           asub, aend,
-                           bsub, bend))
+                sl.append((intbase, intend, asub, aend, bsub, bend))
 
             # advance whichever one ends first in the base text
             if (abase + alen) < (bbase + blen):
@@ -397,6 +415,7 @@ class Merge3Text(object):
 
         return unc
 
+
 def _verifytext(text, path, ui, opts):
     """verifies that text is non-binary (unless opts[text] is passed,
     then we just warn)"""
@@ -408,6 +427,7 @@ def _verifytext(text, path, ui, opts):
             raise error.Abort(msg)
     return text
 
+
 def _picklabels(defaults, overrides):
     if len(overrides) > 3:
         raise error.Abort(_("can only specify three labels."))
@@ -415,6 +435,7 @@ def _picklabels(defaults, overrides):
     for i, override in enumerate(overrides):
         result[i] = override
     return result
+
 
 def simplemerge(ui, localctx, basectx, otherctx, **opts):
     """Performs the simplemerge algorithm.
@@ -433,12 +454,12 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         # repository usually sees) might be more useful.
         return _verifytext(ctx.decodeddata(), ctx.path(), ui, opts)
 
-    mode = opts.get('mode','merge')
+    mode = opts.get('mode', 'merge')
     name_a, name_b, name_base = None, None, None
     if mode != 'union':
-        name_a, name_b, name_base = _picklabels([localctx.path(),
-                                                 otherctx.path(), None],
-                                                opts.get('label', []))
+        name_a, name_b, name_base = _picklabels(
+            [localctx.path(), otherctx.path(), None], opts.get('label', [])
+        )
 
     try:
         localtext = readctx(localctx)
@@ -449,9 +470,9 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
 
     m3 = Merge3Text(basetext, localtext, othertext)
     extrakwargs = {
-            "localorother": opts.get("localorother", None),
-            'minimize': True,
-        }
+        "localorother": opts.get("localorother", None),
+        'minimize': True,
+    }
     if mode == 'union':
         extrakwargs['start_marker'] = None
         extrakwargs['mid_marker'] = None
@@ -462,8 +483,9 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         extrakwargs['minimize'] = False
 
     mergedtext = ""
-    for line in m3.merge_lines(name_a=name_a, name_b=name_b,
-                               **pycompat.strkwargs(extrakwargs)):
+    for line in m3.merge_lines(
+        name_a=name_a, name_b=name_b, **pycompat.strkwargs(extrakwargs)
+    ):
         if opts.get('print'):
             ui.fout.write(line)
         else:

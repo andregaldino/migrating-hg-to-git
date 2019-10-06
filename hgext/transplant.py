@@ -44,8 +44,10 @@ from mercurial.utils import (
     stringutil,
 )
 
+
 class TransplantError(error.Abort):
     pass
+
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -58,17 +60,19 @@ testedwith = 'ships-with-hg-core'
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('transplant', 'filter',
-    default=None,
+configitem(
+    'transplant', 'filter', default=None,
 )
-configitem('transplant', 'log',
-    default=None,
+configitem(
+    'transplant', 'log', default=None,
 )
+
 
 class transplantentry(object):
     def __init__(self, lnode, rnode):
         self.lnode = lnode
         self.rnode = rnode
+
 
 class transplants(object):
     def __init__(self, path=None, transplantfile=None, opener=None):
@@ -116,17 +120,22 @@ class transplants(object):
             del list[list.index(transplant)]
             self.dirty = True
 
+
 class transplanter(object):
     def __init__(self, ui, repo, opts):
         self.ui = ui
         self.path = repo.vfs.join('transplant')
         self.opener = vfsmod.vfs(self.path)
-        self.transplants = transplants(self.path, 'transplants',
-                                       opener=self.opener)
+        self.transplants = transplants(
+            self.path, 'transplants', opener=self.opener
+        )
+
         def getcommiteditor():
             editform = cmdutil.mergeeditform(repo[None], 'transplant')
-            return cmdutil.getcommiteditor(editform=editform,
-                                           **pycompat.strkwargs(opts))
+            return cmdutil.getcommiteditor(
+                editform=editform, **pycompat.strkwargs(opts)
+            )
+
         self.getcommiteditor = getcommiteditor
 
     def applied(self, repo, node, parent):
@@ -136,8 +145,9 @@ class transplanter(object):
             parentrev = repo.changelog.rev(parent)
         if hasnode(repo, node):
             rev = repo.changelog.rev(node)
-            reachable = repo.changelog.ancestors([parentrev], rev,
-                                                 inclusive=True)
+            reachable = repo.changelog.ancestors(
+                [parentrev], rev, inclusive=True
+            )
             if rev in reachable:
                 return True
         for t in self.transplants.get(node):
@@ -146,8 +156,9 @@ class transplanter(object):
                 self.transplants.remove(t)
                 return False
             lnoderev = repo.changelog.rev(t.lnode)
-            if lnoderev in repo.changelog.ancestors([parentrev], lnoderev,
-                                                    inclusive=True):
+            if lnoderev in repo.changelog.ancestors(
+                [parentrev], lnoderev, inclusive=True
+            ):
                 return True
         return False
 
@@ -170,8 +181,9 @@ class transplanter(object):
                 revstr = '%d:%s' % (rev, nodemod.short(node))
 
                 if self.applied(repo, node, p1):
-                    self.ui.warn(_('skipping already applied revision %s\n') %
-                                 revstr)
+                    self.ui.warn(
+                        _('skipping already applied revision %s\n') % revstr
+                    )
                     continue
 
                 parents = source.changelog.parents(node)
@@ -185,8 +197,9 @@ class transplanter(object):
                     if pulls:
                         if source != repo:
                             exchange.pull(repo, source.peer(), heads=pulls)
-                        merge.update(repo, pulls[-1], branchmerge=False,
-                                     force=False)
+                        merge.update(
+                            repo, pulls[-1], branchmerge=False, force=False
+                        )
                         p1 = repo.dirstate.p1()
                         pulls = []
 
@@ -202,15 +215,18 @@ class transplanter(object):
                 skipmerge = False
                 if parents[1] != revlog.nullid:
                     if not opts.get('parent'):
-                        self.ui.note(_('skipping merge changeset %d:%s\n')
-                                     % (rev, nodemod.short(node)))
+                        self.ui.note(
+                            _('skipping merge changeset %d:%s\n')
+                            % (rev, nodemod.short(node))
+                        )
                         skipmerge = True
                     else:
                         parent = source.lookup(opts['parent'])
                         if parent not in parents:
-                            raise error.Abort(_('%s is not a parent of %s') %
-                                              (nodemod.short(parent),
-                                               nodemod.short(node)))
+                            raise error.Abort(
+                                _('%s is not a parent of %s')
+                                % (nodemod.short(parent), nodemod.short(node))
+                            )
                 else:
                     parent = parents[0]
 
@@ -228,23 +244,30 @@ class transplanter(object):
                 if patchfile or domerge:
                     try:
                         try:
-                            n = self.applyone(repo, node,
-                                              source.changelog.read(node),
-                                              patchfile, merge=domerge,
-                                              log=opts.get('log'),
-                                              filter=opts.get('filter'))
+                            n = self.applyone(
+                                repo,
+                                node,
+                                source.changelog.read(node),
+                                patchfile,
+                                merge=domerge,
+                                log=opts.get('log'),
+                                filter=opts.get('filter'),
+                            )
                         except TransplantError:
                             # Do not rollback, it is up to the user to
                             # fix the merge or cancel everything
                             tr.close()
                             raise
                         if n and domerge:
-                            self.ui.status(_('%s merged at %s\n') % (revstr,
-                                      nodemod.short(n)))
+                            self.ui.status(
+                                _('%s merged at %s\n')
+                                % (revstr, nodemod.short(n))
+                            )
                         elif n:
-                            self.ui.status(_('%s transplanted to %s\n')
-                                           % (nodemod.short(node),
-                                              nodemod.short(n)))
+                            self.ui.status(
+                                _('%s transplanted to %s\n')
+                                % (nodemod.short(node), nodemod.short(n))
+                            )
                     finally:
                         if patchfile:
                             os.unlink(patchfile)
@@ -274,22 +297,30 @@ class transplanter(object):
         fp.close()
 
         try:
-            self.ui.system('%s %s %s' % (filter,
-                                         procutil.shellquote(headerfile),
-                                         procutil.shellquote(patchfile)),
-                           environ={'HGUSER': changelog[1],
-                                    'HGREVISION': nodemod.hex(node),
-                                    },
-                           onerr=error.Abort, errprefix=_('filter failed'),
-                           blockedtag='transplant_filter')
+            self.ui.system(
+                '%s %s %s'
+                % (
+                    filter,
+                    procutil.shellquote(headerfile),
+                    procutil.shellquote(patchfile),
+                ),
+                environ={
+                    'HGUSER': changelog[1],
+                    'HGREVISION': nodemod.hex(node),
+                },
+                onerr=error.Abort,
+                errprefix=_('filter failed'),
+                blockedtag='transplant_filter',
+            )
             user, date, msg = self.parselog(open(headerfile, 'rb'))[1:4]
         finally:
             os.unlink(headerfile)
 
         return (user, date, msg)
 
-    def applyone(self, repo, node, cl, patchfile, merge=False, log=False,
-                 filter=None):
+    def applyone(
+        self, repo, node, cl, patchfile, merge=False, log=False, filter=None
+    ):
         '''apply the patch in patchfile to the repository as a transplant'''
         (manifest, user, (time, timezone), files, message) = cl[:5]
         date = "%d %d" % (time, timezone)
@@ -319,8 +350,12 @@ class transplanter(object):
                 p2 = node
                 self.log(user, date, message, p1, p2, merge=merge)
                 self.ui.write(stringutil.forcebytestr(inst) + '\n')
-                raise TransplantError(_('fix up the working directory and run '
-                                        'hg transplant --continue'))
+                raise TransplantError(
+                    _(
+                        'fix up the working directory and run '
+                        'hg transplant --continue'
+                    )
+                )
         else:
             files = None
         if merge:
@@ -330,11 +365,18 @@ class transplanter(object):
         else:
             m = match.exact(files)
 
-        n = repo.commit(message, user, date, extra=extra, match=m,
-                        editor=self.getcommiteditor())
+        n = repo.commit(
+            message,
+            user,
+            date,
+            extra=extra,
+            match=m,
+            editor=self.getcommiteditor(),
+        )
         if not n:
-            self.ui.warn(_('skipping emptied changeset %s\n') %
-                           nodemod.short(node))
+            self.ui.warn(
+                _('skipping emptied changeset %s\n') % nodemod.short(node)
+            )
             return None
         if not merge:
             self.transplants.set(n, node)
@@ -349,12 +391,14 @@ class transplanter(object):
         if os.path.exists(os.path.join(self.path, 'journal')):
             n, node = self.recover(repo, source, opts)
             if n:
-                self.ui.status(_('%s transplanted as %s\n') %
-                                 (nodemod.short(node),
-                                  nodemod.short(n)))
+                self.ui.status(
+                    _('%s transplanted as %s\n')
+                    % (nodemod.short(node), nodemod.short(n))
+                )
             else:
-                self.ui.status(_('%s skipped due to empty diff\n')
-                               % (nodemod.short(node),))
+                self.ui.status(
+                    _('%s skipped due to empty diff\n') % (nodemod.short(node),)
+                )
         seriespath = os.path.join(self.path, 'series')
         if not os.path.exists(seriespath):
             self.transplants.write()
@@ -380,9 +424,10 @@ class transplanter(object):
             if opts.get('parent'):
                 parent = source.lookup(opts['parent'])
                 if parent not in parents:
-                    raise error.Abort(_('%s is not a parent of %s') %
-                                      (nodemod.short(parent),
-                                       nodemod.short(node)))
+                    raise error.Abort(
+                        _('%s is not a parent of %s')
+                        % (nodemod.short(parent), nodemod.short(node))
+                    )
             else:
                 merge = True
 
@@ -390,14 +435,21 @@ class transplanter(object):
         try:
             p1 = repo.dirstate.p1()
             if p1 != parent:
-                raise error.Abort(_('working directory not at transplant '
-                                   'parent %s') % nodemod.hex(parent))
+                raise error.Abort(
+                    _('working directory not at transplant ' 'parent %s')
+                    % nodemod.hex(parent)
+                )
             if merge:
                 repo.setparents(p1, parents[1])
             modified, added, removed, deleted = repo.status()[:4]
             if merge or modified or added or removed or deleted:
-                n = repo.commit(message, user, date, extra=extra,
-                                editor=self.getcommiteditor())
+                n = repo.commit(
+                    message,
+                    user,
+                    date,
+                    extra=extra,
+                    editor=self.getcommiteditor(),
+                )
                 if not n:
                     raise error.Abort(_('commit failed'))
                 if not merge:
@@ -418,8 +470,9 @@ class transplanter(object):
             startctx = repo['.']
             hg.updaterepo(repo, startctx.node(), overwrite=True)
             ui.status(_("stopped the interrupted transplant\n"))
-            ui.status(_("working directory is now at %s\n") %
-                      startctx.hex()[:12])
+            ui.status(
+                _("working directory is now at %s\n") % startctx.hex()[:12]
+            )
             self.unlog()
             return 0
 
@@ -513,31 +566,35 @@ class transplanter(object):
 
         return matchfn
 
+
 def hasnode(repo, node):
     try:
         return repo.changelog.rev(node) is not None
     except error.StorageError:
         return False
 
+
 def browserevs(ui, repo, nodes, opts):
     '''interactively transplant changesets'''
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     transplants = []
     merges = []
-    prompt = _('apply changeset? [ynmpcq?]:'
-               '$$ &yes, transplant this changeset'
-               '$$ &no, skip this changeset'
-               '$$ &merge at this changeset'
-               '$$ show &patch'
-               '$$ &commit selected changesets'
-               '$$ &quit and cancel transplant'
-               '$$ &? (show this help)')
+    prompt = _(
+        'apply changeset? [ynmpcq?]:'
+        '$$ &yes, transplant this changeset'
+        '$$ &no, skip this changeset'
+        '$$ &merge at this changeset'
+        '$$ show &patch'
+        '$$ &commit selected changesets'
+        '$$ &quit and cancel transplant'
+        '$$ &? (show this help)'
+    )
     for node in nodes:
         displayer.show(repo[node])
         action = None
         while not action:
             choice = ui.promptchoice(prompt)
-            action = 'ynmpcq?'[choice:choice + 1]
+            action = 'ynmpcq?'[choice : choice + 1]
             if action == '?':
                 for c, t in ui.extractchoices(prompt)[1]:
                     ui.write('%s: %s\n' % (c, t))
@@ -560,24 +617,41 @@ def browserevs(ui, repo, nodes, opts):
     displayer.close()
     return (transplants, merges)
 
-@command('transplant',
-    [('s', 'source', '', _('transplant changesets from REPO'), _('REPO')),
-    ('b', 'branch', [], _('use this source changeset as head'), _('REV')),
-    ('a', 'all', None, _('pull all changesets up to the --branch revisions')),
-    ('p', 'prune', [], _('skip over REV'), _('REV')),
-    ('m', 'merge', [], _('merge at REV'), _('REV')),
-    ('', 'parent', '',
-     _('parent to choose when transplanting merge'), _('REV')),
-    ('e', 'edit', False, _('invoke editor on commit messages')),
-    ('', 'log', None, _('append transplant info to log message')),
-    ('', 'stop', False, _('stop interrupted transplant')),
-    ('c', 'continue', None, _('continue last transplant session '
-                              'after fixing conflicts')),
-    ('', 'filter', '',
-     _('filter changesets through command'), _('CMD'))],
-    _('hg transplant [-s REPO] [-b BRANCH [-a]] [-p REV] '
-      '[-m REV] [REV]...'),
-    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
+
+@command(
+    'transplant',
+    [
+        ('s', 'source', '', _('transplant changesets from REPO'), _('REPO')),
+        ('b', 'branch', [], _('use this source changeset as head'), _('REV')),
+        (
+            'a',
+            'all',
+            None,
+            _('pull all changesets up to the --branch revisions'),
+        ),
+        ('p', 'prune', [], _('skip over REV'), _('REV')),
+        ('m', 'merge', [], _('merge at REV'), _('REV')),
+        (
+            '',
+            'parent',
+            '',
+            _('parent to choose when transplanting merge'),
+            _('REV'),
+        ),
+        ('e', 'edit', False, _('invoke editor on commit messages')),
+        ('', 'log', None, _('append transplant info to log message')),
+        ('', 'stop', False, _('stop interrupted transplant')),
+        (
+            'c',
+            'continue',
+            None,
+            _('continue last transplant session ' 'after fixing conflicts'),
+        ),
+        ('', 'filter', '', _('filter changesets through command'), _('CMD')),
+    ],
+    _('hg transplant [-s REPO] [-b BRANCH [-a]] [-p REV] ' '[-m REV] [REV]...'),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+)
 def transplant(ui, repo, *revs, **opts):
     '''transplant changesets from another branch
 
@@ -632,6 +706,7 @@ def transplant(ui, repo, *revs, **opts):
     with repo.wlock():
         return _dotransplant(ui, repo, *revs, **opts)
 
+
 def _dotransplant(ui, repo, *revs, **opts):
     def incwalk(repo, csets, match=util.always):
         for node in csets:
@@ -655,24 +730,41 @@ def _dotransplant(ui, repo, *revs, **opts):
     def checkopts(opts, revs):
         if opts.get('continue'):
             if opts.get('branch') or opts.get('all') or opts.get('merge'):
-                raise error.Abort(_('--continue is incompatible with '
-                                   '--branch, --all and --merge'))
+                raise error.Abort(
+                    _(
+                        '--continue is incompatible with '
+                        '--branch, --all and --merge'
+                    )
+                )
             return
         if opts.get('stop'):
             if opts.get('branch') or opts.get('all') or opts.get('merge'):
-                raise error.Abort(_('--stop is incompatible with '
-                                   '--branch, --all and --merge'))
+                raise error.Abort(
+                    _(
+                        '--stop is incompatible with '
+                        '--branch, --all and --merge'
+                    )
+                )
             return
-        if not (opts.get('source') or revs or
-                opts.get('merge') or opts.get('branch')):
-            raise error.Abort(_('no source URL, branch revision, or revision '
-                               'list provided'))
+        if not (
+            opts.get('source')
+            or revs
+            or opts.get('merge')
+            or opts.get('branch')
+        ):
+            raise error.Abort(
+                _(
+                    'no source URL, branch revision, or revision '
+                    'list provided'
+                )
+            )
         if opts.get('all'):
             if not opts.get('branch'):
                 raise error.Abort(_('--all requires a branch revision'))
             if revs:
-                raise error.Abort(_('--all is incompatible with a '
-                                   'revision list'))
+                raise error.Abort(
+                    _('--all is incompatible with a ' 'revision list')
+                )
 
     opts = pycompat.byteskwargs(opts)
     checkopts(opts, revs)
@@ -710,8 +802,9 @@ def _dotransplant(ui, repo, *revs, **opts):
                 target.add(peer.lookup(r))
             except error.RepoError:
                 pass
-        source, csets, cleanupfn = bundlerepo.getremotechanges(ui, repo, peer,
-                                    onlyheads=sorted(target), force=True)
+        source, csets, cleanupfn = bundlerepo.getremotechanges(
+            ui, repo, peer, onlyheads=sorted(target), force=True
+        )
     else:
         source = repo
         heads = pycompat.maplist(source.lookup, opts.get('branch', ()))
@@ -724,8 +817,10 @@ def _dotransplant(ui, repo, *revs, **opts):
 
         tf = tp.transplantfilter(repo, source, p1)
         if opts.get('prune'):
-            prune = set(source[r].node()
-                        for r in scmutil.revrange(source, opts.get('prune')))
+            prune = set(
+                source[r].node()
+                for r in scmutil.revrange(source, opts.get('prune'))
+            )
             matchfn = lambda x: tf(x) and x not in prune
         else:
             matchfn = tf
@@ -738,8 +833,9 @@ def _dotransplant(ui, repo, *revs, **opts):
             if source != repo:
                 alltransplants = incwalk(source, csets, match=matchfn)
             else:
-                alltransplants = transplantwalk(source, p1, heads,
-                                                match=matchfn)
+                alltransplants = transplantwalk(
+                    source, p1, heads, match=matchfn
+                )
             if opts.get('all'):
                 revs = alltransplants
             else:
@@ -755,6 +851,7 @@ def _dotransplant(ui, repo, *revs, **opts):
         if cleanupfn:
             cleanupfn()
 
+
 def continuecmd(ui, repo):
     """logic to resume an interrupted transplant using
     'hg continue'"""
@@ -762,7 +859,9 @@ def continuecmd(ui, repo):
         tp = transplanter(ui, repo, {})
         return tp.resume(repo, repo, {})
 
+
 revsetpredicate = registrar.revsetpredicate()
+
 
 @revsetpredicate('transplanted([set])')
 def revsettransplanted(repo, subset, x):
@@ -772,10 +871,13 @@ def revsettransplanted(repo, subset, x):
         s = revset.getset(repo, subset, x)
     else:
         s = subset
-    return smartset.baseset([r for r in s if
-        repo[r].extra().get('transplant_source')])
+    return smartset.baseset(
+        [r for r in s if repo[r].extra().get('transplant_source')]
+    )
+
 
 templatekeyword = registrar.templatekeyword()
+
 
 @templatekeyword('transplanted', requires={'ctx'})
 def kwtransplanted(context, mapping):
@@ -785,14 +887,20 @@ def kwtransplanted(context, mapping):
     n = ctx.extra().get('transplant_source')
     return n and nodemod.hex(n) or ''
 
+
 def extsetup(ui):
-    statemod.addunfinished (
-        'transplant', fname='transplant/journal', clearable=True,
+    statemod.addunfinished(
+        'transplant',
+        fname='transplant/journal',
+        clearable=True,
         continuefunc=continuecmd,
-        statushint=_('To continue:    hg transplant --continue\n'
-                     'To stop:        hg transplant --stop'),
-        cmdhint=_("use 'hg transplant --continue' or 'hg transplant --stop'")
+        statushint=_(
+            'To continue:    hg transplant --continue\n'
+            'To stop:        hg transplant --stop'
+        ),
+        cmdhint=_("use 'hg transplant --continue' or 'hg transplant --stop'"),
     )
+
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = [revsettransplanted, kwtransplanted]

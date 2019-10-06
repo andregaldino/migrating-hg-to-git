@@ -21,8 +21,10 @@ from mercurial import (
 
 from . import narrowbundle2
 
+
 def uisetup():
     wireprotov1peer.wirepeer.narrow_widen = peernarrowwiden
+
 
 def reposetup(repo):
     def wirereposetup(ui, peer):
@@ -34,16 +36,32 @@ def reposetup(repo):
                 kwargs[r"includepats"] = ','.join(include)
                 kwargs[r"excludepats"] = ','.join(exclude)
             return orig(cmd, *args, **kwargs)
+
         extensions.wrapfunction(peer, '_calltwowaystream', wrapped)
+
     hg.wirepeersetupfuncs.append(wirereposetup)
 
-@wireprotov1server.wireprotocommand('narrow_widen', 'oldincludes oldexcludes'
-                                                    ' newincludes newexcludes'
-                                                    ' commonheads cgversion'
-                                                    ' known ellipses',
-                                    permission='pull')
-def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
-                 newexcludes, commonheads, cgversion, known, ellipses):
+
+@wireprotov1server.wireprotocommand(
+    'narrow_widen',
+    'oldincludes oldexcludes'
+    ' newincludes newexcludes'
+    ' commonheads cgversion'
+    ' known ellipses',
+    permission='pull',
+)
+def narrow_widen(
+    repo,
+    proto,
+    oldincludes,
+    oldexcludes,
+    newincludes,
+    newexcludes,
+    commonheads,
+    cgversion,
+    known,
+    ellipses,
+):
     """wireprotocol command to send data when a narrow clone is widen. We will
     be sending a changegroup here.
 
@@ -60,9 +78,11 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
 
     preferuncompressed = False
     try:
+
         def splitpaths(data):
             # work around ''.split(',') => ['']
             return data.split(b',') if data else []
+
         oldincludes = splitpaths(oldincludes)
         newincludes = splitpaths(newincludes)
         oldexcludes = splitpaths(oldexcludes)
@@ -83,16 +103,36 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
 
         bundler = bundle2.bundle20(repo.ui)
         if not ellipses:
-            newmatch = narrowspec.match(repo.root, include=newincludes,
-                                        exclude=newexcludes)
-            oldmatch = narrowspec.match(repo.root, include=oldincludes,
-                                        exclude=oldexcludes)
-            bundle2.widen_bundle(bundler, repo, oldmatch, newmatch, common,
-                                 known, cgversion, ellipses)
+            newmatch = narrowspec.match(
+                repo.root, include=newincludes, exclude=newexcludes
+            )
+            oldmatch = narrowspec.match(
+                repo.root, include=oldincludes, exclude=oldexcludes
+            )
+            bundle2.widen_bundle(
+                bundler,
+                repo,
+                oldmatch,
+                newmatch,
+                common,
+                known,
+                cgversion,
+                ellipses,
+            )
         else:
-            narrowbundle2.generateellipsesbundle2(bundler, repo, oldincludes,
-                    oldexcludes, newincludes, newexcludes, cgversion, common,
-                    list(common), known, None)
+            narrowbundle2.generateellipsesbundle2(
+                bundler,
+                repo,
+                oldincludes,
+                oldexcludes,
+                newincludes,
+                newexcludes,
+                cgversion,
+                common,
+                list(common),
+                known,
+                None,
+            )
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)
         manargs = [('message', pycompat.bytestr(exc))]
@@ -103,8 +143,10 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
         preferuncompressed = True
 
     chunks = bundler.getchunks()
-    return wireprototypes.streamres(gen=chunks,
-                                    prefer_uncompressed=preferuncompressed)
+    return wireprototypes.streamres(
+        gen=chunks, prefer_uncompressed=preferuncompressed
+    )
+
 
 def peernarrowwiden(remote, **kwargs):
     for ch in (r'commonheads', r'known'):

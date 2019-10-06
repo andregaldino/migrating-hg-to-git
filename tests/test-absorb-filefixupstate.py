@@ -4,12 +4,14 @@ import itertools
 from mercurial import pycompat
 from hgext import absorb
 
+
 class simplefctx(object):
     def __init__(self, content):
         self.content = content
 
     def data(self):
         return self.content
+
 
 def insertreturns(x):
     # insert "\n"s after each single char
@@ -18,6 +20,7 @@ def insertreturns(x):
     else:
         return pycompat.maplist(insertreturns, x)
 
+
 def removereturns(x):
     # the revert of "insertreturns"
     if isinstance(x, bytes):
@@ -25,10 +28,14 @@ def removereturns(x):
     else:
         return pycompat.maplist(removereturns, x)
 
+
 def assertlistequal(lhs, rhs, decorator=lambda x: x):
     if lhs != rhs:
-        raise RuntimeError('mismatch:\n actual:   %r\n expected: %r'
-                           % tuple(map(decorator, [lhs, rhs])))
+        raise RuntimeError(
+            'mismatch:\n actual:   %r\n expected: %r'
+            % tuple(map(decorator, [lhs, rhs]))
+        )
+
 
 def testfilefixup(oldcontents, workingcopy, expectedcontents, fixups=None):
     """([str], str, [str], [(rev, a1, a2, b1, b2)]?) -> None
@@ -43,21 +50,23 @@ def testfilefixup(oldcontents, workingcopy, expectedcontents, fixups=None):
     expectedcontents = insertreturns(expectedcontents)
     oldcontents = insertreturns(oldcontents)
     workingcopy = insertreturns(workingcopy)
-    state = absorb.filefixupstate(pycompat.maplist(simplefctx, oldcontents),
-                                  'path')
+    state = absorb.filefixupstate(
+        pycompat.maplist(simplefctx, oldcontents), 'path'
+    )
     state.diffwith(simplefctx(workingcopy))
     if fixups is not None:
         assertlistequal(state.fixups, fixups)
     state.apply()
     assertlistequal(state.finalcontents, expectedcontents, removereturns)
 
+
 def buildcontents(linesrevs):
     # linesrevs: [(linecontent : str, revs : [int])]
     revs = set(itertools.chain(*[revs for line, revs in linesrevs]))
     return [b''] + [
-        b''.join([l for l, rs in linesrevs if r in rs])
-        for r in sorted(revs)
+        b''.join([l for l, rs in linesrevs if r in rs]) for r in sorted(revs)
     ]
+
 
 # input case 0: one single commit
 case0 = [b'', b'11']
@@ -69,11 +78,7 @@ testfilefixup(case0, b'22', [b'', b'22'])
 testfilefixup(case0, b'222', [b'', b'222'])
 
 # input case 1: 3 lines, each commit adds one line
-case1 = buildcontents([
-    (b'1', [1, 2, 3]),
-    (b'2', [   2, 3]),
-    (b'3', [      3]),
-])
+case1 = buildcontents([(b'1', [1, 2, 3]), (b'2', [2, 3]), (b'3', [3]),])
 
 # 1:1 line mapping
 testfilefixup(case1, b'123', case1)
@@ -90,10 +95,10 @@ testfilefixup(case1, b'abcd', case1)
 testfilefixup(case1, b'ab', case1)
 
 # deletion
-testfilefixup(case1, b'',   [b'', b'', b'', b''])
-testfilefixup(case1, b'1',  [b'', b'1', b'1', b'1'])
-testfilefixup(case1, b'2',  [b'', b'', b'2', b'2'])
-testfilefixup(case1, b'3',  [b'', b'', b'', b'3'])
+testfilefixup(case1, b'', [b'', b'', b'', b''])
+testfilefixup(case1, b'1', [b'', b'1', b'1', b'1'])
+testfilefixup(case1, b'2', [b'', b'', b'2', b'2'])
+testfilefixup(case1, b'3', [b'', b'', b'', b'3'])
 testfilefixup(case1, b'13', [b'', b'1', b'1', b'13'])
 
 # replaces
@@ -116,15 +121,12 @@ testfilefixup(case1, b'1a23', case1)
 testfilefixup(case1, b'12b3', case1)
 
 # input case 2: delete in the middle
-case2 = buildcontents([
-    (b'11', [1, 2]),
-    (b'22', [1   ]),
-    (b'33', [1, 2]),
-])
+case2 = buildcontents([(b'11', [1, 2]), (b'22', [1]), (b'33', [1, 2]),])
 
 # deletion (optimize code should make it 2 chunks)
-testfilefixup(case2, b'', [b'', b'22', b''],
-              fixups=[(4, 0, 2, 0, 0), (4, 2, 4, 0, 0)])
+testfilefixup(
+    case2, b'', [b'', b'22', b''], fixups=[(4, 0, 2, 0, 0), (4, 2, 4, 0, 0)]
+)
 
 # 1:1 line mapping
 testfilefixup(case2, b'aaaa', [b'', b'aa22aa', b'aaaa'])
@@ -134,11 +136,7 @@ testfilefixup(case2, b'aaaa', [b'', b'aa22aa', b'aaaa'])
 testfilefixup(case2, b'aaa', case2)
 
 # input case 3: rev 3 reverts rev 2
-case3 = buildcontents([
-    (b'1', [1, 2, 3]),
-    (b'2', [   2   ]),
-    (b'3', [1, 2, 3]),
-])
+case3 = buildcontents([(b'1', [1, 2, 3]), (b'2', [2]), (b'3', [1, 2, 3]),])
 
 # 1:1 line mapping
 testfilefixup(case3, b'13', case3)
@@ -157,24 +155,26 @@ testfilefixup(case3, b'', [b'', b'', b'2', b''])
 testfilefixup(case3, b'a13c', [b'', b'a13c', b'a123c', b'a13c'])
 
 # input case 4: a slightly complex case
-case4 = buildcontents([
-    (b'1', [1, 2, 3]),
-    (b'2', [   2, 3]),
-    (b'3', [1, 2,  ]),
-    (b'4', [1,    3]),
-    (b'5', [      3]),
-    (b'6', [   2, 3]),
-    (b'7', [   2   ]),
-    (b'8', [   2, 3]),
-    (b'9', [      3]),
-])
+case4 = buildcontents(
+    [
+        (b'1', [1, 2, 3]),
+        (b'2', [2, 3]),
+        (b'3', [1, 2,]),
+        (b'4', [1, 3]),
+        (b'5', [3]),
+        (b'6', [2, 3]),
+        (b'7', [2]),
+        (b'8', [2, 3]),
+        (b'9', [3]),
+    ]
+)
 
 testfilefixup(case4, b'1245689', case4)
 testfilefixup(case4, b'1a2456bbb', case4)
 testfilefixup(case4, b'1abc5689', case4)
 testfilefixup(case4, b'1ab5689', [b'', b'134', b'1a3678', b'1ab5689'])
 testfilefixup(case4, b'aa2bcd8ee', [b'', b'aa34', b'aa23d78', b'aa2bcd8ee'])
-testfilefixup(case4, b'aa2bcdd8ee',[b'', b'aa34', b'aa23678', b'aa24568ee'])
+testfilefixup(case4, b'aa2bcdd8ee', [b'', b'aa34', b'aa23678', b'aa24568ee'])
 testfilefixup(case4, b'aaaaaa', case4)
 testfilefixup(case4, b'aa258b', [b'', b'aa34', b'aa2378', b'aa258b'])
 testfilefixup(case4, b'25bb', [b'', b'34', b'23678', b'25689'])
@@ -183,11 +183,7 @@ testfilefixup(case4, b'28', [b'', b'34', b'2378', b'28'])
 testfilefixup(case4, b'', [b'', b'34', b'37', b''])
 
 # input case 5: replace a small chunk which is near a deleted line
-case5 = buildcontents([
-    (b'12', [1, 2]),
-    (b'3',  [1]),
-    (b'4',  [1, 2]),
-])
+case5 = buildcontents([(b'12', [1, 2]), (b'3', [1]), (b'4', [1, 2]),])
 
 testfilefixup(case5, b'1cd4', [b'', b'1cd34', b'1cd4'])
 

@@ -19,6 +19,7 @@ httplib = util.httplib
 
 try:
     import msvcrt
+
     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
     msvcrt.setmode(sys.stderr.fileno(), os.O_BINARY)
 except ImportError:
@@ -31,11 +32,14 @@ parser.add_argument('--twice', action='store_true')
 parser.add_argument('--headeronly', action='store_true')
 parser.add_argument('--json', action='store_true')
 parser.add_argument('--hgproto')
-parser.add_argument('--requestheader', nargs='*', default=[],
-                    help='Send an additional HTTP request header. Argument '
-                         'value is <header>=<value>')
-parser.add_argument('--bodyfile',
-                    help='Write HTTP response body to a file')
+parser.add_argument(
+    '--requestheader',
+    nargs='*',
+    default=[],
+    help='Send an additional HTTP request header. Argument '
+    'value is <header>=<value>',
+)
+parser.add_argument('--bodyfile', help='Write HTTP response body to a file')
 parser.add_argument('host')
 parser.add_argument('path')
 parser.add_argument('show', nargs='*')
@@ -49,6 +53,8 @@ hgproto = args.hgproto
 requestheaders = args.requestheader
 
 tag = None
+
+
 def request(host, path, show):
     assert not path.startswith('/'), path
     global tag
@@ -65,15 +71,19 @@ def request(host, path, show):
     conn = httplib.HTTPConnection(host)
     conn.request("GET", '/' + path, None, headers)
     response = conn.getresponse()
-    stdout.write(b'%d %s\n' % (response.status,
-                               response.reason.encode('ascii')))
+    stdout.write(
+        b'%d %s\n' % (response.status, response.reason.encode('ascii'))
+    )
     if show[:1] == ['-']:
-        show = sorted(h for h, v in response.getheaders()
-                      if h.lower() not in show)
+        show = sorted(
+            h for h, v in response.getheaders() if h.lower() not in show
+        )
     for h in [h.lower() for h in show]:
         if response.getheader(h, None) is not None:
-            stdout.write(b"%s: %s\n" % (h.encode('ascii'),
-                                        response.getheader(h).encode('ascii')))
+            stdout.write(
+                b"%s: %s\n"
+                % (h.encode('ascii'), response.getheader(h).encode('ascii'))
+            )
     if not headeronly:
         stdout.write(b'\n')
         data = response.read()
@@ -103,6 +113,7 @@ def request(host, path, show):
         tag = response.getheader('ETag')
 
     return response.status
+
 
 status = request(args.host, args.path, args.show)
 if twice:

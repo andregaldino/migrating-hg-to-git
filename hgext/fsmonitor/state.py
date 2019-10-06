@@ -21,6 +21,7 @@ from mercurial import (
 _version = 4
 _versionformat = ">I"
 
+
 class state(object):
     def __init__(self, repo):
         self._vfs = repo.vfs
@@ -31,7 +32,8 @@ class state(object):
 
         self.mode = self._ui.config('fsmonitor', 'mode')
         self.walk_on_invalidate = self._ui.configbool(
-            'fsmonitor', 'walk_on_invalidate')
+            'fsmonitor', 'walk_on_invalidate'
+        )
         self.timeout = float(self._ui.config('fsmonitor', 'timeout'))
 
     def get(self):
@@ -48,8 +50,10 @@ class state(object):
         versionbytes = file.read(4)
         if len(versionbytes) < 4:
             self._ui.log(
-                'fsmonitor', 'fsmonitor: state file only has %d bytes, '
-                'nuking state\n' % len(versionbytes))
+                'fsmonitor',
+                'fsmonitor: state file only has %d bytes, '
+                'nuking state\n' % len(versionbytes),
+            )
             self.invalidate()
             return None, None, None
         try:
@@ -57,8 +61,10 @@ class state(object):
             if diskversion != _version:
                 # different version, nuke state and start over
                 self._ui.log(
-                    'fsmonitor', 'fsmonitor: version switch from %d to '
-                    '%d, nuking state\n' % (diskversion, _version))
+                    'fsmonitor',
+                    'fsmonitor: version switch from %d to '
+                    '%d, nuking state\n' % (diskversion, _version),
+                )
                 self.invalidate()
                 return None, None, None
 
@@ -67,17 +73,23 @@ class state(object):
             # followed by a \0
             if len(state) < 3:
                 self._ui.log(
-                    'fsmonitor', 'fsmonitor: state file truncated (expected '
-                    '3 chunks, found %d), nuking state\n', len(state))
+                    'fsmonitor',
+                    'fsmonitor: state file truncated (expected '
+                    '3 chunks, found %d), nuking state\n',
+                    len(state),
+                )
                 self.invalidate()
                 return None, None, None
             diskhostname = state[0]
             hostname = socket.gethostname()
             if diskhostname != hostname:
                 # file got moved to a different host
-                self._ui.log('fsmonitor', 'fsmonitor: stored hostname "%s" '
-                             'different from current "%s", nuking state\n' %
-                             (diskhostname, hostname))
+                self._ui.log(
+                    'fsmonitor',
+                    'fsmonitor: stored hostname "%s" '
+                    'different from current "%s", nuking state\n'
+                    % (diskhostname, hostname),
+                )
                 self.invalidate()
                 return None, None, None
 
@@ -104,8 +116,9 @@ class state(object):
             return
 
         try:
-            file = self._vfs('fsmonitor.state', 'wb', atomictemp=True,
-                checkambig=True)
+            file = self._vfs(
+                'fsmonitor.state', 'wb', atomictemp=True, checkambig=True
+            )
         except (IOError, OSError):
             self._ui.warn(_("warning: unable to write out fsmonitor state\n"))
             return

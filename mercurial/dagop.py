@@ -9,12 +9,8 @@ from __future__ import absolute_import
 
 import heapq
 
-from .node import (
-    nullrev,
-)
-from .thirdparty import (
-    attr,
-)
+from .node import nullrev
+from .thirdparty import attr
 from . import (
     error,
     mdiff,
@@ -29,6 +25,7 @@ generatorset = smartset.generatorset
 
 # possible maximum depth between null and wdir()
 maxlogdepth = 0x80000000
+
 
 def _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse):
     """Walk DAG using 'pfunc' from the given 'revs' nodes
@@ -72,7 +69,7 @@ def _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse):
                 heapq.heappush(pendingheap, (heapsign * inputrev, 0))
         # rescan parents until curdepth >= startdepth because queued entries
         # of the same revision are iterated from the lowest depth
-        foundnew = (currev != lastrev)
+        foundnew = currev != lastrev
         if foundnew and curdepth >= startdepth:
             lastrev = currev
             yield currev
@@ -82,6 +79,7 @@ def _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse):
                 if prev != node.nullrev:
                     heapq.heappush(pendingheap, (heapsign * prev, pdepth))
 
+
 def filectxancestors(fctxs, followfirst=False):
     """Like filectx.ancestors(), but can walk from multiple files/revisions,
     and includes the given fctxs themselves
@@ -90,6 +88,7 @@ def filectxancestors(fctxs, followfirst=False):
     """
     visit = {}
     visitheap = []
+
     def addvisit(fctx):
         rev = fctx.rev()
         if rev not in visit:
@@ -105,13 +104,14 @@ def filectxancestors(fctxs, followfirst=False):
     for c in fctxs:
         addvisit(c)
     while visit:
-        currev = -heapq.heappop(visitheap)
+        currev = -(heapq.heappop(visitheap))
         curfctxs = visit.pop(currev)
         yield currev, curfctxs
         for c in curfctxs:
             for parent in c.parents()[:cut]:
                 addvisit(parent)
     assert not visitheap
+
 
 def filerevancestors(fctxs, followfirst=False):
     """Like filectx.ancestors(), but can walk from multiple files/revisions,
@@ -122,17 +122,20 @@ def filerevancestors(fctxs, followfirst=False):
     gen = (rev for rev, _cs in filectxancestors(fctxs, followfirst))
     return generatorset(gen, iterasc=False)
 
+
 def _genrevancestors(repo, revs, followfirst, startdepth, stopdepth, cutfunc):
     if followfirst:
         cut = 1
     else:
         cut = None
     cl = repo.changelog
+
     def plainpfunc(rev):
         try:
             return cl.parentrevs(rev)[:cut]
         except error.WdirUnsupported:
             return (pctx.rev() for pctx in repo[rev].parents()[:cut])
+
     if cutfunc is None:
         pfunc = plainpfunc
     else:
@@ -140,8 +143,10 @@ def _genrevancestors(repo, revs, followfirst, startdepth, stopdepth, cutfunc):
         revs = revs.filter(lambda rev: not cutfunc(rev))
     return _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse=True)
 
-def revancestors(repo, revs, followfirst=False, startdepth=None,
-                 stopdepth=None, cutfunc=None):
+
+def revancestors(
+    repo, revs, followfirst=False, startdepth=None, stopdepth=None, cutfunc=None
+):
     r"""Like revlog.ancestors(), but supports additional options, includes
     the given revs themselves, and returns a smartset
 
@@ -163,9 +168,11 @@ def revancestors(repo, revs, followfirst=False, startdepth=None,
         |/
         A
     """
-    gen = _genrevancestors(repo, revs, followfirst, startdepth, stopdepth,
-                           cutfunc)
+    gen = _genrevancestors(
+        repo, revs, followfirst, startdepth, stopdepth, cutfunc
+    )
     return generatorset(gen, iterasc=False)
+
 
 def _genrevdescendants(repo, revs, followfirst):
     if followfirst:
@@ -194,6 +201,7 @@ def _genrevdescendants(repo, revs, followfirst):
                     yield i
                     break
 
+
 def _builddescendantsmap(repo, startrev, followfirst):
     """Build map of 'rev -> child revs', offset from startrev"""
     cl = repo.changelog
@@ -207,12 +215,16 @@ def _builddescendantsmap(repo, startrev, followfirst):
             descmap[p2rev - startrev].append(currev)
     return descmap
 
+
 def _genrevdescendantsofdepth(repo, revs, followfirst, startdepth, stopdepth):
     startrev = revs.min()
     descmap = _builddescendantsmap(repo, startrev, followfirst)
+
     def pfunc(rev):
         return descmap[rev - startrev]
+
     return _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse=False)
+
 
 def revdescendants(repo, revs, followfirst, startdepth=None, stopdepth=None):
     """Like revlog.descendants() but supports additional options, includes
@@ -224,9 +236,11 @@ def revdescendants(repo, revs, followfirst, startdepth=None, stopdepth=None):
     if startdepth is None and (stopdepth is None or stopdepth >= maxlogdepth):
         gen = _genrevdescendants(repo, revs, followfirst)
     else:
-        gen = _genrevdescendantsofdepth(repo, revs, followfirst,
-                                        startdepth, stopdepth)
+        gen = _genrevdescendantsofdepth(
+            repo, revs, followfirst, startdepth, stopdepth
+        )
     return generatorset(gen, iterasc=True)
+
 
 def descendantrevs(revs, revsfn, parentrevsfn):
     """Generate revision number descendants in revision order.
@@ -258,6 +272,7 @@ def descendantrevs(revs, revsfn, parentrevsfn):
                 seen.add(rev)
                 yield rev
                 break
+
 
 def _reachablerootspure(pfunc, minroot, roots, heads, includepath):
     """See revlog.reachableroots"""
@@ -294,6 +309,7 @@ def _reachablerootspure(pfunc, minroot, roots, heads, includepath):
                 reached(rev)
     return reachable
 
+
 def reachableroots(repo, roots, heads, includepath=False):
     """See revlog.reachableroots"""
     if not roots:
@@ -306,6 +322,7 @@ def reachableroots(repo, roots, heads, includepath=False):
     revs.sort()
     return revs
 
+
 def _changesrange(fctx1, fctx2, linerange2, diffopts):
     """Return `(diffinrange, linerange1)` where `diffinrange` is True
     if diff from fctx2 to fctx1 has changes in linerange2 and
@@ -315,6 +332,7 @@ def _changesrange(fctx1, fctx2, linerange2, diffopts):
     filteredblocks, linerange1 = mdiff.blocksinrange(blocks, linerange2)
     diffinrange = any(stype == '!' for _, stype in filteredblocks)
     return diffinrange, linerange1
+
 
 def blockancestors(fctx, fromline, toline, followfirst=False):
     """Yield ancestors of `fctx` with respect to the block of lines within
@@ -348,6 +366,7 @@ def blockancestors(fctx, fromline, toline, followfirst=False):
             visit[p.linkrev(), p.filenode()] = p, linerange1
         if inrange:
             yield c, linerange2
+
 
 def blockdescendants(fctx, fromline, toline):
     """Yield descendants of `fctx` with respect to the block of lines within
@@ -388,6 +407,7 @@ def blockdescendants(fctx, fromline, toline):
         if inrange:
             yield c, linerange1
 
+
 @attr.s(slots=True, frozen=True)
 class annotateline(object):
     fctx = attr.ib()
@@ -395,6 +415,7 @@ class annotateline(object):
     # Whether this annotation was the result of a skip-annotate.
     skip = attr.ib(default=False)
     text = attr.ib(default=None)
+
 
 @attr.s(slots=True, frozen=True)
 class _annotatedfile(object):
@@ -405,15 +426,18 @@ class _annotatedfile(object):
     # full file content
     text = attr.ib()
 
+
 def _countlines(text):
     if text.endswith("\n"):
         return text.count("\n")
     return text.count("\n") + int(bool(text))
 
+
 def _decoratelines(text, fctx):
     n = _countlines(text)
     linenos = pycompat.rangelist(1, n + 1)
     return _annotatedfile([fctx] * n, linenos, [False] * n, text)
+
 
 def _annotatepair(parents, childfctx, child, skipchild, diffopts):
     r'''
@@ -426,8 +450,10 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
 
     See test-annotate.py for unit tests.
     '''
-    pblocks = [(parent, mdiff.allblocks(parent.text, child.text, opts=diffopts))
-               for parent in parents]
+    pblocks = [
+        (parent, mdiff.allblocks(parent.text, child.text, opts=diffopts))
+        for parent in parents
+    ]
 
     if skipchild:
         # Need to iterate over the blocks twice -- make it a list
@@ -482,6 +508,7 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
                         child.skips[bk] = True
     return child
 
+
 def annotate(base, parents, skiprevs=None, diffopts=None):
     """Core algorithm for filectx.annotate()
 
@@ -528,8 +555,9 @@ def annotate(base, parents, skiprevs=None, diffopts=None):
             skipchild = False
             if skiprevs is not None:
                 skipchild = f._changeid in skiprevs
-            curr = _annotatepair([hist[p] for p in pl], f, curr, skipchild,
-                                 diffopts)
+            curr = _annotatepair(
+                [hist[p] for p in pl], f, curr, skipchild, diffopts
+            )
             for p in pl:
                 if needed[p] == 1:
                     del hist[p]
@@ -541,8 +569,11 @@ def annotate(base, parents, skiprevs=None, diffopts=None):
             del pcache[f]
 
     a = hist[base]
-    return [annotateline(*r) for r in zip(a.fctxs, a.linenos, a.skips,
-                                          mdiff.splitnewlines(a.text))]
+    return [
+        annotateline(*r)
+        for r in zip(a.fctxs, a.linenos, a.skips, mdiff.splitnewlines(a.text))
+    ]
+
 
 def toposort(revs, parentsfunc, firstbranch=()):
     """Yield revisions from heads to roots one (topo) branch at a time.
@@ -695,7 +726,7 @@ def toposort(revs, parentsfunc, firstbranch=()):
             #
             # we also update the <parents> set to include the parents of the
             # new nodes.
-            if rev == currentrev: # only display stuff in rev
+            if rev == currentrev:  # only display stuff in rev
                 gr[0].append(rev)
             gr[1].remove(rev)
             parents = [p for p in parentsfunc(rev) if p > node.nullrev]
@@ -742,6 +773,7 @@ def toposort(revs, parentsfunc, firstbranch=()):
         for r in g[0]:
             yield r
 
+
 def headrevs(revs, parentsfn):
     """Resolve the set of heads from a set of revisions.
 
@@ -763,6 +795,7 @@ def headrevs(revs, parentsfn):
         up(parentsfn(rev))
     headrevs.difference_update(parents)
     return headrevs
+
 
 def headrevssubset(revsfn, parentrevsfn, startrev=None, stoprevs=None):
     """Returns the set of all revs that have no children with control.
@@ -799,6 +832,7 @@ def headrevssubset(revsfn, parentrevsfn, startrev=None, stoprevs=None):
                 heads.remove(prev)
 
     return heads
+
 
 def linearize(revs, parentsfn):
     """Linearize and topologically sort a list of revisions.

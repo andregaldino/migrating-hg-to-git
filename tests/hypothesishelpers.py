@@ -21,14 +21,14 @@ import hypothesis.strategies as st
 from hypothesis import given
 
 # hypothesis store data regarding generate example and code
-set_hypothesis_home_dir(os.path.join(
-    os.getenv('TESTTMP'), ".hypothesis"
-))
+set_hypothesis_home_dir(os.path.join(os.getenv('TESTTMP'), ".hypothesis"))
+
 
 def check(*args, **kwargs):
     """decorator to make a function a hypothesis test
 
     Decorated function are run immediately (to be used doctest style)"""
+
     def accept(f):
         # Workaround for https://github.com/DRMacIver/hypothesis/issues/206
         # Fixed in version 1.13 (released 2015 october 29th)
@@ -39,22 +39,24 @@ def check(*args, **kwargs):
         except Exception:
             traceback.print_exc(file=sys.stdout)
             sys.exit(1)
+
     return accept
 
 
 def roundtrips(data, decode, encode):
     """helper to tests function that must do proper encode/decode roundtripping
     """
+
     @given(data)
     def testroundtrips(value):
         encoded = encode(value)
         decoded = decode(encoded)
         if decoded != value:
             raise ValueError(
-                "Round trip failed: %s(%r) -> %s(%r) -> %r" % (
-                    encode.__name__, value, decode.__name__, encoded,
-                    decoded
-                ))
+                "Round trip failed: %s(%r) -> %s(%r) -> %r"
+                % (encode.__name__, value, decode.__name__, encoded, decoded)
+            )
+
     try:
         testroundtrips()
     except Exception:
@@ -66,6 +68,9 @@ def roundtrips(data, decode, encode):
 
 # strategy for generating bytestring that might be an issue for Mercurial
 bytestrings = (
-    st.builds(lambda s, e: s.encode(e), st.text(), st.sampled_from([
-        'utf-8', 'utf-16',
-    ]))) | st.binary()
+    st.builds(
+        lambda s, e: s.encode(e),
+        st.text(),
+        st.sampled_from(['utf-8', 'utf-16',]),
+    )
+) | st.binary()

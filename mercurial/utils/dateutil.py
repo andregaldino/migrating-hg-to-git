@@ -20,14 +20,14 @@ from .. import (
 
 # used by parsedate
 defaultdateformats = (
-    '%Y-%m-%dT%H:%M:%S', # the 'real' ISO8601
-    '%Y-%m-%dT%H:%M',    #   without seconds
-    '%Y-%m-%dT%H%M%S',   # another awful but legal variant without :
-    '%Y-%m-%dT%H%M',     #   without seconds
-    '%Y-%m-%d %H:%M:%S', # our common legal variant
-    '%Y-%m-%d %H:%M',    #   without seconds
-    '%Y-%m-%d %H%M%S',   # without :
-    '%Y-%m-%d %H%M',     #   without seconds
+    '%Y-%m-%dT%H:%M:%S',  # the 'real' ISO8601
+    '%Y-%m-%dT%H:%M',  #   without seconds
+    '%Y-%m-%dT%H%M%S',  # another awful but legal variant without :
+    '%Y-%m-%dT%H%M',  #   without seconds
+    '%Y-%m-%d %H:%M:%S',  # our common legal variant
+    '%Y-%m-%d %H:%M',  #   without seconds
+    '%Y-%m-%d %H%M%S',  # without :
+    '%Y-%m-%d %H%M',  #   without seconds
     '%Y-%m-%d %I:%M:%S%p',
     '%Y-%m-%d %H:%M',
     '%Y-%m-%d %I:%M%p',
@@ -38,7 +38,7 @@ defaultdateformats = (
     '%m/%d/%Y',
     '%a %b %d %H:%M:%S %Y',
     '%a %b %d %I:%M:%S%p %Y',
-    '%a, %d %b %Y %H:%M:%S',        #  GNU coreutils "/bin/date --rfc-2822"
+    '%a, %d %b %Y %H:%M:%S',  #  GNU coreutils "/bin/date --rfc-2822"
     '%b %d %H:%M:%S %Y',
     '%b %d %I:%M:%S%p %Y',
     '%b %d %H:%M:%S',
@@ -53,12 +53,8 @@ defaultdateformats = (
     '%I:%M%p',
 )
 
-extendeddateformats = defaultdateformats + (
-    "%Y",
-    "%Y-%m",
-    "%b",
-    "%b %Y",
-)
+extendeddateformats = defaultdateformats + ("%Y", "%Y-%m", "%b", "%b %Y",)
+
 
 def makedate(timestamp=None):
     '''Return a unix timestamp (or the current time) as a (unixtime,
@@ -68,10 +64,12 @@ def makedate(timestamp=None):
     if timestamp < 0:
         hint = _("check your clock")
         raise error.Abort(_("negative timestamp: %d") % timestamp, hint=hint)
-    delta = (datetime.datetime.utcfromtimestamp(timestamp) -
-             datetime.datetime.fromtimestamp(timestamp))
+    delta = datetime.datetime.utcfromtimestamp(
+        timestamp
+    ) - datetime.datetime.fromtimestamp(timestamp)
     tz = delta.days * 86400 + delta.seconds
     return timestamp, tz
+
 
 def datestr(date=None, format='%a %b %d %H:%M:%S %Y %1%2'):
     """represent a (unixtime, offset) tuple as a localized time.
@@ -98,8 +96,8 @@ def datestr(date=None, format='%a %b %d %H:%M:%S %Y %1%2'):
         format = format.replace("%1", "%c%02d" % (sign, q))
         format = format.replace("%2", "%02d" % r)
     d = t - tz
-    if d > 0x7fffffff:
-        d = 0x7fffffff
+    if d > 0x7FFFFFFF:
+        d = 0x7FFFFFFF
     elif d < -0x80000000:
         d = -0x80000000
     # Never use time.gmtime() and datetime.datetime.fromtimestamp()
@@ -109,9 +107,11 @@ def datestr(date=None, format='%a %b %d %H:%M:%S %Y %1%2'):
     s = encoding.strtolocal(t.strftime(encoding.strfromlocal(format)))
     return s
 
+
 def shortdate(date=None):
     """turn (timestamp, tzoff) tuple into iso 8631 date."""
     return datestr(date, format='%Y-%m-%d')
+
 
 def parsetimezone(s):
     """find a trailing timezone, if any, in string, and return a
@@ -133,14 +133,20 @@ def parsetimezone(s):
         return 0, s[:-1]
 
     # ISO8601-style [+-]hh:mm
-    if (len(s) >= 6 and s[-6] in "+-" and s[-3] == ":" and
-        s[-5:-3].isdigit() and s[-2:].isdigit()):
+    if (
+        len(s) >= 6
+        and s[-6] in "+-"
+        and s[-3] == ":"
+        and s[-5:-3].isdigit()
+        and s[-2:].isdigit()
+    ):
         sign = (s[-6] == "+") and 1 or -1
         hours = int(s[-5:-3])
         minutes = int(s[-2:])
         return -sign * (hours * 60 + minutes) * 60, s[:-6]
 
     return None, s
+
 
 def strdate(string, format, defaults=None):
     """parse a localized time string and return a (unixtime, offset) tuple.
@@ -152,10 +158,10 @@ def strdate(string, format, defaults=None):
     offset, date = parsetimezone(string)
 
     # add missing elements from defaults
-    usenow = False # default to using biased defaults
-    for part in ("S", "M", "HI", "d", "mb", "yY"): # decreasing specificity
+    usenow = False  # default to using biased defaults
+    for part in ("S", "M", "HI", "d", "mb", "yY"):  # decreasing specificity
         part = pycompat.bytestr(part)
-        found = [True for p in part if ("%"+p) in format]
+        found = [True for p in part if ("%" + p) in format]
         if not found:
             date += "@" + defaults[part][usenow]
             format += "@%" + part[0]
@@ -164,8 +170,9 @@ def strdate(string, format, defaults=None):
             # elements are relative to today
             usenow = True
 
-    timetuple = time.strptime(encoding.strfromlocal(date),
-                              encoding.strfromlocal(format))
+    timetuple = time.strptime(
+        encoding.strfromlocal(date), encoding.strfromlocal(format)
+    )
     localunixtime = int(calendar.timegm(timetuple))
     if offset is None:
         # local timezone
@@ -174,6 +181,7 @@ def strdate(string, format, defaults=None):
     else:
         unixtime = localunixtime + offset
     return unixtime, offset
+
 
 def parsedate(date, formats=None, bias=None):
     """parse a localized date/time and return a (unixtime, offset) tuple.
@@ -211,8 +219,9 @@ def parsedate(date, formats=None, bias=None):
         date = datetime.date.today().strftime(r'%b %d')
         date = encoding.strtolocal(date)
     elif date == 'yesterday' or date == _('yesterday'):
-        date = (datetime.date.today() -
-                datetime.timedelta(days=1)).strftime(r'%b %d')
+        date = (datetime.date.today() - datetime.timedelta(days=1)).strftime(
+            r'%b %d'
+        )
         date = encoding.strtolocal(date)
 
     try:
@@ -244,16 +253,18 @@ def parsedate(date, formats=None, bias=None):
                 break
         else:
             raise error.ParseError(
-                _('invalid date: %r') % pycompat.bytestr(date))
+                _('invalid date: %r') % pycompat.bytestr(date)
+            )
     # validate explicit (probably user-specified) date and
     # time zone offset. values must fit in signed 32 bits for
     # current 32-bit linux runtimes. timezones go from UTC-12
     # to UTC+14
-    if when < -0x80000000 or when > 0x7fffffff:
+    if when < -0x80000000 or when > 0x7FFFFFFF:
         raise error.ParseError(_('date exceeds 32 bits: %d') % when)
     if offset < -50400 or offset > 43200:
         raise error.ParseError(_('impossible time zone offset: %d') % offset)
     return when, offset
+
 
 def matchdate(date):
     """Return a function that matches a given date match specifier
@@ -319,8 +330,9 @@ def matchdate(date):
         except ValueError:
             raise error.Abort(_("invalid day spec: %s") % date[1:])
         if days < 0:
-            raise error.Abort(_("%s must be nonnegative (see 'hg help dates')")
-                % date[1:])
+            raise error.Abort(
+                _("%s must be nonnegative (see 'hg help dates')") % date[1:]
+            )
         when = makedate()[0] - days * 3600 * 24
         return lambda x: x >= when
     elif b" to " in date:

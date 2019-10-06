@@ -147,9 +147,7 @@ from mercurial import (
     util,
 )
 
-from mercurial.interfaces import (
-    repository,
-)
+from mercurial.interfaces import repository
 
 from . import (
     blobstore,
@@ -175,34 +173,34 @@ filesetpredicate = eh.filesetpredicate
 reposetup = eh.finalreposetup
 templatekeyword = eh.templatekeyword
 
-eh.configitem('experimental', 'lfs.serve',
-    default=True,
+eh.configitem(
+    'experimental', 'lfs.serve', default=True,
 )
-eh.configitem('experimental', 'lfs.user-agent',
-    default=None,
+eh.configitem(
+    'experimental', 'lfs.user-agent', default=None,
 )
-eh.configitem('experimental', 'lfs.disableusercache',
-    default=False,
+eh.configitem(
+    'experimental', 'lfs.disableusercache', default=False,
 )
-eh.configitem('experimental', 'lfs.worker-enable',
-    default=False,
+eh.configitem(
+    'experimental', 'lfs.worker-enable', default=False,
 )
 
-eh.configitem('lfs', 'url',
-    default=None,
+eh.configitem(
+    'lfs', 'url', default=None,
 )
-eh.configitem('lfs', 'usercache',
-    default=None,
+eh.configitem(
+    'lfs', 'usercache', default=None,
 )
 # Deprecated
-eh.configitem('lfs', 'threshold',
-    default=None,
+eh.configitem(
+    'lfs', 'threshold', default=None,
 )
-eh.configitem('lfs', 'track',
-    default='none()',
+eh.configitem(
+    'lfs', 'track', default='none()',
 )
-eh.configitem('lfs', 'retry',
-    default=5,
+eh.configitem(
+    'lfs', 'retry', default=5,
 )
 
 lfsprocessor = (
@@ -211,13 +209,16 @@ lfsprocessor = (
     wrapper.bypasscheckhash,
 )
 
+
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the lfs requirement
     supported |= {'lfs'}
 
+
 @eh.uisetup
 def _uisetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
+
 
 @eh.reposetup
 def _reposetup(ui, repo):
@@ -237,6 +238,7 @@ def _reposetup(ui, repo):
     repo.__class__ = lfsrepo
 
     if 'lfs' not in repo.requirements:
+
         def checkrequireslfs(ui, repo, **kwargs):
             if 'lfs' in repo.requirements:
                 return 0
@@ -250,8 +252,9 @@ def _reposetup(ui, repo):
             match = repo._storenarrowmatch
             for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?
-                if any(ctx[f].islfs() for f in ctx.files()
-                       if f in ctx and match(f)):
+                if any(
+                    ctx[f].islfs() for f in ctx.files() if f in ctx and match(f)
+                ):
                     repo.requirements.add('lfs')
                     repo.features.add(repository.REPO_FEATURE_LFS)
                     repo._writerequirements()
@@ -262,6 +265,7 @@ def _reposetup(ui, repo):
         ui.setconfig('hooks', 'pretxnchangegroup.lfs', checkrequireslfs, 'lfs')
     else:
         repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
+
 
 def _trackedmatcher(repo):
     """Return a function (path, size) -> bool indicating whether or not to
@@ -288,8 +292,10 @@ def _trackedmatcher(repo):
     cfg.parse('.hglfs', data)
 
     try:
-        rules = [(minifileset.compile(pattern), minifileset.compile(rule))
-                 for pattern, rule in cfg.items('track')]
+        rules = [
+            (minifileset.compile(pattern), minifileset.compile(rule))
+            for pattern, rule in cfg.items('track')
+        ]
     except error.ParseError as e:
         # The original exception gives no indicator that the error is in the
         # .hglfs file, so add that.
@@ -306,6 +312,7 @@ def _trackedmatcher(repo):
 
     return _match
 
+
 # Called by remotefilelog
 def wrapfilelog(filelog):
     wrapfunction = extensions.wrapfunction
@@ -314,20 +321,24 @@ def wrapfilelog(filelog):
     wrapfunction(filelog, 'renamed', wrapper.filelogrenamed)
     wrapfunction(filelog, 'size', wrapper.filelogsize)
 
+
 @eh.wrapfunction(localrepo, 'resolverevlogstorevfsoptions')
 def _resolverevlogstorevfsoptions(orig, ui, requirements, features):
     opts = orig(ui, requirements, features)
     for name, module in extensions.extensions(ui):
         if module is sys.modules[__name__]:
             if revlog.REVIDX_EXTSTORED in opts[b'flagprocessors']:
-                msg = (_(b"cannot register multiple processors on flag '%#x'.")
-                       % revlog.REVIDX_EXTSTORED)
+                msg = (
+                    _(b"cannot register multiple processors on flag '%#x'.")
+                    % revlog.REVIDX_EXTSTORED
+                )
                 raise error.Abort(msg)
 
             opts[b'flagprocessors'][revlog.REVIDX_EXTSTORED] = lfsprocessor
             break
 
     return opts
+
 
 @eh.extsetup
 def _extsetup(ui):
@@ -342,15 +353,19 @@ def _extsetup(ui):
     # "packed1". Using "packed1" with lfs will likely cause trouble.
     exchange._bundlespeccontentopts["v2"]["cg.version"] = "03"
 
+
 @eh.filesetpredicate('lfs()')
 def lfsfileset(mctx, x):
     """File that uses LFS storage."""
     # i18n: "lfs" is a keyword
     filesetlang.getargs(x, 0, 0, _("lfs takes no arguments"))
     ctx = mctx.ctx
+
     def lfsfilep(f):
         return wrapper.pointerfromctx(ctx, f, removed=True) is not None
+
     return mctx.predicate(lfsfilep, predrepr='<lfs>')
+
 
 @eh.templatekeyword('lfs_files', requires={'ctx'})
 def lfsfiles(context, mapping):
@@ -358,7 +373,7 @@ def lfsfiles(context, mapping):
     changeset."""
     ctx = context.resource(mapping, 'ctx')
 
-    pointers = wrapper.pointersfromctx(ctx, removed=True) # {path: pointer}
+    pointers = wrapper.pointersfromctx(ctx, removed=True)  # {path: pointer}
     files = sorted(pointers.keys())
 
     def pointer(v):
@@ -377,8 +392,11 @@ def lfsfiles(context, mapping):
     f = templateutil._showcompatlist(context, mapping, 'lfs_file', files)
     return templateutil.hybrid(f, files, makemap, pycompat.identity)
 
-@eh.command('debuglfsupload',
-            [('r', 'rev', [], _('upload large files introduced by REV'))])
+
+@eh.command(
+    'debuglfsupload',
+    [('r', 'rev', [], _('upload large files introduced by REV'))],
+)
 def debuglfsupload(ui, repo, **opts):
     """upload lfs blobs added by the working copy parent or given revisions"""
     revs = opts.get(r'rev', [])

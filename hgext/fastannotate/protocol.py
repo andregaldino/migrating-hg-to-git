@@ -22,28 +22,37 @@ from . import context
 
 # common
 
+
 def _getmaster(ui):
     """get the mainbranch, and enforce it is set"""
     master = ui.config('fastannotate', 'mainbranch')
     if not master:
-        raise error.Abort(_('fastannotate.mainbranch is required '
-                            'for both the client and the server'))
+        raise error.Abort(
+            _(
+                'fastannotate.mainbranch is required '
+                'for both the client and the server'
+            )
+        )
     return master
 
+
 # server-side
+
 
 def _capabilities(orig, repo, proto):
     result = orig(repo, proto)
     result.append('getannotate')
     return result
 
+
 def _getannotate(repo, proto, path, lastnode):
     # output:
     #   FILE := vfspath + '\0' + str(size) + '\0' + content
     #   OUTPUT := '' | FILE + OUTPUT
     result = ''
-    buildondemand = repo.ui.configbool('fastannotate', 'serverbuildondemand',
-                                       True)
+    buildondemand = repo.ui.configbool(
+        'fastannotate', 'serverbuildondemand', True
+    )
     with context.annotatecontext(repo, path) as actx:
         if buildondemand:
             # update before responding to the client
@@ -57,7 +66,7 @@ def _getannotate(repo, proto, path, lastnode):
                 try:
                     actx.annotate(master, master)
                 except Exception:
-                    actx.rebuild() # delete files
+                    actx.rebuild()  # delete files
             finally:
                 # although the "with" context will also do a close/flush, we
                 # need to do it early so we can send the correct respond to
@@ -78,29 +87,34 @@ def _getannotate(repo, proto, path, lastnode):
                 result += '%s\0%d\0%s' % (relpath, len(content), content)
     return result
 
+
 def _registerwireprotocommand():
     if 'getannotate' in wireprotov1server.commands:
         return
-    wireprotov1server.wireprotocommand(
-        'getannotate', 'path lastnode')(_getannotate)
+    wireprotov1server.wireprotocommand('getannotate', 'path lastnode')(
+        _getannotate
+    )
+
 
 def serveruisetup(ui):
     _registerwireprotocommand()
     extensions.wrapfunction(wireprotov1server, '_capabilities', _capabilities)
 
+
 # client-side
+
 
 def _parseresponse(payload):
     result = {}
     i = 0
     l = len(payload) - 1
-    state = 0 # 0: vfspath, 1: size
+    state = 0  # 0: vfspath, 1: size
     vfspath = size = ''
     while i < l:
-        ch = payload[i:i + 1]
+        ch = payload[i : i + 1]
         if ch == '\0':
             if state == 1:
-                result[vfspath] = payload[i + 1:i + 1 + int(size)]
+                result[vfspath] = payload[i + 1 : i + 1 + int(size)]
                 i += int(size)
                 state = 0
                 vfspath = size = ''
@@ -114,6 +128,7 @@ def _parseresponse(payload):
         i += 1
     return result
 
+
 def peersetup(ui, peer):
     class fastannotatepeer(peer.__class__):
         @wireprotov1peer.batchable
@@ -126,20 +141,24 @@ def peersetup(ui, peer):
                 f = wireprotov1peer.future()
                 yield args, f
                 yield _parseresponse(f.value)
+
     peer.__class__ = fastannotatepeer
+
 
 @contextlib.contextmanager
 def annotatepeer(repo):
     ui = repo.ui
 
     remotepath = ui.expandpath(
-        ui.config('fastannotate', 'remotepath', 'default'))
+        ui.config('fastannotate', 'remotepath', 'default')
+    )
     peer = hg.peer(ui, {}, remotepath)
 
     try:
         yield peer
     finally:
         peer.close()
+
 
 def clientfetch(repo, paths, lastnodemap=None, peer=None):
     """download annotate cache from the server for paths"""
@@ -158,9 +177,11 @@ def clientfetch(repo, paths, lastnodemap=None, peer=None):
     with peer.commandexecutor() as batcher:
         ui.debug('fastannotate: requesting %d files\n' % len(paths))
         for p in paths:
-            results.append(batcher.callcommand(
-                'getannotate',
-                {'path': p, 'lastnode':lastnodemap.get(p)}))
+            results.append(
+                batcher.callcommand(
+                    'getannotate', {'path': p, 'lastnode': lastnodemap.get(p)}
+                )
+            )
 
         for result in results:
             r = result.result()
@@ -168,17 +189,21 @@ def clientfetch(repo, paths, lastnodemap=None, peer=None):
             r = {util.pconvert(p): v for p, v in r.iteritems()}
             for path in sorted(r):
                 # ignore malicious paths
-                if (not path.startswith('fastannotate/')
-                    or '/../' in (path + '/')):
+                if not path.startswith('fastannotate/') or '/../' in (
+                    path + '/'
+                ):
                     ui.debug('fastannotate: ignored malicious path %s\n' % path)
                     continue
                 content = r[path]
                 if ui.debugflag:
-                    ui.debug('fastannotate: writing %d bytes to %s\n'
-                             % (len(content), path))
+                    ui.debug(
+                        'fastannotate: writing %d bytes to %s\n'
+                        % (len(content), path)
+                    )
                 repo.vfs.makedirs(os.path.dirname(path))
                 with repo.vfs(path, 'wb') as f:
                     f.write(content)
+
 
 def _filterfetchpaths(repo, paths):
     """return a subset of paths whose history is long and need to fetch linelog
@@ -193,10 +218,11 @@ def _filterfetchpaths(repo, paths):
         try:
             if len(repo.file(path)) >= threshold:
                 result.append(path)
-        except Exception: # file not found etc.
+        except Exception:  # file not found etc.
             result.append(path)
 
     return result
+
 
 def localreposetup(ui, repo):
     class fastannotaterepo(repo.__class__):
@@ -215,7 +241,9 @@ def localreposetup(ui, repo):
             except Exception as ex:
                 # could be directory not writable or so, not fatal
                 self.ui.debug('fastannotate: prefetch failed: %r\n' % ex)
+
     repo.__class__ = fastannotaterepo
+
 
 def clientreposetup(ui, repo):
     _registerwireprotocommand()

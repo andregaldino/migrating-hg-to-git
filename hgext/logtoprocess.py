@@ -36,15 +36,14 @@ from __future__ import absolute_import
 
 import os
 
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
+
 
 class processlogger(object):
     """Map log events to external commands
@@ -66,10 +65,12 @@ class processlogger(object):
             b'MSG1': msg,
         }
         # keyword arguments get prefixed with OPT_ and uppercased
-        env.update((b'OPT_%s' % key.upper(), value)
-                   for key, value in opts.items())
+        env.update(
+            (b'OPT_%s' % key.upper(), value) for key, value in opts.items()
+        )
         fullenv = procutil.shellenviron(env)
         procutil.runbgcommand(script, fullenv, shell=True)
+
 
 def uipopulate(ui):
     ui.setlogger(b'logtoprocess', processlogger(ui))

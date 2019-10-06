@@ -14,6 +14,7 @@ from mercurial import (
 cmdtable = {}
 command = registrar.command(cmdtable)
 
+
 def pdb(ui, repo, msg, **opts):
     objects = {
         'mercurial': mercurial,
@@ -24,25 +25,25 @@ def pdb(ui, repo, msg, **opts):
 
     code.interact(msg, local=objects)
 
+
 def ipdb(ui, repo, msg, **opts):
     import IPython
 
     cl = repo.changelog
     mf = repo.manifestlog
-    cl, mf # use variables to appease pyflakes
+    cl, mf  # use variables to appease pyflakes
 
     IPython.embed()
 
+
 @command(b'debugshell|dbsh', [])
 def debugshell(ui, repo, **opts):
-    bannermsg = ("loaded repo : %s\n"
-                 "using source: %s" % (pycompat.sysstr(repo.root),
-                                       mercurial.__path__[0]))
+    bannermsg = "loaded repo : %s\n" "using source: %s" % (
+        pycompat.sysstr(repo.root),
+        mercurial.__path__[0],
+    )
 
-    pdbmap = {
-        'pdb'  : 'code',
-        'ipdb' : 'IPython'
-    }
+    pdbmap = {'pdb': 'code', 'ipdb': 'IPython'}
 
     debugger = ui.config(b"ui", b"debugger")
     if not debugger:
@@ -55,8 +56,10 @@ def debugshell(ui, repo, **opts):
         with demandimport.deactivated():
             __import__(pdbmap[debugger])
     except ImportError:
-        ui.warn((b"%s debugger specified but %s module was not found\n")
-                % (debugger, pdbmap[debugger]))
+        ui.warn(
+            b"%s debugger specified but %s module was not found\n"
+            % (debugger, pdbmap[debugger])
+        )
         debugger = b'pdb'
 
     getattr(sys.modules[__name__], debugger)(ui, repo, bannermsg, **opts)

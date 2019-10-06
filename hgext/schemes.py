@@ -65,6 +65,7 @@ testedwith = 'ships-with-hg-core'
 
 _partre = re.compile(br'\{(\d+)\}')
 
+
 class ShortRepository(object):
     def __init__(self, url, scheme, templater):
         self.scheme = scheme
@@ -80,8 +81,9 @@ class ShortRepository(object):
 
     def instance(self, ui, url, create, intents=None, createopts=None):
         url = self.resolve(url)
-        return hg._peerlookup(url).instance(ui, url, create, intents=intents,
-                                            createopts=createopts)
+        return hg._peerlookup(url).instance(
+            ui, url, create, intents=intents, createopts=createopts
+        )
 
     def resolve(self, url):
         # Should this use the util.url class, or is manual parsing better?
@@ -98,6 +100,7 @@ class ShortRepository(object):
         context = dict(('%d' % (i + 1), v) for i, v in enumerate(parts))
         return ''.join(self.templater.process(self.url, context)) + tail
 
+
 def hasdriveletter(orig, path):
     if path:
         for scheme in schemes:
@@ -105,25 +108,34 @@ def hasdriveletter(orig, path):
                 return False
     return orig(path)
 
+
 schemes = {
     'py': 'http://hg.python.org/',
     'bb': 'https://bitbucket.org/',
     'bb+ssh': 'ssh://hg@bitbucket.org/',
     'gcode': 'https://{1}.googlecode.com/hg/',
-    'kiln': 'https://{1}.kilnhg.com/Repo/'
-    }
+    'kiln': 'https://{1}.kilnhg.com/Repo/',
+}
+
 
 def extsetup(ui):
     schemes.update(dict(ui.configitems('schemes')))
     t = templater.engine(templater.parse)
     for scheme, url in schemes.items():
-        if (pycompat.iswindows and len(scheme) == 1 and scheme.isalpha()
-            and os.path.exists('%s:\\' % scheme)):
-            raise error.Abort(_('custom scheme %s:// conflicts with drive '
-                               'letter %s:\\\n') % (scheme, scheme.upper()))
+        if (
+            pycompat.iswindows
+            and len(scheme) == 1
+            and scheme.isalpha()
+            and os.path.exists('%s:\\' % scheme)
+        ):
+            raise error.Abort(
+                _('custom scheme %s:// conflicts with drive ' 'letter %s:\\\n')
+                % (scheme, scheme.upper())
+            )
         hg.schemes[scheme] = ShortRepository(url, scheme, t)
 
     extensions.wrapfunction(util, 'hasdriveletter', hasdriveletter)
+
 
 @command('debugexpandscheme', norepo=True)
 def expandscheme(ui, url, **opts):

@@ -100,6 +100,7 @@ from mercurial import (
     util,
 )
 from mercurial.utils import dateutil
+
 stringio = util.stringio
 
 cmdtable = {}
@@ -108,35 +109,35 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('patchbomb', 'bundletype',
-    default=None,
+configitem(
+    'patchbomb', 'bundletype', default=None,
 )
-configitem('patchbomb', 'bcc',
-    default=None,
+configitem(
+    'patchbomb', 'bcc', default=None,
 )
-configitem('patchbomb', 'cc',
-    default=None,
+configitem(
+    'patchbomb', 'cc', default=None,
 )
-configitem('patchbomb', 'confirm',
-    default=False,
+configitem(
+    'patchbomb', 'confirm', default=False,
 )
-configitem('patchbomb', 'flagtemplate',
-    default=None,
+configitem(
+    'patchbomb', 'flagtemplate', default=None,
 )
-configitem('patchbomb', 'from',
-    default=None,
+configitem(
+    'patchbomb', 'from', default=None,
 )
-configitem('patchbomb', 'intro',
-    default='auto',
+configitem(
+    'patchbomb', 'intro', default='auto',
 )
-configitem('patchbomb', 'publicurl',
-    default=None,
+configitem(
+    'patchbomb', 'publicurl', default=None,
 )
-configitem('patchbomb', 'reply-to',
-    default=None,
+configitem(
+    'patchbomb', 'reply-to', default=None,
 )
-configitem('patchbomb', 'to',
-    default=None,
+configitem(
+    'patchbomb', 'to', default=None,
 )
 
 if pycompat.ispy3:
@@ -150,6 +151,7 @@ else:
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
+
 def _addpullheader(seq, ctx):
     """Add a header pointing to a public URL where the changeset is available
     """
@@ -159,23 +161,30 @@ def _addpullheader(seq, ctx):
     # destination before patchbombing anything.
     publicurl = repo.ui.config('patchbomb', 'publicurl')
     if publicurl:
-        return ('Available At %s\n'
-                '#              hg pull %s -r %s' % (publicurl, publicurl, ctx))
+        return 'Available At %s\n' '#              hg pull %s -r %s' % (
+            publicurl,
+            publicurl,
+            ctx,
+        )
     return None
+
 
 def uisetup(ui):
     cmdutil.extraexport.append('pullurl')
     cmdutil.extraexportmap['pullurl'] = _addpullheader
+
 
 def reposetup(ui, repo):
     if not repo.local():
         return
     repo._wlockfreeprefix.add('last-email.txt')
 
+
 def prompt(ui, prompt, default=None, rest=':'):
     if default:
         prompt += ' [%s]' % default
     return ui.prompt(prompt + rest, default)
+
 
 def introwanted(ui, opts, number):
     '''is an introductory message apparently wanted?'''
@@ -189,11 +198,13 @@ def introwanted(ui, opts, number):
     elif introconfig == 'auto':
         intro = number > 1
     else:
-        ui.write_err(_('warning: invalid patchbomb.intro value "%s"\n')
-                     % introconfig)
+        ui.write_err(
+            _('warning: invalid patchbomb.intro value "%s"\n') % introconfig
+        )
         ui.write_err(_('(should be one of always, never, auto)\n'))
         intro = number > 1
     return intro
+
 
 def _formatflags(ui, repo, rev, flags):
     """build flag string optionally by template"""
@@ -208,6 +219,7 @@ def _formatflags(ui, repo, rev, flags):
         fm.write('flags', '%s', fm.formatlist(flags, name='flag'))
     return out.getvalue()
 
+
 def _formatprefix(ui, repo, rev, flags, idx, total, numbered):
     """build prefix to patch subject"""
     flag = _formatflags(ui, repo, rev, flags)
@@ -220,8 +232,19 @@ def _formatprefix(ui, repo, rev, flags, idx, total, numbered):
         tlen = len("%d" % total)
         return '[PATCH %0*d of %d%s]' % (tlen, idx, total, flag)
 
-def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
-              patchname=None):
+
+def makepatch(
+    ui,
+    repo,
+    rev,
+    patchlines,
+    opts,
+    _charsets,
+    idx,
+    total,
+    numbered,
+    patchname=None,
+):
 
     desc = []
     node = None
@@ -240,8 +263,9 @@ def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
         raise ValueError
 
     if opts.get('attach') and not opts.get('body'):
-        body = ('\n'.join(desc[1:]).strip() or
-                'Patch subject is complete summary.')
+        body = (
+            '\n'.join(desc[1:]).strip() or 'Patch subject is complete summary.'
+        )
         body += '\n\n\n'
 
     if opts.get('plain'):
@@ -264,31 +288,38 @@ def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
         msg = emimemultipart.MIMEMultipart()
         if body:
             msg.attach(mail.mimeencode(ui, body, _charsets, opts.get('test')))
-        p = mail.mimetextpatch('\n'.join(patchlines), 'x-patch',
-                               opts.get('test'))
+        p = mail.mimetextpatch(
+            '\n'.join(patchlines), 'x-patch', opts.get('test')
+        )
         binnode = nodemod.bin(node)
         # if node is mq patch, it will have the patch file's name as a tag
         if not patchname:
-            patchtags = [t for t in repo.nodetags(binnode)
-                         if t.endswith('.patch') or t.endswith('.diff')]
+            patchtags = [
+                t
+                for t in repo.nodetags(binnode)
+                if t.endswith('.patch') or t.endswith('.diff')
+            ]
             if patchtags:
                 patchname = patchtags[0]
             elif total > 1:
-                patchname = cmdutil.makefilename(repo[node], '%b-%n.patch',
-                                                 seqno=idx, total=total)
+                patchname = cmdutil.makefilename(
+                    repo[node], '%b-%n.patch', seqno=idx, total=total
+                )
             else:
                 patchname = cmdutil.makefilename(repo[node], '%b.patch')
         disposition = r'inline'
         if opts.get('attach'):
             disposition = r'attachment'
         p[r'Content-Disposition'] = (
-            disposition + r'; filename=' + encoding.strfromlocal(patchname))
+            disposition + r'; filename=' + encoding.strfromlocal(patchname)
+        )
         msg.attach(p)
     else:
         msg = mail.mimetextpatch(body, display=opts.get('test'))
 
-    prefix = _formatprefix(ui, repo, rev, opts.get('flag'), idx, total,
-                           numbered)
+    prefix = _formatprefix(
+        ui, repo, rev, opts.get('flag'), idx, total, numbered
+    )
     subj = desc[0].strip().rstrip('. ')
     if not numbered:
         subj = ' '.join([prefix, opts.get('subject') or subj])
@@ -300,6 +331,7 @@ def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
     msg['X-Mercurial-Series-Total'] = '%i' % total
     return msg, subj, ds
 
+
 def _getpatches(repo, revs, **opts):
     """return a list of patches for a list of revisions
 
@@ -309,12 +341,16 @@ def _getpatches(repo, revs, **opts):
     prev = repo['.'].rev()
     for r in revs:
         if r == prev and (repo[None].files() or repo[None].deleted()):
-            ui.warn(_('warning: working directory has '
-                      'uncommitted changes\n'))
+            ui.warn(
+                _('warning: working directory has ' 'uncommitted changes\n')
+            )
         output = stringio()
-        cmdutil.exportfile(repo, [r], output,
-                           opts=patch.difffeatureopts(ui, opts, git=True))
+        cmdutil.exportfile(
+            repo, [r], output, opts=patch.difffeatureopts(ui, opts, git=True)
+        )
         yield output.getvalue().split('\n')
+
+
 def _getbundle(repo, dest, **opts):
     """return a bundle containing changesets missing in "dest"
 
@@ -339,6 +375,7 @@ def _getbundle(repo, dest, **opts):
             pass
         os.rmdir(tmpdir)
 
+
 def _getdescription(repo, defaultbody, sender, **opts):
     """obtain the body of the introduction message and return it
 
@@ -351,15 +388,18 @@ def _getdescription(repo, defaultbody, sender, **opts):
     if opts.get(r'desc'):
         body = open(opts.get(r'desc')).read()
     else:
-        ui.write(_('\nWrite the introductory message for the '
-                   'patch series.\n\n'))
-        body = ui.edit(defaultbody, sender, repopath=repo.path,
-                       action='patchbombbody')
+        ui.write(
+            _('\nWrite the introductory message for the ' 'patch series.\n\n')
+        )
+        body = ui.edit(
+            defaultbody, sender, repopath=repo.path, action='patchbombbody'
+        )
         # Save series description in case sendmail fails
         msgfile = repo.vfs('last-email.txt', 'wb')
         msgfile.write(body)
         msgfile.close()
     return body
+
 
 def _getbundlemsgs(repo, sender, bundle, **opts):
     """Get the full email for sending a given bundle
@@ -369,8 +409,9 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
     """
     ui = repo.ui
     _charsets = mail._charsets(ui)
-    subj = (opts.get(r'subject')
-            or prompt(ui, 'Subject:', 'A bundle for your repository'))
+    subj = opts.get(r'subject') or prompt(
+        ui, 'Subject:', 'A bundle for your repository'
+    )
 
     body = _getdescription(repo, '', sender, **opts)
     msg = emimemultipart.MIMEMultipart()
@@ -379,12 +420,16 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
     datapart = emimebase.MIMEBase(r'application', r'x-mercurial-bundle')
     datapart.set_payload(bundle)
     bundlename = '%s.hg' % opts.get(r'bundlename', 'bundle')
-    datapart.add_header(r'Content-Disposition', r'attachment',
-                        filename=encoding.strfromlocal(bundlename))
+    datapart.add_header(
+        r'Content-Disposition',
+        r'attachment',
+        filename=encoding.strfromlocal(bundlename),
+    )
     emailencoders.encode_base64(datapart)
     msg.attach(datapart)
     msg['Subject'] = mail.headencode(ui, subj, _charsets, opts.get(r'test'))
     return [(msg, subj, None)]
+
 
 def _makeintro(repo, sender, revs, patches, **opts):
     """make an introduction email, asking the user for content if needed
@@ -394,12 +439,14 @@ def _makeintro(repo, sender, revs, patches, **opts):
     _charsets = mail._charsets(ui)
 
     # use the last revision which is likely to be a bookmarked head
-    prefix = _formatprefix(ui, repo, revs.last(), opts.get(r'flag'),
-                           0, len(patches), numbered=True)
-    subj = (opts.get(r'subject') or
-            prompt(ui, '(optional) Subject: ', rest=prefix, default=''))
+    prefix = _formatprefix(
+        ui, repo, revs.last(), opts.get(r'flag'), 0, len(patches), numbered=True
+    )
+    subj = opts.get(r'subject') or prompt(
+        ui, '(optional) Subject: ', rest=prefix, default=''
+    )
     if not subj:
-        return None         # skip intro if the user doesn't bother
+        return None  # skip intro if the user doesn't bother
 
     subj = prefix + ' ' + subj
 
@@ -413,9 +460,9 @@ def _makeintro(repo, sender, revs, patches, **opts):
 
     body = _getdescription(repo, body, sender, **opts)
     msg = mail.mimeencode(ui, body, _charsets, opts.get(r'test'))
-    msg['Subject'] = mail.headencode(ui, subj, _charsets,
-                                     opts.get(r'test'))
+    msg['Subject'] = mail.headencode(ui, subj, _charsets, opts.get(r'test'))
     return (msg, subj, diffstat)
+
 
 def _getpatchmsgs(repo, sender, revs, patchnames=None, **opts):
     """return a list of emails from a list of patches
@@ -430,8 +477,7 @@ def _getpatchmsgs(repo, sender, revs, patchnames=None, **opts):
     patches = list(_getpatches(repo, revs, **opts))
     msgs = []
 
-    ui.write(_('this patch series consists of %d patches.\n\n')
-             % len(patches))
+    ui.write(_('this patch series consists of %d patches.\n\n') % len(patches))
 
     # build the intro message, or skip it if the user declines
     if introwanted(ui, bytesopts, len(patches)):
@@ -448,11 +494,22 @@ def _getpatchmsgs(repo, sender, revs, patchnames=None, **opts):
     for i, (r, p) in enumerate(zip(revs, patches)):
         if patchnames:
             name = patchnames[i]
-        msg = makepatch(ui, repo, r, p, bytesopts, _charsets,
-                        i + 1, len(patches), numbered, name)
+        msg = makepatch(
+            ui,
+            repo,
+            r,
+            p,
+            bytesopts,
+            _charsets,
+            i + 1,
+            len(patches),
+            numbered,
+            name,
+        )
         msgs.append(msg)
 
     return msgs
+
 
 def _getoutgoing(repo, dest, revs):
     '''Return the revisions present locally but not in dest'''
@@ -469,54 +526,122 @@ def _getoutgoing(repo, dest, revs):
         ui.status(_("no changes found\n"))
     return revs
 
+
 def _msgid(node, timestamp):
     hostname = encoding.strtolocal(socket.getfqdn())
     hostname = encoding.environ.get('HGHOSTNAME', hostname)
     return '<%s.%d@%s>' % (node, timestamp, hostname)
 
+
 emailopts = [
     ('', 'body', None, _('send patches as inline message text (default)')),
     ('a', 'attach', None, _('send patches as attachments')),
     ('i', 'inline', None, _('send patches as inline attachments')),
-    ('', 'bcc', [],
-     _('email addresses of blind carbon copy recipients'), _('EMAIL')),
+    (
+        '',
+        'bcc',
+        [],
+        _('email addresses of blind carbon copy recipients'),
+        _('EMAIL'),
+    ),
     ('c', 'cc', [], _('email addresses of copy recipients'), _('EMAIL')),
     ('', 'confirm', None, _('ask for confirmation before sending')),
     ('d', 'diffstat', None, _('add diffstat output to messages')),
     ('', 'date', '', _('use the given date as the sending date'), _('DATE')),
-    ('', 'desc', '',
-     _('use the given file as the series description'), _('FILE')),
+    (
+        '',
+        'desc',
+        '',
+        _('use the given file as the series description'),
+        _('FILE'),
+    ),
     ('f', 'from', '', _('email address of sender'), _('EMAIL')),
     ('n', 'test', None, _('print messages that would be sent')),
-    ('m', 'mbox', '',
-     _('write messages to mbox file instead of sending them'), _('FILE')),
-    ('', 'reply-to', [],
-     _('email addresses replies should be sent to'), _('EMAIL')),
-    ('s', 'subject', '',
-     _('subject of first message (intro or single patch)'), _('TEXT')),
+    (
+        'm',
+        'mbox',
+        '',
+        _('write messages to mbox file instead of sending them'),
+        _('FILE'),
+    ),
+    (
+        '',
+        'reply-to',
+        [],
+        _('email addresses replies should be sent to'),
+        _('EMAIL'),
+    ),
+    (
+        's',
+        'subject',
+        '',
+        _('subject of first message (intro or single patch)'),
+        _('TEXT'),
+    ),
     ('', 'in-reply-to', '', _('message identifier to reply to'), _('MSGID')),
     ('', 'flag', [], _('flags to add in subject prefixes'), _('FLAG')),
-    ('t', 'to', [], _('email addresses of recipients'), _('EMAIL'))]
+    ('t', 'to', [], _('email addresses of recipients'), _('EMAIL')),
+]
 
-@command('email',
-    [('g', 'git', None, _('use git extended diff format')),
-    ('', 'plain', None, _('omit hg patch header')),
-    ('o', 'outgoing', None,
-     _('send changes not found in the target repository')),
-    ('b', 'bundle', None, _('send changes not in target as a binary bundle')),
-    ('B', 'bookmark', '',
-     _('send changes only reachable by given bookmark'), _('BOOKMARK')),
-    ('', 'bundlename', 'bundle',
-     _('name of the bundle attachment file'), _('NAME')),
-    ('r', 'rev', [], _('a revision to send'), _('REV')),
-    ('', 'force', None, _('run even when remote repository is unrelated '
-       '(with -b/--bundle)')),
-    ('', 'base', [], _('a base changeset to specify instead of a destination '
-       '(with -b/--bundle)'), _('REV')),
-    ('', 'intro', None, _('send an introduction email for a single patch')),
-    ] + emailopts + cmdutil.remoteopts,
+
+@command(
+    'email',
+    [
+        ('g', 'git', None, _('use git extended diff format')),
+        ('', 'plain', None, _('omit hg patch header')),
+        (
+            'o',
+            'outgoing',
+            None,
+            _('send changes not found in the target repository'),
+        ),
+        (
+            'b',
+            'bundle',
+            None,
+            _('send changes not in target as a binary bundle'),
+        ),
+        (
+            'B',
+            'bookmark',
+            '',
+            _('send changes only reachable by given bookmark'),
+            _('BOOKMARK'),
+        ),
+        (
+            '',
+            'bundlename',
+            'bundle',
+            _('name of the bundle attachment file'),
+            _('NAME'),
+        ),
+        ('r', 'rev', [], _('a revision to send'), _('REV')),
+        (
+            '',
+            'force',
+            None,
+            _(
+                'run even when remote repository is unrelated '
+                '(with -b/--bundle)'
+            ),
+        ),
+        (
+            '',
+            'base',
+            [],
+            _(
+                'a base changeset to specify instead of a destination '
+                '(with -b/--bundle)'
+            ),
+            _('REV'),
+        ),
+        ('', 'intro', None, _('send an introduction email for a single patch')),
+    ]
+    + emailopts
+    + cmdutil.remoteopts,
     _('hg email [OPTION]... [DEST]...'),
-    helpcategory=command.CATEGORY_IMPORT_EXPORT)
+    helpcategory=command.CATEGORY_IMPORT_EXPORT,
+)
 def email(ui, repo, *revs, **opts):
     '''send changesets by email
 
@@ -621,8 +746,12 @@ def email(ui, repo, *revs, **opts):
         raise error.Abort(_('specify at least one changeset with -B, -r or -o'))
 
     if outgoing and bundle:
-        raise error.Abort(_("--outgoing mode always on with --bundle;"
-                           " do not re-specify --outgoing"))
+        raise error.Abort(
+            _(
+                "--outgoing mode always on with --bundle;"
+                " do not re-specify --outgoing"
+            )
+        )
     if rev and bookmark:
         raise error.Abort(_("-r and -B are mutually exclusive"))
 
@@ -657,8 +786,9 @@ def email(ui, repo, *revs, **opts):
         try:
             publicpeer = hg.peer(repo, {}, publicurl)
         except error.RepoError:
-            repo.ui.write_err(_('unable to access public repo: %s\n')
-                              % publicurl)
+            repo.ui.write_err(
+                _('unable to access public repo: %s\n') % publicurl
+            )
             raise
         if not publicpeer.capable('known'):
             repo.ui.debug('skipping existence checks: public repo too old\n')
@@ -677,8 +807,9 @@ def email(ui, repo, *revs, **opts):
                     msg = _('public url %s is missing %s')
                     msg %= (publicurl, missing[0])
                 missingrevs = [ctx.rev() for ctx in missing]
-                revhint = ' '.join('-r %s' % h
-                                   for h in repo.set('heads(%ld)', missingrevs))
+                revhint = ' '.join(
+                    '-r %s' % h for h in repo.set('heads(%ld)', missingrevs)
+                )
                 hint = _("use 'hg push %s %s'") % (publicurl, revhint)
                 raise error.Abort(msg, hint=hint)
 
@@ -692,9 +823,12 @@ def email(ui, repo, *revs, **opts):
         return _msgid(id[:20], int(start_time[0]))
 
     # deprecated config: patchbomb.from
-    sender = (opts.get('from') or ui.config('email', 'from') or
-              ui.config('patchbomb', 'from') or
-              prompt(ui, 'From', ui.username()))
+    sender = (
+        opts.get('from')
+        or ui.config('email', 'from')
+        or ui.config('patchbomb', 'from')
+        or prompt(ui, 'From', ui.username())
+    )
 
     if bundle:
         stropts = pycompat.strkwargs(opts)
@@ -716,11 +850,13 @@ def email(ui, repo, *revs, **opts):
             return mail.addrlistencode(ui, addrs, _charsets, opts.get('test'))
 
         # not on the command line: fallback to config and then maybe ask
-        addr = (ui.config('email', configkey) or
-                ui.config('patchbomb', configkey))
+        addr = ui.config('email', configkey) or ui.config(
+            'patchbomb', configkey
+        )
         if not addr:
-            specified = (ui.hasconfig('email', configkey) or
-                         ui.hasconfig('patchbomb', configkey))
+            specified = ui.hasconfig('email', configkey) or ui.hasconfig(
+                'patchbomb', configkey
+            )
             if not specified and ask:
                 addr = prompt(ui, header, default=default)
         if addr:
@@ -728,7 +864,8 @@ def email(ui, repo, *revs, **opts):
             return mail.addrlistencode(ui, [addr], _charsets, opts.get('test'))
         elif default:
             return mail.addrlistencode(
-                ui, [default], _charsets, opts.get('test'))
+                ui, [default], _charsets, opts.get('test')
+            )
         return []
 
     to = getaddrs('To', ask=True)
@@ -752,8 +889,9 @@ def email(ui, repo, *revs, **opts):
             if ds:
                 ui.write(ds, label='patchbomb.diffstats')
         ui.write('\n')
-        if ui.promptchoice(_('are you sure you want to send (yn)?'
-                             '$$ &Yes $$ &No')):
+        if ui.promptchoice(
+            _('are you sure you want to send (yn)?' '$$ &Yes $$ &No')
+        ):
             raise error.Abort(_('patchbomb canceled'))
 
     ui.write('\n')
@@ -792,7 +930,7 @@ def email(ui, repo, *revs, **opts):
         m['From'] = sender
         m['To'] = ', '.join(to)
         if cc:
-            m['Cc']  = ', '.join(cc)
+            m['Cc'] = ', '.join(cc)
         if bcc:
             m['Bcc'] = ', '.join(bcc)
         if replyto:

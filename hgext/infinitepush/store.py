@@ -15,17 +15,18 @@ from mercurial import (
     node,
     pycompat,
 )
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 
 NamedTemporaryFile = tempfile.NamedTemporaryFile
+
 
 class BundleWriteException(Exception):
     pass
 
+
 class BundleReadException(Exception):
     pass
+
 
 class abstractbundlestore(object):
     """Defines the interface for bundle stores.
@@ -35,6 +36,7 @@ class abstractbundlestore(object):
     be any Python object understood by the corresponding bundle index (see
     ``abstractbundleindex`` below).
     """
+
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -56,18 +58,21 @@ class abstractbundlestore(object):
         and close().
         """
 
+
 class filebundlestore(object):
     """bundle store in filesystem
 
     meant for storing bundles somewhere on disk and on network filesystems
     """
+
     def __init__(self, ui, repo):
         self.ui = ui
         self.repo = repo
         self.storepath = ui.configpath('scratchbranch', 'storepath')
         if not self.storepath:
-            self.storepath = self.repo.vfs.join("scratchbranches",
-                                                "filebundlestore")
+            self.storepath = self.repo.vfs.join(
+                "scratchbranches", "filebundlestore"
+            )
         if not os.path.exists(self.storepath):
             os.makedirs(self.storepath)
 
@@ -99,6 +104,7 @@ class filebundlestore(object):
         except IOError:
             return None
 
+
 class externalbundlestore(abstractbundlestore):
     def __init__(self, put_binary, put_args, get_binary, get_args):
         """
@@ -120,8 +126,10 @@ class externalbundlestore(abstractbundlestore):
     def _call_binary(self, args):
         p = subprocess.Popen(
             pycompat.rapply(procutil.tonativestr, args),
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            close_fds=True)
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=True,
+        )
         stdout, stderr = p.communicate()
         returncode = p.returncode
         return returncode, stdout, stderr
@@ -135,20 +143,24 @@ class externalbundlestore(abstractbundlestore):
             temp.write(data)
             temp.flush()
             temp.seek(0)
-            formatted_args = [arg.format(filename=temp.name)
-                              for arg in self.put_args]
+            formatted_args = [
+                arg.format(filename=temp.name) for arg in self.put_args
+            ]
             returncode, stdout, stderr = self._call_binary(
-                [self.put_binary] + formatted_args)
+                [self.put_binary] + formatted_args
+            )
 
             if returncode != 0:
                 raise BundleWriteException(
-                    'Failed to upload to external store: %s' % stderr)
+                    'Failed to upload to external store: %s' % stderr
+                )
             stdout_lines = stdout.splitlines()
             if len(stdout_lines) == 1:
                 return stdout_lines[0]
             else:
                 raise BundleWriteException(
-                    'Bad output from %s: %s' % (self.put_binary, stdout))
+                    'Bad output from %s: %s' % (self.put_binary, stdout)
+                )
 
     def read(self, handle):
         # Won't work on windows because you can't open file second time without
@@ -156,12 +168,16 @@ class externalbundlestore(abstractbundlestore):
         # TODO: rewrite without str.format() and replace NamedTemporaryFile()
         # with pycompat.namedtempfile()
         with NamedTemporaryFile() as temp:
-            formatted_args = [arg.format(filename=temp.name, handle=handle)
-                              for arg in self.get_args]
+            formatted_args = [
+                arg.format(filename=temp.name, handle=handle)
+                for arg in self.get_args
+            ]
             returncode, stdout, stderr = self._call_binary(
-                [self.get_binary] + formatted_args)
+                [self.get_binary] + formatted_args
+            )
 
             if returncode != 0:
                 raise BundleReadException(
-                    'Failed to download from external store: %s' % stderr)
+                    'Failed to download from external store: %s' % stderr
+                )
             return temp.read()

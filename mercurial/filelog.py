@@ -20,16 +20,15 @@ from .interfaces import (
     repository,
     util as interfaceutil,
 )
-from .utils import (
-    storageutil,
-)
+from .utils import storageutil
+
 
 @interfaceutil.implementer(repository.ifilestorage)
 class filelog(object):
     def __init__(self, opener, path):
-        self._revlog = revlog.revlog(opener,
-                                     '/'.join(('data', path + '.i')),
-                                     censorable=True)
+        self._revlog = revlog.revlog(
+            opener, '/'.join(('data', path + '.i')), censorable=True
+        )
         # Full name of the user visible file, relative to the repository root.
         # Used by LFS.
         self._revlog.filename = path
@@ -66,8 +65,9 @@ class filelog(object):
         return self._revlog.node(rev)
 
     def lookup(self, node):
-        return storageutil.fileidlookup(self._revlog, node,
-                                        self._revlog.indexfile)
+        return storageutil.fileidlookup(
+            self._revlog, node, self._revlog.indexfile
+        )
 
     def linkrev(self, rev):
         return self._revlog.linkrev(rev)
@@ -95,29 +95,63 @@ class filelog(object):
     def rawdata(self, node, _df=None):
         return self._revlog.rawdata(node, _df=_df)
 
-    def emitrevisions(self, nodes, nodesorder=None,
-                      revisiondata=False, assumehaveparentrevisions=False,
-                      deltamode=repository.CG_DELTAMODE_STD):
+    def emitrevisions(
+        self,
+        nodes,
+        nodesorder=None,
+        revisiondata=False,
+        assumehaveparentrevisions=False,
+        deltamode=repository.CG_DELTAMODE_STD,
+    ):
         return self._revlog.emitrevisions(
-            nodes, nodesorder=nodesorder, revisiondata=revisiondata,
+            nodes,
+            nodesorder=nodesorder,
+            revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
-            deltamode=deltamode)
+            deltamode=deltamode,
+        )
 
-    def addrevision(self, revisiondata, transaction, linkrev, p1, p2,
-                    node=None, flags=revlog.REVIDX_DEFAULT_FLAGS,
-                    cachedelta=None):
-        return self._revlog.addrevision(revisiondata, transaction, linkrev,
-                                    p1, p2, node=node, flags=flags,
-                                    cachedelta=cachedelta)
+    def addrevision(
+        self,
+        revisiondata,
+        transaction,
+        linkrev,
+        p1,
+        p2,
+        node=None,
+        flags=revlog.REVIDX_DEFAULT_FLAGS,
+        cachedelta=None,
+    ):
+        return self._revlog.addrevision(
+            revisiondata,
+            transaction,
+            linkrev,
+            p1,
+            p2,
+            node=node,
+            flags=flags,
+            cachedelta=cachedelta,
+        )
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
-                 maybemissingparents=False):
+    def addgroup(
+        self,
+        deltas,
+        linkmapper,
+        transaction,
+        addrevisioncb=None,
+        maybemissingparents=False,
+    ):
         if maybemissingparents:
-            raise error.Abort(_('revlog storage does not support missing '
-                                'parents write mode'))
+            raise error.Abort(
+                _(
+                    'revlog storage does not support missing '
+                    'parents write mode'
+                )
+            )
 
-        return self._revlog.addgroup(deltas, linkmapper, transaction,
-                                     addrevisioncb=addrevisioncb)
+        return self._revlog.addgroup(
+            deltas, linkmapper, transaction, addrevisioncb=addrevisioncb
+        )
 
     def getstrippoint(self, minlink):
         return self._revlog.getstrippoint(minlink)
@@ -165,13 +199,21 @@ class filelog(object):
     def verifyintegrity(self, state):
         return self._revlog.verifyintegrity(state)
 
-    def storageinfo(self, exclusivefiles=False, sharedfiles=False,
-                    revisionscount=False, trackedsize=False,
-                    storedsize=False):
+    def storageinfo(
+        self,
+        exclusivefiles=False,
+        sharedfiles=False,
+        revisionscount=False,
+        trackedsize=False,
+        storedsize=False,
+    ):
         return self._revlog.storageinfo(
-            exclusivefiles=exclusivefiles, sharedfiles=sharedfiles,
-            revisionscount=revisionscount, trackedsize=trackedsize,
-            storedsize=storedsize)
+            exclusivefiles=exclusivefiles,
+            sharedfiles=sharedfiles,
+            revisionscount=revisionscount,
+            trackedsize=trackedsize,
+            storedsize=storedsize,
+        )
 
     # TODO these aren't part of the interface and aren't internal methods.
     # Callers should be fixed to not use them.
@@ -191,6 +233,7 @@ class filelog(object):
             raise error.ProgrammingError('expected filelog to clone()')
 
         return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
+
 
 class narrowfilelog(filelog):
     """Filelog variation to be used with narrow stores."""

@@ -29,6 +29,7 @@ from . import (
 urlerr = util.urlerr
 urlreq = util.urlreq
 
+
 class httprangereader(object):
     def __init__(self, url, opener):
         # we assume opener has HTTPRangeHandler
@@ -45,6 +46,7 @@ class httprangereader(object):
 
     def seek(self, pos):
         self.pos = pos
+
     def read(self, bytes=None):
         req = urlreq.request(pycompat.strurl(self.url))
         end = ''
@@ -67,25 +69,30 @@ class httprangereader(object):
             # HTTPRangeHandler does nothing if remote does not support
             # Range headers and returns the full entity. Let's slice it.
             if bytes:
-                data = data[self.pos:self.pos + bytes]
+                data = data[self.pos : self.pos + bytes]
             else:
-                data = data[self.pos:]
+                data = data[self.pos :]
         elif bytes:
             data = data[:bytes]
         self.pos += len(data)
         return data
+
     def readlines(self):
         return self.read().splitlines(True)
+
     def __iter__(self):
         return iter(self.readlines())
+
     def close(self):
         pass
+
 
 # _RangeError and _HTTPRangeHandler were originally in byterange.py,
 # which was itself extracted from urlgrabber. See the last version of
 # byterange.py from history if you need more information.
 class _RangeError(IOError):
     """Error raised when an unsatisfiable range is requested."""
+
 
 class _HTTPRangeHandler(urlreq.basehandler):
     """Handler that enables HTTP Range headers.
@@ -106,6 +113,7 @@ class _HTTPRangeHandler(urlreq.basehandler):
     def http_error_416(self, req, fp, code, msg, hdrs):
         # HTTP's Range Not Satisfiable error
         raise _RangeError('Requested Range Not Satisfiable')
+
 
 def build_opener(ui, authinfo):
     # urllib cannot handle URLs with embedded user or passwd
@@ -131,14 +139,18 @@ def build_opener(ui, authinfo):
 
     return statichttpvfs
 
+
 class statichttppeer(localrepo.localpeer):
     def local(self):
         return None
+
     def canpush(self):
         return False
 
-class statichttprepository(localrepo.localrepository,
-                           localrepo.revlogfilestorage):
+
+class statichttprepository(
+    localrepo.localrepository, localrepo.revlogfilestorage
+):
     supported = localrepo.localrepository._basesupported
 
     def __init__(self, ui, path):
@@ -178,8 +190,9 @@ class statichttprepository(localrepo.localrepository,
                 raise error.RepoError(msg)
 
         supportedrequirements = localrepo.gathersupportedrequirements(ui)
-        localrepo.ensurerequirementsrecognized(requirements,
-                                               supportedrequirements)
+        localrepo.ensurerequirementsrecognized(
+            requirements, supportedrequirements
+        )
         localrepo.ensurerequirementscompatible(ui, requirements)
 
         # setup store
@@ -191,8 +204,9 @@ class statichttprepository(localrepo.localrepository,
         self.requirements = requirements
 
         rootmanifest = manifest.manifestrevlog(self.svfs)
-        self.manifestlog = manifest.manifestlog(self.svfs, self, rootmanifest,
-                                                self.narrowmatch())
+        self.manifestlog = manifest.manifestlog(
+            self.svfs, self, rootmanifest, self.narrowmatch()
+        )
         self.changelog = changelog.changelog(self.svfs)
         self._tags = None
         self.nodetagscache = None
@@ -216,14 +230,19 @@ class statichttprepository(localrepo.localrepository,
         return statichttppeer(self)
 
     def wlock(self, wait=True):
-        raise error.LockUnavailable(0, _('lock not available'), 'lock',
-                                    _('cannot lock static-http repository'))
+        raise error.LockUnavailable(
+            0,
+            _('lock not available'),
+            'lock',
+            _('cannot lock static-http repository'),
+        )
 
     def lock(self, wait=True):
         raise error.Abort(_('cannot lock static-http repository'))
 
     def _writecaches(self):
-        pass # statichttprepository are read only
+        pass  # statichttprepository are read only
+
 
 def instance(ui, path, create, intents=None, createopts=None):
     if create:

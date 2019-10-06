@@ -45,6 +45,7 @@ from mercurial import (
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
+
 def pygmentize(web, field, fctx, tmpl):
     style = web.config('web', 'pygments_style', 'colorful')
     expr = web.config('web', 'highlightfiles', "size('<5M')")
@@ -53,8 +54,10 @@ def pygmentize(web, field, fctx, tmpl):
     ctx = fctx.changectx()
     m = ctx.matchfileset(expr)
     if m(fctx.path()):
-        highlight.pygmentize(field, fctx, style, tmpl,
-                guessfilenameonly=filenameonly)
+        highlight.pygmentize(
+            field, fctx, style, tmpl, guessfilenameonly=filenameonly
+        )
+
 
 def filerevision_highlight(orig, web, fctx):
     mt = web.res.headers['Content-Type']
@@ -70,6 +73,7 @@ def filerevision_highlight(orig, web, fctx):
 
     return orig(web, fctx)
 
+
 def annotate_highlight(orig, web):
     mt = web.res.headers['Content-Type']
     if 'html' in mt:
@@ -78,21 +82,28 @@ def annotate_highlight(orig, web):
 
     return orig(web)
 
+
 def generate_css(web):
     pg_style = web.config('web', 'pygments_style', 'colorful')
     fmter = highlight.HtmlFormatter(style=pycompat.sysstr(pg_style))
     web.res.headers['Content-Type'] = 'text/css'
     style_defs = fmter.get_style_defs(pycompat.sysstr(''))
-    web.res.setbodybytes(''.join([
-        '/* pygments_style = %s */\n\n' % pg_style,
-        pycompat.bytestr(style_defs),
-    ]))
+    web.res.setbodybytes(
+        ''.join(
+            [
+                '/* pygments_style = %s */\n\n' % pg_style,
+                pycompat.bytestr(style_defs),
+            ]
+        )
+    )
     return web.res.sendresponse()
+
 
 def extsetup(ui):
     # monkeypatch in the new version
-    extensions.wrapfunction(webcommands, '_filerevision',
-                            filerevision_highlight)
+    extensions.wrapfunction(
+        webcommands, '_filerevision', filerevision_highlight
+    )
     extensions.wrapfunction(webcommands, 'annotate', annotate_highlight)
     webcommands.highlightcss = generate_css
     webcommands.__all__.append('highlightcss')

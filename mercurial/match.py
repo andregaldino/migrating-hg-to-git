@@ -21,19 +21,29 @@ from . import (
     pycompat,
     util,
 )
-from .utils import (
-    stringutil,
-)
+from .utils import stringutil
 
 rustmod = policy.importrust(r'filepatterns')
 
-allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
-                   'rootglob',
-                   'listfile', 'listfile0', 'set', 'include', 'subinclude',
-                   'rootfilesin')
+allpatternkinds = (
+    're',
+    'glob',
+    'path',
+    'relglob',
+    'relpath',
+    'relre',
+    'rootglob',
+    'listfile',
+    'listfile0',
+    'set',
+    'include',
+    'subinclude',
+    'rootfilesin',
+)
 cwdrelativepatternkinds = ('relpath', 'glob')
 
 propertycache = util.propertycache
+
 
 def _rematcher(regex):
     '''compile the regexp with the best available regexp engine and return a
@@ -45,6 +55,7 @@ def _rematcher(regex):
     except AttributeError:
         return m.match
 
+
 def _expandsets(kindpats, ctx=None, listsubrepos=False, badfn=None):
     '''Returns the kindpats list with the 'set' patterns expanded to matchers'''
     matchers = []
@@ -53,8 +64,9 @@ def _expandsets(kindpats, ctx=None, listsubrepos=False, badfn=None):
     for kind, pat, source in kindpats:
         if kind == 'set':
             if ctx is None:
-                raise error.ProgrammingError("fileset expression with no "
-                                             "context")
+                raise error.ProgrammingError(
+                    "fileset expression with no " "context"
+                )
             matchers.append(ctx.matchfileset(pat, badfn=badfn))
 
             if listsubrepos:
@@ -66,6 +78,7 @@ def _expandsets(kindpats, ctx=None, listsubrepos=False, badfn=None):
             continue
         other.append((kind, pat, source))
     return matchers, other
+
 
 def _expandsubinclude(kindpats, root):
     '''Returns the list of subinclude matcher args and the kindpats without the
@@ -91,6 +104,7 @@ def _expandsubinclude(kindpats, root):
 
     return relmatchers, other
 
+
 def _kindpatsalwaysmatch(kindpats):
     """"Checks whether the kindspats match everything, as e.g.
     'relpath:.' does.
@@ -100,11 +114,14 @@ def _kindpatsalwaysmatch(kindpats):
             return False
     return True
 
-def _buildkindpatsmatcher(matchercls, root, kindpats, ctx=None,
-                          listsubrepos=False, badfn=None):
+
+def _buildkindpatsmatcher(
+    matchercls, root, kindpats, ctx=None, listsubrepos=False, badfn=None
+):
     matchers = []
-    fms, kindpats = _expandsets(kindpats, ctx=ctx,
-                                listsubrepos=listsubrepos, badfn=badfn)
+    fms, kindpats = _expandsets(
+        kindpats, ctx=ctx, listsubrepos=listsubrepos, badfn=badfn
+    )
     if kindpats:
         m = matchercls(root, kindpats, badfn=badfn)
         matchers.append(m)
@@ -116,9 +133,21 @@ def _buildkindpatsmatcher(matchercls, root, kindpats, ctx=None,
         return matchers[0]
     return unionmatcher(matchers)
 
-def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
-          auditor=None, ctx=None, listsubrepos=False, warn=None,
-          badfn=None, icasefs=False):
+
+def match(
+    root,
+    cwd,
+    patterns=None,
+    include=None,
+    exclude=None,
+    default='glob',
+    auditor=None,
+    ctx=None,
+    listsubrepos=False,
+    warn=None,
+    badfn=None,
+    icasefs=False,
+):
     r"""build an object to match a set of file patterns
 
     arguments:
@@ -223,8 +252,14 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
         if _kindpatsalwaysmatch(kindpats):
             m = alwaysmatcher(badfn)
         else:
-            m = _buildkindpatsmatcher(patternmatcher, root, kindpats, ctx=ctx,
-                                      listsubrepos=listsubrepos, badfn=badfn)
+            m = _buildkindpatsmatcher(
+                patternmatcher,
+                root,
+                kindpats,
+                ctx=ctx,
+                listsubrepos=listsubrepos,
+                badfn=badfn,
+            )
     else:
         # It's a little strange that no patterns means to match everything.
         # Consider changing this to match nothing (probably using nevermatcher).
@@ -232,24 +267,40 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
 
     if include:
         kindpats = normalize(include, 'glob', root, cwd, auditor, warn)
-        im = _buildkindpatsmatcher(includematcher, root, kindpats, ctx=ctx,
-                                   listsubrepos=listsubrepos, badfn=None)
+        im = _buildkindpatsmatcher(
+            includematcher,
+            root,
+            kindpats,
+            ctx=ctx,
+            listsubrepos=listsubrepos,
+            badfn=None,
+        )
         m = intersectmatchers(m, im)
     if exclude:
         kindpats = normalize(exclude, 'glob', root, cwd, auditor, warn)
-        em = _buildkindpatsmatcher(includematcher, root, kindpats, ctx=ctx,
-                                   listsubrepos=listsubrepos, badfn=None)
+        em = _buildkindpatsmatcher(
+            includematcher,
+            root,
+            kindpats,
+            ctx=ctx,
+            listsubrepos=listsubrepos,
+            badfn=None,
+        )
         m = differencematcher(m, em)
     return m
+
 
 def exact(files, badfn=None):
     return exactmatcher(files, badfn=badfn)
 
+
 def always(badfn=None):
     return alwaysmatcher(badfn)
 
+
 def never(badfn=None):
     return nevermatcher(badfn)
+
 
 def badmatch(match, badfn):
     """Make a copy of the given matcher, replacing its bad method with the given
@@ -258,6 +309,7 @@ def badmatch(match, badfn):
     m = copy.copy(match)
     m.bad = badfn
     return m
+
 
 def _donormalize(patterns, default, root, cwd, auditor=None, warn=None):
     '''Convert 'kind:pat' from the patterns list to tuples with kind and
@@ -278,36 +330,41 @@ def _donormalize(patterns, default, root, cwd, auditor=None, warn=None):
                 files = [f for f in files if f]
             except EnvironmentError:
                 raise error.Abort(_("unable to read file list (%s)") % pat)
-            for k, p, source in _donormalize(files, default, root, cwd,
-                                             auditor, warn):
+            for k, p, source in _donormalize(
+                files, default, root, cwd, auditor, warn
+            ):
                 kindpats.append((k, p, pat))
             continue
         elif kind == 'include':
             try:
                 fullpath = os.path.join(root, util.localpath(pat))
                 includepats = readpatternfile(fullpath, warn)
-                for k, p, source in _donormalize(includepats, default,
-                                                 root, cwd, auditor, warn):
+                for k, p, source in _donormalize(
+                    includepats, default, root, cwd, auditor, warn
+                ):
                     kindpats.append((k, p, source or pat))
             except error.Abort as inst:
                 raise error.Abort('%s: %s' % (pat, inst[0]))
             except IOError as inst:
                 if warn:
-                    warn(_("skipping unreadable pattern file '%s': %s\n") %
-                         (pat, stringutil.forcebytestr(inst.strerror)))
+                    warn(
+                        _("skipping unreadable pattern file '%s': %s\n")
+                        % (pat, stringutil.forcebytestr(inst.strerror))
+                    )
             continue
         # else: re or relre - which cannot be normalized
         kindpats.append((kind, pat, ''))
     return kindpats
 
-class basematcher(object):
 
+class basematcher(object):
     def __init__(self, badfn=None):
         if badfn is not None:
             self.bad = badfn
 
     def __call__(self, fn):
         return self.matchfn(fn)
+
     # Callbacks related to how the matcher is used by dirstate.walk.
     # Subscribers to these events must monkeypatch the matcher object.
     def bad(self, f, msg):
@@ -419,6 +476,7 @@ class basematcher(object):
         optimizations will be difficult.'''
         return not self.always() and not self.isexact() and not self.prefix()
 
+
 class alwaysmatcher(basematcher):
     '''Matches everything.'''
 
@@ -439,6 +497,7 @@ class alwaysmatcher(basematcher):
 
     def __repr__(self):
         return r'<alwaysmatcher>'
+
 
 class nevermatcher(basematcher):
     '''Matches nothing.'''
@@ -466,6 +525,7 @@ class nevermatcher(basematcher):
     def __repr__(self):
         return r'<nevermatcher>'
 
+
 class predicatematcher(basematcher):
     """A matcher adapter for a simple boolean function"""
 
@@ -476,14 +536,18 @@ class predicatematcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        s = (stringutil.buildrepr(self._predrepr)
-             or pycompat.byterepr(self.matchfn))
+        s = stringutil.buildrepr(self._predrepr) or pycompat.byterepr(
+            self.matchfn
+        )
         return '<predicatenmatcher pred=%s>' % s
+
 
 def normalizerootdir(dir, funcname):
     if dir == '.':
-        util.nouideprecwarn("match.%s() no longer accepts "
-                            "'.', use '' instead." % funcname, '5.1')
+        util.nouideprecwarn(
+            "match.%s() no longer accepts " "'.', use '' instead." % funcname,
+            '5.1',
+        )
         return ''
     return dir
 
@@ -536,10 +600,13 @@ class patternmatcher(basematcher):
         dir = normalizerootdir(dir, 'visitdir')
         if self._prefix and dir in self._fileset:
             return 'all'
-        return (dir in self._fileset or
-                dir in self._dirs or
-                any(parentdir in self._fileset
-                    for parentdir in util.finddirs(dir)))
+        return (
+            dir in self._fileset
+            or dir in self._dirs
+            or any(
+                parentdir in self._fileset for parentdir in util.finddirs(dir)
+            )
+        )
 
     def visitchildrenset(self, dir):
         ret = self.visitdir(dir)
@@ -555,7 +622,8 @@ class patternmatcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<patternmatcher patterns=%r>' % pycompat.bytestr(self._pats))
+        return '<patternmatcher patterns=%r>' % pycompat.bytestr(self._pats)
+
 
 # This is basically a reimplementation of util.dirs that stores the children
 # instead of just a count of them, plus a small optional optimization to avoid
@@ -588,7 +656,7 @@ class _dirchildren(object):
         oldpos = len(path)
         pos = path.rfind('/')
         while pos != -1:
-            yield path[:pos], path[pos + 1:oldpos]
+            yield path[:pos], path[pos + 1 : oldpos]
             oldpos = pos
             pos = path.rfind('/', 0, pos)
         yield '', path[:oldpos]
@@ -596,8 +664,8 @@ class _dirchildren(object):
     def get(self, path):
         return self._dirs.get(path, set())
 
-class includematcher(basematcher):
 
+class includematcher(basematcher):
     def __init__(self, root, kindpats, badfn=None):
         super(includematcher, self).__init__(badfn)
 
@@ -616,11 +684,12 @@ class includematcher(basematcher):
         dir = normalizerootdir(dir, 'visitdir')
         if self._prefix and dir in self._roots:
             return 'all'
-        return (dir in self._roots or
-                dir in self._dirs or
-                dir in self._parents or
-                any(parentdir in self._roots
-                    for parentdir in util.finddirs(dir)))
+        return (
+            dir in self._roots
+            or dir in self._dirs
+            or dir in self._parents
+            or any(parentdir in self._roots for parentdir in util.finddirs(dir))
+        )
 
     @propertycache
     def _allparentschildren(self):
@@ -631,19 +700,21 @@ class includematcher(basematcher):
         # if we asked for the children of 'foo', but had only added
         # self._parents, we wouldn't be able to respond ['bar'].
         return _dirchildren(
-                itertools.chain(self._dirs, self._roots, self._parents),
-                onlyinclude=self._parents)
+            itertools.chain(self._dirs, self._roots, self._parents),
+            onlyinclude=self._parents,
+        )
 
     def visitchildrenset(self, dir):
         if self._prefix and dir in self._roots:
             return 'all'
         # Note: this does *not* include the 'dir in self._parents' case from
         # visitdir, that's handled below.
-        if ('' in self._roots or
-            dir in self._roots or
-            dir in self._dirs or
-            any(parentdir in self._roots
-                for parentdir in util.finddirs(dir))):
+        if (
+            '' in self._roots
+            or dir in self._roots
+            or dir in self._dirs
+            or any(parentdir in self._roots for parentdir in util.finddirs(dir))
+        ):
             return 'this'
 
         if dir in self._parents:
@@ -652,7 +723,8 @@ class includematcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<includematcher includes=%r>' % pycompat.bytestr(self._pats))
+        return '<includematcher includes=%r>' % pycompat.bytestr(self._pats)
+
 
 class exactmatcher(basematcher):
     r'''Matches the input files exactly. They are interpreted as paths, not
@@ -702,8 +774,7 @@ class exactmatcher(basematcher):
         candidates = self._fileset | self._dirs - {''}
         if dir != '':
             d = dir + '/'
-            candidates = set(c[len(d):] for c in candidates if
-                             c.startswith(d))
+            candidates = set(c[len(d) :] for c in candidates if c.startswith(d))
         # self._dirs includes all of the directories, recursively, so if
         # we're attempting to match foo/bar/baz.txt, it'll have '', 'foo',
         # 'foo/bar' in it. Thus we can safely ignore a candidate that has a
@@ -720,7 +791,8 @@ class exactmatcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<exactmatcher files=%r>' % self._files)
+        return '<exactmatcher files=%r>' % self._files
+
 
 class differencematcher(basematcher):
     '''Composes two matchers by matching if the first matches and the second
@@ -729,6 +801,7 @@ class differencematcher(basematcher):
     The second matcher's non-matching-attributes (bad, explicitdir,
     traversedir) are ignored.
     '''
+
     def __init__(self, m1, m2):
         super(differencematcher, self).__init__()
         self._m1 = m1
@@ -789,7 +862,8 @@ class differencematcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<differencematcher m1=%r, m2=%r>' % (self._m1, self._m2))
+        return '<differencematcher m1=%r, m2=%r>' % (self._m1, self._m2)
+
 
 def intersectmatchers(m1, m2):
     '''Composes two matchers by matching if both of them match.
@@ -811,6 +885,7 @@ def intersectmatchers(m1, m2):
         m = copy.copy(m1)
         return m
     return intersectionmatcher(m1, m2)
+
 
 class intersectionmatcher(basematcher):
     def __init__(self, m1, m2):
@@ -871,7 +946,8 @@ class intersectionmatcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<intersectionmatcher m1=%r, m2=%r>' % (self._m1, self._m2))
+        return '<intersectionmatcher m1=%r, m2=%r>' % (self._m1, self._m2)
+
 
 class subdirmatcher(basematcher):
     """Adapt a matcher to work on a subdirectory only.
@@ -906,8 +982,11 @@ class subdirmatcher(basematcher):
         self._matcher = matcher
         self._always = matcher.always()
 
-        self._files = [f[len(path) + 1:] for f in matcher._files
-                       if f.startswith(path + "/")]
+        self._files = [
+            f[len(path) + 1 :]
+            for f in matcher._files
+            if f.startswith(path + "/")
+        ]
 
         # If the parent repo had a path to this subrepo and the matcher is
         # a prefix matcher, this submatcher always matches.
@@ -948,8 +1027,11 @@ class subdirmatcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<subdirmatcher path=%r, matcher=%r>' %
-                (self._path, self._matcher))
+        return '<subdirmatcher path=%r, matcher=%r>' % (
+            self._path,
+            self._matcher,
+        )
+
 
 class prefixdirmatcher(basematcher):
     """Adapt a matcher to work on a parent directory.
@@ -999,7 +1081,7 @@ class prefixdirmatcher(basematcher):
     def matchfn(self, f):
         if not f.startswith(self._pathprefix):
             return False
-        return self._matcher.matchfn(f[len(self._pathprefix):])
+        return self._matcher.matchfn(f[len(self._pathprefix) :])
 
     @propertycache
     def _pathdirs(self):
@@ -1009,14 +1091,14 @@ class prefixdirmatcher(basematcher):
         if dir == self._path:
             return self._matcher.visitdir('')
         if dir.startswith(self._pathprefix):
-            return self._matcher.visitdir(dir[len(self._pathprefix):])
+            return self._matcher.visitdir(dir[len(self._pathprefix) :])
         return dir in self._pathdirs
 
     def visitchildrenset(self, dir):
         if dir == self._path:
             return self._matcher.visitchildrenset('')
         if dir.startswith(self._pathprefix):
-            return self._matcher.visitchildrenset(dir[len(self._pathprefix):])
+            return self._matcher.visitchildrenset(dir[len(self._pathprefix) :])
         if dir in self._pathdirs:
             return 'this'
         return set()
@@ -1029,8 +1111,11 @@ class prefixdirmatcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<prefixdirmatcher path=%r, matcher=%r>'
-                % (pycompat.bytestr(self._path), self._matcher))
+        return '<prefixdirmatcher path=%r, matcher=%r>' % (
+            pycompat.bytestr(self._path),
+            self._matcher,
+        )
+
 
 class unionmatcher(basematcher):
     """A matcher that is the union of several matchers.
@@ -1082,7 +1167,8 @@ class unionmatcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<unionmatcher matchers=%r>' % self._matchers)
+        return '<unionmatcher matchers=%r>' % self._matchers
+
 
 def patkind(pattern, default=None):
     '''If pattern is 'kind:pat' with a known kind, return kind.
@@ -1099,6 +1185,7 @@ def patkind(pattern, default=None):
     '''
     return _patsplit(pattern, default)[0]
 
+
 def _patsplit(pattern, default):
     """Split a string into the optional pattern kind prefix and the actual
     pattern."""
@@ -1107,6 +1194,7 @@ def _patsplit(pattern, default):
         if kind in allpatternkinds:
             return kind, pat
     return default, pattern
+
 
 def _globre(pat):
     r'''Convert an extended glob string to a regexp string.
@@ -1135,10 +1223,12 @@ def _globre(pat):
     res = ''
     group = 0
     escape = util.stringutil.regexbytesescapemap.get
+
     def peek():
-        return i < n and pat[i:i + 1]
+        return i < n and pat[i : i + 1]
+
     while i < n:
-        c = pat[i:i + 1]
+        c = pat[i : i + 1]
         i += 1
         if c not in '*?[{},\\':
             res += escape(c, c)
@@ -1156,14 +1246,14 @@ def _globre(pat):
             res += '.'
         elif c == '[':
             j = i
-            if j < n and pat[j:j + 1] in '!]':
+            if j < n and pat[j : j + 1] in '!]':
                 j += 1
-            while j < n and pat[j:j + 1] != ']':
+            while j < n and pat[j : j + 1] != ']':
                 j += 1
             if j >= n:
                 res += '\\['
             else:
-                stuff = pat[i:j].replace('\\','\\\\')
+                stuff = pat[i:j].replace('\\', '\\\\')
                 i = j + 1
                 if stuff[0:1] == '!':
                     stuff = '^' + stuff[1:]
@@ -1189,6 +1279,7 @@ def _globre(pat):
             res += escape(c, c)
     return res
 
+
 def _regex(kind, pat, globsuffix):
     '''Convert a (normalized) pattern of any kind into a
     regular expression.
@@ -1196,11 +1287,7 @@ def _regex(kind, pat, globsuffix):
 
     if rustmod is not None:
         try:
-            return rustmod.build_single_regex(
-                kind,
-                pat,
-                globsuffix
-            )
+            return rustmod.build_single_regex(kind, pat, globsuffix)
         except rustmod.PatternError:
             raise error.ProgrammingError(
                 'not a regex pattern: %s:%s' % (kind, pat)
@@ -1227,7 +1314,7 @@ def _regex(kind, pat, globsuffix):
         if globre.startswith('[^/]*'):
             # When pat has the form *XYZ (common), make the returned regex more
             # legible by returning the regex for **XYZ instead of **/*XYZ.
-            return '.*' + globre[len('[^/]*'):] + globsuffix
+            return '.*' + globre[len('[^/]*') :] + globsuffix
         return '(?:|.*/)' + globre + globsuffix
     if kind == 'relre':
         if pat.startswith('^'):
@@ -1237,6 +1324,7 @@ def _regex(kind, pat, globsuffix):
         return _globre(pat) + globsuffix
     raise error.ProgrammingError('not a regex pattern: %s:%s' % (kind, pat))
 
+
 def _buildmatch(kindpats, globsuffix, root):
     '''Return regexp string and a matcher function for kindpats.
     globsuffix is appended to the regexp of globs.'''
@@ -1245,6 +1333,7 @@ def _buildmatch(kindpats, globsuffix, root):
     subincludes, kindpats = _expandsubinclude(kindpats, root)
     if subincludes:
         submatchers = {}
+
         def matchsubinclude(f):
             for prefix, matcherargs in subincludes:
                 if f.startswith(prefix):
@@ -1253,15 +1342,17 @@ def _buildmatch(kindpats, globsuffix, root):
                         mf = match(*matcherargs)
                         submatchers[prefix] = mf
 
-                    if mf(f[len(prefix):]):
+                    if mf(f[len(prefix) :]):
                         return True
             return False
+
         matchfuncs.append(matchsubinclude)
 
     regex = ''
     if kindpats:
         if all(k == 'rootfilesin' for k, p, s in kindpats):
             dirs = {p for k, p, s in kindpats}
+
             def mf(f):
                 i = f.rfind('/')
                 if i >= 0:
@@ -1269,6 +1360,7 @@ def _buildmatch(kindpats, globsuffix, root):
                 else:
                     dir = '.'
                 return dir in dirs
+
             regex = b'rootfilesin: %s' % stringutil.pprint(list(sorted(dirs)))
             matchfuncs.append(mf)
         else:
@@ -1280,11 +1372,14 @@ def _buildmatch(kindpats, globsuffix, root):
     else:
         return regex, lambda f: any(mf(f) for mf in matchfuncs)
 
+
 MAX_RE_SIZE = 20000
+
 
 def _joinregexes(regexps):
     """gather multiple regular expressions into a single one"""
     return '|'.join(regexps)
+
 
 def _buildregexmatch(kindpats, globsuffix):
     """Build a match function from a list of kinds and kindpats,
@@ -1332,11 +1427,13 @@ def _buildregexmatch(kindpats, globsuffix):
                 _rematcher(_regex(k, p, globsuffix))
             except re.error:
                 if s:
-                    raise error.Abort(_("%s: invalid pattern (%s): %s") %
-                                      (s, k, p))
+                    raise error.Abort(
+                        _("%s: invalid pattern (%s): %s") % (s, k, p)
+                    )
                 else:
                     raise error.Abort(_("invalid pattern (%s): %s") % (k, p))
         raise error.Abort(_("invalid pattern"))
+
 
 def _patternrootsanddirs(kindpats):
     '''Returns roots and directories corresponding to each pattern.
@@ -1349,7 +1446,7 @@ def _patternrootsanddirs(kindpats):
     r = []
     d = []
     for kind, pat, source in kindpats:
-        if kind in ('glob', 'rootglob'): # find the non-glob prefix
+        if kind in ('glob', 'rootglob'):  # find the non-glob prefix
             root = []
             for p in pat.split('/'):
                 if '[' in p or '{' in p or '*' in p or '?' in p:
@@ -1364,14 +1461,16 @@ def _patternrootsanddirs(kindpats):
             if pat == '.':
                 pat = ''
             d.append(pat)
-        else: # relglob, re, relre
+        else:  # relglob, re, relre
             r.append('')
     return r, d
+
 
 def _roots(kindpats):
     '''Returns root directories to match recursively from the given patterns.'''
     roots, dirs = _patternrootsanddirs(kindpats)
     return roots
+
 
 def _rootsdirsandparents(kindpats):
     '''Returns roots and exact directories from patterns.
@@ -1416,6 +1515,7 @@ def _rootsdirsandparents(kindpats):
     # 'dirs' to also be in 'parents', consider removing them before returning.
     return r, d, p
 
+
 def _explicitfiles(kindpats):
     '''Returns the potential explicit filenames from the patterns.
 
@@ -1429,6 +1529,7 @@ def _explicitfiles(kindpats):
     filable = [kp for kp in kindpats if kp[0] not in ('rootfilesin',)]
     return _roots(filable)
 
+
 def _prefix(kindpats):
     '''Whether all the patterns match a prefix (i.e. recursively)'''
     for kind, pat, source in kindpats:
@@ -1436,7 +1537,9 @@ def _prefix(kindpats):
             return False
     return True
 
+
 _commentre = None
+
 
 def readpatternfile(filepath, warn, sourceinfo=False):
     '''parse a pattern file, returning a list of
@@ -1464,9 +1567,7 @@ def readpatternfile(filepath, warn, sourceinfo=False):
 
     if rustmod is not None:
         result, warnings = rustmod.read_pattern_file(
-            filepath,
-            bool(warn),
-            sourceinfo,
+            filepath, bool(warn), sourceinfo,
         )
 
         for warning_params in warnings:
@@ -1496,7 +1597,7 @@ def readpatternfile(filepath, warn, sourceinfo=False):
             # remove comments prefixed by an even number of escapes
             m = _commentre.search(line)
             if m:
-                line = line[:m.end(1)]
+                line = line[: m.end(1)]
             # fixup properly escaped comments that survived the above
             line = line.replace("\\#", "#")
         line = line.rstrip()
@@ -1509,19 +1610,20 @@ def readpatternfile(filepath, warn, sourceinfo=False):
                 syntax = syntaxes[s]
             except KeyError:
                 if warn:
-                    warn(_("%s: ignoring invalid syntax '%s'\n") %
-                         (filepath, s))
+                    warn(
+                        _("%s: ignoring invalid syntax '%s'\n") % (filepath, s)
+                    )
             continue
 
         linesyntax = syntax
         for s, rels in syntaxes.iteritems():
             if line.startswith(rels):
                 linesyntax = rels
-                line = line[len(rels):]
+                line = line[len(rels) :]
                 break
-            elif line.startswith(s+':'):
+            elif line.startswith(s + ':'):
                 linesyntax = rels
-                line = line[len(s) + 1:]
+                line = line[len(s) + 1 :]
                 break
         if sourceinfo:
             patterns.append((linesyntax + line, lineno, line))

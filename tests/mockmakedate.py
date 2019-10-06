@@ -7,6 +7,7 @@ import os
 from mercurial import pycompat
 from mercurial.utils import dateutil
 
+
 def mockmakedate():
     filename = os.path.join(os.environ['TESTTMP'], 'testtime')
     try:
@@ -17,5 +18,6 @@ def mockmakedate():
     with open(filename, 'wb') as timef:
         timef.write(pycompat.bytestr(time))
     return (time, 0)
+
 
 dateutil.makedate = mockmakedate

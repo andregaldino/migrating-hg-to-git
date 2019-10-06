@@ -37,19 +37,24 @@ rustmod = policy.importrust(r'dirstate')
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
-_rangemask = 0x7fffffff
+_rangemask = 0x7FFFFFFF
 
 dirstatetuple = parsers.dirstatetuple
 
+
 class repocache(filecache):
     """filecache for files in .hg/"""
+
     def join(self, obj, fname):
         return obj._opener.join(fname)
 
+
 class rootcache(filecache):
     """filecache for files in the repository root"""
+
     def join(self, obj, fname):
         return obj._join(fname)
+
 
 def _getfsnow(vfs):
     '''Get "now" timestamp on filesystem'''
@@ -60,9 +65,9 @@ def _getfsnow(vfs):
         os.close(tmpfd)
         vfs.unlink(tmpname)
 
+
 @interfaceutil.implementer(intdirstate.idirstate)
 class dirstate(object):
-
     def __init__(self, opener, ui, root, validate, sparsematchfn):
         '''Create a new dirstate object.
 
@@ -183,6 +188,7 @@ class dirstate(object):
 
     def flagfunc(self, buildfallback):
         if self._checklink and self._checkexec:
+
             def f(x):
                 try:
                     st = os.lstat(self._join(x))
@@ -193,24 +199,29 @@ class dirstate(object):
                 except OSError:
                     pass
                 return ''
+
             return f
 
         fallback = buildfallback()
         if self._checklink:
+
             def f(x):
                 if os.path.islink(self._join(x)):
                     return 'l'
                 if 'x' in fallback(x):
                     return 'x'
                 return ''
+
             return f
         if self._checkexec:
+
             def f(x):
                 if 'l' in fallback(x):
                     return 'l'
                 if util.isexec(self._join(x)):
                     return 'x'
                 return ''
+
             return f
         else:
             return fallback
@@ -238,7 +249,7 @@ class dirstate(object):
         if not util.endswithsep(rootsep):
             rootsep += pycompat.ossep
         if cwd.startswith(rootsep):
-            return cwd[len(rootsep):]
+            return cwd[len(rootsep) :]
         else:
             # we're outside the repo. return an absolute path.
             return cwd
@@ -296,8 +307,10 @@ class dirstate(object):
         See localrepo.setparents()
         """
         if self._parentwriters == 0:
-            raise ValueError("cannot set dirstate parent outside of "
-                             "dirstate.parentchange context manager")
+            raise ValueError(
+                "cannot set dirstate parent outside of "
+                "dirstate.parentchange context manager"
+            )
 
         self._dirty = True
         oldp2 = self._pl[1]
@@ -307,7 +320,8 @@ class dirstate(object):
         copies = {}
         if oldp2 != nullid and p2 == nullid:
             candidatefiles = self._map.nonnormalset.union(
-                                self._map.otherparentset)
+                self._map.otherparentset
+            )
             for f in candidatefiles:
                 s = self._map.get(f)
                 if s is None:
@@ -339,7 +353,7 @@ class dirstate(object):
             ce = self._filecache['_branch']
             if ce:
                 ce.refresh()
-        except: # re-raises
+        except:  # re-raises
             f.discard()
             raise
 
@@ -382,8 +396,9 @@ class dirstate(object):
         if state == 'a' or oldstate == 'r':
             scmutil.checkfilename(f)
             if self._map.hastrackeddir(f):
-                raise error.Abort(_('directory %r already in dirstate') %
-                                  pycompat.bytestr(f))
+                raise error.Abort(
+                    _('directory %r already in dirstate') % pycompat.bytestr(f)
+                )
             # shadows
             for d in util.finddirs(f):
                 if self._map.hastrackeddir(d):
@@ -391,8 +406,9 @@ class dirstate(object):
                 entry = self._map.get(d)
                 if entry is not None and entry[0] != 'r':
                     raise error.Abort(
-                        _('file %r in dirstate clashes with %r') %
-                        (pycompat.bytestr(d), pycompat.bytestr(f)))
+                        _('file %r in dirstate clashes with %r')
+                        % (pycompat.bytestr(d), pycompat.bytestr(f))
+                    )
         self._dirty = True
         self._updatedfiles.add(f)
         self._map.addfile(f, oldstate, state, mode, size, mtime)
@@ -449,8 +465,9 @@ class dirstate(object):
     def otherparent(self, f):
         '''Mark as coming from the other parent, always dirty.'''
         if self._pl[1] == nullid:
-            raise error.Abort(_("setting %r to other parent "
-                               "only allowed in merges") % f)
+            raise error.Abort(
+                _("setting %r to other parent " "only allowed in merges") % f
+            )
         if f in self and self[f] == 'n':
             # merge-like
             self._addpath(f, 'm', 0, -2, -1)
@@ -473,9 +490,9 @@ class dirstate(object):
             entry = self._map.get(f)
             if entry is not None:
                 # backup the previous state
-                if entry[0] == 'm': # merge
+                if entry[0] == 'm':  # merge
                     size = -1
-                elif entry[0] == 'n' and entry[2] == -2: # other parent
+                elif entry[0] == 'n' and entry[2] == -2:  # other parent
                     size = -2
                     self._map.otherparentset.add(f)
         self._updatedfiles.add(f)
@@ -530,8 +547,9 @@ class dirstate(object):
             if isknown:
                 folded = path
             else:
-                folded = self._discoverpath(path, normed, ignoremissing, exists,
-                                            self._map.filefoldmap)
+                folded = self._discoverpath(
+                    path, normed, ignoremissing, exists, self._map.filefoldmap
+                )
         return folded
 
     def _normalize(self, path, isknown, ignoremissing=False, exists=None):
@@ -545,8 +563,9 @@ class dirstate(object):
             else:
                 # store discovered result in dirfoldmap so that future
                 # normalizefile calls don't start matching directories
-                folded = self._discoverpath(path, normed, ignoremissing, exists,
-                                            self._map.dirfoldmap)
+                folded = self._discoverpath(
+                    path, normed, ignoremissing, exists, self._map.dirfoldmap
+                )
         return folded
 
     def normalize(self, path, isknown=False, ignoremissing=False):
@@ -625,8 +644,12 @@ class dirstate(object):
             self._updatedfiles.clear()
 
             # delay writing in-memory changes out
-            tr.addfilegenerator('dirstate', (self._filename,),
-                                self._writedirstate, location='plain')
+            tr.addfilegenerator(
+                'dirstate',
+                (self._filename,),
+                self._writedirstate,
+                location='plain',
+            )
             return
 
         st = self._opener(filename, "w", atomictemp=True, checkambig=True)
@@ -661,14 +684,15 @@ class dirstate(object):
             items = self._map.iteritems()
             for f, e in items:
                 if e[0] == 'n' and e[3] == now:
-                    import time # to avoid useless import
+                    import time  # to avoid useless import
+
                     # rather than sleep n seconds, sleep until the next
                     # multiple of n seconds
                     clock = time.time()
                     start = int(clock) - (int(clock) % delaywrite)
                     end = start + delaywrite
                     time.sleep(end - clock)
-                    now = end # trust our estimate that the end is near now
+                    now = end  # trust our estimate that the end is near now
                     break
             # since the iterator is potentially not deleted,
             # delete the iterator to release the reference for the Rust
@@ -705,16 +729,18 @@ class dirstate(object):
         visited = set()
         while files:
             i = files.popleft()
-            patterns = matchmod.readpatternfile(i, self._ui.warn,
-                                                sourceinfo=True)
+            patterns = matchmod.readpatternfile(
+                i, self._ui.warn, sourceinfo=True
+            )
             for pattern, lineno, line in patterns:
                 kind, p = matchmod._patsplit(pattern, 'glob')
                 if kind == "subinclude":
                     if p not in visited:
                         files.append(p)
                     continue
-                m = matchmod.match(self._root, '', [], [pattern],
-                                   warn=self._ui.warn)
+                m = matchmod.match(
+                    self._root, '', [], [pattern], warn=self._ui.warn
+                )
                 if m(f):
                     return (i, lineno, line)
             visited.add(i)
@@ -807,10 +833,10 @@ class dirstate(object):
                     badfn(ff, badtype(kind))
                     if nf in dmap:
                         results[nf] = None
-            except OSError as inst: # nf not found on disk - it is dirstate only
-                if nf in dmap: # does it exactly match a missing file?
+            except OSError as inst:  # nf not found on disk - it is dirstate only
+                if nf in dmap:  # does it exactly match a missing file?
                     results[nf] = None
-                else: # does it match a missing directory?
+                else:  # does it match a missing directory?
                     if self._map.hasdir(nf):
                         if matchedir:
                             matchedir(nf)
@@ -852,8 +878,9 @@ class dirstate(object):
             for norm, paths in normed.iteritems():
                 if len(paths) > 1:
                     for path in paths:
-                        folded = self._discoverpath(path, norm, True, None,
-                                                    self._map.dirfoldmap)
+                        folded = self._discoverpath(
+                            path, norm, True, None, self._map.dirfoldmap
+                        )
                         if path != folded:
                             results[path] = None
 
@@ -897,10 +924,10 @@ class dirstate(object):
         join = self._join
 
         exact = skipstep3 = False
-        if match.isexact(): # match.exact
+        if match.isexact():  # match.exact
             exact = True
-            dirignore = util.always # skip step 2
-        elif match.prefix(): # match.match, no patterns
+            dirignore = util.always  # skip step 2
+        elif match.prefix():  # match.match, no patterns
             skipstep3 = True
 
         if not exact and self._checkcase:
@@ -934,8 +961,9 @@ class dirstate(object):
                     entries = listdir(join(nd), stat=True, skip=skip)
                 except OSError as inst:
                     if inst.errno in (errno.EACCES, errno.ENOENT):
-                        match.bad(self.pathto(nd),
-                                  encoding.strtolocal(inst.strerror))
+                        match.bad(
+                            self.pathto(nd), encoding.strtolocal(inst.strerror)
+                        )
                         continue
                     raise
                 for f, kind, st in entries:
@@ -953,8 +981,9 @@ class dirstate(object):
                         # even though f might be a directory, we're only
                         # interested in comparing it to files currently in the
                         # dmap -- therefore normalizefile is enough
-                        nf = normalizefile(nd and (nd + "/" + f) or f, True,
-                                           True)
+                        nf = normalizefile(
+                            nd and (nd + "/" + f) or f, True, True
+                        )
                     else:
                         nf = nd and (nd + "/" + f) or f
                     if nf not in results:
@@ -969,8 +998,9 @@ class dirstate(object):
                             if nf in dmap:
                                 if matchalways or matchfn(nf):
                                     results[nf] = st
-                            elif ((matchalways or matchfn(nf))
-                                  and not ignore(nf)):
+                            elif (matchalways or matchfn(nf)) and not ignore(
+                                nf
+                            ):
                                 # unknown file -- normalize if necessary
                                 if not alreadynormed:
                                     nf = normalize(nf, False, True)
@@ -1011,8 +1041,10 @@ class dirstate(object):
                     # different case, don't add one for this, since that would
                     # make it appear as if the file exists under both names
                     # on disk.
-                    if (normalizefile and
-                        normalizefile(nf, True, True) in results):
+                    if (
+                        normalizefile
+                        and normalizefile(nf, True, True) in results
+                    ):
                         results[nf] = None
                     # Report ignored items in the dmap as long as they are not
                     # under a symlink directory.
@@ -1059,7 +1091,7 @@ class dirstate(object):
         dmap.preload()
         dcontains = dmap.__contains__
         dget = dmap.__getitem__
-        ladd = lookup.append            # aka "unsure"
+        ladd = lookup.append  # aka "unsure"
         madd = modified.append
         aadd = added.append
         uadd = unknown.append
@@ -1078,8 +1110,9 @@ class dirstate(object):
         # - match.traversedir does something, because match.traversedir should
         #   be called for every dir in the working dir
         full = listclean or match.traversedir is not None
-        for fn, st in self.walk(match, subrepos, listunknown, listignored,
-                                full=full).iteritems():
+        for fn, st in self.walk(
+            match, subrepos, listunknown, listignored, full=full
+        ).iteritems():
             if not dcontains(fn):
                 if (listignored or mexact(fn)) and dirignore(fn):
                     if listignored:
@@ -1104,14 +1137,20 @@ class dirstate(object):
             if not st and state in "nma":
                 dadd(fn)
             elif state == 'n':
-                if (size >= 0 and
-                    ((size != st.st_size and size != st.st_size & _rangemask)
-                     or ((mode ^ st.st_mode) & 0o100 and checkexec))
-                    or size == -2 # other parent
-                    or fn in copymap):
+                if (
+                    size >= 0
+                    and (
+                        (size != st.st_size and size != st.st_size & _rangemask)
+                        or ((mode ^ st.st_mode) & 0o100 and checkexec)
+                    )
+                    or size == -2  # other parent
+                    or fn in copymap
+                ):
                     madd(fn)
-                elif (time != st[stat.ST_MTIME]
-                      and time != st[stat.ST_MTIME] & _rangemask):
+                elif (
+                    time != st[stat.ST_MTIME]
+                    and time != st[stat.ST_MTIME] & _rangemask
+                ):
                     ladd(fn)
                 elif st[stat.ST_MTIME] == lastnormaltime:
                     # fn may have just been marked as normal and it may have
@@ -1128,8 +1167,12 @@ class dirstate(object):
             elif state == 'r':
                 radd(fn)
 
-        return (lookup, scmutil.status(modified, added, removed, deleted,
-                                       unknown, ignored, clean))
+        return (
+            lookup,
+            scmutil.status(
+                modified, added, removed, deleted, unknown, ignored, clean
+            ),
+        )
 
     def matches(self, match):
         '''
@@ -1164,15 +1207,20 @@ class dirstate(object):
         # because the latter omits writing out if transaction is running.
         # output file will be used to create backup of dirstate at this point.
         if self._dirty or not self._opener.exists(filename):
-            self._writedirstate(self._opener(filename, "w", atomictemp=True,
-                                             checkambig=True))
+            self._writedirstate(
+                self._opener(filename, "w", atomictemp=True, checkambig=True)
+            )
 
         if tr:
             # ensure that subsequent tr.writepending returns True for
             # changes written out above, even if dirstate is never
             # changed after this
-            tr.addfilegenerator('dirstate', (self._filename,),
-                                self._writedirstate, location='plain')
+            tr.addfilegenerator(
+                'dirstate',
+                (self._filename,),
+                self._writedirstate,
+                location='plain',
+            )
 
             # ensure that pending file written above is unlinked at
             # failure, even if tr.writepending isn't invoked until the
@@ -1182,8 +1230,11 @@ class dirstate(object):
         self._opener.tryunlink(backupname)
         # hardlink backup is okay because _writedirstate is always called
         # with an "atomictemp=True" file.
-        util.copyfile(self._opener.join(filename),
-                      self._opener.join(backupname), hardlink=True)
+        util.copyfile(
+            self._opener.join(filename),
+            self._opener.join(backupname),
+            hardlink=True,
+        )
 
     def restorebackup(self, tr, backupname):
         '''Restore dirstate by backup file'''
@@ -1200,6 +1251,7 @@ class dirstate(object):
     def clearbackup(self, tr, backupname):
         '''Clear backup file'''
         self._opener.unlink(backupname)
+
 
 class dirstatemap(object):
     """Map encapsulating the dirstate's contents.
@@ -1376,15 +1428,16 @@ class dirstatemap(object):
         except AttributeError:
             pass
         else:
-            return makefilefoldmap(self._map, util.normcasespec,
-                                   util.normcasefallback)
+            return makefilefoldmap(
+                self._map, util.normcasespec, util.normcasefallback
+            )
 
         f = {}
         normcase = util.normcase
         for name, s in self._map.iteritems():
             if s[0] != 'r':
                 f[normcase(name)] = name
-        f['.'] = '.' # prevents useless util.fspath() invocation
+        f['.'] = '.'  # prevents useless util.fspath() invocation
         return f
 
     def hastrackeddir(self, d):
@@ -1413,8 +1466,9 @@ class dirstatemap(object):
         fp, mode = txnutil.trypending(self._root, self._opener, self._filename)
         if self._pendingmode is not None and self._pendingmode != mode:
             fp.close()
-            raise error.Abort(_('working directory state may be '
-                                'changed parallelly'))
+            raise error.Abort(
+                _('working directory state may be ' 'changed parallelly')
+            )
         self._pendingmode = mode
         return fp
 
@@ -1436,8 +1490,9 @@ class dirstatemap(object):
             elif l == 0:
                 self._parents = (nullid, nullid)
             else:
-                raise error.Abort(_('working directory state appears '
-                                    'damaged!'))
+                raise error.Abort(
+                    _('working directory state appears ' 'damaged!')
+                )
 
         return self._parents
 
@@ -1448,7 +1503,8 @@ class dirstatemap(object):
     def read(self):
         # ignore HG_PENDING because identity is used only for writing
         self.identity = util.filestat.frompath(
-            self._opener.join(self._filename))
+            self._opener.join(self._filename)
+        )
 
         try:
             fp = self._opendirstatefile()
@@ -1499,8 +1555,9 @@ class dirstatemap(object):
         self.get = self._map.get
 
     def write(self, st, now):
-        st.write(parsers.pack_dirstate(self._map, self.copymap,
-                                       self.parents(), now))
+        st.write(
+            parsers.pack_dirstate(self._map, self.copymap, self.parents(), now)
+        )
         st.close()
         self._dirtyparents = False
         self.nonnormalset, self.otherparentset = self.nonnormalentries()
@@ -1532,6 +1589,7 @@ class dirstatemap(object):
 
 
 if rustmod is not None:
+
     class dirstatemap(object):
         def __init__(self, ui, opener, root):
             self._ui = ui
@@ -1604,12 +1662,14 @@ if rustmod is not None:
         iteritems = items
 
         def _opendirstatefile(self):
-            fp, mode = txnutil.trypending(self._root, self._opener,
-                                          self._filename)
+            fp, mode = txnutil.trypending(
+                self._root, self._opener, self._filename
+            )
             if self._pendingmode is not None and self._pendingmode != mode:
                 fp.close()
-                raise error.Abort(_('working directory state may be '
-                                    'changed parallelly'))
+                raise error.Abort(
+                    _('working directory state may be ' 'changed parallelly')
+                )
             self._pendingmode = mode
             return fp
 
@@ -1633,15 +1693,17 @@ if rustmod is not None:
                 try:
                     self._parents = self._rustmap.parents(st)
                 except ValueError:
-                    raise error.Abort(_('working directory state appears '
-                                        'damaged!'))
+                    raise error.Abort(
+                        _('working directory state appears ' 'damaged!')
+                    )
 
             return self._parents
 
         def read(self):
             # ignore HG_PENDING because identity is used only for writing
             self.identity = util.filestat.frompath(
-                self._opener.join(self._filename))
+                self._opener.join(self._filename)
+            )
 
             try:
                 fp = self._opendirstatefile()
@@ -1675,11 +1737,11 @@ if rustmod is not None:
             return self._rustmap.filefoldmapasdict()
 
         def hastrackeddir(self, d):
-            self._dirs # Trigger Python's propertycache
+            self._dirs  # Trigger Python's propertycache
             return self._rustmap.hastrackeddir(d)
 
         def hasdir(self, d):
-            self._dirs # Trigger Python's propertycache
+            self._dirs  # Trigger Python's propertycache
             return self._rustmap.hasdir(d)
 
         @propertycache

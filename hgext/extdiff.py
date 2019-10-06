@@ -117,22 +117,20 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('extdiff', br'opts\..*',
-    default='',
-    generic=True,
+configitem(
+    'extdiff', br'opts\..*', default='', generic=True,
 )
 
-configitem('extdiff', br'gui\..*',
-    generic=True,
+configitem(
+    'extdiff', br'gui\..*', generic=True,
 )
 
-configitem('diff-tools', br'.*\.diffargs$',
-    default=None,
-    generic=True,
+configitem(
+    'diff-tools', br'.*\.diffargs$', default=None, generic=True,
 )
 
-configitem('diff-tools', br'.*\.gui$',
-    generic=True,
+configitem(
+    'diff-tools', br'.*\.gui$', generic=True,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -140,6 +138,7 @@ configitem('diff-tools', br'.*\.gui$',
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
+
 
 def snapshot(ui, repo, files, node, tmproot, listsubrepos):
     '''snapshot files as of some revision
@@ -155,18 +154,27 @@ def snapshot(ui, repo, files, node, tmproot, listsubrepos):
     fnsandstat = []
 
     if node is not None:
-        ui.note(_('making snapshot of %d files from rev %s\n') %
-                (len(files), short(node)))
+        ui.note(
+            _('making snapshot of %d files from rev %s\n')
+            % (len(files), short(node))
+        )
     else:
-        ui.note(_('making snapshot of %d files from working directory\n') %
-            (len(files)))
+        ui.note(
+            _('making snapshot of %d files from working directory\n')
+            % (len(files))
+        )
 
     if files:
         repo.ui.setconfig("ui", "archivemeta", False)
 
-        archival.archive(repo, base, node, 'files',
-                         match=scmutil.matchfiles(repo, files),
-                         subrepos=listsubrepos)
+        archival.archive(
+            repo,
+            base,
+            node,
+            'files',
+            match=scmutil.matchfiles(repo, files),
+            subrepos=listsubrepos,
+        )
 
         for fn in sorted(files):
             wfn = util.pconvert(fn)
@@ -178,15 +186,32 @@ def snapshot(ui, repo, files, node, tmproot, listsubrepos):
                 fnsandstat.append((dest, repo.wjoin(fn), os.lstat(dest)))
     return dirname, fnsandstat
 
-def formatcmdline(cmdline, repo_root, do3way,
-                  parent1, plabel1, parent2, plabel2, child, clabel):
+
+def formatcmdline(
+    cmdline,
+    repo_root,
+    do3way,
+    parent1,
+    plabel1,
+    parent2,
+    plabel2,
+    child,
+    clabel,
+):
     # Function to quote file/dir names in the argument string.
     # When not operating in 3-way mode, an empty string is
     # returned for parent2
-    replace = {'parent': parent1, 'parent1': parent1, 'parent2': parent2,
-               'plabel1': plabel1, 'plabel2': plabel2,
-               'child': child, 'clabel': clabel,
-               'root': repo_root}
+    replace = {
+        'parent': parent1,
+        'parent1': parent1,
+        'parent2': parent2,
+        'plabel1': plabel1,
+        'plabel2': plabel2,
+        'child': child,
+        'clabel': clabel,
+        'root': repo_root,
+    }
+
     def quote(match):
         pre = match.group(2)
         key = match.group(3)
@@ -195,11 +220,14 @@ def formatcmdline(cmdline, repo_root, do3way,
         return pre + procutil.shellquote(replace[key])
 
     # Match parent2 first, so 'parent1?' will match both parent1 and parent
-    regex = (br'''(['"]?)([^\s'"$]*)'''
-             br'\$(parent2|parent1?|child|plabel1|plabel2|clabel|root)\1')
+    regex = (
+        br'''(['"]?)([^\s'"$]*)'''
+        br'\$(parent2|parent1?|child|plabel1|plabel2|clabel|root)\1'
+    )
     if not do3way and not re.search(regex, cmdline):
         cmdline += ' $parent1 $child'
     return re.sub(regex, quote, cmdline)
+
 
 def _systembackground(cmd, environ=None, cwd=None):
     ''' like 'procutil.system', but returns the Popen object directly
@@ -207,16 +235,33 @@ def _systembackground(cmd, environ=None, cwd=None):
     '''
     cmd = procutil.quotecommand(cmd)
     env = procutil.shellenviron(environ)
-    proc = subprocess.Popen(procutil.tonativestr(cmd),
-                            shell=True, close_fds=procutil.closefds,
-                            env=procutil.tonativeenv(env),
-                            cwd=pycompat.rapply(procutil.tonativestr, cwd))
+    proc = subprocess.Popen(
+        procutil.tonativestr(cmd),
+        shell=True,
+        close_fds=procutil.closefds,
+        env=procutil.tonativeenv(env),
+        cwd=pycompat.rapply(procutil.tonativestr, cwd),
+    )
     return proc
 
-def _runperfilediff(cmdline, repo_root, ui, guitool, do3way, confirm,
-                    commonfiles, tmproot, dir1a, dir1b,
-                    dir2root, dir2,
-                    rev1a, rev1b, rev2):
+
+def _runperfilediff(
+    cmdline,
+    repo_root,
+    ui,
+    guitool,
+    do3way,
+    confirm,
+    commonfiles,
+    tmproot,
+    dir1a,
+    dir1b,
+    dir2root,
+    dir2,
+    rev1a,
+    rev1b,
+    rev2,
+):
     # Note that we need to sort the list of files because it was
     # built in an "unstable" way and it's annoying to get files in a
     # random order, especially when "confirm" mode is enabled.
@@ -241,31 +286,42 @@ def _runperfilediff(cmdline, repo_root, ui, guitool, do3way, confirm,
 
         if confirm:
             # Prompt before showing this diff
-            difffiles = _('diff %s (%d of %d)') % (commonfile, idx + 1,
-                                                   totalfiles)
-            responses = _('[Yns?]'
-                          '$$ &Yes, show diff'
-                          '$$ &No, skip this diff'
-                          '$$ &Skip remaining diffs'
-                          '$$ &? (display help)')
+            difffiles = _('diff %s (%d of %d)') % (
+                commonfile,
+                idx + 1,
+                totalfiles,
+            )
+            responses = _(
+                '[Yns?]'
+                '$$ &Yes, show diff'
+                '$$ &No, skip this diff'
+                '$$ &Skip remaining diffs'
+                '$$ &? (display help)'
+            )
             r = ui.promptchoice('%s %s' % (difffiles, responses))
-            if r == 3: # ?
+            if r == 3:  # ?
                 while r == 3:
                     for c, t in ui.extractchoices(responses)[1]:
                         ui.write('%s - %s\n' % (c, encoding.lower(t)))
                     r = ui.promptchoice('%s %s' % (difffiles, responses))
-            if r == 0: # yes
+            if r == 0:  # yes
                 pass
-            elif r == 1: # no
+            elif r == 1:  # no
                 continue
-            elif r == 2: # skip
+            elif r == 2:  # skip
                 break
 
         curcmdline = formatcmdline(
-            cmdline, repo_root, do3way=do3way,
-            parent1=path1a, plabel1=label1a,
-            parent2=path1b, plabel2=label1b,
-            child=path2, clabel=label2)
+            cmdline,
+            repo_root,
+            do3way=do3way,
+            parent1=path1a,
+            plabel1=label1a,
+            parent2=path1b,
+            plabel2=label1b,
+            child=path2,
+            clabel=label2,
+        )
 
         if confirm or not guitool:
             # Run the comparison program and wait for it to exit
@@ -274,15 +330,18 @@ def _runperfilediff(cmdline, repo_root, ui, guitool, do3way, confirm,
             # from the user between each invocation, or because, as far
             # as we know, the tool doesn't have a GUI, in which case
             # we can't run multiple CLI programs at the same time.
-            ui.debug('running %r in %s\n' %
-                     (pycompat.bytestr(curcmdline), tmproot))
+            ui.debug(
+                'running %r in %s\n' % (pycompat.bytestr(curcmdline), tmproot)
+            )
             ui.system(curcmdline, cwd=tmproot, blockedtag='extdiff')
         else:
             # Run the comparison program but don't wait, as we're
             # going to rapid-fire each file diff and then wait on
             # the whole group.
-            ui.debug('running %r in %s (backgrounded)\n' %
-                     (pycompat.bytestr(curcmdline), tmproot))
+            ui.debug(
+                'running %r in %s (backgrounded)\n'
+                % (pycompat.bytestr(curcmdline), tmproot)
+            )
             proc = _systembackground(curcmdline, cwd=tmproot)
             waitprocs.append(proc)
 
@@ -290,6 +349,7 @@ def _runperfilediff(cmdline, repo_root, ui, guitool, do3way, confirm,
         with ui.timeblockedsection('extdiff'):
             for proc in waitprocs:
                 proc.wait()
+
 
 def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
     '''Do the actual diff:
@@ -329,7 +389,7 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         if node1b == nullid:
             do3way = False
 
-    subrepos=opts.get('subrepos')
+    subrepos = opts.get('subrepos')
 
     matcher = scmutil.match(repo[node2], pats, opts)
 
@@ -341,12 +401,14 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         if node2 is None:
             raise error.Abort(_('--patch requires two revisions'))
     else:
-        mod_a, add_a, rem_a = map(set, repo.status(node1a, node2, matcher,
-                                                   listsubrepos=subrepos)[:3])
+        mod_a, add_a, rem_a = map(
+            set, repo.status(node1a, node2, matcher, listsubrepos=subrepos)[:3]
+        )
         if do3way:
-            mod_b, add_b, rem_b = map(set,
-                                      repo.status(node1b, node2, matcher,
-                                                  listsubrepos=subrepos)[:3])
+            mod_b, add_b, rem_b = map(
+                set,
+                repo.status(node1b, node2, matcher, listsubrepos=subrepos)[:3],
+            )
         else:
             mod_b, add_b, rem_b = set(), set(), set()
         modadd = mod_a | add_a | mod_b | add_b
@@ -359,13 +421,15 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         if not opts.get('patch'):
             # Always make a copy of node1a (and node1b, if applicable)
             dir1a_files = mod_a | rem_a | ((mod_b | add_b) - add_a)
-            dir1a = snapshot(ui, repo, dir1a_files, node1a, tmproot,
-                             subrepos)[0]
+            dir1a = snapshot(ui, repo, dir1a_files, node1a, tmproot, subrepos)[
+                0
+            ]
             rev1a = '@%d' % repo[node1a].rev()
             if do3way:
                 dir1b_files = mod_b | rem_b | ((mod_a | add_a) - add_b)
-                dir1b = snapshot(ui, repo, dir1b_files, node1b, tmproot,
-                                 subrepos)[0]
+                dir1b = snapshot(
+                    ui, repo, dir1b_files, node1b, tmproot, subrepos
+                )[0]
                 rev1b = '@%d' % repo[node1b].rev()
             else:
                 dir1b = None
@@ -380,12 +444,13 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
                 dir2 = snapshot(ui, repo, modadd, node2, tmproot, subrepos)[0]
                 rev2 = '@%d' % repo[node2].rev()
             elif len(common) > 1:
-                #we only actually need to get the files to copy back to
-                #the working dir in this case (because the other cases
-                #are: diffing 2 revisions or single file -- in which case
-                #the file is already directly passed to the diff tool).
-                dir2, fnsandstat = snapshot(ui, repo, modadd, None, tmproot,
-                                            subrepos)
+                # we only actually need to get the files to copy back to
+                # the working dir in this case (because the other cases
+                # are: diffing 2 revisions or single file -- in which case
+                # the file is already directly passed to the diff tool).
+                dir2, fnsandstat = snapshot(
+                    ui, repo, modadd, None, tmproot, subrepos
+                )
             else:
                 # This lets the diff tool open the changed file directly
                 dir2 = ''
@@ -413,10 +478,13 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         else:
             template = 'hg-%h.patch'
             with formatter.nullformatter(ui, 'extdiff', {}) as fm:
-                cmdutil.export(repo, [repo[node1a].rev(), repo[node2].rev()],
-                               fm,
-                               fntemplate=repo.vfs.reljoin(tmproot, template),
-                               match=matcher)
+                cmdutil.export(
+                    repo,
+                    [repo[node1a].rev(), repo[node2].rev()],
+                    fm,
+                    fntemplate=repo.vfs.reljoin(tmproot, template),
+                    match=matcher,
+                )
             label1a = cmdutil.makefilename(repo[node1a], template)
             label2 = cmdutil.makefilename(repo[node2], template)
             dir1a = repo.vfs.reljoin(tmproot, label1a)
@@ -428,21 +496,39 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         if not perfile:
             # Run the external tool on the 2 temp directories or the patches
             cmdline = formatcmdline(
-                cmdline, repo.root, do3way=do3way,
-                parent1=dir1a, plabel1=label1a,
-                parent2=dir1b, plabel2=label1b,
-                child=dir2, clabel=label2)
-            ui.debug('running %r in %s\n' % (pycompat.bytestr(cmdline),
-                                             tmproot))
+                cmdline,
+                repo.root,
+                do3way=do3way,
+                parent1=dir1a,
+                plabel1=label1a,
+                parent2=dir1b,
+                plabel2=label1b,
+                child=dir2,
+                clabel=label2,
+            )
+            ui.debug(
+                'running %r in %s\n' % (pycompat.bytestr(cmdline), tmproot)
+            )
             ui.system(cmdline, cwd=tmproot, blockedtag='extdiff')
         else:
             # Run the external tool once for each pair of files
             _runperfilediff(
-                cmdline, repo.root, ui, guitool=guitool,
-                do3way=do3way, confirm=confirm,
-                commonfiles=common, tmproot=tmproot, dir1a=dir1a, dir1b=dir1b,
-                dir2root=dir2root, dir2=dir2,
-                rev1a=rev1a, rev1b=rev1b, rev2=rev2)
+                cmdline,
+                repo.root,
+                ui,
+                guitool=guitool,
+                do3way=do3way,
+                confirm=confirm,
+                commonfiles=common,
+                tmproot=tmproot,
+                dir1a=dir1a,
+                dir1b=dir1b,
+                dir2root=dir2root,
+                dir2=dir2,
+                rev1a=rev1a,
+                rev1b=rev1b,
+                rev2=rev2,
+            )
 
         for copy_fn, working_fn, st in fnsandstat:
             cpstat = os.lstat(copy_fn)
@@ -453,11 +539,15 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
             # copyfile() carries over the permission, so the mode check could
             # be in an 'elif' branch, but for the case where the file has
             # changed without affecting mtime or size.
-            if (cpstat[stat.ST_MTIME] != st[stat.ST_MTIME]
+            if (
+                cpstat[stat.ST_MTIME] != st[stat.ST_MTIME]
                 or cpstat.st_size != st.st_size
-                or (cpstat.st_mode & 0o100) != (st.st_mode & 0o100)):
-                ui.debug('file changed while diffing. '
-                         'Overwriting: %s (src: %s)\n' % (working_fn, copy_fn))
+                or (cpstat.st_mode & 0o100) != (st.st_mode & 0o100)
+            ):
+                ui.debug(
+                    'file changed while diffing. '
+                    'Overwriting: %s (src: %s)\n' % (working_fn, copy_fn)
+                )
                 util.copyfile(copy_fn, working_fn)
 
         return 1
@@ -465,24 +555,39 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         ui.note(_('cleaning up temp directory\n'))
         shutil.rmtree(tmproot)
 
-extdiffopts = [
-    ('o', 'option', [],
-     _('pass option to comparison program'), _('OPT')),
-    ('r', 'rev', [], _('revision'), _('REV')),
-    ('c', 'change', '', _('change made by revision'), _('REV')),
-    ('', 'per-file', False,
-     _('compare each file instead of revision snapshots')),
-    ('', 'confirm', False,
-     _('prompt user before each external program invocation')),
-    ('', 'patch', None, _('compare patches for two revisions'))
-    ] + cmdutil.walkopts + cmdutil.subrepoopts
 
-@command('extdiff',
-    [('p', 'program', '', _('comparison program to run'), _('CMD')),
-     ] + extdiffopts,
+extdiffopts = (
+    [
+        ('o', 'option', [], _('pass option to comparison program'), _('OPT')),
+        ('r', 'rev', [], _('revision'), _('REV')),
+        ('c', 'change', '', _('change made by revision'), _('REV')),
+        (
+            '',
+            'per-file',
+            False,
+            _('compare each file instead of revision snapshots'),
+        ),
+        (
+            '',
+            'confirm',
+            False,
+            _('prompt user before each external program invocation'),
+        ),
+        ('', 'patch', None, _('compare patches for two revisions')),
+    ]
+    + cmdutil.walkopts
+    + cmdutil.subrepoopts
+)
+
+
+@command(
+    'extdiff',
+    [('p', 'program', '', _('comparison program to run'), _('CMD')),]
+    + extdiffopts,
     _('hg extdiff [OPT]... [FILE]...'),
     helpcategory=command.CATEGORY_FILE_CONTENTS,
-    inferrepo=True)
+    inferrepo=True,
+)
 def extdiff(ui, repo, *pats, **opts):
     '''use external program to diff repository (or selected files)
 
@@ -523,6 +628,7 @@ def extdiff(ui, repo, *pats, **opts):
     cmdline = ' '.join(map(procutil.shellquote, [program] + option))
     return dodiff(ui, repo, cmdline, pats, opts)
 
+
 class savedcmd(object):
     """use external program to diff repository (or selected files)
 
@@ -552,8 +658,10 @@ class savedcmd(object):
         options = ' '.join(map(procutil.shellquote, opts['option']))
         if options:
             options = ' ' + options
-        return dodiff(ui, repo, self._cmdline + options, pats, opts,
-                      guitool=self._isgui)
+        return dodiff(
+            ui, repo, self._cmdline + options, pats, opts, guitool=self._isgui
+        )
+
 
 def uisetup(ui):
     for cmd, path in ui.configitems('extdiff'):
@@ -594,9 +702,14 @@ def uisetup(ui):
                     if isgui is None:
                         isgui = ui.configbool(section, cmd + '.gui') or False
                     break
-        command(cmd, extdiffopts[:], _('hg %s [OPTION]... [FILE]...') % cmd,
-                helpcategory=command.CATEGORY_FILE_CONTENTS,
-                inferrepo=True)(savedcmd(path, cmdline, isgui))
+        command(
+            cmd,
+            extdiffopts[:],
+            _('hg %s [OPTION]... [FILE]...') % cmd,
+            helpcategory=command.CATEGORY_FILE_CONTENTS,
+            inferrepo=True,
+        )(savedcmd(path, cmdline, isgui))
+
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = [savedcmd]

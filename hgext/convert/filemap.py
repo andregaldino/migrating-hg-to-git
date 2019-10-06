@@ -14,7 +14,9 @@ from mercurial import (
     pycompat,
 )
 from . import common
+
 SKIPREV = common.SKIPREV
+
 
 def rpairs(path):
     '''Yield tuples with path split at '/', starting with the full path.
@@ -27,9 +29,10 @@ def rpairs(path):
     '''
     i = len(path)
     while i != -1:
-        yield path[:i], path[i + 1:]
+        yield path[:i], path[i + 1 :]
         i = path.rfind('/', 0, i)
     yield '.', path
+
 
 def normalize(path):
     ''' We use posixpath.normpath to support cross-platform path format.
@@ -37,6 +40,7 @@ def normalize(path):
     if path is None:
         return None
     return posixpath.normpath(path)
+
 
 class filemapper(object):
     '''Map and filter filenames when importing.
@@ -55,25 +59,31 @@ class filemapper(object):
 
     def parse(self, path):
         errs = 0
+
         def check(name, mapping, listname):
             if not name:
-                self.ui.warn(_('%s:%d: path to %s is missing\n') %
-                             (lex.infile, lex.lineno, listname))
+                self.ui.warn(
+                    _('%s:%d: path to %s is missing\n')
+                    % (lex.infile, lex.lineno, listname)
+                )
                 return 1
             if name in mapping:
-                self.ui.warn(_('%s:%d: %r already in %s list\n') %
-                             (lex.infile, lex.lineno, name, listname))
+                self.ui.warn(
+                    _('%s:%d: %r already in %s list\n')
+                    % (lex.infile, lex.lineno, name, listname)
+                )
                 return 1
-            if (name.startswith('/') or
-                name.endswith('/') or
-                '//' in name):
-                self.ui.warn(_('%s:%d: superfluous / in %s %r\n') %
-                             (lex.infile, lex.lineno, listname,
-                              pycompat.bytestr(name)))
+            if name.startswith('/') or name.endswith('/') or '//' in name:
+                self.ui.warn(
+                    _('%s:%d: superfluous / in %s %r\n')
+                    % (lex.infile, lex.lineno, listname, pycompat.bytestr(name))
+                )
                 return 1
             return 0
+
         lex = common.shlexer(
-            filepath=path, wordchars='!@#$%^&*()-=+[]{}|;:,./<>?')
+            filepath=path, wordchars='!@#$%^&*()-=+[]{}|;:,./<>?'
+        )
         cmd = lex.get_token()
         while cmd:
             if cmd == 'include':
@@ -93,8 +103,10 @@ class filemapper(object):
             elif cmd == 'source':
                 errs += self.parse(normalize(lex.get_token()))
             else:
-                self.ui.warn(_('%s:%d: unknown directive %r\n') %
-                             (lex.infile, lex.lineno, pycompat.bytestr(cmd)))
+                self.ui.warn(
+                    _('%s:%d: unknown directive %r\n')
+                    % (lex.infile, lex.lineno, pycompat.bytestr(cmd))
+                )
                 errs += 1
             cmd = lex.get_token()
         return errs
@@ -157,6 +169,7 @@ class filemapper(object):
     def active(self):
         return bool(self.include or self.exclude or self.rename)
 
+
 # This class does two additional things compared to a regular source:
 #
 # - Filter and rename files.  This is mostly wrapped by the filemapper
@@ -170,6 +183,7 @@ class filemapper(object):
 #   This set of revisions includes not only revisions that directly
 #   touch files we're interested in, but also merges that merge two
 #   or more interesting revisions.
+
 
 class filemap_source(common.converter_source):
     def __init__(self, ui, baseconverter, filemap):
@@ -189,8 +203,9 @@ class filemap_source(common.converter_source):
         self.children = {}
         self.seenchildren = {}
         # experimental config: convert.ignoreancestorcheck
-        self.ignoreancestorcheck = self.ui.configbool('convert',
-                                                      'ignoreancestorcheck')
+        self.ignoreancestorcheck = self.ui.configbool(
+            'convert', 'ignoreancestorcheck'
+        )
 
     def before(self):
         self.base.before()
@@ -250,7 +265,7 @@ class filemap_source(common.converter_source):
             try:
                 parents = self.origparents[rev]
             except KeyError:
-                continue # unknown revmap source
+                continue  # unknown revmap source
             if wanted:
                 self.mark_wanted(rev, parents)
             else:
@@ -348,8 +363,7 @@ class filemap_source(common.converter_source):
             if p in self.wantedancestors:
                 wrev.update(self.wantedancestors[p])
             else:
-                self.ui.warn(_('warning: %s parent %s is missing\n') %
-                             (rev, p))
+                self.ui.warn(_('warning: %s parent %s is missing\n') % (rev, p))
         wrev.add(rev)
         self.wantedancestors[rev] = wrev
 
@@ -382,10 +396,13 @@ class filemap_source(common.converter_source):
             if mp1 == SKIPREV or mp1 in knownparents:
                 continue
 
-            isancestor = (not self.ignoreancestorcheck and
-                          any(p2 for p2 in parents
-                              if p1 != p2 and mp1 != self.parentmap[p2]
-                                 and mp1 in self.wantedancestors[p2]))
+            isancestor = not self.ignoreancestorcheck and any(
+                p2
+                for p2 in parents
+                if p1 != p2
+                and mp1 != self.parentmap[p2]
+                and mp1 in self.wantedancestors[p2]
+            )
             if not isancestor and not hasbranchparent and len(parents) > 1:
                 # This could be expensive, avoid unnecessary calls.
                 if self._cachedcommit(p1).branch == branch:

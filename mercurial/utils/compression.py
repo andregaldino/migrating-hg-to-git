@@ -15,9 +15,7 @@ from .. import (
     i18n,
     pycompat,
 )
-from . import (
-    stringutil,
-)
+from . import stringutil
 
 safehasattr = pycompat.safehasattr
 
@@ -29,14 +27,17 @@ _ = i18n._
 SERVERROLE = 'server'
 CLIENTROLE = 'client'
 
-compewireprotosupport = collections.namedtuple(r'compenginewireprotosupport',
-                                               (r'name', r'serverpriority',
-                                                r'clientpriority'))
+compewireprotosupport = collections.namedtuple(
+    r'compenginewireprotosupport',
+    (r'name', r'serverpriority', r'clientpriority'),
+)
+
 
 class propertycache(object):
     def __init__(self, func):
         self.func = func
         self.name = func.__name__
+
     def __get__(self, obj, type=None):
         result = self.func(obj)
         self.cachevalue(obj, result)
@@ -45,6 +46,7 @@ class propertycache(object):
     def cachevalue(self, obj, value):
         # __dict__ assignment required to bypass __setattr__ (eg: repoview)
         obj.__dict__[self.name] = value
+
 
 class compressormanager(object):
     """Holds registrations of various compression engines.
@@ -56,6 +58,7 @@ class compressormanager(object):
     Compressors are registered against the global instance by calling its
     ``register()`` method.
     """
+
     def __init__(self):
         self._engines = {}
         # Bundle spec human name to engine name.
@@ -87,19 +90,23 @@ class compressormanager(object):
         name = engine.name()
 
         if name in self._engines:
-            raise error.Abort(_('compression engine %s already registered') %
-                              name)
+            raise error.Abort(
+                _('compression engine %s already registered') % name
+            )
 
         bundleinfo = engine.bundletype()
         if bundleinfo:
             bundlename, bundletype = bundleinfo
 
             if bundlename in self._bundlenames:
-                raise error.Abort(_('bundle name %s already registered') %
-                                  bundlename)
+                raise error.Abort(
+                    _('bundle name %s already registered') % bundlename
+                )
             if bundletype in self._bundletypes:
-                raise error.Abort(_('bundle type %s already registered by %s') %
-                                  (bundletype, self._bundletypes[bundletype]))
+                raise error.Abort(
+                    _('bundle type %s already registered by %s')
+                    % (bundletype, self._bundletypes[bundletype])
+                )
 
             # No external facing name declared.
             if bundlename:
@@ -111,16 +118,22 @@ class compressormanager(object):
         if wiresupport:
             wiretype = wiresupport.name
             if wiretype in self._wiretypes:
-                raise error.Abort(_('wire protocol compression %s already '
-                                    'registered by %s') %
-                                  (wiretype, self._wiretypes[wiretype]))
+                raise error.Abort(
+                    _(
+                        'wire protocol compression %s already '
+                        'registered by %s'
+                    )
+                    % (wiretype, self._wiretypes[wiretype])
+                )
 
             self._wiretypes[wiretype] = name
 
         revlogheader = engine.revlogheader()
         if revlogheader and revlogheader in self._revlogheaders:
-            raise error.Abort(_('revlog header %s already registered by %s') %
-                              (revlogheader, self._revlogheaders[revlogheader]))
+            raise error.Abort(
+                _('revlog header %s already registered by %s')
+                % (revlogheader, self._revlogheaders[revlogheader])
+            )
 
         if revlogheader:
             self._revlogheaders[revlogheader] = name
@@ -144,8 +157,9 @@ class compressormanager(object):
         """
         engine = self._engines[self._bundlenames[bundlename]]
         if not engine.available():
-            raise error.Abort(_('compression engine %s could not be loaded') %
-                              engine.name())
+            raise error.Abort(
+                _('compression engine %s could not be loaded') % engine.name()
+            )
         return engine
 
     def forbundletype(self, bundletype):
@@ -157,8 +171,9 @@ class compressormanager(object):
         """
         engine = self._engines[self._bundletypes[bundletype]]
         if not engine.available():
-            raise error.Abort(_('compression engine %s could not be loaded') %
-                              engine.name())
+            raise error.Abort(
+                _('compression engine %s could not be loaded') % engine.name()
+            )
         return engine
 
     def supportedwireengines(self, role, onlyavailable=True):
@@ -189,8 +204,9 @@ class compressormanager(object):
     def forwiretype(self, wiretype):
         engine = self._engines[self._wiretypes[wiretype]]
         if not engine.available():
-            raise error.Abort(_('compression engine %s could not be loaded') %
-                              engine.name())
+            raise error.Abort(
+                _('compression engine %s could not be loaded') % engine.name()
+            )
         return engine
 
     def forrevlogheader(self, header):
@@ -200,13 +216,16 @@ class compressormanager(object):
         """
         return self._engines[self._revlogheaders[header]]
 
+
 compengines = compressormanager()
+
 
 class compressionengine(object):
     """Base class for compression engines.
 
     Compression engines must implement the interface defined by this class.
     """
+
     def name(self):
         """Returns the name of the compression engine.
 
@@ -319,6 +338,7 @@ class compressionengine(object):
         """
         raise NotImplementedError()
 
+
 class _CompressedStreamReader(object):
     def __init__(self, fh):
         if safehasattr(fh, 'unbufferedread'):
@@ -338,13 +358,13 @@ class _CompressedStreamReader(object):
             while self._pending:
                 if len(self._pending[0]) > l + self._pos:
                     newbuf = self._pending[0]
-                    buf.append(newbuf[self._pos:self._pos + l])
+                    buf.append(newbuf[self._pos : self._pos + l])
                     self._pos += l
                     return ''.join(buf)
 
                 newbuf = self._pending.pop(0)
                 if self._pos:
-                    buf.append(newbuf[self._pos:])
+                    buf.append(newbuf[self._pos :])
                     l -= len(newbuf) - self._pos
                 else:
                     buf.append(newbuf)
@@ -359,10 +379,12 @@ class _CompressedStreamReader(object):
                 # No progress and no new data, bail out
                 return ''.join(buf)
 
+
 class _GzipCompressedStreamReader(_CompressedStreamReader):
     def __init__(self, fh):
         super(_GzipCompressedStreamReader, self).__init__(fh)
         self._decompobj = zlib.decompressobj()
+
     def _decompress(self, chunk):
         newbuf = self._decompobj.decompress(chunk)
         if newbuf:
@@ -376,10 +398,12 @@ class _GzipCompressedStreamReader(_CompressedStreamReader):
         except zlib.error:
             pass
 
+
 class _BZ2CompressedStreamReader(_CompressedStreamReader):
     def __init__(self, fh):
         super(_BZ2CompressedStreamReader, self).__init__(fh)
         self._decompobj = bz2.BZ2Decompressor()
+
     def _decompress(self, chunk):
         newbuf = self._decompobj.decompress(chunk)
         if newbuf:
@@ -394,6 +418,7 @@ class _BZ2CompressedStreamReader(_CompressedStreamReader):
         except EOFError:
             self._eof = True
 
+
 class _TruncatedBZ2CompressedStreamReader(_BZ2CompressedStreamReader):
     def __init__(self, fh):
         super(_TruncatedBZ2CompressedStreamReader, self).__init__(fh)
@@ -401,11 +426,13 @@ class _TruncatedBZ2CompressedStreamReader(_BZ2CompressedStreamReader):
         if newbuf:
             self._pending.append(newbuf)
 
+
 class _ZstdCompressedStreamReader(_CompressedStreamReader):
     def __init__(self, fh, zstd):
         super(_ZstdCompressedStreamReader, self).__init__(fh)
         self._zstd = zstd
         self._decompobj = zstd.ZstdDecompressor().decompressobj()
+
     def _decompress(self, chunk):
         newbuf = self._decompobj.decompress(chunk)
         if newbuf:
@@ -419,6 +446,7 @@ class _ZstdCompressedStreamReader(_CompressedStreamReader):
                     break
         except self._zstd.ZstdError:
             self._eof = True
+
 
 class _zlibengine(compressionengine):
     def name(self):
@@ -456,7 +484,6 @@ class _zlibengine(compressionengine):
         return _GzipCompressedStreamReader(fh)
 
     class zlibrevlogcompressor(object):
-
         def __init__(self, level=None):
             self._level = level
 
@@ -488,7 +515,7 @@ class _zlibengine(compressionengine):
                 parts = []
                 pos = 0
                 while pos < insize:
-                    pos2 = pos + 2**20
+                    pos2 = pos + 2 ** 20
                     parts.append(z.compress(data[pos:pos2]))
                     pos = pos2
                 parts.append(z.flush())
@@ -501,8 +528,10 @@ class _zlibengine(compressionengine):
             try:
                 return zlib.decompress(data)
             except zlib.error as e:
-                raise error.StorageError(_('revlog decompress error: %s') %
-                                         stringutil.forcebytestr(e))
+                raise error.StorageError(
+                    _('revlog decompress error: %s')
+                    % stringutil.forcebytestr(e)
+                )
 
     def revlogcompressor(self, opts=None):
         level = None
@@ -510,7 +539,9 @@ class _zlibengine(compressionengine):
             level = opts.get('zlib.level')
         return self.zlibrevlogcompressor(level)
 
+
 compengines.register(_zlibengine())
+
 
 class _bz2engine(compressionengine):
     def name(self):
@@ -548,7 +579,9 @@ class _bz2engine(compressionengine):
     def decompressorreader(self, fh):
         return _BZ2CompressedStreamReader(fh)
 
+
 compengines.register(_bz2engine())
+
 
 class _truncatedbz2engine(compressionengine):
     def name(self):
@@ -562,7 +595,9 @@ class _truncatedbz2engine(compressionengine):
     def decompressorreader(self, fh):
         return _TruncatedBZ2CompressedStreamReader(fh)
 
+
 compengines.register(_truncatedbz2engine())
+
 
 class _noopengine(compressionengine):
     def name(self):
@@ -597,7 +632,9 @@ class _noopengine(compressionengine):
     def revlogcompressor(self, opts=None):
         return self.nooprevlogcompressor()
 
+
 compengines.register(_noopengine())
+
 
 class _zstdengine(compressionengine):
     def name(self):
@@ -609,6 +646,7 @@ class _zstdengine(compressionengine):
         # until first access.
         try:
             from .. import zstd
+
             # Force delayed import.
             zstd.__version__
             return zstd
@@ -716,8 +754,10 @@ class _zstdengine(compressionengine):
 
                 return ''.join(chunks)
             except Exception as e:
-                raise error.StorageError(_('revlog decompress error: %s') %
-                                         stringutil.forcebytestr(e))
+                raise error.StorageError(
+                    _('revlog decompress error: %s')
+                    % stringutil.forcebytestr(e)
+                )
 
     def revlogcompressor(self, opts=None):
         opts = opts or {}
@@ -728,7 +768,9 @@ class _zstdengine(compressionengine):
             level = 3
         return self.zstdrevlogcompressor(self._module, level=level)
 
+
 compengines.register(_zstdengine())
+
 
 def bundlecompressiontopics():
     """Obtains a list of available bundle compressions for use in help."""
@@ -760,5 +802,6 @@ def bundlecompressiontopics():
         items[bt[0]] = value
 
     return items
+
 
 i18nfunctions = bundlecompressiontopics().values()

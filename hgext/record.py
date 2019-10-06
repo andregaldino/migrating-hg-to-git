@@ -30,12 +30,14 @@ command = registrar.command(cmdtable)
 testedwith = 'ships-with-hg-core'
 
 
-@command("record",
-         # same options as commit + white space diff options
-        [c for c in commands.table['commit|ci'][1][:]
-            if c[1] != "interactive"] + cmdutil.diffwsopts,
-          _('hg record [OPTION]... [FILE]...'),
-        helpcategory=command.CATEGORY_COMMITTING)
+@command(
+    "record",
+    # same options as commit + white space diff options
+    [c for c in commands.table['commit|ci'][1][:] if c[1] != "interactive"]
+    + cmdutil.diffwsopts,
+    _('hg record [OPTION]... [FILE]...'),
+    helpcategory=command.CATEGORY_COMMITTING,
+)
 def record(ui, repo, *pats, **opts):
     '''interactively select changes to commit
 
@@ -66,13 +68,15 @@ def record(ui, repo, *pats, **opts):
     This command is not available when committing a merge.'''
 
     if not ui.interactive():
-        raise error.Abort(_('running non-interactively, use %s instead') %
-                         'commit')
+        raise error.Abort(
+            _('running non-interactively, use %s instead') % 'commit'
+        )
 
     opts[r"interactive"] = True
     overrides = {('experimental', 'crecord'): False}
     with ui.configoverride(overrides, 'record'):
         return commands.commit(ui, repo, *pats, **opts)
+
 
 def qrefresh(origfn, ui, repo, *pats, **opts):
     if not opts[r'interactive']:
@@ -88,15 +92,19 @@ def qrefresh(origfn, ui, repo, *pats, **opts):
         mq.refresh(ui, repo, **opts)
 
     # backup all changed files
-    cmdutil.dorecord(ui, repo, committomq, None, True,
-                    cmdutil.recordfilter, *pats, **opts)
+    cmdutil.dorecord(
+        ui, repo, committomq, None, True, cmdutil.recordfilter, *pats, **opts
+    )
+
 
 # This command registration is replaced during uisetup().
-@command('qrecord',
+@command(
+    'qrecord',
     [],
     _('hg qrecord [OPTION]... PATCH [FILE]...'),
     helpcategory=command.CATEGORY_COMMITTING,
-    inferrepo=True)
+    inferrepo=True,
+)
 def qrecord(ui, repo, patch, *pats, **opts):
     '''interactively record a new patch
 
@@ -104,6 +112,7 @@ def qrecord(ui, repo, patch, *pats, **opts):
     usage.
     '''
     return _qrecord('qnew', ui, repo, patch, *pats, **opts)
+
 
 def _qrecord(cmdsuggest, ui, repo, patch, *pats, **opts):
     try:
@@ -120,8 +129,17 @@ def _qrecord(cmdsuggest, ui, repo, patch, *pats, **opts):
     overrides = {('experimental', 'crecord'): False}
     with ui.configoverride(overrides, 'record'):
         cmdutil.checkunfinished(repo)
-        cmdutil.dorecord(ui, repo, committomq, cmdsuggest, False,
-                         cmdutil.recordfilter, *pats, **opts)
+        cmdutil.dorecord(
+            ui,
+            repo,
+            committomq,
+            cmdsuggest,
+            False,
+            cmdutil.recordfilter,
+            *pats,
+            **opts
+        )
+
 
 def qnew(origfn, ui, repo, patch, *args, **opts):
     if opts[r'interactive']:
@@ -140,11 +158,17 @@ def uisetup(ui):
         # same options as qnew, but copy them so we don't get
         # -i/--interactive for qrecord and add white space diff options
         mq.cmdtable['qnew'][1][:] + cmdutil.diffwsopts,
-        _('hg qrecord [OPTION]... PATCH [FILE]...'))
+        _('hg qrecord [OPTION]... PATCH [FILE]...'),
+    )
 
     _wrapcmd('qnew', mq.cmdtable, qnew, _("interactively record a new patch"))
-    _wrapcmd('qrefresh', mq.cmdtable, qrefresh,
-             _("interactively select changes to refresh"))
+    _wrapcmd(
+        'qrefresh',
+        mq.cmdtable,
+        qrefresh,
+        _("interactively select changes to refresh"),
+    )
+
 
 def _wrapcmd(cmd, table, wrapfn, msg):
     entry = extensions.wrapcommand(table, cmd, wrapfn)

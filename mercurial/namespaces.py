@@ -7,6 +7,7 @@ from . import (
     util,
 )
 
+
 def tolist(val):
     """
     a convenience method to return an empty list instead of None
@@ -15,6 +16,7 @@ def tolist(val):
         return []
     else:
         return [val]
+
 
 class namespaces(object):
     """provides an interface to register and operate on multiple namespaces. See
@@ -33,32 +35,44 @@ class namespaces(object):
         bmknames = lambda repo: repo._bookmarks.keys()
         bmknamemap = lambda repo, name: tolist(repo._bookmarks.get(name))
         bmknodemap = lambda repo, node: repo.nodebookmarks(node)
-        n = namespace("bookmarks", templatename="bookmark",
-                      logfmt=columns['bookmark'],
-                      listnames=bmknames,
-                      namemap=bmknamemap, nodemap=bmknodemap,
-                      builtin=True)
+        n = namespace(
+            "bookmarks",
+            templatename="bookmark",
+            logfmt=columns['bookmark'],
+            listnames=bmknames,
+            namemap=bmknamemap,
+            nodemap=bmknodemap,
+            builtin=True,
+        )
         self.addnamespace(n)
 
         tagnames = lambda repo: [t for t, n in repo.tagslist()]
         tagnamemap = lambda repo, name: tolist(repo._tagscache.tags.get(name))
         tagnodemap = lambda repo, node: repo.nodetags(node)
-        n = namespace("tags", templatename="tag",
-                      logfmt=columns['tag'],
-                      listnames=tagnames,
-                      namemap=tagnamemap, nodemap=tagnodemap,
-                      deprecated={'tip'},
-                      builtin=True)
+        n = namespace(
+            "tags",
+            templatename="tag",
+            logfmt=columns['tag'],
+            listnames=tagnames,
+            namemap=tagnamemap,
+            nodemap=tagnodemap,
+            deprecated={'tip'},
+            builtin=True,
+        )
         self.addnamespace(n)
 
         bnames = lambda repo: repo.branchmap().keys()
         bnamemap = lambda repo, name: tolist(repo.branchtip(name, True))
         bnodemap = lambda repo, node: [repo[node].branch()]
-        n = namespace("branches", templatename="branch",
-                      logfmt=columns['branch'],
-                      listnames=bnames,
-                      namemap=bnamemap, nodemap=bnodemap,
-                      builtin=True)
+        n = namespace(
+            "branches",
+            templatename="branch",
+            logfmt=columns['branch'],
+            listnames=bnames,
+            namemap=bnamemap,
+            nodemap=bnodemap,
+            builtin=True,
+        )
         self.addnamespace(n)
 
     def __getitem__(self, namespace):
@@ -89,6 +103,7 @@ class namespaces(object):
         # we only generate a template keyword if one does not already exist
         if namespace.name not in templatekw.keywords:
             templatekeyword = registrar.templatekeyword(templatekw.keywords)
+
             @templatekeyword(namespace.name, requires={'repo', 'ctx'})
             def generatekw(context, mapping):
                 return templatekw.shownames(context, mapping, namespace.name)
@@ -106,6 +121,7 @@ class namespaces(object):
             if n:
                 return n
         raise KeyError(_('no such name: %s') % name)
+
 
 class namespace(object):
     """provides an interface to a namespace
@@ -135,9 +151,20 @@ class namespace(object):
                  Mercurial.
     """
 
-    def __init__(self, name, templatename=None, logname=None, colorname=None,
-                 logfmt=None, listnames=None, namemap=None, nodemap=None,
-                 deprecated=None, builtin=False, singlenode=None):
+    def __init__(
+        self,
+        name,
+        templatename=None,
+        logname=None,
+        colorname=None,
+        logfmt=None,
+        listnames=None,
+        namemap=None,
+        nodemap=None,
+        deprecated=None,
+        builtin=False,
+        singlenode=None,
+    ):
         """create a namespace
 
         name: the namespace to be registered (in plural form)

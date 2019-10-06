@@ -67,24 +67,27 @@ from .utils import (
     stringutil,
 )
 
+
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
     return node.hex(hashlib.sha1(stringutil.pprint(items)).digest())
 
+
 # sensitive config sections affecting confighash
 _configsections = [
     'alias',  # affects global state commands.table
-    'eol',    # uses setconfig('eol', ...)
+    'eol',  # uses setconfig('eol', ...)
     'extdiff',  # uisetup will register new commands
     'extensions',
 ]
 
 _configsectionitems = [
-    ('commands', 'show.aliasprefix'), # show.py reads it in extsetup
+    ('commands', 'show.aliasprefix'),  # show.py reads it in extsetup
 ]
 
 # sensitive environment variables affecting confighash
-_envre = re.compile(br'''\A(?:
+_envre = re.compile(
+    br'''\A(?:
                     CHGHG
                     |HG(?:DEMANDIMPORT|EMITWARNINGS|MODULEPOLICY|PROF|RCPATH)?
                     |HG(?:ENCODING|PLAIN).*
@@ -95,7 +98,10 @@ _envre = re.compile(br'''\A(?:
                     |PYTHON.*
                     |TERM(?:INFO)?
                     |TZ
-                    )\Z''', re.X)
+                    )\Z''',
+    re.X,
+)
+
 
 def _confighash(ui):
     """return a quick hash for detecting config/env changes
@@ -119,10 +125,14 @@ def _confighash(ui):
         ignored = {'HG'}
     else:
         ignored = set()
-    envitems = [(k, v) for k, v in encoding.environ.iteritems()
-                if _envre.match(k) and k not in ignored]
+    envitems = [
+        (k, v)
+        for k, v in encoding.environ.iteritems()
+        if _envre.match(k) and k not in ignored
+    ]
     envhash = _hashlist(sorted(envitems))
     return sectionhash[:6] + envhash[:6]
+
 
 def _getmtimepaths(ui):
     """get a list of paths that should be checked to detect change
@@ -135,6 +145,7 @@ def _getmtimepaths(ui):
     modules = [m for n, m in extensions.extensions(ui)]
     try:
         from . import __version__
+
         modules.append(__version__)
     except ImportError:
         pass
@@ -147,6 +158,7 @@ def _getmtimepaths(ui):
         except TypeError:
             pass
     return sorted(set(files))
+
 
 def _mtimehash(paths):
     """return a quick hash for detecting file changes
@@ -165,6 +177,7 @@ def _mtimehash(paths):
     extensions after importing them (there is imp.find_module but that faces
     race conditions). We need to calculate confighash without importing.
     """
+
     def trystat(path):
         try:
             st = os.stat(path)
@@ -172,10 +185,13 @@ def _mtimehash(paths):
         except OSError:
             # could be ENOENT, EPERM etc. not fatal in any case
             pass
+
     return _hashlist(pycompat.maplist(trystat, paths))[:12]
+
 
 class hashstate(object):
     """a structure storing confighash, mtimehash, paths used for mtimehash"""
+
     def __init__(self, confighash, mtimehash, mtimepaths):
         self.confighash = confighash
         self.mtimehash = mtimehash
@@ -187,9 +203,14 @@ class hashstate(object):
             mtimepaths = _getmtimepaths(ui)
         confighash = _confighash(ui)
         mtimehash = _mtimehash(mtimepaths)
-        ui.log('cmdserver', 'confighash = %s mtimehash = %s\n',
-               confighash, mtimehash)
+        ui.log(
+            'cmdserver',
+            'confighash = %s mtimehash = %s\n',
+            confighash,
+            mtimehash,
+        )
         return hashstate(confighash, mtimehash, mtimepaths)
+
 
 def _newchgui(srcui, csystem, attachio):
     class chgui(srcui.__class__):
@@ -206,20 +227,27 @@ def _newchgui(srcui, csystem, attachio):
             #  b. or stdout is redirected by protectfinout(),
             # because the chg client is not aware of these situations and
             # will behave differently (i.e. write to stdout).
-            if (out is not self.fout
+            if (
+                out is not self.fout
                 or not util.safehasattr(self.fout, 'fileno')
                 or self.fout.fileno() != procutil.stdout.fileno()
-                or self._finoutredirected):
+                or self._finoutredirected
+            ):
                 return procutil.system(cmd, environ=environ, cwd=cwd, out=out)
             self.flush()
             return self._csystem(cmd, procutil.shellenviron(environ), cwd)
 
         def _runpager(self, cmd, env=None):
-            self._csystem(cmd, procutil.shellenviron(env), type='pager',
-                          cmdtable={'attachio': attachio})
+            self._csystem(
+                cmd,
+                procutil.shellenviron(env),
+                type='pager',
+                cmdtable={'attachio': attachio},
+            )
             return True
 
     return chgui(srcui)
+
 
 def _loadnewui(srcui, args, cdebug):
     from . import dispatch  # avoid cycle
@@ -256,6 +284,7 @@ def _loadnewui(srcui, args, cdebug):
 
     return (newui, newlui)
 
+
 class channeledsystem(object):
     """Propagate ui.system() request in the following format:
 
@@ -276,6 +305,7 @@ class channeledsystem(object):
     and executes it defined by cmdtable, or exits the loop if the command name
     is empty.
     """
+
     def __init__(self, in_, out, channel):
         self.in_ = in_
         self.out = out
@@ -291,10 +321,10 @@ class channeledsystem(object):
 
         if type == 'system':
             length = self.in_.read(4)
-            length, = struct.unpack('>I', length)
+            (length,) = struct.unpack('>I', length)
             if length != 4:
                 raise error.Abort(_('invalid response'))
-            rc, = struct.unpack('>i', self.in_.read(4))
+            (rc,) = struct.unpack('>i', self.in_.read(4))
             return rc
         elif type == 'pager':
             while True:
@@ -308,6 +338,7 @@ class channeledsystem(object):
         else:
             raise error.ProgrammingError('invalid S channel type: %s' % type)
 
+
 _iochannels = [
     # server.ch, ui.fp, mode
     ('cin', 'fin', r'rb'),
@@ -315,12 +346,18 @@ _iochannels = [
     ('cerr', 'ferr', r'wb'),
 ]
 
+
 class chgcmdserver(commandserver.server):
-    def __init__(self, ui, repo, fin, fout, sock, prereposetups,
-                 hashstate, baseaddress):
+    def __init__(
+        self, ui, repo, fin, fout, sock, prereposetups, hashstate, baseaddress
+    ):
         super(chgcmdserver, self).__init__(
             _newchgui(ui, channeledsystem(fin, fout, 'S'), self.attachio),
-            repo, fin, fout, prereposetups)
+            repo,
+            fin,
+            fout,
+            prereposetups,
+        )
         self.clientsock = sock
         self._ioattached = False
         self._oldios = []  # original (self.ch, ui.fp, fd) before "attachio"
@@ -512,23 +549,31 @@ class chgcmdserver(commandserver.server):
         encoding.environ.update(newenv)
 
     capabilities = commandserver.server.capabilities.copy()
-    capabilities.update({'attachio': attachio,
-                         'chdir': chdir,
-                         'runcommand': runcommand,
-                         'setenv': setenv,
-                         'setumask': setumask,
-                         'setumask2': setumask2})
+    capabilities.update(
+        {
+            'attachio': attachio,
+            'chdir': chdir,
+            'runcommand': runcommand,
+            'setenv': setenv,
+            'setumask': setumask,
+            'setumask2': setumask2,
+        }
+    )
 
     if util.safehasattr(procutil, 'setprocname'):
+
         def setprocname(self):
             """Change process title"""
             name = self._readstr()
             self.ui.log('chgserver', 'setprocname: %r\n', name)
             procutil.setprocname(name)
+
         capabilities['setprocname'] = setprocname
+
 
 def _tempaddress(address):
     return '%s.%d.tmp' % (address, os.getpid())
+
 
 def _hashaddress(address, hashstr):
     # if the basename of address contains '.', use only the left part. this
@@ -537,6 +582,7 @@ def _hashaddress(address, hashstr):
     dirname, basename = os.path.split(address)
     basename = basename.split('.', 1)[0]
     return '%s-%s' % (os.path.join(dirname, basename), hashstr)
+
 
 class chgunixservicehandler(object):
     """Set of operations for chg services"""
@@ -594,8 +640,10 @@ class chgunixservicehandler(object):
     def _issocketowner(self):
         try:
             st = os.stat(self._realaddress)
-            return (st.st_ino == self._socketstat.st_ino and
-                    st[stat.ST_MTIME] == self._socketstat[stat.ST_MTIME])
+            return (
+                st.st_ino == self._socketstat.st_ino
+                and st[stat.ST_MTIME] == self._socketstat[stat.ST_MTIME]
+            )
         except OSError:
             return False
 
@@ -610,8 +658,9 @@ class chgunixservicehandler(object):
 
     def shouldexit(self):
         if not self._issocketowner():
-            self.ui.log(b'chgserver', b'%s is not owned, exiting.\n',
-                        self._realaddress)
+            self.ui.log(
+                b'chgserver', b'%s is not owned, exiting.\n', self._realaddress
+            )
             return True
         if time.time() - self._lastactive > self._idletimeout:
             self.ui.log(b'chgserver', b'being idle too long. exiting.\n')
@@ -622,8 +671,17 @@ class chgunixservicehandler(object):
         self._lastactive = time.time()
 
     def createcmdserver(self, repo, conn, fin, fout, prereposetups):
-        return chgcmdserver(self.ui, repo, fin, fout, conn, prereposetups,
-                            self._hashstate, self._baseaddress)
+        return chgcmdserver(
+            self.ui,
+            repo,
+            fin,
+            fout,
+            conn,
+            prereposetups,
+            self._hashstate,
+            self._baseaddress,
+        )
+
 
 def chgunixservice(ui, repo, opts):
     # CHGINTERNALMARK is set by chg client. It is an indication of things are

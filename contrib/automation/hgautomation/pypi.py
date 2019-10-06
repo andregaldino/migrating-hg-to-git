@@ -7,12 +7,8 @@
 
 # no-check-code because Python 3 native.
 
-from twine.commands.upload import (
-    upload as twine_upload,
-)
-from twine.settings import (
-    Settings,
-)
+from twine.commands.upload import upload as twine_upload
+from twine.settings import Settings
 
 
 def upload(paths):

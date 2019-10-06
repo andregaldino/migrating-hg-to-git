@@ -18,6 +18,7 @@ from mercurial.utils import dateutil
 
 try:
     from mercurial import rustext
+
     rustext.__name__  # force actual import (see hgdemandimport)
 except ImportError:
     rustext = None
@@ -25,12 +26,13 @@ except ImportError:
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem(b'fakedirstatewritetime', b'fakenow',
-    default=None,
+configitem(
+    b'fakedirstatewritetime', b'fakenow', default=None,
 )
 
 parsers = policy.importmod(r'parsers')
 rustmod = policy.importrust(r'parsers')
+
 
 def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
     # execute what original parsers.pack_dirstate should do actually
@@ -42,6 +44,7 @@ def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
             dmap[f] = e
 
     return orig(dmap, copymap, pl, fakenow)
+
 
 def fakewrite(ui, func):
     # fake "now" of 'pack_dirstate' only if it is invoked while 'func'
@@ -62,9 +65,9 @@ def fakewrite(ui, func):
         # The Rust implementation does not use public parse/pack dirstate
         # to prevent conversion round-trips
         orig_dirstatemap_write = dirstate.dirstatemap.write
-        wrapper = lambda self, st, now: orig_dirstatemap_write(self,
-                                                               st,
-                                                               fakenow)
+        wrapper = lambda self, st, now: orig_dirstatemap_write(
+            self, st, fakenow
+        )
         dirstate.dirstatemap.write = wrapper
 
     orig_dirstate_getfsnow = dirstate._getfsnow
@@ -83,16 +86,19 @@ def fakewrite(ui, func):
         if rustmod is not None:
             dirstate.dirstatemap.write = orig_dirstatemap_write
 
+
 def _poststatusfixup(orig, workingctx, status, fixup):
     ui = workingctx.repo().ui
-    return fakewrite(ui, lambda : orig(workingctx, status, fixup))
+    return fakewrite(ui, lambda: orig(workingctx, status, fixup))
+
 
 def markcommitted(orig, committablectx, node):
     ui = committablectx.repo().ui
-    return fakewrite(ui, lambda : orig(committablectx, node))
+    return fakewrite(ui, lambda: orig(committablectx, node))
+
 
 def extsetup(ui):
-    extensions.wrapfunction(context.workingctx, '_poststatusfixup',
-                            _poststatusfixup)
-    extensions.wrapfunction(context.workingctx, 'markcommitted',
-                            markcommitted)
+    extensions.wrapfunction(
+        context.workingctx, '_poststatusfixup', _poststatusfixup
+    )
+    extensions.wrapfunction(context.workingctx, 'markcommitted', markcommitted)

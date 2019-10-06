@@ -8,9 +8,8 @@
 from __future__ import absolute_import
 
 from mercurial.i18n import _
-from mercurial import (
-    error,
-)
+from mercurial import error
+
 
 def wrapdirstate(repo, dirstate):
     """Add narrow spec dirstate ignore, block changes outside narrow spec."""
@@ -20,9 +19,15 @@ def wrapdirstate(repo, dirstate):
             narrowmatch = repo.narrowmatch()
             for f in args:
                 if f is not None and not narrowmatch(f) and f not in self:
-                    raise error.Abort(_("cannot track '%s' - it is outside " +
-                        "the narrow clone") % f)
+                    raise error.Abort(
+                        _(
+                            "cannot track '%s' - it is outside "
+                            + "the narrow clone"
+                        )
+                        % f
+                    )
             return fn(self, *args, **kwargs)
+
         return _wrapper
 
     class narrowdirstate(dirstate.__class__):

@@ -29,20 +29,25 @@ data_non_inlined = (
     b'\x00\x00\x00\x03\x00\x00\x00\x02\xff\xff\xff\xff\x12\xcb\xeby1'
     b'\xb6\r\x98B\xcb\x07\xbd`\x8f\x92\xd9\xc4\x84\xbdK\x00\x00\x00'
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    )
+)
+
 
 class fakechangelog(object):
     def __init__(self, idx):
         self.index = idx
+
 
 class fakerepo(object):
     def __init__(self, idx):
         """Just make so that self.changelog.index is the given idx."""
         self.changelog = fakechangelog(idx)
 
-@unittest.skipIf(PartialDiscovery is None or cparsers is None,
-                 "rustext or the C Extension parsers module "
-                 "discovery relies on is not available")
+
+@unittest.skipIf(
+    PartialDiscovery is None or cparsers is None,
+    "rustext or the C Extension parsers module "
+    "discovery relies on is not available",
+)
 class rustdiscoverytest(unittest.TestCase):
     """Test the correctness of binding to Rust code.
 
@@ -64,11 +69,10 @@ class rustdiscoverytest(unittest.TestCase):
     def testindex(self):
         idx = self.parseindex()
         # checking our assumptions about the index binary data:
-        self.assertEqual({i: (r[5], r[6]) for i, r in enumerate(idx)},
-                         {0: (-1, -1),
-                          1: (0, -1),
-                          2: (1, -1),
-                          3: (2, -1)})
+        self.assertEqual(
+            {i: (r[5], r[6]) for i, r in enumerate(idx)},
+            {0: (-1, -1), 1: (0, -1), 2: (1, -1), 3: (2, -1)},
+        )
 
     def testaddcommonsmissings(self):
         disco = PartialDiscovery(self.repo(), [3], True)
@@ -109,6 +113,8 @@ class rustdiscoverytest(unittest.TestCase):
     def testinitnorandom(self):
         PartialDiscovery(self.repo(), [3], True, randomize=False)
 
+
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

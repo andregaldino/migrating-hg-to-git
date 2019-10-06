@@ -2,9 +2,11 @@ from __future__ import absolute_import, print_function
 
 import sys
 
+
 def flush():
     sys.stdout.flush()
     sys.stderr.flush()
+
 
 globalvars = {}
 lines = sys.stdin.readlines()

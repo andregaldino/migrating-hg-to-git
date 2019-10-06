@@ -240,26 +240,25 @@ command = registrar.command(cmdtable)
 
 configtable = {}
 configitem = registrar.configitem(configtable)
-configitem('experimental', 'histedit.autoverb',
-    default=False,
+configitem(
+    'experimental', 'histedit.autoverb', default=False,
 )
-configitem('histedit', 'defaultrev',
-    default=None,
+configitem(
+    'histedit', 'defaultrev', default=None,
 )
-configitem('histedit', 'dropmissing',
-    default=False,
+configitem(
+    'histedit', 'dropmissing', default=False,
 )
-configitem('histedit', 'linelen',
-    default=80,
+configitem(
+    'histedit', 'linelen', default=80,
 )
-configitem('histedit', 'singletransaction',
-    default=False,
+configitem(
+    'histedit', 'singletransaction', default=False,
 )
-configitem('ui', 'interface.histedit',
-    default=None,
+configitem(
+    'ui', 'interface.histedit', default=None,
 )
-configitem('histedit', 'summary-template',
-           default='{rev} {desc|firstline}')
+configitem('histedit', 'summary-template', default='{rev} {desc|firstline}')
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -273,6 +272,7 @@ secondaryactions = set()
 tertiaryactions = set()
 internalactions = set()
 
+
 def geteditcomment(ui, first, last):
     """ construct the editor comment
     The comment includes::
@@ -284,15 +284,18 @@ def geteditcomment(ui, first, last):
 
     Commands are only included once.
     """
-    intro = _("""Edit history between %s and %s
+    intro = _(
+        """Edit history between %s and %s
 
 Commits are listed from least to most recent
 
 You can reorder changesets by reordering the lines
 
 Commands:
-""")
+"""
+    )
     actions = []
+
     def addverb(v):
         a = actiontable[v]
         lines = a.message.split("\n")
@@ -302,21 +305,24 @@ Commands:
         actions.extend(['  %s' for l in lines[1:]])
 
     for v in (
-         sorted(primaryactions) +
-         sorted(secondaryactions) +
-         sorted(tertiaryactions)
-        ):
+        sorted(primaryactions)
+        + sorted(secondaryactions)
+        + sorted(tertiaryactions)
+    ):
         addverb(v)
     actions.append('')
 
     hints = []
     if ui.configbool('histedit', 'dropmissing'):
-        hints.append("Deleting a changeset from the list "
-                     "will DISCARD it from the edited history!")
+        hints.append(
+            "Deleting a changeset from the list "
+            "will DISCARD it from the edited history!"
+        )
 
     lines = (intro % (first, last)).split('\n') + actions + hints
 
     return ''.join(['# %s\n' % l if l else '#\n' for l in lines])
+
 
 class histeditstate(object):
     def __init__(self, repo):
@@ -357,14 +363,23 @@ class histeditstate(object):
             backupfile = None
         rules = "\n".join(["%s %s" % (verb, rest) for [verb, rest] in rules])
 
-        return {'parentctxnode': parentctxnode, "rules": rules, "keep": keep,
-                "topmost": topmost, "replacements": replacements,
-                "backupfile": backupfile}
+        return {
+            'parentctxnode': parentctxnode,
+            "rules": rules,
+            "keep": keep,
+            "topmost": topmost,
+            "replacements": replacements,
+            "backupfile": backupfile,
+        }
 
     def write(self, tr=None):
         if tr:
-            tr.addfilegenerator('histedit-state', ('histedit-state',),
-                                self._write, location='plain')
+            tr.addfilegenerator(
+                'histedit-state',
+                ('histedit-state',),
+                self._write,
+                location='plain',
+            )
         else:
             with self.repo.vfs("histedit-state", "w") as f:
                 self._write(f)
@@ -379,8 +394,13 @@ class histeditstate(object):
             fp.write('%s\n' % action.tostate())
         fp.write('%d\n' % len(self.replacements))
         for replacement in self.replacements:
-            fp.write('%s%s\n' % (node.hex(replacement[0]), ''.join(node.hex(r)
-                for r in replacement[1])))
+            fp.write(
+                '%s%s\n'
+                % (
+                    node.hex(replacement[0]),
+                    ''.join(node.hex(r) for r in replacement[1]),
+                )
+            )
         backupfile = self.backupfile
         if not backupfile:
             backupfile = ''
@@ -391,7 +411,7 @@ class histeditstate(object):
         lines = [l[:-1] for l in fp.readlines()]
 
         index = 0
-        lines[index] # version number
+        lines[index]  # version number
         index += 1
 
         parentctxnode = node.bin(lines[index])
@@ -421,8 +441,10 @@ class histeditstate(object):
         for i in pycompat.xrange(replacementlen):
             replacement = lines[index]
             original = node.bin(replacement[:40])
-            succ = [node.bin(replacement[i:i + 40]) for i in
-                    range(40, len(replacement), 40)]
+            succ = [
+                node.bin(replacement[i : i + 40])
+                for i in range(40, len(replacement), 40)
+            ]
             replacements.append((original, succ))
             index += 1
 
@@ -477,13 +499,16 @@ class histeditaction(object):
     def _verifynodeconstraints(self, prev, expected, seen):
         # by default command need a node in the edited list
         if self.node not in expected:
-            raise error.ParseError(_('%s "%s" changeset was not a candidate')
-                                   % (self.verb, node.short(self.node)),
-                                   hint=_('only use listed changesets'))
+            raise error.ParseError(
+                _('%s "%s" changeset was not a candidate')
+                % (self.verb, node.short(self.node)),
+                hint=_('only use listed changesets'),
+            )
         # and only one command per node
         if self.node in seen:
-            raise error.ParseError(_('duplicated command for changeset %s') %
-                                   node.short(self.node))
+            raise error.ParseError(
+                _('duplicated command for changeset %s') % node.short(self.node)
+            )
 
     def torule(self):
         """build a histedit rule line for an action
@@ -493,14 +518,18 @@ class histeditaction(object):
         """
         ctx = self.repo[self.node]
         ui = self.repo.ui
-        summary = cmdutil.rendertemplate(
-            ctx, ui.config('histedit', 'summary-template')) or ''
+        summary = (
+            cmdutil.rendertemplate(
+                ctx, ui.config('histedit', 'summary-template')
+            )
+            or ''
+        )
         summary = summary.splitlines()[0]
         line = '%s %s %s' % (self.verb, ctx, summary)
         # trim to 75 columns by default so it's not stupidly wide in my editor
         # (the 5 more are left for verb)
         maxlen = self.repo.ui.configint('histedit', 'linelen')
-        maxlen = max(maxlen, 22) # avoid truncating hash
+        maxlen = max(maxlen, 22)  # avoid truncating hash
         return stringutil.ellipsis(line, maxlen)
 
     def tostate(self):
@@ -528,9 +557,10 @@ class histeditaction(object):
         repo.dirstate.setbranch(rulectx.branch())
         if stats.unresolvedcount:
             raise error.InterventionRequired(
-                _('Fix up the change (%s %s)') %
-                (self.verb, node.short(self.node)),
-                hint=_('hg histedit --continue to resume'))
+                _('Fix up the change (%s %s)')
+                % (self.verb, node.short(self.node)),
+                hint=_('hg histedit --continue to resume'),
+            )
 
     def continuedirty(self):
         """Continues the action when changes have been applied to the working
@@ -544,8 +574,13 @@ class histeditaction(object):
             date = dateutil.makedate()
         else:
             date = rulectx.date()
-        commit(text=rulectx.description(), user=rulectx.user(),
-               date=date, extra=rulectx.extra(), editor=editor)
+        commit(
+            text=rulectx.description(),
+            user=rulectx.user(),
+            date=date,
+            extra=rulectx.extra(),
+            editor=editor,
+        )
 
     def commiteditor(self):
         """The editor to be used to edit the commit message."""
@@ -557,13 +592,16 @@ class histeditaction(object):
         rulectx."""
         ctx = self.repo['.']
         if ctx.node() == self.state.parentctxnode:
-            self.repo.ui.warn(_('%s: skipping changeset (no changes)\n') %
-                              node.short(self.node))
+            self.repo.ui.warn(
+                _('%s: skipping changeset (no changes)\n')
+                % node.short(self.node)
+            )
             return ctx, [(self.node, tuple())]
         if ctx.node() == self.node:
             # Nothing changed
             return ctx, []
         return ctx, [(self.node, (ctx.node(),))]
+
 
 def commitfuncfor(repo, src):
     """Build a commit function for the replacement of <src>
@@ -576,6 +614,7 @@ def commitfuncfor(repo, src):
     different and not easily factored out of the fold method.
     """
     phasemin = src.phase()
+
     def commitfunc(**kwargs):
         overrides = {('phases', 'new-commit'): phasemin}
         with repo.ui.configoverride(overrides, 'histedit'):
@@ -583,7 +622,9 @@ def commitfuncfor(repo, src):
             extra['histedit_source'] = src.hex()
             kwargs[r'extra'] = extra
             return repo.commit(**kwargs)
+
     return commitfunc
+
 
 def applychanges(ui, repo, ctx, opts):
     """Merge changeset from ctx (only) in the current working directory"""
@@ -598,12 +639,14 @@ def applychanges(ui, repo, ctx, opts):
     else:
         try:
             # ui.forcemerge is an internal variable, do not document
-            repo.ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                              'histedit')
+            repo.ui.setconfig(
+                'ui', 'forcemerge', opts.get('tool', ''), 'histedit'
+            )
             stats = mergemod.graft(repo, ctx, ctx.p1(), ['local', 'histedit'])
         finally:
             repo.ui.setconfig('ui', 'forcemerge', '', 'histedit')
     return stats
+
 
 def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
     """collapse the set of revisions from first to last as new one.
@@ -621,7 +664,8 @@ def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
     for c in ctxs:
         if not c.mutable():
             raise error.ParseError(
-                _("cannot fold into public change %s") % node.short(c.node()))
+                _("cannot fold into public change %s") % node.short(c.node())
+            )
     base = firstctx.p1()
 
     # commit a new version of the old changeset, including the update
@@ -637,15 +681,20 @@ def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
     files = [f for f in files if not cmdutil.samefile(f, lastctx, base)]
     # commit version of these files as defined by head
     headmf = lastctx.manifest()
+
     def filectxfn(repo, ctx, path):
         if path in headmf:
             fctx = lastctx[path]
             flags = fctx.flags()
-            mctx = context.memfilectx(repo, ctx,
-                                      fctx.path(), fctx.data(),
-                                      islink='l' in flags,
-                                      isexec='x' in flags,
-                                      copysource=copied.get(path))
+            mctx = context.memfilectx(
+                repo,
+                ctx,
+                fctx.path(),
+                fctx.data(),
+                islink='l' in flags,
+                isexec='x' in flags,
+                copysource=copied.get(path),
+            )
             return mctx
         return None
 
@@ -661,24 +710,33 @@ def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
     editor = None
     if not skipprompt:
         editor = cmdutil.getcommiteditor(edit=True, editform='histedit.fold')
-    new = context.memctx(repo,
-                         parents=parents,
-                         text=message,
-                         files=files,
-                         filectxfn=filectxfn,
-                         user=user,
-                         date=date,
-                         extra=extra,
-                         editor=editor)
+    new = context.memctx(
+        repo,
+        parents=parents,
+        text=message,
+        files=files,
+        filectxfn=filectxfn,
+        user=user,
+        date=date,
+        extra=extra,
+        editor=editor,
+    )
     return repo.commitctx(new)
+
 
 def _isdirtywc(repo):
     return repo[None].dirty(missing=True)
 
+
 def abortdirty():
-    raise error.Abort(_('working copy has pending changes'),
-        hint=_('amend, commit, or revert them and run histedit '
-            '--continue, or abort with histedit --abort'))
+    raise error.Abort(
+        _('working copy has pending changes'),
+        hint=_(
+            'amend, commit, or revert them and run histedit '
+            '--continue, or abort with histedit --abort'
+        ),
+    )
+
 
 def action(verbs, message, priority=False, internal=False):
     def wrap(cls):
@@ -699,11 +757,11 @@ def action(verbs, message, priority=False, internal=False):
         for verb in verbs:
             actiontable[verb] = cls
         return cls
+
     return wrap
 
-@action(['pick', 'p'],
-        _('use commit'),
-        priority=True)
+
+@action(['pick', 'p'], _('use commit'), priority=True)
 class pick(histeditaction):
     def run(self):
         rulectx = self.repo[self.node]
@@ -713,9 +771,8 @@ class pick(histeditaction):
 
         return super(pick, self).run()
 
-@action(['edit', 'e'],
-        _('use commit, but stop for amending'),
-        priority=True)
+
+@action(['edit', 'e'], _('use commit, but stop for amending'), priority=True)
 class edit(histeditaction):
     def run(self):
         repo = self.repo
@@ -725,13 +782,14 @@ class edit(histeditaction):
         raise error.InterventionRequired(
             _('Editing (%s), you may commit or record as needed now.')
             % node.short(self.node),
-            hint=_('hg histedit --continue to resume'))
+            hint=_('hg histedit --continue to resume'),
+        )
 
     def commiteditor(self):
         return cmdutil.getcommiteditor(edit=True, editform='histedit.edit')
 
-@action(['fold', 'f'],
-        _('use commit, but combine it with the one above'))
+
+@action(['fold', 'f'], _('use commit, but combine it with the one above'))
 class fold(histeditaction):
     def verify(self, prev, expected, seen):
         """ Verifies semantic correctness of the fold rule"""
@@ -745,17 +803,20 @@ class fold(histeditaction):
             c = repo[prev.node]
         if not c.mutable():
             raise error.ParseError(
-                _("cannot fold into public change %s") % node.short(c.node()))
-
+                _("cannot fold into public change %s") % node.short(c.node())
+            )
 
     def continuedirty(self):
         repo = self.repo
         rulectx = repo[self.node]
 
         commit = commitfuncfor(repo, rulectx)
-        commit(text='fold-temp-revision %s' % node.short(self.node),
-               user=rulectx.user(), date=rulectx.date(),
-               extra=rulectx.extra())
+        commit(
+            text='fold-temp-revision %s' % node.short(self.node),
+            user=rulectx.user(),
+            date=rulectx.date(),
+            extra=rulectx.extra(),
+        )
 
     def continueclean(self):
         repo = self.repo
@@ -763,25 +824,30 @@ class fold(histeditaction):
         rulectx = repo[self.node]
         parentctxnode = self.state.parentctxnode
         if ctx.node() == parentctxnode:
-            repo.ui.warn(_('%s: empty changeset\n') %
-                              node.short(self.node))
+            repo.ui.warn(_('%s: empty changeset\n') % node.short(self.node))
             return ctx, [(self.node, (parentctxnode,))]
 
         parentctx = repo[parentctxnode]
-        newcommits = set(c.node() for c in repo.set('(%d::. - %d)',
-                                                    parentctx.rev(),
-                                                    parentctx.rev()))
+        newcommits = set(
+            c.node()
+            for c in repo.set('(%d::. - %d)', parentctx.rev(), parentctx.rev())
+        )
         if not newcommits:
-            repo.ui.warn(_('%s: cannot fold - working copy is not a '
-                           'descendant of previous commit %s\n') %
-                           (node.short(self.node), node.short(parentctxnode)))
+            repo.ui.warn(
+                _(
+                    '%s: cannot fold - working copy is not a '
+                    'descendant of previous commit %s\n'
+                )
+                % (node.short(self.node), node.short(parentctxnode))
+            )
             return ctx, [(self.node, (ctx.node(),))]
 
         middlecommits = newcommits.copy()
         middlecommits.discard(ctx.node())
 
-        return self.finishfold(repo.ui, repo, parentctx, rulectx, ctx.node(),
-                               middlecommits)
+        return self.finishfold(
+            repo.ui, repo, parentctx, rulectx, ctx.node(), middlecommits
+        )
 
     def skipprompt(self):
         """Returns true if the rule should skip the message editor.
@@ -818,10 +884,14 @@ class fold(histeditaction):
         if not self.mergedescs():
             newmessage = ctx.description()
         else:
-            newmessage = '\n***\n'.join(
-                [ctx.description()] +
-                [repo[r].description() for r in internalchanges] +
-                [oldctx.description()]) + '\n'
+            newmessage = (
+                '\n***\n'.join(
+                    [ctx.description()]
+                    + [repo[r].description() for r in internalchanges]
+                    + [oldctx.description()]
+                )
+                + '\n'
+            )
         commitopts['message'] = newmessage
         # date
         if self.firstdate():
@@ -841,23 +911,31 @@ class fold(histeditaction):
         phasemin = max(ctx.phase(), oldctx.phase())
         overrides = {('phases', 'new-commit'): phasemin}
         with repo.ui.configoverride(overrides, 'histedit'):
-            n = collapse(repo, ctx, repo[newnode], commitopts,
-                         skipprompt=self.skipprompt())
+            n = collapse(
+                repo,
+                ctx,
+                repo[newnode],
+                commitopts,
+                skipprompt=self.skipprompt(),
+            )
         if n is None:
             return ctx, []
         hg.updaterepo(repo, n, overwrite=False)
-        replacements = [(oldctx.node(), (newnode,)),
-                        (ctx.node(), (n,)),
-                        (newnode, (n,)),
-                       ]
+        replacements = [
+            (oldctx.node(), (newnode,)),
+            (ctx.node(), (n,)),
+            (newnode, (n,)),
+        ]
         for ich in internalchanges:
             replacements.append((ich, (n,)))
         return repo[n], replacements
 
-@action(['base', 'b'],
-        _('checkout changeset and apply further changesets from there'))
-class base(histeditaction):
 
+@action(
+    ['base', 'b'],
+    _('checkout changeset and apply further changesets from there'),
+)
+class base(histeditaction):
     def run(self):
         if self.repo['.'].node() != self.node:
             mergemod.update(self.repo, self.node, branchmerge=False, force=True)
@@ -876,25 +954,33 @@ class base(histeditaction):
             msg = _('%s "%s" changeset was an edited list candidate')
             raise error.ParseError(
                 msg % (self.verb, node.short(self.node)),
-                hint=_('base must only use unlisted changesets'))
+                hint=_('base must only use unlisted changesets'),
+            )
 
-@action(['_multifold'],
-        _(
-    """fold subclass used for when multiple folds happen in a row
+
+@action(
+    ['_multifold'],
+    _(
+        """fold subclass used for when multiple folds happen in a row
 
     We only want to fire the editor for the folded message once when
     (say) four changes are folded down into a single change. This is
     similar to rollup, but we should preserve both messages so that
     when the last fold operation runs we can show the user all the
     commit messages in their editor.
-    """),
-        internal=True)
+    """
+    ),
+    internal=True,
+)
 class _multifold(fold):
     def skipprompt(self):
         return True
 
-@action(["roll", "r"],
-        _("like fold, but discard this commit's description and date"))
+
+@action(
+    ["roll", "r"],
+    _("like fold, but discard this commit's description and date"),
+)
 class rollup(fold):
     def mergedescs(self):
         return False
@@ -905,19 +991,23 @@ class rollup(fold):
     def firstdate(self):
         return True
 
-@action(["drop", "d"],
-        _('remove commit from history'))
+
+@action(["drop", "d"], _('remove commit from history'))
 class drop(histeditaction):
     def run(self):
         parentctx = self.repo[self.state.parentctxnode]
         return parentctx, [(self.node, tuple())]
 
-@action(["mess", "m"],
-        _('edit commit message without changing commit content'),
-        priority=True)
+
+@action(
+    ["mess", "m"],
+    _('edit commit message without changing commit content'),
+    priority=True,
+)
 class message(histeditaction):
     def commiteditor(self):
         return cmdutil.getcommiteditor(edit=True, editform='histedit.mess')
+
 
 def findoutgoing(ui, repo, remote=None, force=False, opts=None):
     """utility function to find the first outgoing changeset
@@ -945,6 +1035,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
         raise error.Abort(msg, hint=hint)
     return repo[roots[0]].node()
 
+
 # Curses Support
 try:
     import curses
@@ -957,7 +1048,7 @@ ACTION_LABELS = {
     'roll': '^roll',
 }
 
-COLOR_HELP, COLOR_SELECTED, COLOR_OK, COLOR_WARN, COLOR_CURRENT  = 1, 2, 3, 4, 5
+COLOR_HELP, COLOR_SELECTED, COLOR_OK, COLOR_WARN, COLOR_CURRENT = 1, 2, 3, 4, 5
 COLOR_DIFF_ADD_LINE, COLOR_DIFF_DEL_LINE, COLOR_DIFF_OFFSET = 6, 7, 8
 
 E_QUIT, E_HISTEDIT = 1, 2
@@ -966,51 +1057,52 @@ MODE_INIT, MODE_PATCH, MODE_RULES, MODE_HELP = 0, 1, 2, 3
 
 KEYTABLE = {
     'global': {
-        'h':         'next-action',
+        'h': 'next-action',
         'KEY_RIGHT': 'next-action',
-        'l':         'prev-action',
-        'KEY_LEFT':  'prev-action',
-        'q':         'quit',
-        'c':         'histedit',
-        'C':         'histedit',
-        'v':         'showpatch',
-        '?':         'help',
+        'l': 'prev-action',
+        'KEY_LEFT': 'prev-action',
+        'q': 'quit',
+        'c': 'histedit',
+        'C': 'histedit',
+        'v': 'showpatch',
+        '?': 'help',
     },
     MODE_RULES: {
-        'd':         'action-drop',
-        'e':         'action-edit',
-        'f':         'action-fold',
-        'm':         'action-mess',
-        'p':         'action-pick',
-        'r':         'action-roll',
-        ' ':         'select',
-        'j':         'down',
-        'k':         'up',
-        'KEY_DOWN':  'down',
-        'KEY_UP':    'up',
-        'J':         'move-down',
-        'K':         'move-up',
+        'd': 'action-drop',
+        'e': 'action-edit',
+        'f': 'action-fold',
+        'm': 'action-mess',
+        'p': 'action-pick',
+        'r': 'action-roll',
+        ' ': 'select',
+        'j': 'down',
+        'k': 'up',
+        'KEY_DOWN': 'down',
+        'KEY_UP': 'up',
+        'J': 'move-down',
+        'K': 'move-up',
         'KEY_NPAGE': 'move-down',
         'KEY_PPAGE': 'move-up',
-        '0':         'goto',  # Used for 0..9
+        '0': 'goto',  # Used for 0..9
     },
     MODE_PATCH: {
-        ' ':         'page-down',
+        ' ': 'page-down',
         'KEY_NPAGE': 'page-down',
         'KEY_PPAGE': 'page-up',
-        'j':         'line-down',
-        'k':         'line-up',
-        'KEY_DOWN':  'line-down',
-        'KEY_UP':    'line-up',
-        'J':         'down',
-        'K':         'up',
+        'j': 'line-down',
+        'k': 'line-up',
+        'KEY_DOWN': 'line-down',
+        'KEY_UP': 'line-up',
+        'J': 'down',
+        'K': 'up',
     },
-    MODE_HELP: {
-    },
+    MODE_HELP: {},
 }
+
 
 def screen_size():
     return struct.unpack('hh', fcntl.ioctl(1, termios.TIOCGWINSZ, '    '))
+
 
 class histeditrule(object):
     def __init__(self, ctx, pos, action='pick'):
@@ -1039,7 +1131,8 @@ class histeditrule(object):
         if self.action == 'roll':
             desc = ''
         return "#{0:<2} {1:<6} {2}:{3}   {4}".format(
-                self.origpos, action, r, h, desc)
+            self.origpos, action, r, h, desc
+        )
 
     def checkconflicts(self, other):
         if other.pos > self.pos and other.origpos <= self.origpos:
@@ -1050,6 +1143,7 @@ class histeditrule(object):
         if other in self.conflicts:
             self.conflicts.remove(other)
         return self.conflicts
+
 
 # ============ EVENTS ===============
 def movecursor(state, oldpos, newpos):
@@ -1071,14 +1165,17 @@ def movecursor(state, oldpos, newpos):
     # Reset the patch view region to the top of the new patch.
     state['modes'][MODE_PATCH]['line_offset'] = 0
 
+
 def changemode(state, mode):
     curmode, _ = state['mode']
     state['mode'] = (mode, curmode)
     if mode == MODE_PATCH:
         state['modes'][MODE_PATCH]['patchcontents'] = patchcontents(state)
 
+
 def makeselection(state, pos):
     state['selected'] = pos
+
 
 def swap(state, oldpos, newpos):
     """Swap two positions and calculate necessary conflicts in
@@ -1102,11 +1199,13 @@ def swap(state, oldpos, newpos):
     if state['selected']:
         makeselection(state, newpos)
 
+
 def changeaction(state, pos, action):
     """Change the action state on the given position to the new action"""
     rules = state['rules']
     assert 0 <= pos < len(rules)
     rules[pos].action = action
+
 
 def cycleaction(state, pos, next=False):
     """Changes the action state the next or the previous action from
@@ -1124,6 +1223,7 @@ def cycleaction(state, pos, next=False):
         index -= 1
     changeaction(state, pos, KEY_LIST[index % len(KEY_LIST)])
 
+
 def changeview(state, delta, unit):
     '''Change the region of whatever is being viewed (a patch or the list of
     changesets). 'delta' is an amount (+/- 1) and 'unit' is 'page' or 'line'.'''
@@ -1138,6 +1238,7 @@ def changeview(state, delta, unit):
     max_offset = (num_pages - 1) * page_height
     newline = mode_state['line_offset'] + delta * unit
     mode_state['line_offset'] = max(0, min(max_offset, newline))
+
 
 def event(state, ch):
     """Change state based on the current character input
@@ -1201,6 +1302,7 @@ def event(state, ch):
     elif action == 'line-up':
         return E_LINEUP
 
+
 def makecommands(rules):
     """Returns a list of commands consumable by histedit --commands based on
     our list of rules"""
@@ -1208,6 +1310,7 @@ def makecommands(rules):
     for rules in rules:
         commands.append("{0} {1}\n".format(rules.action, rules.ctx))
     return commands
+
 
 def addln(win, y, x, line, color=None):
     """Add a line to the given window left padding but 100% filled with
@@ -1224,26 +1327,31 @@ def addln(win, y, x, line, color=None):
     else:
         win.addstr(y, x, line)
 
+
 def _trunc_head(line, n):
     if len(line) <= n:
         return line
-    return '> ' + line[-(n - 2):]
+    return '> ' + line[-(n - 2) :]
+
+
 def _trunc_tail(line, n):
     if len(line) <= n:
         return line
-    return line[:n - 2] + ' >'
+    return line[: n - 2] + ' >'
+
 
 def patchcontents(state):
     repo = state['repo']
     rule = state['rules'][state['pos']]
-    displayer = logcmdutil.changesetdisplayer(repo.ui, repo, {
-        "patch": True,  "template": "status"
-    }, buffered=True)
-    overrides = {('ui',  'verbose'): True}
+    displayer = logcmdutil.changesetdisplayer(
+        repo.ui, repo, {"patch": True, "template": "status"}, buffered=True
+    )
+    overrides = {('ui', 'verbose'): True}
     with repo.ui.configoverride(overrides, source='histedit'):
         displayer.show(rule.ctx)
         displayer.close()
     return displayer.hunk[rule.ctx.rev()].splitlines()
+
 
 def _chisteditmain(repo, rules, stdscr):
     try:
@@ -1362,8 +1470,13 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             if y + start == selected:
                 addln(rulesscr, y, 2, rule, curses.color_pair(COLOR_SELECTED))
             elif y + start == pos:
-                addln(rulesscr, y, 2, rule,
-                      curses.color_pair(COLOR_CURRENT) | curses.A_BOLD)
+                addln(
+                    rulesscr,
+                    y,
+                    2,
+                    rule,
+                    curses.color_pair(COLOR_CURRENT) | curses.A_BOLD,
+                )
             else:
                 addln(rulesscr, y, 2, rule)
         rulesscr.noutrefresh()
@@ -1376,13 +1489,14 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             if diffcolors:
                 if line and line[0] == '+':
                     win.addstr(
-                        y, 0, line, curses.color_pair(COLOR_DIFF_ADD_LINE))
+                        y, 0, line, curses.color_pair(COLOR_DIFF_ADD_LINE)
+                    )
                 elif line and line[0] == '-':
                     win.addstr(
-                        y, 0, line, curses.color_pair(COLOR_DIFF_DEL_LINE))
+                        y, 0, line, curses.color_pair(COLOR_DIFF_DEL_LINE)
+                    )
                 elif line.startswith('@@ '):
-                    win.addstr(
-                        y, 0, line, curses.color_pair(COLOR_DIFF_OFFSET))
+                    win.addstr(y, 0, line, curses.color_pair(COLOR_DIFF_OFFSET))
                 else:
                     win.addstr(y, 0, line)
             else:
@@ -1415,12 +1529,8 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         'mode': (MODE_INIT, MODE_INIT),
         'page_height': None,
         'modes': {
-            MODE_RULES: {
-                'line_offset': 0,
-            },
-            MODE_PATCH: {
-                'line_offset': 0,
-            }
+            MODE_RULES: {'line_offset': 0,},
+            MODE_PATCH: {'line_offset': 0,},
         },
         'repo': repo,
     }
@@ -1488,6 +1598,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         except curses.error:
             pass
 
+
 def _chistedit(ui, repo, *freeargs, **opts):
     """interactively edit changeset history via a curses interface
 
@@ -1507,8 +1618,12 @@ def _chistedit(ui, repo, *freeargs, **opts):
         cmdutil.bailifchanged(repo)
 
         if os.path.exists(os.path.join(repo.path, 'histedit-state')):
-            raise error.Abort(_('history edit already in progress, try '
-                               '--continue or --abort'))
+            raise error.Abort(
+                _(
+                    'history edit already in progress, try '
+                    '--continue or --abort'
+                )
+            )
         revs.extend(freeargs)
         if not revs:
             defaultrev = destutil.desthistedit(ui, repo)
@@ -1516,19 +1631,26 @@ def _chistedit(ui, repo, *freeargs, **opts):
                 revs.append(defaultrev)
         if len(revs) != 1:
             raise error.Abort(
-                _('histedit requires exactly one ancestor revision'))
+                _('histedit requires exactly one ancestor revision')
+            )
 
         rr = list(repo.set('roots(%ld)', scmutil.revrange(repo, revs)))
         if len(rr) != 1:
-            raise error.Abort(_('The specified revisions must have '
-                'exactly one common root'))
+            raise error.Abort(
+                _(
+                    'The specified revisions must have '
+                    'exactly one common root'
+                )
+            )
         root = rr[0].node()
 
         topmost = repo.dirstate.p1()
         revs = between(repo, root, topmost, keep)
         if not revs:
-            raise error.Abort(_('%s is not an ancestor of working directory') %
-                             node.short(root))
+            raise error.Abort(
+                _('%s is not an ancestor of working directory')
+                % node.short(root)
+            )
 
         ctxs = []
         for i, r in enumerate(revs):
@@ -1556,21 +1678,34 @@ def _chistedit(ui, repo, *freeargs, **opts):
         pass
     return -1
 
-@command('histedit',
-    [('', 'commands', '',
-      _('read history edits from the specified file'), _('FILE')),
-     ('c', 'continue', False, _('continue an edit already in progress')),
-     ('', 'edit-plan', False, _('edit remaining actions list')),
-     ('k', 'keep', False,
-      _("don't strip old nodes after edit is complete")),
-     ('', 'abort', False, _('abort an edit in progress')),
-     ('o', 'outgoing', False, _('changesets not found in destination')),
-     ('f', 'force', False,
-      _('force outgoing even for unrelated repositories')),
-     ('r', 'rev', [], _('first revision to be edited'), _('REV'))] +
-    cmdutil.formatteropts,
-     _("[OPTIONS] ([ANCESTOR] | --outgoing [URL])"),
-    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
+
+@command(
+    'histedit',
+    [
+        (
+            '',
+            'commands',
+            '',
+            _('read history edits from the specified file'),
+            _('FILE'),
+        ),
+        ('c', 'continue', False, _('continue an edit already in progress')),
+        ('', 'edit-plan', False, _('edit remaining actions list')),
+        ('k', 'keep', False, _("don't strip old nodes after edit is complete")),
+        ('', 'abort', False, _('abort an edit in progress')),
+        ('o', 'outgoing', False, _('changesets not found in destination')),
+        (
+            'f',
+            'force',
+            False,
+            _('force outgoing even for unrelated repositories'),
+        ),
+        ('r', 'rev', [], _('first revision to be edited'), _('REV')),
+    ]
+    + cmdutil.formatteropts,
+    _("[OPTIONS] ([ANCESTOR] | --outgoing [URL])"),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+)
 def histedit(ui, repo, *freeargs, **opts):
     """interactively edit changeset history
 
@@ -1673,10 +1808,13 @@ def histedit(ui, repo, *freeargs, **opts):
     # kludge: _chistedit only works for starting an edit, not aborting
     # or continuing, so fall back to regular _texthistedit for those
     # operations.
-    if ui.interface('histedit') == 'curses' and  _getgoal(
-            pycompat.byteskwargs(opts)) == goalnew:
+    if (
+        ui.interface('histedit') == 'curses'
+        and _getgoal(pycompat.byteskwargs(opts)) == goalnew
+    ):
         return _chistedit(ui, repo, *freeargs, **opts)
     return _texthistedit(ui, repo, *freeargs, **opts)
+
 
 def _texthistedit(ui, repo, *freeargs, **opts):
     state = histeditstate(repo)
@@ -1685,10 +1823,12 @@ def _texthistedit(ui, repo, *freeargs, **opts):
         state.lock = lock
         _histedit(ui, repo, state, *freeargs, **opts)
 
+
 goalcontinue = 'continue'
 goalabort = 'abort'
 goaleditplan = 'edit-plan'
 goalnew = 'new'
+
 
 def _getgoal(opts):
     if opts.get(b'continue'):
@@ -1699,6 +1839,7 @@ def _getgoal(opts):
         return goaleditplan
     return goalnew
 
+
 def _readfile(ui, path):
     if path == '-':
         with ui.timeblockedsection('histedit'):
@@ -1706,6 +1847,7 @@ def _readfile(ui, path):
     else:
         with open(path, 'rb') as f:
             return f.read()
+
 
 def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
     # TODO only abort if we try to histedit mq patches, not just
@@ -1729,18 +1871,24 @@ def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
             raise error.Abort(_('no arguments allowed with --abort'))
     elif goal == 'edit-plan':
         if any((outg, revs, freeargs)):
-            raise error.Abort(_('only --commands argument allowed with '
-                               '--edit-plan'))
+            raise error.Abort(
+                _('only --commands argument allowed with ' '--edit-plan')
+            )
     else:
         if state.inprogress():
-            raise error.Abort(_('history edit already in progress, try '
-                               '--continue or --abort'))
+            raise error.Abort(
+                _(
+                    'history edit already in progress, try '
+                    '--continue or --abort'
+                )
+            )
         if outg:
             if revs:
                 raise error.Abort(_('no revisions allowed with --outgoing'))
             if len(freeargs) > 1:
                 raise error.Abort(
-                    _('only one repo argument allowed with --outgoing'))
+                    _('only one repo argument allowed with --outgoing')
+                )
         else:
             revs.extend(freeargs)
             if len(revs) == 0:
@@ -1750,7 +1898,9 @@ def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
 
             if len(revs) != 1:
                 raise error.Abort(
-                    _('histedit requires exactly one ancestor revision'))
+                    _('histedit requires exactly one ancestor revision')
+                )
+
 
 def _histedit(ui, repo, state, *freeargs, **opts):
     opts = pycompat.byteskwargs(opts)
@@ -1773,10 +1923,14 @@ def _histedit(ui, repo, state, *freeargs, **opts):
             if not hastags:
                 hastags = len(tags)
     if hastags:
-        if ui.promptchoice(_('warning: tags associated with the given'
-                             ' changeset will be lost after histedit.\n'
-                             'do you want to continue (yN)? $$ &Yes $$ &No'),
-                           default=1):
+        if ui.promptchoice(
+            _(
+                'warning: tags associated with the given'
+                ' changeset will be lost after histedit.\n'
+                'do you want to continue (yN)? $$ &Yes $$ &No'
+            ),
+            default=1,
+        ):
             raise error.Abort(_('histedit cancelled\n'))
     # rebuild state
     if goal == goalcontinue:
@@ -1796,6 +1950,7 @@ def _histedit(ui, repo, state, *freeargs, **opts):
     _finishhistedit(ui, repo, state, fm)
     fm.end()
 
+
 def _continuehistedit(ui, repo, state):
     """This function runs after either:
     - bootstrapcontinue (if the goal is 'continue')
@@ -1804,8 +1959,7 @@ def _continuehistedit(ui, repo, state):
     # preprocess rules so that we can hide inner folds from the user
     # and only show one editor
     actions = state.actions[:]
-    for idx, (action, nextact) in enumerate(
-            zip(actions, actions[1:] + [None])):
+    for idx, (action, nextact) in enumerate(zip(actions, actions[1:] + [None])):
         if action.verb == 'fold' and nextact and nextact.verb == 'fold':
             state.actions[idx].__class__ = _multifold
 
@@ -1822,21 +1976,24 @@ def _continuehistedit(ui, repo, state):
         # and reopen a transaction. For example, if the action executes an
         # external process it may choose to commit the transaction first.
         tr = repo.transaction('histedit')
-    progress = ui.makeprogress(_("editing"), unit=_('changes'),
-                               total=len(state.actions))
+    progress = ui.makeprogress(
+        _("editing"), unit=_('changes'), total=len(state.actions)
+    )
     with progress, util.acceptintervention(tr):
         while state.actions:
             state.write(tr=tr)
             actobj = state.actions[0]
             progress.increment(item=actobj.torule())
-            ui.debug('histedit: processing %s %s\n' % (actobj.verb,
-                                                       actobj.torule()))
+            ui.debug(
+                'histedit: processing %s %s\n' % (actobj.verb, actobj.torule())
+            )
             parentctx, replacement_ = actobj.run()
             state.parentctxnode = parentctx.node()
             state.replacements.extend(replacement_)
             state.actions.pop(0)
 
     state.write()
+
 
 def _finishhistedit(ui, repo, state, fm):
     """This action runs when histedit is finishing its session"""
@@ -1848,8 +2005,10 @@ def _finishhistedit(ui, repo, state, fm):
             if not succs:
                 ui.debug('histedit: %s is dropped\n' % node.short(prec))
             else:
-                ui.debug('histedit: %s is replaced by %s\n' % (
-                    node.short(prec), node.short(succs[0])))
+                ui.debug(
+                    'histedit: %s is replaced by %s\n'
+                    % (node.short(prec), node.short(succs[0]))
+                )
                 if len(succs) > 1:
                     m = 'histedit:                            %s'
                     for n in succs[1:]:
@@ -1868,15 +2027,23 @@ def _finishhistedit(ui, repo, state, fm):
 
     # remove entries about unknown nodes
     nodemap = repo.unfiltered().changelog.nodemap
-    mapping = {k: v for k, v in mapping.items()
-               if k in nodemap and all(n in nodemap for n in v)}
+    mapping = {
+        k: v
+        for k, v in mapping.items()
+        if k in nodemap and all(n in nodemap for n in v)
+    }
     scmutil.cleanupnodes(repo, mapping, 'histedit')
     hf = fm.hexfunc
     fl = fm.formatlist
     fd = fm.formatdict
-    nodechanges = fd({hf(oldn): fl([hf(n) for n in newn], name='node')
-                      for oldn, newn in mapping.iteritems()},
-                     key="oldnode", value="newnodes")
+    nodechanges = fd(
+        {
+            hf(oldn): fl([hf(n) for n in newn], name='node')
+            for oldn, newn in mapping.iteritems()
+        },
+        key="oldnode",
+        value="newnodes",
+    )
     fm.data(nodechanges=nodechanges)
 
     state.clear()
@@ -1885,12 +2052,12 @@ def _finishhistedit(ui, repo, state, fm):
     if repo.vfs.exists('histedit-last-edit.txt'):
         repo.vfs.unlink('histedit-last-edit.txt')
 
+
 def _aborthistedit(ui, repo, state, nobackup=False):
     try:
         state.read()
         __, leafs, tmpnodes, __ = processreplacement(state)
-        ui.debug('restore wc to old parent %s\n'
-                % node.short(state.topmost))
+        ui.debug('restore wc to old parent %s\n' % node.short(state.topmost))
 
         # Recover our old commits if necessary
         if not state.topmost in repo and state.backupfile:
@@ -1898,25 +2065,34 @@ def _aborthistedit(ui, repo, state, nobackup=False):
             f = hg.openpath(ui, backupfile)
             gen = exchange.readbundle(ui, f, backupfile)
             with repo.transaction('histedit.abort') as tr:
-                bundle2.applybundle(repo, gen, tr, source='histedit',
-                                    url='bundle:' + backupfile)
+                bundle2.applybundle(
+                    repo, gen, tr, source='histedit', url='bundle:' + backupfile
+                )
 
             os.remove(backupfile)
 
         # check whether we should update away
-        if repo.unfiltered().revs('parents() and (%n  or %ln::)',
-                                state.parentctxnode, leafs | tmpnodes):
+        if repo.unfiltered().revs(
+            'parents() and (%n  or %ln::)',
+            state.parentctxnode,
+            leafs | tmpnodes,
+        ):
             hg.clean(repo, state.topmost, show_stats=True, quietempty=True)
         cleanupnode(ui, repo, tmpnodes, nobackup=nobackup)
         cleanupnode(ui, repo, leafs, nobackup=nobackup)
     except Exception:
         if state.inprogress():
-            ui.warn(_('warning: encountered an exception during histedit '
-                '--abort; the repository may not have been completely '
-                'cleaned up\n'))
+            ui.warn(
+                _(
+                    'warning: encountered an exception during histedit '
+                    '--abort; the repository may not have been completely '
+                    'cleaned up\n'
+                )
+            )
         raise
     finally:
-            state.clear()
+        state.clear()
+
 
 def hgaborthistedit(ui, repo):
     state = histeditstate(repo)
@@ -1926,21 +2102,22 @@ def hgaborthistedit(ui, repo):
         state.lock = lock
         _aborthistedit(ui, repo, state, nobackup=nobackup)
 
+
 def _edithisteditplan(ui, repo, state, rules):
     state.read()
     if not rules:
-        comment = geteditcomment(ui,
-                                 node.short(state.parentctxnode),
-                                 node.short(state.topmost))
+        comment = geteditcomment(
+            ui, node.short(state.parentctxnode), node.short(state.topmost)
+        )
         rules = ruleeditor(repo, ui, state.actions, comment)
     else:
         rules = _readfile(ui, rules)
     actions = parserules(rules, state)
-    ctxs = [repo[act.node]
-            for act in state.actions if act.node]
+    ctxs = [repo[act.node] for act in state.actions if act.node]
     warnverifyactions(ui, repo, actions, state, ctxs)
     state.actions = actions
     state.write()
+
 
 def _newhistedit(ui, repo, state, revs, freeargs, opts):
     outg = opts.get('outgoing')
@@ -1960,14 +2137,19 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     else:
         rr = list(repo.set('roots(%ld)', scmutil.revrange(repo, revs)))
         if len(rr) != 1:
-            raise error.Abort(_('The specified revisions must have '
-                'exactly one common root'))
+            raise error.Abort(
+                _(
+                    'The specified revisions must have '
+                    'exactly one common root'
+                )
+            )
         root = rr[0].node()
 
     revs = between(repo, root, topmost, state.keep)
     if not revs:
-        raise error.Abort(_('%s is not an ancestor of working directory') %
-                         node.short(root))
+        raise error.Abort(
+            _('%s is not an ancestor of working directory') % node.short(root)
+        )
 
     ctxs = [repo[r] for r in revs]
 
@@ -1983,15 +2165,24 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     for c in [ctxs[0].p1()] + ctxs:
         try:
             mergemod.calculateupdates(
-                repo, wctx, c, ancs,
+                repo,
+                wctx,
+                c,
+                ancs,
                 # These parameters were determined by print-debugging
                 # what happens later on inside histedit.
-                branchmerge=False, force=False, acceptremote=False,
-                followcopies=False)
+                branchmerge=False,
+                force=False,
+                acceptremote=False,
+                followcopies=False,
+            )
         except error.Abort:
             raise error.Abort(
-       _("untracked files in working directory conflict with files in %s") % (
-           c))
+                _(
+                    "untracked files in working directory conflict with files in %s"
+                )
+                % c
+            )
 
     if not rules:
         comment = geteditcomment(ui, node.short(root), node.short(topmost))
@@ -2009,15 +2200,21 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     state.topmost = topmost
     state.replacements = []
 
-    ui.log("histedit", "%d actions to histedit\n", len(actions),
-           histedit_num_actions=len(actions))
+    ui.log(
+        "histedit",
+        "%d actions to histedit\n",
+        len(actions),
+        histedit_num_actions=len(actions),
+    )
 
     # Create a backup so we can always abort completely.
     backupfile = None
     if not obsolete.isenabled(repo, obsolete.createmarkersopt):
-        backupfile = repair.backupbundle(repo, [parentctxnode],
-                                         [topmost], root, 'histedit')
+        backupfile = repair.backupbundle(
+            repo, [parentctxnode], [topmost], root, 'histedit'
+        )
     state.backupfile = backupfile
+
 
 def _getsummary(ctx):
     # a common pattern is to extract the summary but default to the empty
@@ -2026,6 +2223,7 @@ def _getsummary(ctx):
     if summary:
         summary = summary.splitlines()[0]
     return summary
+
 
 def bootstrapcontinue(ui, state, opts):
     repo = state.repo
@@ -2048,23 +2246,32 @@ def bootstrapcontinue(ui, state, opts):
 
     return state
 
+
 def between(repo, old, new, keep):
     """select and validate the set of revision to edit
 
     When keep is false, the specified set can't have children."""
     revs = repo.revs('%n::%n', old, new)
     if revs and not keep:
-        if (not obsolete.isenabled(repo, obsolete.allowunstableopt) and
-            repo.revs('(%ld::) - (%ld)', revs, revs)):
-            raise error.Abort(_('can only histedit a changeset together '
-                                'with all its descendants'))
+        if not obsolete.isenabled(
+            repo, obsolete.allowunstableopt
+        ) and repo.revs('(%ld::) - (%ld)', revs, revs):
+            raise error.Abort(
+                _(
+                    'can only histedit a changeset together '
+                    'with all its descendants'
+                )
+            )
         if repo.revs('(%ld) and merge()', revs):
             raise error.Abort(_('cannot edit history that contains merges'))
         root = repo[revs.first()]  # list is already sorted by repo.revs()
         if not root.mutable():
-            raise error.Abort(_('cannot edit public changeset: %s') % root,
-                             hint=_("see 'hg help phases' for details"))
+            raise error.Abort(
+                _('cannot edit public changeset: %s') % root,
+                hint=_("see 'hg help phases' for details"),
+            )
     return pycompat.maplist(repo.changelog.node, revs)
+
 
 def ruleeditor(repo, ui, actions, editcomment=""):
     """open an editor to edit rules
@@ -2085,7 +2292,7 @@ def ruleeditor(repo, ui, actions, editcomment=""):
                 if fword in primaryactions | secondaryactions | tertiaryactions:
                     act.verb = fword
                     # get the target summary
-                    tsum = summary[len(fword) + 1:].lstrip()
+                    tsum = summary[len(fword) + 1 :].lstrip()
                     # safe but slow: reverse iterate over the actions so we
                     # don't clash on two commits having the same summary
                     for na, l in reversed(list(newact.iteritems())):
@@ -2108,8 +2315,13 @@ def ruleeditor(repo, ui, actions, editcomment=""):
     rules = '\n'.join([act.torule() for act in actions])
     rules += '\n\n'
     rules += editcomment
-    rules = ui.edit(rules, ui.username(), {'prefix': 'histedit'},
-                    repopath=repo.path, action='histedit')
+    rules = ui.edit(
+        rules,
+        ui.username(),
+        {'prefix': 'histedit'},
+        repopath=repo.path,
+        action='histedit',
+    )
 
     # Save edit rules in .hg/histedit-last-edit.txt in case
     # the user needs to ask for help after something
@@ -2119,10 +2331,14 @@ def ruleeditor(repo, ui, actions, editcomment=""):
 
     return rules
 
+
 def parserules(rules, state):
     """Read the histedit rules string and return list of action objects """
-    rules = [l for l in (r.strip() for r in rules.splitlines())
-                if l and not l.startswith('#')]
+    rules = [
+        l
+        for l in (r.strip() for r in rules.splitlines())
+        if l and not l.startswith('#')
+    ]
     actions = []
     for r in rules:
         if ' ' not in r:
@@ -2136,14 +2352,20 @@ def parserules(rules, state):
         actions.append(action)
     return actions
 
+
 def warnverifyactions(ui, repo, actions, state, ctxs):
     try:
         verifyactions(actions, state, ctxs)
     except error.ParseError:
         if repo.vfs.exists('histedit-last-edit.txt'):
-            ui.warn(_('warning: histedit rules saved '
-                      'to: .hg/histedit-last-edit.txt\n'))
+            ui.warn(
+                _(
+                    'warning: histedit rules saved '
+                    'to: .hg/histedit-last-edit.txt\n'
+                )
+            )
         raise
+
 
 def verifyactions(actions, state, ctxs):
     """Verify that there exists exactly one action per given changeset and
@@ -2157,8 +2379,9 @@ def verifyactions(actions, state, ctxs):
     prev = None
 
     if actions and actions[0].verb in ['roll', 'fold']:
-        raise error.ParseError(_('first changeset cannot use verb "%s"') %
-                               actions[0].verb)
+        raise error.ParseError(
+            _('first changeset cannot use verb "%s"') % actions[0].verb
+        )
 
     for action in actions:
         action.verify(prev, expected, seen)
@@ -2169,19 +2392,25 @@ def verifyactions(actions, state, ctxs):
 
     if state.repo.ui.configbool('histedit', 'dropmissing'):
         if len(actions) == 0:
-            raise error.ParseError(_('no rules provided'),
-                    hint=_('use strip extension to remove commits'))
+            raise error.ParseError(
+                _('no rules provided'),
+                hint=_('use strip extension to remove commits'),
+            )
 
         drops = [drop(state, n) for n in missing]
         # put the in the beginning so they execute immediately and
         # don't show in the edit-plan in the future
         actions[:0] = drops
     elif missing:
-        raise error.ParseError(_('missing rules for changeset %s') %
-                node.short(missing[0]),
-                hint=_('use "drop %s" to discard, see also: '
-                       "'hg help -e histedit.config'")
-                       % node.short(missing[0]))
+        raise error.ParseError(
+            _('missing rules for changeset %s') % node.short(missing[0]),
+            hint=_(
+                'use "drop %s" to discard, see also: '
+                "'hg help -e histedit.config'"
+            )
+            % node.short(missing[0]),
+        )
+
 
 def adjustreplacementsfrommarkers(repo, oldreplacements):
     """Adjust replacements from obsolescence markers
@@ -2199,7 +2428,9 @@ def adjustreplacementsfrommarkers(repo, oldreplacements):
     newreplacements = list(oldreplacements)
     oldsuccs = [r[1] for r in oldreplacements]
     # successors that have already been added to succstocheck once
-    seensuccs = set().union(*oldsuccs) # create a set from an iterable of tuples
+    seensuccs = set().union(
+        *oldsuccs
+    )  # create a set from an iterable of tuples
     succstocheck = list(seensuccs)
     while succstocheck:
         n = succstocheck.pop()
@@ -2217,6 +2448,7 @@ def adjustreplacementsfrommarkers(repo, oldreplacements):
                     succstocheck.append(nsucc)
 
     return newreplacements
+
 
 def processreplacement(state):
     """process the list of replacements to return
@@ -2279,6 +2511,7 @@ def processreplacement(state):
 
     return final, tmpnodes, new, newtopmost
 
+
 def movetopmostbookmarks(repo, oldtopmost, newtopmost):
     """Move bookmark from oldtopmost to newly created topmost
 
@@ -2295,6 +2528,7 @@ def movetopmostbookmarks(repo, oldtopmost, newtopmost):
             for name in oldbmarks:
                 changes.append((name, newtopmost))
             marks.applychanges(repo, tr, changes)
+
 
 def cleanupnode(ui, repo, nodes, nobackup=False):
     """strip a group of nodes from the repository
@@ -2314,21 +2548,27 @@ def cleanupnode(ui, repo, nodes, nobackup=False):
             backup = not nobackup
             repair.strip(ui, repo, roots, backup=backup)
 
+
 def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
     if isinstance(nodelist, str):
         nodelist = [nodelist]
     state = histeditstate(repo)
     if state.inprogress():
         state.read()
-        histedit_nodes = {action.node for action
-                          in state.actions if action.node}
+        histedit_nodes = {
+            action.node for action in state.actions if action.node
+        }
         common_nodes = histedit_nodes & set(nodelist)
         if common_nodes:
-            raise error.Abort(_("histedit in progress, can't strip %s")
-                             % ', '.join(node.short(x) for x in common_nodes))
+            raise error.Abort(
+                _("histedit in progress, can't strip %s")
+                % ', '.join(node.short(x) for x in common_nodes)
+            )
     return orig(ui, repo, nodelist, *args, **kwargs)
 
+
 extensions.wrapfunction(repair, 'strip', stripwrapper)
+
 
 def summaryhook(ui, repo):
     state = histeditstate(repo)
@@ -2337,11 +2577,21 @@ def summaryhook(ui, repo):
     state.read()
     if state.actions:
         # i18n: column positioning for "hg summary"
-        ui.write(_('hist:   %s (histedit --continue)\n') %
-                 (ui.label(_('%d remaining'), 'histedit.remaining') %
-                  len(state.actions)))
+        ui.write(
+            _('hist:   %s (histedit --continue)\n')
+            % (
+                ui.label(_('%d remaining'), 'histedit.remaining')
+                % len(state.actions)
+            )
+        )
+
 
 def extsetup(ui):
     cmdutil.summaryhooks.add('histedit', summaryhook)
-    statemod.addunfinished('histedit', fname='histedit-state', allowcommit=True,
-                            continueflag=True, abortfunc=hgaborthistedit)
+    statemod.addunfinished(
+        'histedit',
+        fname='histedit-state',
+        allowcommit=True,
+        continueflag=True,
+        abortfunc=hgaborthistedit,
+    )

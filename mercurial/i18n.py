@@ -24,17 +24,20 @@ else:
     module = pycompat.fsencode(__file__)
 
 _languages = None
-if (pycompat.iswindows
+if (
+    pycompat.iswindows
     and 'LANGUAGE' not in encoding.environ
     and 'LC_ALL' not in encoding.environ
     and 'LC_MESSAGES' not in encoding.environ
-    and 'LANG' not in encoding.environ):
+    and 'LANG' not in encoding.environ
+):
     # Try to detect UI language by "User Interface Language Management" API
     # if no locale variables are set. Note that locale.getdefaultlocale()
     # uses GetLocaleInfo(), which may be different from UI language.
     # (See http://msdn.microsoft.com/en-us/library/dd374098(v=VS.85).aspx )
     try:
         import ctypes
+
         langid = ctypes.windll.kernel32.GetUserDefaultUILanguage()
         _languages = [locale.windows_locale[langid]]
     except (ImportError, AttributeError, KeyError):
@@ -42,6 +45,7 @@ if (pycompat.iswindows
         pass
 
 _ugettext = None
+
 
 def setdatapath(datapath):
     datapath = pycompat.fsdecode(datapath)
@@ -53,7 +57,9 @@ def setdatapath(datapath):
     except AttributeError:
         _ugettext = t.gettext
 
+
 _msgcache = {}  # encoding: {message: translation}
+
 
 def gettext(message):
     """Translate message.
@@ -94,12 +100,16 @@ def gettext(message):
             cache[message] = message
     return cache[message]
 
+
 def _plain():
-    if ('HGPLAIN' not in encoding.environ
-        and 'HGPLAINEXCEPT' not in encoding.environ):
+    if (
+        'HGPLAIN' not in encoding.environ
+        and 'HGPLAINEXCEPT' not in encoding.environ
+    ):
         return False
     exceptions = encoding.environ.get('HGPLAINEXCEPT', '').strip().split(',')
     return 'i18n' not in exceptions
+
 
 if _plain():
     _ = lambda message: message

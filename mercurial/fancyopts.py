@@ -27,6 +27,7 @@ nevernegate = {
     'version',
 }
 
+
 def _earlyoptarg(arg, shortlist, namelist):
     """Check if the given arg is a valid unabbreviated option
 
@@ -88,6 +89,7 @@ def _earlyoptarg(arg, shortlist, namelist):
         if i >= 0:
             return flag, bool(val), val, shortlist.startswith(':', i + 1)
     return '', False, '', False
+
 
 def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     """Parse options like getopt, but ignores unknown options and abbreviated
@@ -202,6 +204,7 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     parsedargs.extend(args[pos:])
     return parsedopts, parsedargs
 
+
 class customopt(object):
     """Manage defaults and mutations for any type of opt."""
 
@@ -226,12 +229,14 @@ class customopt(object):
 
         On failure, abort can be called with a string error message."""
 
+
 class _simpleopt(customopt):
     def _isboolopt(self):
         return isinstance(self._defaultvalue, (bool, type(None)))
 
     def newstate(self, oldstate, newparam, abort):
         return newparam
+
 
 class _callableopt(customopt):
     def __init__(self, callablefn):
@@ -241,6 +246,7 @@ class _callableopt(customopt):
     def newstate(self, oldstate, newparam, abort):
         return self.callablefn(newparam)
 
+
 class _listopt(customopt):
     def getdefaultvalue(self):
         return self._defaultvalue[:]
@@ -249,12 +255,14 @@ class _listopt(customopt):
         oldstate.append(newparam)
         return oldstate
 
+
 class _intopt(customopt):
     def newstate(self, oldstate, newparam, abort):
         try:
             return int(newparam)
         except ValueError:
             abort(_('expected int'))
+
 
 def _defaultopt(default):
     """Returns a default opt implementation, given a default value."""
@@ -269,6 +277,7 @@ def _defaultopt(default):
         return _intopt(default)
     else:
         return _simpleopt(default)
+
 
 def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
     """
@@ -369,9 +378,13 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
         if obj._isboolopt():
             state[name] = boolval
         else:
+
             def abort(s):
-                raise error.Abort(_('invalid value %r for option %s, %s')
-                                  % (pycompat.maybebytestr(val), opt, s))
+                raise error.Abort(
+                    _('invalid value %r for option %s, %s')
+                    % (pycompat.maybebytestr(val), opt, s)
+                )
+
             state[name] = defmap[name].newstate(state[name], val, abort)
 
     # return unparsed args

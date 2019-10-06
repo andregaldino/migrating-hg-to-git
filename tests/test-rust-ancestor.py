@@ -9,6 +9,7 @@ from mercurial import (
 
 try:
     from mercurial import rustext
+
     rustext.__name__  # trigger immediate actual import
 except ImportError:
     rustext = None
@@ -45,12 +46,14 @@ data_non_inlined = (
     b'\x00\x00\x00\x03\x00\x00\x00\x02\xff\xff\xff\xff\x12\xcb\xeby1'
     b'\xb6\r\x98B\xcb\x07\xbd`\x8f\x92\xd9\xc4\x84\xbdK\x00\x00\x00'
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    )
+)
 
 
-@unittest.skipIf(rustext is None or cparsers is None,
-                 "rustext or the C Extension parsers module "
-                 "ancestor relies on is not available")
+@unittest.skipIf(
+    rustext is None or cparsers is None,
+    "rustext or the C Extension parsers module "
+    "ancestor relies on is not available",
+)
 class rustancestorstest(unittest.TestCase):
     """Test the correctness of binding to Rust code.
 
@@ -70,11 +73,10 @@ class rustancestorstest(unittest.TestCase):
     def testiteratorrevlist(self):
         idx = self.parseindex()
         # checking test assumption about the index binary data:
-        self.assertEqual({i: (r[5], r[6]) for i, r in enumerate(idx)},
-                         {0: (-1, -1),
-                          1: (0, -1),
-                          2: (1, -1),
-                          3: (2, -1)})
+        self.assertEqual(
+            {i: (r[5], r[6]) for i, r in enumerate(idx)},
+            {0: (-1, -1), 1: (0, -1), 2: (1, -1), 3: (2, -1)},
+        )
         ait = AncestorsIterator(idx, [3], 0, True)
         self.assertEqual([r for r in ait], [3, 2, 1, 0])
 
@@ -84,11 +86,10 @@ class rustancestorstest(unittest.TestCase):
     def testlazyancestors(self):
         idx = self.parseindex()
         start_count = sys.getrefcount(idx)  # should be 2 (see Python doc)
-        self.assertEqual({i: (r[5], r[6]) for i, r in enumerate(idx)},
-                         {0: (-1, -1),
-                          1: (0, -1),
-                          2: (1, -1),
-                          3: (2, -1)})
+        self.assertEqual(
+            {i: (r[5], r[6]) for i, r in enumerate(idx)},
+            {0: (-1, -1), 1: (0, -1), 2: (1, -1), 3: (2, -1)},
+        )
         lazy = LazyAncestors(idx, [3], 0, True)
         # we have two more references to the index:
         # - in its inner iterator for __contains__ and __bool__
@@ -148,9 +149,9 @@ class rustancestorstest(unittest.TestCase):
         self.assertEqual(list(ait), [3, 2, 1, 0])
 
     def testgrapherror(self):
-        data = (data_non_inlined[:64 + 27] +
-                b'\xf2' +
-                data_non_inlined[64 + 28:])
+        data = (
+            data_non_inlined[: 64 + 27] + b'\xf2' + data_non_inlined[64 + 28 :]
+        )
         idx = cparsers.parse_index2(data, False)[0]
         with self.assertRaises(rustext.GraphError) as arc:
             AncestorsIterator(idx, [1], -1, False)
@@ -170,6 +171,8 @@ class rustancestorstest(unittest.TestCase):
         idx = self.parseindex()
         self.assertEqual(dagop.headrevs(idx, [1, 2, 3]), {3})
 
+
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

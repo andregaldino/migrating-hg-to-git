@@ -53,7 +53,7 @@ def openstore(repo=None, remote=None, put=False, ui=None):
     path = util.safehasattr(remote, 'url') and remote.url() or remote.path
 
     match = _scheme_re.match(path)
-    if not match:                       # regular filesystem path
+    if not match:  # regular filesystem path
         scheme = 'file'
     else:
         scheme = match.group(1)
@@ -69,17 +69,21 @@ def openstore(repo=None, remote=None, put=False, ui=None):
         except lfutil.storeprotonotcapable:
             pass
 
-    raise error.Abort(_('%s does not appear to be a largefile store') %
-                     util.hidepassword(path))
+    raise error.Abort(
+        _('%s does not appear to be a largefile store')
+        % util.hidepassword(path)
+    )
+
 
 _storeprovider = {
-    'file':  [localstore.localstore],
-    'http':  [wirestore.wirestore],
+    'file': [localstore.localstore],
+    'http': [wirestore.wirestore],
     'https': [wirestore.wirestore],
     'ssh': [wirestore.wirestore],
-    }
+}
 
 _scheme_re = re.compile(br'^([a-zA-Z0-9+-.]+)://')
+
 
 def getlfile(ui, hash):
     return util.chunkbuffer(openstore(ui=ui)._get(hash))

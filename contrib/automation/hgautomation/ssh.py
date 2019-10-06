@@ -11,14 +11,13 @@ import socket
 import time
 import warnings
 
-from cryptography.utils import (
-    CryptographyDeprecationWarning,
-)
+from cryptography.utils import CryptographyDeprecationWarning
 import paramiko
 
 
 def wait_for_ssh(hostname, port, timeout=60, username=None, key_filename=None):
     """Wait for an SSH server to start on the specified host and port."""
+
     class IgnoreHostKeyPolicy(paramiko.MissingHostKeyPolicy):
         def missing_host_key(self, client, hostname, key):
             return
@@ -28,17 +27,23 @@ def wait_for_ssh(hostname, port, timeout=60, username=None, key_filename=None):
     # paramiko triggers a CryptographyDeprecationWarning in the cryptography
     # package. Let's suppress
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore',
-                                category=CryptographyDeprecationWarning)
+        warnings.filterwarnings(
+            'ignore', category=CryptographyDeprecationWarning
+        )
 
         while True:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(IgnoreHostKeyPolicy())
             try:
-                client.connect(hostname, port=port, username=username,
-                               key_filename=key_filename,
-                               timeout=5.0, allow_agent=False,
-                               look_for_keys=False)
+                client.connect(
+                    hostname,
+                    port=port,
+                    username=username,
+                    key_filename=key_filename,
+                    timeout=5.0,
+                    allow_agent=False,
+                    look_for_keys=False,
+                )
 
                 return client
             except socket.error:

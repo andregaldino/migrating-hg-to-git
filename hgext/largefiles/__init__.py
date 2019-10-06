@@ -135,14 +135,14 @@ eh.merge(lfcommands.eh)
 eh.merge(overrides.eh)
 eh.merge(proto.eh)
 
-eh.configitem('largefiles', 'minsize',
-    default=eh.configitem.dynamicdefault,
+eh.configitem(
+    'largefiles', 'minsize', default=eh.configitem.dynamicdefault,
 )
-eh.configitem('largefiles', 'patterns',
-    default=list,
+eh.configitem(
+    'largefiles', 'patterns', default=list,
 )
-eh.configitem('largefiles', 'usercache',
-    default=None,
+eh.configitem(
+    'largefiles', 'usercache', default=None,
 )
 
 cmdtable = eh.cmdtable
@@ -151,9 +151,11 @@ extsetup = eh.finalextsetup
 reposetup = reposetup.reposetup
 uisetup = eh.finaluisetup
 
+
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the largefiles requirement
     supported |= {'largefiles'}
+
 
 @eh.uisetup
 def _uisetup(ui):
@@ -165,16 +167,21 @@ def _uisetup(ui):
 
     # create the new wireproto commands ...
     wireprotov1server.wireprotocommand('putlfile', 'sha', permission='push')(
-        proto.putlfile)
+        proto.putlfile
+    )
     wireprotov1server.wireprotocommand('getlfile', 'sha', permission='pull')(
-        proto.getlfile)
+        proto.getlfile
+    )
     wireprotov1server.wireprotocommand('statlfile', 'sha', permission='pull')(
-        proto.statlfile)
+        proto.statlfile
+    )
     wireprotov1server.wireprotocommand('lheads', '', permission='pull')(
-        wireprotov1server.heads)
+        wireprotov1server.heads
+    )
 
-    extensions.wrapfunction(wireprotov1server.commands['heads'], 'func',
-                            proto.heads)
+    extensions.wrapfunction(
+        wireprotov1server.commands['heads'], 'func', proto.heads
+    )
     # TODO also wrap wireproto.commandsv2 once heads is implemented there.
 
     # can't do this in reposetup because it needs to have happened before
@@ -188,7 +195,7 @@ def _uisetup(ui):
     for name, module in extensions.extensions():
         if name == 'rebase':
             # TODO: teach exthelper to handle this
-            extensions.wrapfunction(module, 'rebase',
-                                    overrides.overriderebase)
+            extensions.wrapfunction(module, 'rebase', overrides.overriderebase)
+
 
 revsetpredicate = eh.revsetpredicate

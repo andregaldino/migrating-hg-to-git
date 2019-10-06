@@ -20,10 +20,7 @@ from .constants import (
     REVIDX_SIDEDATA,
 )
 
-from .. import (
-    error,
-    util
-)
+from .. import error, util
 
 # blanked usage of all the name to prevent pyflakes constraints
 # We need these name available in the module for extensions.
@@ -41,6 +38,7 @@ REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
 flagprocessors = {
     REVIDX_ISCENSORED: None,
 }
+
 
 def addflagprocessor(flag, processor):
     """Register a flag processor on a revision data flag.
@@ -69,17 +67,19 @@ def addflagprocessor(flag, processor):
     """
     insertflagprocessor(flag, processor, flagprocessors)
 
+
 def insertflagprocessor(flag, processor, flagprocessors):
     if not flag & REVIDX_KNOWN_FLAGS:
-        msg = _("cannot register processor on unknown flag '%#x'.") % (flag)
+        msg = _("cannot register processor on unknown flag '%#x'.") % flag
         raise error.ProgrammingError(msg)
     if flag not in REVIDX_FLAGS_ORDER:
-        msg = _("flag '%#x' undefined in REVIDX_FLAGS_ORDER.") % (flag)
+        msg = _("flag '%#x' undefined in REVIDX_FLAGS_ORDER.") % flag
         raise error.ProgrammingError(msg)
     if flag in flagprocessors:
-        msg = _("cannot register multiple processors on flag '%#x'.") % (flag)
+        msg = _("cannot register multiple processors on flag '%#x'.") % flag
         raise error.Abort(msg)
     flagprocessors[flag] = processor
+
 
 def processflagswrite(revlog, text, flags, sidedata):
     """Inspect revision data flags and applies write transformations defined
@@ -97,8 +97,10 @@ def processflagswrite(revlog, text, flags, sidedata):
     processed text and ``validatehash`` is a bool indicating whether the
     returned text should be checked for hash integrity.
     """
-    return _processflagsfunc(revlog, text, flags, 'write',
-                             sidedata=sidedata)[:2]
+    return _processflagsfunc(revlog, text, flags, 'write', sidedata=sidedata)[
+        :2
+    ]
+
 
 def processflagsread(revlog, text, flags):
     """Inspect revision data flags and applies read transformations defined
@@ -120,6 +122,7 @@ def processflagsread(revlog, text, flags):
     """
     return _processflagsfunc(revlog, text, flags, 'read')
 
+
 def processflagsraw(revlog, text, flags):
     """Inspect revision data flags to check is the content hash should be
     validated.
@@ -138,6 +141,7 @@ def processflagsraw(revlog, text, flags):
     """
     return _processflagsfunc(revlog, text, flags, 'raw')[1]
 
+
 def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
     """internal function to process flag on a revlog
 
@@ -147,12 +151,13 @@ def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
     if flags == 0:
         return text, True, {}
     if operation not in ('read', 'write', 'raw'):
-        raise error.ProgrammingError(_("invalid '%s' operation") %
-                                     operation)
+        raise error.ProgrammingError(_("invalid '%s' operation") % operation)
     # Check all flags are known.
     if flags & ~REVIDX_KNOWN_FLAGS:
-        raise revlog._flagserrorclass(_("incompatible revision flag '%#x'") %
-                                      (flags & ~REVIDX_KNOWN_FLAGS))
+        raise revlog._flagserrorclass(
+            _("incompatible revision flag '%#x'")
+            % (flags & ~REVIDX_KNOWN_FLAGS)
+        )
     validatehash = True
     # Depending on the operation (read or write), the order might be
     # reversed due to non-commutative transforms.
@@ -168,7 +173,7 @@ def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
             vhash = True
 
             if flag not in revlog._flagprocessors:
-                message = _("missing processor for flag '%#x'") % (flag)
+                message = _("missing processor for flag '%#x'") % flag
                 raise revlog._flagserrorclass(message)
 
             processor = revlog._flagprocessors[flag]
@@ -180,7 +185,7 @@ def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
                 elif operation == 'read':
                     text, vhash, s = readtransform(revlog, text)
                     outsidedata.update(s)
-                else: # write operation
+                else:  # write operation
                     text, vhash = writetransform(revlog, text, sidedata)
             validatehash = validatehash and vhash
 

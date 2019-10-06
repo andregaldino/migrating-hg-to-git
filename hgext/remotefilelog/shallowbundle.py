@@ -26,10 +26,10 @@ NoFiles = 0
 LocalFiles = 1
 AllFiles = 2
 
+
 def shallowgroup(cls, self, nodelist, rlog, lookup, units=None, reorder=None):
     if not isinstance(rlog, remotefilelog.remotefilelog):
-        for c in super(cls, self).group(nodelist, rlog, lookup,
-                                        units=units):
+        for c in super(cls, self).group(nodelist, rlog, lookup, units=units):
             yield c
         return
 
@@ -52,17 +52,20 @@ def shallowgroup(cls, self, nodelist, rlog, lookup, units=None, reorder=None):
 
     yield self.close()
 
+
 class shallowcg1packer(changegroup.cgpacker):
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
         if shallowutil.isenabled(self._repo):
             fastpathlinkrev = False
 
-        return super(shallowcg1packer, self).generate(commonrevs, clnodes,
-            fastpathlinkrev, source)
+        return super(shallowcg1packer, self).generate(
+            commonrevs, clnodes, fastpathlinkrev, source
+        )
 
     def group(self, nodelist, rlog, lookup, units=None, reorder=None):
-        return shallowgroup(shallowcg1packer, self, nodelist, rlog, lookup,
-                            units=units)
+        return shallowgroup(
+            shallowcg1packer, self, nodelist, rlog, lookup, units=units
+        )
 
     def generatefiles(self, changedfiles, *args):
         try:
@@ -78,16 +81,18 @@ class shallowcg1packer(changegroup.cgpacker):
                 # Force load the filelog data.
                 bundlerepo.bundlerepository.file(repo, 'foo')
                 if repo._cgfilespos:
-                    raise error.Abort("cannot pull from full bundles",
-                                      hint="use `hg unbundle` instead")
+                    raise error.Abort(
+                        "cannot pull from full bundles",
+                        hint="use `hg unbundle` instead",
+                    )
                 return []
             filestosend = self.shouldaddfilegroups(source)
             if filestosend == NoFiles:
-                changedfiles = list([f for f in changedfiles
-                                     if not repo.shallowmatch(f)])
+                changedfiles = list(
+                    [f for f in changedfiles if not repo.shallowmatch(f)]
+                )
 
-        return super(shallowcg1packer, self).generatefiles(
-            changedfiles, *args)
+        return super(shallowcg1packer, self).generatefiles(changedfiles, *args)
 
     def shouldaddfilegroups(self, source):
         repo = self._repo
@@ -110,8 +115,9 @@ class shallowcg1packer(changegroup.cgpacker):
 
     def prune(self, rlog, missing, commonrevs):
         if not isinstance(rlog, remotefilelog.remotefilelog):
-            return super(shallowcg1packer, self).prune(rlog, missing,
-                commonrevs)
+            return super(shallowcg1packer, self).prune(
+                rlog, missing, commonrevs
+            )
 
         repo = self._repo
         results = []
@@ -138,6 +144,7 @@ class shallowcg1packer(changegroup.cgpacker):
         yield meta
         yield delta
 
+
 def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
     if not shallowutil.isenabled(repo):
         return orig(repo, outgoing, version, source, *args, **kwargs)
@@ -149,23 +156,25 @@ def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
             bundlecaps = kwargs.get(r'bundlecaps')
             includepattern = None
             excludepattern = None
-            for cap in (bundlecaps or []):
+            for cap in bundlecaps or []:
                 if cap.startswith("includepattern="):
-                    raw = cap[len("includepattern="):]
+                    raw = cap[len("includepattern=") :]
                     if raw:
                         includepattern = raw.split('\0')
                 elif cap.startswith("excludepattern="):
-                    raw = cap[len("excludepattern="):]
+                    raw = cap[len("excludepattern=") :]
                     if raw:
                         excludepattern = raw.split('\0')
             if includepattern or excludepattern:
-                repo.shallowmatch = match.match(repo.root, '', None,
-                    includepattern, excludepattern)
+                repo.shallowmatch = match.match(
+                    repo.root, '', None, includepattern, excludepattern
+                )
             else:
                 repo.shallowmatch = match.always()
         return orig(repo, outgoing, version, source, *args, **kwargs)
     finally:
         repo.shallowmatch = original
+
 
 def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
     if not shallowutil.isenabled(repo):
@@ -218,6 +227,7 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
             raise error.Abort(_("received file revlog group is empty"))
 
     processed = set()
+
     def available(f, node, depf, depnode):
         if depnode != nullid and (depf, depnode) not in processed:
             if not (depf, depnode) in revisiondatas:

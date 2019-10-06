@@ -28,9 +28,7 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 
-from mercurial.node import (
-    bin,
-)
+from mercurial.node import bin
 from mercurial import (
     bookmarks,
     error,
@@ -45,15 +43,15 @@ from mercurial import (
     util,
 )
 
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
 
 if pycompat.ispy3:
     import collections.abc
+
     mutablemapping = collections.abc.MutableMapping
 else:
     import collections
+
     mutablemapping = collections.MutableMapping
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -67,15 +65,16 @@ configitem = registrar.configitem(configtable)
 templatekeyword = registrar.templatekeyword()
 revsetpredicate = registrar.revsetpredicate()
 
-configitem('remotenames', 'bookmarks',
-    default=True,
+configitem(
+    'remotenames', 'bookmarks', default=True,
 )
-configitem('remotenames', 'branches',
-    default=True,
+configitem(
+    'remotenames', 'branches', default=True,
 )
-configitem('remotenames', 'hoistedpeer',
-    default='default',
+configitem(
+    'remotenames', 'hoistedpeer', default='default',
 )
+
 
 class lazyremotenamedict(mutablemapping):
     """
@@ -88,10 +87,11 @@ class lazyremotenamedict(mutablemapping):
     is in self.potentialentries we resolve it and store the result in
     self.cache. We cannot be lazy is when asked all the entries (keys).
     """
+
     def __init__(self, kind, repo):
         self.cache = {}
         self.potentialentries = {}
-        self._kind = kind # bookmarks or branches
+        self._kind = kind  # bookmarks or branches
         self._repo = repo
         self.loaded = False
 
@@ -99,8 +99,9 @@ class lazyremotenamedict(mutablemapping):
         """ Read the remotenames file, store entries matching selected kind """
         self.loaded = True
         repo = self._repo
-        for node, rpath, rname in logexchange.readremotenamefile(repo,
-                                                                self._kind):
+        for node, rpath, rname in logexchange.readremotenamefile(
+            repo, self._kind
+        ):
             name = rpath + '/' + rname
             self.potentialentries[name] = (node, rpath, name)
 
@@ -117,7 +118,7 @@ class lazyremotenamedict(mutablemapping):
         except LookupError:
             return None
         # Skip closed branches
-        if (self._kind == 'branches' and repo[binnode].closesbranch()):
+        if self._kind == 'branches' and repo[binnode].closesbranch():
             return None
         return [binnode]
 
@@ -168,6 +169,7 @@ class lazyremotenamedict(mutablemapping):
             yield (k, [bin(vtup[0])])
 
     items = iteritems
+
 
 class remotenames(object):
     """
@@ -223,7 +225,7 @@ class remotenames(object):
             hoist += '/'
             for name, node in marktonodes.iteritems():
                 if name.startswith(hoist):
-                    name = name[len(hoist):]
+                    name = name[len(hoist) :]
                     self._hoisttonodes[name] = node
         return self._hoisttonodes
 
@@ -234,9 +236,10 @@ class remotenames(object):
             hoist += '/'
             for name, node in marktonodes.iteritems():
                 if name.startswith(hoist):
-                    name = name[len(hoist):]
+                    name = name[len(hoist) :]
                     self._nodetohoists.setdefault(node[0], []).append(name)
         return self._nodetohoists
+
 
 def wrapprintbookmarks(orig, ui, repo, fm, bmarks):
     if 'remotebookmarks' not in repo.names:
@@ -253,8 +256,10 @@ def wrapprintbookmarks(orig, ui, repo, fm, bmarks):
 
     return orig(ui, repo, fm, bmarks)
 
+
 def extsetup(ui):
     extensions.wrapfunction(bookmarks, '_printbookmarks', wrapprintbookmarks)
+
 
 def reposetup(ui, repo):
 
@@ -274,10 +279,13 @@ def reposetup(ui, repo):
             colorname='remotebookmark',
             logfmt='remote bookmark:  %s\n',
             listnames=lambda repo: repo._remotenames.bmarktonodes().keys(),
-            namemap=lambda repo, name:
-                repo._remotenames.bmarktonodes().get(name, []),
-            nodemap=lambda repo, node:
-                repo._remotenames.nodetobmarks().get(node, []))
+            namemap=lambda repo, name: repo._remotenames.bmarktonodes().get(
+                name, []
+            ),
+            nodemap=lambda repo, node: repo._remotenames.nodetobmarks().get(
+                node, []
+            ),
+        )
         repo.names.addnamespace(remotebookmarkns)
 
         # hoisting only works if there are remote bookmarks
@@ -288,12 +296,16 @@ def reposetup(ui, repo):
                 templatename='hoistednames',
                 colorname='hoistedname',
                 logfmt='hoisted name:  %s\n',
-                listnames = lambda repo:
-                    repo._remotenames.hoisttonodes(hoist).keys(),
-                namemap = lambda repo, name:
-                    repo._remotenames.hoisttonodes(hoist).get(name, []),
-                nodemap = lambda repo, node:
-                    repo._remotenames.nodetohoists(hoist).get(node, []))
+                listnames=lambda repo: repo._remotenames.hoisttonodes(
+                    hoist
+                ).keys(),
+                namemap=lambda repo, name: repo._remotenames.hoisttonodes(
+                    hoist
+                ).get(name, []),
+                nodemap=lambda repo, node: repo._remotenames.nodetohoists(
+                    hoist
+                ).get(node, []),
+            )
             repo.names.addnamespace(hoistednamens)
 
     if ui.configbool('remotenames', 'branches'):
@@ -302,12 +314,16 @@ def reposetup(ui, repo):
             templatename='remotebranches',
             colorname='remotebranch',
             logfmt='remote branch:  %s\n',
-            listnames = lambda repo: repo._remotenames.branchtonodes().keys(),
-            namemap = lambda repo, name:
-                repo._remotenames.branchtonodes().get(name, []),
-            nodemap = lambda repo, node:
-                repo._remotenames.nodetobranch().get(node, []))
+            listnames=lambda repo: repo._remotenames.branchtonodes().keys(),
+            namemap=lambda repo, name: repo._remotenames.branchtonodes().get(
+                name, []
+            ),
+            nodemap=lambda repo, node: repo._remotenames.nodetobranch().get(
+                node, []
+            ),
+        )
         repo.names.addnamespace(remotebranchns)
+
 
 @templatekeyword('remotenames', requires={'repo', 'ctx'})
 def remotenameskw(context, mapping):
@@ -322,8 +338,10 @@ def remotenameskw(context, mapping):
     if 'remotebranches' in repo.names:
         remotenames += repo.names['remotebranches'].names(repo, ctx.node())
 
-    return templateutil.compatlist(context, mapping, 'remotename', remotenames,
-                                   plural='remotenames')
+    return templateutil.compatlist(
+        context, mapping, 'remotename', remotenames, plural='remotenames'
+    )
+
 
 @templatekeyword('remotebookmarks', requires={'repo', 'ctx'})
 def remotebookmarkskw(context, mapping):
@@ -335,8 +353,14 @@ def remotebookmarkskw(context, mapping):
     if 'remotebookmarks' in repo.names:
         remotebmarks = repo.names['remotebookmarks'].names(repo, ctx.node())
 
-    return templateutil.compatlist(context, mapping, 'remotebookmark',
-                                   remotebmarks, plural='remotebookmarks')
+    return templateutil.compatlist(
+        context,
+        mapping,
+        'remotebookmark',
+        remotebmarks,
+        plural='remotebookmarks',
+    )
+
 
 @templatekeyword('remotebranches', requires={'repo', 'ctx'})
 def remotebrancheskw(context, mapping):
@@ -348,15 +372,22 @@ def remotebrancheskw(context, mapping):
     if 'remotebranches' in repo.names:
         remotebranches = repo.names['remotebranches'].names(repo, ctx.node())
 
-    return templateutil.compatlist(context, mapping, 'remotebranch',
-                                   remotebranches, plural='remotebranches')
+    return templateutil.compatlist(
+        context,
+        mapping,
+        'remotebranch',
+        remotebranches,
+        plural='remotebranches',
+    )
+
 
 def _revsetutil(repo, subset, x, rtypes):
     """utility function to return a set of revs based on the rtypes"""
     args = revsetlang.getargs(x, 0, 1, _('only one argument accepted'))
     if args:
         kind, pattern, matcher = stringutil.stringmatcher(
-            revsetlang.getstring(args[0], _('argument must be a string')))
+            revsetlang.getstring(args[0], _('argument must be a string'))
+        )
     else:
         kind = pattern = None
         matcher = util.always
@@ -371,11 +402,13 @@ def _revsetutil(repo, subset, x, rtypes):
                     continue
                 nodes.update(ns.nodes(repo, name))
     if kind == 'literal' and not nodes:
-        raise error.RepoLookupError(_("remote name '%s' does not exist")
-                                    % pattern)
+        raise error.RepoLookupError(
+            _("remote name '%s' does not exist") % pattern
+        )
 
     revs = (cl.rev(n) for n in nodes if cl.hasnode(n))
     return subset & smartset.baseset(revs)
+
 
 @revsetpredicate('remotenames([name])')
 def remotenamesrevset(repo, subset, x):
@@ -386,6 +419,7 @@ def remotenamesrevset(repo, subset, x):
     """
     return _revsetutil(repo, subset, x, ('remotebookmarks', 'remotebranches'))
 
+
 @revsetpredicate('remotebranches([name])')
 def remotebranchesrevset(repo, subset, x):
     """All changesets which are branch heads on remotes. If `name` is
@@ -394,6 +428,7 @@ def remotebranchesrevset(repo, subset, x):
     Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
     """
     return _revsetutil(repo, subset, x, ('remotebranches',))
+
 
 @revsetpredicate('remotebookmarks([name])')
 def remotebmarksrevset(repo, subset, x):

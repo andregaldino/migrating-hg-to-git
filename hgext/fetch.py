@@ -10,9 +10,7 @@
 from __future__ import absolute_import
 
 from mercurial.i18n import _
-from mercurial.node import (
-    short,
-)
+from mercurial.node import short
 from mercurial import (
     cmdutil,
     error,
@@ -34,15 +32,27 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-@command('fetch',
-    [('r', 'rev', [],
-     _('a specific revision you would like to pull'), _('REV')),
-    ('', 'edit', None, _('invoke editor on commit messages')),
-    ('', 'force-editor', None, _('edit commit message (DEPRECATED)')),
-    ('', 'switch-parent', None, _('switch parents when merging')),
-    ] + cmdutil.commitopts + cmdutil.commitopts2 + cmdutil.remoteopts,
+
+@command(
+    'fetch',
+    [
+        (
+            'r',
+            'rev',
+            [],
+            _('a specific revision you would like to pull'),
+            _('REV'),
+        ),
+        ('', 'edit', None, _('invoke editor on commit messages')),
+        ('', 'force-editor', None, _('edit commit message (DEPRECATED)')),
+        ('', 'switch-parent', None, _('switch parents when merging')),
+    ]
+    + cmdutil.commitopts
+    + cmdutil.commitopts2
+    + cmdutil.remoteopts,
     _('hg fetch [SOURCE]'),
-    helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT)
+    helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
+)
 def fetch(ui, repo, source='default', **opts):
     '''pull changes from a remote repository, merge new changes if needed.
 
@@ -75,8 +85,10 @@ def fetch(ui, repo, source='default', **opts):
     except error.RepoLookupError:
         branchnode = None
     if parent != branchnode:
-        raise error.Abort(_('working directory not at branch tip'),
-                         hint=_("use 'hg update' to check out branch tip"))
+        raise error.Abort(
+            _('working directory not at branch tip'),
+            hint=_("use 'hg update' to check out branch tip"),
+        )
 
     wlock = lock = None
     try:
@@ -88,19 +100,26 @@ def fetch(ui, repo, source='default', **opts):
         bheads = repo.branchheads(branch)
         bheads = [head for head in bheads if len(repo[head].children()) == 0]
         if len(bheads) > 1:
-            raise error.Abort(_('multiple heads in this branch '
-                               '(use "hg heads ." and "hg merge" to merge)'))
+            raise error.Abort(
+                _(
+                    'multiple heads in this branch '
+                    '(use "hg heads ." and "hg merge" to merge)'
+                )
+            )
 
         other = hg.peer(repo, opts, ui.expandpath(source))
-        ui.status(_('pulling from %s\n') %
-                  util.hidepassword(ui.expandpath(source)))
+        ui.status(
+            _('pulling from %s\n') % util.hidepassword(ui.expandpath(source))
+        )
         revs = None
         if opts['rev']:
             try:
                 revs = [other.lookup(rev) for rev in opts['rev']]
             except error.CapabilityError:
-                err = _("other repository doesn't support revision lookup, "
-                        "so a rev cannot be specified.")
+                err = _(
+                    "other repository doesn't support revision lookup, "
+                    "so a rev cannot be specified."
+                )
                 raise error.Abort(err)
 
         # Are there any changes at all?
@@ -125,9 +144,13 @@ def fetch(ui, repo, source='default', **opts):
             hg.clean(repo, newparent)
         newheads = [n for n in newheads if n != newparent]
         if len(newheads) > 1:
-            ui.status(_('not merging with %d other new branch heads '
-                        '(use "hg heads ." and "hg merge" to merge them)\n') %
-                      (len(newheads) - 1))
+            ui.status(
+                _(
+                    'not merging with %d other new branch heads '
+                    '(use "hg heads ." and "hg merge" to merge them)\n'
+                )
+                % (len(newheads) - 1)
+            )
             return 1
 
         if not newheads:
@@ -143,25 +166,29 @@ def fetch(ui, repo, source='default', **opts):
                 firstparent, secondparent = newparent, newheads[0]
             else:
                 firstparent, secondparent = newheads[0], newparent
-                ui.status(_('updating to %d:%s\n') %
-                          (repo.changelog.rev(firstparent),
-                           short(firstparent)))
+                ui.status(
+                    _('updating to %d:%s\n')
+                    % (repo.changelog.rev(firstparent), short(firstparent))
+                )
             hg.clean(repo, firstparent)
-            ui.status(_('merging with %d:%s\n') %
-                      (repo.changelog.rev(secondparent), short(secondparent)))
+            ui.status(
+                _('merging with %d:%s\n')
+                % (repo.changelog.rev(secondparent), short(secondparent))
+            )
             err = hg.merge(repo, secondparent, remind=False)
 
         if not err:
             # we don't translate commit messages
-            message = (cmdutil.logmessage(ui, opts) or
-                       ('Automated merge with %s' %
-                        util.removeauth(other.url())))
+            message = cmdutil.logmessage(ui, opts) or (
+                'Automated merge with %s' % util.removeauth(other.url())
+            )
             editopt = opts.get('edit') or opts.get('force_editor')
             editor = cmdutil.getcommiteditor(edit=editopt, editform='fetch')
             n = repo.commit(message, opts['user'], opts['date'], editor=editor)
-            ui.status(_('new changeset %d:%s merges remote changes '
-                        'with local\n') % (repo.changelog.rev(n),
-                                           short(n)))
+            ui.status(
+                _('new changeset %d:%s merges remote changes ' 'with local\n')
+                % (repo.changelog.rev(n), short(n))
+            )
 
         return err
 

@@ -18,12 +18,14 @@ from mercurial import (
     pycompat,
     ui as uimod,
 )
+
 # Load the local remotefilelog, not the system one
 sys.path[0:0] = [os.path.join(os.path.dirname(__file__), '..')]
 from hgext.remotefilelog import (
     basepack,
     historypack,
 )
+
 
 class histpacktests(unittest.TestCase):
     def setUp(self):
@@ -42,8 +44,9 @@ class histpacktests(unittest.TestCase):
         return hashlib.sha1(content).digest()
 
     def getFakeHash(self):
-        return b''.join(pycompat.bytechr(random.randint(0, 255))
-                        for _ in range(20))
+        return b''.join(
+            pycompat.bytechr(random.randint(0, 255)) for _ in range(20)
+        )
 
     def createPack(self, revisions=None):
         """Creates and returns a historypack containing the specified revisions.
@@ -52,12 +55,19 @@ class histpacktests(unittest.TestCase):
         node, p1node, p2node, and linknode.
         """
         if revisions is None:
-            revisions = [(b"filename", self.getFakeHash(), nullid, nullid,
-                          self.getFakeHash(), None)]
+            revisions = [
+                (
+                    b"filename",
+                    self.getFakeHash(),
+                    nullid,
+                    nullid,
+                    self.getFakeHash(),
+                    None,
+                )
+            ]
 
         packdir = pycompat.fsencode(self.makeTempDir())
-        packer = historypack.mutablehistorypack(uimod.ui(), packdir,
-                                                version=2)
+        packer = historypack.mutablehistorypack(uimod.ui(), packdir, version=2)
 
         for filename, node, p1, p2, linknode, copyfrom in revisions:
             packer.add(filename, node, p1, p2, linknode, copyfrom)
@@ -163,8 +173,7 @@ class histpacktests(unittest.TestCase):
         # Verify the pack contents
         for (filename, node) in allentries:
             ancestors = pack.getancestors(filename, node)
-            self.assertEqual(ancestorcounts[(filename, node)],
-                             len(ancestors))
+            self.assertEqual(ancestorcounts[(filename, node)], len(ancestors))
             for anode, (ap1, ap2, alinknode, copyfrom) in ancestors.items():
                 ep1, ep2, elinknode = allentries[(filename, anode)]
                 self.assertEqual(ap1, ep1)
@@ -208,13 +217,15 @@ class histpacktests(unittest.TestCase):
         missing = pack.getmissing([(filename, revisions[0][1])])
         self.assertFalse(missing)
 
-        missing = pack.getmissing([(filename, revisions[0][1]),
-                                   (filename, revisions[1][1])])
+        missing = pack.getmissing(
+            [(filename, revisions[0][1]), (filename, revisions[1][1])]
+        )
         self.assertFalse(missing)
 
         fakenode = self.getFakeHash()
-        missing = pack.getmissing([(filename, revisions[0][1]),
-                                   (filename, fakenode)])
+        missing = pack.getmissing(
+            [(filename, revisions[0][1]), (filename, fakenode)]
+        )
         self.assertEqual(missing, [(filename, fakenode)])
 
         # Test getmissing on a non-existant filename
@@ -268,11 +279,13 @@ class histpacktests(unittest.TestCase):
             self.assertEqual(p2, actual[1])
             self.assertEqual(linknode, actual[2])
             self.assertEqual(copyfrom, actual[3])
+
+
 # TODO:
 # histpack store:
 # - repack two packs into one
 
 if __name__ == '__main__':
     if pycompat.iswindows:
-        sys.exit(80)    # Skip on Windows
+        sys.exit(80)  # Skip on Windows
     silenttestrunner.main(__name__)

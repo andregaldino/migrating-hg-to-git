@@ -47,6 +47,7 @@ renameflag = 2
 # len(mercurial.node.nullid)
 _hshlen = 20
 
+
 class revmap(object):
     """trivial hg bin hash - linelog rev bidirectional map
 
@@ -157,15 +158,16 @@ class revmap(object):
         """write the state down to the file"""
         if not self.path:
             return
-        if self._lastmaxrev == -1: # write the entire file
+        if self._lastmaxrev == -1:  # write the entire file
             with open(self.path, 'wb') as f:
                 f.write(self.HEADER)
                 for i in pycompat.xrange(1, len(self._rev2hsh)):
                     self._writerev(i, f)
-        else: # append incrementally
+        else:  # append incrementally
             with open(self.path, 'ab') as f:
-                for i in pycompat.xrange(self._lastmaxrev + 1,
-                                         len(self._rev2hsh)):
+                for i in pycompat.xrange(
+                    self._lastmaxrev + 1, len(self._rev2hsh)
+                ):
                     self._writerev(i, f)
         self._lastmaxrev = self.maxrev
 
@@ -217,7 +219,7 @@ class revmap(object):
         buf = ''
         while True:
             ch = f.read(1)
-            if not ch: # unexpected eof
+            if not ch:  # unexpected eof
                 raise error.CorruptedFileError()
             if ch == '\0':
                 break
@@ -229,9 +231,9 @@ class revmap(object):
         test if (node, path) is in the map, and is not in a side branch.
         f can be either a tuple of (node, path), or a fctx.
         """
-        if isinstance(f, tuple): # f: (node, path)
+        if isinstance(f, tuple):  # f: (node, path)
             hsh, path = f
-        else: # f: fctx
+        else:  # f: fctx
             hsh, path = f.node(), f.path()
         rev = self.hsh2rev(hsh)
         if rev is None:
@@ -239,6 +241,7 @@ class revmap(object):
         if path is not None and path != self.rev2path(rev):
             return False
         return (self.rev2flag(rev) & sidebranchflag) == 0
+
 
 def getlastnode(path):
     """return the last hash in a revmap, without loading its full content.

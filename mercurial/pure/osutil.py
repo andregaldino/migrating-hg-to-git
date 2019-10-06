@@ -18,6 +18,7 @@ from .. import (
     pycompat,
 )
 
+
 def _mode_to_kind(mode):
     if statmod.S_ISREG(mode):
         return statmod.S_IFREG
@@ -34,6 +35,7 @@ def _mode_to_kind(mode):
     if statmod.S_ISSOCK(mode):
         return statmod.S_IFSOCK
     return mode
+
 
 def listdir(path, stat=False, skip=None):
     '''listdir(path, stat=False) -> list_of_tuples
@@ -64,6 +66,7 @@ def listdir(path, stat=False, skip=None):
         else:
             result.append((fn, _mode_to_kind(st.st_mode)))
     return result
+
 
 if not pycompat.iswindows:
     posixfile = open
@@ -111,8 +114,11 @@ if not pycompat.iswindows:
     _recvmsg = getattr(_libc, 'recvmsg', None)
     if _recvmsg:
         _recvmsg.restype = getattr(ctypes, 'c_ssize_t', ctypes.c_long)
-        _recvmsg.argtypes = (ctypes.c_int, ctypes.POINTER(_msghdr),
-                             ctypes.c_int)
+        _recvmsg.argtypes = (
+            ctypes.c_int,
+            ctypes.POINTER(_msghdr),
+            ctypes.c_int,
+        )
     else:
         # recvmsg isn't always provided by libc; such systems are unsupported
         def _recvmsg(sockfd, msg, flags):
@@ -132,10 +138,15 @@ if not pycompat.iswindows:
         dummy = (ctypes.c_ubyte * 1)()
         iov = _iovec(ctypes.cast(dummy, ctypes.c_void_p), ctypes.sizeof(dummy))
         cbuf = ctypes.create_string_buffer(256)
-        msgh = _msghdr(None, 0,
-                       ctypes.pointer(iov), 1,
-                       ctypes.cast(cbuf, ctypes.c_void_p), ctypes.sizeof(cbuf),
-                       0)
+        msgh = _msghdr(
+            None,
+            0,
+            ctypes.pointer(iov),
+            1,
+            ctypes.cast(cbuf, ctypes.c_void_p),
+            ctypes.sizeof(cbuf),
+            0,
+        )
         r = _recvmsg(sockfd, ctypes.byref(msgh), 0)
         if r < 0:
             e = ctypes.get_errno()
@@ -145,13 +156,17 @@ if not pycompat.iswindows:
         cmsg = _CMSG_FIRSTHDR(msgh)
         if not cmsg:
             return []
-        if (cmsg.cmsg_level != socket.SOL_SOCKET or
-            cmsg.cmsg_type != _SCM_RIGHTS):
+        if (
+            cmsg.cmsg_level != socket.SOL_SOCKET
+            or cmsg.cmsg_type != _SCM_RIGHTS
+        ):
             return []
         rfds = ctypes.cast(cmsg.cmsg_data, ctypes.POINTER(ctypes.c_int))
-        rfdscount = ((cmsg.cmsg_len - _cmsghdr.cmsg_data.offset) //
-                     ctypes.sizeof(ctypes.c_int))
+        rfdscount = (
+            cmsg.cmsg_len - _cmsghdr.cmsg_data.offset
+        ) // ctypes.sizeof(ctypes.c_int)
         return [rfds[i] for i in pycompat.xrange(rfdscount)]
+
 
 else:
     import msvcrt
@@ -188,14 +203,22 @@ else:
 
     # types of parameters of C functions used (required by pypy)
 
-    _kernel32.CreateFileA.argtypes = [_LPCSTR, _DWORD, _DWORD, ctypes.c_void_p,
-        _DWORD, _DWORD, _HANDLE]
+    _kernel32.CreateFileA.argtypes = [
+        _LPCSTR,
+        _DWORD,
+        _DWORD,
+        ctypes.c_void_p,
+        _DWORD,
+        _DWORD,
+        _HANDLE,
+    ]
     _kernel32.CreateFileA.restype = _HANDLE
 
     def _raiseioerror(name):
         err = ctypes.WinError()
-        raise IOError(err.errno, r'%s: %s' % (encoding.strfromlocal(name),
-                                              err.strerror))
+        raise IOError(
+            err.errno, r'%s: %s' % (encoding.strfromlocal(name), err.strerror)
+        )
 
     class posixfile(object):
         '''a file object aiming for POSIX-like semantics
@@ -235,9 +258,15 @@ else:
             else:
                 raise ValueError(r"invalid mode: %s" % pycompat.sysstr(mode))
 
-            fh = _kernel32.CreateFileA(name, access,
-                    _FILE_SHARE_READ | _FILE_SHARE_WRITE | _FILE_SHARE_DELETE,
-                    None, creation, _FILE_ATTRIBUTE_NORMAL, None)
+            fh = _kernel32.CreateFileA(
+                name,
+                access,
+                _FILE_SHARE_READ | _FILE_SHARE_WRITE | _FILE_SHARE_DELETE,
+                None,
+                creation,
+                _FILE_ATTRIBUTE_NORMAL,
+                None,
+            )
             if fh == _INVALID_HANDLE_VALUE:
                 _raiseioerror(name)
 

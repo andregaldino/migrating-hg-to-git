@@ -3,9 +3,8 @@ from __future__ import absolute_import, print_function
 import io
 import unittest
 
-from mercurial import (
-    util,
-)
+from mercurial import util
+
 
 class CappedReaderTests(unittest.TestCase):
     def testreadfull(self):
@@ -86,6 +85,8 @@ class CappedReaderTests(unittest.TestCase):
         self.assertEqual(res, b'')
         self.assertEqual(source.tell(), 100)
 
+
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

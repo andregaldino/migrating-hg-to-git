@@ -16,9 +16,8 @@ from mercurial import (
     pycompat,
 )
 
-from . import (
-    common,
-)
+from . import common
+
 
 class submodule(object):
     def __init__(self, path, node, url):
@@ -32,6 +31,7 @@ class submodule(object):
     def hgsubstate(self):
         return "%s %s" % (self.node, self.path)
 
+
 # Keys in extra fields that should not be copied if the user requests.
 bannedextrakeys = {
     # Git commit object built-ins.
@@ -43,6 +43,7 @@ bannedextrakeys = {
     'branch',
     'close',
 }
+
 
 class convert_git(common.converter_source, common.commandline):
     # Windows does not support GIT_DIR= construct while other systems
@@ -78,8 +79,9 @@ class convert_git(common.converter_source, common.commandline):
         if os.path.isdir(path + "/.git"):
             path += "/.git"
         if not os.path.exists(path + "/objects"):
-            raise common.NoRepo(_("%s does not look like a Git repository") %
-                                path)
+            raise common.NoRepo(
+                _("%s does not look like a Git repository") % path
+            )
 
         # The default value (50) is based on the default for 'git diff'.
         similarity = ui.configint('convert', 'git.similarity')
@@ -106,8 +108,10 @@ class convert_git(common.converter_source, common.commandline):
         self.copyextrakeys = self.ui.configlist('convert', 'git.extrakeys')
         banned = set(self.copyextrakeys) & bannedextrakeys
         if banned:
-            raise error.Abort(_('copying of extra key is forbidden: %s') %
-                              _(', ').join(sorted(banned)))
+            raise error.Abort(
+                _('copying of extra key is forbidden: %s')
+                % _(', ').join(sorted(banned))
+            )
 
         committeractions = self.ui.configlist('convert', 'git.committeractions')
 
@@ -126,19 +130,31 @@ class convert_git(common.converter_source, common.commandline):
                     messagealways = v or 'committer:'
 
         if messagedifferent and messagealways:
-            raise error.Abort(_('committeractions cannot define both '
-                                'messagedifferent and messagealways'))
+            raise error.Abort(
+                _(
+                    'committeractions cannot define both '
+                    'messagedifferent and messagealways'
+                )
+            )
 
         dropcommitter = 'dropcommitter' in committeractions
         replaceauthor = 'replaceauthor' in committeractions
 
         if dropcommitter and replaceauthor:
-            raise error.Abort(_('committeractions cannot define both '
-                                'dropcommitter and replaceauthor'))
+            raise error.Abort(
+                _(
+                    'committeractions cannot define both '
+                    'dropcommitter and replaceauthor'
+                )
+            )
 
         if dropcommitter and messagealways:
-            raise error.Abort(_('committeractions cannot define both '
-                                'dropcommitter and messagealways'))
+            raise error.Abort(
+                _(
+                    'committeractions cannot define both '
+                    'dropcommitter and messagealways'
+                )
+            )
 
         if not messagedifferent and not messagealways:
             messagedifferent = 'committer:'
@@ -172,17 +188,20 @@ class convert_git(common.converter_source, common.commandline):
     def catfile(self, rev, ftype):
         if rev == nodemod.nullhex:
             raise IOError
-        self.catfilepipe[0].write(rev+'\n')
+        self.catfilepipe[0].write(rev + '\n')
         self.catfilepipe[0].flush()
         info = self.catfilepipe[1].readline().split()
         if info[1] != ftype:
-            raise error.Abort(_('cannot read %r object at %s') % (
-                pycompat.bytestr(ftype), rev))
+            raise error.Abort(
+                _('cannot read %r object at %s')
+                % (pycompat.bytestr(ftype), rev)
+            )
         size = int(info[2])
         data = self.catfilepipe[1].read(size)
         if len(data) < size:
-            raise error.Abort(_('cannot read %r object at %s: unexpected size')
-                              % (ftype, rev))
+            raise error.Abort(
+                _('cannot read %r object at %s: unexpected size') % (ftype, rev)
+            )
         # read the trailing newline
         self.catfilepipe[1].read(1)
         return data
@@ -216,8 +235,10 @@ class convert_git(common.converter_source, common.commandline):
         self.submodules = []
         c = config.config()
         # Each item in .gitmodules starts with whitespace that cant be parsed
-        c.parse('.gitmodules', '\n'.join(line.strip() for line in
-                               content.split('\n')))
+        c.parse(
+            '.gitmodules',
+            '\n'.join(line.strip() for line in content.split('\n')),
+        )
         for sec in c.sections():
             s = c[sec]
             if 'url' in s and 'path' in s:
@@ -228,15 +249,18 @@ class convert_git(common.converter_source, common.commandline):
         if ret:
             # This can happen if a file is in the repo that has permissions
             # 160000, but there is no .gitmodules file.
-            self.ui.warn(_("warning: cannot read submodules config file in "
-                           "%s\n") % version)
+            self.ui.warn(
+                _("warning: cannot read submodules config file in " "%s\n")
+                % version
+            )
             return
 
         try:
             self.parsegitmodules(modules)
         except error.ParseError:
-            self.ui.warn(_("warning: unable to parse .gitmodules in %s\n")
-                         % version)
+            self.ui.warn(
+                _("warning: unable to parse .gitmodules in %s\n") % version
+            )
             return
 
         for m in self.submodules:
@@ -249,7 +273,9 @@ class convert_git(common.converter_source, common.commandline):
         if full:
             raise error.Abort(_("convert from git does not support --full"))
         self.modecache = {}
-        cmd = ['diff-tree','-z', '--root', '-m', '-r'] + self.simopt + [version]
+        cmd = (
+            ['diff-tree', '-z', '--root', '-m', '-r'] + self.simopt + [version]
+        )
         output, status = self.gitrun(*cmd)
         if status:
             raise error.Abort(_('cannot read changes in %s') % version)
@@ -264,12 +290,13 @@ class convert_git(common.converter_source, common.commandline):
         i = 0
 
         skipsubmodules = self.ui.configbool('convert', 'git.skipsubmodules')
+
         def add(entry, f, isdest):
             seen.add(f)
             h = entry[3]
-            p = (entry[1] == "100755")
-            s = (entry[1] == "120000")
-            renamesource = (not isdest and entry[4][0] == 'R')
+            p = entry[1] == "100755"
+            s = entry[1] == "120000"
+            renamesource = not isdest and entry[4][0] == 'R'
 
             if f == '.gitmodules':
                 if skipsubmodules:
@@ -330,9 +357,9 @@ class convert_git(common.converter_source, common.commandline):
         return (changes, copies, set())
 
     def getcommit(self, version):
-        c = self.catfile(version, "commit") # read the commit hash
+        c = self.catfile(version, "commit")  # read the commit hash
         end = c.find("\n\n")
-        message = c[end + 2:]
+        message = c[end + 2 :]
         message = self.recode(message)
         l = c[:end].splitlines()
         parents = []
@@ -377,18 +404,23 @@ class convert_git(common.converter_source, common.commandline):
         date = tm + " " + (b"%d" % tz)
         saverev = self.ui.configbool('convert', 'git.saverev')
 
-        c = common.commit(parents=parents, date=date, author=author,
-                          desc=message,
-                          rev=version,
-                          extra=extra,
-                          saverev=saverev)
+        c = common.commit(
+            parents=parents,
+            date=date,
+            author=author,
+            desc=message,
+            rev=version,
+            extra=extra,
+            saverev=saverev,
+        )
         return c
 
     def numcommits(self):
         output, ret = self.gitrunlines('rev-list', '--all')
         if ret:
-            raise error.Abort(_('cannot retrieve number of commits in %s')
-                              % self.path)
+            raise error.Abort(
+                _('cannot retrieve number of commits in %s') % self.path
+            )
         return len(output)
 
     def gettags(self):
@@ -408,7 +440,7 @@ class convert_git(common.converter_source, common.commandline):
             node, tag = line.split(None, 1)
             if not tag.startswith(prefix):
                 continue
-            alltags[tag[len(prefix):]] = node
+            alltags[tag[len(prefix) :]] = node
 
         # Filter out tag objects for annotated tag refs
         for tag in alltags:
@@ -425,8 +457,9 @@ class convert_git(common.converter_source, common.commandline):
     def getchangedfiles(self, version, i):
         changes = []
         if i is None:
-            output, status = self.gitrunlines('diff-tree', '--root', '-m',
-                                              '-r', version)
+            output, status = self.gitrunlines(
+                'diff-tree', '--root', '-m', '-r', version
+            )
             if status:
                 raise error.Abort(_('cannot read changes in %s') % version)
             for l in output:
@@ -435,9 +468,15 @@ class convert_git(common.converter_source, common.commandline):
                 m, f = l[:-1].split("\t")
                 changes.append(f)
         else:
-            output, status = self.gitrunlines('diff-tree', '--name-only',
-                                              '--root', '-r', version,
-                                              '%s^%d' % (version, i + 1), '--')
+            output, status = self.gitrunlines(
+                'diff-tree',
+                '--name-only',
+                '--root',
+                '-r',
+                version,
+                '%s^%d' % (version, i + 1),
+                '--',
+            )
             if status:
                 raise error.Abort(_('cannot read changes in %s') % version)
             changes = [f.rstrip('\n') for f in output]
@@ -452,7 +491,7 @@ class convert_git(common.converter_source, common.commandline):
         reftypes = [
             # (git prefix, hg prefix)
             ('refs/remotes/origin/', remoteprefix + '/'),
-            ('refs/heads/', '')
+            ('refs/heads/', ''),
         ]
 
         exclude = {
@@ -468,7 +507,7 @@ class convert_git(common.converter_source, common.commandline):
                 for gitprefix, hgprefix in reftypes:
                     if not name.startswith(gitprefix) or name in exclude:
                         continue
-                    name = '%s%s' % (hgprefix, name[len(gitprefix):])
+                    name = '%s%s' % (hgprefix, name[len(gitprefix) :])
                     bookmarks[name] = rev
         except Exception:
             pass

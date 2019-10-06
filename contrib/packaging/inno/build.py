@@ -19,14 +19,15 @@ import sys
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--python',
-                        required=True,
-                        help='path to python.exe to use')
-    parser.add_argument('--iscc',
-                        help='path to iscc.exe to use')
-    parser.add_argument('--version',
-                        help='Mercurial version string to use '
-                             '(detected from __version__.py if not defined')
+    parser.add_argument(
+        '--python', required=True, help='path to python.exe to use'
+    )
+    parser.add_argument('--iscc', help='path to iscc.exe to use')
+    parser.add_argument(
+        '--version',
+        help='Mercurial version string to use '
+        '(detected from __version__.py if not defined',
+    )
 
     args = parser.parse_args()
 
@@ -36,8 +37,11 @@ if __name__ == '__main__':
     if args.iscc:
         iscc = pathlib.Path(args.iscc)
     else:
-        iscc = (pathlib.Path(os.environ['ProgramFiles(x86)']) / 'Inno Setup 5' /
-            'ISCC.exe')
+        iscc = (
+            pathlib.Path(os.environ['ProgramFiles(x86)'])
+            / 'Inno Setup 5'
+            / 'ISCC.exe'
+        )
 
     here = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
     source_dir = here.parent.parent.parent
@@ -47,5 +51,10 @@ if __name__ == '__main__':
 
     from hgpackaging.inno import build
 
-    build(source_dir, build_dir, pathlib.Path(args.python), iscc,
-          version=args.version)
+    build(
+        source_dir,
+        build_dir,
+        pathlib.Path(args.python),
+        iscc,
+        version=args.version,
+    )

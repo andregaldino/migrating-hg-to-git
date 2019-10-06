@@ -17,50 +17,63 @@ if os.environ.get('HGALLOWPYTHON3', ''):
     #
     # TODO: when we actually work on Python 3, use this string as the
     # actual supportedpy string.
-    supportedpy = ','.join([
-        '>=2.7',
-        '!=3.0.*',
-        '!=3.1.*',
-        '!=3.2.*',
-        '!=3.3.*',
-        '!=3.4.*',
-        '!=3.5.0',
-        '!=3.5.1',
-        '!=3.5.2',
-        '!=3.6.0',
-        '!=3.6.1',
-    ])
+    supportedpy = ','.join(
+        [
+            '>=2.7',
+            '!=3.0.*',
+            '!=3.1.*',
+            '!=3.2.*',
+            '!=3.3.*',
+            '!=3.4.*',
+            '!=3.5.0',
+            '!=3.5.1',
+            '!=3.5.2',
+            '!=3.6.0',
+            '!=3.6.1',
+        ]
+    )
 
 import sys, platform
 import sysconfig
+
 if sys.version_info[0] >= 3:
     printf = eval('print')
     libdir_escape = 'unicode_escape'
+
     def sysstr(s):
         return s.decode('latin-1')
+
+
 else:
     libdir_escape = 'string_escape'
+
     def printf(*args, **kwargs):
         f = kwargs.get('file', sys.stdout)
         end = kwargs.get('end', '\n')
         f.write(b' '.join(args) + end)
+
     def sysstr(s):
         return s
+
 
 # Attempt to guide users to a modern pip - this means that 2.6 users
 # should have a chance of getting a 4.2 release, and when we ratchet
 # the version requirement forward again hopefully everyone will get
 # something that works for them.
 if sys.version_info < (2, 7, 0, 'final'):
-    pip_message = ('This may be due to an out of date pip. '
-                   'Make sure you have pip >= 9.0.1.')
+    pip_message = (
+        'This may be due to an out of date pip. '
+        'Make sure you have pip >= 9.0.1.'
+    )
     try:
         import pip
+
         pip_version = tuple([int(x) for x in pip.__version__.split('.')[:3]])
-        if pip_version < (9, 0, 1) :
+        if pip_version < (9, 0, 1):
             pip_message = (
                 'Your pip version is out of date, please install '
-                'pip >= 9.0.1. pip {} detected.'.format(pip.__version__))
+                'pip >= 9.0.1. pip {} detected.'.format(pip.__version__)
+            )
         else:
             # pip is new enough - it must be something else
             pip_message = ''
@@ -70,7 +83,9 @@ if sys.version_info < (2, 7, 0, 'final'):
 Mercurial does not support Python older than 2.7.
 Python {py} detected.
 {pip}
-""".format(py=sys.version_info, pip=pip_message)
+""".format(
+        py=sys.version_info, pip=pip_message
+    )
     printf(error, file=sys.stderr)
     sys.exit(1)
 
@@ -100,7 +115,9 @@ necessary to run `hg` with Python 3.
 
 See https://www.mercurial-scm.org/wiki/Python3 for more on Mercurial's
 Python 3 support.
-""".format(py='.'.join('%d' % x for x in sys.version_info[0:2]))
+""".format(
+            py='.'.join('%d' % x for x in sys.version_info[0:2])
+        )
 
         printf(error, file=sys.stderr)
         sys.exit(1)
@@ -114,27 +131,33 @@ else:
 # Solaris Python packaging brain damage
 try:
     import hashlib
+
     sha = hashlib.sha1()
 except ImportError:
     try:
         import sha
-        sha.sha # silence unused import warning
+
+        sha.sha  # silence unused import warning
     except ImportError:
         raise SystemExit(
-            "Couldn't import standard hashlib (incomplete Python install).")
+            "Couldn't import standard hashlib (incomplete Python install)."
+        )
 
 try:
     import zlib
-    zlib.compressobj # silence unused import warning
+
+    zlib.compressobj  # silence unused import warning
 except ImportError:
     raise SystemExit(
-        "Couldn't import standard zlib (incomplete Python install).")
+        "Couldn't import standard zlib (incomplete Python install)."
+    )
 
 # The base IronPython distribution (as of 2.7.1) doesn't support bz2
 isironpython = False
 try:
-    isironpython = (platform.python_implementation()
-                    .lower().find("ironpython") != -1)
+    isironpython = (
+        platform.python_implementation().lower().find("ironpython") != -1
+    )
 except AttributeError:
     pass
 
@@ -143,10 +166,12 @@ if isironpython:
 else:
     try:
         import bz2
-        bz2.BZ2Compressor # silence unused import warning
+
+        bz2.BZ2Compressor  # silence unused import warning
     except ImportError:
         raise SystemExit(
-            "Couldn't import standard bz2 (incomplete Python install).")
+            "Couldn't import standard bz2 (incomplete Python install)."
+        )
 
 ispypy = "PyPy" in sys.version
 
@@ -163,10 +188,11 @@ import re
 import shutil
 import tempfile
 from distutils import log
+
 # We have issues with setuptools on some platforms and builders. Until
 # those are resolved, setuptools is opt-in except for platforms where
 # we don't have issues.
-issetuptools = (os.name == 'nt' or 'FORCE_SETUPTOOLS' in os.environ)
+issetuptools = os.name == 'nt' or 'FORCE_SETUPTOOLS' in os.environ
 if issetuptools:
     from setuptools import setup
 else:
@@ -194,6 +220,7 @@ from distutils.version import StrictVersion
 # Explain to distutils.StrictVersion how our release candidates are versionned
 StrictVersion.version_re = re.compile(r'^(\d+)\.(\d+)(\.(\d+))?-?(rc(\d+))?$')
 
+
 def write_if_changed(path, content):
     """Write content to a file iff the content hasn't changed."""
     if os.path.exists(path):
@@ -206,10 +233,12 @@ def write_if_changed(path, content):
         with open(path, 'wb') as fh:
             fh.write(content)
 
+
 scripts = ['hg']
 if os.name == 'nt':
     # We remove hg.bat if we are able to build hg.exe.
     scripts.append('contrib/win32/hg.bat')
+
 
 def cancompile(cc, code):
     tmpdir = tempfile.mkdtemp(prefix='hg-install-')
@@ -238,31 +267,38 @@ def cancompile(cc, code):
             devnull.close()
         shutil.rmtree(tmpdir)
 
+
 # simplified version of distutils.ccompiler.CCompiler.has_function
 # that actually removes its temporary files.
 def hasfunction(cc, funcname):
     code = 'int main(void) { %s(); }\n' % funcname
     return cancompile(cc, code)
 
+
 def hasheader(cc, headername):
     code = '#include <%s>\nint main(void) { return 0; }\n' % headername
     return cancompile(cc, code)
 
+
 # py2exe needs to be installed to work
 try:
     import py2exe
-    py2exe.Distribution # silence unused import warning
+
+    py2exe.Distribution  # silence unused import warning
     py2exeloaded = True
     # import py2exe's patched Distribution class
     from distutils.core import Distribution
 except ImportError:
     py2exeloaded = False
 
+
 def runcmd(cmd, env, cwd=None):
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE, env=env, cwd=cwd)
+    p = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, cwd=cwd
+    )
     out, err = p.communicate()
     return p.returncode, out, err
+
 
 class hgcommand(object):
     def __init__(self, cmd, env):
@@ -279,21 +315,30 @@ class hgcommand(object):
             return ''
         return out
 
+
 def filterhgerr(err):
     # If root is executing setup.py, but the repository is owned by
     # another user (as in "sudo python setup.py install") we will get
     # trust warnings since the .hg/hgrc file is untrusted. That is
     # fine, we don't want to load it anyway.  Python may warn about
     # a missing __init__.py in mercurial/locale, we also ignore that.
-    err = [e for e in err.splitlines()
-           if (not e.startswith(b'not trusting file')
-               and not e.startswith(b'warning: Not importing')
-               and not e.startswith(b'obsolete feature not enabled')
-               and not e.startswith(b'*** failed to import extension')
-               and not e.startswith(b'devel-warn:')
-               and not (e.startswith(b'(third party extension')
-                        and e.endswith(b'or newer of Mercurial; disabling)')))]
+    err = [
+        e
+        for e in err.splitlines()
+        if (
+            not e.startswith(b'not trusting file')
+            and not e.startswith(b'warning: Not importing')
+            and not e.startswith(b'obsolete feature not enabled')
+            and not e.startswith(b'*** failed to import extension')
+            and not e.startswith(b'devel-warn:')
+            and not (
+                e.startswith(b'(third party extension')
+                and e.endswith(b'or newer of Mercurial; disabling)')
+            )
+        )
+    ]
     return b'\n'.join(b'  ' + e for e in err)
+
 
 def findhg():
     """Try to figure out how we should invoke hg for examining the local
@@ -334,18 +379,23 @@ def findhg():
     if retcode == 0 and not filterhgerr(err):
         return hgcommand(hgcmd, hgenv)
 
-    raise SystemExit('Unable to find a working hg binary to extract the '
-                     'version from the repository tags')
+    raise SystemExit(
+        'Unable to find a working hg binary to extract the '
+        'version from the repository tags'
+    )
+
 
 def localhgenv():
     """Get an environment dictionary to use for invoking or importing
     mercurial from the local repository."""
     # Execute hg out of this directory with a custom environment which takes
     # care to not use any hgrc files and do no localization.
-    env = {'HGMODULEPOLICY': 'py',
-           'HGRCPATH': '',
-           'LANGUAGE': 'C',
-           'PATH': ''} # make pypi modules that use os.environ['PATH'] happy
+    env = {
+        'HGMODULEPOLICY': 'py',
+        'HGRCPATH': '',
+        'LANGUAGE': 'C',
+        'PATH': '',
+    }  # make pypi modules that use os.environ['PATH'] happy
     if 'LD_LIBRARY_PATH' in os.environ:
         env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
     if 'SystemRoot' in os.environ:
@@ -353,6 +403,7 @@ def localhgenv():
         # https://bugs.python.org/issue13524#msg148850
         env['SystemRoot'] = os.environ['SystemRoot']
     return env
+
 
 version = ''
 
@@ -367,11 +418,11 @@ if os.path.isdir('.hg'):
         # Continuing with an invalid version number will break extensions
         # that define minimumhgversion.
         raise SystemExit('Unable to determine hg version from local repository')
-    if numerictags: # tag(s) found
+    if numerictags:  # tag(s) found
         version = numerictags[-1]
-        if hgid.endswith('+'): # propagate the dirty status to the tag
+        if hgid.endswith('+'):  # propagate the dirty status to the tag
             version += '+'
-    else: # no tag found
+    else:  # no tag found
         ltagcmd = ['parents', '--template', '{latesttag}']
         ltag = sysstr(hg.run(ltagcmd))
         changessincecmd = ['log', '-T', 'x\n', '-r', "only(.,'%s')" % ltag]
@@ -380,8 +431,9 @@ if os.path.isdir('.hg'):
     if version.endswith('+'):
         version += time.strftime('%Y%m%d')
 elif os.path.exists('.hg_archival.txt'):
-    kw = dict([[t.strip() for t in l.split(':', 1)]
-               for l in open('.hg_archival.txt')])
+    kw = dict(
+        [[t.strip() for t in l.split(':', 1)] for l in open('.hg_archival.txt')]
+    )
     if 'tag' in kw:
         version = kw['tag']
     elif 'latesttag' in kw:
@@ -397,15 +449,21 @@ if version:
     if not isinstance(versionb, bytes):
         versionb = versionb.encode('ascii')
 
-    write_if_changed('mercurial/__version__.py', b''.join([
-        b'# this file is autogenerated by setup.py\n'
-        b'version = b"%s"\n' % versionb,
-    ]))
+    write_if_changed(
+        'mercurial/__version__.py',
+        b''.join(
+            [
+                b'# this file is autogenerated by setup.py\n'
+                b'version = b"%s"\n' % versionb,
+            ]
+        ),
+    )
 
 try:
     oldpolicy = os.environ.get('HGMODULEPOLICY', None)
     os.environ['HGMODULEPOLICY'] = 'py'
     from mercurial import __version__
+
     version = __version__.version
 except ImportError:
     version = b'unknown'
@@ -415,10 +473,12 @@ finally:
     else:
         os.environ['HGMODULEPOLICY'] = oldpolicy
 
+
 class hgbuild(build):
     # Insert hgbuildmo first so that files in mercurial/locale/ are found
     # when build_py is run next.
     sub_commands = [('build_mo', None)] + build.sub_commands
+
 
 class hgbuildmo(build):
 
@@ -426,8 +486,10 @@ class hgbuildmo(build):
 
     def run(self):
         if not find_executable('msgfmt'):
-            self.warn("could not find msgfmt executable, no translations "
-                     "will be built")
+            self.warn(
+                "could not find msgfmt executable, no translations "
+                "will be built"
+            )
             return
 
         podir = 'i18n'
@@ -466,18 +528,23 @@ class hgdist(Distribution):
         # too late for some cases
         return not self.pure and Distribution.has_ext_modules(self)
 
+
 # This is ugly as a one-liner. So use a variable.
 buildextnegops = dict(getattr(build_ext, 'negative_options', {}))
 buildextnegops['no-zstd'] = 'zstd'
 buildextnegops['no-rust'] = 'rust'
 
+
 class hgbuildext(build_ext):
     user_options = build_ext.user_options + [
         ('zstd', None, 'compile zstd bindings [default]'),
         ('no-zstd', None, 'do not compile zstd bindings'),
-        ('rust', None,
-         'compile Rust extensions if they are in use '
-         '(requires Cargo) [default]'),
+        (
+            'rust',
+            None,
+            'compile Rust extensions if they are in use '
+            '(requires Cargo) [default]',
+        ),
         ('no-rust', None, 'do not compile Rust extensions'),
     ]
 
@@ -499,14 +566,17 @@ class hgbuildext(build_ext):
         return build_ext.finalize_options(self)
 
     def build_extensions(self):
-        ruststandalones = [e for e in self.extensions
-                           if isinstance(e, RustStandaloneExtension)]
-        self.extensions = [e for e in self.extensions
-                           if e not in ruststandalones]
+        ruststandalones = [
+            e for e in self.extensions if isinstance(e, RustStandaloneExtension)
+        ]
+        self.extensions = [
+            e for e in self.extensions if e not in ruststandalones
+        ]
         # Filter out zstd if disabled via argument.
         if not self.zstd:
-            self.extensions = [e for e in self.extensions
-                               if e.name != 'mercurial.zstd']
+            self.extensions = [
+                e for e in self.extensions if e.name != 'mercurial.zstd'
+            ]
 
         # Build Rust standalon extensions if it'll be used
         # and its build is not explictely disabled (for external build
@@ -518,16 +588,21 @@ class hgbuildext(build_ext):
         return build_ext.build_extensions(self)
 
     def build_extension(self, ext):
-        if (self.distribution.rust and self.rust
-            and isinstance(ext, RustExtension)):
-                ext.rustbuild()
+        if (
+            self.distribution.rust
+            and self.rust
+            and isinstance(ext, RustExtension)
+        ):
+            ext.rustbuild()
         try:
             build_ext.build_extension(self, ext)
         except CCompilerError:
             if not getattr(ext, 'optional', False):
                 raise
-            log.warn("Failed to build optional extension '%s' (skipping)",
-                     ext.name)
+            log.warn(
+                "Failed to build optional extension '%s' (skipping)", ext.name
+            )
+
 
 class hgbuildscripts(build_scripts):
     def run(self):
@@ -554,6 +629,7 @@ class hgbuildscripts(build_scripts):
 
         return build_scripts.run(self)
 
+
 class hgbuildpy(build_py):
     def finalize_options(self):
         build_py.finalize_options(self)
@@ -565,18 +641,24 @@ class hgbuildpy(build_py):
                 bdiffbuild,
                 mpatchbuild,
             )
-            exts = [mpatchbuild.ffi.distutils_extension(),
-                    bdiffbuild.ffi.distutils_extension()]
+
+            exts = [
+                mpatchbuild.ffi.distutils_extension(),
+                bdiffbuild.ffi.distutils_extension(),
+            ]
             # cffi modules go here
             if sys.platform == 'darwin':
                 from mercurial.cffi import osutilbuild
+
                 exts.append(osutilbuild.ffi.distutils_extension())
             self.distribution.ext_modules = exts
         else:
             h = os.path.join(get_python_inc(), 'Python.h')
             if not os.path.exists(h):
-                raise SystemExit('Python headers are required to build '
-                                 'Mercurial but weren\'t found in %s' % h)
+                raise SystemExit(
+                    'Python headers are required to build '
+                    'Mercurial but weren\'t found in %s' % h
+                )
 
     def run(self):
         basepath = os.path.join(self.build_lib, 'mercurial')
@@ -591,14 +673,16 @@ class hgbuildpy(build_py):
         else:
             modulepolicy = 'rust+c' if rust else 'c'
 
-        content = b''.join([
-            b'# this file is autogenerated by setup.py\n',
-            b'modulepolicy = b"%s"\n' % modulepolicy.encode('ascii'),
-        ])
-        write_if_changed(os.path.join(basepath, '__modulepolicy__.py'),
-                         content)
+        content = b''.join(
+            [
+                b'# this file is autogenerated by setup.py\n',
+                b'modulepolicy = b"%s"\n' % modulepolicy.encode('ascii'),
+            ]
+        )
+        write_if_changed(os.path.join(basepath, '__modulepolicy__.py'), content)
 
         build_py.run(self)
+
 
 class buildhgextindex(Command):
     description = 'generate prebuilt index of hgext (for frozen package)'
@@ -617,10 +701,13 @@ class buildhgextindex(Command):
                 f.write('# empty\n')
 
         # here no extension enabled, disabled() lists up everything
-        code = ('import pprint; from mercurial import extensions; '
-                'pprint.pprint(extensions.disabled())')
-        returncode, out, err = runcmd([sys.executable, '-c', code],
-                                      localhgenv())
+        code = (
+            'import pprint; from mercurial import extensions; '
+            'pprint.pprint(extensions.disabled())'
+        )
+        returncode, out, err = runcmd(
+            [sys.executable, '-c', code], localhgenv()
+        )
         if err or returncode != 0:
             raise DistutilsExecError(err)
 
@@ -629,12 +716,17 @@ class buildhgextindex(Command):
             f.write(b'docs = ')
             f.write(out)
 
+
 class buildhgexe(build_ext):
     description = 'compile hg.exe from mercurial/exewrapper.c'
     user_options = build_ext.user_options + [
-        ('long-paths-support', None, 'enable support for long paths on '
-                                     'Windows (off by default and '
-                                     'experimental)'),
+        (
+            'long-paths-support',
+            None,
+            'enable support for long paths on '
+            'Windows (off by default and '
+            'experimental)',
+        ),
     ]
 
     LONG_PATHS_MANIFEST = """
@@ -656,34 +748,39 @@ class buildhgexe(build_ext):
         if os.name != 'nt':
             return
         if isinstance(self.compiler, HackedMingw32CCompiler):
-            self.compiler.compiler_so = self.compiler.compiler # no -mdll
-            self.compiler.dll_libraries = [] # no -lmsrvc90
+            self.compiler.compiler_so = self.compiler.compiler  # no -mdll
+            self.compiler.dll_libraries = []  # no -lmsrvc90
 
         # Different Python installs can have different Python library
         # names. e.g. the official CPython distribution uses pythonXY.dll
         # and MinGW uses libpythonX.Y.dll.
         _kernel32 = ctypes.windll.kernel32
-        _kernel32.GetModuleFileNameA.argtypes = [ctypes.c_void_p,
-                                                 ctypes.c_void_p,
-                                                 ctypes.c_ulong]
+        _kernel32.GetModuleFileNameA.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_ulong,
+        ]
         _kernel32.GetModuleFileNameA.restype = ctypes.c_ulong
         size = 1000
         buf = ctypes.create_string_buffer(size + 1)
-        filelen = _kernel32.GetModuleFileNameA(sys.dllhandle, ctypes.byref(buf),
-                                               size)
+        filelen = _kernel32.GetModuleFileNameA(
+            sys.dllhandle, ctypes.byref(buf), size
+        )
 
         if filelen > 0 and filelen != size:
             dllbasename = os.path.basename(buf.value)
             if not dllbasename.lower().endswith(b'.dll'):
-                raise SystemExit('Python DLL does not end with .dll: %s' %
-                                 dllbasename)
+                raise SystemExit(
+                    'Python DLL does not end with .dll: %s' % dllbasename
+                )
             pythonlib = dllbasename[:-4]
         else:
-            log.warn('could not determine Python DLL filename; '
-                     'assuming pythonXY')
+            log.warn(
+                'could not determine Python DLL filename; ' 'assuming pythonXY'
+            )
 
             hv = sys.hexversion
-            pythonlib = 'python%d%d' % (hv >> 24, (hv >> 16) & 0xff)
+            pythonlib = 'python%d%d' % (hv >> 24, (hv >> 16) & 0xFF)
 
         log.info('using %s as Python library name' % pythonlib)
         with open('mercurial/hgpythonlib.h', 'wb') as f:
@@ -694,14 +791,16 @@ class buildhgexe(build_ext):
         if sys.version_info[0] >= 3:
             macros = [('_UNICODE', None), ('UNICODE', None)]
 
-        objects = self.compiler.compile(['mercurial/exewrapper.c'],
-                                         output_dir=self.build_temp,
-                                         macros=macros)
+        objects = self.compiler.compile(
+            ['mercurial/exewrapper.c'],
+            output_dir=self.build_temp,
+            macros=macros,
+        )
         dir = os.path.dirname(self.get_ext_fullpath('dummy'))
         self.hgtarget = os.path.join(dir, 'hg')
-        self.compiler.link_executable(objects, self.hgtarget,
-                                      libraries=[],
-                                      output_dir=self.build_temp)
+        self.compiler.link_executable(
+            objects, self.hgtarget, libraries=[], output_dir=self.build_temp
+        )
         if self.long_paths_support:
             self.addlongpathsmanifest()
 
@@ -733,8 +832,16 @@ class buildhgexe(build_ext):
         log.info("running mt.exe to update hg.exe's manifest in-place")
         # supplying both -manifest and -inputresource to mt.exe makes
         # it merge the embedded and supplied manifests in the -outputresource
-        self.spawn(['mt.exe', '-nologo', '-manifest', manfname,
-                    inputresource, outputresource])
+        self.spawn(
+            [
+                'mt.exe',
+                '-nologo',
+                '-manifest',
+                manfname,
+                inputresource,
+                outputresource,
+            ]
+        )
         log.info("done updating hg.exe's manifest")
         os.remove(manfname)
 
@@ -742,6 +849,7 @@ class buildhgexe(build_ext):
     def hgexepath(self):
         dir = os.path.dirname(self.get_ext_fullpath('dummy'))
         return os.path.join(self.build_temp, dir, 'hg.exe')
+
 
 class hgbuilddoc(Command):
     description = 'build documentation'
@@ -782,12 +890,12 @@ class hgbuilddoc(Command):
             txt = 'doc/%s.txt' % root
             log.info('generating %s' % txt)
             res, out, err = runcmd(
-                [sys.executable, 'gendoc.py', root],
-                os.environ,
-                cwd='doc')
+                [sys.executable, 'gendoc.py', root], os.environ, cwd='doc'
+            )
             if res:
-                raise SystemExit('error running gendoc.py: %s' %
-                                 '\n'.join([out, err]))
+                raise SystemExit(
+                    'error running gendoc.py: %s' % '\n'.join([out, err])
+                )
 
             with open(txt, 'wb') as fh:
                 fh.write(out)
@@ -799,10 +907,12 @@ class hgbuilddoc(Command):
             res, out, err = runcmd(
                 [sys.executable, 'gendoc.py', '%s.gendoc' % root],
                 os.environ,
-                cwd='doc')
+                cwd='doc',
+            )
             if res:
-                raise SystemExit('error running gendoc: %s' %
-                                 '\n'.join([out, err]))
+                raise SystemExit(
+                    'error running gendoc: %s' % '\n'.join([out, err])
+                )
 
             with open(gendoc, 'wb') as fh:
                 fh.write(out)
@@ -810,34 +920,58 @@ class hgbuilddoc(Command):
         def genman(root):
             log.info('generating doc/%s' % root)
             res, out, err = runcmd(
-                [sys.executable, 'runrst', 'hgmanpage', '--halt', 'warning',
-                 '--strip-elements-with-class', 'htmlonly',
-                 '%s.txt' % root, root],
+                [
+                    sys.executable,
+                    'runrst',
+                    'hgmanpage',
+                    '--halt',
+                    'warning',
+                    '--strip-elements-with-class',
+                    'htmlonly',
+                    '%s.txt' % root,
+                    root,
+                ],
                 os.environ,
-                cwd='doc')
+                cwd='doc',
+            )
             if res:
-                raise SystemExit('error running runrst: %s' %
-                                 '\n'.join([out, err]))
+                raise SystemExit(
+                    'error running runrst: %s' % '\n'.join([out, err])
+                )
 
             normalizecrlf('doc/%s' % root)
 
         def genhtml(root):
             log.info('generating doc/%s.html' % root)
             res, out, err = runcmd(
-                [sys.executable, 'runrst', 'html', '--halt', 'warning',
-                 '--link-stylesheet', '--stylesheet-path', 'style.css',
-                 '%s.txt' % root, '%s.html' % root],
+                [
+                    sys.executable,
+                    'runrst',
+                    'html',
+                    '--halt',
+                    'warning',
+                    '--link-stylesheet',
+                    '--stylesheet-path',
+                    'style.css',
+                    '%s.txt' % root,
+                    '%s.html' % root,
+                ],
                 os.environ,
-                cwd='doc')
+                cwd='doc',
+            )
             if res:
-                raise SystemExit('error running runrst: %s' %
-                                 '\n'.join([out, err]))
+                raise SystemExit(
+                    'error running runrst: %s' % '\n'.join([out, err])
+                )
 
             normalizecrlf('doc/%s.html' % root)
 
         # This logic is duplicated in doc/Makefile.
-        sources = set(f for f in os.listdir('mercurial/help')
-                      if re.search(r'[0-9]\.txt$', f))
+        sources = set(
+            f
+            for f in os.listdir('mercurial/help')
+            if re.search(r'[0-9]\.txt$', f)
+        )
 
         # common.txt is a one-off.
         gentxt('common')
@@ -854,13 +988,20 @@ class hgbuilddoc(Command):
             if self.html:
                 genhtml(root)
 
+
 class hginstall(install):
 
     user_options = install.user_options + [
-        ('old-and-unmanageable', None,
-         'noop, present for eggless setuptools compat'),
-        ('single-version-externally-managed', None,
-         'noop, present for eggless setuptools compat'),
+        (
+            'old-and-unmanageable',
+            None,
+            'noop, present for eggless setuptools compat',
+        ),
+        (
+            'single-version-externally-managed',
+            None,
+            'noop, present for eggless setuptools compat',
+        ),
     ]
 
     # Also helps setuptools not be sad while we refuse to create eggs.
@@ -872,6 +1013,7 @@ class hginstall(install):
         # packaging.
         excl = set(['bdist_egg'])
         return filter(lambda x: x not in excl, install.get_sub_commands(self))
+
 
 class hginstalllib(install_lib):
     '''
@@ -887,6 +1029,7 @@ class hginstalllib(install_lib):
 
     def run(self):
         realcopyfile = file_util.copy_file
+
         def copyfileandsetmode(*args, **kwargs):
             src, dst = args[0], args[1]
             dst, copied = realcopyfile(*args, **kwargs)
@@ -901,11 +1044,13 @@ class hginstalllib(install_lib):
                 m = stat.S_IMODE(st[stat.ST_MODE])
                 m = (m & ~int('0777', 8)) | setmode
                 os.chmod(dst, m)
+
         file_util.copy_file = copyfileandsetmode
         try:
             install_lib.run(self)
         finally:
             file_util.copy_file = realcopyfile
+
 
 class hginstallscripts(install_scripts):
     '''
@@ -921,8 +1066,7 @@ class hginstallscripts(install_scripts):
 
     def finalize_options(self):
         install_scripts.finalize_options(self)
-        self.set_undefined_options('install',
-                                   ('install_lib', 'install_lib'))
+        self.set_undefined_options('install', ('install_lib', 'install_lib'))
 
     def run(self):
         install_scripts.run(self)
@@ -946,17 +1090,19 @@ class hginstallscripts(install_scripts):
         # we can't reliably set the libdir in wheels: the default behavior
         # of looking in sys.path must do.
 
-        if (os.path.splitdrive(self.install_dir)[0] !=
-            os.path.splitdrive(self.install_lib)[0]):
+        if (
+            os.path.splitdrive(self.install_dir)[0]
+            != os.path.splitdrive(self.install_lib)[0]
+        ):
             # can't make relative paths from one drive to another, so use an
             # absolute path instead
             libdir = self.install_lib
         else:
             common = os.path.commonprefix((self.install_dir, self.install_lib))
-            rest = self.install_dir[len(common):]
+            rest = self.install_dir[len(common) :]
             uplevel = len([n for n in os.path.split(rest) if n])
 
-            libdir = uplevel * ('..' + os.sep) + self.install_lib[len(common):]
+            libdir = uplevel * ('..' + os.sep) + self.install_lib[len(common) :]
 
         for outfile in self.outfiles:
             with open(outfile, 'rb') as fp:
@@ -970,13 +1116,16 @@ class hginstallscripts(install_scripts):
             # install path. During wheel packaging, the shebang has a special
             # value.
             if data.startswith(b'#!python'):
-                log.info('not rewriting @LIBDIR@ in %s because install path '
-                         'not known' % outfile)
+                log.info(
+                    'not rewriting @LIBDIR@ in %s because install path '
+                    'not known' % outfile
+                )
                 continue
 
             data = data.replace(b'@LIBDIR@', libdir.encode(libdir_escape))
             with open(outfile, 'wb') as fp:
                 fp.write(data)
+
 
 # virtualenv installs custom distutils/__init__.py and
 # distutils/distutils.cfg files which essentially proxy back to the
@@ -1020,8 +1169,10 @@ if py2exehacked:
             res.modules = modules
 
             import opcode
-            distutilsreal = os.path.join(os.path.dirname(opcode.__file__),
-                                         'distutils')
+
+            distutilsreal = os.path.join(
+                os.path.dirname(opcode.__file__), 'distutils'
+            )
 
             for root, dirs, files in os.walk(distutilsreal):
                 for f in sorted(files):
@@ -1042,60 +1193,74 @@ if py2exehacked:
                         continue
 
                     if modname.endswith('.__init__'):
-                        modname = modname[:-len('.__init__')]
+                        modname = modname[: -len('.__init__')]
                         path = os.path.dirname(full)
                     else:
                         path = None
 
-                    res.modules[modname] = py2exemodule(modname, full,
-                                                        path=path)
+                    res.modules[modname] = py2exemodule(
+                        modname, full, path=path
+                    )
 
             if 'distutils' not in res.modules:
                 raise SystemExit('could not find distutils modules')
 
             return res
 
-cmdclass = {'build': hgbuild,
-            'build_doc': hgbuilddoc,
-            'build_mo': hgbuildmo,
-            'build_ext': hgbuildext,
-            'build_py': hgbuildpy,
-            'build_scripts': hgbuildscripts,
-            'build_hgextindex': buildhgextindex,
-            'install': hginstall,
-            'install_lib': hginstalllib,
-            'install_scripts': hginstallscripts,
-            'build_hgexe': buildhgexe,
-            }
+
+cmdclass = {
+    'build': hgbuild,
+    'build_doc': hgbuilddoc,
+    'build_mo': hgbuildmo,
+    'build_ext': hgbuildext,
+    'build_py': hgbuildpy,
+    'build_scripts': hgbuildscripts,
+    'build_hgextindex': buildhgextindex,
+    'install': hginstall,
+    'install_lib': hginstalllib,
+    'install_scripts': hginstallscripts,
+    'build_hgexe': buildhgexe,
+}
 
 if py2exehacked:
     cmdclass['py2exe'] = hgbuildpy2exe
 
-packages = ['mercurial',
-            'mercurial.cext',
-            'mercurial.cffi',
-            'mercurial.hgweb',
-            'mercurial.interfaces',
-            'mercurial.pure',
-            'mercurial.thirdparty',
-            'mercurial.thirdparty.attr',
-            'mercurial.thirdparty.zope',
-            'mercurial.thirdparty.zope.interface',
-            'mercurial.utils',
-            'mercurial.revlogutils',
-            'mercurial.testing',
-            'hgext', 'hgext.convert', 'hgext.fsmonitor',
-            'hgext.fastannotate',
-            'hgext.fsmonitor.pywatchman',
-            'hgext.highlight',
-            'hgext.infinitepush',
-            'hgext.largefiles', 'hgext.lfs', 'hgext.narrow',
-            'hgext.remotefilelog',
-            'hgext.zeroconf', 'hgext3rd',
-            'hgdemandimport']
+packages = [
+    'mercurial',
+    'mercurial.cext',
+    'mercurial.cffi',
+    'mercurial.hgweb',
+    'mercurial.interfaces',
+    'mercurial.pure',
+    'mercurial.thirdparty',
+    'mercurial.thirdparty.attr',
+    'mercurial.thirdparty.zope',
+    'mercurial.thirdparty.zope.interface',
+    'mercurial.utils',
+    'mercurial.revlogutils',
+    'mercurial.testing',
+    'hgext',
+    'hgext.convert',
+    'hgext.fsmonitor',
+    'hgext.fastannotate',
+    'hgext.fsmonitor.pywatchman',
+    'hgext.highlight',
+    'hgext.infinitepush',
+    'hgext.largefiles',
+    'hgext.lfs',
+    'hgext.narrow',
+    'hgext.remotefilelog',
+    'hgext.zeroconf',
+    'hgext3rd',
+    'hgdemandimport',
+]
 if sys.version_info[0] == 2:
-    packages.extend(['mercurial.thirdparty.concurrent',
-                     'mercurial.thirdparty.concurrent.futures'])
+    packages.extend(
+        [
+            'mercurial.thirdparty.concurrent',
+            'mercurial.thirdparty.concurrent.futures',
+        ]
+    )
 
 if 'HG_PY2EXE_EXTRA_INSTALL_PACKAGES' in os.environ:
     # py2exe can't cope with namespace packages very well, so we have to
@@ -1103,9 +1268,11 @@ if 'HG_PY2EXE_EXTRA_INSTALL_PACKAGES' in os.environ:
     # image here. This is gross, but you gotta do what you gotta do.
     packages.extend(os.environ['HG_PY2EXE_EXTRA_INSTALL_PACKAGES'].split(' '))
 
-common_depends = ['mercurial/bitmanipulation.h',
-                  'mercurial/compat.h',
-                  'mercurial/cext/util.h']
+common_depends = [
+    'mercurial/bitmanipulation.h',
+    'mercurial/compat.h',
+    'mercurial/cext/util.h',
+]
 common_include_dirs = ['mercurial']
 
 osutil_cflags = []
@@ -1117,16 +1284,24 @@ for plat, func in [('bsd', 'setproctitle')]:
         osutil_cflags.append('-DHAVE_%s' % func.upper())
 
 for plat, macro, code in [
-    ('bsd|darwin', 'BSD_STATFS', '''
+    (
+        'bsd|darwin',
+        'BSD_STATFS',
+        '''
      #include <sys/param.h>
      #include <sys/mount.h>
      int main() { struct statfs s; return sizeof(s.f_fstypename); }
-     '''),
-    ('linux', 'LINUX_STATFS', '''
+     ''',
+    ),
+    (
+        'linux',
+        'LINUX_STATFS',
+        '''
      #include <linux/magic.h>
      #include <sys/vfs.h>
      int main() { struct statfs s; return sizeof(s.f_type); }
-     '''),
+     ''',
+    ),
 ]:
     if re.search(plat, sys.platform) and cancompile(new_compiler(), code):
         osutil_cflags.append('-DHAVE_%s' % macro)
@@ -1150,8 +1325,10 @@ xdiff_headers = [
     'mercurial/thirdparty/xdiff/xutils.h',
 ]
 
+
 class RustCompilationError(CCompilerError):
     """Exception class for Rust compilation errors."""
+
 
 class RustExtension(Extension):
     """Base classes for concrete Rust Extension classes.
@@ -1159,8 +1336,9 @@ class RustExtension(Extension):
 
     rusttargetdir = os.path.join('rust', 'target', 'release')
 
-    def __init__(self, mpath, sources, rustlibname, subcrate,
-                 py3_features=None, **kw):
+    def __init__(
+        self, mpath, sources, rustlibname, subcrate, py3_features=None, **kw
+    ):
         Extension.__init__(self, mpath, sources, **kw)
         srcdir = self.rustsrcdir = os.path.join('rust', subcrate)
         self.py3_features = py3_features
@@ -1172,9 +1350,11 @@ class RustExtension(Extension):
         if os.path.exists(cargo_lock):
             self.depends.append(cargo_lock)
         for dirpath, subdir, fnames in os.walk(os.path.join(srcdir, 'src')):
-            self.depends.extend(os.path.join(dirpath, fname)
-                                for fname in fnames
-                                if os.path.splitext(fname)[1] == '.rs')
+            self.depends.extend(
+                os.path.join(dirpath, fname)
+                for fname in fnames
+                if os.path.splitext(fname)[1] == '.rs'
+            )
 
     @staticmethod
     def rustdylibsuffix():
@@ -1202,16 +1382,19 @@ class RustExtension(Extension):
             # Unix only fix (os.path.expanduser not really reliable if
             # HOME is shadowed like this)
             import pwd
+
             env['HOME'] = pwd.getpwuid(os.getuid()).pw_dir
 
         cargocmd = ['cargo', 'rustc', '-vv', '--release']
         if sys.version_info[0] == 3 and self.py3_features is not None:
-            cargocmd.extend(('--features', self.py3_features,
-                             '--no-default-features'))
+            cargocmd.extend(
+                ('--features', self.py3_features, '--no-default-features')
+            )
         cargocmd.append('--')
         if sys.platform == 'darwin':
-            cargocmd.extend(("-C", "link-arg=-undefined",
-                             "-C", "link-arg=dynamic_lookup"))
+            cargocmd.extend(
+                ("-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup")
+            )
         try:
             subprocess.check_call(cargocmd, env=env, cwd=self.rustsrcdir)
         except OSError as exc:
@@ -1219,14 +1402,17 @@ class RustExtension(Extension):
                 raise RustCompilationError("Cargo not found")
             elif exc.errno == errno.EACCES:
                 raise RustCompilationError(
-                    "Cargo found, but permisssion to execute it is denied")
+                    "Cargo found, but permisssion to execute it is denied"
+                )
             else:
                 raise
         except subprocess.CalledProcessError:
             raise RustCompilationError(
                 "Cargo failed. Working directory: %r, "
                 "command: %r, environment: %r"
-                % (self.rustsrcdir, cargocmd, env))
+                % (self.rustsrcdir, cargocmd, env)
+            )
+
 
 class RustEnhancedExtension(RustExtension):
     """A C Extension, conditionally enhanced with Rust code.
@@ -1237,8 +1423,9 @@ class RustEnhancedExtension(RustExtension):
     """
 
     def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
-        RustExtension.__init__(self, mpath, sources, rustlibname, subcrate,
-                               **kw)
+        RustExtension.__init__(
+            self, mpath, sources, rustlibname, subcrate, **kw
+        )
         if hgrustext != 'direct-ffi':
             return
         self.extra_compile_args.append('-DWITH_RUST')
@@ -1249,11 +1436,12 @@ class RustEnhancedExtension(RustExtension):
         if hgrustext == 'direct-ffi':
             RustExtension.rustbuild(self)
 
-class RustStandaloneExtension(RustExtension):
 
+class RustStandaloneExtension(RustExtension):
     def __init__(self, pydottedname, rustcrate, dylibname, **kw):
-        RustExtension.__init__(self, pydottedname, [], dylibname, rustcrate,
-                               **kw)
+        RustExtension.__init__(
+            self, pydottedname, [], dylibname, rustcrate, **kw
+        )
         self.dylibname = dylibname
 
     def build(self, target_dir):
@@ -1261,58 +1449,85 @@ class RustStandaloneExtension(RustExtension):
         target = [target_dir]
         target.extend(self.name.split('.'))
         target[-1] += DYLIB_SUFFIX
-        shutil.copy2(os.path.join(self.rusttargetdir,
-                                  self.dylibname + self.rustdylibsuffix()),
-                     os.path.join(*target))
+        shutil.copy2(
+            os.path.join(
+                self.rusttargetdir, self.dylibname + self.rustdylibsuffix()
+            ),
+            os.path.join(*target),
+        )
 
 
 extmodules = [
-    Extension('mercurial.cext.base85', ['mercurial/cext/base85.c'],
-              include_dirs=common_include_dirs,
-              depends=common_depends),
-    Extension('mercurial.cext.bdiff', ['mercurial/bdiff.c',
-                                       'mercurial/cext/bdiff.c'] + xdiff_srcs,
-              include_dirs=common_include_dirs,
-              depends=common_depends + ['mercurial/bdiff.h'] + xdiff_headers),
-    Extension('mercurial.cext.mpatch', ['mercurial/mpatch.c',
-                                        'mercurial/cext/mpatch.c'],
-              include_dirs=common_include_dirs,
-              depends=common_depends),
+    Extension(
+        'mercurial.cext.base85',
+        ['mercurial/cext/base85.c'],
+        include_dirs=common_include_dirs,
+        depends=common_depends,
+    ),
+    Extension(
+        'mercurial.cext.bdiff',
+        ['mercurial/bdiff.c', 'mercurial/cext/bdiff.c'] + xdiff_srcs,
+        include_dirs=common_include_dirs,
+        depends=common_depends + ['mercurial/bdiff.h'] + xdiff_headers,
+    ),
+    Extension(
+        'mercurial.cext.mpatch',
+        ['mercurial/mpatch.c', 'mercurial/cext/mpatch.c'],
+        include_dirs=common_include_dirs,
+        depends=common_depends,
+    ),
     RustEnhancedExtension(
-        'mercurial.cext.parsers', ['mercurial/cext/charencode.c',
-                                   'mercurial/cext/dirs.c',
-                                   'mercurial/cext/manifest.c',
-                                   'mercurial/cext/parsers.c',
-                                   'mercurial/cext/pathencode.c',
-                                   'mercurial/cext/revlog.c'],
+        'mercurial.cext.parsers',
+        [
+            'mercurial/cext/charencode.c',
+            'mercurial/cext/dirs.c',
+            'mercurial/cext/manifest.c',
+            'mercurial/cext/parsers.c',
+            'mercurial/cext/pathencode.c',
+            'mercurial/cext/revlog.c',
+        ],
         'hgdirectffi',
         'hg-direct-ffi',
         include_dirs=common_include_dirs,
-        depends=common_depends + ['mercurial/cext/charencode.h',
-                                  'mercurial/cext/revlog.h',
-                                  'rust/hg-core/src/ancestors.rs',
-                                  'rust/hg-core/src/lib.rs']),
-    Extension('mercurial.cext.osutil', ['mercurial/cext/osutil.c'],
-              include_dirs=common_include_dirs,
-              extra_compile_args=osutil_cflags,
-              extra_link_args=osutil_ldflags,
-              depends=common_depends),
+        depends=common_depends
+        + [
+            'mercurial/cext/charencode.h',
+            'mercurial/cext/revlog.h',
+            'rust/hg-core/src/ancestors.rs',
+            'rust/hg-core/src/lib.rs',
+        ],
+    ),
     Extension(
-        'mercurial.thirdparty.zope.interface._zope_interface_coptimizations', [
-        'mercurial/thirdparty/zope/interface/_zope_interface_coptimizations.c',
-        ]),
-    Extension('hgext.fsmonitor.pywatchman.bser',
-              ['hgext/fsmonitor/pywatchman/bser.c']),
-    RustStandaloneExtension('mercurial.rustext', 'hg-cpython', 'librusthg',
-                            py3_features='python3'),
-    ]
+        'mercurial.cext.osutil',
+        ['mercurial/cext/osutil.c'],
+        include_dirs=common_include_dirs,
+        extra_compile_args=osutil_cflags,
+        extra_link_args=osutil_ldflags,
+        depends=common_depends,
+    ),
+    Extension(
+        'mercurial.thirdparty.zope.interface._zope_interface_coptimizations',
+        [
+            'mercurial/thirdparty/zope/interface/_zope_interface_coptimizations.c',
+        ],
+    ),
+    Extension(
+        'hgext.fsmonitor.pywatchman.bser', ['hgext/fsmonitor/pywatchman/bser.c']
+    ),
+    RustStandaloneExtension(
+        'mercurial.rustext', 'hg-cpython', 'librusthg', py3_features='python3'
+    ),
+]
 
 
 sys.path.insert(0, 'contrib/python-zstandard')
 import setup_zstd
-extmodules.append(setup_zstd.get_c_extension(
-    name='mercurial.zstd',
-    root=os.path.abspath(os.path.dirname(__file__))))
+
+extmodules.append(
+    setup_zstd.get_c_extension(
+        name='mercurial.zstd', root=os.path.abspath(os.path.dirname(__file__))
+    )
+)
 
 try:
     from distutils import cygwinccompiler
@@ -1337,6 +1552,7 @@ except ImportError:
     class HackedMingw32CCompiler(object):
         pass
 
+
 if os.name == 'nt':
     # Allow compiler/linker flags to be added to Visual Studio builds.  Passing
     # extra_link_args to distutils.extensions.Extension() doesn't have any
@@ -1354,14 +1570,20 @@ if os.name == 'nt':
 
     msvccompiler.MSVCCompiler = HackedMSVCCompiler
 
-packagedata = {'mercurial': ['locale/*/LC_MESSAGES/hg.mo',
-                             'help/*.txt',
-                             'help/internals/*.txt',
-                             'default.d/*.rc',
-                             'dummycert.pem']}
+packagedata = {
+    'mercurial': [
+        'locale/*/LC_MESSAGES/hg.mo',
+        'help/*.txt',
+        'help/internals/*.txt',
+        'default.d/*.rc',
+        'dummycert.pem',
+    ]
+}
+
 
 def ordinarypath(p):
     return p and p[0] != '.' and p[-1] != '~'
+
 
 for root in ('templates',):
     for curdir, dirs, files in os.walk(os.path.join('mercurial', root)):
@@ -1402,9 +1624,12 @@ if issetuptools:
 
 if py2exeloaded:
     extra['console'] = [
-        {'script':'hg',
-         'copyright':'Copyright (C) 2005-2019 Matt Mackall and others',
-         'product_version':version}]
+        {
+            'script': 'hg',
+            'copyright': 'Copyright (C) 2005-2019 Matt Mackall and others',
+            'product_version': version,
+        }
+    ]
     # Sub command of 'build' because 'py2exe' does not handle sub_commands.
     # Need to override hgbuild because it has a private copy of
     # build.sub_commands.
@@ -1438,8 +1663,9 @@ if sys.platform == 'darwin' and os.path.exists('/usr/bin/xcodebuild'):
         version = version[0]
         if sys.version_info[0] == 3:
             version = version.decode('utf-8')
-        xcode4 = (version.startswith('Xcode') and
-                  StrictVersion(version.split()[1]) >= StrictVersion('4.0'))
+        xcode4 = version.startswith('Xcode') and StrictVersion(
+            version.split()[1]
+        ) >= StrictVersion('4.0')
         xcode51 = re.match(r'^Xcode\s+5\.1', version) is not None
     else:
         # xcodebuild returns empty on OS X Lion with XCode 4.3 not
@@ -1463,59 +1689,66 @@ if sys.platform == 'darwin' and os.path.exists('/usr/bin/xcodebuild'):
         cflags = get_config_var('CFLAGS')
         if cflags and re.search(r'-mno-fused-madd\b', cflags) is not None:
             os.environ['CFLAGS'] = (
-                os.environ.get('CFLAGS', '') + ' -Qunused-arguments')
+                os.environ.get('CFLAGS', '') + ' -Qunused-arguments'
+            )
 
-setup(name='mercurial',
-      version=setupversion,
-      author='Matt Mackall and many others',
-      author_email='mercurial@mercurial-scm.org',
-      url='https://mercurial-scm.org/',
-      download_url='https://mercurial-scm.org/release/',
-      description=('Fast scalable distributed SCM (revision control, version '
-                   'control) system'),
-      long_description=('Mercurial is a distributed SCM tool written in Python.'
-                        ' It is used by a number of large projects that require'
-                        ' fast, reliable distributed revision control, such as '
-                        'Mozilla.'),
-      license='GNU GPLv2 or any later version',
-      classifiers=[
-          'Development Status :: 6 - Mature',
-          'Environment :: Console',
-          'Intended Audience :: Developers',
-          'Intended Audience :: System Administrators',
-          'License :: OSI Approved :: GNU General Public License (GPL)',
-          'Natural Language :: Danish',
-          'Natural Language :: English',
-          'Natural Language :: German',
-          'Natural Language :: Italian',
-          'Natural Language :: Japanese',
-          'Natural Language :: Portuguese (Brazilian)',
-          'Operating System :: Microsoft :: Windows',
-          'Operating System :: OS Independent',
-          'Operating System :: POSIX',
-          'Programming Language :: C',
-          'Programming Language :: Python',
-          'Topic :: Software Development :: Version Control',
-      ],
-      scripts=scripts,
-      packages=packages,
-      ext_modules=extmodules,
-      data_files=datafiles,
-      package_data=packagedata,
-      cmdclass=cmdclass,
-      distclass=hgdist,
-      options={
-          'py2exe': {
-              'bundle_files': 3,
-              'dll_excludes': py2exedllexcludes,
-              'excludes': py2exeexcludes,
-              'packages': py2exepackages,
-          },
-          'bdist_mpkg': {
-              'zipdist': False,
-              'license': 'COPYING',
-              'readme': 'contrib/packaging/macosx/Readme.html',
-              'welcome': 'contrib/packaging/macosx/Welcome.html',
-          },
-      },
-      **extra)
+setup(
+    name='mercurial',
+    version=setupversion,
+    author='Matt Mackall and many others',
+    author_email='mercurial@mercurial-scm.org',
+    url='https://mercurial-scm.org/',
+    download_url='https://mercurial-scm.org/release/',
+    description=(
+        'Fast scalable distributed SCM (revision control, version '
+        'control) system'
+    ),
+    long_description=(
+        'Mercurial is a distributed SCM tool written in Python.'
+        ' It is used by a number of large projects that require'
+        ' fast, reliable distributed revision control, such as '
+        'Mozilla.'
+    ),
+    license='GNU GPLv2 or any later version',
+    classifiers=[
+        'Development Status :: 6 - Mature',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'Natural Language :: Danish',
+        'Natural Language :: English',
+        'Natural Language :: German',
+        'Natural Language :: Italian',
+        'Natural Language :: Japanese',
+        'Natural Language :: Portuguese (Brazilian)',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: OS Independent',
+        'Operating System :: POSIX',
+        'Programming Language :: C',
+        'Programming Language :: Python',
+        'Topic :: Software Development :: Version Control',
+    ],
+    scripts=scripts,
+    packages=packages,
+    ext_modules=extmodules,
+    data_files=datafiles,
+    package_data=packagedata,
+    cmdclass=cmdclass,
+    distclass=hgdist,
+    options={
+        'py2exe': {
+            'bundle_files': 3,
+            'dll_excludes': py2exedllexcludes,
+            'excludes': py2exeexcludes,
+            'packages': py2exepackages,
+        },
+        'bdist_mpkg': {
+            'zipdist': False,
+            'license': 'COPYING',
+            'readme': 'contrib/packaging/macosx/Readme.html',
+            'welcome': 'contrib/packaging/macosx/Welcome.html',
+        },
+    },
+    **extra
+)

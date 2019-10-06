@@ -28,12 +28,13 @@ from mercurial import (
     wireprototypes,
     wireprotov1server,
 )
-from .  import (
+from . import (
     constants,
     shallowutil,
 )
 
 _sshv1server = wireprotoserver.sshv1protocolhandler
+
 
 def setupserver(ui, repo):
     """Sets up a normal Mercurial repo so it can serve files to shallow repos.
@@ -41,32 +42,39 @@ def setupserver(ui, repo):
     onetimesetup(ui)
 
     # don't send files to shallow clients during pulls
-    def generatefiles(orig, self, changedfiles, linknodes, commonrevs, source,
-                      *args, **kwargs):
+    def generatefiles(
+        orig, self, changedfiles, linknodes, commonrevs, source, *args, **kwargs
+    ):
         caps = self._bundlecaps or []
         if constants.BUNDLE2_CAPABLITY in caps:
             # only send files that don't match the specified patterns
             includepattern = None
             excludepattern = None
-            for cap in (self._bundlecaps or []):
+            for cap in self._bundlecaps or []:
                 if cap.startswith("includepattern="):
-                    includepattern = cap[len("includepattern="):].split('\0')
+                    includepattern = cap[len("includepattern=") :].split('\0')
                 elif cap.startswith("excludepattern="):
-                    excludepattern = cap[len("excludepattern="):].split('\0')
+                    excludepattern = cap[len("excludepattern=") :].split('\0')
 
             m = match.always()
             if includepattern or excludepattern:
-                m = match.match(repo.root, '', None,
-                    includepattern, excludepattern)
+                m = match.match(
+                    repo.root, '', None, includepattern, excludepattern
+                )
 
             changedfiles = list([f for f in changedfiles if not m(f)])
-        return orig(self, changedfiles, linknodes, commonrevs, source,
-                    *args, **kwargs)
+        return orig(
+            self, changedfiles, linknodes, commonrevs, source, *args, **kwargs
+        )
 
     extensions.wrapfunction(
-        changegroup.cgpacker, 'generatefiles', generatefiles)
+        changegroup.cgpacker, 'generatefiles', generatefiles
+    )
+
 
 onetime = False
+
+
 def onetimesetup(ui):
     """Configures the wireprotocol for both clients and servers.
     """
@@ -77,16 +85,20 @@ def onetimesetup(ui):
 
     # support file content requests
     wireprotov1server.wireprotocommand(
-        'x_rfl_getflogheads', 'path', permission='pull')(getflogheads)
+        'x_rfl_getflogheads', 'path', permission='pull'
+    )(getflogheads)
+    wireprotov1server.wireprotocommand('x_rfl_getfiles', '', permission='pull')(
+        getfiles
+    )
     wireprotov1server.wireprotocommand(
-        'x_rfl_getfiles', '', permission='pull')(getfiles)
-    wireprotov1server.wireprotocommand(
-        'x_rfl_getfile', 'file node', permission='pull')(getfile)
+        'x_rfl_getfile', 'file node', permission='pull'
+    )(getfile)
 
     class streamstate(object):
         match = None
         shallowremote = False
         noflatmf = False
+
     state = streamstate()
 
     def stream_out_shallow(repo, proto, other):
@@ -107,19 +119,22 @@ def onetimesetup(ui):
             state.match = match.always()
             state.noflatmf = other.get('noflatmanifest') == 'True'
             if includepattern or excludepattern:
-                state.match = match.match(repo.root, '', None,
-                    includepattern, excludepattern)
+                state.match = match.match(
+                    repo.root, '', None, includepattern, excludepattern
+                )
             streamres = wireprotov1server.stream(repo, proto)
 
             # Force the first value to execute, so the file list is computed
             # within the try/finally scope
             first = next(streamres.gen)
             second = next(streamres.gen)
+
             def gen():
                 yield first
                 yield second
                 for value in streamres.gen:
                     yield value
+
             return wireprototypes.streamres(gen())
         finally:
             state.shallowremote = oldshallow
@@ -149,8 +164,9 @@ def onetimesetup(ui):
 
             if 'treemanifest' in repo.requirements:
                 for (u, e, s) in repo.store.datafiles():
-                    if (u.startswith('meta/') and
-                        (u.endswith('.i') or u.endswith('.d'))):
+                    if u.startswith('meta/') and (
+                        u.endswith('.i') or u.endswith('.d')
+                    ):
                         yield (u, e, s)
 
             # Return .d and .i files that do not match the shallow pattern
@@ -170,8 +186,9 @@ def onetimesetup(ui):
             # don't allow cloning from a shallow repo to a full repo
             # since it would require fetching every version of every
             # file in order to create the revlogs.
-            raise error.Abort(_("Cannot clone from a shallow repo "
-                                "to a full repo."))
+            raise error.Abort(
+                _("Cannot clone from a shallow repo " "to a full repo.")
+            )
         else:
             for x in orig(repo, matcher):
                 yield x
@@ -181,14 +198,16 @@ def onetimesetup(ui):
     # expose remotefilelog capabilities
     def _capabilities(orig, repo, proto):
         caps = orig(repo, proto)
-        if (shallowutil.isenabled(repo) or ui.configbool('remotefilelog',
-                                                         'server')):
+        if shallowutil.isenabled(repo) or ui.configbool(
+            'remotefilelog', 'server'
+        ):
             if isinstance(proto, _sshv1server):
                 # legacy getfiles method which only works over ssh
                 caps.append(constants.NETWORK_CAP_LEGACY_SSH_GETFILES)
             caps.append('x_rfl_getflogheads')
             caps.append('x_rfl_getfile')
         return caps
+
     extensions.wrapfunction(wireprotov1server, '_capabilities', _capabilities)
 
     def _adjustlinkrev(orig, self, *args, **kwargs):
@@ -200,7 +219,8 @@ def onetimesetup(ui):
         return orig(self, *args, **kwargs)
 
     extensions.wrapfunction(
-        context.basefilectx, '_adjustlinkrev', _adjustlinkrev)
+        context.basefilectx, '_adjustlinkrev', _adjustlinkrev
+    )
 
     def _iscmd(orig, cmd):
         if cmd == 'x_rfl_getfiles':
@@ -208,6 +228,7 @@ def onetimesetup(ui):
         return orig(cmd)
 
     extensions.wrapfunction(wireprotoserver, 'iscmd', _iscmd)
+
 
 def _loadfileblob(repo, cachepath, path, node):
     filecachepath = os.path.join(cachepath, path, hex(node))
@@ -250,12 +271,14 @@ def _loadfileblob(repo, cachepath, path, node):
             text = f.read()
     return text
 
+
 def getflogheads(repo, proto, path):
     """A server api for requesting a filelog's heads
     """
     flog = repo.file(path)
     heads = flog.heads()
     return '\n'.join((hex(head) for head in heads if head != nullid))
+
 
 def getfile(repo, proto, file, node):
     """A server api for requesting a particular version of a file. Can be used
@@ -275,6 +298,7 @@ def getfile(repo, proto, file, node):
     if node == nullid:
         return '0\0'
     return '0\0' + _loadfileblob(repo, cachepath, file, node)
+
 
 def getfiles(repo, proto):
     """A server api for requesting particular versions of particular files.
@@ -310,7 +334,9 @@ def getfiles(repo, proto):
             # it would be better to only flush after processing a whole batch
             # but currently we don't know if there are more requests coming
             proto._fout.flush()
+
     return wireprototypes.streamres(streamer())
+
 
 def createfileblob(filectx):
     """
@@ -361,14 +387,19 @@ def createfileblob(filectx):
                 copyname = rename[0]
             linknode = ancestorctx.node()
             ancestortext += "%s%s%s%s%s\0" % (
-                ancestorctx.filenode(), p1, p2, linknode,
-                copyname)
+                ancestorctx.filenode(),
+                p1,
+                p2,
+                linknode,
+                copyname,
+            )
     finally:
         repo.forcelinkrev = False
 
     header = shallowutil.buildfileblobheader(len(text), revlogflags)
 
     return "%s\0%s%s" % (header, text, ancestortext)
+
 
 def gcserver(ui, repo):
     if not repo.ui.configbool("remotefilelog", "server"):

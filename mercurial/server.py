@@ -21,12 +21,18 @@ from . import (
     util,
 )
 
-from .utils import (
-    procutil,
-)
+from .utils import procutil
 
-def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
-               runargs=None, appendpid=False):
+
+def runservice(
+    opts,
+    parentfn=None,
+    initfn=None,
+    runfn=None,
+    logfile=None,
+    runargs=None,
+    appendpid=False,
+):
     '''Run a command as a service.'''
 
     postexecargs = {}
@@ -38,8 +44,9 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
             elif inst.startswith('chdir:'):
                 postexecargs['chdir'] = inst[6:]
             elif inst != 'none':
-                raise error.Abort(_('invalid value for --daemon-postexec: %s')
-                                  % inst)
+                raise error.Abort(
+                    _('invalid value for --daemon-postexec: %s') % inst
+                )
 
     # When daemonized on Windows, redirect stdout/stderr to the lockfile (which
     # gets cleaned up after the child is up and running), so that the parent can
@@ -51,8 +58,9 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
             procutil.stdout.flush()
             procutil.stderr.flush()
 
-            fd = os.open(postexecargs['unlink'],
-                         os.O_WRONLY | os.O_APPEND | os.O_BINARY)
+            fd = os.open(
+                postexecargs['unlink'], os.O_WRONLY | os.O_APPEND | os.O_BINARY
+            )
             try:
                 os.dup2(fd, procutil.stdout.fileno())
                 os.dup2(fd, procutil.stderr.fileno())
@@ -84,10 +92,12 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
                     del runargs[i]
                     break
                 elif runargs[i].startswith('--cwd'):
-                    del runargs[i:i + 2]
+                    del runargs[i : i + 2]
                     break
+
             def condfn():
                 return not os.path.exists(lockpath)
+
             pid = procutil.rundetached(runargs, condfn)
             if pid < 0:
                 # If the daemonized process managed to write out an error msg,
@@ -126,13 +136,17 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
         nullfd = os.open(os.devnull, os.O_RDWR)
         logfilefd = nullfd
         if logfile:
-            logfilefd = os.open(logfile, os.O_RDWR | os.O_CREAT | os.O_APPEND,
-                                0o666)
+            logfilefd = os.open(
+                logfile, os.O_RDWR | os.O_CREAT | os.O_APPEND, 0o666
+            )
         os.dup2(nullfd, procutil.stdin.fileno())
         os.dup2(logfilefd, procutil.stdout.fileno())
         os.dup2(logfilefd, procutil.stderr.fileno())
-        stdio = (procutil.stdin.fileno(), procutil.stdout.fileno(),
-                 procutil.stderr.fileno())
+        stdio = (
+            procutil.stdin.fileno(),
+            procutil.stdout.fileno(),
+            procutil.stderr.fileno(),
+        )
         if nullfd not in stdio:
             os.close(nullfd)
         if logfile and logfilefd not in stdio:
@@ -146,11 +160,13 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
     if runfn:
         return runfn()
 
+
 _cmdservicemap = {
     'chgunix': chgserver.chgunixservice,
     'pipe': commandserver.pipeservice,
     'unix': commandserver.unixforkingservice,
 }
+
 
 def _createcmdservice(ui, repo, opts):
     mode = opts['cmdserver']
@@ -160,6 +176,7 @@ def _createcmdservice(ui, repo, opts):
         raise error.Abort(_('unknown mode %s') % mode)
     commandserver.setuplogging(ui, repo)
     return servicefn(ui, repo, opts)
+
 
 def _createhgwebservice(ui, repo, opts):
     # this way we can check if something was given in the command-line
@@ -193,17 +210,20 @@ def _createhgwebservice(ui, repo, opts):
     else:
         servui = ui
 
-    optlist = ("name templates style address port prefix ipv6"
-               " accesslog errorlog certificate encoding")
+    optlist = (
+        "name templates style address port prefix ipv6"
+        " accesslog errorlog certificate encoding"
+    )
     for o in optlist.split():
         val = opts.get(o, '')
-        if val in (None, ''): # should check against default options instead
+        if val in (None, ''):  # should check against default options instead
             continue
         for u in alluis:
             u.setconfig("web", o, val, 'serve')
 
     app = hgweb.createapp(baseui, repo, webconf)
     return hgweb.httpservice(servui, app, opts)
+
 
 def createservice(ui, repo, opts):
     if opts["cmdserver"]:

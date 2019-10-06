@@ -16,9 +16,7 @@ import zipfile
 import zlib
 
 from .i18n import _
-from .node import (
-    nullrev,
-)
+from .node import nullrev
 
 from . import (
     error,
@@ -29,11 +27,13 @@ from . import (
     util,
     vfs as vfsmod,
 )
+
 stringio = util.stringio
 
 # from unzip source code:
 _UNX_IFREG = 0x8000
-_UNX_IFLNK = 0xa000
+_UNX_IFLNK = 0xA000
+
 
 def tidyprefix(dest, kind, prefix):
     '''choose prefix to use for names in archive.  make sure prefix is
@@ -48,7 +48,7 @@ def tidyprefix(dest, kind, prefix):
         lower = prefix.lower()
         for sfx in exts.get(kind, []):
             if lower.endswith(sfx):
-                prefix = prefix[:-len(sfx)]
+                prefix = prefix[: -len(sfx)]
                 break
     lpfx = os.path.normpath(util.localpath(prefix))
     prefix = util.pconvert(lpfx)
@@ -62,13 +62,15 @@ def tidyprefix(dest, kind, prefix):
         raise error.Abort(_('archive prefix contains illegal components'))
     return prefix
 
+
 exts = {
     'tar': ['.tar'],
     'tbz2': ['.tbz2', '.tar.bz2'],
     'tgz': ['.tgz', '.tar.gz'],
     'zip': ['.zip'],
-    'txz': ['.txz', '.tar.xz']
-    }
+    'txz': ['.txz', '.tar.xz'],
+}
+
 
 def guesskind(dest):
     for kind, extensions in exts.iteritems():
@@ -76,11 +78,13 @@ def guesskind(dest):
             return kind
     return None
 
+
 def _rootctx(repo):
     # repo[0] may be hidden
     for rev in repo:
         return repo[rev]
     return repo[nullrev]
+
 
 # {tags} on ctx includes local tags and 'tip', with no current way to limit
 # that to global tags.  Therefore, use {latesttag} as a substitute when
@@ -94,15 +98,19 @@ branch: {branch|utf8}
                join(latesttag % "latesttag: {tag}", "\n"),
                "latesttagdistance: {latesttagdistance}",
                "changessincelatesttag: {changessincelatesttag}"))}
-'''[1:]  # drop leading '\n'
+'''[
+    1:
+]  # drop leading '\n'
+
 
 def buildmetadata(ctx):
     '''build content of .hg_archival.txt'''
     repo = ctx.repo()
 
     opts = {
-        'template': repo.ui.config('experimental', 'archivemetatemplate',
-                                   _defaultmetatemplate)
+        'template': repo.ui.config(
+            'experimental', 'archivemetatemplate', _defaultmetatemplate
+        )
     }
 
     out = util.stringio()
@@ -121,12 +129,12 @@ def buildmetadata(ctx):
 
     return out.getvalue()
 
+
 class tarit(object):
     '''write archive to tar file or stream.  can write uncompressed,
     or compress with gzip or bzip2.'''
 
     class GzipFileWithTime(gzip.GzipFile):
-
         def __init__(self, *args, **kw):
             timestamp = None
             if r'timestamp' in kw:
@@ -138,8 +146,8 @@ class tarit(object):
             gzip.GzipFile.__init__(self, *args, **kw)
 
         def _write_gzip_header(self):
-            self.fileobj.write('\037\213')             # magic header
-            self.fileobj.write('\010')                 # compression method
+            self.fileobj.write('\037\213')  # magic header
+            self.fileobj.write('\010')  # compression method
             fname = self.name
             if fname and fname.endswith('.gz'):
                 fname = fname[:-3]
@@ -162,16 +170,19 @@ class tarit(object):
                 mode = mode[0:1]
                 if not fileobj:
                     fileobj = open(name, mode + 'b')
-                gzfileobj = self.GzipFileWithTime(name,
-                                                  pycompat.sysstr(mode + 'b'),
-                                                  zlib.Z_BEST_COMPRESSION,
-                                                  fileobj, timestamp=mtime)
+                gzfileobj = self.GzipFileWithTime(
+                    name,
+                    pycompat.sysstr(mode + 'b'),
+                    zlib.Z_BEST_COMPRESSION,
+                    fileobj,
+                    timestamp=mtime,
+                )
                 self.fileobj = gzfileobj
                 return tarfile.TarFile.taropen(
-                    name, pycompat.sysstr(mode), gzfileobj)
+                    name, pycompat.sysstr(mode), gzfileobj
+                )
             else:
-                return tarfile.open(
-                    name, pycompat.sysstr(mode + kind), fileobj)
+                return tarfile.open(name, pycompat.sysstr(mode + kind), fileobj)
 
         if isinstance(dest, bytes):
             self.z = taropen('w:', name=dest)
@@ -199,6 +210,7 @@ class tarit(object):
         if self.fileobj:
             self.fileobj.close()
 
+
 class zipit(object):
     '''write archive to zip file or stream.  can write uncompressed,
     or compressed with deflate.'''
@@ -206,13 +218,13 @@ class zipit(object):
     def __init__(self, dest, mtime, compress=True):
         if isinstance(dest, bytes):
             dest = pycompat.fsdecode(dest)
-        self.z = zipfile.ZipFile(dest, r'w',
-                                 compress and zipfile.ZIP_DEFLATED or
-                                 zipfile.ZIP_STORED)
+        self.z = zipfile.ZipFile(
+            dest, r'w', compress and zipfile.ZIP_DEFLATED or zipfile.ZIP_STORED
+        )
 
         # Python's zipfile module emits deprecation warnings if we try
         # to store files with a date before 1980.
-        epoch = 315532800 # calendar.timegm((1980, 1, 1, 0, 0, 0, 1, 1, 0))
+        epoch = 315532800  # calendar.timegm((1980, 1, 1, 0, 0, 0, 1, 1, 0))
         if mtime < epoch:
             mtime = epoch
 
@@ -233,15 +245,18 @@ class zipit(object):
         # add "extended-timestamp" extra block, because zip archives
         # without this will be extracted with unexpected timestamp,
         # if TZ is not configured as GMT
-        i.extra += struct.pack('<hhBl',
-                               0x5455,     # block type: "extended-timestamp"
-                               1 + 4,      # size of this block
-                               1,          # "modification time is present"
-                               int(self.mtime)) # last modification (UTC)
+        i.extra += struct.pack(
+            '<hhBl',
+            0x5455,  # block type: "extended-timestamp"
+            1 + 4,  # size of this block
+            1,  # "modification time is present"
+            int(self.mtime),
+        )  # last modification (UTC)
         self.z.writestr(i, data)
 
     def done(self):
         self.z.close()
+
 
 class fileit(object):
     '''write archive as files in directory.'''
@@ -266,6 +281,7 @@ class fileit(object):
     def done(self):
         pass
 
+
 archivers = {
     'files': fileit,
     'tar': tarit,
@@ -274,10 +290,20 @@ archivers = {
     'txz': lambda name, mtime: tarit(name, mtime, 'xz'),
     'uzip': lambda name, mtime: zipit(name, mtime, False),
     'zip': zipit,
-    }
+}
 
-def archive(repo, dest, node, kind, decode=True, match=None,
-            prefix='', mtime=None, subrepos=False):
+
+def archive(
+    repo,
+    dest,
+    node,
+    kind,
+    decode=True,
+    match=None,
+    prefix='',
+    mtime=None,
+    subrepos=False,
+):
     '''create archive of repo as it was at node.
 
     dest can be name of directory, name of archive file, or file
@@ -330,10 +356,12 @@ def archive(repo, dest, node, kind, decode=True, match=None,
     total = len(files)
     if total:
         files.sort()
-        scmutil.prefetchfiles(repo, [ctx.rev()],
-                              scmutil.matchfiles(repo, files))
-        progress = repo.ui.makeprogress(_('archiving'), unit=_('files'),
-                                        total=total)
+        scmutil.prefetchfiles(
+            repo, [ctx.rev()], scmutil.matchfiles(repo, files)
+        )
+        progress = repo.ui.makeprogress(
+            _('archiving'), unit=_('files'), total=total
+        )
         progress.update(0)
         for f in files:
             ff = ctx.flags(f)

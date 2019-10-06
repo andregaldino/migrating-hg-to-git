@@ -42,11 +42,11 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('experimental', 'uncommitondirtywdir',
-    default=False,
+configitem(
+    'experimental', 'uncommitondirtywdir', default=False,
 )
-configitem('experimental', 'uncommit.keep',
-    default=False,
+configitem(
+    'experimental', 'uncommit.keep', default=False,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -55,8 +55,10 @@ configitem('experimental', 'uncommit.keep',
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-def _commitfiltered(repo, ctx, match, keepcommit, message=None, user=None,
-                    date=None):
+
+def _commitfiltered(
+    repo, ctx, match, keepcommit, message=None, user=None, date=None
+):
     """Recommit ctx with changed files not in match. Return the new
     node identifier, or None if nothing changed.
     """
@@ -73,19 +75,24 @@ def _commitfiltered(repo, ctx, match, keepcommit, message=None, user=None,
     if not keepcommit:
         return ctx.p1().node()
 
-    files = (initialfiles - exclude)
+    files = initialfiles - exclude
     # Filter copies
     copied = copiesmod.pathcopies(base, ctx)
-    copied = dict((dst, src) for dst, src in copied.iteritems()
-                  if dst in files)
+    copied = dict((dst, src) for dst, src in copied.iteritems() if dst in files)
+
     def filectxfn(repo, memctx, path, contentctx=ctx, redirect=()):
         if path not in contentctx:
             return None
         fctx = contentctx[path]
-        mctx = context.memfilectx(repo, memctx, fctx.path(), fctx.data(),
-                                  fctx.islink(),
-                                  fctx.isexec(),
-                                  copysource=copied.get(path))
+        mctx = context.memfilectx(
+            repo,
+            memctx,
+            fctx.path(),
+            fctx.data(),
+            fctx.islink(),
+            fctx.isexec(),
+            copysource=copied.get(path),
+        )
         return mctx
 
     if not files:
@@ -98,25 +105,38 @@ def _commitfiltered(repo, ctx, match, keepcommit, message=None, user=None,
     if not date:
         date = ctx.date()
 
-    new = context.memctx(repo,
-                         parents=[base.node(), node.nullid],
-                         text=message,
-                         files=files,
-                         filectxfn=filectxfn,
-                         user=user,
-                         date=date,
-                         extra=ctx.extra())
+    new = context.memctx(
+        repo,
+        parents=[base.node(), node.nullid],
+        text=message,
+        files=files,
+        filectxfn=filectxfn,
+        user=user,
+        date=date,
+        extra=ctx.extra(),
+    )
     return repo.commitctx(new)
 
-@command('uncommit',
-    [('', 'keep', None, _('allow an empty commit after uncommitting')),
-     ('', 'allow-dirty-working-copy', False,
-    _('allow uncommit with outstanding changes')),
-     (b'n', b'note', b'', _(b'store a note on uncommit'), _(b'TEXT'))
-    ] + commands.walkopts + commands.commitopts + commands.commitopts2
+
+@command(
+    'uncommit',
+    [
+        ('', 'keep', None, _('allow an empty commit after uncommitting')),
+        (
+            '',
+            'allow-dirty-working-copy',
+            False,
+            _('allow uncommit with outstanding changes'),
+        ),
+        (b'n', b'note', b'', _(b'store a note on uncommit'), _(b'TEXT')),
+    ]
+    + commands.walkopts
+    + commands.commitopts
+    + commands.commitopts2
     + commands.commitopts3,
     _('[OPTION]... [FILE]...'),
-    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+)
 def uncommit(ui, repo, *pats, **opts):
     """uncommit part or all of a local changeset
 
@@ -137,11 +157,14 @@ def uncommit(ui, repo, *pats, **opts):
 
         m, a, r, d = repo.status()[:4]
         isdirtypath = any(set(m + a + r + d) & set(pats))
-        allowdirtywcopy = (opts['allow_dirty_working_copy'] or
-                    repo.ui.configbool('experimental', 'uncommitondirtywdir'))
+        allowdirtywcopy = opts[
+            'allow_dirty_working_copy'
+        ] or repo.ui.configbool('experimental', 'uncommitondirtywdir')
         if not allowdirtywcopy and (not pats or isdirtypath):
-            cmdutil.bailifchanged(repo, hint=_('requires '
-                                '--allow-dirty-working-copy to uncommit'))
+            cmdutil.bailifchanged(
+                repo,
+                hint=_('requires ' '--allow-dirty-working-copy to uncommit'),
+            )
         old = repo['.']
         rewriteutil.precheck(repo, [old.rev()], 'uncommit')
         if len(old.parents()) > 1:
@@ -164,15 +187,18 @@ def uncommit(ui, repo, *pats, **opts):
 
             for f in sorted(badfiles):
                 if f in s.clean:
-                    hint = _(b"file was not changed in working directory "
-                             b"parent")
+                    hint = _(
+                        b"file was not changed in working directory " b"parent"
+                    )
                 elif repo.wvfs.exists(f):
                     hint = _(b"file was untracked in working directory parent")
                 else:
                     hint = _(b"file does not exist")
 
-                raise error.Abort(_(b'cannot uncommit "%s"')
-                                  % scmutil.getuipathfn(repo)(f), hint=hint)
+                raise error.Abort(
+                    _(b'cannot uncommit "%s"') % scmutil.getuipathfn(repo)(f),
+                    hint=hint,
+                )
 
         with repo.transaction('uncommit'):
             if not (opts[b'message'] or opts[b'logfile']):
@@ -185,9 +211,15 @@ def uncommit(ui, repo, *pats, **opts):
                     keepcommit = opts.get('keep')
                 else:
                     keepcommit = ui.configbool('experimental', 'uncommit.keep')
-            newid = _commitfiltered(repo, old, match, keepcommit,
-                                    message=message, user=opts.get(b'user'),
-                                    date=opts.get(b'date'))
+            newid = _commitfiltered(
+                repo,
+                old,
+                match,
+                keepcommit,
+                message=message,
+                user=opts.get(b'user'),
+                date=opts.get(b'date'),
+            )
             if newid is None:
                 ui.status(_("nothing to uncommit\n"))
                 return 1
@@ -205,13 +237,19 @@ def uncommit(ui, repo, *pats, **opts):
 
             scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
 
+
 def predecessormarkers(ctx):
     """yields the obsolete markers marking the given changeset as a successor"""
     for data in ctx.repo().obsstore.predecessors.get(ctx.node(), ()):
         yield obsutil.marker(ctx.repo(), data)
 
-@command('unamend', [], helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
-         helpbasic=True)
+
+@command(
+    'unamend',
+    [],
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+    helpbasic=True,
+)
 def unamend(ui, repo, **opts):
     """undo the most recent amend operation on a current changeset
 
@@ -250,14 +288,16 @@ def unamend(ui, repo, **opts):
                 return None
 
         # Make a new commit same as predctx
-        newctx = context.memctx(repo,
-                                parents=(predctx.p1(), predctx.p2()),
-                                text=predctx.description(),
-                                files=predctx.files(),
-                                filectxfn=filectxfn,
-                                user=predctx.user(),
-                                date=predctx.date(),
-                                extra=extras)
+        newctx = context.memctx(
+            repo,
+            parents=(predctx.p1(), predctx.p2()),
+            text=predctx.description(),
+            files=predctx.files(),
+            filectxfn=filectxfn,
+            user=predctx.user(),
+            date=predctx.date(),
+            extra=extras,
+        )
         newprednode = repo.commitctx(newctx)
         newpredctx = repo[newprednode]
         dirstate = repo.dirstate

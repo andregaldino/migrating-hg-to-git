@@ -52,6 +52,7 @@ SD_TEST7 = 7
 SIDEDATA_HEADER = struct.Struct(r'>H')
 SIDEDATA_ENTRY = struct.Struct(r'>HL20s')
 
+
 def sidedatawriteprocessor(rl, text, sidedata):
     sidedata = list(sidedata.items())
     sidedata.sort()
@@ -64,10 +65,11 @@ def sidedatawriteprocessor(rl, text, sidedata):
     rawtext.append(bytes(text))
     return ''.join(rawtext), False
 
+
 def sidedatareadprocessor(rl, text):
     sidedata = {}
     offset = 0
-    nbentry, = SIDEDATA_HEADER.unpack(text[:SIDEDATA_HEADER.size])
+    (nbentry,) = SIDEDATA_HEADER.unpack(text[: SIDEDATA_HEADER.size])
     offset += SIDEDATA_HEADER.size
     dataoffset = SIDEDATA_HEADER.size + (SIDEDATA_ENTRY.size * nbentry)
     for i in range(nbentry):
@@ -85,9 +87,11 @@ def sidedatareadprocessor(rl, text):
     text = text[dataoffset:]
     return text, True, sidedata
 
+
 def sidedatarawprocessor(rl, text):
     # side data modifies rawtext and prevent rawtext hash validation
     return False
+
 
 processors = (
     sidedatareadprocessor,

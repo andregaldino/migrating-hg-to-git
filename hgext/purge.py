@@ -42,17 +42,29 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-@command('purge|clean',
-    [('a', 'abort-on-err', None, _('abort if an error occurs')),
-    ('',  'all', None, _('purge ignored files too')),
-    ('',  'dirs', None, _('purge empty directories')),
-    ('',  'files', None, _('purge files')),
-    ('p', 'print', None, _('print filenames instead of deleting them')),
-    ('0', 'print0', None, _('end filenames with NUL, for use with xargs'
-                            ' (implies -p/--print)')),
-    ] + cmdutil.walkopts,
+
+@command(
+    'purge|clean',
+    [
+        ('a', 'abort-on-err', None, _('abort if an error occurs')),
+        ('', 'all', None, _('purge ignored files too')),
+        ('', 'dirs', None, _('purge empty directories')),
+        ('', 'files', None, _('purge files')),
+        ('p', 'print', None, _('print filenames instead of deleting them')),
+        (
+            '0',
+            'print0',
+            None,
+            _(
+                'end filenames with NUL, for use with xargs'
+                ' (implies -p/--print)'
+            ),
+        ),
+    ]
+    + cmdutil.walkopts,
     _('hg purge [OPTION]... [DIR]...'),
-    helpcategory=command.CATEGORY_MAINTENANCE)
+    helpcategory=command.CATEGORY_MAINTENANCE,
+)
 def purge(ui, repo, *dirs, **opts):
     '''removes files not tracked by Mercurial
 
@@ -89,7 +101,7 @@ def purge(ui, repo, *dirs, **opts):
     eol = '\n'
     if opts.get('print0'):
         eol = '\0'
-        act = False # --print0 implies --print
+        act = False  # --print0 implies --print
 
     removefiles = opts.get('files')
     removedirs = opts.get('dirs')
@@ -101,10 +113,14 @@ def purge(ui, repo, *dirs, **opts):
     match = scmutil.match(repo[None], dirs, opts)
 
     paths = mergemod.purge(
-        repo, match, ignored=opts.get('all', False),
-        removeemptydirs=removedirs, removefiles=removefiles,
+        repo,
+        match,
+        ignored=opts.get('all', False),
+        removeemptydirs=removedirs,
+        removefiles=removefiles,
         abortonerror=opts.get('abort_on_err'),
-        noop=not act)
+        noop=not act,
+    )
 
     for path in paths:
         if not act:

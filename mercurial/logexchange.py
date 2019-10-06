@@ -18,6 +18,7 @@ from . import (
 # directory name in .hg/ in which remotenames files will be present
 remotenamedir = 'logexchange'
 
+
 def readremotenamefile(repo, filename):
     """
     reads a file from .hg/logexchange/ directory and yields it's content
@@ -45,6 +46,7 @@ def readremotenamefile(repo, filename):
 
     f.close()
 
+
 def readremotenames(repo):
     """
     read the details about the remotenames stored in .hg/logexchange/ and
@@ -57,6 +59,7 @@ def readremotenames(repo):
         yield bmentry
     for branchentry in readremotenamefile(repo, 'branches'):
         yield branchentry
+
 
 def writeremotenamefile(repo, remotepath, names, nametype):
     vfs = vfsmod.vfs(repo.vfs.join(remotenamedir))
@@ -81,6 +84,7 @@ def writeremotenamefile(repo, remotepath, names, nametype):
 
     f.close()
 
+
 def saveremotenames(repo, remotepath, branches=None, bookmarks=None):
     """
     save remotenames i.e. remotebookmarks and remotebranches in their
@@ -94,6 +98,7 @@ def saveremotenames(repo, remotepath, branches=None, bookmarks=None):
             writeremotenamefile(repo, remotepath, branches, 'branches')
     finally:
         wlock.release()
+
 
 def activepath(repo, remote):
     """returns remote path"""
@@ -123,6 +128,7 @@ def activepath(repo, remote):
 
     return rpath
 
+
 def pullremotenames(localrepo, remoterepo):
     """
     pulls bookmarks and branches information of the remote repo during a
@@ -133,9 +139,9 @@ def pullremotenames(localrepo, remoterepo):
     remotepath = activepath(localrepo, remoterepo)
 
     with remoterepo.commandexecutor() as e:
-        bookmarks = e.callcommand('listkeys', {
-            'namespace': 'bookmarks',
-        }).result()
+        bookmarks = e.callcommand(
+            'listkeys', {'namespace': 'bookmarks',}
+        ).result()
 
     # on a push, we don't want to keep obsolete heads since
     # they won't show up as heads on the next pull, so we

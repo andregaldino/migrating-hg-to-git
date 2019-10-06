@@ -9,9 +9,7 @@
 
 from __future__ import absolute_import
 
-from ..interfaces import (
-    repository,
-)
+from ..interfaces import repository
 
 # revlog header flags
 REVLOGV0 = 0
@@ -20,9 +18,9 @@ REVLOGV1 = 1
 # Reminder: change the bounds check in revlog.__init__ when this is changed.
 REVLOGV2 = 0xDEAD
 # Shared across v1 and v2.
-FLAG_INLINE_DATA = (1 << 16)
+FLAG_INLINE_DATA = 1 << 16
 # Only used by v1, implied by v2.
-FLAG_GENERALDELTA = (1 << 17)
+FLAG_GENERALDELTA = 1 << 17
 REVLOG_DEFAULT_FLAGS = FLAG_INLINE_DATA
 REVLOG_DEFAULT_FORMAT = REVLOGV1
 REVLOG_DEFAULT_VERSION = REVLOG_DEFAULT_FORMAT | REVLOG_DEFAULT_FLAGS
@@ -53,10 +51,7 @@ REVIDX_FLAGS_ORDER = [
 
 # bitmark for flags that could cause rawdata content change
 REVIDX_RAWTEXT_CHANGING_FLAGS = (
-    REVIDX_ISCENSORED
-    | REVIDX_EXTSTORED
-    | REVIDX_SIDEDATA
+    REVIDX_ISCENSORED | REVIDX_EXTSTORED | REVIDX_SIDEDATA
 )
 
 SPARSE_REVLOG_MAX_CHAIN_LENGTH = 1000
-

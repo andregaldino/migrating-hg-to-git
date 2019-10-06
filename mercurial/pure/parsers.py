@@ -12,6 +12,7 @@ import zlib
 
 from ..node import nullid
 from .. import pycompat
+
 stringio = pycompat.bytesio
 
 
@@ -26,16 +27,20 @@ def dirstatetuple(*x):
     # x is a tuple
     return x
 
+
 indexformatng = ">Qiiiiii20s12x"
 indexfirst = struct.calcsize('Q')
 sizeint = struct.calcsize('i')
 indexsize = struct.calcsize(indexformatng)
 
+
 def gettype(q):
     return int(q & 0xFFFF)
 
+
 def offset_type(offset, type):
     return int(int(offset) << 16 | type)
+
 
 class BaseIndexObject(object):
     def __len__(self):
@@ -57,13 +62,14 @@ class BaseIndexObject(object):
         if i >= self._lgt:
             return self._extra[i - self._lgt]
         index = self._calculate_index(i)
-        r = struct.unpack(indexformatng, self._data[index:index + indexsize])
+        r = struct.unpack(indexformatng, self._data[index : index + indexsize])
         if i == 0:
             e = list(r)
             type = gettype(e[0])
             e[0] = offset_type(0, type)
             return tuple(e)
         return r
+
 
 class IndexObject(BaseIndexObject):
     def __init__(self, data):
@@ -81,11 +87,12 @@ class IndexObject(BaseIndexObject):
         i = i.start
         self._check_index(i)
         if i < self._lgt:
-            self._data = self._data[:i * indexsize]
+            self._data = self._data[: i * indexsize]
             self._lgt = i
             self._extra = []
         else:
-            self._extra = self._extra[:i - self._lgt]
+            self._extra = self._extra[: i - self._lgt]
+
 
 class InlinedIndexObject(BaseIndexObject):
     def __init__(self, data, inline=0):
@@ -100,8 +107,9 @@ class InlinedIndexObject(BaseIndexObject):
             self._offsets = [0] * lgt
         count = 0
         while off <= len(self._data) - indexsize:
-            s, = struct.unpack('>i',
-                self._data[off + indexfirst:off + sizeint + indexfirst])
+            (s,) = struct.unpack(
+                '>i', self._data[off + indexfirst : off + sizeint + indexfirst]
+            )
             if lgt is not None:
                 self._offsets[count] = off
             count += 1
@@ -120,18 +128,20 @@ class InlinedIndexObject(BaseIndexObject):
             self._lgt = i
             self._extra = []
         else:
-            self._extra = self._extra[:i - self._lgt]
+            self._extra = self._extra[: i - self._lgt]
 
     def _calculate_index(self, i):
         return self._offsets[i]
+
 
 def parse_index2(data, inline):
     if not inline:
         return IndexObject(data), None
     return InlinedIndexObject(data, inline), (0, data)
 
+
 def parse_dirstate(dmap, copymap, st):
-    parents = [st[:20], st[20: 40]]
+    parents = [st[:20], st[20:40]]
     # dereference fields so they will be local in loop
     format = ">cllll"
     e_size = struct.calcsize(format)
@@ -141,7 +151,7 @@ def parse_dirstate(dmap, copymap, st):
     # the inner loop
     while pos1 < l:
         pos2 = pos1 + e_size
-        e = _unpack(">cllll", st[pos1:pos2]) # a literal here is faster
+        e = _unpack(">cllll", st[pos1:pos2])  # a literal here is faster
         pos1 = pos2 + e[4]
         f = st[pos2:pos1]
         if '\0' in f:
@@ -149,6 +159,7 @@ def parse_dirstate(dmap, copymap, st):
             copymap[f] = c
         dmap[f] = e[:4]
     return parents
+
 
 def pack_dirstate(dmap, copymap, pl, now):
     now = int(now)

@@ -18,17 +18,16 @@ from .. import (
     error,
     mdiff,
 )
-from ..interfaces import (
-    repository,
-)
-from ..utils import (
-    storageutil,
-)
+from ..interfaces import repository
+from ..utils import storageutil
+
 
 class basetestcase(unittest.TestCase):
     if not getattr(unittest.TestCase, r'assertRaisesRegex', False):
-        assertRaisesRegex = (# camelcase-required
-            unittest.TestCase.assertRaisesRegexp)
+        assertRaisesRegex = (  # camelcase-required
+            unittest.TestCase.assertRaisesRegexp
+        )
+
 
 class ifileindextests(basetestcase):
     """Generic tests for the ifileindex interface.
@@ -38,6 +37,7 @@ class ifileindextests(basetestcase):
 
     Use ``makeifileindextests()`` to create an instance of this type.
     """
+
     def testempty(self):
         f = self._makefilefn()
         self.assertEqual(len(f), 0, 'new file store has 0 length by default')
@@ -398,6 +398,7 @@ class ifileindextests(basetestcase):
         self.assertEqual(f.children(node4), [])
         self.assertEqual(f.children(node5), [])
 
+
 class ifiledatatests(basetestcase):
     """Generic tests for the ifiledata interface.
 
@@ -406,12 +407,15 @@ class ifiledatatests(basetestcase):
 
     Use ``makeifiledatatests()`` to create an instance of this type.
     """
+
     def testempty(self):
         f = self._makefilefn()
 
         self.assertEqual(f.storageinfo(), {})
-        self.assertEqual(f.storageinfo(revisionscount=True, trackedsize=True),
-                         {'revisionscount': 0, 'trackedsize': 0})
+        self.assertEqual(
+            f.storageinfo(revisionscount=True, trackedsize=True),
+            {'revisionscount': 0, 'trackedsize': 0},
+        )
 
         self.assertEqual(f.size(nullrev), 0)
 
@@ -466,8 +470,10 @@ class ifiledatatests(basetestcase):
             node = f.add(fulltext, None, tr, 0, nullid, nullid)
 
         self.assertEqual(f.storageinfo(), {})
-        self.assertEqual(f.storageinfo(revisionscount=True, trackedsize=True),
-                         {'revisionscount': 1, 'trackedsize': len(fulltext)})
+        self.assertEqual(
+            f.storageinfo(revisionscount=True, trackedsize=True),
+            {'revisionscount': 1, 'trackedsize': len(fulltext)},
+        )
 
         self.assertEqual(f.size(0), len(fulltext))
 
@@ -537,7 +543,8 @@ class ifiledatatests(basetestcase):
             {
                 'revisionscount': 3,
                 'trackedsize': len(fulltext0) + len(fulltext1) + len(fulltext2),
-            })
+            },
+        )
 
         self.assertEqual(f.size(0), len(fulltext0))
         self.assertEqual(f.size(1), len(fulltext1))
@@ -603,9 +610,10 @@ class ifiledatatests(basetestcase):
         self.assertEqual(rev.basenode, node0)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
-        self.assertEqual(rev.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' +
-                         fulltext1)
+        self.assertEqual(
+            rev.delta,
+            b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' + fulltext1,
+        )
 
         rev = next(gen)
 
@@ -616,9 +624,10 @@ class ifiledatatests(basetestcase):
         self.assertEqual(rev.basenode, node1)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
-        self.assertEqual(rev.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' +
-                         fulltext2)
+        self.assertEqual(
+            rev.delta,
+            b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' + fulltext2,
+        )
 
         with self.assertRaises(StopIteration):
             next(gen)
@@ -646,9 +655,10 @@ class ifiledatatests(basetestcase):
         self.assertEqual(rev.basenode, node0)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
-        self.assertEqual(rev.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' +
-                         fulltext1)
+        self.assertEqual(
+            rev.delta,
+            b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' + fulltext1,
+        )
 
         rev = next(gen)
 
@@ -659,9 +669,10 @@ class ifiledatatests(basetestcase):
         self.assertEqual(rev.basenode, node1)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
-        self.assertEqual(rev.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' +
-                         fulltext2)
+        self.assertEqual(
+            rev.delta,
+            b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' + fulltext2,
+        )
 
         with self.assertRaises(StopIteration):
             next(gen)
@@ -672,14 +683,14 @@ class ifiledatatests(basetestcase):
 
         # nodesorder=storage is recognized. But we can't test it thoroughly
         # because behavior is storage-dependent.
-        res = list(f.emitrevisions([node2, node1, node0],
-                                         nodesorder='storage'))
+        res = list(f.emitrevisions([node2, node1, node0], nodesorder='storage'))
         self.assertEqual(len(res), 3)
         self.assertEqual({o.node for o in res}, {node0, node1, node2})
 
         # nodesorder=nodes forces the order.
-        gen = f.emitrevisions([node2, node0], nodesorder='nodes',
-                              revisiondata=True)
+        gen = f.emitrevisions(
+            [node2, node0], nodesorder='nodes', revisiondata=True
+        )
 
         rev = next(gen)
         self.assertEqual(rev.node, node2)
@@ -719,16 +730,18 @@ class ifiledatatests(basetestcase):
         self.assertEqual(rev.basenode, node1)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
-        self.assertEqual(rev.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' +
-                         fulltext2)
+        self.assertEqual(
+            rev.delta,
+            b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' + fulltext2,
+        )
 
         with self.assertRaises(StopIteration):
             next(gen)
 
         # assumehaveparentrevisions=True allows delta against initial revision.
-        gen = f.emitrevisions([node2, node1],
-                              revisiondata=True, assumehaveparentrevisions=True)
+        gen = f.emitrevisions(
+            [node2, node1], revisiondata=True, assumehaveparentrevisions=True
+        )
 
         rev = next(gen)
         self.assertEqual(rev.node, node1)
@@ -737,14 +750,16 @@ class ifiledatatests(basetestcase):
         self.assertEqual(rev.basenode, node0)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
-        self.assertEqual(rev.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' +
-                         fulltext1)
+        self.assertEqual(
+            rev.delta,
+            b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' + fulltext1,
+        )
 
         # forceprevious=True forces a delta against the previous revision.
         # Special case for initial revision.
-        gen = f.emitrevisions([node0], revisiondata=True,
-                              deltamode=repository.CG_DELTAMODE_PREV)
+        gen = f.emitrevisions(
+            [node0], revisiondata=True, deltamode=repository.CG_DELTAMODE_PREV
+        )
 
         rev = next(gen)
         self.assertEqual(rev.node, node0)
@@ -753,15 +768,19 @@ class ifiledatatests(basetestcase):
         self.assertEqual(rev.basenode, nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
-        self.assertEqual(rev.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00' +
-                         fulltext0)
+        self.assertEqual(
+            rev.delta,
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00' + fulltext0,
+        )
 
         with self.assertRaises(StopIteration):
             next(gen)
 
-        gen = f.emitrevisions([node0, node2], revisiondata=True,
-                              deltamode=repository.CG_DELTAMODE_PREV)
+        gen = f.emitrevisions(
+            [node0, node2],
+            revisiondata=True,
+            deltamode=repository.CG_DELTAMODE_PREV,
+        )
 
         rev = next(gen)
         self.assertEqual(rev.node, node0)
@@ -770,9 +789,10 @@ class ifiledatatests(basetestcase):
         self.assertEqual(rev.basenode, nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
-        self.assertEqual(rev.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00' +
-                         fulltext0)
+        self.assertEqual(
+            rev.delta,
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00' + fulltext0,
+        )
 
         rev = next(gen)
         self.assertEqual(rev.node, node2)
@@ -798,17 +818,21 @@ class ifiledatatests(basetestcase):
             b'copyrev': b'b' * 40,
         }
 
-        stored1 = b''.join([
-            b'\x01\ncopy: source0\n',
-            b'copyrev: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n\x01\n',
-            fulltext1,
-        ])
+        stored1 = b''.join(
+            [
+                b'\x01\ncopy: source0\n',
+                b'copyrev: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n\x01\n',
+                fulltext1,
+            ]
+        )
 
-        stored2 = b''.join([
-            b'\x01\ncopy: source1\n',
-            b'copyrev: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n\x01\n',
-            fulltext2,
-        ])
+        stored2 = b''.join(
+            [
+                b'\x01\ncopy: source1\n',
+                b'copyrev: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n\x01\n',
+                fulltext2,
+            ]
+        )
 
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
@@ -847,11 +871,13 @@ class ifiledatatests(basetestcase):
             b'copy': b'source0',
             b'copyrev': b'b' * 40,
         }
-        stored1 = b''.join([
-            b'\x01\ncopy: source0\n',
-            b'copyrev: %s\n' % (b'b' * 40),
-            b'\x01\n\x01\nbar',
-        ])
+        stored1 = b''.join(
+            [
+                b'\x01\ncopy: source0\n',
+                b'copyrev: %s\n' % (b'b' * 40),
+                b'\x01\n\x01\nbar',
+            ]
+        )
 
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
@@ -888,8 +914,9 @@ class ifiledatatests(basetestcase):
             node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
             node1 = b'\xaa' * 20
 
-            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1,
-                                   rawtext=fulltext1)
+            self._addrawrevisionfn(
+                f, tr, node1, node0, nullid, 1, rawtext=fulltext1
+            )
 
         self.assertEqual(len(f), 2)
         self.assertEqual(f.parents(node1), (node0, nullid))
@@ -922,8 +949,9 @@ class ifiledatatests(basetestcase):
             node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
             node1 = b'\xaa' * 20
 
-            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1,
-                                   rawtext=fulltext1)
+            self._addrawrevisionfn(
+                f, tr, node1, node0, nullid, 1, rawtext=fulltext1
+            )
 
         with self.assertRaises(error.StorageError):
             f.rawdata(node1)
@@ -943,8 +971,9 @@ class ifiledatatests(basetestcase):
             node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
             node1 = b'\xaa' * 20
 
-            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1,
-                                   rawtext=fulltext1)
+            self._addrawrevisionfn(
+                f, tr, node1, node0, nullid, 1, rawtext=fulltext1
+            )
 
         with self.assertRaises(error.StorageError):
             f.read(node1)
@@ -963,8 +992,9 @@ class ifiledatatests(basetestcase):
             node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
             node1 = b'\xaa' * 20
 
-            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1,
-                                   rawtext=fulltext1)
+            self._addrawrevisionfn(
+                f, tr, node1, node0, nullid, 1, rawtext=fulltext1
+            )
 
         with self.assertRaises(error.StorageError):
             f.read(node1)
@@ -973,8 +1003,9 @@ class ifiledatatests(basetestcase):
 
         with self._maketransactionfn() as tr:
             delta = mdiff.textdiff(fulltext1, fulltext2)
-            self._addrawrevisionfn(f, tr, node2, node1, nullid,
-                                   2, delta=(1, delta))
+            self._addrawrevisionfn(
+                f, tr, node2, node1, nullid, 2, delta=(1, delta)
+            )
 
         self.assertEqual(len(f), 3)
 
@@ -985,9 +1016,7 @@ class ifiledatatests(basetestcase):
     def testcensored(self):
         f = self._makefilefn()
 
-        stored1 = storageutil.packmeta({
-            b'censored': b'tombstone',
-        }, b'')
+        stored1 = storageutil.packmeta({b'censored': b'tombstone',}, b'')
 
         with self._maketransactionfn() as tr:
             node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
@@ -995,8 +1024,9 @@ class ifiledatatests(basetestcase):
             # The node value doesn't matter since we can't verify it.
             node1 = b'\xbb' * 20
 
-            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1, stored1,
-                                   censored=True)
+            self._addrawrevisionfn(
+                f, tr, node1, node0, nullid, 1, stored1, censored=True
+            )
 
         self.assertTrue(f.iscensored(1))
 
@@ -1015,9 +1045,7 @@ class ifiledatatests(basetestcase):
 
         f = self._makefilefn()
 
-        stored1 = storageutil.packmeta({
-            b'censored': b'tombstone',
-        }, b'')
+        stored1 = storageutil.packmeta({b'censored': b'tombstone',}, b'')
 
         with self._maketransactionfn() as tr:
             node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
@@ -1025,11 +1053,13 @@ class ifiledatatests(basetestcase):
             # The node value doesn't matter since we can't verify it.
             node1 = b'\xbb' * 20
 
-            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1, stored1,
-                                   censored=True)
+            self._addrawrevisionfn(
+                f, tr, node1, node0, nullid, 1, stored1, censored=True
+            )
 
         with self.assertRaises(error.CensoredNodeError):
             f.rawdata(1)
+
 
 class ifilemutationtests(basetestcase):
     """Generic tests for the ifilemutation interface.
@@ -1039,6 +1069,7 @@ class ifilemutationtests(basetestcase):
 
     Use ``makeifilemutationtests()`` to create an instance of this type.
     """
+
     def testaddnoop(self):
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
@@ -1073,6 +1104,7 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
 
         callbackargs = []
+
         def cb(*args, **kwargs):
             callbackargs.append((args, kwargs))
 
@@ -1101,9 +1133,13 @@ class ifilemutationtests(basetestcase):
         with self._maketransactionfn() as tr:
             nodes = f.addgroup(deltas, linkmapper, tr, addrevisioncb=cb)
 
-        self.assertEqual(nodes, [
-            b'\x49\xd8\xcb\xb1\x5c\xe2\x57\x92\x04\x47'
-            b'\x00\x6b\x46\x97\x8b\x7a\xf9\x80\xa9\x79'])
+        self.assertEqual(
+            nodes,
+            [
+                b'\x49\xd8\xcb\xb1\x5c\xe2\x57\x92\x04\x47'
+                b'\x00\x6b\x46\x97\x8b\x7a\xf9\x80\xa9\x79'
+            ],
+        )
 
         self.assertEqual(len(callbackargs), 1)
         self.assertEqual(callbackargs[0][0][1], nodes[0])
@@ -1149,9 +1185,7 @@ class ifilemutationtests(basetestcase):
         # Attempt to apply a delta made against a censored revision.
         f = self._makefilefn()
 
-        stored1 = storageutil.packmeta({
-            b'censored': b'tombstone',
-        }, b'')
+        stored1 = storageutil.packmeta({b'censored': b'tombstone',}, b'')
 
         with self._maketransactionfn() as tr:
             node0 = f.add(b'foo\n' * 30, None, tr, 0, nullid, nullid)
@@ -1159,8 +1193,9 @@ class ifilemutationtests(basetestcase):
             # The node value doesn't matter since we can't verify it.
             node1 = b'\xbb' * 20
 
-            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1, stored1,
-                                   censored=True)
+            self._addrawrevisionfn(
+                f, tr, node1, node0, nullid, 1, stored1, censored=True
+            )
 
         delta = mdiff.textdiff(b'bar\n' * 30, (b'bar\n' * 30) + b'baz\n')
         deltas = [(b'\xcc' * 20, node1, nullid, b'\x01' * 20, node1, delta, 0)]
@@ -1306,6 +1341,7 @@ class ifilemutationtests(basetestcase):
         with self.assertRaises(error.LookupError):
             f.rev(node1)
 
+
 def makeifileindextests(makefilefn, maketransactionfn, addrawrevisionfn):
     """Create a unittest.TestCase class suitable for testing file storage.
 
@@ -1331,6 +1367,7 @@ def makeifileindextests(makefilefn, maketransactionfn, addrawrevisionfn):
     }
     return type(r'ifileindextests', (ifileindextests,), d)
 
+
 def makeifiledatatests(makefilefn, maketransactionfn, addrawrevisionfn):
     d = {
         r'_makefilefn': makefilefn,
@@ -1338,6 +1375,7 @@ def makeifiledatatests(makefilefn, maketransactionfn, addrawrevisionfn):
         r'_addrawrevisionfn': addrawrevisionfn,
     }
     return type(r'ifiledatatests', (ifiledatatests,), d)
+
 
 def makeifilemutationtests(makefilefn, maketransactionfn, addrawrevisionfn):
     d = {

@@ -35,13 +35,15 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-@command('children',
-    [('r', 'rev', '.',
-     _('show children of the specified revision'), _('REV')),
-    ] + templateopts,
+
+@command(
+    'children',
+    [('r', 'rev', '.', _('show children of the specified revision'), _('REV')),]
+    + templateopts,
     _('hg children [-r REV] [FILE]'),
     helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
-    inferrepo=True)
+    inferrepo=True,
+)
 def children(ui, repo, file_=None, **opts):
     """show the children of the given or working directory revision
 

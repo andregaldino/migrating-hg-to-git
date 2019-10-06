@@ -30,6 +30,7 @@ _respecial = pycompat.bytestr(b'()[]{}?*+-|^$\\.&~# \t\n\r\v\f')
 _regexescapemap = {ord(i): (b'\\' + i).decode('latin1') for i in _respecial}
 regexbytesescapemap = {i: (b'\\' + i) for i in _respecial}
 
+
 def reescape(pat):
     """Drop-in replacement for re.escape."""
     # NOTE: it is intentional that this works on unicodes and not
@@ -44,9 +45,11 @@ def reescape(pat):
         return pat
     return pat.encode('latin1')
 
+
 def pprint(o, bprefix=False, indent=0, level=0):
     """Pretty print an object."""
     return b''.join(pprintgen(o, bprefix=bprefix, indent=indent, level=level))
+
 
 def pprintgen(o, bprefix=False, indent=0, level=0):
     """Pretty print an object to a generator of atoms.
@@ -83,8 +86,9 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
             yield ' ' * (level * indent)
 
         for i, a in enumerate(o):
-            for chunk in pprintgen(a, bprefix=bprefix, indent=indent,
-                                   level=level):
+            for chunk in pprintgen(
+                a, bprefix=bprefix, indent=indent, level=level
+            ):
                 yield chunk
 
             if i + 1 < len(o):
@@ -113,14 +117,16 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
             yield ' ' * (level * indent)
 
         for i, (k, v) in enumerate(sorted(o.items())):
-            for chunk in pprintgen(k, bprefix=bprefix, indent=indent,
-                                   level=level):
+            for chunk in pprintgen(
+                k, bprefix=bprefix, indent=indent, level=level
+            ):
                 yield chunk
 
             yield ': '
 
-            for chunk in pprintgen(v, bprefix=bprefix, indent=indent,
-                                   level=level):
+            for chunk in pprintgen(
+                v, bprefix=bprefix, indent=indent, level=level
+            ):
                 yield chunk
 
             if i + 1 < len(o):
@@ -149,8 +155,9 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
             yield ' ' * (level * indent)
 
         for i, k in enumerate(sorted(o)):
-            for chunk in pprintgen(k, bprefix=bprefix, indent=indent,
-                                   level=level):
+            for chunk in pprintgen(
+                k, bprefix=bprefix, indent=indent, level=level
+            ):
                 yield chunk
 
             if i + 1 < len(o):
@@ -179,8 +186,9 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
             yield ' ' * (level * indent)
 
         for i, a in enumerate(o):
-            for chunk in pprintgen(a, bprefix=bprefix, indent=indent,
-                                   level=level):
+            for chunk in pprintgen(
+                a, bprefix=bprefix, indent=indent, level=level
+            ):
                 yield chunk
 
             if i + 1 < len(o):
@@ -221,8 +229,9 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
             except StopIteration:
                 last = True
 
-            for chunk in pprintgen(current, bprefix=bprefix, indent=indent,
-                                   level=level):
+            for chunk in pprintgen(
+                current, bprefix=bprefix, indent=indent, level=level
+            ):
                 yield chunk
 
             if not last:
@@ -240,6 +249,7 @@ def pprintgen(o, bprefix=False, indent=0, level=0):
         yield ']'
     else:
         yield pycompat.byterepr(o)
+
 
 def prettyrepr(o):
     """Pretty print a representation of a possibly-nested object"""
@@ -267,6 +277,7 @@ def prettyrepr(o):
         p0, p1 = q0, q1
     return '\n'.join('  ' * l + s for l, s in lines)
 
+
 def buildrepr(r):
     """Format an optional printable representation from unexpanded bits
 
@@ -290,9 +301,11 @@ def buildrepr(r):
     else:
         return pprint(r)
 
+
 def binary(s):
     """return true if a string is binary data"""
     return bool(s and '\0' in s)
+
 
 def stringmatcher(pattern, casesensitive=True):
     """
@@ -340,8 +353,7 @@ def stringmatcher(pattern, casesensitive=True):
                 flags = remod.I
             regex = remod.compile(pattern, flags)
         except remod.error as e:
-            raise error.ParseError(_('invalid regular expression: %s')
-                                   % e)
+            raise error.ParseError(_('invalid regular expression: %s') % e)
         return 're', pattern, regex.search
     elif pattern.startswith('literal:'):
         pattern = pattern[8:]
@@ -353,6 +365,7 @@ def stringmatcher(pattern, casesensitive=True):
         match = lambda s: ipat == encoding.lower(s)
     return 'literal', pattern, match
 
+
 def shortuser(user):
     """Return a short representation of a user name or email address."""
     f = user.find('@')
@@ -360,7 +373,7 @@ def shortuser(user):
         user = user[:f]
     f = user.find('<')
     if f >= 0:
-        user = user[f + 1:]
+        user = user[f + 1 :]
     f = user.find(' ')
     if f >= 0:
         user = user[:f]
@@ -369,6 +382,7 @@ def shortuser(user):
         user = user[:f]
     return user
 
+
 def emailuser(user):
     """Return the user portion of an email address."""
     f = user.find('@')
@@ -376,15 +390,17 @@ def emailuser(user):
         user = user[:f]
     f = user.find('<')
     if f >= 0:
-        user = user[f + 1:]
+        user = user[f + 1 :]
     return user
+
 
 def email(author):
     '''get email of author.'''
     r = author.find('>')
     if r == -1:
         r = None
-    return author[author.find('<') + 1:r]
+    return author[author.find('<') + 1 : r]
+
 
 def person(author):
     """Returns the name before an email address,
@@ -413,12 +429,15 @@ def person(author):
     f = author.find('@')
     return author[:f].replace('.', ' ')
 
+
 @attr.s(hash=True)
 class mailmapping(object):
     '''Represents a username/email key or value in
     a mailmap file'''
+
     email = attr.ib()
     name = attr.ib(default=None)
+
 
 def _ismailmaplineinvalid(names, emails):
     '''Returns True if the parsed names and emails
@@ -443,6 +462,7 @@ def _ismailmaplineinvalid(names, emails):
     False
     '''
     return not emails or not names and len(emails) < 2
+
 
 def parsemailmap(mailmapcontent):
     """Parses data in the .mailmap format
@@ -515,16 +535,15 @@ def parsemailmap(mailmapcontent):
             continue
 
         mailmapkey = mailmapping(
-            email=emails[-1],
-            name=names[-1] if len(names) == 2 else None,
+            email=emails[-1], name=names[-1] if len(names) == 2 else None,
         )
 
         mailmap[mailmapkey] = mailmapping(
-            email=emails[0],
-            name=names[0] if names else None,
+            email=emails[0], name=names[0] if names else None,
         )
 
     return mailmap
+
 
 def mapname(mailmap, author):
     """Returns the author field according to the mailmap cache, or
@@ -573,7 +592,9 @@ def mapname(mailmap, author):
         proper.email if proper.email else commit.email,
     )
 
+
 _correctauthorformat = remod.compile(br'^[^<]+\s\<[^<>]+@[^<>]+\>$')
+
 
 def isauthorwellformed(author):
     '''Return True if the author field is well formed
@@ -596,9 +617,11 @@ def isauthorwellformed(author):
     '''
     return _correctauthorformat.match(author) is not None
 
+
 def ellipsis(text, maxlength=400):
     """Trim string to at most maxlength (default: 400) columns in display."""
     return encoding.trim(text, maxlength, ellipsis='...')
+
 
 def escapestr(s):
     if isinstance(s, memoryview):
@@ -607,8 +630,10 @@ def escapestr(s):
     # Python 3 compatibility
     return codecs.escape_encode(s)[0]
 
+
 def unescapestr(s):
     return codecs.escape_decode(s)[0]
+
 
 def forcebytestr(obj):
     """Portably format an arbitrary object (e.g. exception) into a byte
@@ -619,9 +644,11 @@ def forcebytestr(obj):
         # non-ascii string, may be lossy
         return pycompat.bytestr(encoding.strtolocal(str(obj)))
 
+
 def uirepr(s):
     # Avoid double backslash in Windows path repr()
     return pycompat.byterepr(pycompat.bytestr(s)).replace(b'\\\\', b'\\')
+
 
 # delay import of textwrap
 def _MBTextWrapper(**kwargs):
@@ -640,6 +667,7 @@ def _MBTextWrapper(**kwargs):
 
         This requires use decision to determine width of such characters.
         """
+
         def _cutdown(self, ucstr, space_left):
             l = 0
             colwidth = encoding.ucolwidth
@@ -712,8 +740,11 @@ def _MBTextWrapper(**kwargs):
                     self._handle_long_word(chunks, cur_line, cur_len, width)
 
                 # If the last chunk on this line is all whitespace, drop it.
-                if (self.drop_whitespace and
-                    cur_line and cur_line[-1].strip() == r''):
+                if (
+                    self.drop_whitespace
+                    and cur_line
+                    and cur_line[-1].strip() == r''
+                ):
                     del cur_line[-1]
 
                 # Convert current line back to a string and store it in list
@@ -727,25 +758,43 @@ def _MBTextWrapper(**kwargs):
     _MBTextWrapper = tw
     return tw(**kwargs)
 
+
 def wrap(line, width, initindent='', hangindent=''):
     maxindent = max(len(hangindent), len(initindent))
     if width <= maxindent:
         # adjust for weird terminal size
         width = max(78, maxindent + 1)
-    line = line.decode(pycompat.sysstr(encoding.encoding),
-                       pycompat.sysstr(encoding.encodingmode))
-    initindent = initindent.decode(pycompat.sysstr(encoding.encoding),
-                                   pycompat.sysstr(encoding.encodingmode))
-    hangindent = hangindent.decode(pycompat.sysstr(encoding.encoding),
-                                   pycompat.sysstr(encoding.encodingmode))
-    wrapper = _MBTextWrapper(width=width,
-                             initial_indent=initindent,
-                             subsequent_indent=hangindent)
+    line = line.decode(
+        pycompat.sysstr(encoding.encoding),
+        pycompat.sysstr(encoding.encodingmode),
+    )
+    initindent = initindent.decode(
+        pycompat.sysstr(encoding.encoding),
+        pycompat.sysstr(encoding.encodingmode),
+    )
+    hangindent = hangindent.decode(
+        pycompat.sysstr(encoding.encoding),
+        pycompat.sysstr(encoding.encodingmode),
+    )
+    wrapper = _MBTextWrapper(
+        width=width, initial_indent=initindent, subsequent_indent=hangindent
+    )
     return wrapper.fill(line).encode(pycompat.sysstr(encoding.encoding))
 
-_booleans = {'1': True, 'yes': True, 'true': True, 'on': True, 'always': True,
-             '0': False, 'no': False, 'false': False, 'off': False,
-             'never': False}
+
+_booleans = {
+    '1': True,
+    'yes': True,
+    'true': True,
+    'on': True,
+    'always': True,
+    '0': False,
+    'no': False,
+    'false': False,
+    'off': False,
+    'never': False,
+}
+
 
 def parsebool(s):
     """Parse s into a boolean.
@@ -753,6 +802,7 @@ def parsebool(s):
     If s is not a valid boolean, returns None.
     """
     return _booleans.get(s.lower(), None)
+
 
 def evalpythonliteral(s):
     """Evaluate a string containing a Python literal expression"""

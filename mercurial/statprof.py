@@ -144,6 +144,7 @@ skips = {
 ###########################################################################
 ## Utils
 
+
 def clock():
     times = os.times()
     return (times[0] + times[1], times[4])
@@ -151,6 +152,7 @@ def clock():
 
 ###########################################################################
 ## Collection data structures
+
 
 class ProfileState(object):
     def __init__(self, frequency=None):
@@ -196,6 +198,7 @@ class ProfileState(object):
             return 1
         return 0
 
+
 state = ProfileState()
 
 
@@ -214,8 +217,7 @@ class CodeSite(object):
 
     def __eq__(self, other):
         try:
-            return (self.lineno == other.lineno and
-                    self.path == other.path)
+            return self.lineno == other.lineno and self.path == other.path
         except:
             return False
 
@@ -248,7 +250,7 @@ class CodeSite(object):
 
         source = self.source
         if len(source) > length:
-            source = source[:(length - 3)] + "..."
+            source = source[: (length - 3)] + "..."
         return source
 
     def filename(self):
@@ -256,6 +258,7 @@ class CodeSite(object):
 
     def skipname(self):
         return r'%s:%s' % (self.filename(), self.function)
+
 
 class Sample(object):
     __slots__ = (r'stack', r'time')
@@ -269,16 +272,21 @@ class Sample(object):
         stack = []
 
         while frame:
-            stack.append(CodeSite.get(
-                pycompat.sysbytes(frame.f_code.co_filename),
-                frame.f_lineno,
-                pycompat.sysbytes(frame.f_code.co_name)))
+            stack.append(
+                CodeSite.get(
+                    pycompat.sysbytes(frame.f_code.co_filename),
+                    frame.f_lineno,
+                    pycompat.sysbytes(frame.f_code.co_name),
+                )
+            )
             frame = frame.f_back
 
         return Sample(stack, time)
 
+
 ###########################################################################
 ## SIGPROF handler
+
 
 def profile_signal_handler(signum, frame):
     if state.profile_level > 0:
@@ -288,11 +296,13 @@ def profile_signal_handler(signum, frame):
         timestamp = state.accumulated_time[state.timeidx]
         state.samples.append(Sample.from_frame(frame, timestamp))
 
-        signal.setitimer(signal.ITIMER_PROF,
-            state.sample_interval, 0.0)
+        signal.setitimer(signal.ITIMER_PROF, state.sample_interval, 0.0)
         state.last_start_time = now
 
+
 stopthread = threading.Event()
+
+
 def samplerthread(tid):
     while not stopthread.is_set():
         now = clock()
@@ -308,16 +318,21 @@ def samplerthread(tid):
 
     stopthread.clear()
 
+
 ###########################################################################
 ## Profiling API
+
 
 def is_active():
     return state.profile_level > 0
 
+
 lastmechanism = None
+
+
 def start(mechanism='thread', track='cpu'):
     '''Install the profiling signal handler, and start profiling.'''
-    state.track = track # note: nesting different mode won't work
+    state.track = track  # note: nesting different mode won't work
     state.profile_level += 1
     if state.profile_level == 1:
         state.last_start_time = clock()
@@ -329,14 +344,17 @@ def start(mechanism='thread', track='cpu'):
 
         if mechanism == 'signal':
             signal.signal(signal.SIGPROF, profile_signal_handler)
-            signal.setitimer(signal.ITIMER_PROF,
-                rpt or state.sample_interval, 0.0)
+            signal.setitimer(
+                signal.ITIMER_PROF, rpt or state.sample_interval, 0.0
+            )
         elif mechanism == 'thread':
             frame = inspect.currentframe()
             tid = [k for k, f in sys._current_frames().items() if f == frame][0]
-            state.thread = threading.Thread(target=samplerthread,
-                                 args=(tid,), name="samplerthread")
+            state.thread = threading.Thread(
+                target=samplerthread, args=(tid,), name="samplerthread"
+            )
             state.thread.start()
+
 
 def stop():
     '''Stop profiling, and uninstall the profiling signal handler.'''
@@ -358,15 +376,18 @@ def stop():
 
     return state
 
+
 def save_data(path):
     with open(path, 'w+') as file:
         file.write("%f %f\n" % state.accumulated_time)
         for sample in state.samples:
             time = sample.time
             stack = sample.stack
-            sites = ['\1'.join([s.path, b'%d' % s.lineno, s.function])
-                     for s in stack]
+            sites = [
+                '\1'.join([s.path, b'%d' % s.lineno, s.function]) for s in stack
+            ]
             file.write("%d\0%s\n" % (time, '\0'.join(sites)))
+
 
 def load_data(path):
     lines = open(path, 'rb').read().splitlines()
@@ -380,11 +401,11 @@ def load_data(path):
         sites = []
         for rawsite in rawsites:
             siteparts = rawsite.split('\1')
-            sites.append(CodeSite.get(siteparts[0], int(siteparts[1]),
-                        siteparts[2]))
+            sites.append(
+                CodeSite.get(siteparts[0], int(siteparts[1]), siteparts[2])
+            )
 
         state.samples.append(Sample(sites, time))
-
 
 
 def reset(frequency=None):
@@ -410,6 +431,7 @@ def profile():
 
 ###########################################################################
 ## Reporting API
+
 
 class SiteStats(object):
     def __init__(self, site):
@@ -453,6 +475,7 @@ class SiteStats(object):
 
         return [s for s in stats.itervalues()]
 
+
 class DisplayFormats:
     ByLine = 0
     ByMethod = 1
@@ -462,6 +485,7 @@ class DisplayFormats:
     Json = 5
     Chrome = 6
 
+
 def display(fp=None, format=3, data=None, **kwargs):
     '''Print statistics, either to stdout or the given file object.'''
     if data is None:
@@ -469,6 +493,7 @@ def display(fp=None, format=3, data=None, **kwargs):
 
     if fp is None:
         import sys
+
         fp = sys.stdout
     if len(data.samples) == 0:
         fp.write(b'No samples recorded.\n')
@@ -496,34 +521,47 @@ def display(fp=None, format=3, data=None, **kwargs):
         fp.write(b'Sample count: %d\n' % len(data.samples))
         fp.write(b'Total time: %f seconds (%f wall)\n' % data.accumulated_time)
 
+
 def display_by_line(data, fp):
     '''Print the profiler data with each sample line represented
     as one row in a table.  Sorted by self-time per line.'''
     stats = SiteStats.buildstats(data.samples)
     stats.sort(reverse=True, key=lambda x: x.selfseconds())
 
-    fp.write(b'%5.5s %10.10s   %7.7s  %-8.8s\n' % (
-        b'%  ', b'cumulative', b'self', b''))
-    fp.write(b'%5.5s  %9.9s  %8.8s  %-8.8s\n' % (
-        b"time", b"seconds", b"seconds", b"name"))
+    fp.write(
+        b'%5.5s %10.10s   %7.7s  %-8.8s\n'
+        % (b'%  ', b'cumulative', b'self', b'')
+    )
+    fp.write(
+        b'%5.5s  %9.9s  %8.8s  %-8.8s\n'
+        % (b"time", b"seconds", b"seconds", b"name")
+    )
 
     for stat in stats:
         site = stat.site
-        sitelabel = '%s:%d:%s' % (site.filename(),
-                                  site.lineno,
-                                  site.function)
-        fp.write(b'%6.2f %9.2f %9.2f  %s\n' % (
-            stat.selfpercent(), stat.totalseconds(),
-            stat.selfseconds(), sitelabel))
+        sitelabel = '%s:%d:%s' % (site.filename(), site.lineno, site.function)
+        fp.write(
+            b'%6.2f %9.2f %9.2f  %s\n'
+            % (
+                stat.selfpercent(),
+                stat.totalseconds(),
+                stat.selfseconds(),
+                sitelabel,
+            )
+        )
+
 
 def display_by_method(data, fp):
     '''Print the profiler data with each sample function represented
     as one row in a table.  Important lines within that function are
     output as nested rows.  Sorted by self-time per line.'''
-    fp.write(b'%5.5s %10.10s   %7.7s  %-8.8s\n' %
-          ('%  ', 'cumulative', 'self', ''))
-    fp.write(b'%5.5s  %9.9s  %8.8s  %-8.8s\n' %
-          ("time", "seconds", "seconds", "name"))
+    fp.write(
+        b'%5.5s %10.10s   %7.7s  %-8.8s\n' % ('%  ', 'cumulative', 'self', '')
+    )
+    fp.write(
+        b'%5.5s  %9.9s  %8.8s  %-8.8s\n'
+        % ("time", "seconds", "seconds", "name")
+    )
 
     stats = SiteStats.buildstats(data.samples)
 
@@ -542,11 +580,9 @@ def display_by_method(data, fp):
             total_self_sec += stat.selfseconds()
             total_percent += stat.selfpercent()
 
-        functiondata.append((fname,
-                             total_cum_sec,
-                             total_self_sec,
-                             total_percent,
-                             sitestats))
+        functiondata.append(
+            (fname, total_cum_sec, total_self_sec, total_percent, sitestats)
+        )
 
     # sort by total self sec
     functiondata.sort(reverse=True, key=lambda x: x[2])
@@ -554,24 +590,35 @@ def display_by_method(data, fp):
     for function in functiondata:
         if function[3] < 0.05:
             continue
-        fp.write(b'%6.2f %9.2f %9.2f  %s\n' % (
-            function[3], # total percent
-            function[1], # total cum sec
-            function[2], # total self sec
-            function[0])) # file:function
+        fp.write(
+            b'%6.2f %9.2f %9.2f  %s\n'
+            % (
+                function[3],  # total percent
+                function[1],  # total cum sec
+                function[2],  # total self sec
+                function[0],
+            )
+        )  # file:function
 
         function[4].sort(reverse=True, key=lambda i: i.selfseconds())
         for stat in function[4]:
             # only show line numbers for significant locations (>1% time spent)
             if stat.selfpercent() > 1:
                 source = stat.site.getsource(25)
-                if sys.version_info.major >= 3 and not isinstance(source, bytes):
+                if sys.version_info.major >= 3 and not isinstance(
+                    source, bytes
+                ):
                     source = pycompat.bytestr(source)
 
-                stattuple = (stat.selfpercent(), stat.selfseconds(),
-                             stat.site.lineno, source)
+                stattuple = (
+                    stat.selfpercent(),
+                    stat.selfseconds(),
+                    stat.site.lineno,
+                    source,
+                )
 
                 fp.write(b'%33.0f%% %6.2f   line %d: %s\n' % stattuple)
+
 
 def display_about_method(data, fp, function=None, **kwargs):
     if function is None:
@@ -587,8 +634,9 @@ def display_about_method(data, fp, function=None, **kwargs):
 
     for sample in data.samples:
         for i, site in enumerate(sample.stack):
-            if site.function == function and (not filename
-                or site.filename() == filename):
+            if site.function == function and (
+                not filename or site.filename() == filename
+            ):
                 relevant_samples += 1
                 if i != len(sample.stack) - 1:
                     parent = sample.stack[i + 1]
@@ -605,17 +653,24 @@ def display_about_method(data, fp, function=None, **kwargs):
     parents = [(parent, count) for parent, count in parents.iteritems()]
     parents.sort(reverse=True, key=lambda x: x[1])
     for parent, count in parents:
-        fp.write(b'%6.2f%%   %s:%s   line %s: %s\n' %
-            (count / relevant_samples * 100,
-             pycompat.fsencode(parent.filename()),
-             pycompat.sysbytes(parent.function),
-             parent.lineno,
-             pycompat.sysbytes(parent.getsource(50))))
+        fp.write(
+            b'%6.2f%%   %s:%s   line %s: %s\n'
+            % (
+                count / relevant_samples * 100,
+                pycompat.fsencode(parent.filename()),
+                pycompat.sysbytes(parent.function),
+                parent.lineno,
+                pycompat.sysbytes(parent.getsource(50)),
+            )
+        )
 
     stats = SiteStats.buildstats(data.samples)
-    stats = [s for s in stats
-               if s.site.function == function and
-               (not filename or s.site.filename() == filename)]
+    stats = [
+        s
+        for s in stats
+        if s.site.function == function
+        and (not filename or s.site.filename() == filename)
+    ]
 
     total_cum_sec = 0
     total_self_sec = 0
@@ -630,20 +685,27 @@ def display_about_method(data, fp, function=None, **kwargs):
     fp.write(
         b'\n    %s:%s    Total: %0.2fs (%0.2f%%)    Self: %0.2fs (%0.2f%%)\n\n'
         % (
-        pycompat.sysbytes(filename or '___'),
-        pycompat.sysbytes(function),
-        total_cum_sec,
-        total_cum_percent,
-        total_self_sec,
-        total_self_percent
-        ))
+            pycompat.sysbytes(filename or '___'),
+            pycompat.sysbytes(function),
+            total_cum_sec,
+            total_cum_percent,
+            total_self_sec,
+            total_self_percent,
+        )
+    )
 
     children = [(child, count) for child, count in children.iteritems()]
     children.sort(reverse=True, key=lambda x: x[1])
     for child, count in children:
-        fp.write(b'        %6.2f%%   line %s: %s\n' %
-              (count / relevant_samples * 100, child.lineno,
-               pycompat.sysbytes(child.getsource(50))))
+        fp.write(
+            b'        %6.2f%%   line %s: %s\n'
+            % (
+                count / relevant_samples * 100,
+                child.lineno,
+                pycompat.sysbytes(child.getsource(50)),
+            )
+        )
+
 
 def display_hotpath(data, fp, limit=0.05, **kwargs):
     class HotNode(object):
@@ -677,8 +739,11 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
 
     def _write(node, depth, multiple_siblings):
         site = node.site
-        visiblechildren = [c for c in node.children.itervalues()
-                             if c.count >= (limit * root.count)]
+        visiblechildren = [
+            c
+            for c in node.children.itervalues()
+            if c.count >= (limit * root.count)
+        ]
         if site:
             indent = depth * 2 - 1
             filename = ''
@@ -689,13 +754,18 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
                 function = childsite.function
 
             # lots of string formatting
-            listpattern = ''.ljust(indent) +\
-                          ('\\' if multiple_siblings else '|') +\
-                          ' %4.1f%%' +\
-                          (' %5.2fs' % node.count if showtime else '') +\
-                          '  %s %s'
-            liststring = listpattern % (node.count / root.count * 100,
-                                        filename, function)
+            listpattern = (
+                ''.ljust(indent)
+                + ('\\' if multiple_siblings else '|')
+                + ' %4.1f%%'
+                + (' %5.2fs' % node.count if showtime else '')
+                + '  %s %s'
+            )
+            liststring = listpattern % (
+                node.count / root.count * 100,
+                filename,
+                function,
+            )
             codepattern = '%' + ('%d' % (55 - len(liststring))) + 's %d:  %s'
             codestring = codepattern % ('line', site.lineno, site.getsource(30))
 
@@ -719,6 +789,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
 
     if root.count > 0:
         _write(root, 0, False)
+
 
 def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
     if scriptpath is None:
@@ -750,7 +821,10 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
     os.system("perl ~/flamegraph.pl %s > %s" % (path, outputfile))
     fp.write(b'Written to %s\n' % outputfile)
 
+
 _pathcache = {}
+
+
 def simplifypath(path):
     '''Attempt to make the path to a Python module easier to read by
     removing whatever part of the Python search path it was found
@@ -762,10 +836,11 @@ def simplifypath(path):
     for p in [hgpath] + sys.path:
         prefix = p + os.sep
         if path.startswith(prefix):
-            path = path[len(prefix):]
+            path = path[len(prefix) :]
             break
     _pathcache[path] = path
     return path
+
 
 def write_to_json(data, fp):
     samples = []
@@ -775,9 +850,12 @@ def write_to_json(data, fp):
 
         for frame in sample.stack:
             stack.append(
-                (pycompat.sysstr(frame.path),
-                 frame.lineno,
-                 pycompat.sysstr(frame.function)))
+                (
+                    pycompat.sysstr(frame.path),
+                    frame.lineno,
+                    pycompat.sysstr(frame.function),
+                )
+            )
 
         samples.append((sample.time, stack))
 
@@ -786,6 +864,7 @@ def write_to_json(data, fp):
         data = data.encode('utf-8')
 
     fp.write(data)
+
 
 def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
     samples = []
@@ -796,7 +875,7 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
     # representation to save space. It's fiddly but worth it.
     # We maintain a bijection between stack and ID.
     stack2id = {}
-    id2stack = [] # will eventually be rendered
+    id2stack = []  # will eventually be rendered
 
     def stackid(stack):
         if not stack:
@@ -841,8 +920,16 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
         if minthreshold <= duration <= maxthreshold:
             # ensure no zero-duration events
             sampletime = max(oldtime + clamp, sample.time)
-            samples.append(dict(ph=r'E', name=oldfunc, cat=oldcat, sf=oldsid,
-                                ts=sampletime*1e6, pid=0))
+            samples.append(
+                dict(
+                    ph=r'E',
+                    name=oldfunc,
+                    cat=oldcat,
+                    sf=oldsid,
+                    ts=sampletime * 1e6,
+                    pid=0,
+                )
+            )
         else:
             blacklist.add(oldidx)
 
@@ -850,10 +937,16 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
     # events given only stack snapshots.
 
     for sample in data.samples:
-        stack = tuple(((r'%s:%d' % (simplifypath(pycompat.sysstr(frame.path)),
-                                    frame.lineno),
-                        pycompat.sysstr(frame.function))
-                       for frame in sample.stack))
+        stack = tuple(
+            (
+                (
+                    r'%s:%d'
+                    % (simplifypath(pycompat.sysstr(frame.path)), frame.lineno),
+                    pycompat.sysstr(frame.function),
+                )
+                for frame in sample.stack
+            )
+        )
         qstack = collections.deque(stack)
         if laststack == qstack:
             continue
@@ -867,23 +960,35 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
             laststack.appendleft(f)
             path, name = f
             sid = stackid(tuple(laststack))
-            samples.append(dict(ph=r'B', name=name, cat=path,
-                                ts=sample.time*1e6, sf=sid, pid=0))
+            samples.append(
+                dict(
+                    ph=r'B',
+                    name=name,
+                    cat=path,
+                    ts=sample.time * 1e6,
+                    sf=sid,
+                    pid=0,
+                )
+            )
         laststack = collections.deque(stack)
     while laststack:
         poplast()
-    events = [sample for idx, sample in enumerate(samples)
-              if idx not in blacklist]
-    frames = collections.OrderedDict((str(k), v)
-                                     for (k,v) in enumerate(id2stack))
+    events = [
+        sample for idx, sample in enumerate(samples) if idx not in blacklist
+    ]
+    frames = collections.OrderedDict(
+        (str(k), v) for (k, v) in enumerate(id2stack)
+    )
     data = json.dumps(dict(traceEvents=events, stackFrames=frames), indent=1)
     if not isinstance(data, bytes):
         data = data.encode('utf-8')
     fp.write(data)
     fp.write('\n')
 
+
 def printusage():
-    print(r"""
+    print(
+        r"""
 The statprof command line allows you to inspect the last profile's results in
 the following forms:
 
@@ -900,7 +1005,9 @@ usage:
     flame [-s --script-path] [-o --output-file path]
         Writes out a flamegraph to output-file (defaults to ~/flamegraph.svg)
         Requires that ~/flamegraph.pl exist.
-        (Specify alternate script path with --script-path.)""")
+        (Specify alternate script path with --script-path.)"""
+    )
+
 
 def main(argv=None):
     if argv is None:
@@ -932,8 +1039,11 @@ def main(argv=None):
 
     # process options
     try:
-        opts, args = pycompat.getoptb(sys.argv[optstart:], "hl:f:o:p:",
-                                   ["help", "limit=", "file=", "output-file=", "script-path="])
+        opts, args = pycompat.getoptb(
+            sys.argv[optstart:],
+            "hl:f:o:p:",
+            ["help", "limit=", "file=", "output-file=", "script-path="],
+        )
     except getopt.error as msg:
         print(msg)
         printusage()
@@ -965,6 +1075,7 @@ def main(argv=None):
     display(**pycompat.strkwargs(displayargs))
 
     return 0
+
 
 if __name__ == r"__main__":
     sys.exit(main())

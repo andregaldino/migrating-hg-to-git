@@ -28,15 +28,14 @@ from mercurial import (
     scmutil,
     util,
 )
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
 
 try:
     import fuzzywuzzy.fuzz as fuzz
+
     fuzz.token_set_ratio
 except ImportError:
     fuzz = None
@@ -59,6 +58,7 @@ RE_DIRECTIVE = re.compile(br'^\.\. ([a-zA-Z0-9_]+)::\s*([^$]+)?$')
 RE_ISSUE = br'\bissue ?[0-9]{4,6}(?![0-9])\b'
 
 BULLET_SECTION = _('Other Changes')
+
 
 class parsedreleasenotes(object):
     def __init__(self):
@@ -103,19 +103,25 @@ class parsedreleasenotes(object):
         This is used to combine multiple sources of release notes together.
         """
         if not fuzz:
-            ui.warn(_("module 'fuzzywuzzy' not found, merging of similar "
-                      "releasenotes is disabled\n"))
+            ui.warn(
+                _(
+                    "module 'fuzzywuzzy' not found, merging of similar "
+                    "releasenotes is disabled\n"
+                )
+            )
 
         for section in other:
-            existingnotes = (
-                converttitled(self.titledforsection(section)) +
-                convertnontitled(self.nontitledforsection(section)))
+            existingnotes = converttitled(
+                self.titledforsection(section)
+            ) + convertnontitled(self.nontitledforsection(section))
             for title, paragraphs in other.titledforsection(section):
                 if self.hastitledinsection(section, title):
                     # TODO prompt for resolution if different and running in
                     # interactive mode.
-                    ui.write(_('%s already exists in %s section; ignoring\n') %
-                             (title, section))
+                    ui.write(
+                        _('%s already exists in %s section; ignoring\n')
+                        % (title, section)
+                    )
                     continue
 
                 incoming_str = converttitled([(title, paragraphs)])[0]
@@ -146,6 +152,7 @@ class parsedreleasenotes(object):
 
                 self.addnontitleditem(section, paragraphs)
 
+
 class releasenotessections(object):
     def __init__(self, ui, repo=None):
         if repo:
@@ -170,6 +177,7 @@ class releasenotessections(object):
 
         return None
 
+
 def converttitled(titledparagraphs):
     """
     Convert titled paragraphs to strings
@@ -181,6 +189,7 @@ def converttitled(titledparagraphs):
             lines.extend(para)
         string_list.append(' '.join(lines))
     return string_list
+
 
 def convertnontitled(nontitledparagraphs):
     """
@@ -194,6 +203,7 @@ def convertnontitled(nontitledparagraphs):
         string_list.append(' '.join(lines))
     return string_list
 
+
 def getissuenum(incoming_str):
     """
     Returns issue number from the incoming string if it exists
@@ -202,6 +212,7 @@ def getissuenum(incoming_str):
     if issue:
         issue = issue.group()
     return issue
+
 
 def findissue(ui, existing, issue):
     """
@@ -213,6 +224,7 @@ def findissue(ui, existing, issue):
     else:
         return False
 
+
 def similar(ui, existing, incoming_str):
     """
     Returns true if similar note found in existing notes.
@@ -220,13 +232,16 @@ def similar(ui, existing, incoming_str):
     if len(incoming_str.split()) > 10:
         merge = similaritycheck(incoming_str, existing)
         if not merge:
-            ui.write(_('"%s" already exists in notes file; ignoring\n')
-                     % incoming_str)
+            ui.write(
+                _('"%s" already exists in notes file; ignoring\n')
+                % incoming_str
+            )
             return True
         else:
             return False
     else:
         return False
+
 
 def similaritycheck(incoming_str, existingnotes):
     """
@@ -244,6 +259,7 @@ def similaritycheck(incoming_str, existingnotes):
             break
     return merge
 
+
 def getcustomadmonitions(repo):
     ctx = repo['.']
     p = config.config()
@@ -253,12 +269,14 @@ def getcustomadmonitions(repo):
             data = ctx[f].data()
             p.parse(f, data, sections, remap, read)
         else:
-            raise error.Abort(_(".hgreleasenotes file \'%s\' not found") %
-                              repo.pathto(f))
+            raise error.Abort(
+                _(".hgreleasenotes file \'%s\' not found") % repo.pathto(f)
+            )
 
     if '.hgreleasenotes' in ctx:
         read('.hgreleasenotes')
     return p['sections']
+
 
 def checkadmonitions(ui, repo, directives, revs):
     """
@@ -280,10 +298,13 @@ def checkadmonitions(ui, repo, directives, revs):
             if admonition.group(1) in directives:
                 continue
             else:
-                ui.write(_("Invalid admonition '%s' present in changeset %s"
-                           "\n") % (admonition.group(1), ctx.hex()[:12]))
-                sim = lambda x: difflib.SequenceMatcher(None,
-                    admonition.group(1), x).ratio()
+                ui.write(
+                    _("Invalid admonition '%s' present in changeset %s" "\n")
+                    % (admonition.group(1), ctx.hex()[:12])
+                )
+                sim = lambda x: difflib.SequenceMatcher(
+                    None, admonition.group(1), x
+                ).ratio()
 
                 similar = [s for s in directives if sim(s) > 0.6]
                 if len(similar) == 1:
@@ -292,9 +313,11 @@ def checkadmonitions(ui, repo, directives, revs):
                     ss = ", ".join(sorted(similar))
                     ui.write(_("(did you mean one of %s?)\n") % ss)
 
+
 def _getadmonitionlist(ui, sections):
     for section in sections:
         ui.write("%s: %s\n" % (section[0], section[1]))
+
 
 def parsenotesfromrevisions(repo, directives, revs):
     notes = parsedreleasenotes()
@@ -302,8 +325,9 @@ def parsenotesfromrevisions(repo, directives, revs):
     for rev in revs:
         ctx = repo[rev]
 
-        blocks, pruned = minirst.parse(ctx.description(),
-                                       admonitions=directives)
+        blocks, pruned = minirst.parse(
+            ctx.description(), admonitions=directives
+        )
 
         for i, block in enumerate(blocks):
             if block['type'] != 'admonition':
@@ -313,8 +337,13 @@ def parsenotesfromrevisions(repo, directives, revs):
             title = block['lines'][0].strip() if block['lines'] else None
 
             if i + 1 == len(blocks):
-                raise error.Abort(_('changeset %s: release notes directive %s '
-                        'lacks content') % (ctx, directive))
+                raise error.Abort(
+                    _(
+                        'changeset %s: release notes directive %s '
+                        'lacks content'
+                    )
+                    % (ctx, directive)
+                )
 
             # Now search ahead and find all paragraphs attached to this
             # admonition.
@@ -330,8 +359,13 @@ def parsenotesfromrevisions(repo, directives, revs):
                     break
 
                 if pblock['type'] != 'paragraph':
-                    repo.ui.warn(_('changeset %s: unexpected block in release '
-                        'notes directive %s\n') % (ctx, directive))
+                    repo.ui.warn(
+                        _(
+                            'changeset %s: unexpected block in release '
+                            'notes directive %s\n'
+                        )
+                        % (ctx, directive)
+                    )
 
                 if pblock['indent'] > 0:
                     paragraphs.append(pblock['lines'])
@@ -340,14 +374,17 @@ def parsenotesfromrevisions(repo, directives, revs):
 
             # TODO consider using title as paragraph for more concise notes.
             if not paragraphs:
-                repo.ui.warn(_("error parsing releasenotes for revision: "
-                               "'%s'\n") % node.hex(ctx.node()))
+                repo.ui.warn(
+                    _("error parsing releasenotes for revision: " "'%s'\n")
+                    % node.hex(ctx.node())
+                )
             if title:
                 notes.addtitleditem(directive, title, paragraphs)
             else:
                 notes.addnontitleditem(directive, paragraphs)
 
     return notes
+
 
 def parsereleasenotesfile(sections, text):
     """Parse text content containing generated release notes."""
@@ -375,7 +412,7 @@ def parsereleasenotesfile(sections, text):
                 else:
                     lines = [[l[1:].strip() for l in block['lines']]]
 
-                    for block in blocks[i + 1:]:
+                    for block in blocks[i + 1 :]:
                         if block['type'] in ('bullet', 'section'):
                             break
                         if block['type'] == 'paragraph':
@@ -383,8 +420,10 @@ def parsereleasenotesfile(sections, text):
                     notefragment.append(lines)
                     continue
             elif block['type'] != 'paragraph':
-                raise error.Abort(_('unexpected block type in release notes: '
-                                    '%s') % block['type'])
+                raise error.Abort(
+                    _('unexpected block type in release notes: ' '%s')
+                    % block['type']
+                )
             if title:
                 notefragment.append(block['lines'])
 
@@ -402,8 +441,9 @@ def parsereleasenotesfile(sections, text):
         if block['underline'] == '=':  # main section
             name = sections.sectionfromtitle(title)
             if not name:
-                raise error.Abort(_('unknown release notes section: %s') %
-                                  title)
+                raise error.Abort(
+                    _('unknown release notes section: %s') % title
+                )
 
             currentsection = name
             bullet_points = gatherparagraphsbullets(i)
@@ -423,6 +463,7 @@ def parsereleasenotesfile(sections, text):
             raise error.Abort(_('unsupported section type for %s') % title)
 
     return notes
+
 
 def serializenotes(sections, notes):
     """Serialize release notes from parsed fragments and notes.
@@ -449,8 +490,9 @@ def serializenotes(sections, notes):
             for i, para in enumerate(paragraphs):
                 if i:
                     lines.append('')
-                lines.extend(stringutil.wrap(' '.join(para),
-                                             width=78).splitlines())
+                lines.extend(
+                    stringutil.wrap(' '.join(para), width=78).splitlines()
+                )
 
             lines.append('')
 
@@ -468,17 +510,25 @@ def serializenotes(sections, notes):
             lines.append('')
 
         for paragraphs in nontitled:
-            lines.extend(stringutil.wrap(' '.join(paragraphs[0]),
-                                         width=78,
-                                         initindent='* ',
-                                         hangindent='  ').splitlines())
+            lines.extend(
+                stringutil.wrap(
+                    ' '.join(paragraphs[0]),
+                    width=78,
+                    initindent='* ',
+                    hangindent='  ',
+                ).splitlines()
+            )
 
             for para in paragraphs[1:]:
                 lines.append('')
-                lines.extend(stringutil.wrap(' '.join(para),
-                                             width=78,
-                                             initindent='  ',
-                                             hangindent='  ').splitlines())
+                lines.extend(
+                    stringutil.wrap(
+                        ' '.join(para),
+                        width=78,
+                        initindent='  ',
+                        hangindent='  ',
+                    ).splitlines()
+                )
 
             lines.append('')
 
@@ -487,14 +537,29 @@ def serializenotes(sections, notes):
 
     return '\n'.join(lines)
 
-@command('releasenotes',
-    [('r', 'rev', '', _('revisions to process for release notes'), _('REV')),
-    ('c', 'check', False, _('checks for validity of admonitions (if any)'),
-        _('REV')),
-    ('l', 'list', False, _('list the available admonitions with their title'),
-        None)],
+
+@command(
+    'releasenotes',
+    [
+        ('r', 'rev', '', _('revisions to process for release notes'), _('REV')),
+        (
+            'c',
+            'check',
+            False,
+            _('checks for validity of admonitions (if any)'),
+            _('REV'),
+        ),
+        (
+            'l',
+            'list',
+            False,
+            _('list the available admonitions with their title'),
+            None,
+        ),
+    ],
     _('hg releasenotes [-r REV] [-c] FILE'),
-    helpcategory=command.CATEGORY_CHANGE_NAVIGATION)
+    helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
+)
 def releasenotes(ui, repo, file_=None, **opts):
     """parse release notes from commit messages into an output file
 
@@ -615,6 +680,7 @@ def releasenotes(ui, repo, file_=None, **opts):
 
     with open(file_, 'wb') as fh:
         fh.write(serializenotes(sections, notes))
+
 
 @command('debugparsereleasenotes', norepo=True)
 def debugparsereleasenotes(ui, path, repo=None):

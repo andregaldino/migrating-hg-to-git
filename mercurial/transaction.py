@@ -21,43 +21,54 @@ from . import (
     pycompat,
     util,
 )
-from .utils import (
-    stringutil,
-)
+from .utils import stringutil
 
 version = 2
 
 # These are the file generators that should only be executed after the
 # finalizers are done, since they rely on the output of the finalizers (like
 # the changelog having been written).
-postfinalizegenerators = {
-    'bookmarks',
-    'dirstate'
-}
+postfinalizegenerators = {'bookmarks', 'dirstate'}
 
-gengroupall='all'
-gengroupprefinalize='prefinalize'
-gengrouppostfinalize='postfinalize'
+gengroupall = 'all'
+gengroupprefinalize = 'prefinalize'
+gengrouppostfinalize = 'postfinalize'
+
 
 def active(func):
     def _active(self, *args, **kwds):
         if self._count == 0:
-            raise error.Abort(_(
-                'cannot use transaction when it is already committed/aborted'))
+            raise error.Abort(
+                _('cannot use transaction when it is already committed/aborted')
+            )
         return func(self, *args, **kwds)
+
     return _active
 
-def _playback(journal, report, opener, vfsmap, entries, backupentries,
-              unlink=True, checkambigfiles=None):
+
+def _playback(
+    journal,
+    report,
+    opener,
+    vfsmap,
+    entries,
+    backupentries,
+    unlink=True,
+    checkambigfiles=None,
+):
     for f, o, _ignore in entries:
         if o or not unlink:
             checkambig = checkambigfiles and (f, '') in checkambigfiles
             try:
                 fp = opener(f, 'a', checkambig=checkambig)
                 if fp.tell() < o:
-                    raise error.Abort(_(
+                    raise error.Abort(
+                        _(
                             "attempted to truncate %s to %d bytes, but it was "
-                            "already %d bytes\n") % (f, o, fp.tell()))
+                            "already %d bytes\n"
+                        )
+                        % (f, o, fp.tell())
+                    )
                 fp.truncate(o)
                 fp.close()
             except IOError:
@@ -73,8 +84,7 @@ def _playback(journal, report, opener, vfsmap, entries, backupentries,
     backupfiles = []
     for l, f, b, c in backupentries:
         if l not in vfsmap and c:
-            report("couldn't handle %s: unknown cache location %s\n"
-                        % (b, l))
+            report("couldn't handle %s: unknown cache location %s\n" % (b, l))
         vfs = vfsmap[l]
         try:
             if f and b:
@@ -109,10 +119,22 @@ def _playback(journal, report, opener, vfsmap, entries, backupentries,
         # only pure backup file remains, it is sage to ignore any error
         pass
 
+
 class transaction(util.transactional):
-    def __init__(self, report, opener, vfsmap, journalname, undoname=None,
-                 after=None, createmode=None, validator=None, releasefn=None,
-                 checkambigfiles=None, name=r'<unnamed>'):
+    def __init__(
+        self,
+        report,
+        opener,
+        vfsmap,
+        journalname,
+        undoname=None,
+        after=None,
+        createmode=None,
+        validator=None,
+        releasefn=None,
+        checkambigfiles=None,
+        name=r'<unnamed>',
+    ):
         """Begin a new transaction
 
         Begins a new transaction that allows rolling back writes in the event of
@@ -197,8 +219,11 @@ class transaction(util.transactional):
 
     def __repr__(self):
         name = r'/'.join(self._names)
-        return (r'<transaction name=%s, count=%d, usages=%d>' %
-                (name, self._count, self._usages))
+        return r'<transaction name=%s, count=%d, usages=%d>' % (
+            name,
+            self._count,
+            self._usages,
+        )
 
     def __del__(self):
         if self._journal:
@@ -290,8 +315,7 @@ class transaction(util.transactional):
         self._addbackupentry((location, '', tmpfile, False))
 
     @active
-    def addfilegenerator(self, genid, filenames, genfunc, order=0,
-                         location=''):
+    def addfilegenerator(self, genid, filenames, genfunc, order=0, location=''):
         """add a function to generates some files at transaction commit
 
         The `genfunc` argument is a function capable of generating proper
@@ -334,8 +358,8 @@ class transaction(util.transactional):
             # for generation at closing, check if it's before or after finalize
             postfinalize = group == gengrouppostfinalize
             if (
-                    group != gengroupall
-                    and (id in postfinalizegenerators) != postfinalize
+                group != gengroupall
+                and (id in postfinalizegenerators) != postfinalize
             ):
                 continue
 
@@ -350,8 +374,9 @@ class transaction(util.transactional):
                     else:
                         self.addbackup(name, location=location)
                         checkambig = (name, location) in self._checkambigfiles
-                    files.append(vfs(name, 'w', atomictemp=True,
-                                     checkambig=checkambig))
+                    files.append(
+                        vfs(name, 'w', atomictemp=True, checkambig=checkambig)
+                    )
                 genfunc(*files)
                 for f in files:
                     f.close()
@@ -469,7 +494,7 @@ class transaction(util.transactional):
         '''commit the transaction'''
         if self._count == 1:
             self._validator(self)  # will raise exception if needed
-            self._validator = None # Help prevent cycles.
+            self._validator = None  # Help prevent cycles.
             self._generatefiles(group=gengroupprefinalize)
             categories = sorted(self._finalizecallback)
             for cat in categories:
@@ -486,8 +511,9 @@ class transaction(util.transactional):
         # cleanup temporary files
         for l, f, b, c in self._backupentries:
             if l not in self._vfsmap and c:
-                self._report("couldn't remove %s: unknown cache location %s\n"
-                             % (b, l))
+                self._report(
+                    "couldn't remove %s: unknown cache location %s\n" % (b, l)
+                )
                 continue
             vfs = self._vfsmap[l]
             if not f and b and vfs.exists(b):
@@ -497,21 +523,23 @@ class transaction(util.transactional):
                     if not c:
                         raise
                     # Abort may be raise by read only opener
-                    self._report("couldn't remove %s: %s\n"
-                                 % (vfs.join(b), inst))
+                    self._report(
+                        "couldn't remove %s: %s\n" % (vfs.join(b), inst)
+                    )
         self._entries = []
         self._writeundo()
         if self._after:
             self._after()
-            self._after = None # Help prevent cycles.
+            self._after = None  # Help prevent cycles.
         if self._opener.isfile(self._backupjournal):
             self._opener.unlink(self._backupjournal)
         if self._opener.isfile(self._journal):
             self._opener.unlink(self._journal)
         for l, _f, b, c in self._backupentries:
             if l not in self._vfsmap and c:
-                self._report("couldn't remove %s: unknown cache location"
-                             "%s\n" % (b, l))
+                self._report(
+                    "couldn't remove %s: unknown cache location" "%s\n" % (b, l)
+                )
                 continue
             vfs = self._vfsmap[l]
             if b and vfs.exists(b):
@@ -521,13 +549,14 @@ class transaction(util.transactional):
                     if not c:
                         raise
                     # Abort may be raise by read only opener
-                    self._report("couldn't remove %s: %s\n"
-                                 % (vfs.join(b), inst))
+                    self._report(
+                        "couldn't remove %s: %s\n" % (vfs.join(b), inst)
+                    )
         self._backupentries = []
         self._journal = None
 
-        self._releasefn(self, True) # notify success of closing transaction
-        self._releasefn = None # Help prevent cycles.
+        self._releasefn(self, True)  # notify success of closing transaction
+        self._releasefn = None  # Help prevent cycles.
 
         # run post close action
         categories = sorted(self._postclosecallback)
@@ -547,8 +576,9 @@ class transaction(util.transactional):
         """write transaction data for possible future undo call"""
         if self._undoname is None:
             return
-        undobackupfile = self._opener.open("%s.backupfiles" % self._undoname,
-                                           'w')
+        undobackupfile = self._opener.open(
+            "%s.backupfiles" % self._undoname, 'w'
+        )
         undobackupfile.write('%d\n' % version)
         for l, f, b, c in self._backupentries:
             if not f:  # temporary file
@@ -557,8 +587,10 @@ class transaction(util.transactional):
                 u = ''
             else:
                 if l not in self._vfsmap and c:
-                    self._report("couldn't remove %s: unknown cache location"
-                                 "%s\n" % (b, l))
+                    self._report(
+                        "couldn't remove %s: unknown cache location"
+                        "%s\n" % (b, l)
+                    )
                     continue
                 vfs = self._vfsmap[l]
                 base, name = vfs.split(b)
@@ -568,7 +600,6 @@ class transaction(util.transactional):
                 util.copyfile(vfs.join(b), vfs.join(u), hardlink=True)
             undobackupfile.write("%s\0%s\0%s\0%d\n" % (l, f, u, c))
         undobackupfile.close()
-
 
     def _abort(self):
         self._count = 0
@@ -591,18 +622,27 @@ class transaction(util.transactional):
                     self._abortcallback[cat](self)
                 # Prevent double usage and help clear cycles.
                 self._abortcallback = None
-                _playback(self._journal, self._report, self._opener,
-                          self._vfsmap, self._entries, self._backupentries,
-                          False, checkambigfiles=self._checkambigfiles)
+                _playback(
+                    self._journal,
+                    self._report,
+                    self._opener,
+                    self._vfsmap,
+                    self._entries,
+                    self._backupentries,
+                    False,
+                    checkambigfiles=self._checkambigfiles,
+                )
                 self._report(_("rollback completed\n"))
             except BaseException as exc:
                 self._report(_("rollback failed - please run hg recover\n"))
-                self._report(_("(failure reason: %s)\n")
-                             % stringutil.forcebytestr(exc))
+                self._report(
+                    _("(failure reason: %s)\n") % stringutil.forcebytestr(exc)
+                )
         finally:
             self._journal = None
-            self._releasefn(self, False) # notify failure of transaction
-            self._releasefn = None # Help prevent cycles.
+            self._releasefn(self, False)  # notify failure of transaction
+            self._releasefn = None  # Help prevent cycles.
+
 
 def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     """Rolls back the transaction contained in the given file
@@ -631,8 +671,7 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
             f, o = l.split('\0')
             entries.append((f, int(o), None))
         except ValueError:
-            report(
-                _("couldn't read journal entry %r!\n") % pycompat.bytestr(l))
+            report(_("couldn't read journal entry %r!\n") % pycompat.bytestr(l))
 
     backupjournal = "%s.backupfiles" % file
     if opener.exists(backupjournal):
@@ -648,8 +687,19 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
                         l, f, b, c = line.split('\0')
                         backupentries.append((l, f, b, bool(c)))
             else:
-                report(_("journal was created by a different version of "
-                         "Mercurial\n"))
+                report(
+                    _(
+                        "journal was created by a different version of "
+                        "Mercurial\n"
+                    )
+                )
 
-    _playback(file, report, opener, vfsmap, entries, backupentries,
-              checkambigfiles=checkambigfiles)
+    _playback(
+        file,
+        report,
+        opener,
+        vfsmap,
+        entries,
+        backupentries,
+        checkambigfiles=checkambigfiles,
+    )

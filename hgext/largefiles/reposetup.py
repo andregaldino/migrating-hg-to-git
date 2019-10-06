@@ -25,6 +25,7 @@ from . import (
     lfutil,
 )
 
+
 def reposetup(ui, repo):
     # wire repositories should be given new wireproto functions
     # by "proto.wirereposetup()" via "hg.wirepeersetupfuncs"
@@ -36,6 +37,7 @@ def reposetup(ui, repo):
         _largefilesenabled = True
 
         lfstatus = False
+
         def status_nolfiles(self, *args, **kwargs):
             return super(lfilesrepo, self).status(*args, **kwargs)
 
@@ -46,19 +48,25 @@ def reposetup(ui, repo):
         def __getitem__(self, changeid):
             ctx = super(lfilesrepo, self).__getitem__(changeid)
             if self.lfstatus:
+
                 class lfilesctx(ctx.__class__):
                     def files(self):
                         filenames = super(lfilesctx, self).files()
                         return [lfutil.splitstandin(f) or f for f in filenames]
+
                     def manifest(self):
                         man1 = super(lfilesctx, self).manifest()
+
                         class lfilesmanifest(man1.__class__):
                             def __contains__(self, filename):
                                 orig = super(lfilesmanifest, self).__contains__
-                                return (orig(filename) or
-                                        orig(lfutil.standin(filename)))
+                                return orig(filename) or orig(
+                                    lfutil.standin(filename)
+                                )
+
                         man1.__class__ = lfilesmanifest
                         return man1
+
                     def filectx(self, path, fileid=None, filelog=None):
                         orig = super(lfilesctx, self).filectx
                         try:
@@ -70,13 +78,15 @@ def reposetup(ui, repo):
                             # Adding a null character will cause Mercurial to
                             # identify this as a binary file.
                             if filelog is not None:
-                                result = orig(lfutil.standin(path), fileid,
-                                              filelog)
+                                result = orig(
+                                    lfutil.standin(path), fileid, filelog
+                                )
                             else:
                                 result = orig(lfutil.standin(path), fileid)
                             olddata = result.data
                             result.data = lambda: olddata() + '\0'
                         return result
+
                 ctx.__class__ = lfilesctx
             return ctx
 
@@ -87,13 +97,28 @@ def reposetup(ui, repo):
         # XXX large file status is buggy when used on repo proxy.
         # XXX this needs to be investigated.
         @localrepo.unfilteredmethod
-        def status(self, node1='.', node2=None, match=None, ignored=False,
-                clean=False, unknown=False, listsubrepos=False):
+        def status(
+            self,
+            node1='.',
+            node2=None,
+            match=None,
+            ignored=False,
+            clean=False,
+            unknown=False,
+            listsubrepos=False,
+        ):
             listignored, listclean, listunknown = ignored, clean, unknown
             orig = super(lfilesrepo, self).status
             if not self.lfstatus:
-                return orig(node1, node2, match, listignored, listclean,
-                            listunknown, listsubrepos)
+                return orig(
+                    node1,
+                    node2,
+                    match,
+                    listignored,
+                    listclean,
+                    listunknown,
+                    listsubrepos,
+                )
 
             # some calls in this function rely on the old version of status
             self.lfstatus = False
@@ -124,8 +149,15 @@ def reposetup(ui, repo):
                         if match(f):
                             break
                     else:
-                        return orig(node1, node2, match, listignored, listclean,
-                                    listunknown, listsubrepos)
+                        return orig(
+                            node1,
+                            node2,
+                            match,
+                            listignored,
+                            listclean,
+                            listunknown,
+                            listsubrepos,
+                        )
 
                 # Create a copy of match that matches standins instead
                 # of largefiles.
@@ -149,8 +181,9 @@ def reposetup(ui, repo):
                 m = copy.copy(match)
                 m._files = tostandins(m._files)
 
-                result = orig(node1, node2, m, ignored, clean, unknown,
-                              listsubrepos)
+                result = orig(
+                    node1, node2, m, ignored, clean, unknown, listsubrepos
+                )
                 if working:
 
                     def sfindirstate(f):
@@ -158,24 +191,32 @@ def reposetup(ui, repo):
                         dirstate = self.dirstate
                         return sf in dirstate or dirstate.hasdir(sf)
 
-                    match._files = [f for f in match._files
-                                    if sfindirstate(f)]
+                    match._files = [f for f in match._files if sfindirstate(f)]
                     # Don't waste time getting the ignored and unknown
                     # files from lfdirstate
-                    unsure, s = lfdirstate.status(match, subrepos=[],
-                                                  ignored=False,
-                                                  clean=listclean,
-                                                  unknown=False)
+                    unsure, s = lfdirstate.status(
+                        match,
+                        subrepos=[],
+                        ignored=False,
+                        clean=listclean,
+                        unknown=False,
+                    )
                     (modified, added, removed, deleted, clean) = (
-                        s.modified, s.added, s.removed, s.deleted, s.clean)
+                        s.modified,
+                        s.added,
+                        s.removed,
+                        s.deleted,
+                        s.clean,
+                    )
                     if parentworking:
                         for lfile in unsure:
                             standin = lfutil.standin(lfile)
                             if standin not in ctx1:
                                 # from second parent
                                 modified.append(lfile)
-                            elif (lfutil.readasstandin(ctx1[standin])
-                                  != lfutil.hashfile(self.wjoin(lfile))):
+                            elif lfutil.readasstandin(
+                                ctx1[standin]
+                            ) != lfutil.hashfile(self.wjoin(lfile)):
                                 modified.append(lfile)
                             else:
                                 if listclean:
@@ -190,11 +231,14 @@ def reposetup(ui, repo):
                             standin = lfutil.standin(lfile)
                             if standin in ctx1:
                                 abslfile = self.wjoin(lfile)
-                                if ((lfutil.readasstandin(ctx1[standin]) !=
-                                     lfutil.hashfile(abslfile)) or
-                                    (checkexec and
-                                     ('x' in ctx1.flags(standin)) !=
-                                     bool(lfutil.getexecutable(abslfile)))):
+                                if (
+                                    lfutil.readasstandin(ctx1[standin])
+                                    != lfutil.hashfile(abslfile)
+                                ) or (
+                                    checkexec
+                                    and ('x' in ctx1.flags(standin))
+                                    != bool(lfutil.getexecutable(abslfile))
+                                ):
                                     modified.append(lfile)
                                 elif listclean:
                                     clean.append(lfile)
@@ -205,8 +249,11 @@ def reposetup(ui, repo):
                         # marked as 'R' in the working context.
                         # then, largefiles not managed also in the target
                         # context should be excluded from 'removed'.
-                        removed = [lfile for lfile in removed
-                                   if lfutil.standin(lfile) in ctx1]
+                        removed = [
+                            lfile
+                            for lfile in removed
+                            if lfutil.standin(lfile) in ctx1
+                        ]
 
                     # Standins no longer found in lfdirstate have been deleted
                     for standin in ctx1.walk(lfutil.getstandinmatcher(self)):
@@ -229,10 +276,8 @@ def reposetup(ui, repo):
                     # files are not really removed if they are still in
                     # lfdirstate. This happens in merges where files
                     # change type.
-                    removed = [f for f in removed
-                               if f not in self.dirstate]
-                    result[2] = [f for f in result[2]
-                                 if f not in lfdirstate]
+                    removed = [f for f in removed if f not in self.dirstate]
+                    result[2] = [f for f in result[2] if f not in lfdirstate]
 
                     lfiles = set(lfdirstate)
                     # Unknown files
@@ -240,16 +285,28 @@ def reposetup(ui, repo):
                     # Ignored files
                     result[5] = set(result[5]).difference(lfiles)
                     # combine normal files and largefiles
-                    normals = [[fn for fn in filelist
-                                if not lfutil.isstandin(fn)]
-                               for filelist in result]
-                    lfstatus = (modified, added, removed, deleted, [], [],
-                                clean)
-                    result = [sorted(list1 + list2)
-                              for (list1, list2) in zip(normals, lfstatus)]
-                else: # not against working directory
-                    result = [[lfutil.splitstandin(f) or f for f in items]
-                              for items in result]
+                    normals = [
+                        [fn for fn in filelist if not lfutil.isstandin(fn)]
+                        for filelist in result
+                    ]
+                    lfstatus = (
+                        modified,
+                        added,
+                        removed,
+                        deleted,
+                        [],
+                        [],
+                        clean,
+                    )
+                    result = [
+                        sorted(list1 + list2)
+                        for (list1, list2) in zip(normals, lfstatus)
+                    ]
+                else:  # not against working directory
+                    result = [
+                        [lfutil.splitstandin(f) or f for f in items]
+                        for items in result
+                    ]
 
                 if wlock:
                     lfdirstate.write()
@@ -263,18 +320,28 @@ def reposetup(ui, repo):
 
         def commitctx(self, ctx, *args, **kwargs):
             node = super(lfilesrepo, self).commitctx(ctx, *args, **kwargs)
+
             class lfilesctx(ctx.__class__):
                 def markcommitted(self, node):
                     orig = super(lfilesctx, self).markcommitted
                     return lfutil.markcommitted(orig, self, node)
+
             ctx.__class__ = lfilesctx
             return node
 
         # Before commit, largefile standins have not had their
         # contents updated to reflect the hash of their largefile.
         # Do that here.
-        def commit(self, text="", user=None, date=None, match=None,
-                force=False, editor=False, extra=None):
+        def commit(
+            self,
+            text="",
+            user=None,
+            date=None,
+            match=None,
+            force=False,
+            editor=False,
+            extra=None,
+        ):
             if extra is None:
                 extra = {}
             orig = super(lfilesrepo, self).commit
@@ -282,20 +349,30 @@ def reposetup(ui, repo):
             with self.wlock():
                 lfcommithook = self._lfcommithooks[-1]
                 match = lfcommithook(self, match)
-                result = orig(text=text, user=user, date=date, match=match,
-                                force=force, editor=editor, extra=extra)
+                result = orig(
+                    text=text,
+                    user=user,
+                    date=date,
+                    match=match,
+                    force=force,
+                    editor=editor,
+                    extra=extra,
+                )
                 return result
 
         def push(self, remote, force=False, revs=None, newbranch=False):
             if remote.local():
                 missing = set(self.requirements) - remote.local().supported
                 if missing:
-                    msg = _("required features are not"
-                            " supported in the destination:"
-                            " %s") % (', '.join(sorted(missing)))
+                    msg = _(
+                        "required features are not"
+                        " supported in the destination:"
+                        " %s"
+                    ) % (', '.join(sorted(missing)))
                     raise error.Abort(msg)
-            return super(lfilesrepo, self).push(remote, force=force, revs=revs,
-                newbranch=newbranch)
+            return super(lfilesrepo, self).push(
+                remote, force=force, revs=revs, newbranch=newbranch
+            )
 
         # TODO: _subdirlfs should be moved into "lfutil.py", because
         # it is referred only from "lfutil.updatestandinsbymatch"
@@ -319,7 +396,8 @@ def reposetup(ui, repo):
                 if lfutil.isstandin(f + '/'):
                     raise error.Abort(
                         _('file "%s" is a largefile standin') % f,
-                        hint=('commit the largefile itself instead'))
+                        hint='commit the largefile itself instead',
+                    )
                 # Scan directories
                 if self.wvfs.isdir(f):
                     dirs.append(f)
@@ -377,17 +455,19 @@ def reposetup(ui, repo):
         if lfrevs:
             toupload = set()
             addfunc = lambda fn, lfhash: toupload.add(lfhash)
-            lfutil.getlfilestoupload(pushop.repo, lfrevs,
-                                     addfunc)
+            lfutil.getlfilestoupload(pushop.repo, lfrevs, addfunc)
             lfcommands.uploadlfiles(ui, pushop.repo, pushop.remote, toupload)
+
     repo.prepushoutgoinghooks.add("largefiles", prepushoutgoinghook)
 
     def checkrequireslfiles(ui, repo, **kwargs):
         if 'largefiles' not in repo.requirements and any(
-                lfutil.shortname+'/' in f[0] for f in repo.store.datafiles()):
+            lfutil.shortname + '/' in f[0] for f in repo.store.datafiles()
+        ):
             repo.requirements.add('largefiles')
             repo._writerequirements()
 
-    ui.setconfig('hooks', 'changegroup.lfiles', checkrequireslfiles,
-                 'largefiles')
+    ui.setconfig(
+        'hooks', 'changegroup.lfiles', checkrequireslfiles, 'largefiles'
+    )
     ui.setconfig('hooks', 'commit.lfiles', checkrequireslfiles, 'largefiles')

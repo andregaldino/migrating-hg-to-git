@@ -10,9 +10,7 @@ from __future__ import absolute_import
 
 import errno
 
-from . import (
-    pycompat,
-)
+from . import pycompat
 
 from .utils import (
     dateutil,
@@ -20,25 +18,31 @@ from .utils import (
     stringutil,
 )
 
+
 def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
     """Open log file in append mode, with optional rotation
 
     If maxsize > 0, the log file will be rotated up to maxfiles.
     """
+
     def rotate(oldpath, newpath):
         try:
             vfs.unlink(newpath)
         except OSError as err:
             if err.errno != errno.ENOENT:
-                ui.debug("warning: cannot remove '%s': %s\n" %
-                         (newpath, err.strerror))
+                ui.debug(
+                    "warning: cannot remove '%s': %s\n"
+                    % (newpath, err.strerror)
+                )
         try:
             if newpath:
                 vfs.rename(oldpath, newpath)
         except OSError as err:
             if err.errno != errno.ENOENT:
-                ui.debug("warning: cannot rename '%s' to '%s': %s\n" %
-                         (newpath, oldpath, err.strerror))
+                ui.debug(
+                    "warning: cannot rename '%s' to '%s': %s\n"
+                    % (newpath, oldpath, err.strerror)
+                )
 
     if maxsize > 0:
         try:
@@ -49,19 +53,23 @@ def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
             if st.st_size >= maxsize:
                 path = vfs.join(name)
                 for i in pycompat.xrange(maxfiles - 1, 1, -1):
-                    rotate(oldpath='%s.%d' % (path, i - 1),
-                           newpath='%s.%d' % (path, i))
-                rotate(oldpath=path,
-                       newpath=maxfiles > 0 and path + '.1')
+                    rotate(
+                        oldpath='%s.%d' % (path, i - 1),
+                        newpath='%s.%d' % (path, i),
+                    )
+                rotate(oldpath=path, newpath=maxfiles > 0 and path + '.1')
     return vfs(name, 'a', makeparentdirs=False)
+
 
 def _formatlogline(msg):
     date = dateutil.datestr(format=b'%Y/%m/%d %H:%M:%S')
     pid = procutil.getpid()
     return b'%s (%d)> %s' % (date, pid, msg)
 
+
 def _matchevent(event, tracked):
     return b'*' in tracked or event in tracked
+
 
 class filelogger(object):
     """Basic logger backed by physical file with optional rotation"""
@@ -79,13 +87,20 @@ class filelogger(object):
     def log(self, ui, event, msg, opts):
         line = _formatlogline(msg)
         try:
-            with openlogfile(ui, self._vfs, self._name,
-                             maxfiles=self._maxfiles,
-                             maxsize=self._maxsize) as fp:
+            with openlogfile(
+                ui,
+                self._vfs,
+                self._name,
+                maxfiles=self._maxfiles,
+                maxsize=self._maxsize,
+            ) as fp:
                 fp.write(line)
         except IOError as err:
-            ui.debug(b'cannot write to %s: %s\n'
-                     % (self._name, stringutil.forcebytestr(err)))
+            ui.debug(
+                b'cannot write to %s: %s\n'
+                % (self._name, stringutil.forcebytestr(err))
+            )
+
 
 class fileobjectlogger(object):
     """Basic logger backed by file-like object"""
@@ -103,9 +118,14 @@ class fileobjectlogger(object):
             self._fp.write(line)
             self._fp.flush()
         except IOError as err:
-            ui.debug(b'cannot write to %s: %s\n'
-                     % (stringutil.forcebytestr(self._fp.name),
-                        stringutil.forcebytestr(err)))
+            ui.debug(
+                b'cannot write to %s: %s\n'
+                % (
+                    stringutil.forcebytestr(self._fp.name),
+                    stringutil.forcebytestr(err),
+                )
+            )
+
 
 class proxylogger(object):
     """Forward log events to another logger to be set later"""

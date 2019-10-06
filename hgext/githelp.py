@@ -29,9 +29,7 @@ from mercurial import (
     registrar,
     scmutil,
 )
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -42,6 +40,7 @@ testedwith = 'ships-with-hg-core'
 cmdtable = {}
 command = registrar.command(cmdtable)
 
+
 def convert(s):
     if s.startswith("origin/"):
         return s[7:]
@@ -51,29 +50,36 @@ def convert(s):
     s = re.sub('~$', '~1', s)
     return s
 
-@command('githelp|git', [
-    ], _('hg githelp'),
-    helpcategory=command.CATEGORY_HELP, helpbasic=True)
+
+@command(
+    'githelp|git',
+    [],
+    _('hg githelp'),
+    helpcategory=command.CATEGORY_HELP,
+    helpbasic=True,
+)
 def githelp(ui, repo, *args, **kwargs):
     '''suggests the Mercurial equivalent of the given git command
 
     Usage: hg githelp -- <git command>
     '''
 
-    if len(args) == 0 or (len(args) == 1 and args[0] =='git'):
-        raise error.Abort(_('missing git command - '
-                            'usage: hg githelp -- <git command>'))
+    if len(args) == 0 or (len(args) == 1 and args[0] == 'git'):
+        raise error.Abort(
+            _('missing git command - ' 'usage: hg githelp -- <git command>')
+        )
 
     if args[0] == 'git':
         args = args[1:]
 
     cmd = args[0]
     if not cmd in gitcommands:
-        raise error.Abort(_("error: unknown git command %s") % (cmd))
+        raise error.Abort(_("error: unknown git command %s") % cmd)
 
     ui.pager('githelp')
     args = args[1:]
     return gitcommands[cmd](ui, repo, *args, **kwargs)
+
 
 def parseoptions(ui, cmdoptions, args):
     cmdoptions = list(cmdoptions)
@@ -91,23 +97,31 @@ def parseoptions(ui, cmdoptions, args):
             elif (r'-' + ex.opt) in ex.msg:
                 flag = '-' + pycompat.bytestr(ex.opt)
             else:
-                raise error.Abort(_("unknown option %s") %
-                                  pycompat.bytestr(ex.opt))
+                raise error.Abort(
+                    _("unknown option %s") % pycompat.bytestr(ex.opt)
+                )
             try:
                 args.remove(flag)
             except Exception:
                 msg = _("unknown option '%s' packed with other options")
                 hint = _("please try passing the option as its own flag: -%s")
-                raise error.Abort(msg % pycompat.bytestr(ex.opt),
-                                  hint=hint % pycompat.bytestr(ex.opt))
+                raise error.Abort(
+                    msg % pycompat.bytestr(ex.opt),
+                    hint=hint % pycompat.bytestr(ex.opt),
+                )
 
             ui.warn(_("ignoring unknown option %s\n") % flag)
 
     args = list([convert(x) for x in args])
-    opts = dict([(k, convert(v)) if isinstance(v, str) else (k, v)
-                                 for k, v in opts.iteritems()])
+    opts = dict(
+        [
+            (k, convert(v)) if isinstance(v, str) else (k, v)
+            for k, v in opts.iteritems()
+        ]
+    )
 
     return args, opts
+
 
 class Command(object):
     def __init__(self, name):
@@ -149,6 +163,7 @@ class Command(object):
     def __and__(self, other):
         return AndCommand(self, other)
 
+
 class AndCommand(object):
     def __init__(self, left, right):
         self.left = left
@@ -160,6 +175,7 @@ class AndCommand(object):
     def __and__(self, other):
         return AndCommand(self, other)
 
+
 def add(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('A', 'all', None, ''),
@@ -167,9 +183,13 @@ def add(ui, repo, *args, **kwargs):
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    if (opts.get('patch')):
-        ui.status(_("note: Mercurial will commit when complete, "
-                    "as there is no staging area in Mercurial\n\n"))
+    if opts.get('patch'):
+        ui.status(
+            _(
+                "note: Mercurial will commit when complete, "
+                "as there is no staging area in Mercurial\n\n"
+            )
+        )
         cmd = Command('commit --interactive')
     else:
         cmd = Command("add")
@@ -177,17 +197,22 @@ def add(ui, repo, *args, **kwargs):
         if not opts.get('all'):
             cmd.extend(args)
         else:
-            ui.status(_("note: use hg addremove to remove files that have "
-                        "been deleted\n\n"))
+            ui.status(
+                _(
+                    "note: use hg addremove to remove files that have "
+                    "been deleted\n\n"
+                )
+            )
 
     ui.status((bytes(cmd)), "\n")
 
+
 def am(ui, repo, *args, **kwargs):
-    cmdoptions=[
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
     cmd = Command('import')
     ui.status(bytes(cmd), "\n")
+
 
 def apply(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -197,7 +222,7 @@ def apply(ui, repo, *args, **kwargs):
     args, opts = parseoptions(ui, cmdoptions, args)
 
     cmd = Command('import --no-commit')
-    if (opts.get('p')):
+    if opts.get('p'):
         cmd['-p'] = opts.get('p')
     if opts.get('directory'):
         cmd['--prefix'] = opts.get('directory')
@@ -205,16 +230,18 @@ def apply(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def bisect(ui, repo, *args, **kwargs):
     ui.status(_("see 'hg help bisect' for how to use bisect\n\n"))
 
+
 def blame(ui, repo, *args, **kwargs):
-    cmdoptions = [
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
     cmd = Command('annotate -udl')
     cmd.extend([convert(v) for v in args])
     ui.status((bytes(cmd)), "\n")
+
 
 def branch(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -259,6 +286,7 @@ def branch(ui, repo, *args, **kwargs):
             cmd.append(args[0])
     ui.status((bytes(cmd)), "\n")
 
+
 def ispath(repo, string):
     """
     The first argument to git checkout can either be a revision or a path. Let's
@@ -287,6 +315,7 @@ def ispath(repo, string):
 
     return didexist
 
+
 def checkout(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('b', 'branch', '', ''),
@@ -297,7 +326,7 @@ def checkout(ui, repo, *args, **kwargs):
     paths = []
     if '--' in args:
         sepindex = args.index('--')
-        paths.extend(args[sepindex + 1:])
+        paths.extend(args[sepindex + 1 :])
         args = args[:sepindex]
 
     args, opts = parseoptions(ui, cmdoptions, args)
@@ -350,6 +379,7 @@ def checkout(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def cherrypick(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('', 'continue', None, ''),
@@ -372,6 +402,7 @@ def cherrypick(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def clean(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('d', 'd', None, ''),
@@ -386,6 +417,7 @@ def clean(ui, repo, *args, **kwargs):
     cmd.extend(args)
 
     ui.status((bytes(cmd)), "\n")
+
 
 def clone(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -405,8 +437,12 @@ def clone(ui, repo, *args, **kwargs):
 
     if opts.get('bare'):
         cmd['-U'] = None
-        ui.status(_("note: Mercurial does not have bare clones. "
-                    "-U will clone the repo without checking out a commit\n\n"))
+        ui.status(
+            _(
+                "note: Mercurial does not have bare clones. "
+                "-U will clone the repo without checking out a commit\n\n"
+            )
+        )
     elif opts.get('no_checkout'):
         cmd['-U'] = None
 
@@ -416,6 +452,7 @@ def clone(ui, repo, *args, **kwargs):
         cmd = cmd & cocmd
 
     ui.status((bytes(cmd)), "\n")
+
 
 def commit(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -448,9 +485,13 @@ def commit(ui, repo, *args, **kwargs):
         cmd['-m'] = "'%s'" % (opts.get('message'),)
 
     if opts.get('all'):
-        ui.status(_("note: Mercurial doesn't have a staging area, "
-                    "so there is no --all. -A will add and remove files "
-                    "for you though.\n\n"))
+        ui.status(
+            _(
+                "note: Mercurial doesn't have a staging area, "
+                "so there is no --all. -A will add and remove files "
+                "for you though.\n\n"
+            )
+        )
 
     if opts.get('file'):
         cmd['-l'] = opts.get('file')
@@ -465,9 +506,15 @@ def commit(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def deprecated(ui, repo, *args, **kwargs):
-    ui.warn(_('this command has been deprecated in the git project, '
-              'thus isn\'t supported by this tool\n\n'))
+    ui.warn(
+        _(
+            'this command has been deprecated in the git project, '
+            'thus isn\'t supported by this tool\n\n'
+        )
+    )
+
 
 def diff(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -480,8 +527,12 @@ def diff(ui, repo, *args, **kwargs):
     cmd = Command('diff')
 
     if opts.get('cached'):
-        ui.status(_('note: Mercurial has no concept of a staging area, '
-                    'so --cached does nothing\n\n'))
+        ui.status(
+            _(
+                'note: Mercurial has no concept of a staging area, '
+                'so --cached does nothing\n\n'
+            )
+        )
 
     if opts.get('reverse'):
         cmd['--reverse'] = None
@@ -496,14 +547,20 @@ def diff(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def difftool(ui, repo, *args, **kwargs):
-    ui.status(_('Mercurial does not enable external difftool by default. You '
-        'need to enable the extdiff extension in your .hgrc file by adding\n'
-        'extdiff =\n'
-        'to the [extensions] section and then running\n\n'
-        'hg extdiff -p <program>\n\n'
-        'See \'hg help extdiff\' and \'hg help -e extdiff\' for more '
-        'information.\n'))
+    ui.status(
+        _(
+            'Mercurial does not enable external difftool by default. You '
+            'need to enable the extdiff extension in your .hgrc file by adding\n'
+            'extdiff =\n'
+            'to the [extensions] section and then running\n\n'
+            'hg extdiff -p <program>\n\n'
+            'See \'hg help extdiff\' and \'hg help -e extdiff\' for more '
+            'information.\n'
+        )
+    )
+
 
 def fetch(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -517,10 +574,14 @@ def fetch(ui, repo, *args, **kwargs):
     if len(args) > 0:
         cmd.append(args[0])
         if len(args) > 1:
-            ui.status(_("note: Mercurial doesn't have refspecs. "
-                        "-r can be used to specify which commits you want to "
-                        "pull. -B can be used to specify which bookmark you "
-                        "want to pull.\n\n"))
+            ui.status(
+                _(
+                    "note: Mercurial doesn't have refspecs. "
+                    "-r can be used to specify which commits you want to "
+                    "pull. -B can be used to specify which bookmark you "
+                    "want to pull.\n\n"
+                )
+            )
             for v in args[1:]:
                 if v in repo._bookmarks:
                     cmd['-B'] = v
@@ -529,9 +590,9 @@ def fetch(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def grep(ui, repo, *args, **kwargs):
-    cmdoptions = [
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
     cmd = Command('grep')
@@ -542,9 +603,9 @@ def grep(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def init(ui, repo, *args, **kwargs):
-    cmdoptions = [
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
     cmd = Command('init')
@@ -553,6 +614,7 @@ def init(ui, repo, *args, **kwargs):
         cmd.append(args[0])
 
     ui.status((bytes(cmd)), "\n")
+
 
 def log(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -568,10 +630,18 @@ def log(ui, repo, *args, **kwargs):
         ('p', 'patch', None, ''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
-    ui.status(_('note: -v prints the entire commit message like Git does. To '
-                'print just the first line, drop the -v.\n\n'))
-    ui.status(_("note: see hg help revset for information on how to filter "
-                "log output\n\n"))
+    ui.status(
+        _(
+            'note: -v prints the entire commit message like Git does. To '
+            'print just the first line, drop the -v.\n\n'
+        )
+    )
+    ui.status(
+        _(
+            "note: see hg help revset for information on how to filter "
+            "log output\n\n"
+        )
+    )
 
     cmd = Command('log')
     cmd['-v'] = None
@@ -590,13 +660,21 @@ def log(ui, repo, *args, **kwargs):
     if opts.get('pretty') or opts.get('format') or opts.get('oneline'):
         format = opts.get('format', '')
         if 'format:' in format:
-            ui.status(_("note: --format format:??? equates to Mercurial's "
-                        "--template. See hg help templates for more info.\n\n"))
+            ui.status(
+                _(
+                    "note: --format format:??? equates to Mercurial's "
+                    "--template. See hg help templates for more info.\n\n"
+                )
+            )
             cmd['--template'] = '???'
         else:
-            ui.status(_("note: --pretty/format/oneline equate to Mercurial's "
-                        "--style or --template. See hg help templates for "
-                        "more info.\n\n"))
+            ui.status(
+                _(
+                    "note: --pretty/format/oneline equate to Mercurial's "
+                    "--style or --template. See hg help templates for "
+                    "more info.\n\n"
+                )
+            )
             cmd['--style'] = '???'
 
     if len(args) > 0:
@@ -607,6 +685,7 @@ def log(ui, repo, *args, **kwargs):
         cmd.extend(args)
 
     ui.status((bytes(cmd)), "\n")
+
 
 def lsfiles(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -620,8 +699,12 @@ def lsfiles(ui, repo, *args, **kwargs):
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    if (opts.get('modified') or opts.get('deleted')
-        or opts.get('others') or opts.get('ignored')):
+    if (
+        opts.get('modified')
+        or opts.get('deleted')
+        or opts.get('others')
+        or opts.get('ignored')
+    ):
         cmd = Command('status')
         if opts.get('deleted'):
             cmd['-d'] = None
@@ -634,8 +717,12 @@ def lsfiles(ui, repo, *args, **kwargs):
     else:
         cmd = Command('files')
     if opts.get('stage'):
-        ui.status(_("note: Mercurial doesn't have a staging area, ignoring "
-                  "--stage\n"))
+        ui.status(
+            _(
+                "note: Mercurial doesn't have a staging area, ignoring "
+                "--stage\n"
+            )
+        )
     if opts.get('_zero'):
         cmd['-0'] = None
     cmd.append('.')
@@ -644,9 +731,9 @@ def lsfiles(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def merge(ui, repo, *args, **kwargs):
-    cmdoptions = [
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
     cmd = Command('merge')
@@ -656,6 +743,7 @@ def merge(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def mergebase(ui, repo, *args, **kwargs):
     cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
@@ -663,12 +751,16 @@ def mergebase(ui, repo, *args, **kwargs):
     if len(args) != 2:
         args = ['A', 'B']
 
-    cmd = Command("log -T '{node}\\n' -r 'ancestor(%s,%s)'"
-                  % (args[0], args[1]))
+    cmd = Command(
+        "log -T '{node}\\n' -r 'ancestor(%s,%s)'" % (args[0], args[1])
+    )
 
-    ui.status(_('note: ancestors() is part of the revset language\n'),
-              _("(learn more about revsets with 'hg help revsets')\n\n"))
+    ui.status(
+        _('note: ancestors() is part of the revset language\n'),
+        _("(learn more about revsets with 'hg help revsets')\n\n"),
+    )
     ui.status((bytes(cmd)), "\n")
+
 
 def mergetool(ui, repo, *args, **kwargs):
     cmdoptions = []
@@ -680,6 +772,7 @@ def mergetool(ui, repo, *args, **kwargs):
         cmd['--all'] = None
     cmd.extend(args)
     ui.status((bytes(cmd)), "\n")
+
 
 def mv(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -698,6 +791,7 @@ def mv(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def pull(ui, repo, *args, **kwargs):
     cmdoptions = [
         ('', 'all', None, ''),
@@ -712,10 +806,14 @@ def pull(ui, repo, *args, **kwargs):
     if len(args) > 0:
         cmd.append(args[0])
         if len(args) > 1:
-            ui.status(_("note: Mercurial doesn't have refspecs. "
-                        "-r can be used to specify which commits you want to "
-                        "pull. -B can be used to specify which bookmark you "
-                        "want to pull.\n\n"))
+            ui.status(
+                _(
+                    "note: Mercurial doesn't have refspecs. "
+                    "-r can be used to specify which commits you want to "
+                    "pull. -B can be used to specify which bookmark you "
+                    "want to pull.\n\n"
+                )
+            )
             for v in args[1:]:
                 if v in repo._bookmarks:
                     cmd['-B'] = v
@@ -723,6 +821,7 @@ def pull(ui, repo, *args, **kwargs):
                     cmd['-r'] = v
 
     ui.status((bytes(cmd)), "\n")
+
 
 def push(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -736,10 +835,14 @@ def push(ui, repo, *args, **kwargs):
     if len(args) > 0:
         cmd.append(args[0])
         if len(args) > 1:
-            ui.status(_("note: Mercurial doesn't have refspecs. "
-                        "-r can be used to specify which commits you want "
-                        "to push. -B can be used to specify which bookmark "
-                        "you want to push.\n\n"))
+            ui.status(
+                _(
+                    "note: Mercurial doesn't have refspecs. "
+                    "-r can be used to specify which commits you want "
+                    "to push. -B can be used to specify which bookmark "
+                    "you want to push.\n\n"
+                )
+            )
             for v in args[1:]:
                 if v in repo._bookmarks:
                     cmd['-B'] = v
@@ -750,6 +853,7 @@ def push(ui, repo, *args, **kwargs):
         cmd['-f'] = None
 
     ui.status((bytes(cmd)), "\n")
+
 
 def rebase(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -763,12 +867,20 @@ def rebase(ui, repo, *args, **kwargs):
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if opts.get('interactive'):
-        ui.status(_("note: hg histedit does not perform a rebase. "
-                    "It just edits history.\n\n"))
+        ui.status(
+            _(
+                "note: hg histedit does not perform a rebase. "
+                "It just edits history.\n\n"
+            )
+        )
         cmd = Command('histedit')
         if len(args) > 0:
-            ui.status(_("also note: 'hg histedit' will automatically detect"
-                      " your stack, so no second argument is necessary\n\n"))
+            ui.status(
+                _(
+                    "also note: 'hg histedit' will automatically detect"
+                    " your stack, so no second argument is necessary\n\n"
+                )
+            )
         ui.status((bytes(cmd)), "\n")
         return
 
@@ -784,9 +896,13 @@ def rebase(ui, repo, *args, **kwargs):
         cmd['--abort'] = None
 
     if opts.get('onto'):
-        ui.status(_("note: if you're trying to lift a commit off one branch, "
-                    "try hg rebase -d <destination commit> -s <commit to be "
-                    "lifted>\n\n"))
+        ui.status(
+            _(
+                "note: if you're trying to lift a commit off one branch, "
+                "try hg rebase -d <destination commit> -s <commit to be "
+                "lifted>\n\n"
+            )
+        )
         cmd['-d'] = convert(opts.get('onto'))
         if len(args) < 2:
             raise error.Abort(_("expected format: git rebase --onto X Y Z"))
@@ -799,6 +915,7 @@ def rebase(ui, repo, *args, **kwargs):
             cmd['-b'] = convert(args[1])
 
     ui.status((bytes(cmd)), "\n")
+
 
 def reflog(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -813,8 +930,13 @@ def reflog(ui, repo, *args, **kwargs):
         cmd.append(args[0])
 
     ui.status(bytes(cmd), "\n\n")
-    ui.status(_("note: in hg commits can be deleted from repo but we always"
-              " have backups\n"))
+    ui.status(
+        _(
+            "note: in hg commits can be deleted from repo but we always"
+            " have backups\n"
+        )
+    )
+
 
 def reset(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -828,11 +950,19 @@ def reset(ui, repo, *args, **kwargs):
     hard = opts.get('hard')
 
     if opts.get('mixed'):
-        ui.status(_('note: --mixed has no meaning since Mercurial has no '
-                    'staging area\n\n'))
+        ui.status(
+            _(
+                'note: --mixed has no meaning since Mercurial has no '
+                'staging area\n\n'
+            )
+        )
     if opts.get('soft'):
-        ui.status(_('note: --soft has no meaning since Mercurial has no '
-                    'staging area\n\n'))
+        ui.status(
+            _(
+                'note: --soft has no meaning since Mercurial has no '
+                'staging area\n\n'
+            )
+        )
 
     cmd = Command('update')
     if hard:
@@ -842,20 +972,25 @@ def reset(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def revert(ui, repo, *args, **kwargs):
-    cmdoptions = [
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if len(args) > 1:
-        ui.status(_("note: hg backout doesn't support multiple commits at "
-                    "once\n\n"))
+        ui.status(
+            _(
+                "note: hg backout doesn't support multiple commits at "
+                "once\n\n"
+            )
+        )
 
     cmd = Command('backout')
     if args:
         cmd.append(args[0])
 
     ui.status((bytes(cmd)), "\n")
+
 
 def revparse(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -871,6 +1006,7 @@ def revparse(ui, repo, *args, **kwargs):
         ui.status((bytes(cmd)), "\n")
     else:
         ui.status(_("note: see hg help revset for how to refer to commits\n"))
+
 
 def rm(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -888,6 +1024,7 @@ def rm(ui, repo, *args, **kwargs):
         cmd['-n'] = None
 
     ui.status((bytes(cmd)), "\n")
+
 
 def show(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -920,6 +1057,7 @@ def show(ui, repo, *args, **kwargs):
         cmd = Command('export')
 
     ui.status((bytes(cmd)), "\n")
+
 
 def stash(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -956,8 +1094,12 @@ def stash(ui, repo, *args, **kwargs):
         if action == 'apply':
             cmd['--keep'] = None
     elif action == 'branch' or action == 'create':
-        ui.status(_("note: Mercurial doesn't have equivalents to the "
-                    "git stash branch or create actions\n\n"))
+        ui.status(
+            _(
+                "note: Mercurial doesn't have equivalents to the "
+                "git stash branch or create actions\n\n"
+            )
+        )
         return
     else:
         if len(args) > 0:
@@ -967,6 +1109,7 @@ def stash(ui, repo, *args, **kwargs):
                 cmd['--name'] = args[1]
 
     ui.status((bytes(cmd)), "\n")
+
 
 def status(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -982,28 +1125,29 @@ def status(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def svn(ui, repo, *args, **kwargs):
     if not args:
         raise error.Abort(_('missing svn command'))
     svncmd = args[0]
     if svncmd not in gitsvncommands:
-        raise error.Abort(_('unknown git svn command "%s"') % (svncmd))
+        raise error.Abort(_('unknown git svn command "%s"') % svncmd)
 
     args = args[1:]
     return gitsvncommands[svncmd](ui, repo, *args, **kwargs)
 
+
 def svndcommit(ui, repo, *args, **kwargs):
-    cmdoptions = [
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
     cmd = Command('push')
 
     ui.status((bytes(cmd)), "\n")
 
+
 def svnfetch(ui, repo, *args, **kwargs):
-    cmdoptions = [
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
     cmd = Command('pull')
@@ -1011,9 +1155,9 @@ def svnfetch(ui, repo, *args, **kwargs):
 
     ui.status((bytes(cmd)), "\n")
 
+
 def svnfindrev(ui, repo, *args, **kwargs):
-    cmdoptions = [
-    ]
+    cmdoptions = []
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if not args:
@@ -1023,6 +1167,7 @@ def svnfindrev(ui, repo, *args, **kwargs):
     cmd['-r'] = args[0]
 
     ui.status((bytes(cmd)), "\n")
+
 
 def svnrebase(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -1038,6 +1183,7 @@ def svnrebase(ui, repo, *args, **kwargs):
     cmd = pullcmd & rebasecmd
 
     ui.status((bytes(cmd)), "\n")
+
 
 def tag(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -1066,6 +1212,7 @@ def tag(ui, repo, *args, **kwargs):
             cmd['-f'] = None
 
     ui.status((bytes(cmd)), "\n")
+
 
 gitcommands = {
     'add': add,

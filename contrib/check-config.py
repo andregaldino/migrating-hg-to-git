@@ -15,7 +15,8 @@ foundopts = {}
 documented = {}
 allowinconsistent = set()
 
-configre = re.compile(br'''
+configre = re.compile(
+    br'''
     # Function call
     ui\.config(?P<ctype>|int|bool|list)\(
         # First argument.
@@ -23,9 +24,12 @@ configre = re.compile(br'''
         # Second argument
         ['"](?P<option>\S+)['"](,\s+
         (?:default=)?(?P<default>\S+?))?
-    \)''', re.VERBOSE | re.MULTILINE)
+    \)''',
+    re.VERBOSE | re.MULTILINE,
+)
 
-configwithre = re.compile(br'''
+configwithre = re.compile(
+    br'''
     ui\.config(?P<ctype>with)\(
         # First argument is callback function. This doesn't parse robustly
         # if it is e.g. a function call.
@@ -33,22 +37,31 @@ configwithre = re.compile(br'''
         ['"](?P<section>\S+)['"],\s*
         ['"](?P<option>\S+)['"](,\s+
         (?:default=)?(?P<default>\S+?))?
-    \)''', re.VERBOSE | re.MULTILINE)
+    \)''',
+    re.VERBOSE | re.MULTILINE,
+)
 
-configpartialre = (br"""ui\.config""")
+configpartialre = br"""ui\.config"""
 
-ignorere = re.compile(br'''
+ignorere = re.compile(
+    br'''
     \#\s(?P<reason>internal|experimental|deprecated|developer|inconsistent)\s
     config:\s(?P<config>\S+\.\S+)$
-    ''', re.VERBOSE | re.MULTILINE)
+    ''',
+    re.VERBOSE | re.MULTILINE,
+)
 
 if sys.version_info[0] > 2:
+
     def mkstr(b):
         if isinstance(b, str):
             return b
         return b.decode('utf8')
+
+
 else:
     mkstr = lambda x: x
+
 
 def main(args):
     for f in args:
@@ -115,18 +128,32 @@ def main(args):
                 name = m.group('section') + b"." + m.group('option')
                 default = m.group('default')
                 if default in (
-                        None, b'False', b'None', b'0', b'[]', b'""', b"''"):
+                    None,
+                    b'False',
+                    b'None',
+                    b'0',
+                    b'[]',
+                    b'""',
+                    b"''",
+                ):
                     default = b''
                 if re.match(b'[a-z.]+$', default):
                     default = b'<variable>'
-                if (name in foundopts and (ctype, default) != foundopts[name]
-                    and name not in allowinconsistent):
+                if (
+                    name in foundopts
+                    and (ctype, default) != foundopts[name]
+                    and name not in allowinconsistent
+                ):
                     print(mkstr(l.rstrip()))
                     fctype, fdefault = foundopts[name]
-                    print("conflict on %s: %r != %r" % (
-                        mkstr(name),
-                        (mkstr(ctype), mkstr(default)),
-                        (mkstr(fctype), mkstr(fdefault))))
+                    print(
+                        "conflict on %s: %r != %r"
+                        % (
+                            mkstr(name),
+                            (mkstr(ctype), mkstr(default)),
+                            (mkstr(fctype), mkstr(fdefault)),
+                        )
+                    )
                     print("at %s:%d:" % (mkstr(f), linenum))
                 foundopts[name] = (ctype, default)
                 carryover = b''
@@ -139,9 +166,11 @@ def main(args):
 
     for name in sorted(foundopts):
         if name not in documented:
-            if not (name.startswith(b"devel.") or
-                    name.startswith(b"experimental.") or
-                    name.startswith(b"debug.")):
+            if not (
+                name.startswith(b"devel.")
+                or name.startswith(b"experimental.")
+                or name.startswith(b"debug.")
+            ):
                 ctype, default = foundopts[name]
                 if default:
                     if isinstance(default, bytes):
@@ -149,8 +178,11 @@ def main(args):
                     default = ' [%s]' % default
                 elif isinstance(default, bytes):
                     default = mkstr(default)
-                print("undocumented: %s (%s)%s" % (
-                    mkstr(name), mkstr(ctype), default))
+                print(
+                    "undocumented: %s (%s)%s"
+                    % (mkstr(name), mkstr(ctype), default)
+                )
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

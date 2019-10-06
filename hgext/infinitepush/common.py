@@ -15,9 +15,12 @@ from mercurial import (
     pycompat,
 )
 
+
 def isremotebooksenabled(ui):
-    return ('remotenames' in extensions._extensions and
-            ui.configbool('remotenames', 'bookmarks'))
+    return 'remotenames' in extensions._extensions and ui.configbool(
+        'remotenames', 'bookmarks'
+    )
+
 
 def downloadbundle(repo, unknownbinhead):
     index = repo.bundlestore.index
@@ -27,6 +30,7 @@ def downloadbundle(repo, unknownbinhead):
         raise error.Abort('%s head is not known' % hex(unknownbinhead))
     bundleraw = store.read(bundleid)
     return _makebundlefromraw(bundleraw)
+
 
 def _makebundlefromraw(data):
     fp = None

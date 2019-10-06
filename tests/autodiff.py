@@ -13,9 +13,12 @@ from mercurial import (
 cmdtable = {}
 command = registrar.command(cmdtable)
 
-@command(b'autodiff',
+
+@command(
+    b'autodiff',
     [(b'', b'git', b'', b'git upgrade mode (yes/no/auto/warn/abort)')],
-    b'[OPTION]... [FILE]...')
+    b'[OPTION]... [FILE]...',
+)
 def autodiff(ui, repo, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     diffopts = patch.difffeatureopts(ui, opts)
@@ -31,21 +34,31 @@ def autodiff(ui, repo, *pats, **opts):
     elif git == b'warn':
         diffopts.git = False
         diffopts.upgrade = True
+
         def losedatafn(fn=None, **kwargs):
             brokenfiles.add(fn)
             return True
+
     elif git == b'abort':
         diffopts.git = False
         diffopts.upgrade = True
+
         def losedatafn(fn=None, **kwargs):
             raise error.Abort(b'losing data for %s' % fn)
+
     else:
         raise error.Abort(b'--git must be yes, no or auto')
 
     ctx1, ctx2 = scmutil.revpair(repo, [])
     m = scmutil.match(ctx2, pats, opts)
-    it = patch.diff(repo, ctx1.node(), ctx2.node(), match=m, opts=diffopts,
-                    losedatafn=losedatafn)
+    it = patch.diff(
+        repo,
+        ctx1.node(),
+        ctx2.node(),
+        match=m,
+        opts=diffopts,
+        losedatafn=losedatafn,
+    )
     for chunk in it:
         ui.write(chunk)
     for fn in sorted(brokenfiles):

@@ -19,9 +19,7 @@ from mercurial import (
     registrar,
 )
 
-from mercurial.interfaces import (
-    repository,
-)
+from mercurial.interfaces import repository
 
 from . import (
     narrowbundle2,
@@ -42,16 +40,20 @@ configitem = registrar.configitem(configtable)
 # of this writining in late 2017, all repositories large enough for
 # ellipsis nodes to be a hard requirement also enforce strictly linear
 # history for other scaling reasons.
-configitem('experimental', 'narrowservebrokenellipses',
-           default=False,
-           alias=[('narrow', 'serveellipses')],
+configitem(
+    'experimental',
+    'narrowservebrokenellipses',
+    default=False,
+    alias=[('narrow', 'serveellipses')],
 )
 
 # Export the commands table for Mercurial to see.
 cmdtable = narrowcommands.table
 
+
 def featuresetup(ui, features):
     features.add(repository.NARROW_REQUIREMENT)
+
 
 def uisetup(ui):
     """Wraps user-facing mercurial commands with narrow-aware versions."""
@@ -59,6 +61,7 @@ def uisetup(ui):
     narrowbundle2.setup()
     narrowcommands.setup()
     narrowwirepeer.uisetup()
+
 
 def reposetup(ui, repo):
     """Wraps local repositories with narrow repo support."""
@@ -69,6 +72,7 @@ def reposetup(ui, repo):
     if repository.NARROW_REQUIREMENT in repo.requirements:
         narrowrepo.wraprepo(repo)
         narrowwirepeer.reposetup(repo)
+
 
 templatekeyword = narrowtemplates.templatekeyword
 revsetpredicate = narrowtemplates.revsetpredicate

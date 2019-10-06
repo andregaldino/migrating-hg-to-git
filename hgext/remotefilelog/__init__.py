@@ -194,8 +194,12 @@ configitem('remotefilelog', 'cacheprocess', default=None)
 configitem('remotefilelog', 'cacheprocess.includepath', default=None)
 configitem("remotefilelog", "cachelimit", default="1000 GB")
 
-configitem('remotefilelog', 'fallbackpath', default=configitems.dynamicdefault,
-           alias=[('remotefilelog', 'fallbackrepo')])
+configitem(
+    'remotefilelog',
+    'fallbackpath',
+    default=configitems.dynamicdefault,
+    alias=[('remotefilelog', 'fallbackrepo')],
+)
 
 configitem('remotefilelog', 'validatecachelog', default=None)
 configitem('remotefilelog', 'validatecache', default='on')
@@ -231,8 +235,7 @@ _defaultlimit = 60 * 60 * 24 * 30
 configitem('remotefilelog', 'nodettl', default=_defaultlimit)
 
 configitem('remotefilelog', 'data.gencountlimit', default=2),
-configitem('remotefilelog', 'data.generations',
-           default=['1GB', '100MB', '1MB'])
+configitem('remotefilelog', 'data.generations', default=['1GB', '100MB', '1MB'])
 configitem('remotefilelog', 'data.maxrepackpacks', default=50)
 configitem('remotefilelog', 'data.repackmaxpacksize', default='4GB')
 configitem('remotefilelog', 'data.repacksizelimit', default='100MB')
@@ -254,6 +257,7 @@ repoclass._basesupported.add(constants.SHALLOWREPO_REQUIREMENT)
 
 isenabled = shallowutil.isenabled
 
+
 def uisetup(ui):
     """Wraps user facing Mercurial commands to swap them out with shallow
     versions.
@@ -261,23 +265,31 @@ def uisetup(ui):
     hg.wirepeersetupfuncs.append(fileserverclient.peersetup)
 
     entry = extensions.wrapcommand(commands.table, 'clone', cloneshallow)
-    entry[1].append(('', 'shallow', None,
-                     _("create a shallow clone which uses remote file "
-                       "history")))
+    entry[1].append(
+        (
+            '',
+            'shallow',
+            None,
+            _("create a shallow clone which uses remote file " "history"),
+        )
+    )
 
-    extensions.wrapcommand(commands.table, 'debugindex',
-        debugcommands.debugindex)
-    extensions.wrapcommand(commands.table, 'debugindexdot',
-        debugcommands.debugindexdot)
+    extensions.wrapcommand(
+        commands.table, 'debugindex', debugcommands.debugindex
+    )
+    extensions.wrapcommand(
+        commands.table, 'debugindexdot', debugcommands.debugindexdot
+    )
     extensions.wrapcommand(commands.table, 'log', log)
     extensions.wrapcommand(commands.table, 'pull', pull)
 
     # Prevent 'hg manifest --all'
     def _manifest(orig, ui, repo, *args, **opts):
-        if (isenabled(repo) and opts.get(r'all')):
+        if isenabled(repo) and opts.get(r'all'):
             raise error.Abort(_("--all is not supported in a shallow repo"))
 
         return orig(ui, repo, *args, **opts)
+
     extensions.wrapcommand(commands.table, "manifest", _manifest)
 
     # Wrap remotefilelog with lfs code
@@ -290,6 +302,7 @@ def uisetup(ui):
         if lfsmod:
             lfsmod.wrapfilelog(remotefilelog.remotefilelog)
             fileserverclient._lfsmod = lfsmod
+
     extensions.afterloaded('lfs', _lfsloaded)
 
     # debugdata needs remotefilelog.len to work
@@ -297,18 +310,21 @@ def uisetup(ui):
 
     changegroup.cgpacker = shallowbundle.shallowcg1packer
 
-    extensions.wrapfunction(changegroup, '_addchangegroupfiles',
-                            shallowbundle.addchangegroupfiles)
     extensions.wrapfunction(
-        changegroup, 'makechangegroup', shallowbundle.makechangegroup)
+        changegroup, '_addchangegroupfiles', shallowbundle.addchangegroupfiles
+    )
+    extensions.wrapfunction(
+        changegroup, 'makechangegroup', shallowbundle.makechangegroup
+    )
     extensions.wrapfunction(localrepo, 'makestore', storewrapper)
     extensions.wrapfunction(exchange, 'pull', exchangepull)
     extensions.wrapfunction(merge, 'applyupdates', applyupdates)
     extensions.wrapfunction(merge, '_checkunknownfiles', checkunknownfiles)
     extensions.wrapfunction(context.workingctx, '_checklookup', checklookup)
     extensions.wrapfunction(scmutil, '_findrenames', findrenames)
-    extensions.wrapfunction(copies, '_computeforwardmissing',
-                            computeforwardmissing)
+    extensions.wrapfunction(
+        copies, '_computeforwardmissing', computeforwardmissing
+    )
     extensions.wrapfunction(dispatch, 'runcommand', runcommand)
     extensions.wrapfunction(repair, '_collectbrokencsets', _collectbrokencsets)
     extensions.wrapfunction(context.changectx, 'filectx', filectx)
@@ -327,6 +343,7 @@ def uisetup(ui):
 def cloneshallow(orig, ui, repo, *args, **opts):
     if opts.get(r'shallow'):
         repos = []
+
         def pull_shallow(orig, self, *args, **kwargs):
             if not isenabled(self):
                 repos.append(self.unfiltered())
@@ -336,8 +353,10 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                 # setupclient fixed the class on the repo itself
                 # but we also need to fix it on the repoview
                 if isinstance(self, repoview.repoview):
-                    self.__class__.__bases__ = (self.__class__.__bases__[0],
-                                                self.unfiltered().__class__)
+                    self.__class__.__bases__ = (
+                        self.__class__.__bases__[0],
+                        self.unfiltered().__class__,
+                    )
                 self.requirements.add(constants.SHALLOWREPO_REQUIREMENT)
                 self._writerequirements()
 
@@ -346,6 +365,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                 return exchangepull(orig, self, *args, **kwargs)
             else:
                 return orig(self, *args, **kwargs)
+
         extensions.wrapfunction(exchange, 'pull', pull_shallow)
 
         # Wrap the stream logic to add requirements and to pass include/exclude
@@ -364,12 +384,16 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                     return remote._callstream('stream_out_shallow', **opts)
                 else:
                     return orig()
+
             extensions.wrapfunction(remote, 'stream_out', stream_out_shallow)
+
         def stream_wrap(orig, op):
             setup_streamout(op.repo, op.remote)
             return orig(op)
+
         extensions.wrapfunction(
-            streamclone, 'maybeperformlegacystreamclone', stream_wrap)
+            streamclone, 'maybeperformlegacystreamclone', stream_wrap
+        )
 
         def canperformstreamclone(orig, pullop, bundle2=False):
             # remotefilelog is currently incompatible with the
@@ -377,16 +401,18 @@ def cloneshallow(orig, ui, repo, *args, **opts):
             # v1 instead.
             if 'v2' in pullop.remotebundle2caps.get('stream', []):
                 pullop.remotebundle2caps['stream'] = [
-                    c for c in pullop.remotebundle2caps['stream']
-                    if c != 'v2']
+                    c for c in pullop.remotebundle2caps['stream'] if c != 'v2'
+                ]
             if bundle2:
                 return False, None
             supported, requirements = orig(pullop, bundle2=bundle2)
             if requirements is not None:
                 requirements.add(constants.SHALLOWREPO_REQUIREMENT)
             return supported, requirements
+
         extensions.wrapfunction(
-            streamclone, 'canperformstreamclone', canperformstreamclone)
+            streamclone, 'canperformstreamclone', canperformstreamclone
+        )
 
     try:
         orig(ui, repo, *args, **opts)
@@ -396,6 +422,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                 if util.safehasattr(r, 'fileservice'):
                     r.fileservice.close()
 
+
 def debugdatashallow(orig, *args, **kwds):
     oldlen = remotefilelog.remotefilelog.__len__
     try:
@@ -403,6 +430,7 @@ def debugdatashallow(orig, *args, **kwds):
         return orig(*args, **kwds)
     finally:
         remotefilelog.remotefilelog.__len__ = oldlen
+
 
 def reposetup(ui, repo):
     if not repo.local():
@@ -424,6 +452,7 @@ def reposetup(ui, repo):
     if isserverenabled:
         remotefilelogserver.setupserver(ui, repo)
 
+
 def setupclient(ui, repo):
     if not isinstance(repo, localrepo.localrepository):
         return
@@ -436,6 +465,7 @@ def setupclient(ui, repo):
     shallowrepo.wraprepo(repo)
     repo.store = shallowstore.wrapstore(repo.store)
 
+
 def storewrapper(orig, requirements, path, vfstype):
     s = orig(requirements, path, vfstype)
     if constants.SHALLOWREPO_REQUIREMENT in requirements:
@@ -443,9 +473,11 @@ def storewrapper(orig, requirements, path, vfstype):
 
     return s
 
+
 # prefetch files before update
-def applyupdates(orig, repo, actions, wctx, mctx, overwrite, wantfiledata,
-                 labels=None):
+def applyupdates(
+    orig, repo, actions, wctx, mctx, overwrite, wantfiledata, labels=None
+):
     if isenabled(repo):
         manifest = mctx.manifest()
         files = []
@@ -453,12 +485,13 @@ def applyupdates(orig, repo, actions, wctx, mctx, overwrite, wantfiledata,
             files.append((f, hex(manifest[f])))
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(files)
-    return orig(repo, actions, wctx, mctx, overwrite, wantfiledata,
-                labels=labels)
+    return orig(
+        repo, actions, wctx, mctx, overwrite, wantfiledata, labels=labels
+    )
+
 
 # Prefetch merge checkunknownfiles
-def checkunknownfiles(orig, repo, wctx, mctx, force, actions,
-    *args, **kwargs):
+def checkunknownfiles(orig, repo, wctx, mctx, force, actions, *args, **kwargs):
     if isenabled(repo):
         files = []
         sparsematch = repo.maybesparsematch(mctx.rev())
@@ -474,6 +507,7 @@ def checkunknownfiles(orig, repo, wctx, mctx, force, actions,
         repo.fileservice.prefetch(files)
     return orig(repo, wctx, mctx, force, actions, *args, **kwargs)
 
+
 # Prefetch files before status attempts to look at their size and contents
 def checklookup(orig, self, files):
     repo = self._repo
@@ -487,6 +521,7 @@ def checklookup(orig, self, files):
         repo.fileservice.prefetch(prefetchfiles)
     return orig(self, files)
 
+
 # Prefetch the logic that compares added and removed files for renames
 def findrenames(orig, repo, matcher, added, removed, *args, **kwargs):
     if isenabled(repo):
@@ -498,6 +533,7 @@ def findrenames(orig, repo, matcher, added, removed, *args, **kwargs):
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(files)
     return orig(repo, matcher, added, removed, *args, **kwargs)
+
 
 # prefetch files before pathcopies check
 def computeforwardmissing(orig, a, b, match=None):
@@ -520,6 +556,7 @@ def computeforwardmissing(orig, a, b, match=None):
         repo.fileservice.prefetch(files)
     return missing
 
+
 # close cache miss server connection after the command has finished
 def runcommand(orig, lui, repo, *args, **kwargs):
     fileservice = None
@@ -534,31 +571,48 @@ def runcommand(orig, lui, repo, *args, **kwargs):
         if fileservice:
             fileservice.close()
 
+
 # prevent strip from stripping remotefilelogs
 def _collectbrokencsets(orig, repo, files, striprev):
     if isenabled(repo):
         files = list([f for f in files if not repo.shallowmatch(f)])
     return orig(repo, files, striprev)
 
+
 # changectx wrappers
 def filectx(orig, self, path, fileid=None, filelog=None):
     if fileid is None:
         fileid = self.filenode(path)
-    if (isenabled(self._repo) and self._repo.shallowmatch(path)):
-        return remotefilectx.remotefilectx(self._repo, path, fileid=fileid,
-                                           changectx=self, filelog=filelog)
+    if isenabled(self._repo) and self._repo.shallowmatch(path):
+        return remotefilectx.remotefilectx(
+            self._repo, path, fileid=fileid, changectx=self, filelog=filelog
+        )
     return orig(self, path, fileid=fileid, filelog=filelog)
 
+
 def workingfilectx(orig, self, path, filelog=None):
-    if (isenabled(self._repo) and self._repo.shallowmatch(path)):
-        return remotefilectx.remoteworkingfilectx(self._repo, path,
-                                                  workingctx=self,
-                                                  filelog=filelog)
+    if isenabled(self._repo) and self._repo.shallowmatch(path):
+        return remotefilectx.remoteworkingfilectx(
+            self._repo, path, workingctx=self, filelog=filelog
+        )
     return orig(self, path, filelog=filelog)
 
+
 # prefetch required revisions before a diff
-def trydiff(orig, repo, revs, ctx1, ctx2, modified, added, removed,
-    copy, getfilectx, *args, **kwargs):
+def trydiff(
+    orig,
+    repo,
+    revs,
+    ctx1,
+    ctx2,
+    modified,
+    added,
+    removed,
+    copy,
+    getfilectx,
+    *args,
+    **kwargs
+):
     if isenabled(repo):
         prefetch = []
         mf1 = ctx1.manifest()
@@ -575,8 +629,20 @@ def trydiff(orig, repo, revs, ctx1, ctx2, modified, added, removed,
 
         repo.fileservice.prefetch(prefetch)
 
-    return orig(repo, revs, ctx1, ctx2, modified, added, removed, copy,
-                getfilectx, *args, **kwargs)
+    return orig(
+        repo,
+        revs,
+        ctx1,
+        ctx2,
+        modified,
+        added,
+        removed,
+        copy,
+        getfilectx,
+        *args,
+        **kwargs
+    )
+
 
 # Prevent verify from processing files
 # a stub for mercurial.hg.verify()
@@ -589,6 +655,8 @@ def _verify(orig, repo, level=None):
 
 
 clientonetime = False
+
+
 def onetimeclientsetup(ui):
     global clientonetime
     if clientonetime:
@@ -600,18 +668,53 @@ def onetimeclientsetup(ui):
     # This violates Mercurial's filelog->manifest->changelog write order,
     # but is generally fine for client repos.
     pendingfilecommits = []
-    def addrawrevision(orig, self, rawtext, transaction, link, p1, p2, node,
-                       flags, cachedelta=None, _metatuple=None):
+
+    def addrawrevision(
+        orig,
+        self,
+        rawtext,
+        transaction,
+        link,
+        p1,
+        p2,
+        node,
+        flags,
+        cachedelta=None,
+        _metatuple=None,
+    ):
         if isinstance(link, int):
             pendingfilecommits.append(
-                (self, rawtext, transaction, link, p1, p2, node, flags,
-                 cachedelta, _metatuple))
+                (
+                    self,
+                    rawtext,
+                    transaction,
+                    link,
+                    p1,
+                    p2,
+                    node,
+                    flags,
+                    cachedelta,
+                    _metatuple,
+                )
+            )
             return node
         else:
-            return orig(self, rawtext, transaction, link, p1, p2, node, flags,
-                        cachedelta, _metatuple=_metatuple)
+            return orig(
+                self,
+                rawtext,
+                transaction,
+                link,
+                p1,
+                p2,
+                node,
+                flags,
+                cachedelta,
+                _metatuple=_metatuple,
+            )
+
     extensions.wrapfunction(
-        remotefilelog.remotefilelog, 'addrawrevision', addrawrevision)
+        remotefilelog.remotefilelog, 'addrawrevision', addrawrevision
+    )
 
     def changelogadd(orig, self, *args):
         oldlen = len(self)
@@ -625,17 +728,21 @@ def onetimeclientsetup(ui):
                     log.addrawrevision(rt, tr, linknode, p1, p2, n, fl, c, m)
                 else:
                     raise error.ProgrammingError(
-                        'pending multiple integer revisions are not supported')
+                        'pending multiple integer revisions are not supported'
+                    )
         else:
             # "link" is actually wrong here (it is set to len(changelog))
             # if changelog remains unchanged, skip writing file revisions
             # but still do a sanity check about pending multiple revisions
             if len(set(x[3] for x in pendingfilecommits)) > 1:
                 raise error.ProgrammingError(
-                    'pending multiple integer revisions are not supported')
+                    'pending multiple integer revisions are not supported'
+                )
         del pendingfilecommits[:]
         return node
+
     extensions.wrapfunction(changelog.changelog, 'add', changelogadd)
+
 
 def getrenamedfn(orig, repo, endrev=None):
     if not isenabled(repo) or copies.usechangesetcentricalgo(repo):
@@ -665,6 +772,7 @@ def getrenamedfn(orig, repo, endrev=None):
 
     return getrenamed
 
+
 def walkfilerevs(orig, repo, match, follow, revs, fncache):
     if not isenabled(repo):
         return orig(repo, match, follow, revs, fncache)
@@ -680,8 +788,10 @@ def walkfilerevs(orig, repo, match, follow, revs, fncache):
     pctx = repo['.']
     for filename in match.files():
         if filename not in pctx:
-            raise error.Abort(_('cannot follow file not in parent '
-                               'revision: "%s"') % filename)
+            raise error.Abort(
+                _('cannot follow file not in parent ' 'revision: "%s"')
+                % filename
+            )
         fctx = pctx[filename]
 
         linkrev = fctx.linkrev()
@@ -697,6 +807,7 @@ def walkfilerevs(orig, repo, match, follow, revs, fncache):
 
     return wanted
 
+
 def filelogrevset(orig, repo, subset, x):
     """``filelog(pattern)``
     Changesets connected to the specified filelog.
@@ -711,8 +822,9 @@ def filelogrevset(orig, repo, subset, x):
 
     # i18n: "filelog" is a keyword
     pat = revset.getstring(x, _("filelog requires a pattern"))
-    m = match.match(repo.root, repo.getcwd(), [pat], default='relpath',
-                       ctx=repo[None])
+    m = match.match(
+        repo.root, repo.getcwd(), [pat], default='relpath', ctx=repo[None]
+    )
     s = set()
 
     if not match.patkind(pat):
@@ -734,6 +846,7 @@ def filelogrevset(orig, repo, subset, x):
                 s.add(actx.linkrev())
 
     return smartset.baseset([r for r in subset if r in s])
+
 
 @command('gc', [], _('hg gc [REPO...]'), norepo=True)
 def gc(ui, *args, **opts):
@@ -773,6 +886,7 @@ def gc(ui, *args, **opts):
     for repo in repos:
         remotefilelogserver.gcserver(ui, repo._repo)
 
+
 def gcclient(ui, cachepath):
     # get list of repos that use this cache
     repospath = os.path.join(cachepath, 'repos')
@@ -792,8 +906,9 @@ def gcclient(ui, cachepath):
     filesrepacked = False
 
     count = 0
-    progress = ui.makeprogress(_("analyzing repositories"), unit="repos",
-                               total=len(repos))
+    progress = ui.makeprogress(
+        _("analyzing repositories"), unit="repos", total=len(repos)
+    )
     for path in repos:
         progress.update(count)
         count += 1
@@ -843,6 +958,7 @@ def gcclient(ui, cachepath):
         # Compute a keepset which is not garbage collected
         def keyfn(fname, fnode):
             return fileserverclient.getcachekey(reponame, fname, hex(fnode))
+
         keepkeys = repackmod.keepset(repo, keyfn=keyfn, lastkeepkeys=keepkeys)
 
     progress.complete()
@@ -861,6 +977,7 @@ def gcclient(ui, cachepath):
         sharedcache.gc(keepkeys)
     elif not filesrepacked:
         ui.warn(_("warning: no valid repos in repofile\n"))
+
 
 def log(orig, ui, repo, *pats, **opts):
     if not isenabled(repo):
@@ -887,10 +1004,15 @@ def log(orig, ui, repo, *pats, **opts):
                         break
 
             if isfile:
-                ui.warn(_("warning: file log can be slow on large repos - " +
-                          "use -f to speed it up\n"))
+                ui.warn(
+                    _(
+                        "warning: file log can be slow on large repos - "
+                        + "use -f to speed it up\n"
+                    )
+                )
 
     return orig(ui, repo, *pats, **opts)
+
 
 def revdatelimit(ui, revset):
     """Update revset so that only changesets no older than 'prefetchdays' days
@@ -901,6 +1023,7 @@ def revdatelimit(ui, revset):
     if days > 0:
         revset = '(%s) & date(-%s)' % (revset, days)
     return revset
+
 
 def readytofetch(repo):
     """Check that enough time has passed since the last background prefetch.
@@ -919,6 +1042,7 @@ def readytofetch(repo):
             ready = True
 
     return ready
+
 
 def wcpprefetch(ui, repo, **kwargs):
     """Prefetches in background revisions specified by bgprefetchrevs revset.
@@ -943,6 +1067,7 @@ def wcpprefetch(ui, repo, **kwargs):
 
     repo._afterlock(anon)
 
+
 def pull(orig, ui, repo, *pats, **opts):
     result = orig(ui, repo, *pats, **opts)
 
@@ -958,29 +1083,35 @@ def pull(orig, ui, repo, *pats, **opts):
             revs = scmutil.revrange(repo, [prefetchrevset])
             base = repo['.'].rev()
             if bgprefetch:
-                repo.backgroundprefetch(prefetchrevset, repack=bgrepack,
-                                        ensurestart=ensurestart)
+                repo.backgroundprefetch(
+                    prefetchrevset, repack=bgrepack, ensurestart=ensurestart
+                )
             else:
                 repo.prefetch(revs, base=base)
                 if bgrepack:
-                    repackmod.backgroundrepack(repo, incremental=True,
-                                               ensurestart=ensurestart)
+                    repackmod.backgroundrepack(
+                        repo, incremental=True, ensurestart=ensurestart
+                    )
         elif bgrepack:
-            repackmod.backgroundrepack(repo, incremental=True,
-                                       ensurestart=ensurestart)
+            repackmod.backgroundrepack(
+                repo, incremental=True, ensurestart=ensurestart
+            )
 
     return result
+
 
 def exchangepull(orig, repo, remote, *args, **kwargs):
     # Hook into the callstream/getbundle to insert bundle capabilities
     # during a pull.
-    def localgetbundle(orig, source, heads=None, common=None, bundlecaps=None,
-                       **kwargs):
+    def localgetbundle(
+        orig, source, heads=None, common=None, bundlecaps=None, **kwargs
+    ):
         if not bundlecaps:
             bundlecaps = set()
         bundlecaps.add(constants.BUNDLE2_CAPABLITY)
-        return orig(source, heads=heads, common=common, bundlecaps=bundlecaps,
-                    **kwargs)
+        return orig(
+            source, heads=heads, common=common, bundlecaps=bundlecaps, **kwargs
+        )
 
     if util.safehasattr(remote, '_callstream'):
         remote._localrepo = repo
@@ -988,6 +1119,7 @@ def exchangepull(orig, repo, remote, *args, **kwargs):
         extensions.wrapfunction(remote, 'getbundle', localgetbundle)
 
     return orig(repo, remote, *args, **kwargs)
+
 
 def _fileprefetchhook(repo, revs, match):
     if isenabled(repo):
@@ -1003,48 +1135,64 @@ def _fileprefetchhook(repo, revs, match):
                     allfiles.append((path, hex(mf[path])))
         repo.fileservice.prefetch(allfiles)
 
-@command('debugremotefilelog', [
-    ('d', 'decompress', None, _('decompress the filelog first')),
-    ], _('hg debugremotefilelog <path>'), norepo=True)
+
+@command(
+    'debugremotefilelog',
+    [('d', 'decompress', None, _('decompress the filelog first')),],
+    _('hg debugremotefilelog <path>'),
+    norepo=True,
+)
 def debugremotefilelog(ui, path, **opts):
     return debugcommands.debugremotefilelog(ui, path, **opts)
 
-@command('verifyremotefilelog', [
-    ('d', 'decompress', None, _('decompress the filelogs first')),
-    ], _('hg verifyremotefilelogs <directory>'), norepo=True)
+
+@command(
+    'verifyremotefilelog',
+    [('d', 'decompress', None, _('decompress the filelogs first')),],
+    _('hg verifyremotefilelogs <directory>'),
+    norepo=True,
+)
 def verifyremotefilelog(ui, path, **opts):
     return debugcommands.verifyremotefilelog(ui, path, **opts)
 
-@command('debugdatapack', [
-    ('', 'long', None, _('print the long hashes')),
-    ('', 'node', '', _('dump the contents of node'), 'NODE'),
-    ], _('hg debugdatapack <paths>'), norepo=True)
+
+@command(
+    'debugdatapack',
+    [
+        ('', 'long', None, _('print the long hashes')),
+        ('', 'node', '', _('dump the contents of node'), 'NODE'),
+    ],
+    _('hg debugdatapack <paths>'),
+    norepo=True,
+)
 def debugdatapack(ui, *paths, **opts):
     return debugcommands.debugdatapack(ui, *paths, **opts)
 
-@command('debughistorypack', [
-    ], _('hg debughistorypack <path>'), norepo=True)
+
+@command('debughistorypack', [], _('hg debughistorypack <path>'), norepo=True)
 def debughistorypack(ui, path, **opts):
     return debugcommands.debughistorypack(ui, path)
 
-@command('debugkeepset', [
-    ], _('hg debugkeepset'))
+
+@command('debugkeepset', [], _('hg debugkeepset'))
 def debugkeepset(ui, repo, **opts):
     # The command is used to measure keepset computation time
     def keyfn(fname, fnode):
         return fileserverclient.getcachekey(repo.name, fname, hex(fnode))
+
     repackmod.keepset(repo, keyfn)
     return
 
-@command('debugwaitonrepack', [
-    ], _('hg debugwaitonrepack'))
+
+@command('debugwaitonrepack', [], _('hg debugwaitonrepack'))
 def debugwaitonrepack(ui, repo, **opts):
     return debugcommands.debugwaitonrepack(repo)
 
-@command('debugwaitonprefetch', [
-    ], _('hg debugwaitonprefetch'))
+
+@command('debugwaitonprefetch', [], _('hg debugwaitonprefetch'))
 def debugwaitonprefetch(ui, repo, **opts):
     return debugcommands.debugwaitonprefetch(repo)
+
 
 def resolveprefetchopts(ui, opts):
     if not opts.get('rev'):
@@ -1068,11 +1216,17 @@ def resolveprefetchopts(ui, opts):
 
     return opts
 
-@command('prefetch', [
-    ('r', 'rev', [], _('prefetch the specified revisions'), _('REV')),
-    ('', 'repack', False, _('run repack after prefetch')),
-    ('b', 'base', '', _("rev that is assumed to already be local")),
-    ] + commands.walkopts, _('hg prefetch [OPTIONS] [FILE...]'))
+
+@command(
+    'prefetch',
+    [
+        ('r', 'rev', [], _('prefetch the specified revisions'), _('REV')),
+        ('', 'repack', False, _('run repack after prefetch')),
+        ('b', 'base', '', _("rev that is assumed to already be local")),
+    ]
+    + commands.walkopts,
+    _('hg prefetch [OPTIONS] [FILE...]'),
+)
 def prefetch(ui, repo, *pats, **opts):
     """prefetch file revisions from the server
 
@@ -1095,20 +1249,35 @@ def prefetch(ui, repo, *pats, **opts):
 
     # Run repack in background
     if opts.get('repack'):
-        repackmod.backgroundrepack(repo, incremental=True,
-                                   ensurestart=ensurestart)
+        repackmod.backgroundrepack(
+            repo, incremental=True, ensurestart=ensurestart
+        )
 
-@command('repack', [
-     ('', 'background', None, _('run in a background process'), None),
-     ('', 'incremental', None, _('do an incremental repack'), None),
-     ('', 'packsonly', None, _('only repack packs (skip loose objects)'), None),
-    ], _('hg repack [OPTIONS]'))
+
+@command(
+    'repack',
+    [
+        ('', 'background', None, _('run in a background process'), None),
+        ('', 'incremental', None, _('do an incremental repack'), None),
+        (
+            '',
+            'packsonly',
+            None,
+            _('only repack packs (skip loose objects)'),
+            None,
+        ),
+    ],
+    _('hg repack [OPTIONS]'),
+)
 def repack_(ui, repo, *pats, **opts):
     if opts.get(r'background'):
         ensurestart = repo.ui.configbool('devel', 'remotefilelog.ensurestart')
-        repackmod.backgroundrepack(repo, incremental=opts.get(r'incremental'),
-                                   packsonly=opts.get(r'packsonly', False),
-                                   ensurestart=ensurestart)
+        repackmod.backgroundrepack(
+            repo,
+            incremental=opts.get(r'incremental'),
+            packsonly=opts.get(r'packsonly', False),
+            ensurestart=ensurestart,
+        )
         return
 
     options = {'packsonly': opts.get(r'packsonly')}
