@@ -1701,6 +1701,12 @@ class ui(object):
             self._writemsg(self._fmsgout, type=b'debug', *msg, **opts)
             self.log(b'debug', b'%s', b''.join(msg))
 
+    # Aliases to defeat check-code.
+    statusnoi18n = status
+    notenoi18n = note
+    warnnoi18n = warn
+    writenoi18n = write
+
     def edit(
         self,
         text,
