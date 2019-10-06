@@ -58,6 +58,7 @@ from mercurial import (
     error,
     exthelper,
     httpconnection as httpconnectionmod,
+    match,
     mdiff,
     obsutil,
     parser,
@@ -546,6 +547,36 @@ class phabdiff(object):
         if not isinstance(change, phabchange):
             raise error.Abort(b'phabdiff.addchange only takes phabchanges')
         self.changes[change.currentPath] = change
+
+
+def maketext(pchange, ctx, fname):
+    """populate the phabchange for a text file"""
+    repo = ctx.repo()
+    fmatcher = match.exact([fname])
+    diffopts = mdiff.diffopts(git=True, context=32767)
+    _pfctx, _fctx, header, fhunks = next(
+        patch.diffhunks(repo, ctx.p1(), ctx, fmatcher, opts=diffopts)
+    )
+
+    for fhunk in fhunks:
+        (oldOffset, oldLength, newOffset, newLength), lines = fhunk
+        corpus = b''.join(lines[1:])
+        shunk = list(header)
+        shunk.extend(lines)
+        _mf, _mt, addLines, delLines, _hb = patch.diffstatsum(
+            patch.diffstatdata(util.iterlines(shunk))
+        )
+        pchange.addhunk(
+            phabhunk(
+                oldOffset,
+                oldLength,
+                newOffset,
+                newLength,
+                corpus,
+                addLines,
+                delLines,
+            )
+        )
 
 
 def creatediff(ctx):
