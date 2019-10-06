@@ -448,6 +448,23 @@ def getdiff(ctx, diffopts):
     return output.getvalue()
 
 
+class DiffChangeType(object):
+    ADD = 1
+    CHANGE = 2
+    DELETE = 3
+    MOVE_AWAY = 4
+    COPY_AWAY = 5
+    MOVE_HERE = 6
+    COPY_HERE = 7
+    MULTICOPY = 8
+
+
+class DiffFileType(object):
+    TEXT = 1
+    IMAGE = 2
+    BINARY = 3
+
+
 def creatediff(ctx):
     """create a Differential Diff"""
     repo = ctx.repo()
