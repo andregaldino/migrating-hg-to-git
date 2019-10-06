@@ -289,6 +289,7 @@ def _extract(ui, fileobj, tmpname, tmpfp):
                             prefix = '# %s ' % header
                             if line.startswith(prefix):
                                 data[key] = line[len(prefix):]
+                                ui.debug('%s: %s\n' % (header, data[key]))
                     else:
                         hgpatchheader = False
                 elif line == '---':
