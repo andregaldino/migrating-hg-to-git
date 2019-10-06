@@ -46,6 +46,7 @@ import contextlib
 import hashlib
 import itertools
 import json
+import mimetypes
 import operator
 import re
 
@@ -644,6 +645,43 @@ def uploadfile(fctx):
         raise error.Abort(b'Upload of %s failed.' % bytes(fctx))
 
     return fphid
+
+
+def addoldbinary(pchange, fctx, originalfname):
+    """add the metadata for the previous version of a binary file to the
+    phabchange for the new version
+    """
+    oldfctx = fctx.p1()[originalfname]
+    if fctx.cmp(oldfctx):
+        # Files differ, add the old one
+        pchange.metadata[b'old:file:size'] = oldfctx.size()
+        mimeguess, _enc = mimetypes.guess_type(
+            encoding.unifromlocal(oldfctx.path())
+        )
+        if mimeguess:
+            pchange.metadata[b'old:file:mime-type'] = pycompat.bytestr(
+                mimeguess
+            )
+        fphid = uploadfile(oldfctx)
+        pchange.metadata[b'old:binary-phid'] = fphid
+    else:
+        # If it's left as IMAGE/BINARY web UI might try to display it
+        pchange.fileType = DiffFileType.TEXT
+        pchange.copynewmetadatatoold()
+
+
+def makebinary(pchange, fctx):
+    """populate the phabchange for a binary file"""
+    pchange.fileType = DiffFileType.BINARY
+    fphid = uploadfile(fctx)
+    pchange.metadata[b'new:binary-phid'] = fphid
+    pchange.metadata[b'new:file:size'] = fctx.size()
+    mimeguess, _enc = mimetypes.guess_type(encoding.unifromlocal(fctx.path()))
+    if mimeguess:
+        mimeguess = pycompat.bytestr(mimeguess)
+        pchange.metadata[b'new:file:mime-type'] = mimeguess
+        if mimeguess.startswith(b'image/'):
+            pchange.fileType = DiffFileType.IMAGE
 
 
 def creatediff(ctx):
