@@ -70,7 +70,7 @@ def _importfrom(pkgname, modname):
     except AttributeError:
         raise ImportError(r'cannot import name %s' % modname)
     # force import; fakelocals[modname] may be replaced with the real module
-    getattr(mod, r'__doc__', None)
+    getattr(mod, '__doc__', None)
     return fakelocals[modname]
 
 
@@ -94,7 +94,7 @@ _modredirects = {
 
 def _checkmod(pkgname, modname, mod):
     expected = _cextversions.get((pkgname, modname))
-    actual = getattr(mod, r'version', None)
+    actual = getattr(mod, 'version', None)
     if actual != expected:
         raise ImportError(
             r'cannot import module %s.%s '

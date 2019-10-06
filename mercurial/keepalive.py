@@ -255,7 +255,7 @@ class KeepAliveHandler(object):
         # If not a persistent connection, don't try to reuse it. Look
         # for this using getattr() since vcr doesn't define this
         # attribute, and in that case always close the connection.
-        if getattr(r, r'will_close', True):
+        if getattr(r, 'will_close', True):
             self._cm.remove(h)
 
         if DEBUG:

@@ -270,7 +270,7 @@ if ispy3:
     def getdoc(obj):
         """Get docstring as bytes; may be None so gettext() won't confuse it
         with _('')"""
-        doc = getattr(obj, u'__doc__', None)
+        doc = getattr(obj, '__doc__', None)
         if doc is None:
             return doc
         return sysbytes(doc)

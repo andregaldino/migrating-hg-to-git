@@ -24,7 +24,7 @@ from ..utils import storageutil
 
 
 class basetestcase(unittest.TestCase):
-    if not getattr(unittest.TestCase, r'assertRaisesRegex', False):
+    if not getattr(unittest.TestCase, 'assertRaisesRegex', False):
         assertRaisesRegex = (  # camelcase-required
             unittest.TestCase.assertRaisesRegexp
         )

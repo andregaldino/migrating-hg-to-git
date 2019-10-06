@@ -623,7 +623,7 @@ class observedbufferedinputpipe(bufferedinputpipe):
     def _fillbuffer(self):
         res = super(observedbufferedinputpipe, self)._fillbuffer()
 
-        fn = getattr(self._input._observer, r'osread', None)
+        fn = getattr(self._input._observer, 'osread', None)
         if fn:
             fn(res, _chunksize)
 
@@ -634,7 +634,7 @@ class observedbufferedinputpipe(bufferedinputpipe):
     def read(self, size):
         res = super(observedbufferedinputpipe, self).read(size)
 
-        fn = getattr(self._input._observer, r'bufferedread', None)
+        fn = getattr(self._input._observer, 'bufferedread', None)
         if fn:
             fn(res, size)
 
@@ -643,7 +643,7 @@ class observedbufferedinputpipe(bufferedinputpipe):
     def readline(self, *args, **kwargs):
         res = super(observedbufferedinputpipe, self).readline(*args, **kwargs)
 
-        fn = getattr(self._input._observer, r'bufferedreadline', None)
+        fn = getattr(self._input._observer, 'bufferedreadline', None)
         if fn:
             fn(res)
 

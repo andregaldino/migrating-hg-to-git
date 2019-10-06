@@ -110,65 +110,14 @@ if sys.version_info[0] >= 3:
             except IndexError:
                 return False
 
-        def _findargnofcall(n):
-            """Find arg n of a call expression (start at 0)
-
-            Returns index of the first token of that argument, or None if
-            there is not that many arguments.
-
-            Assumes that token[i + 1] is '('.
-
-            """
-            nested = 0
-            for j in range(i + 2, len(tokens)):
-                if _isop(j, ')', ']', '}'):
-                    # end of call, tuple, subscription or dict / set
-                    nested -= 1
-                    if nested < 0:
-                        return None
-                elif n == 0:
-                    # this is the starting position of arg
-                    return j
-                elif _isop(j, '(', '[', '{'):
-                    nested += 1
-                elif _isop(j, ',') and nested == 0:
-                    n -= 1
-
-            return None
-
-        def _ensureunicode(j):
-            """Make sure the token at j is a unicode string
-
-            This rewrites a string token to include the unicode literal prefix
-            so the string transformer won't add the byte prefix.
-
-            Ignores tokens that are not strings. Assumes bounds checking has
-            already been done.
-
-            """
-            st = tokens[j]
-            if st.type == token.STRING and st.string.startswith(("'", '"')):
-                tokens[j] = st._replace(string='u%s' % st.string)
-
         for i, t in enumerate(tokens):
             # This looks like a function call.
             if t.type == token.NAME and _isop(i + 1, '('):
                 fn = t.string
 
-                # *attr() builtins don't accept byte strings to 2nd argument.
-                if fn in (
-                    'getattr',
-                    'setattr',
-                    'hasattr',
-                    'safehasattr',
-                ) and not _isop(i - 1, '.'):
-                    arg1idx = _findargnofcall(1)
-                    if arg1idx is not None:
-                        _ensureunicode(arg1idx)
-
                 # It changes iteritems/values to items/values as they are not
                 # present in Python 3 world.
-                elif fn in ('iteritems', 'itervalues') and not (
+                if fn in ('iteritems', 'itervalues') and not (
                     tokens[i - 1].type == token.NAME
                     and tokens[i - 1].string == 'def'
                 ):
@@ -182,7 +131,7 @@ if sys.version_info[0] >= 3:
     # ``replacetoken`` or any mechanism that changes semantics of module
     # loading is changed. Otherwise cached bytecode may get loaded without
     # the new transformation mechanisms applied.
-    BYTECODEHEADER = b'HG\x00\x13'
+    BYTECODEHEADER = b'HG\x00\x14'
 
     class hgloader(importlib.machinery.SourceFileLoader):
         """Custom module loader that transforms source code.
