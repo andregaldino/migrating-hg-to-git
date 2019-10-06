@@ -475,10 +475,9 @@ class _templateconverter(object):
 
 
 class templateformatter(baseformatter):
-    def __init__(self, ui, out, topic, opts):
+    def __init__(self, ui, out, topic, opts, spec):
         baseformatter.__init__(self, ui, topic, opts, _templateconverter)
         self._out = out
-        spec = lookuptemplate(ui, topic, opts.get(b'template', b''))
         self._tref = spec.ref
         self._t = loadtemplater(
             ui,
@@ -723,7 +722,8 @@ def formatter(ui, out, topic, opts):
     elif template == b"debug":
         return debugformatter(ui, out, topic, opts)
     elif template != b"":
-        return templateformatter(ui, out, topic, opts)
+        spec = lookuptemplate(ui, topic, opts.get(b'template', b''))
+        return templateformatter(ui, out, topic, opts, spec)
     # developer config: ui.formatdebug
     elif ui.configbool(b'ui', b'formatdebug'):
         return debugformatter(ui, out, topic, opts)
