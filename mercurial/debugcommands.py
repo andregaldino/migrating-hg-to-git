@@ -2663,7 +2663,7 @@ def debugsidedata(ui, repo, file_, rev=None, **opts):
         for key, value in sidedata:
             ui.write((' entry-%04o size %d\n' % (key, len(value))))
             if ui.verbose:
-                ui.write(('  %s\n' % repr(value)))
+                ui.write(('  %s\n' % stringutil.pprint(value)))
 
 @command('debugssl', [], '[SOURCE]', optionalrepo=True)
 def debugssl(ui, repo, source=None, **opts):
