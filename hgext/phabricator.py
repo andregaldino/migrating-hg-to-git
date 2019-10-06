@@ -43,6 +43,7 @@ from __future__ import absolute_import
 
 import base64
 import contextlib
+import hashlib
 import itertools
 import json
 import operator
@@ -606,6 +607,43 @@ def uploadchunks(fctx, fphid):
             },
         )
     progress.complete()
+
+
+def uploadfile(fctx):
+    """upload binary files to Phabricator"""
+    repo = fctx.repo()
+    ui = repo.ui
+    fname = fctx.path()
+    size = fctx.size()
+    fhash = pycompat.bytestr(hashlib.sha256(fctx.data()).hexdigest())
+
+    # an allocate call is required first to see if an upload is even required
+    # (Phab might already have it) and to determine if chunking is needed
+    allocateparams = {
+        b'name': fname,
+        b'contentLength': size,
+        b'contentHash': fhash,
+    }
+    filealloc = callconduit(ui, b'file.allocate', allocateparams)
+    fphid = filealloc[b'filePHID']
+
+    if filealloc[b'upload']:
+        ui.write(_(b'uploading %s\n') % bytes(fctx))
+        if not fphid:
+            uploadparams = {
+                b'name': fname,
+                b'data_base64': base64.b64encode(fctx.data()),
+            }
+            fphid = callconduit(ui, b'file.upload', uploadparams)
+        else:
+            uploadchunks(fctx, fphid)
+    else:
+        ui.debug(b'server already has %s\n' % bytes(fctx))
+
+    if not fphid:
+        raise error.Abort(b'Upload of %s failed.' % bytes(fctx))
+
+    return fphid
 
 
 def creatediff(ctx):
