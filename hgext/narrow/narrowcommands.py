@@ -445,6 +445,7 @@ def _widen(
     + commands.remoteopts,
     _(b'[OPTIONS]... [REMOTE]'),
     inferrepo=True,
+    helpcategory=command.CATEGORY_MAINTENANCE,
 )
 def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     """show or change the current narrowspec

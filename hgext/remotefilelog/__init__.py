@@ -1234,6 +1234,7 @@ def resolveprefetchopts(ui, opts):
     ]
     + commands.walkopts,
     _(b'hg prefetch [OPTIONS] [FILE...]'),
+    helpcategory=command.CATEGORY_MAINTENANCE,
 )
 def prefetch(ui, repo, *pats, **opts):
     """prefetch file revisions from the server
