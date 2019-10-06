@@ -3318,7 +3318,7 @@ statemod.addunfinished(
     ]
     + formatteropts
     + walkopts,
-    _(b'[OPTION]... PATTERN [FILE]...'),
+    _(b'[--diff] [OPTION]... PATTERN [FILE]...'),
     helpcategory=command.CATEGORY_FILE_CONTENTS,
     inferrepo=True,
     intents={INTENT_READONLY},
