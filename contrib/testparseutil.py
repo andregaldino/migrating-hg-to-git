@@ -49,7 +49,7 @@ if ispy3:
     def sysstr(s):
         if isinstance(s, builtins.str):
             return s
-        return s.decode(u'latin-1')
+        return s.decode('latin-1')
 
     def opentext(f):
         return open(f, 'r')

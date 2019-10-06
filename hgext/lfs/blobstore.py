@@ -394,7 +394,7 @@ class _gitlfsremote(object):
 
         def encodestr(x):
             if isinstance(x, pycompat.unicode):
-                return x.encode(u'utf-8')
+                return x.encode('utf-8')
             return x
 
         return pycompat.rapply(encodestr, response)

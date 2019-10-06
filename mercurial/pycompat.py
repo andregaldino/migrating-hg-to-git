@@ -206,7 +206,7 @@ if ispy3:
             ) and not hasattr(  # hasattr-py3-only
                 s, u'__bytes__'
             ):
-                s = str(s).encode(u'ascii')
+                s = str(s).encode('ascii')
             return bytes.__new__(cls, s)
 
         def __getitem__(self, key):
@@ -237,7 +237,7 @@ if ispy3:
         This never raises UnicodeEncodeError, but only ASCII characters
         can be round-trip by sysstr(sysbytes(s)).
         """
-        return s.encode(u'utf-8')
+        return s.encode('utf-8')
 
     def sysstr(s):
         """Return a keyword str to be passed to Python functions such as
@@ -249,18 +249,18 @@ if ispy3:
         """
         if isinstance(s, builtins.str):
             return s
-        return s.decode(u'latin-1')
+        return s.decode('latin-1')
 
     def strurl(url):
         """Converts a bytes url back to str"""
         if isinstance(url, bytes):
-            return url.decode(u'ascii')
+            return url.decode('ascii')
         return url
 
     def bytesurl(url):
         """Converts a str url to bytes by encoding in ascii"""
         if isinstance(url, str):
-            return url.encode(u'ascii')
+            return url.encode('ascii')
         return url
 
     def raisewithtb(exc, tb):

@@ -166,14 +166,6 @@ if sys.version_info[0] >= 3:
                     if arg1idx is not None:
                         _ensureunicode(arg1idx)
 
-                # .encode() and .decode() on str/bytes/unicode don't accept
-                # byte strings on Python 3.
-                elif fn in ('encode', 'decode') and _isop(i - 1, '.'):
-                    for argn in range(2):
-                        argidx = _findargnofcall(argn)
-                        if argidx is not None:
-                            _ensureunicode(argidx)
-
                 # It changes iteritems/values to items/values as they are not
                 # present in Python 3 world.
                 elif fn in ('iteritems', 'itervalues') and not (
@@ -190,7 +182,7 @@ if sys.version_info[0] >= 3:
     # ``replacetoken`` or any mechanism that changes semantics of module
     # loading is changed. Otherwise cached bytecode may get loaded without
     # the new transformation mechanisms applied.
-    BYTECODEHEADER = b'HG\x00\x12'
+    BYTECODEHEADER = b'HG\x00\x13'
 
     class hgloader(importlib.machinery.SourceFileLoader):
         """Custom module loader that transforms source code.
