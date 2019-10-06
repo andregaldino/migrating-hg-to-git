@@ -23,6 +23,7 @@ from .node import (
     nullid,
     nullrev,
 )
+from .pycompat import delattr
 from .thirdparty import attr
 from . import (
     copies,

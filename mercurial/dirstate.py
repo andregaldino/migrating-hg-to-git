@@ -15,6 +15,7 @@ import stat
 
 from .i18n import _
 from .node import nullid
+from .pycompat import delattr
 from . import (
     encoding,
     error,

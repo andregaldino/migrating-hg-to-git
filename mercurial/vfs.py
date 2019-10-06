@@ -15,6 +15,7 @@ import threading
 
 from .i18n import _
 from .pycompat import (
+    delattr,
     getattr,
     setattr,
 )

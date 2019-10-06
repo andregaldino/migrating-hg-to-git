@@ -101,8 +101,6 @@ if sys.version_info[0] >= 3:
         REMEMBER TO CHANGE ``BYTECODEHEADER`` WHEN CHANGING THIS FUNCTION
         OR CACHED FILES WON'T GET INVALIDATED PROPERLY.
         """
-        futureimpline = False
-
         # The following utility functions access the tokens list and i index of
         # the for i, t enumerate(tokens) loop below
         def _isop(j, *o):
@@ -153,34 +151,6 @@ if sys.version_info[0] >= 3:
                 tokens[j] = st._replace(string='u%s' % st.string)
 
         for i, t in enumerate(tokens):
-            # Insert compatibility imports at "from __future__ import" line.
-            # No '\n' should be added to preserve line numbers.
-            if (
-                t.type == token.NAME
-                and t.string == 'import'
-                and all(u.type == token.NAME for u in tokens[i - 2 : i])
-                and [u.string for u in tokens[i - 2 : i]]
-                == ['from', '__future__']
-            ):
-                futureimpline = True
-            if t.type == token.NEWLINE and futureimpline:
-                futureimpline = False
-                if fullname == 'mercurial.pycompat':
-                    yield t
-                    continue
-                r, c = t.start
-                l = (
-                    b'; from mercurial.pycompat import '
-                    b'delattr\n'
-                )
-                for u in tokenize.tokenize(io.BytesIO(l).readline):
-                    if u.type in (tokenize.ENCODING, token.ENDMARKER):
-                        continue
-                    yield u._replace(
-                        start=(r, c + u.start[1]), end=(r, c + u.end[1])
-                    )
-                continue
-
             # This looks like a function call.
             if t.type == token.NAME and _isop(i + 1, '('):
                 fn = t.string
@@ -220,7 +190,7 @@ if sys.version_info[0] >= 3:
     # ``replacetoken`` or any mechanism that changes semantics of module
     # loading is changed. Otherwise cached bytecode may get loaded without
     # the new transformation mechanisms applied.
-    BYTECODEHEADER = b'HG\x00\x11'
+    BYTECODEHEADER = b'HG\x00\x12'
 
     class hgloader(importlib.machinery.SourceFileLoader):
         """Custom module loader that transforms source code.

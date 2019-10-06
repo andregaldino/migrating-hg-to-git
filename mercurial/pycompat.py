@@ -355,6 +355,7 @@ else:
     strurl = identity
     bytesurl = identity
     open = open
+    delattr = delattr
     getattr = getattr
     hasattr = hasattr
     setattr = setattr

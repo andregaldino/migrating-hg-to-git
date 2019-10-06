@@ -36,6 +36,7 @@ import warnings
 
 from .thirdparty import attr
 from .pycompat import (
+    delattr,
     getattr,
     open,
     setattr,

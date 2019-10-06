@@ -13,6 +13,7 @@ import weakref
 
 from .node import nullrev
 from .pycompat import (
+    delattr,
     getattr,
     setattr,
 )

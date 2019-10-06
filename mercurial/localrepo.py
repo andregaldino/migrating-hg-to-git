@@ -23,7 +23,10 @@ from .node import (
     nullrev,
     short,
 )
-from .pycompat import getattr
+from .pycompat import (
+    delattr,
+    getattr,
+)
 from . import (
     bookmarks,
     branchmap,
