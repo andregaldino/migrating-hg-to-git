@@ -66,6 +66,7 @@ Prevent adding new files in the root directory accidentally.
   hg
   hgeditor
   hgweb.cgi
+  pyproject.toml
   setup.py
 
 Prevent adding modules which could be shadowed by ancient .so/.dylib.
