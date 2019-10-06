@@ -3310,7 +3310,7 @@ statemod.addunfinished(
             b'all-files',
             None,
             _(
-                b'include all files in the changeset while grepping (EXPERIMENTAL)'
+                b'include all files in the changeset while grepping (DEPRECATED)'
             ),
         ),
         (b'u', b'user', None, _(b'list the author (long with -v)')),
@@ -3366,14 +3366,12 @@ def grep(ui, repo, pattern, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     diff = opts.get(b'all') or opts.get(b'diff')
-    all_files = opts.get(b'all_files')
     if diff and opts.get(b'all_files'):
         raise error.Abort(_(b'--diff and --all-files are mutually exclusive'))
-    # TODO: remove "not opts.get('rev')" if --all-files -rMULTIREV gets working
-    if opts.get(b'all_files') is None and not opts.get(b'rev') and not diff:
-        # experimental config: commands.grep.all-files
-        opts[b'all_files'] = ui.configbool(b'commands', b'grep.all-files')
+    if opts.get(b'all_files') is None and not diff:
+        opts[b'all_files'] = True
     plaingrep = opts.get(b'all_files') and not opts.get(b'rev')
+    all_files = opts.get(b'all_files')
     if plaingrep:
         opts[b'rev'] = [b'wdir()']
 
