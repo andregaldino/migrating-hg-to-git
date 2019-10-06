@@ -355,6 +355,7 @@ else:
     strurl = identity
     bytesurl = identity
     open = open
+    hasattr = hasattr
     setattr = setattr
 
     # this can't be parsed on Python 3
