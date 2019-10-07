@@ -1,4 +1,4 @@
-#testcases filelog compatibility changeset
+#testcases filelog compatibility changeset sidedata
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -19,6 +19,13 @@
   > [experimental]
   > copies.read-from = changeset-only
   > copies.write-to = changeset-only
+  > EOF
+#endif
+
+#if sidedata
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-copies-side-data-changeset = yes
   > EOF
 #endif
 
@@ -172,8 +179,8 @@ the break.
   o  0 add x
      x
   $ hg debugpathcopies 0 5
-  x -> y (no-filelog !)
-#if no-filelog
+  x -> y (no-filelog no-sidedata !)
+#if no-filelog no-sidedata
   $ hg graft -r 2
   grafting 2:* "modify x again" (glob)
   merging y and x to y
@@ -340,8 +347,12 @@ different between the branches.
   o  0 base
      a
   $ hg debugpathcopies 1 5
-  x -> y (no-filelog !)
-#if filelog
+  x -> y (no-filelog no-sidedata !)
+#if no-filelog no-sidedata
+  $ hg graft -r 2
+  grafting 2:* "modify x" (glob)
+  merging y and x to y
+#else
 BROKEN: This should succeed and merge the changes from x into y
   $ hg graft -r 2
   grafting 2:* "modify x" (glob)
@@ -351,10 +362,6 @@ BROKEN: This should succeed and merge the changes from x into y
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
   [255]
-#else
-  $ hg graft -r 2
-  grafting 2:* "modify x" (glob)
-  merging y and x to y
 #endif
   $ hg co -qC 2
 BROKEN: This should succeed and merge the changes from x into y
