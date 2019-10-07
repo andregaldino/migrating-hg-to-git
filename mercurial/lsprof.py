@@ -143,16 +143,3 @@ def label(code):
         res = res.encode('latin-1')
 
     return res
-
-
-if __name__ == '__main__':
-    import os
-
-    sys.argv = sys.argv[1:]
-    if not sys.argv:
-        print(b"usage: lsprof.py <script> <arguments...>", file=sys.stderr)
-        sys.exit(2)
-    sys.path.insert(0, os.path.abspath(os.path.dirname(sys.argv[0])))
-    stats = profile(execfile, sys.argv[0], globals(), locals())
-    stats.sort()
-    stats.pprint()
