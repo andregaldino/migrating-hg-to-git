@@ -23,4 +23,5 @@ run pyflakes on all tracked files ending in .py or without a file ending
   > | xargs pyflakes 2>/dev/null | "$TESTDIR/filterpyflakes.py"
   contrib/perf.py:*: undefined name 'xrange' (glob) (?)
   mercurial/hgweb/server.py:*: undefined name 'reload' (glob) (?)
+  mercurial/util.py:*: undefined name 'file' (glob) (?)
   
