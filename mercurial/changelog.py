@@ -268,9 +268,10 @@ class changelogrevision(object):
     __slots__ = (
         r'_offsets',
         r'_text',
+        r'_sidedata',
     )
 
-    def __new__(cls, text):
+    def __new__(cls, text, sidedata):
         if not text:
             return _changelogrevision(extra=_defaultextra)
 
@@ -302,6 +303,7 @@ class changelogrevision(object):
 
         self._offsets = (nl1, nl2, nl3, doublenl)
         self._text = text
+        self._sidedata = sidedata
 
         return self
 
@@ -613,12 +615,13 @@ class changelog(revlog.revlog):
         ``changelogrevision`` instead, as it is faster for partial object
         access.
         """
-        c = changelogrevision(self.revision(node))
+        c = changelogrevision(*self._revisiondata(node))
         return (c.manifest, c.user, c.date, c.files, c.description, c.extra)
 
     def changelogrevision(self, nodeorrev):
         """Obtain a ``changelogrevision`` for a node or revision."""
-        return changelogrevision(self.revision(nodeorrev))
+        text, sidedata = self._revisiondata(nodeorrev)
+        return changelogrevision(text, sidedata)
 
     def readfiles(self, node):
         """
