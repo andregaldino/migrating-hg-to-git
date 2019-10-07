@@ -1250,11 +1250,17 @@ def debugformat(ui, repo, **opts):
 def debugfsinfo(ui, path=b"."):
     """show information detected about current filesystem"""
     ui.writenoi18n(b'path: %s\n' % path)
-    ui.writenoi18n(b'mounted on: %s\n' % (util.getfsmountpoint(path) or b'(unknown)'))
+    ui.writenoi18n(
+        b'mounted on: %s\n' % (util.getfsmountpoint(path) or b'(unknown)')
+    )
     ui.writenoi18n(b'exec: %s\n' % (util.checkexec(path) and b'yes' or b'no'))
     ui.writenoi18n(b'fstype: %s\n' % (util.getfstype(path) or b'(unknown)'))
-    ui.writenoi18n(b'symlink: %s\n' % (util.checklink(path) and b'yes' or b'no'))
-    ui.writenoi18n(b'hardlink: %s\n' % (util.checknlink(path) and b'yes' or b'no'))
+    ui.writenoi18n(
+        b'symlink: %s\n' % (util.checklink(path) and b'yes' or b'no')
+    )
+    ui.writenoi18n(
+        b'hardlink: %s\n' % (util.checknlink(path) and b'yes' or b'no')
+    )
     casesensitive = b'(unknown)'
     try:
         with pycompat.namedtempfile(prefix=b'.debugfsinfo', dir=path) as f:
@@ -1938,7 +1944,9 @@ def debugmergestate(ui, repo, *args):
                 ui.writenoi18n(b'other: %s\n' % record)
             elif rtype == b'm':
                 driver, mdstate = record.split(b'\0', 1)
-                ui.writenoi18n(b'merge driver: %s (state "%s")\n' % (driver, mdstate))
+                ui.writenoi18n(
+                    b'merge driver: %s (state "%s")\n' % (driver, mdstate)
+                )
             elif rtype in b'FDC':
                 r = record.split(b'\0')
                 f, state, hash, lfile, afile, anode, ofile = r[0:7]
@@ -1951,7 +1959,9 @@ def debugmergestate(ui, repo, *args):
                     b'file: %s (record type "%s", state "%s", hash %s)\n'
                     % (f, rtype, state, _hashornull(hash))
                 )
-                ui.writenoi18n(b'  local path: %s (flags "%s")\n' % (lfile, flags))
+                ui.writenoi18n(
+                    b'  local path: %s (flags "%s")\n' % (lfile, flags)
+                )
                 ui.writenoi18n(
                     b'  ancestor path: %s (node %s)\n'
                     % (afile, _hashornull(anode))
@@ -2797,7 +2807,9 @@ def debugrevlog(ui, repo, file_=None, **opts):
     fmt2 = dfmtstr(totalsize)
     ui.writenoi18n(b'revisions     : ' + fmt2 % numrevs)
     ui.writenoi18n(b'    merges    : ' + fmt % pcfmt(nummerges, numrevs))
-    ui.writenoi18n(b'    normal    : ' + fmt % pcfmt(numrevs - nummerges, numrevs))
+    ui.writenoi18n(
+        b'    normal    : ' + fmt % pcfmt(numrevs - nummerges, numrevs)
+    )
     ui.writenoi18n(b'revisions     : ' + fmt2 % numrevs)
     ui.writenoi18n(b'    empty     : ' + fmt % pcfmt(numempty, numrevs))
     ui.writenoi18n(
@@ -2808,7 +2820,9 @@ def debugrevlog(ui, repo, file_=None, **opts):
         b'                   delta : '
         + fmt % pcfmt(numemptydelta, numemptytext + numemptydelta)
     )
-    ui.writenoi18n(b'    snapshot  : ' + fmt % pcfmt(numfull + numsemi, numrevs))
+    ui.writenoi18n(
+        b'    snapshot  : ' + fmt % pcfmt(numfull + numsemi, numrevs)
+    )
     for depth in sorted(numsnapdepth):
         ui.write(
             (b'      lvl-%-3d :       ' % depth)
@@ -2881,7 +2895,9 @@ def debugrevlog(ui, repo, file_=None, **opts):
         ui.write(b'\n')
         fmt = pcfmtstr(numdeltas)
         fmt2 = pcfmtstr(numdeltas, 4)
-        ui.writenoi18n(b'deltas against prev  : ' + fmt % pcfmt(numprev, numdeltas))
+        ui.writenoi18n(
+            b'deltas against prev  : ' + fmt % pcfmt(numprev, numdeltas)
+        )
         if numprev > 0:
             ui.writenoi18n(
                 b'    where prev = p1  : ' + fmt2 % pcfmt(nump1prev, numprev)
@@ -2893,8 +2909,12 @@ def debugrevlog(ui, repo, file_=None, **opts):
                 b'    other            : ' + fmt2 % pcfmt(numoprev, numprev)
             )
         if gdelta:
-            ui.writenoi18n(b'deltas against p1    : ' + fmt % pcfmt(nump1, numdeltas))
-            ui.writenoi18n(b'deltas against p2    : ' + fmt % pcfmt(nump2, numdeltas))
+            ui.writenoi18n(
+                b'deltas against p1    : ' + fmt % pcfmt(nump1, numdeltas)
+            )
+            ui.writenoi18n(
+                b'deltas against p2    : ' + fmt % pcfmt(nump2, numdeltas)
+            )
             ui.writenoi18n(
                 b'deltas against other : ' + fmt % pcfmt(numother, numdeltas)
             )
@@ -3113,8 +3133,12 @@ def debugrevspec(ui, repo, expr, **opts):
         arevs = revset.makematcher(treebystage[b'analyzed'])(repo)
         brevs = revset.makematcher(treebystage[b'optimized'])(repo)
         if opts[b'show_set'] or (opts[b'show_set'] is None and ui.verbose):
-            ui.writenoi18n(b"* analyzed set:\n", stringutil.prettyrepr(arevs), b"\n")
-            ui.writenoi18n(b"* optimized set:\n", stringutil.prettyrepr(brevs), b"\n")
+            ui.writenoi18n(
+                b"* analyzed set:\n", stringutil.prettyrepr(arevs), b"\n"
+            )
+            ui.writenoi18n(
+                b"* optimized set:\n", stringutil.prettyrepr(brevs), b"\n"
+            )
         arevs = list(arevs)
         brevs = list(brevs)
         if arevs == brevs:
@@ -3418,7 +3442,9 @@ def debugtemplate(ui, repo, tmpl, **opts):
         ui.note(templater.prettyformat(tree), b'\n')
         newtree = templater.expandaliases(tree, aliases)
         if newtree != tree:
-            ui.notenoi18n(b"* expanded:\n", templater.prettyformat(newtree), b'\n')
+            ui.notenoi18n(
+                b"* expanded:\n", templater.prettyformat(newtree), b'\n'
+            )
 
     if revs is None:
         tres = formatter.templateresources(ui, repo)

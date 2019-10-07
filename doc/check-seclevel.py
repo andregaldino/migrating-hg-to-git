@@ -70,7 +70,9 @@ def checkseclevel(ui, doc, name, initlevel):
             continue
         nextlevel = mark2level[mark]
         if curlevel < nextlevel and curlevel + 1 != nextlevel:
-            ui.warnnoi18n('gap of section level at "%s" of %s\n' % (title, name))
+            ui.warnnoi18n(
+                'gap of section level at "%s" of %s\n' % (title, name)
+            )
             showavailables(ui, initlevel)
             errorcnt += 1
             continue
@@ -88,7 +90,9 @@ def checkcmdtable(ui, cmdtable, namefmt, initlevel):
     for k, entry in cmdtable.items():
         name = k.split(b"|")[0].lstrip(b"^")
         if not entry[0].__doc__:
-            ui.notenoi18n('skip checking %s: no help document\n' % (namefmt % name))
+            ui.notenoi18n(
+                'skip checking %s: no help document\n' % (namefmt % name)
+            )
             continue
         errorcnt += checkseclevel(
             ui, entry[0].__doc__, namefmt % name, initlevel
@@ -113,7 +117,9 @@ def checkhghelps(ui):
     ):
         mod = extensions.load(ui, name, None)
         if not mod.__doc__:
-            ui.notenoi18n('skip checking %s extension: no help document\n' % name)
+            ui.notenoi18n(
+                'skip checking %s extension: no help document\n' % name
+            )
             continue
         errorcnt += checkseclevel(
             ui, mod.__doc__, '%s extension' % name, initlevel_ext
