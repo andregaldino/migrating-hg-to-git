@@ -1479,6 +1479,11 @@ def allsupportedversions(repo):
         #
         # (or even to push subset of history)
         needv03 = True
+    if b'exp-sidedata-flag' in repo.requirements:
+        needv03 = True
+        # don't attempt to use 01/02 until we do sidedata cleaning
+        versions.discard(b'01')
+        versions.discard(b'02')
     if not needv03:
         versions.discard(b'03')
     return versions
