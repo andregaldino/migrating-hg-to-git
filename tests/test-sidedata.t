@@ -71,8 +71,8 @@ Check that we can upgrade to sidedata
   compression-level: default default default
   $ hg debugupgraderepo -R up-no-side-data --config format.use-side-data=yes > /dev/null
 
-Check that we cannot upgrade to sidedata
-----------------------------------------
+Check that we can downgrade from sidedata
+-----------------------------------------
 
   $ hg init up-side-data --config format.use-side-data=yes
   $ hg debugformat -v -R up-side-data
@@ -95,6 +95,4 @@ Check that we cannot upgrade to sidedata
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
-  $ hg debugupgraderepo -R up-side-data --config format.use-side-data=no
-  abort: cannot upgrade repository; requirement would be removed: exp-sidedata-flag
-  [255]
+  $ hg debugupgraderepo -R up-side-data --config format.use-side-data=no > /dev/null

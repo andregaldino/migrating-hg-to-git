@@ -76,6 +76,7 @@ def supportremovedrequirements(repo):
     """
     supported = {
         localrepo.SPARSEREVLOG_REQUIREMENT,
+        localrepo.SIDEDATA_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -679,8 +680,18 @@ UPGRADE_ALL_REVLOGS = frozenset(
 )
 
 
-def getsidedatacompanion(srcrepo, destrepo):
-    return None
+def getsidedatacompanion(srcrepo, dstrepo):
+    sidedatacompanion = None
+    removedreqs = srcrepo.requirements - dstrepo.requirements
+    if localrepo.SIDEDATA_REQUIREMENT in removedreqs:
+
+        def sidedatacompanion(rl, rev):
+            rl = getattr(rl, '_revlog', rl)
+            if rl.flags(rev) & revlog.REVIDX_SIDEDATA:
+                return True, (), {}
+            return False, (), {}
+
+    return sidedatacompanion
 
 
 def matchrevlog(revlogfilter, entry):

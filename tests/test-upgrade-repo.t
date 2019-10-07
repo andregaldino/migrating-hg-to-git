@@ -1361,3 +1361,53 @@ upgrade
    entry-0001 size 4
    entry-0002 size 32
 
+downgrade
+
+  $ hg debugupgraderepo --config format.use-side-data=no --run --no-backup > /dev/null
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  sidedata:           no     no      no
+  plain-cl-delta:    yes    yes     yes
+  compression:       zstd   zstd    zlib
+  compression-level: default default default
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlog-compression-zstd
+  revlogv1
+  sparserevlog
+  store
+  $ hg debugsidedata -c 0
+
+upgrade from hgrc
+
+  $ cat >> .hg/hgrc << EOF
+  > [format]
+  > use-side-data=yes
+  > EOF
+  $ hg debugupgraderepo --run --no-backup > /dev/null
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  sidedata:          yes    yes      no
+  plain-cl-delta:    yes    yes     yes
+  compression:       zstd   zstd    zlib
+  compression-level: default default default
+  $ cat .hg/requires
+  dotencode
+  exp-sidedata-flag
+  fncache
+  generaldelta
+  revlog-compression-zstd
+  revlogv1
+  sparserevlog
+  store
+  $ hg debugsidedata -c 0
