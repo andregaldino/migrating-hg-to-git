@@ -440,6 +440,10 @@ SPARSEREVLOG_REQUIREMENT = b'sparserevlog'
 # information for revision without altering their original hashes.
 SIDEDATA_REQUIREMENT = b'exp-sidedata-flag'
 
+# A repository with the the copies-sidedata-changeset requirement will store
+# copies related information in changeset's sidedata.
+COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'
+
 # Functions receiving (ui, features) that extensions can register to impact
 # the ability to load repositories with custom requirements. Only
 # functions defined in loaded extensions are called.
@@ -997,6 +1001,7 @@ class localrepository(object):
         b'revlogv1',
         b'generaldelta',
         b'treemanifest',
+        COPIESSDC_REQUIREMENT,
         REVLOGV2_REQUIREMENT,
         SIDEDATA_REQUIREMENT,
         SPARSEREVLOG_REQUIREMENT,
@@ -3512,6 +3517,10 @@ def newreporequirements(ui, createopts):
     # experimental config: format.use-side-data
     if ui.configbool(b'format', b'use-side-data'):
         requirements.add(SIDEDATA_REQUIREMENT)
+    # experimental config: format.exp-use-copies-side-data-changeset
+    if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
+        requirements.add(SIDEDATA_REQUIREMENT)
+        requirements.add(COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
         requirements.add(b'treemanifest')
 

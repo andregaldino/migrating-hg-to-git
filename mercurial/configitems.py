@@ -748,6 +748,12 @@ coreconfigitem(
     b'format', b'usestore', default=True,
 )
 coreconfigitem(
+    b'format',
+    b'exp-use-copies-side-data-changeset',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
     b'format', b'use-side-data', default=False, experimental=True,
 )
 coreconfigitem(
