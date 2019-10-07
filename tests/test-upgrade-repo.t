@@ -1329,6 +1329,35 @@ upgrade from hgrc
   sparserevlog
   store
 
-  $ cd ..
-
 #endif
+
+Check upgrading to a side-data revlog
+-------------------------------------
+
+upgrade
+
+  $ hg --config format.use-side-data=yes debugupgraderepo --run  --no-backup --config "extensions.sidedata=$TESTDIR/testlib/ext-sidedata.py" >/dev/null
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  sidedata:          yes     no      no
+  plain-cl-delta:    yes    yes     yes
+  compression:       zstd   zstd    zlib
+  compression-level: default default default
+  $ cat .hg/requires
+  dotencode
+  exp-sidedata-flag
+  fncache
+  generaldelta
+  revlog-compression-zstd
+  revlogv1
+  sparserevlog
+  store
+  $ hg debugsidedata -c 0
+  2 sidedata entries
+   entry-0001 size 4
+   entry-0002 size 32
+

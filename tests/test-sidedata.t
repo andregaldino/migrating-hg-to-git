@@ -45,8 +45,8 @@ Check upgrade behavior
 
 Right now, sidedata has not upgrade support
 
-Check that we cannot upgrade to sidedata
-----------------------------------------
+Check that we can upgrade to sidedata
+-------------------------------------
 
   $ hg init up-no-side-data --config format.use-side-data=no
   $ hg debugformat -v -R up-no-side-data
@@ -69,9 +69,7 @@ Check that we cannot upgrade to sidedata
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
-  $ hg debugupgraderepo -R up-no-side-data --config format.use-side-data=yes
-  abort: cannot upgrade repository; do not support adding requirement: exp-sidedata-flag
-  [255]
+  $ hg debugupgraderepo -R up-no-side-data --config format.use-side-data=yes > /dev/null
 
 Check that we cannot upgrade to sidedata
 ----------------------------------------

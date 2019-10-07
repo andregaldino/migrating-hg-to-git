@@ -31,6 +31,7 @@ from .utils import compression
 RECLONES_REQUIREMENTS = {
     b'generaldelta',
     localrepo.SPARSEREVLOG_REQUIREMENT,
+    localrepo.SIDEDATA_REQUIREMENT,
 }
 
 
@@ -100,6 +101,7 @@ def supporteddestrequirements(repo):
         b'revlogv1',
         b'store',
         localrepo.SPARSEREVLOG_REQUIREMENT,
+        localrepo.SIDEDATA_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -125,6 +127,7 @@ def allowednewrequirements(repo):
         b'fncache',
         b'generaldelta',
         localrepo.SPARSEREVLOG_REQUIREMENT,
+        localrepo.SIDEDATA_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -676,6 +679,10 @@ UPGRADE_ALL_REVLOGS = frozenset(
 )
 
 
+def getsidedatacompanion(srcrepo, destrepo):
+    return None
+
+
 def matchrevlog(revlogfilter, entry):
     """check is a revlog is selected for cloning
 
@@ -779,6 +786,8 @@ def _clonerevlogs(
     def oncopiedrevision(rl, rev, node):
         progress.increment()
 
+    sidedatacompanion = getsidedatacompanion(srcrepo, dstrepo)
+
     # Do the actual copying.
     # FUTURE this operation can be farmed off to worker processes.
     seen = set()
@@ -870,6 +879,7 @@ def _clonerevlogs(
                 addrevisioncb=oncopiedrevision,
                 deltareuse=deltareuse,
                 forcedeltabothparents=forcedeltabothparents,
+                sidedatacompanion=sidedatacompanion,
             )
         else:
             msg = _(b'blindly copying %s containing %i revisions\n')
