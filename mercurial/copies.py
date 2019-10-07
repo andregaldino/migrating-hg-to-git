@@ -13,6 +13,9 @@ import os
 
 from .i18n import _
 
+
+from .revlogutils.flagutil import REVIDX_SIDEDATA
+
 from . import (
     error,
     match as matchmod,
@@ -21,6 +24,9 @@ from . import (
     pycompat,
     util,
 )
+
+from .revlogutils import sidedata as sidedatamod
+
 from .utils import stringutil
 
 
@@ -955,3 +961,49 @@ def decodefileindices(files, data):
         # Perhaps someone had chosen the same key name (e.g. "added") and
         # used different syntax for the value.
         return None
+
+
+def _getsidedata(srcrepo, rev):
+    ctx = srcrepo[rev]
+    filescopies = computechangesetcopies(ctx)
+    filesadded = computechangesetfilesadded(ctx)
+    filesremoved = computechangesetfilesremoved(ctx)
+    sidedata = {}
+    if any([filescopies, filesadded, filesremoved]):
+        sortedfiles = sorted(ctx.files())
+        p1copies, p2copies = filescopies
+        p1copies = encodecopies(sortedfiles, p1copies)
+        p2copies = encodecopies(sortedfiles, p2copies)
+        filesadded = encodefileindices(sortedfiles, filesadded)
+        filesremoved = encodefileindices(sortedfiles, filesremoved)
+        sidedata[sidedatamod.SD_P1COPIES] = p1copies
+        sidedata[sidedatamod.SD_P2COPIES] = p2copies
+        sidedata[sidedatamod.SD_FILESADDED] = filesadded
+        sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
+    return sidedata
+
+
+def getsidedataadder(srcrepo, destrepo):
+    def sidedatacompanion(revlog, rev):
+        sidedata = {}
+        if util.safehasattr(revlog, 'filteredrevs'):  # this is a changelog
+            sidedata = _getsidedata(srcrepo, rev)
+        return False, (), sidedata
+
+    return sidedatacompanion
+
+
+def getsidedataremover(srcrepo, destrepo):
+    def sidedatacompanion(revlog, rev):
+        f = ()
+        if util.safehasattr(revlog, 'filteredrevs'):  # this is a changelog
+            if revlog.flags(rev) & REVIDX_SIDEDATA:
+                f = (
+                    sidedatamod.SD_P1COPIES,
+                    sidedatamod.SD_P2COPIES,
+                    sidedatamod.SD_FILESADDED,
+                    sidedatamod.SD_FILESREMOVED,
+                )
+        return False, f, {}
+
+    return sidedatacompanion

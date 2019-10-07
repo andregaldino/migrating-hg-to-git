@@ -450,4 +450,91 @@ Test committing half a rename
   $ hg ci -Aqm 'add a'
   $ hg mv a b
   $ hg ci -m 'remove a' a
+
+#if sidedata
+
+Test upgrading/downgrading to sidedata storage
+==============================================
+
+downgrading (keeping some sidedata)
+
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  sidedata:          yes    yes      no
+  copies-sdc:        yes    yes      no
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
+  $ hg debugsidedata -c -- 0
+  4 sidedata entries
+   entry-0010 size 0
+   entry-0011 size 0
+   entry-0012 size 1
+   entry-0013 size 0
+  $ hg debugsidedata -c -- 1
+  4 sidedata entries
+   entry-0010 size 0
+   entry-0011 size 0
+   entry-0012 size 0
+   entry-0013 size 1
+  $ hg debugsidedata -m -- 0
+  $ cat << EOF > .hg/hgrc
+  > [format]
+  > use-side-data = yes
+  > exp-use-copies-side-data-changeset = no
+  > EOF
+  $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  sidedata:          yes    yes      no
+  copies-sdc:         no     no      no
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
+  $ hg debugsidedata -c -- 0
+  $ hg debugsidedata -c -- 1
+  $ hg debugsidedata -m -- 0
+
+upgrading
+
+  $ cat << EOF > .hg/hgrc
+  > [format]
+  > exp-use-copies-side-data-changeset = yes
+  > EOF
+  $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  sidedata:          yes    yes      no
+  copies-sdc:        yes    yes      no
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
+  $ hg debugsidedata -c -- 0
+  4 sidedata entries
+   entry-0010 size 0
+   entry-0011 size 0
+   entry-0012 size 1
+   entry-0013 size 0
+  $ hg debugsidedata -c -- 1
+  4 sidedata entries
+   entry-0010 size 0
+   entry-0011 size 0
+   entry-0012 size 0
+   entry-0013 size 1
+  $ hg debugsidedata -m -- 0
+
+#endif
+
   $ cd ..

@@ -13,6 +13,7 @@ from .i18n import _
 from .pycompat import getattr
 from . import (
     changelog,
+    copies,
     error,
     filelog,
     hg,
@@ -31,7 +32,6 @@ from .utils import compression
 RECLONES_REQUIREMENTS = {
     b'generaldelta',
     localrepo.SPARSEREVLOG_REQUIREMENT,
-    localrepo.SIDEDATA_REQUIREMENT,
 }
 
 
@@ -77,6 +77,7 @@ def supportremovedrequirements(repo):
     supported = {
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
+        localrepo.COPIESSDC_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -103,6 +104,7 @@ def supporteddestrequirements(repo):
         b'store',
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
+        localrepo.COPIESSDC_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -129,6 +131,7 @@ def allowednewrequirements(repo):
         b'generaldelta',
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
+        localrepo.COPIESSDC_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -698,6 +701,7 @@ UPGRADE_ALL_REVLOGS = frozenset(
 def getsidedatacompanion(srcrepo, dstrepo):
     sidedatacompanion = None
     removedreqs = srcrepo.requirements - dstrepo.requirements
+    addedreqs = dstrepo.requirements - srcrepo.requirements
     if localrepo.SIDEDATA_REQUIREMENT in removedreqs:
 
         def sidedatacompanion(rl, rev):
@@ -706,6 +710,10 @@ def getsidedatacompanion(srcrepo, dstrepo):
                 return True, (), {}
             return False, (), {}
 
+    elif localrepo.COPIESSDC_REQUIREMENT in addedreqs:
+        sidedatacompanion = copies.getsidedataadder(srcrepo, dstrepo)
+    elif localrepo.COPIESSDC_REQUIREMENT in removedreqs:
+        sidedatacompanion = copies.getsidedataremover(srcrepo, dstrepo)
     return sidedatacompanion
 
 
