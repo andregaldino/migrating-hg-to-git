@@ -1,4 +1,6 @@
+#testcases extra sidedata
 
+#if extra
   $ cat >> $HGRCPATH << EOF
   > [experimental]
   > copies.write-to=changeset-only
@@ -7,6 +9,18 @@
   > changesetcopies = log -r . -T 'files: {files}
   >   {extras % "{ifcontains("files", key, "{key}: {value}\n")}"}
   >   {extras % "{ifcontains("copies", key, "{key}: {value}\n")}"}'
+  > EOF
+#endif
+
+#if sidedata
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-copies-side-data-changeset = yes
+  > EOF
+#endif
+
+  $ cat >> $HGRCPATH << EOF
+  > [alias]
   > showcopies = log -r . -T '{file_copies % "{source} -> {name}\n"}'
   > [extensions]
   > rebase =
@@ -17,6 +31,31 @@ Check that copies are recorded correctly
 
   $ hg init repo
   $ cd repo
+#if sidedata
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  sidedata:          yes    yes      no
+  copies-sdc:        yes    yes      no
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
+#else
+  $ hg debugformat -v
+  format-variant    repo config default
+  fncache:           yes    yes     yes
+  dotencode:         yes    yes     yes
+  generaldelta:      yes    yes     yes
+  sparserevlog:      yes    yes     yes
+  sidedata:           no     no      no
+  copies-sdc:         no     no      no
+  plain-cl-delta:    yes    yes     yes
+  compression:       zlib   zlib    zlib
+  compression-level: default default default
+#endif
   $ echo a > a
   $ hg add a
   $ hg ci -m initial
@@ -24,6 +63,9 @@ Check that copies are recorded correctly
   $ hg cp a c
   $ hg cp a d
   $ hg ci -m 'copy a to b, c, and d'
+
+#if extra
+
   $ hg changesetcopies
   files: b c d
   filesadded: 0
@@ -33,28 +75,43 @@ Check that copies are recorded correctly
   p1copies: 0\x00a (esc)
   1\x00a (esc)
   2\x00a (esc)
+
+#endif
+
   $ hg showcopies
   a -> b
   a -> c
   a -> d
+
+#if extra
+
   $ hg showcopies --config experimental.copies.read-from=compatibility
   a -> b
   a -> c
   a -> d
   $ hg showcopies --config experimental.copies.read-from=filelog-only
 
+#endif
+
 Check that renames are recorded correctly
 
   $ hg mv b b2
   $ hg ci -m 'rename b to b2'
+
+#if extra
+
   $ hg changesetcopies
   files: b b2
   filesadded: 1
   filesremoved: 0
   
   p1copies: 1\x00b (esc)
+
+#endif
+
   $ hg showcopies
   b -> b2
+
 
 Rename onto existing file. This should get recorded in the changeset files list and in the extras,
 even though there is no filelog entry.
@@ -63,19 +120,50 @@ even though there is no filelog entry.
   $ hg st --copies
   M c
     b2
+
+#if extra
+
   $ hg debugindex c
      rev linkrev nodeid       p1           p2
        0       1 b789fdd96dc2 000000000000 000000000000
+
+#else
+
+  $ hg debugindex c
+     rev linkrev nodeid       p1           p2
+       0       1 37d9b5d994ea 000000000000 000000000000
+
+#endif
+
+
   $ hg ci -m 'move b onto d'
+
+#if extra
+
   $ hg changesetcopies
   files: c
   
   p1copies: 0\x00b2 (esc)
+
+#endif
+
   $ hg showcopies
   b2 -> c
+
+#if extra
+
   $ hg debugindex c
      rev linkrev nodeid       p1           p2
        0       1 b789fdd96dc2 000000000000 000000000000
+
+#else
+
+  $ hg debugindex c
+     rev linkrev nodeid       p1           p2
+       0       1 37d9b5d994ea 000000000000 000000000000
+       1       3 029625640347 000000000000 000000000000
+
+#endif
 
 Create a merge commit with copying done during merge.
 
@@ -96,6 +184,9 @@ File 'd' exists only in p2, so 'h' should be from p2
 File 'f' exists only in p1, so 'i' should be from p1
   $ hg cp f i
   $ hg ci -m 'merge'
+
+#if extra
+
   $ hg changesetcopies
   files: g h i
   filesadded: 0
@@ -105,6 +196,9 @@ File 'f' exists only in p1, so 'i' should be from p1
   p1copies: 0\x00a (esc)
   2\x00f (esc)
   p2copies: 1\x00d (esc)
+
+#endif
+
   $ hg showcopies
   a -> g
   d -> h
@@ -113,6 +207,7 @@ File 'f' exists only in p1, so 'i' should be from p1
 Test writing to both changeset and filelog
 
   $ hg cp a j
+#if extra
   $ hg ci -m 'copy a to j' --config experimental.copies.write-to=compatibility
   $ hg changesetcopies
   files: j
@@ -121,6 +216,9 @@ Test writing to both changeset and filelog
   
   p1copies: 0\x00a (esc)
   p2copies: 
+#else
+  $ hg ci -m 'copy a to j'
+#endif
   $ hg debugdata j 0
   \x01 (esc)
   copy: a
@@ -135,17 +233,23 @@ Test writing to both changeset and filelog
   a -> j
 Existing copy information in the changeset gets removed on amend and writing
 copy information on to the filelog
+#if extra
   $ hg ci --amend -m 'copy a to j, v2' \
   > --config experimental.copies.write-to=filelog-only
-  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/dd7bb9581359-a6e6b6d2-amend.hg
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
   $ hg changesetcopies
   files: j
   
+#else
+  $ hg ci --amend -m 'copy a to j, v2'
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
+#endif
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> j
 The entries should be written to extras even if they're empty (so the client
 won't have to fall back to reading from filelogs)
   $ echo x >> j
+#if extra
   $ hg ci -m 'modify j' --config experimental.copies.write-to=compatibility
   $ hg changesetcopies
   files: j
@@ -154,25 +258,40 @@ won't have to fall back to reading from filelogs)
   
   p1copies: 
   p2copies: 
+#else
+  $ hg ci -m 'modify j'
+#endif
 
 Test writing only to filelog
 
   $ hg cp a k
+#if extra
   $ hg ci -m 'copy a to k' --config experimental.copies.write-to=filelog-only
+
   $ hg changesetcopies
   files: k
   
+#else
+  $ hg ci -m 'copy a to k'
+#endif
+
   $ hg debugdata k 0
   \x01 (esc)
   copy: a
   copyrev: b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3
   \x01 (esc)
   a
+#if extra
   $ hg showcopies
+
   $ hg showcopies --config experimental.copies.read-from=compatibility
   a -> k
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> k
+#else
+  $ hg showcopies
+  a -> k
+#endif
 
   $ cd ..
 
@@ -188,9 +307,9 @@ Test rebasing a commit with copy information
   $ hg mv a b
   $ hg ci -qm 'rename a to b'
   $ hg rebase -d 1 --config rebase.experimental.inmemory=yes
-  rebasing 2:fc7287ac5b9b "rename a to b" (tip)
+  rebasing 2:* "rename a to b" (tip) (glob)
   merging a and b to b
-  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/fc7287ac5b9b-8f2a95ec-rebase.hg
+  saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/*-*-rebase.hg (glob)
   $ hg st --change . --copies
   A b
     a
@@ -237,7 +356,7 @@ Test splitting a commit
   examine changes to 'b' and 'c'?
   (enter ? for help) [Ynesfdaq?] y
   
-  saved backup bundle to $TESTTMP/split/.hg/strip-backup/9a396d463e04-2d9e6864-split.hg
+  saved backup bundle to $TESTTMP/split/.hg/strip-backup/*-*-split.hg (glob)
   $ cd ..
 
 Test committing half a rename
