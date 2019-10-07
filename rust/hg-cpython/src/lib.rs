@@ -35,6 +35,7 @@ pub mod discovery;
 pub mod exceptions;
 pub mod filepatterns;
 pub mod parsers;
+pub mod utils;
 
 py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     m.add(
