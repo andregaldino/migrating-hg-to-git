@@ -14,6 +14,7 @@ import os
 from .i18n import _
 
 from . import (
+    error,
     match as matchmod,
     node,
     pathutil,
@@ -855,6 +856,26 @@ def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
             wctx[dst].markcopied(src)
 
 
+def computechangesetfilesadded(ctx):
+    """return the list of files added in a changeset
+    """
+    added = []
+    for f in ctx.files():
+        if not any(f in p for p in ctx.parents()):
+            added.append(f)
+    return added
+
+
+def computechangesetfilesremoved(ctx):
+    """return the list of files removed in a changeset
+    """
+    removed = []
+    for f in ctx.files():
+        if f not in ctx:
+            removed.append(f)
+    return removed
+
+
 def computechangesetcopies(ctx):
     """return the copies data for a changeset
 
@@ -879,3 +900,58 @@ def computechangesetcopies(ctx):
         elif src in p2 and p2[src].filenode() == srcnode:
             p2copies[dst] = src
     return p1copies, p2copies
+
+
+def encodecopies(files, copies):
+    items = []
+    for i, dst in enumerate(files):
+        if dst in copies:
+            items.append(b'%d\0%s' % (i, copies[dst]))
+    if len(items) != len(copies):
+        raise error.ProgrammingError(
+            b'some copy targets missing from file list'
+        )
+    return b"\n".join(items)
+
+
+def decodecopies(files, data):
+    try:
+        copies = {}
+        if not data:
+            return copies
+        for l in data.split(b'\n'):
+            strindex, src = l.split(b'\0')
+            i = int(strindex)
+            dst = files[i]
+            copies[dst] = src
+        return copies
+    except (ValueError, IndexError):
+        # Perhaps someone had chosen the same key name (e.g. "p1copies") and
+        # used different syntax for the value.
+        return None
+
+
+def encodefileindices(files, subset):
+    subset = set(subset)
+    indices = []
+    for i, f in enumerate(files):
+        if f in subset:
+            indices.append(b'%d' % i)
+    return b'\n'.join(indices)
+
+
+def decodefileindices(files, data):
+    try:
+        subset = []
+        if not data:
+            return subset
+        for strindex in data.split(b'\n'):
+            i = int(strindex)
+            if i < 0 or i >= len(files):
+                return None
+            subset.append(files[i])
+        return subset
+    except (ValueError, IndexError):
+        # Perhaps someone had chosen the same key name (e.g. "added") and
+        # used different syntax for the value.
+        return None

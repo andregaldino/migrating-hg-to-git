@@ -16,6 +16,7 @@ from .node import (
 from .thirdparty import attr
 
 from . import (
+    copies,
     encoding,
     error,
     pycompat,
@@ -87,61 +88,6 @@ def encodeextra(d):
         for k in sorted(d)
     ]
     return b"\0".join(items)
-
-
-def encodecopies(files, copies):
-    items = []
-    for i, dst in enumerate(files):
-        if dst in copies:
-            items.append(b'%d\0%s' % (i, copies[dst]))
-    if len(items) != len(copies):
-        raise error.ProgrammingError(
-            b'some copy targets missing from file list'
-        )
-    return b"\n".join(items)
-
-
-def decodecopies(files, data):
-    try:
-        copies = {}
-        if not data:
-            return copies
-        for l in data.split(b'\n'):
-            strindex, src = l.split(b'\0')
-            i = int(strindex)
-            dst = files[i]
-            copies[dst] = src
-        return copies
-    except (ValueError, IndexError):
-        # Perhaps someone had chosen the same key name (e.g. "p1copies") and
-        # used different syntax for the value.
-        return None
-
-
-def encodefileindices(files, subset):
-    subset = set(subset)
-    indices = []
-    for i, f in enumerate(files):
-        if f in subset:
-            indices.append(b'%d' % i)
-    return b'\n'.join(indices)
-
-
-def decodefileindices(files, data):
-    try:
-        subset = []
-        if not data:
-            return subset
-        for strindex in data.split(b'\n'):
-            i = int(strindex)
-            if i < 0 or i >= len(files):
-                return None
-            subset.append(files[i])
-        return subset
-    except (ValueError, IndexError):
-        # Perhaps someone had chosen the same key name (e.g. "added") and
-        # used different syntax for the value.
-        return None
 
 
 def stripdesc(desc):
@@ -368,7 +314,7 @@ class changelogrevision(object):
             rawindices = self.extra.get(b'filesadded')
         if rawindices is None:
             return None
-        return decodefileindices(self.files, rawindices)
+        return copies.decodefileindices(self.files, rawindices)
 
     @property
     def filesremoved(self):
@@ -378,7 +324,7 @@ class changelogrevision(object):
             rawindices = self.extra.get(b'filesremoved')
         if rawindices is None:
             return None
-        return decodefileindices(self.files, rawindices)
+        return copies.decodefileindices(self.files, rawindices)
 
     @property
     def p1copies(self):
@@ -388,7 +334,7 @@ class changelogrevision(object):
             rawcopies = self.extra.get(b'p1copies')
         if rawcopies is None:
             return None
-        return decodecopies(self.files, rawcopies)
+        return copies.decodecopies(self.files, rawcopies)
 
     @property
     def p2copies(self):
@@ -398,7 +344,7 @@ class changelogrevision(object):
             rawcopies = self.extra.get(b'p2copies')
         if rawcopies is None:
             return None
-        return decodecopies(self.files, rawcopies)
+        return copies.decodecopies(self.files, rawcopies)
 
     @property
     def description(self):
@@ -711,13 +657,13 @@ class changelog(revlog.revlog):
             ):
                 extra.pop(name, None)
         if p1copies is not None:
-            p1copies = encodecopies(sortedfiles, p1copies)
+            p1copies = copies.encodecopies(sortedfiles, p1copies)
         if p2copies is not None:
-            p2copies = encodecopies(sortedfiles, p2copies)
+            p2copies = copies.encodecopies(sortedfiles, p2copies)
         if filesadded is not None:
-            filesadded = encodefileindices(sortedfiles, filesadded)
+            filesadded = copies.encodefileindices(sortedfiles, filesadded)
         if filesremoved is not None:
-            filesremoved = encodefileindices(sortedfiles, filesremoved)
+            filesremoved = copies.encodefileindices(sortedfiles, filesremoved)
         if self._copiesstorage == b'extra':
             extrasentries = p1copies, p2copies, filesadded, filesremoved
             if extra is None and any(x is not None for x in extrasentries):

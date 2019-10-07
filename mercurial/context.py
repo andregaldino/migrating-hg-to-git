@@ -546,7 +546,7 @@ class changectx(basectx):
                 filesadded = None
         if filesadded is None:
             if compute_on_none:
-                filesadded = scmutil.computechangesetfilesadded(self)
+                filesadded = copies.computechangesetfilesadded(self)
             else:
                 filesadded = []
         return filesadded
@@ -565,7 +565,7 @@ class changectx(basectx):
                 filesremoved = None
         if filesremoved is None:
             if compute_on_none:
-                filesremoved = scmutil.computechangesetfilesremoved(self)
+                filesremoved = copies.computechangesetfilesremoved(self)
             else:
                 filesremoved = []
         return filesremoved
