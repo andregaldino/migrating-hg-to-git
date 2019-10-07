@@ -58,6 +58,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:      yes
   sparserevlog:      yes
   sidedata:           no
+  copies-sdc:         no
   plain-cl-delta:    yes
   compression:       zlib
   compression-level: default
@@ -68,6 +69,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -78,6 +80,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -88,6 +91,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.uptodate|generaldelta:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|sparserevlog:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|sidedata:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|copies-sdc:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:   ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:      ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   [formatvariant.name.uptodate|compression-level:][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
@@ -124,6 +128,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "repo": false
    },
    {
+    "config": false,
+    "default": false,
+    "name": "copies-sdc",
+    "repo": false
+   },
+   {
     "config": true,
     "default": true,
     "name": "plain-cl-delta",
@@ -152,6 +162,9 @@ An upgrade of a repository created with recommended settings only suggests optim
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -179,6 +192,9 @@ An upgrade of a repository created with recommended settings only suggests optim
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -205,6 +221,9 @@ modern form of the option
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -242,6 +261,7 @@ Various sub-optimal detections work
   generaldelta:       no
   sparserevlog:       no
   sidedata:           no
+  copies-sdc:         no
   plain-cl-delta:    yes
   compression:       zlib
   compression-level: default
@@ -252,6 +272,7 @@ Various sub-optimal detections work
   generaldelta:       no    yes     yes
   sparserevlog:       no    yes     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -262,6 +283,7 @@ Various sub-optimal detections work
   generaldelta:       no     no     yes
   sparserevlog:       no     no     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -272,6 +294,7 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchdefault|generaldelta:     ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|sparserevlog:     ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|sidedata:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|copies-sdc:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:   ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:      ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   [formatvariant.name.uptodate|compression-level:][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
@@ -311,6 +334,9 @@ Various sub-optimal detections work
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   additional optimizations are available by specifying "--optimize <name>":
   
@@ -363,6 +389,9 @@ Various sub-optimal detections work
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -391,6 +420,9 @@ Upgrading a repository that is already modern essentially no-ops
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   beginning upgrade...
   repository locked and read-only
@@ -445,6 +477,9 @@ make sure we have a .d file
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   beginning upgrade...
   repository locked and read-only
@@ -545,6 +580,9 @@ unless --no-backup is passed
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
@@ -581,6 +619,9 @@ We can restrict optimization to some revlog:
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -659,6 +700,9 @@ Check we can select negatively
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -708,6 +752,9 @@ Check that we can select changelog only
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -756,6 +803,9 @@ Check that we can select filelog only
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -811,6 +861,9 @@ Check you can't skip revlog clone during important format downgrade
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -865,6 +918,9 @@ Check you can't skip revlog clone during important format upgrade
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -923,6 +979,9 @@ store files with special filenames aren't encoded during copy
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
@@ -956,6 +1015,9 @@ store files with special filenames aren't encoded during copy
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-fulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
@@ -1024,6 +1086,9 @@ Check upgrading a large file repository
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
@@ -1079,6 +1144,9 @@ Check upgrading a large file repository
   
   sidedata
      Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
   
   beginning upgrade...
   repository locked and read-only
@@ -1178,6 +1246,9 @@ repository config is taken in account
   sidedata
      Allows storage of extra data alongside a revision.
   
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   re-delta-all
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time
   
@@ -1270,6 +1341,7 @@ upgrade
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zstd   zlib    zlib
   compression-level: default default default
@@ -1292,6 +1364,7 @@ downgrade
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -1317,6 +1390,7 @@ upgrade from hgrc
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zstd   zstd    zlib
   compression-level: default default default
@@ -1344,6 +1418,7 @@ upgrade
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:          yes     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zstd   zstd    zlib
   compression-level: default default default
@@ -1371,6 +1446,7 @@ downgrade
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zstd   zstd    zlib
   compression-level: default default default
@@ -1398,6 +1474,7 @@ upgrade from hgrc
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:          yes    yes      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zstd   zstd    zlib
   compression-level: default default default

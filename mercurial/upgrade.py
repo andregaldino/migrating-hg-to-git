@@ -371,6 +371,21 @@ class sidedata(requirementformatvariant):
 
 
 @registerformatvariant
+class copiessdc(requirementformatvariant):
+    name = b'copies-sdc'
+
+    _requirement = localrepo.COPIESSDC_REQUIREMENT
+
+    default = False
+
+    description = _(b'Stores copies information alongside changesets.')
+
+    upgrademessage = _(
+        b'Allows to use more efficient algorithm to deal with ' b'copy tracing.'
+    )
+
+
+@registerformatvariant
 class removecldeltachain(formatvariant):
     name = b'plain-cl-delta'
 

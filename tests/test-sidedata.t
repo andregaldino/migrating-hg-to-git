@@ -56,6 +56,7 @@ Check that we can upgrade to sidedata
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:           no     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -66,6 +67,7 @@ Check that we can upgrade to sidedata
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:           no    yes      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -82,6 +84,7 @@ Check that we can downgrade from sidedata
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:          yes     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
@@ -92,6 +95,7 @@ Check that we can downgrade from sidedata
   generaldelta:      yes    yes     yes
   sparserevlog:      yes    yes     yes
   sidedata:          yes     no      no
+  copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
   compression:       zlib   zlib    zlib
   compression-level: default default default
