@@ -1,4 +1,4 @@
-#testcases filelog compatibility changeset
+#testcases filelog compatibility changeset sidedata
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -19,6 +19,13 @@
   > [experimental]
   > copies.read-from = changeset-only
   > copies.write-to = changeset-only
+  > EOF
+#endif
+
+#if sidedata
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-copies-side-data-changeset = yes
   > EOF
 #endif
 
@@ -302,6 +309,7 @@ It's a little weird that it shows up on both sides
   x -> z
   $ hg debugpathcopies 0 2
   x -> z (filelog !)
+  x -> z (sidedata !)
 
 Copy file that exists on both sides of the merge, different content
   $ newrepo
@@ -395,7 +403,7 @@ Copy x to y on one side of merge, create y and rename to z on the other side.
   $ hg debugpathcopies 2 3
   y -> z
   $ hg debugpathcopies 1 3
-  y -> z (no-filelog !)
+  y -> z (no-filelog no-sidedata !)
 
 Create x and y, then rename x to z on one side of merge, and rename y to z and
 modify z on the other side. When storing copies in the changeset, we don't
@@ -440,17 +448,18 @@ Try merging the other direction too
   o  0 add x and y
      x y
   $ hg debugpathcopies 1 4
-  y -> z (no-filelog !)
+  y -> z (no-filelog no-sidedata !)
   $ hg debugpathcopies 2 4
-  x -> z (no-filelog !)
+  x -> z (no-filelog no-sidedata !)
   $ hg debugpathcopies 0 4
   x -> z (filelog !)
+  x -> z (sidedata !)
   y -> z (compatibility !)
   y -> z (changeset !)
   $ hg debugpathcopies 1 5
-  y -> z (no-filelog !)
+  y -> z (no-filelog no-sidedata !)
   $ hg debugpathcopies 2 5
-  x -> z (no-filelog !)
+  x -> z (no-filelog no-sidedata !)
   $ hg debugpathcopies 0 5
   x -> z
 
