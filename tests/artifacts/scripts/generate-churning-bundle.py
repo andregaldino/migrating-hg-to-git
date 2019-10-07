@@ -62,7 +62,7 @@ def filecontent(iteridx, oldcontent):
     else:
         current = str(iteridx)
 
-    for idx in xrange(NB_LINES):
+    for idx in range(NB_LINES):
         do_change_line = True
         if oldcontent is not None and ALWAYS_CHANGE_LINES < idx:
             do_change_line = not ((idx - iteridx) % OTHER_CHANGES)
@@ -113,7 +113,7 @@ def run(target):
         hg('init')
         updatefile(FILENAME, None)
         hg('commit', '--addremove', '--message', 'initial commit')
-        for idx in xrange(1, NB_CHANGESET + 1):
+        for idx in range(1, NB_CHANGESET + 1):
             if sys.stdout.isatty():
                 print("generating commit #%d/%d" % (idx, NB_CHANGESET))
             if (idx % PERIOD_BRANCHING) == 0:
