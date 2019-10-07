@@ -3236,7 +3236,9 @@ def debugsetparents(ui, repo, rev1, rev2=None):
 
 @command(b'debugsidedata', cmdutil.debugrevlogopts, _(b'-c|-m|FILE REV'))
 def debugsidedata(ui, repo, file_, rev=None, **opts):
-    """dump the side data for a cl/manifest/file revision"""
+    """dump the side data for a cl/manifest/file revision
+
+    Use --verbose to dump the sidedata content."""
     opts = pycompat.byteskwargs(opts)
     if opts.get(b'changelog') or opts.get(b'manifest') or opts.get(b'dir'):
         if rev is not None:
