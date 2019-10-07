@@ -11,5 +11,5 @@ rustfmt:pattern = set:**.rs
 # git+https://github.com/python/black/@d9e71a75ccfefa3d9156a64c03313a0d4ad981e5
 # to have the dependencies for grey.
 #
-# black:command = python3.7 contrib/grey.py --skip-string-normalization
+# black:command = python3.7 contrib/grey.py --skip-string-normalization -
 # black:pattern = set:**.py - hgext/fsmonitor/pywatchman/** - mercurial/thirdparty/** - "contrib/python-zstandard/**"
