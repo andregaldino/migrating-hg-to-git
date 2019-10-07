@@ -1711,6 +1711,8 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
             part.addparam(
                 b'targetphase', b'%d' % phases.secret, mandatory=False
             )
+        if b'exp-sidedata-flag' in repo.requirements:
+            part.addparam(b'exp-sidedata', b'1')
 
     if opts.get(b'streamv2', False):
         addpartbundlestream2(bundler, repo, stream=True)
@@ -1930,7 +1932,14 @@ def combinechangegroupresults(op):
 
 
 @parthandler(
-    b'changegroup', (b'version', b'nbchanges', b'treemanifest', b'targetphase')
+    b'changegroup',
+    (
+        b'version',
+        b'nbchanges',
+        b'exp-sidedata',
+        b'treemanifest',
+        b'targetphase',
+    ),
 )
 def handlechangegroup(op, inpart):
     """apply a changegroup part on the repo
@@ -1965,6 +1974,14 @@ def handlechangegroup(op, inpart):
             op.repo.ui, op.repo.requirements, op.repo.features
         )
         op.repo._writerequirements()
+
+    bundlesidedata = bool(b'exp-sidedata' in inpart.params)
+    reposidedata = bool(b'exp-sidedata-flag' in op.repo.requirements)
+    if reposidedata and not bundlesidedata:
+        msg = b"repository is using sidedata but the bundle source do not"
+        hint = b'this is currently unsupported'
+        raise error.Abort(msg, hint=hint)
+
     extrakwargs = {}
     targetphase = inpart.params.get(b'targetphase')
     if targetphase is not None:
@@ -2551,5 +2568,7 @@ def widen_bundle(
         part.addparam(b'version', cgversion)
         if b'treemanifest' in repo.requirements:
             part.addparam(b'treemanifest', b'1')
+        if b'exp-sidedata-flag' in repo.requirements:
+            part.addparam(b'exp-sidedata', b'1')
 
     return bundler
