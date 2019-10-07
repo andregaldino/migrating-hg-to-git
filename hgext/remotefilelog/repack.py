@@ -54,7 +54,7 @@ def backgroundrepack(
 def fullrepack(repo, options=None):
     """If ``packsonly`` is True, stores creating only loose objects are skipped.
     """
-    if util.safehasattr(repo, b'shareddatastores'):
+    if util.safehasattr(repo, 'shareddatastores'):
         datasource = contentstore.unioncontentstore(*repo.shareddatastores)
         historysource = metadatastore.unionmetadatastore(
             *repo.sharedhistorystores, allowincomplete=True
@@ -72,7 +72,7 @@ def fullrepack(repo, options=None):
             options=options,
         )
 
-    if util.safehasattr(repo.manifestlog, b'datastore'):
+    if util.safehasattr(repo.manifestlog, 'datastore'):
         localdata, shareddata = _getmanifeststores(repo)
         lpackpath, ldstores, lhstores = localdata
         spackpath, sdstores, shstores = shareddata
@@ -112,7 +112,7 @@ def incrementalrepack(repo, options=None):
     """This repacks the repo by looking at the distribution of pack files in the
     repo and performing the most minimal repack to keep the repo in good shape.
     """
-    if util.safehasattr(repo, b'shareddatastores'):
+    if util.safehasattr(repo, 'shareddatastores'):
         packpath = shallowutil.getcachepackpath(
             repo, constants.FILEPACK_CATEGORY
         )
@@ -125,7 +125,7 @@ def incrementalrepack(repo, options=None):
             options=options,
         )
 
-    if util.safehasattr(repo.manifestlog, b'datastore'):
+    if util.safehasattr(repo.manifestlog, 'datastore'):
         localdata, shareddata = _getmanifeststores(repo)
         lpackpath, ldstores, lhstores = localdata
         spackpath, sdstores, shstores = shareddata
@@ -901,7 +901,7 @@ class repackentry(object):
 
 
 def repacklockvfs(repo):
-    if util.safehasattr(repo, b'name'):
+    if util.safehasattr(repo, 'name'):
         # Lock in the shared cache so repacks across multiple copies of the same
         # repo are coordinated.
         sharedcachepath = shallowutil.getcachepackpath(

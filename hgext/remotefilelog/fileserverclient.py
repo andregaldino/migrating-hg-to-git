@@ -89,7 +89,7 @@ def peersetup(ui, peer):
                 not in self.capabilities()
             ):
                 return
-            if not util.safehasattr(self, b'_localrepo'):
+            if not util.safehasattr(self, '_localrepo'):
                 return
             if (
                 constants.SHALLOWREPO_REQUIREMENT
@@ -129,7 +129,7 @@ def peersetup(ui, peer):
 
         def _callstream(self, command, **opts):
             supertype = super(remotefilepeer, self)
-            if not util.safehasattr(supertype, b'_sendrequest'):
+            if not util.safehasattr(supertype, '_sendrequest'):
                 self._updatecallstreamopts(command, pycompat.byteskwargs(opts))
             return super(remotefilepeer, self)._callstream(command, **opts)
 

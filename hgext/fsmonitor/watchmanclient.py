@@ -61,7 +61,7 @@ class client(object):
 
     def getcurrentclock(self):
         result = self.command(b'clock')
-        if not util.safehasattr(result, b'clock'):
+        if not util.safehasattr(result, 'clock'):
             raise Unavailable(
                 b'clock result is missing clock value', invalidate=True
             )

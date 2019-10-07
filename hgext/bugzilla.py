@@ -731,13 +731,13 @@ class cookietransportrequest(object):
 # inheritance with a new-style class.
 class cookietransport(cookietransportrequest, xmlrpclib.Transport):
     def __init__(self, use_datetime=0):
-        if util.safehasattr(xmlrpclib.Transport, b"__init__"):
+        if util.safehasattr(xmlrpclib.Transport, "__init__"):
             xmlrpclib.Transport.__init__(self, use_datetime)
 
 
 class cookiesafetransport(cookietransportrequest, xmlrpclib.SafeTransport):
     def __init__(self, use_datetime=0):
-        if util.safehasattr(xmlrpclib.Transport, b"__init__"):
+        if util.safehasattr(xmlrpclib.Transport, "__init__"):
             xmlrpclib.SafeTransport.__init__(self, use_datetime)
 
 

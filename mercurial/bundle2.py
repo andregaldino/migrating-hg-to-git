@@ -936,7 +936,7 @@ class unbundle20(unpackermixin):
 
     def close(self):
         """close underlying file"""
-        if util.safehasattr(self._fp, b'close'):
+        if util.safehasattr(self._fp, 'close'):
             return self._fp.close()
 
 
@@ -1024,7 +1024,7 @@ class bundlepart(object):
 
         The new part have the very same content but no partid assigned yet.
         Parts with generated data cannot be copied."""
-        assert not util.safehasattr(self.data, b'next')
+        assert not util.safehasattr(self.data, 'next')
         return self.__class__(
             self.type,
             self._mandatoryparams,
@@ -1093,7 +1093,7 @@ class bundlepart(object):
                 msg.append(b')')
             if not self.data:
                 msg.append(b' empty payload')
-            elif util.safehasattr(self.data, b'next') or util.safehasattr(
+            elif util.safehasattr(self.data, 'next') or util.safehasattr(
                 self.data, b'__next__'
             ):
                 msg.append(b' streamed payload')
@@ -1189,7 +1189,7 @@ class bundlepart(object):
         Exists to handle the different methods to provide data to a part."""
         # we only support fixed size data now.
         # This will be improved in the future.
-        if util.safehasattr(self.data, b'next') or util.safehasattr(
+        if util.safehasattr(self.data, 'next') or util.safehasattr(
             self.data, b'__next__'
         ):
             buff = util.chunkbuffer(self.data)
@@ -1336,7 +1336,7 @@ class unbundlepart(unpackermixin):
 
     def __init__(self, ui, header, fp):
         super(unbundlepart, self).__init__(fp)
-        self._seekable = util.safehasattr(fp, b'seek') and util.safehasattr(
+        self._seekable = util.safehasattr(fp, 'seek') and util.safehasattr(
             fp, b'tell'
         )
         self.ui = ui

@@ -53,7 +53,7 @@ def extsetup(ui):
 
 
 def _commit(orig, ui, repo, *pats, **opts):
-    if util.safehasattr(repo, b'unfiltered'):
+    if util.safehasattr(repo, 'unfiltered'):
         repo = repo.unfiltered()
 
     class repoextra(repo.__class__):
