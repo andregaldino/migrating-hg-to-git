@@ -2542,6 +2542,7 @@ class revlog(object):
         addrevisioncb=None,
         deltareuse=DELTAREUSESAMEREVS,
         forcedeltabothparents=None,
+        sidedatacompanion=None,
     ):
         """Copy this revlog to another, possibly with format changes.
 
@@ -2583,6 +2584,20 @@ class revlog(object):
         In addition to the delta policy, the ``forcedeltabothparents``
         argument controls whether to force compute deltas against both parents
         for merges. By default, the current default is used.
+
+        If not None, the `sidedatacompanion` is callable that accept two
+        arguments:
+
+            (srcrevlog, rev)
+
+        and return a triplet that control changes to sidedata content from the
+        old revision to the new clone result:
+
+            (dropall, filterout, update)
+
+        * if `dropall` is True, all sidedata should be dropped
+        * `filterout` is a set of sidedata keys that should be dropped
+        * `update` is a mapping of additionnal/new key -> value
         """
         if deltareuse not in self.DELTAREUSEALL:
             raise ValueError(
@@ -2617,7 +2632,12 @@ class revlog(object):
             destrevlog._deltabothparents = forcedeltabothparents or oldamd
 
             self._clone(
-                tr, destrevlog, addrevisioncb, deltareuse, forcedeltabothparents
+                tr,
+                destrevlog,
+                addrevisioncb,
+                deltareuse,
+                forcedeltabothparents,
+                sidedatacompanion,
             )
 
         finally:
@@ -2626,7 +2646,13 @@ class revlog(object):
             destrevlog._deltabothparents = oldamd
 
     def _clone(
-        self, tr, destrevlog, addrevisioncb, deltareuse, forcedeltabothparents
+        self,
+        tr,
+        destrevlog,
+        addrevisioncb,
+        deltareuse,
+        forcedeltabothparents,
+        sidedatacompanion,
     ):
         """perform the core duty of `revlog.clone` after parameter processing"""
         deltacomputer = deltautil.deltacomputer(destrevlog)
@@ -2642,12 +2668,24 @@ class revlog(object):
             p2 = index[entry[6]][7]
             node = entry[7]
 
+            sidedataactions = (False, [], {})
+            if sidedatacompanion is not None:
+                sidedataactions = sidedatacompanion(self, rev)
+
             # (Possibly) reuse the delta from the revlog if allowed and
             # the revlog chunk is a delta.
             cachedelta = None
             rawtext = None
-            if deltareuse == self.DELTAREUSEFULLADD:
-                text = self.revision(rev)
+            if any(sidedataactions) or deltareuse == self.DELTAREUSEFULLADD:
+                dropall, filterout, update = sidedataactions
+                text, sidedata = self._revisiondata(rev)
+                if dropall:
+                    sidedata = {}
+                for key in filterout:
+                    sidedata.pop(key, None)
+                sidedata.update(update)
+                if not sidedata:
+                    sidedata = None
                 destrevlog.addrevision(
                     text,
                     tr,
@@ -2658,6 +2696,7 @@ class revlog(object):
                     node=node,
                     flags=flags,
                     deltacomputer=deltacomputer,
+                    sidedata=sidedata,
                 )
             else:
                 if destrevlog._lazydelta:
