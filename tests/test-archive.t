@@ -132,7 +132,7 @@ check http return codes
   transfer-encoding: chunked
   
   body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505 (no-py38 !)
-  body: size=506, sha1=70926a04cb8887d0bcccf5380488100a10222def (py-38 !)
+  body: size=506, sha1=70926a04cb8887d0bcccf5380488100a10222def (py38 !)
   % tar.bz2 and zip disallowed should both give 403
   403 Archive type not allowed: bz2
   content-type: text/html; charset=ascii
