@@ -95,7 +95,7 @@ def encodebatchcmds(req):
 
         args = b','.join(
             b'%s=%s' % (escapearg(k), escapearg(v))
-            for k, v in argsdict.iteritems()
+            for k, v in pycompat.iteritems(argsdict)
         )
         cmds.append(b'%s %s' % (op, args))
 
@@ -448,7 +448,7 @@ class wirepeer(repository.peer):
         self.requirecap(b'getbundle', _(b'look up remote changes'))
         opts = {}
         bundlecaps = kwargs.get(b'bundlecaps') or set()
-        for key, value in kwargs.iteritems():
+        for key, value in pycompat.iteritems(kwargs):
             if value is None:
                 continue
             keytype = wireprototypes.GETBUNDLE_ARGUMENTS.get(key)

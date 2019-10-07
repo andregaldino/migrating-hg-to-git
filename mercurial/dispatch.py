@@ -540,7 +540,7 @@ class cmdalias(object):
 
         try:
             aliases, entry = cmdutil.findcmd(self.name, cmdtable)
-            for alias, e in cmdtable.iteritems():
+            for alias, e in pycompat.iteritems(cmdtable):
                 if e is entry:
                     self.cmd = alias
                     break

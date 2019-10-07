@@ -24,7 +24,7 @@ def launch(application):
     procutil.setbinary(procutil.stdin)
     procutil.setbinary(procutil.stdout)
 
-    environ = dict(os.environ.iteritems())  # re-exports
+    environ = dict(pycompat.iteritems(os.environ))  # re-exports
     environ.setdefault(r'PATH_INFO', b'')
     if environ.get(r'SERVER_SOFTWARE', r'').startswith(r'Microsoft-IIS'):
         # IIS includes script_name in PATH_INFO

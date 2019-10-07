@@ -228,7 +228,7 @@ class branchcache(object):
         return key in self._entries
 
     def iteritems(self):
-        for k, v in self._entries.iteritems():
+        for k, v in pycompat.iteritems(self._entries):
             self._verifybranch(k)
             yield k, v
 
@@ -344,7 +344,7 @@ class branchcache(object):
         return heads
 
     def iterbranches(self):
-        for bn, heads in self.iteritems():
+        for bn, heads in pycompat.iteritems(self):
             yield (bn, heads) + self._branchtip(heads)
 
     def iterheads(self):
@@ -370,7 +370,7 @@ class branchcache(object):
                 cachekey.append(hex(self.filteredhash))
             f.write(b" ".join(cachekey) + b'\n')
             nodecount = 0
-            for label, nodes in sorted(self._entries.iteritems()):
+            for label, nodes in sorted(pycompat.iteritems(self._entries)):
                 label = encoding.fromlocal(label)
                 for node in nodes:
                     nodecount += 1
@@ -420,7 +420,7 @@ class branchcache(object):
         # if older branchheads are reachable from new ones, they aren't
         # really branchheads. Note checking parents is insufficient:
         # 1 (branch a) -> 2 (branch b) -> 3 (branch a)
-        for branch, newheadrevs in newbranches.iteritems():
+        for branch, newheadrevs in pycompat.iteritems(newbranches):
             bheads = self._entries.setdefault(branch, [])
             bheadset = set(cl.rev(node) for node in bheads)
 

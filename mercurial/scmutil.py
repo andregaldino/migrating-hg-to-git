@@ -135,7 +135,7 @@ def itersubrepos(ctx1, ctx2):
             del subpaths[subpath]
             missing.add(subpath)
 
-    for subpath, ctx in sorted(subpaths.iteritems()):
+    for subpath, ctx in sorted(pycompat.iteritems(subpaths)):
         yield subpath, ctx.sub(subpath)
 
     # Yield an empty subrepo based on ctx1 for anything only in ctx2.  That way,
@@ -1298,7 +1298,7 @@ def _interestingfiles(repo, matcher):
         ignored=False,
         full=False,
     )
-    for abs, st in walkresults.iteritems():
+    for abs, st in pycompat.iteritems(walkresults):
         dstate = dirstate[abs]
         if dstate == b'?' and audit_path.check(abs):
             unknown.append(abs)
@@ -1345,7 +1345,7 @@ def _markchanges(repo, unknown, deleted, renames):
     with repo.wlock():
         wctx.forget(deleted)
         wctx.add(unknown)
-        for new, old in renames.iteritems():
+        for new, old in pycompat.iteritems(renames):
             wctx.copy(old, new)
 
 
@@ -1481,10 +1481,11 @@ def movedirstate(repo, newctx, match=None):
     oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
     oldcopies.update(copies)
     copies = dict(
-        (dst, oldcopies.get(src, src)) for dst, src in oldcopies.iteritems()
+        (dst, oldcopies.get(src, src))
+        for dst, src in pycompat.iteritems(oldcopies)
     )
     # Adjust the dirstate copies
-    for dst, src in copies.iteritems():
+    for dst, src in pycompat.iteritems(copies):
         if src not in newctx or dst in newctx or ds[dst] != b'a':
             src = None
         ds.copy(src, dst)
@@ -2070,7 +2071,7 @@ def registersummarycallback(repo, otr, txnname=b''):
                 return
             published = [
                 rev
-                for rev, (old, new) in phasetracking.iteritems()
+                for rev, (old, new) in pycompat.iteritems(phasetracking)
                 if new == phases.public and rev < origrepolen
             ]
             if not published:

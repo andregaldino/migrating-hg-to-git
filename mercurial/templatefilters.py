@@ -341,7 +341,7 @@ def json(obj, paranoid=True):
         out = [
             b'"%s": %s'
             % (encoding.jsonescape(k, paranoid=paranoid), json(v, paranoid))
-            for k, v in sorted(obj.iteritems())
+            for k, v in sorted(pycompat.iteritems(obj))
         ]
         return b'{' + b', '.join(out) + b'}'
     elif util.safehasattr(obj, b'__iter__'):
@@ -544,7 +544,7 @@ def websub(text, websubtable):
 def loadfilter(ui, extname, registrarobj):
     """Load template filter from specified registrarobj
     """
-    for name, func in registrarobj._table.iteritems():
+    for name, func in pycompat.iteritems(registrarobj._table):
         filters[name] = func
 
 

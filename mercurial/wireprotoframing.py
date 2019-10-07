@@ -123,7 +123,7 @@ ARGUMENT_RECORD_HEADER = struct.Struct(r'<HH')
 
 def humanflags(mapping, value):
     """Convert a numeric flags value to a human value, using a mapping table."""
-    namemap = {v: k for k, v in mapping.iteritems()}
+    namemap = {v: k for k, v in pycompat.iteritems(mapping)}
     flags = []
     val = 1
     while value >= val:
@@ -160,7 +160,7 @@ class frame(object):
     @encoding.strmethod
     def __repr__(self):
         typename = b'<unknown 0x%02x>' % self.typeid
-        for name, value in FRAME_TYPES.iteritems():
+        for name, value in pycompat.iteritems(FRAME_TYPES):
             if value == self.typeid:
                 typename = name
                 break

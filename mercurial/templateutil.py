@@ -308,7 +308,7 @@ class hybrid(wrapped):
         if util.safehasattr(self._values, b'get'):
             values = {
                 k: v
-                for k, v in self._values.iteritems()
+                for k, v in pycompat.iteritems(self._values)
                 if select(self._wrapvalue(k, v))
             }
         else:
@@ -341,7 +341,8 @@ class hybrid(wrapped):
         xs = self._values
         if util.safehasattr(xs, b'get'):
             return {
-                k: unwrapvalue(context, mapping, v) for k, v in xs.iteritems()
+                k: unwrapvalue(context, mapping, v)
+                for k, v in pycompat.iteritems(xs)
             }
         return [unwrapvalue(context, mapping, x) for x in xs]
 
@@ -461,7 +462,7 @@ class _mappingsequence(wrapped):
             items.append(
                 {
                     k: unwrapvalue(context, lm, v)
-                    for k, v in nm.iteritems()
+                    for k, v in pycompat.iteritems(nm)
                     if k not in knownres
                 }
             )
@@ -639,7 +640,7 @@ def compatdict(
     This exists for backward compatibility with the old-style template. Use
     hybriddict() for new template keywords.
     """
-    c = [{key: k, value: v} for k, v in data.iteritems()]
+    c = [{key: k, value: v} for k, v in pycompat.iteritems(data)]
     f = _showcompatlist(context, mapping, name, c, plural, separator)
     return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
 

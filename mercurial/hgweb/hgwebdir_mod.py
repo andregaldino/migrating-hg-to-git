@@ -447,7 +447,8 @@ class hgwebdir(object):
                     uenv = req.rawenv
                     if pycompat.ispy3:
                         uenv = {
-                            k.decode('latin1'): v for k, v in uenv.iteritems()
+                            k.decode('latin1'): v
+                            for k, v in pycompat.iteritems(uenv)
                         }
                     req = requestmod.parserequestfromenv(
                         uenv,

@@ -1740,7 +1740,7 @@ class gitsubrepo(abstractsubrepo):
             for b in rev2branch[self._state[1]]:
                 if b.startswith(b'refs/remotes/origin/'):
                     return True
-        for b, revision in branch2rev.iteritems():
+        for b, revision in pycompat.iteritems(branch2rev):
             if b.startswith(b'refs/remotes/origin/'):
                 if self._gitisancestor(self._state[1], revision):
                     return True

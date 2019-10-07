@@ -448,7 +448,7 @@ def debugcapabilities(ui, path, **opts):
     b2caps = bundle2.bundle2caps(peer)
     if b2caps:
         ui.writenoi18n(b'Bundle2 capabilities:\n')
-        for key, values in sorted(b2caps.iteritems()):
+        for key, values in sorted(pycompat.iteritems(b2caps)):
             ui.write(b'  %s\n' % key)
             for v in values:
                 ui.write(b'    %s\n' % v)
@@ -870,7 +870,7 @@ def debugstate(ui, repo, **opts):
         keyfunc = lambda x: (x[1][3], x[0])  # sort by mtime, then by filename
     else:
         keyfunc = None  # sort by filename
-    for file_, ent in sorted(repo.dirstate.iteritems(), key=keyfunc):
+    for file_, ent in sorted(pycompat.iteritems(repo.dirstate), key=keyfunc):
         if ent[3] == -1:
             timestr = b'unset               '
         elif nodates:
@@ -2039,7 +2039,7 @@ def debugnamecomplete(ui, repo, *args):
     names = set()
     # since we previously only listed open branches, we will handle that
     # specially (after this for loop)
-    for name, ns in repo.names.iteritems():
+    for name, ns in pycompat.iteritems(repo.names):
         if name != b'branches':
             names.update(ns.listnames(repo))
     names.update(
@@ -2268,7 +2268,7 @@ def debugpathcomplete(ui, repo, *specs, **opts):
         fullpaths = opts[r'full']
         files, dirs = set(), set()
         adddir, addfile = dirs.add, files.add
-        for f, st in dirstate.iteritems():
+        for f, st in pycompat.iteritems(dirstate):
             if f.startswith(spec) and st[0] in acceptable:
                 if fixpaths:
                     f = f.replace(b'/', pycompat.ossep)
@@ -2454,7 +2454,7 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
         ui.status(pycompat.bytestr(r) + b'\n')
         return not r
     else:
-        for k, v in sorted(target.listkeys(namespace).iteritems()):
+        for k, v in sorted(pycompat.iteritems(target.listkeys(namespace))):
             ui.write(
                 b"%s\t%s\n" % (stringutil.escapestr(k), stringutil.escapestr(v))
             )
@@ -3608,7 +3608,7 @@ def debugwireargs(ui, repopath, *vals, **opts):
     for opt in cmdutil.remoteopts:
         del opts[opt[1]]
     args = {}
-    for k, v in opts.iteritems():
+    for k, v in pycompat.iteritems(opts):
         if v:
             args[k] = v
     args = pycompat.strkwargs(args)

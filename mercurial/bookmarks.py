@@ -137,7 +137,7 @@ class bmstore(object):
         return iter(self._refmap)
 
     def iteritems(self):
-        return self._refmap.iteritems()
+        return pycompat.iteritems(self._refmap)
 
     def items(self):
         return self._refmap.items()
@@ -245,7 +245,7 @@ class bmstore(object):
         self._aclean = True
 
     def _write(self, fp):
-        for name, node in sorted(self._refmap.iteritems()):
+        for name, node in sorted(pycompat.iteritems(self._refmap)):
             fp.write(b"%s %s\n" % (hex(node), encoding.fromlocal(name)))
         self._clean = True
         self._repo.invalidatevolatilesets()
@@ -413,7 +413,7 @@ def headsforactive(repo):
         )
     name = repo._activebookmark.split(b'@', 1)[0]
     heads = []
-    for mark, n in repo._bookmarks.iteritems():
+    for mark, n in pycompat.iteritems(repo._bookmarks):
         if mark.split(b'@', 1)[0] == name:
             heads.append(n)
     return heads
@@ -467,7 +467,7 @@ def listbinbookmarks(repo):
     marks = getattr(repo, '_bookmarks', {})
 
     hasnode = repo.changelog.hasnode
-    for k, v in marks.iteritems():
+    for k, v in pycompat.iteritems(marks):
         # don't expose local divergent bookmarks
         if hasnode(v) and (b'@' not in k or k.endswith(b'@')):
             yield k, v
@@ -999,7 +999,7 @@ def _printbookmarks(ui, repo, fm, bmarks):
     hexfn = fm.hexfunc
     if len(bmarks) == 0 and fm.isplain():
         ui.status(_(b"no bookmarks set\n"))
-    for bmark, (n, prefix, label) in sorted(bmarks.iteritems()):
+    for bmark, (n, prefix, label) in sorted(pycompat.iteritems(bmarks)):
         fm.startitem()
         fm.context(repo=repo)
         if not ui.quiet:

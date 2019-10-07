@@ -124,7 +124,7 @@ def listexts(header, exts, indent=1, showdeprecated=False):
     '''return a text listing of the given extensions'''
     rst = []
     if exts:
-        for name, desc in sorted(exts.iteritems()):
+        for name, desc in sorted(pycompat.iteritems(exts)):
             if not showdeprecated and any(w in desc for w in _exclkeywords):
                 continue
             rst.append(b'%s:%s: %s\n' % (b' ' * indent, name, desc))
@@ -261,7 +261,7 @@ def topicmatch(ui, commands, kw):
             name = names[0]
             if not filtertopic(ui, name):
                 results[b'topics'].append((names[0], header))
-    for cmd, entry in commands.table.iteritems():
+    for cmd, entry in pycompat.iteritems(commands.table):
         if len(entry) == 3:
             summary = entry[2]
         else:
@@ -278,7 +278,8 @@ def topicmatch(ui, commands, kw):
                 continue
             results[b'commands'].append((cmdname, summary))
     for name, docs in itertools.chain(
-        extensions.enabled(False).iteritems(), extensions.disabled().iteritems()
+        pycompat.iteritems(extensions.enabled(False)),
+        pycompat.iteritems(extensions.disabled()),
     ):
         if not docs:
             continue
@@ -291,7 +292,7 @@ def topicmatch(ui, commands, kw):
         except ImportError:
             # debug message would be printed in extensions.load()
             continue
-        for cmd, entry in getattr(mod, 'cmdtable', {}).iteritems():
+        for cmd, entry in pycompat.iteritems(getattr(mod, 'cmdtable', {})):
             if kw in cmd or (len(entry) > 2 and lowercontains(entry[2])):
                 cmdname = cmdutil.parsealiases(cmd)[0]
                 func = entry[0]
@@ -738,7 +739,7 @@ def help_(
         h = {}
         # Command -> string showing synonyms
         syns = {}
-        for c, e in commands.table.iteritems():
+        for c, e in pycompat.iteritems(commands.table):
             fs = cmdutil.parsealiases(c)
             f = fs[0]
             syns[f] = b', '.join(fs)

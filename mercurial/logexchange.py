@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from .node import hex
 
 from . import (
+    pycompat,
     util,
     vfs as vfsmod,
 )
@@ -74,7 +75,7 @@ def writeremotenamefile(repo, remotepath, names, nametype):
         if oldpath != remotepath:
             f.write(b'%s\0%s\0%s\n' % (node, oldpath, rname))
 
-    for name, node in sorted(names.iteritems()):
+    for name, node in sorted(pycompat.iteritems(names)):
         if nametype == b"branches":
             for n in node:
                 f.write(b'%s\0%s\0%s\n' % (n, remotepath, name))
@@ -153,7 +154,7 @@ def pullremotenames(localrepo, remoterepo):
     with remoterepo.commandexecutor() as e:
         branchmap = e.callcommand(b'branchmap', {}).result()
 
-    for branch, nodes in branchmap.iteritems():
+    for branch, nodes in pycompat.iteritems(branchmap):
         bmap[branch] = []
         for node in nodes:
             if node in repo and not repo[node].obsolete():

@@ -568,7 +568,7 @@ def shownamespaces(context, mapping):
         # 'name' for iterating over namespaces, templatename for local reference
         return lambda v: {b'name': v, ns.templatename: v}
 
-    for k, ns in repo.names.iteritems():
+    for k, ns in pycompat.iteritems(repo.names):
         names = ns.names(repo, ctx.node())
         f = _showcompatlist(context, mapping, b'name', names)
         namespaces[k] = _hybrid(f, names, makensmapfn(ns), pycompat.identity)
@@ -630,12 +630,14 @@ def showpeerurls(context, mapping):
     repo = context.resource(mapping, b'repo')
     # see commands.paths() for naming of dictionary keys
     paths = repo.ui.paths
-    urls = util.sortdict((k, p.rawloc) for k, p in sorted(paths.iteritems()))
+    urls = util.sortdict(
+        (k, p.rawloc) for k, p in sorted(pycompat.iteritems(paths))
+    )
 
     def makemap(k):
         p = paths[k]
         d = {b'name': k, b'url': p.rawloc}
-        d.update((o, v) for o, v in sorted(p.suboptions.iteritems()))
+        d.update((o, v) for o, v in sorted(pycompat.iteritems(p.suboptions)))
         return d
 
     return _hybrid(None, urls, makemap, lambda k: b'%s=%s' % (k, urls[k]))
@@ -982,7 +984,7 @@ def showwhyunstable(context, mapping):
 def loadkeyword(ui, extname, registrarobj):
     """Load template keyword from specified registrarobj
     """
-    for name, func in registrarobj._table.iteritems():
+    for name, func in pycompat.iteritems(registrarobj._table):
         keywords[name] = func
 
 

@@ -87,7 +87,7 @@ def readauthforuri(ui, uri, user):
     bestuser = None
     bestlen = 0
     bestauth = None
-    for group, auth in groups.iteritems():
+    for group, auth in pycompat.iteritems(groups):
         if user and user != auth.get(b'username', user):
             # If a username was set in the URI, the entry username
             # must either match it or be unset

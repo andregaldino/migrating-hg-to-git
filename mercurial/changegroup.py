@@ -353,7 +353,7 @@ class cg1unpacker(object):
                     mfnode = cl.changelogrevision(cset).manifest
                     mfest = ml[mfnode].readdelta()
                     # store file cgnodes we must see
-                    for f, n in mfest.iteritems():
+                    for f, n in pycompat.iteritems(mfest):
                         needfiles.setdefault(f, set()).add(n)
 
             # process the files
@@ -991,7 +991,7 @@ class cgpacker(object):
         if self._ellipses and self._isshallow:
             mfdicts = [
                 (self._repo.manifestlog[n].read(), lr)
-                for (n, lr) in manifests.iteritems()
+                for (n, lr) in pycompat.iteritems(manifests)
             ]
 
         manifests.clear()
@@ -1672,7 +1672,7 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
                 del needfiles[f]
     progress.complete()
 
-    for f, needs in needfiles.iteritems():
+    for f, needs in pycompat.iteritems(needfiles):
         fl = repo.file(f)
         for n in needs:
             try:

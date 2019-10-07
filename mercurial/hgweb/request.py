@@ -74,7 +74,7 @@ class multidict(object):
         return vals[0]
 
     def asdictoflists(self):
-        return {k: list(v) for k, v in self._items.iteritems()}
+        return {k: list(v) for k, v in pycompat.iteritems(self._items)}
 
 
 @attr.s(frozen=True)
@@ -162,10 +162,10 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # strings on Python 3 must be between \00000-\000FF. We deal with bytes
     # in Mercurial, so mass convert string keys and values to bytes.
     if pycompat.ispy3:
-        env = {k.encode('latin-1'): v for k, v in env.iteritems()}
+        env = {k.encode('latin-1'): v for k, v in pycompat.iteritems(env)}
         env = {
             k: v.encode('latin-1') if isinstance(v, str) else v
-            for k, v in env.iteritems()
+            for k, v in pycompat.iteritems(env)
         }
 
     # Some hosting solutions are emulating hgwebdir, and dispatching directly
@@ -300,7 +300,7 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # perform case normalization for us. We just rewrite underscore to dash
     # so keys match what likely went over the wire.
     headers = []
-    for k, v in env.iteritems():
+    for k, v in pycompat.iteritems(env):
         if k.startswith(b'HTTP_'):
             headers.append((k[len(b'HTTP_') :].replace(b'_', b'-'), v))
 

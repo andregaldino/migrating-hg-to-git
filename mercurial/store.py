@@ -144,7 +144,7 @@ def _buildencodefun():
         cmap[xchr(x)] = e + xchr(x).lower()
 
     dmap = {}
-    for k, v in cmap.iteritems():
+    for k, v in pycompat.iteritems(cmap):
         dmap[v] = k
 
     def decode(s):

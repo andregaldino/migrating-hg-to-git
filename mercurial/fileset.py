@@ -629,7 +629,7 @@ def match(ctx, expr, badfn=None):
 def loadpredicate(ui, extname, registrarobj):
     """Load fileset predicates from specified registrarobj
     """
-    for name, func in registrarobj._table.iteritems():
+    for name, func in pycompat.iteritems(registrarobj._table):
         symbols[name] = func
 
 

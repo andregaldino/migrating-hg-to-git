@@ -17,6 +17,7 @@ from . import (
     match as matchmod,
     node,
     pathutil,
+    pycompat,
     util,
 )
 from .utils import stringutil
@@ -144,7 +145,7 @@ def _filter(src, dst, t):
 def _chain(a, b):
     """chain two sets of copies 'a' and 'b'"""
     t = a.copy()
-    for k, v in b.iteritems():
+    for k, v in pycompat.iteritems(b):
         if v in t:
             t[k] = t[v]
         else:
@@ -353,7 +354,7 @@ def _backwardrenames(a, b, match):
     # to filter the source instead.
     f = _forwardcopies(b, a)
     r = {}
-    for k, v in sorted(f.iteritems()):
+    for k, v in sorted(pycompat.iteritems(f)):
         if match and not match(v):
             continue
         # remove copies
@@ -632,7 +633,7 @@ def _fullcopytracing(repo, c1, c2, base):
 
     # examine each file copy for a potential directory move, which is
     # when all the files in a directory are moved to a new directory
-    for dst, src in fullcopy.iteritems():
+    for dst, src in pycompat.iteritems(fullcopy):
         dsrc, ddst = pathutil.dirname(src), pathutil.dirname(dst)
         if dsrc in invalid:
             # already seen to be uninteresting
@@ -658,7 +659,7 @@ def _fullcopytracing(repo, c1, c2, base):
     if not dirmove:
         return copy, {}, diverge, renamedelete, {}
 
-    dirmove = {k + b"/": v + b"/" for k, v in dirmove.iteritems()}
+    dirmove = {k + b"/": v + b"/" for k, v in pycompat.iteritems(dirmove)}
 
     for d in dirmove:
         repo.ui.debug(
@@ -736,7 +737,7 @@ def _heuristicscopytracing(repo, c1, c2, base):
         ctx = ctx.p1()
 
     cp = _forwardcopies(base, c2)
-    for dst, src in cp.iteritems():
+    for dst, src in pycompat.iteritems(cp):
         if src in m1:
             copies[dst] = src
 
@@ -845,7 +846,7 @@ def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
         # of the function is much faster (and is required for carrying copy
         # metadata across the rebase anyway).
         exclude = pathcopies(repo[fromrev], repo[skiprev])
-    for dst, src in pathcopies(repo[fromrev], repo[rev]).iteritems():
+    for dst, src in pycompat.iteritems(pathcopies(repo[fromrev], repo[rev])):
         if dst in exclude:
             continue
         if dst in wctx:

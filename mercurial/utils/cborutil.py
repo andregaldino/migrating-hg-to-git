@@ -176,7 +176,7 @@ def streamencodemap(d):
     yield encodelength(MAJOR_TYPE_MAP, len(d))
 
     for key, value in sorted(
-        d.iteritems(), key=lambda x: _mixedtypesortkey(x[0])
+        pycompat.iteritems(d), key=lambda x: _mixedtypesortkey(x[0])
     ):
         for chunk in streamencode(key):
             yield chunk

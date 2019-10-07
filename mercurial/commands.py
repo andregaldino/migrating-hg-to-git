@@ -2355,7 +2355,7 @@ def copy(ui, repo, *pats, **opts):
 )
 def debugcommands(ui, cmd=b'', *args):
     """list all available commands and options"""
-    for cmd, vals in sorted(table.iteritems()):
+    for cmd, vals in sorted(pycompat.iteritems(table)):
         cmd = cmd.split(b'|')[0]
         opts = b', '.join([i[1] for i in vals[1]])
         ui.write(b'%s: %s\n' % (cmd, opts))
@@ -3906,7 +3906,9 @@ def identify(
                 hexremoterev = hex(remoterev)
                 bms = [
                     bm
-                    for bm, bmr in peer.listkeys(b'bookmarks').iteritems()
+                    for bm, bmr in pycompat.iteritems(
+                        peer.listkeys(b'bookmarks')
+                    )
                     if bmr == hexremoterev
                 ]
 
@@ -5146,11 +5148,11 @@ def paths(ui, repo, search=None, **opts):
     if search:
         pathitems = [
             (name, path)
-            for name, path in ui.paths.iteritems()
+            for name, path in pycompat.iteritems(ui.paths)
             if name == search
         ]
     else:
-        pathitems = sorted(ui.paths.iteritems())
+        pathitems = sorted(pycompat.iteritems(ui.paths))
 
     fm = ui.formatter(b'paths', opts)
     if fm.isplain():
@@ -6959,7 +6961,7 @@ def summary(ui, repo, **opts):
 
     c = repo.dirstate.copies()
     copied, renamed = [], []
-    for d, s in c.iteritems():
+    for d, s in pycompat.iteritems(c):
         if s in status.removed:
             status.removed.remove(s)
             renamed.append(d)

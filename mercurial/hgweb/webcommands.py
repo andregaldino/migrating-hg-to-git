@@ -564,7 +564,7 @@ def manifest(web):
     l = len(path)
     abspath = b"/" + path
 
-    for full, n in mf.iteritems():
+    for full, n in pycompat.iteritems(mf):
         # the virtual path (working copy path) used for the full
         # (repository) path
         f = decodepath(full)
@@ -1525,7 +1525,7 @@ def help(web):
 
         early, other = [], []
         primary = lambda s: s.partition(b'|')[0]
-        for c, e in commands.table.iteritems():
+        for c, e in pycompat.iteritems(commands.table):
             doc = _getdoc(e)
             if b'DEPRECATED' in doc or c.startswith(b'debug'):
                 continue

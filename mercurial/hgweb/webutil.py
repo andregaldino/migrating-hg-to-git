@@ -57,7 +57,7 @@ def archivelist(ui, nodeid, url=None):
     allowed = ui.configlist(b'web', b'allow-archive', untrusted=True)
     archives = []
 
-    for typ, spec in archivespecs.iteritems():
+    for typ, spec in pycompat.iteritems(archivespecs):
         if typ in allowed or ui.configbool(
             b'web', b'allow' + typ, untrusted=True
         ):
@@ -852,7 +852,7 @@ class sessionvars(templateutil.wrapped):
 
     def itermaps(self, context):
         separator = self._start
-        for key, value in sorted(self._vars.iteritems()):
+        for key, value in sorted(pycompat.iteritems(self._vars)):
             yield {
                 b'name': key,
                 b'value': pycompat.bytestr(value),

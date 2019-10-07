@@ -91,7 +91,7 @@ def dict_(context, mapping, args):
 
     data.update(
         (k, evalfuncarg(context, mapping, v))
-        for k, v in args[b'kwargs'].iteritems()
+        for k, v in pycompat.iteritems(args[b'kwargs'])
     )
     return templateutil.hybriddict(data)
 
@@ -874,7 +874,7 @@ def word(context, mapping, args):
 def loadfunction(ui, extname, registrarobj):
     """Load template function from specified registrarobj
     """
-    for name, func in registrarobj._table.iteritems():
+    for name, func in pycompat.iteritems(registrarobj._table):
         funcs[name] = func
 
 

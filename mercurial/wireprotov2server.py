@@ -965,7 +965,10 @@ def resolvenodes(repo, revisions):
 
 @wireprotocommand(b'branchmap', permission=b'pull')
 def branchmapv2(repo, proto):
-    yield {encoding.fromlocal(k): v for k, v in repo.branchmap().iteritems()}
+    yield {
+        encoding.fromlocal(k): v
+        for k, v in pycompat.iteritems(repo.branchmap())
+    }
 
 
 @wireprotocommand(b'capabilities', permission=b'pull')
@@ -1061,7 +1064,7 @@ def changesetdata(repo, proto, revisions, fields):
     # If requested, send bookmarks from nodes that didn't have revision
     # data sent so receiver is aware of any bookmark updates.
     if b'bookmarks' in fields:
-        for node, marks in sorted(nodebookmarks.iteritems()):
+        for node, marks in sorted(pycompat.iteritems(nodebookmarks)):
             yield {
                 b'node': node,
                 b'bookmarks': sorted(marks),
@@ -1379,7 +1382,7 @@ def listkeysv2(repo, proto, namespace):
     keys = repo.listkeys(encoding.tolocal(namespace))
     keys = {
         encoding.fromlocal(k): encoding.fromlocal(v)
-        for k, v in keys.iteritems()
+        for k, v in pycompat.iteritems(keys)
     }
 
     yield keys

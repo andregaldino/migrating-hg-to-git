@@ -131,7 +131,7 @@ def _confighash(ui):
         ignored = set()
     envitems = [
         (k, v)
-        for k, v in encoding.environ.iteritems()
+        for k, v in pycompat.iteritems(encoding.environ)
         if _envre.match(k) and k not in ignored
     ]
     envhash = _hashlist(sorted(envitems))
@@ -317,7 +317,7 @@ class channeledsystem(object):
 
     def __call__(self, cmd, environ, cwd=None, type=b'system', cmdtable=None):
         args = [type, procutil.quotecommand(cmd), os.path.abspath(cwd or b'.')]
-        args.extend(b'%s=%s' % (k, v) for k, v in environ.iteritems())
+        args.extend(b'%s=%s' % (k, v) for k, v in pycompat.iteritems(environ))
         data = b'\0'.join(args)
         self.out.write(struct.pack(b'>cI', self.channel, len(data)))
         self.out.write(data)

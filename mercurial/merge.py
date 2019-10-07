@@ -436,7 +436,7 @@ class mergestate(object):
         # the type of state that is stored, and capital-letter records are used
         # to prevent older versions of Mercurial that do not support the feature
         # from loading them.
-        for filename, v in self._state.iteritems():
+        for filename, v in pycompat.iteritems(self._state):
             if v[0] == MERGE_RECORD_DRIVER_RESOLVED:
                 # Driver-resolved merge. These are stored in 'D' records.
                 records.append(
@@ -462,9 +462,9 @@ class mergestate(object):
             else:
                 # Normal files.  These are stored in 'F' records.
                 records.append((RECORD_MERGED, b'\0'.join([filename] + v)))
-        for filename, extras in sorted(self._stateextras.iteritems()):
+        for filename, extras in sorted(pycompat.iteritems(self._stateextras)):
             rawextras = b'\0'.join(
-                b'%s\0%s' % (k, v) for k, v in extras.iteritems()
+                b'%s\0%s' % (k, v) for k, v in pycompat.iteritems(extras)
             )
             records.append(
                 (RECORD_FILE_VALUES, b'%s\0%s' % (filename, rawextras))
@@ -571,7 +571,7 @@ class mergestate(object):
     def unresolved(self):
         """Obtain the paths of unresolved files."""
 
-        for f, entry in self._state.iteritems():
+        for f, entry in pycompat.iteritems(self._state):
             if entry[0] in (
                 MERGE_RECORD_UNRESOLVED,
                 MERGE_RECORD_UNRESOLVED_PATH,
@@ -725,7 +725,7 @@ class mergestate(object):
             ACTION_ADD_MODIFIED: [],
             ACTION_GET: [],
         }
-        for f, (r, action) in self._results.iteritems():
+        for f, (r, action) in pycompat.iteritems(self._results):
             if action is not None:
                 actions[action].append((f, None, b"merge result"))
         return actions
@@ -865,7 +865,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                 warnconflicts.update(conflicts)
 
         checkunknowndirs = _unknowndirschecker()
-        for f, (m, args, msg) in actions.iteritems():
+        for f, (m, args, msg) in pycompat.iteritems(actions):
             if m in (ACTION_CREATED, ACTION_DELETED_CHANGED):
                 if _checkunknownfile(repo, wctx, mctx, f):
                     fileconflicts.add(f)
@@ -883,7 +883,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
         collectconflicts(ignoredconflicts, ignoredconfig)
         collectconflicts(unknownconflicts, unknownconfig)
     else:
-        for f, (m, args, msg) in actions.iteritems():
+        for f, (m, args, msg) in pycompat.iteritems(actions):
             if m == ACTION_CREATED_MERGE:
                 fl2, anc = args
                 different = _checkunknownfile(repo, wctx, mctx, f)
@@ -942,7 +942,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
         else:
             repo.ui.warn(_(b"%s: replacing untracked files in directory\n") % f)
 
-    for f, (m, args, msg) in actions.iteritems():
+    for f, (m, args, msg) in pycompat.iteritems(actions):
         if m == ACTION_CREATED:
             backup = (
                 f in fileconflicts
@@ -995,7 +995,7 @@ def _checkcollision(repo, wmf, actions):
         wmf = wmf.matches(narrowmatch)
         if actions:
             narrowactions = {}
-            for m, actionsfortype in actions.iteritems():
+            for m, actionsfortype in pycompat.iteritems(actions):
                 narrowactions[m] = []
                 for (f, args, msg) in actionsfortype:
                     if narrowmatch(f):
@@ -1298,7 +1298,7 @@ def manifestmerge(
         relevantfiles = set(ma.diff(m2).keys())
 
         # For copied and moved files, we need to add the source file too.
-        for copykey, copyvalue in copy.iteritems():
+        for copykey, copyvalue in pycompat.iteritems(copy):
             if copyvalue in relevantfiles:
                 relevantfiles.add(copykey)
         for movedirkey in movewithdir:
@@ -1309,7 +1309,7 @@ def manifestmerge(
     diff = m1.diff(m2, match=matcher)
 
     actions = {}
-    for f, ((n1, fl1), (n2, fl2)) in diff.iteritems():
+    for f, ((n1, fl1), (n2, fl2)) in pycompat.iteritems(diff):
         if n1 and n2:  # file exists on both local and remote side
             if f not in ma:
                 fa = copy.get(f, None)
@@ -1573,7 +1573,7 @@ def calculateupdates(
             if renamedelete is None or len(renamedelete) < len(renamedelete1):
                 renamedelete = renamedelete1
 
-            for f, a in sorted(actions.iteritems()):
+            for f, a in sorted(pycompat.iteritems(actions)):
                 m, args, msg = a
                 repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m))
                 if f in fbids:
@@ -2058,7 +2058,7 @@ def applyupdates(
     extraactions = ms.actions()
     if extraactions:
         mfiles = set(a[0] for a in actions[ACTION_MERGE])
-        for k, acts in extraactions.iteritems():
+        for k, acts in pycompat.iteritems(extraactions):
             actions[k].extend(acts)
             if k == ACTION_GET and wantfiledata:
                 # no filedata until mergestate is updated to provide it
@@ -2401,7 +2401,7 @@ def update(
         )
 
         if updatecheck == UPDATECHECK_NO_CONFLICT:
-            for f, (m, args, msg) in actionbyfile.iteritems():
+            for f, (m, args, msg) in pycompat.iteritems(actionbyfile):
                 if m not in (
                     ACTION_GET,
                     ACTION_KEEP,
@@ -2465,7 +2465,7 @@ def update(
 
         # Convert to dictionary-of-lists format
         actions = emptyactions()
-        for f, (m, args, msg) in actionbyfile.iteritems():
+        for f, (m, args, msg) in pycompat.iteritems(actionbyfile):
             if m not in actions:
                 actions[m] = []
             actions[m].append((f, args, msg))
@@ -2480,7 +2480,7 @@ def update(
                 _checkcollision(repo, wc.manifest(), actions)
 
         # divergent renames
-        for f, fl in sorted(diverge.iteritems()):
+        for f, fl in sorted(pycompat.iteritems(diverge)):
             repo.ui.warn(
                 _(
                     b"note: possible conflict - %s was renamed "
@@ -2492,7 +2492,7 @@ def update(
                 repo.ui.warn(b" %s\n" % nf)
 
         # rename and delete
-        for f, fl in sorted(renamedelete.iteritems()):
+        for f, fl in sorted(pycompat.iteritems(renamedelete)):
             repo.ui.warn(
                 _(
                     b"note: possible conflict - %s was deleted "

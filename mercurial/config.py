@@ -86,7 +86,7 @@ class config(object):
         return sorted(self._data.keys())
 
     def items(self, section):
-        return list(self._data.get(section, {}).iteritems())
+        return list(pycompat.iteritems(self._data.get(section, {})))
 
     def set(self, section, item, value, source=b""):
         if pycompat.ispy3:

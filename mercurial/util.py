@@ -1265,7 +1265,7 @@ class sortdict(collections.OrderedDict):
         # __setitem__() isn't called as of PyPy 5.8.0
         def update(self, src):
             if isinstance(src, dict):
-                src = src.iteritems()
+                src = pycompat.iteritems(src)
             for k, v in src:
                 self[k] = v
 
@@ -3501,7 +3501,7 @@ class dirs(object):
         self._dirs = {}
         addpath = self.addpath
         if isinstance(map, dict) and skip is not None:
-            for f, s in map.iteritems():
+            for f, s in pycompat.iteritems(map):
                 if s[0] != skip:
                     addpath(f)
         elif skip is not None:

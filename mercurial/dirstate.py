@@ -282,7 +282,7 @@ class dirstate(object):
         return iter(sorted(self._map))
 
     def items(self):
-        return self._map.iteritems()
+        return pycompat.iteritems(self._map)
 
     iteritems = items
 
@@ -670,7 +670,9 @@ class dirstate(object):
     def _writedirstate(self, st):
         # notify callbacks about parents change
         if self._origpl is not None and self._origpl != self._pl:
-            for c, callback in sorted(self._plchangecallbacks.iteritems()):
+            for c, callback in sorted(
+                pycompat.iteritems(self._plchangecallbacks)
+            ):
                 callback(self, self._origpl, self._pl)
             self._origpl = None
         # use the modification time of the newly created temporary file as the
@@ -682,7 +684,7 @@ class dirstate(object):
         delaywrite = self._ui.configint(b'debug', b'dirstate.delaywrite')
         if delaywrite > 0:
             # do we have any files to delay for?
-            items = self._map.iteritems()
+            items = pycompat.iteritems(self._map)
             for f, e in items:
                 if e[0] == b'n' and e[3] == now:
                     import time  # to avoid useless import
@@ -863,7 +865,7 @@ class dirstate(object):
         if match.isexact() and self._checkcase:
             normed = {}
 
-            for f, st in results.iteritems():
+            for f, st in pycompat.iteritems(results):
                 if st is None:
                     continue
 
@@ -876,7 +878,7 @@ class dirstate(object):
 
                 paths.add(f)
 
-            for norm, paths in normed.iteritems():
+            for norm, paths in pycompat.iteritems(normed):
                 if len(paths) > 1:
                     for path in paths:
                         folded = self._discoverpath(
@@ -1111,9 +1113,9 @@ class dirstate(object):
         # - match.traversedir does something, because match.traversedir should
         #   be called for every dir in the working dir
         full = listclean or match.traversedir is not None
-        for fn, st in self.walk(
-            match, subrepos, listunknown, listignored, full=full
-        ).iteritems():
+        for fn, st in pycompat.iteritems(
+            self.walk(match, subrepos, listunknown, listignored, full=full)
+        ):
             if not dcontains(fn):
                 if (listignored or mexact(fn)) and dirignore(fn):
                     if listignored:
@@ -1324,7 +1326,7 @@ class dirstatemap(object):
         util.clearcachedproperty(self, b"otherparentset")
 
     def items(self):
-        return self._map.iteritems()
+        return pycompat.iteritems(self._map)
 
     # forward for python2,3 compat
     iteritems = items
@@ -1412,7 +1414,7 @@ class dirstatemap(object):
         except AttributeError:
             nonnorm = set()
             otherparent = set()
-            for fname, e in self._map.iteritems():
+            for fname, e in pycompat.iteritems(self._map):
                 if e[0] != b'n' or e[3] == -1:
                     nonnorm.add(fname)
                 if e[0] == b'n' and e[2] == -2:
@@ -1435,7 +1437,7 @@ class dirstatemap(object):
 
         f = {}
         normcase = util.normcase
-        for name, s in self._map.iteritems():
+        for name, s in pycompat.iteritems(self._map):
             if s[0] != b'r':
                 f[normcase(name)] = name
         f[b'.'] = b'.'  # prevents useless util.fspath() invocation

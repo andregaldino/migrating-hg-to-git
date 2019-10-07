@@ -232,7 +232,7 @@ def _generic_proxytunnel(self):
         ]
     )
     self.send(b'CONNECT %s HTTP/1.0\r\n' % self.realhostport)
-    for header in proxyheaders.iteritems():
+    for header in pycompat.iteritems(proxyheaders):
         self.send(b'%s: %s\r\n' % header)
     self.send(b'\r\n')
 

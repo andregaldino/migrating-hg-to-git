@@ -429,7 +429,7 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
     linkrevs = {}
     seen = set()
 
-    for clrev, node in sorted(manifestnodes.iteritems()):
+    for clrev, node in sorted(pycompat.iteritems(manifestnodes)):
         if node in seen:
             continue
 
@@ -641,7 +641,7 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
 
                 locallinkrevs[path] = {
                     node: linkrevs[manifestnode]
-                    for node, manifestnode in nodes.iteritems()
+                    for node, manifestnode in pycompat.iteritems(nodes)
                 }
 
             for path, f in fs:
@@ -758,7 +758,7 @@ def _fetchfilesfromcsets(
 
                 linkrevs = {
                     fnode: manlinkrevs[mnode]
-                    for fnode, mnode in fnodes[path].iteritems()
+                    for fnode, mnode in pycompat.iteritems(fnodes[path])
                 }
 
                 def getlinkrev(node):

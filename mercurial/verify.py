@@ -423,11 +423,11 @@ class verifier(object):
                 _(b'checking'), unit=_(b'manifests'), total=len(subdirs)
             )
 
-        for subdir, linkrevs in subdirnodes.iteritems():
+        for subdir, linkrevs in pycompat.iteritems(subdirnodes):
             subdirfilenodes = self._verifymanifest(
                 linkrevs, subdir, storefiles, subdirprogress
             )
-            for f, onefilenodes in subdirfilenodes.iteritems():
+            for f, onefilenodes in pycompat.iteritems(subdirfilenodes):
                 filenodes.setdefault(f, {}).update(onefilenodes)
 
         if not dir and subdirnodes:
@@ -608,7 +608,7 @@ class verifier(object):
 
             # cross-check
             if f in filenodes:
-                fns = [(v, k) for k, v in filenodes[f].iteritems()]
+                fns = [(v, k) for k, v in pycompat.iteritems(filenodes[f])]
                 for lr, node in sorted(fns):
                     self._err(
                         lr,

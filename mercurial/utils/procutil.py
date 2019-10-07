@@ -246,7 +246,7 @@ _filtertable = {
 
 def filter(s, cmd):
     b"filter a string through a command that transforms its input to its output"
-    for name, fn in _filtertable.iteritems():
+    for name, fn in pycompat.iteritems(_filtertable):
         if cmd.startswith(name):
             return fn(s, cmd[len(name) :].lstrip())
     return pipefilter(s, cmd)
@@ -368,7 +368,7 @@ def shellenviron(environ=None):
 
     env = dict(encoding.environ)
     if environ:
-        env.update((k, py2shell(v)) for k, v in environ.iteritems())
+        env.update((k, py2shell(v)) for k, v in pycompat.iteritems(environ))
     env[b'HG'] = hgexecutable()
     return env
 

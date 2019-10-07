@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from .i18n import _
 from . import (
+    pycompat,
     registrar,
     templatekw,
     util,
@@ -83,7 +84,7 @@ class namespaces(object):
         return self._names.__iter__()
 
     def items(self):
-        return self._names.iteritems()
+        return pycompat.iteritems(self._names)
 
     iteritems = items
 
@@ -116,7 +117,7 @@ class namespaces(object):
 
         Raises a KeyError if there is no such node.
         """
-        for ns, v in self._names.iteritems():
+        for ns, v in pycompat.iteritems(self._names):
             n = v.singlenode(repo, name)
             if n:
                 return n

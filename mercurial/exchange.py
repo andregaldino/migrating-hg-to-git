@@ -957,7 +957,7 @@ def _pushb2ctxcheckheads(pushop, bundler):
             bundler.newpart(b'check:heads', data=iter(pushop.remoteheads))
         else:
             affected = set()
-            for branch, heads in pushop.pushbranchmap.iteritems():
+            for branch, heads in pycompat.iteritems(pushop.pushbranchmap):
                 remoteheads, newheads, unsyncedheads, discardedheads = heads
                 if remoteheads is not None:
                     remote = set(remoteheads)
@@ -1260,7 +1260,7 @@ def _getbundlesendvars(pushop, bundler):
 
         part = bundler.newpart(b'pushvars')
 
-        for key, value in shellvars.iteritems():
+        for key, value in pycompat.iteritems(shellvars):
             part.addparam(key, value, mandatory=False)
 
 

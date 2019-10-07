@@ -20,6 +20,7 @@ from . import (
     filemerge,
     pathutil,
     phases,
+    pycompat,
     util,
 )
 from .utils import stringutil
@@ -162,7 +163,7 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
         repo.ui.debug(b"  subrepo %s: %s %s\n" % (s, msg, r))
 
     promptssrc = filemerge.partextras(labels)
-    for s, l in sorted(s1.iteritems()):
+    for s, l in sorted(pycompat.iteritems(s1)):
         a = sa.get(s, nullstate)
         ld = l  # local state with possible dirty flag for compares
         if wctx.sub(s).dirty():

@@ -389,7 +389,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         sparsematch = matcher(repo, [mctx.rev()])
 
     temporaryfiles = []
-    for file, action in actions.iteritems():
+    for file, action in pycompat.iteritems(actions):
         type, args, msg = action
         files.add(file)
         if sparsematch(file):
@@ -532,7 +532,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
         )
 
     # Check for files that were only in the dirstate.
-    for file, state in dirstate.iteritems():
+    for file, state in pycompat.iteritems(dirstate):
         if not file in files:
             old = origsparsematch(file)
             new = sparsematch(file)
@@ -541,7 +541,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
 
     # Apply changes to disk
     typeactions = mergemod.emptyactions()
-    for f, (m, args, msg) in actions.iteritems():
+    for f, (m, args, msg) in pycompat.iteritems(actions):
         typeactions[m].append((f, args, msg))
 
     mergemod.applyupdates(

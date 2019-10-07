@@ -487,7 +487,7 @@ class manifestdict(object):
         diff = self.diff(m2)
         files = set(
             filepath
-            for filepath, hashflags in diff.iteritems()
+            for filepath, hashflags in pycompat.iteritems(diff)
             if hashflags[1][0] is None
         )
         return files
@@ -789,7 +789,9 @@ class treemanifest(object):
 
     def _loadalllazy(self):
         selfdirs = self._dirs
-        for d, (path, node, readsubtree, docopy) in self._lazydirs.iteritems():
+        for d, (path, node, readsubtree, docopy) in pycompat.iteritems(
+            self._lazydirs
+        ):
             if docopy:
                 selfdirs[d] = readsubtree(path, node).copy()
             else:
@@ -828,11 +830,11 @@ class treemanifest(object):
           differs, load it in both
         """
         toloadlazy = []
-        for d, v1 in t1._lazydirs.iteritems():
+        for d, v1 in pycompat.iteritems(t1._lazydirs):
             v2 = t2._lazydirs.get(d)
             if not v2 or v2[1] != v1[1]:
                 toloadlazy.append(d)
-        for d, v1 in t2._lazydirs.iteritems():
+        for d, v1 in pycompat.iteritems(t2._lazydirs):
             if d not in t1._lazydirs:
                 toloadlazy.append(d)
 
@@ -910,7 +912,7 @@ class treemanifest(object):
             if p in self._files:
                 yield self._subpath(p), n
             else:
-                for f, sn in n.iteritems():
+                for f, sn in pycompat.iteritems(n):
                     yield f, sn
 
     iteritems = items
@@ -1052,10 +1054,10 @@ class treemanifest(object):
                 self._load()
                 s._lazydirs = {
                     d: (p, n, r, True)
-                    for d, (p, n, r, c) in self._lazydirs.iteritems()
+                    for d, (p, n, r, c) in pycompat.iteritems(self._lazydirs)
                 }
                 sdirs = s._dirs
-                for d, v in self._dirs.iteritems():
+                for d, v in pycompat.iteritems(self._dirs):
                     sdirs[d] = v.copy()
                 s._files = dict.copy(self._files)
                 s._flags = dict.copy(self._flags)
@@ -1083,7 +1085,7 @@ class treemanifest(object):
             t1._load()
             t2._load()
             self._loaddifflazy(t1, t2)
-            for d, m1 in t1._dirs.iteritems():
+            for d, m1 in pycompat.iteritems(t1._dirs):
                 if d in t2._dirs:
                     m2 = t2._dirs[d]
                     _filesnotin(m1, m2)
@@ -1200,7 +1202,7 @@ class treemanifest(object):
                 ret._flags[fn] = self._flags[fn]
 
         visit = self._loadchildrensetlazy(visit)
-        for dir, subm in self._dirs.iteritems():
+        for dir, subm in pycompat.iteritems(self._dirs):
             if visit and dir[:-1] not in visit:
                 continue
             m = subm._matches(match)
@@ -1242,15 +1244,15 @@ class treemanifest(object):
             t2._load()
             self._loaddifflazy(t1, t2)
 
-            for d, m1 in t1._dirs.iteritems():
+            for d, m1 in pycompat.iteritems(t1._dirs):
                 m2 = t2._dirs.get(d, emptytree)
                 stack.append((m1, m2))
 
-            for d, m2 in t2._dirs.iteritems():
+            for d, m2 in pycompat.iteritems(t2._dirs):
                 if d not in t1._dirs:
                     stack.append((emptytree, m2))
 
-            for fn, n1 in t1._files.iteritems():
+            for fn, n1 in pycompat.iteritems(t1._files):
                 fl1 = t1._flags.get(fn, b'')
                 n2 = t2._files.get(fn, None)
                 fl2 = t2._flags.get(fn, b'')
@@ -1259,7 +1261,7 @@ class treemanifest(object):
                 elif clean:
                     result[t1._subpath(fn)] = None
 
-            for fn, n2 in t2._files.iteritems():
+            for fn, n2 in pycompat.iteritems(t2._files):
                 if fn not in t1._files:
                     fl2 = t2._flags.get(fn, b'')
                     result[t2._subpath(fn)] = ((None, b''), (n2, fl2))
@@ -1310,7 +1312,9 @@ class treemanifest(object):
         """
         self._load()
         flags = self.flags
-        lazydirs = [(d[:-1], v[1], b't') for d, v in self._lazydirs.iteritems()]
+        lazydirs = [
+            (d[:-1], v[1], b't') for d, v in pycompat.iteritems(self._lazydirs)
+        ]
         dirs = [(d[:-1], self._dirs[d]._node, b't') for d in self._dirs]
         files = [(f, self._files[f], flags(f)) for f in self._files]
         return _text(sorted(dirs + files + lazydirs))
@@ -1339,7 +1343,7 @@ class treemanifest(object):
         visit = self._loadchildrensetlazy(visit)
         if visit == b'this' or visit == b'all':
             visit = None
-        for d, subm in self._dirs.iteritems():
+        for d, subm in pycompat.iteritems(self._dirs):
             if visit and d[:-1] not in visit:
                 continue
             subp1 = getnode(m1, d)
@@ -1362,7 +1366,7 @@ class treemanifest(object):
         self._load()
         # OPT: use visitchildrenset to avoid loading everything.
         self._loadalllazy()
-        for d, subm in self._dirs.iteritems():
+        for d, subm in pycompat.iteritems(self._dirs):
             for subtree in subm.walksubtrees(matcher=matcher):
                 yield subtree
 
@@ -2144,7 +2148,7 @@ class treemanifestctx(object):
             m0 = self._manifestlog.get(self._dir, store.node(r0)).read()
             m1 = self.read()
             md = treemanifest(dir=self._dir)
-            for f, ((n0, fl0), (n1, fl1)) in m0.diff(m1).iteritems():
+            for f, ((n0, fl0), (n1, fl1)) in pycompat.iteritems(m0.diff(m1)):
                 if n1:
                     md[f] = n1
                     if fl1:

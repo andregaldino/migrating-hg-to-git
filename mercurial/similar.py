@@ -8,7 +8,10 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from . import mdiff
+from . import (
+    mdiff,
+    pycompat,
+)
 
 
 def _findexactmatches(repo, added, removed):
@@ -95,7 +98,7 @@ def _findsimilarmatches(repo, added, removed, threshold):
                 copies[a] = (r, myscore)
     progress.complete()
 
-    for dest, v in copies.iteritems():
+    for dest, v in pycompat.iteritems(copies):
         source, bscore = v
         yield source, dest, bscore
 

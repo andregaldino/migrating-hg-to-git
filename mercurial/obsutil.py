@@ -15,6 +15,7 @@ from . import (
     encoding,
     node as nodemod,
     phases,
+    pycompat,
     util,
 )
 from .utils import dateutil
@@ -983,7 +984,7 @@ def divergentsets(repo, ctx):
             base[tuple(nsuccset)] = n
     return [
         {b'divergentnodes': divset, b'commonpredecessor': b}
-        for divset, b in base.iteritems()
+        for divset, b in pycompat.iteritems(base)
     ]
 
 

@@ -444,7 +444,9 @@ class revlog(object):
             self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
 
         # revlog v0 doesn't have flag processors
-        for flag, processor in opts.get(b'flagprocessors', {}).iteritems():
+        for flag, processor in pycompat.iteritems(
+            opts.get(b'flagprocessors', {})
+        ):
             flagutil.insertflagprocessor(flag, processor, self._flagprocessors)
 
         if self._chunkcachesize <= 0:
@@ -1141,7 +1143,7 @@ class revlog(object):
                     # But, obviously its parents aren't.
                     for p in self.parents(n):
                         heads.pop(p, None)
-        heads = [head for head, flag in heads.iteritems() if flag]
+        heads = [head for head, flag in pycompat.iteritems(heads) if flag]
         roots = list(roots)
         assert orderedout
         assert roots
