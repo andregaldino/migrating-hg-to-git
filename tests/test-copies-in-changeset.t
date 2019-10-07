@@ -75,7 +75,17 @@ Check that copies are recorded correctly
   p1copies: 0\x00a (esc)
   1\x00a (esc)
   2\x00a (esc)
-
+#else
+  $ hg debugsidedata -c -v -- -1
+  4 sidedata entries
+   entry-0010 size 11
+    '0\x00a\n1\x00a\n2\x00a'
+   entry-0011 size 0
+    ''
+   entry-0012 size 5
+    '0\n1\n2'
+   entry-0013 size 0
+    ''
 #endif
 
   $ hg showcopies
@@ -107,6 +117,17 @@ Check that renames are recorded correctly
   
   p1copies: 1\x00b (esc)
 
+#else
+  $ hg debugsidedata -c -v -- -1
+  4 sidedata entries
+   entry-0010 size 3
+    '1\x00b'
+   entry-0011 size 0
+    ''
+   entry-0012 size 1
+    '1'
+   entry-0013 size 1
+    '0'
 #endif
 
   $ hg showcopies
@@ -145,6 +166,17 @@ even though there is no filelog entry.
   
   p1copies: 0\x00b2 (esc)
 
+#else
+  $ hg debugsidedata -c -v -- -1
+  4 sidedata entries
+   entry-0010 size 4
+    '0\x00b2'
+   entry-0011 size 0
+    ''
+   entry-0012 size 0
+    ''
+   entry-0013 size 0
+    ''
 #endif
 
   $ hg showcopies
@@ -197,6 +229,17 @@ File 'f' exists only in p1, so 'i' should be from p1
   2\x00f (esc)
   p2copies: 1\x00d (esc)
 
+#else
+  $ hg debugsidedata -c -v -- -1
+  4 sidedata entries
+   entry-0010 size 7
+    '0\x00a\n2\x00f'
+   entry-0011 size 3
+    '1\x00d'
+   entry-0012 size 5
+    '0\n1\n2'
+   entry-0013 size 0
+    ''
 #endif
 
   $ hg showcopies
@@ -218,6 +261,16 @@ Test writing to both changeset and filelog
   p2copies: 
 #else
   $ hg ci -m 'copy a to j'
+  $ hg debugsidedata -c -v -- -1
+  4 sidedata entries
+   entry-0010 size 3
+    '0\x00a'
+   entry-0011 size 0
+    ''
+   entry-0012 size 1
+    '0'
+   entry-0013 size 0
+    ''
 #endif
   $ hg debugdata j 0
   \x01 (esc)
@@ -243,6 +296,16 @@ copy information on to the filelog
 #else
   $ hg ci --amend -m 'copy a to j, v2'
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
+  $ hg debugsidedata -c -v -- -1
+  4 sidedata entries
+   entry-0010 size 3
+    '0\x00a'
+   entry-0011 size 0
+    ''
+   entry-0012 size 1
+    '0'
+   entry-0013 size 0
+    ''
 #endif
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> j
@@ -260,6 +323,16 @@ won't have to fall back to reading from filelogs)
   p2copies: 
 #else
   $ hg ci -m 'modify j'
+  $ hg debugsidedata -c -v -- -1
+  4 sidedata entries
+   entry-0010 size 0
+    ''
+   entry-0011 size 0
+    ''
+   entry-0012 size 0
+    ''
+   entry-0013 size 0
+    ''
 #endif
 
 Test writing only to filelog
@@ -273,6 +346,16 @@ Test writing only to filelog
   
 #else
   $ hg ci -m 'copy a to k'
+  $ hg debugsidedata -c -v -- -1
+  4 sidedata entries
+   entry-0010 size 3
+    '0\x00a'
+   entry-0011 size 0
+    ''
+   entry-0012 size 1
+    '0'
+   entry-0013 size 0
+    ''
 #endif
 
   $ hg debugdata k 0

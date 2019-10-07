@@ -825,10 +825,13 @@ def resolvestorevfsoptions(ui, requirements, features):
     else:  # explicitly mark repo as using revlogv0
         options[b'revlogv0'] = True
 
-    writecopiesto = ui.config(b'experimental', b'copies.write-to')
-    copiesextramode = (b'changeset-only', b'compatibility')
-    if writecopiesto in copiesextramode:
-        options[b'copies-storage'] = b'extra'
+    if COPIESSDC_REQUIREMENT in requirements:
+        options[b'copies-storage'] = b'changeset-sidedata'
+    else:
+        writecopiesto = ui.config(b'experimental', b'copies.write-to')
+        copiesextramode = (b'changeset-only', b'compatibility')
+        if writecopiesto in copiesextramode:
+            options[b'copies-storage'] = b'extra'
 
     return options
 
@@ -1181,6 +1184,10 @@ class localrepository(object):
         self._sparsematchercache = {}
 
         self._extrafilterid = repoview.extrafilter(ui)
+
+        self.filecopiesmode = None
+        if COPIESSDC_REQUIREMENT in self.requirements:
+            self.filecopiesmode = b'changeset-sidedata'
 
     def _getvfsward(self, origfunc):
         """build a ward for self.vfs"""
@@ -2949,12 +2956,17 @@ class localrepository(object):
         p1, p2 = ctx.p1(), ctx.p2()
         user = ctx.user()
 
-        writecopiesto = self.ui.config(b'experimental', b'copies.write-to')
-        writefilecopymeta = writecopiesto != b'changeset-only'
-        writechangesetcopy = writecopiesto in (
-            b'changeset-only',
-            b'compatibility',
-        )
+        if self.filecopiesmode == b'changeset-sidedata':
+            writechangesetcopy = True
+            writefilecopymeta = True
+            writecopiesto = None
+        else:
+            writecopiesto = self.ui.config(b'experimental', b'copies.write-to')
+            writefilecopymeta = writecopiesto != b'changeset-only'
+            writechangesetcopy = writecopiesto in (
+                b'changeset-only',
+                b'compatibility',
+            )
         p1copies, p2copies = None, None
         if writechangesetcopy:
             p1copies = ctx.p1copies()

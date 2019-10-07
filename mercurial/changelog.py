@@ -27,6 +27,8 @@ from .utils import (
     stringutil,
 )
 
+from .revlogutils import sidedata as sidedatamod
+
 _defaultextra = {b'branch': b'default'}
 
 
@@ -676,6 +678,7 @@ class changelog(revlog.revlog):
                     _(b'the name \'%s\' is reserved') % branch
                 )
         sortedfiles = sorted(files)
+        sidedata = None
         if extra is not None:
             for name in (
                 b'p1copies',
@@ -704,13 +707,25 @@ class changelog(revlog.revlog):
                 extra[b'filesadded'] = filesadded
             if filesremoved is not None:
                 extra[b'filesremoved'] = filesremoved
+        elif self._copiesstorage == b'changeset-sidedata':
+            sidedata = {}
+            if p1copies is not None:
+                sidedata[sidedatamod.SD_P1COPIES] = p1copies
+            if p2copies is not None:
+                sidedata[sidedatamod.SD_P2COPIES] = p2copies
+            if filesadded is not None:
+                sidedata[sidedatamod.SD_FILESADDED] = filesadded
+            if filesremoved is not None:
+                sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
 
         if extra:
             extra = encodeextra(extra)
             parseddate = b"%s %s" % (parseddate, extra)
         l = [hex(manifest), user, parseddate] + sortedfiles + [b"", desc]
         text = b"\n".join(l)
-        return self.addrevision(text, transaction, len(self), p1, p2)
+        return self.addrevision(
+            text, transaction, len(self), p1, p2, sidedata=sidedata
+        )
 
     def branchinfo(self, rev):
         """return the branch name and open/close state of a revision

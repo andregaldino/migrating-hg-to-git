@@ -1547,6 +1547,10 @@ class ilocalrepositorymain(interfaceutil.Interface):
 
     names = interfaceutil.Attribute("""A ``namespaces`` instance.""")
 
+    filecopiesmode = interfaceutil.Attribute(
+        """The way files copies should be dealt with in this repo."""
+    )
+
     def close():
         """Close the handle on this repository."""
 

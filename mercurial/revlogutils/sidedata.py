@@ -48,6 +48,12 @@ SD_TEST5 = 5
 SD_TEST6 = 6
 SD_TEST7 = 7
 
+# key to store copies related information
+SD_P1COPIES = 8
+SD_P2COPIES = 9
+SD_FILESADDED = 10
+SD_FILESREMOVED = 11
+
 # internal format constant
 SIDEDATA_HEADER = struct.Struct(r'>H')
 SIDEDATA_ENTRY = struct.Struct(r'>HL20s')
