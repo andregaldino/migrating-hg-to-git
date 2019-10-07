@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import re
@@ -972,3 +972,14 @@ def has_emacs():
     # 24.4, so we allow emacs 24.4, 24.5, and 25+ (24.5 was the last
     # 24 release)
     return matchoutput('emacs --version', b'GNU Emacs 2(4.4|4.5|5|6|7|8|9)')
+
+
+# @check('black', 'the black formatter for python')
+@check('grey', 'grey, the fork of the black formatter for python')
+def has_black():
+    # use that to actual black as soon as possible
+    # blackcmd = b'black --version'
+    blackcmd = b'python3 $RUNTESTDIR/../contrib/grey.py --version'
+    # version_regex = b'black, version \d'
+    version_regex = b'grey.py, version \d'
+    return matchoutput(blackcmd, version_regex)
