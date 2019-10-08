@@ -1192,11 +1192,13 @@ def perfdirstatewrite(ui, repo, **opts):
     ds = repo.dirstate
     b"a" in ds
 
-    def d():
+    def setup():
         ds._dirty = True
+
+    def d():
         ds.write(repo.currenttransaction())
 
-    timer(d)
+    timer(d, setup=setup)
     fm.end()
 
 
