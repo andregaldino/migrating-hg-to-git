@@ -764,6 +764,13 @@ def perfannotate(ui, repo, f, **opts):
     + formatteropts,
 )
 def perfstatus(ui, repo, **opts):
+    """benchmark the performance of a single status call
+
+    The repository data are preserved between each call.
+
+    By default, only the status of the tracked file are requested. If
+    `--unknown` is passed, the "unknown" files are also tracked.
+    """
     opts = _byteskwargs(opts)
     # m = match.always(repo.root, repo.getcwd())
     # timer(lambda: sum(map(len, repo.dirstate.status(m, [], False, False,

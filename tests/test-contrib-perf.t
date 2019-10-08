@@ -172,7 +172,7 @@ perfstatus
    perfrevrange  (no help text available)
    perfrevset    benchmark the execution time of a revset
    perfstartup   (no help text available)
-   perfstatus    (no help text available)
+   perfstatus    benchmark the performance of a single status call
    perftags      (no help text available)
    perftemplating
                  test the rendering time of a given template
