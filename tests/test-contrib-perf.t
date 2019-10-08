@@ -105,7 +105,7 @@ perfstatus
    perfctxfiles  (no help text available)
    perfdiffwd    Profile diff of working directory changes
    perfdirfoldmap
-                 (no help text available)
+                 benchmap a 'dirstate._map.dirfoldmap.get()' request
    perfdirs      (no help text available)
    perfdirstate  benchmap the time necessary to load a dirstate from scratch
    perfdirstatedirs
