@@ -60,7 +60,11 @@ def check(name, desc):
 def checkvers(name, desc, vers):
     """Registers a check function for each of a series of versions.
 
-    vers can be a list or an iterator"""
+    vers can be a list or an iterator.
+
+    Produces a series of feature checks that have the form <name><vers> without
+    any punctuation (even if there's punctuation in 'vers'; i.e. this produces
+    'py38', not 'py3.8' or 'py-38')."""
 
     def decorator(func):
         def funcv(v):
@@ -757,6 +761,8 @@ def has_demandimport():
     return (not has_chg()) and os.environ.get('HGDEMANDIMPORT') != 'disable'
 
 
+# Add "py27", "py35", ... as possible feature checks. Note that there's no
+# punctuation here.
 @checkvers("py", "Python >= %s", (2.7, 3.5, 3.6, 3.7, 3.8, 3.9))
 def has_python_range(v):
     major, minor = v.split('.')[0:2]
