@@ -1142,6 +1142,10 @@ def perfdirstatedirs(ui, repo, **opts):
 
 @command(b'perfdirstatefoldmap', formatteropts)
 def perfdirstatefoldmap(ui, repo, **opts):
+    """benchmap a `dirstate._map.filefoldmap.get()` request
+
+    The dirstate filefoldmap cache is dropped between every request.
+    """
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     dirstate = repo.dirstate

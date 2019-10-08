@@ -111,7 +111,7 @@ perfstatus
    perfdirstatedirs
                  benchmap a 'dirstate.hasdir' call from an empty 'dirs' cache
    perfdirstatefoldmap
-                 (no help text available)
+                 benchmap a 'dirstate._map.filefoldmap.get()' request
    perfdirstatewrite
                  (no help text available)
    perfdiscovery
