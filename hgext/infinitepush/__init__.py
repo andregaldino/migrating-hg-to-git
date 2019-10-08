@@ -6,6 +6,11 @@
 # GNU General Public License version 2 or any later version.
 """ store some pushes in a remote blob store on the server (EXPERIMENTAL)
 
+IMPORTANT: if you use this extension, please contact
+mercurial-devel@mercurial-scm.org ASAP. This extension is believed to
+be unused and barring learning of users of this functionality, we will
+delete this code at the end of 2020.
+
     [infinitepush]
     # Server-side and client-side option. Pattern of the infinitepush bookmark
     branchpattern = PATTERN
