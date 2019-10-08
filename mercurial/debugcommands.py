@@ -2948,7 +2948,7 @@ def debugrevlogindex(ui, repo, file_=None, **opts):
 
     if format == 0:
         if ui.verbose:
-            ui.write(
+            ui.writenoi18n(
                 (b"   rev    offset  length linkrev" b" %s %s p2\n")
                 % (b"nodeid".ljust(idlen), b"p1".ljust(idlen))
             )
@@ -2959,7 +2959,7 @@ def debugrevlogindex(ui, repo, file_=None, **opts):
             )
     elif format == 1:
         if ui.verbose:
-            ui.write(
+            ui.writenoi18n(
                 (
                     b"   rev flag   offset   length     size   link     p1"
                     b"     p2 %s\n"
@@ -3253,11 +3253,11 @@ def debugsidedata(ui, repo, file_, rev=None, **opts):
     if sidedata:
         sidedata = list(sidedata.items())
         sidedata.sort()
-        ui.write((b'%d sidedata entries\n' % len(sidedata)))
+        ui.writenoi18n(b'%d sidedata entries\n' % len(sidedata))
         for key, value in sidedata:
-            ui.write((b' entry-%04o size %d\n' % (key, len(value))))
+            ui.writenoi18n(b' entry-%04o size %d\n' % (key, len(value)))
             if ui.verbose:
-                ui.write((b'  %s\n' % stringutil.pprint(value)))
+                ui.writenoi18n(b'  %s\n' % stringutil.pprint(value))
 
 
 @command(b'debugssl', [], b'[SOURCE]', optionalrepo=True)
