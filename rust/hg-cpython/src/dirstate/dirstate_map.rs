@@ -8,7 +8,7 @@
 //! Bindings for the `hg::dirstate::dirstate_map` file provided by the
 //! `hg-core` package.
 
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::convert::TryInto;
 use std::time::Duration;
 
@@ -465,6 +465,12 @@ py_class!(pub class DirstateMap |py| {
 });
 
 impl DirstateMap {
+    pub fn get_inner<'a>(
+        &'a self,
+        py: Python<'a>,
+    ) -> Ref<'a, RustDirstateMap> {
+        self.inner_shared(py).borrow()
+    }
     fn translate_key(
         py: Python,
         res: (&HgPathBuf, &DirstateEntry),
