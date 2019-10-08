@@ -1112,11 +1112,13 @@ def perfdirstate(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     b"a" in repo.dirstate
 
-    def d():
+    def setup():
         repo.dirstate.invalidate()
+
+    def d():
         b"a" in repo.dirstate
 
-    timer(d)
+    timer(d, setup=setup)
     fm.end()
 
 
