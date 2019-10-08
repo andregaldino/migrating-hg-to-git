@@ -1101,10 +1101,14 @@ def perfdirs(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfdirstate', formatteropts)
+@command(b'perfdirstate', [
+            (b'', b'iteration', None,
+             b'benchmark a full iteration for the dirstate'),
+        ] + formatteropts)
 def perfdirstate(ui, repo, **opts):
-    """benchmap the time necessary to load a dirstate from scratch
+    """benchmap the time of various distate operations
 
+    By default benchmark the time necessary to load a dirstate from scratch.
     The dirstate is loaded to the point were a "contains" request can be
     answered.
     """
@@ -1112,11 +1116,18 @@ def perfdirstate(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     b"a" in repo.dirstate
 
-    def setup():
-        repo.dirstate.invalidate()
+    if opts[b'iteration']:
+        setup = None
+        dirstate = repo.dirstate
+        def d():
+            for f in dirstate:
+                pass
+    else:
+        def setup():
+            repo.dirstate.invalidate()
 
-    def d():
-        b"a" in repo.dirstate
+        def d():
+            b"a" in repo.dirstate
 
     timer(d, setup=setup)
     fm.end()

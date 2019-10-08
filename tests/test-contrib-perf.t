@@ -107,7 +107,7 @@ perfstatus
    perfdirfoldmap
                  benchmap a 'dirstate._map.dirfoldmap.get()' request
    perfdirs      (no help text available)
-   perfdirstate  benchmap the time necessary to load a dirstate from scratch
+   perfdirstate  benchmap the time of various distate operations
    perfdirstatedirs
                  benchmap a 'dirstate.hasdir' call from an empty 'dirs' cache
    perfdirstatefoldmap
@@ -205,6 +205,7 @@ perfstatus
   $ hg perfdirfoldmap
   $ hg perfdirs
   $ hg perfdirstate
+  $ hg perfdirstate --iteration
   $ hg perfdirstatedirs
   $ hg perfdirstatefoldmap
   $ hg perfdirstatewrite
