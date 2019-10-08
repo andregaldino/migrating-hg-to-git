@@ -1128,13 +1128,15 @@ def perfdirstatedirs(ui, repo, **opts):
     """
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    b"a" in repo.dirstate
+    repo.dirstate.hasdir(b"a")
+
+    def setup():
+        del repo.dirstate._map._dirs
 
     def d():
         repo.dirstate.hasdir(b"a")
-        del repo.dirstate._map._dirs
 
-    timer(d)
+    timer(d, setup=setup)
     fm.end()
 
 
