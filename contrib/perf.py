@@ -1103,6 +1103,11 @@ def perfdirs(ui, repo, **opts):
 
 @command(b'perfdirstate', formatteropts)
 def perfdirstate(ui, repo, **opts):
+    """benchmap the time necessary to load a dirstate from scratch
+
+    The dirstate is loaded to the point were a "contains" request can be
+    answered.
+    """
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     b"a" in repo.dirstate

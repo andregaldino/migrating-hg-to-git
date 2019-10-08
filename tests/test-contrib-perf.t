@@ -107,7 +107,7 @@ perfstatus
    perfdirfoldmap
                  (no help text available)
    perfdirs      (no help text available)
-   perfdirstate  (no help text available)
+   perfdirstate  benchmap the time necessary to load a dirstate from scratch
    perfdirstatedirs
                  (no help text available)
    perfdirstatefoldmap
