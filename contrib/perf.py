@@ -1149,13 +1149,15 @@ def perfdirstatefoldmap(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     dirstate = repo.dirstate
-    b'a' in dirstate
+    dirstate._map.filefoldmap.get(b'a')
+
+    def setup():
+        del dirstate._map.filefoldmap
 
     def d():
         dirstate._map.filefoldmap.get(b'a')
-        del dirstate._map.filefoldmap
 
-    timer(d)
+    timer(d, setup=setup)
     fm.end()
 
 
