@@ -124,7 +124,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
     re_01 = re.compile(b'cvs \\[r?log aborted\\]: (.+)$')
     re_02 = re.compile(b'cvs (r?log|server): (.+)\n$')
     re_03 = re.compile(
-        b"(Cannot access.+CVSROOT)|" b"(can't create temporary directory.+)$"
+        b"(Cannot access.+CVSROOT)|(can't create temporary directory.+)$"
     )
     re_10 = re.compile(b'Working file: (.+)$')
     re_20 = re.compile(b'symbolic names:')
@@ -328,7 +328,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
                 state = 5
             else:
                 assert not re_32.match(line), _(
-                    b'must have at least ' b'some revisions'
+                    b'must have at least some revisions'
                 )
 
         elif state == 5:
@@ -563,7 +563,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
                     raise error.Abort(
                         inst,
                         hint=_(
-                            b'check convert.cvsps.logencoding' b' configuration'
+                            b'check convert.cvsps.logencoding configuration'
                         ),
                     )
             else:
@@ -573,9 +573,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
                         b" CVS log message for %s of %s"
                     )
                     % (revstr(entry.revision), entry.file),
-                    hint=_(
-                        b'check convert.cvsps.logencoding' b' configuration'
-                    ),
+                    hint=_(b'check convert.cvsps.logencoding configuration'),
                 )
 
     hook.hook(ui, None, b"cvslog", True, log=log)

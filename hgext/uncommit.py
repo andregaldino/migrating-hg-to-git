@@ -165,7 +165,7 @@ def uncommit(ui, repo, *pats, **opts):
         if not allowdirtywcopy and (not pats or isdirtypath):
             cmdutil.bailifchanged(
                 repo,
-                hint=_(b'requires ' b'--allow-dirty-working-copy to uncommit'),
+                hint=_(b'requires --allow-dirty-working-copy to uncommit'),
             )
         old = repo[b'.']
         rewriteutil.precheck(repo, [old.rev()], b'uncommit')
@@ -190,7 +190,7 @@ def uncommit(ui, repo, *pats, **opts):
             for f in sorted(badfiles):
                 if f in s.clean:
                     hint = _(
-                        b"file was not changed in working directory " b"parent"
+                        b"file was not changed in working directory parent"
                     )
                 elif repo.wvfs.exists(f):
                     hint = _(b"file was untracked in working directory parent")

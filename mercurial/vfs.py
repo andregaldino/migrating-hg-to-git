@@ -685,7 +685,7 @@ class backgroundfilecloser(object):
         """Schedule a file for closing."""
         if not self._entered:
             raise error.Abort(
-                _(b'can only call close() when context manager ' b'active')
+                _(b'can only call close() when context manager active')
             )
 
         # If a background thread encountered an exception, raise now so we fail

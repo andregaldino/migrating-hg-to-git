@@ -70,7 +70,7 @@ testedwith = b'ships-with-hg-core'
             b'',
             b'relative',
             None,
-            _(b'point to source using a relative path ' b'(EXPERIMENTAL)'),
+            _(b'point to source using a relative path (EXPERIMENTAL)'),
         ),
     ],
     _(b'[-U] [-B] SOURCE [DEST]'),

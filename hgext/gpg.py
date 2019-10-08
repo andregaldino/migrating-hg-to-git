@@ -76,7 +76,7 @@ class gpg(object):
             fp = os.fdopen(fd, r'wb')
             fp.write(data)
             fp.close()
-            gpgcmd = b"%s --logger-fd 1 --status-fd 1 --verify " b"\"%s\" \"%s\"" % (
+            gpgcmd = b"%s --logger-fd 1 --status-fd 1 --verify \"%s\" \"%s\"" % (
                 self.path,
                 sigfile,
                 datafile,
@@ -179,12 +179,12 @@ def getkeys(ui, repo, mygpg, sigdata, context):
             continue
         if key[0] == b"EXPSIG":
             ui.write(
-                _(b"%s Note: Signature has expired" b" (signed by: \"%s\")\n")
+                _(b"%s Note: Signature has expired (signed by: \"%s\")\n")
                 % (prefix, key[2])
             )
         elif key[0] == b"EXPKEYSIG":
             ui.write(
-                _(b"%s Note: This key has expired" b" (signed by: \"%s\")\n")
+                _(b"%s Note: This key has expired (signed by: \"%s\")\n")
                 % (prefix, key[2])
             )
         validkeys.append((key[1], key[2], key[3]))
@@ -304,7 +304,7 @@ def _dosign(ui, repo, *revs, **opts):
         ]
         if len(nodes) > 1:
             raise error.Abort(
-                _(b'uncommitted merge - please provide a ' b'specific revision')
+                _(b'uncommitted merge - please provide a specific revision')
             )
         if not nodes:
             nodes = [repo.changelog.tip()]

@@ -980,7 +980,7 @@ def expectsize(repo, subset, x, order):
         raise error.ParseError(_(b'invalid set of arguments'))
     minsize, maxsize = getintrange(
         args[b'size'],
-        _(b'expectsize requires a size range' b' or a positive integer'),
+        _(b'expectsize requires a size range or a positive integer'),
         _(b'size range bounds must be integers'),
         minsize,
         maxsize,
@@ -989,11 +989,13 @@ def expectsize(repo, subset, x, order):
         raise error.ParseError(_(b'negative size'))
     rev = getset(repo, fullreposet(repo), args[b'set'], order=order)
     if minsize != maxsize and (len(rev) < minsize or len(rev) > maxsize):
-        err = _(
-            b'revset size mismatch.' b' expected between %d and %d, got %d'
-        ) % (minsize, maxsize, len(rev))
+        err = _(b'revset size mismatch. expected between %d and %d, got %d') % (
+            minsize,
+            maxsize,
+            len(rev),
+        )
     elif minsize == maxsize and len(rev) != minsize:
-        err = _(b'revset size mismatch.' b' expected %d, got %d') % (
+        err = _(b'revset size mismatch. expected %d, got %d') % (
             minsize,
             len(rev),
         )
@@ -1043,14 +1045,14 @@ def extra(repo, subset, x):
         raise error.ParseError(_(b'extra takes at least 1 argument'))
     # i18n: "extra" is a keyword
     label = getstring(
-        args[b'label'], _(b'first argument to extra must be ' b'a string')
+        args[b'label'], _(b'first argument to extra must be a string')
     )
     value = None
 
     if b'value' in args:
         # i18n: "extra" is a keyword
         value = getstring(
-            args[b'value'], _(b'second argument to extra must be ' b'a string')
+            args[b'value'], _(b'second argument to extra must be a string')
         )
         kind, value, matcher = stringutil.stringmatcher(value)
 
@@ -1314,7 +1316,7 @@ def _matchfiles(repo, subset, x):
         elif prefix == b'r:':
             if rev is not None:
                 raise error.ParseError(
-                    b'_matchfiles expected at most one ' b'revision'
+                    b'_matchfiles expected at most one revision'
                 )
             if value == b'':  # empty means working directory
                 rev = node.wdirrev
@@ -1323,7 +1325,7 @@ def _matchfiles(repo, subset, x):
         elif prefix == b'd:':
             if default is not None:
                 raise error.ParseError(
-                    b'_matchfiles expected at most one ' b'default mode'
+                    b'_matchfiles expected at most one default mode'
                 )
             default = value
         else:
@@ -2127,7 +2129,7 @@ def matching(repo, subset, x):
         fieldlist = getstring(
             l[1],
             # i18n: "matching" is a keyword
-            _(b"matching requires a string " b"as its second argument"),
+            _(b"matching requires a string as its second argument"),
         ).split()
 
     # Make sure that there are no repeated fields,
@@ -2284,7 +2286,7 @@ def _getsortargs(x):
     if len(keyflags) > 1 and any(k == b'topo' for k, reverse in keyflags):
         # i18n: "topo" is a keyword
         raise error.ParseError(
-            _(b'topo sort order cannot be combined ' b'with other sort keys')
+            _(b'topo sort order cannot be combined with other sort keys')
         )
 
     opts = {}

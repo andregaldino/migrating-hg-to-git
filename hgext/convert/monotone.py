@@ -263,7 +263,7 @@ class monotone_source(common.converter_source, common.commandline):
     def getchanges(self, rev, full):
         if full:
             raise error.Abort(
-                _(b"convert from monotone does not support " b"--full")
+                _(b"convert from monotone does not support --full")
             )
         revision = self.mtnrun(b"get_revision", rev).split(b"\n\n")
         files = {}
@@ -369,7 +369,7 @@ class monotone_source(common.converter_source, common.commandline):
             version = float(versionstr)
         except Exception:
             raise error.Abort(
-                _(b"unable to determine mtn automate interface " b"version")
+                _(b"unable to determine mtn automate interface version")
             )
 
         if version >= 12.0:

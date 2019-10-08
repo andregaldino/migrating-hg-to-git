@@ -143,12 +143,12 @@ class peerexecutor(object):
     def callcommand(self, command, args):
         if self._sent:
             raise error.ProgrammingError(
-                b'callcommand() cannot be used ' b'after commands are sent'
+                b'callcommand() cannot be used after commands are sent'
             )
 
         if self._closed:
             raise error.ProgrammingError(
-                b'callcommand() cannot be used ' b'after close()'
+                b'callcommand() cannot be used after close()'
             )
 
         # Commands are dispatched through methods on the peer.

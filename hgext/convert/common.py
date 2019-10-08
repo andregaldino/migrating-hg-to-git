@@ -169,7 +169,7 @@ class converter_source(object):
         """
         if not re.match(br'[0-9a-fA-F]{40,40}$', revstr):
             raise error.Abort(
-                _(b'%s entry %s is not a valid revision' b' identifier')
+                _(b'%s entry %s is not a valid revision identifier')
                 % (mapname, revstr)
             )
 

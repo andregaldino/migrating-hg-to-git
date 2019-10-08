@@ -15,7 +15,7 @@ from . import error
 def checkunresolved(ms):
     if list(ms.unresolved()):
         raise error.Abort(
-            _(b"unresolved merge conflicts " b"(see 'hg help resolve')")
+            _(b"unresolved merge conflicts (see 'hg help resolve')")
         )
     if ms.mdstate() != b's' or list(ms.driverresolved()):
         raise error.Abort(

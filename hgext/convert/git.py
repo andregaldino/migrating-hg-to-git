@@ -259,7 +259,7 @@ class convert_git(common.converter_source, common.commandline):
             # This can happen if a file is in the repo that has permissions
             # 160000, but there is no .gitmodules file.
             self.ui.warn(
-                _(b"warning: cannot read submodules config file in " b"%s\n")
+                _(b"warning: cannot read submodules config file in %s\n")
                 % version
             )
             return

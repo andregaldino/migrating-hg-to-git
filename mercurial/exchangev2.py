@@ -219,7 +219,7 @@ def _fetchrawstorefiles(repo, remote):
                     vfs = repo.svfs
                 else:
                     raise error.Abort(
-                        _(b'invalid location for raw file data: ' b'%s')
+                        _(b'invalid location for raw file data: %s')
                         % filemeta[b'location']
                     )
 

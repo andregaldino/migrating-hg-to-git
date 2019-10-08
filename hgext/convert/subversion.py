@@ -189,7 +189,7 @@ def debugsvnlog(ui, **opts):
     """
     if svn is None:
         raise error.Abort(
-            _(b'debugsvnlog could not load Subversion python ' b'bindings')
+            _(b'debugsvnlog could not load Subversion python bindings')
         )
 
     args = decodeargs(ui.fin.read())
@@ -647,7 +647,7 @@ class svn_source(converter_source):
             revstr,
         ):
             raise error.Abort(
-                _(b'%s entry %s is not a valid revision' b' identifier')
+                _(b'%s entry %s is not a valid revision identifier')
                 % (mapname, revstr)
             )
 

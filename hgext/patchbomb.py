@@ -162,7 +162,7 @@ def _addpullheader(seq, ctx):
     # destination before patchbombing anything.
     publicurl = repo.ui.config(b'patchbomb', b'publicurl')
     if publicurl:
-        return b'Available At %s\n' b'#              hg pull %s -r %s' % (
+        return b'Available At %s\n#              hg pull %s -r %s' % (
             publicurl,
             publicurl,
             ctx,
@@ -343,9 +343,7 @@ def _getpatches(repo, revs, **opts):
     prev = repo[b'.'].rev()
     for r in revs:
         if r == prev and (repo[None].files() or repo[None].deleted()):
-            ui.warn(
-                _(b'warning: working directory has ' b'uncommitted changes\n')
-            )
+            ui.warn(_(b'warning: working directory has uncommitted changes\n'))
         output = stringio()
         cmdutil.exportfile(
             repo, [r], output, opts=patch.difffeatureopts(ui, opts, git=True)
@@ -391,7 +389,7 @@ def _getdescription(repo, defaultbody, sender, **opts):
         body = open(opts.get(r'desc')).read()
     else:
         ui.write(
-            _(b'\nWrite the introductory message for the ' b'patch series.\n\n')
+            _(b'\nWrite the introductory message for the patch series.\n\n')
         )
         body = ui.edit(
             defaultbody, sender, repopath=repo.path, action=b'patchbombbody'
@@ -911,7 +909,7 @@ def email(ui, repo, *revs, **opts):
                 ui.write(ds, label=b'patchbomb.diffstats')
         ui.write(b'\n')
         if ui.promptchoice(
-            _(b'are you sure you want to send (yn)?' b'$$ &Yes $$ &No')
+            _(b'are you sure you want to send (yn)?$$ &Yes $$ &No')
         ):
             raise error.Abort(_(b'patchbomb canceled'))
 

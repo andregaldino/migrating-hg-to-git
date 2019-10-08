@@ -667,7 +667,7 @@ class obsstore(object):
         Return the number of new marker."""
         if self._readonly:
             raise error.Abort(
-                _(b'creating obsolete markers is not enabled on ' b'this repo')
+                _(b'creating obsolete markers is not enabled on this repo')
             )
         known = set()
         getsuccessors = self.successors.get

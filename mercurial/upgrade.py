@@ -409,7 +409,7 @@ class compressionengine(formatvariant):
     )
 
     upgrademessage = _(
-        b'revlog content will be recompressed with the new ' b'algorithm.'
+        b'revlog content will be recompressed with the new algorithm.'
     )
 
     @classmethod
@@ -1106,7 +1106,7 @@ def upgraderepo(
     missingreqs = requiredsourcerequirements(repo) - repo.requirements
     if missingreqs:
         raise error.Abort(
-            _(b'cannot upgrade repository; requirement ' b'missing: %s')
+            _(b'cannot upgrade repository; requirement missing: %s')
             % _(b', ').join(sorted(missingreqs))
         )
 
@@ -1173,7 +1173,7 @@ def upgraderepo(
         raise error.Abort(
             _(b'unknown optimization action requested: %s')
             % b', '.join(sorted(optimize)),
-            hint=_(b'run without arguments to see valid ' b'optimizations'),
+            hint=_(b'run without arguments to see valid optimizations'),
         )
 
     deficiencies = finddeficiencies(repo)

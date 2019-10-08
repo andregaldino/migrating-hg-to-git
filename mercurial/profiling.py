@@ -43,9 +43,7 @@ def lsprofile(ui, fp):
     climit = ui.configint(b'profiling', b'nested')
 
     if format not in [b'text', b'kcachegrind']:
-        ui.warn(
-            _(b"unrecognized profiling format '%s'" b" - Ignored\n") % format
-        )
+        ui.warn(_(b"unrecognized profiling format '%s' - Ignored\n") % format)
         format = b'text'
 
     try:

@@ -830,7 +830,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         hg._showstats(repo, stats)
         if stats.unresolvedcount:
             repo.ui.status(
-                _(b"use 'hg resolve' to retry unresolved " b"file merges\n")
+                _(b"use 'hg resolve' to retry unresolved file merges\n")
             )
             return 1
     else:
@@ -839,7 +839,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         cmdutil.revert(ui, repo, rctx, repo.dirstate.parents())
 
     if opts.get(b'no_commit'):
-        msg = _(b"changeset %s backed out, " b"don't forget to commit.\n")
+        msg = _(b"changeset %s backed out, don't forget to commit.\n")
         ui.status(msg % short(node))
         return 0
 
@@ -1353,7 +1353,7 @@ def branch(ui, repo, label=None, **opts):
             if not opts.get(b'force') and label in repo.branchmap():
                 if label not in [p.branch() for p in repo[None].parents()]:
                     raise error.Abort(
-                        _(b'a branch of the same name already' b' exists'),
+                        _(b'a branch of the same name already exists'),
                         # i18n: "it" refers to an existing branch
                         hint=_(b"use 'hg update' to switch to it"),
                     )
@@ -1562,9 +1562,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
     except error.UnsupportedBundleSpecification as e:
         raise error.Abort(
             pycompat.bytestr(e),
-            hint=_(
-                b"see 'hg help bundlespec' for supported " b"values for --type"
-            ),
+            hint=_(b"see 'hg help bundlespec' for supported values for --type"),
         )
     cgversion = bundlespec.contentopts[b"cg.version"]
 
@@ -1578,7 +1576,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
     if opts.get(b'all'):
         if dest:
             raise error.Abort(
-                _(b"--all is incompatible with specifying " b"a destination")
+                _(b"--all is incompatible with specifying a destination")
             )
         if opts.get(b'base'):
             ui.warn(_(b"ignoring --base because --all was specified\n"))
@@ -1593,7 +1591,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
     if base:
         if dest:
             raise error.Abort(
-                _(b"--base is incompatible with specifying " b"a destination")
+                _(b"--base is incompatible with specifying a destination")
             )
         common = [repo[rev].node() for rev in base]
         heads = [repo[r].node() for r in revs] if revs else None
@@ -2048,7 +2046,7 @@ def _docommit(ui, repo, *pats, **opts):
 
         if repo[b'.'].closesbranch():
             raise error.Abort(
-                _(b'current revision is already a branch closing' b' head')
+                _(b'current revision is already a branch closing head')
             )
         elif not bheads:
             raise error.Abort(_(b'branch "%s" has no heads to close') % branch)
@@ -2298,7 +2296,7 @@ def continuecmd(ui, repo, **opts):
     if not contstate.continuefunc:
         raise error.Abort(
             (
-                _(b"%s in progress but does not support " b"'hg continue'")
+                _(b"%s in progress but does not support 'hg continue'")
                 % (contstate._opname)
             ),
             hint=contstate.continuemsg(),
@@ -2987,19 +2985,19 @@ def _dograft(ui, repo, *revs, **opts):
     if opts.get(b'no_commit'):
         if opts.get(b'edit'):
             raise error.Abort(
-                _(b"cannot specify --no-commit and " b"--edit together")
+                _(b"cannot specify --no-commit and --edit together")
             )
         if opts.get(b'currentuser'):
             raise error.Abort(
-                _(b"cannot specify --no-commit and " b"--currentuser together")
+                _(b"cannot specify --no-commit and --currentuser together")
             )
         if opts.get(b'currentdate'):
             raise error.Abort(
-                _(b"cannot specify --no-commit and " b"--currentdate together")
+                _(b"cannot specify --no-commit and --currentdate together")
             )
         if opts.get(b'log'):
             raise error.Abort(
-                _(b"cannot specify --no-commit and " b"--log together")
+                _(b"cannot specify --no-commit and --log together")
             )
 
     graftstate = statemod.cmdstate(repo, b'graftstate')
@@ -3007,7 +3005,7 @@ def _dograft(ui, repo, *revs, **opts):
     if opts.get(b'stop'):
         if opts.get(b'continue'):
             raise error.Abort(
-                _(b"cannot use '--continue' and " b"'--stop' together")
+                _(b"cannot use '--continue' and '--stop' together")
             )
         if opts.get(b'abort'):
             raise error.Abort(_(b"cannot use '--abort' and '--stop' together"))
@@ -3028,7 +3026,7 @@ def _dograft(ui, repo, *revs, **opts):
     elif opts.get(b'abort'):
         if opts.get(b'continue'):
             raise error.Abort(
-                _(b"cannot use '--continue' and " b"'--abort' together")
+                _(b"cannot use '--continue' and '--abort' together")
             )
         if any(
             (
@@ -3866,7 +3864,7 @@ def identify(
     opts = pycompat.byteskwargs(opts)
     if not repo and not source:
         raise error.Abort(
-            _(b"there is no Mercurial repository here " b"(.hg not found)")
+            _(b"there is no Mercurial repository here (.hg not found)")
         )
 
     default = not (num or id or branch or tags or bookmarks)
@@ -4904,7 +4902,7 @@ statemod.addunfinished(
     cmdmsg=_(b'outstanding uncommitted merge'),
     abortfunc=hg.abortmerge,
     statushint=_(
-        b'To continue:    hg commit\n' b'To abort:       hg merge --abort'
+        b'To continue:    hg commit\nTo abort:       hg merge --abort'
     ),
     cmdhint=_(b"use 'hg commit' or 'hg merge --abort'"),
 )
@@ -5305,7 +5303,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
             )
         elif currentbranchheads > 1:
             ui.status(
-                _(b"(run 'hg heads .' to see heads, 'hg merge' to " b"merge)\n")
+                _(b"(run 'hg heads .' to see heads, 'hg merge' to merge)\n")
             )
         else:
             ui.status(_(b"(run 'hg heads' to see heads)\n"))
@@ -5615,7 +5613,7 @@ def push(ui, repo, dest=None, **opts):
         revs = [repo[rev].node() for rev in revs]
         if not revs:
             raise error.Abort(
-                _(b'default push revset for path evaluates to an ' b'empty set')
+                _(b'default push revset for path evaluates to an empty set')
             )
 
     repo._subtoppath = dest
@@ -5882,7 +5880,7 @@ def resolve(ui, repo, *pats, **opts):
     if confirm:
         if all:
             if ui.promptchoice(
-                _(b're-merge all unresolved files (yn)?' b'$$ &Yes $$ &No')
+                _(b're-merge all unresolved files (yn)?$$ &Yes $$ &No')
             ):
                 raise error.Abort(_(b'user quit'))
         if mark and not pats:
@@ -6474,7 +6472,7 @@ def serve(ui, repo, **opts):
     if opts[b"stdio"]:
         if repo is None:
             raise error.RepoError(
-                _(b"there is no Mercurial repository here" b" (.hg not found)")
+                _(b"there is no Mercurial repository here (.hg not found)")
             )
         s = wireprotoserver.sshserver(ui, repo)
         s.serve_forever()
@@ -7234,7 +7232,7 @@ def tag(ui, repo, name1, *names, **opts):
             scmutil.checknewlabel(repo, n, b'tag')
             if not n:
                 raise error.Abort(
-                    _(b'tag names cannot consist entirely of ' b'whitespace')
+                    _(b'tag names cannot consist entirely of whitespace')
                 )
         if opts.get(b'rev') and opts.get(b'remove'):
             raise error.Abort(_(b"--rev and --remove are incompatible"))
@@ -7269,7 +7267,7 @@ def tag(ui, repo, name1, *names, **opts):
             for n in names:
                 if n in repo.tags():
                     raise error.Abort(
-                        _(b"tag '%s' already exists " b"(use -f to force)") % n
+                        _(b"tag '%s' already exists (use -f to force)") % n
                     )
         if not opts.get(b'local'):
             p1, p2 = repo.dirstate.parents()

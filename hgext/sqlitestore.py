@@ -358,7 +358,7 @@ class sqlitefilestore(object):
 
             if i != rev:
                 raise SQLiteStoreError(
-                    _(b'sqlite database has inconsistent ' b'revision numbers')
+                    _(b'sqlite database has inconsistent revision numbers')
                 )
 
             if p1rev == nullrev:
@@ -772,7 +772,7 @@ class sqlitefilestore(object):
         # SQLite, since columns can be resized at will.
         if len(tombstone) > len(self.rawdata(censornode)):
             raise error.Abort(
-                _(b'censor tombstone must be no longer than ' b'censored data')
+                _(b'censor tombstone must be no longer than censored data')
             )
 
         # We need to replace the censored revision's data with the tombstone.
@@ -1161,7 +1161,7 @@ def newreporequirements(orig, ui, createopts):
     # This restriction can be lifted once we have more confidence.
     if b'sharedrepo' in createopts:
         raise error.Abort(
-            _(b'shared repositories not supported with SQLite ' b'store')
+            _(b'shared repositories not supported with SQLite store')
         )
 
     # This filtering is out of an abundance of caution: we want to ensure
@@ -1176,7 +1176,7 @@ def newreporequirements(orig, ui, createopts):
     unsupported = set(createopts) - known
     if unsupported:
         raise error.Abort(
-            _(b'SQLite store does not support repo creation ' b'option: %s')
+            _(b'SQLite store does not support repo creation option: %s')
             % b', '.join(sorted(unsupported))
         )
 

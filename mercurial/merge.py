@@ -760,7 +760,7 @@ def _getcheckunknownconfig(repo, section, name):
     if config not in valid:
         validstr = b', '.join([b"'" + v + b"'" for v in valid])
         raise error.ConfigError(
-            _(b"%s.%s not valid " b"('%s' is none of %s)")
+            _(b"%s.%s not valid ('%s' is none of %s)")
             % (section, name, config, validstr)
         )
     return config
@@ -1048,7 +1048,7 @@ def _checkcollision(repo, wmf, actions):
         if fold.startswith(foldprefix) and not f.startswith(unfoldprefix):
             # the folded prefix matches but actual casing is different
             raise error.Abort(
-                _(b"case-folding collision between " b"%s and directory of %s")
+                _(b"case-folding collision between %s and directory of %s")
                 % (lastfull, f)
             )
         foldprefix = fold + b'/'
@@ -1225,11 +1225,11 @@ def _filternarrowactions(narrowmatch, branchmerge, actions):
                     b'which is not yet supported'
                 )
                 % f,
-                hint=_(b'merging in the other direction ' b'may work'),
+                hint=_(b'merging in the other direction may work'),
             )
         else:
             raise error.Abort(
-                _(b'conflict in file \'%s\' is outside ' b'narrow clone') % f
+                _(b'conflict in file \'%s\' is outside narrow clone') % f
             )
 
 
@@ -1992,7 +1992,7 @@ def applyupdates(
     if usemergedriver:
         if wctx.isinmemory():
             raise error.InMemoryMergeConflictsError(
-                b"in-memory merge does not " b"support mergedriver"
+                b"in-memory merge does not support mergedriver"
             )
         ms.commit()
         proceed = driverpreprocess(repo, ms, wctx, labels=labels)
@@ -2334,7 +2334,7 @@ def update(
                 if not mergeancestor and wc.branch() == p2.branch():
                     raise error.Abort(
                         _(b"nothing to merge"),
-                        hint=_(b"use 'hg update' " b"or check 'hg heads'"),
+                        hint=_(b"use 'hg update' or check 'hg heads'"),
                     )
             if not force and (wc.files() or wc.deleted()):
                 raise error.Abort(

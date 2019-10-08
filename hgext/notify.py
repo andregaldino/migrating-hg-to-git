@@ -377,7 +377,7 @@ class notifier(object):
                 continue
         if len(subs) == 0:
             self.ui.debug(
-                b'notify: no subscribers to selected repo ' b'and revset\n'
+                b'notify: no subscribers to selected repo and revset\n'
             )
             return
 

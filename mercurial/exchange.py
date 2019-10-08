@@ -319,7 +319,7 @@ def getbundlespec(ui, fh):
                             b'a known bundlespec'
                         )
                         % version,
-                        hint=_(b'try upgrading your Mercurial ' b'client'),
+                        hint=_(b'try upgrading your Mercurial client'),
                     )
             elif part.type == b'stream2' and version is None:
                 # A stream2 part requires to be part of a v2 bundle
@@ -330,7 +330,7 @@ def getbundlespec(ui, fh):
 
         if not version:
             raise error.Abort(
-                _(b'could not identify changegroup version in ' b'bundle')
+                _(b'could not identify changegroup version in bundle')
             )
 
         return b'%s-%s' % (comp, version)
@@ -383,7 +383,7 @@ def _checkpublish(pushop):
             )
         elif behavior == b'confirm':
             if ui.promptchoice(
-                _(b'push and publish %i changesets (yn)?' b'$$ &Yes $$ &No')
+                _(b'push and publish %i changesets (yn)?$$ &Yes $$ &No')
                 % len(published)
             ):
                 raise error.Abort(_(b'user quit'))
@@ -1166,8 +1166,7 @@ def _abortonsecretctx(pushop, node, b):
     """abort if a given bookmark points to a secret changeset"""
     if node and pushop.repo[node].phase() == phases.secret:
         raise error.Abort(
-            _(b'cannot push bookmark %s as it points to a secret' b' changeset')
-            % b
+            _(b'cannot push bookmark %s as it points to a secret changeset') % b
         )
 
 
@@ -2696,7 +2695,7 @@ def check_heads(repo, their_heads, context):
         # someone else committed/pushed/unbundled while we
         # were transferring data
         raise error.PushRaced(
-            b'repository changed while %s - ' b'please try again' % context
+            b'repository changed while %s - please try again' % context
         )
 
 
@@ -2842,7 +2841,7 @@ def _maybeapplyclonebundle(pullop):
             )
         )
         repo.ui.warn(
-            _(b'(you may want to report this to the server ' b'operator)\n')
+            _(b'(you may want to report this to the server operator)\n')
         )
         return
 

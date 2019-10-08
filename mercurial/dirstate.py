@@ -467,7 +467,7 @@ class dirstate(object):
         '''Mark as coming from the other parent, always dirty.'''
         if self._pl[1] == nullid:
             raise error.Abort(
-                _(b"setting %r to other parent " b"only allowed in merges") % f
+                _(b"setting %r to other parent only allowed in merges") % f
             )
         if f in self and self[f] == b'n':
             # merge-like
@@ -1470,7 +1470,7 @@ class dirstatemap(object):
         if self._pendingmode is not None and self._pendingmode != mode:
             fp.close()
             raise error.Abort(
-                _(b'working directory state may be ' b'changed parallelly')
+                _(b'working directory state may be changed parallelly')
             )
         self._pendingmode = mode
         return fp
@@ -1494,7 +1494,7 @@ class dirstatemap(object):
                 self._parents = (nullid, nullid)
             else:
                 raise error.Abort(
-                    _(b'working directory state appears ' b'damaged!')
+                    _(b'working directory state appears damaged!')
                 )
 
         return self._parents
@@ -1671,7 +1671,7 @@ if rustmod is not None:
             if self._pendingmode is not None and self._pendingmode != mode:
                 fp.close()
                 raise error.Abort(
-                    _(b'working directory state may be ' b'changed parallelly')
+                    _(b'working directory state may be changed parallelly')
                 )
             self._pendingmode = mode
             return fp
@@ -1697,7 +1697,7 @@ if rustmod is not None:
                     self._parents = self._rustmap.parents(st)
                 except ValueError:
                     raise error.Abort(
-                        _(b'working directory state appears ' b'damaged!')
+                        _(b'working directory state appears damaged!')
                     )
 
             return self._parents

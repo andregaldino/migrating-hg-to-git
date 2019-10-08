@@ -414,7 +414,7 @@ class fileserverclient(object):
                         ):
                             if not isinstance(remote, _sshv1peer):
                                 raise error.Abort(
-                                    b'remotefilelog requires ssh ' b'servers'
+                                    b'remotefilelog requires ssh servers'
                                 )
                             step = self.ui.configint(
                                 b'remotefilelog', b'getfilesstep'

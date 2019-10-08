@@ -383,14 +383,13 @@ def parsev1commandresponse(
                 return respurl, proto, resp
             else:
                 raise error.RepoError(
-                    _(b'unexpected CBOR response from ' b'server')
+                    _(b'unexpected CBOR response from server')
                 )
 
         version_info = tuple([int(n) for n in subtype.split(b'.')])
     except ValueError:
         raise error.RepoError(
-            _(b"'%s' sent a broken Content-Type " b"header (%s)")
-            % (safeurl, proto)
+            _(b"'%s' sent a broken Content-Type header (%s)") % (safeurl, proto)
         )
 
     # TODO consider switching to a decompression reader that uses
@@ -685,12 +684,12 @@ class httpv2executor(object):
     def callcommand(self, command, args):
         if self._sent:
             raise error.ProgrammingError(
-                b'callcommand() cannot be used after ' b'commands are sent'
+                b'callcommand() cannot be used after commands are sent'
             )
 
         if self._closed:
             raise error.ProgrammingError(
-                b'callcommand() cannot be used after ' b'close()'
+                b'callcommand() cannot be used after close()'
             )
 
         # The service advertises which commands are available. So if we attempt
@@ -763,7 +762,7 @@ class httpv2executor(object):
 
         if len(permissions) > 1:
             raise error.RepoError(
-                _(b'cannot make request requiring multiple ' b'permissions: %s')
+                _(b'cannot make request requiring multiple permissions: %s')
                 % _(b', ').join(sorted(permissions))
             )
 
@@ -1101,7 +1100,7 @@ def instance(ui, path, create, intents=None, createopts=None):
     try:
         if path.startswith(b'https:') and not urlmod.has_https:
             raise error.Abort(
-                _(b'Python support for SSL and HTTPS ' b'is not installed')
+                _(b'Python support for SSL and HTTPS is not installed')
             )
 
         inst = makepeer(ui, path)

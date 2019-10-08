@@ -242,7 +242,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
     def send_headers(self):
         if not self.saved_status:
             raise AssertionError(
-                b"Sending headers before " b"start_response() called"
+                b"Sending headers before start_response() called"
             )
         saved_status = self.saved_status.split(None, 1)
         saved_status[0] = int(saved_status[0])

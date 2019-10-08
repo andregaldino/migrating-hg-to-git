@@ -116,7 +116,7 @@ def _fctxannotate(
         return _doannotate(self, follow, diffopts)
     except Exception as ex:
         self._repo.ui.debug(
-            b'fastannotate: falling back to the vanilla ' b'annotate: %r\n' % ex
+            b'fastannotate: falling back to the vanilla annotate: %r\n' % ex
         )
         return orig(self, follow=follow, skiprevs=skiprevs, diffopts=diffopts)
 

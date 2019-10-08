@@ -1295,7 +1295,7 @@ def archive(web):
     web.res.setbodywillwrite()
     if list(web.res.sendresponse()):
         raise error.ProgrammingError(
-            b'sendresponse() should not emit data ' b'if writing later'
+            b'sendresponse() should not emit data if writing later'
         )
 
     bodyfh = web.res.getbodyfile()

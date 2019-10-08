@@ -677,7 +677,7 @@ def _fullcopytracing(repo, c1, c2, base):
                     if df not in copy:
                         movewithdir[f] = df
                         repo.ui.debug(
-                            (b"   pending file src: '%s' -> " b"dst: '%s'\n")
+                            b"   pending file src: '%s' -> dst: '%s'\n"
                             % (f, df)
                         )
                     break

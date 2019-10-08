@@ -119,6 +119,6 @@ def createapp(baseui, repo, webconf):
     else:
         if not repo:
             raise error.RepoError(
-                _(b"there is no Mercurial repository" b" here (.hg not found)")
+                _(b"there is no Mercurial repository here (.hg not found)")
             )
         return hgweb_mod.hgweb(repo, baseui=baseui)

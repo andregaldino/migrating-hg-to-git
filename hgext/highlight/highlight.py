@@ -39,7 +39,7 @@ TextLexer = pygments.lexers.TextLexer
 HtmlFormatter = pygments.formatters.HtmlFormatter
 
 SYNTAX_CSS = (
-    b'\n<link rel="stylesheet" href="{url}highlightcss" ' b'type="text/css" />'
+    b'\n<link rel="stylesheet" href="{url}highlightcss" type="text/css" />'
 )
 
 

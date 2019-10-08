@@ -109,7 +109,7 @@ def debugancestor(ui, repo, *args):
     elif len(args) == 2:
         if not repo:
             raise error.Abort(
-                _(b'there is no Mercurial repository here ' b'(.hg not found)')
+                _(b'there is no Mercurial repository here (.hg not found)')
             )
         rev1, rev2 = args
         r = repo.changelog
@@ -1464,7 +1464,7 @@ def debuginstall(ui, **opts):
     fm.condwrite(
         err,
         b'encodingerror',
-        _(b" %s\n" b" (check that your locale is properly set)\n"),
+        _(b" %s\n (check that your locale is properly set)\n"),
         err,
     )
 
@@ -1577,7 +1577,7 @@ def debuginstall(ui, **opts):
     )
     fm.write(
         b'compenginesavail',
-        _(b'checking available compression engines ' b'(%s)\n'),
+        _(b'checking available compression engines (%s)\n'),
         fm.formatlist(
             sorted(e.name() for e in compengines if e.available()),
             name=b'compengine',
@@ -1701,7 +1701,7 @@ def debuginstall(ui, **opts):
     fm.condwrite(
         problems,
         b'problems',
-        _(b"%d problems detected," b" please check your install!\n"),
+        _(b"%d problems detected, please check your install!\n"),
         problems,
     )
     fm.end()
@@ -2071,7 +2071,7 @@ def debugnamecomplete(ui, repo, *args):
             b'',
             b'exclusive',
             False,
-            _(b'restrict display to markers only ' b'relevant to REV'),
+            _(b'restrict display to markers only relevant to REV'),
         ),
         (b'', b'index', False, _(b'display index of the marker')),
         (b'', b'delete', [], _(b'delete markers specified by indices')),
@@ -2115,7 +2115,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
 
         if repo.currenttransaction():
             raise error.Abort(
-                _(b'cannot delete obsmarkers in the middle ' b'of transaction.')
+                _(b'cannot delete obsmarkers in the middle of transaction.')
             )
 
         with repo.lock():
@@ -2949,7 +2949,7 @@ def debugrevlogindex(ui, repo, file_=None, **opts):
     if format == 0:
         if ui.verbose:
             ui.writenoi18n(
-                (b"   rev    offset  length linkrev" b" %s %s p2\n")
+                b"   rev    offset  length linkrev %s %s p2\n"
                 % (b"nodeid".ljust(idlen), b"p1".ljust(idlen))
             )
         else:
@@ -3096,7 +3096,7 @@ def debugrevspec(ui, repo, expr, **opts):
         stages = stages[:-1]
     if opts[b'verify_optimized'] and opts[b'no_optimized']:
         raise error.Abort(
-            _(b'cannot use --verify-optimized with ' b'--no-optimized')
+            _(b'cannot use --verify-optimized with --no-optimized')
         )
     stagenames = set(n for n, f in stages)
 
@@ -3276,7 +3276,7 @@ def debugssl(ui, repo, source=None, **opts):
     '''
     if not pycompat.iswindows:
         raise error.Abort(
-            _(b'certificate chain building is only possible on ' b'Windows')
+            _(b'certificate chain building is only possible on Windows')
         )
 
     if not source:
@@ -3422,7 +3422,7 @@ def debugtemplate(ui, repo, tmpl, **opts):
     if opts[r'rev']:
         if repo is None:
             raise error.RepoError(
-                _(b'there is no Mercurial repository here ' b'(.hg not found)')
+                _(b'there is no Mercurial repository here (.hg not found)')
             )
         revs = scmutil.revrange(repo, opts[r'rev'])
 
@@ -3882,9 +3882,7 @@ def debugwireproto(ui, repo, path=None, **opts):
         )
 
     if path and opts[b'localssh']:
-        raise error.Abort(
-            _(b'cannot specify --localssh with an explicit ' b'path')
-        )
+        raise error.Abort(_(b'cannot specify --localssh with an explicit path'))
 
     if ui.interactive():
         ui.write(_(b'(waiting for commands on stdin)\n'))
@@ -4153,7 +4151,7 @@ def debugwireproto(ui, repo, path=None, **opts):
         elif action.startswith(b'httprequest '):
             if not opener:
                 raise error.Abort(
-                    _(b'cannot use httprequest without an HTTP ' b'peer')
+                    _(b'cannot use httprequest without an HTTP peer')
                 )
 
             request = action.split(b' ', 2)

@@ -117,7 +117,7 @@ def pythonhook(ui, repo, htype, hname, funcname, args, throw):
             ui.warn(_(b'error: %s hook failed: %s\n') % (hname, exc.args[0]))
         else:
             ui.warn(
-                _(b'error: %s hook raised an exception: ' b'%s\n')
+                _(b'error: %s hook raised an exception: %s\n')
                 % (hname, stringutil.forcebytestr(exc))
             )
         if throw:

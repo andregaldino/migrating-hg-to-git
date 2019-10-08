@@ -423,7 +423,7 @@ def checknodescendants(repo, revs):
         b'(%ld::) - (%ld)', revs, revs
     ):
         raise error.Abort(
-            _(b'can only fix a changeset together ' b'with all its descendants')
+            _(b'can only fix a changeset together with all its descendants')
         )
 
 

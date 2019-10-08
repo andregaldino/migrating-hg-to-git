@@ -121,7 +121,7 @@ def patternsforrev(repo, rev):
 
     if rev is None:
         raise error.Abort(
-            _(b'cannot parse sparse patterns from working ' b'directory')
+            _(b'cannot parse sparse patterns from working directory')
         )
 
     includes, excludes, profiles = parseconfig(repo.ui, raw, b'sparse')
@@ -483,7 +483,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
 
     if abort:
         raise error.Abort(
-            _(b'could not update sparseness due to pending ' b'changes')
+            _(b'could not update sparseness due to pending changes')
         )
 
     # Calculate actions

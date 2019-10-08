@@ -269,7 +269,7 @@ class bundlerepository(object):
                 if part.type == b'changegroup':
                     if cgpart:
                         raise NotImplementedError(
-                            b"can't process " b"multiple changegroups"
+                            b"can't process multiple changegroups"
                         )
                     cgpart = part
 

@@ -137,7 +137,7 @@ class unioncontentstore(basestore.baseunionstore):
 
     def add(self, name, node, data):
         raise RuntimeError(
-            b"cannot add content only to remotefilelog " b"contentstore"
+            b"cannot add content only to remotefilelog contentstore"
         )
 
     def getmissing(self, keys):
@@ -209,7 +209,7 @@ class remotefilelogcontentstore(basestore.basestore):
 
     def add(self, name, node, data):
         raise RuntimeError(
-            b"cannot add content only to remotefilelog " b"contentstore"
+            b"cannot add content only to remotefilelog contentstore"
         )
 
     def _sanitizemetacache(self):

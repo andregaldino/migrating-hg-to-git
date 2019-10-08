@@ -631,7 +631,7 @@ class cmdalias(object):
                 continue
             if not encoding.isasciistr(v):
                 self.badalias = _(
-                    b"non-ASCII character in alias definition " b"'%s:%s'"
+                    b"non-ASCII character in alias definition '%s:%s'"
                 ) % (name, k)
                 return
             cfg[k] = v

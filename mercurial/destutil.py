@@ -129,9 +129,9 @@ def _destupdatebranchfallback(repo, clean):
         heads = repo.branchheads(currentbranch, closed=True)
         assert heads, b"any branch has at least one head"
         node = repo.revs(b'max(.::(%ln))', heads).first()
-        assert node is not None, (
-            b"any revision has at least " b"one descendant branch head"
-        )
+        assert (
+            node is not None
+        ), b"any revision has at least one descendant branch head"
         if bookmarks.isactivewdirparent(repo):
             movemark = repo[b'.'].node()
     else:

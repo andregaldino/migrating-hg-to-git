@@ -593,7 +593,7 @@ class queue(object):
             diffopts.git = self.gitmode == b'yes'
         else:
             raise error.Abort(
-                _(b'mq.git option can be auto/keep/yes/no' b' got %s')
+                _(b'mq.git option can be auto/keep/yes/no got %s')
                 % self.gitmode
             )
         if patchfn:
@@ -1113,7 +1113,7 @@ class queue(object):
 
             if patcherr:
                 self.ui.warn(
-                    _(b"patch failed, rejects left in working " b"directory\n")
+                    _(b"patch failed, rejects left in working directory\n")
                 )
                 err = 2
                 break
@@ -1214,7 +1214,7 @@ class queue(object):
     def delete(self, repo, patches, opts):
         if not patches and not opts.get(b'rev'):
             raise error.Abort(
-                _(b'qdelete requires at least one revision or ' b'patch name')
+                _(b'qdelete requires at least one revision or patch name')
             )
 
         realpatches = []
@@ -1295,7 +1295,7 @@ class queue(object):
         if name != name.strip():
             # whitespace is stripped by parseseries()
             raise error.Abort(
-                _(b'patch name cannot begin or end with ' b'whitespace')
+                _(b'patch name cannot begin or end with whitespace')
             )
         for prefix in (b'.hg', b'.mq'):
             if name.startswith(prefix):
@@ -1629,11 +1629,11 @@ class queue(object):
                     )
                 if move:
                     raise error.Abort(
-                        _(b'cannot use --exact and --move ' b'together')
+                        _(b'cannot use --exact and --move together')
                     )
                 if self.applied:
                     raise error.Abort(
-                        _(b'cannot push --exact with applied ' b'patches')
+                        _(b'cannot push --exact with applied patches')
                     )
                 root = self.series[start]
                 target = patchheader(self.join(root), self.plainmode).parent
@@ -2390,7 +2390,7 @@ class queue(object):
         if rev:
             if files:
                 raise error.Abort(
-                    _(b'option "-r" not valid when importing ' b'files')
+                    _(b'option "-r" not valid when importing files')
                 )
             rev = scmutil.revrange(repo, rev)
             rev.sort(reverse=True)
@@ -2398,7 +2398,7 @@ class queue(object):
             raise error.Abort(_(b'no files or revisions specified'))
         if (len(files) > 1 or len(rev) > 1) and patchname:
             raise error.Abort(
-                _(b'option "-n" not valid when importing multiple ' b'patches')
+                _(b'option "-n" not valid when importing multiple patches')
             )
         imported = []
         if rev:
@@ -2408,7 +2408,7 @@ class queue(object):
             heads = repo.changelog.heads(repo.changelog.node(rev.first()))
             if len(heads) > 1:
                 raise error.Abort(
-                    _(b'revision %d is the root of more than one ' b'branch')
+                    _(b'revision %d is the root of more than one branch')
                     % rev.last()
                 )
             if self.applied:
@@ -2419,7 +2419,7 @@ class queue(object):
                     )
                 if heads != [self.applied[-1].node]:
                     raise error.Abort(
-                        _(b'revision %d is not the parent of ' b'the queue')
+                        _(b'revision %d is not the parent of the queue')
                         % rev.first()
                     )
                 base = repo.changelog.rev(self.applied[0].node)
@@ -2447,7 +2447,7 @@ class queue(object):
                         )
                     if lastparent and lastparent != r:
                         raise error.Abort(
-                            _(b'revision %d is not the parent of ' b'%d')
+                            _(b'revision %d is not the parent of %d')
                             % (r, lastparent)
                         )
                     lastparent = p1
@@ -2849,7 +2849,7 @@ def clone(ui, source, dest=None, **opts):
         hg.peer(ui, opts, patchespath)
     except error.RepoError:
         raise error.Abort(
-            _(b'versioned patch repository not found' b' (see init --mq)')
+            _(b'versioned patch repository not found (see init --mq)')
         )
     qbase, destrev = None, None
     if sr.local():
@@ -3359,7 +3359,7 @@ def guard(ui, repo, *args, **opts):
     if opts.get(r'list'):
         if args or opts.get(r'none'):
             raise error.Abort(
-                _(b'cannot mix -l/--list with options or ' b'arguments')
+                _(b'cannot mix -l/--list with options or arguments')
             )
         for i in pycompat.xrange(len(q.series)):
             status(i)
@@ -3671,13 +3671,12 @@ def save(ui, repo, **opts):
             if os.path.exists(newpath):
                 if not os.path.isdir(newpath):
                     raise error.Abort(
-                        _(b'destination %s exists and is not ' b'a directory')
+                        _(b'destination %s exists and is not a directory')
                         % newpath
                     )
                 if not opts.get(b'force'):
                     raise error.Abort(
-                        _(b'destination %s exists, ' b'use -f to force')
-                        % newpath
+                        _(b'destination %s exists, use -f to force') % newpath
                     )
         else:
             newpath = savename(path)
@@ -4157,7 +4156,7 @@ def reposetup(ui, repo):
             for patch in mqtags:
                 if patch[1] in tags:
                     self.ui.warn(
-                        _(b'tag %s overrides mq patch of the same ' b'name\n')
+                        _(b'tag %s overrides mq patch of the same name\n')
                         % patch[1]
                     )
                 else:
@@ -4191,13 +4190,13 @@ def mqinit(orig, ui, *args, **kwargs):
         repopath = args[0]
         if not hg.islocal(repopath):
             raise error.Abort(
-                _(b'only a local queue repository ' b'may be initialized')
+                _(b'only a local queue repository may be initialized')
             )
     else:
         repopath = cmdutil.findrepo(encoding.getcwd())
         if not repopath:
             raise error.Abort(
-                _(b'there is no Mercurial repository here ' b'(.hg not found)')
+                _(b'there is no Mercurial repository here (.hg not found)')
             )
     repo = hg.repository(ui, repopath)
     return qinit(ui, repo, True)

@@ -1233,7 +1233,7 @@ class interrupthandler(unpackermixin):
     def __call__(self):
 
         self.ui.debug(
-            b'bundle2-input-stream-interrupt:' b' opening out of band context\n'
+            b'bundle2-input-stream-interrupt: opening out of band context\n'
         )
         indebug(self.ui, b'bundle2 stream interruption, looking for a part.')
         headerblock = self._readpartheader()
@@ -1252,7 +1252,7 @@ class interrupthandler(unpackermixin):
             if not hardabort:
                 part.consume()
         self.ui.debug(
-            b'bundle2-input-stream-interrupt:' b' closing out of band context\n'
+            b'bundle2-input-stream-interrupt: closing out of band context\n'
         )
 
 
@@ -1320,7 +1320,7 @@ def decodepayloadchunks(ui, fh):
         s = read(headersize)
         if len(s) < headersize:
             raise error.Abort(
-                _(b'stream ended unexpectedly ' b' (got %d bytes, expected %d)')
+                _(b'stream ended unexpectedly  (got %d bytes, expected %d)')
                 % (len(s), chunksize)
             )
 
@@ -1889,7 +1889,7 @@ def writebundle(
         assert compression is None
         if cg.version != b'01':
             raise error.Abort(
-                _(b'old bundle types only supports v1 ' b'changegroups')
+                _(b'old bundle types only supports v1 changegroups')
             )
         header, comp = bundletypes[bundletype]
         if comp not in util.compengines.supportedbundletypes:
@@ -2136,7 +2136,7 @@ def handlecheckheads(op, inpart):
         op.gettransaction()
     if sorted(heads) != sorted(op.repo.heads()):
         raise error.PushRaced(
-            b'remote repository changed while pushing - ' b'please try again'
+            b'remote repository changed while pushing - please try again'
         )
 
 

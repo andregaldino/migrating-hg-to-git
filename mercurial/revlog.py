@@ -244,7 +244,7 @@ class revlogoldio(object):
     def packentry(self, entry, node, version, rev):
         if gettype(entry[0]):
             raise error.RevlogError(
-                _(b'index entry flags need revlog ' b'version 1')
+                _(b'index entry flags need revlog version 1')
             )
         e2 = (
             getoffset(entry[0]),
@@ -451,12 +451,12 @@ class revlog(object):
 
         if self._chunkcachesize <= 0:
             raise error.RevlogError(
-                _(b'revlog chunk cache size %r is not ' b'greater than 0')
+                _(b'revlog chunk cache size %r is not greater than 0')
                 % self._chunkcachesize
             )
         elif self._chunkcachesize & (self._chunkcachesize - 1):
             raise error.RevlogError(
-                _(b'revlog chunk cache size %r is not a ' b'power of 2')
+                _(b'revlog chunk cache size %r is not a power of 2')
                 % self._chunkcachesize
             )
 
@@ -492,7 +492,7 @@ class revlog(object):
         if fmt == REVLOGV0:
             if flags:
                 raise error.RevlogError(
-                    _(b'unknown flags (%#04x) in version %d ' b'revlog %s')
+                    _(b'unknown flags (%#04x) in version %d revlog %s')
                     % (flags >> 16, fmt, self.indexfile)
                 )
 
@@ -502,7 +502,7 @@ class revlog(object):
         elif fmt == REVLOGV1:
             if flags & ~REVLOGV1_FLAGS:
                 raise error.RevlogError(
-                    _(b'unknown flags (%#04x) in version %d ' b'revlog %s')
+                    _(b'unknown flags (%#04x) in version %d revlog %s')
                     % (flags >> 16, fmt, self.indexfile)
                 )
 
@@ -512,7 +512,7 @@ class revlog(object):
         elif fmt == REVLOGV2:
             if flags & ~REVLOGV2_FLAGS:
                 raise error.RevlogError(
-                    _(b'unknown flags (%#04x) in version %d ' b'revlog %s')
+                    _(b'unknown flags (%#04x) in version %d revlog %s')
                     % (flags >> 16, fmt, self.indexfile)
                 )
 
@@ -2707,7 +2707,7 @@ class revlog(object):
 
         if len(tombstone) > self.rawsize(censorrev):
             raise error.Abort(
-                _(b'censor tombstone must be no longer than ' b'censored data')
+                _(b'censor tombstone must be no longer than censored data')
             )
 
         # Rewriting the revlog in place is hard. Our strategy for censoring is

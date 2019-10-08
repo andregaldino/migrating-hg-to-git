@@ -1232,7 +1232,7 @@ class svnsubrepo(abstractsubrepo):
     def remove(self):
         if self.dirty():
             self.ui.warn(
-                _(b'not removing repo %s because ' b'it has changes.\n')
+                _(b'not removing repo %s because it has changes.\n')
                 % self._path
             )
             return
@@ -1572,7 +1572,7 @@ class gitsubrepo(abstractsubrepo):
         self._gitcommand([b'fetch'])
         if not self._githavelocally(revision):
             raise error.Abort(
-                _(b'revision %s does not exist in subrepository ' b'"%s"\n')
+                _(b'revision %s does not exist in subrepository "%s"\n')
                 % (revision, self._relpath)
             )
 
@@ -1630,11 +1630,11 @@ class gitsubrepo(abstractsubrepo):
         def rawcheckout():
             # no branch to checkout, check it out with no branch
             self.ui.warn(
-                _(b'checking out detached HEAD in ' b'subrepository "%s"\n')
+                _(b'checking out detached HEAD in subrepository "%s"\n')
                 % self._relpath
             )
             self.ui.warn(
-                _(b'check out a git branch if you intend ' b'to make changes\n')
+                _(b'check out a git branch if you intend to make changes\n')
             )
             checkout([b'-q', revision])
 
@@ -1822,7 +1822,7 @@ class gitsubrepo(abstractsubrepo):
             return
         if self.dirty():
             self.ui.warn(
-                _(b'not removing repo %s because ' b'it has changes.\n')
+                _(b'not removing repo %s because it has changes.\n')
                 % self._relpath
             )
             return

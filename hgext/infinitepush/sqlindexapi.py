@@ -70,7 +70,7 @@ class sqlindexapi(indexapi.indexapi):
             raise indexapi.indexexception(b"SQL connection already open")
         if self.sqlcursor:
             raise indexapi.indexexception(
-                b"SQL cursor already open without" b" connection"
+                b"SQL cursor already open without connection"
             )
         retry = 3
         while True:
@@ -126,7 +126,7 @@ class sqlindexapi(indexapi.indexapi):
             self.sqlconnect()
         self.log.info(b"ADD BUNDLE %r %r" % (self.reponame, bundleid))
         self.sqlcursor.execute(
-            b"INSERT INTO bundles(bundle, reponame) VALUES " b"(%s, %s)",
+            b"INSERT INTO bundles(bundle, reponame) VALUES (%s, %s)",
             params=(bundleid, self.reponame),
         )
         for ctx in nodesctx:

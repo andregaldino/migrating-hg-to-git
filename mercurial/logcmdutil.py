@@ -925,8 +925,7 @@ def getlinerangerevs(repo, userrevs, opts):
     for fname, (fromline, toline) in _parselinerangeopt(repo, opts):
         if fname not in wctx:
             raise error.Abort(
-                _(b'cannot follow file not in parent ' b'revision: "%s"')
-                % fname
+                _(b'cannot follow file not in parent revision: "%s"') % fname
             )
         fctx = wctx.filectx(fname)
         for fctx, linerange in dagop.blockancestors(fctx, fromline, toline):

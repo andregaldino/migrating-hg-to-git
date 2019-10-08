@@ -60,7 +60,7 @@ class cmdstate(object):
         """
         if not isinstance(version, int):
             raise error.ProgrammingError(
-                b"version of state file should be" b" an integer"
+                b"version of state file should be an integer"
             )
 
         with self._repo.vfs(self.fname, b'wb', atomictemp=True) as fp:
@@ -76,7 +76,7 @@ class cmdstate(object):
                 int(fp.readline())
             except ValueError:
                 raise error.CorruptedState(
-                    b"unknown version of state file" b" found"
+                    b"unknown version of state file found"
                 )
 
             return cborutil.decodeall(fp.read())[0]

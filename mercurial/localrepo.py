@@ -223,12 +223,12 @@ class localcommandexecutor(object):
     def callcommand(self, command, args):
         if self._sent:
             raise error.ProgrammingError(
-                b'callcommand() cannot be used after ' b'sendcommands()'
+                b'callcommand() cannot be used after sendcommands()'
             )
 
         if self._closed:
             raise error.ProgrammingError(
-                b'callcommand() cannot be used after ' b'close()'
+                b'callcommand() cannot be used after close()'
             )
 
         # We don't need to support anything fancy. Just call the named
@@ -343,9 +343,7 @@ class localpeer(repository.peer):
         return self._repo.pushkey(namespace, key, old, new)
 
     def stream_out(self):
-        raise error.Abort(
-            _(b'cannot perform stream clone against local ' b'peer')
-        )
+        raise error.Abort(_(b'cannot perform stream clone against local peer'))
 
     def unbundle(self, bundle, heads, url):
         """apply a bundle on a repo
@@ -568,7 +566,7 @@ def makelocalrepository(baseui, path, intents=None):
 
         if not sharedvfs.exists():
             raise error.RepoError(
-                _(b'.hg/sharedpath points to nonexistent ' b'directory %s')
+                _(b'.hg/sharedpath points to nonexistent directory %s')
                 % sharedvfs.base
             )
 
@@ -1453,7 +1451,7 @@ class localrepository(object):
             if not self._dirstatevalidatewarned:
                 self._dirstatevalidatewarned = True
                 self.ui.warn(
-                    _(b"warning: ignoring unknown" b" working parent %s!\n")
+                    _(b"warning: ignoring unknown working parent %s!\n")
                     % short(node)
                 )
             return nullid
@@ -2302,7 +2300,7 @@ class localrepository(object):
                 ) % (oldtip, desc, detail)
             else:
                 msg = _(
-                    b'repository tip rolled back to revision %d' b' (undo %s)\n'
+                    b'repository tip rolled back to revision %d (undo %s)\n'
                 ) % (oldtip, desc)
         except IOError:
             msg = _(b'rolling back unknown transaction\n')
@@ -2367,8 +2365,7 @@ class localrepository(object):
                 )
             else:
                 ui.status(
-                    _(b'working directory now based on ' b'revision %d\n')
-                    % parents
+                    _(b'working directory now based on revision %d\n') % parents
                 )
             mergemod.mergestate.clean(self, self[b'.'].node())
 
@@ -3600,7 +3597,7 @@ def createrepository(ui, path, createopts=None):
 
     if not isinstance(unknownopts, dict):
         raise error.ProgrammingError(
-            b'filterknowncreateopts() did not return ' b'a dict'
+            b'filterknowncreateopts() did not return a dict'
         )
 
     if unknownopts:
@@ -3687,7 +3684,7 @@ def poisonrepository(repo):
                 return object.__getattribute__(self, item)
 
             raise error.ProgrammingError(
-                b'repo instances should not be used ' b'after unshare'
+                b'repo instances should not be used after unshare'
             )
 
         def close(self):

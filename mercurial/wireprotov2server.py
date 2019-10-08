@@ -140,7 +140,7 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
         # since client does Accept it.
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(
-            _(b'client MUST send Content-Type header with ' b'value: %s\n')
+            _(b'client MUST send Content-Type header with value: %s\n')
             % FRAMINGTYPE
         )
         return
@@ -324,7 +324,7 @@ def _httpv2runcommand(
             res.status = b'403 Forbidden'
             res.headers[b'Content-Type'] = b'text/plain'
             res.setbodybytes(
-                _(b'insufficient permissions to execute ' b'command: %s')
+                _(b'insufficient permissions to execute command: %s')
                 % command[b'command']
             )
             return True
@@ -340,7 +340,7 @@ def _httpv2runcommand(
             res.status = b'200 OK'
             res.headers[b'Content-Type'] = b'text/plain'
             res.setbodybytes(
-                _(b'multiple commands cannot be issued to this ' b'URL')
+                _(b'multiple commands cannot be issued to this URL')
             )
             return True
 
@@ -725,13 +725,13 @@ def wireprotocommand(
 
     if not isinstance(args, dict):
         raise error.ProgrammingError(
-            b'arguments for version 2 commands ' b'must be declared as dicts'
+            b'arguments for version 2 commands must be declared as dicts'
         )
 
     for arg, meta in args.items():
         if arg == b'*':
             raise error.ProgrammingError(
-                b'* argument name not allowed on ' b'version 2 commands'
+                b'* argument name not allowed on version 2 commands'
             )
 
         if not isinstance(meta, dict):
@@ -773,7 +773,7 @@ def wireprotocommand(
     def register(func):
         if name in COMMANDS:
             raise error.ProgrammingError(
-                b'%s command already registered ' b'for version 2' % name
+                b'%s command already registered for version 2' % name
             )
 
         COMMANDS[name] = wireprototypes.commandentry(
@@ -890,7 +890,7 @@ def resolvenodes(repo, revisions):
 
     if not isinstance(revisions, list):
         raise error.WireprotoCommandError(
-            b'revisions must be defined as an ' b'array'
+            b'revisions must be defined as an array'
         )
 
     for spec in revisions:

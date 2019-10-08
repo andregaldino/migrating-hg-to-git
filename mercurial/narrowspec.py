@@ -110,7 +110,7 @@ def validatepatterns(pats):
     """
     if not isinstance(pats, set):
         raise error.ProgrammingError(
-            b'narrow patterns should be a set; ' b'got %r' % pats
+            b'narrow patterns should be a set; got %r' % pats
         )
 
     for pat in pats:

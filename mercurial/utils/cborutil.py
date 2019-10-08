@@ -404,7 +404,7 @@ def decodeitem(b, offset=0):
 
             if special != SPECIAL_START_ARRAY:
                 raise CBORDecodeError(
-                    b'expected array after finite set ' b'semantic tag'
+                    b'expected array after finite set semantic tag'
                 )
 
             return True, size, readcount + readcount2 + 1, SPECIAL_START_SET
@@ -746,7 +746,7 @@ class sansiodecoder(object):
                     SPECIAL_START_SET,
                 ):
                     raise CBORDecodeError(
-                        b'collections not supported as map ' b'keys'
+                        b'collections not supported as map keys'
                     )
 
                 # We do not allow special values to be used as map keys.
@@ -841,7 +841,7 @@ class sansiodecoder(object):
                     SPECIAL_START_SET,
                 ):
                     raise CBORDecodeError(
-                        b'collections not allowed as set ' b'values'
+                        b'collections not allowed as set values'
                     )
 
                 # We don't allow non-trivial types to exist as set values.

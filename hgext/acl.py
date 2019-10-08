@@ -439,7 +439,7 @@ def _txnhook(ui, repo, hooktype, node, source, user, **kwargs):
         branch = ctx.branch()
         if denybranches and denybranches(branch):
             raise error.Abort(
-                _(b'acl: user "%s" denied on branch "%s"' b' (changeset "%s")')
+                _(b'acl: user "%s" denied on branch "%s" (changeset "%s")')
                 % (user, branch, ctx)
             )
         if allowbranches and not allowbranches(branch):
@@ -457,7 +457,7 @@ def _txnhook(ui, repo, hooktype, node, source, user, **kwargs):
         for f in ctx.files():
             if deny and deny(f):
                 raise error.Abort(
-                    _(b'acl: user "%s" denied on "%s"' b' (changeset "%s")')
+                    _(b'acl: user "%s" denied on "%s" (changeset "%s")')
                     % (user, f, ctx)
                 )
             if allow and not allow(f):

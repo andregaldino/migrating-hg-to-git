@@ -163,12 +163,12 @@ def buildargsdict(trees, funcname, argspec, keyvaluenode, keynode):
     )
     if kwstart < len(poskeys):
         raise error.ParseError(
-            _(b"%(func)s takes at least %(nargs)d positional " b"arguments")
+            _(b"%(func)s takes at least %(nargs)d positional arguments")
             % {b'func': funcname, b'nargs': len(poskeys)}
         )
     if not varkey and kwstart > len(poskeys) + len(keys):
         raise error.ParseError(
-            _(b"%(func)s takes at most %(nargs)d positional " b"arguments")
+            _(b"%(func)s takes at most %(nargs)d positional arguments")
             % {b'func': funcname, b'nargs': len(poskeys) + len(keys)}
         )
     args = util.sortdict()
@@ -193,7 +193,7 @@ def buildargsdict(trees, funcname, argspec, keyvaluenode, keynode):
             d = args
         elif not optkey:
             raise error.ParseError(
-                _(b"%(func)s got an unexpected keyword " b"argument '%(key)s'")
+                _(b"%(func)s got an unexpected keyword argument '%(key)s'")
                 % {b'func': funcname, b'key': k}
             )
         else:
@@ -713,7 +713,7 @@ class basealiasrules(object):
             raise error.Abort(a.error)
         if a in expanding:
             raise error.ParseError(
-                _(b'infinite expansion of %(section)s ' b'"%(name)s" detected')
+                _(b'infinite expansion of %(section)s "%(name)s" detected')
                 % {b'section': cls._section, b'name': a.name}
             )
         # get cacheable replacement tree by expanding aliases recursively

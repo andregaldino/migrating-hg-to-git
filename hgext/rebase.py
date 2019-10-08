@@ -469,7 +469,7 @@ class rebaseruntime(object):
                     branches.add(repo[rev].branch())
                     if len(branches) > 1:
                         raise error.Abort(
-                            _(b'cannot collapse multiple named ' b'branches')
+                            _(b'cannot collapse multiple named branches')
                         )
 
         # Calculate self.obsoletenotrebased
@@ -589,14 +589,11 @@ class rebaseruntime(object):
         elif rev in self.obsoletenotrebased:
             succ = self.obsoletenotrebased[rev]
             if succ is None:
-                msg = (
-                    _(b'note: not rebasing %s, it has no ' b'successor\n')
-                    % desc
-                )
+                msg = _(b'note: not rebasing %s, it has no successor\n') % desc
             else:
                 succdesc = _ctxdesc(repo[succ])
                 msg = _(
-                    b'note: not rebasing %s, already in ' b'destination as %s\n'
+                    b'note: not rebasing %s, already in destination as %s\n'
                 ) % (desc, succdesc)
             repo.ui.status(msg)
             # Make clearrebased aware state[rev] is not a true successor
@@ -1111,7 +1108,7 @@ def _dryrunrebase(ui, repo, action, opts):
         ui.status(_(b'starting in-memory rebase\n'))
     else:
         ui.status(
-            _(b'starting dry-run rebase; repository will not be ' b'changed\n')
+            _(b'starting dry-run rebase; repository will not be changed\n')
         )
     with repo.wlock(), repo.lock():
         needsabort = True
@@ -1136,9 +1133,7 @@ def _dryrunrebase(ui, repo, action, opts):
         else:
             if confirm:
                 ui.status(_(b'rebase completed successfully\n'))
-                if not ui.promptchoice(
-                    _(b'apply changes (yn)?' b'$$ &Yes $$ &No')
-                ):
+                if not ui.promptchoice(_(b'apply changes (yn)?$$ &Yes $$ &No')):
                     # finish unfinished rebase
                     rbsrt._finishrebase()
                 else:
@@ -1415,8 +1410,7 @@ def _definedestmap(
                     ui.note(_(b'skipping %s - empty destination\n') % repo[r])
                 else:
                     raise error.Abort(
-                        _(b'rebase destination for %s is not ' b'unique')
-                        % repo[r]
+                        _(b'rebase destination for %s is not unique') % repo[r]
                     )
 
     if dest is not None:
@@ -1638,7 +1632,7 @@ def _checkobsrebase(repo, ui, rebaseobsrevs, rebaseobsskipped):
 
     if divergencebasecandidates and not divergenceok:
         divhashes = (bytes(repo[r]) for r in divergencebasecandidates)
-        msg = _(b"this rebase will cause " b"divergences from: %s")
+        msg = _(b"this rebase will cause divergences from: %s")
         h = _(
             b"to force the rebase please set "
             b"experimental.evolution.allowdivergence=True"

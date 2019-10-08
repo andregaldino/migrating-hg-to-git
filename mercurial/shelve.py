@@ -456,7 +456,7 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
     stat = repo.status(match=scmutil.match(repo[None], pats, opts))
     if stat.deleted:
         ui.status(
-            _(b"nothing changed (%d missing files, see " b"'hg status')\n")
+            _(b"nothing changed (%d missing files, see 'hg status')\n")
             % len(stat.deleted)
         )
     else:
@@ -707,7 +707,7 @@ def checkparents(repo, state):
     """check parent while resuming an unshelve"""
     if state.parents != repo.dirstate.parents():
         raise error.Abort(
-            _(b'working directory parents do not match unshelve ' b'state')
+            _(b'working directory parents do not match unshelve state')
         )
 
 

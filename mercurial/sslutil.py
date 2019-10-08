@@ -210,7 +210,7 @@ def _hostsettings(ui, hostname):
         if not (fingerprint.startswith((b'sha1:', b'sha256:', b'sha512:'))):
             raise error.Abort(
                 _(b'invalid fingerprint for %s: %s') % (bhostname, fingerprint),
-                hint=_(b'must begin with "sha1:", "sha256:", ' b'or "sha512:"'),
+                hint=_(b'must begin with "sha1:", "sha256:", or "sha512:"'),
             )
 
         alg, fingerprint = fingerprint.split(b':', 1)
@@ -328,7 +328,7 @@ def protocolsettings(protocol):
     if supportedprotocols == {b'tls1.0'}:
         if protocol != b'tls1.0':
             raise error.Abort(
-                _(b'current Python does not support protocol ' b'setting %s')
+                _(b'current Python does not support protocol setting %s')
                 % protocol,
                 hint=_(
                     b'upgrade Python or disable setting since '
@@ -616,7 +616,7 @@ def wrapserversocket(
     for f in (certfile, keyfile, cafile):
         if f and not os.path.exists(f):
             raise error.Abort(
-                _(b'referenced certificate file (%s) does not ' b'exist') % f
+                _(b'referenced certificate file (%s) does not exist') % f
             )
 
     protocol, options, _protocolui = protocolsettings(b'tls1.0')
@@ -928,7 +928,7 @@ def validatesocket(sock):
 
     if not peercert:
         raise error.Abort(
-            _(b'%s certificate error: ' b'no certificate received') % host
+            _(b'%s certificate error: no certificate received') % host
         )
 
     if settings[b'disablecertverification']:
@@ -990,7 +990,7 @@ def validatesocket(sock):
             section = b'hostsecurity'
             nice = b'%s:%s' % (hash, fmtfingerprint(peerfingerprints[hash]))
         raise error.Abort(
-            _(b'certificate for %s has unexpected ' b'fingerprint %s')
+            _(b'certificate for %s has unexpected fingerprint %s')
             % (host, nice),
             hint=_(b'check %s configuration') % section,
         )

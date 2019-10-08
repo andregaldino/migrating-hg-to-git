@@ -236,8 +236,7 @@ def validateconfig(ui):
     else:
         if not procutil.findexe(method):
             raise error.Abort(
-                _(b'%r specified as email transport, ' b'but not in PATH')
-                % method
+                _(b'%r specified as email transport, but not in PATH') % method
             )
 
 

@@ -860,7 +860,7 @@ def help_(
             )
             if name == b'shortlist':
                 rst.append(
-                    _(b"\n(use 'hg help' for the full list " b"of commands)\n")
+                    _(b"\n(use 'hg help' for the full list of commands)\n")
                 )
         else:
             if name == b'shortlist':
@@ -872,7 +872,7 @@ def help_(
                 )
             elif name and not full:
                 rst.append(
-                    _(b"\n(use 'hg help %s' to show the full help " b"text)\n")
+                    _(b"\n(use 'hg help %s' to show the full help text)\n")
                     % name
                 )
             elif name and syns and name in syns.keys():
@@ -929,7 +929,7 @@ def help_(
         try:
             cmdutil.findcmd(name, commands.table)
             rst.append(
-                _(b"\nuse 'hg help -c %s' to see help for " b"the %s command\n")
+                _(b"\nuse 'hg help -c %s' to see help for the %s command\n")
                 % (name, name)
             )
         except error.UnknownCommand:
@@ -985,7 +985,7 @@ def help_(
         doc = doc.splitlines()[0]
 
         rst = listexts(
-            _(b"'%s' is provided by the following " b"extension:") % cmd,
+            _(b"'%s' is provided by the following extension:") % cmd,
             {ext: doc},
             indent=4,
             showdeprecated=True,

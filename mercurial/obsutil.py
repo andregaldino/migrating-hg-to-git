@@ -929,7 +929,7 @@ filteredmsgtable = {
     b"superseded": _(b"hidden revision '%s' was rewritten as: %s"),
     b"superseded_split": _(b"hidden revision '%s' was split as: %s"),
     b"superseded_split_several": _(
-        b"hidden revision '%s' was split as: %s and " b"%d more"
+        b"hidden revision '%s' was split as: %s and %d more"
     ),
 }
 

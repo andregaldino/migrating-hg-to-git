@@ -460,7 +460,7 @@ def reposetup(ui, repo):
                     continue
                 if inconsistenteol(data):
                     raise errormod.Abort(
-                        _(b"inconsistent newline style " b"in %s\n") % f
+                        _(b"inconsistent newline style in %s\n") % f
                     )
             return super(eolrepo, self).commitctx(ctx, error, origctx)
 

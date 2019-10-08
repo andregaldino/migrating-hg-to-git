@@ -70,7 +70,7 @@ class repoloader(object):
         """
         if self._thread and self._thread.is_alive():
             raise error.ProgrammingError(
-                b'cannot obtain cached repo while ' b'loader is active'
+                b'cannot obtain cached repo while loader is active'
             )
         return self._cache.peek(path, None)
 

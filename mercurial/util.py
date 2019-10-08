@@ -2034,12 +2034,12 @@ def checkwinfilename(path):
                 )
             if ord(c) <= 31:
                 return _(
-                    b"filename contains '%s', which is invalid " b"on Windows"
+                    b"filename contains '%s', which is invalid on Windows"
                 ) % stringutil.escapestr(c)
         base = n.split(b'.')[0]
         if base and base.lower() in _winreservednames:
             return (
-                _(b"filename contains '%s', which is reserved " b"on Windows")
+                _(b"filename contains '%s', which is reserved on Windows")
                 % base
             )
         t = n[-1:]
@@ -3506,7 +3506,7 @@ class dirs(object):
                     addpath(f)
         elif skip is not None:
             raise error.ProgrammingError(
-                b"skip character is only supported " b"with a dict source"
+                b"skip character is only supported with a dict source"
             )
         else:
             for f in map:
@@ -3583,7 +3583,7 @@ def readexactly(stream, n):
     s = stream.read(n)
     if len(s) < n:
         raise error.Abort(
-            _(b"stream ended unexpectedly" b" (got %d bytes, expected %d)")
+            _(b"stream ended unexpectedly (got %d bytes, expected %d)")
             % (len(s), n)
         )
     return s

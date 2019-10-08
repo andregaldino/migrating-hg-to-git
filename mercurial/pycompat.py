@@ -361,7 +361,7 @@ else:
     setattr = setattr
 
     # this can't be parsed on Python 3
-    exec(b'def raisewithtb(exc, tb):\n' b'    raise exc, None, tb\n')
+    exec(b'def raisewithtb(exc, tb):\n    raise exc, None, tb\n')
 
     def fsencode(filename):
         """

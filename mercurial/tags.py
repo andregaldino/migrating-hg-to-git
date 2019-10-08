@@ -593,7 +593,7 @@ def _tag(
         repo.hook(b'pretag', throw=True, node=hex(node), tag=name, local=local)
         if name in branches:
             repo.ui.warn(
-                _(b"warning: tag %s conflicts with existing" b" branch name\n")
+                _(b"warning: tag %s conflicts with existing branch name\n")
                 % name
             )
 

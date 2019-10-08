@@ -359,7 +359,7 @@ def safestriproots(ui, repo, nodes):
     if notstrip:
         nodestr = b', '.join(sorted(short(repo[n].node()) for n in notstrip))
         ui.warn(
-            _(b'warning: orphaned descendants detected, ' b'not stripping %s\n')
+            _(b'warning: orphaned descendants detected, not stripping %s\n')
             % nodestr
         )
     return [c.node() for c in repo.set(b'roots(%ld)', tostrip)]

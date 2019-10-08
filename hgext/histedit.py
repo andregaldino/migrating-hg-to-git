@@ -1884,7 +1884,7 @@ def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
     elif goal == b'edit-plan':
         if any((outg, revs, freeargs)):
             raise error.Abort(
-                _(b'only --commands argument allowed with ' b'--edit-plan')
+                _(b'only --commands argument allowed with --edit-plan')
             )
     else:
         if state.inprogress():

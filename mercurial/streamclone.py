@@ -468,14 +468,14 @@ def applybundlev1(repo, fp):
     """
     if len(repo):
         raise error.Abort(
-            _(b'cannot apply stream clone bundle on non-empty ' b'repo')
+            _(b'cannot apply stream clone bundle on non-empty repo')
         )
 
     filecount, bytecount, requirements = readbundle1header(fp)
     missingreqs = requirements - repo.supportedformats
     if missingreqs:
         raise error.Abort(
-            _(b'unable to apply stream clone: ' b'unsupported format: %s')
+            _(b'unable to apply stream clone: unsupported format: %s')
             % b', '.join(sorted(missingreqs))
         )
 
@@ -715,7 +715,7 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
     missingreqs = [r for r in requirements if r not in repo.supported]
     if missingreqs:
         raise error.Abort(
-            _(b'unable to apply stream clone: ' b'unsupported format: %s')
+            _(b'unable to apply stream clone: unsupported format: %s')
             % b', '.join(sorted(missingreqs))
         )
 

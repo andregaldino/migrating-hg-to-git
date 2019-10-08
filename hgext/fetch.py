@@ -188,7 +188,7 @@ def fetch(ui, repo, source=b'default', **opts):
                 message, opts[b'user'], opts[b'date'], editor=editor
             )
             ui.status(
-                _(b'new changeset %d:%s merges remote changes ' b'with local\n')
+                _(b'new changeset %d:%s merges remote changes with local\n')
                 % (repo.changelog.rev(n), short(n))
             )
 

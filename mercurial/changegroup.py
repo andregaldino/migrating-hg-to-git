@@ -1551,7 +1551,7 @@ def getbundler(
 
     if version == b'01' and not matcher.always():
         raise error.ProgrammingError(
-            b'version 01 changegroups do not support ' b'sparse file matchers'
+            b'version 01 changegroups do not support sparse file matchers'
         )
 
     if ellipses and version in (b'01', b'02'):

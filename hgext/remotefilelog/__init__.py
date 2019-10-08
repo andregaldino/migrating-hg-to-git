@@ -273,7 +273,7 @@ def uisetup(ui):
             b'',
             b'shallow',
             None,
-            _(b"create a shallow clone which uses remote file " b"history"),
+            _(b"create a shallow clone which uses remote file history"),
         )
     )
 
@@ -796,8 +796,7 @@ def walkfilerevs(orig, repo, match, follow, revs, fncache):
     for filename in match.files():
         if filename not in pctx:
             raise error.Abort(
-                _(b'cannot follow file not in parent ' b'revision: "%s"')
-                % filename
+                _(b'cannot follow file not in parent revision: "%s"') % filename
             )
         fctx = pctx[filename]
 

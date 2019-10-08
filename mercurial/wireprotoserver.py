@@ -679,7 +679,7 @@ def _runsshserver(ui, repo, fin, fout, ev):
                     _sshv1respondooberror(
                         fout,
                         ui.ferr,
-                        b'cannot upgrade protocols multiple ' b'times',
+                        b'cannot upgrade protocols multiple times',
                     )
                     state = b'shutdown'
                     continue
@@ -787,7 +787,7 @@ def _runsshserver(ui, repo, fin, fout, ev):
                     _sshv1respondooberror(
                         fout,
                         ui.ferr,
-                        b'malformed handshake protocol: ' b'missing %s' % line,
+                        b'malformed handshake protocol: missing %s' % line,
                     )
                     ok = False
                     state = b'shutdown'

@@ -55,7 +55,7 @@ def getcachepath(ui, allowempty=False):
             return None
         else:
             raise error.Abort(
-                _(b"could not find config option " b"remotefilelog.cachepath")
+                _(b"could not find config option remotefilelog.cachepath")
             )
     return util.expandpath(cachepath)
 
@@ -427,7 +427,7 @@ def readexactly(stream, n):
     s = stream.read(n)
     if len(s) < n:
         raise error.Abort(
-            _(b"stream ended unexpectedly" b" (got %d bytes, expected %d)")
+            _(b"stream ended unexpectedly (got %d bytes, expected %d)")
             % (len(s), n)
         )
     return s

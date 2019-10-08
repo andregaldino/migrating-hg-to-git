@@ -711,7 +711,7 @@ class identitydecoder(object):
     def __init__(self, ui, extraobjs):
         if extraobjs:
             raise error.Abort(
-                _(b'identity decoder received unexpected ' b'additional values')
+                _(b'identity decoder received unexpected additional values')
             )
 
     def decode(self, data):
@@ -745,7 +745,7 @@ class zlibdecoder(object):
 
         if extraobjs:
             raise error.Abort(
-                _(b'zlib decoder received unexpected ' b'additional values')
+                _(b'zlib decoder received unexpected additional values')
             )
 
         self._decompressor = zlib.decompressobj()
@@ -802,7 +802,7 @@ class zstd8mbdecoder(zstdbasedecoder):
     def __init__(self, ui, extraobjs):
         if extraobjs:
             raise error.Abort(
-                _(b'zstd8mb decoder received unexpected ' b'additional values')
+                _(b'zstd8mb decoder received unexpected additional values')
             )
 
         super(zstd8mbdecoder, self).__init__(maxwindowsize=8 * 1048576)
@@ -1116,7 +1116,7 @@ class serverreactor(object):
             # TODO handle decoding frames
             self._state = b'errored'
             raise error.ProgrammingError(
-                b'support for decoding stream payloads ' b'not yet implemented'
+                b'support for decoding stream payloads not yet implemented'
             )
 
         if frame.streamflags & STREAM_FLAG_END_STREAM:
@@ -1361,7 +1361,7 @@ class serverreactor(object):
         if not entry[b'requestdone']:
             self._state = b'errored'
             raise error.ProgrammingError(
-                b'should not be called without ' b'requestdone set'
+                b'should not be called without requestdone set'
             )
 
         del self._receivingcommands[requestid]
@@ -1664,9 +1664,7 @@ class serverreactor(object):
             return self._makeruncommandresult(frame.requestid)
         else:
             self._state = b'errored'
-            return self._makeerrorresult(
-                _(b'command data frame without ' b'flags')
-            )
+            return self._makeerrorresult(_(b'command data frame without flags'))
 
     def _onframeerrored(self, frame):
         return self._makeerrorresult(_(b'server already errored'))
@@ -1796,7 +1794,7 @@ class clientreactor(object):
         else:
             if not self._cansend:
                 raise error.ProgrammingError(
-                    b'sends cannot be performed on ' b'this instance'
+                    b'sends cannot be performed on this instance'
                 )
 
             if not self._hasmultiplesend:
@@ -1824,7 +1822,7 @@ class clientreactor(object):
 
         if not self._cansend:
             raise error.ProgrammingError(
-                b'sends cannot be performed on this ' b'instance'
+                b'sends cannot be performed on this instance'
             )
 
         # If the instance only allows sending once, mark that we have fired

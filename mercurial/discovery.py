@@ -412,11 +412,11 @@ def checkheads(pushop):
                 heads = scmutil.nodesummaries(repo, unsyncedheads)
             if heads is None:
                 repo.ui.status(
-                    _(b"remote has heads that are " b"not known locally\n")
+                    _(b"remote has heads that are not known locally\n")
                 )
             elif branch is None:
                 repo.ui.status(
-                    _(b"remote has heads that are " b"not known locally: %s\n")
+                    _(b"remote has heads that are not known locally: %s\n")
                     % heads
                 )
             else:
@@ -447,7 +447,7 @@ def checkheads(pushop):
             if errormsg is None:
                 if branch not in (b'default', None):
                     errormsg = _(
-                        b"push creates new remote head %s " b"on branch '%s'!"
+                        b"push creates new remote head %s on branch '%s'!"
                     ) % (short(dhs[0]), branch)
                 elif repo[dhs[0]].bookmarks():
                     errormsg = _(

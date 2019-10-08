@@ -128,7 +128,7 @@ def basewrapper(func, argtype, enc, dec, args, kwds):
         return enc(func(*dec(args), **dec(kwds)))
     except UnicodeError:
         raise error.Abort(
-            _(b"[win32mbcs] filename conversion failed with" b" %s encoding\n")
+            _(b"[win32mbcs] filename conversion failed with %s encoding\n")
             % _encoding
         )
 

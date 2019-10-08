@@ -124,24 +124,19 @@ def strip(
             ),
         ),
         (b'', b'no-backup', None, _(b'do not save backup bundle')),
-        (
-            b'',
-            b'nobackup',
-            None,
-            _(b'do not save backup bundle ' b'(DEPRECATED)'),
-        ),
+        (b'', b'nobackup', None, _(b'do not save backup bundle (DEPRECATED)'),),
         (b'n', b'', None, _(b'ignored  (DEPRECATED)')),
         (
             b'k',
             b'keep',
             None,
-            _(b"do not modify working directory during " b"strip"),
+            _(b"do not modify working directory during strip"),
         ),
         (
             b'B',
             b'bookmark',
             [],
-            _(b"remove revs only reachable from given" b" bookmark"),
+            _(b"remove revs only reachable from given bookmark"),
             _(b'BOOKMARK'),
         ),
         (

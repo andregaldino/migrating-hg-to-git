@@ -257,13 +257,9 @@ def resolvecommitoptions(ui, opts):
     the ``date`` option is set.
     """
     if opts.get(b'date') and opts.get(b'currentdate'):
-        raise error.Abort(
-            _(b'--date and --currentdate are mutually ' b'exclusive')
-        )
+        raise error.Abort(_(b'--date and --currentdate are mutually exclusive'))
     if opts.get(b'user') and opts.get(b'currentuser'):
-        raise error.Abort(
-            _(b'--user and --currentuser are mutually ' b'exclusive')
-        )
+        raise error.Abort(_(b'--user and --currentuser are mutually exclusive'))
 
     datemaydiffer = False  # date-only change should be ignored?
 
@@ -1010,7 +1006,7 @@ def logmessage(ui, opts):
 
     if message and logfile:
         raise error.Abort(
-            _(b'options --message and --logfile are mutually ' b'exclusive')
+            _(b'options --message and --logfile are mutually exclusive')
         )
     if not message and logfile:
         try:
@@ -1180,7 +1176,7 @@ def _buildfntemplate(pat, total=None, seqno=None, revwidth=None, pathname=None):
             newname.append(stringutil.escapestr(pat[i:n]))
             if n + 2 > end:
                 raise error.Abort(
-                    _(b"incomplete format spec in output " b"filename")
+                    _(b"incomplete format spec in output filename")
                 )
             c = pat[n + 1 : n + 2]
             i = n + 2
@@ -1188,7 +1184,7 @@ def _buildfntemplate(pat, total=None, seqno=None, revwidth=None, pathname=None):
                 newname.append(expander[c])
             except KeyError:
                 raise error.Abort(
-                    _(b"invalid format spec '%%%s' in output " b"filename") % c
+                    _(b"invalid format spec '%%%s' in output filename") % c
                 )
     return b''.join(newname)
 
@@ -2264,7 +2260,7 @@ def walkchangerevs(repo, match, opts, prepare):
 
         if follow:
             raise error.Abort(
-                _(b'can only follow copies/renames for explicit ' b'filenames')
+                _(b'can only follow copies/renames for explicit filenames')
             )
 
         # The slow path checks files modified in every changeset.

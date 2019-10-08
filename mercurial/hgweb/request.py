@@ -516,7 +516,7 @@ class wsgiresponse(object):
 
             if self._bodygen is not None or self._bodywillwrite:
                 raise error.ProgrammingError(
-                    b"must use setbodybytes('') with " b"304 responses"
+                    b"must use setbodybytes('') with 304 responses"
                 )
 
         # Various HTTP clients (notably httplib) won't read the HTTP response

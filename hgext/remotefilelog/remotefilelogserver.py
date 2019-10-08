@@ -194,7 +194,7 @@ def onetimesetup(ui):
             # since it would require fetching every version of every
             # file in order to create the revlogs.
             raise error.Abort(
-                _(b"Cannot clone from a shallow repo " b"to a full repo.")
+                _(b"Cannot clone from a shallow repo to a full repo.")
             )
         else:
             for x in orig(repo, matcher):

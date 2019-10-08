@@ -249,7 +249,7 @@ def _narrow(
         if not force:
             raise error.Abort(
                 _(b'local changes found'),
-                hint=_(b'use --force-delete-local-changes to ' b'ignore'),
+                hint=_(b'use --force-delete-local-changes to ignore'),
             )
 
     with ui.uninterruptible():

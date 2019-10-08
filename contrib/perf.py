@@ -1379,7 +1379,7 @@ def perfmanifest(ui, repo, rev, manifest_rev=False, clear_disk=False, **opts):
                     t = repo.manifestlog._revlog.lookup(rev)
             except ValueError:
                 raise error.Abort(
-                    b'manifest revision must be integer or full ' b'node'
+                    b'manifest revision must be integer or full node'
                 )
 
     def d():

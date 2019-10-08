@@ -1619,7 +1619,7 @@ class workingctx(committablectx):
             return
         if not (stat.S_ISREG(st.st_mode) or stat.S_ISLNK(st.st_mode)):
             self._repo.ui.warn(
-                _(b"copy failed: %s is not a file or a " b"symbolic link\n")
+                _(b"copy failed: %s is not a file or a symbolic link\n")
                 % self._repo.dirstate.pathto(dest)
             )
         else:
@@ -1678,7 +1678,7 @@ class workingctx(committablectx):
                     or stringutil.binary(d)
                 ):
                     self._repo.ui.debug(
-                        b'ignoring suspect symlink placeholder' b' "%s"\n' % f
+                        b'ignoring suspect symlink placeholder "%s"\n' % f
                     )
                     continue
             sane.append(f)
@@ -1750,7 +1750,7 @@ class workingctx(committablectx):
                         # already changed simultaneously after last
                         # caching (see also issue5584 for detail)
                         self._repo.ui.debug(
-                            b'skip updating dirstate: ' b'identity mismatch\n'
+                            b'skip updating dirstate: identity mismatch\n'
                         )
             except error.LockError:
                 pass

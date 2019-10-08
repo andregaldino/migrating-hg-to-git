@@ -66,7 +66,7 @@ def _expandsets(kindpats, ctx=None, listsubrepos=False, badfn=None):
         if kind == b'set':
             if ctx is None:
                 raise error.ProgrammingError(
-                    b"fileset expression with no " b"context"
+                    b"fileset expression with no context"
                 )
             matchers.append(ctx.matchfileset(pat, badfn=badfn))
 
@@ -546,7 +546,7 @@ class predicatematcher(basematcher):
 def normalizerootdir(dir, funcname):
     if dir == b'.':
         util.nouideprecwarn(
-            b"match.%s() no longer accepts " b"'.', use '' instead." % funcname,
+            b"match.%s() no longer accepts '.', use '' instead." % funcname,
             b'5.1',
         )
         return b''

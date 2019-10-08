@@ -108,7 +108,7 @@ def split(ui, repo, *revs, **opts):
             )
             if not alloworphaned and len(torebase) != len(descendants):
                 raise error.Abort(
-                    _(b'split would leave orphaned changesets ' b'behind')
+                    _(b'split would leave orphaned changesets behind')
                 )
         else:
             if not alloworphaned and descendants:
@@ -164,7 +164,7 @@ def dosplit(ui, repo, tr, ctx, opts):
                 firstline = c.description().split(b'\n', 1)[0]
                 header += _(b'HG: - %s: %s\n') % (short(c.node()), firstline)
             header += _(
-                b'HG: Write commit message for the next split ' b'changeset.\n'
+                b'HG: Write commit message for the next split changeset.\n'
             )
         else:
             header = _(

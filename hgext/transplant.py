@@ -438,7 +438,7 @@ class transplanter(object):
             p1 = repo.dirstate.p1()
             if p1 != parent:
                 raise error.Abort(
-                    _(b'working directory not at transplant ' b'parent %s')
+                    _(b'working directory not at transplant parent %s')
                     % nodemod.hex(parent)
                 )
             if merge:
@@ -661,7 +661,7 @@ def browserevs(ui, repo, nodes, opts):
             b'c',
             b'continue',
             None,
-            _(b'continue last transplant session ' b'after fixing conflicts'),
+            _(b'continue last transplant session after fixing conflicts'),
         ),
         (
             b'',
@@ -788,7 +788,7 @@ def _dotransplant(ui, repo, *revs, **opts):
                 raise error.Abort(_(b'--all requires a branch revision'))
             if revs:
                 raise error.Abort(
-                    _(b'--all is incompatible with a ' b'revision list')
+                    _(b'--all is incompatible with a revision list')
                 )
 
     opts = pycompat.byteskwargs(opts)

@@ -93,7 +93,7 @@ fastannotatecommandargs = {
             b'l',
             b'line-number',
             None,
-            _(b'show line number at the first ' b'appearance'),
+            _(b'show line number at the first appearance'),
         ),
         (
             b'e',
@@ -127,7 +127,7 @@ fastannotatecommandargs = {
             b'',
             b'rebuild',
             None,
-            _(b'rebuild cache even if it exists ' b'(EXPERIMENTAL)'),
+            _(b'rebuild cache even if it exists (EXPERIMENTAL)'),
         ),
     ]
     + commands.diffwsopts

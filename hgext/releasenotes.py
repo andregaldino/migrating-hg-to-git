@@ -300,7 +300,7 @@ def checkadmonitions(ui, repo, directives, revs):
                 continue
             else:
                 ui.write(
-                    _(b"Invalid admonition '%s' present in changeset %s" b"\n")
+                    _(b"Invalid admonition '%s' present in changeset %s\n")
                     % (admonition.group(1), ctx.hex()[:12])
                 )
                 sim = lambda x: difflib.SequenceMatcher(
@@ -376,7 +376,7 @@ def parsenotesfromrevisions(repo, directives, revs):
             # TODO consider using title as paragraph for more concise notes.
             if not paragraphs:
                 repo.ui.warn(
-                    _(b"error parsing releasenotes for revision: " b"'%s'\n")
+                    _(b"error parsing releasenotes for revision: '%s'\n")
                     % node.hex(ctx.node())
                 )
             if title:
@@ -422,7 +422,7 @@ def parsereleasenotesfile(sections, text):
                     continue
             elif block[b'type'] != b'paragraph':
                 raise error.Abort(
-                    _(b'unexpected block type in release notes: ' b'%s')
+                    _(b'unexpected block type in release notes: %s')
                     % block[b'type']
                 )
             if title:

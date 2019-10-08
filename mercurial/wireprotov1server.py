@@ -41,7 +41,7 @@ urlreq = util.urlreq
 
 bundle2requiredmain = _(b'incompatible Mercurial client; bundle2 required')
 bundle2requiredhint = _(
-    b'see https://www.mercurial-scm.org/wiki/' b'IncompatibleClient'
+    b'see https://www.mercurial-scm.org/wiki/IncompatibleClient'
 )
 bundle2required = b'%s\n(%s)\n' % (bundle2requiredmain, bundle2requiredhint)
 
@@ -165,13 +165,13 @@ def wireprotocommand(name, args=None, permission=b'push'):
 
     if not isinstance(args, bytes):
         raise error.ProgrammingError(
-            b'arguments for version 1 commands ' b'must be declared as bytes'
+            b'arguments for version 1 commands must be declared as bytes'
         )
 
     def register(func):
         if name in commands:
             raise error.ProgrammingError(
-                b'%s command already registered ' b'for version 1' % name
+                b'%s command already registered for version 1' % name
             )
         commands[name] = wireprototypes.commandentry(
             func, args=args, transports=transports, permission=permission

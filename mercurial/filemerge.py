@@ -315,7 +315,7 @@ def _iprompt(repo, mynode, orig, fcd, fco, fca, toolconf, labels=None):
     # conflicts.
     if fcd.changectx().isinmemory():
         raise error.InMemoryMergeConflictsError(
-            b'in-memory merge does not ' b'support file conflicts'
+            b'in-memory merge does not support file conflicts'
         )
 
     prompts = partextras(labels)
@@ -415,7 +415,7 @@ def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
         if premerge not in validkeep:
             _valid = b', '.join([b"'" + v + b"'" for v in validkeep])
             raise error.ConfigError(
-                _(b"%s.premerge not valid " b"('%s' is neither boolean nor %s)")
+                _(b"%s.premerge not valid ('%s' is neither boolean nor %s)")
                 % (tool, premerge, _valid)
             )
 
@@ -440,7 +440,7 @@ def _mergecheck(repo, mynode, orig, fcd, fco, fca, toolconf):
     uipathfn = scmutil.getuipathfn(repo)
     if symlink:
         repo.ui.warn(
-            _(b'warning: internal %s cannot merge symlinks ' b'for %s\n')
+            _(b'warning: internal %s cannot merge symlinks for %s\n')
             % (tool, uipathfn(fcd.path()))
         )
         return False
@@ -606,7 +606,7 @@ def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
 
     if isinstance(fcd, context.overlayworkingfilectx):
         raise error.InMemoryMergeConflictsError(
-            b'in-memory merge does not ' b'support the :dump tool.'
+            b'in-memory merge does not support the :dump tool.'
         )
 
     util.writefile(a + b".local", fcd.decodeddata())
@@ -635,7 +635,7 @@ def _xmergeimm(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     # directory and tell the user how to get it is my best idea, but it's
     # clunky.)
     raise error.InMemoryMergeConflictsError(
-        b'in-memory merge does not support ' b'external merge tools'
+        b'in-memory merge does not support external merge tools'
     )
 
 
@@ -698,7 +698,7 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     uipathfn = scmutil.getuipathfn(repo)
     if fcd.isabsent() or fco.isabsent():
         repo.ui.warn(
-            _(b'warning: %s cannot merge change/delete conflict ' b'for %s\n')
+            _(b'warning: %s cannot merge change/delete conflict for %s\n')
             % (tool, uipathfn(fcd.path()))
         )
         return False, 1, None
@@ -1064,7 +1064,7 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
         if onfailure:
             if wctx.isinmemory():
                 raise error.InMemoryMergeConflictsError(
-                    b'in-memory merge does ' b'not support merge ' b'conflicts'
+                    b'in-memory merge does not support merge conflicts'
                 )
             ui.warn(onfailure % fduipath)
         return True, 1, False
@@ -1150,7 +1150,7 @@ def _haltmerge():
 def _onfilemergefailure(ui):
     action = ui.config(b'merge', b'on-failure')
     if action == b'prompt':
-        msg = _(b'continue merge operation (yn)?' b'$$ &Yes $$ &No')
+        msg = _(b'continue merge operation (yn)?$$ &Yes $$ &No')
         if ui.promptchoice(msg, 0) == 1:
             _haltmerge()
     if action == b'halt':
@@ -1180,7 +1180,7 @@ def _check(repo, r, ui, tool, fcd, files):
     if b'prompt' in _toollist(ui, tool, b"check"):
         checked = True
         if ui.promptchoice(
-            _(b"was merge of '%s' successful (yn)?" b"$$ &Yes $$ &No")
+            _(b"was merge of '%s' successful (yn)?$$ &Yes $$ &No")
             % uipathfn(fd),
             1,
         ):

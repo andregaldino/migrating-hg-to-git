@@ -302,7 +302,7 @@ class bmstore(object):
                     )
                     return delbms
             raise error.Abort(
-                _(b"bookmark '%s' already exists " b"(use -f to force)") % mark
+                _(b"bookmark '%s' already exists (use -f to force)") % mark
             )
         if (
             mark in self._repo.branchmap()
@@ -893,7 +893,7 @@ def checkformat(repo, mark):
     mark = mark.strip()
     if not mark:
         raise error.Abort(
-            _(b"bookmark names cannot consist entirely of " b"whitespace")
+            _(b"bookmark names cannot consist entirely of whitespace")
         )
     scmutil.checknewlabel(repo, mark, b'bookmark')
     return mark

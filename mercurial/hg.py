@@ -379,7 +379,7 @@ def postshare(sourcerepo, destrepo, defaultpath=None):
     """
     default = defaultpath or sourcerepo.ui.config(b'paths', b'default')
     if default:
-        template = b'[paths]\n' b'default = %s\n'
+        template = b'[paths]\ndefault = %s\n'
         destrepo.vfs.write(b'hgrc', util.tonativeeol(template % default))
     if repositorymod.NARROW_REQUIREMENT in sourcerepo.requirements:
         with destrepo.wlock():
@@ -1182,9 +1182,7 @@ def abortmerge(ui, repo):
         # there were no conficts, mergestate was not stored
         node = repo[b'.'].hex()
 
-    repo.ui.status(
-        _(b"aborting the merge, updating back to" b" %s\n") % node[:12]
-    )
+    repo.ui.status(_(b"aborting the merge, updating back to %s\n") % node[:12])
     stats = mergemod.update(repo, node, branchmerge=False, force=True)
     _showstats(repo, stats)
     return stats.unresolvedcount > 0

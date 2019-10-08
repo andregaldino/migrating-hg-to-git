@@ -778,7 +778,7 @@ class treemanifest(object):
 
             def readsubtree(subdir, subm):
                 raise AssertionError(
-                    b'treemanifest constructor only accepts ' b'flat manifests'
+                    b'treemanifest constructor only accepts flat manifests'
                 )
 
             self.parse(text, readsubtree)

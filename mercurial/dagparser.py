@@ -275,7 +275,7 @@ def parsedag(desc):
                 i += 1
                 c = nextch()
             raise error.Abort(
-                _(b'invalid character in dag description: ' b'%s...') % s
+                _(b'invalid character in dag description: %s...') % s
             )
 
 
@@ -381,7 +381,7 @@ def dagtextlines(
                     yield b'\n'
                 else:
                     raise error.Abort(
-                        _(b"invalid event type in dag: " b"('%s', '%s')")
+                        _(b"invalid event type in dag: ('%s', '%s')")
                         % (
                             stringutil.escapestr(kind),
                             stringutil.escapestr(data),
