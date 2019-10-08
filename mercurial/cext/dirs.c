@@ -68,26 +68,41 @@ static int _addpath(PyObject *dirs, PyObject *path)
 	while ((pos = _finddir(cpath, pos - 1)) != -1) {
 		PyObject *val;
 
-		/* It's likely that every prefix already has an entry
-		   in our dict. Try to avoid allocating and
-		   deallocating a string for each prefix we check. */
-		if (key != NULL)
-			((PyBytesObject *)key)->ob_shash = -1;
-		else {
-			/* Force Python to not reuse a small shared string. */
-			key = PyBytes_FromStringAndSize(cpath,
-							 pos < 2 ? 2 : pos);
+		if (pos < 2) {
+			key = PyBytes_FromStringAndSize(cpath, pos);
 			if (key == NULL)
 				goto bail;
+		} else {
+			/* It's likely that every prefix already has an entry
+			   in our dict. Try to avoid allocating and
+			   deallocating a string for each prefix we check. */
+			if (key != NULL)
+				((PyBytesObject *)key)->ob_shash = -1;
+			else {
+				/* We know pos >= 2, so we won't get a small
+				 * shared string. */
+				key = PyBytes_FromStringAndSize(cpath, pos);
+				if (key == NULL)
+					goto bail;
+			}
+			/* Py_SIZE(o) refers to the ob_size member of
+			 * the struct. Yes, assigning to what looks
+			 * like a function seems wrong. */
+			Py_SIZE(key) = pos;
+			((PyBytesObject *)key)->ob_sval[pos] = '\0';
 		}
-		/* Py_SIZE(o) refers to the ob_size member of the struct. Yes,
-		* assigning to what looks like a function seems wrong. */
-		Py_SIZE(key) = pos;
-		((PyBytesObject *)key)->ob_sval[pos] = '\0';
 
 		val = PyDict_GetItem(dirs, key);
 		if (val != NULL) {
 			PYLONG_VALUE(val) += 1;
+			if (pos < 2) {
+				/* This was a short string, so we
+				 * probably got a small shared string
+				 * we can't mutate on the next loop
+				 * iteration. Clear it.
+				 */
+				Py_CLEAR(key);
+			}
 			break;
 		}
 
