@@ -1124,6 +1124,8 @@ def perfdirstate(ui, repo, **opts):
 
 @command(b'perfdirstatedirs', formatteropts)
 def perfdirstatedirs(ui, repo, **opts):
+    """benchmap a 'dirstate.hasdir' call from an empty `dirs` cache
+    """
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     b"a" in repo.dirstate

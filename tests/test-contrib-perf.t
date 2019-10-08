@@ -109,7 +109,7 @@ perfstatus
    perfdirs      (no help text available)
    perfdirstate  benchmap the time necessary to load a dirstate from scratch
    perfdirstatedirs
-                 (no help text available)
+                 benchmap a 'dirstate.hasdir' call from an empty 'dirs' cache
    perfdirstatefoldmap
                  (no help text available)
    perfdirstatewrite
