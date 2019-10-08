@@ -205,6 +205,7 @@ perfstatus
   $ hg perfdirfoldmap
   $ hg perfdirs
   $ hg perfdirstate
+  $ hg perfdirstate --contains
   $ hg perfdirstate --iteration
   $ hg perfdirstatedirs
   $ hg perfdirstatefoldmap

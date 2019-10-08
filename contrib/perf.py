@@ -1101,10 +1101,24 @@ def perfdirs(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfdirstate', [
-            (b'', b'iteration', None,
-             b'benchmark a full iteration for the dirstate'),
-        ] + formatteropts)
+@command(
+    b'perfdirstate',
+    [
+        (
+            b'',
+            b'iteration',
+            None,
+            b'benchmark a full iteration for the dirstate',
+        ),
+        (
+            b'',
+            b'contains',
+            None,
+            b'benchmark a large amount of `nf in dirstate` calls',
+        ),
+    ]
+    + formatteropts,
+)
 def perfdirstate(ui, repo, **opts):
     """benchmap the time of various distate operations
 
@@ -1116,13 +1130,31 @@ def perfdirstate(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     b"a" in repo.dirstate
 
+    if opts[b'iteration'] and opts[b'contains']:
+        msg = b'only specify one of --iteration or --contains'
+        raise error.Abort(msg)
+
     if opts[b'iteration']:
         setup = None
         dirstate = repo.dirstate
+
         def d():
             for f in dirstate:
                 pass
+
+    elif opts[b'contains']:
+        setup = None
+        dirstate = repo.dirstate
+        allfiles = list(dirstate)
+        # also add file path that will be "missing" from the dirstate
+        allfiles.extend([f[::-1] for f in allfiles])
+
+        def d():
+            for f in allfiles:
+                f in dirstate
+
     else:
+
         def setup():
             repo.dirstate.invalidate()
 
