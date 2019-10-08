@@ -113,7 +113,7 @@ perfstatus
    perfdirstatefoldmap
                  benchmap a 'dirstate._map.filefoldmap.get()' request
    perfdirstatewrite
-                 (no help text available)
+                 benchmap the time it take to write a dirstate on disk
    perfdiscovery
                  benchmark discovery between local repo and the peer at given
                  path

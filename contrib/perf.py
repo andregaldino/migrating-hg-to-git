@@ -1185,6 +1185,8 @@ def perfdirfoldmap(ui, repo, **opts):
 
 @command(b'perfdirstatewrite', formatteropts)
 def perfdirstatewrite(ui, repo, **opts):
+    """benchmap the time it take to write a dirstate on disk
+    """
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     ds = repo.dirstate
