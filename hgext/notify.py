@@ -161,6 +161,7 @@ from mercurial import (
     logcmdutil,
     mail,
     patch,
+    pycompat,
     registrar,
     util,
 )
@@ -559,7 +560,10 @@ def messageid(ctx, domain, messageidseed):
         host = encoding.strtolocal(socket.getfqdn())
     if messageidseed:
         messagehash = hashlib.sha512(ctx.hex() + messageidseed)
-        messageid = b'<hg.%s@%s>' % (messagehash.hexdigest()[:64], host)
+        messageid = b'<hg.%s@%s>' % (
+            pycompat.sysbytes(messagehash.hexdigest()[:64]),
+            host,
+        )
     else:
         messageid = b'<hg.%s.%d.%d@%s>' % (
             ctx,
