@@ -1555,6 +1555,7 @@ class ui(object):
         # - http://bugs.python.org/issue12833
         with self.timeblockedsection(b'stdio'):
             if usereadline:
+                prompt = encoding.strfromlocal(prompt)
                 line = encoding.strtolocal(pycompat.rawinput(prompt))
                 # When stdin is in binary mode on Windows, it can cause
                 # raw_input() to emit an extra trailing carriage return
