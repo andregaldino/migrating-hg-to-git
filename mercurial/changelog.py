@@ -363,22 +363,30 @@ class changelogrevision(object):
     @property
     def filesadded(self):
         rawindices = self.extra.get(b'filesadded')
-        return rawindices and decodefileindices(self.files, rawindices)
+        if rawindices is None:
+            return None
+        return decodefileindices(self.files, rawindices)
 
     @property
     def filesremoved(self):
         rawindices = self.extra.get(b'filesremoved')
-        return rawindices and decodefileindices(self.files, rawindices)
+        if rawindices is None:
+            return None
+        return decodefileindices(self.files, rawindices)
 
     @property
     def p1copies(self):
         rawcopies = self.extra.get(b'p1copies')
-        return rawcopies and decodecopies(self.files, rawcopies)
+        if rawcopies is None:
+            return None
+        return decodecopies(self.files, rawcopies)
 
     @property
     def p2copies(self):
         rawcopies = self.extra.get(b'p2copies')
-        return rawcopies and decodecopies(self.files, rawcopies)
+        if rawcopies is None:
+            return None
+        return decodecopies(self.files, rawcopies)
 
     @property
     def description(self):
