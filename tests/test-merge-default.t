@@ -41,7 +41,7 @@ Should fail because > 2 heads:
   $ HGMERGE=internal:other; export HGMERGE
   $ hg merge
   abort: branch 'default' has 3 heads - please merge with an explicit rev
-  (run 'hg heads .' to see heads)
+  (run 'hg heads .' to see heads, specify rev with -r)
   [255]
 
 Should succeed:
@@ -117,7 +117,7 @@ Should fail because merge with other branch:
 
   $ hg merge
   abort: branch 'foobranch' has one head - please merge with an explicit rev
-  (run 'hg heads' to see all heads)
+  (run 'hg heads' to see all heads, specify rev with -r)
   [255]
 
 
@@ -137,7 +137,7 @@ Test experimental destination revset
 
   $ hg log -r '_destmerge()'
   abort: branch 'foobranch' has one head - please merge with an explicit rev
-  (run 'hg heads' to see all heads)
+  (run 'hg heads' to see all heads, specify rev with -r)
   [255]
 
 (on a branch with a two heads)
@@ -171,5 +171,5 @@ Test experimental destination revset
 
   $ hg log -r '_destmerge(foobranch)'
   abort: branch 'foobranch' has one head - please merge with an explicit rev
-  (run 'hg heads' to see all heads)
+  (run 'hg heads' to see all heads, specify rev with -r)
   [255]

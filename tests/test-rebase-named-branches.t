@@ -374,7 +374,7 @@ rebase 'c1' to the branch head 'c2' that is closed
   
   $ hg rebase
   abort: branch 'c' has one head - please rebase to an explicit rev
-  (run 'hg heads' to see all heads)
+  (run 'hg heads' to see all heads, specify destination with -d)
   [255]
   $ hg tglog
   _  4: 8427af5d86f2 'c2 closed' c

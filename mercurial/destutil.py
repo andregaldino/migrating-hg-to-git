@@ -182,14 +182,14 @@ msgdestmerge = {
                 b"multiple matching bookmarks to merge -"
                 b" please merge with an explicit rev or bookmark"
             ),
-            _(b"run 'hg heads' to see all heads"),
+            _(b"run 'hg heads' to see all heads, specify rev with -r"),
         ),
         b'rebase': (
             _(
                 b"multiple matching bookmarks to rebase -"
                 b" please rebase to an explicit rev or bookmark"
             ),
-            _(b"run 'hg heads' to see all heads"),
+            _(b"run 'hg heads' to see all heads, specify destination with -d"),
         ),
     },
     # no other matching divergent bookmark
@@ -199,47 +199,47 @@ msgdestmerge = {
                 b"no matching bookmark to merge - "
                 b"please merge with an explicit rev or bookmark"
             ),
-            _(b"run 'hg heads' to see all heads"),
+            _(b"run 'hg heads' to see all heads, specify rev with -r"),
         ),
         b'rebase': (
             _(
                 b"no matching bookmark to rebase - "
                 b"please rebase to an explicit rev or bookmark"
             ),
-            _(b"run 'hg heads' to see all heads"),
+            _(b"run 'hg heads' to see all heads, specify destination with -d"),
         ),
     },
     # branch have too many unbookmarked heads, no obvious destination
     b'toomanyheads': {
         b'merge': (
             _(b"branch '%s' has %d heads - please merge with an explicit rev"),
-            _(b"run 'hg heads .' to see heads"),
+            _(b"run 'hg heads .' to see heads, specify rev with -r"),
         ),
         b'rebase': (
             _(b"branch '%s' has %d heads - please rebase to an explicit rev"),
-            _(b"run 'hg heads .' to see heads"),
+            _(b"run 'hg heads .' to see heads, specify destination with -d"),
         ),
     },
     # branch have no other unbookmarked heads
     b'bookmarkedheads': {
         b'merge': (
             _(b"heads are bookmarked - please merge with an explicit rev"),
-            _(b"run 'hg heads' to see all heads"),
+            _(b"run 'hg heads' to see all heads, specify rev with -r"),
         ),
         b'rebase': (
             _(b"heads are bookmarked - please rebase to an explicit rev"),
-            _(b"run 'hg heads' to see all heads"),
+            _(b"run 'hg heads' to see all heads, specify destination with -d"),
         ),
     },
     # branch have just a single heads, but there is other branches
     b'nootherbranchheads': {
         b'merge': (
             _(b"branch '%s' has one head - please merge with an explicit rev"),
-            _(b"run 'hg heads' to see all heads"),
+            _(b"run 'hg heads' to see all heads, specify rev with -r"),
         ),
         b'rebase': (
             _(b"branch '%s' has one head - please rebase to an explicit rev"),
-            _(b"run 'hg heads' to see all heads"),
+            _(b"run 'hg heads' to see all heads, specify destination with -d"),
         ),
     },
     # repository have a single head
