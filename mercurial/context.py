@@ -533,55 +533,76 @@ class changectx(basectx):
         return sorted(modified)
 
     def filesadded(self):
-        source = self._repo.ui.config(b'experimental', b'copies.read-from')
         filesadded = self._changeset.filesadded
-        if source == b'changeset-only':
-            if filesadded is None:
-                filesadded = []
-        elif source == b'compatibility':
-            if filesadded is None:
-                filesadded = scmutil.computechangesetfilesadded(self)
+        compute_on_none = True
+        if self._repo.filecopiesmode == b'changeset-sidedata':
+            compute_on_none = False
         else:
-            filesadded = scmutil.computechangesetfilesadded(self)
+            source = self._repo.ui.config(b'experimental', b'copies.read-from')
+            if source == b'changeset-only':
+                compute_on_none = False
+            elif source != b'compatibility':
+                # filelog mode, ignore any changelog content
+                filesadded = None
+        if filesadded is None:
+            if compute_on_none:
+                filesadded = scmutil.computechangesetfilesadded(self)
+            else:
+                filesadded = []
         return filesadded
 
     def filesremoved(self):
-        source = self._repo.ui.config(b'experimental', b'copies.read-from')
         filesremoved = self._changeset.filesremoved
-        if source == b'changeset-only':
-            if filesremoved is None:
-                filesremoved = []
-        elif source == b'compatibility':
-            if filesremoved is None:
-                filesremoved = scmutil.computechangesetfilesremoved(self)
+        compute_on_none = True
+        if self._repo.filecopiesmode == b'changeset-sidedata':
+            compute_on_none = False
         else:
-            filesremoved = scmutil.computechangesetfilesremoved(self)
+            source = self._repo.ui.config(b'experimental', b'copies.read-from')
+            if source == b'changeset-only':
+                compute_on_none = False
+            elif source != b'compatibility':
+                # filelog mode, ignore any changelog content
+                filesremoved = None
+        if filesremoved is None:
+            if compute_on_none:
+                filesremoved = scmutil.computechangesetfilesremoved(self)
+            else:
+                filesremoved = []
         return filesremoved
 
     @propertycache
     def _copies(self):
-        source = self._repo.ui.config(b'experimental', b'copies.read-from')
         p1copies = self._changeset.p1copies
         p2copies = self._changeset.p2copies
-        # If config says to get copy metadata only from changeset, then return
-        # that, defaulting to {} if there was no copy metadata.
-        # In compatibility mode, we return copy data from the changeset if
-        # it was recorded there, and otherwise we fall back to getting it from
-        # the filelogs (below).
-        if source == b'changeset-only':
-            if p1copies is None:
-                p1copies = {}
-            if p2copies is None:
-                p2copies = {}
-        elif source == b'compatibility':
-            if p1copies is None:
-                # we are in compatiblity mode and there is not data in the
-                # changeset), we get the copy metadata from the filelogs.
-                p1copies, p2copies = super(changectx, self)._copies
+        compute_on_none = True
+        if self._repo.filecopiesmode == b'changeset-sidedata':
+            compute_on_none = False
         else:
-            # config said to read only from filelog, we get the copy metadata
-            # from the filelogs.
-            p1copies, p2copies = super(changectx, self)._copies
+            source = self._repo.ui.config(b'experimental', b'copies.read-from')
+            # If config says to get copy metadata only from changeset, then
+            # return that, defaulting to {} if there was no copy metadata.  In
+            # compatibility mode, we return copy data from the changeset if it
+            # was recorded there, and otherwise we fall back to getting it from
+            # the filelogs (below).
+            #
+            # If we are in compatiblity mode and there is not data in the
+            # changeset), we get the copy metadata from the filelogs.
+            #
+            # otherwise, when config said to read only from filelog, we get the
+            # copy metadata from the filelogs.
+            if source == b'changeset-only':
+                compute_on_none = False
+            elif source != b'compatibility':
+                # filelog mode, ignore any changelog content
+                p1copies = p2copies = None
+        if p1copies is None:
+            if compute_on_none:
+                p1copies, p2copies = super(changectx, self)._copies
+            else:
+                if p1copies is None:
+                    p1copies = {}
+        if p2copies is None:
+            p2copies = {}
         return p1copies, p2copies
 
     def description(self):

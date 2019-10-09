@@ -188,6 +188,8 @@ def _computeforwardmissing(a, b, match=None):
 
 def usechangesetcentricalgo(repo):
     """Checks if we should use changeset-centric copy algorithms"""
+    if repo.filecopiesmode == b'changeset-sidedata':
+        return True
     readfrom = repo.ui.config(b'experimental', b'copies.read-from')
     changesetsource = (b'changeset-only', b'compatibility')
     return readfrom in changesetsource

@@ -362,28 +362,40 @@ class changelogrevision(object):
 
     @property
     def filesadded(self):
-        rawindices = self.extra.get(b'filesadded')
+        if sidedatamod.SD_FILESADDED in self._sidedata:
+            rawindices = self._sidedata.get(sidedatamod.SD_FILESADDED)
+        else:
+            rawindices = self.extra.get(b'filesadded')
         if rawindices is None:
             return None
         return decodefileindices(self.files, rawindices)
 
     @property
     def filesremoved(self):
-        rawindices = self.extra.get(b'filesremoved')
+        if sidedatamod.SD_FILESREMOVED in self._sidedata:
+            rawindices = self._sidedata.get(sidedatamod.SD_FILESREMOVED)
+        else:
+            rawindices = self.extra.get(b'filesremoved')
         if rawindices is None:
             return None
         return decodefileindices(self.files, rawindices)
 
     @property
     def p1copies(self):
-        rawcopies = self.extra.get(b'p1copies')
+        if sidedatamod.SD_P1COPIES in self._sidedata:
+            rawcopies = self._sidedata.get(sidedatamod.SD_P1COPIES)
+        else:
+            rawcopies = self.extra.get(b'p1copies')
         if rawcopies is None:
             return None
         return decodecopies(self.files, rawcopies)
 
     @property
     def p2copies(self):
-        rawcopies = self.extra.get(b'p2copies')
+        if sidedatamod.SD_P2COPIES in self._sidedata:
+            rawcopies = self._sidedata.get(sidedatamod.SD_P2COPIES)
+        else:
+            rawcopies = self.extra.get(b'p2copies')
         if rawcopies is None:
             return None
         return decodecopies(self.files, rawcopies)

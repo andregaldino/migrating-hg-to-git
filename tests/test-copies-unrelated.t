@@ -179,8 +179,8 @@ the break.
   o  0 add x
      x
   $ hg debugpathcopies 0 5
-  x -> y (no-filelog no-sidedata !)
-#if no-filelog no-sidedata
+  x -> y (no-filelog !)
+#if no-filelog
   $ hg graft -r 2
   grafting 2:* "modify x again" (glob)
   merging y and x to y
@@ -347,8 +347,8 @@ different between the branches.
   o  0 base
      a
   $ hg debugpathcopies 1 5
-  x -> y (no-filelog no-sidedata !)
-#if no-filelog no-sidedata
+  x -> y (no-filelog !)
+#if no-filelog
   $ hg graft -r 2
   grafting 2:* "modify x" (glob)
   merging y and x to y
