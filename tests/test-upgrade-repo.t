@@ -1420,14 +1420,15 @@ upgrade
   sidedata:          yes     no      no
   copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
-  compression:       zstd   zstd    zlib
+  compression:       zstd   zstd    zlib (zstd !)
+  compression:       zlib   zlib    zlib (no-zstd !)
   compression-level: default default default
   $ cat .hg/requires
   dotencode
   exp-sidedata-flag
   fncache
   generaldelta
-  revlog-compression-zstd
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -1448,13 +1449,14 @@ downgrade
   sidedata:           no     no      no
   copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
-  compression:       zstd   zstd    zlib
+  compression:       zstd   zstd    zlib (zstd !)
+  compression:       zlib   zlib    zlib (no-zstd !)
   compression-level: default default default
   $ cat .hg/requires
   dotencode
   fncache
   generaldelta
-  revlog-compression-zstd
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -1476,14 +1478,15 @@ upgrade from hgrc
   sidedata:          yes    yes      no
   copies-sdc:         no     no      no
   plain-cl-delta:    yes    yes     yes
-  compression:       zstd   zstd    zlib
+  compression:       zstd   zstd    zlib (zstd !)
+  compression:       zlib   zlib    zlib (no-zstd !)
   compression-level: default default default
   $ cat .hg/requires
   dotencode
   exp-sidedata-flag
   fncache
   generaldelta
-  revlog-compression-zstd
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
