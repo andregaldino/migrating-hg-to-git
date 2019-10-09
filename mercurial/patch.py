@@ -1188,9 +1188,11 @@ def filterpatch(ui, headers, match, operation=None):
             # chars is a good target) because of issue6158.
             r = ui.promptchoice(b"%s\n(enter ? for help) %s" % (query, resps))
             ui.write(b"\n")
+            ui.flush()
             if r == 8:  # ?
                 for c, t in ui.extractchoices(resps)[1]:
                     ui.write(b'%s - %s\n' % (c, encoding.lower(t)))
+                    ui.flush()
                 continue
             elif r == 0:  # yes
                 ret = True
@@ -1200,10 +1202,12 @@ def filterpatch(ui, headers, match, operation=None):
                 if chunk is None:
                     ui.write(_(b'cannot edit patch for whole file'))
                     ui.write(b"\n")
+                    ui.flush()
                     continue
                 if chunk.header.binary():
                     ui.write(_(b'cannot edit patch for binary file'))
                     ui.write(b"\n")
+                    ui.flush()
                     continue
                 # Patch comment based on the Git one (based on comment at end of
                 # https://mercurial-scm.org/wiki/RecordExtension)
@@ -1304,6 +1308,7 @@ the hunk is left unchanged.
         for i, chunk in enumerate(h.hunks):
             if skipfile is None and skipall is None:
                 chunk.pretty(ui)
+                ui.flush()
             if total == 1:
                 msg = messages[b'single'][operation] % chunk.filename()
             else:
