@@ -53,7 +53,9 @@ if isatty(stdout):
     if pycompat.iswindows:
         # Windows doesn't support line buffering
         stdout = os.fdopen(stdout.fileno(), r'wb', 0)
-    else:
+    elif not pycompat.ispy3:
+        # on Python 3, stdout (sys.stdout.buffer) is already line buffered and
+        # buffering=1 is not handled in binary mode
         stdout = os.fdopen(stdout.fileno(), r'wb', 1)
 
 if pycompat.iswindows:
