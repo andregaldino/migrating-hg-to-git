@@ -757,7 +757,7 @@ coreconfigitem(
     experimental=True,
 )
 coreconfigitem(
-    b'format', b'use-side-data', default=False, experimental=True,
+    b'format', b'exp-use-side-data', default=False, experimental=True,
 )
 coreconfigitem(
     b'format', b'internal-phase', default=False, experimental=True,

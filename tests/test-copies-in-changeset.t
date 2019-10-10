@@ -484,7 +484,7 @@ downgrading (keeping some sidedata)
   $ hg debugsidedata -m -- 0
   $ cat << EOF > .hg/hgrc
   > [format]
-  > use-side-data = yes
+  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = no
   > EOF
   $ hg debugupgraderepo --run --quiet --no-backup > /dev/null

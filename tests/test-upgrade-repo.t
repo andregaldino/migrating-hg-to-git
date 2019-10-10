@@ -1410,7 +1410,7 @@ Check upgrading to a side-data revlog
 
 upgrade
 
-  $ hg --config format.use-side-data=yes debugupgraderepo --run  --no-backup --config "extensions.sidedata=$TESTDIR/testlib/ext-sidedata.py" >/dev/null
+  $ hg --config format.exp-use-side-data=yes debugupgraderepo --run  --no-backup --config "extensions.sidedata=$TESTDIR/testlib/ext-sidedata.py" >/dev/null
   $ hg debugformat -v
   format-variant    repo config default
   fncache:           yes    yes     yes
@@ -1439,7 +1439,7 @@ upgrade
 
 downgrade
 
-  $ hg debugupgraderepo --config format.use-side-data=no --run --no-backup > /dev/null
+  $ hg debugupgraderepo --config format.exp-use-side-data=no --run --no-backup > /dev/null
   $ hg debugformat -v
   format-variant    repo config default
   fncache:           yes    yes     yes
@@ -1466,7 +1466,7 @@ upgrade from hgrc
 
   $ cat >> .hg/hgrc << EOF
   > [format]
-  > use-side-data=yes
+  > exp-use-side-data=yes
   > EOF
   $ hg debugupgraderepo --run --no-backup > /dev/null
   $ hg debugformat -v

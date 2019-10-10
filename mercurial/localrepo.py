@@ -3526,8 +3526,8 @@ def newreporequirements(ui, createopts):
         if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(SPARSEREVLOG_REQUIREMENT)
 
-    # experimental config: format.use-side-data
-    if ui.configbool(b'format', b'use-side-data'):
+    # experimental config: format.exp-use-side-data
+    if ui.configbool(b'format', b'exp-use-side-data'):
         requirements.add(SIDEDATA_REQUIREMENT)
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
