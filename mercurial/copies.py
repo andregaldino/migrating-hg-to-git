@@ -30,91 +30,6 @@ from .revlogutils import sidedata as sidedatamod
 from .utils import stringutil
 
 
-def _findlimit(repo, ctxa, ctxb):
-    """
-    Find the last revision that needs to be checked to ensure that a full
-    transitive closure for file copies can be properly calculated.
-    Generally, this means finding the earliest revision number that's an
-    ancestor of a or b but not both, except when a or b is a direct descendent
-    of the other, in which case we can return the minimum revnum of a and b.
-    """
-
-    # basic idea:
-    # - mark a and b with different sides
-    # - if a parent's children are all on the same side, the parent is
-    #   on that side, otherwise it is on no side
-    # - walk the graph in topological order with the help of a heap;
-    #   - add unseen parents to side map
-    #   - clear side of any parent that has children on different sides
-    #   - track number of interesting revs that might still be on a side
-    #   - track the lowest interesting rev seen
-    #   - quit when interesting revs is zero
-
-    cl = repo.changelog
-    wdirparents = None
-    a = ctxa.rev()
-    b = ctxb.rev()
-    if a is None:
-        wdirparents = (ctxa.p1(), ctxa.p2())
-        a = node.wdirrev
-    if b is None:
-        assert not wdirparents
-        wdirparents = (ctxb.p1(), ctxb.p2())
-        b = node.wdirrev
-
-    side = {a: -1, b: 1}
-    visit = [-a, -b]
-    heapq.heapify(visit)
-    interesting = len(visit)
-    limit = node.wdirrev
-
-    while interesting:
-        r = -(heapq.heappop(visit))
-        if r == node.wdirrev:
-            parents = [pctx.rev() for pctx in wdirparents]
-        else:
-            parents = cl.parentrevs(r)
-        if parents[1] == node.nullrev:
-            parents = parents[:1]
-        for p in parents:
-            if p not in side:
-                # first time we see p; add it to visit
-                side[p] = side[r]
-                if side[p]:
-                    interesting += 1
-                heapq.heappush(visit, -p)
-            elif side[p] and side[p] != side[r]:
-                # p was interesting but now we know better
-                side[p] = 0
-                interesting -= 1
-        if side[r]:
-            limit = r  # lowest rev visited
-            interesting -= 1
-
-    # Consider the following flow (see test-commit-amend.t under issue4405):
-    # 1/ File 'a0' committed
-    # 2/ File renamed from 'a0' to 'a1' in a new commit (call it 'a1')
-    # 3/ Move back to first commit
-    # 4/ Create a new commit via revert to contents of 'a1' (call it 'a1-amend')
-    # 5/ Rename file from 'a1' to 'a2' and commit --amend 'a1-msg'
-    #
-    # During the amend in step five, we will be in this state:
-    #
-    # @  3 temporary amend commit for a1-amend
-    # |
-    # o  2 a1-amend
-    # |
-    # | o  1 a1
-    # |/
-    # o  0 a0
-    #
-    # When _findlimit is called, a and b are revs 3 and 0, so limit will be 2,
-    # yet the filelog has the copy information in rev 1 and we will not look
-    # back far enough unless we also look at the a and b as candidates.
-    # This only occurs when a is a descendent of b or visa-versa.
-    return min(limit, a, b)
-
-
 def _filter(src, dst, t):
     """filters out invalid copies after chaining"""
 
@@ -160,7 +75,7 @@ def _chain(a, b):
     return t
 
 
-def _tracefile(fctx, am, basemf, limit):
+def _tracefile(fctx, am, basemf):
     """return file context that is the ancestor of fctx present in ancestor
     manifest am
 
@@ -217,9 +132,6 @@ def _committedforwardcopies(a, b, base, match):
     dbg = repo.ui.debug
     if debug:
         dbg(b'debug.copies:    looking into rename from %s to %s\n' % (a, b))
-    limit = _findlimit(repo, a, b)
-    if debug:
-        dbg(b'debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()
     basemf = None if base is None else base.manifest()
 
@@ -253,7 +165,7 @@ def _committedforwardcopies(a, b, base, match):
 
         if debug:
             start = util.timer()
-        opath = _tracefile(fctx, am, basemf, limit)
+        opath = _tracefile(fctx, am, basemf)
         if opath:
             if debug:
                 dbg(b'debug.copies:          rename of: %s\n' % opath)
