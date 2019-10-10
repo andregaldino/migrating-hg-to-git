@@ -176,7 +176,7 @@ class partialdiscovery(object):
 
     def stats(self):
         return {
-            b'undecided': len(self.undecided),
+            'undecided': len(self.undecided),
         }
 
     def commonheads(self):
@@ -441,7 +441,7 @@ def findcommonheads(
         stats = disco.stats()
         ui.debug(
             b"query %i; still undecided: %i, sample size is: %i\n"
-            % (roundtrips, stats[b'undecided'], len(sample))
+            % (roundtrips, stats['undecided'], len(sample))
         )
 
         # indices between sample and externalized version must match
