@@ -440,7 +440,7 @@ class notifier(object):
             msg[r'Message-Id'] = messageid(ctx, self.domain, self.messageidseed)
         msg[r'To'] = encoding.strfromlocal(b', '.join(sorted(subs)))
 
-        msgtext = encoding.strtolocal(msg.as_string())
+        msgtext = msg.as_bytes() if pycompat.ispy3 else msg.as_string()
         if self.test:
             self.ui.write(msgtext)
             if not msgtext.endswith(b'\n'):
