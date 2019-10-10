@@ -678,9 +678,6 @@ class curseschunkselector(object):
         # (used for determining when the selected item begins/ends)
         self.linesprintedtopadsofar = 0
 
-        # the first line of the pad which is visible on the screen
-        self.firstlineofpadtoprint = 0
-
         # stores optional text for a commit comment provided by the user
         self.commenttext = b""
 
