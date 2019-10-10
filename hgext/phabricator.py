@@ -697,6 +697,23 @@ def makebinary(pchange, fctx):
 gitmode = {b'l': b'120000', b'x': b'100755', b'': b'100644'}
 
 
+def notutf8(fctx):
+    """detect non-UTF-8 text files since Phabricator requires them to be marked
+    as binary
+    """
+    try:
+        fctx.data().decode('utf-8')
+        if fctx.parents():
+            fctx.p1().data().decode('utf-8')
+        return False
+    except UnicodeDecodeError:
+        fctx.repo().ui.write(
+            _(b'file %s detected as non-UTF-8, marked as binary\n')
+            % fctx.path()
+        )
+        return True
+
+
 def addremoved(pdiff, ctx, removed):
     """add removed files to the phabdiff. Shouldn't include moves"""
     for fname in removed:
@@ -705,7 +722,7 @@ def addremoved(pdiff, ctx, removed):
         )
         pchange.addoldmode(gitmode[ctx.p1()[fname].flags()])
         fctx = ctx.p1()[fname]
-        if not fctx.isbinary():
+        if not (fctx.isbinary() or notutf8(fctx)):
             maketext(pchange, ctx, fname)
 
         pdiff.addchange(pchange)
@@ -722,7 +739,7 @@ def addmodified(pdiff, ctx, modified):
             pchange.addoldmode(originalmode)
             pchange.addnewmode(filemode)
 
-        if fctx.isbinary():
+        if fctx.isbinary() or notutf8(fctx):
             makebinary(pchange, fctx)
             addoldbinary(pchange, fctx, fname)
         else:
@@ -781,7 +798,7 @@ def addadded(pdiff, ctx, added, removed):
             pchange.addnewmode(gitmode[fctx.flags()])
             pchange.type = DiffChangeType.ADD
 
-        if fctx.isbinary():
+        if fctx.isbinary() or notutf8(fctx):
             makebinary(pchange, fctx)
             if renamed:
                 addoldbinary(pchange, fctx, originalfname)
