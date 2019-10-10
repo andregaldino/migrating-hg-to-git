@@ -113,6 +113,14 @@ dirs_fuzzer: dirs.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlo
 	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/dirs_fuzzer
 
+fncache_fuzzer: fncache.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o
+	$(CXX) $(CXXFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -Wno-register -Wno-macro-redefined \
+	  -I../../mercurial fncache.cc \
+	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
+	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  -o $$OUT/fncache_fuzzer
+
 manifest_corpus.zip:
 	python manifest_corpus.py $$OUT/manifest_fuzzer_seed_corpus.zip
 
@@ -163,6 +171,6 @@ clean:
 	  mpatch \
 	  xdiff
 
-oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer dirs_fuzzer manifest_fuzzer manifest_corpus.zip revlog_fuzzer revlog_corpus.zip dirstate_fuzzer dirstate_corpus.zip fm1readmarkers_fuzzer fm1readmarkers_corpus.zip
+oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer dirs_fuzzer fncache_fuzzer manifest_fuzzer manifest_corpus.zip revlog_fuzzer revlog_corpus.zip dirstate_fuzzer dirstate_corpus.zip fm1readmarkers_fuzzer fm1readmarkers_corpus.zip
 
 .PHONY: all clean oss-fuzz
