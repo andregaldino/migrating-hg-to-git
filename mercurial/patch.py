@@ -11,7 +11,6 @@ from __future__ import absolute_import, print_function
 import collections
 import contextlib
 import copy
-import email
 import errno
 import hashlib
 import os
@@ -107,7 +106,7 @@ def split(stream):
     def mimesplit(stream, cur):
         def msgfp(m):
             fp = stringio()
-            g = email.Generator.Generator(fp, mangle_from_=False)
+            g = mail.Generator(fp, mangle_from_=False)
             g.flatten(m)
             fp.seek(0)
             return fp

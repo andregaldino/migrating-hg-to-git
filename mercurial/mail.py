@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import email
 import email.charset
+import email.generator
 import email.header
 import email.message
 import email.parser
@@ -420,6 +421,8 @@ def mimeencode(ui, s, charsets=None, display=False):
 
 if pycompat.ispy3:
 
+    Generator = email.generator.BytesGenerator
+
     def parse(fp):
         ep = email.parser.Parser()
         # disable the "universal newlines" mode, which isn't binary safe.
@@ -435,6 +438,8 @@ if pycompat.ispy3:
 
 
 else:
+
+    Generator = email.generator.Generator
 
     def parse(fp):
         ep = email.parser.Parser()
