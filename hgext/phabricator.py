@@ -144,9 +144,21 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
     def hgmatcher(r1, r2):
         if r1.uri != r2.uri or r1.method != r2.method:
             return False
-        r1params = r1.body.split(b'&')
-        r2params = r2.body.split(b'&')
-        return set(r1params) == set(r2params)
+        r1params = util.urlreq.parseqs(r1.body)
+        r2params = util.urlreq.parseqs(r2.body)
+        for key in r1params:
+            if key not in r2params:
+                return False
+            value = r1params[key][0]
+            # we want to compare json payloads without worrying about ordering
+            if value.startswith(b'{') and value.endswith(b'}'):
+                r1json = json.loads(value)
+                r2json = json.loads(r2params[key][0])
+                if r1json != r2json:
+                    return False
+            elif r2params[key][0] != value:
+                return False
+        return True
 
     def sanitiserequest(request):
         request.body = re.sub(
