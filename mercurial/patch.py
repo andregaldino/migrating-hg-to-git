@@ -1182,7 +1182,6 @@ def filterpatch(ui, headers, match, operation=None):
         if skipfile is not None:
             return skipfile, skipfile, skipall, newpatches
         while True:
-            ui.flush()
             resps = messages[b'help'][operation]
             # IMPORTANT: keep the last line of this prompt short (<40 english
             # chars is a good target) because of issue6158.
