@@ -74,7 +74,6 @@ You can set patchbomb to always ask for confirmation by setting
 from __future__ import absolute_import
 
 import email.encoders as emailencoders
-import email.generator as emailgen
 import email.mime.base as emimebase
 import email.mime.multipart as emimemultipart
 import email.utils as eutil
@@ -140,11 +139,6 @@ configitem(
 configitem(
     b'patchbomb', b'to', default=None,
 )
-
-if pycompat.ispy3:
-    _bytesgenerator = emailgen.BytesGenerator
-else:
-    _bytesgenerator = emailgen.Generator
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -976,7 +970,7 @@ def email(ui, repo, *revs, **opts):
         if opts.get(b'test'):
             ui.status(_(b'displaying '), subj, b' ...\n')
             ui.pager(b'email')
-            generator = _bytesgenerator(ui, mangle_from_=False)
+            generator = mail.Generator(ui, mangle_from_=False)
             try:
                 generator.flatten(m, 0)
                 ui.write(b'\n')
@@ -992,7 +986,7 @@ def email(ui, repo, *revs, **opts):
                 # Exim does not remove the Bcc field
                 del m[b'Bcc']
             fp = stringio()
-            generator = _bytesgenerator(fp, mangle_from_=False)
+            generator = mail.Generator(fp, mangle_from_=False)
             generator.flatten(m, 0)
             alldests = to + bcc + cc
             alldests = [encoding.strfromlocal(d) for d in alldests]
