@@ -1156,7 +1156,7 @@ class curseschunkselector(object):
 
         # is reset to 0 at the beginning of printitem()
 
-        linesprinted = (xstart + len(t)) / self.xscreensize
+        linesprinted = (xstart + len(t)) // self.xscreensize
         self.linesprintedtopadsofar += linesprinted
         return t
 
