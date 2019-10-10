@@ -145,10 +145,14 @@ def _smtp(ui):
         sslutil.validatesocket(s.sock)
     username = ui.config(b'smtp', b'username')
     password = ui.config(b'smtp', b'password')
-    if username and not password:
-        password = ui.getpass()
+    if username:
+        if password:
+            password = encoding.strfromlocal(password)
+        else:
+            password = ui.getpass()
     if username and password:
         ui.note(_(b'(authenticating to mail server as %s)\n') % username)
+        username = encoding.strfromlocal(username)
         try:
             s.login(username, password)
         except smtplib.SMTPException as inst:
