@@ -61,7 +61,7 @@ class STARTTLS(smtplib.SMTP):
                 ui=self._ui,
                 serverhostname=self._host,
             )
-            self.file = smtplib.SSLFakeFile(self.sock)
+            self.file = self.sock.makefile("rb")
             self.helo_resp = None
             self.ehlo_resp = None
             self.esmtp_features = {}
