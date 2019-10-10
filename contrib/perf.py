@@ -1941,10 +1941,10 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
             data = {
                 b'base': b.hex(),
                 b'p1.node': p1.hex(),
-                b'p1.nbrevs': len(repo.revs('%d::%d', b.rev(), p1.rev())),
+                b'p1.nbrevs': len(repo.revs('only(%d, %d)', p1.rev(), b.rev())),
                 b'p1.nbmissingfiles': len(p1missing),
                 b'p2.node': p2.hex(),
-                b'p2.nbrevs': len(repo.revs('%d::%d', b.rev(), p2.rev())),
+                b'p2.nbrevs': len(repo.revs('only(%d, %d)', p2.rev(), b.rev())),
                 b'p2.nbmissingfiles': len(p2missing),
             }
             if dostats:
