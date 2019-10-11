@@ -186,28 +186,6 @@ def generate_ellipses_bundle2_for_widening(
         if b'treemanifest' in repo.requirements:
             part.addparam(b'treemanifest', b'1')
 
-    visitnodes, relevant_nodes, ellipsisroots = exchange._computeellipsis(
-        repo, common, heads, set(), newmatch, depth=depth
-    )
-
-    repo.ui.debug(b'Found %d relevant revs\n' % len(relevant_nodes))
-    if visitnodes:
-        packer = changegroup.getbundler(
-            version,
-            repo,
-            matcher=newmatch,
-            ellipses=True,
-            shallow=depth is not None,
-            ellipsisroots=ellipsisroots,
-            fullnodes=relevant_nodes,
-        )
-        cgdata = packer.generate(common, visitnodes, False, b'narrow_widen')
-
-        part = bundler.newpart(b'changegroup', data=cgdata)
-        part.addparam(b'version', version)
-        if b'treemanifest' in repo.requirements:
-            part.addparam(b'treemanifest', b'1')
-
 
 @bundle2.parthandler(_SPECPART, (_SPECPART_INCLUDE, _SPECPART_EXCLUDE))
 def _handlechangespec_2(op, inpart):
