@@ -120,7 +120,7 @@ def narrow_widen(
                 ellipses,
             )
         else:
-            narrowbundle2.generateellipsesbundle2(
+            narrowbundle2.generate_ellipses_bundle2_for_widening(
                 bundler,
                 repo,
                 oldincludes,
