@@ -121,15 +121,10 @@ def generate_ellipses_bundle2_for_widening(
     version,
     common,
     known,
-    depth,
 ):
     newmatch = narrowspec.match(
         repo.root, include=newinclude, exclude=newexclude
     )
-    if depth is not None:
-        depth = int(depth)
-        if depth < 1:
-            raise error.Abort(_(b'depth must be positive, got %d') % depth)
 
     common = set(common or [nullid])
     # Steps:
@@ -173,7 +168,7 @@ def generate_ellipses_bundle2_for_widening(
             repo,
             matcher=newmatch,
             ellipses=True,
-            shallow=depth is not None,
+            shallow=False,
             ellipsisroots=newellipsis,
             fullnodes=newfull,
         )

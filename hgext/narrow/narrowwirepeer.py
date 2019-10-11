@@ -130,7 +130,6 @@ def narrow_widen(
                 cgversion,
                 common,
                 known,
-                None,
             )
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)
