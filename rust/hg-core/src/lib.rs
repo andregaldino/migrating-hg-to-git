@@ -12,6 +12,7 @@ pub use dirstate::{
     dirs_multiset::{DirsMultiset, DirsMultisetIter},
     dirstate_map::DirstateMap,
     parsers::{pack_dirstate, parse_dirstate, PARENT_SIZE},
+    status::status,
     CopyMap, CopyMapIter, DirstateEntry, DirstateParents, EntryState,
     StateMap, StateMapIter,
 };

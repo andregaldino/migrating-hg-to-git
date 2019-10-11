@@ -12,6 +12,7 @@
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use std::iter::FusedIterator;
 
+use std::fs::Metadata;
 use std::path::Path;
 
 pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
@@ -74,6 +75,32 @@ pub fn normalize_case(path: &HgPath) -> HgPathBuf {
     return path.to_ascii_uppercase();
     #[cfg(unix)]
     path.to_ascii_lowercase()
+}
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+pub struct HgMetadata {
+    pub st_dev: u64,
+    pub st_mode: u32,
+    pub st_nlink: u64,
+    pub st_size: u64,
+    pub st_mtime: i64,
+    pub st_ctime: i64,
+}
+
+// TODO support other plaforms
+#[cfg(unix)]
+impl HgMetadata {
+    pub fn from_metadata(metadata: Metadata) -> Self {
+        use std::os::unix::fs::MetadataExt;
+        Self {
+            st_dev: metadata.dev(),
+            st_mode: metadata.mode(),
+            st_nlink: metadata.nlink(),
+            st_size: metadata.size(),
+            st_mtime: metadata.mtime(),
+            st_ctime: metadata.ctime(),
+        }
+    }
 }
 
 #[cfg(test)]

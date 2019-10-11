@@ -13,6 +13,7 @@ use std::convert::TryFrom;
 pub mod dirs_multiset;
 pub mod dirstate_map;
 pub mod parsers;
+pub mod status;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct DirstateParents {
