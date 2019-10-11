@@ -112,20 +112,8 @@ def generateellipsesbundle2(
 
 
 def generate_ellipses_bundle2_for_widening(
-    bundler,
-    repo,
-    oldinclude,
-    oldexclude,
-    newinclude,
-    newexclude,
-    version,
-    common,
-    known,
+    bundler, repo, oldmatch, newmatch, version, common, known,
 ):
-    newmatch = narrowspec.match(
-        repo.root, include=newinclude, exclude=newexclude
-    )
-
     common = set(common or [nullid])
     # Steps:
     # 1. Send kill for "$known & ::common"

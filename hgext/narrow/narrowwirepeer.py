@@ -102,13 +102,13 @@ def narrow_widen(
         cgversion = cgversion
 
         bundler = bundle2.bundle20(repo.ui)
+        newmatch = narrowspec.match(
+            repo.root, include=newincludes, exclude=newexcludes
+        )
+        oldmatch = narrowspec.match(
+            repo.root, include=oldincludes, exclude=oldexcludes
+        )
         if not ellipses:
-            newmatch = narrowspec.match(
-                repo.root, include=newincludes, exclude=newexcludes
-            )
-            oldmatch = narrowspec.match(
-                repo.root, include=oldincludes, exclude=oldexcludes
-            )
             bundle2.widen_bundle(
                 bundler,
                 repo,
@@ -121,15 +121,7 @@ def narrow_widen(
             )
         else:
             narrowbundle2.generate_ellipses_bundle2_for_widening(
-                bundler,
-                repo,
-                oldincludes,
-                oldexcludes,
-                newincludes,
-                newexcludes,
-                cgversion,
-                common,
-                known,
+                bundler, repo, oldmatch, newmatch, cgversion, common, known,
             )
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)
