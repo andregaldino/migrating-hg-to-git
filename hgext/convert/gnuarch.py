@@ -216,7 +216,8 @@ class gnuarch_source(common.converter_source, common.commandline):
         cmdline = [self.execmd, cmd]
         cmdline += args
         cmdline = [procutil.shellquote(arg) for arg in cmdline]
-        cmdline += [b'>', os.devnull, b'2>', os.devnull]
+        bdevnull = pycompat.bytestr(os.devnull)
+        cmdline += [b'>', bdevnull, b'2>', bdevnull]
         cmdline = procutil.quotecommand(b' '.join(cmdline))
         self.ui.debug(cmdline, b'\n')
         return os.system(pycompat.rapply(procutil.tonativestr, cmdline))
