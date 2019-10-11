@@ -134,58 +134,57 @@ def generate_ellipses_bundle2_for_widening(
 
     heads = set(heads or repo.heads())
     common = set(common or [nullid])
-    if known and (oldinclude != newinclude or oldexclude != newexclude):
-        # Steps:
-        # 1. Send kill for "$known & ::common"
-        #
-        # 2. Send changegroup for ::common
-        #
-        # 3. Proceed.
-        #
-        # In the future, we can send kills for only the specific
-        # nodes we know should go away or change shape, and then
-        # send a data stream that tells the client something like this:
-        #
-        # a) apply this changegroup
-        # b) apply nodes XXX, YYY, ZZZ that you already have
-        # c) goto a
-        #
-        # until they've built up the full new state.
-        # Convert to revnums and intersect with "common". The client should
-        # have made it a subset of "common" already, but let's be safe.
-        known = set(repo.revs(b"%ln & ::%ln", known, common))
-        # TODO: we could send only roots() of this set, and the
-        # list of nodes in common, and the client could work out
-        # what to strip, instead of us explicitly sending every
-        # single node.
-        deadrevs = known
+    # Steps:
+    # 1. Send kill for "$known & ::common"
+    #
+    # 2. Send changegroup for ::common
+    #
+    # 3. Proceed.
+    #
+    # In the future, we can send kills for only the specific
+    # nodes we know should go away or change shape, and then
+    # send a data stream that tells the client something like this:
+    #
+    # a) apply this changegroup
+    # b) apply nodes XXX, YYY, ZZZ that you already have
+    # c) goto a
+    #
+    # until they've built up the full new state.
+    # Convert to revnums and intersect with "common". The client should
+    # have made it a subset of "common" already, but let's be safe.
+    known = set(repo.revs(b"%ln & ::%ln", known, common))
+    # TODO: we could send only roots() of this set, and the
+    # list of nodes in common, and the client could work out
+    # what to strip, instead of us explicitly sending every
+    # single node.
+    deadrevs = known
 
-        def genkills():
-            for r in deadrevs:
-                yield _KILLNODESIGNAL
-                yield repo.changelog.node(r)
-            yield _DONESIGNAL
+    def genkills():
+        for r in deadrevs:
+            yield _KILLNODESIGNAL
+            yield repo.changelog.node(r)
+        yield _DONESIGNAL
 
-        bundler.newpart(_CHANGESPECPART, data=genkills())
-        newvisit, newfull, newellipsis = exchange._computeellipsis(
-            repo, set(), common, known, newmatch
+    bundler.newpart(_CHANGESPECPART, data=genkills())
+    newvisit, newfull, newellipsis = exchange._computeellipsis(
+        repo, set(), common, known, newmatch
+    )
+    if newvisit:
+        packer = changegroup.getbundler(
+            version,
+            repo,
+            matcher=newmatch,
+            ellipses=True,
+            shallow=depth is not None,
+            ellipsisroots=newellipsis,
+            fullnodes=newfull,
         )
-        if newvisit:
-            packer = changegroup.getbundler(
-                version,
-                repo,
-                matcher=newmatch,
-                ellipses=True,
-                shallow=depth is not None,
-                ellipsisroots=newellipsis,
-                fullnodes=newfull,
-            )
-            cgdata = packer.generate(common, newvisit, False, b'narrow_widen')
+        cgdata = packer.generate(common, newvisit, False, b'narrow_widen')
 
-            part = bundler.newpart(b'changegroup', data=cgdata)
-            part.addparam(b'version', version)
-            if b'treemanifest' in repo.requirements:
-                part.addparam(b'treemanifest', b'1')
+        part = bundler.newpart(b'changegroup', data=cgdata)
+        part.addparam(b'version', version)
+        if b'treemanifest' in repo.requirements:
+            part.addparam(b'treemanifest', b'1')
 
     visitnodes, relevant_nodes, ellipsisroots = exchange._computeellipsis(
         repo, common, heads, set(), newmatch, depth=depth
