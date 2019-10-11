@@ -143,14 +143,12 @@ def generate_ellipses_bundle2_for_widening(
     # c) goto a
     #
     # until they've built up the full new state.
-    # Convert to revnums and intersect with "common". The client should
-    # have made it a subset of "common" already, but let's be safe.
-    known = set(repo.revs(b"%ln & ::%ln", known, common))
+    knownrevs = {repo.changelog.rev(n) for n in known}
     # TODO: we could send only roots() of this set, and the
     # list of nodes in common, and the client could work out
     # what to strip, instead of us explicitly sending every
     # single node.
-    deadrevs = known
+    deadrevs = knownrevs
 
     def genkills():
         for r in deadrevs:
@@ -160,7 +158,7 @@ def generate_ellipses_bundle2_for_widening(
 
     bundler.newpart(_CHANGESPECPART, data=genkills())
     newvisit, newfull, newellipsis = exchange._computeellipsis(
-        repo, set(), common, known, newmatch
+        repo, set(), common, knownrevs, newmatch
     )
     if newvisit:
         packer = changegroup.getbundler(
