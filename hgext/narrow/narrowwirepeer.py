@@ -129,7 +129,6 @@ def narrow_widen(
                 newexcludes,
                 cgversion,
                 common,
-                list(common),
                 known,
                 None,
             )

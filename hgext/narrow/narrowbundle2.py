@@ -120,7 +120,6 @@ def generate_ellipses_bundle2_for_widening(
     newexclude,
     version,
     common,
-    heads,
     known,
     depth,
 ):
@@ -132,7 +131,6 @@ def generate_ellipses_bundle2_for_widening(
         if depth < 1:
             raise error.Abort(_(b'depth must be positive, got %d') % depth)
 
-    heads = set(heads or repo.heads())
     common = set(common or [nullid])
     # Steps:
     # 1. Send kill for "$known & ::common"
