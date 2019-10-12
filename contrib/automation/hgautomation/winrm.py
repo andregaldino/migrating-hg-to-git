@@ -55,7 +55,7 @@ def format_object(o):
 
     try:
         o = str(o)
-    except TypeError:
+    except (AttributeError, TypeError):
         o = pprint.pformat(o.extended_properties)
 
     return o
