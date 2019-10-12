@@ -202,7 +202,19 @@ impl<'a, T> PySharedRef<'a, T> {
         self.data.borrow(self.py)
     }
 
-    pub fn borrow_mut(&self) -> PyResult<RefMut<'a, T>> {
+    /// Mutably borrows the wrapped value.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the value is currently borrowed through `PySharedRef`
+    /// or `PyLeaked`.
+    pub fn borrow_mut(&self) -> RefMut<'a, T> {
+        self.try_borrow_mut().expect("already borrowed")
+    }
+
+    /// Mutably borrows the wrapped value, returning an error if the value
+    /// is currently borrowed.
+    pub fn try_borrow_mut(&self) -> PyResult<RefMut<'a, T>> {
         self.data.try_borrow_mut(self.py)
     }
 
@@ -572,7 +584,7 @@ mod test {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable();
-        owner.string_shared(py).borrow_mut().unwrap().clear();
+        owner.string_shared(py).borrow_mut().clear();
         assert!(leaked.try_borrow(py).is_err());
     }
 
@@ -582,7 +594,7 @@ mod test {
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
-        owner.string_shared(py).borrow_mut().unwrap().clear();
+        owner.string_shared(py).borrow_mut().clear();
         assert!(leaked_iter.try_borrow_mut(py).is_err());
     }
 
@@ -592,40 +604,40 @@ mod test {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable();
-        owner.string_shared(py).borrow_mut().unwrap().clear();
+        owner.string_shared(py).borrow_mut().clear();
         let _leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
     }
 
     #[test]
-    fn test_borrow_mut_while_leaked_ref() {
+    fn test_try_borrow_mut_while_leaked_ref() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
-        assert!(owner.string_shared(py).borrow_mut().is_ok());
+        assert!(owner.string_shared(py).try_borrow_mut().is_ok());
         let leaked = owner.string_shared(py).leak_immutable();
         {
             let _leaked_ref = leaked.try_borrow(py).unwrap();
-            assert!(owner.string_shared(py).borrow_mut().is_err());
+            assert!(owner.string_shared(py).try_borrow_mut().is_err());
             {
                 let _leaked_ref2 = leaked.try_borrow(py).unwrap();
-                assert!(owner.string_shared(py).borrow_mut().is_err());
+                assert!(owner.string_shared(py).try_borrow_mut().is_err());
             }
-            assert!(owner.string_shared(py).borrow_mut().is_err());
+            assert!(owner.string_shared(py).try_borrow_mut().is_err());
         }
-        assert!(owner.string_shared(py).borrow_mut().is_ok());
+        assert!(owner.string_shared(py).try_borrow_mut().is_ok());
     }
 
     #[test]
-    fn test_borrow_mut_while_leaked_ref_mut() {
+    fn test_try_borrow_mut_while_leaked_ref_mut() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
-        assert!(owner.string_shared(py).borrow_mut().is_ok());
+        assert!(owner.string_shared(py).try_borrow_mut().is_ok());
         let leaked = owner.string_shared(py).leak_immutable();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
         {
             let _leaked_ref = leaked_iter.try_borrow_mut(py).unwrap();
-            assert!(owner.string_shared(py).borrow_mut().is_err());
+            assert!(owner.string_shared(py).try_borrow_mut().is_err());
         }
-        assert!(owner.string_shared(py).borrow_mut().is_ok());
+        assert!(owner.string_shared(py).try_borrow_mut().is_ok());
     }
 
     #[test]
@@ -638,10 +650,19 @@ mod test {
     }
 
     #[test]
+    fn test_try_borrow_mut_while_borrow() {
+        let (gil, owner) = prepare_env();
+        let py = gil.python();
+        let _ref = owner.string_shared(py).borrow();
+        assert!(owner.string_shared(py).try_borrow_mut().is_err());
+    }
+
+    #[test]
+    #[should_panic(expected = "already borrowed")]
     fn test_borrow_mut_while_borrow() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         let _ref = owner.string_shared(py).borrow();
-        assert!(owner.string_shared(py).borrow_mut().is_err());
+        owner.string_shared(py).borrow_mut();
     }
 }

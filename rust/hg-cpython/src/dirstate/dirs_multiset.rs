@@ -72,7 +72,7 @@ py_class!(pub class Dirs |py| {
     }
 
     def addpath(&self, path: PyObject) -> PyResult<PyObject> {
-        self.inner_shared(py).borrow_mut()?.add_path(
+        self.inner_shared(py).borrow_mut().add_path(
             HgPath::new(path.extract::<PyBytes>(py)?.data(py)),
         ).and(Ok(py.None())).or_else(|e| {
             match e {
@@ -90,7 +90,7 @@ py_class!(pub class Dirs |py| {
     }
 
     def delpath(&self, path: PyObject) -> PyResult<PyObject> {
-        self.inner_shared(py).borrow_mut()?.delete_path(
+        self.inner_shared(py).borrow_mut().delete_path(
             HgPath::new(path.extract::<PyBytes>(py)?.data(py)),
         )
             .and(Ok(py.None()))
