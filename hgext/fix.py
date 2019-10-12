@@ -794,11 +794,11 @@ def getfixers(ui):
     fixers = {}
     for name in fixernames(ui):
         fixers[name] = Fixer()
-        for key, default in FIXER_ATTRS.items():
+        for key in FIXER_ATTRS:
             setattr(
                 fixers[name],
                 pycompat.sysstr(b'_' + key),
-                ui.config(b'fix', name + b':' + key, default),
+                ui.config(b'fix', name + b':' + key),
             )
         fixers[name]._priority = int(fixers[name]._priority)
         fixers[name]._metadata = stringutil.parsebool(fixers[name]._metadata)
