@@ -570,25 +570,14 @@ macro_rules! py_shared_iterator {
         $success_type: ty
     ) => {
         py_class!(pub class $name |py| {
-            data inner: RefCell<Option<$leaked>>;
+            data inner: RefCell<$leaked>;
 
             def __next__(&self) -> PyResult<$success_type> {
-                let mut inner_opt = self.inner(py).borrow_mut();
-                if let Some(leaked) = inner_opt.as_mut() {
-                    let mut iter = leaked.try_borrow_mut(py)?;
-                    match iter.next() {
-                        None => {
-                            drop(iter);
-                            // replace Some(inner) by None, drop $leaked
-                            inner_opt.take();
-                            Ok(None)
-                        }
-                        Some(res) => {
-                            $success_func(py, res)
-                        }
-                    }
-                } else {
-                    Ok(None)
+                let mut leaked = self.inner(py).borrow_mut();
+                let mut iter = leaked.try_borrow_mut(py)?;
+                match iter.next() {
+                    None => Ok(None),
+                    Some(res) => $success_func(py, res),
                 }
             }
 
@@ -604,7 +593,7 @@ macro_rules! py_shared_iterator {
             ) -> PyResult<Self> {
                 Self::create_instance(
                     py,
-                    RefCell::new(Some(leaked)),
+                    RefCell::new(leaked),
                 )
             }
         }
