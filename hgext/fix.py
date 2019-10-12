@@ -843,9 +843,7 @@ class Fixer(object):
 
     def affects(self, opts, fixctx, path):
         """Should this fixer run on the file at the given path and context?"""
-        return self._pattern is not None and scmutil.match(
-            fixctx, [self._pattern], opts
-        )(path)
+        return scmutil.match(fixctx, [self._pattern], opts)(path)
 
     def shouldoutputmetadata(self):
         """Should the stdout of this fixer start with JSON and a null byte?"""
