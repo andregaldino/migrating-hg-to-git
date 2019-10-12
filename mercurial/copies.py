@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import collections
-import heapq
 import os
 
 from .i18n import _
@@ -229,6 +228,8 @@ def _changesetforwardcopies(a, b, match):
 
     cl = repo.changelog
     missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
+    mrset = set(missingrevs)
+    roots = set()
     for r in missingrevs:
         for p in cl.parentrevs(r):
             if p == node.nullrev:
@@ -237,17 +238,25 @@ def _changesetforwardcopies(a, b, match):
                 children[p] = [r]
             else:
                 children[p].append(r)
+            if p not in mrset:
+                roots.add(p)
+    if not roots:
+        # no common revision to track copies from
+        return {}
+    min_root = min(roots)
 
-    roots = set(children) - set(missingrevs)
-    work = list(roots)
+    from_head = set(
+        cl.reachableroots(min_root, [b.rev()], list(roots), includepath=True)
+    )
+
+    iterrevs = set(from_head)
+    iterrevs &= mrset
+    iterrevs.update(roots)
+    iterrevs.remove(b.rev())
     all_copies = {r: {} for r in roots}
-    heapq.heapify(work)
     alwaysmatch = match.always()
-    while work:
-        r = heapq.heappop(work)
+    for r in sorted(iterrevs):
         copies = all_copies.pop(r)
-        if r == b.rev():
-            return copies
         for i, c in enumerate(children[r]):
             p1, p2, p1copies, p2copies, removed = revinfo(c)
             if r == p1:
@@ -273,7 +282,6 @@ def _changesetforwardcopies(a, b, match):
                     del newcopies[f]
             othercopies = all_copies.get(c)
             if othercopies is None:
-                heapq.heappush(work, c)
                 all_copies[c] = newcopies
             else:
                 # we are the second parent to work on c, we need to merge our
@@ -293,7 +301,7 @@ def _changesetforwardcopies(a, b, match):
                 else:
                     newcopies.update(othercopies)
                     all_copies[c] = newcopies
-    assert False
+    return all_copies[b.rev()]
 
 
 def _forwardcopies(a, b, base=None, match=None):
