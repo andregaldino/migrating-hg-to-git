@@ -394,3 +394,63 @@ Copies via null revision (there shouldn't be any)
   $ hg debugpathcopies 2 1
   $ hg graft -r 1
   grafting 1:* "copy x to y" (glob)
+
+Copies involving a merge of multiple roots.
+
+  $ newrepo
+  $ echo a > a
+  $ hg ci -Aqm 'add a'
+  $ echo a >> a
+  $ hg ci -Aqm 'update a'
+  $ echo a >> a
+  $ hg ci -Aqm 'update a'
+
+  $ hg up null
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo b > a
+  $ hg ci -Aqm 'add a'
+  $ hg mv a b
+  $ hg ci -Aqm 'move a to b'
+  $ echo b >> b
+  $ hg ci -Aqm 'update b'
+  $ hg merge 0
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "merge with other branch"
+  $ echo a >> a
+  $ echo a >> a
+  $ echo b >> b
+  $ hg ci -Aqm 'update a and b'
+  $ hg l
+  @  7 update a and b
+  |  a b
+  o    6 merge with other branch
+  |\
+  | o  5 update b
+  | |  b
+  | o  4 move a to b
+  | |  a b
+  | o  3 add a
+  |    a
+  | o  2 update a
+  | |  a
+  | o  1 update a
+  |/   a
+  o  0 add a
+     a
+  $ hg cat a -r 7
+  a
+  a
+  a
+  $ hg cat a -r 2
+  a
+  a
+  a
+  $ hg cat a -r 0
+  a
+  $ hg debugpathcopies 7 2
+  $ hg debugpathcopies 2 7
+  $ hg merge 2
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+
