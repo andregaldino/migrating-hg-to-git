@@ -20,7 +20,7 @@ use cpython::{
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
     dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
-    ref_sharing::{PyLeakedRef, PySharedRefCell},
+    ref_sharing::{PyLeaked, PySharedRefCell},
 };
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
@@ -483,14 +483,14 @@ py_shared_ref!(DirstateMap, RustDirstateMap, inner, inner_shared);
 
 py_shared_iterator!(
     DirstateMapKeysIterator,
-    PyLeakedRef<StateMapIter<'static>>,
+    PyLeaked<StateMapIter<'static>>,
     DirstateMap::translate_key,
     Option<PyBytes>
 );
 
 py_shared_iterator!(
     DirstateMapItemsIterator,
-    PyLeakedRef<StateMapIter<'static>>,
+    PyLeaked<StateMapIter<'static>>,
     DirstateMap::translate_key_value,
     Option<(PyBytes, PyObject)>
 );

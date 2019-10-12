@@ -186,12 +186,12 @@ impl<'a, T> PySharedRef<'a, T> {
     }
 
     /// Returns a leaked reference.
-    pub fn leak_immutable(&self) -> PyResult<PyLeakedRef<&'static T>> {
+    pub fn leak_immutable(&self) -> PyResult<PyLeaked<&'static T>> {
         let state = &self.data.py_shared_state;
         unsafe {
             let (static_ref, static_state_ref) =
                 state.leak_immutable(self.py, self.data)?;
-            Ok(PyLeakedRef::new(
+            Ok(PyLeaked::new(
                 self.py,
                 self.owner,
                 static_ref,
@@ -307,16 +307,16 @@ macro_rules! py_shared_ref {
 }
 
 /// Manage immutable references to `PyObject` leaked into Python iterators.
-pub struct PyLeakedRef<T> {
+pub struct PyLeaked<T> {
     inner: PyObject,
     data: Option<T>,
     py_shared_state: &'static PySharedState,
 }
 
-// DO NOT implement Deref for PyLeakedRef<T>! Dereferencing PyLeakedRef
+// DO NOT implement Deref for PyLeaked<T>! Dereferencing PyLeaked
 // without taking Python GIL wouldn't be safe.
 
-impl<T> PyLeakedRef<T> {
+impl<T> PyLeaked<T> {
     /// # Safety
     ///
     /// The `py_shared_state` must be owned by the `inner` Python object.
@@ -355,19 +355,19 @@ impl<T> PyLeakedRef<T> {
     ///
     /// The lifetime of the object passed in to the function `f` is cheated.
     /// It's typically a static reference, but is valid only while the
-    /// corresponding `PyLeakedRef` is alive. Do not copy it out of the
+    /// corresponding `PyLeaked` is alive. Do not copy it out of the
     /// function call.
     pub unsafe fn map<U>(
         mut self,
         py: Python,
         f: impl FnOnce(T) -> U,
-    ) -> PyLeakedRef<U> {
+    ) -> PyLeaked<U> {
         // f() could make the self.data outlive. That's why map() is unsafe.
         // In order to make this function safe, maybe we'll need a way to
         // temporarily restrict the lifetime of self.data and translate the
         // returned object back to Something<'static>.
         let new_data = f(self.data.take().unwrap());
-        PyLeakedRef {
+        PyLeaked {
             inner: self.inner.clone_ref(py),
             data: Some(new_data),
             py_shared_state: self.py_shared_state,
@@ -375,7 +375,7 @@ impl<T> PyLeakedRef<T> {
     }
 }
 
-impl<T> Drop for PyLeakedRef<T> {
+impl<T> Drop for PyLeaked<T> {
     fn drop(&mut self) {
         // py_shared_state should be alive since we do have
         // a Python reference to the owner object. Taking GIL makes
@@ -383,7 +383,7 @@ impl<T> Drop for PyLeakedRef<T> {
         let gil = Python::acquire_gil();
         let py = gil.python();
         if self.data.is_none() {
-            return; // moved to another PyLeakedRef
+            return; // moved to another PyLeaked
         }
         self.py_shared_state.decrease_leak_count(py, false);
     }
@@ -439,7 +439,7 @@ impl<T> Drop for PyLeakedRef<T> {
 ///
 /// py_shared_iterator!(
 ///     MyTypeItemsIterator,
-///     PyLeakedRef<HashMap<'static, Vec<u8>, Vec<u8>>>,
+///     PyLeaked<HashMap<'static, Vec<u8>, Vec<u8>>>,
 ///     MyType::translate_key_value,
 ///     Option<(PyBytes, PyBytes)>
 /// );
