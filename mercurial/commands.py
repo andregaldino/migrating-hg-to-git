@@ -5616,8 +5616,10 @@ def push(ui, repo, dest=None, **opts):
                 _(b'default push revset for path evaluates to an empty set')
             )
     elif ui.configbool(b'commands', b'push.require-revs'):
-        raise error.Abort(_(b'no revisions specified to push'),
-                          hint=_(b'did you mean "hg push -r ."?'))
+        raise error.Abort(
+            _(b'no revisions specified to push'),
+            hint=_(b'did you mean "hg push -r ."?'),
+        )
 
     repo._subtoppath = dest
     try:
