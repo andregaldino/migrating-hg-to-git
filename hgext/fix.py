@@ -46,8 +46,10 @@ tool needs to operate on unchanged files, it should set the :skipclean suboption
 to false.
 
 The :pattern suboption determines which files will be passed through each
-configured tool. See :hg:`help patterns` for possible values. If there are file
-arguments to :hg:`fix`, the intersection of these patterns is used.
+configured tool. See :hg:`help patterns` for possible values. However, all
+patterns are relative to the repo root, even if that text says they are relative
+to the current working directory. If there are file arguments to :hg:`fix`, the
+intersection of these patterns is used.
 
 There is also a configurable limit for the maximum size of file that will be
 processed by :hg:`fix`::
@@ -140,6 +142,7 @@ from mercurial import (
     context,
     copies,
     error,
+    match as matchmod,
     mdiff,
     merge,
     obsolete,
@@ -843,7 +846,11 @@ class Fixer(object):
 
     def affects(self, opts, fixctx, path):
         """Should this fixer run on the file at the given path and context?"""
-        return scmutil.match(fixctx, [self._pattern], opts)(path)
+        repo = fixctx.repo()
+        matcher = matchmod.match(
+            repo.root, repo.root, [self._pattern], ctx=fixctx
+        )
+        return matcher(path)
 
     def shouldoutputmetadata(self):
         """Should the stdout of this fixer start with JSON and a null byte?"""

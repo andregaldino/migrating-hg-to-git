@@ -157,8 +157,10 @@ Help text for fix.
   :skipclean suboption to false.
   
   The :pattern suboption determines which files will be passed through each
-  configured tool. See 'hg help patterns' for possible values. If there are file
-  arguments to 'hg fix', the intersection of these patterns is used.
+  configured tool. See 'hg help patterns' for possible values. However, all
+  patterns are relative to the repo root, even if that text says they are
+  relative to the current working directory. If there are file arguments to 'hg
+  fix', the intersection of these patterns is used.
   
   There is also a configurable limit for the maximum size of file that will be
   processed by 'hg fix':
@@ -1321,7 +1323,7 @@ reasonable with that.
   $ echo modified > bar
   $ hg fix -w bar
   $ cat bar
-  modified
+  $TESTTMP/subprocesscwd
 
   $ cd ../..
 
