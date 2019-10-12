@@ -11,10 +11,7 @@ import errno
 import struct
 
 from mercurial.i18n import _
-from mercurial.node import (
-    bin,
-    nullid,
-)
+from mercurial.node import nullid
 from mercurial import (
     bundle2,
     changegroup,
@@ -65,42 +62,24 @@ def getbundlechangegrouppart_narrow(
         raise ValueError(_(b'no common changegroup version'))
     version = max(cgversions)
 
-    oldinclude = sorted(filter(bool, kwargs.get(r'oldincludepats', [])))
-    oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
-    newinclude = sorted(filter(bool, kwargs.get(r'includepats', [])))
-    newexclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
-    known = {bin(n) for n in kwargs.get(r'known', [])}
+    include = sorted(filter(bool, kwargs.get(r'includepats', [])))
+    exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
     generateellipsesbundle2(
         bundler,
         repo,
-        oldinclude,
-        oldexclude,
-        newinclude,
-        newexclude,
+        include,
+        exclude,
         version,
         common,
         heads,
-        known,
         kwargs.get(r'depth', None),
     )
 
 
 def generateellipsesbundle2(
-    bundler,
-    repo,
-    oldinclude,
-    oldexclude,
-    newinclude,
-    newexclude,
-    version,
-    common,
-    heads,
-    known,
-    depth,
+    bundler, repo, include, exclude, version, common, heads, depth,
 ):
-    newmatch = narrowspec.match(
-        repo.root, include=newinclude, exclude=newexclude
-    )
+    match = narrowspec.match(repo.root, include=include, exclude=exclude)
     if depth is not None:
         depth = int(depth)
         if depth < 1:
@@ -108,61 +87,9 @@ def generateellipsesbundle2(
 
     heads = set(heads or repo.heads())
     common = set(common or [nullid])
-    if known and (oldinclude != newinclude or oldexclude != newexclude):
-        # Steps:
-        # 1. Send kill for "$known & ::common"
-        #
-        # 2. Send changegroup for ::common
-        #
-        # 3. Proceed.
-        #
-        # In the future, we can send kills for only the specific
-        # nodes we know should go away or change shape, and then
-        # send a data stream that tells the client something like this:
-        #
-        # a) apply this changegroup
-        # b) apply nodes XXX, YYY, ZZZ that you already have
-        # c) goto a
-        #
-        # until they've built up the full new state.
-        # Convert to revnums and intersect with "common". The client should
-        # have made it a subset of "common" already, but let's be safe.
-        known = set(repo.revs(b"%ln & ::%ln", known, common))
-        # TODO: we could send only roots() of this set, and the
-        # list of nodes in common, and the client could work out
-        # what to strip, instead of us explicitly sending every
-        # single node.
-        deadrevs = known
-
-        def genkills():
-            for r in deadrevs:
-                yield _KILLNODESIGNAL
-                yield repo.changelog.node(r)
-            yield _DONESIGNAL
-
-        bundler.newpart(_CHANGESPECPART, data=genkills())
-        newvisit, newfull, newellipsis = exchange._computeellipsis(
-            repo, set(), common, known, newmatch
-        )
-        if newvisit:
-            packer = changegroup.getbundler(
-                version,
-                repo,
-                matcher=newmatch,
-                ellipses=True,
-                shallow=depth is not None,
-                ellipsisroots=newellipsis,
-                fullnodes=newfull,
-            )
-            cgdata = packer.generate(common, newvisit, False, b'narrow_widen')
-
-            part = bundler.newpart(b'changegroup', data=cgdata)
-            part.addparam(b'version', version)
-            if b'treemanifest' in repo.requirements:
-                part.addparam(b'treemanifest', b'1')
 
     visitnodes, relevant_nodes, ellipsisroots = exchange._computeellipsis(
-        repo, common, heads, set(), newmatch, depth=depth
+        repo, common, heads, set(), match, depth=depth
     )
 
     repo.ui.debug(b'Found %d relevant revs\n' % len(relevant_nodes))
@@ -170,7 +97,7 @@ def generateellipsesbundle2(
         packer = changegroup.getbundler(
             version,
             repo,
-            matcher=newmatch,
+            matcher=match,
             ellipses=True,
             shallow=depth is not None,
             ellipsisroots=ellipsisroots,
