@@ -178,7 +178,7 @@ FIXER_ATTRS = {
 }
 
 for key, default in FIXER_ATTRS.items():
-    configitem(b'fix', b'.*(:%s)?' % key, default=default, generic=True)
+    configitem(b'fix', b'.*:%s$' % key, default=default, generic=True)
 
 # A good default size allows most source code files to be fixed, but avoids
 # letting fixer tools choke on huge inputs, which could be surprising to the
@@ -794,12 +794,11 @@ def getfixers(ui):
     fixers = {}
     for name in fixernames(ui):
         fixers[name] = Fixer()
-        attrs = ui.configsuboptions(b'fix', name)[1]
         for key, default in FIXER_ATTRS.items():
             setattr(
                 fixers[name],
                 pycompat.sysstr(b'_' + key),
-                attrs.get(key, default),
+                ui.config(b'fix', name + b':' + key, default),
             )
         fixers[name]._priority = int(fixers[name]._priority)
         fixers[name]._metadata = stringutil.parsebool(fixers[name]._metadata)
