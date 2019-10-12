@@ -1298,7 +1298,7 @@ reasonable with that.
   $ cat >> .hg/hgrc <<EOF
   > [fix]
   > printcwd:command = "$PYTHON" -c "import os; print(os.getcwd())"
-  > printcwd:pattern = path:foo/bar
+  > printcwd:pattern = relpath:foo/bar
   > EOF
 
   $ mkdir foo
@@ -1318,6 +1318,10 @@ reasonable with that.
   $TESTTMP/subprocesscwd
   $ cat bar
   $TESTTMP/subprocesscwd
+  $ echo modified > bar
+  $ hg fix -w bar
+  $ cat bar
+  modified
 
   $ cd ../..
 
@@ -1373,7 +1377,7 @@ The way we invoke matching must not prohibit this.
 
   $ cd bar
   $ hg fix --working-dir --config "fix.cooltool:command=echo fixed" \
-  >                      --config "fix.cooltool:pattern=rootglob:**"
+  >                      --config "fix.cooltool:pattern=glob:**"
   $ cd ..
 
   $ cat foo/file
@@ -1409,7 +1413,7 @@ changes.
   $ hg fix --working-dir foo bar baz \
   >        --config "fix.changedlines:command=\"$PYTHON\" print.py \"Line ranges:\"" \
   >        --config 'fix.changedlines:linerange="{first} through {last}"' \
-  >        --config 'fix.changedlines:pattern=rootglob:**' \
+  >        --config 'fix.changedlines:pattern=glob:**' \
   >        --config 'fix.changedlines:skipclean=false'
 
   $ cat foo
