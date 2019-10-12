@@ -132,12 +132,8 @@ import subprocess
 from mercurial.i18n import _
 from mercurial.node import nullrev
 from mercurial.node import wdirrev
-from mercurial.pycompat import setattr
 
-from mercurial.utils import (
-    procutil,
-    stringutil,
-)
+from mercurial.utils import procutil
 
 from mercurial import (
     cmdutil,
@@ -172,9 +168,9 @@ FIXER_ATTRS = {
     b'linerange': None,
     b'pattern': None,
     b'priority': 0,
-    b'metadata': b'false',
-    b'skipclean': b'true',
-    b'enabled': b'true',
+    b'metadata': False,
+    b'skipclean': True,
+    b'enabled': True,
 }
 
 for key, default in FIXER_ATTRS.items():
@@ -793,29 +789,27 @@ def getfixers(ui):
     """
     fixers = {}
     for name in fixernames(ui):
-        fixers[name] = Fixer()
-        for key in FIXER_ATTRS:
-            setattr(
-                fixers[name],
-                pycompat.sysstr(b'_' + key),
-                ui.config(b'fix', name + b':' + key),
-            )
-        fixers[name]._priority = int(fixers[name]._priority)
-        fixers[name]._metadata = stringutil.parsebool(fixers[name]._metadata)
-        fixers[name]._skipclean = stringutil.parsebool(fixers[name]._skipclean)
-        fixers[name]._enabled = stringutil.parsebool(fixers[name]._enabled)
+        enabled = ui.configbool(b'fix', name + b':enabled')
+        command = ui.config(b'fix', name + b':command')
+        pattern = ui.config(b'fix', name + b':pattern')
+        linerange = ui.config(b'fix', name + b':linerange')
+        priority = ui.configint(b'fix', name + b':priority')
+        metadata = ui.configbool(b'fix', name + b':metadata')
+        skipclean = ui.configbool(b'fix', name + b':skipclean')
         # Don't use a fixer if it has no pattern configured. It would be
         # dangerous to let it affect all files. It would be pointless to let it
         # affect no files. There is no reasonable subset of files to use as the
         # default.
-        if fixers[name]._pattern is None:
+        if pattern is None:
             ui.warn(
                 _(b'fixer tool has no pattern configuration: %s\n') % (name,)
             )
-            del fixers[name]
-        elif not fixers[name]._enabled:
+        elif not enabled:
             ui.debug(b'ignoring disabled fixer tool: %s\n' % (name,))
-            del fixers[name]
+        else:
+            fixers[name] = Fixer(
+                command, pattern, linerange, priority, metadata, skipclean
+            )
     return collections.OrderedDict(
         sorted(fixers.items(), key=lambda item: item[1]._priority, reverse=True)
     )
@@ -832,6 +826,16 @@ def fixernames(ui):
 
 class Fixer(object):
     """Wraps the raw config values for a fixer with methods"""
+
+    def __init__(
+        self, command, pattern, linerange, priority, metadata, skipclean
+    ):
+        self._command = command
+        self._pattern = pattern
+        self._linerange = linerange
+        self._priority = priority
+        self._metadata = metadata
+        self._skipclean = skipclean
 
     def affects(self, opts, fixctx, path):
         """Should this fixer run on the file at the given path and context?"""
