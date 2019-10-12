@@ -1,6 +1,11 @@
 #testcases flat tree
   $ . "$TESTDIR/narrow-library.sh"
 
+  $ cat >> $HGRCPATH <<EOF
+  > [alias]
+  > l = log -G -T "{if(ellipsis, '...')}{rev}: {desc}\n"
+  > EOF
+
 #if tree
   $ cat << EOF >> $HGRCPATH
   > [experimental]
@@ -76,15 +81,23 @@ add more upstream files which we will include in a wider narrow spec
   $ echo 'widest v4' > widest/f
   $ hg commit -m 'update widest v4'
 
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  7: update widest v4
-  6: add outside2
-  5: update inside
-  4: update widest v3
-  3: add wider, update widest
-  2: add outside
-  1: add widest
-  0: add inside
+  $ hg l
+  @  7: update widest v4
+  |
+  o  6: add outside2
+  |
+  o  5: update inside
+  |
+  o  4: update widest v3
+  |
+  o  3: add wider, update widest
+  |
+  o  2: add outside
+  |
+  o  1: add widest
+  |
+  o  0: add inside
+  
 
   $ cd ..
 
@@ -92,6 +105,11 @@ Widen the narrow spec to see the widest file. This should not get the newly
 added upstream revisions.
 
   $ cd narrow
+  $ hg l
+  @  ...1: add outside
+  |
+  o  0: add inside
+  
   $ hg tracked --addinclude widest/f
   comparing with ssh://user@dummy/master
   searching for changes
@@ -100,6 +118,13 @@ added upstream revisions.
   adding manifests
   adding file changes
   added 3 changesets with 2 changes to 2 files
+  $ hg l
+  @  ...2: add outside
+  |
+  o  1: add widest
+  |
+  o  0: add inside
+  
   $ hg tracked
   I path:inside
   I path:widest/f
@@ -130,15 +155,23 @@ Pull down the newly added upstream revision.
   $ cat inside/f
   inside v2
 
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  7: update widest v4
-  ...6: add outside2
-  5: update inside
-  4: update widest v3
-  3: add wider, update widest
-  ...2: add outside
-  1: add widest
-  0: add inside
+  $ hg l
+  o  7: update widest v4
+  |
+  o  ...6: add outside2
+  |
+  @  5: update inside
+  |
+  o  4: update widest v3
+  |
+  o  3: add wider, update widest
+  |
+  o  ...2: add outside
+  |
+  o  1: add widest
+  |
+  o  0: add inside
+  
 
 Check that widening with a newline fails
 
@@ -180,15 +213,23 @@ widen the narrow spec to include the wider file
   $ cat widest/f
   widest v4
 
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  7: update widest v4
-  ...6: add outside2
-  5: update inside
-  4: update widest v3
-  3: add wider, update widest
-  ...2: add outside
-  1: add widest
-  0: add inside
+  $ hg l
+  @  7: update widest v4
+  |
+  o  ...6: add outside2
+  |
+  o  5: update inside
+  |
+  o  4: update widest v3
+  |
+  o  3: add wider, update widest
+  |
+  o  ...2: add outside
+  |
+  o  1: add widest
+  |
+  o  0: add inside
+  
 
 separate suite of tests: files from 0-10 modified in changes 0-10. This allows
 more obvious precise tests tickling particular corner cases.
@@ -245,15 +286,23 @@ make narrow clone with every third node.
   crosschecking files in changesets and manifests
   checking files
   checked 8 changesets with 4 changes to 4 files
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  ...7: add d10/f
-  6: add d9/f
-  ...5: add d8/f
-  4: add d6/f
-  ...3: add d5/f
-  2: add d3/f
-  ...1: add d2/f
-  0: add d0/f
+  $ hg l
+  @  ...7: add d10/f
+  |
+  o  6: add d9/f
+  |
+  o  ...5: add d8/f
+  |
+  o  4: add d6/f
+  |
+  o  ...3: add d5/f
+  |
+  o  2: add d3/f
+  |
+  o  ...1: add d2/f
+  |
+  o  0: add d0/f
+  
   $ hg tracked --addinclude d1
   comparing with ssh://user@dummy/upstream
   searching for changes
@@ -268,16 +317,25 @@ make narrow clone with every third node.
   I path:d3
   I path:d6
   I path:d9
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  ...8: add d10/f
-  7: add d9/f
-  ...6: add d8/f
-  5: add d6/f
-  ...4: add d5/f
-  3: add d3/f
-  ...2: add d2/f
-  1: add d1/f
-  0: add d0/f
+  $ hg l
+  @  ...8: add d10/f
+  |
+  o  7: add d9/f
+  |
+  o  ...6: add d8/f
+  |
+  o  5: add d6/f
+  |
+  o  ...4: add d5/f
+  |
+  o  3: add d3/f
+  |
+  o  ...2: add d2/f
+  |
+  o  1: add d1/f
+  |
+  o  0: add d0/f
+  
 
 Verify shouldn't claim the repo is corrupt after a widen.
 
@@ -294,16 +352,42 @@ Widening preserves parent of local commit
   $ cd ..
   $ hg clone -q --narrow ssh://user@dummy/upstream narrow3 --include d2 -r 2
   $ cd narrow3
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  1: add d2/f
-  ...0: add d1/f
+  $ hg l
+  @  1: add d2/f
+  |
+  o  ...0: add d1/f
+  
   $ hg pull -q -r 3
   $ hg co -q tip
   $ hg pull -q -r 4
   $ echo local > d2/f
   $ hg ci -m local
   created new head
+  $ hg l
+  @  4: local
+  |
+  | o  ...3: add d4/f
+  |/
+  o  ...2: add d3/f
+  |
+  o  1: add d2/f
+  |
+  o  ...0: add d1/f
+  
   $ hg tracked -q --addinclude d0 --addinclude d9
+  $ hg l
+  @  5: local
+  |
+  | o  ...4: add d4/f
+  |/
+  o  ...3: add d3/f
+  |
+  o  2: add d2/f
+  |
+  o  ...1: add d1/f
+  |
+  o  0: add d0/f
+  
 
 Widening preserves bookmarks
 
@@ -328,10 +412,13 @@ Widening that fails can be recovered from
   $ cd interrupted
   $ echo local > d0/f
   $ hg ci -m local
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  2: local
-  ...1: add d10/f
-  0: add d0/f
+  $ hg l
+  @  2: local
+  |
+  o  ...1: add d10/f
+  |
+  o  0: add d0/f
+  
   $ hg bookmarks bookmark
   $ hg --config hooks.pretxnchangegroup.bad=false tracked --addinclude d1
   comparing with ssh://user@dummy/upstream
@@ -344,7 +431,7 @@ Widening that fails can be recovered from
   rollback completed
   abort: pretxnchangegroup.bad hook exited with status 1
   [255]
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
+  $ hg l
   $ hg bookmarks
   no bookmarks set
   $ hg unbundle .hg/strip-backup/*-widen.hg
@@ -354,9 +441,12 @@ Widening that fails can be recovered from
   added 3 changesets with 2 changes to 1 files
   new changesets *:* (glob)
   (run 'hg update' to get a working copy)
-  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  2: local
-  ...1: add d10/f
-  0: add d0/f
+  $ hg l
+  o  2: local
+  |
+  o  ...1: add d10/f
+  |
+  o  0: add d0/f
+  
   $ hg bookmarks
    * bookmark                  2:* (glob)
