@@ -37,22 +37,22 @@ $PYTHON36_x86_SHA256 = "89871D432BC06E4630D7B64CB1A8451E53C80E68DE29029976B12AAD
 $PYTHON36_x64_URL = "https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe"
 $PYTHON36_x64_SHA256 = "96088A58B7C43BC83B84E6B67F15E8706C614023DD64F9A5A14E81FF824ADADC"
 
-$PYTHON37_x86_URL = "https://www.python.org/ftp/python/3.7.2/python-3.7.2.exe"
-$PYTHON37_x86_SHA256 = "8BACE330FB409E428B04EEEE083DD9CA7F6C754366D07E23B3853891D8F8C3D0"
-$PYTHON37_x64_URL = "https://www.python.org/ftp/python/3.7.2/python-3.7.2-amd64.exe"
-$PYTHON37_x64_SHA256 = "0FE2A696F5A3E481FED795EF6896ED99157BCEF273EF3C4A96F2905CBDB3AA13"
+$PYTHON37_x86_URL = "https://www.python.org/ftp/python/3.7.4/python-3.7.4.exe"
+$PYTHON37_x86_SHA256 = "9a30ab5568ba37bfbcae5cdee19e9dc30765c42cf066f605221563ff8b20ee34"
+$PYTHON37_X64_URL = "https://www.python.org/ftp/python/3.7.4/python-3.7.4-amd64.exe"
+$PYTHON37_x64_SHA256 = "bab92f987320975c7826171a072bfd64f8f0941aaf2cdeba6924b7025c9968a3"
 
-$PYTHON38_x86_URL = "https://www.python.org/ftp/python/3.8.0/python-3.8.0b2.exe"
-$PYTHON38_x86_SHA256 = "efa37ff7a239332bd5cf8b6e6ff15e3f183da942fd8c8d3e4b6bd11fa5e07e23"
-$PYTHON38_x64_URL = "https://www.python.org/ftp/python/3.8.0/python-3.8.0b2-amd64.exe"
-$PYTHON38_x64_SHA256 = "4e151f7dfa3605e6f400a3b01acfc2517468d71afb1e20f9299149356b79d8e9"
+$PYTHON38_x86_URL = "https://www.python.org/ftp/python/3.8.0/python-3.8.0rc1.exe"
+$PYTHON38_x86_SHA256 = "79eb5dd04be8384154ef6767e35ae570ede28188bd6cecce4f18c1aa42d1bb66"
+$PYTHON38_x64_URL = "https://www.python.org/ftp/python/3.8.0/python-3.8.0rc1-amd64.exe"
+$PYTHON38_x64_SHA256 = "c9cffbaf11487c08432d3ea9a3ac125f0fee41b41e71062477fb057ca1e5ab40"
 
-# PIP 19.0.3.
-$PIP_URL = "https://github.com/pypa/get-pip/raw/fee32c376da1ff6496a798986d7939cd51e1644f/get-pip.py"
-$PIP_SHA256 = "efe99298f3fbb1f56201ce6b81d2658067d2f7d7dfc2d412e0d3cacc9a397c61"
+# PIP 19.2.3.
+$PIP_URL = "https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py"
+$PIP_SHA256 = "57e3643ff19f018f8a00dfaa6b7e4620e3c1a7a2171fd218425366ec006b3bfe"
 
-$VIRTUALENV_URL = "https://files.pythonhosted.org/packages/37/db/89d6b043b22052109da35416abc3c397655e4bd3cff031446ba02b9654fa/virtualenv-16.4.3.tar.gz"
-$VIRTUALENV_SHA256 = "984d7e607b0a5d1329425dd8845bd971b957424b5ba664729fab51ab8c11bc39"
+$VIRTUALENV_URL = "https://files.pythonhosted.org/packages/66/f0/6867af06d2e2f511e4e1d7094ff663acdebc4f15d4a0cb0fed1007395124/virtualenv-16.7.5.tar.gz"
+$VIRTUALENV_SHA256 = "f78d81b62d3147396ac33fc9d77579ddc42cc2a98dd9ea38886f616b33bc7fb2"
 
 $INNO_SETUP_URL = "http://files.jrsoftware.org/is/5/innosetup-5.6.1-unicode.exe"
 $INNO_SETUP_SHA256 = "27D49E9BC769E9D1B214C153011978DB90DC01C2ACD1DDCD9ED7B3FE3B96B538"
@@ -60,9 +60,9 @@ $INNO_SETUP_SHA256 = "27D49E9BC769E9D1B214C153011978DB90DC01C2ACD1DDCD9ED7B3FE3B
 $MINGW_BIN_URL = "https://osdn.net/frs/redir.php?m=constant&f=mingw%2F68260%2Fmingw-get-0.6.3-mingw32-pre-20170905-1-bin.zip"
 $MINGW_BIN_SHA256 = "2AB8EFD7C7D1FC8EAF8B2FA4DA4EEF8F3E47768284C021599BC7435839A046DF"
 
-$MERCURIAL_WHEEL_FILENAME = "mercurial-4.9-cp27-cp27m-win_amd64.whl"
-$MERCURIAL_WHEEL_URL = "https://files.pythonhosted.org/packages/fe/e8/b872d53dfbbf986bdc46af0b30f580b227fb59bddd2587152a55e205b0cc/$MERCURIAL_WHEEL_FILENAME"
-$MERCURIAL_WHEEL_SHA256 = "218cc2e7c3f1d535007febbb03351663897edf27df0e57d6842e3b686492b429"
+$MERCURIAL_WHEEL_FILENAME = "mercurial-5.1.2-cp27-cp27m-win_amd64.whl"
+$MERCURIAL_WHEEL_URL = "https://files.pythonhosted.org/packages/6d/47/e031e47f7fe9b16e4e3383da47e2b0a7eae6e603996bc67a03ec4fa1b3f4/$MERCURIAL_WHEEL_FILENAME"
+$MERCURIAL_WHEEL_SHA256 = "1d18c7f6ca1456f0f62ee65c9a50c14cbba48ce6e924930cdb10537f5c9eaf5f"
 
 # Writing progress slows down downloads substantially. So disable it.
 $progressPreference = 'silentlyContinue'
