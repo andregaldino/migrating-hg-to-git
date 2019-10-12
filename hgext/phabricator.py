@@ -518,7 +518,7 @@ class phabchange(object):
     def addhunk(self, hunk):
         if not isinstance(hunk, phabhunk):
             raise error.Abort(b'phabchange.addhunk only takes phabhunks')
-        self.hunks.append(hunk)
+        self.hunks.append(pycompat.byteskwargs(attr.asdict(hunk)))
         # It's useful to include these stats since the Phab web UI shows them,
         # and uses them to estimate how large a change a Revision is. Also used
         # in email subjects for the [+++--] bit.
@@ -549,7 +549,9 @@ class phabdiff(object):
     def addchange(self, change):
         if not isinstance(change, phabchange):
             raise error.Abort(b'phabdiff.addchange only takes phabchanges')
-        self.changes[change.currentPath] = change
+        self.changes[change.currentPath] = pycompat.byteskwargs(
+            attr.asdict(change)
+        )
 
 
 def maketext(pchange, ctx, fname):
