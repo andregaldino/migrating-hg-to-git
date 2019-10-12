@@ -38,17 +38,20 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 ///   `PySharedRefCell` is allowed only through its `borrow_mut()`.
 /// - The `py: Python<'_>` token, which makes sure that any data access is
 ///   synchronized by the GIL.
+/// - The `borrow_count`, which is the number of references borrowed from
+///   `PyLeaked`. Just like `RefCell`, mutation is prohibited while `PyLeaked`
+///   is borrowed.
 /// - The `generation` counter, which increments on `borrow_mut()`. `PyLeaked`
 ///   reference is valid only if the `current_generation()` equals to the
 ///   `generation` at the time of `leak_immutable()`.
 #[derive(Debug, Default)]
 struct PySharedState {
-    leak_count: Cell<usize>,
     mutably_borrowed: Cell<bool>,
     // The counter variable could be Cell<usize> since any operation on
     // PySharedState is synchronized by the GIL, but being "atomic" makes
     // PySharedState inherently Sync. The ordering requirement doesn't
     // matter thanks to the GIL.
+    borrow_count: AtomicUsize,
     generation: AtomicUsize,
 }
 
@@ -69,7 +72,7 @@ impl PySharedState {
                  mutable reference in a Python object",
             ));
         }
-        match self.leak_count.get() {
+        match self.current_borrow_count(py) {
             0 => {
                 self.mutably_borrowed.replace(true);
                 // Note that this wraps around to the same value if mutably
@@ -78,21 +81,9 @@ impl PySharedState {
                 self.generation.fetch_add(1, Ordering::Relaxed);
                 Ok(PyRefMut::new(py, pyrefmut, self))
             }
-            // TODO
-            // For now, this works differently than Python references
-            // in the case of iterators.
-            // Python does not complain when the data an iterator
-            // points to is modified if the iterator is never used
-            // afterwards.
-            // Here, we are stricter than this by refusing to give a
-            // mutable reference if it is already borrowed.
-            // While the additional safety might be argued for, it
-            // breaks valid programming patterns in Python and we need
-            // to fix this issue down the line.
             _ => Err(AlreadyBorrowed::new(
                 py,
-                "Cannot borrow mutably while there are \
-                 immutable references in Python objects",
+                "Cannot borrow mutably while immutably borrowed",
             )),
         }
     }
@@ -121,28 +112,66 @@ impl PySharedState {
         // can move stuff to PySharedRefCell?
         let ptr = data.as_ptr();
         let state_ptr: *const PySharedState = &data.py_shared_state;
-        self.leak_count.replace(self.leak_count.get() + 1);
         Ok((&*ptr, &*state_ptr))
+    }
+
+    fn current_borrow_count(&self, _py: Python) -> usize {
+        self.borrow_count.load(Ordering::Relaxed)
+    }
+
+    fn increase_borrow_count(&self, _py: Python) {
+        // Note that this wraps around if there are more than usize::MAX
+        // borrowed references, which shouldn't happen due to memory limit.
+        self.borrow_count.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn decrease_borrow_count(&self, _py: Python) {
+        let prev_count = self.borrow_count.fetch_sub(1, Ordering::Relaxed);
+        assert!(prev_count > 0);
     }
 
     /// # Safety
     ///
     /// It's up to you to make sure the reference is about to be deleted
     /// when updating the leak count.
-    fn decrease_leak_count(&self, _py: Python, mutable: bool) {
+    fn decrease_leak_count(&self, py: Python, mutable: bool) {
         if mutable {
-            assert_eq!(self.leak_count.get(), 0);
+            assert_eq!(self.current_borrow_count(py), 0);
             assert!(self.mutably_borrowed.get());
             self.mutably_borrowed.replace(false);
         } else {
-            let count = self.leak_count.get();
-            assert!(count > 0);
-            self.leak_count.replace(count - 1);
+            unimplemented!();
         }
     }
 
     fn current_generation(&self, _py: Python) -> usize {
         self.generation.load(Ordering::Relaxed)
+    }
+}
+
+/// Helper to keep the borrow count updated while the shared object is
+/// immutably borrowed without using the `RefCell` interface.
+struct BorrowPyShared<'a> {
+    py: Python<'a>,
+    py_shared_state: &'a PySharedState,
+}
+
+impl<'a> BorrowPyShared<'a> {
+    fn new(
+        py: Python<'a>,
+        py_shared_state: &'a PySharedState,
+    ) -> BorrowPyShared<'a> {
+        py_shared_state.increase_borrow_count(py);
+        BorrowPyShared {
+            py,
+            py_shared_state,
+        }
+    }
+}
+
+impl Drop for BorrowPyShared<'_> {
+    fn drop(&mut self) {
+        self.py_shared_state.decrease_borrow_count(self.py);
     }
 }
 
@@ -273,13 +302,6 @@ impl<'a, T> Drop for PyRefMut<'a, T> {
 /// Allows a `py_class!` generated struct to share references to one of its
 /// data members with Python.
 ///
-/// # Warning
-///
-/// TODO allow Python container types: for now, integration with the garbage
-///     collector does not extend to Rust structs holding references to Python
-///     objects. Should the need surface, `__traverse__` and `__clear__` will
-///     need to be written as per the `rust-cpython` docs on GC integration.
-///
 /// # Parameters
 ///
 /// * `$name` is the same identifier used in for `py_class!` macro call.
@@ -376,7 +398,7 @@ impl<T> PyLeaked<T> {
     ) -> PyResult<PyLeakedRef<'a, T>> {
         self.validate_generation(py)?;
         Ok(PyLeakedRef {
-            _py: py,
+            _borrow: BorrowPyShared::new(py, self.py_shared_state),
             data: self.data.as_ref().unwrap(),
         })
     }
@@ -393,7 +415,7 @@ impl<T> PyLeaked<T> {
     ) -> PyResult<PyLeakedRefMut<'a, T>> {
         self.validate_generation(py)?;
         Ok(PyLeakedRefMut {
-            _py: py,
+            _borrow: BorrowPyShared::new(py, self.py_shared_state),
             data: self.data.as_mut().unwrap(),
         })
     }
@@ -451,23 +473,9 @@ impl<T> PyLeaked<T> {
     }
 }
 
-impl<T> Drop for PyLeaked<T> {
-    fn drop(&mut self) {
-        // py_shared_state should be alive since we do have
-        // a Python reference to the owner object. Taking GIL makes
-        // sure that the state is only accessed by this thread.
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-        if self.data.is_none() {
-            return; // moved to another PyLeaked
-        }
-        self.py_shared_state.decrease_leak_count(py, false);
-    }
-}
-
 /// Immutably borrowed reference to a leaked value.
 pub struct PyLeakedRef<'a, T> {
-    _py: Python<'a>,
+    _borrow: BorrowPyShared<'a>,
     data: &'a T,
 }
 
@@ -481,7 +489,7 @@ impl<T> Deref for PyLeakedRef<'_, T> {
 
 /// Mutably borrowed reference to a leaked value.
 pub struct PyLeakedRefMut<'a, T> {
-    _py: Python<'a>,
+    _borrow: BorrowPyShared<'a>,
     data: &'a mut T,
 }
 
@@ -570,6 +578,7 @@ macro_rules! py_shared_iterator {
                     let mut iter = leaked.try_borrow_mut(py)?;
                     match iter.next() {
                         None => {
+                            drop(iter);
                             // replace Some(inner) by None, drop $leaked
                             inner_opt.take();
                             Ok(None)
@@ -649,9 +658,7 @@ mod test {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable().unwrap();
-        owner.string(py).py_shared_state.leak_count.replace(0); // XXX cheat
         owner.string_shared(py).borrow_mut().unwrap().clear();
-        owner.string(py).py_shared_state.leak_count.replace(1); // XXX cheat
         assert!(leaked.try_borrow(py).is_err());
     }
 
@@ -661,9 +668,7 @@ mod test {
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable().unwrap();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
-        owner.string(py).py_shared_state.leak_count.replace(0); // XXX cheat
         owner.string_shared(py).borrow_mut().unwrap().clear();
-        owner.string(py).py_shared_state.leak_count.replace(1); // XXX cheat
         assert!(leaked_iter.try_borrow_mut(py).is_err());
     }
 
@@ -673,19 +678,39 @@ mod test {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable().unwrap();
-        owner.string(py).py_shared_state.leak_count.replace(0); // XXX cheat
         owner.string_shared(py).borrow_mut().unwrap().clear();
-        owner.string(py).py_shared_state.leak_count.replace(1); // XXX cheat
         let _leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
     }
 
     #[test]
-    fn test_borrow_mut_while_leaked() {
+    fn test_borrow_mut_while_leaked_ref() {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         assert!(owner.string_shared(py).borrow_mut().is_ok());
-        let _leaked = owner.string_shared(py).leak_immutable().unwrap();
-        // TODO: will be allowed
-        assert!(owner.string_shared(py).borrow_mut().is_err());
+        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        {
+            let _leaked_ref = leaked.try_borrow(py).unwrap();
+            assert!(owner.string_shared(py).borrow_mut().is_err());
+            {
+                let _leaked_ref2 = leaked.try_borrow(py).unwrap();
+                assert!(owner.string_shared(py).borrow_mut().is_err());
+            }
+            assert!(owner.string_shared(py).borrow_mut().is_err());
+        }
+        assert!(owner.string_shared(py).borrow_mut().is_ok());
+    }
+
+    #[test]
+    fn test_borrow_mut_while_leaked_ref_mut() {
+        let (gil, owner) = prepare_env();
+        let py = gil.python();
+        assert!(owner.string_shared(py).borrow_mut().is_ok());
+        let leaked = owner.string_shared(py).leak_immutable().unwrap();
+        let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
+        {
+            let _leaked_ref = leaked_iter.try_borrow_mut(py).unwrap();
+            assert!(owner.string_shared(py).borrow_mut().is_err());
+        }
+        assert!(owner.string_shared(py).borrow_mut().is_ok());
     }
 }

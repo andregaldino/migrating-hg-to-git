@@ -687,8 +687,7 @@ class dirstate(object):
         delaywrite = self._ui.configint(b'debug', b'dirstate.delaywrite')
         if delaywrite > 0:
             # do we have any files to delay for?
-            items = pycompat.iteritems(self._map)
-            for f, e in items:
+            for f, e in pycompat.iteritems(self._map):
                 if e[0] == b'n' and e[3] == now:
                     import time  # to avoid useless import
 
@@ -700,12 +699,6 @@ class dirstate(object):
                     time.sleep(end - clock)
                     now = end  # trust our estimate that the end is near now
                     break
-            # since the iterator is potentially not deleted,
-            # delete the iterator to release the reference for the Rust
-            # implementation.
-            # TODO make the Rust implementation behave like Python
-            # since this would not work with a non ref-counting GC.
-            del items
 
         self._map.write(st, now)
         self._lastnormaltime = 0
