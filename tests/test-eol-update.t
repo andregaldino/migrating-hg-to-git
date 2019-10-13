@@ -187,21 +187,21 @@ from tip ... which evidently is wrong:
   calling hook preupdate.eol: hgext.eol.preupdate
    .hgeol: remote created -> g
   getting .hgeol
-  filtering .hgeol through 
+  filtering .hgeol through compat-isbinary
    a.txt: remote created -> g
   getting a.txt
-  filtering a.txt through 
+  filtering a.txt through tolf
    f: remote created -> g
   getting f
-  filtering f through 
+  filtering f through tolf
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg st
   M f
   $ touch .hgeol *  # ensure consistent dirtyness checks ignoring dirstate
   $ hg up -C -r 0 -v --debug
   eol: detected change in .hgeol
-  filtering .hgeol through 
-  filtering a.txt through 
+  filtering .hgeol through compat-isbinary
+  filtering a.txt through tolf
   resolving manifests
    branchmerge: False, force: True, partial: False
    ancestor: 15cbdf8ca3db+, local: 15cbdf8ca3db+, remote: 15cbdf8ca3db
@@ -263,20 +263,20 @@ for f in revision 0, and it thus ends up with working directory changes.
   calling hook preupdate.eol: hgext.eol.preupdate
    .hgeol: remote is newer -> g
   getting .hgeol
-  filtering .hgeol through 
+  filtering .hgeol through compat-isbinary
    a.txt: remote is newer -> g
   getting a.txt
-  filtering a.txt through 
+  filtering a.txt through tolf
    f: remote is newer -> g
   getting f
-  filtering f through 
+  filtering f through tolf
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ touch .hgeol *
   $ hg st --debug
   eol: detected change in .hgeol
-  filtering .hgeol through 
-  filtering a.txt through 
+  filtering .hgeol through compat-isbinary
+  filtering a.txt through tolf
   M f
   $ hg diff
   diff --git a/f b/f
@@ -291,8 +291,8 @@ Workaround: Update again - this will read the right .hgeol:
   $ touch .hgeol *
   $ hg up -C -r 0 -v --debug
   eol: detected change in .hgeol
-  filtering .hgeol through 
-  filtering a.txt through 
+  filtering .hgeol through compat-isbinary
+  filtering a.txt through tolf
   resolving manifests
    branchmerge: False, force: True, partial: False
    ancestor: 15cbdf8ca3db+, local: 15cbdf8ca3db+, remote: 15cbdf8ca3db
@@ -304,8 +304,8 @@ Workaround: Update again - this will read the right .hgeol:
   $ touch .hgeol *
   $ hg st --debug
   eol: detected change in .hgeol
-  filtering .hgeol through 
-  filtering a.txt through 
+  filtering .hgeol through compat-isbinary
+  filtering a.txt through tolf
 
   $ cd ..
 

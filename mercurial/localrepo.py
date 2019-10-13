@@ -1903,10 +1903,12 @@ class localrepository(object):
                         break
                 if not fn:
                     fn = lambda s, c, **kwargs: procutil.filter(s, c)
+                    fn.__name__ = 'commandfilter'
                 # Wrap old filters not supporting keyword arguments
                 if not pycompat.getargspec(fn)[2]:
                     oldfn = fn
                     fn = lambda s, c, **kwargs: oldfn(s, c)
+                    fn.__name__ = 'compat-' + oldfn.__name__
                 l.append((mf, fn, params))
             self._filterpats[filter] = l
         return self._filterpats[filter]
@@ -1914,7 +1916,10 @@ class localrepository(object):
     def _filter(self, filterpats, filename, data):
         for mf, fn, cmd in filterpats:
             if mf(filename):
-                self.ui.debug(b"filtering %s through %s\n" % (filename, cmd))
+                self.ui.debug(
+                    b"filtering %s through %s\n"
+                    % (filename, cmd or pycompat.sysbytes(fn.__name__))
+                )
                 data = fn(data, cmd, ui=self.ui, repo=self, filename=filename)
                 break
 
