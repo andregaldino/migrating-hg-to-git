@@ -36,7 +36,7 @@ use std::mem::transmute;
 /// would be a good idea in the near future to remove it entirely to allow
 /// for a pure Python tuple of the same effective structure to be used,
 /// rendering this type and the capsule below useless.
-type MakeDirstateTupleFn = extern "C" fn(
+type MakeDirstateTupleFn = unsafe extern "C" fn(
     state: c_char,
     mode: c_int,
     size: c_int,
@@ -75,7 +75,11 @@ pub fn make_dirstate_tuple(
     // because Into<u8> has a specific implementation while `as c_char` would
     // just do a naive enum cast.
     let state_code: u8 = state.into();
-    Ok(make(state_code as c_char, mode, size, mtime))
+
+    unsafe {
+        let ptr = make(state_code as c_char, mode, size, mtime);
+        Ok(ptr)
+    }
 }
 
 pub fn extract_dirstate(py: Python, dmap: &PyDict) -> Result<StateMap, PyErr> {
