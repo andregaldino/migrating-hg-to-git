@@ -23,13 +23,13 @@ hg-core = { path = "../hg-core" }
 libc = '*'
 
 [dependencies.cpython]
-version = "*"
+version = "0.3"
 default-features = false
 
 [dependencies.python27-sys]
-version = "0.2.1"
+version = "0.3"
 optional = true
 
 [dependencies.python3-sys]
-version = "0.2.1"
+version = "0.3"
 optional = true
