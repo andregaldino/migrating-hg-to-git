@@ -9,23 +9,20 @@
 //!
 //! Ideally, we should use an Index entirely implemented in Rust,
 //! but this will take some time to get there.
-#[cfg(feature = "python27")]
-use python27_sys as python_sys;
-#[cfg(feature = "python3")]
-use python3_sys as python_sys;
 
-use cpython::{PyClone, PyErr, PyObject, PyResult, Python};
+use cpython::{PyClone, PyObject, PyResult, Python};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
 use libc::c_int;
-use python_sys::PyCapsule_Import;
-use std::ffi::CStr;
-use std::mem::transmute;
 
-type IndexParentsFn = unsafe extern "C" fn(
-    index: *mut python_sys::PyObject,
-    rev: c_int,
-    ps: *mut [c_int; 2],
-) -> c_int;
+py_capsule_fn!(
+    from mercurial.cext.parsers import index_get_parents_CAPI
+        as get_parents_capi
+        signature (
+            index: *mut RawPyObject,
+            rev: c_int,
+            ps: *mut [c_int; 2],
+        ) -> c_int
+);
 
 /// A `Graph` backed up by objects and functions from revlog.c
 ///
@@ -61,14 +58,14 @@ type IndexParentsFn = unsafe extern "C" fn(
 /// mechanisms in other contexts.
 pub struct Index {
     index: PyObject,
-    parents: IndexParentsFn,
+    parents: get_parents_capi::CapsuleFn,
 }
 
 impl Index {
     pub fn new(py: Python, index: PyObject) -> PyResult<Self> {
         Ok(Index {
             index: index,
-            parents: decapsule_parents_fn(py)?,
+            parents: get_parents_capi::retrieve(py)?,
         })
     }
 }
@@ -101,33 +98,5 @@ impl Graph for Index {
             0 => Ok(res),
             _ => Err(GraphError::ParentOutOfRange(rev)),
         }
-    }
-}
-
-/// Return the `index_get_parents` function of the parsers C Extension module.
-///
-/// A pointer to the function is stored in the `parsers` module as a
-/// standard [Python capsule](https://docs.python.org/2/c-api/capsule.html).
-///
-/// This function retrieves the capsule and casts the function pointer
-///
-/// Casting function pointers is one of the rare cases of
-/// legitimate use cases of `mem::transmute()` (see
-/// https://doc.rust-lang.org/std/mem/fn.transmute.html of
-/// `mem::transmute()`.
-/// It is inappropriate for architectures where
-/// function and data pointer sizes differ (so-called "Harvard
-/// architectures"), but these are nowadays mostly DSPs
-/// and microcontrollers, hence out of our scope.
-fn decapsule_parents_fn(py: Python) -> PyResult<IndexParentsFn> {
-    unsafe {
-        let caps_name = CStr::from_bytes_with_nul_unchecked(
-            b"mercurial.cext.parsers.index_get_parents_CAPI\0",
-        );
-        let from_caps = PyCapsule_Import(caps_name.as_ptr(), 0);
-        if from_caps.is_null() {
-            return Err(PyErr::fetch(py));
-        }
-        Ok(transmute(from_caps))
     }
 }

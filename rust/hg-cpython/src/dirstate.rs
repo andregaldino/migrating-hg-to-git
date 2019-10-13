@@ -22,14 +22,7 @@ use hg::{
     StateMap,
 };
 use libc::{c_char, c_int};
-#[cfg(feature = "python27")]
-use python27_sys as python_sys;
-#[cfg(feature = "python3")]
-use python3_sys as python_sys;
-use python_sys::PyCapsule_Import;
 use std::convert::TryFrom;
-use std::ffi::CStr;
-use std::mem::transmute;
 
 // C code uses a custom `dirstate_tuple` type, checks in multiple instances
 // for this type, and raises a Python `Exception` if the check does not pass.
@@ -37,34 +30,23 @@ use std::mem::transmute;
 // would be a good idea in the near future to remove it entirely to allow
 // for a pure Python tuple of the same effective structure to be used,
 // rendering this type and the capsule below useless.
-type MakeDirstateTupleFn = unsafe extern "C" fn(
-    state: c_char,
-    mode: c_int,
-    size: c_int,
-    mtime: c_int,
-) -> *mut python_sys::PyObject;
-
-// This is largely a copy/paste from cindex.rs, pending the merge of a
-// `py_capsule_fn!` macro in the rust-cpython project:
-// https://github.com/dgrunwald/rust-cpython/pull/169
-fn decapsule_make_dirstate_tuple(py: Python) -> PyResult<MakeDirstateTupleFn> {
-    unsafe {
-        let caps_name = CStr::from_bytes_with_nul_unchecked(
-            b"mercurial.cext.parsers.make_dirstate_tuple_CAPI\0",
-        );
-        let from_caps = PyCapsule_Import(caps_name.as_ptr(), 0);
-        if from_caps.is_null() {
-            return Err(PyErr::fetch(py));
-        }
-        Ok(transmute(from_caps))
-    }
-}
+py_capsule_fn!(
+    from mercurial.cext.parsers import make_dirstate_tuple_CAPI
+        as make_dirstate_tuple_capi
+        signature (
+            state: c_char,
+            mode: c_int,
+            size: c_int,
+            mtime: c_int,
+        ) -> *mut RawPyObject
+);
 
 pub fn make_dirstate_tuple(
     py: Python,
     entry: &DirstateEntry,
 ) -> PyResult<PyObject> {
-    let make = decapsule_make_dirstate_tuple(py)?;
+    // might be silly to retrieve capsule function in hot loop
+    let make = make_dirstate_tuple_capi::retrieve(py)?;
 
     let &DirstateEntry {
         state,
