@@ -1907,7 +1907,7 @@ class localrepository(object):
                 # Wrap old filters not supporting keyword arguments
                 if not pycompat.getargspec(fn)[2]:
                     oldfn = fn
-                    fn = lambda s, c, **kwargs: oldfn(s, c)
+                    fn = lambda s, c, oldfn=oldfn, **kwargs: oldfn(s, c)
                     fn.__name__ = 'compat-' + oldfn.__name__
                 l.append((mf, fn, params))
             self._filterpats[filter] = l
