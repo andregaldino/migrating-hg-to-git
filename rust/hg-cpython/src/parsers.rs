@@ -15,15 +15,13 @@ use cpython::{
     PythonObject, ToPyObject,
 };
 use hg::{
-    pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf, DirstateEntry,
+    pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf,
     DirstatePackError, DirstateParents, DirstateParseError, PARENT_SIZE,
 };
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use libc::c_char;
-
-use crate::dirstate::{decapsule_make_dirstate_tuple, extract_dirstate};
+use crate::dirstate::{extract_dirstate, make_dirstate_tuple};
 use std::time::Duration;
 
 fn parse_dirstate_wrapper(
@@ -37,22 +35,11 @@ fn parse_dirstate_wrapper(
 
     match parse_dirstate(&mut dirstate_map, &mut copies, st.data(py)) {
         Ok(parents) => {
-            for (filename, entry) in dirstate_map {
-                // Explicitly go through u8 first, then cast to
-                // platform-specific `c_char` because Into<u8> has a specific
-                // implementation while `as c_char` would just do a naive enum
-                // cast.
-                let state: u8 = entry.state.into();
-
+            for (filename, entry) in &dirstate_map {
                 dmap.set_item(
                     py,
                     PyBytes::new(py, filename.as_ref()),
-                    decapsule_make_dirstate_tuple(py)?(
-                        state as c_char,
-                        entry.mode,
-                        entry.size,
-                        entry.mtime,
-                    ),
+                    make_dirstate_tuple(py, entry)?,
                 )?;
             }
             for (path, copy_path) in copies {
@@ -127,30 +114,11 @@ fn pack_dirstate_wrapper(
         Duration::from_secs(now.as_object().extract::<u64>(py)?),
     ) {
         Ok(packed) => {
-            for (
-                filename,
-                DirstateEntry {
-                    state,
-                    mode,
-                    size,
-                    mtime,
-                },
-            ) in dirstate_map
-            {
-                // Explicitly go through u8 first, then cast to
-                // platform-specific `c_char` because Into<u8> has a specific
-                // implementation while `as c_char` would just do a naive enum
-                // cast.
-                let state: u8 = state.into();
+            for (filename, entry) in &dirstate_map {
                 dmap.set_item(
                     py,
                     PyBytes::new(py, filename.as_ref()),
-                    decapsule_make_dirstate_tuple(py)?(
-                        state as c_char,
-                        mode,
-                        size,
-                        mtime,
-                    ),
+                    make_dirstate_tuple(py, entry)?,
                 )?;
             }
             Ok(PyBytes::new(py, &packed))

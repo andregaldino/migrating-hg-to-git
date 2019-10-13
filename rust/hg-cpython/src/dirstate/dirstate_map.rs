@@ -16,11 +16,10 @@ use cpython::{
     exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyObject,
     PyResult, PyTuple, Python, PythonObject, ToPyObject,
 };
-use libc::c_char;
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
-    dirstate::{decapsule_make_dirstate_tuple, dirs_multiset::Dirs},
+    dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
     ref_sharing::{PyLeakedRef, PySharedRefCell},
 };
 use hg::{
@@ -66,15 +65,7 @@ py_class!(pub class DirstateMap |py| {
         let key = key.extract::<PyBytes>(py)?;
         match self.inner(py).borrow().get(HgPath::new(key.data(py))) {
             Some(entry) => {
-                // Explicitly go through u8 first, then cast to
-                // platform-specific `c_char`.
-                let state: u8 = entry.state.into();
-                Ok(Some(decapsule_make_dirstate_tuple(py)?(
-                        state as c_char,
-                        entry.mode,
-                        entry.size,
-                        entry.mtime,
-                    )))
+                Ok(Some(make_dirstate_tuple(py, entry)?))
             },
             None => Ok(default)
         }
@@ -303,15 +294,7 @@ py_class!(pub class DirstateMap |py| {
         let key = HgPath::new(key.data(py));
         match self.inner(py).borrow().get(key) {
             Some(entry) => {
-                // Explicitly go through u8 first, then cast to
-                // platform-specific `c_char`.
-                let state: u8 = entry.state.into();
-                Ok(decapsule_make_dirstate_tuple(py)?(
-                        state as c_char,
-                        entry.mode,
-                        entry.size,
-                        entry.mtime,
-                    ))
+                Ok(make_dirstate_tuple(py, entry)?)
             },
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
@@ -493,18 +476,9 @@ impl DirstateMap {
         res: (&HgPathBuf, &DirstateEntry),
     ) -> PyResult<Option<(PyBytes, PyObject)>> {
         let (f, entry) = res;
-
-        // Explicitly go through u8 first, then cast to
-        // platform-specific `c_char`.
-        let state: u8 = entry.state.into();
         Ok(Some((
             PyBytes::new(py, f.as_ref()),
-            decapsule_make_dirstate_tuple(py)?(
-                state as c_char,
-                entry.mode,
-                entry.size,
-                entry.mtime,
-            ),
+            make_dirstate_tuple(py, entry)?,
         )))
     }
 }

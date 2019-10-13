@@ -46,9 +46,7 @@ type MakeDirstateTupleFn = extern "C" fn(
 /// This is largely a copy/paste from cindex.rs, pending the merge of a
 /// `py_capsule_fn!` macro in the rust-cpython project:
 /// https://github.com/dgrunwald/rust-cpython/pull/169
-pub fn decapsule_make_dirstate_tuple(
-    py: Python,
-) -> PyResult<MakeDirstateTupleFn> {
+fn decapsule_make_dirstate_tuple(py: Python) -> PyResult<MakeDirstateTupleFn> {
     unsafe {
         let caps_name = CStr::from_bytes_with_nul_unchecked(
             b"mercurial.cext.parsers.make_dirstate_tuple_CAPI\0",
@@ -59,6 +57,25 @@ pub fn decapsule_make_dirstate_tuple(
         }
         Ok(transmute(from_caps))
     }
+}
+
+pub fn make_dirstate_tuple(
+    py: Python,
+    entry: &DirstateEntry,
+) -> PyResult<PyObject> {
+    let make = decapsule_make_dirstate_tuple(py)?;
+
+    let &DirstateEntry {
+        state,
+        mode,
+        size,
+        mtime,
+    } = entry;
+    // Explicitly go through u8 first, then cast to platform-specific `c_char`
+    // because Into<u8> has a specific implementation while `as c_char` would
+    // just do a naive enum cast.
+    let state_code: u8 = state.into();
+    Ok(make(state_code as c_char, mode, size, mtime))
 }
 
 pub fn extract_dirstate(py: Python, dmap: &PyDict) -> Result<StateMap, PyErr> {
