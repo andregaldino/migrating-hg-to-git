@@ -387,7 +387,7 @@ def reposetup(ui, repo):
             return eol.match
 
         def _hgcleardirstate(self):
-            self._eolmatch = self.loadeol([None, b'tip'])
+            self._eolmatch = self.loadeol([None])
             if not self._eolmatch:
                 self._eolmatch = util.never
                 return

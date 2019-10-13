@@ -21,9 +21,8 @@ setup repository
   adding .hgeol
   adding a.txt
 
-Test commit of removed .hgeol - currently it seems to live on as zombie
-(causing "filtering a.txt through tolf") after being removed ... but actually
-it is just confusing use of tip revision.
+Test commit of removed .hgeol and how it immediately makes the automatic
+changes explicit and committable.
 
   $ cd ..
   $ hg clone repo repo-2
@@ -41,7 +40,7 @@ it is just confusing use of tip revision.
   $ hg remove .hgeol
   $ touch a.txt *  # ensure consistent st dirtyness checks, ignoring dirstate timing
   $ hg st -v --debug
-  filtering a.txt through tolf
+  M a.txt
   R .hgeol
   $ hg commit -m 'remove eol'
   $ hg exp
@@ -49,16 +48,26 @@ it is just confusing use of tip revision.
   # User test
   # Date 0 0
   #      Thu Jan 01 00:00:00 1970 +0000
-  # Node ID c60b96c20c7de8c821127b548c34e5b170bcf9fe
+  # Node ID 3c20c2d90333b6ecdc8f7aa8f9b73223c7c7a608
   # Parent  90f94e2cf4e24628afddd641688dfe4cd476d6e4
   remove eol
   
-  diff -r 90f94e2cf4e2 -r c60b96c20c7d .hgeol
+  diff -r 90f94e2cf4e2 -r 3c20c2d90333 .hgeol
   --- a/.hgeol	Thu Jan 01 00:00:00 1970 +0000
   +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
   @@ -1,2 +0,0 @@
   -[patterns]
   -**.txt = native
+  diff -r 90f94e2cf4e2 -r 3c20c2d90333 a.txt
+  --- a/a.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,3 +1,3 @@
+  -first
+  -second
+  -third
+  +first\r (esc)
+  +second\r (esc)
+  +third\r (esc)
   $ hg push --quiet
   $ cd ..
 
@@ -75,7 +84,7 @@ the source repo:
   updating to branch default
   resolving manifests
    branchmerge: False, force: False, partial: False
-   ancestor: 000000000000, local: 000000000000+, remote: c60b96c20c7d
+   ancestor: 000000000000, local: 000000000000+, remote: 3c20c2d90333
   calling hook preupdate.eol: hgext.eol.preupdate
    a.txt: remote created -> g
   getting a.txt
@@ -83,9 +92,9 @@ the source repo:
   $ cd repo-3
 
   $ cat a.txt
-  first
-  second
-  third
+  first\r (esc)
+  second\r (esc)
+  third\r (esc)
 
 Test clone of revision with .hgeol
 
