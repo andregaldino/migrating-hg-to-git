@@ -31,12 +31,12 @@ use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::mem::transmute;
 
-/// C code uses a custom `dirstate_tuple` type, checks in multiple instances
-/// for this type, and raises a Python `Exception` if the check does not pass.
-/// Because this type differs only in name from the regular Python tuple, it
-/// would be a good idea in the near future to remove it entirely to allow
-/// for a pure Python tuple of the same effective structure to be used,
-/// rendering this type and the capsule below useless.
+// C code uses a custom `dirstate_tuple` type, checks in multiple instances
+// for this type, and raises a Python `Exception` if the check does not pass.
+// Because this type differs only in name from the regular Python tuple, it
+// would be a good idea in the near future to remove it entirely to allow
+// for a pure Python tuple of the same effective structure to be used,
+// rendering this type and the capsule below useless.
 type MakeDirstateTupleFn = unsafe extern "C" fn(
     state: c_char,
     mode: c_int,
@@ -44,9 +44,9 @@ type MakeDirstateTupleFn = unsafe extern "C" fn(
     mtime: c_int,
 ) -> *mut python_sys::PyObject;
 
-/// This is largely a copy/paste from cindex.rs, pending the merge of a
-/// `py_capsule_fn!` macro in the rust-cpython project:
-/// https://github.com/dgrunwald/rust-cpython/pull/169
+// This is largely a copy/paste from cindex.rs, pending the merge of a
+// `py_capsule_fn!` macro in the rust-cpython project:
+// https://github.com/dgrunwald/rust-cpython/pull/169
 fn decapsule_make_dirstate_tuple(py: Python) -> PyResult<MakeDirstateTupleFn> {
     unsafe {
         let caps_name = CStr::from_bytes_with_nul_unchecked(
