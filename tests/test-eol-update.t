@@ -120,12 +120,6 @@ Test EOL update
    first
   -second
    third
-  diff --git a/f b/f
-  --- a/f
-  +++ b/f
-  @@ -1,1 +1,1 @@
-  -f\r (esc)
-  +f
   $ dotest CRLF
   
   % hg clone repo repo-CRLF
@@ -159,12 +153,6 @@ Test EOL update
    first
   -second
    third
-  diff --git a/f b/f
-  --- a/f
-  +++ b/f
-  @@ -1,1 +1,1 @@
-  -f\r (esc)
-  +f
 
 Test in repo using eol extension, while keeping an eye on how filters are
 applied:
@@ -177,8 +165,8 @@ applied:
   > eol =
   > EOF
 
-Update to revision 0 which has no .hgeol . Unfortunately, it uses the filter
-from tip ... which evidently is wrong:
+Update to revision 0 which has no .hgeol, shouldn't use any filters, and
+obviously should leave things as tidy as they were before the clean update.
 
   $ hg up -c -r 0 -v --debug
   resolving manifests
@@ -193,22 +181,8 @@ from tip ... which evidently is wrong:
   filtering a.txt through tolf
    f: remote created -> g
   getting f
-  filtering f through tolf
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg st
-  M f
-  $ touch .hgeol *  # ensure consistent dirtyness checks ignoring dirstate
-  $ hg up -C -r 0 -v --debug
-  eol: detected change in .hgeol
-  filtering .hgeol through isbinary
-  filtering a.txt through tolf
-  resolving manifests
-   branchmerge: False, force: True, partial: False
-   ancestor: 15cbdf8ca3db+, local: 15cbdf8ca3db+, remote: 15cbdf8ca3db
-  calling hook preupdate.eol: hgext.eol.preupdate
-   f: remote is newer -> g
-  getting f
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg branch b
   marked working directory as branch b
@@ -250,9 +224,9 @@ Merge changes that apply a filter to f:
   -f\r (esc)
   +f
 
-Abort the merge with up -C to revision 0 ... but notice how .hgeol changes are
-not detected correctly: f is filtered with tolf even though there is no filter
-for f in revision 0, and it thus ends up with working directory changes.
+Abort the merge with up -C to revision 0.
+Note that files are filtered correctly for revision 0: f is not filtered, a.txt
+is filtered with tolf, and everything is left tidy.
 
   $ touch .hgeol *  # ensure consistent dirtyness checks ignoring dirstate
   $ hg up -C -r 0 -v --debug
@@ -269,7 +243,6 @@ for f in revision 0, and it thus ends up with working directory changes.
   filtering a.txt through tolf
    f: remote is newer -> g
   getting f
-  filtering f through tolf
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ touch .hgeol *
@@ -277,16 +250,9 @@ for f in revision 0, and it thus ends up with working directory changes.
   eol: detected change in .hgeol
   filtering .hgeol through isbinary
   filtering a.txt through tolf
-  M f
   $ hg diff
-  diff --git a/f b/f
-  --- a/f
-  +++ b/f
-  @@ -1,1 +1,1 @@
-  -f\r (esc)
-  +f
 
-Workaround: Update again - this will read the right .hgeol:
+Things were clean, and updating again will not change anything:
 
   $ touch .hgeol *
   $ hg up -C -r 0 -v --debug
@@ -297,9 +263,7 @@ Workaround: Update again - this will read the right .hgeol:
    branchmerge: False, force: True, partial: False
    ancestor: 15cbdf8ca3db+, local: 15cbdf8ca3db+, remote: 15cbdf8ca3db
   calling hook preupdate.eol: hgext.eol.preupdate
-   f: remote is newer -> g
-  getting f
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ touch .hgeol *
   $ hg st --debug

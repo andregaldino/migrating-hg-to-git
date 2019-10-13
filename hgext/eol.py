@@ -221,6 +221,12 @@ class eolfile(object):
         self.match = match.match(root, b'', [], include, exclude)
 
     def copytoui(self, ui):
+        newpatterns = set(pattern for pattern, key, m in self.patterns)
+        for section in (b'decode', b'encode'):
+            for oldpattern, _filter in ui.configitems(section):
+                if oldpattern not in newpatterns:
+                    if ui.configsource(section, oldpattern) == b'eol':
+                        ui.setconfig(section, oldpattern, b'!', b'eol')
         for pattern, key, m in self.patterns:
             try:
                 ui.setconfig(b'decode', pattern, self._decode[key], b'eol')
