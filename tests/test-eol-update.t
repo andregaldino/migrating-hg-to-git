@@ -187,7 +187,7 @@ from tip ... which evidently is wrong:
   calling hook preupdate.eol: hgext.eol.preupdate
    .hgeol: remote created -> g
   getting .hgeol
-  filtering .hgeol through compat-isbinary
+  filtering .hgeol through isbinary
    a.txt: remote created -> g
   getting a.txt
   filtering a.txt through tolf
@@ -200,7 +200,7 @@ from tip ... which evidently is wrong:
   $ touch .hgeol *  # ensure consistent dirtyness checks ignoring dirstate
   $ hg up -C -r 0 -v --debug
   eol: detected change in .hgeol
-  filtering .hgeol through compat-isbinary
+  filtering .hgeol through isbinary
   filtering a.txt through tolf
   resolving manifests
    branchmerge: False, force: True, partial: False
@@ -263,7 +263,7 @@ for f in revision 0, and it thus ends up with working directory changes.
   calling hook preupdate.eol: hgext.eol.preupdate
    .hgeol: remote is newer -> g
   getting .hgeol
-  filtering .hgeol through compat-isbinary
+  filtering .hgeol through isbinary
    a.txt: remote is newer -> g
   getting a.txt
   filtering a.txt through tolf
@@ -275,7 +275,7 @@ for f in revision 0, and it thus ends up with working directory changes.
   $ touch .hgeol *
   $ hg st --debug
   eol: detected change in .hgeol
-  filtering .hgeol through compat-isbinary
+  filtering .hgeol through isbinary
   filtering a.txt through tolf
   M f
   $ hg diff
@@ -291,7 +291,7 @@ Workaround: Update again - this will read the right .hgeol:
   $ touch .hgeol *
   $ hg up -C -r 0 -v --debug
   eol: detected change in .hgeol
-  filtering .hgeol through compat-isbinary
+  filtering .hgeol through isbinary
   filtering a.txt through tolf
   resolving manifests
    branchmerge: False, force: True, partial: False
@@ -304,7 +304,7 @@ Workaround: Update again - this will read the right .hgeol:
   $ touch .hgeol *
   $ hg st --debug
   eol: detected change in .hgeol
-  filtering .hgeol through compat-isbinary
+  filtering .hgeol through isbinary
   filtering a.txt through tolf
 
   $ cd ..

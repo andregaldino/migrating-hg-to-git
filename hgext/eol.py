@@ -165,7 +165,7 @@ def tocrlf(s, params, ui, **kwargs):
     return util.tocrlf(s)
 
 
-def isbinary(s, params):
+def isbinary(s, params, ui, **kwargs):
     """Filter to do nothing with the file."""
     return s
 
