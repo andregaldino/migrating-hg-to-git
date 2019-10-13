@@ -66,8 +66,6 @@ dependencies = [
  "cpython 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hg-core 0.1.0",
  "libc 0.2.45 (registry+https://github.com/rust-lang/crates.io-index)",
- "python27-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "python3-sys 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

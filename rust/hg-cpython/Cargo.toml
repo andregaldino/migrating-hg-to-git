@@ -11,12 +11,9 @@ crate-type = ["cdylib"]
 [features]
 default = ["python27"]
 
-python27 = ["cpython/python27-sys",
-            "cpython/extension-module-2-7",
-            "python27-sys",
-            ]
+python27 = ["cpython/python27-sys", "cpython/extension-module-2-7"]
 
-python3 = ["python3-sys", "cpython/python3-sys", "cpython/extension-module"]
+python3 = ["cpython/python3-sys", "cpython/extension-module"]
 
 [dependencies]
 hg-core = { path = "../hg-core" }
@@ -25,11 +22,3 @@ libc = '*'
 [dependencies.cpython]
 version = "0.3"
 default-features = false
-
-[dependencies.python27-sys]
-version = "0.3"
-optional = true
-
-[dependencies.python3-sys]
-version = "0.3"
-optional = true
