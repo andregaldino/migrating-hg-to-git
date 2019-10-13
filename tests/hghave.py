@@ -984,8 +984,8 @@ def has_emacs():
 @check('grey', 'grey, the fork of the black formatter for python')
 def has_black():
     # use that to actual black as soon as possible
-    # blackcmd = b'black --version'
-    blackcmd = b'python3 $RUNTESTDIR/../contrib/grey.py --version'
+    # blackcmd = 'black --version'
+    blackcmd = 'python3 $RUNTESTDIR/../contrib/grey.py --version'
     # version_regex = b'black, version \d'
     version_regex = b'grey.py, version \d'
     return matchoutput(blackcmd, version_regex)
