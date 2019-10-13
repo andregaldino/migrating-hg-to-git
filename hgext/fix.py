@@ -631,7 +631,7 @@ def fixfile(ui, repo, opts, fixers, fixctx, path, basectxs):
             proc = subprocess.Popen(
                 procutil.tonativestr(command),
                 shell=True,
-                cwd=repo.root,
+                cwd=procutil.tonativestr(repo.root),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
