@@ -26,14 +26,17 @@ Test EOL update
   > EOF
   > 
   >     printf "first\nsecond\nthird\n" > a.txt
+  >     printf "f\r\n" > f
   >     hg commit --addremove -m 'LF commit'
   > 
   >     cat > .hgeol <<EOF
   > [patterns]
   > **.txt = CRLF
+  > f = LF
   > EOF
   > 
   >     printf "first\r\nsecond\r\nthird\r\n" > a.txt
+  >     printf "f\n" > f
   >     hg commit -m 'CRLF commit'
   > 
   >     cd ..
@@ -83,10 +86,11 @@ Test EOL update
   % hg init
   adding .hgeol
   adding a.txt
+  adding f
   $ dotest LF
   
   % hg clone repo repo-LF
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   % a.txt (before)
   first\r (esc)
   second\r (esc)
@@ -104,7 +108,7 @@ Test EOL update
    third\r (esc)
   % hg update 0
   merging a.txt
-  1 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  2 files updated, 1 files merged, 0 files removed, 0 files unresolved
   % a.txt
   first
   third
@@ -116,10 +120,16 @@ Test EOL update
    first
   -second
    third
+  diff --git a/f b/f
+  --- a/f
+  +++ b/f
+  @@ -1,1 +1,1 @@
+  -f\r (esc)
+  +f
   $ dotest CRLF
   
   % hg clone repo repo-CRLF
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   % a.txt (before)
   first\r (esc)
   second\r (esc)
@@ -137,7 +147,7 @@ Test EOL update
    third\r (esc)
   % hg update 0
   merging a.txt
-  1 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  2 files updated, 1 files merged, 0 files removed, 0 files unresolved
   % a.txt
   first
   third
@@ -149,4 +159,154 @@ Test EOL update
    first
   -second
    third
+  diff --git a/f b/f
+  --- a/f
+  +++ b/f
+  @@ -1,1 +1,1 @@
+  -f\r (esc)
+  +f
+
+Test in repo using eol extension, while keeping an eye on how filters are
+applied:
+
+  $ cd repo
+
+  $ hg up -q -c -r null
+  $ cat > .hg/hgrc <<EOF
+  > [extensions]
+  > eol =
+  > EOF
+
+Update to revision 0 which has no .hgeol . Unfortunately, it uses the filter
+from tip ... which evidently is wrong:
+
+  $ hg up -c -r 0 -v --debug
+  resolving manifests
+   branchmerge: False, force: False, partial: False
+   ancestor: 000000000000, local: 000000000000+, remote: 15cbdf8ca3db
+  calling hook preupdate.eol: hgext.eol.preupdate
+   .hgeol: remote created -> g
+  getting .hgeol
+  filtering .hgeol through 
+   a.txt: remote created -> g
+  getting a.txt
+  filtering a.txt through 
+   f: remote created -> g
+  getting f
+  filtering f through 
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg st
+  M f
+  $ touch .hgeol *  # ensure consistent dirtyness checks ignoring dirstate
+  $ hg up -C -r 0 -v --debug
+  eol: detected change in .hgeol
+  filtering .hgeol through 
+  filtering a.txt through 
+  resolving manifests
+   branchmerge: False, force: True, partial: False
+   ancestor: 15cbdf8ca3db+, local: 15cbdf8ca3db+, remote: 15cbdf8ca3db
+  calling hook preupdate.eol: hgext.eol.preupdate
+   f: remote is newer -> g
+  getting f
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg branch b
+  marked working directory as branch b
+  (branches are permanent and global, did you want a bookmark?)
+  $ hg ci -m b
+
+Merge changes that apply a filter to f:
+
+  $ hg merge 1
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg st
+  M .hgeol
+  M a.txt
+  M f
+  $ hg diff
+  diff --git a/.hgeol b/.hgeol
+  --- a/.hgeol
+  +++ b/.hgeol
+  @@ -1,2 +1,3 @@
+   [patterns]
+  -**.txt = LF
+  +**.txt = CRLF
+  +f = LF
+  diff --git a/a.txt b/a.txt
+  --- a/a.txt
+  +++ b/a.txt
+  @@ -1,3 +1,3 @@
+  -first
+  -second
+  -third
+  +first\r (esc)
+  +second\r (esc)
+  +third\r (esc)
+  diff --git a/f b/f
+  --- a/f
+  +++ b/f
+  @@ -1,1 +1,1 @@
+  -f\r (esc)
+  +f
+
+Abort the merge with up -C to revision 0 ... but notice how .hgeol changes are
+not detected correctly: f is filtered with tolf even though there is no filter
+for f in revision 0, and it thus ends up with working directory changes.
+
+  $ touch .hgeol *  # ensure consistent dirtyness checks ignoring dirstate
+  $ hg up -C -r 0 -v --debug
+  eol: detected change in .hgeol
+  resolving manifests
+   branchmerge: False, force: True, partial: False
+   ancestor: 1db78bdd3bd6+, local: 1db78bdd3bd6+, remote: 15cbdf8ca3db
+  calling hook preupdate.eol: hgext.eol.preupdate
+   .hgeol: remote is newer -> g
+  getting .hgeol
+  filtering .hgeol through 
+   a.txt: remote is newer -> g
+  getting a.txt
+  filtering a.txt through 
+   f: remote is newer -> g
+  getting f
+  filtering f through 
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ touch .hgeol *
+  $ hg st --debug
+  eol: detected change in .hgeol
+  filtering .hgeol through 
+  filtering a.txt through 
+  M f
+  $ hg diff
+  diff --git a/f b/f
+  --- a/f
+  +++ b/f
+  @@ -1,1 +1,1 @@
+  -f\r (esc)
+  +f
+
+Workaround: Update again - this will read the right .hgeol:
+
+  $ touch .hgeol *
+  $ hg up -C -r 0 -v --debug
+  eol: detected change in .hgeol
+  filtering .hgeol through 
+  filtering a.txt through 
+  resolving manifests
+   branchmerge: False, force: True, partial: False
+   ancestor: 15cbdf8ca3db+, local: 15cbdf8ca3db+, remote: 15cbdf8ca3db
+  calling hook preupdate.eol: hgext.eol.preupdate
+   f: remote is newer -> g
+  getting f
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ touch .hgeol *
+  $ hg st --debug
+  eol: detected change in .hgeol
+  filtering .hgeol through 
+  filtering a.txt through 
+
+  $ cd ..
+
   $ rm -r repo
