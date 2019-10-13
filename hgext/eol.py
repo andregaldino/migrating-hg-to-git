@@ -401,7 +401,7 @@ def reposetup(ui, repo):
             except OSError:
                 eolmtime = 0
 
-            if eolmtime > cachemtime:
+            if eolmtime >= cachemtime and eolmtime > 0:
                 self.ui.debug(b"eol: detected change in .hgeol\n")
 
                 hgeoldata = self.wvfs.read(b'.hgeol')
