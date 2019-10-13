@@ -23,9 +23,10 @@ use hg::{
 };
 use libc::{c_char, c_int};
 #[cfg(feature = "python27")]
-use python27_sys::PyCapsule_Import;
+use python27_sys as python_sys;
 #[cfg(feature = "python3")]
-use python3_sys::PyCapsule_Import;
+use python3_sys as python_sys;
+use python_sys::PyCapsule_Import;
 use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::mem::transmute;
@@ -41,7 +42,7 @@ type MakeDirstateTupleFn = unsafe extern "C" fn(
     mode: c_int,
     size: c_int,
     mtime: c_int,
-) -> PyObject;
+) -> *mut python_sys::PyObject;
 
 /// This is largely a copy/paste from cindex.rs, pending the merge of a
 /// `py_capsule_fn!` macro in the rust-cpython project:
@@ -76,10 +77,11 @@ pub fn make_dirstate_tuple(
     // just do a naive enum cast.
     let state_code: u8 = state.into();
 
-    unsafe {
+    let maybe_obj = unsafe {
         let ptr = make(state_code as c_char, mode, size, mtime);
-        Ok(ptr)
-    }
+        PyObject::from_owned_ptr_opt(py, ptr)
+    };
+    maybe_obj.ok_or_else(|| PyErr::fetch(py))
 }
 
 pub fn extract_dirstate(py: Python, dmap: &PyDict) -> Result<StateMap, PyErr> {
