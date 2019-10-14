@@ -13,16 +13,16 @@ use crate::{
         hg_path::{HgPath, HgPathBuf},
     },
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
-    DirstateParents, DirstateParseError, StateMap,
+    DirstateParents, DirstateParseError, FastHashMap, StateMap,
 };
 use core::borrow::Borrow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::ops::Deref;
 use std::time::Duration;
 
-pub type FileFoldMap = HashMap<HgPathBuf, HgPathBuf>;
+pub type FileFoldMap = FastHashMap<HgPathBuf, HgPathBuf>;
 
 const NULL_ID: [u8; 20] = [0; 20];
 const MTIME_UNSET: i32 = -1;
@@ -327,7 +327,7 @@ impl DirstateMap {
         if let Some(ref file_fold_map) = self.file_fold_map {
             return file_fold_map;
         }
-        let mut new_file_fold_map = FileFoldMap::new();
+        let mut new_file_fold_map = FileFoldMap::default();
         for (filename, DirstateEntry { state, .. }) in self.state_map.borrow()
         {
             if *state == EntryState::Removed {

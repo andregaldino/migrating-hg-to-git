@@ -11,12 +11,11 @@
 //! `mercurial.setdiscovery`
 
 use super::{Graph, GraphError, Revision, NULL_REVISION};
-use crate::ancestors::MissingAncestors;
-use crate::dagops;
+use crate::{ancestors::MissingAncestors, dagops, FastHashMap};
 use rand::seq::SliceRandom;
 use rand::{thread_rng, RngCore, SeedableRng};
 use std::cmp::{max, min};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashSet, VecDeque};
 
 type Rng = rand_pcg::Pcg32;
 
@@ -25,7 +24,7 @@ pub struct PartialDiscovery<G: Graph + Clone> {
     graph: G, // plays the role of self._repo
     common: MissingAncestors<G>,
     undecided: Option<HashSet<Revision>>,
-    children_cache: Option<HashMap<Revision, Vec<Revision>>>,
+    children_cache: Option<FastHashMap<Revision, Vec<Revision>>>,
     missing: HashSet<Revision>,
     rng: Rng,
     respect_size: bool,
@@ -61,7 +60,7 @@ fn update_sample<I>(
 where
     I: Iterator<Item = Revision>,
 {
-    let mut distances: HashMap<Revision, u32> = HashMap::new();
+    let mut distances: FastHashMap<Revision, u32> = FastHashMap::default();
     let mut visit: VecDeque<Revision> = heads.into_iter().collect();
     let mut factor: u32 = 1;
     let mut seen: HashSet<Revision> = HashSet::new();
@@ -328,7 +327,8 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
         }
         self.ensure_undecided()?;
 
-        let mut children: HashMap<Revision, Vec<Revision>> = HashMap::new();
+        let mut children: FastHashMap<Revision, Vec<Revision>> =
+            FastHashMap::default();
         for &rev in self.undecided.as_ref().unwrap() {
             for p in ParentsIterator::graph_parents(&self.graph, rev)? {
                 children.entry(p).or_insert_with(|| Vec::new()).push(rev);

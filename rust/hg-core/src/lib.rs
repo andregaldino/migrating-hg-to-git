@@ -24,6 +24,8 @@ use crate::utils::hg_path::HgPathBuf;
 pub use filepatterns::{
     build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
 };
+use std::collections::HashMap;
+use twox_hash::RandomXxHashBuilder64;
 
 /// Mercurial revision numbers
 ///
@@ -52,6 +54,11 @@ pub trait Graph {
 }
 
 pub type LineNumber = usize;
+
+/// Rust's default hasher is too slow because it tries to prevent collision
+/// attacks. We are not concerned about those: if an ill-minded person has
+/// write access to your repository, you have other issues.
+pub type FastHashMap<K, V> = HashMap<K, V, RandomXxHashBuilder64>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum GraphError {

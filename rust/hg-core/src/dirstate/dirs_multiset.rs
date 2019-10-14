@@ -11,16 +11,16 @@
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::{
     dirstate::EntryState, utils::files, DirstateEntry, DirstateMapError,
+    FastHashMap,
 };
 use std::collections::hash_map::{self, Entry};
-use std::collections::HashMap;
 
 // could be encapsulated if we care API stability more seriously
 pub type DirsMultisetIter<'a> = hash_map::Keys<'a, HgPathBuf, u32>;
 
 #[derive(PartialEq, Debug)]
 pub struct DirsMultiset {
-    inner: HashMap<HgPathBuf, u32>,
+    inner: FastHashMap<HgPathBuf, u32>,
 }
 
 impl DirsMultiset {
@@ -28,11 +28,11 @@ impl DirsMultiset {
     ///
     /// If `skip_state` is provided, skips dirstate entries with equal state.
     pub fn from_dirstate(
-        vec: &HashMap<HgPathBuf, DirstateEntry>,
+        vec: &FastHashMap<HgPathBuf, DirstateEntry>,
         skip_state: Option<EntryState>,
     ) -> Self {
         let mut multiset = DirsMultiset {
-            inner: HashMap::new(),
+            inner: FastHashMap::default(),
         };
 
         for (filename, DirstateEntry { state, .. }) in vec {
@@ -52,7 +52,7 @@ impl DirsMultiset {
     /// Initializes the multiset from a manifest.
     pub fn from_manifest(vec: &Vec<HgPathBuf>) -> Self {
         let mut multiset = DirsMultiset {
-            inner: HashMap::new(),
+            inner: FastHashMap::default(),
         };
 
         for filename in vec {
@@ -127,7 +127,6 @@ impl DirsMultiset {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
 
     #[test]
     fn test_delete_path_path_not_found() {
@@ -243,13 +242,13 @@ mod tests {
     fn test_dirsmultiset_new_empty() {
         let new = DirsMultiset::from_manifest(&vec![]);
         let expected = DirsMultiset {
-            inner: HashMap::new(),
+            inner: FastHashMap::default(),
         };
         assert_eq!(expected, new);
 
-        let new = DirsMultiset::from_dirstate(&HashMap::new(), None);
+        let new = DirsMultiset::from_dirstate(&FastHashMap::default(), None);
         let expected = DirsMultiset {
-            inner: HashMap::new(),
+            inner: FastHashMap::default(),
         };
         assert_eq!(expected, new);
     }
