@@ -490,3 +490,34 @@ macro_rules! py_shared_iterator {
         }
     };
 }
+
+#[cfg(test)]
+#[cfg(any(feature = "python27-bin", feature = "python3-bin"))]
+mod test {
+    use super::*;
+    use cpython::{GILGuard, Python};
+
+    py_class!(class Owner |py| {
+        data string: PySharedRefCell<String>;
+    });
+    py_shared_ref!(Owner, String, string, string_shared);
+
+    fn prepare_env() -> (GILGuard, Owner) {
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+        let owner =
+            Owner::create_instance(py, PySharedRefCell::new("new".to_owned()))
+                .unwrap();
+        (gil, owner)
+    }
+
+    #[test]
+    fn test_borrow_mut_while_leaked() {
+        let (gil, owner) = prepare_env();
+        let py = gil.python();
+        assert!(owner.string_shared(py).borrow_mut().is_ok());
+        let _leaked = owner.string_shared(py).leak_immutable().unwrap();
+        // TODO: will be allowed
+        assert!(owner.string_shared(py).borrow_mut().is_err());
+    }
+}

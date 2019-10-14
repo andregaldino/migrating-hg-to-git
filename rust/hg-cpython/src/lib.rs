@@ -72,3 +72,10 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     )?;
     Ok(())
 });
+
+#[cfg(not(any(feature = "python27-bin", feature = "python3-bin")))]
+#[test]
+#[ignore]
+fn libpython_must_be_linked_to_run_tests() {
+    // stub function to tell that some tests wouldn't run
+}

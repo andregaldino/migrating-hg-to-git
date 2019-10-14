@@ -113,7 +113,7 @@ check: tests
 tests:
         # Run Rust tests if cargo is installed
 	if command -v $(CARGO) >/dev/null 2>&1; then \
-		cd $(HGROOT)/rust/hg-cpython && $(CARGO) test --quiet --all; \
+		$(MAKE) rust-tests; \
 	fi
 	cd tests && $(PYTHON) run-tests.py $(TESTFLAGS)
 
@@ -126,6 +126,13 @@ testpy-%:
 	cd $$(mktemp --directory --tmpdir) && \
         $(MAKE) -f $(HGROOT)/contrib/Makefile.python PYTHONVER=$* PREFIX=$(HGPYTHONS)/$* python )
 	cd tests && $(HGPYTHONS)/$*/bin/python run-tests.py $(TESTFLAGS)
+
+rust-tests: py_feature = $(shell $(PYTHON) -c \
+ 'import sys; print(["python27-bin", "python3-bin"][sys.version_info[0] >= 3])')
+rust-tests:
+	cd $(HGROOT)/rust/hg-cpython \
+		&& $(CARGO) test --quiet --all \
+			--no-default-features --features "$(py_feature)"
 
 check-code:
 	hg manifest | xargs python contrib/check-code.py
@@ -248,6 +255,7 @@ osx:
 
 .PHONY: help all local build doc cleanbutpackages clean install install-bin \
 	install-doc install-home install-home-bin install-home-doc \
-	dist dist-notests check tests check-code format-c update-pot \
+	dist dist-notests check tests rust-tests check-code format-c \
+	update-pot \
 	$(packaging_targets) \
 	osx
