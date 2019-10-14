@@ -1,5 +1,16 @@
 [tool.black]
 line-length = 80
-exclude = 'build/|wheelhouse/|dist/|packages/|\.hg/|\.mypy_cache/|\.venv/|mercurial/thirdparty/|hgext/fsmonitor/pywatchman/|contrib/python-zstandard/'
+exclude = '''
+build/
+| wheelhouse/
+| dist/
+| packages/
+| \.hg/
+| \.mypy_cache/
+| \.venv/
+| mercurial/thirdparty/
+| hgext/fsmonitor/pywatchman/
+| contrib/python-zstandard/
+'''
 skip-string-normalization = true
 quiet = true
