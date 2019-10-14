@@ -64,10 +64,10 @@ Prevent adding new files in the root directory accidentally.
   COPYING
   Makefile
   README.rst
+  black.toml
   hg
   hgeditor
   hgweb.cgi
-  pyproject.toml
   setup.py
 
 Prevent adding modules which could be shadowed by ancient .so/.dylib.
