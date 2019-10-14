@@ -12,4 +12,4 @@ rustfmt:pattern = set:**.rs
 # to have the dependencies for grey.
 #
 # black:command = python3.7 contrib/grey.py --config=black.toml -
-# black:pattern = set:**.py - hgext/fsmonitor/pywatchman/** - mercurial/thirdparty/** - "contrib/python-zstandard/**"
+# black:pattern = set:**.py - hgext/fsmonitor/pywatchman/** - mercurial/thirdparty/** - "contrib/python-zstandard/** - contrib/grey.py"
