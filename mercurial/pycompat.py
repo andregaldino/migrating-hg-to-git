@@ -92,6 +92,13 @@ if ispy3:
     import io
     import struct
 
+    if os.name == r'nt' and sys.version_info >= (3, 6):
+        # MBCS (or ANSI) filesystem encoding must be used as before.
+        # Otherwise non-ASCII filenames in existing repositories would be
+        # corrupted.
+        # This must be set once prior to any fsencode/fsdecode calls.
+        sys._enablelegacywindowsfsencoding()
+
     fsencode = os.fsencode
     fsdecode = os.fsdecode
     oscurdir = os.curdir.encode('ascii')
@@ -137,8 +144,8 @@ if ispy3:
     #
     # https://hg.python.org/cpython/file/v3.5.1/Programs/python.c#l55
     #
-    # TODO: On Windows, the native argv is wchar_t, so we'll need a different
-    # workaround to simulate the Python 2 (i.e. ANSI Win32 API) behavior.
+    # On Windows, the native argv is unicode and is converted to MBCS bytes
+    # since we do enable the legacy filesystem encoding.
     if getattr(sys, 'argv', None) is not None:
         sysargv = list(map(os.fsencode, sys.argv))
 
