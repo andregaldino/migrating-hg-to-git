@@ -270,15 +270,19 @@ def _changesetforwardcopies(a, b, match):
                 childcopies = {
                     dst: src for dst, src in childcopies.items() if match(dst)
                 }
-            # Copy the dict only if later iterations will also need it
-            if i != len(children[r]) - 1:
-                newcopies = copies.copy()
-            else:
-                newcopies = copies
+            newcopies = copies
             if childcopies:
                 newcopies = _chain(newcopies, childcopies)
+                # _chain makes a copies, we can avoid doing so in some
+                # simple/linear cases.
+                assert newcopies is not copies
             for f in removed:
                 if f in newcopies:
+                    if newcopies is copies:
+                        # copy on write to avoid affecting potential other
+                        # branches.  when there are no other branches, this
+                        # could be avoided.
+                        newcopies = copies.copy()
                     del newcopies[f]
             othercopies = all_copies.get(c)
             if othercopies is None:
