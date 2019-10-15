@@ -27,10 +27,12 @@
  * We modify Python integers for refcounting, but those integers are
  * never visible to Python code.
  */
+/* clang-format off */
 typedef struct {
 	PyObject_HEAD
 	PyObject *dict;
 } dirsObject;
+/* clang-format on */
 
 static inline Py_ssize_t _finddir(const char *path, Py_ssize_t pos)
 {
