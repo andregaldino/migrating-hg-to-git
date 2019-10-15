@@ -1259,7 +1259,7 @@ def event(state, ch):
         return E_RESIZE
 
     lookup_ch = ch
-    if b'0' <= ch <= b'9':
+    if ch is not None and b'0' <= ch <= b'9':
         lookup_ch = b'0'
 
     curmode, prevmode = state[b'mode']
