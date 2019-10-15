@@ -950,7 +950,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
     localrevs = opts[b'rev']
-    with util.timedcm(b'debug-discovery') as t:
+    with util.timedcm('debug-discovery') as t:
         common, hds = doit(localrevs, remoterevs)
 
     # compute all statistics

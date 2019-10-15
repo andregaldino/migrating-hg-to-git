@@ -104,7 +104,7 @@ class request(object):
 def run():
     b"run the command in sys.argv"
     initstdio()
-    with tracing.log(b'parse args into request'):
+    with tracing.log('parse args into request'):
         req = request(pycompat.sysargv[1:])
     err = None
     try:
@@ -210,7 +210,7 @@ def _formatargs(args):
 
 def dispatch(req):
     """run the command specified in req.args; returns an integer status code"""
-    with tracing.log(b'dispatch.dispatch'):
+    with tracing.log('dispatch.dispatch'):
         if req.ferr:
             ferr = req.ferr
         elif req.ui:
@@ -297,7 +297,7 @@ def dispatch(req):
 
 
 def _runcatch(req):
-    with tracing.log(b'dispatch._runcatch'):
+    with tracing.log('dispatch._runcatch'):
 
         def catchterm(*args):
             raise error.SignalInterrupt
@@ -1181,7 +1181,7 @@ def _dispatch(req):
 def _runcommand(ui, options, cmd, cmdfunc):
     """Run a command function, possibly with profiling enabled."""
     try:
-        with tracing.log(b"Running %s command" % cmd):
+        with tracing.log("Running %s command" % cmd):
             return cmdfunc()
     except error.SignatureError:
         raise error.CommandError(cmd, _(b'invalid arguments'))

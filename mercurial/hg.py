@@ -185,12 +185,12 @@ def _peerorrepo(
     for f in presetupfuncs or []:
         f(ui, obj)
     ui.log(b'extension', b'- executing reposetup hooks\n')
-    with util.timedcm(b'all reposetup') as allreposetupstats:
+    with util.timedcm('all reposetup') as allreposetupstats:
         for name, module in extensions.extensions(ui):
             ui.log(b'extension', b'  - running reposetup for %s\n', name)
             hook = getattr(module, 'reposetup', None)
             if hook:
-                with util.timedcm(b'reposetup %r', name) as stats:
+                with util.timedcm('reposetup %r', name) as stats:
                     hook(ui, obj)
                 ui.log(
                     b'extension', b'  > reposetup for %s took %s\n', name, stats

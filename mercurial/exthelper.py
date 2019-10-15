@@ -139,7 +139,7 @@ class exthelper(object):
         for cont, funcname, wrapper in self._functionwrappers:
             extensions.wrapfunction(cont, funcname, wrapper)
         for c in self._uicallables:
-            with tracing.log(b'finaluisetup: %s', pycompat.sysbytes(repr(c))):
+            with tracing.log('finaluisetup: %s', repr(c)):
                 c(ui)
 
     def finaluipopulate(self, ui):
@@ -180,7 +180,7 @@ class exthelper(object):
                     entry[1].append(opt)
 
         for c in self._extcallables:
-            with tracing.log(b'finalextsetup: %s', pycompat.sysbytes(repr(c))):
+            with tracing.log('finalextsetup: %s', repr(c)):
                 c(ui)
 
     def finalreposetup(self, ui, repo):
@@ -193,7 +193,7 @@ class exthelper(object):
         - Changes to repo.__class__, repo.dirstate.__class__
         """
         for c in self._repocallables:
-            with tracing.log(b'finalreposetup: %s', pycompat.sysbytes(repr(c))):
+            with tracing.log('finalreposetup: %s', repr(c)):
                 c(ui, repo)
 
     def uisetup(self, call):
