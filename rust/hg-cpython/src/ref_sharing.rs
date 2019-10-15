@@ -179,7 +179,7 @@ impl<'a, T> PySharedRef<'a, T> {
         Self { py, owner, data }
     }
 
-    pub fn borrow(&self) -> Ref<T> {
+    pub fn borrow(&self) -> Ref<'a, T> {
         self.data.borrow()
     }
 
