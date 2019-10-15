@@ -204,7 +204,7 @@ def _changesetforwardcopies(a, b, match):
     if a.rev() in (node.nullrev, b.rev()):
         return {}
 
-    repo = a.repo()
+    repo = a.repo().unfiltered()
     children = {}
     revinfo = _revinfogetter(repo)
 
