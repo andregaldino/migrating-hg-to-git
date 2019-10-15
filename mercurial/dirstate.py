@@ -16,6 +16,9 @@ import stat
 from .i18n import _
 from .node import nullid
 from .pycompat import delattr
+
+from hgdemandimport import tracing
+
 from . import (
     encoding,
     error,
@@ -951,6 +954,7 @@ class dirstate(object):
         def traverse(work, alreadynormed):
             wadd = work.append
             while work:
+                tracing.counter('dirstate.walk work', len(work))
                 nd = work.pop()
                 visitentries = match.visitchildrenset(nd)
                 if not visitentries:
@@ -961,7 +965,8 @@ class dirstate(object):
                 if nd != b'':
                     skip = b'.hg'
                 try:
-                    entries = listdir(join(nd), stat=True, skip=skip)
+                    with tracing.log('dirstate.walk.traverse listdir %s', nd):
+                        entries = listdir(join(nd), stat=True, skip=skip)
                 except OSError as inst:
                     if inst.errno in (errno.EACCES, errno.ENOENT):
                         match.bad(
