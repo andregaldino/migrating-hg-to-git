@@ -687,7 +687,9 @@ def temporary_ec2_instances(ec2resource, config):
 
 
 @contextlib.contextmanager
-def create_temp_windows_ec2_instances(c: AWSConnection, config):
+def create_temp_windows_ec2_instances(
+    c: AWSConnection, config, bootstrap: bool = False
+):
     """Create temporary Windows EC2 instances.
 
     This is a higher-level wrapper around ``create_temp_ec2_instances()`` that
@@ -712,7 +714,9 @@ def create_temp_windows_ec2_instances(c: AWSConnection, config):
             'Tags': [{'Key': 'Name', 'Value': 'hg-temp-windows'}],
         }
     )
-    config['UserData'] = WINDOWS_USER_DATA % password
+
+    if bootstrap:
+        config['UserData'] = WINDOWS_USER_DATA % password
 
     with temporary_ec2_instances(c.ec2resource, config) as instances:
         wait_for_ip_addresses(instances)
@@ -1111,6 +1115,23 @@ def ensure_windows_dev_ami(
     with INSTALL_WINDOWS_DEPENDENCIES.open('r', encoding='utf-8') as fh:
         commands.extend(l.rstrip() for l in fh)
 
+    # Schedule run of EC2Launch on next boot. This ensures that UserData
+    # is executed.
+    # We disable setComputerName because it forces a reboot.
+    # We set an explicit admin password because this causes UserData to run
+    # as Administrator instead of System.
+    commands.extend(
+        [
+            r'''Set-Content -Path C:\ProgramData\Amazon\EC2-Windows\Launch\Config\LaunchConfig.json '''
+            r'''-Value '{"setComputerName": false, "setWallpaper": true, "addDnsSuffixList": true, '''
+            r'''"extendBootVolumeSize": true, "handleUserData": true, '''
+            r'''"adminPasswordType": "Specify", "adminPassword": "%s"}' '''
+            % c.automation.default_password(),
+            r'C:\ProgramData\Amazon\EC2-Windows\Launch\Scripts\InitializeInstance.ps1 '
+            r'–Schedule',
+        ]
+    )
+
     # Disable Windows Defender when bootstrapping because it just slows
     # things down.
     commands.insert(0, 'Set-MpPreference -DisableRealtimeMonitoring $true')
@@ -1135,7 +1156,9 @@ def ensure_windows_dev_ami(
 
     print('no suitable Windows development image found; creating one...')
 
-    with create_temp_windows_ec2_instances(c, config) as instances:
+    with create_temp_windows_ec2_instances(
+        c, config, bootstrap=True
+    ) as instances:
         assert len(instances) == 1
         instance = instances[0]
 
