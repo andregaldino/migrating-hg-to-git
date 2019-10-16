@@ -250,6 +250,7 @@ is filtered with tolf, and everything is left tidy.
   eol: detected change in .hgeol
   filtering .hgeol through isbinary
   filtering a.txt through tolf
+  skip updating dirstate: identity mismatch (?)
   $ hg diff
 
 Things were clean, and updating again will not change anything:
@@ -263,6 +264,7 @@ Things were clean, and updating again will not change anything:
    branchmerge: False, force: True, partial: False
    ancestor: 15cbdf8ca3db+, local: 15cbdf8ca3db+, remote: 15cbdf8ca3db
   calling hook preupdate.eol: hgext.eol.preupdate
+  starting 4 threads for background file closing (?)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ touch .hgeol *
