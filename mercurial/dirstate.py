@@ -1784,6 +1784,10 @@ if rustmod is not None:
             if parents and not self._dirtyparents:
                 self.setparents(*parents)
 
+            self.__contains__ = self._rustmap.__contains__
+            self.__getitem__ = self._rustmap.__getitem__
+            self.get = self._rustmap.get
+
         def write(self, st, now):
             parents = self.parents()
             st.write(self._rustmap.write(parents[0], parents[1], now))
