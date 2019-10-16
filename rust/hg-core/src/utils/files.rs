@@ -21,12 +21,9 @@ pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
         use std::os::unix::ffi::OsStrExt;
         os_str = std::ffi::OsStr::from_bytes(bytes);
     }
-    #[cfg(windows)]
-    {
-        // TODO: convert from Windows MBCS (ANSI encoding) to WTF8.
-        // Perhaps, the return type would have to be Result<PathBuf>.
-        unimplemented!()
-    }
+    // TODO Handle other platforms
+    // TODO: convert from WTF8 to Windows MBCS (ANSI encoding).
+    // Perhaps, the return type would have to be Result<PathBuf>.
 
     Path::new(os_str)
 }

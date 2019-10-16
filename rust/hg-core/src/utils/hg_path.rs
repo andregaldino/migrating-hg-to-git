@@ -258,11 +258,8 @@ pub fn hg_path_to_os_string<P: AsRef<HgPath>>(
         use std::os::unix::ffi::OsStrExt;
         os_str = std::ffi::OsStr::from_bytes(&hg_path.as_ref().as_bytes());
     }
-    #[cfg(windows)]
-    {
-        // TODO: convert from Windows MBCS (ANSI encoding) to WTF8.
-        unimplemented!();
-    }
+    // TODO Handle other platforms
+    // TODO: convert from WTF8 to Windows MBCS (ANSI encoding).
     Ok(os_str.to_os_string())
 }
 
@@ -281,11 +278,9 @@ pub fn os_string_to_hg_path_buf<S: AsRef<OsStr>>(
         use std::os::unix::ffi::OsStrExt;
         buf = HgPathBuf::from_bytes(&os_string.as_ref().as_bytes());
     }
-    #[cfg(windows)]
-    {
-        // TODO: convert from WTF8 to Windows MBCS (ANSI encoding).
-        unimplemented!();
-    }
+    // TODO Handle other platforms
+    // TODO: convert from WTF8 to Windows MBCS (ANSI encoding).
+
     buf.check_state()?;
     Ok(buf)
 }
@@ -300,11 +295,9 @@ pub fn path_to_hg_path_buf<P: AsRef<Path>>(
         use std::os::unix::ffi::OsStrExt;
         buf = HgPathBuf::from_bytes(&os_str.as_bytes());
     }
-    #[cfg(windows)]
-    {
-        // TODO: convert from WTF8 to Windows MBCS (ANSI encoding).
-        unimplemented!();
-    }
+    // TODO Handle other platforms
+    // TODO: convert from WTF8 to Windows MBCS (ANSI encoding).
+
     buf.check_state()?;
     Ok(buf)
 }
