@@ -207,13 +207,14 @@ def _changesetforwardcopies(a, b, match):
             return copies
         for i, c in enumerate(children[r]):
             childctx = repo[c]
+            p1copies, p2copies = childctx._copies
             if r == childctx.p1().rev():
                 parent = 1
-                childcopies = childctx.p1copies()
+                childcopies = p1copies
             else:
                 assert r == childctx.p2().rev()
                 parent = 2
-                childcopies = childctx.p2copies()
+                childcopies = p2copies
             if not alwaysmatch:
                 childcopies = {
                     dst: src for dst, src in childcopies.items() if match(dst)
