@@ -27,6 +27,7 @@ from . import (
     policy,
     pycompat,
     scmutil,
+    sparse,
     txnutil,
     util,
 )
@@ -1097,6 +1098,58 @@ class dirstate(object):
 
         dmap = self._map
         dmap.preload()
+
+        use_rust = True
+        if rustmod is None:
+            use_rust = False
+        elif subrepos:
+            use_rust = False
+        if bool(listunknown):
+            # Pathauditor does not exist yet in Rust, unknown files
+            # can't be trusted.
+            use_rust = False
+        elif self._ignorefiles() and listignored:
+            # Rust has no ignore mechanism yet, so don't use Rust for
+            # commands that need ignore.
+            use_rust = False
+        elif not match.always():
+            # Matchers have yet to be implemented
+            use_rust = False
+        # We don't yet have a mechanism for extensions
+        elif sparse.enabled:
+            use_rust = False
+        elif not getattr(self, "_fsmonitordisable", True):
+            use_rust = False
+
+        if use_rust:
+            (
+                lookup,
+                modified,
+                added,
+                removed,
+                deleted,
+                unknown,
+                clean,
+            ) = rustmod.status(
+                dmap._rustmap,
+                self._rootdir,
+                match.files(),
+                bool(listclean),
+                self._lastnormaltime,
+                self._checkexec,
+            )
+
+            status = scmutil.status(
+                modified=modified,
+                added=added,
+                removed=removed,
+                deleted=deleted,
+                unknown=unknown,
+                ignored=ignored,
+                clean=clean,
+            )
+            return (lookup, status)
+
         dcontains = dmap.__contains__
         dget = dmap.__getitem__
         ladd = lookup.append  # aka "unsure"
