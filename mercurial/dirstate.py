@@ -1262,6 +1262,9 @@ class dirstate(object):
         return files in the dirstate (in whatever state) filtered by match
         '''
         dmap = self._map
+        if rustmod is not None:
+            dmap = self._map._rustmap
+
         if match.always():
             return dmap.keys()
         files = match.files()
