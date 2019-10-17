@@ -13,6 +13,7 @@ import os
 from .i18n import _
 from .pycompat import getattr
 from . import (
+    encoding,
     error,
     pycompat,
     util,
@@ -173,7 +174,7 @@ class config(object):
                         if inst.errno != errno.ENOENT:
                             raise error.ParseError(
                                 _(b"cannot include %s (%s)")
-                                % (inc, inst.strerror),
+                                % (inc, encoding.strtolocal(inst.strerror)),
                                 b"%s:%d" % (src, line),
                             )
                 continue

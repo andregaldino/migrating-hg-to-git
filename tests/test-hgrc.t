@@ -49,6 +49,18 @@ Issue1199: Can't use '%' in hgrc (eg url encoded username)
   paths.default=$TESTTMP/foo%bar
   $ cd ..
 
+Check %include
+
+  $ echo '[section]' > $TESTTMP/included
+  $ echo 'option = value' >> $TESTTMP/included
+  $ echo '%include $TESTTMP/included' >> $HGRC
+  $ hg showconfig section
+  section.option=value
+  $ chmod u-r $TESTTMP/included
+  $ hg showconfig section
+  hg: parse error at $TESTTMP/hgrc:2: cannot include $TESTTMP/included (Permission denied)
+  [255]
+
 issue1829: wrong indentation
 
   $ echo '[foo]' > $HGRC
