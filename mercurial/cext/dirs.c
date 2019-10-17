@@ -66,6 +66,14 @@ static int _addpath(PyObject *dirs, PyObject *path)
 	while ((pos = _finddir(cpath, pos - 1)) != -1) {
 		PyObject *val;
 
+		/* Sniff for trailing slashes, a marker of an invalid input. */
+		if (pos > 0 && cpath[pos - 1] == '/') {
+			PyErr_SetString(
+			    PyExc_ValueError,
+			    "found invalid consecutive slashes in path");
+			goto bail;
+		}
+
 		key = PyBytes_FromStringAndSize(cpath, pos);
 		if (key == NULL)
 			goto bail;

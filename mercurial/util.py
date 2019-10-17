@@ -3515,6 +3515,10 @@ class dirs(object):
     def addpath(self, path):
         dirs = self._dirs
         for base in finddirs(path):
+            if base.endswith(b'/'):
+                raise ValueError(
+                    "found invalid consecutive slashes in path: %r" % base
+                )
             if base in dirs:
                 dirs[base] += 1
                 return
