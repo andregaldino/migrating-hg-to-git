@@ -27,7 +27,6 @@ from . import (
     policy,
     pycompat,
     scmutil,
-    sparse,
     txnutil,
     util,
 )
@@ -1114,11 +1113,6 @@ class dirstate(object):
             use_rust = False
         elif not match.always():
             # Matchers have yet to be implemented
-            use_rust = False
-        # We don't yet have a mechanism for extensions
-        elif sparse.enabled:
-            use_rust = False
-        elif not getattr(self, "_fsmonitordisable", True):
             use_rust = False
 
         if use_rust:
