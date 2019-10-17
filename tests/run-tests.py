@@ -2246,15 +2246,19 @@ class TestResult(unittest._TextTestResult):
         # os.times module computes the user time and system time spent by
         # child's processes along with real elapsed time taken by a process.
         # This module has one limitation. It can only work for Linux user
-        # and not for Windows.
+        # and not for Windows. Hence why we fall back to another function
+        # for wall time calculations.
         test.started_times = os.times()
+        # TODO use a monotonic clock once support for Python 2.7 is dropped.
+        test.started_time = time.time()
         if self._firststarttime is None:  # thread racy but irrelevant
-            self._firststarttime = test.started_times[4]
+            self._firststarttime = test.started_time
 
     def stopTest(self, test, interrupted=False):
         super(TestResult, self).stopTest(test)
 
         test.stopped_times = os.times()
+        stopped_time = time.time()
 
         starttime = test.started_times
         endtime = test.stopped_times
@@ -2264,9 +2268,9 @@ class TestResult(unittest._TextTestResult):
                 test.name,
                 endtime[2] - starttime[2],  # user space CPU time
                 endtime[3] - starttime[3],  # sys  space CPU time
-                endtime[4] - starttime[4],  # real time
-                starttime[4] - origin,  # start date in run context
-                endtime[4] - origin,  # end date in run context
+                stopped_time - test.started_time,  # real time
+                test.started_time - origin,  # start date in run context
+                stopped_time - origin,  # end date in run context
             )
         )
 
