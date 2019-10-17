@@ -99,6 +99,11 @@ class bundlespec(object):
     contentopts = attr.ib()
 
 
+def _sortedmarkers(markers):
+    # last item of marker tuple ('parents') may be None or a tuple
+    return sorted(markers, key=lambda m: m[:-1] + (m[-1] or (),))
+
+
 def parsebundlespec(repo, spec, strict=True):
     """Parse a bundle string specification into parts.
 
@@ -2567,8 +2572,7 @@ def _getbundleobsmarkerpart(
             heads = repo.heads()
         subset = [c.node() for c in repo.set(b'::%ln', heads)]
         markers = repo.obsstore.relevantmarkers(subset)
-        # last item of marker tuple ('parents') may be None or a tuple
-        markers = sorted(markers, key=lambda m: m[:-1] + (m[-1] or (),))
+        markers = _sortedmarkers(markers)
         bundle2.buildobsmarkerspart(bundler, markers)
 
 
