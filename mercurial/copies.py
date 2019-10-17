@@ -193,13 +193,44 @@ def _revinfogetter(repo):
         changelogrevision = cl.changelogrevision
         flags = cl.flags
 
+        # A small cache to avoid doing the work twice for merges
+        #
+        # In the vast majority of cases, if we ask information for a revision
+        # about 1 parent, we'll later ask it for the other. So it make sense to
+        # keep the information around when reaching the first parent of a merge
+        # and dropping it after it was provided for the second parents.
+        #
+        # It exists cases were only one parent of the merge will be walked. It
+        # happens when the "destination" the copy tracing is descendant from a
+        # new root, not common with the "source". In that case, we will only walk
+        # through merge parents that are descendant of changesets common
+        # between "source" and "destination".
+        #
+        # With the current case implementation if such changesets have a copy
+        # information, we'll keep them in memory until the end of
+        # _changesetforwardcopies. We don't expect the case to be frequent
+        # enough to matters.
+        #
+        # In addition, it would be possible to reach pathological case, were
+        # many first parent are met before any second parent is reached. In
+        # that case the cache could grow. If this even become an issue one can
+        # safely introduce a maximum cache size. This would trade extra CPU/IO
+        # time to save memory.
+        merge_caches = {}
+
         def revinfo(rev):
             p1, p2 = parents(rev)
             if flags(rev) & REVIDX_SIDEDATA:
+                e = merge_caches.pop(rev, None)
+                if e is not None:
+                    return e
                 c = changelogrevision(rev)
                 p1copies = c.p1copies
                 p2copies = c.p2copies
                 removed = c.filesremoved
+                if p1 != node.nullrev and p2 != node.nullrev:
+                    # XXX some case we over cache, IGNORE
+                    merge_caches[rev] = (p1, p2, p1copies, p2copies, removed)
             else:
                 p1copies = {}
                 p2copies = {}
