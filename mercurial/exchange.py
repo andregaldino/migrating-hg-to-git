@@ -1140,7 +1140,7 @@ def _pushb2obsmarkers(pushop, bundler):
         return
     pushop.stepsdone.add(b'obsmarkers')
     if pushop.outobsmarkers:
-        markers = sorted(pushop.outobsmarkers)
+        markers = _sortedmarkers(pushop.outobsmarkers)
         bundle2.buildobsmarkerspart(bundler, markers)
 
 
@@ -1475,7 +1475,8 @@ def _pushobsolete(pushop):
     if pushop.outobsmarkers:
         pushop.ui.debug(b'try to push obsolete markers to remote\n')
         rslts = []
-        remotedata = obsolete._pushkeyescape(sorted(pushop.outobsmarkers))
+        markers = _sortedmarkers(pushop.outobsmarkers)
+        remotedata = obsolete._pushkeyescape(markers)
         for key in sorted(remotedata, reverse=True):
             # reverse sort to ensure we end with dump0
             data = remotedata[key]
