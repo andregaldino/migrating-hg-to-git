@@ -2247,17 +2247,17 @@ class TestResult(unittest._TextTestResult):
         # child's processes along with real elapsed time taken by a process.
         # This module has one limitation. It can only work for Linux user
         # and not for Windows.
-        test.started = os.times()
+        test.started_times = os.times()
         if self._firststarttime is None:  # thread racy but irrelevant
-            self._firststarttime = test.started[4]
+            self._firststarttime = test.started_times[4]
 
     def stopTest(self, test, interrupted=False):
         super(TestResult, self).stopTest(test)
 
-        test.stopped = os.times()
+        test.stopped_times = os.times()
 
-        starttime = test.started
-        endtime = test.stopped
+        starttime = test.started_times
+        endtime = test.stopped_times
         origin = self._firststarttime
         self.times.append(
             (
