@@ -1274,8 +1274,8 @@ def _tokenize(text):
             yield (b'symbol', symbol, pos)
             pos += len(symbol)
         else:  # special char, ignore space
-            if text[pos] != b' ':
-                yield (text[pos], None, pos)
+            if text[pos : pos + 1] != b' ':
+                yield (text[pos : pos + 1], None, pos)
             pos += 1
     yield (b'end', None, pos)
 
