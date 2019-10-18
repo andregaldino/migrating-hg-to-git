@@ -975,9 +975,18 @@ test python hooks
   Traceback (most recent call last):
   SyntaxError: * (glob)
   exception from second failed import attempt:
+  Traceback (most recent call last): (py3 !)
+  SyntaxError: * (glob) (py3 !)
   Traceback (most recent call last):
-  ImportError: No module named hgext_syntaxerror
+  ImportError: No module named hgext_syntaxerror (no-py3 !)
+  ImportError: No module named 'hgext_syntaxerror' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'hgext_syntaxerror' (py36 !)
   Traceback (most recent call last):
+  SyntaxError: * (glob) (py3 !)
+  Traceback (most recent call last): (py3 !)
+  ImportError: No module named 'hgext_syntaxerror' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'hgext_syntaxerror' (py36 !)
+  Traceback (most recent call last): (py3 !)
   HookLoadError: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed (no-py3 !)
   mercurial.error.HookLoadError: b'preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed' (py3 !)
   abort: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed
@@ -1133,10 +1142,23 @@ make sure --traceback works on hook import failure
   $ hg --traceback commit -ma 2>&1 | egrep '^exception|ImportError|ModuleNotFoundError|Traceback|HookLoadError|abort'
   exception from first failed import attempt:
   Traceback (most recent call last):
-  ImportError: No module named somebogusmodule
+  ImportError: No module named somebogusmodule (no-py3 !)
+  ImportError: No module named 'somebogusmodule' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'somebogusmodule' (py36 !)
   exception from second failed import attempt:
+  Traceback (most recent call last): (py3 !)
+  ImportError: No module named 'somebogusmodule' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'somebogusmodule' (py36 !)
+  Traceback (most recent call last): (py3 !)
+  ImportError: No module named 'hgext_importfail' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'hgext_importfail' (py36 !)
+  Traceback (most recent call last): (py3 !)
+  ImportError: No module named 'somebogusmodule' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'somebogusmodule' (py36 !)
   Traceback (most recent call last):
-  ImportError: No module named hgext_importfail
+  ImportError: No module named hgext_importfail (no-py3 !)
+  ImportError: No module named 'hgext_importfail' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'hgext_importfail' (py36 !)
   Traceback (most recent call last):
   HookLoadError: precommit.importfail hook is invalid: import of "importfail" failed (no-py3 !)
   mercurial.error.HookLoadError: b'precommit.importfail hook is invalid: import of "importfail" failed' (py3 !)
