@@ -980,7 +980,8 @@ different between Python 2.6 and Python 2.7.
   Traceback (most recent call last):
   ImportError: No module named hgext_syntaxerror
   Traceback (most recent call last):
-  HookLoadError: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed
+  HookLoadError: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed (no-py3 !)
+  mercurial.error.HookLoadError: b'preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed' (py3 !)
   abort: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed
 
   $ echo '[hooks]' > ../a/.hg/hgrc
@@ -1139,7 +1140,8 @@ make sure --traceback works on hook import failure
   Traceback (most recent call last):
   ImportError: No module named hgext_importfail
   Traceback (most recent call last):
-  HookLoadError: precommit.importfail hook is invalid: import of "importfail" failed
+  HookLoadError: precommit.importfail hook is invalid: import of "importfail" failed (no-py3 !)
+  mercurial.error.HookLoadError: b'precommit.importfail hook is invalid: import of "importfail" failed' (py3 !)
   abort: precommit.importfail hook is invalid: import of "importfail" failed
 
 Issue1827: Hooks Update & Commit not completely post operation
