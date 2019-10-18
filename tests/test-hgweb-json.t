@@ -2005,7 +2005,7 @@ help/ shows help topics
         "topic": "graft"
       },
       {
-        "summary": "search revision history for a pattern in specified files",
+        "summary": "search for a pattern in specified files",
         "topic": "grep"
       },
       {

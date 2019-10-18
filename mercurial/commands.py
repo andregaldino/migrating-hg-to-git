@@ -3276,7 +3276,7 @@ statemod.addunfinished(
             b'diff',
             None,
             _(
-                b'print all revisions when the term was introduced '
+                b'search revision differences for when the pattern was added '
                 b'or removed'
             ),
         ),
@@ -3302,7 +3302,7 @@ statemod.addunfinished(
             b'r',
             b'rev',
             [],
-            _(b'only search files changed within revision range'),
+            _(b'search files changed within revision range'),
             _(b'REV'),
         ),
         (
@@ -3324,23 +3324,27 @@ statemod.addunfinished(
     intents={INTENT_READONLY},
 )
 def grep(ui, repo, pattern, *pats, **opts):
-    """search revision history for a pattern in specified files
+    """search for a pattern in specified files
 
-    Search revision history for a regular expression in the specified
-    files or the entire project.
+    Search the working directory or revision history for a regular
+    expression in the specified files for the entire repository.
 
-    By default, grep prints the most recent revision number for each
-    file in which it finds a match. To get it to print every revision
-    that contains a change in match status ("-" for a match that becomes
-    a non-match, or "+" for a non-match that becomes a match), use the
-    --diff flag.
+    By default, grep searches the repository files in the working
+    directory and prints the files where it finds a match. To specify
+    historical revisions instead of the working directory, use the
+    --rev flag.
+
+    To search instead historical revision differences that contains a
+    change in match status ("-" for a match that becomes a non-match,
+    or "+" for a non-match that becomes a match), use the --diff flag.
 
     PATTERN can be any Python (roughly Perl-compatible) regular
     expression.
 
-    If no FILEs are specified (and -f/--follow isn't set), all files in
-    the repository are searched, including those that don't exist in the
-    current branch or have been deleted in a prior changeset.
+    If no FILEs are specified and the --rev flag isn't supplied, all
+    files in the working directory are searched. When using the --rev
+    flag and specifying FILEs, use the --follow argument to also
+    follow the specified FILEs across renames and copies.
 
     .. container:: verbose
 
@@ -3363,6 +3367,7 @@ def grep(ui, repo, pattern, *pats, **opts):
       See :hg:`help templates.operators` for the list expansion syntax.
 
     Returns 0 if a match is found, 1 otherwise.
+
     """
     opts = pycompat.byteskwargs(opts)
     diff = opts.get(b'all') or opts.get(b'diff')

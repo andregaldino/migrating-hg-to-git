@@ -92,7 +92,7 @@ the extension is unknown.
    cat           output the current or given revision of files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   grep          search revision history for a pattern in specified files
+   grep          search for a pattern in specified files
   
   Change navigation:
   
@@ -220,7 +220,7 @@ the extension is unknown.
    cat           output the current or given revision of files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   grep          search revision history for a pattern in specified files
+   grep          search for a pattern in specified files
   
   Change navigation:
   
@@ -2590,7 +2590,7 @@ Dish up an empty repo; serve it cold.
   grep
   </a>
   </td><td>
-  search revision history for a pattern in specified files
+  search for a pattern in specified files
   </td></tr>
   <tr><td>
   <a href="/help/hashelp">

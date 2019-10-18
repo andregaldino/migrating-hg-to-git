@@ -336,7 +336,7 @@ Testing -h/--help:
    cat           output the current or given revision of files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   grep          search revision history for a pattern in specified files
+   grep          search for a pattern in specified files
   
   Change navigation:
   
@@ -468,7 +468,7 @@ Testing -h/--help:
    cat           output the current or given revision of files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   grep          search revision history for a pattern in specified files
+   grep          search for a pattern in specified files
   
   Change navigation:
   
