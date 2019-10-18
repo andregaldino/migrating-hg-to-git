@@ -1208,8 +1208,8 @@ def overridearchive(
             sub = ctx.workingsub(subpath)
             submatch = matchmod.subdirmatcher(subpath, match)
             subprefix = prefix + subpath + b'/'
-            sub._repo.lfstatus = True
-            sub.archive(archiver, subprefix, submatch)
+            with lfstatus(sub._repo):
+                sub.archive(archiver, subprefix, submatch)
 
     archiver.done()
 
@@ -1266,8 +1266,8 @@ def hgsubrepoarchive(orig, repo, archiver, prefix, match=None, decode=True):
         sub = ctx.workingsub(subpath)
         submatch = matchmod.subdirmatcher(subpath, match)
         subprefix = prefix + subpath + b'/'
-        sub._repo.lfstatus = True
-        sub.archive(archiver, subprefix, submatch, decode)
+        with lfstatus(sub._repo):
+            sub.archive(archiver, subprefix, submatch, decode)
 
 
 # If a largefile is modified, the change is not reflected in its
