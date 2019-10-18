@@ -9,6 +9,7 @@
 '''Overridden Mercurial commands and functions for the largefiles extension'''
 from __future__ import absolute_import
 
+import contextlib
 import copy
 import os
 
@@ -157,14 +158,20 @@ def addlargefiles(ui, repo, isaddremove, matcher, uipathfn, **opts):
     return added, bad
 
 
+@contextlib.contextmanager
+def lfstatus(repo):
+    repo.lfstatus = True
+    try:
+        yield
+    finally:
+        repo.lfstatus = False
+
+
 def removelargefiles(ui, repo, isaddremove, matcher, uipathfn, dryrun, **opts):
     after = opts.get(r'after')
     m = composelargefilematcher(matcher, repo[None].manifest())
-    try:
-        repo.lfstatus = True
+    with lfstatus(repo):
         s = repo.status(match=m, clean=not isaddremove)
-    finally:
-        repo.lfstatus = False
     manifest = repo[None].manifest()
     modified, added, deleted, clean = [
         [f for f in list if lfutil.standin(f) in manifest]
@@ -308,29 +315,20 @@ def cmdutilremove(
 
 @eh.wrapfunction(subrepo.hgsubrepo, b'status')
 def overridestatusfn(orig, repo, rev2, **opts):
-    try:
-        repo._repo.lfstatus = True
+    with lfstatus(repo._repo):
         return orig(repo, rev2, **opts)
-    finally:
-        repo._repo.lfstatus = False
 
 
 @eh.wrapcommand(b'status')
 def overridestatus(orig, ui, repo, *pats, **opts):
-    try:
-        repo.lfstatus = True
+    with lfstatus(repo):
         return orig(ui, repo, *pats, **opts)
-    finally:
-        repo.lfstatus = False
 
 
 @eh.wrapfunction(subrepo.hgsubrepo, b'dirty')
 def overridedirty(orig, repo, ignoreupdate=False, missing=False):
-    try:
-        repo._repo.lfstatus = True
+    with lfstatus(repo._repo):
         return orig(repo, ignoreupdate=ignoreupdate, missing=missing)
-    finally:
-        repo._repo.lfstatus = False
 
 
 @eh.wrapcommand(b'log')
@@ -1117,22 +1115,14 @@ def overriderebase(orig, ui, repo, **opts):
 
 @eh.wrapcommand(b'archive')
 def overridearchivecmd(orig, ui, repo, dest, **opts):
-    repo.unfiltered().lfstatus = True
-
-    try:
+    with lfstatus(repo.unfiltered()):
         return orig(ui, repo.unfiltered(), dest, **opts)
-    finally:
-        repo.unfiltered().lfstatus = False
 
 
 @eh.wrapfunction(webcommands, b'archive')
 def hgwebarchive(orig, web):
-    web.repo.lfstatus = True
-
-    try:
+    with lfstatus(web.repo):
         return orig(web)
-    finally:
-        web.repo.lfstatus = False
 
 
 @eh.wrapfunction(archival, b'archive')
@@ -1286,20 +1276,16 @@ def hgsubrepoarchive(orig, repo, archiver, prefix, match=None, decode=True):
 @eh.wrapfunction(cmdutil, b'bailifchanged')
 def overridebailifchanged(orig, repo, *args, **kwargs):
     orig(repo, *args, **kwargs)
-    repo.lfstatus = True
-    s = repo.status()
-    repo.lfstatus = False
+    with lfstatus(repo):
+        s = repo.status()
     if s.modified or s.added or s.removed or s.deleted:
         raise error.Abort(_(b'uncommitted changes'))
 
 
 @eh.wrapfunction(cmdutil, b'postcommitstatus')
 def postcommitstatus(orig, repo, *args, **kwargs):
-    repo.lfstatus = True
-    try:
+    with lfstatus(repo):
         return orig(repo, *args, **kwargs)
-    finally:
-        repo.lfstatus = False
 
 
 @eh.wrapfunction(cmdutil, b'forget')
@@ -1319,11 +1305,8 @@ def cmdutilforget(
     )
     m = composelargefilematcher(match, repo[None].manifest())
 
-    try:
-        repo.lfstatus = True
+    with lfstatus(repo):
         s = repo.status(match=m, clean=True)
-    finally:
-        repo.lfstatus = False
     manifest = repo[None].manifest()
     forget = sorted(s.modified + s.added + s.deleted + s.clean)
     forget = [f for f in forget if lfutil.standin(f) in manifest]
@@ -1473,11 +1456,8 @@ def summaryremotehook(ui, repo, opts, changes):
     b'summary', opts=[(b'', b'large', None, _(b'display outgoing largefiles'))]
 )
 def overridesummary(orig, ui, repo, *pats, **opts):
-    try:
-        repo.lfstatus = True
+    with lfstatus(repo):
         orig(ui, repo, *pats, **opts)
-    finally:
-        repo.lfstatus = False
 
 
 @eh.wrapfunction(scmutil, b'addremove')
