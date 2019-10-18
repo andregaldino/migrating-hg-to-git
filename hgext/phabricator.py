@@ -609,26 +609,25 @@ def uploadchunks(fctx, fphid):
     """
     ui = fctx.repo().ui
     chunks = callconduit(ui, b'file.querychunks', {b'filePHID': fphid})
-    progress = ui.makeprogress(
+    with ui.makeprogress(
         _(b'uploading file chunks'), unit=_(b'chunks'), total=len(chunks)
-    )
-    for chunk in chunks:
-        progress.increment()
-        if chunk[b'complete']:
-            continue
-        bstart = int(chunk[b'byteStart'])
-        bend = int(chunk[b'byteEnd'])
-        callconduit(
-            ui,
-            b'file.uploadchunk',
-            {
-                b'filePHID': fphid,
-                b'byteStart': bstart,
-                b'data': base64.b64encode(fctx.data()[bstart:bend]),
-                b'dataEncoding': b'base64',
-            },
-        )
-    progress.complete()
+    ) as progress:
+        for chunk in chunks:
+            progress.increment()
+            if chunk[b'complete']:
+                continue
+            bstart = int(chunk[b'byteStart'])
+            bend = int(chunk[b'byteEnd'])
+            callconduit(
+                ui,
+                b'file.uploadchunk',
+                {
+                    b'filePHID': fphid,
+                    b'byteStart': bstart,
+                    b'data': base64.b64encode(fctx.data()[bstart:bend]),
+                    b'dataEncoding': b'base64',
+                },
+            )
 
 
 def uploadfile(fctx):
