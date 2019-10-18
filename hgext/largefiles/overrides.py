@@ -160,11 +160,12 @@ def addlargefiles(ui, repo, isaddremove, matcher, uipathfn, **opts):
 
 @contextlib.contextmanager
 def lfstatus(repo):
+    oldvalue = getattr(repo, 'lfstatus', False)
     repo.lfstatus = True
     try:
         yield
     finally:
-        repo.lfstatus = False
+        repo.lfstatus = oldvalue
 
 
 def removelargefiles(ui, repo, isaddremove, matcher, uipathfn, dryrun, **opts):
