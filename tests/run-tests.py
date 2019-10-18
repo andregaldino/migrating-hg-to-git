@@ -3514,21 +3514,23 @@ class TestRunner(object):
                 print('WARNING: cannot fix hg.bat reference to python.exe')
 
         if self.options.anycoverage:
-            custom = os.path.join(osenvironb[b'RUNTESTDIR'], 'sitecustomize.py')
-            target = os.path.join(self._pythondir, 'sitecustomize.py')
+            custom = os.path.join(
+                osenvironb[b'RUNTESTDIR'], b'sitecustomize.py'
+            )
+            target = os.path.join(self._pythondir, b'sitecustomize.py')
             vlog('# Installing coverage trigger to %s' % target)
             shutil.copyfile(custom, target)
-            rc = os.path.join(self._testdir, '.coveragerc')
+            rc = os.path.join(self._testdir, b'.coveragerc')
             vlog('# Installing coverage rc to %s' % rc)
-            os.environ['COVERAGE_PROCESS_START'] = rc
-            covdir = os.path.join(self._installdir, '..', 'coverage')
+            osenvironb[b'COVERAGE_PROCESS_START'] = rc
+            covdir = os.path.join(self._installdir, b'..', b'coverage')
             try:
                 os.mkdir(covdir)
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
 
-            os.environ['COVERAGE_DIR'] = covdir
+            osenvironb[b'COVERAGE_DIR'] = covdir
 
     def _checkhglib(self, verb):
         """Ensure that the 'mercurial' package imported by python is
@@ -3602,22 +3604,25 @@ class TestRunner(object):
         # chdir is the easiest way to get short, relative paths in the
         # output.
         os.chdir(self._hgroot)
-        covdir = os.path.join(self._installdir, '..', 'coverage')
+        covdir = os.path.join(_strpath(self._installdir), '..', 'coverage')
         cov = coverage(data_file=os.path.join(covdir, 'cov'))
 
         # Map install directory paths back to source directory.
-        cov.config.paths['srcdir'] = ['.', self._pythondir]
+        cov.config.paths['srcdir'] = ['.', _strpath(self._pythondir)]
 
         cov.combine()
 
-        omit = [os.path.join(x, '*') for x in [self._bindir, self._testdir]]
+        omit = [
+            _strpath(os.path.join(x, b'*'))
+            for x in [self._bindir, self._testdir]
+        ]
         cov.report(ignore_errors=True, omit=omit)
 
         if self.options.htmlcov:
-            htmldir = os.path.join(self._outputdir, 'htmlcov')
+            htmldir = os.path.join(_strpath(self._outputdir), 'htmlcov')
             cov.html_report(directory=htmldir, omit=omit)
         if self.options.annotate:
-            adir = os.path.join(self._outputdir, 'annotated')
+            adir = os.path.join(_strpath(self._outputdir), 'annotated')
             if not os.path.isdir(adir):
                 os.mkdir(adir)
             cov.annotate(directory=adir, omit=omit)
