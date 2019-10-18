@@ -1113,7 +1113,8 @@ test python hook configured with python:[file]:[hook] syntax
 
   $ hg id
   loading pre-identify.npmd hook failed:
-  abort: No module named repo!
+  abort: No module named repo! (no-py3 !)
+  abort: No module named 'repo'! (py3 !)
   [255]
 
   $ cd ../../b
