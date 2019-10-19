@@ -6,7 +6,8 @@
 // GNU General Public License version 2 or any later version.
 
 //! Bindings for the `hg::status` module provided by the
-//! `hg-core` crate. From Python, this will be seen as `rustext.dirstate.status`.
+//! `hg-core` crate. From Python, this will be seen as
+//! `rustext.dirstate.status`.
 //!
 
 use crate::dirstate::DirstateMap;
