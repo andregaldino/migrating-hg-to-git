@@ -41,9 +41,9 @@ longname = b'largefiles'
 
 
 @contextlib.contextmanager
-def lfstatus(repo):
+def lfstatus(repo, value=True):
     oldvalue = getattr(repo, 'lfstatus', False)
-    repo.lfstatus = True
+    repo.lfstatus = value
     try:
         yield
     finally:
@@ -591,12 +591,8 @@ def getlfilestoupload(repo, missing, addfunc):
             progress.update(i)
             parents = [p for p in repo[n].parents() if p != node.nullid]
 
-            oldlfstatus = repo.lfstatus
-            repo.lfstatus = False
-            try:
+            with lfstatus(repo, value=False):
                 ctx = repo[n]
-            finally:
-                repo.lfstatus = oldlfstatus
 
             files = set(ctx.files())
             if len(parents) == 2:
