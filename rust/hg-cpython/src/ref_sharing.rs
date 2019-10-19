@@ -57,24 +57,6 @@ struct PySharedState {
 }
 
 impl PySharedState {
-    /// Return a reference to the wrapped data and its state with an
-    /// artificial static lifetime.
-    /// We need to be protected by the GIL for thread-safety.
-    ///
-    /// # Safety
-    ///
-    /// This is highly unsafe since the lifetime of the given data can be
-    /// extended. Do not call this function directly.
-    unsafe fn leak_immutable<T>(
-        &self,
-        _py: Python,
-        data: Ref<T>,
-    ) -> (&'static T, &'static PySharedState) {
-        let ptr: *const T = &*data;
-        let state_ptr: *const PySharedState = self;
-        (&*ptr, &*state_ptr)
-    }
-
     fn current_borrow_count(&self, _py: Python) -> usize {
         self.borrow_count.load(Ordering::Relaxed)
     }
@@ -223,10 +205,16 @@ impl<'a, T> PySharedRef<'a, T> {
         // make sure self.data isn't mutably borrowed; otherwise the
         // generation number can't be trusted.
         let data_ref = self.borrow();
-        unsafe {
-            let (static_ref, static_state_ref) =
-                state.leak_immutable(self.py, data_ref);
-            PyLeaked::new(self.py, self.owner, static_ref, static_state_ref)
+
+        // &'static cast is safe because data_ptr and state_ptr are owned
+        // by self.owner, and we do have the GIL for thread safety.
+        let data_ptr: *const T = &*data_ref;
+        let state_ptr: *const PySharedState = state;
+        PyLeaked::<&'static T> {
+            inner: self.owner.clone_ref(self.py),
+            data: unsafe { &*data_ptr },
+            py_shared_state: unsafe { &*state_ptr },
+            generation: state.current_generation(self.py),
         }
     }
 }
@@ -304,23 +292,6 @@ pub struct PyLeaked<T> {
 // is invalid if generation != py_shared_state.generation.
 
 impl<T> PyLeaked<T> {
-    /// # Safety
-    ///
-    /// The `py_shared_state` must be owned by the `inner` Python object.
-    fn new(
-        py: Python,
-        inner: &PyObject,
-        data: T,
-        py_shared_state: &'static PySharedState,
-    ) -> Self {
-        Self {
-            inner: inner.clone_ref(py),
-            data: data,
-            py_shared_state,
-            generation: py_shared_state.current_generation(py),
-        }
-    }
-
     /// Immutably borrows the wrapped value.
     ///
     /// Borrowing fails if the underlying reference has been invalidated.
