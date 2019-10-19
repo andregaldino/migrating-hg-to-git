@@ -15,6 +15,7 @@ from mercurial.i18n import _
 
 from mercurial import (
     error,
+    extensions,
     localrepo,
     match as matchmod,
     scmutil,
@@ -47,45 +48,46 @@ def reposetup(ui, repo):
             ctx = super(lfilesrepo, self).__getitem__(changeid)
             if self.lfstatus:
 
-                class lfilesctx(ctx.__class__):
-                    def files(self):
-                        filenames = super(lfilesctx, self).files()
-                        return [lfutil.splitstandin(f) or f for f in filenames]
+                def files(orig):
+                    filenames = orig()
+                    return [lfutil.splitstandin(f) or f for f in filenames]
 
-                    def manifest(self):
-                        man1 = super(lfilesctx, self).manifest()
+                extensions.wrapfunction(ctx, 'files', files)
 
-                        class lfilesmanifest(man1.__class__):
-                            def __contains__(self, filename):
-                                orig = super(lfilesmanifest, self).__contains__
-                                return orig(filename) or orig(
-                                    lfutil.standin(filename)
-                                )
+                def manifest(orig):
+                    man1 = orig()
 
-                        man1.__class__ = lfilesmanifest
-                        return man1
+                    class lfilesmanifest(man1.__class__):
+                        def __contains__(self, filename):
+                            orig = super(lfilesmanifest, self).__contains__
+                            return orig(filename) or orig(
+                                lfutil.standin(filename)
+                            )
 
-                    def filectx(self, path, fileid=None, filelog=None):
-                        orig = super(lfilesctx, self).filectx
-                        try:
-                            if filelog is not None:
-                                result = orig(path, fileid, filelog)
-                            else:
-                                result = orig(path, fileid)
-                        except error.LookupError:
-                            # Adding a null character will cause Mercurial to
-                            # identify this as a binary file.
-                            if filelog is not None:
-                                result = orig(
-                                    lfutil.standin(path), fileid, filelog
-                                )
-                            else:
-                                result = orig(lfutil.standin(path), fileid)
-                            olddata = result.data
-                            result.data = lambda: olddata() + b'\0'
-                        return result
+                    man1.__class__ = lfilesmanifest
+                    return man1
 
-                ctx.__class__ = lfilesctx
+                extensions.wrapfunction(ctx, 'manifest', manifest)
+
+                def filectx(orig, path, fileid=None, filelog=None):
+                    try:
+                        if filelog is not None:
+                            result = orig(path, fileid, filelog)
+                        else:
+                            result = orig(path, fileid)
+                    except error.LookupError:
+                        # Adding a null character will cause Mercurial to
+                        # identify this as a binary file.
+                        if filelog is not None:
+                            result = orig(lfutil.standin(path), fileid, filelog)
+                        else:
+                            result = orig(lfutil.standin(path), fileid)
+                        olddata = result.data
+                        result.data = lambda: olddata() + b'\0'
+                    return result
+
+                extensions.wrapfunction(ctx, 'filectx', filectx)
+
             return ctx
 
         # Figure out the status of big files and insert them into the
