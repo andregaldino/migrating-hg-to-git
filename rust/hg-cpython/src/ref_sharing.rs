@@ -57,26 +57,6 @@ struct PySharedState {
 }
 
 impl PySharedState {
-    fn try_borrow_mut<'a, T>(
-        &'a self,
-        py: Python<'a>,
-        pyrefmut: RefMut<'a, T>,
-    ) -> PyResult<RefMut<'a, T>> {
-        match self.current_borrow_count(py) {
-            0 => {
-                // Note that this wraps around to the same value if mutably
-                // borrowed more than usize::MAX times, which wouldn't happen
-                // in practice.
-                self.generation.fetch_add(1, Ordering::Relaxed);
-                Ok(pyrefmut)
-            }
-            _ => Err(AlreadyBorrowed::new(
-                py,
-                "Cannot borrow mutably while immutably borrowed",
-            )),
-        }
-    }
-
     /// Return a reference to the wrapped data and its state with an
     /// artificial static lifetime.
     /// We need to be protected by the GIL for thread-safety.
@@ -112,6 +92,14 @@ impl PySharedState {
 
     fn current_generation(&self, _py: Python) -> usize {
         self.generation.load(Ordering::Relaxed)
+    }
+
+    fn increment_generation(&self, py: Python) {
+        assert_eq!(self.current_borrow_count(py), 0);
+        // Note that this wraps around to the same value if mutably
+        // borrowed more than usize::MAX times, which wouldn't happen
+        // in practice.
+        self.generation.fetch_add(1, Ordering::Relaxed);
     }
 }
 
@@ -170,11 +158,18 @@ impl<T> PySharedRefCell<T> {
         &'a self,
         py: Python<'a>,
     ) -> PyResult<RefMut<'a, T>> {
+        if self.py_shared_state.current_borrow_count(py) > 0 {
+            return Err(AlreadyBorrowed::new(
+                py,
+                "Cannot borrow mutably while immutably borrowed",
+            ));
+        }
         let inner_ref = self
             .inner
             .try_borrow_mut()
             .map_err(|e| AlreadyBorrowed::new(py, e.to_string()))?;
-        self.py_shared_state.try_borrow_mut(py, inner_ref)
+        self.py_shared_state.increment_generation(py);
+        Ok(inner_ref)
     }
 }
 
