@@ -9,6 +9,7 @@
 '''largefiles utility code: must not import other modules in this package.'''
 from __future__ import absolute_import
 
+import contextlib
 import copy
 import hashlib
 import os
@@ -37,6 +38,16 @@ shortnameslash = shortname + b'/'
 longname = b'largefiles'
 
 # -- Private worker functions ------------------------------------------
+
+
+@contextlib.contextmanager
+def lfstatus(repo):
+    oldvalue = getattr(repo, 'lfstatus', False)
+    repo.lfstatus = True
+    try:
+        yield
+    finally:
+        repo.lfstatus = oldvalue
 
 
 def getminsize(ui, assumelfiles, opt, default=10):

@@ -9,7 +9,6 @@
 '''Overridden Mercurial commands and functions for the largefiles extension'''
 from __future__ import absolute_import
 
-import contextlib
 import copy
 import os
 
@@ -49,6 +48,8 @@ from . import (
 )
 
 eh = exthelper.exthelper()
+
+lfstatus = lfutil.lfstatus
 
 # -- Utility functions: commonly/repeatedly needed functionality ---------------
 
@@ -156,16 +157,6 @@ def addlargefiles(ui, repo, isaddremove, matcher, uipathfn, **opts):
 
         added = [f for f in lfnames if f not in bad]
     return added, bad
-
-
-@contextlib.contextmanager
-def lfstatus(repo):
-    oldvalue = getattr(repo, 'lfstatus', False)
-    repo.lfstatus = True
-    try:
-        yield
-    finally:
-        repo.lfstatus = oldvalue
 
 
 def removelargefiles(ui, repo, isaddremove, matcher, uipathfn, dryrun, **opts):
