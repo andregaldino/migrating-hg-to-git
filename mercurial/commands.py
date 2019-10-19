@@ -6817,7 +6817,6 @@ def status(ui, repo, *pats, **opts):
         end = b'\0'
     else:
         end = b'\n'
-    copy = {}
     states = b'modified added removed deleted unknown ignored clean'.split()
     show = [k for k in states if opts.get(k)]
     if opts.get(b'all'):
@@ -6856,6 +6855,7 @@ def status(ui, repo, *pats, **opts):
 
     changestates = zip(states, pycompat.iterbytestr(b'MAR!?IC'), stat)
 
+    copy = {}
     if (
         opts.get(b'all')
         or opts.get(b'copies')
