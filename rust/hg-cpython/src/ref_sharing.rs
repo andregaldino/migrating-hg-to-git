@@ -22,10 +22,10 @@
 
 //! Macros for use in the `hg-cpython` bridge library.
 
-use crate::exceptions::AlreadyBorrowed;
 use cpython::{exc, PyClone, PyErr, PyObject, PyResult, Python};
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{BorrowMutError, Ref, RefCell, RefMut};
 use std::ops::{Deref, DerefMut};
+use std::result;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Manages the shared state between Python and Rust
@@ -139,17 +139,14 @@ impl<T> PySharedRefCell<T> {
     fn try_borrow_mut<'a>(
         &'a self,
         py: Python<'a>,
-    ) -> PyResult<RefMut<'a, T>> {
+    ) -> result::Result<RefMut<'a, T>, BorrowMutError> {
         if self.py_shared_state.current_borrow_count(py) > 0 {
-            return Err(AlreadyBorrowed::new(
-                py,
-                "Cannot borrow mutably while immutably borrowed",
-            ));
+            // propagate borrow-by-leaked state to inner to get BorrowMutError
+            let _dummy = self.inner.borrow();
+            self.inner.try_borrow_mut()?;
+            unreachable!("BorrowMutError must be returned");
         }
-        let inner_ref = self
-            .inner
-            .try_borrow_mut()
-            .map_err(|e| AlreadyBorrowed::new(py, e.to_string()))?;
+        let inner_ref = self.inner.try_borrow_mut()?;
         self.py_shared_state.increment_generation(py);
         Ok(inner_ref)
     }
@@ -191,7 +188,9 @@ impl<'a, T> PySharedRef<'a, T> {
 
     /// Mutably borrows the wrapped value, returning an error if the value
     /// is currently borrowed.
-    pub fn try_borrow_mut(&self) -> PyResult<RefMut<'a, T>> {
+    pub fn try_borrow_mut(
+        &self,
+    ) -> result::Result<RefMut<'a, T>, BorrowMutError> {
         self.data.try_borrow_mut(self.py)
     }
 
