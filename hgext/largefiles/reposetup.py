@@ -18,6 +18,7 @@ from mercurial import (
     localrepo,
     match as matchmod,
     scmutil,
+    util,
 )
 
 from . import (
@@ -130,14 +131,15 @@ def reposetup(ui, repo):
             if match is None:
                 match = matchmod.always()
 
-            wlock = None
             try:
-                try:
-                    # updating the dirstate is optional
-                    # so we don't wait on the lock
-                    wlock = self.wlock(False)
-                except error.LockError:
-                    pass
+                # updating the dirstate is optional
+                # so we don't wait on the lock
+                wlock = self.wlock(False)
+                gotlock = True
+            except error.LockError:
+                wlock = util.nullcontextmanager()
+                gotlock = False
+            with wlock:
 
                 # First check if paths or patterns were specified on the
                 # command line.  If there were, and they don't match any
@@ -308,12 +310,8 @@ def reposetup(ui, repo):
                         for items in result
                     ]
 
-                if wlock:
+                if gotlock:
                     lfdirstate.write()
-
-            finally:
-                if wlock:
-                    wlock.release()
 
             self.lfstatus = True
             return scmutil.status(*result)
