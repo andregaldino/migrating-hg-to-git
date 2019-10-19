@@ -39,9 +39,6 @@ def reposetup(ui, repo):
 
         lfstatus = False
 
-        def status_nolfiles(self, *args, **kwargs):
-            return super(lfilesrepo, self).status(*args, **kwargs)
-
         # When lfstatus is set, return a context that gives the names
         # of largefiles instead of their corresponding standins and
         # identifies the largefiles as always binary, regardless of
