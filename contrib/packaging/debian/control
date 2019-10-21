@@ -39,6 +39,7 @@ Description: fast, easy to use, distributed revision control tool.
 Package: mercurial-common
 Architecture: all
 Depends:
+ sensible-utils,
  ${misc:Depends},
  ${python3:Depends},
 Recommends: mercurial (= ${source:Version}), ca-certificates
