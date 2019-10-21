@@ -53,31 +53,29 @@ locally.  Both committing and downloading an LFS file will link the
 file to a usercache, to speed up future access.  See the `usercache`
 config setting described below.
 
-.hglfs::
+The extension reads its configuration from a versioned ``.hglfs``
+configuration file found in the root of the working directory. The
+``.hglfs`` file uses the same syntax as all other Mercurial
+configuration files. It uses a single section, ``[track]``.
 
-    The extension reads its configuration from a versioned ``.hglfs``
-    configuration file found in the root of the working directory. The
-    ``.hglfs`` file uses the same syntax as all other Mercurial
-    configuration files. It uses a single section, ``[track]``.
+The ``[track]`` section specifies which files are stored as LFS (or
+not). Each line is keyed by a file pattern, with a predicate value.
+The first file pattern match is used, so put more specific patterns
+first.  The available predicates are ``all()``, ``none()``, and
+``size()``. See "hg help filesets.size" for the latter.
 
-    The ``[track]`` section specifies which files are stored as LFS (or
-    not). Each line is keyed by a file pattern, with a predicate value.
-    The first file pattern match is used, so put more specific patterns
-    first.  The available predicates are ``all()``, ``none()``, and
-    ``size()``. See "hg help filesets.size" for the latter.
+Example versioned ``.hglfs`` file::
 
-    Example versioned ``.hglfs`` file::
+  [track]
+  # No Makefile or python file, anywhere, will be LFS
+  **Makefile = none()
+  **.py = none()
 
-      [track]
-      # No Makefile or python file, anywhere, will be LFS
-      **Makefile = none()
-      **.py = none()
+  **.zip = all()
+  **.exe = size(">1MB")
 
-      **.zip = all()
-      **.exe = size(">1MB")
-
-      # Catchall for everything not matched above
-      ** = size(">10MB")
+  # Catchall for everything not matched above
+  ** = size(">10MB")
 
 Configs::
 
