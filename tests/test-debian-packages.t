@@ -17,10 +17,10 @@ Ensure debuild doesn't run the testsuite, as that could get silly.
   mercurial_*.deb (glob)
 main deb should have .so but no .py
   $ dpkg --contents mercurial_*.deb | egrep '(localrepo|parsers)'
-  * ./usr/lib/python2.7/dist-packages/mercurial/cext/parsers*.so (glob)
+  * ./usr/lib/python3/dist-packages/mercurial/cext/parsers*.so (glob)
 mercurial-common should have py but no .so or pyc
   $ dpkg --contents mercurial-common_*.deb | egrep '(localrepo|parsers.*so)'
-  * ./usr/lib/python2.7/dist-packages/mercurial/localrepo.py (glob)
+  * ./usr/lib/python3/dist-packages/mercurial/localrepo.py (glob)
 zsh completions should be in the common package
   $ dpkg --contents mercurial-common_*.deb | egrep 'zsh.*[^/]$'
   * ./usr/share/zsh/vendor-completions/_hg (glob)

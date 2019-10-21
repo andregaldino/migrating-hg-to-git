@@ -4,18 +4,21 @@
 
 CPUS=$(shell cat /proc/cpuinfo | grep -E ^processor | wc -l)
 
+export HGPYTHON3=1
+export PYTHON=python3
+
 %:
-	dh $@ --with python2
+	dh $@ --with python3
 
 override_dh_auto_test:
 	http_proxy='' dh_auto_test -- TESTFLAGS="-j$(CPUS)"
 
-override_dh_python2:
-	dh_python2
+override_dh_python3:
+	dh_python3
 	find debian/mercurial/usr/share -type d -empty -delete
 
 override_dh_install:
-	python$(PYVERS) setup.py install --root "$(CURDIR)"/debian/mercurial --install-layout=deb
+	python3 setup.py install --root "$(CURDIR)"/debian/mercurial --install-layout=deb
 	# chg
 	make -C contrib/chg \
 		DESTDIR="$(CURDIR)"/debian/mercurial \
@@ -25,7 +28,7 @@ override_dh_install:
 	find "$(CURDIR)"/debian/mercurial/usr/lib \
 		! -name '*.so' ! -type d -delete , \
 		-type d -empty -delete
-	python$(PYVERS) setup.py install --root "$(CURDIR)/debian/mercurial-common" --install-layout=deb
+	python3 setup.py install --root "$(CURDIR)/debian/mercurial-common" --install-layout=deb
 	make install-doc PREFIX="$(CURDIR)"/debian/mercurial-common/usr
 	# remove arch-dependent python stuff
 	find "$(CURDIR)"/debian/mercurial-common/usr/lib \
