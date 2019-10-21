@@ -111,5 +111,5 @@ if [ "$CLEANUP" ] ; then
           -type f -newer $control -print0 2>/dev/null | \
       xargs -Inarf -0 mv narf "$OUTPUTDIR"
     echo "Built packages for $debver:"
-    find "$PWD"/"$OUTPUTDIR" -type f -newer $control -name '*.deb'
+    find "$OUTPUTDIR" -type f -newer $control -name '*.deb'
 fi
